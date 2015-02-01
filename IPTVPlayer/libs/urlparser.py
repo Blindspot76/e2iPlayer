@@ -1982,15 +1982,13 @@ class pageParser:
         printDBG("parserUSTREAMTV linkUrl[%s]" % linkUrl)
         #http://www.ustream.tv/channel/http-sitem-cyhp-de-polsat-htm
         linksTab = []
-        
+        live = True
         # get PC streams
         while True:
             sts, data = self.cm.getPage(linkUrl)
-            if not sts:
-                break
+            if not sts: break
             channelID = self.cm.ph.getSearchGroups(data, 'data-content-id="([0-9]+?)"')[0]
-            if '' == channelID:
-                break
+            if '' == channelID: break
             if '/recorded/' in linkUrl:
                 videoUrl = 'https://www.ustream.tv/recorded/' + channelID
                 live = False
