@@ -115,10 +115,10 @@ class IPTVExtMoviePlayer(Screen):
             <widget name="statusIcon"         position="20,45"         size="40,40"   zPosition="3"             transparent="1" alphatest="blend" />
             
             <widget name="goToSeekPointer"    position="94,0"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
-            <widget name="goToSeekLabel"      position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"   font="Regular;24" halign="center" valign="center"/>
-            <widget name="infoBarTitle"       position="82,30"         size="568,27"  zPosition="4" transparent="1" foregroundColor="white"   font="Regular;18" halign="center" valign="center"/>
-            <widget name="currTimeLabel"      position="94,62"         size="100,20"  zPosition="4" transparent="1" foregroundColor="#035ccc" font="Regular;24" halign="left"   valign="top"/>
-            <widget name="lengthTimeLabel"    position="538,62"        size="100,20"  zPosition="4" transparent="1" foregroundColor="white"   font="Regular;24" halign="right"  valign="top"/>
+            <widget name="goToSeekLabel"      position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
+            <widget name="infoBarTitle"       position="82,30"         size="568,27"  zPosition="4" transparent="1" foregroundColor="white"   backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
+            <widget name="currTimeLabel"      position="94,62"         size="100,30"  zPosition="4" transparent="1" foregroundColor="#035ccc"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
+            <widget name="lengthTimeLabel"    position="538,62"        size="100,30"  zPosition="4" transparent="1" foregroundColor="white"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
     </screen>""" % ( getDesktop(0).size().width(), 
                      getDesktop(0).size().height(),
                      GetIPTVDMImgDir("playback_banner.png"),
