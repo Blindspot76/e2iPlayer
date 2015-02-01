@@ -439,7 +439,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     # SERWERS LISTS STEP'S PRIVATES METHODS
     ############################################################################## 
     def __addLastVersion(self, servers):
-        mainUrl = "https://gitorious.org/iptv-pl-dla-openpli/iptv-pl-dla-openpli"
+        mainUrl = "https://gitorious.org/iptvplayer-for-e2/iptvplayer-for-e2"
         sts, response = self.cm.getPage(mainUrl, {'return_data':False})
         if sts:
             finalurl = response.geturl()
@@ -451,7 +451,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 if sts:
                     newVerNum = CParsingHelper.getSearchGroups(data, '&quot;([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)&quot;')[0]
                     sourceUrl = mainUrl + "/archive/%s.tar.gz" % crcSum
-                    server = {'name':'gitorious.org', 'version':newVerNum, 'url':sourceUrl, 'subdir':'iptv-pl-dla-openpli-iptv-pl-dla-openpli/', 'pyver':'X.X', 'packagetype':'sourcecode'}
+                    server = {'name':'gitorious.org', 'version':newVerNum, 'url':sourceUrl, 'subdir':'iptvplayer-for-e2-iptvplayer-for-e2/', 'pyver':'X.X', 'packagetype':'sourcecode'}
                     printDBG("UpdateMainAppImpl.__addLastVersion server: [%s]" % str(server))
                     servers.append(server)
             else:

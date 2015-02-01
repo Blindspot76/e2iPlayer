@@ -3,7 +3,7 @@ Dostępne są skrypty napisane w językach bash (powinny posiadać rozszeżenie 
 
 Do każdego skryptu przekazywane są dwa parametry:
 1) lokalizacja starej wersji pluginu np.:           "/usr/local/e2/lib/enigma2/python/Plugins/Extensions/IPTVPlayer"
-2) tymczasowa lokalizacja nowej wersji pluginu np.: "/tmp/iptv_update/iptv_archive/iptv-pl-dla-openpli-iptv-pl-dla-openpli/IPTVPlayer"
+2) tymczasowa lokalizacja nowej wersji pluginu np.: "/tmp/iptv_update/iptvplayer-for-e2-iptvplayer-for-e2/IPTVPlayer"
 
 Parametry te mogą być przydatne jeśli np. chcemy skopiować nie które pliki ze starej wersji do nowej.
 W szczególności każdy skrypt powinien kopiować samego siebie do tymczasowej lokalizacji z nową wersją.
