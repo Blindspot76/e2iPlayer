@@ -59,7 +59,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # gstplayer
-        self.gstplayerVersion = 5
+        self.gstplayerVersion = 6
         self.gstplayerpaths = ["/usr/bin/gstplayer", GetBinDir("gstplayer", "")]
         self._gstplayerInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/gstplayer (%s)" % _("recommended")), "/usr/bin/gstplayer"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),

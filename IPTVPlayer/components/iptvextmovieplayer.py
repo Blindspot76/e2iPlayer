@@ -289,11 +289,12 @@ class IPTVExtMoviePlayer(Screen):
                         self.showPlaybackInfoBar()
                         self.extPlayerCmddDispatcher.doGoToSeek(str(self.lastPosition-5))
                         self.lastPosition = 0
-                    if not self.playback['LengthFromPlayerReceived'] and self.playback['Length'] < val:
-                        self.playback['Length'] = val
-                        self['progressBar'].range = (0, val)
-                        self['lengthTimeLabel'].setText( str(timedelta(seconds=val)) )
-                if -1 != val:
+                    tmpLength = self.playback['CurrentTime']
+                    if val > self.playback['CurrentTime']: tmpLength = val
+                    if 0 < tmpLength:
+                        self.playback['Length'] = tmpLength
+                        self['progressBar'].range = (0, tmpLength)
+                        self['lengthTimeLabel'].setText( str(timedelta(seconds=tmpLength)) )
                     self.playback['LengthFromPlayerReceived'] = True
             elif 'CurrentTime' == key:
                 if self.playback['Length'] < val:
