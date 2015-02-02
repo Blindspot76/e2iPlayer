@@ -118,7 +118,8 @@ class IPTVExtMoviePlayer(Screen):
             <widget name="goToSeekLabel"      position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
             <widget name="infoBarTitle"       position="82,30"         size="568,23"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
             <widget name="currTimeLabel"      position="94,62"         size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
-            <widget name="lengthTimeLabel"    position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+            <widget name="lengthTimeLabel"    position="317,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
+            <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>    
     </screen>""" % ( getDesktop(0).size().width(), 
                      getDesktop(0).size().height(),
                      GetIPTVDMImgDir("playback_banner.png"),
@@ -195,6 +196,7 @@ class IPTVExtMoviePlayer(Screen):
         self['infoBarTitle']      = Label(self.title)
         self['goToSeekLabel']     = Label("0:00:00")
         self['currTimeLabel']     = Label("0:00:00")
+        self['remainedLabel']     = Label("0:00:00")
         self['lengthTimeLabel']   = Label("0:00:00")
         
         # goto seek  timer
@@ -202,9 +204,9 @@ class IPTVExtMoviePlayer(Screen):
         self.playback['GoToSeekTimer'] = eTimer()
         self.playback['GoToSeekTimer_conn'] = eConnectCallback(self.playback['GoToSeekTimer'].timeout, self.doGoToSeek)
         
-        self.playback.update( {'InfoAvailable':  False,
-                               'CurrentTime':    0,
+        self.playback.update( {'CurrentTime':    0,
                                'Length':         0,
+                               'LengthFromPlayerReceived': False,
                                'GoToSeekTime':   0,
                                'GoToSeeking':    False,
                                'IsLive':         False,
@@ -223,7 +225,7 @@ class IPTVExtMoviePlayer(Screen):
         # show hide info bar functionality
         self.goToSeekRepeatCount = 0
         self.goToSeekStep = 0
-        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'lengthTimeLabel', 'statusIcon'] }
+        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'statusIcon'] }
         self.playbackInfoBar['timer'] = eTimer()
         self.playbackInfoBar['timer_conn'] = eConnectCallback(self.playbackInfoBar['timer'].timeout, self.hidePlaybackInfoBar)
         
@@ -287,19 +289,21 @@ class IPTVExtMoviePlayer(Screen):
                         self.showPlaybackInfoBar()
                         self.extPlayerCmddDispatcher.doGoToSeek(str(self.lastPosition-5))
                         self.lastPosition = 0
-                    self.playback['InfoAvailable'] = True
-                    if self.playback['Length'] < val:
+                    if not self.playback['LengthFromPlayerReceived'] and self.playback['Length'] < val:
                         self.playback['Length'] = val
                         self['progressBar'].range = (0, val)
                         self['lengthTimeLabel'].setText( str(timedelta(seconds=val)) )
+                if -1 != val:
+                    self.playback['LengthFromPlayerReceived'] = True
             elif 'CurrentTime' == key:
-                if self.playback['InfoAvailable'] and self.playback['Length'] < val:
+                if self.playback['Length'] < val:
                     self.playback['Length'] = val
                     self['progressBar'].range = (0, val)
                     self['lengthTimeLabel'].setText( str(timedelta(seconds=val)) )
                 self['progressBar'].value = val
                 self.playback['CurrentTime'] = stsObj['CurrentTime']
                 self['currTimeLabel'].setText( str(timedelta(seconds=self.playback['CurrentTime'])) )
+                self['remainedLabel'].setText( str(timedelta(seconds=self.playback['Length']-self.playback['CurrentTime'])) )
             elif 'Status' == key:
                 curSts = self.playback['Status']
                 if self.playback['Status'] != val[0]:
@@ -322,9 +326,9 @@ class IPTVExtMoviePlayer(Screen):
             self["goToSeekLabel"].hide()
 
     def doGoToSeekPointerMove(self, seek):
-        printDBG('IPTVExtMoviePlayer.doGoToSeekPointerMove seek[%r], InfoAvailable[%r], GoToSeeking[%r]' % (seek, self.playback['InfoAvailable'], self.playback['GoToSeeking']))
+        printDBG('IPTVExtMoviePlayer.doGoToSeekPointerMove seek[%r], LengthFromPlayerReceived[%r], GoToSeeking[%r]' % (seek, self.playback['LengthFromPlayerReceived'], self.playback['GoToSeeking']))
         self.playback['GoToSeekTimer'].stop()
-        if not self.playback['InfoAvailable']: return
+        if not self.playback['LengthFromPlayerReceived']: return
         if not self.playback['GoToSeeking']:
             self.playback['GoToSeeking']  = True
             self.playback['GoToSeekTime'] = self.playback['CurrentTime']
