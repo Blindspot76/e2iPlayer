@@ -140,7 +140,7 @@ class IPTVExtMoviePlayer(Screen):
             self.gstAdditionalParams['buffer-size']          = gstAdditionalParams.get('buffer-size', 0) # in KB
         else: self.playerName = _("external eplayer3")
 
-        self.session.nav.playService(None) # current service must be None to give free access to eplayer3
+        self.session.nav.playService(None) # current service must be None to give free access to DVB Audio and Video Sinks
         self.fileSRC      = filesrcLocation
         self.title        = FileName
         if lastPosition:
@@ -196,7 +196,7 @@ class IPTVExtMoviePlayer(Screen):
         self['infoBarTitle']      = Label(self.title)
         self['goToSeekLabel']     = Label("0:00:00")
         self['currTimeLabel']     = Label("0:00:00")
-        self['remainedLabel']     = Label("0:00:00")
+        self['remainedLabel']     = Label("-0:00:00")
         self['lengthTimeLabel']   = Label("0:00:00")
         
         # goto seek  timer
@@ -304,7 +304,7 @@ class IPTVExtMoviePlayer(Screen):
                 self['progressBar'].value = val
                 self.playback['CurrentTime'] = stsObj['CurrentTime']
                 self['currTimeLabel'].setText( str(timedelta(seconds=self.playback['CurrentTime'])) )
-                self['remainedLabel'].setText( str(timedelta(seconds=self.playback['Length']-self.playback['CurrentTime'])) )
+                self['remainedLabel'].setText( '-' + str(timedelta(seconds=self.playback['Length']-self.playback['CurrentTime'])) )
             elif 'Status' == key:
                 curSts = self.playback['Status']
                 if self.playback['Status'] != val[0]:
@@ -340,7 +340,7 @@ class IPTVExtMoviePlayer(Screen):
         # update data
         self.playback['GoToSeekTime'] += seek
         if self.playback['GoToSeekTime'] < 0: self.playback['GoToSeekTime'] = 0
-        if self.playback['GoToSeekTime'] > self.playback['Length']-10: self.playback['GoToSeekTime'] = self.playback['Length']-10
+        if self.playback['GoToSeekTime'] > self.playback['Length']: self.playback['GoToSeekTime'] = self.playback['Length']
         self["goToSeekLabel"].setText( str(timedelta(seconds=self.playback['GoToSeekTime'])) )
         
         # update position
