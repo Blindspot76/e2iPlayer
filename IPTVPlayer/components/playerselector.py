@@ -20,7 +20,6 @@ class PlayerSelectorWidget(Screen):
     LAST_SELECTION = 0
     def __init__(self, session, list):
         printDBG("PlayerSelectorWidget.__init__ --------------------------------")
-        #printDBG("PlayerSelectorWidget icons size: " + config.plugins.iptvplayer.IconsSize.value)
         screenwidth = getDesktop(0).size().width()
         if len(list) > 16 and int(config.plugins.iptvplayer.IconsSize.value) == 100:
             numOfRow = 4
@@ -209,6 +208,7 @@ class PlayerSelectorWidget(Screen):
             "right": self.keyRight,
             "up":    self.keyUp,
             "down":  self.keyDown,
+            "blue":  self.keyBlue,
         }, -1)
         
 
@@ -365,6 +365,9 @@ class PlayerSelectorWidget(Screen):
         else:
             self.close(None)
         return
+        
+    def keyBlue(self):
+        self.close((_("IPTV download manager"), "IPTVDM"))
     
     def hideWindow(self):
         self.visible = False

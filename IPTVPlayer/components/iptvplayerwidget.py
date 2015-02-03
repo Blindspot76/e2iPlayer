@@ -514,11 +514,13 @@ class IPTVPlayerWidget(Screen):
             elif ret[1] == "HostConfig":
                 self.runConfigHostIfAllowed()
 
-    def runIPTVDM(self):
+    def runIPTVDM(self, callback=None):
         global gDownloadManager
         if None != gDownloadManager:
             from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmui import IPTVDMWidget
-            self.session.open(IPTVDMWidget, gDownloadManager)
+            if None == callback: self.session.open(IPTVDMWidget, gDownloadManager)
+            else: self.session.openWithCallback(callback, IPTVDMWidget, gDownloadManager)
+        elif None != callback: callback()
         return
         
     def displayIcon(self, ret=None, doDecodeCover=False):
@@ -883,6 +885,9 @@ class IPTVPlayerWidget(Screen):
                 return
             elif ret[1] == "update":
                 self.session.openWithCallback(self.displayListOfHosts, IPTVUpdateWindow, UpdateMainAppImpl(self.session))
+                return
+            elif ret[1] == "IPTVDM":
+                self.runIPTVDM(self.selectHost)
                 return
             else: # host selected
                 self.hostName = ret[1] 
