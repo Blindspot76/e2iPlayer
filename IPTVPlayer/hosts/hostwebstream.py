@@ -16,6 +16,7 @@ from Plugins.Extensions.IPTVPlayer.libs.satlive   import SatLiveApi, GetConfigLi
 from Plugins.Extensions.IPTVPlayer.libs.weebtv    import WeebTvApi, GetConfigList as WeebTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.vidtvpl   import VidTvApi
 from Plugins.Extensions.IPTVPlayer.libs.looknijtv import LooknijTvApi
+from Plugins.Extensions.IPTVPlayer.libs.nettvpw   import NettvPw
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -106,6 +107,7 @@ class HasBahCa:
                         {'name': 'videostar.pl',    'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
                         {'name': 'goldvod.tv',      'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/lista-kanalow.html',                               'icon': 'http://goldvod.tv/img/logo.png'}, \
                         #{'name': 'looknij.tv',      'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2014/10/logosite.png'}, \
+                        {'name': 'nettv.pw',        'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
                         {'name': 'web-live.tv',     'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
                         {'name': 'm3u',             'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg.prv.pl/Lista_matzgPL.m3u',                              'icon': 'http://matzg.prv.pl/Iptv_matzgPL.png'}, \
                         {'name': 'm3u',             'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
@@ -134,6 +136,7 @@ class HasBahCa:
         self.satLiveApi   = None
         self.vidTvApi     = None
         self.looknijTvApi = None
+        self.nettvpwApi   = None
         self.weebTvApi    = None
         self.teamCastTab  = {}
         
@@ -374,6 +377,14 @@ class HasBahCa:
     def getLooknijTvLink(self, url):
         printDBG("getLooknijTvLink url[%s]" % url)
         return self.looknijTvApi.getVideoLink(url)
+        
+    def getNettvpwList(self, url):
+        if None == self.nettvpwApi: self.nettvpwApi = NettvPw()
+        tmpList = self.nettvpwApi.getChannelsList(url)
+        for item in tmpList: self.playVideo(item)
+            
+    def getNettvpwLink(self, url):
+        return self.nettvpwApi.getVideoLink(url)
     
     def getWeebTvList(self, url):
         printDBG('getWeebTvList start')
@@ -644,6 +655,9 @@ class HasBahCa:
     #looknij.tv items
         elif name == "looknij.tv":
             self.getLooknijTvList(url)
+    #nettv.pw items
+        elif name == "nettv.pw":
+            self.getNettvpwList(url)
     #weeb.tv items
         elif name == 'weeb.tv':
             self.getWeebTvList(url)
@@ -695,6 +709,11 @@ class IPTVHost(CHostBase):
             url = self.host.getVidTvLink(url)
         elif 'looknij.tv' in url:
             url = self.host.getLooknijTvLink(url)
+        elif 'nettv.pw' in url:
+            tmpList = self.host.getNettvpwLink(url)
+            for item in tmpList:
+                retlist.append(CUrlItem(item['name'], item['url']))
+            url = None
         elif 'weeb.tv' in name:
             url = self.host.getWeebTvLink(url)
         elif name == "team-cast.pl":
@@ -718,7 +737,7 @@ class IPTVHost(CHostBase):
             for item in tmpList:
                 retlist.append(CUrlItem(item['name'], item['url']))
             url = None
-
+            
         if isinstance(url, basestring):
             if url.endswith('.m3u'):
                 tmpList = self.host.getDirectVideoHasBahCa(name, url)

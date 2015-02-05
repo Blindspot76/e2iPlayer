@@ -1968,6 +1968,7 @@ class pageParser:
             if sts:
                 data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>', False)[1]
                 data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0)
+                printDBG(data)
                 id = CParsingHelper.getDataBeetwenMarkers(data, "id=", '&', False)[1]
                 pid = CParsingHelper.getDataBeetwenMarkers(data, "pid=", '&', False)[1]
                 data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>', False)[1]
@@ -1980,15 +1981,20 @@ class pageParser:
         
     def parserUSTREAMTV(self, linkUrl):
         printDBG("parserUSTREAMTV linkUrl[%s]" % linkUrl)
-        #http://www.ustream.tv/channel/http-sitem-cyhp-de-polsat-htm
+        #http://www.ustream.tv/channel/nasa-educational
         linksTab = []
         live = True
         # get PC streams
         while True:
-            sts, data = self.cm.getPage(linkUrl)
-            if not sts: break
-            channelID = self.cm.ph.getSearchGroups(data, 'data-content-id="([0-9]+?)"')[0]
+            channelID = self.cm.ph.getSearchGroups(linkUrl+'|', "cid=([0-9]+?)[^0-9]")[0]
+            if '' == channelID:            
+                sts, data = self.cm.getPage(linkUrl)
+                if not sts: break
+                channelID = self.cm.ph.getSearchGroups(data, 'data-content-id="([0-9]+?)"')[0]
+                if '' == channelID: channelID = self.cm.ph.getSearchGroups(data, 'ustream.vars.cId=([0-9]+?)[^0-9]')[0]
+
             if '' == channelID: break
+            #in linkUrl and 'ustream.vars.isLive=true' not in data and '/live/' not in linkUrl
             if '/recorded/' in linkUrl:
                 videoUrl = 'https://www.ustream.tv/recorded/' + channelID
                 live = False
@@ -2018,6 +2024,7 @@ class pageParser:
             except:
                 printExc()
             break
+        return linksTab
         # get mobile streams
         if live:
             playlist_url = "http://iphone-streaming.ustream.tv/uhls/%s/streams/live/iphone/playlist.m3u8" % channelID
