@@ -43,13 +43,13 @@ def gettytul():
 
 class AnimeOdcinki(CBaseHostClass):
     MAINURL  = 'http://www.anime-odcinki.pl/'
-    SEARCH_URL = MAINURL + 'infusions/video/search.php?find='
-    MAIN_CAT_TAB = [{ 'category':'list_letters',   'title':'Lista anime',        'url':'Manga/viewpage.php?page_id=4'       },
-                    { 'category':'list_letters',   'title':'Lista filmów',       'url':'viewpage.php?page_id=1869'          },
-                    { 'category':'list_items',     'title':'Ostation dodane',    'url':'infusions/video/recent_videos.php'  },
-                    { 'category':'list_items',     'title':'Najwyżej ocenione',  'url':'infusions/video/top_rated.php'      },
-                    { 'category':'list_items',     'title':'Popularne odcinki',  'url':'infusions/video/popular_videos.php' },
-                    { 'category':'Wyszukaj',       'title':'Wyszukaj'             },
+    SEARCH_URL = MAINURL + '/search/node/'
+    MAIN_CAT_TAB = [{ 'category':'list_letters',          'title':'Lista anime',           'url':MAINURL+'lista-anime'  },
+                    { 'category':'list_letters',          'title':'Lista filmów',          'url':MAINURL+'lista-filmow' },
+                    { 'category':'list_emiotwane',        'title':'Anime Emitowane',       'url':MAINURL                },
+                    { 'category':'list_new_episodes',     'title':'Nowe odcinki emitowane','url':MAINURL                },
+                    { 'category':'list_new_added',        'title':'Ostatnio dodane odcinki z poprzednich sezonów',  'url':MAINURL },
+                    { 'category':'Wyszukaj',              'title':'Wyszukaj'             },
                     { 'category':'Historia wyszukiwania', 'title':'Historia wyszukiwania'} ]
                     
     
@@ -80,51 +80,79 @@ class AnimeOdcinki(CBaseHostClass):
             params.update(item)
             params['name']  = 'category'
             self.addDir(params)
+            
+    def _listBase(self, cItem, category, m1, m2, sp):
+        url = self._resolveUrl(cItem['url'])
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
+        data = data.split(sp)
+        if len(data): del data[-1]
+        for item in data:
+            params = dict(cItem)
+            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"', 1)[0]
+            title = self.cleanHtmlStr(item)
+            icon  = self._resolveUrl( self.cm.ph.getSearchGroups(item, """<img src=['"]([^"^']+?\.jpg[^"^']*?)['"]""")[0] )
+            if len(title) and '|' == title[0]: title = title[1:]
+            params.update({'title':title, 'url':url, 'category':category, 'icon':icon})
+            if '/film/' in url or category == 'video': self.addVideo(params)
+            else: self.addDir(params)
                 
     def listsLetters(self, cItem, category):
         printDBG('AnimeOdcinki.listsLetters start')
-        url = AnimeOdcinki.MAINURL + cItem['url']
-        sts, data = self.cm.getPage(url)
-        if sts:
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="entry">', '</table>', False)[1]
-            data = re.findall('<a href="([^"]+?)"><strong>([^<])</strong></a>', data)
-            for item in data:
-                params = dict(cItem)
-                params.update({'title':item[1], 'url':item[0], 'category':category})
-                self.addDir(params)
-                
+        self._listBase(cItem, category, '<div class="view-content">', '</div>', '</span>')
+            
     def listsAnimes(self, cItem, category):
         printDBG('AnimeOdcinki.listsAnimes start')
-        url = AnimeOdcinki.MAINURL + cItem['url']
-        sts, data = self.cm.getPage(url)
-        if sts:
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<ul><li class="lista">', '</div>', False)[1]
-            data = re.findall('<a href="([^"]+?)"[^>]*?>([^<]+?)</a>', data)
-            for item in data:
-                params = dict(cItem)
-                params.update({'title':item[1], 'url':item[0], 'category':category})
-                self.addDir(params)
+        self._listBase(cItem, category, '<tbody>', '</tbody>', '</tr>')
+        
+    def listEmitowane(self, cItem, category):
+        printDBG('AnimeOdcinki.listEmitowane start')
+        self._listBase(cItem, category, 'Anime Emitowane', '</ul>', '</li>')
+        
+    def listNewEpisodes(self, cItem):
+        printDBG('AnimeOdcinki.listNewEpisodes start')
+        self._listBase(cItem, 'video', '<ul class="jcarousel jcarousel-view--new-emitowane--block jcarousel-dom-1 jcarousel-skin-default">', '</ul>', '</div>')
+
+    def listNewAdded(self, cItem):
+        printDBG('AnimeOdcinki.listNewAdded start')
+        self._listBase(cItem, 'video', '<ul class="jcarousel jcarousel-view--nowe-odcinki--block jcarousel-dom-2 jcarousel-skin-default">', '</ul>', '</div>')            
                 
     def listEpisodes(self, cItem):
         printDBG('AnimeOdcinki.listEpisodes start')
-        url = self._resolveUrl(cItem['url'])
+        page = cItem.get('page', 0)
+        url  = self._resolveUrl(cItem['url']) + ('?page=%d' % page)
         sts, data = self.cm.getPage(url)
-        if sts:
-            data = self.cm.ph.getDataBeetwenMarkers(data, "<div class='main-body floatfix'>", "<a id='comments'", False)[1]
-            icon = self._resolveUrl( self.cm.ph.getSearchGroups(data, """src=['"]([^"^']+?\.jpg)['"]""")[0] )
-            desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<thead>', '<!', False)[1])
-            trailer = self.cm.ph.getSearchGroups(data, """href=['"](http[^"^']+?youtu[^"^']+?)['"]""")[0]
-            if '' != trailer:
-                params = dict(cItem)
-                params.update({'title':_('Zwiastun'), 'url':trailer, 'desc':desc, 'icon':icon})
-                self.addVideo(params)
-            #data = self.cm.ph.getDataBeetwenMarkers(data, 'w:', '</div>', False)[1]
-            data = re.findall("""<a href=['"]([^"^']+?)['"][^>]*?>([^<]+?)<""", data)
-            for item in data:
-                if '' != item[1] and 'anime-odcinki.pl' in self._resolveUrl(item[0]):
-                    params = dict(cItem)
-                    params.update({'title':item[1], 'url':item[0], 'desc':desc, 'icon':icon})
-                    self.addVideo(params)
+        if not sts: return
+        desc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', "</section>", False)[1]
+        icon = self._resolveUrl( self.cm.ph.getSearchGroups(desc, """<img src=['"]([^"^']+?\.jpg[^"^']*?)['"]""")[0] )
+        desc = self.cleanHtmlStr(desc)
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="view-content">', '</section>', False)[1]
+        nextPage = False
+        if '<ul class="pagination">' in data:
+            if '"Przejdź do następnej strony"' in data: nextPage = True
+            data = data[:data.find('<ul class="pagination">')] 
+        '''
+        trailer = self.cm.ph.getSearchGroups(data, """href=['"](http[^"^']+?youtu[^"^']+?)['"]""")[0]
+        if '' != trailer:
+            params = dict(cItem)
+            params.update({'title':_('Zwiastun'), 'url':trailer, 'desc':desc, 'icon':icon})
+            self.addVideo(params)
+        '''
+        data = data.split('<div class="views-row views-row')
+        for item in data:
+            idx = item.find('>')
+            if 0 > idx: continue
+            item = item[idx+1:]
+            title = self.cleanHtmlStr(item)
+            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"', 1)[0]
+            params= {'title':title, 'url':url, 'desc':desc, 'icon':icon}
+            self.addVideo(params)
+        
+        if nextPage:
+            params = dict(cItem)
+            params.update({'title':'Następna strona', 'page':page+1})
+            self.addDir(params)
                     
     def listItems(self, cItem):
         printDBG('AnimeOdcinki.listItems start')     
@@ -154,23 +182,24 @@ class AnimeOdcinki(CBaseHostClass):
     
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AnimeOdcinki.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        url = AnimeOdcinki.SEARCH_URL + searchPattern.replace(' ', '+')
-        currPath = url[:url.rfind('/')] + '/'
+        url = AnimeOdcinki.SEARCH_URL + urllib.quote_plus(searchPattern)
         sts, data = self.cm.getPage(url)
-        if sts:
-            data = self.cm.ph.getDataBeetwenMarkers(data, "value='Find Video'></form>", "class='main-footer-top")[1]
-            data = data.split("<table cellpadding='0'")
-            if len(data): del data[0]
-            if len(data): data[-1] += '>'
-            for item in data:
-                params = dict(cItem)
-                url = self.cm.ph.getSearchGroups(item, """<a href=["']([^'^"]+?)["']""")[0]
-                title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, "<strong>", "</strong>")[1])
-                if '' != url and '' != title:                
-                    icon =  self._resolveUrl(self.cm.ph.getSearchGroups(item, """src=['"]([^"^']+?)['"]""")[0], currPath)
-                    desc = self.cleanHtmlStr('<'+item)
-                    params.update({'title':title, 'url':self._resolveUrl(url, currPath), 'icon':icon, 'desc':desc})
-                    self.addVideo(params)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ol class="search-results node-results">', '</ol>')[1]
+        data = data.split("</li>")
+        if len(data): del data[-1]
+        for item in data:
+            tmp   = self.cm.ph.getSearchGroups(item, '<a href="([^"]+?)"[^>]*?>([^<]+?)<', 2)
+            url   = tmp[0]
+            title = self.cleanHtmlStr(tmp[1])
+            if '' != url and '' != title:
+                desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="search-snippet-info">', '</div>')[1] )
+                icon = ''
+                params = {'name':'category', 'title':title, 'url':self._resolveUrl(url), 'icon':icon, 'desc':desc}
+                if re.search('/anime/[^/]+?$', url):
+                    params['category'] = 'episodes_list'
+                    self.addDir(params)
+                else: self.addVideo(params)
     
     def getLinksForVideo(self, cItem):
         printDBG("AnimeOdcinki.getLinksForVideo [%s]" % cItem['url'])
@@ -178,21 +207,19 @@ class AnimeOdcinki(CBaseHostClass):
             return cItem['url_cache']
         urlTab = []
         url = self._resolveUrl(cItem['url'])
-        if 'anime-odcinki.pl' in url:
+        if 'anime-odcinki.pl' in url:       
             sts, data = self.cm.getPage(url)
             if sts:
-                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="switcher-panel"></div>', "<a id='comments'")[1]
-                players = data.split('<div id="player')
-                del players[0]
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', "<ul")[1]
+                printDBG(data)
+                players = re.compile(""">(http[^<]+?)<""").findall(data)
                 for player in players:
-                    playerUrl = self.cm.ph.getSearchGroups(player, """src=['"]([^"^']+?)['"]""")[0]
+                    playerUrl = self.cleanHtmlStr( player )
                     if '' != playerUrl:
                         tmpTab = self.up.getVideoLinkExt(playerUrl)
                         urlTab.extend(tmpTab)
-        else:
-            urlTab = self.up.getVideoLinkExt(url)
-        if len(urlTab):
-            cItem['url_cache'] = urlTab
+        else: urlTab = self.up.getVideoLinkExt(url)
+        if len(urlTab): cItem['url_cache'] = urlTab
         return urlTab
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
@@ -203,7 +230,7 @@ class AnimeOdcinki(CBaseHostClass):
         printDBG( "AnimeOdcinki.handleService: ---------> name[%s], category[%s] " % (name, category) )
         searchPattern = self.currItem.get("search_pattern", searchPattern)
         self.currList = []
-        return
+        
         if None == name:
             self.listsTab(AnimeOdcinki.MAIN_CAT_TAB, {'name':'category'})
     #LIST LETTERS
@@ -218,6 +245,15 @@ class AnimeOdcinki(CBaseHostClass):
     #LIST ITEMS
         elif 'list_items' == category:
             self.listItems(self.currItem)
+    #LIST EMITOWANE
+        elif 'list_emiotwane' == category:
+            self.listEmitowane(self.currItem, 'episodes_list')
+    #LIST NEW EPISODES
+        elif 'list_new_episodes' == category:
+            self.listNewEpisodes(self.currItem)
+    #LIST NEW ADDED 
+        elif 'list_new_added' == category:
+            self.listNewAdded(self.currItem)
     #WYSZUKAJ
         elif category in ["Wyszukaj", "search_next_page"]:
             self.listSearchResult(self.currItem, searchPattern, searchType)

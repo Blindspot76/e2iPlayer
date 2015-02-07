@@ -186,7 +186,7 @@ class urlparser:
                        'rutube.ru':            self.pp.parserRUTUBE        ,
                        'youtube.com':          self.pp.parserYOUTUBE       ,
                        'youtu.be':             self.pp.parserYOUTUBE       ,
-                       'docs.google.com':      self.pp.parserGOOGLEDOC     ,
+                       'google.com':           self.pp.parserGOOGLE        ,
                        'tinymov.net':          self.pp.parserTINYMOV       ,
                        'topupload.tv':         self.pp.parserTOPUPLOAD     ,
                        'maxupload.tv':         self.pp.parserTOPUPLOAD     ,
@@ -2104,8 +2104,8 @@ class pageParser:
             return url
         return False
         
-    def parserGOOGLEDOC(self, linkUrl):
-        printDBG("parserGOODCASTCO linkUrl[%s]" % linkUrl)
+    def parserGOOGLE(self, linkUrl):
+        printDBG("parserGOOGLE linkUrl[%s]" % linkUrl)
         
         def unicode_escape(s):
             decoder = codecs.getdecoder('unicode_escape')
@@ -2114,13 +2114,13 @@ class pageParser:
         videoTab = []
         sts, data = self.cm.getPage(linkUrl)
         if sts: 
-            data = self.cm.ph.getSearchGroups(data, '"fmt_stream_map":"([^"]+?)"')[0]
+            data = self.cm.ph.getSearchGroups(data, '"fmt_stream_map"[:,]"([^"]+?)"')[0]
             data = data.split(',')
             for item in data:
                 item = item.split('|')
                 if item[0] in YoutubeIE._video_formats_map['mp4']:
-                    videoTab.append({'name':'doc.google.com: %s' % YoutubeIE._video_dimensions[item[0]].split('x')[0] + 'p', 'url':unicode_escape(item[1])})
-        return videoTab
+                    videoTab.append({'name':'google.com: %s' % YoutubeIE._video_dimensions[item[0]].split('x')[0] + 'p', 'url':unicode_escape(item[1])})
+        return videoTab[::-1]
         
     def parserMYVIRU(self, linkUrl):
         printDBG("parserMYVIRU linkUrl[%s]" % linkUrl)
