@@ -252,7 +252,7 @@ class SeansikTV(CBaseHostClass):
                     continue
                 #if url.startswith('http'):
                 params = dict(cItem)
-                params.update({'title': title, 'url':url, 'hosting':hosting})
+                params.update({'title': title, 'url':self.cleanHtmlStr(url), 'hosting':hosting})
                 self.addVideo(params)
                 
     def getHostingTable(self, cItem):

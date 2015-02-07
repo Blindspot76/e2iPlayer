@@ -417,7 +417,7 @@ class IPTVExtMoviePlayer(Screen):
             msg = msg % (self.playerName, self.playerBinaryInfo['data'], code)
             self.showMessage(msg, MessageBox.TYPE_ERROR, self.onLeavePlayer)
         elif 'gstplayer' == self.player and 246 == code:
-            msg % (self.playerName, _("ERROR: pipeline could not be constructed: no element \"playbin2\" \nPlease check if gstreamer plugins are available in your system."), code)
+            msg = msg % (self.playerName, _("ERROR: pipeline could not be constructed: no element \"playbin2\" \nPlease check if gstreamer plugins are available in your system."), code)
             self.showMessage(msg, MessageBox.TYPE_ERROR, self.onLeavePlayer)
         else: self.onLeavePlayer()
         

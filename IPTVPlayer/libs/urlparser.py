@@ -1601,8 +1601,9 @@ class pageParser:
                         else:
                             r        = streamer
                             playpath = item 
-                        swfUrl   = "http://streamin.to/player6/jwplayer.flash.swf"
-                        vidTab.append({'name': 'rtmp://streamin.to/ ', 'url':r + ' playpath=%s' % playpath + ' swfUrl=%s' % swfUrl + ' pageUrl=%s' % baseUrl})
+                        swfUrl  = "http://streamin.to/player6/jwplayer.flash.swf"
+                        rtmpUrl = r + ' playpath=%s' % playpath + ' swfUrl=%s' % swfUrl + ' pageUrl=%s' % baseUrl
+                        vidTab.append({'name': 'rtmp://streamin.to/ ', 'url':urlparser.decorateUrl(rtmpUrl, {'iptv_livestream':False})})
                     except:
                         printExc()
             return vidTab
