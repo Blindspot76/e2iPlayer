@@ -11,7 +11,7 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes  import AES
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML, _unquote
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML, clean_html, _unquote
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, \
                                                                VIDUPME_decryptPlayerParams,    \
                                                                VIDEOWEED_unpackJSPlayerParams, \
@@ -244,6 +244,8 @@ class urlparser:
                        'tvp.pl':               self.pp.parserTVP           ,
                        'junkyvideo.com':       self.pp.parserJUNKYVIDEO    ,
                        'live.bvbtotal.de':     self.pp.parserLIVEBVBTOTALDE,
+                       'partners.nettvplus.com': self.pp.parserNETTVPLUSCOM,
+                       '7cast.net':            self.pp.parser7CASTNET      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -314,6 +316,91 @@ class urlparser:
         except:
             printExc()
         return False
+        
+    def getAutoDetectedStreamLink(self, url, data=None):
+        printDBG("NettvPw.getVideoLink url[%s]" % url)
+        if None == data:
+            sts,data = self.cm.getPage(url)
+            if not sts: return []
+        if 'http://goodcast.co/' in data:
+            id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
+            videoUrl = 'http://goodcast.co/stream.php?id=' + id
+            videoUrl = strwithmeta(videoUrl, {'Referer':url})
+            return self.getVideoLinkExt(videoUrl)
+        elif '7cast.net' in data:
+            videoUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?7cast.net[^'^"]+?)['"]""")[0]
+            videoUrl = strwithmeta(videoUrl, {'Referer':url})
+            return self.getVideoLinkExt(videoUrl)
+        elif 'partners.nettvplus.com' in data:
+            videoUrl = self.cm.ph.getSearchGroups(data, """['"](http://partners.nettvplus.com[^'^"]+?)['"]""")[0]
+            return self.getVideoLinkExt(videoUrl)
+        elif "yukons.net" in data:
+            channel = self.cm.ph.getDataBeetwenMarkers(data, 'channel="', '"', False)[1]
+            videoUrl = strwithmeta('http://yukons.net/watch/'+channel, {'Referer':url})
+            return self.getVideoLinkExt(videoUrl)
+        elif "privatestream.tv" in data:
+            videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/[^"]+?)"')[0]
+            videoUrl = strwithmeta(videoUrl, {'Referer':url})
+            return self.getVideoLinkExt(videoUrl)
+        elif "ustream.tv" in data:
+            videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?ustream.tv[^"]+?)"')[0]
+            if videoUrl.startswith('//'):
+                videoUrl = 'http:' + videoUrl
+            videoUrl = strwithmeta(videoUrl, {'Referer':url})
+            return self.getVideoLinkExt(videoUrl)
+        elif 'rtmp://' in data:
+            tmp = self.cm.ph.getSearchGroups(data, """(rtmp://[^'^"]+?)['"]""")[0]
+            tmp = tmp.split('&amp;')
+            r = tmp[0]
+            if 1 < len(tmp)and tmp[1].startswith('c='):
+                playpath = tmp[1][2:]
+            else:
+                playpath = self.cm.ph.getSearchGroups(data, """['"]*url['"]*[ ]*?:[ ]*?['"]([^'^"]+?)['"]""")[0]
+            if '' != playpath:
+                r += ' playpath=%s' % playpath.strip()
+            swfUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?swf)['"]""")[0]
+            r += ' swfUrl=%s pageUrl=%s' % (swfUrl, url)
+            return [{'name':'team-cast', 'url':r}]
+        elif 'abcast.biz' in data:
+            file = self.cm.ph.getSearchGroups(data, "file='([^']+?)'")[0]
+            if '' != file:
+                videoUrl = 'http://abcast.biz/embed.php?file='+file+'&width=640&height=480'
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+        elif 'shidurlive.com' in data:
+            videoUrl = self.cm.ph.getSearchGroups(data, """src=['"](http[^'^"]+?shidurlive.com[^'^"]+?)['"]""")[0]
+            if '' != videoUrl:
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+        elif 'sawlive.tv' in data:
+            videoUrl = self.cm.ph.getSearchGroups(data, """src=['"](http[^'^"]+?sawlive.tv[^'^"]+?)['"]""")[0]
+            if '' != videoUrl:
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+        elif "castalba.tv" in data:
+            id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
+            if '' != id:
+                videoUrl = 'http://castalba.tv/embed.php?cid='+id+'&wh=640&ht=400&r=team-cast.pl.cp-21.webhostbox.net'
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+        elif "fxstream.biz" in data:
+            file = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
+            if '' != file:
+                videoUrl = 'http://fxstream.biz/embed.php?file='+file+'&width=640&height=400'
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+        else:
+            file = self.cm.ph.getSearchGroups(data, """['"]*(http[^'^"]+?\.m3u8[^'^"]*?)['"]""")[0]
+            if '' != file: 
+                file = file.split('&#038;')[0]
+                return getDirectM3U8Playlist(urllib.unquote(clean_html(file)), checkExt=False)
+            if 'x-vlc-plugin' in data:
+                vlcUrl = self.cm.ph.getSearchGroups(data, """target=['"](http[^'^"]+?)['"]""")[0]
+                if '' != vlcUrl: return [{'name':'vlc', 'url':vlcUrl}]
+            printDBG("=======================================================================")
+            printDBG(data)
+            printDBG("=======================================================================")
+        return []
 
 class pageParser:
     HTTP_HEADER= {  'User-Agent'  : 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
@@ -2093,15 +2180,13 @@ class pageParser:
         printDBG("parserGOODCASTCO linkUrl[%s]" % linkUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         videoUrl = strwithmeta(linkUrl)
-        if 'Referer' in videoUrl.meta:
-            HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        HTTP_HEADER['Referer'] = videoUrl.meta.get('Referer', videoUrl)
         sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
         if not sts: return False
         url  = self.cm.ph.getSearchGroups(data, 'streamer=([^&]+?)&')[0]
         file = self.cm.ph.getSearchGroups(data, 'file=([0-9]+?)&')[0]
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=http://abcast.biz/ab.swf pageUrl=%s token=Fo5_n0w?U.rA6l3-70w47ch' % (file, linkUrl)
-            printDBG(url)
             return url
         return False
         
@@ -2474,7 +2559,54 @@ class pageParser:
             url = urlparser.decorateUrl(item['url'], {'iptv_livestream': True})
             linksTab.append({'name':name, 'url':url})
         return linksTab
-    
+        
+    def parserNETTVPLUSCOM(self, baseUrl):
+        printDBG("parserNETTVPLUSCOM baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = dict(self.HTTP_HEADER)
+        HTTP_HEADER['User-Agent'] = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
+        HTTP_HEADER['Referer'] = baseUrl
+        if baseUrl.endswith('/source.js'): url = baseUrl
+        else: url = baseUrl[:baseUrl.rfind('/')] + '/source.js'
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts: return []
+        url = self.cm.ph.getSearchGroups(data, '''["'](http[^'^"]+?m3u8[^'^"]*?)["']''')[0]
+        if '' != url: return getDirectM3U8Playlist(url, False)
+        return []
+        
+    def parser7CASTNET(self, baseUrl):
+        printDBG("parser7CASTNET baseUrl[%s]" % baseUrl)
+        baseUrl = urlparser.decorateUrl(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        HTTP_HEADER = dict(self.HTTP_HEADER)
+        HTTP_HEADER['User-Agent'] = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
+        HTTP_HEADER['Referer'] = referer
+
+        url = baseUrl
+        if '/embed/' in url:
+            sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+            if not sts: return []
+            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^'^"]+?)["']''')[0]
+        sts, data = self.cm.getPage(url, {'header': HTTP_HEADER})
+        if not sts: return False
+        data = data[data.rfind('}(')+2:].split('{}))')[0] + '{}'
+        data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
+        names  = []
+        values = {}
+        data = re.compile(";([^;]+?)\.push\('(.)'\)").findall(data)
+        for item in data:
+            if item[0] not in names:
+                names.append(item[0])
+                values[item[0]] = item[1]
+            else: values[item[0]] += item[1]
+        if urllib.unquote(values[names[1]]).startswith('rtmp'): names = names[::-1]
+        r = urllib.unquote(values[names[0]]) + '/' + urllib.unquote(values[names[1]])
+        printDBG("...............................[%s]" % r)
+        if r.startswith('rtmp'):
+            swfUrl  = "http://7cast.net/jplayer.swf"
+            rtmpUrl = r + ' swfUrl=%s pageUrl=%s live=1 ' % (swfUrl, baseUrl)
+            return [{'name': 'rtmp://7cast.com/ ', 'url':urlparser.decorateUrl(rtmpUrl, {'iptv_livestream':True})}]
+        return []
+        
     def parserBILLIONUPLOADS(self, linkUrl):
         printDBG("parserBILLIONUPLOADS linkUrl[%s]" % linkUrl)
         return False

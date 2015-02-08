@@ -16,6 +16,7 @@ from Plugins.Extensions.IPTVPlayer.libs.satlive   import SatLiveApi, GetConfigLi
 from Plugins.Extensions.IPTVPlayer.libs.weebtv    import WeebTvApi, GetConfigList as WeebTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.vidtvpl   import VidTvApi
 from Plugins.Extensions.IPTVPlayer.libs.looknijtv import LooknijTvApi
+from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl import TvSportCdaApi
 from Plugins.Extensions.IPTVPlayer.libs.nettvpw   import NettvPw
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
@@ -106,9 +107,10 @@ class HasBahCa:
                         {'name': 'weeb.tv',         'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://static.weeb.tv/images/weebtv-santahat1.png'}, \
                         {'name': 'videostar.pl',    'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
                         {'name': 'goldvod.tv',      'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/lista-kanalow.html',                               'icon': 'http://goldvod.tv/img/logo.png'}, \
-                        {'name': 'nettv.pw',        'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
                         {'name': 'web-live.tv',     'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
-                        {'name': 'looknij.tv',      'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2014/10/logosite.png'}, \
+                        {'name': 'looknij.tv',      'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
+                        {'name': 'tvisport.cba.pl', 'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
+                        {'name': 'nettv.pw',        'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
                         {'name': 'm3u',             'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg.prv.pl/Lista_matzgPL.m3u',                              'icon': 'http://matzg.prv.pl/Iptv_matzgPL.png'}, \
                         {'name': 'm3u',             'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
                         {'name': 'm3u',             'title': 'Prognoza Pogody matzg',             'url': 'http://matzg.prv.pl/lista_pogoda.m3u',                               'icon': 'http://matzg.prv.pl/pogoda.png'}, \
@@ -136,6 +138,7 @@ class HasBahCa:
         self.satLiveApi   = None
         self.vidTvApi     = None
         self.looknijTvApi = None
+        self.tvSportCdaApi= None
         self.nettvpwApi   = None
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -377,6 +380,24 @@ class HasBahCa:
     def getLooknijTvLink(self, url):
         printDBG("getLooknijTvLink url[%s]" % url)
         return self.looknijTvApi.getVideoLink(url)
+        
+    def getTvSportCdaList(self, url):
+        printDBG('getTvSportCdaList start')
+        if None == self.looknijTvApi:
+            self.tvSportCdaApi = TvSportCdaApi()
+        if '' == url:
+            tmpList = self.tvSportCdaApi.getCategoriesList()
+            for item in tmpList:
+                params = dict(item)
+                params.update({'name':'tvisport.cba.pl'})
+                self.addDir(params)
+        else:
+            tmpList = self.tvSportCdaApi.getChannelsList(url)
+            for item in tmpList: self.playVideo(item)
+            
+    def getTvSportCdaLink(self, url):
+        printDBG("getTvSportCdaLink url[%s]" % url)
+        return self.tvSportCdaApi.getVideoLink(url)
         
     def getNettvpwList(self, url):
         if None == self.nettvpwApi: self.nettvpwApi = NettvPw()
@@ -655,6 +676,9 @@ class HasBahCa:
     #looknij.tv items
         elif name == "looknij.tv":
             self.getLooknijTvList(url)
+    #tvisport.cba.pl items
+        elif name == "tvisport.cba.pl":
+            self.getTvSportCdaList(url)
     #nettv.pw items
         elif name == "nettv.pw":
             self.getNettvpwList(url)
@@ -709,6 +733,11 @@ class IPTVHost(CHostBase):
             url = self.host.getVidTvLink(url)
         elif 'looknij.tv' in url:
             url = self.host.getLooknijTvLink(url)
+        elif 'tvisport.cba.pl' in url:
+            tmpList = self.host.getTvSportCdaLink(url)
+            for item in tmpList:
+                retlist.append(CUrlItem(item['name'], item['url']))
+            url = None
         elif 'nettv.pw' in url:
             tmpList = self.host.getNettvpwLink(url)
             for item in tmpList:

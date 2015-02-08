@@ -54,69 +54,9 @@ class NettvPw:
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player">', '</div>', False)[1]
         url  = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
         if not url.startswith('http'): url = _url_path_join(baseUrl, url)
+        
         sts,data = self.cm.getPage(url)
         if not sts: return []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<body>', '</body>', False)[1]
         
-        if "yukons.net" in data:
-            channel = self.cm.ph.getDataBeetwenMarkers(data, 'channel="', '"', False)[1]
-            videoUrl = strwithmeta('http://yukons.net/watch/'+channel, {'Referer':url})
-            return self.up.getVideoLinkExt(videoUrl)
-        elif "privatestream.tv" in data:
-            videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/[^"]+?)"')[0]
-            videoUrl = strwithmeta(videoUrl, {'Referer':url})
-            return self.up.getVideoLinkExt(videoUrl)
-        elif "ustream.tv" in data:
-            videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?ustream.tv[^"]+?)"')[0]
-            if videoUrl.startswith('//'):
-                videoUrl = 'http:' + videoUrl
-            videoUrl = strwithmeta(videoUrl, {'Referer':url})
-            return self.up.getVideoLinkExt(videoUrl)
-        elif 'rtmp://' in data:
-            tmp = self.cm.ph.getSearchGroups(data, """(rtmp://[^'^"]+?)['"]""")[0]
-            tmp = tmp.split('&amp;')
-            r = tmp[0]
-            if 1 < len(tmp)and tmp[1].startswith('c='):
-                playpath = tmp[1][2:]
-            else:
-                playpath = self.cm.ph.getSearchGroups(data, """['"]*url['"]*[ ]*?:[ ]*?['"]([^'^"]+?)['"]""")[0]
-            if '' != playpath:
-                r += ' playpath=%s' % playpath.strip()
-            swfUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?swf)['"]""")[0]
-            r += ' swfUrl=%s pageUrl=%s' % (swfUrl, url)
-            return [{'name':'team-cast', 'url':r}]
-        elif 'abcast.biz' in data:
-            file = self.cm.ph.getSearchGroups(data, "file='([^']+?)'")[0]
-            if '' != file:
-                videoUrl = 'http://abcast.biz/embed.php?file='+file+'&width=640&height=480'
-                videoUrl = strwithmeta(videoUrl, {'Referer':url})
-                return self.up.getVideoLinkExt(videoUrl)
-        elif 'shidurlive.com' in data:
-            videoUrl = self.cm.ph.getSearchGroups(data, """src=['"](http[^'^"]+?shidurlive.com[^'^"]+?)['"]""")[0]
-            if '' != videoUrl:
-                videoUrl = strwithmeta(videoUrl, {'Referer':url})
-                return self.up.getVideoLinkExt(videoUrl)
-        elif 'sawlive.tv' in data:
-            videoUrl = self.cm.ph.getSearchGroups(data, """src=['"](http[^'^"]+?sawlive.tv[^'^"]+?)['"]""")[0]
-            if '' != videoUrl:
-                videoUrl = strwithmeta(videoUrl, {'Referer':url})
-                return self.up.getVideoLinkExt(videoUrl)
-        elif "castalba.tv" in data:
-            id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
-            if '' != id:
-                videoUrl = 'http://castalba.tv/embed.php?cid='+id+'&wh=640&ht=400&r=team-cast.pl.cp-21.webhostbox.net'
-                videoUrl = strwithmeta(videoUrl, {'Referer':url})
-                return self.up.getVideoLinkExt(videoUrl)
-        elif "fxstream.biz" in data:
-            file = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
-            if '' != file:
-                videoUrl = 'http://fxstream.biz/embed.php?file='+file+'&width=640&height=400'
-                videoUrl = strwithmeta(videoUrl, {'Referer':url})
-                return self.up.getVideoLinkExt(videoUrl)
-        else:
-            file = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?\.m3u8[^'^"]*?)['"]""")[0]
-            if '' != file: return getDirectM3U8Playlist(file, checkExt=False)
-            printDBG("=======================================================================")
-            printDBG(data)
-            printDBG("=======================================================================")
-        return []
+        return self.up.getAutoDetectedStreamLink(url, data)
