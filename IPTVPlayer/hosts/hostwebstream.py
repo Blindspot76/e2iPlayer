@@ -383,7 +383,7 @@ class HasBahCa:
         
     def getTvSportCdaList(self, url):
         printDBG('getTvSportCdaList start')
-        if None == self.looknijTvApi:
+        if None == self.TvSportCdaApi:
             self.tvSportCdaApi = TvSportCdaApi()
         if '' == url:
             tmpList = self.tvSportCdaApi.getCategoriesList()
