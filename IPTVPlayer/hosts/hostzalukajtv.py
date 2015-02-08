@@ -235,7 +235,7 @@ class ZalukajTv(CBaseHostClass):
         urlTab = []
         for loggedIn in tries:
             url = cItem['url']
-            sts, data = self._getPage(url=url, loggedIn=loggedIn)
+            sts, data = self._getPage(url=url)
             if not sts: continue
             url = self._getFullUrl( self.cm.ph.getSearchGroups(data, '"(/player.php[^"]+?)"', 1)[0] )
             if '' == url:
@@ -247,7 +247,7 @@ class ZalukajTv(CBaseHostClass):
             if '' == url:
                 printDBG( 'No href in data[%s]' % '')
                 continue
-            sts, data = self._getPage(url)
+            sts, data = self._getPage(url, loggedIn=loggedIn)
             if not sts: continue
             # First check for premium link
             url = self.cm.ph.getSearchGroups(data, "url:'([^']+?)'", 1)[0]
