@@ -784,32 +784,26 @@ class pageParser:
         
         videoid = self.cm.ph.getSearchGroups(baseUrl+'|', """videoid=([0-9]+?)[^0-9]""")[0]
         #baseUrl.split('?')[0].endswith('.swf') and
-        if '' != videoid:
-            configUrl = "http://video.sibnet.ru/shell_config_xml.php?videoid=%s&partner=null&playlist_position=null&playlist_size=0&related_albid=0&related_tagid=0&related_ids=null&repeat=null&nocache" % (videoid)
-        else:
-            configUrl = baseUrl
+        if '' != videoid: configUrl = "http://video.sibnet.ru/shell_config_xml.php?videoid=%s&partner=null&playlist_position=null&playlist_size=0&related_albid=0&related_tagid=0&related_ids=null&repeat=null&nocache" % (videoid)
+        else: configUrl = baseUrl
         # get video for android
         HTTP_HEADER = dict(self.HTTP_HEADER)
         HTTP_HEADER['User-Agent'] = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
         sts, data = self.cm.getPage(configUrl, {'header':HTTP_HEADER})
         if sts:
             url = self.cm.ph.getSearchGroups(data, """<file>(http[^<]+?\.mp4)</file>""")[0]
-            if '' == url:
-                url = self.cm.ph.getSearchGroups(data, """(http[^"']+?\.mp4)""")[0]
-            if '' != url:
-                videoUrls.append({'name':'video.sibnet.ru: mp4', 'url':url})
+            if '' == url: url = self.cm.ph.getSearchGroups(data, """(http[^"']+?\.mp4)""")[0]
+            if '' != url: videoUrls.append({'name':'video.sibnet.ru: mp4', 'url':url})
         # get video for PC
         sts, data = self.cm.getPage(configUrl)
         if sts:
             url = self.cm.ph.getSearchGroups(data, """<file>(http[^<]+?)</file>""")[0]
-            if '' == url:
-                url = self.cm.ph.getSearchGroups(data, """['"]file['"][ ]*?:[ ]*?['"]([^"^']+?)['"]""")[0]
+            if '' == url: url = self.cm.ph.getSearchGroups(data, """['"]file['"][ ]*?:[ ]*?['"]([^"^']+?)['"]""")[0]
             if url.split('?')[0].endswith('.m3u8'):
                 retTab = getDirectM3U8Playlist(url)
                 for item in retTab:
                     videoUrls.append({'name':'video.sibnet.ru: ' + item['name'], 'url':item['url']})
-            elif '' != url:
-                videoUrls.append({'name':'video.sibnet.ru: ' + url.split('.')[-1], 'url':url})
+            elif '' != url: videoUrls.append({'name':'video.sibnet.ru: ' + url.split('.')[-1], 'url':url})
         return videoUrls
         '''
         # Old code not used
@@ -1132,13 +1126,17 @@ class pageParser:
             return False
             
     def parserVIDEOMEGA(self,baseUrl):
-        
         video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php)?\?ref=([A-Za-z0-9]+)')[0]
-        iframe_url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
-
+        if 'iframe' in baseUrl:
+            iframe_url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
+            url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
+        else:
+            iframe_url = 'http://videomega.tv/?ref=%s' % (video_id)
+            url = 'http://videomega.tv/cdn.php?ref=%s' % (video_id)
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
                        'Referer':iframe_url }
-        sts, data = self.cm.getPage( baseUrl, {'header':HTTP_HEADER} )
+        sts, data = self.cm.getPage( url, {'header':HTTP_HEADER} )
+        printDBG(data)
         data = re.findall(r'unescape\("([^"]+)"\)', data)[-1]
         data = urllib.unquote(data)
         data = self.cm.ph.getSearchGroups(data, r'file:\s*"([^"]+)"')[0]
@@ -2265,7 +2263,7 @@ class pageParser:
         printDBG("parserSAWLIVETV linkUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
-        Referer = baseUrl.meta.get('Referer', '')
+        Referer = baseUrl.meta.get('Referer', baseUrl)
         HTTP_HEADER['Referer'] = Referer
         
         sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
@@ -2292,7 +2290,7 @@ class pageParser:
         printDBG("parserSHIDURLIVECOM linkUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
-        Referer = baseUrl.meta.get('Referer', '')
+        Referer = baseUrl.meta.get('Referer', baseUrl)
         HTTP_HEADER['Referer'] = Referer
         
         sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
@@ -2309,7 +2307,7 @@ class pageParser:
                 data += line+';'
         swfUrl = self.cm.ph.getSearchGroups(data, "'(http[^']+?swf)'")[0]
         url    = self.cm.ph.getSearchGroups(data, "streamer'[^']+?'(rtmp[^']+?)'")[0]#.replace('rtmp://', 'rtmpe://')
-        file   = self.cm.ph.getSearchGroups(data, "file'[^']+?'([^']+?)'")[0]
+        file   = urllib.unquote( self.cm.ph.getSearchGroups(data, "file'[^']+?'([^']+?)'")[0] )
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, linkUrl)
             printDBG(url)
@@ -2320,7 +2318,7 @@ class pageParser:
         printDBG("parserCASTALBATV baseUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
-        Referer = baseUrl.meta.get('Referer', '')
+        Referer = baseUrl.meta.get('Referer', baseUrl)
         HTTP_HEADER['Referer'] = Referer
         
         sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})

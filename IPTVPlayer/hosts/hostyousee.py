@@ -6,7 +6,7 @@
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
 import Plugins.Extensions.IPTVPlayer.libs.youseeapi as youseeapi
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir
 import re
 ###################################################
 # FOREIGN import
@@ -25,16 +25,16 @@ class CListItem:
                 title = '',
                 category = '',
                 page = '',
-		videoUrl = '',
-		description = '',
+                videoUrl = '',
+                description = '',
                 type = TYPE_CATEGORY):
                 
         self.name = name
         self.title = title
         self.category = category
         self.page = page
-	self.videoUrl = videoUrl
-	self.description = description
+        self.videoUrl = videoUrl
+        self.description = description
         self.type = type
 
 class YouSee:    
@@ -58,8 +58,8 @@ class YouSee:
         valTab = []
         
         if None == self.valTab:
-    	    valTab.append('YouSee Live TV')
-    	    self.valTab = valTab
+            valTab.append('YouSee Live TV')
+            self.valTab = valTab
         
         return self.valTab
 
@@ -67,18 +67,15 @@ class YouSee:
         strTab = []
         valTab = []
         
-    	try:
-    	    programs = self.api_ys.allowedChannels()
-        except:
-    	    return valTab
-            
-        for program in programs:
-            strTab = []
-            strTab.append(program['id'])
-            strTab.append(program['nicename'])
-            print strTab
-            valTab.append(strTab)
-                
+        try:
+            programs = self.api_ys.allowedChannels()
+            for program in programs:
+                strTab = []
+                strTab.append(program['id'])
+                strTab.append(program['nicename'])
+                print strTab
+                valTab.append(strTab)
+        except: printExc()
         return valTab
 
     def addList(self, table, category):
@@ -88,7 +85,7 @@ class YouSee:
                 item = CListItem(   name = table[i].encode('UTF-8'),
                                     title = table[i].encode('UTF-8'),
                                     category = category,
-				    description = 'For danish YouSee cable TV customers only',
+                                    description = 'For danish YouSee cable TV customers only',
                                     type = CListItem.TYPE_CATEGORY)
 
                 self.currList.append(item)
@@ -124,21 +121,17 @@ class YouSee:
                 self.title = item.title
                 self.category = item.category
                 self.page = item.page
-		self.description = item.description
-		self.videoUrl = item.videoUrl
+                self.description = item.description
+                self.videoUrl = item.videoUrl
                 print( "yousee: |||||||||||||||||||||||||||||||||||| %s " % item.name )
         
         self.currList = []
 
         if self.name == None:
             self.addList(self.getMenuTable(),'main-menu')
-        if self.category == 'main-menu':
-    	    if self.LIVE_TV == index:
-    		self.addList(self.getYouSeeChannelsTab(),'yousee-channels')
-            
+        if self.category == 'main-menu' and self.LIVE_TV == index:
+            self.addList(self.getYouSeeChannelsTab(),'yousee-channels')
         return
-        
-        
         
 class IPTVHost(IHost):
 
@@ -200,22 +193,18 @@ class IPTVHost(IHost):
     # for given url
     def getResolvedURL(self, url):
         printDBG("yousee.getResolvedURL: %s" % url)
-	if url != None and url != '':
-    	    if url.startswith('yousee-channel-id:'):
-    		id = url.split(':')[1]
-    		ret = self.host.api_ys.streamUrl(id)
-    		rtmpUrl = ret['url'].encode('UTF-8')
-    		printDBG(rtmpUrl)
-            list = []
-    	    if rtmpUrl:
-    		printDBG("yousee.getResolvedurl.append: %s" % rtmpUrl)
-        	if rtmpUrl.find('://') >= 0 :
-		    list.append(rtmpUrl)
-
-            return RetHost(RetHost.OK, value = list)
-            
-        else:
-            return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+        list = []
+        if url not in [None, '']:
+            if url.startswith('yousee-channel-id:'):
+                id = url.split(':')[1]
+                ret = self.host.api_ys.streamUrl(id)
+                rtmpUrl = ret['url'].encode('UTF-8')
+                printDBG(rtmpUrl)
+                if rtmpUrl:
+                    printDBG("yousee.getResolvedurl.append: %s" % rtmpUrl)
+                if rtmpUrl.find('://') >= 0 :
+                    list.append(rtmpUrl)
+        return RetHost(RetHost.OK, value = list)
             
     # return full path to player logo
     def getLogoPath(self):  
@@ -226,9 +215,7 @@ class IPTVHost(IHost):
         
         for cItem in cList:
             hostLinks = []
-
-	    description = cItem.description
-
+            description = cItem.description
             type = CDisplayListItem.TYPE_UNKNOWN
             if cItem.type == CListItem.TYPE_CATEGORY:
                 type = CDisplayListItem.TYPE_CATEGORY
