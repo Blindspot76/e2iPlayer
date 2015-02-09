@@ -209,8 +209,8 @@ class urlparser:
                        'vidsso.com':           self.pp.parserVIDSSO        ,
                        'wat.tv':               self.pp.parseWATTV          ,
                        'tune.pk':              self.pp.parseTUNEPK         ,
-                       'embed.tune.pk':        self.pp.parseTUNEPK         ,
                        'netu.tv':              self.pp.parseNETUTV         ,
+                       'hqq.tv':               self.pp.parseNETUTV         ,
                        'vshare.io':            self.pp.parseVSHAREIO       ,
                        'vidspot.net':          self.pp.parserVIDSPOT       ,
                        'video.tt':             self.pp.parserVIDEOTT       ,
@@ -776,7 +776,7 @@ class pageParser:
             name = match[i][1]
             vidTab.append({'name': 'dailymotion.com: ' + name, 'url':url})
 
-        return vidTab
+        return vidTab[::-1]
 
     def parserSIBNET(self, baseUrl):
         printDBG("parserSIBNET url[%s]" % baseUrl)
@@ -1817,7 +1817,12 @@ class pageParser:
         
     def parseTUNEPK(self, url):
         printDBG("parseTUNEPK url[%s]\n" % url)
-        # example video: http://tune.pk/video/4203444/top-10-infamous-mass-shootings-in-the-us
+        # example video: http://tune.pk/video/4203444/top-10-infamous-mass-shootings-in-the-u
+        for item in ['vid=', '/video/', '/play/']:
+            vid = self.cm.ph.getSearchGroups(url, item+'([0-9]+)[^0-9]')[0]
+            if '' != vid: break
+        if '' == vid: return []
+        url = 'http://embed.tune.pk/play/%s?autoplay=no&ssl=no' % vid
         return self.__parseJWPLAYER_A(url, 'tune.pk')
     
     def parserVIDEOTT(self, url):
@@ -2744,8 +2749,8 @@ class pageParser:
         secPlayerUrl = "http://hqq.tv/sec/player/embed_player.php?vid=%s&at=%s&autoplayed=%s&referer=on&http_referer=%s&pass=" % (vid, post_data.get('at', ''),  post_data.get('autoplayed', ''), urllib.quote(playerUrl))
         HTTP_HEADER['Referer'] = playerUrl
         sts, data = self.cm.getPage(secPlayerUrl, {'header' : HTTP_HEADER}, post_data)
+        data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
         #CParsingHelper.writeToFile('/home/sulge/test.html', data)
-        #printDBG(data)
         def getUtf8Str(st):
             idx = 0
             st2 = ''
@@ -2753,28 +2758,19 @@ class pageParser:
                 st2 += '\\u0' + st[idx:idx + 3]
                 idx += 3
             return st2.decode('unicode-escape').encode('UTF-8')
-        
         file_vars = CParsingHelper.getDataBeetwenMarkers(data, 'Uppod(', ')', False)[1]
         file_vars = CParsingHelper.getDataBeetwenMarkers(data, 'file:', ',', False)[1].strip()
         file_vars = file_vars.split('+')
-
         file_url = ''
         for file_var in file_vars:
             file_var = file_var.strip()
             if 0 < len(file_var):
                 match = re.search('''["']([^"]*?)["']''', file_var)
-                if match:
-                    file_url += match.group(1)
-                else:
-                    file_url += re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % file_var, data).group(1)
-                
-        if file_url.startswith('#') and 3 < len(file_url):
-            file_url = getUtf8Str(file_url[1:])
-        
+                if match: file_url += match.group(1)
+                else: file_url += re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % file_var, data).group(1)
+        if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
         #printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % file_url)
-        
-        if file_url.startswith('http'):
-            return file_url
+        if file_url.startswith('http'): return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'Range':'bytes=0-', 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'})
         return False     
        
        
