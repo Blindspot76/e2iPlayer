@@ -1819,7 +1819,7 @@ class pageParser:
         printDBG("parseTUNEPK url[%s]\n" % url)
         # example video: http://tune.pk/video/4203444/top-10-infamous-mass-shootings-in-the-u
         for item in ['vid=', '/video/', '/play/']:
-            vid = self.cm.ph.getSearchGroups(url, item+'([0-9]+)[^0-9]')[0]
+            vid = self.cm.ph.getSearchGroups(url+'&', item+'([0-9]+)[^0-9]')[0]
             if '' != vid: break
         if '' == vid: return []
         url = 'http://embed.tune.pk/play/%s?autoplay=no&ssl=no' % vid
