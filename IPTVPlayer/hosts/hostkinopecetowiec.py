@@ -356,7 +356,10 @@ class KinoPecetowiec(CBaseHostClass):
             
         hostingTab = []
         verTab = []
-        sts, data = self.cm.getPage( urlItem['url'] )
+        if self.loggedIn: http_params = {'header': self.HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        else: http_params = {'header': self.HEADER}
+        
+        sts, data = self.cm.getPage( urlItem['url'], http_params )
         if False == sts: return hostingTab
         
         avTypes = self.cm.ph.getDataBeetwenMarkers(data, 'var __avTypes = ', ';', False)[1]
