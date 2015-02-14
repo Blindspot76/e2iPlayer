@@ -78,7 +78,7 @@ class IPTVPlayerBufferingWidget(Screen):
                         i_w, i_h, i_x, i_y  # icon
                       )
    
-    def __init__(self, session, url, pathForRecordings, movieTitle, useAlternativePlayer, requestedBuffSize):
+    def __init__(self, session, url, pathForRecordings, movieTitle, activMoviePlayer, requestedBuffSize):
         self.session = session
         Screen.__init__(self, session)
         self.onStartCalled = False
@@ -88,8 +88,8 @@ class IPTVPlayerBufferingWidget(Screen):
         self.url           = url
         self.movieTitle    = movieTitle
         
-        self.currentService       = self.session.nav.getCurrentlyPlayingServiceReference()
-        self.useAlternativePlayer = useAlternativePlayer
+        self.currentService   = self.session.nav.getCurrentlyPlayingServiceReference()
+        self.activMoviePlayer = activMoviePlayer
         
         self.onClose.append(self.__onClose)
         #self.onLayoutFinish.append(self.doStart)
@@ -236,18 +236,8 @@ class IPTVPlayerBufferingWidget(Screen):
         
         exteplayerBlocked =  strwithmeta(self.url).meta.get('iptv_block_exteplayer', False)
         printDBG("runMovePlayer >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> exteplayerBlocked[%s]" % exteplayerBlocked)
-        # select movie player
-        if 'sh4' == config.plugins.iptvplayer.plarform.value:
-            if self.useAlternativePlayer: player = config.plugins.iptvplayer.alternativeSH4MoviePlayer.value
-            else: player = config.plugins.iptvplayer.defaultSH4MoviePlayer.value
-        elif 'mipsel' == config.plugins.iptvplayer.plarform.value:
-            if self.useAlternativePlayer: player = config.plugins.iptvplayer.alternativeMIPSELMoviePlayer.value
-            else: player = config.plugins.iptvplayer.defaultMIPSELMoviePlayer.value
-        elif 'i686' == config.plugins.iptvplayer.plarform.value:
-            if self.useAlternativePlayer: player = config.plugins.iptvplayer.alternativeI686MoviePlayer.value
-            else: player = config.plugins.iptvplayer.defaultI686MoviePlayer.value
-        else: player = config.plugins.iptvplayer.NaszPlayer.value
         
+        player = self.activMoviePlayer
         printDBG('IPTVPlayerBufferingWidget.runMovePlayer [%r]' % player)
         if "mini" == player:
             self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 4)

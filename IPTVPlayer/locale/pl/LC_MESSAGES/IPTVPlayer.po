@@ -57,8 +57,8 @@ msgstr "IPTV download manager"
 msgid  "Select option"
 msgstr "Wybór opcji"
 
-msgid  "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg"
-msgstr "Autorzy samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg informują, że zajmują się wtyczką IPTV Player 'pro publico bono' z nadzieją, ale bez gwarancji jej użyteczności."
+msgid  "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291"
+msgstr "Autorzy samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291 informują, że zajmują się wtyczką IPTV Player 'pro publico bono' z nadzieją, ale bez gwarancji jej użyteczności."
 
 msgid  "Operation aborted!"
 msgstr "Operacja została przerwana!"
@@ -997,3 +997,23 @@ msgstr "Automatyczne sprawdzanie dostępności aktualizacji"
 msgid  "There is a new version available do you want to update? \nYour version [%s], latest version on server [%s]"
 msgstr "Dostępna jest nowa wersja pluginu. \nTwoja wersja [%s], najnowsza wersja na serwerze [%s]. \nCzy chcesz zakutalizować?"
 
+
+################################
+
+msgid  "Change active movie player"
+msgstr "Zmień aktywny odtwarzacz"
+
+msgid  "Set active movie player"
+msgstr "Ustaw aktywny odtwarzacz"
+
+msgid  "[%s] with buffering"
+msgstr "[%s] z buforowaniem"
+
+msgid  "[%s] without buffering"
+msgstr "[%s] bez buforowania"
+
+msgid  "Select movie player"
+msgstr "Wybierz odtwarzacz"
+
+msgid  "Auto selection based on the settings"
+msgstr "Wybór automatyczny bazując na ustawieniach"

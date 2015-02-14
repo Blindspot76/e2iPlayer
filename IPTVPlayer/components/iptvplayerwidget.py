@@ -268,6 +268,8 @@ class IPTVPlayerWidget(Screen):
         self.autoPlaySeqTimer_conn = eConnectCallback(self.autoPlaySeqTimer.timeout, self.autoPlaySeqTimerCallBack)
         self.autoPlaySeqTimerValue = 0
         #################################################################
+        
+        self.activePlayer = {} # 'buffering':False/True, 'player':'gstplayer'
 
     #end def __init__(self, session):
         
@@ -432,17 +434,19 @@ class IPTVPlayerWidget(Screen):
      
     def blue_pressed(self):       
         self.stopAutoPlaySequencer()
-        Opcje = []
+        options = []
+        
+        if None != self.activePlayer.get('player', None): title = _('Change active movie player')
+        else: title = _('Set active movie player')
+        options.append((title, "SetActiveMoviePlayer"))
         try:
             host = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['GetConfigList'], -1)
             if( len( host.GetConfigList() ) > 0 ):
-                Opcje.append((_("Configure host"), "HostConfig"))
-        except: 
-            printExc()
-        Opcje.append((_("Info"), "info"))
-        Opcje.append((_("IPTV download manager"), "IPTVDM"))
-        
-        self.session.openWithCallback(self.blue_pressed_next, ChoiceBox, title = _("Select option"), list = Opcje)
+                options.append((_("Configure host"), "HostConfig"))
+        except: printExc()
+        options.append((_("Info"), "info"))
+        options.append((_("IPTV download manager"), "IPTVDM"))
+        self.session.openWithCallback(self.blue_pressed_next, ChoiceBox, title = _("Select option"), list = options)
 
     def pause_pressed(self):
         printDBG('pause_pressed')
@@ -507,12 +511,26 @@ class IPTVPlayerWidget(Screen):
         TextMSG = ''
         if ret:
             if ret[1] == "info": #informacje o wtyczce
-                TextMSG = _("Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg")
+                TextMSG = _("Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291")
                 self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO, timeout = 10 )
             elif ret[1] == "IPTVDM":
                 self.runIPTVDM()
             elif ret[1] == "HostConfig":
                 self.runConfigHostIfAllowed()
+            elif ret[1] == "SetActiveMoviePlayer":
+                options = []
+                if None != self.activePlayer.get('player', None): options.append((_("Auto selection based on the settings"), {}))
+                player = self.getMoviePlayer(True, False)
+                printDBG(">>>>>>>>>>>>>>>>>>>>> [%r]" % dir(player))
+                options.append((_("[%s] with buffering") % player.getText(), {'buffering':True, 'player':player}))
+                player = self.getMoviePlayer(True, True)
+                options.append((_("[%s] with buffering") % player.getText(), {'buffering':True, 'player':player}))
+                player = self.getMoviePlayer()
+                options.append((_("[%s] without buffering") % player.getText(), {'buffering':False, 'player':player}))
+                self.session.openWithCallback(self.setActiveMoviePlayer, ChoiceBox, title = _("Select movie player"), list = options)
+    
+    def setActiveMoviePlayer(self, ret):
+        if ret: self.activePlayer = ret[1]
 
     def runIPTVDM(self, callback=None):
         global gDownloadManager
@@ -1083,6 +1101,23 @@ class IPTVPlayerWidget(Screen):
         elif protocol in ['f4m', 'uds', 'rtmp']: fileExtension = '.flv'
         else: fileExtension = '.mp4' # default fileExtension
         return fileExtension
+        
+    def getMoviePlayer(self, buffering=False, useAlternativePlayer=False):
+        printDBG("getMoviePlayer")
+        # select movie player
+        if buffering:
+            if 'sh4' == config.plugins.iptvplayer.plarform.value:
+                if useAlternativePlayer: player = config.plugins.iptvplayer.alternativeSH4MoviePlayer
+                else: player = config.plugins.iptvplayer.defaultSH4MoviePlayer
+            elif 'mipsel' == config.plugins.iptvplayer.plarform.value:
+                if useAlternativePlayer: player = config.plugins.iptvplayer.alternativeMIPSELMoviePlayer
+                else: player = config.plugins.iptvplayer.defaultMIPSELMoviePlayer.value
+            elif 'i686' == config.plugins.iptvplayer.plarform.value:
+                if useAlternativePlayer: player = config.plugins.iptvplayer.alternativeI686MoviePlayer
+                else: player = config.plugins.iptvplayer.defaultI686MoviePlayer
+            else: player = config.plugins.iptvplayer.NaszPlayer
+        else: player = config.plugins.iptvplayer.NaszPlayer
+        return player
 
     def playVideo(self, ret):
         printDBG( "playVideo" )
@@ -1107,7 +1142,7 @@ class IPTVPlayerWidget(Screen):
                 self.session.open(MessageBox, reaseon, type = MessageBox.TYPE_INFO, timeout = 10)
                 return
 
-            isBufferingMode = self.checkBuffering(url)
+            isBufferingMode = self.activePlayer.get('buffering', self.checkBuffering(url))
             if not self.recorderMode:
                 pathForRecordings = config.plugins.iptvplayer.bufferingPath.value
             else:
@@ -1137,12 +1172,14 @@ class IPTVPlayerWidget(Screen):
                     self.stopAutoPlaySequencer()
             elif isBufferingMode:
                 self.session.nav.stopService()
-                self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, self.useAlternativePlayer, self.bufferSize)
+                player = self.activePlayer.get('player', self.getMoviePlayer(True, self.useAlternativePlayer))
+                self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize)
             else:
                 self.session.nav.stopService()
-                if "mini" == config.plugins.iptvplayer.NaszPlayer.value:
+                player = self.activePlayer.get('player', config.plugins.iptvplayer.NaszPlayer)
+                if "mini" == player.value:
                     self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, url, self.currItem.name)
-                elif "standard" == config.plugins.iptvplayer.NaszPlayer.value:
+                elif "standard" == player.value:
                     self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, url, self.currItem.name)
                 else:
                     gstAdditionalParams = {}

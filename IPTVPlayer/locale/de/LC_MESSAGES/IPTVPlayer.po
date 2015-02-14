@@ -57,9 +57,9 @@ msgstr "IPTV Downloadverwaltung"
 msgid "Select option"
 msgstr "Wähle Option"
 
-msgid "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg"
+msgid "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291"
 msgstr ""
-"Autoren samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg "
+"Autoren samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291 "
 
 msgid "Operation aborted!"
 msgstr "Operation abgebrochen"
@@ -915,4 +915,24 @@ msgstr "?? Auto check for plugin update ??"
 
 msgid  "There is a new version available do you want to update? \nYour version [%s], latest version on server [%s]"
 msgstr "?? There is a new version available do you want to update? \nYour version [%s], latest version on server [%s] ??"
+
+msgid  "Change active movie player"
+msgstr "?? Change active movie player ??"
+
+msgid  "Set active movie player"
+msgstr "?? Set active movie player ??"
+
+msgid  "[%s] with buffering"
+msgstr "?? [%s] with buffering ??"
+
+msgid  "[%s] without buffering"
+msgstr "?? [%s] without buffering ??"
+
+msgid  "Select movie player"
+msgstr "?? Select movie player ??"
+
+msgid  "Auto selection based on the settings"
+msgstr "?? Auto selection based on the settings ??"
+
+
 
