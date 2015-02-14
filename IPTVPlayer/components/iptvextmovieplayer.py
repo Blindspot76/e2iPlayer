@@ -73,7 +73,6 @@ class ExtPlayerCommandsDispatcher():
     def doUpdateInfo(self):
         self.extPlayerSendCommand('PLAYBACK_LENGTH', '', False)
         self.extPlayerSendCommand('PLAYBACK_CURRENT_TIME', '', False)
-        
 
     ##############################################
     
@@ -111,7 +110,8 @@ class IPTVExtMoviePlayer(Screen):
     skin = """
     <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
             <widget name="playbackInfoBaner"  position="0,30"          size="650,77"  zPosition="2" pixmap="%s" transparent="1" alphatest="blend" />
-            <widget name="progressBar"        position="94,54"         size="544,7"   zPosition="4" pixmap="%s" borderWidth="1" borderColor="#888888" />
+            <widget name="progressBar"        position="94,54"         size="544,7"   zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
+            <widget name="bufferingBar"       position="94,54"         size="544,7"   zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
             <widget name="statusIcon"         position="20,45"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
             
             <widget name="goToSeekPointer"    position="94,0"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
@@ -124,9 +124,10 @@ class IPTVExtMoviePlayer(Screen):
                      getDesktop(0).size().height(),
                      GetIPTVDMImgDir("playback_banner.png"),
                      GetIPTVDMImgDir("playback_progress.png"),
+                     GetIPTVDMImgDir("playback_buff_progress.png"),
                      GetIPTVDMImgDir('playback_pointer.png') )
     
-    def __init__(self, session, filesrcLocation, FileName, lastPosition=None, player='eplayer', gstAdditionalParams={}):
+    def __init__(self, session, filesrcLocation, FileName, lastPosition=None, player='eplayer', additionalParams={}):
         # 'gstplayer'
         Screen.__init__(self, session)
         self.skinName = "IPTVExtMoviePlayer"
@@ -134,10 +135,10 @@ class IPTVExtMoviePlayer(Screen):
         if 'gstplayer' == self.player: 
             self.playerName = _("external gstplayer")
             self.gstAdditionalParams = {}
-            self.gstAdditionalParams['download-buffer-path'] = gstAdditionalParams.get('download-buffer-path', '') # File template to store temporary files in, should contain directory and XXXXXX
-            self.gstAdditionalParams['ring-buffer-max-size'] = gstAdditionalParams.get('ring-buffer-max-size', 0) # in MB
-            self.gstAdditionalParams['buffer-duration']      = gstAdditionalParams.get('buffer-duration', -1) # in s
-            self.gstAdditionalParams['buffer-size']          = gstAdditionalParams.get('buffer-size', 0) # in KB
+            self.gstAdditionalParams['download-buffer-path'] = additionalParams.get('download-buffer-path', '') # File template to store temporary files in, should contain directory and XXXXXX
+            self.gstAdditionalParams['ring-buffer-max-size'] = additionalParams.get('ring-buffer-max-size', 0) # in MB
+            self.gstAdditionalParams['buffer-duration']      = additionalParams.get('buffer-duration', -1) # in s
+            self.gstAdditionalParams['buffer-size']          = additionalParams.get('buffer-size', 0) # in KB
         else: self.playerName = _("external eplayer3")
 
         self.session.nav.playService(None) # current service must be None to give free access to DVB Audio and Video Sinks
@@ -147,7 +148,8 @@ class IPTVExtMoviePlayer(Screen):
             self.lastPosition = lastPosition
         else:
             self.lastPosition = 0 
-            
+        self.downloader = additionalParams.get('downloader', None)
+        
         printDBG('IPTVExtMoviePlayer.__init__ lastPosition[%r]' % self.lastPosition)
         
         self.extPlayerCmddDispatcher = ExtPlayerCommandsDispatcher(self)
@@ -186,12 +188,13 @@ class IPTVExtMoviePlayer(Screen):
         # playback info
         # GUI
         self.updateInfoTimer = eTimer()
-        self.updateInfoTimer_conn = eConnectCallback(self.updateInfoTimer.timeout, self.extPlayerCmddDispatcher.doUpdateInfo)
+        self.updateInfoTimer_conn = eConnectCallback(self.updateInfoTimer.timeout, self.updateInfo)
         
         # playback info bar gui elements
         self['playbackInfoBaner'] = Cover3()
         self['statusIcon']        = Cover3()
         self['progressBar']       = ProgressBar()
+        self['bufferingBar']      = ProgressBar()
         self['goToSeekPointer']   = Cover3() 
         self['infoBarTitle']      = Label(self.title)
         self['goToSeekLabel']     = Label("0:00:00")
@@ -208,6 +211,7 @@ class IPTVExtMoviePlayer(Screen):
                                'Length':         0,
                                'LengthFromPlayerReceived': False,
                                'GoToSeekTime':   0,
+                               'StartGoToSeekTime': 0,
                                'GoToSeeking':    False,
                                'IsLive':         False,
                                'Status':         None
@@ -225,7 +229,7 @@ class IPTVExtMoviePlayer(Screen):
         # show hide info bar functionality
         self.goToSeekRepeatCount = 0
         self.goToSeekStep = 0
-        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'statusIcon'] }
+        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'statusIcon'] }
         self.playbackInfoBar['timer'] = eTimer()
         self.playbackInfoBar['timer_conn'] = eConnectCallback(self.playbackInfoBar['timer'].timeout, self.hidePlaybackInfoBar)
         
@@ -245,6 +249,15 @@ class IPTVExtMoviePlayer(Screen):
         self.messageQueue = []
         self.underMessage = False
         
+    def updateInfo(self):
+        self.extPlayerCmddDispatcher.doUpdateInfo()
+        if None != self.downloader:
+            remoteFileSize = self.downloader.getRemoteFileSize()
+            if 0 < remoteFileSize:
+                localFileSize = self.downloader.getLocalFileSize(True) 
+                if 0 < localFileSize:
+                    self['bufferingBar'].value = (localFileSize * 100000) / remoteFileSize
+                    
     def showMessage(self, message, type, callback=None):
         printDBG("IPTVExtMoviePlayer.showMessage")
         if self.isClosing and type != None: return
@@ -303,6 +316,7 @@ class IPTVExtMoviePlayer(Screen):
                     self['lengthTimeLabel'].setText( str(timedelta(seconds=val)) )
                 self['progressBar'].value = val
                 self.playback['CurrentTime'] = stsObj['CurrentTime']
+                if 0 < self.playback['CurrentTime']: self.playback['StartGoToSeekTime'] = self.playback['CurrentTime']
                 self['currTimeLabel'].setText( str(timedelta(seconds=self.playback['CurrentTime'])) )
                 self['remainedLabel'].setText( '-' + str(timedelta(seconds=self.playback['Length']-self.playback['CurrentTime'])) )
             elif 'Status' == key:
@@ -321,6 +335,7 @@ class IPTVExtMoviePlayer(Screen):
         self.playback['GoToSeekTimer'].stop()
         if self.playback['GoToSeeking']:
             self.showPlaybackInfoBar()
+            self.playback['StartGoToSeekTime'] = self.playback['GoToSeekTime']
             self.extPlayerCmddDispatcher.doGoToSeek(str(self.playback['GoToSeekTime']))
             self.playback['GoToSeeking'] = False
             self['goToSeekPointer'].hide()
@@ -332,7 +347,7 @@ class IPTVExtMoviePlayer(Screen):
         if not self.playback['LengthFromPlayerReceived']: return
         if not self.playback['GoToSeeking']:
             self.playback['GoToSeeking']  = True
-            self.playback['GoToSeekTime'] = self.playback['CurrentTime']
+            self.playback['GoToSeekTime'] = self.playback['StartGoToSeekTime']
             self.showPlaybackInfoBar([], True)
             self['goToSeekPointer'].show()
             self["goToSeekLabel"].show()
@@ -522,6 +537,7 @@ class IPTVExtMoviePlayer(Screen):
             self.console_stdoutAvail_conn = None
             self.console.sendCtrlC()
             self.console = None
+        self.downloader = None
         self.playbackInfoBar['timer'].stop()
         self.playbackInfoBar['timer_conn'] = None
         self.waitEOSAbortedFix['timer_conn'] = None
@@ -557,6 +573,8 @@ class IPTVExtMoviePlayer(Screen):
     def onStart(self):
         self.onLayoutFinish.remove(self.onStart)
         self['progressBar'].value = 0
+        self['bufferingBar'].range = (0, 100000)
+        self['bufferingBar'].value = 0
         self.initGuiComponentsPos()
         if 'gstplayer' == self.player:
             gstplayerPath = config.plugins.iptvplayer.gstplayerpath.value
@@ -572,8 +590,8 @@ class IPTVExtMoviePlayer(Screen):
         self.console = eConsoleAppContainer()
         self.console_appClosed_conn = eConnectCallback(self.console.appClosed, self.eplayer3Finished)
         self.console_stderrAvail_conn = eConnectCallback(self.console.stderrAvail, self.eplayer3DataAvailable)
-        if 'gstplayer' == self.player: 
-            self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self.eplayer3DataAvailable2 ) # work around to catch EOF event after seeking, pause .etc
+        #if 'gstplayer' == self.player: 
+        #    self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self.eplayer3DataAvailable2 ) # work around to catch EOF event after seeking, pause .etc
         self.console.execute( cmd )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
             
