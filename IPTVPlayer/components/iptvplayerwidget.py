@@ -269,7 +269,7 @@ class IPTVPlayerWidget(Screen):
         self.autoPlaySeqTimerValue = 0
         #################################################################
         
-        self.activePlayer = {} # 'buffering':False/True, 'player':'gstplayer'
+        self.activePlayer = {} # 'buffering':False/True, 'player':...
 
     #end def __init__(self, session):
         
@@ -1111,7 +1111,7 @@ class IPTVPlayerWidget(Screen):
                 else: player = config.plugins.iptvplayer.defaultSH4MoviePlayer
             elif 'mipsel' == config.plugins.iptvplayer.plarform.value:
                 if useAlternativePlayer: player = config.plugins.iptvplayer.alternativeMIPSELMoviePlayer
-                else: player = config.plugins.iptvplayer.defaultMIPSELMoviePlayer.value
+                else: player = config.plugins.iptvplayer.defaultMIPSELMoviePlayer
             elif 'i686' == config.plugins.iptvplayer.plarform.value:
                 if useAlternativePlayer: player = config.plugins.iptvplayer.alternativeI686MoviePlayer
                 else: player = config.plugins.iptvplayer.defaultI686MoviePlayer
