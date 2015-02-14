@@ -37,7 +37,8 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           mkdirs as iptvtools_mkdirs, GetIPTVPlayerVerstion, GetVersionNum, \
                                                           printDBG, printExc, iptv_system, GetHostsList, \
                                                           eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir,\
-                                                          SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable
+                                                          SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
+                                                          CMoviePlayerPerHost
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
@@ -269,8 +270,7 @@ class IPTVPlayerWidget(Screen):
         self.autoPlaySeqTimerValue = 0
         #################################################################
         
-        self.activePlayer = {} # 'buffering':False/True, 'player':...
-
+        self.activePlayer = None
     #end def __init__(self, session):
         
     def __del__(self):
@@ -309,6 +309,7 @@ class IPTVPlayerWidget(Screen):
             iptv_system('echo 1 > /proc/sys/vm/drop_caches')
         except:
             printExc()
+        self.activePlayer = None
             
     def loadSpinner(self):
         try:
@@ -530,7 +531,7 @@ class IPTVPlayerWidget(Screen):
                 self.session.openWithCallback(self.setActiveMoviePlayer, ChoiceBox, title = _("Select movie player"), list = options)
     
     def setActiveMoviePlayer(self, ret):
-        if ret: self.activePlayer = ret[1]
+        if ret: self.activePlayer.set(ret[1])
 
     def runIPTVDM(self, callback=None):
         global gDownloadManager
@@ -974,6 +975,9 @@ class IPTVPlayerWidget(Screen):
             self.loadHostData();
 
     def loadHostData(self):
+        if None != self.activePlayer: self.activePlayer.save()
+        self.activePlayer = CMoviePlayerPerHost(self.hostName)
+                
         #############################################
         #            change logo for player
         #############################################

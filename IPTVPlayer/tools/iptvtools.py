@@ -28,6 +28,8 @@ import sys
 import os
 import stat
 import codecs
+try:    import json
+except: import simplejson as json
 ###################################################
 class eConnectCallbackObj:
     OBJ_ID = 0
@@ -140,14 +142,15 @@ def GetCookieDir(file = ''):
         printExc()
     return cookieDir + file
     
-def GetSearchHistoryDir(file = ''):
-    path = config.plugins.iptvplayer.SciezkaCache.value + "/SearchHistory"
+def GetCacheSubDir(dir, file = ''):
+    path = config.plugins.iptvplayer.SciezkaCache.value + "/" + dir
     path = path.replace('//', '/')
-    try:
-        mkdirs(path)
-    except:
-        printExc()
+    try: mkdirs(path)
+    except: printExc()
     return path + '/' + file
+
+def GetSearchHistoryDir(file = ''):
+    return GetCacheSubDir('SearchHistory', file)
 
 def GetIPTVDMImgDir(file = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/') + file
@@ -767,6 +770,62 @@ class CSearchHistoryHelper():
         return sts, ret
 # end CSearchHistoryHelper
 
+class CFakeMoviePlayerOption():
+    def __init__(self, value, text):
+        self.value = value
+        self.text  = text
+    def getText(self):
+        return self.text
+
+class CMoviePlayerPerHost():
+    def __init__(self, hostName):
+        self.filePath = GetCacheSubDir('MoviePlayer', hostName + '.json')
+        self.activePlayer = {} # {buffering:True/False, 'player':''}
+        self.load()
+        
+    def __del__(self):
+        self.save()
+        
+    def load(self):
+        sts, ret = False, ''
+        try:
+            if not os.path.isfile(self.filePath):
+                sts = True
+            else:
+                file = codecs.open(self.filePath, 'r', 'utf-8', 'ignore')
+                ret = file.read().encode('utf-8', 'ignore')
+                file.close()
+                activePlayer = {}
+                ret = json.loads(ret)
+                activePlayer['buffering'] = ret['buffering']
+                activePlayer['player'] = CFakeMoviePlayerOption(ret['player']['value'].encode('utf-8'), ret['player']['text'].encode('utf-8'))
+                self.activePlayer  = activePlayer
+                sts = True
+        except: printExc()
+        return sts, ret
+        
+    def save(self):
+        sts = False
+        try:
+            if {} == self.activePlayer and os.path.isfile(self.filePath):
+                os.remove(self.filePath)
+            else:
+                data = {}
+                data['buffering'] = self.activePlayer['buffering']
+                data['player']    = {'value':self.activePlayer['player'].value, 'text':self.activePlayer['player'].getText()}
+                data = json.dumps(data).encode('utf-8')
+                file = codecs.open(self.filePath, 'w', 'utf-8', 'replace')
+                file.write(data)
+                file.close
+                sts = True
+        except: printExc()
+        return sts
+    
+    def get(self, key, defval):
+        return self.activePlayer.get(key, defval)
+        
+    def set(self, activePlayer):
+        self.activePlayer = activePlayer
 
 def printExc(msg=''):
     printDBG("===============================================")
