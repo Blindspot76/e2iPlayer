@@ -544,16 +544,23 @@ class pageParser:
 
     def parserWGRANE(self,url):
         # extract video hash from given url
-        vidHash = re.search("([0-9a-fA-F]{32})$", url)
-        if not vidHash: return False
-        params = {'use_cookie': True, 'load_cookie':False, 'save_cookie':False} 
-        url = "http://www.wgrane.pl/index.html?adult_content_agree=" + vidHash.group(1)
-        sts, data = self.cm.getPage(url, params)
+        sts, data = self.cm.getPage(url)
         if not sts: return False
-        data = re.search("<meta itemprop='contentURL' content='([^']+?)' />", data)
+        agree = ''
+        if 'controversial_content_agree' in data: agree = 'controversial_content_agree'
+        elif 'adult_content_agree' in data: agree = 'adult_content_agree'
+        if '' != agree:
+            vidHash = re.search("([0-9a-fA-F]{32})$", url)
+            if not vidHash: return False
+            params = {'use_cookie': True, 'load_cookie':False, 'save_cookie':False} 
+            url = "http://www.wgrane.pl/index.html?%s=%s" % (agree, vidHash.group(1))
+            sts, data = self.cm.getPage(url, params)
+            if not sts: return False
+        tmp = re.search('"(http[^"]+?/video/[^"]+?\.mp4[^"]*?)"', data)
+        if tmp: return tmp.group(1)
+        data = re.search("<meta itemprop='contentURL' content='([^']+?)'", data)
         if not data: return False
-        url = unescapeHTML(data.group(1).decode("utf-8")).encode("utf-8")
-
+        url = clean_html(data.group(1))
         return url
         
     def parserCDA(self, inUrl):
