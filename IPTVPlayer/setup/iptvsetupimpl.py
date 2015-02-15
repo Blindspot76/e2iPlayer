@@ -64,6 +64,10 @@ class IPTVSetupImpl:
         self._gstplayerInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/gstplayer (%s)" % _("recommended")), "/usr/bin/gstplayer"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),
                                           (_("Do not install (not recommended)"), "")]
+                                          
+        # flumpegdemux
+        self.flumpegdemuxVersion = {'i686':199720, 'mipsel':275752, 'sh4':151664}
+        self.flumpegdemuxpaths = ["/usr/lib/gstreamer-0.10/libgstflumpegdemux.so"]
         
     def __del__(self):
         printDBG("IPTVSetupImpl.__del__ -------------------------------")
@@ -308,7 +312,7 @@ class IPTVSetupImpl:
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
         self.stepHelper = CBinaryStepHelper("gstplayer", self.platform, self.openSSLVersion, config.plugins.iptvplayer.gstplayerpath)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer as external movie player.' % ('gstplayer')), 1)
+        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer as external movie player.') % ('gstplayer'), 1)
         self.stepHelper.setInstallChoiseList( self._gstplayerInstallChoiseList )
         self.stepHelper.setPaths( self.gstplayerpaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
@@ -320,6 +324,53 @@ class IPTVSetupImpl:
 
     def gstplayerStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.gstplayerStepFinished sts[%r]" % sts)
+        if sts: self.flumpegdemuxStep()
+        else: self.finish()
+        
+    ###################################################
+    # STEP: FLUENDO MPEGDEMUX
+    ###################################################
+    def flumpegdemuxStep(self, ret=None):
+        printDBG("IPTVSetupImpl.flumpegdemuxStep")
+        def _detectValidator(code, data):
+            platform = config.plugins.iptvplayer.plarform.value
+            validSize = self.flumpegdemuxVersion.get(platform, -1)
+            if 0 == code:
+                try: currentSize = os_path.getsize(self.flumpegdemuxpaths[0])
+                except: currentSize = -1
+                if -1 != validSize and validSize == currentSize: return True,False
+            return False,True
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            sts, retPath = False, ""
+            try: currentSize = os_path.getsize(self.flumpegdemuxpaths[0])
+            except: currentSize = -1
+            if -1 < currentSize: sts, retPath = True, paths[0]
+            return sts, retPath
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + "0.10"
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        self.stepHelper = CBinaryStepHelper("libgstflumpegdemux.so", self.platform, self.openSSLVersion, None)
+        msg1 = "Fluendo mpegdemux for GSTREAMER 0.10"
+        msg2 = "\nFor more info please visit http://fluendo.com/"
+        msg3 = _('It improves playing of streams hls/m3u8.\n')
+        self.stepHelper.updateMessage('detection', msg1, 0)
+        self.stepHelper.updateMessage('detection', msg2, 1)
+        self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+        self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+        
+        self.stepHelper.setInstallChoiseList( [('gst-fluendo-mpegdemux', self.flumpegdemuxpaths[0])] )
+        self.stepHelper.setPaths( self.flumpegdemuxpaths )
+        self.stepHelper.setDetectCmdBuilder( lambda path: ('ls "%s" 2>&1 ' % path) )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.flumpegdemuxStepFinished )
+        self.binaryDetect()
+
+    def flumpegdemuxStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.flumpegdemuxStepFinished sts[%r]" % sts)
         self.finish()
 
     ###################################################
