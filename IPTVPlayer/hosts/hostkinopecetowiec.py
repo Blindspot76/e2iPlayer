@@ -75,6 +75,7 @@ class KinoPecetowiec(CBaseHostClass):
         self.loggedIn = None        
         self.linksCacheCache = {}
         self.serialCache     = []
+        self.informedAboutLoginRequirements = False
             
     def _getfromJson(self, data, type='films'):
         try:
@@ -453,6 +454,10 @@ class KinoPecetowiec(CBaseHostClass):
                 self.sessionEx.open(MessageBox, 'Problem z zalogowaniem użytkownika "%s".' % self.LOGIN, type = MessageBox.TYPE_INFO, timeout = 10 )
             else:
                 self.sessionEx.open(MessageBox, 'Zostałeś poprawnie \nzalogowany.', type = MessageBox.TYPE_INFO, timeout = 10 )
+        
+        if True != self.loggedIn and not self.informedAboutLoginRequirements:
+            self.informedAboutLoginRequirements = True
+            self.sessionEx.open(MessageBox, 'Aby móc oglądać video musisz być zalogowany, jesli nie masz konta zarejestruj się.\nhttp://www.kino.pecetowiec.pl/rejestracja.html', type = MessageBox.TYPE_INFO, timeout = 10 )
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
