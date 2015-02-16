@@ -155,7 +155,7 @@ class IPTVPlayerWidget(Screen):
             "1"       :   self.ok_pressed1,
             "2"       :   self.ok_pressed2,
             "3"       :   self.ok_pressed3,
-            "play"    :   self.ok_pressedUseAlternativePlayer
+            "play"    :   self.startAutoPlaySequencer
         }, -1)
 
         self["headertext"] = Label()
@@ -399,7 +399,7 @@ class IPTVPlayerWidget(Screen):
         asynccall.gMainFunctionsQueue.addToQueue("selectMainVideoLinks", [thread, ret])
         
     def getResolvedURLCallback(self, thread, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("playVideo", [thread, ret])
+        asynccall.gMainFunctionsQueue.addToQueue("selectResolvedVideoLinks", [thread, ret])
         
     def callbackGetList(self, addParam, thread, ret):
         asynccall.gMainFunctionsQueue.addToQueue("reloadList", [thread, {'add_param':addParam, 'ret':ret}])
@@ -774,6 +774,19 @@ class IPTVPlayerWidget(Screen):
             self.currList[currSelIndex].urlItems = ret.value
         self.selectLinkForCurrVideo()
     #end selectMainVideoLinks(self, ret):
+    
+    def selectResolvedVideoLinks(self, ret):
+        if ret.status == RetHost.OK and isinstance(ret.value, list):
+            linkList = []
+            for item in ret.value:
+                
+                if isinstance(item, CUrlItem): 
+                    item.urlNeedsResolve = 0 # protection from recursion 
+                    linkList.append(item)
+                elif isinstance(item, basestring): linkList.append(CUrlItem(item, item, 0))
+                else: printExc("selectResolvedVideoLinks: wrong resolved url type!")
+            self.selectLinkForCurrVideo(linkList)
+        else: printExc()
  
     def getSelIndex(self):
         currSelIndex = self["list"].getCurrentIndex()
@@ -1019,7 +1032,7 @@ class IPTVPlayerWidget(Screen):
         self.getInitialList()
     #end selectHostCallback(self, ret):
 
-    def selectLinkForCurrVideo(self):
+    def selectLinkForCurrVideo(self, customUrlItems=None):
         if not self.visible:
             self["statustext"].setText("")
             self.showWindow()
@@ -1028,8 +1041,10 @@ class IPTVPlayerWidget(Screen):
         if item.type not in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE]:
             printDBG("Incorrect icon type[%s]" % item.type)
             return
-            
-        links = item.urlItems
+        
+        if None == customUrlItems: links = item.urlItems
+        else: links = customUrlItems
+        
         options = []
         for link in links:
             printDBG("selectLinkForCurrVideo: |%s| |%s|" % (link.name, link.url))
@@ -1069,12 +1084,14 @@ class IPTVPlayerWidget(Screen):
                 if len(videoUrl) > 3:
                     #check if we need to resolve this URL
                     if str(retArg[2]) == '1':
-                        #call resolve link from host                              
+                        #call resolve link from host
                         self.requestListFromHost('ResolveURL', -1, videoUrl)
                     else:
                         list = []
                         list.append(videoUrl)
                         self.playVideo(RetHost(status = RetHost.OK, value = list))
+                    return
+        self.playVideo(RetHost(status = RetHost.ERROR, value = []))
     # end selectLinksCallback(self, retArg):
         
     def checkBuffering(self, url):
