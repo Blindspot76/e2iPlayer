@@ -8,6 +8,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHisto
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
@@ -57,6 +58,7 @@ class SeansikTV(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'SeansikTV'})
+        self.linksCacheCache = {}
     
     def _getStr(self, v, default=''):
         return clean_html(self._encodeStr(v, default))
@@ -138,7 +140,8 @@ class SeansikTV(CBaseHostClass):
             # validate data
             if '' == url or '' == title: continue
             params = {'name':'category', 'category':category, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
-            self.addDir(params)
+            if 'video' != category: self.addDir(params)
+            else: self.addVideo(params)
         if netxtPage:
             params = dict(cItem)
             params.update({'title':'Następna strona', 'page':page})
@@ -189,9 +192,9 @@ class SeansikTV(CBaseHostClass):
             self.addDir(params)
         if 0 == len(self.currList):
             cItem.update({'season':'season1', 'category':category, 'icon':icon})
-            self.listEpisodes(cItem, 'links_container')
+            self.listEpisodes(cItem)
     
-    def listEpisodes(self, cItem, category):
+    def listEpisodes(self, cItem):
         printDBG("SeansikTV.listEpisodes")
         url = self._getFullUrl(cItem['url'])
         sts, data = self.cm.getPage( url )
@@ -208,14 +211,18 @@ class SeansikTV(CBaseHostClass):
                 # validate data
                 if '' == url or '' == title: continue
                 params = dict(cItem)
-                params.update({'category':category, 'title':title, 'url':url, 'desc':desc})
-                self.addDir(params)
+                params.update({'title':title, 'url':url, 'desc':desc})
+                self.addVideo(params)
                 
-    def listLinks(self, cItem):
-        printDBG("listLinks")
+    def getHostingTable(self, urlItem):
+        printDBG("SeansikTV.getHostingTable")
+        # use cache if possible
+        if 0 < len( self.linksCacheCache.get('tab', []) ) and (urlItem['url'] + urlItem.get('ver', '')) == self.linksCacheCache.get('marker', None):
+            return self.linksCacheCache['tab']
+        hostingTab = []
 
-        sts, data = self.cm.getPage( self._getFullUrl( cItem['url'] ) )
-        if False == sts: return
+        sts, data = self.cm.getPage( self._getFullUrl( urlItem['url'] ) )
+        if not sts: return hostingTab
         
         long_hashes  = CParsingHelper.getSearchGroups(data, '_sasa[ ]*?=[ ]*?{([^}]+?)}')[0]
         short_hashes = CParsingHelper.getDataBeetwenMarkers(data, '<div id="translation_', '<div class="content"', False)[1]
@@ -251,20 +258,23 @@ class SeansikTV(CBaseHostClass):
                 except:
                     continue
                 #if url.startswith('http'):
-                params = dict(cItem)
-                params.update({'title': title, 'url':self.cleanHtmlStr(url), 'hosting':hosting})
-                self.addVideo(params)
+                hostingTab.append({'name':title, 'url':strwithmeta(self.cleanHtmlStr(url), {'hosting':hosting})} )
+        self.linksCacheCache = {'marker': urlItem['url'], 'tab': hostingTab}
+        return hostingTab
                 
-    def getHostingTable(self, cItem):
-        url = cItem['url']
-        printDBG("getHostingTable url[%s]" % url)
-        if 'flowplayer' == cItem['hosting']:
-            return [{'name':'flowplayer', 'url':url}]
+    def getVideoLinks(self, url):
+        printDBG("SeansikTV.getVideoLinks url[%r]" % url)
+        if not isinstance(url, strwithmeta): return []
+        hosting = url.meta.get('hosting', '')
+        if 'flowplayer' == hosting: return [{'name':'flowplayer', 'url':url}]
         return self.up.getVideoLinkExt( url )
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        
+        # clear hosting tab cache
+        self.linksCacheCache = {}
 
         name     = self.currItem.get("name", '')
 
@@ -281,14 +291,12 @@ class SeansikTV(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self._listsTab(SeansikTV.MAIN_TAB, {'name':'category'})
-        elif category == "links_container":
-            self.listLinks(self.currItem)
     #FILMY
         elif category == "films":
             self.addSortParam(self.currItem, 'list_films_categories')
     #FILMS ITEMS
         elif category == 'list_films_items':
-            self.listItems(self.currItem, 'links_container')
+            self.listItems(self.currItem, 'video')
     #FILMS CATEGORIES
         elif category == 'list_films_categories':
             self.listCategories(self.currItem, 'list_films_items')
@@ -308,7 +316,7 @@ class SeansikTV(CBaseHostClass):
             self.listSeasons(self.currItem, 'series_episodes')
     #LIST SERIES EPISODES
         elif category == "series_episodes":
-            self.listEpisodes(self.currItem, 'links_container')
+            self.listEpisodes(self.currItem)
     #ANIMES
         elif category == "animes":
             self.addSortParam(self.currItem, 'list_anime_categories')
@@ -323,7 +331,7 @@ class SeansikTV(CBaseHostClass):
             params = {'name':'category'}
             if 'filmy' == searchType:
                 params.update({'url':'/act/list?type=film&title=' + pattern, 'category':'list_films_items'})
-                self.listItems(params, 'links_container')
+                self.listItems(params, 'video')
             elif 'seriale' == searchType:
                 params.update({'url':'/act/list?type=series&title=' + pattern, 'category':'list_series_items'})
                 self.listItems2(params, 'series_seasons')
@@ -357,7 +365,7 @@ class IPTVHost(CHostBase):
         retlist = []
         urlList = self.host.getHostingTable(self.host.currList[Index])
         for item in urlList:
-            need_resolve = 0
+            need_resolve = 1
             retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
@@ -365,13 +373,13 @@ class IPTVHost(CHostBase):
     
     def getResolvedURL(self, url):
         # resolve url to get direct url to video file
-        url = self.host.up.getVideoLink( url )
-        urlTab = []
+        retlist = []
+        urlList = self.host.getVideoLinks(url)
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
-        if isinstance(url, basestring) and url.startswith('http'):
-            urlTab.append(url)
-
-        return RetHost(RetHost.OK, value = urlTab)
+        return RetHost(RetHost.OK, value = retlist)
 
     def convertList(self, cList):
         hostList = []

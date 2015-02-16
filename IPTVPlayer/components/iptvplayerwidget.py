@@ -776,17 +776,19 @@ class IPTVPlayerWidget(Screen):
     #end selectMainVideoLinks(self, ret):
     
     def selectResolvedVideoLinks(self, ret):
+        printDBG( "selectResolvedVideoLinks" )
+        self["statustext"].setText("")
+        self["list"].show()
+        linkList = []
         if ret.status == RetHost.OK and isinstance(ret.value, list):
-            linkList = []
             for item in ret.value:
-                
                 if isinstance(item, CUrlItem): 
                     item.urlNeedsResolve = 0 # protection from recursion 
                     linkList.append(item)
                 elif isinstance(item, basestring): linkList.append(CUrlItem(item, item, 0))
                 else: printExc("selectResolvedVideoLinks: wrong resolved url type!")
-            self.selectLinkForCurrVideo(linkList)
         else: printExc()
+        self.selectLinkForCurrVideo(linkList)
  
     def getSelIndex(self):
         currSelIndex = self["list"].getCurrentIndex()
@@ -1091,7 +1093,7 @@ class IPTVPlayerWidget(Screen):
                         list.append(videoUrl)
                         self.playVideo(RetHost(status = RetHost.OK, value = list))
                     return
-        self.playVideo(RetHost(status = RetHost.ERROR, value = []))
+            self.playVideo(RetHost(status = RetHost.ERROR, value = []))
     # end selectLinksCallback(self, retArg):
         
     def checkBuffering(self, url):
