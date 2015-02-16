@@ -1,4 +1,4 @@
-﻿#QQ.XX.YY.ZZ
+#QQ.XX.YY.ZZ
 #QQ-dodanie nowego playera
 #XX-dodanie nowej funkcjonalnosci
 #YY-poprawka dzialania
@@ -6,4 +6,4 @@
 #zmiana YY powoduje wyzerowanie ZZ
 #zmiana XX powoduje wyzerowanie YY i ZZ
 #usunięcie/zablokowanie hosta nie powoduje zmiany QQ
-IPTV_VERSION="54.10.02.00"
+IPTV_VERSION="54.11.00.00"

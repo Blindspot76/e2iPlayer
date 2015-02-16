@@ -152,6 +152,9 @@ class IPTVPlayerWidget(Screen):
             "info"    :   self.info_pressed,
             "8"       :   self.startAutoPlaySequencer,
             "0"       :   self.ok_pressedUseAlternativePlayer,
+            "1"       :   self.ok_pressed1,
+            "2"       :   self.ok_pressed2,
+            "3"       :   self.ok_pressed3,
             "play"    :   self.ok_pressedUseAlternativePlayer
         }, -1)
 
@@ -658,6 +661,21 @@ class IPTVPlayerWidget(Screen):
     
     def ok_pressedUseAlternativePlayer(self):
         self.ok_pressed(useAlternativePlayer=True)
+
+    def ok_pressed1(self):
+        player = self.getMoviePlayer(True, False)
+        self.activePlayer.set({'buffering':True, 'player':player}) 
+        self.ok_pressed(useAlternativePlayer=True)
+
+    def ok_pressed2(self):
+        player = self.getMoviePlayer(True, True)
+        self.activePlayer.set({'buffering':True, 'player':player}) 
+        self.ok_pressed(useAlternativePlayer=True)
+
+    def ok_pressed3(self):
+        player = self.getMoviePlayer()
+        self.activePlayer.set({'buffering':False, 'player':player}) 
+        self.ok_pressed(useAlternativePlayer=False)
     
     def ok_pressed(self, eventFrom='remote', useAlternativePlayer=False):
         self.useAlternativePlayer = useAlternativePlayer
