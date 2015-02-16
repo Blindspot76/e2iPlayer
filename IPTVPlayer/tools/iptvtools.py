@@ -142,6 +142,13 @@ def GetCookieDir(file = ''):
         printExc()
     return cookieDir + file
     
+def GetTmpDir(file = ''):
+    path = config.plugins.iptvplayer.NaszaTMP.value
+    path = path.replace('//', '/')
+    try: mkdirs(path)
+    except: printExc()
+    return path + '/' + file
+    
 def GetCacheSubDir(dir, file = ''):
     path = config.plugins.iptvplayer.SciezkaCache.value + "/" + dir
     path = path.replace('//', '/')

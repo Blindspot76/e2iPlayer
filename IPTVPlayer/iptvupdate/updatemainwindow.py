@@ -7,7 +7,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes          import enum
 from Plugins.Extensions.IPTVPlayer.iptvupdate.iptvlist      import IPTVUpdateList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import UpdateDownloaderCreator
@@ -242,7 +242,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.cm = common()
 
         self.setup_title = _("IPTVPlayer - update")
-        self.tmpDir = os_path.join(config.plugins.iptvplayer.NaszaTMP.value, 'iptv_update')
+        self.tmpDir = GetTmpDir('iptv_update')
         self.ExtensionPath = resolveFilename(SCOPE_PLUGINS, 'Extensions/')
         self.ExtensionTmpPath = None
         
