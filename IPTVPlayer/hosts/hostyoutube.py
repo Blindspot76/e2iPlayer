@@ -6,8 +6,8 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, remove_html_markup, CSelOneLink, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
 from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
-from Plugins.Extensions.IPTVPlayer.libs.filehost import FileHost
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
 
@@ -86,7 +86,7 @@ class Youtube(CBaseHostClass):
         filespath = config.plugins.iptvplayer.Sciezkaurllist.value
         groupList = True
         if 'sub_file_category'  not in cItem:
-            self.currFileHost = FileHost()
+            self.currFileHost = IPTVFileHost()
             self.currFileHost.addFile(filespath + Youtube.UTLIST_FILE, encoding='utf-8')
             tmpList = self.currFileHost.getGroups(sortList)
             if 0 < len(tmpList):

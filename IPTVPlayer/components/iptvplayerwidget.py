@@ -38,7 +38,8 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           printDBG, printExc, iptv_system, GetHostsList, \
                                                           eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir,\
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
-                                                          CMoviePlayerPerHost
+                                                          CMoviePlayerPerHost, GetFavouritesDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvfavourites import IPTVFavourites
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
@@ -53,7 +54,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvextmovieplayer import IPTVExtM
 from Plugins.Extensions.IPTVPlayer.components.iptvpictureplayer import IPTVPicturePlayerWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvlist import IPTVMainNavigatorList
 from Plugins.Extensions.IPTVPlayer.components.articleview import ArticleView
-from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent
+from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent, CFavItem
 from Plugins.Extensions.IPTVPlayer.components.iconmenager import IconMenager
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover, Cover3
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
@@ -131,7 +132,6 @@ class IPTVPlayerWidget(Screen):
 
         self.currentService = self.session.nav.getCurrentlyPlayingServiceReference()
         #self.session.nav.stopService()
-        self.session.nav.event.append(self.__event)
 
         self["key_red"]    = StaticText(_("Exit"))
         self["key_green"]  = StaticText(_("Player > Recorder"))
@@ -206,8 +206,9 @@ class IPTVPlayerWidget(Screen):
         self.searchPattern = CSearchHistoryHelper.loadLastPattern()[1]
         self.searchType = None
         self.workThread = None
-        self.host = None
-        self.hostName = ''
+        self.host       = None
+        self.hostName     = ''
+        self.hostFavTypes = []
         
         self.nextSelIndex = 0
         self.currSelIndex = 0
@@ -274,6 +275,7 @@ class IPTVPlayerWidget(Screen):
         #################################################################
         
         self.activePlayer = None
+        self.favourites = IPTVFavourites(GetFavouritesDir())
     #end def __init__(self, session):
         
     def __del__(self):
@@ -281,7 +283,6 @@ class IPTVPlayerWidget(Screen):
 
     def __onClose(self):
         self.session.nav.playService(self.currentService)
-        self.session.nav.event.remove(self.__event)
         self["list"].disconnectSelChanged(self.onSelectionChanged)
         #self["list"] = None
         #self["actions"] = None
@@ -440,6 +441,7 @@ class IPTVPlayerWidget(Screen):
         self.stopAutoPlaySequencer()
         options = []
         
+        if -1 < self.canByAddedToFavourites()[0]: options.append((_("Add item to favourites"), "FAV"))
         if None != self.activePlayer.get('player', None): title = _('Change active movie player')
         else: title = _('Set active movie player')
         options.append((title, "SetActiveMoviePlayer"))
@@ -525,13 +527,16 @@ class IPTVPlayerWidget(Screen):
                 options = []
                 if None != self.activePlayer.get('player', None): options.append((_("Auto selection based on the settings"), {}))
                 player = self.getMoviePlayer(True, False)
-                printDBG(">>>>>>>>>>>>>>>>>>>>> [%r]" % dir(player))
+                printDBG("SetActiveMoviePlayer [%r]" % dir(player))
                 options.append((_("[%s] with buffering") % player.getText(), {'buffering':True, 'player':player}))
                 player = self.getMoviePlayer(True, True)
                 options.append((_("[%s] with buffering") % player.getText(), {'buffering':True, 'player':player}))
                 player = self.getMoviePlayer()
                 options.append((_("[%s] without buffering") % player.getText(), {'buffering':False, 'player':player}))
                 self.session.openWithCallback(self.setActiveMoviePlayer, ChoiceBox, title = _("Select movie player"), list = options)
+            elif ret[1] == 'FAV':
+                currSelIndex = self.canByAddedToFavourites()[0]
+                self.requestListFromHost('ForFavItem', currSelIndex, '')
     
     def setActiveMoviePlayer(self, ret):
         if ret: self.activePlayer.set(ret[1])
@@ -986,10 +991,15 @@ class IPTVPlayerWidget(Screen):
                 failCallBackFun()
 
     def loadHost(self):
+        self.hostFavTypes = []
         if not config.plugins.iptvplayer.devHelper.value:
             try:
                 _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['IPTVHost'], -1)
                 self.host = _temp.IPTVHost()
+                if not isinstance(self.host, IHost):
+                    printDBG("Host [%r] does not inherit from IHost" % self.hostName)
+                    self.close()
+                    return
             except:
                 printExc( 'Cannot import class IPTVHost for host [%r]' %  self.hostName)
                 self.close()
@@ -999,23 +1009,19 @@ class IPTVPlayerWidget(Screen):
             self.host = _temp.IPTVHost()
             
         try: protectedByPin = self.host.isProtectedByPinCode()
-        except: protected = False
+        except: protected = False # should never happen
         
-        if True == protectedByPin:
+        if protectedByPin:
             from iptvpin import IPTVPinWidget
             self.session.openWithCallback(boundFunction(self.checkPin, self.loadHostData, self.selectHost), IPTVPinWidget, title=_("Enter pin"))
-        else:
-            self.loadHostData();
+        else: self.loadHostData();
 
     def loadHostData(self):
         if None != self.activePlayer: self.activePlayer.save()
         self.activePlayer = CMoviePlayerPerHost(self.hostName)
-                
-        #############################################
-        #            change logo for player
-        #############################################
+
+        # change logo for player
         self["playerlogo"].hide()
-        
         try:
             hRet= self.host.getLogoPath()
             if hRet.status == RetHost.OK and  len(hRet.value):
@@ -1026,9 +1032,14 @@ class IPTVPlayerWidget(Screen):
                     self["playerlogo"].decodeCover(logoPath, \
                                                    self.updateCover, \
                                                    "playerlogo")
-        except:
-            printExc('The current host crashed')
-        #############################################
+        except: printExc()
+        
+        # get types of items which can be added as favourites
+        self.hostFavTypes = []
+        try:
+            hRet = self.host.getSupportedFavoritesTypes()
+            if hRet.status == RetHost.OK: self.hostFavTypes = hRet.value
+        except: printExc('The current host crashed')
         
         # request initial list from host        
         self.getInitialList()
@@ -1250,7 +1261,7 @@ class IPTVPlayerWidget(Screen):
         if not self.isInWorkThread():
             self["list"].hide()
             
-            if type != 'ForVideoLinks' and type != 'ResolveURL' and type != 'ForArticleContent':
+            if type not in ['ForVideoLinks', 'ResolveURL', 'ForArticleContent', 'ForFavItem']:
                 #hide bottom panel
                 self["cover"].hide()
                 self["console"].setText('')
@@ -1300,6 +1311,9 @@ class IPTVPlayerWidget(Screen):
                 elif type == 'ForArticleContent':
                     self["statustext"].setText(IDS_DOWNLOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getArticleContent, self.getArticleContentCallback, True)(currSelIndex)
+                elif type == 'ForFavItem':
+                    self["statustext"].setText(IDS_LOADING)
+                    self.workThread = asynccall.AsyncMethod(self.host.getFavouriteItem, self.getFavouriteItemCallback, True)(currSelIndex)
                 else:
                     printDBG( 'requestListFromHost unknown list type: ' + type )
                 self.showSpinner()
@@ -1434,18 +1448,51 @@ class IPTVPlayerWidget(Screen):
         self.visible = True
         self.show()
 
-    def Error(self, error = None):
-        if error is not None:
-            try:
-                self["list"].hide()
-                self["statustext"].setText(str(error.getErrorMessage()))
-            except: pass
-
-    def __event(self, ev):
-        pass
-
     def createSummary(self):
         return IPTVPlayerLCDScreen
+        
+    def canByAddedToFavourites(self):
+        cItem = None
+        index = -1
+        # we need to check if fav is available
+        if len(self.hostFavTypes) and self.visible and \
+           None != self.getSelectedItem() and \
+           self.getSelItem().type in self.hostFavTypes:
+            cItem = self.getSelItem()
+            index = self.getSelIndex()
+        return index, cItem
+        
+    def getFavouriteItemCallback(self, thread, ret):
+        asynccall.gMainFunctionsQueue.addToQueue("handleFavouriteItemCallback", [thread, ret])
+        
+    def handleFavouriteItemCallback(self, ret):
+        printDBG("IPTVPlayerWidget.handleFavouriteItemCallback")
+        self["statustext"].setText("")
+        self["list"].show()
+        linkList = []
+        if ret.status == RetHost.OK and \
+           isinstance(ret.value, list) and \
+           1 == len(ret.value) and isinstance(ret.value[0], CFavItem):
+            favItem = ret.value[0]
+            sts = self.favourites.load(groupsOnly=True)
+            if sts:
+                favGroups = self.favourites.getGroups()
+                options = []
+                for group in favGroups:
+                    options.append( (group['title'], group['group_id']) )
+                if len(options): self.session.openWithCallback( boundFunction(self.addFavouriteToGroup, favItem), ChoiceBox, title=_("Select favourite group"), list=options)
+                else: self.session.open(MessageBox, _("There is no favourites groups."), type=MessageBox.TYPE_INFO, timeout=10 )
+            else: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
+        else: self.session.open(MessageBox, _("No valid links available."), type=MessageBox.TYPE_INFO, timeout=10 )
+        
+    def addFavouriteToGroup(self, favItem, retArg):
+        if retArg and 2 == len(retArg):
+            if CFavItem.RESOLVER_SELF == favItem.resolver: favItem.resolver = self.hostName
+            sts = self.favourites.loadGroupItems(retArg[1])
+            if sts: sts = self.favourites.addGroupItem(favItem, retArg[1])
+            if sts: sts = self.favourites.saveGroupItems(retArg[1])
+            if not sts: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
+        
 #class IPTVPlayerWidget
 
 class IPTVPlayerLCDScreen(Screen):

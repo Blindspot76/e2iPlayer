@@ -6,9 +6,9 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
-from Plugins.Extensions.IPTVPlayer.libs.filehost import FileHost
 ###################################################
 
 ###################################################
@@ -74,13 +74,6 @@ class Urllist(CBaseHostClass):
             return True
         return False
         
-    def listsMainMenu(self):
-        printDBG("Urllist.listsMainMenu")
-        for item in Urllist.MAIN_GROUPED_TAB:
-            params = {'name': 'category'}
-            params.update(item)
-            self.addDir(params)
-        
     def listCategory(self, cItem, searchMode=False):
         printDBG("Urllist.listCategory cItem[%s]" % cItem)
         
@@ -88,7 +81,7 @@ class Urllist(CBaseHostClass):
         filespath = config.plugins.iptvplayer.Sciezkaurllist.value
         groupList = config.plugins.iptvplayer.grupujurllist.value
         if cItem['category'] in ['all', Urllist.URLLIST_FILE, Urllist.URRLIST_STREAMS, Urllist.URRLIST_USER]:
-            self.currFileHost = FileHost()
+            self.currFileHost = IPTVFileHost()
             if cItem['category'] in ['all', Urllist.URLLIST_FILE]: 
                 self.currFileHost.addFile(filespath + Urllist.URLLIST_FILE, encoding='utf-8')
             if cItem['category'] in ['all', Urllist.URRLIST_STREAMS]: 
@@ -146,9 +139,11 @@ class Urllist(CBaseHostClass):
         self.currList = []
         
         if None == name:
-            self.listsMainMenu()
+            self.listsTab(Urllist.MAIN_GROUPED_TAB, self.currItem)
         else:
             self.listCategory(self.currItem)
+        
+        CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
 

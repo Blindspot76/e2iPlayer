@@ -158,6 +158,9 @@ def GetCacheSubDir(dir, file = ''):
 
 def GetSearchHistoryDir(file = ''):
     return GetCacheSubDir('SearchHistory', file)
+    
+def GetFavouritesDir(file = ''):
+    return GetCacheSubDir('IPTVFavourites', file)
 
 def GetIPTVDMImgDir(file = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/') + file
@@ -833,6 +836,16 @@ class CMoviePlayerPerHost():
         
     def set(self, activePlayer):
         self.activePlayer = activePlayer
+        
+def byteify(input):
+    if isinstance(input, dict):
+        return dict([(byteify(key), byteify(value)) for key, value in input.iteritems()])
+    elif isinstance(input, list):
+        return [byteify(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('utf-8')
+    else:
+        return input
 
 def printExc(msg=''):
     printDBG("===============================================")

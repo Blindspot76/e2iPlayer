@@ -41,8 +41,7 @@ from Screens.MessageBox import MessageBox
 ###################################################
 config.plugins.iptvplayer.TVNDefaultformat = ConfigSelection(default = "4", choices = [("0", "Najgorsza"), ("1", "Bardzo niska"), ("2", "Niska"),  ("3", "Średnia"), ("4", "Standard"), ("5", "Wysoka"), ("6", "Bardzo wysoka"), ("7", "HD"), ("9999", "Najlepsza")])
 config.plugins.iptvplayer.TVNUseDF = ConfigYesNo(default = False)
-config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "Mobile (Android)", choices = [("Mobile (Android)", "Mobile (Android)"),("Samsung TV", "Samsung TV")])
-config.plugins.iptvplayer.TVNhttpType = ConfigSelection(default = "http://", choices = [("http://", "http://"),("https://", "https://")])
+config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "Samsung TV", choices = [("Mobile (Android)", "Mobile (Android)"),("Samsung TV", "Samsung TV")])
 config.plugins.iptvplayer.proxyenable = ConfigYesNo(default = False)
    
 def GetConfigList():
@@ -51,9 +50,7 @@ def GetConfigList():
     optionList.append(getConfigListEntry("Domyślna jakość video:", config.plugins.iptvplayer.TVNDefaultformat))
     optionList.append(getConfigListEntry("Używaj domyślnej jakości video:", config.plugins.iptvplayer.TVNUseDF))
     optionList.append(getConfigListEntry("TVN-Przedstaw się jako:", config.plugins.iptvplayer.TVNdevice))
-    if config.plugins.iptvplayer.TVNdevice.value == 'Samsung TV':
-        optionList.append(getConfigListEntry("    Typ połączenia:", config.plugins.iptvplayer.TVNhttpType))
-    optionList.append(getConfigListEntry("   TVN-korzystaj z proxy?", config.plugins.iptvplayer.proxyenable))
+    optionList.append(getConfigListEntry("TVN-korzystaj z proxy?", config.plugins.iptvplayer.proxyenable))
 
     return optionList
 ###################################################
@@ -87,7 +84,7 @@ class TvnVod(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'TvnVod', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
         
         if config.plugins.iptvplayer.TVNdevice.value == 'Samsung TV':
-            self.baseUrl = config.plugins.iptvplayer.TVNhttpType.value + 'api.tvnplayer.pl/api?platform=ConnectedTV&terminal=Samsung&format=json&v=3.0&authKey=ba786b315508f0920eca1c34d65534cd'
+            self.baseUrl = 'https://api.tvnplayer.pl/api?platform=ConnectedTV&terminal=Samsung&format=json&v=3.0&authKey=ba786b315508f0920eca1c34d65534cd'
             userAgent = TvnVod.HOST
         else:
             self.baseUrl = 'https://api.tvnplayer.pl/api?platform=Mobile&terminal=Android&format=json&v=3.1&authKey=4dc7b4f711fb9f3d53919ef94c23890c' #b4bc971840de63d105b3166403aa1bea

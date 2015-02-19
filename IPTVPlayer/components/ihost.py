@@ -53,6 +53,38 @@ class ArticleContent:
         self.title  = title
         self.text   = text
         self.images = images
+        
+class CFavItem:
+    RESOLVER_SELF       = 'SELF'
+    RESOLVER_URLLPARSER = 'URLLPARSER'
+    TYPE_UNKNOWN = CDisplayListItem.TYPE_UNKNOWN
+    def __init__( self, name         = '', \
+                  description        = '', \
+                  type               = TYPE_UNKNOWN, \
+                  iconimage          = '', \
+                  data               = '', \
+                  resolver           = RESOLVER_SELF ):
+        self.name        = name
+        self.description = description
+        self.type        = type
+        self.iconimage   = iconimage 
+        self.data        = data
+        self.resolver    = resolver
+        
+    def fromDisplayListItem(self, dispItem):
+        self.name        = dispItem.name
+        self.description = dispItem.description
+        self.type        = dispItem.type
+        self.iconimage   = dispItem.iconimage
+        return self
+    
+    def setFromDict(self, data):
+        for key in data:
+            setattr(self, key, data[key])
+        return self
+        
+    def getAsDict(self):
+        return vars(self)
        
 class RetHost:
     OK = "OK"
@@ -71,6 +103,19 @@ class IHost:
 
     def isProtectedByPinCode(self):
         return False
+    
+    # return list of types which can be added as favourite
+    def getSupportedFavoritesTypes(self):
+        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+    
+    # get favourite item CFavItem for item with given index
+    def getFavouriteItem(self, Index=0):
+        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+        
+    # similar as getLinksForItem, returns links 
+    # for given CFavItem
+    def getLinksForFavourite(self, favItem):
+        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
 
     # return firs available list of item category or video or link
     def getInitList(self):
@@ -104,12 +149,12 @@ class IHost:
     def getMoreForItem(self, Index=0):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
         
-    # return list of links for AUDIO, VIDEO, PICTURE
-    # for given Index, item should have type VIDEO!
-    # item - object of CDisplayListItem for selected item
     def getLinksForVideo(self, Index = 0, item = None):
         return self.getLinksForItem(Index, item)
         
+    # return list of links for AUDIO, VIDEO, PICTURE
+    # for given Index, 
+    # item - object of CDisplayListItem for selected item
     def getLinksForItem(self, Index = 0, item = None):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
         
@@ -132,9 +177,10 @@ CHostBase implements some typical methods
           from IHost interface
 '''
 class CHostBase(IHost):
-    def __init__( self, host, withSearchHistrory ):
+    def __init__( self, host, withSearchHistrory, favouriteTypes=[] ):
         self.host = host
         self.withSearchHistrory = withSearchHistrory
+        self.favouriteTypes     = favouriteTypes
 
         self.currIndex = -1
         self.listOfprevList = [] 
@@ -142,6 +188,45 @@ class CHostBase(IHost):
         
         self.searchPattern = ''
         self.searchType = ''
+        
+    def getSupportedFavoritesTypes(self):
+        return RetHost(RetHost.OK, value = self.favouriteTypes)
+        
+    def isValidIndex(self, Index, validTypes=None):
+        listLen = len(self.host.currList)
+        if listLen < Index and listLen > 0:
+            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
+            return False
+        if None != validTypes and self.converItem(self.host.currList[Index]).type not in validTypes:
+            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
+            return False
+        return True
+        
+    def getFavouriteItem(self, Index=0):
+        retCode = RetHost.ERROR
+        retlist = []
+        if not self.isValidIndex(Index, self.favouriteTypes): RetHost(retCode, value=retlist)
+        
+        cItem = self.host.currList[Index]
+        data = self.host.getFavouriteData(cItem)
+        favItem = CFavItem(data=data)
+        favItem.fromDisplayListItem(self.converItem(cItem))
+        
+        retlist = [favItem]
+        retCode = RetHost.OK
+
+        return RetHost(retCode, value=retlist)
+    # end getFavouriteItem
+    
+    def getLinksForFavourite(self, favItem):
+        retlist = []
+        urlList = self.host.getLinksForFavourite(favItem.data)
+        for item in urlList:
+            need_resolve = 0
+            name = self.host.cleanHtmlStr( item["name"] )
+            url  = item["url"]
+            retlist.append(CUrlItem(name, url, need_resolve))
+        return RetHost(RetHost.OK, value = retlist)
     
     # return firs available list of item category or video or link
     def getInitList(self):
@@ -210,6 +295,21 @@ class CHostBase(IHost):
     def setSearchPattern(self):
         return
     '''
+    
+    def convertList(self, cList):
+        hostList = []
+        for cItem in cList:
+            hostItem = self.converItem(cItem)
+            if None != hostItem: hostList.append(hostItem)
+        return hostList
+    # end convertList
+    
+    # this method must be overwritten 
+    # by the child class
+    '''
+    def converItem(self, cItem):
+        return None
+    '''
 
     def getSearchResults(self, searchpattern, searchType = None):
         retList = []
@@ -248,6 +348,13 @@ class CBaseHostClass:
         if '' != params.get('cookie', ''):
             self.COOKIE_FILE = GetCookieDir(params['cookie'])
         self.moreMode = False
+        
+    def listsTab(self, tab, cItem):
+        for item in tab:
+            params = dict(cItem)
+            params.update(item)
+            params['name']  = 'category'
+            self.addDir(params)
         
     @staticmethod 
     def cleanHtmlStr(str):

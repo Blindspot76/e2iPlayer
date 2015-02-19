@@ -10,9 +10,9 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 ###################################################
 import codecs
 
-class FileHost:
+class IPTVFileHost:
     def __init__(self):
-        printDBG("FileHost.__init__")    
+        printDBG("IPTVFileHost.__init__")    
         self.items = []
         self.groups = []
         
@@ -28,7 +28,7 @@ class FileHost:
         return groupTitle, titleInGroup
 
     def addFile(self, filePath, encoding='utf-8', addItemParams = {}):
-        printDBG('FileHost.addFile file[%s]' % filePath)
+        printDBG('IPTVFileHost.addFile file[%s]' % filePath)
         try:
             with codecs.open(filePath, 'r', encoding, 'replace') as fp:
                 lineNum = 0
@@ -52,7 +52,7 @@ class FileHost:
                             params.update(addItemParams)
                             self.items.append(params)
                             continue
-                    printDBG('FileHost.addFile wrong line[%d]' % (lineNum))
+                    printDBG('IPTVFileHost.addFile wrong line[%d]' % (lineNum))
         except:
             printExc()
                 
