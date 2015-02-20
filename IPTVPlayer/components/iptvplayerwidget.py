@@ -45,6 +45,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingW
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 
+from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
 from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu
 from Plugins.Extensions.IPTVPlayer.components.confighost import ConfigHostMenu
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
@@ -1485,6 +1486,7 @@ class IPTVPlayerWidget(Screen):
                 options = []
                 for group in favGroups:
                     options.append( (group['title'], group['group_id']) )
+                options.append( (_("Add new group"), None) )
                 if len(options): self.session.openWithCallback( boundFunction(self.addFavouriteToGroup, favItem), ChoiceBox, title=_("Select favourite group"), list=options)
                 else: self.session.open(MessageBox, _("There is no favourites groups."), type=MessageBox.TYPE_INFO, timeout=10 )
             else: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
@@ -1492,10 +1494,30 @@ class IPTVPlayerWidget(Screen):
         
     def addFavouriteToGroup(self, favItem, retArg):
         if retArg and 2 == len(retArg):
-            if CFavItem.RESOLVER_SELF == favItem.resolver: favItem.resolver = self.hostName
-            sts = self.favourites.loadGroupItems(retArg[1])
-            if sts: sts = self.favourites.addGroupItem(favItem, retArg[1])
-            if sts: sts = self.favourites.saveGroupItems(retArg[1])
+            if None != retArg[1]:
+                if CFavItem.RESOLVER_SELF == favItem.resolver: favItem.resolver = self.hostName
+                sts = self.favourites.loadGroupItems(retArg[1])
+                if sts: sts = self.favourites.addGroupItem(favItem, retArg[1])
+                if sts: sts = self.favourites.saveGroupItems(retArg[1])
+                if not sts: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
+            else: # addn new group
+                from copy import deepcopy
+                params = deepcopy(IPTVMultipleInputBox.DEF_PARAMS)
+                params['title'] = _("Add new group of favourites")
+                params['list'] = []
+                for input in [[_("Name:"), _("Group %d") % (len(self.favourites.getGroups()) + 1)], [_("Description:"), _(" ")]]:
+                    item = deepcopy(IPTVMultipleInputBox.DEF_INPUT_PARAMS)
+                    item['title'] = input[0]
+                    item['input']['text'] = input[1]
+                    params['list'].append(item)
+                self.session.openWithCallback( boundFunction(self.addNewFavouriteGroup, favItem), IPTVMultipleInputBox, params)
+                
+    def addNewFavouriteGroup(self, favItem, retArg):
+        if retArg and 2 == len(retArg):
+            group = {"title":retArg[0], "group_id":retArg[0].lower(), "desc":retArg[1]}
+            sts = self.favourites.addGroup(group)
+            if sts: self.favourites.save(True)
+            if sts: self.addFavouriteToGroup(favItem, (group['title'], group['group_id']))
             if not sts: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
         
 #class IPTVPlayerWidget
