@@ -101,7 +101,7 @@ class IPTVFavouritesAddItemWidget(Screen):
         for item in groups:
             if item['group_id'] in self.ignoredGroups: continue
             options.append((item['title'], item['group_id']))
-        if self.canAddNewGroup: options.append((_("Add new group"), None))
+        if self.canAddNewGroup: options.append((_("Add item to favourites"), None))
         if len(options): self.session.openWithCallback(self.addFavouriteToGroup, ChoiceBox, title=_("Select favourite group"), list=options)
         else: self.session.open(MessageBox, _("There is no favourites groups."), type=MessageBox.TYPE_INFO, timeout=10 )
         
@@ -172,7 +172,7 @@ class IPTVFavouritesMainWidget(Screen):
         self["title"]         = Label(_("Favourites groups"))
         self["label_red"]     = Label(_("Remove group"))
         self["label_yellow"]  = Label(_("Move group"))
-        self["label_green"]   = Label(_("Add group"))
+        self["label_green"]   = Label(_("Add new group"))
         
         self["list"] = IPTVMainNavigatorList()
         self["list"].connectSelChanged(self.onSelectionChanged)

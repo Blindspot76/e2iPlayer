@@ -906,33 +906,119 @@ msgstr "Startseite"
 msgid  "All programs in the Live Stream"
 msgstr "Alle Programme im Livestream"
 
-# Need to be transleted
+#############################################################################################
+#                                       NEEED TRANSLATION 
+#############################################################################################
 msgid  "It seems that the host \"%s\" has crashed. Do you want to report this problem?"
-msgstr "?? It seems that the host \"%s\" has crashed. Do you want to report this problem? ??"
+msgstr "?? It seems that the host \"%s\" has crashed. Do you want to report this problem? "
 
 msgid "Auto check for plugin update"
-msgstr "?? Auto check for plugin update ??"
+msgstr "?? Auto check for plugin update "
 
 msgid  "There is a new version available do you want to update? \nYour version [%s], latest version on server [%s]"
-msgstr "?? There is a new version available do you want to update? \nYour version [%s], latest version on server [%s] ??"
+msgstr "?? There is a new version available do you want to update? \nYour version [%s], latest version on server [%s] "
 
 msgid  "Change active movie player"
-msgstr "?? Change active movie player ??"
+msgstr "?? Change active movie player "
 
 msgid  "Set active movie player"
-msgstr "?? Set active movie player ??"
+msgstr "?? Set active movie player "
 
 msgid  "[%s] with buffering"
-msgstr "?? [%s] with buffering ??"
+msgstr "?? [%s] with buffering "
 
 msgid  "[%s] without buffering"
-msgstr "?? [%s] without buffering ??"
+msgstr "?? [%s] without buffering "
 
 msgid  "Select movie player"
-msgstr "?? Select movie player ??"
+msgstr "?? Select movie player "
 
 msgid  "Auto selection based on the settings"
-msgstr "?? Auto selection based on the settings ??"
+msgstr "?? Auto selection based on the settings "
+
+###############################
+#        Favourites
+###############################
+msgid "Favourites manager"
+msgstr "?? Favourites manager"
+
+msgid "Add item to favourites"
+msgstr "?? Add item to favourites"
+
+msgid "Edit favourites"
+msgstr "?? Edit favourites"
+
+msgid "Add new group of favourites"
+msgstr "?? Add new group of favourites"
+
+msgid "Name:"
+msgstr "?? Name:"
+
+msgid "Group %d"
+msgstr "?? Group %d"
+
+msgid "Description:"
+msgstr "?? Description:"
+
+msgid "Name cannot be empty."
+msgstr "?? Name cannot be empty."
+
+msgid "Name is not valid.\nPlease remove special characters."
+msgstr "?? Name is not valid.\nPlease remove special characters."
+
+msgid "Group \"%s\" already exists."
+msgstr "?? Group \"%s\" already exists."
+
+msgid "Select favourite group"
+msgstr "?? Select favourite group"
+
+msgid "There is no favourites groups."
+msgstr "?? There is no favourites groups."
+
+msgid "Favourites groups"
+msgstr "?? Favourites groups"
+
+msgid "Remove group"
+msgstr "?? Remove group"
+
+msgid "Move group"
+msgstr "?? Move group"
+
+msgid "Add new group"
+msgstr "?? Add new group"
+
+msgid "Items in group \"%s\""
+msgstr "?? Items in group \"%s\""
+
+msgid "Move item"
+msgstr "?? Move item"
+
+msgid "Add item to group"
+msgstr "?? Add item to group"
+
+msgid "Wrong indexes."
+msgstr "?? Wrong indexes."
+
+msgid "The same item already exists in this group."
+msgstr "?? The same item already exists in this group."
+
+msgid "Item idx[%d] not found in group[%s]."
+msgstr "?? Item idx[%d] not found in group[%s]."
+
+msgid "Group with id[%s] not found."
+msgstr "?? Group with id[%s] not found."
+
+msgid "Error reading file \"%s\".\n"
+msgstr "?? Error reading file \"%s\".\n"
+
+msgid "Error deleting file \"%s\".\n"
+msgstr "?? Error deleting file \"%s\".\n"
+
+msgid "Error writing file \"%s\".\n"
+msgstr "?? Error writing file \"%s\".\n"
+
+msgid "Favourites"
+msgstr "?? Favourites"
 
 
 

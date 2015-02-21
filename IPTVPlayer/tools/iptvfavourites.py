@@ -146,7 +146,7 @@ class IPTVFavourites:
                 items.append(item)
                 self.groups[idx]['items'] = items
                 return True
-            else: self.lastError = _("The same item already exists in this group!")
+            else: self.lastError = _("The same item already exists in this group.")
         return False
 
     def delGroupItem(self, itemIdx, group_id):
@@ -155,7 +155,7 @@ class IPTVFavourites:
             try: del self.groups[idx]['items'][itemIdx]
             except:
                 printExc()
-                self.lastError = _("Item idx[%d] not found in group[%s]!") % (itemIdx, group_id)
+                self.lastError = _("Item idx[%d] not found in group[%s].") % (itemIdx, group_id)
                 return False
             return True
         else: return False
@@ -175,7 +175,7 @@ class IPTVFavourites:
         for idx in range(len(self.groups)):
             if group_id == self.groups[idx]['group_id']:
                 return idx
-        self.lastError = _("Group with id[%s] not found!") % group_id
+        self.lastError = _("Group with id[%s] not found.") % group_id
         return -1
         
     def _loadItems(self, groupIdx):
@@ -192,7 +192,7 @@ class IPTVFavourites:
                 self.groups[groupIdx]['items'] = favItems
             except:
                 printExc()
-                self.lastError = _('Error reading file [%s].\n') % filePath
+                self.lastError = _("Error reading file \"%s\".\n") % filePath
                 ret = False
         else: self.groups[groupIdx]['items'] = []
         return ret
@@ -208,7 +208,7 @@ class IPTVFavourites:
                 self.groups = data
             except:
                 printExc()
-                self.lastError = _('Error reading file [%s].\n') % filePath
+                self.lastError = _("Error reading file \"%s\".\n") % filePath
                 ret = False
         else: self.groups = []
         return ret
@@ -221,7 +221,7 @@ class IPTVFavourites:
                 os_remove(filePath)
             except:
                 printExc()
-                self.lastError = _('Error deleting file [%s].\n') % filePath
+                self.lastError = _("Error deleting file \"%s\".\n") % filePath
                 ret = False
         return ret
             
@@ -238,7 +238,7 @@ class IPTVFavourites:
             self._saveToFile(filePath, data)
         except:
             printExc()
-            self.lastError = _('Error writing file [%s].\n') % filePath
+            self.lastError = _("Error writing file \"%s\".\n") % filePath
             ret = False
         return ret
     
@@ -252,7 +252,7 @@ class IPTVFavourites:
             data = json.dumps(groups)
             self._saveToFile(filePath, data)
         except:
-            self.lastError = _('Error writing file [%s].\n') % filePath
+            self.lastError = _("Error writing file \"%s\".\n") % filePath
             ret = False
         return ret
         

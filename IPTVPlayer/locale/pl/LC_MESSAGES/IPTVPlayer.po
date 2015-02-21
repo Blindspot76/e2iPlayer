@@ -1017,3 +1017,89 @@ msgstr "Wybierz odtwarzacz"
 
 msgid  "Auto selection based on the settings"
 msgstr "Wybór automatyczny bazując na ustawieniach"
+
+
+###############################
+#        Favourites
+###############################
+msgid "Favourites manager"
+msgstr "Manager ulubionych"
+
+msgid "Add item to favourites"
+msgstr "Dodaj do ulubionych"
+
+msgid "Edit favourites"
+msgstr "Edytuj ulubione"
+
+msgid "Add new group of favourites"
+msgstr "Dodaj nową grupę ulubionych"
+
+msgid "Name:"
+msgstr "Nazwa:"
+
+msgid "Group %d"
+msgstr "Grupa %d"
+
+msgid "Description:"
+msgstr "Opis:"
+
+msgid "Name cannot be empty."
+msgstr "Nazwa niemoże być pusta."
+
+msgid "Name is not valid.\nPlease remove special characters."
+msgstr "Nazwa jest nieprawidłowa.\nProszę usunąć znaki specjalne."
+
+msgid "Group \"%s\" already exists."
+msgstr "Grupa \"%s\" już istnieje."
+
+msgid "Select favourite group"
+msgstr "Wybierz grupę ulubionych"
+
+msgid "There is no favourites groups."
+msgstr "Brak grup ulubionych."
+
+msgid "Favourites groups"
+msgstr "Grupy ulubionych"
+
+msgid "Remove group"
+msgstr "Usuń"
+
+msgid "Move group"
+msgstr "Przesuń"
+
+msgid "Add new group"
+msgstr "Dodaj nową"
+
+msgid "Items in group \"%s\""
+msgstr "Elementy w grupie \"%s\""
+
+msgid "Move item"
+msgstr "Przesuń"
+
+msgid "Add item to group"
+msgstr "Dodaj do innej grupy"
+
+msgid "Wrong indexes."
+msgstr "Błędne indeksy."
+
+msgid "The same item already exists in this group."
+msgstr "Ten element istnieje już w tej grupie."
+
+msgid "Item idx[%d] not found in group[%s]."
+msgstr "Element [%d] nie został odnaleziony w grupie [%s]."
+
+msgid "Group with id[%s] not found."
+msgstr "Grupa o identyfikatorze [%s] nie została odnaleziona."
+
+msgid "Error reading file \"%s\".\n"
+msgstr "Błąd podczas wczytywania pliku \"%s\".\n"
+
+msgid "Error deleting file \"%s\".\n"
+msgstr "Błąd podczas usuwania pliku \"%s\".\n"
+
+msgid "Error writing file \"%s\".\n"
+msgstr "Błąd podczas zapisywania pliku \"%s\".\n"
+
+msgid "Favourites"
+msgstr "Ulubione"
+
