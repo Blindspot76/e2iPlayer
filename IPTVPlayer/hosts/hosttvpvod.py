@@ -374,7 +374,12 @@ class TvpVod(CBaseHostClass):
         except:
             printExc("getVideoLink exception") 
         return videoTab
-
+        
+    def getFavouriteData(self, cItem):
+        return str(cItem['object_id'])
+        
+    def getLinksForFavourite(self, fav_data):
+        return self.getVideoLink(fav_data)
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('TvpVod.handleService start')
@@ -422,22 +427,16 @@ class TvpVod(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, TvpVod(), True)
+        CHostBase.__init__(self, TvpVod(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
     
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('tvpvodlogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] not in ['audio', 'video']:
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
+        retCode = RetHost.ERROR
         retlist = []
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+
         urlList = self.host.getLinksForVideo(self.host.currList[Index])
         for item in urlList:
             need_resolve = 0
@@ -447,52 +446,44 @@ class IPTVHost(CHostBase):
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
-
-    def convertList(self, cList):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append((_("Games"), "games"))
-        #searchTypesOptions.append((_("Channles"), "streams"))
     
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
+    def converItem(self, cItem):
+        hostList = []
+        searchTypesOptions = []
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            if 'category' == cItem['type']:
-                if cItem.get('search_item', False):
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-            elif 'more' == cItem['type']:
-                type = CDisplayListItem.TYPE_MORE
-            elif 'audio' == cItem['type']:
-                type = CDisplayListItem.TYPE_AUDIO
-                
-            if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  self.host._getStr( cItem.get('title', '') )
-            description =  self.host._getStr( cItem.get('desc', '') ).strip()
-            icon        =  self.host._getStr( cItem.get('icon', '') )
-            if '' == icon: icon = TvpVod.DEFAULT_ICON
+        if 'category' == cItem['type']:
+            if cItem.get('search_item', False):
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+        elif 'more' == cItem['type']:
+            type = CDisplayListItem.TYPE_MORE
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
             
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
+            
+        title       =  self.host._getStr( cItem.get('title', '') )
+        description =  self.host._getStr( cItem.get('desc', '') ).strip()
+        icon        =  self.host._getStr( cItem.get('icon', '') )
+        if '' == icon: icon = TvpVod.DEFAULT_ICON
+        
+        return CDisplayListItem(name = title,
+                                description = description,
+                                type = type,
+                                urlItems = hostLinks,
+                                urlSeparateRequest = 1,
+                                iconimage = icon,
+                                possibleTypesOfSearch = possibleTypesOfSearch)
 
     def getSearchItemInx(self):
         try:
