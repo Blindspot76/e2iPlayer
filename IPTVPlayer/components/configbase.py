@@ -163,7 +163,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         return bChanged
         
     def askForSave(self, callbackYesFun, callBackNoFun):
-        self.session.openWithCallback(boundFunction(self.saveOrCancelChanges, callbackYesFun, callBackNoFun), MessageBox, text = "Zapisać zmiany?", type = MessageBox.TYPE_YESNO)
+        self.session.openWithCallback(boundFunction(self.saveOrCancelChanges, callbackYesFun, callBackNoFun), MessageBox, text = _("Save changes?"), type = MessageBox.TYPE_YESNO)
         return
         
     def saveOrCancelChanges(self, callbackFun=None, failCallBackFun=None, answer=None):

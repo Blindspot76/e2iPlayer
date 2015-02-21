@@ -25,10 +25,11 @@ from Components.Input import Input
 from Tools.BoundFunction import boundFunction
 from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Tools.LoadPixmap import LoadPixmap
+from enigma import gRGB
 ###################################################
 
 class IPTVMultipleInputBox(Screen):
-    DEF_INPUT_PARAMS = {'title':'', 'useable_chars':None, 'label_font':'Regular;23', 'label_size':(550,25), 'input_font':'Regular;20', 'input_size':(550,25), 'input':dict(text="", maxSize = False, visible_width = False, type = Input.TEXT)}
+    DEF_INPUT_PARAMS = {'validator':None, 'title':'', 'useable_chars':None, 'label_font':'Regular;23', 'label_size':(550,25), 'input_font':'Regular;20', 'input_size':(550,25), 'input':dict(text="", maxSize = False, visible_width = False, type = Input.TEXT)}
     DEF_PARAMS = {'title':_("Input"), 'list':[]}
     def __init__(self, session, params={}):
         
@@ -43,12 +44,14 @@ class IPTVMultipleInputBox(Screen):
             item = self.list[idx]
             self["text_%d"%idx] = Label(item.get('title', ''))
             self["input_%d"%idx] = Input(**item['input'])
+            self["border_%d"%idx] = Label("")
             if item.get('useable_chars', None) is not None:
                 self["input_%d"%idx].setUseableChars(item['useable_chars'])
-            skinItems +=  '<widget name="text_%d" position="%d,%d" size="%d,%d" font="%s" />' % (idx, 10, pY, item['label_size'][0], item['label_size'][1], item['label_font'])
+            skinItems +=  '<widget name="text_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="2" />' % (idx, 10, pY, item['label_size'][0], item['label_size'][1], item['label_font'])
             pY += dY + item['label_size'][1]
             if item['label_size'][0] > maxWidth: maxWidth = item['label_size'][0]
-            skinItems +=  '<widget name="input_%d" position="%d,%d" size="%d,%d" font="%s" />' % (idx, pX, pY, item['input_size'][0], item['input_size'][1], item['input_font'])
+            skinItems +=  '<widget name="input_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="2" />' % (idx, pX, pY, item['input_size'][0], item['input_size'][1], item['input_font'])
+            skinItems +=  '<widget name="border_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="1" transparent="0" backgroundColor="#331F93B9" />' % (idx, pX-5, pY-5, item['input_size'][0]+10, item['input_size'][1]+10, item['input_font'])
             if 0 == idx: 
                 self['marker'] = Cover3()
                 skinItems +=  '<widget name="marker" zPosition="2" position="10,%d" size="16,16" transparent="1" alphatest="blend" />' % (pY + (item['input_size'][1]-16) / 2)
@@ -57,7 +60,7 @@ class IPTVMultipleInputBox(Screen):
             pY += dY*2 + item['input_size'][1]
             if item['input_size'][0] > maxWidth: maxWidth = item['input_size'][0]
             
-        maxWidth += pX
+        maxWidth += pX*2
         self.skin = """
         <screen name="IPTVMultipleInputBox" position="center,center" size="%d,%d" title="%s">
             <widget name="key_red"   position="10,10" zPosition="2" size="%d,35" valign="center" halign="left"   font="Regular;22" transparent="1" foregroundColor="red" />
@@ -109,9 +112,13 @@ class IPTVMultipleInputBox(Screen):
         self.setKeyboardMode()
         self.markerPixmap = [LoadPixmap(GetIconDir('radio_button_on.png')), LoadPixmap(GetIconDir('radio_button_off.png'))]
         
+        self.started = False
+        
     def onStart(self):
         self.onShown.remove(self.onStart)
         self.loadMarkers()
+        self.setMarker()
+        self.started = True
         
     def loadMarkers(self):
         try:
@@ -122,23 +129,36 @@ class IPTVMultipleInputBox(Screen):
         except: printExc()
         
     def keyUp(self):
+        if not self.started: return
+        prevIdx = self.idx
         self.idx -= 1
         if self.idx < 0: self.idx = len(self.list) - 1
         self.activeInput = "input_%d" % self.idx
         self.setKeyboardMode()
-        self.setMarker()
+        self.setMarker(prevIdx)
 
     def keyDown(self):
+        if not self.started: return
+        prevIdx = self.idx
         self.idx += 1
         if self.idx >= len(self.list): self.idx = 0
         self.activeInput = "input_%d" % self.idx
         self.setKeyboardMode() 
-        self.setMarker()
+        self.setMarker(prevIdx)
         
-    def setMarker(self):
+    def setMarker(self, prevIdx=None):
         if "marker" in self:
             x, y = self["marker_%d"%self.idx].getPosition()
             self["marker"].setPosition(x, y)
+        try:
+            if None != prevIdx: 
+                self["border_%d"%prevIdx].hide()
+            else:
+                for idx in range(len(self.list)):
+                    self["border_%d"%idx].hide()
+            self["border_%d"%self.idx].show()
+        except: printExc()
+
         
     def setKeyboardMode(self):
         rcinput = eRCInput.getInstance()
@@ -168,6 +188,14 @@ class IPTVMultipleInputBox(Screen):
         
         retList = []
         for idx in range(len(self.list)):
+            if None != self.list[idx]['validator']:
+                sts,msg = self.list[idx]['validator'](self["input_%d"%idx].getText())
+                if not sts: 
+                    self.session.open(MessageBox, msg, type=MessageBox.TYPE_ERROR)
+                    self.idx = idx
+                    self.activeInput = "input_%d"%idx
+                    self.setMarker()
+                    return
             retList.append(self["input_%d"%idx].getText())
         self.close(retList)
         

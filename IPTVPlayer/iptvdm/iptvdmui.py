@@ -288,7 +288,6 @@ class IPTVDMWidget(Screen):
             self["list"].setList([ (x,) for x in self.currList])
             self["list"].show()
     #end reloadList
-            
 
     def hideWindow(self):
         self.visible = False

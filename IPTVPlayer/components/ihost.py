@@ -47,6 +47,7 @@ class CDisplayListItem:
         self.urlSeparateRequest = urlSeparateRequest
         # used only for TYPE_SEARCH item
         self.possibleTypesOfSearch = possibleTypesOfSearch
+        self.privateData = None
         
 class ArticleContent:
     def __init__(self, title = '', text = '', images = []):
