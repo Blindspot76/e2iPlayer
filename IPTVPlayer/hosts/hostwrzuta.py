@@ -4,7 +4,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CDisplayListItem, RetHost, CUrlItem
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, CSelOneLink, GetLogoDir
@@ -33,7 +33,7 @@ def GetConfigList():
 def gettytul():
     return 'Wrzuta Player'
     
-class Wrzuta:
+class Wrzuta(CBaseHostClass):
     SERVICE = 'wrzuta'
     MAINURL = 'http://www.wrzuta.pl'
     TOPURL = MAINURL + '/filmy/popularne/'
@@ -62,61 +62,26 @@ class Wrzuta:
         'erotyka': 'Erotyka'
     }
     def __init__(self):
-        printDBG('WRZUTA.__init__')       
-        self.up = urlparser.urlparser()
-        self.cm = pCommon.common()
-        self.history = CSearchHistoryHelper('wrzuta')
-        self.currList = []
-        self.currItem = {}
-        
-    def getCurrList(self):
-        printDBG('WRZUTA.getCurrList') 
-        return self.currList
-
-    def setCurrList(self, list):
-        printDBG('WRZUTA.setCurrList') 
-        self.currList = list
-        return 
-        
-    def getCurrItem(self):
-        return self.currItem
-
-    def setCurrItem(self, item):
-        self.currItem = item
-        
-    def getDataBeetwenMarkers(self, data, marker1, marker2, withMarkers = True):
-        idx1 = data.find(marker1)
-        if -1 == idx1: return False, None
-        idx2 = data.find(marker2, idx1 + len(marker1))
-        if -1 == idx2: return False, None
-        
-        if withMarkers:
-            idx2 = idx2 + len(marker2)
-        else:
-            idx1 = idx1 + len(marker1)
-
-        return True, data[idx1:idx2]
-
+        printDBG('WRZUTA.__init__')
+        CBaseHostClass.__init__(self, {'history':'wrzuta.pl'})
+    
     def setTable(self):
         printDBG('WRZUTA.setTable') 
         return self.SERVICE_MENU_TABLE
 
     def listsMainMenu(self, table):
         printDBG('WRZUTA.listsMainMenu') 
-        self.currList = []
         for num, val in table.items():
-            params = {'type': 'dir', 'name': 'main-menu','category': val, 'title': val, 'icon': ''}
-            self.currList.append(params)
+            params = {'name': 'main-menu','category': val, 'title': val, 'icon': ''}
+            self.addDir(params)
 
     def listsCategories(self, url, category):
         printDBG('WRZUTA.listsCategories') 
-        self.currList = []
         for num, val in self.CATEGORIES.items():
-            params = {'type': 'dir', 'name': category, 'page': url+num, 'title': val, 'icon': ''}
-            self.currList.append(params)
+            params = {'name': category, 'page': url+num, 'title': val, 'icon': ''}
+            self.addDir(params)
 
     def listsChannels(self, url, page, category):
-        self.currList = []
         printDBG('WRZUTA.listsChannels') 
         
         sts, data = self.cm.getPage(url+'/'+page)
@@ -125,33 +90,31 @@ class Wrzuta:
         r = re.compile('class="big-avatar">.+?<img src="(.+?)".+?<a href="(.+?)" class="channel-name">(.+?)</a>', re.DOTALL).findall(data)
         if len(r)>0:
             for i in range(len(r)):
-                params = {'type': 'dir', 'name': 'chanvideo', 'title': r[i][2], 'page': r[i][1], 'icon': r[i][0]}
-                self.currList.append(params)
+                params = {'name': 'chanvideo', 'title': r[i][2], 'page': r[i][1], 'icon': r[i][0]}
+                self.addDir(params)
         r2 = re.compile('<a class="paging-next" rel="(.+?)"').findall(data)
         if len(r2)>0:
-            params = {'type': 'dir', 'name': 'nextpage', 'category': category, 'title': 'Następna strona', 'page': r2[0], 'icon': ''}
-            self.currList.append(params)
+            params = {'name': 'nextpage', 'category': category, 'title': 'Następna strona', 'page': r2[0], 'icon': ''}
+            self.addDir(params)
 
     def listsChanDirs(self, url, page): #img maybe?
-        self.currList = []
         printDBG('WRZUTA.listsChanDirs')
         sts, data = self.cm.getPage(url+self.CHANLIST+page)
         if not sts: return 
         r = re.compile('<a href="(.+?)" class="file-name">(.+?)</a>').findall(data)
         printDBG("tst2 "+str(r))
         if len(r)>0:
-            params = {'type': 'dir', 'name': 'chandirvideo', 'title': 'Ostatnio dodane', 'page': url+'/materialy/filmy', 'icon': ''}
-            self.currList.append(params)
+            params = {'name': 'chandirvideo', 'title': 'Ostatnio dodane', 'page': url+'/materialy/filmy', 'icon': ''}
+            self.addDir(params)
             for i in range(len(r)):
-                params = {'type': 'dir', 'name': 'chandirvideo', 'title': r[i][1], 'page': r[i][0], 'icon': ''}
-                self.currList.append(params)
+                params = {'name': 'chandirvideo', 'title': r[i][1], 'page': r[i][0], 'icon': ''}
+                self.addDir(params)
         r2 = re.compile('<a class="paging-next" rel="(.+?)"').findall(data)
         if len(r2)>0:
-            params = {'type': 'dir', 'name': 'chanvideo', 'category': r2[0], 'title': 'Następna strona', 'page': url, 'icon': ''}
-            self.currList.append(params)
+            params = {'name': 'chanvideo', 'category': r2[0], 'title': 'Następna strona', 'page': url, 'icon': ''}
+            self.addDir(params)
 
     def listsVideo(self,url, name, category): #Duration #mod & join next
-        self.currList = []
         printDBG('WRZUTA.listsVideo')
         if category != '': nUrl = url+'/'+category
         else: nUrl = url
@@ -160,7 +123,7 @@ class Wrzuta:
         if not sts: return
         
         r2 = re.search('<a class="paging-next" rel="([^"]+?)"', data)
-        sts, data = self.getDataBeetwenMarkers(data, '<div id="content"', '<div id="right"', withMarkers = False)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="content"', '<div id="right"', withMarkers = False)
         if not sts:
             printDBG("listsVideo no data beetween markers")
             data = ''
@@ -168,26 +131,25 @@ class Wrzuta:
         r = re.compile('<img src="([^"]+?)".+? (?:height="81" width="144"|width="144" height="81").+?class="(?:box-entry-duration|mini-time|file-time)">(.+?)<.+?<div class="(?:file-info|info-inside|file-detail)">.+?<a href="(.+?)".+?>(.+?)</a>', re.DOTALL).findall(data)
         if len(r)>0:
             for i in range(len(r)):
-                params = {'type': 'video', 'title': self.cm.html_entity_decode(r[i][3].strip()), 'page': r[i][2], 'icon': r[i][0]}
-                self.currList.append(params)
+                params = {'title': self.cm.html_entity_decode(r[i][3].strip()), 'page': r[i][2], 'icon': r[i][0]}
+                self.addVideo(params)
         if r2:
-            params = {'type': 'dir', 'name': name, 'category': r2.group(1), 'title': 'Następna strona', 'page': url, 'icon': ''}
-            self.currList.append(params)
+            params = {'name': name, 'category': r2.group(1), 'title': 'Następna strona', 'page': url, 'icon': ''}
+            self.addDir(params)
 
     def listsChanVideo(self, url, name, category): #Duration
-        self.currList = []
         printDBG('WRZUTA.listsChanVideo')
         sts, data = self.cm.getPage(url+'/'+category)
         if not sts: return 
         r = re.compile('<img (?:width="184" height="104"|width="144" height="81") src="(.+?)".+?<div class="file-time">(.+?)</div>.+?<a class="file-name" href="(.+?)">(.+?)</a>', re.DOTALL).findall(data)
         if len(r)>0:
             for i in range(len(r)):
-                params = {'type': 'video', 'title': self.cm.html_entity_decode(r[i][3].strip()), 'page': r[i][2], 'icon': r[i][0]}
-                self.currList.append(params)
+                params = {'title': self.cm.html_entity_decode(r[i][3].strip()), 'page': r[i][2], 'icon': r[i][0]}
+                self.addVideo(params)
         r2 = re.compile('<a class="paging-next" rel="(.+?)"').findall(data)
         if len(r2)>0:
-            params = {'type': 'dir', 'name': name, 'category': r2[0], 'title': 'Następna strona', 'page': url, 'icon': ''}
-            self.currList.append(params)
+            params = {'name': name, 'category': r2[0], 'title': 'Następna strona', 'page': url, 'icon': ''}
+            self.addDir(params)
 
     def getVideoLinks(self,url):
         printDBG('WRZUTA.getVideoLinks')
@@ -205,45 +167,43 @@ class Wrzuta:
                     linkVideo = ''.join(parts)
                     if linkVideo.find("http://c.wrzuta.pl/wht") == -1:
                         retList.append({'name': num, 'url': linkVideo})
+                        
+        maxRes = int(config.plugins.iptvplayer.wrzutaDefaultformat.value) * 1.1
+        def __getLinkQuality( itemLink ):
+            return int(itemLink['name'])
+        obj = CSelOneLink(retList, __getLinkQuality, maxRes)
+        if config.plugins.iptvplayer.wrzutaUseDF.value:
+            retList = obj.getOneLink()
+        else: retList = obj.getSortedLinks()
         return retList
 
-    def listsHistory(self, table):
-        self.currList = []
-        printDBG('WRZUTA.listsHistory')
-        for i in range(len(table)):
-            if table[i] <> '':
-                params = {'type': 'dir', 'name': 'history', 'title': table[i],'icon': ''}
-                self.currList.append(params)
+    def getFavouriteData(self, cItem):
+        return cItem['page']
+        
+    def getLinksForFavourite(self, fav_data):
+        return self.getVideoLinks(fav_data)
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG( "WRZUTA.handleService %d" % refresh)
-        if 0 == refresh:
-            if len(self.currList) <= index:
-                printDBG( "WRZUTA.handleService wrong index: %s, len(self.currList): %d" % (index, len(self.currList)) )
-                return
+        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
-            if -1 == index:
-                self.item = {}
-                printDBG( "WRZUTA.handleService for first self.category" )
-            else:
-                self.item = self.currList[index]
-            
-        
-        name = self.item.get( "name", '' )
-        title = self.item.get( "title", '')
-        category = self.item.get( "category", '')
-        page = self.item.get( "page", '')
-        icon = self.item.get( "icon", '')
-        link = self.item.get( "url", '')
-        action = self.item.get( "action", '')
-        path = self.item.get( "path", '')
+        name = self.currItem.get( "name", None )
+        title = self.currItem.get( "title", '')
+        category = self.currItem.get( "category", '')
+        page = self.currItem.get( "page", '')
+        icon = self.currItem.get( "icon", '')
+        link = self.currItem.get( "url", '')
+        action = self.currItem.get( "action", '')
+        path = self.currItem.get( "path", '')
 
+        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| [%s] " % name )
+        self.currList = []
 
         if category == None: category = ''
         if page == None: page = ''
 
     #MAIN MENU
-        if name == '':
+        if name == None:
             self.listsMainMenu(self.SERVICE_MENU_TABLE)
     #NAJPOPULARNIEJSZE
         elif category == self.setTable()[1]:
@@ -260,11 +220,7 @@ class Wrzuta:
             self.listsVideo(url, 'servideo', '')
     #HISTORIA WYSZUKIWANIA
         elif category == self.setTable()[6]:
-            t = self.history.getHistoryList()
-            self.listsHistory(t)
-        elif name == 'history':
-            url = self.MAINURL + '/szukaj/filmow/' + urllib.quote_plus(title)
-            self.listsVideo(url, 'servideo', '')
+            self.listsHistory()
     #LISTA FILMÓW
         elif name == 'topvideo' or name == 'newvideo' or name == 'servideo':
             self.listsVideo(page, name, category)
@@ -276,77 +232,49 @@ class Wrzuta:
             self.listsChanVideo(page, name, category)
     
 class IPTVHost(CHostBase):
-
     def __init__(self):
-        CHostBase.__init__(self, Wrzuta(), True)
+        CHostBase.__init__(self, Wrzuta(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
         
-    # return full path to player logo
     def getLogoPath(self):  
         return RetHost(RetHost.OK, value = [ GetLogoDir('wrzutalogo.png') ])
     
-    # return list of links for VIDEO with given Index
-    # for given Index
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen <= Index or listLen == 0:
-            print "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index)
-            return RetHost(RetHost.ERROR, value = [])
-        
-        selItem = self.host.currList[Index]
-        if selItem['type'] != 'video':
-            print "ERROR getLinksForVideo - current item has wrong type"
-            return RetHost(RetHost.ERROR, value = [])
-            
+        retCode = RetHost.ERROR
         retlist = []
-        
-        url = selItem.get('page')
-        if None != selItem and url != '':
-            tmpList = self.host.getVideoLinks( url )
-            if config.plugins.iptvplayer.wrzutaUseDF.value:
-                maxRes = int(config.plugins.iptvplayer.wrzutaDefaultformat.value) * 1.1
-                def __getLinkQuality( itemLink ):
-                    return int(itemLink['name'])
-                tmpList = CSelOneLink(tmpList, __getLinkQuality, maxRes).getOneLink()
-            
-            for idx in range(len(tmpList)):
-                retlist.append(CUrlItem(tmpList[idx]['name'], tmpList[idx]['url'], 0))
-            
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        urlList = self.host.getVideoLinks(self.host.currList[Index]["page"])
+        for item in urlList:
+            retlist.append(CUrlItem(item["name"], item["url"], 0))
         return RetHost(RetHost.OK, value = retlist)
 
-    def convertList(self, cList):
+    def converItem(self, cItem):
         hostList = []
-
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        
+        url = ''
+        desc = ''
+        if cItem['type'] in ['category']:
+            if cItem.get('title', '')  == 'Wyszukaj':
+                type = CDisplayListItem.TYPE_SEARCH
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type']  == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+            url = cItem.get('page', '')
+            hostLinks.append(CUrlItem('', url, 0))
             
-            url = ''
-            desc = ''
-            if cItem['type'] in ['dir']:
-                if cItem.get('category', '')  == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type']  == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem.get('page', '')
-                hostLinks.append(CUrlItem('', url, 0))
-                
-            name = cItem.get('title', '')
-            ico = cItem.get('icon', '')
-            desc = ' ' + cItem.get('page', '')
+        name = cItem.get('title', '')
+        icon = cItem.get('icon', '')
+        desc = ' ' + cItem.get('page', '')
 
-            hostItem = CDisplayListItem(name = name,
-                                        description = desc,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = ico,
-                                        possibleTypesOfSearch = [])
-            hostList.append(hostItem)
-        # end for
-            
-        return hostList
+        return CDisplayListItem(name = name,
+                                description = desc,
+                                type = type,
+                                urlItems = hostLinks,
+                                urlSeparateRequest = 1,
+                                iconimage = icon,
+                                possibleTypesOfSearch = [])
         
     def getSearchItemInx(self):
         # Find 'Wyszukaj' item
@@ -370,3 +298,4 @@ class IPTVHost(CHostBase):
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
         return
+        

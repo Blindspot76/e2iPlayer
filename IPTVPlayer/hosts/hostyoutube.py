@@ -156,12 +156,11 @@ class Youtube(CBaseHostClass):
             else:
                 self.addDir(item)
                 
-    def getLinksForVideo(self, cItem):
-        printDBG("Youtube.getLinksForVideo url[%s]" % cItem['url'])
+    def getLinksForVideo(self, url):
+        printDBG("Youtube.getLinksForVideo url[%s]" % url)
         ytformats = config.plugins.iptvplayer.ytformat.value
         maxRes = int(config.plugins.iptvplayer.ytDefaultformat.value) * 1.1
-        
-        url = cItem['url']
+
         if not url.startswith("http://") and not url.startswith("https://") :
             url = 'http://www.youtube.com/' + url
         tmpTab = self.ytp.getDirectLinks(url, ytformats)
@@ -177,6 +176,12 @@ class Youtube(CBaseHostClass):
         for item in tmpTab:
             videoUrls.append({'name': item['format'] + ' | ' + item['ext'] , 'url':item['url']})
         return videoUrls
+        
+    def getFavouriteData(self, cItem):
+        return cItem['url']
+        
+    def getLinksForFavourite(self, fav_data):
+        return self.getLinksForVideo(fav_data)
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Youtube.handleService start')
@@ -203,23 +208,17 @@ class Youtube(CBaseHostClass):
 
 class IPTVHost(CHostBase):
     def __init__(self):
-        CHostBase.__init__(self, Youtube(), True)
+        CHostBase.__init__(self, Youtube(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('youtubelogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
+        retCode = RetHost.ERROR
         retlist = []
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        
+        urlList = self.host.getLinksForVideo(self.host.currList[Index].get('url', ''))
         for item in urlList:
             need_resolve = 0
             retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
@@ -227,44 +226,39 @@ class IPTVHost(CHostBase):
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
 
-    def convertList(self, cList):
+    def converItem(self, cItem):
         hostList = []
         searchTypesOptions = self.host.SEARCH_TYPES
-    
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            if cItem['type'] == 'category':
-                if cItem.get('search_item', False):
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  cItem.get('title', '')
-            description =  cItem.get('plot', '')
-            if '' == description:
-                description =  cItem.get('time', '') + ' | ' + cItem.get('desc', '')
-            icon        =  cItem.get('icon', '')
+        if cItem['type'] == 'category':
+            if cItem.get('search_item', False):
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
             
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
+        title       =  cItem.get('title', '')
+        description =  cItem.get('plot', '')
+        if '' == description:
+            description =  cItem.get('time', '') + ' | ' + cItem.get('desc', '')
+        icon        =  cItem.get('icon', '')
+        
+        return CDisplayListItem(name = title,
+                                description = description,
+                                type = type,
+                                urlItems = hostLinks,
+                                urlSeparateRequest = 1,
+                                iconimage = icon,
+                                possibleTypesOfSearch = possibleTypesOfSearch)
+    # end converItem
 
     def getSearchItemInx(self):
         # Find 'Wyszukaj' item
