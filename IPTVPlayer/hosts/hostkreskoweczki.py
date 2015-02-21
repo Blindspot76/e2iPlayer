@@ -4,7 +4,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CDisplayListItem, RetHost, CUrlItem
+from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, GetLogoDir
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
@@ -33,7 +33,7 @@ def GetConfigList():
 def gettytul():
     return 'Kreskóweczki'
 
-class Kreskoweczki:
+class Kreskoweczki(CBaseHostClass):
     MAINURL = 'http://www.kreskoweczki.pl'
 
     MENU_TAB = {
@@ -43,35 +43,7 @@ class Kreskoweczki:
         4: "Historia Wyszukiwania"
     }
     def __init__(self):
-        self.cm = pCommon.common()
-        self.up = urlparser.urlparser()
-        self.history = CSearchHistoryHelper('kreskoweczki')
-        
-        # temporary data
-        self.currList = []
-        self.currItem = {}
-
-    def getCurrList(self):
-        return self.currList
-
-    def setCurrList(self, list):
-        self.currList = list
-        
-    def getCurrItem(self):
-        return self.currItem
-
-    def setCurrItem(self, item):
-        self.currItem = item
-
-    def addDir(self, params):
-        params['type'] = 'category'
-        self.currList.append(params)
-        return
-        
-    def addVideo(self, params):
-        params['type'] = 'video'
-        self.currList.append(params)
-        return
+        CBaseHostClass.__init__(self, {'history':'kreskoweczki'})
 
     def setTable(self):
         return self.MENU_TAB
@@ -132,12 +104,6 @@ class Kreskoweczki:
             params = { 'name': 'nextpage', 'title': 'Następna strona', 'page': match2[0], 'icon': ''}
             self.addDir(params)
 
-    def listsHistory(self):
-            list = self.history.getHistoryList()
-            for item in list:
-                params = { 'name': 'history', 'category': 'Wyszukaj', 'title': item, 'plot': 'Szukaj: "%s"' % item, 'icon': ''}
-                self.addDir(params)
-
     def getVideoUrl(self, url):
         videoUrl = ''
         videosTab = []
@@ -173,25 +139,19 @@ class Kreskoweczki:
                 if match:
                     url = match.group(1)
                     if url.endswith('.m3u8'):
-                        printDBG("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
                         return getDirectM3U8Playlist(url)
-        else:
-            return self.up.getVideoLinkExt(videoUrl)
-
+        else: return self.up.getVideoLinkExt(videoUrl)
         return []
+        
+    def getFavouriteData(self, cItem):
+        return cItem['page']
+        
+    def getLinksForFavourite(self, fav_data):
+        return self.getVideoUrl(fav_data)
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
-        if 0 == refresh:
-            if len(self.currList) <= index:
-                printDBG( "handleService wrong index: %s, len(self.currList): %d" % (index, len(self.currList)) )
-                return
-            if -1 == index:
-                # use default value
-                self.currItem = { "name": None }
-                printDBG( "handleService for first self.category" )
-            else:
-                self.currItem = self.currList[index]
+        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
         name     = self.currItem.get("name", '')
         title    = self.currItem.get("title", '')
@@ -222,29 +182,22 @@ class Kreskoweczki:
     #HISTORIA WYSZUKIWANIA
         elif category == self.setTable()[4]:
             self.listsHistory()
-    #WRONG WAY
-        else:
-            printDBG('handleService WRONG WAY')
+        
+        CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, Kreskoweczki(), True)
+        CHostBase.__init__(self, Kreskoweczki(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):  
         return RetHost(RetHost.OK, value = [ GetLogoDir('kreskoweczkilogo.png') ])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
+        retCode = RetHost.ERROR
         retlist = []
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+
         urlList = self.host.getVideoUrl(self.host.currList[Index]["page"])
         for item in urlList:
             retlist.append(CUrlItem(item["name"], item["url"], 0))
@@ -252,38 +205,33 @@ class IPTVHost(CHostBase):
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
 
-    def convertList(self, cList):
-        hostList = []
-        
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
+    def converItem(self, cItem):
+        hostList = []        
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
 
-            if cItem['type'] == 'category':
-                if cItem['title'] == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                page = cItem.get('page', '')
-                if '' != page:
-                    hostLinks.append(CUrlItem("Link", page, 1))
-                
-            title       =  cItem.get('title', '')
-            description =  cItem.get('plot', '')
-            icon        =  cItem.get('icon', '')
+        if cItem['type'] == 'category':
+            if cItem['title'] == 'Wyszukaj':
+                type = CDisplayListItem.TYPE_SEARCH
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+            page = cItem.get('page', '')
+            if '' != page:
+                hostLinks.append(CUrlItem("Link", page, 1))
             
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon )
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
+        title       =  cItem.get('title', '')
+        description =  cItem.get('plot', '')
+        icon        =  cItem.get('icon', '')
+        
+        return CDisplayListItem(name = title,
+                                description = description,
+                                type = type,
+                                urlItems = hostLinks,
+                                urlSeparateRequest = 1,
+                                iconimage = icon )
+    # end converItem
 
     def getSearchItemInx(self):
         # Find 'Wyszukaj' item

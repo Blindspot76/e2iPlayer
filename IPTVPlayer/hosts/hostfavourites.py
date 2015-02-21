@@ -103,6 +103,10 @@ class Favourites(CBaseHostClass):
                 retlist.append(CUrlItem(name, url, 0))
             ret = RetHost(RetHost.OK, value = retlist)
         return ret
+        
+    def getResolvedURL(self, url):
+        try: return self.host.getResolvedURL(url)
+        except: return RetHost(RetHost.ERROR, value = [])
 
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Favourites.handleService start')
@@ -139,7 +143,10 @@ class IPTVHost(CHostBase):
             return RetHost(RetHost.ERROR, value = [])
         return self.host.getLinksForVideo(self.host.currList[Index])
     # end getLinksForVideo
-
+        
+    def getResolvedURL(self, url):
+        return self.host.getResolvedURL(url)
+    
     def convertList(self, cList):
         hostList = []
         searchTypesOptions = []

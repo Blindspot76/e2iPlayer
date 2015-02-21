@@ -223,7 +223,7 @@ class CHostBase(IHost):
         retlist = []
         urlList = self.host.getLinksForFavourite(favItem.data)
         for item in urlList:
-            need_resolve = 0
+            need_resolve = item.get("need_resolve", 0)
             name = self.host.cleanHtmlStr( item["name"] )
             url  = item["url"]
             retlist.append(CUrlItem(name, url, need_resolve))
