@@ -17,8 +17,8 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, remove_html_markup, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, CFavItem
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
@@ -38,6 +38,8 @@ from os import path as os_path
 import urllib
 import re
 
+try: import json
+except: import simplejson as json
 ###################################################
 
 
@@ -90,28 +92,22 @@ class Ipla(CBaseHostClass):
     
     def getVideosList(self, url):
         printDBG("Ipla.getVideosList url[%s]" % url)
-        max_bitrate = int(config.plugins.iptvplayer.iplaDefaultformat.value)
-        def __getLinkQuality( itemLink ):
-            return int(itemLink['bitrate'])
             
         sts, videosXMLTree = self.cm.getPage(url, {'host' : Ipla.HOST})
-        if not sts:
-            printDBG("Ipla.getVideosList")
-        else:
-            videosXMLTree = videosXMLTree.split('</vod>')
+        if sts:
+            videosXMLTree = self.getStr(videosXMLTree).split('</vod>')
             del videosXMLTree[-1]
             re_compile_vod    = re.compile('<vod ([^>]+?)>')
             re_compile_thumbs = re.compile('<thumb ([^>]+?)>')
-            re_compile_srcreq = re.compile('<srcreq ([^>]+?)>')
             try:
                 for vod in videosXMLTree:
                     try:
                         val = re_compile_vod.search(vod)
                         if not val: continue
                         val = self.__getAttribs(val.group(1))
-                        title = self.getStr(val.get('title', ''), '')
-                        plot  = self.getStr(val.get('descr', ''), '')
-                        icon  = self.getStr(val.get('thumbnail', ''), '')   
+                        title = val.get('title', '')
+                        plot  = val.get('descr', '')
+                        icon  = val.get('thumbnail', '')
                         try:
                             thumbs = re_compile_thumbs.findall(vod)
                             thumbSizePrev = 9999
@@ -121,30 +117,37 @@ class Ipla(CBaseHostClass):
                                 if thumbSizePrev > thumbSize:
                                     thumbSizePrev = thumbSize
                                     icon = attrib['url']
-                                    icon = self.getStr(icon, '')
-                        except: 
-                            printExc()
-                        links = re_compile_srcreq.findall(vod)
-                        urls = []
-                        for link in links:
-                            attrib = self.__getAttribs(link)
-                            drm = attrib['drmtype']
-                            if drm == '0':
-                                if config.plugins.iptvplayer.ZablokujWMV.value and attrib['format'] == '0':
-                                    continue
-                                urls.append( {'format':attrib['format'], 'quality':attrib['quality'], 'bitrate':attrib['bitrate'], 'url':attrib['url']} )
-                        if config.plugins.iptvplayer.iplaUseDF.value and 1 < len(urls):           
-                            urls = CSelOneLink(urls, __getLinkQuality, max_bitrate).getOneLink()                    
-                        params = {'category': 'video', 'title': title, 'plot': plot, 'icon':icon, 'urls': urls}
+                        except: printExc()
+                        urls = self._getVideoUrls(vod)
+                        params = {'category': 'video', 'title': title, 'plot': plot, 'icon':icon, 'urls': urls, 'fav_item':{'url':url, 'vod_id':val.get('id', '')}}
                         self.addVideo(params)
-                    except:
-                        printExc()
-            except: 
-                printExc()
+                    except: printExc()
+            except: printExc()
     # end getVideosList
     
+    def _getVideoUrls(self, vodData):
+        urls = []
+        re_compile_srcreq = re.compile('<srcreq ([^>]+?)>')
+        max_bitrate = int(config.plugins.iptvplayer.iplaDefaultformat.value)
+        def __getLinkQuality( itemLink ):
+            return int(itemLink['bitrate'])
+        try:
+            links = re_compile_srcreq.findall(vodData)
+            for link in links:
+                attrib = self.__getAttribs(link)
+                drm = attrib['drmtype']
+                if drm == '0':
+                    if config.plugins.iptvplayer.ZablokujWMV.value and attrib['format'] == '0':
+                        continue
+                    name = "Jakość: %s\t format: %s\t  bitrate: %s" % (attrib['quality'], attrib['format'], attrib['bitrate'])
+                    urls.append( {'name':name, 'url':attrib['url'], 'bitrate':attrib['bitrate']} )
+        except: printExc()
+        if config.plugins.iptvplayer.iplaUseDF.value and 1 < len(urls):
+            urls = CSelOneLink(urls, __getLinkQuality, max_bitrate).getOneLink()
+        return urls
+    
     def __writeCategoryCache(self, data):
-        printDBG("__writeCategoryCache EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+        printDBG("__writeCategoryCache ")
         try:
             if "0" == config.plugins.iptvplayer.iplacachexml.value: return
             data = str({"timestamp" : int(time()), "data":data})
@@ -154,7 +157,7 @@ class Ipla(CBaseHostClass):
             printExc()
     
     def __readCategoryCache(self):
-        printDBG("__readCategoryCache EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+        printDBG("__readCategoryCache ")
         try:
             data = None
             if "0" == config.plugins.iptvplayer.iplacachexml.value: return
@@ -254,12 +257,27 @@ class Ipla(CBaseHostClass):
                     self.getVideosList(Ipla.MOV_URL + parentCatId)
             except: printExc()
         return
-
+        
     def listsMainMenu(self, refresh=False):
         printDBG('listsMainMenu')
         self.getCategories('0', refresh)
         self.addDir( {'category': 'Wyszukaj',  'title': 'Wyszukaj'} )
         self.addDir( {'category': 'search_history',   'title': 'Historia wyszukiwania'} )
+        
+    def getFavouriteData(self, cItem):
+        return json.dumps(cItem['fav_item'])
+        
+    def getLinksForFavourite(self, fav_data):
+        links = []
+        try: 
+            favItem = byteify( json.loads(fav_data) )
+            printDBG(favItem)
+            sts, data = self.cm.getPage(favItem['url'], {'host' : Ipla.HOST})
+            if sts:
+                sts, data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<vod[^>]+?id="%s"[^>]*?>'% favItem['vod_id']), re.compile('</vod>' ), False)
+                if sts: links = self._getVideoUrls(data)
+        except: printExc()
+        return links
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -295,47 +313,40 @@ class Ipla(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, Ipla(), True) # with search history
+        CHostBase.__init__(self, Ipla(), True, [CDisplayListItem.TYPE_VIDEO]) # with search history, can generate favorite item
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('iplalogo.png')])
     
-    def convertList(self, cList):
-        hostList = []
+    def converItem(self, cItem):
         searchTypesOptions = [] # ustawione alfabetycznie
-    
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            if cItem['type'] == 'category':
-                if cItem['title'] == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                urls = cItem.get('urls', [])
-                for urlItem in urls:
-                    nameLink = "Jakosc: %s\t format: %s\t  bitrate: %s" % (urlItem['quality'], urlItem['format'], urlItem['bitrate'])
-                    hostLinks.append(CUrlItem(nameLink, urlItem['url'], 0))
-                
-            title       =  clean_html( cItem.get('title', '') )
-            description =  clean_html( cItem.get('plot', '') )
-            icon        =  cItem.get('icon', '')
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 0,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
+        if cItem['type'] == 'category':
+            if cItem['title'] == 'Wyszukaj':
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+            urls = cItem.get('urls', [])
+            for urlItem in urls:
+                hostLinks.append(CUrlItem(urlItem['name'], urlItem['url'], 0))
+            
+        title       =  clean_html( cItem.get('title', '') )
+        description =  clean_html( cItem.get('plot', '') )
+        icon        =  cItem.get('icon', '')
+        hostItem = CDisplayListItem(name = title,
+                                    description = description,
+                                    type = type,
+                                    urlItems = hostLinks,
+                                    urlSeparateRequest = 0,
+                                    iconimage = icon,
+                                    possibleTypesOfSearch = possibleTypesOfSearch)
+        return hostItem
     
     def getSearchItemInx(self):
         # Find 'Wyszukaj' item
