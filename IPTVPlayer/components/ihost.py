@@ -210,11 +210,12 @@ class CHostBase(IHost):
         
         cItem = self.host.currList[Index]
         data = self.host.getFavouriteData(cItem)
-        favItem = CFavItem(data=data)
-        favItem.fromDisplayListItem(self.converItem(cItem))
-        
-        retlist = [favItem]
-        retCode = RetHost.OK
+        if None != data:
+            favItem = CFavItem(data=data)
+            favItem.fromDisplayListItem(self.converItem(cItem))
+            
+            retlist = [favItem]
+            retCode = RetHost.OK
 
         return RetHost(retCode, value=retlist)
     # end getFavouriteItem

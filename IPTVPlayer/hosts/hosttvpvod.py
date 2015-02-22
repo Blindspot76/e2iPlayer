@@ -379,6 +379,9 @@ class TvpVod(CBaseHostClass):
         return str(cItem['object_id'])
         
     def getLinksForFavourite(self, fav_data):
+        if None == self.loggedIn:
+            premium = config.plugins.iptvplayer.tvpvod_premium.value
+            if premium: self.loggedIn, msg = self.tryTologin()
         return self.getVideoLink(fav_data)
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
