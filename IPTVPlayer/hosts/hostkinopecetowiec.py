@@ -444,6 +444,15 @@ class KinoPecetowiec(CBaseHostClass):
                 item['images'] = [ {'title':'', 'author': '', 'url': icon} ]
                 retList.append( item )
         return retList
+        
+    def getFavouriteData(self, cItem):
+        return cItem['url']
+        
+    def getLinksForFavourite(self, fav_data):
+        if None == self.loggedIn and self.PREMIUM:
+            self.loggedIn = self.tryTologin()
+        
+        return self.getHostingTable({'url':fav_data})
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('KinoPecetowiec.handleService start')
@@ -501,22 +510,16 @@ class KinoPecetowiec(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, KinoPecetowiec(), True)
+        CHostBase.__init__(self, KinoPecetowiec(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('kinopecetowieclogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
+        retCode = RetHost.ERROR
         retlist = []
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        
         urlList = self.host.getHostingTable(self.host.currList[Index])
         for item in urlList:
             need_resolve = 0
@@ -524,24 +527,12 @@ class IPTVHost(CHostBase):
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        url = self.host.getLink(url)
-        urlTab = []
-        if isinstance(url, basestring) and url.startswith('http'):
-            urlTab.append(url)
-        return RetHost(RetHost.OK, value = urlTab)
         
     def getArticleContent(self, Index = 0):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getArticleContent - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getArticleContent - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
+        retCode = RetHost.ERROR
         retlist = []
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+
         hList = self.host.getArticleContent(Index)
         for item in hList:
             title  = self.host.cleanHtmlStr( item.get('title', '') )
@@ -550,44 +541,40 @@ class IPTVHost(CHostBase):
             retlist.append( ArticleContent(title = title, text = text, images =  images) )
         return RetHost(RetHost.OK, value = retlist)
 
-    def convertList(self, cList):
+    def converItem(self, cItem):
         hostList = []
         searchTypesOptions = [] # ustawione alfabetycznie
         searchTypesOptions.append(("Filmy", "filmy"))
         searchTypesOptions.append(("Seriale", "seriale"))
     
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            if cItem['type'] == 'category':
-                if cItem['title'] == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  cItem.get('title', '')
-            description =  self.host.cleanHtmlStr(cItem.get('plot', ''))
-            icon        =  cItem.get('icon', '')
+        if cItem['type'] == 'category':
+            if cItem['title'] == 'Wyszukaj':
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
             
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
+        title       =  cItem.get('title', '')
+        description =  self.host.cleanHtmlStr(cItem.get('plot', ''))
+        icon        =  cItem.get('icon', '')
+        
+        return CDisplayListItem(name = title,
+                                description = description,
+                                type = type,
+                                urlItems = hostLinks,
+                                urlSeparateRequest = 1,
+                                iconimage = icon,
+                                possibleTypesOfSearch = possibleTypesOfSearch)
+    # end converItem
 
     def getSearchItemInx(self):
         # Find 'Wyszukaj' item

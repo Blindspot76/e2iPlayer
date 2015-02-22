@@ -258,7 +258,7 @@ class SeansikTV(CBaseHostClass):
                 except:
                     continue
                 #if url.startswith('http'):
-                hostingTab.append({'name':title, 'url':strwithmeta(self.cleanHtmlStr(url), {'hosting':hosting})} )
+                hostingTab.append({'name':title, 'url':strwithmeta(self.cleanHtmlStr(url), {'hosting':hosting}), 'need_resolve':1})
         self.linksCacheCache = {'marker': urlItem['url'], 'tab': hostingTab}
         return hostingTab
                 
@@ -268,6 +268,13 @@ class SeansikTV(CBaseHostClass):
         hosting = url.meta.get('hosting', '')
         if 'flowplayer' == hosting: return [{'name':'flowplayer', 'url':url}]
         return self.up.getVideoLinkExt( url )
+       
+    def getFavouriteData(self, cItem):
+        return cItem['url']
+        
+    def getLinksForFavourite(self, fav_data):
+
+        return self.getHostingTable({'url':fav_data})
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -347,22 +354,16 @@ class SeansikTV(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, SeansikTV(), True)
+        CHostBase.__init__(self, SeansikTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('seansiktvlogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
+        retCode = RetHost.ERROR
         retlist = []
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        
         urlList = self.host.getHostingTable(self.host.currList[Index])
         for item in urlList:
             need_resolve = 1
@@ -381,51 +382,47 @@ class IPTVHost(CHostBase):
 
         return RetHost(RetHost.OK, value = retlist)
 
-    def convertList(self, cList):
+    def converItem(self, cItem):
         hostList = []
         searchTypesOptions = [] # ustawione alfabetycznie
         searchTypesOptions.append(("Filmy",  "filmy"))
         searchTypesOptions.append(("Seriale","seriale"))
         searchTypesOptions.append(("Anime",  "anime"))
     
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            if 'category' == cItem['type']:
-                if cItem.get('search_item', False):
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-            elif 'more' == cItem['type']:
-                type = CDisplayListItem.TYPE_MORE
-            elif 'audio' == cItem['type']:
-                type = CDisplayListItem.TYPE_AUDIO
-                
-            if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  self.host._getStr( cItem.get('title', '') )
-            description =  self.host._getStr( cItem.get('desc', '') ).strip()
-            icon        =  self.host._getStr( cItem.get('icon', '') )
-            if '' == icon: icon = SeansikTV.DEFAULT_ICON
+        if 'category' == cItem['type']:
+            if cItem.get('search_item', False):
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+        elif 'more' == cItem['type']:
+            type = CDisplayListItem.TYPE_MORE
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
             
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
+            
+        title       =  self.host._getStr( cItem.get('title', '') )
+        description =  self.host._getStr( cItem.get('desc', '') ).strip()
+        icon        =  self.host._getStr( cItem.get('icon', '') )
+        if '' == icon: icon = SeansikTV.DEFAULT_ICON
+        
+        return CDisplayListItem(name = title,
+                                description = description,
+                                type = type,
+                                urlItems = hostLinks,
+                                urlSeparateRequest = 1,
+                                iconimage = icon,
+                                possibleTypesOfSearch = possibleTypesOfSearch)
     # end convertList
 
     def getSearchItemInx(self):
