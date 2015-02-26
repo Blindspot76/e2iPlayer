@@ -4,8 +4,9 @@
 ###################################################
 # LOCAL import
 ###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, remove_html_markup, CSelOneLink, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, CSelOneLink, GetLogoDir
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -14,8 +15,9 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 # FOREIGN import
 ###################################################
+from time import sleep
 import re
-from urllib import unquote_plus
+from urllib import quote_plus
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -33,205 +35,288 @@ def GetConfigList():
 def gettytul():
     return 'Anime-Shinden'
 
-#ToDo:
-#  Obsługa playlist
-
 class AnimeShinden(CBaseHostClass):
-    MAINURL = 'http://www.anime-shinden.info'
-    SERVICE_MENU_TABLE = {
-        1: "Lista anime (alfabetycznie)",
-        2: "Lista anime (wg. gatunku)",
-    }
+    MAINURL = 'http://shinden.pl/'
+    ANIME_LIST_URL = MAINURL+'anime?'
+    TOP_LIST_URL = MAINURL+'anime/top?'
+    MAIN_CAT_TAB = [{ 'category':'list_filters',          'title':'Filtruj'              },
+                    { 'category':'top',                   'title':'Top'                  },
+                    { 'category':'Wyszukaj',              'title':'Wyszukaj'             },
+                    { 'category':'Historia wyszukiwania', 'title':'Historia wyszukiwania'} ]
+    
     def __init__(self):
-        CBaseHostClass.__init__(self)
-
-    def setTable(self):
-        return self.SERVICE_MENU_TABLE
-
-    def listsMainMenu(self, table):
-        for num, val in table.items():
-            params = { 'name': 'main-menu','category': val, 'title': val, 'icon': ''}
-            self.addDir(params)
+        CBaseHostClass.__init__(self, {'history':'shinden.pl', 'cookie':'shinden.cookie'})
+        self.genresData = {}
+        self.genres = []
         
-    def listsABCMenu(self, table):
-        for i in range(len(table)):
-            params = { 'name': 'abc-menu','category': table[i], 'title': table[i], 'icon': ''}
-            self.addDir(params)
+    def _getFullUrl(self, url):
+        if 0 < len(url) and not url.startswith('http'):
+            url =  self.MAINURL + url
+        return url
         
-    def listsGenre(self, url):
-        sts, data = self.cm.getPage(url)
-        if not sts: return
-        r = re.compile('<input id=".+?"  type="checkbox" name="genre.." value="(.+?)">').findall(data)
-        if len(r)>0:
-            for i in range(len(r)):
-                params = { 'name': 'genset', 'title': unquote_plus(r[i]), 'page':r[i], 'icon': ''}
-                self.addDir(params)
+    def _fillGenres(self):
+        printDBG('AnimeShinden._fillGenres start')
+        sts, data = self.cm.getPage(AnimeShinden.ANIME_LIST_URL)
+        if not sts: return 
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<section class="search-section">', '</section>', False)[1]
         
-    def getAnimeList(self, url):
-        sts, data = self.cm.getPage(self.MAINURL+url)
-        if not sts: return
-        r = re.compile('<dl class="sub-nav">(.+?)</body>', re.DOTALL).findall(data)
-        if len(r)>0:
-            r2 = re.compile('<a href="'+self.MAINURL+'/(.+?.html)">(.+?) </a>').findall(r[0])
-            if len(r2)>0:
-                for i in range(len(r2)):
-                    value = r2[i]
-                    title = self.cm.html_entity_decode(value[1])
-                    params = { 'name': 'episodelist', 'title': title, 'page': value[0], 'icon': ''}
-                    self.addDir(params)
-
-    def getEpisodeList(self, url):
-        sts, data = self.cm.getPage(url)
-        if sts:
-            data = self.cm.ph.getDataBeetwenMarkers(data, '><div id="news-id', '</td>', False)[1]
-            data = re.findall('<a href="[^"]+?(/[^"]+?.html)"[^>]*?>(.+?)</a>', data)
-            for item in data:
-                if '<!--' not in item[1]:
-                    params = { 'title': self.cleanHtmlStr(item[1]), 'page': 'http:' + item[0], 'icon': ''}
-                    self.addVideo(params)
-
-    def getLinkParts(self,data):
-        valTab = []
-        src = re.compile("flashvars=.+?hd\.file=(.+?)&").findall(data)
-        if len(src) < 1:
-            src = re.compile('flashvars="streamer=(.+?)"').findall(data)
-        if len(src) < 1:
-            src = re.compile('src="(.+?)"').findall(data)
-        for i in range(len(src)):
-            if len(src) > 1:
-                prefix = 'Część '+ str(i+1) + " "
+        markers = self.cm.ph.getDataBeetwenMarkers(data, '<ul ', '</ul>', False)[1]
+        markers = re.compile('id="go([^"]+?)">([^<]+?)<').findall(markers)
+        for item in markers:
+            if 'Tabtag' == item[0]: break
+            filters = []
+            genData = self.cm.ph.getDataBeetwenMarkers(data, 'id="%s">' % item[0], '</ul>', False)[1]
+            if 'genre-item' in genData:
+                genData = genData.split('<li>')
+                if len(genData): del genData[0]
+                for gen in genData:
+                    title  = self.cleanHtmlStr(gen)
+                    filter = self.cm.ph.getSearchGroups(gen, 'data-id[ ]*?=[ ]*?"([0-9]+?)"')[0]
+                    filters.append({'title':title, 'url':'genres=e%%3Bi%s&genres-type=one' % filter})
             else:
-                prefix = ''
-            if 1 == self.up.checkHostSupport(src[i]):
-                valTab.append({'name': ( prefix + self.up.getHostName(src[i]) ), 'url': src[i]})
-        return valTab
-
-    def getHostingTable(self,url):
-        valTab = []
-        videoID = ''
-        sts, data = self.cm.getPage(url)
-        if not sts: return []
-        match = re.compile('class="video_tabs".+?>(.+?)</div>\n', re.DOTALL).findall(data)
-        if len(match) > 0:
-            for i in range(len(match)):
-                linkVideos = self.getLinkParts(match[i])
-                valTab.extend(linkVideos)
-            return valTab
-        else:
-            printDBG('getHostingTable brak hostingu - nie dodano jeszcze tego wideo. Zapraszamy w innym terminie.')
-        return valTab
-
-    '''
-    def getVideoPart(self,link):
-        if len(link) == 1:
-            return link[0][0]
-        elif len(link) > 1:
-            d = xbmcgui.Dialog()
-            item = d.select("Wybierz część", self.cm.getItemTitles(link))
-            print str(item)
-            if item != -1:
-                linkVideo = str(link[item][0])
-                log.info("final link: " + linkVideo)
-                return linkVideo
-        else:
-            printDBG('getVideoPart - nie dodano jeszcze tego wideo.')
-    '''
-
-    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
-        printDBG('handleService start')
-        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
-
-        name     = self.currItem.get("name", '')
-        title    = self.currItem.get("title", '')
-        category = self.currItem.get("category", '')
-        page     = self.currItem.get("page", '')
-        icon     = self.currItem.get("icon", '')
-
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| [%s] " % name )
-        self.currList = []
-
-        if str(page)=='None' or page=='': page = '0'
-
-    #MAIN MENU
-        if name == None:
-            self.listsMainMenu(self.SERVICE_MENU_TABLE)
-    #LISTA ANIME (Alfabetycznie)
-        elif category == self.setTable()[1]:
-            self.listsABCMenu(self.cm.makeABCList())
-        elif name == 'abc-menu':
-            self.getAnimeList('/animelist/index.php?letter=' + category)
-    #LISTA ANIME (wg. Gatunku)
-        elif category == self.setTable()[2]:
-            self.listsGenre(self.MAINURL+'/animelist/index.php')
-        elif name == 'genset':
-            self.getAnimeList('/animelist/index.php?genre[]=' + page)
-    #LISTA ODCINKÓW
-        elif name == 'episodelist':
-            url = self.MAINURL + '/' + page
-            self.getEpisodeList(url)
+                genData = re.compile('href="\?([^"]+?)"[^>]*?>([^<]+?)<').findall(genData)
+                for gen in genData: filters.append({'title':gen[1], 'url':gen[0]})
+            if len(filters): 
+                self.genres.append(item[1])
+                self.genresData[item[1]] = filters
+            else: printExc("_fillGenres error for [%s]" % item[1])
+    
+    def listFilters(self, category):
+        if 0 == len(self.genres): self._fillGenres()
+        for item in self.genres:
+            self.addDir( {'name':'category', 'category':category, 'title':item} )
             
+    def listsFiltersValues(self, cItem, category):
+        printDBG('AnimeShinden.listsFiltersValues')
+        for item in self.genresData.get(cItem['title'], []):
+            params = dict(cItem)
+            params.update( item )
+            params['category'] = category
+            self.addDir( params )
+            
+    def listAnimes(self, cItem, category, baseUrl):
+        printDBG('AnimeShinden.listAnimes')
+        page = cItem.get('page', 1)
+        sts, data = self.cm.getPage(baseUrl + ( 'page=%d&%s' % (page, cItem.get('url', '')) ))
+        if not sts: return
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<li class="pagination-next">', '</li>', False)[1]
+        if '<a href="' in tmp: nextPage = True
+        else: nextPage = False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<table ', '</table>', False)[1]
+        data = data.split('<tr>')
+        if len(data): del data[0]
+        for item in data:
+            item = item.split('</h3>')
+            if 2 > len(item): continue
+            tmp = self.cm.ph.getSearchGroups(item[0], 'href="([^"]+?)"[^>]*?>(.+?)</a>', 2)
+            icon = self._getFullUrl( self.cm.ph.getSearchGroups(item[0], 'src="([^"]+?)"')[0] )
+            params = {'name':'category', 'category':category, 'title':self.cleanHtmlStr(tmp[1]), 'url':tmp[0], 'icon':icon, 'desc':self.cleanHtmlStr(item[1])}
+            self.addDir(params)
+            
+        if nextPage:
+            params = dict(cItem)
+            params.update({'title':_('Następna strona'), 'page':page+1})
+            self.addDir(params)
+            
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("AnimeShinden.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        url = 'type=contains&search=' + quote_plus(searchPattern)
+        params = dict(cItem)
+        params.update({'category':'list_animes', 'url':url})
+        self.listAnimes(params, 'list_episodes', AnimeShinden.ANIME_LIST_URL)
+            
+    def listItems(self, cItem):
+        printDBG('AnimeShinden.listItems')
+        url = self._getFullUrl( cItem['url'] ) + '/episodes'
+        sts, data = self.cm.getPage(url)
+        if not sts: return 
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody class="list-episode-checkboxes">', '</tbody>', False)[1]
+        data = data.split('</tr>')
+        if len(data): del data[-1]
+        for item in data:
+            params = dict(cItem)
+            url = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
+            title = self.cleanHtmlStr(item)
+            if 'class="fa fa-fw fa-check"' not in item: title = title.replace('Zobacz', 'niedostępny')
+            else: title = title.replace('Zobacz', 'zbobacz')
+            params.update({'title':title, 'url':url})
+            self.addVideo(params)
+        
+    def getLinksForVideo(self, cItem):
+        printDBG('AnimeShinden.listItems url[%s]' % cItem['url'])
+        urlsTab = []
+        
+        url = self._getFullUrl( cItem['url'] )
+        sts, data = self.cm.getPage(url)
+        if not sts: return urlsTab
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<table class=" data-view-table-big">', ' </table>', False)[1]
+        data = data.split('</thead>')
+        if 2 > len(data): return urlsTab
+        headers =  re.compile('<th>(.+?)</th>').findall(data[0])
+        data = data[1].split('</tr>')
+        if len(data): del data[-1]
+        for item in data:
+            titles = re.compile('<td[^>]*?>(.+?)</td>').findall(item)
+            title = ''
+            if len(headers) > len(titles): num = len(titles)
+            else: num = len(headers)
+            for idx in range(num):
+                title += '%s %s, ' % (headers[idx], titles[idx])
+            if '' != title: title = title[:-2]
+            onlineId = self.cm.ph.getSearchGroups(item, '"online_id":"([0-9]+?)"')[0]
+            urlsTab.append({'name': title, 'url':onlineId, 'need_resolve':1})
+        return urlsTab
+        
+    def getVideoLinks(self, onlineId):
+        printDBG('AnimeShinden.listItems onlineId[%s]' % onlineId)
+        urlsTab = []
+        url = AnimeShinden.MAINURL+'xhr/%s/player_load' % onlineId
+        sts, data = self.cm.getPage(url, {'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'save_cookie':True})
+        if not sts: return urlsTab
+        try: sleep(int(data)+1)
+        except: printExc()
+        url = AnimeShinden.MAINURL+'xhr/%s/player_show' % onlineId
+        sts, data = self.cm.getPage(url, {'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'load_cookie':True})
+        if not sts: return linksTab
+        printDBG(data)
+        if '<embed src="http://player.shinden.pl' in data:
+            data = re.compile('<embed [^>]+?>').findall(data)
+            for idx in range(len(data)):
+                urls = re.compile('file=(http[^>]+?&amp;)').findall(data[idx])
+                for url in urls: 
+                    if '/hd.' in url: title = 'hd'
+                    else: title = 'sd'
+                    urlsTab.append({'name': 'Część %d, kopia %s' % (idx+1, title), 'url':url})
+        else:
+            url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+            urlsTab = self.up.getVideoLinkExt(url) 
+        return urlsTab
+    
+    def handleService(self, index, refresh=0, searchPattern='', searchType=''):
+        printDBG('AnimeShinden.handleService start')
+        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        name     = self.currItem.get("name", None)
+        category = self.currItem.get("category", '')
+        printDBG( "AnimeShinden.handleService: ---------> name[%s], category[%s] " % (name, category) )
+        searchPattern = self.currItem.get("search_pattern", searchPattern)
+        self.currList = []
+        
+        if None == name:
+            self.listsTab(AnimeShinden.MAIN_CAT_TAB, {'name':'category'})
+        elif  'list_filters' == category: 
+            self.listFilters('list_filter_values')
+        elif 'list_filter_values' == category:
+            self.listsFiltersValues(self.currItem, 'list_animes')
+        elif 'list_animes' == category:
+            self.listAnimes(self.currItem, 'list_episodes', AnimeShinden.ANIME_LIST_URL)
+        elif 'top' == category:
+            self.listAnimes(self.currItem, 'list_episodes', AnimeShinden.TOP_LIST_URL)
+        elif 'list_episodes' == category:
+            self.listItems(self.currItem)
+    #LIST EMITOWANE
+        elif 'list_emiotwane' == category:
+            self.listEmitowane(self.currItem, 'episodes_list')
+    #LIST NEW EPISODES
+        elif 'list_new_episodes' == category:
+            self.listNewEpisodes(self.currItem)
+    #LIST NEW ADDED 
+        elif 'list_new_added' == category:
+            self.listNewAdded(self.currItem)
+    #WYSZUKAJ
+        elif category in ["Wyszukaj"]:
+            self.listSearchResult(self.currItem, searchPattern, searchType)
+    #HISTORIA WYSZUKIWANIA
+        elif category == "Historia wyszukiwania":
+            self.listsHistory()
+        else:
+            printExc()
+
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, AnimeShinden(), False)
+        CHostBase.__init__(self, AnimeShinden(), True)
 
-    def getLogoPath(self):  
-        return RetHost(RetHost.OK, value = [GetLogoDir('animeshindenlogo.png')])
+    def getLogoPath(self):
+        return RetHost(RetHost.OK, value = [GetLogoDir('animeodcinkilogo.png')])
 
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
+    def getLinksForVideo(self, Index=0, selItem = None):
+        retCode = RetHost.ERROR
         retlist = []
-        urlItems = self.host.getHostingTable(self.host.currList[Index]["page"])
-        for item in urlItems:
-            retlist.append(CUrlItem(item['name'], item['url'], 1))
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        
+        urlList = self.host.getLinksForVideo(self.host.currList[Index])
+        for item in urlList:
+            need_resolve = 1
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
     
     def getResolvedURL(self, url):
-        if url != None and url != '':
-            ret = self.host.up.getVideoLink( url )
-            list = []
-            if ret:
-                list.append(ret)
-            return RetHost(RetHost.OK, value = list)
-        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+        # resolve url to get direct url to video file
+        retlist = []
+        urlList = self.host.getVideoLinks(url)
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
-    def convertList(self, cList):
+        return RetHost(RetHost.OK, value = retlist)
+
+    def converItem(self, cItem):
         hostList = []
-        
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
+        searchTypesOptions = [] # ustawione alfabetycznie
+    
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            if cItem['type'] == 'category':
-                type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                page = cItem.get('page', '')
-                if '' != page:
-                    hostLinks.append(CUrlItem("Link", page, 1))
-                
-            title       =  self.host.cleanHtmlStr( cItem.get('title', '') )
-            description =  self.host.cleanHtmlStr( cItem.get('plot', '') )
-            icon        =  cItem.get('icon', '')
+        if cItem['type'] == 'category':
+            if cItem['title'] == 'Wyszukaj':
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else: type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+            url = cItem.get('url', '')
+            if '' != url: hostLinks.append(CUrlItem("Link", url, 1))
             
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon )
-            hostList.append(hostItem)
+        title       =  cItem.get('title', '')
+        description =  clean_html(cItem.get('desc', '')) + clean_html(cItem.get('plot', ''))
+        icon        =  cItem.get('icon', '')
+        
+        return CDisplayListItem(name = title,
+                                    description = description,
+                                    type = type,
+                                    urlItems = hostLinks,
+                                    urlSeparateRequest = 1,
+                                    iconimage = icon,
+                                    possibleTypesOfSearch = possibleTypesOfSearch)
 
-        return hostList
-    # end convertList
+    def getSearchItemInx(self):
+        # Find 'Wyszukaj' item
+        try:
+            list = self.host.getCurrList()
+            for i in range( len(list) ):
+                if list[i]['category'] == 'Wyszukaj':
+                    return i
+        except:
+            printDBG('getSearchItemInx EXCEPTION')
+            return -1
+
+    def setSearchPattern(self):
+        try:
+            list = self.host.getCurrList()
+            if 'history' == list[self.currIndex]['name']:
+                pattern = list[self.currIndex]['title']
+                search_type = list[self.currIndex]['search_type']
+                self.host.history.addHistoryItem( pattern, search_type)
+                self.searchPattern = pattern
+                self.searchType = search_type
+        except:
+            printDBG('setSearchPattern EXCEPTION')
+            self.searchPattern = ''
+            self.searchType = ''
+        return
 
