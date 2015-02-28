@@ -175,12 +175,10 @@ class Ekstraklasa(CBaseHostClass):
         printDBG("Ekstraklasa.getLinks_ETV url[%r]" % url )
         videoUrls = []
         sts, data = self.cm.getPage(url)
-        if sts:
-            "mvp:309802.1473018329"
-            
-            ckmId = self.cm.ph.getSearchGroups(data, 'id="mvp:([^"]+?)"')[0]
-            if '' != ckmId:
-                videoUrls = self.getVideoTab_ETV(ckmId)
+        if not sts: return videoUrls
+        ckmId = self.cm.ph.getSearchGroups(data, 'data-params-mvp="([^"]+?)"')[0]
+        if '' == ckmId: ckmId = self.cm.ph.getSearchGroups(data, 'id="mvp:([^"]+?)"')[0]
+        if '' != ckmId: videoUrls = self.getVideoTab_ETV(ckmId)
         return videoUrls
         
     def getDescription_ETV(self, url):
