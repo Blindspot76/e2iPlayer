@@ -101,7 +101,7 @@ class IPTVFavouritesAddItemWidget(Screen):
         for item in groups:
             if item['group_id'] in self.ignoredGroups: continue
             options.append((item['title'], item['group_id']))
-        if self.canAddNewGroup: options.append((_("Add item to favourites"), None))
+        if self.canAddNewGroup: options.append((_("Add new group of favourites"), None))
         if len(options): self.session.openWithCallback(self.addFavouriteToGroup, ChoiceBox, title=_("Select favourite group"), list=options)
         else: self.session.open(MessageBox, _("There is no favourites groups."), type=MessageBox.TYPE_INFO, timeout=10 )
         
