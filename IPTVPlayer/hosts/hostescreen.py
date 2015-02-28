@@ -6,7 +6,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
 ###################################################
 
 ###################################################
@@ -33,12 +33,14 @@ from Screens.MessageBox import MessageBox
 config.plugins.iptvplayer.escreenHD        = ConfigYesNo(default = False)
 config.plugins.iptvplayer.escreen_login    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.escreen_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.escreen_m3u1     = ConfigText(default = "http://iptv.e-screen.tv/?uid=", fixed_size = False)
 
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Kanały w jakości HD?"), config.plugins.iptvplayer.escreenHD))
     optionList.append(getConfigListEntry(_("Escreen login:"), config.plugins.iptvplayer.escreen_login))
     optionList.append(getConfigListEntry(_("Escreen hasło:"), config.plugins.iptvplayer.escreen_password))
+    optionList.append(getConfigListEntry(_("Adres lista M3U:"), config.plugins.iptvplayer.escreen_m3u1))
     return optionList
 ###################################################
 
@@ -72,6 +74,48 @@ class Escreen(CBaseHostClass):
         CBaseHostClass.__init__(self, {'cookie':'escreen.cookie', 'history':'escreen.tv'})
         self.versionnet = 0
         
+    def addM3UListCategory(self):
+        printDBG("Escreen.addM3UListCategory")
+        if 'http://iptv.e-screen.tv/?uid=' != config.plugins.iptvplayer.escreen_m3u1.value:
+            params = {'name':'category', 'title':'Lista M3U', 'category':'m3u_list'}
+            self.addDir(params)
+                
+    def listM3uLists(self, cItem):
+        printDBG("Escreen.listM3uLists")
+        sts,data = self.cm.getPage( config.plugins.iptvplayer.escreen_m3u1.value )
+        if not sts: return
+        data = data.split('#EXTINF:-1')
+        if len(data): del data[0]
+        tmpTab = []
+        for item in data:
+            idx = item.find('rtmp://')
+            if -1 == idx: idx = item.find('http://')
+            if -1 == idx: idx = item.find('https://')
+            if -1 != idx:
+                url = item[idx:].strip()
+                if url != 'http://e-screen.tv':
+                    icon  = self.cm.ph.getSearchGroups(item, 'tvg-logo="([^"]+?)"')[0]
+                    title = self.cm.ph.getSearchGroups(item, 'tvg-id="([^"]+?)"')[0].strip()
+                    server  = self.cm.ph.getSearchGroups(item, 'group-title="([^"]+?)"')[0]
+                    added = False
+                    for tmp in tmpTab:
+                        printDBG(">>> [%s] [%s]" % (tmp['title'], title) )
+                        if tmp['title'] == title: 
+                            tmp['desc'] += server + ' '
+                            exists = False
+                            for tmpUrl in tmp['urls']: 
+                                if tmpUrl['url'] == url: 
+                                    exists = True
+                                    break
+                            if not exists: tmp['urls'].append({'name':server, 'url':url})
+                            added = True
+                            break
+                    if added: continue
+                    params = {'title':title, 'urls':[{'name':server, 'url':url}], 'url':'', 'desc':server, 'icon':icon}
+                    tmpTab.append(params)
+        for params in tmpTab:
+            self.addVideo(params)
+
     def getStr(self, v, default=''):
         if type(v) == type(u''): return v.encode('utf-8')
         elif type(v) == type(''):  return v
@@ -295,6 +339,18 @@ class Escreen(CBaseHostClass):
                 for item in data:
                     mapFun(item)
             except: printExc()
+            
+    def getLinksForVideo(self, cItem):
+        urlsTab = []
+        urls = cItem.get('urls', [])
+        if 0 == len(urls): urls = [{'name':'e-screener.tv', 'url':cItem.get('url', '')}]
+        for item in urls:
+            url = item.get('url', '')
+            name = item.get('name', 'e-screener.tv')
+            if '' == url: continue
+            if '.m3u8' in url: urlsTab.extend( getDirectM3U8Playlist(url) )
+            else: urlsTab.append({'name':name, 'url':url})
+        return urlsTab
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Escreen.handleService start')
@@ -307,16 +363,20 @@ class Escreen(CBaseHostClass):
         self.password = config.plugins.iptvplayer.escreen_password.value
         
         if None == name:
+            self.addM3UListCategory()
             sts, msg = self.checkVersion()
             if not sts: self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO, timeout=10)
             msg = self.checkMessage()
             if len(msg): self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_INFO, timeout=10)
             if '@' in self.username and '' != self.password:
                 self.hash = self.login()
-                if '' !=  self.hash: self.listsTab(Escreen.MAIN_TAB, {'name':'category'})
+                if '' !=  self.hash:
+                    self.listsTab(Escreen.MAIN_TAB, {'name':'category'})
             else:
                 self.sessionEx.waitForFinishOpen(MessageBox, _('Niepoprawne dane do logowania.\nProszę uzupełnić login i hasło.'), type=MessageBox.TYPE_INFO, timeout=10)
     # TV
+        elif category == 'm3u_list':
+            self.listM3uLists(self.currItem)
         elif category == 'tv':
             self.listBase(self.currItem, self._mapChannelItem)
     # SERIALE
@@ -357,6 +417,19 @@ class IPTVHost(CHostBase):
 
     def getLogoPath(self):  
         return RetHost(RetHost.OK, value = [GetLogoDir('escreenlogo.png')])
+        
+    def getLinksForVideo(self, Index = 0, selItem = None):
+        retCode = RetHost.ERROR
+        retlist = []
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        
+        urlList = self.host.getLinksForVideo(self.host.currList[Index])
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+
+        return RetHost(RetHost.OK, value = retlist)
+    # end getLinksForVideo
 
     def convertList(self, cList):
         hostList = []
@@ -381,14 +454,14 @@ class IPTVHost(CHostBase):
                     hostLinks.append(CUrlItem("Link", url, 0))
                 
             title       =  cItem.get('title', '')
-            description =  clean_html(cItem.get('desc', ''))
+            description =  self.host.cleanHtmlStr(cItem.get('desc', ''))
             icon        =  cItem.get('icon', '')
             
             hostItem = CDisplayListItem(name = title,
                                         description = description,
                                         type = type,
                                         urlItems = hostLinks,
-                                        urlSeparateRequest = 0,
+                                        urlSeparateRequest = 1,
                                         iconimage = icon,
                                         possibleTypesOfSearch = possibleTypesOfSearch)
             hostList.append(hostItem)
