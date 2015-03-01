@@ -655,11 +655,14 @@ class HasBahCa(CBaseHostClass):
         else: params = {}
         sts,data = self.cm.getPage(url, params)
         if not sts: return []
-        url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)\.mp4[^"]*?"')[0]
+        url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?\.mp4[^"]*?)"')[0]
         
         urlMeta = {}
         if config.plugins.iptvplayer.weatherbymatzgprohibitbuffering.value:
             urlMeta['iptv_buffering'] = 'forbidden'
+        if config.plugins.iptvplayer.weather_useproxy.value:
+            urlMeta['http_proxy'] = config.plugins.iptvplayer.proxyurl.value
+            
         url = self.up.decorateUrl(url, urlMeta)
         return [{'name':'prognoza.pogody.tv', 'url':url}]
 

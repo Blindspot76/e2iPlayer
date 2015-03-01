@@ -36,6 +36,7 @@ try:
 except:
     printExc()
 from os import chmod as os_chmod
+import re
 ###################################################
 
 class ExtPlayerCommandsDispatcher():
@@ -582,8 +583,16 @@ class IPTVExtMoviePlayer(Screen):
             cmd = gstplayerPath  + ' "%s"' % self.fileSRC
             if "://" in self.fileSRC: 
                 cmd += ' "%s" "%s"  "%s"  "%s" ' % (self.gstAdditionalParams['download-buffer-path'], self.gstAdditionalParams['ring-buffer-max-size'], self.gstAdditionalParams['buffer-duration'], self.gstAdditionalParams['buffer-size'])
-                url,httpParams = DMHelper.getDownloaderParamFromUrl(strwithmeta(self.fileSRC))
+                tmp = strwithmeta(self.fileSRC)
+                url,httpParams = DMHelper.getDownloaderParamFromUrl(tmp)
                 for key in httpParams: cmd += (' "%s=%s" ' % (key, httpParams[key]) )
+                if 'http_proxy' in tmp.meta:
+                    tmp = tmp.meta['http_proxy']
+                    if '://' in tmp:
+                        if '@' in tmp:
+                            tmp = re.search('([^:]+?://)([^:]+?):([^@]+?)@(.+?)$', tmp)
+                            if tmp: cmd += (' "proxy=%s" "proxy-id=%s" "proxy-pw=%s" ' % (tmp.group(1)+tmp.group(4), tmp.group(2), tmp.group(3)) )
+                        else: cmd += (' "proxy=%s" ' % tmp)
         else:
             cmd = 'exteplayer3 "%s"' % self.fileSRC + " > /dev/null"
         
@@ -592,6 +601,7 @@ class IPTVExtMoviePlayer(Screen):
         self.console_stderrAvail_conn = eConnectCallback(self.console.stderrAvail, self.eplayer3DataAvailable)
         #if 'gstplayer' == self.player: 
         #    self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self.eplayer3DataAvailable2 ) # work around to catch EOF event after seeking, pause .etc
+        printDBG("onStart cmd[%s]" % cmd)
         self.console.execute( cmd )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
             
