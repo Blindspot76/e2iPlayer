@@ -40,7 +40,7 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("Kanały w jakości HD?"), config.plugins.iptvplayer.escreenHD))
     optionList.append(getConfigListEntry(_("Escreen login:"), config.plugins.iptvplayer.escreen_login))
     optionList.append(getConfigListEntry(_("Escreen hasło:"), config.plugins.iptvplayer.escreen_password))
-    optionList.append(getConfigListEntry(_("Adres lista M3U:"), config.plugins.iptvplayer.escreen_m3u1))
+    optionList.append(getConfigListEntry(_("Adres listy M3U:"), config.plugins.iptvplayer.escreen_m3u1))
     return optionList
 ###################################################
 
@@ -107,7 +107,7 @@ class Escreen(CBaseHostClass):
                                 if tmpUrl['url'] == url: 
                                     exists = True
                                     break
-                            if not exists: tmp['urls'].append({'name':server, 'url':url})
+                            if not exists: tmp['urls'].append({'name':server+' ', 'url':url})
                             added = True
                             break
                     if added: continue

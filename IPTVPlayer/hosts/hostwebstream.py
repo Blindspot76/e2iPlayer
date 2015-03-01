@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CDisplayListItem, RetHost, CUrlItem
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetLogoDir, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, MYOBFUSCATECOM_OIO, MYOBFUSCATECOM_0ll, \
@@ -47,6 +47,7 @@ from Screens.MessageBox import MessageBox
 ###################################################
 config.plugins.iptvplayer.SortowanieWebstream              = ConfigYesNo(default = False)
 config.plugins.iptvplayer.weatherbymatzgprohibitbuffering  = ConfigYesNo(default = True)
+config.plugins.iptvplayer.weather_useproxy                 = ConfigYesNo(default = False)
 config.plugins.iptvplayer.fake_separator = ConfigSelection(default = " ", choices = [(" ", " ")])
 
 def GetConfigList():
@@ -70,6 +71,7 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry(_("----------Other----------"), config.plugins.iptvplayer.fake_separator))
     optionList.append(getConfigListEntry("Wyłączyć możliwość buforowania dla http://prognoza.pogody.tv/", config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
+    optionList.append(getConfigListEntry(_("Use Polish proxy for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weather_useproxy))
     return optionList
 
 ###################################################
@@ -98,7 +100,7 @@ def CryptoJS_AES_decrypt(encrypted, password, key_length=32):
     return cipher.decrypt(encrypted[bs:], iv)
 ###################################################
 
-class HasBahCa:
+class HasBahCa(CBaseHostClass):
     HTTP_HEADER= { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
     # {'name': 'meczhd.tv',       'title': 'MeczHH TV',                         'url': 'http://meczhd.tv/',                                                  'icon': 'http://meczhd.tv/theme/img/logo.png'}, \
     # New links for webstream prepared by user @matzg
@@ -108,18 +110,19 @@ class HasBahCa:
                         {'name': 'videostar.pl',    'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
                         {'name': 'goldvod.tv',      'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/lista-kanalow.html',                               'icon': 'http://goldvod.tv/img/logo.png'}, \
                         {'name': 'web-live.tv',     'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
-                        {'name': 'looknij.tv',      'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
-                        {'name': 'tvisport.cba.pl', 'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
+                        #{'name': 'looknij.tv',      'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
+                        #{'name': 'tvisport.cba.pl', 'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
                         {'name': 'nettv.pw',        'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
                         {'name': 'm3u',             'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg.prv.pl/Lista_matzgPL.m3u',                              'icon': 'http://matzg.prv.pl/Iptv_matzgPL.png'}, \
                         {'name': 'm3u',             'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
+                        {'name': 'prognoza.pogody.tv','title': 'prognoza.pogody.tv',              'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
                         {'name': 'm3u',             'title': 'Prognoza Pogody matzg',             'url': 'http://matzg.prv.pl/lista_pogoda.m3u',                               'icon': 'http://matzg.prv.pl/pogoda.png'}, \
                         {'name': 'm3u',             'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg.prv.pl/Pogoda_METEOROGRAMY.m3u',                        'icon': 'http://matzg.prv.pl/pogoda_logo.png'}, \
                         {'name': 'webcamera.pl',    'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
                         {'name': 'm3u',             'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg.prv.pl/inne_matzg.m3u',                                 'icon': 'http://matzg.prv.pl/iptv.png'}, \
                         {'name': 'filmon_groups',   'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'name': 'm3u',             'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
-                        {'name': 'HasBahCa',        'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/index.php?dir=m3u/'}, \
+                        #{'name': 'HasBahCa',        'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/index.php?dir=m3u/'}, \
                         {'name': 'm3u',             'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',             'title': 'Radio-OPEN FM i inne',              'url':'http://matzg.prv.pl/radio.m3u',                                       'icon': 'http://matzg.prv.pl/openfm.png'}, \
                        ]
@@ -299,10 +302,6 @@ class HasBahCa:
                 if 0 < len(title):
                     item = item.replace('rtmp://$OPT:rtmp-raw=', '')
                     urlMeta = {}
-                    if item.startswith('http://prognoza.pogody.tv'):
-                        urlMeta['Host'] = 'prognoza.pogody.tv'
-                        if config.plugins.iptvplayer.weatherbymatzgprohibitbuffering.value:
-                            urlMeta['iptv_buffering'] = 'forbidden'
                     itemUrl = self.up.decorateUrl(item, urlMeta)
                     params = {'title': title, 'url': itemUrl, 'desc': 'Protokół: ' + itemUrl.meta.get('iptv_proto', '')}
                     self.playVideo(params)
@@ -630,6 +629,39 @@ class HasBahCa:
                     return [dict(item)]
             return [dict(tmpList[0])]
         return urlsTab
+        
+        
+    def prognozaPogodyList(self, url):
+        printDBG("prognozaPogodyList start")
+        if config.plugins.iptvplayer.weather_useproxy.value: params = {'http_proxy':config.plugins.iptvplayer.proxyurl.value}
+        else: params = {}
+        sts,data = self.cm.getPage(url, params)
+        if not sts: return
+        data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="items">', '</div>', False)[1]    
+        data = data.split('</a>')
+        if len(data): del data[-1]
+        for item in data:
+            params = {'name':"prognoza.pogody.tv"}
+            params['url'] = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            params['icon'] = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            params['title'] = self.cleanHtmlStr(item)
+            if len(params['icon']) and not params['icon'].startswith('http'): params['icon'] = 'http://prognoza.pogody.tv/'+params['icon']
+            if len(params['url']) and not params['url'].startswith('http'): params['url'] = 'http://prognoza.pogody.tv/'+params['url']
+            self.playVideo(params)
+            
+    def prognozaPogodyLink(self, url):
+        printDBG("prognozaPogodyLink url[%r]" % url)
+        if config.plugins.iptvplayer.weather_useproxy.value: params = {'http_proxy':config.plugins.iptvplayer.proxyurl.value}
+        else: params = {}
+        sts,data = self.cm.getPage(url, params)
+        if not sts: return []
+        url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)\.mp4[^"]*?"')[0]
+        
+        urlMeta = {}
+        if config.plugins.iptvplayer.weatherbymatzgprohibitbuffering.value:
+            urlMeta['iptv_buffering'] = 'forbidden'
+        url = self.up.decorateUrl(url, urlMeta)
+        return [{'name':'prognoza.pogody.tv', 'url':url}]
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -661,6 +693,9 @@ class HasBahCa:
     #m3u items
         elif name == "m3u":
             self.m3uList(url)
+    #prognoza.pogody.tv items
+        elif name == "prognoza.pogody.tv":
+            self.prognozaPogodyList(url)
     #goldvod.tv items
         elif name == "goldvod.tv":
             self.getGoldvodList(url)
@@ -721,6 +756,7 @@ class IPTVHost(CHostBase):
         name = self.host.currList[Index].get("name", '')
         
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s] [%s]" % (name, url))
+        urlList = None
         
         if -1 != url.find('teledunet'):
             new_url = TeledunetParser().get_rtmp_params(url)
@@ -734,40 +770,31 @@ class IPTVHost(CHostBase):
         elif 'looknij.tv' in url:
             url = self.host.getLooknijTvLink(url)
         elif 'tvisport.cba.pl' in url:
-            tmpList = self.host.getTvSportCdaLink(url)
-            for item in tmpList:
-                retlist.append(CUrlItem(item['name'], item['url']))
-            url = None
+            urlList = self.host.getTvSportCdaLink(url)
         elif 'nettv.pw' in url:
-            tmpList = self.host.getNettvpwLink(url)
-            for item in tmpList:
-                retlist.append(CUrlItem(item['name'], item['url']))
-            url = None
+            urlList = self.host.getNettvpwLink(url)
         elif 'weeb.tv' in name:
             url = self.host.getWeebTvLink(url)
         elif name == "team-cast.pl":
-            tmpList = self.host.getTeamCastLink(url)
-            for item in tmpList:
-                retlist.append(CUrlItem(item['name'], item['url']))
-            url = None
+            urlList = self.host.getTeamCastLink(url)
         elif "filmon_channel" == name:
-            tmpList = self.host.getFilmOnLink(channelID=url)
-            for item in tmpList:
-                retlist.append(CUrlItem(item['name'], item['url']))
+            urlList = self.host.getFilmOnLink(channelID=url)
         elif "videostar_channels" == name:
-            tmpList = self.host.getVideostarLink(channelID=url)
-            if 1 < len(tmpList):
-                for item in tmpList:
-                    retlist.append(CUrlItem(item['name'], item['url']))
-            elif 1 == len(tmpList):
-                url =  tmpList[0]['url']
+            urlList = self.host.getVideostarLink(channelID=url)
+            #if 1 < len(tmpList):
+            #    for item in tmpList:
+            #        retlist.append(CUrlItem(item['name'], item['url']))
+            #elif 1 == len(tmpList):
+            #    url =  tmpList[0]['url']
         elif name == "webcamera.pl":
-            tmpList = self.host.getWebCameraLink(url)
-            for item in tmpList:
-                retlist.append(CUrlItem(item['name'], item['url']))
-            url = None
+            urlList = self.host.getWebCameraLink(url)
+        elif name == "prognoza.pogody.tv":
+            urlList = self.host.prognozaPogodyLink(url)
             
-        if isinstance(url, basestring):
+        if isinstance(urlList, list):
+            for item in urlList:
+                retlist.append(CUrlItem(item['name'], item['url']))
+        elif isinstance(url, basestring):
             if url.endswith('.m3u'):
                 tmpList = self.host.getDirectVideoHasBahCa(name, url)
                 for item in tmpList:
