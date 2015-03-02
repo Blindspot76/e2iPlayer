@@ -66,7 +66,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # flumpegdemux
-        self.flumpegdemuxVersion = {'i686':199720, 'mipsel':275752, 'sh4':151664}
+        self.flumpegdemuxVersion = "0.10.85" #{'i686':199720, 'mipsel':275752, 'sh4':151664}
         self.flumpegdemuxpaths = ["/usr/lib/gstreamer-0.10/libgstflumpegdemux.so"]
         
     def __del__(self):
@@ -333,12 +333,7 @@ class IPTVSetupImpl:
     def flumpegdemuxStep(self, ret=None):
         printDBG("IPTVSetupImpl.flumpegdemuxStep")
         def _detectValidator(code, data):
-            platform = config.plugins.iptvplayer.plarform.value
-            validSize = self.flumpegdemuxVersion.get(platform, -1)
-            if 0 == code:
-                try: currentSize = os_path.getsize(self.flumpegdemuxpaths[0])
-                except: currentSize = -1
-                if -1 != validSize and validSize == currentSize: return True,False
+            if 0 == code: return True,False
             return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
@@ -362,7 +357,7 @@ class IPTVSetupImpl:
         
         self.stepHelper.setInstallChoiseList( [('gst-fluendo-mpegdemux', self.flumpegdemuxpaths[0])] )
         self.stepHelper.setPaths( self.flumpegdemuxpaths )
-        self.stepHelper.setDetectCmdBuilder( lambda path: ('ls "%s" 2>&1 ' % path) )
+        self.stepHelper.setDetectCmdBuilder( lambda path: ('grep "%s" "%s" 2>&1 ' % (self.flumpegdemuxVersion, path)) )
         self.stepHelper.setDetectValidator( _detectValidator )
         self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
         self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
