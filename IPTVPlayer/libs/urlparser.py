@@ -2223,7 +2223,7 @@ class pageParser:
         COOKIE_FILE = GetCookieDir('myviru.cookie')
         params  = {'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         videoTab = []
-        if linkUrl.startswith("http://myvi.ru/player/flash/"):
+        if '/player/flash/' in linkUrl:
             videoId = linkUrl.split('/')[-1]
             sts, response = self.cm.getPage(linkUrl, {'return_data':False})
             if not sts: return videoTab
@@ -2236,12 +2236,15 @@ class pageParser:
             data = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
             if not data.startswith("//"): return videoTab
             linkUrl = "http:" + data
-        if linkUrl.startswith("http://myvi.tv/embed/html/"): 
+        if '/embed/html/' in linkUrl: 
             sts, data = self.cm.getPage(linkUrl)
             if not sts: return videoTab
             data = self.cm.ph.getSearchGroups(data, """dataUrl[^'^"]*?:[^'^"]*?['"]([^'^"]+?)['"]""")[0]
-            if not data.startswith("//"): return videoTab
-            sts, data = self.cm.getPage("http:" + data, params)
+            if data.startswith("//"): linkUrl = "http:" + data
+            elif data.startswith("/"): linkUrl = "http://myvi.ru" + data
+            elif data.startswith("http"): linkUrl = data
+            else: return videoTab 
+            sts, data = self.cm.getPage(linkUrl, params)
             if not sts: return videoTab
             try:
                 # get cookie data
