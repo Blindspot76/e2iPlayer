@@ -155,7 +155,7 @@ class IPTVExtMoviePlayer(Screen):
         
         self.extPlayerCmddDispatcher = ExtPlayerCommandsDispatcher(self)
         
-        self["actions"] = ActionMap(['IPTVAlternateVideoPlayer', 'MoviePlayerActions', 'MediaPlayerActions', 'MediaPlayerSeekActions'],
+        self["actions"] = ActionMap(['IPTVAlternateVideoPlayer', 'MoviePlayerActions', 'MediaPlayerActions', 'MediaPlayerSeekActions', 'WizardActions'],
             {
                 "leavePlayer"  : self.key_stop,
                 'play'         : self.key_play,
@@ -174,7 +174,8 @@ class IPTVExtMoviePlayer(Screen):
                 'left_press'   : self.key_left_press,
                 'left_repeat'  : self.key_left_repeat,
                 'rigth_press'  : self.key_rigth_press,
-                'rigth_repeat' : self.key_rigth_repeat
+                'rigth_repeat' : self.key_rigth_repeat,
+                'ok'           : self.key_ok,
             }, -1)
         
         self.onClose.append(self.__onClose)
@@ -249,6 +250,9 @@ class IPTVExtMoviePlayer(Screen):
         self.playerBinaryInfo = {'version':None, 'data':''}
         self.messageQueue = []
         self.underMessage = False
+        
+        try: self.autoHideTime = 1000 * int(config.plugins.iptvplayer.extplayer_infobar_timeout.value)
+        except: self.autoHideTime = 1000
         
     def updateInfo(self):
         self.extPlayerCmddDispatcher.doUpdateInfo()
@@ -390,6 +394,9 @@ class IPTVExtMoviePlayer(Screen):
     def key_left_repeat(self):  self.goToSeekKey(-1, 'repeat')
     def key_rigth_press(self):  self.goToSeekKey(1, 'press')
     def key_rigth_repeat(self): self.goToSeekKey(1, 'repeat')
+    def key_ok(self):
+        if 'Pause' == self.playback['Status']: self.extPlayerCmddDispatcher.play()
+        else: self.extPlayerCmddDispatcher.pause()
         
     def goToSeekKey(self, direction, state='press'):
         if 'press' == state: 
@@ -629,7 +636,7 @@ class IPTVExtMoviePlayer(Screen):
         self.playbackInfoBar['visible'] = True
 
         if not blocked:
-            self.playbackInfoBar['timer'].start(10000, True) # singleshot
+            self.playbackInfoBar['timer'].start(self.autoHideTime, True) # singleshot
 
     def hidePlaybackInfoBar(self, excludeElems=[], force=False):
         self.playbackInfoBar['timer'].stop()
