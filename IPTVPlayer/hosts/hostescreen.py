@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
 ###################################################
 
@@ -18,6 +18,7 @@ try:    import json
 except: import simplejson as json
 import urllib
 from datetime import timedelta
+import base64
 ###################################################
 
 ###################################################
@@ -34,10 +35,12 @@ config.plugins.iptvplayer.escreenHD        = ConfigYesNo(default = False)
 config.plugins.iptvplayer.escreen_login    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.escreen_password = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.escreen_m3u1     = ConfigText(default = "http://iptv.e-screen.tv/?uid=", fixed_size = False)
+config.plugins.iptvplayer.escreen_server   = ConfigSelection(default = "auto", choices = [("auto", "auto"),("0", _("1")),("1", _("2")),("2", _("3")),("list", _("lista"))])
 
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Kanały w jakości HD?"), config.plugins.iptvplayer.escreenHD))
+    optionList.append(getConfigListEntry(_("Server:"), config.plugins.iptvplayer.escreen_server))
     optionList.append(getConfigListEntry(_("Escreen login:"), config.plugins.iptvplayer.escreen_login))
     optionList.append(getConfigListEntry(_("Escreen hasło:"), config.plugins.iptvplayer.escreen_password))
     optionList.append(getConfigListEntry(_("Adres listy M3U:"), config.plugins.iptvplayer.escreen_m3u1))
@@ -54,21 +57,25 @@ class Escreen(CBaseHostClass):
     MAINURL     = 'http://xbmc.e-screen.tv/api'
     VERSION_URL = MAINURLS + '/version'
     LOGIN_URL   = MAINURLS + '/verify'
-    MESSAGE_URL = MAINURLS + '/getmessage.php'
+    MESSAGE_URL = MAINURLS + '/getmessage'
+    MOVIE_TOKEN_URL = MAINURL + '/gettokenformovies'
+    SERVERS_URL = MAINURL + '/getservers'
+    EPG_URL = MAINURL + '/epg'
     #VERSION     = 2014121601
-    VERSION     = 2015011101
+    #VERSION     = 2015011101
+    VERSION      = 2015030101
     MAIN_TAB  = [{'category':'tv',            'title':_('Telewizja ONLINE'), 'url':MAINURLS+'/channels'},
                  {'category':'serialeonline', 'title':_('Seriale ONLINE'),   'url':MAINURL+'/getserialsonline'},
                  {'category':'filmy',         'title':_('FILMY'),            },
-                 {'category':'bajki',         'title':_('BAJKI'),            'url':MAINURL+'/getbajki'}, 
-                 {'category':'search',        'title':_('Search'), 'search_item':True},
-                 {'category':'search_history','title':_('Search history')}]
+                 {'category':'bajki',         'title':_('BAJKI'),            'url':MAINURL+'/getbajki'}]
                  
     FILMS_CAT_TAB  = [{'category':'filmy_kategorie',      'title':_('Kategorie filmowe'), 'url':MAINURL+'/getmoviescategories'},
                      {'category': 'filmy_ostatniododane', 'title':_('Ostatnio dodane'),   'url':MAINURL+'/getmovieslatest'},
-                     {'category': 'filmy_alfabetycznie',  'title':_('Alfabetycznie'),     'url':MAINURL+'/getmoviesalphabetically'}]
+                     {'category': 'filmy_alfabetycznie',  'title':_('Alfabetycznie'),     'url':MAINURL+'/getmoviesalphabetically'},
+                     {'category':'search',                'title':_('Search'), 'search_item':True},
+                     {'category':'search_history',        'title':_('Search history')}]
 
-    
+   
     def __init__(self):
         printDBG("Escreen.__init__")
         CBaseHostClass.__init__(self, {'cookie':'escreen.cookie', 'history':'escreen.tv'})
@@ -114,7 +121,45 @@ class Escreen(CBaseHostClass):
                     params = {'title':title, 'urls':[{'name':server, 'url':url}], 'url':'', 'desc':server, 'icon':icon}
                     tmpTab.append(params)
         for params in tmpTab:
+            params.update({'link_type':'m3u'})
             self.addVideo(params)
+            
+    def getPosterID(self):
+        printDBG("Escreen.getPosterID")
+        self.hash = self.login(True)
+        if len(self.hash) > 3:
+            postdata = { 'user': self.username, 'pass': self.hash, 'token': 'XBMC' } 
+            sts, data = self.cm.getPage(Escreen.MOVIE_TOKEN_URL, Escreen.DEFPARAMS, postdata)
+            if not sts: return None
+            return self.getStr(data)
+        return None
+    
+    def getServers(self):
+        printDBG("Escreen.getServers")
+        rtmpservers = []
+        self.hash = self.login(True)
+        if len(self.hash) > 3:
+            postdata = { 'user': self.username, 'pass': self.hash } 
+            sts, data = self.cm.getPage(Escreen.SERVERS_URL, Escreen.DEFPARAMS, postdata)
+            if not sts: return None
+            try:
+                data = byteify(json.loads(data))
+                for item in data: rtmpservers.append({'name':item['servername'], 'url':item['serverurl']})
+            except: printExc()
+        return rtmpservers
+        
+    def selectServers(self, servers, autoRtmpserver=''):
+        printDBG("Escreen.selectServers")
+        if '' == autoRtmpserver: 
+            if len(servers): rtmpservers = [servers[0]]
+            else: return []
+        else: rtmpservers = [{'name':'auto', 'url':autoRtmpserver}]
+        if 'auto' == config.plugins.iptvplayer.escreen_server.value: return rtmpservers
+        try:
+            if 'list' == config.plugins.iptvplayer.escreen_server.value and len(servers): rtmpservers = servers
+            elif config.plugins.iptvplayer.escreen_server.value in ['0','1','2']: return [servers[int(config.plugins.iptvplayer.escreen_server.value)]]
+        except: printExc()
+        return rtmpservers
 
     def getStr(self, v, default=''):
         if type(v) == type(u''): return v.encode('utf-8')
@@ -212,7 +257,12 @@ class Escreen(CBaseHostClass):
             sendauth   = self.getStr(item['sendauth'])
             provider   = self.getStr(item['provider'])
             app        = self.getStr(item['app'])
-                
+            
+            if 0 == len(sd) and 0 < len(hd): stream = hd
+            else: stream = sd
+            
+            autoRtmpserver = rtmpserver
+            rtmpserver = '%s'
             if (provider == "0"):
                 urlbase2 = rtmpserver+'/'+app+'/'
                 if (sendauth == "yes"):
@@ -240,7 +290,7 @@ class Escreen(CBaseHostClass):
             elif (provider == "2"):
                 url = rtmpserver+'/'+app+'/'+sd
             if len(url):
-                self.addVideo({'title':channelname, 'icon':icon, 'url':url})
+                self.addVideo({'title':channelname, 'stream':stream, 'icon':icon, 'url':url, 'link_type':'channel', 'rtmpserver':autoRtmpserver})
         except: printExc()
             
     def _mapSeriesItem(self, item):
@@ -266,7 +316,7 @@ class Escreen(CBaseHostClass):
             elif (provider == "2"):
                 url = rtmpserver+'/'+app+'/'+url
             if len(url):
-                self.addVideo({'title':channelname, 'icon':icon, 'url':url})
+                self.addVideo({'title':channelname, 'icon':icon, 'url':url, 'link_type':'series'})
         except: printExc()
         
     def _mapBajkiItem(self, item):
@@ -286,10 +336,9 @@ class Escreen(CBaseHostClass):
                 urlbase2 = protocol+server+'/'+videourl+'?user='+self.username+'&pass='+self.hash+'&token='+token
                 urlparams=' swfUrl=flowplayer.swf pageUrl=http://pl.e-screen.tv flashVer=XBMC live=0 '# swfVfy=true'
                 url = urlbase2+urlparams
-            elif (provider == "1"):
-                url = protocol+urllib.quote(self.username)+':'+self.hash+'@'+server+'/'+videourl
+            elif (provider == "1"): url = protocol + server+'/' + videourl
             if len(url):
-                self.addVideo({'title':title, 'icon':cover, 'url':url})
+                self.addVideo({'title':title, 'icon':cover, 'url':url, 'link_type':'cartoon'})
         except: printExc()
         
     def _mapFilmyKategorieItem(self, item):
@@ -311,8 +360,8 @@ class Escreen(CBaseHostClass):
             description = self.getStr(item['description'])
             duration    = self.getStr(item['duration'])
             desc        = "Rok: %s | Czas trwania: %s | %s" % (year, str(timedelta(minutes=int(duration))), description)
-            url         = 'http://'+urllib.quote(self.username)+':'+self.hash+'@'+server+'/'+videourl
-            self.addVideo({'title':title, 'icon':cover, 'url':url, 'desc':desc})
+            url         = 'http://'+server+'/'+videourl
+            self.addVideo({'title':title, 'icon':cover, 'url':url, 'desc':desc, 'link_type':'movie'})
         except: printExc()
     
     def _mapFilmyAlfabetycznie(self, item):
@@ -341,9 +390,20 @@ class Escreen(CBaseHostClass):
             except: printExc()
             
     def getLinksForVideo(self, cItem):
+        printDBG("Escreen.getLinksForVideo")
         urlsTab = []
         urls = cItem.get('urls', [])
-        if 0 == len(urls): urls = [{'name':'e-screener.tv', 'url':cItem.get('url', '')}]
+        if 0 == len(urls): 
+            url = cItem.get('url', '')
+            type = cItem.get('link_type', '')
+            if type in ['cartoon', 'movie']: 
+                url += str(self.getPosterID()).strip()
+                urls = [{'name':'e-screener.tv', 'url':url}]
+            elif type == 'channel':
+                serwers = self.selectServers( self.getServers(), cItem.get('rtmpserver', '') )
+                for serv in serwers: urlsTab.append({'name':serv['name'], 'url':url % serv['url']})
+            else: urls = [{'url':url}]
+        else: urls = self.selectServers(urls)
         for item in urls:
             url = item.get('url', '')
             name = item.get('name', 'e-screener.tv')
@@ -351,6 +411,18 @@ class Escreen(CBaseHostClass):
             if '.m3u8' in url: urlsTab.extend( getDirectM3U8Playlist(url) )
             else: urlsTab.append({'name':name, 'url':url})
         return urlsTab
+        
+    def getArticleContent(self, cItem):
+        printDBG("Escreen.getArticleContent")
+        ret = []
+        if 'stream' in cItem:
+            postdata = { 'token': 'qwerty', 'stream': cItem['stream'] }
+            sts, data = self.cm.getPage(Escreen.EPG_URL, Escreen.DEFPARAMS, postdata)
+            if not sts: return ret
+            printDBG(data)
+            data = re.sub('(\[[^]]+?\])', '', data)
+            ret = [ {'title':cItem['title'], 'text':self.getStr( data )} ]
+        return ret
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Escreen.handleService start')
@@ -430,6 +502,20 @@ class IPTVHost(CHostBase):
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
+    
+    def getArticleContent(self, Index = 0):
+        retCode = RetHost.ERROR
+        retlist = []
+        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+
+        hList = self.host.getArticleContent(self.host.currList[Index])
+        for item in hList:
+            title  = item.get('title', '')
+            text   = item.get('text', '')
+            images = item.get("images", [])
+            retlist.append( ArticleContent(title = title, text = text, images =  images) )
+        return RetHost(RetHost.OK, value = retlist)
+    # end getArticleContent
 
     def convertList(self, cList):
         hostList = []

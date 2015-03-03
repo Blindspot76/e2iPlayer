@@ -38,8 +38,8 @@ class ArticleView(Screen):
             "down": self["text"].pageDown
         }, -1)
         
-        self.title        = artItem.title.replace('\n', ' ').replace('  ', ' ')
-        self.textContent  = artItem.text.replace('\n', ' ').replace('  ', ' ')
+        self.title        = artItem.title
+        self.textContent  = artItem.text
         
         self.onClose.append(self.__onClose)
         self.onShown.append(self.updateTitle)
