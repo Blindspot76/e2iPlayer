@@ -51,11 +51,14 @@ class IPTVSetupImpl:
         self.rtmpdumpVersion = "Compiled by samsamsam@o2.pl 2015-01-11"
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
-        # f4mdump members
-        self.f4mdumpVersion = "F4MDump v0.23"
+        # f4mdump member
+        self.f4mdumpVersion = "F4MDump v0.30"
         self.f4mdumppaths = ["/usr/bin/f4mdump", GetBinDir("f4mdump", "")]
         self._f4mdumpInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/f4mdump (%s)" % _("recommended")), "/usr/bin/f4mdump"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/f4mdump", GetBinDir("f4mdump", "")),
+                                          (_("Do not install (not recommended)"), "")]
+        self._f4mdumpInstallChoiseList2 = [(_('Install into the "%s".') % ("/usr/bin/f4mdump static libstdc++ (%s)" % _("recommended")), "/usr/bin/f4mdump"),
+                                          (_('Install into the "%s".') % "IPTVPlayer/bin/f4mdump _static_libstdc++", GetBinDir("f4mdump", "")),
                                           (_("Do not install (not recommended)"), "")]
                                           
         # gstplayer
@@ -68,6 +71,9 @@ class IPTVSetupImpl:
         # flumpegdemux
         self.flumpegdemuxVersion = "0.10.85" #{'i686':199720, 'mipsel':275752, 'sh4':151664}
         self.flumpegdemuxpaths = ["/usr/lib/gstreamer-0.10/libgstflumpegdemux.so"]
+        
+        self.binaryInstalledSuccessfully = False
+        self.tries = 0
         
     def __del__(self):
         printDBG("IPTVSetupImpl.__del__ -------------------------------")
@@ -267,7 +273,10 @@ class IPTVSetupImpl:
     ###################################################
     def f4mdumpStep(self, ret=None):
         printDBG("IPTVSetupImpl.f4mdumpStep")
+        self.binaryInstalledSuccessfully = False
         def _detectValidator(code, data):
+            if self.binaryInstalledSuccessfully: self.stepHelper.setInstallChoiseList( self._f4mdumpInstallChoiseList2 )
+            else: self.stepHelper.setInstallChoiseList( self._f4mdumpInstallChoiseList )
             if self.f4mdumpVersion in data: return True,False
             else: return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
@@ -275,12 +284,23 @@ class IPTVSetupImpl:
             for idx in range(len(dataTab)):
                 if 'samsamsam@o2.pl' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            if self.binaryInstalledSuccessfully:
+                url = server + 'bin/' + platform + ('/%s_openssl' % binName) + openSSLVersion + '_static_libstdc++'
+                self.binaryInstalledSuccessfully = False
+            else: url = server + 'bin/' + platform + ('/%s_openssl' % binName) + openSSLVersion
+                
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+            
         self.stepHelper = CBinaryStepHelper("f4mdump", self.platform, self.openSSLVersion, config.plugins.iptvplayer.f4mdumppath)
         self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.' % ('f4mdump', 'f4m, uds')), 1)
         self.stepHelper.setInstallChoiseList( self._f4mdumpInstallChoiseList )
         self.stepHelper.setPaths( self.f4mdumppaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
         self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
         self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
         self.stepHelper.setFinishHandler( self.f4mdumpStepFinished )
         self.binaryDetect()
@@ -462,6 +482,7 @@ class IPTVSetupImpl:
     def binaryInstallFinished(self, stsTab, dataTab):
         printDBG("IPTVSetupImpl.binaryInstallFinished")
         if len(stsTab) > 0 and True == stsTab[-1]:
+            self.binaryInstalledSuccessfully = True
             # NEXT STEP
             self.binaryDetect() # run detect step once again to make sure that installed binary will be detected
         else: self.showMessage(_("Installation binary failed. Retry?"), MessageBox.TYPE_YESNO, self.binaryInstallRetry)
