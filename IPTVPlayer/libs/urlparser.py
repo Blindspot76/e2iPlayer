@@ -320,6 +320,7 @@ class urlparser:
         if None == data:
             sts,data = self.cm.getPage(url)
             if not sts: return []
+        data = re.sub("<!--[\s\S]*?-->", "", data)
         if 'http://goodcast.co/' in data:
             id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
             videoUrl = 'http://goodcast.co/stream.php?id=' + id
@@ -2069,6 +2070,7 @@ class pageParser:
                 pid = CParsingHelper.getDataBeetwenMarkers(data, "pid=", '&', False)[1]
                 data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>', False)[1]
                 sts, data = self.cm.getPage("http://yukons.net/srvload/"+id, params)
+                return False
                 if sts:
                     ip = data[4:].strip()
                     url = 'rtmp://%s:443/kuyo playpath=%s?id=%s&pid=%s  swfVfy=http://yukons.net/yplay2.swf pageUrl=%s conn=S:OK live=1' % (ip, shortChannelId, id, pid, url2)
