@@ -125,7 +125,7 @@ class IPTVSetupImpl:
             cmdTabs.append(platformtesterPath + "  2>&1 ")
         def _platformValidator(code, data):
             printDBG("IPTVSetupImpl._platformValidator")
-            if data.startswith("Test platform OK"): return True,False
+            if "Test platform OK" in data: return True,False
             else: return False,True
         self.workingObj = CCmdValidator(self.platformDetectFinished, _platformValidator, cmdTabs)
         self.workingObj.start()
