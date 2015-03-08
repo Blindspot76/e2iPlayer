@@ -113,18 +113,18 @@ class HasBahCa(CBaseHostClass):
                         #{'name': 'looknij.tv',      'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
                         #{'name': 'tvisport.cba.pl', 'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
                         {'name': 'nettv.pw',        'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
-                        {'name': 'm3u',             'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg.prv.pl/Lista_matzgPL.m3u',                              'icon': 'http://matzg.prv.pl/Iptv_matzgPL.png'}, \
+                        {'name': 'm3u',             'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'name': 'm3u',             'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
                         {'name': 'prognoza.pogody.tv','title': 'prognoza.pogody.tv',              'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
-                        {'name': 'm3u',             'title': 'Prognoza Pogody matzg',             'url': 'http://matzg.prv.pl/lista_pogoda.m3u',                               'icon': 'http://matzg.prv.pl/pogoda.png'}, \
-                        {'name': 'm3u',             'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg.prv.pl/Pogoda_METEOROGRAMY.m3u',                        'icon': 'http://matzg.prv.pl/pogoda_logo.png'}, \
+                        {'name': 'm3u',             'title': 'Prognoza Pogody matzg',             'url': 'http://matzg2.prv.pl/lista_pogoda.m3u',                              'icon': 'http://matzg2.prv.pl/pogoda.png'}, \
+                        {'name': 'm3u',             'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg2.prv.pl/Pogoda_METEOROGRAMY.m3u',                       'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
                         {'name': 'webcamera.pl',    'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
-                        {'name': 'm3u',             'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg.prv.pl/inne_matzg.m3u',                                 'icon': 'http://matzg.prv.pl/iptv.png'}, \
+                        {'name': 'm3u',             'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
                         {'name': 'filmon_groups',   'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'name': 'm3u',             'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
                         {'name': 'HasBahCa',        'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/',                                           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'name': 'm3u',             'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
-                        {'name': 'm3u',             'title': 'Radio-OPEN FM i inne',              'url':'http://matzg.prv.pl/radio.m3u',                                       'icon': 'http://matzg.prv.pl/openfm.png'}, \
+                        {'name': 'm3u',             'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                       'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ]
     def __init__(self):
         self.up = urlparser()
