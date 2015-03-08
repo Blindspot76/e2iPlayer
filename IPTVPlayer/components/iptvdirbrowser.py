@@ -100,8 +100,19 @@ class IPTVDirectorySelectorWidget(Screen):
 
     def __onClose(self):
         printDBG("IPTVDirectorySelectorWidget.__onClose -----------------------------")
+        if None != self.console:
+            self.console_appClosed_conn   = None
+            self.console_stderrAvail_conn = None
+            self.console_stdoutAvail_conn = None
+            self.console.sendCtrlC()
+            self.console = None
+            
         self.onClose.remove(self.__onClose)
         self.onLayoutFinish.remove(self.layoutFinished)
+        
+    def _iptvDoClose(self, ret=None):
+        if self.console: self.console.sendCtrlC()
+        sef.close(ret)
         
     def _getSelItem(self):
         currSelIndex = self["list"].getCurrentIndex()
@@ -170,11 +181,11 @@ class IPTVDirectorySelectorWidget(Screen):
         
     def requestApply(self):
         if self.underClosing: return
-        self.doAction( boundFunction(self.close, self.getCurrentDirectory()) )
+        self.doAction( boundFunction(self._iptvDoClose, self.getCurrentDirectory()) )
         
     def requestCancel(self):
         if self.underClosing: return
-        self.doAction( boundFunction(self.close, None) )
+        self.doAction( boundFunction(self._iptvDoClose, None) )
         
     def requestRefresh(self):
         if self.underClosing: return
@@ -212,7 +223,7 @@ class IPTVDirectorySelectorWidget(Screen):
 
     def back(self):
         if '/' == self.currDir:
-            self.close(None)
+            self._iptvDoClose(None)
         else:
             self.currDir = self.currDir[:self.currDir[:-1].rfind('/')]
             self.currDirChanged()

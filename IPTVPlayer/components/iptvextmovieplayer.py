@@ -428,8 +428,7 @@ class IPTVExtMoviePlayer(Screen):
             if self.isStarted and not self.isClosing:
                 self.playbackInfoBar['blocked'] = True
                 self.showPlaybackInfoBar()
-        else:
-            self.doExit()
+        else: self.doExit()
     
     def eplayer3Finished(self, code):
         printDBG("IPTVExtMoviePlayer.eplayer3Finished code[%r]" % code)
@@ -446,10 +445,10 @@ class IPTVExtMoviePlayer(Screen):
         
     def waitCloseTimeoutCallback(self):
         printDBG("IPTVExtMoviePlayer.waitCloseTimeoutCallback")
-        if self.isClosing: return
         if None != self.console:
             printDBG("Force close movie player by sending CtrlC")
             self.console.sendCtrlC()
+        self.onLeavePlayer()
         
     def eplayer3DataAvailable2(self, data):
         if None == data or self.isClosing:
@@ -693,7 +692,7 @@ class IPTVExtMoviePlayer(Screen):
             elif 'PLAYBACK_STOP'          == command: 
                 if not self.waitCloseFix['waiting']:
                     self.waitCloseFix['waiting'] = True
-                    self.waitCloseFix['timer'].start(2000, True) # singleshot
+                    self.waitCloseFix['timer'].start(10000, True) # singleshot
                 self.console.write( "q\n" )
             else:
                 printDBG("IPTVExtMoviePlayer.extPlayerSendCommand unknown command[%s]" % command)

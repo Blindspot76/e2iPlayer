@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+#
+#  IPTV List Component
+#
+#  $Id$
+#
+# 
 ###################################################
 # LOCAL import
 ###################################################
@@ -85,11 +91,8 @@ class IPTVMainNavigatorList(IPTVListComponentBase):
     def __init__(self):
         IPTVListComponentBase.__init__(self)
         self.screenwidth = getDesktop(0).size().width()
-        try:
-            printDBG(skin.fonts.keys())
-            self.font = skin.fonts["iptvlistitem"]
+        try: self.font = skin.fonts["iptvlistitem"]
         except:
-            printExc()
             if self.screenwidth and self.screenwidth == 1920: self.font = ("Regular", 28, 40, 0)
             else: self.font = ("Regular", 18, 35, 0)
         self.l.setFont(0, gFont("Regular", 40))
@@ -106,10 +109,8 @@ class IPTVMainNavigatorList(IPTVListComponentBase):
         for key in self.dictPIX:
             try:
                 pixFile = self.ICONS_FILESNAMES.get(key, None)
-                if None != pixFile:
-                    self.dictPIX[key] = LoadPixmap(cached=True, path=GetIconDir(pixFile))
-            except:
-                printExc()
+                if None != pixFile: self.dictPIX[key] = LoadPixmap(cached=True, path=GetIconDir(pixFile))
+            except: printExc()
         
     def onDestroy(self):
         self._nullPIX()

@@ -6,7 +6,7 @@
 ###################################################
 from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes  import AES
@@ -44,12 +44,9 @@ from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 from Components.config import config
 
 try:
-    try:
-        import json
-    except:
-        import simplejson as json
-except:
-    printExc()
+    try: import json
+    except: import simplejson as json
+except: printExc()
     
 try:
     import codecs
@@ -246,6 +243,7 @@ class urlparser:
                        'live.bvbtotal.de':     self.pp.parserLIVEBVBTOTALDE,
                        'partners.nettvplus.com': self.pp.parserNETTVPLUSCOM,
                        '7cast.net':            self.pp.parser7CASTNET      ,
+                       'facebook.com':         self.pp.parserFACEBOOK      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2620,6 +2618,21 @@ class pageParser:
             return [{'name': 'rtmp://7cast.com/ ', 'url':urlparser.decorateUrl(rtmpUrl, {'iptv_livestream':True})}]
         return []
         
+    def parserFACEBOOK(self, baseUrl):
+        printDBG("parserFACEBOOK baseUrl[%s]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return []
+        
+        data = urllib.unquote( self.cm.ph.getSearchGroups(data, '"params","([^"]+?)"')[0].decode('unicode-escape').encode('UTF-8') )
+        data = byteify( json.loads(data) )
+        urlsTab = []
+        data = data['video_data'][0]
+        if 'sd_src' in data: urlsTab.append({'name':'facebook SD', 'url':data['sd_src'].replace('\\/', '/')})
+        if 'hd_src' in data: urlsTab.append({'name':'facebook HD', 'url':data['hd_src'].replace('\\/', '/')})
+        
+        return urlsTab
+        
+        
     def parserBILLIONUPLOADS(self, linkUrl):
         printDBG("parserBILLIONUPLOADS linkUrl[%s]" % linkUrl)
         return False
@@ -2887,4 +2900,31 @@ class pageParser:
 <input type="hidden" name="fname" value="The.Secret.Life.of.Walter.Mitty.2013.PLSUBBED.DVDscr.XViD.AC3-OzW.avi">
 <input type="hidden" name="referer" value="http://vidto.me/embed-7wtoiieyqsmv-647x500.html">
 <input type="hidden" name="hash" value="4upjo7kqazfuwg4ex75zwmruewqrrxbq">
+
+{
+    "auto_hd": false,
+    "autoplay_reason": "unknown",
+    "default_hd": false,
+    "disable_native_controls": false,
+    "inline_player": false,
+    "pixel_ratio": 1,
+    "preload": false,
+    "start_muted": false,
+    "video_data": [{
+        "hd_src": "https:\\/\\/fbcdn-video-a-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t43.1792-2\\/1346786_597358996980898_38093_n.mp4?rl=1924&vabr=1283&oh=39547a46c1706d6985a63f451d9804ee&oe=54FB5F56&__gda__=1425759704_938e66c3e93914a0af0978780c5a3a81",
+        "is_hds": false,
+        "is_hls": false,
+        "rotation": 0,
+        "sd_src": "https:\\/\\/fbcdn-video-p-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t42.1790-2\\/1188227_592870284096436_64686_n.mp4?rl=563&vabr=313&oh=e891677083036d0b291ed601f85953d8&oe=54FB5B46&__gda__=1425762824_3c005c8845ab035ba6aceae1cc5f63d5",
+        "video_id": "201191406597661",
+        "sd_tag": "legacy_sd",
+        "hd_tag": "legacy_hd",
+        "sd_src_no_ratelimit": "https:\\/\\/fbcdn-video-p-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t42.1790-2\\/1188227_592870284096436_64686_n.mp4?oh=e891677083036d0b291ed601f85953d8&oe=54FB5B46&__gda__=1425762824_fe9007c59a8243300d34f90a3f025c71",
+        "hd_src_no_ratelimit": "https:\\/\\/fbcdn-video-a-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t43.1792-2\\/1346786_597358996980898_38093_n.mp4?oh=39547a46c1706d6985a63f451d9804ee&oe=54FB5F56&__gda__=1425759704_4d32e5007b137533f795db5c816d6ef2",
+        "subtitles_src": null
+    }],
+    "show_captions_default": false,
+    "persistent_volume": true,
+    "buffer_length": 0.1
+}
     '''
