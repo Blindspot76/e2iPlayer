@@ -602,7 +602,9 @@ class pageParser:
         if 0 == len(tmpUrls):
             tmpUrls.append({'name':'cda.pl', 'url':inUrl})
         for urlItem in tmpUrls:
-            sts, data = self.cm.getPage(urlItem['url'])
+            if urlItem['url'].startswith('/'): inUrl = 'http://www.cda.pl/' + urlItem['url']
+            else: inUrl = urlItem['url']
+            sts, data = self.cm.getPage(inUrl)
             if sts:
                 data = CParsingHelper.getDataBeetwenMarkers(data, "modes:", ']', False)[1]
                 data = re.compile("""file: ['"]([^'^"]+?)['"]""").findall(data)
