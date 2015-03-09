@@ -15,11 +15,40 @@ import re
 import htmlentitydefs
 import cookielib
 try:
-    from StringIO import StringIO
+    try: from cStringIO import StringIO
+    except: from StringIO import StringIO 
     import gzip
-except:
-    pass
+except: pass
 ###################################################
+
+
+class MultipartPostHandler(urllib2.BaseHandler):
+    handler_order = urllib2.HTTPHandler.handler_order - 10
+
+    def http_request(self, request):
+        data = request.get_data()
+        if data is not None and type(data) != str:
+            content_type, data = self.encode_multipart_formdata( data )
+            request.add_unredirected_header('Content-Type', content_type)
+            request.add_data(data)
+        return request
+        
+    def encode_multipart_formdata(self, fields):
+        LIMIT = '-----------------------------14312495924498'
+        CRLF = '\r\n'
+        L = []
+        for (key, value) in fields:
+            L.append('--' + LIMIT)
+            L.append('Content-Disposition: form-data; name="%s"' % key)
+            L.append('')
+            L.append(value)
+        L.append('--' + LIMIT + '--')
+        L.append('')
+        body = CRLF.join(L)
+        content_type = 'multipart/form-data; boundary=%s' % LIMIT
+        return content_type, body
+    
+    https_request = http_request
 
 class CParsingHelper:
     @staticmethod
@@ -308,6 +337,9 @@ class common:
         if None != post_data:
             printDBG('pCommon - getURLRequestData() -> post data: ' + str(post_data))
             if params.get('raw_post_data', False):
+                dataPost = post_data
+            elif params.get('multipart_post_data', False):
+                customOpeners.append( MultipartPostHandler() )
                 dataPost = post_data
             else:
                 dataPost = urllib.urlencode(post_data)
