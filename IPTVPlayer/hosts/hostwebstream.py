@@ -124,7 +124,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'm3u',             'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
                         {'name': 'HasBahCa',        'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/',                                           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'name': 'm3u',             'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
-                        {'name': 'm3u',             'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                       'icon': 'http://matzg2.prv.pl/openfm.png'}, \
+                        {'name': 'm3u',             'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ]
     def __init__(self):
         self.up = urlparser()
