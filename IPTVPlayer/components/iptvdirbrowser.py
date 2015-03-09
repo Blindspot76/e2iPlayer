@@ -112,7 +112,7 @@ class IPTVDirectorySelectorWidget(Screen):
         
     def _iptvDoClose(self, ret=None):
         if self.console: self.console.sendCtrlC()
-        sef.close(ret)
+        self.close(ret)
         
     def _getSelItem(self):
         currSelIndex = self["list"].getCurrentIndex()
