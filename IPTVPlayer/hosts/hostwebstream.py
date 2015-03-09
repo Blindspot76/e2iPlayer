@@ -33,6 +33,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 
 try:    from urlparse import urlsplit, urlunsplit
 except: pass
+from hashlib import md5
 ############################################
 
 ###################################################
@@ -240,6 +241,25 @@ class HasBahCa(CBaseHostClass):
             url = url.strip()
             printDBG("adf.ly [%s] -> [%s]" % (tmp, url))
         elif '' != tmp: url = tmp
+        if url.endswith('.rar'):
+            progress_key = md5(url).hexdigest()[:14] #'a2yas1htyel27e' #url.split('/')[-1][:14]
+            post_data = [('APC_UPLOAD_PROGRESS', progress_key), ('MAX_FILE_SIZE', ''), ('storedOpt', '56'), ('FileOrURLFlag', 'url'), ('http_referer', ''),\
+                         ('aid', ''), ('fakefilepc', ''), ('file_or_url', 'url'), ('download_url', url), ('youtube_mode', 'default'),\
+                         ('input_format', '.rar'), ('output_format', '.tar'), ('email', '')]
+            sts, data = self.cm.getPage('http://www.convertfiles.com/converter.php', {'multipart_post_data':True}, post_data)
+            tries = 0
+            while tries < 10:
+                time.sleep(1)
+                sts, data = self.cm.getPage('http://www.convertfiles.com/getprogress.php?progress_key=%s' % progress_key)
+                if not sts: return
+                if '100' in data:
+                    sts, data = self.cm.getPage('http://www.convertfiles.com/convertrogressbar.php?progress_key=%s&i=1' % progress_key)
+                    if not sts: return
+                    url = self.cm.ph.getSearchGroups(data, 'href="([^"]+?\.tar)"')[0]
+                    self.m3uList(url)
+                    return
+                tries += 1
+            if not sts: return
         if url.endswith('.m3u') or 'm3u' in url: self.m3uList(url)
     
     def listHasBahCa(self, cItem):
