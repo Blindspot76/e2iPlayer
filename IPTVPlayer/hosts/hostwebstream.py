@@ -230,6 +230,15 @@ class HasBahCa(CBaseHostClass):
             item = self.currList[0]
             self.currList = []
             self._listHasBahCaResolve(item)
+            
+    def _listHasBahCaFromTar(self, progress_key):
+        sts, data = self.cm.getPage('http://www.convertfiles.com/convertrogressbar.php?progress_key=%s&i=1' % progress_key)
+        if not sts: return
+        url = self.cm.ph.getSearchGroups(data, 'href="([^"]+?\.tar)"')[0]
+        if '' == url: return False
+        self.m3uList(url)
+        if len(self.currList): return True
+        else: return False
 
     def _listHasBahCaResolve(self, cItem):
         url = cItem['url']
@@ -242,24 +251,25 @@ class HasBahCa(CBaseHostClass):
             printDBG("adf.ly [%s] -> [%s]" % (tmp, url))
         elif '' != tmp: url = tmp
         if url.endswith('.rar'):
-            progress_key = md5(url).hexdigest()[:14] #'a2yas1htyel27e' #url.split('/')[-1][:14]
-            post_data = [('APC_UPLOAD_PROGRESS', progress_key), ('MAX_FILE_SIZE', ''), ('storedOpt', '56'), ('FileOrURLFlag', 'url'), ('http_referer', ''),\
-                         ('aid', ''), ('fakefilepc', ''), ('file_or_url', 'url'), ('download_url', url), ('youtube_mode', 'default'),\
-                         ('input_format', '.rar'), ('output_format', '.tar'), ('email', '')]
-            sts, data = self.cm.getPage('http://www.convertfiles.com/converter.php', {'multipart_post_data':True}, post_data)
+            progress_key = md5(url+cItem['title']).hexdigest()[:14] #'a2yas1htyel27e' #url.split('/')[-1][:14]
             tries = 0
             while tries < 10:
+                if self._listHasBahCaFromTar(progress_key): return
+                post_data = [('APC_UPLOAD_PROGRESS', progress_key), ('MAX_FILE_SIZE', ''), ('storedOpt', '56'), ('FileOrURLFlag', 'url'), ('http_referer', ''),\
+                             ('aid', ''), ('fakefilepc', ''), ('file_or_url', 'url'), ('download_url', url), ('youtube_mode', 'default'),\
+                             ('input_format', '.rar'), ('output_format', '.tar'), ('email', '')]
+                sts, data = self.cm.getPage('http://www.convertfiles.com/converter.php', {'multipart_post_data':True}, post_data)
+                if not sts: continue
+                while tries < 10:
+                    time.sleep(1)
+                    sts, data = self.cm.getPage('http://www.convertfiles.com/getprogress.php?progress_key=%s' % progress_key)
+                    if not sts: continue
+                    if '100' in data:
+                        if not self._listHasBahCaFromTar(progress_key): break
+                        return
+                    tries += 1
                 time.sleep(1)
-                sts, data = self.cm.getPage('http://www.convertfiles.com/getprogress.php?progress_key=%s' % progress_key)
-                if not sts: return
-                if '100' in data:
-                    sts, data = self.cm.getPage('http://www.convertfiles.com/convertrogressbar.php?progress_key=%s&i=1' % progress_key)
-                    if not sts: return
-                    url = self.cm.ph.getSearchGroups(data, 'href="([^"]+?\.tar)"')[0]
-                    self.m3uList(url)
-                    return
                 tries += 1
-            if not sts: return
         if url.endswith('.m3u') or 'm3u' in url: self.m3uList(url)
     
     def listHasBahCa(self, cItem):
