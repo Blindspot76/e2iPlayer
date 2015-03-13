@@ -235,7 +235,7 @@ class ZalukajTv(CBaseHostClass):
                 continue 
             sts, data = self._getPage(url)
             if not sts: continue
-            url = self.cm.ph.getSearchGroups(data, '<a href="([^"]+?)"', 1)[0]
+            url = self._getFullUrl(self.cm.ph.getSearchGroups(data, '<a href="([^"]+?)"', 1)[0])
             if '' == url:
                 printDBG( 'No href in data[%s]' % '')
                 continue
