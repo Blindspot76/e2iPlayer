@@ -149,6 +149,9 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, Urllist(), True)
+        
+    def _isPicture(self, url):  
+        return url.endswith(".jpeg") or url.endswith(".jpg") or url.endswith(".png")
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('urllist.png')])
@@ -164,10 +167,12 @@ class IPTVHost(CHostBase):
             return RetHost(RetHost.ERROR, value = [])
 
         retlist = []
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+        uri = self.host.currList[Index].get('url', '')
+        if not self._isPicture(uri):
+            urlList = self.host.getLinksForVideo(self.host.currList[Index])
+            for item in urlList:
+                retlist.append(CUrlItem(item["name"], item["url"], 0))
+        else: retlist.append(CUrlItem('picture link', uri, 0))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
@@ -192,6 +197,10 @@ class IPTVHost(CHostBase):
             elif cItem['type'] == 'video':
                 type = CDisplayListItem.TYPE_VIDEO
                 url = cItem.get('url', '')
+                if self._isPicture(url):
+                    type = CDisplayListItem.TYPE_PICTURE
+                else:
+                    type = CDisplayListItem.TYPE_VIDEO
                 if '' != url:
                     hostLinks.append(CUrlItem("Link", url, 1))
                 

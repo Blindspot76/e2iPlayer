@@ -97,9 +97,14 @@ class IPTVPicturePlayerWidget(Screen):
         self.url           = url
         self.pictureTitle  = pictureTitle
        
-        self["actions"] = ActionMap(["WizardActions", "DirectionActions"],
+        self["actions"] = ActionMap(['IPTVAlternateVideoPlayer', 'MoviePlayerActions', 'MediaPlayerActions', 'WizardActions', 'DirectionActions'],
         {
-            "back": self.back_pressed
+            'leavePlayer'  : self.key_exit,
+            'play'         : self.key_play,
+            'pause'        : self.key_pause,
+            'exit'         : self.key_exit,
+            'back'         : self.key_exit,
+            'ok'           : self.key_ok,
         }, -1)     
 
         self["status"]  = Label()
@@ -125,6 +130,11 @@ class IPTVPicturePlayerWidget(Screen):
         self.onClose.append(self.__onClose)
         self.onLayoutFinish.append(self.doStart)
         
+        self.autoRefresh = False
+        self.refreshPostfixes = ['_0', '_1']
+        self.refreshCount = 0
+        self.refreshing = False
+       
     #end def __init__(self, session):
     
     def __del__(self):
@@ -135,9 +145,12 @@ class IPTVPicturePlayerWidget(Screen):
         self.onEnd()
         self.mainTimer_conn = None
         self.mainTimer = None
-
+        
         self.onClose.remove(self.__onClose)
         self.onLayoutFinish.remove(self.doStart)
+        
+    def _getDownloadFilePath(self):
+        return self.filePath + self.refreshPostfixes[self.refreshCount % len(self.refreshPostfixes) ]
  
     def onStart(self):
         '''
@@ -151,15 +164,21 @@ class IPTVPicturePlayerWidget(Screen):
             self.downloader.isWorkingCorrectly(self._startDownloader)
         else:
             self.session.openWithCallback(self.close, MessageBox, _("Downloading cannot be started.\n Invalid URI[%s].") % self.url, type = MessageBox.TYPE_ERROR, timeout = 10)
-
-    def _startDownloader(self, sts, reason):
-        if sts:
+            
+    def _doStart(self, force=False):
+        if self.autoRefresh or force:
+            self.refreshing = True
+            self.downloader = DownloaderCreator(self.url)
+            
             url,downloaderParams = DMHelper.getDownloaderParamFromUrl(self.url)
             self.downloader.subscribeFor_Finish(self.downloaderEnd)
-            self.downloader.start(url, self.filePath, downloaderParams)
+            self.downloader.start(url, self._getDownloadFilePath(), downloaderParams)
             self.setMainTimerSts(True)
-        else:
-            self.session.openWithCallback(self.close, MessageBox, _("Downloading cannot be started.\n Downloader [%s] not working properly.\n Status[%s]") % (self.downloader.getName(), reason.strip()), type = MessageBox.TYPE_ERROR, timeout = 10 )        
+        else: self.refreshing = False
+
+    def _startDownloader(self, sts, reason):
+        if sts: self._doStart(True)
+        else: self.session.openWithCallback(self.close, MessageBox, _("Downloading cannot be started.\n Downloader [%s] not working properly.\n Status[%s]") % (self.downloader.getName(), reason.strip()), type = MessageBox.TYPE_ERROR, timeout = 10 )        
         
     def onEnd(self, withCleanUp=True):
         self.setMainTimerSts(False)
@@ -172,28 +191,43 @@ class IPTVPicturePlayerWidget(Screen):
         if withCleanUp:
             self._cleanedUp()
 
-    def back_pressed(self):
+    def key_exit(self):
         self.close()
+        
+    def key_play(self):
+        if not self.autoRefresh:
+            self.autoRefresh = True
+            if not self.refreshing: self._doStart()
+
+    def key_pause(self):
+        self.autoRefresh = False
+        
+    def key_ok(self):
+        if self.autoRefresh: self.key_pause()
+        else: self.key_play()
 
     def downloaderEnd(self, status):
         if None != self.downloader:
             self.onEnd(False)
             if DMHelper.STS.DOWNLOADED == status:
                 self["status"].setText(_("£adowanie"))
-                self["picture"].decodeCover(self.filePath, self.decodePictureEnd, ' ')
+                self["picture"].decodeCover(self._getDownloadFilePath(), self.decodePictureEnd, ' ')
             else:
-                self.session.openWithCallback(self.close, MessageBox, (_("Downloading file [%s] problem.") % self.url) + (" sts[%r]" % status), type=MessageBox.TYPE_ERROR, timeout=10)
+                if 0 == self.refreshCount: self.session.openWithCallback(self.close, MessageBox, (_("Downloading file [%s] problem.") % self.url) + (" sts[%r]" % status), type=MessageBox.TYPE_ERROR, timeout=10)
+                self._doStart()
 
     def decodePictureEnd(self, ret={}):
         if None == ret.get('Pixmap', None):
-            self.session.openWithCallback(self.close, MessageBox, _("Downloading file [%s] problem.") % self.filePath, type=MessageBox.TYPE_ERROR, timeout=10)        
+            if 0 == self.refreshCount: self.session.openWithCallback(self.close, MessageBox, _("Downloading file [%s] problem.") % self.filePath, type=MessageBox.TYPE_ERROR, timeout=10)        
         else:
+            self.refreshCount += 1
             self["status"].hide()
             self["console"].hide()
             self["icon"].hide()
             self["picture"].updatePixmap(ret.get('Pixmap', None), ret.get('FileName', self.filePath))
             self["picture"].show()
-            self.setMainTimerSts(False)
+        self.setMainTimerSts(False)
+        self._doStart()
 
     def setMainTimerSts(self, start):
         try:
@@ -218,9 +252,11 @@ class IPTVPicturePlayerWidget(Screen):
         return
         
     def _cleanedUp(self):
-        if fileExists(self.filePath):
-            try: os.remove(self.filePath)
-            except: printDBG('Problem with removing old buffering file')
+        for item in self.refreshPostfixes:
+            filePath = self.filePath + item
+            if fileExists(filePath):
+                try: os.remove(filePath)
+                except: printDBG('Problem with removing old buffering file')
             
     def doStart(self):
         if not self.onStartCalled:
