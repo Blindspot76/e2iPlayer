@@ -8,7 +8,6 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import AsyncMethod
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, eConnectCallback
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import enum
 from Plugins.Extensions.IPTVPlayer.libs import m3u8
@@ -21,10 +20,9 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 ###################################################
 from Tools.BoundFunction import boundFunction
 from enigma import eConsoleAppContainer
-from time import sleep
+from time import sleep, time
 import re
 import datetime
-import threading
 ###################################################
 
 ###################################################
@@ -98,7 +96,6 @@ class M3U8Downloader(BaseDownloader):
         self.fileExtension        = '' # should be implemented in future
         
         self.status       = DMHelper.STS.DOWNLOADING
-        self.updateLock   = threading.RLock()
         self.updateThread = None
         self.fragmentList = []
         self.currentFragment = -1
@@ -125,8 +122,9 @@ class M3U8Downloader(BaseDownloader):
                         if self.refreshDelay < 5:
                             self.refreshDelay = 5
                         if 0 < len(m3u8Obj.segments):
-                            newFragments = [seg.absolute_uri for seg in m3u8Obj.segments]
-                            self.mergeFragmentsList(newFragments)
+                            newFragments = [self._segUri(seg.absolute_uri) for seg in m3u8Obj.segments]
+                            #self.mergeFragmentsList(newFragments)
+                            self.mergeFragmentsListWithChecking(newFragments)
                             printDBG('m3u8 _updateM3U8Finished list updated ---')
                 except:
                     printDBG("m3u8 _updateM3U8Finished exception url[%s] data[%s]" % (self.m3u8Url, self.M3U8ListData))
@@ -137,7 +135,12 @@ class M3U8Downloader(BaseDownloader):
             if self.refreshDelay < self.M3U8UpdaterRefreshDelay or 0 != code:
                 self.M3U8UpdaterRefreshDelay = 0
                 self.M3U8ListData = ''
-                cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=0 --timeout=%d ' % self._getTimeout()) + '"' + self.m3u8Url + '" -O - 2> /dev/null'
+                m3u8Url = self.m3u8Url
+                if '?' in m3u8Url: m3u8Url += '&iptv_stamp='
+                else: m3u8Url += '?iptv_stamp='
+                m3u8Url += ('%s' % time())
+                printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % m3u8Url)
+                cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=0 --timeout=%d ' % self._getTimeout()) + '"' + m3u8Url + '" -O - 2> /dev/null'
                 printDBG("m3u8 _updateM3U8Finished download cmd[%s]" % cmd)
                 self.M3U8Updater.execute(cmd)
                 return
@@ -152,38 +155,38 @@ class M3U8Downloader(BaseDownloader):
         if None != data and 0 < len(data):
             self.M3U8ListData += data; 
         
-    def _updateThread(self, m3u8Url):
-        printDBG('m3u8 update thread start for m3u8[%s]' % m3u8Url)
-        refreshDelay = self.MIN_REFRESH_DELAY
-        while self.liveStream:
-            printDBG('m3u8 update ---')
-            try:
-                m3u8Obj = m3u8.load(m3u8Url)
-                if self.liveStream and not m3u8Obj.is_variant:
-                    if 0 < len(m3u8Obj.segments):
-                        newFragments = [seg.absolute_uri for seg in m3u8Obj.segments]
-                        # update refresh delay
-                        refreshDelay = int(m3u8Obj.target_duration / 2)
-                        if refreshDelay < self.MIN_REFRESH_DELAY:
-                            refreshDelay = self.MIN_REFRESH_DELAY
-                        self.mergeFragmentsList(newFragments)
-            except:
-                printDBG('m3u8 update thread m3u8Obj exception')
-            for i in range(refreshDelay):
-                if self.liveStream:
-                    sleep(self.MIN_REFRESH_DELAY)
-                    
-        try:
-            self.M3U8Updater.sendCtrlC() # kill # produce zombies
-            self.M3U8Updater_appClosed_conn   = None
-            self.M3U8Updater_stdoutAvail_conn = None
-        except: pass
-        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        printDBG('m3u8 update thread end m3u8[%s]' % m3u8Url)
-        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    def mergeFragmentsListWithChecking(self, newFragments):
+        #newFragments = self.fixFragmentsList(newFragments) 
+        try: 
+            idx = newFragments.index(self.fragmentList[-1])
+            newFragments = newFragments[idx+1:]
+        except: printDBG('m3u8 update thread - last fragment from last list not available in new list!')
+        
+        tmpList = []
+        for item in reversed(newFragments):
+            if item in self.fragmentList:
+                break
+            tmpList.insert(0,item)
+        
+        if 0 < len(tmpList):
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DODANO[%d]" % len(tmpList))
+            if 21 < self.currentFragment: 
+                idx = self.currentFragment - 20
+                self.fragmentList = self.fragmentList[idx:]
+                self.currentFragment = 20
+            self.fragmentList.extend(tmpList)
+    '''
+    def fixFragmentsList(self, newFragments):
+        retList = []
+        for idx in range(len(newFragments)):
+            if 0 == idx: 
+                retList.append(newFragments[0])
+                continue
+            if newFragments[idx] != newFragments[idx-1]:
+                retList.append(newFragments[idx])
+        return retList
         
     def mergeFragmentsList(self, newFragments):
-        self.updateLock.acquire()
         try:
             # merge fragments list
             idx = -1
@@ -197,11 +200,11 @@ class M3U8Downloader(BaseDownloader):
             else:
                 self.fragmentList.extend(newFragments)
         except: pass
-        self.updateLock.release()
         #printDBG("===========================================================")
         #printDBG("%r" % self.fragmentList)
         #printDBG("===========================================================")
-        
+    '''
+    
     def _startM3U8(self, m3u8Url):
         self.m3u8Url = m3u8Url
         self.outData = ''
@@ -209,8 +212,11 @@ class M3U8Downloader(BaseDownloader):
         # frist download m3u8 conntent
         ##############################################################################
         self.downloadType = self.DOWNLOAD_TYPE.M3U8
-        
-        cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=0 --timeout=%d ' % self._getTimeout()) + '"' + self.m3u8Url + '" -O - 2> /dev/null'
+        m3u8Url = self.m3u8Url
+        if '?' in m3u8Url: m3u8Url += '&iptv_stamp='
+        else: m3u8Url += '?iptv_stamp='
+        m3u8Url += ('%s' % time())
+        cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=0 --timeout=%d ' % self._getTimeout()) + '"' + m3u8Url + '" -O - 2> /dev/null'
         printDBG("Download cmd[%s]" % cmd)
         self.console_appClosed_conn = eConnectCallback(self.console.appClosed,  self._cmdFinished )
         self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self._dataAvail )
@@ -247,8 +253,6 @@ class M3U8Downloader(BaseDownloader):
                 # this is a live stream this can happen :)
                 tryAgain = False
             
-        # lock
-        self.updateLock.acquire()
         currentFragment = None
         if False == tryAgain:
             self.tries = 0
@@ -258,14 +262,16 @@ class M3U8Downloader(BaseDownloader):
         else:
             self.tries += 1
             currentFragment = self.fragmentList[self.currentFragment]        
-        # unlock
-        self.updateLock.release()
         
         if None != currentFragment:
             self.wgetStatus = self.WGET_STS.CONNECTING
             cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=1 --timeout=%d ' % self._getTimeout()) + '"' + currentFragment + '" -O - >> "' + self.filePath + '"'
             printDBG("Download cmd[%s]" % cmd)
             self.console.execute( cmd )
+            
+            #with open("/home/sulge/tmp/m3u8.txt", "a") as myfile:
+            #    myfile.write(currentFragment+"\n")
+                
             return DMHelper.STS.DOWNLOADING
         else:
             if self.liveStream:
@@ -311,6 +317,9 @@ class M3U8Downloader(BaseDownloader):
 
         return BaseDownloader.CODE_NOT_DOWNLOADING
 
+    def _segUri(self, uri):
+        return uri.split('iptv_stamp')[0]
+    
     def _cmdFinished(self, code, terminated=False):
         printDBG("M3U8Downloader._cmdFinished code[%r] terminated[%r] downloadType[%s]" % (code, terminated, self.downloadType))
         
@@ -329,14 +338,14 @@ class M3U8Downloader(BaseDownloader):
                     # however if this was not done the firs one will be selected
                     if m3u8Obj.is_variant:
                         if 0 < len(m3u8Obj.playlists):
-                            self._startM3U8(m3u8Obj.playlists[-1].absolute_uri)
+                            self._startM3U8(self._segUri(m3u8Obj.playlists[-1].absolute_uri))
                             localStatus = DMHelper.STS.DOWNLOADING
                     else:
                         if 0 < len(m3u8Obj.segments):
                             if not m3u8Obj.is_endlist:
                                 self.liveStream = True
                                 if -1 == self.startLiveDuration:
-                                    self.fragmentList = [seg.absolute_uri for seg in m3u8Obj.segments]
+                                    self.fragmentList = [self._segUri(seg.absolute_uri) for seg in m3u8Obj.segments]
                                 else:
                                     # some live streams only add new fragments not removing old, 
                                     # in this case most probably we not want to download old fragments
@@ -350,16 +359,15 @@ class M3U8Downloader(BaseDownloader):
                                             currentDuration += seg.duration
                                         else:
                                             currentDuration += maxFragDuration
-                                        self.fragmentList.append(seg.absolute_uri)
+                                        self.fragmentList.append(self._segUri(seg.absolute_uri))
                                         if currentDuration >= self.startLiveDuration:
                                             break
                                     self.fragmentList.reverse()
-                                # run update Thread
-                                #self.updateThread = AsyncMethod(self._updateThread)(self.m3u8Url)
                                 # start update fragment list loop
+                                #self.fragmentList = self.fixFragmentsList(self.fragmentList)
                                 self._updateM3U8Finished(-1)
                             else:
-                                self.fragmentList = [seg.absolute_uri for seg in m3u8Obj.segments]
+                                self.fragmentList = [self._segUri(seg.absolute_uri) for seg in m3u8Obj.segments]
                             localStatus = self._startFragment()
                 except:
                     pass
