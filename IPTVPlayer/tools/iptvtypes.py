@@ -3,7 +3,7 @@
 
 def enum(**enums):
     return type('Enum', (), enums)
-    
+
 # Posible args and values for strwithmeta used for url:
 
 # If meta data exists the at least "iptv_proto" MUST by added to them
@@ -14,6 +14,7 @@ def enum(**enums):
 #   "iptv_bitrate":         number
 #   "iptv_chank_url":       "http... link"
 #   "iptv_block_exteplayer" True | False - default False 
+#   "iptv_audio_url"        "http... link"
 
 # Force buffering settings, generally this field should 
 # be used only to materials that we know that they do 

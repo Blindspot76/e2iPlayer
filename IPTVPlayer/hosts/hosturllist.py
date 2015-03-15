@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG,
 from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
+from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 ###################################################
 
 ###################################################
@@ -150,8 +151,13 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, Urllist(), True)
         
-    def _isPicture(self, url):  
-        return url.endswith(".jpeg") or url.endswith(".jpg") or url.endswith(".png")
+    def _isPicture(self, url):
+        def _checkExtension(url): 
+            return url.endswith(".jpeg") or url.endswith(".jpg") or url.endswith(".png")
+        if _checkExtension(url): return True
+        if _checkExtension(url.split('|')[0]): return True
+        if _checkExtension(url.split('?')[0]): return True
+        return False
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('urllist.png')])
@@ -172,7 +178,7 @@ class IPTVHost(CHostBase):
             urlList = self.host.getLinksForVideo(self.host.currList[Index])
             for item in urlList:
                 retlist.append(CUrlItem(item["name"], item["url"], 0))
-        else: retlist.append(CUrlItem('picture link', uri, 0))
+        else: retlist.append(CUrlItem('picture link', urlparser.decorateParamsFromUrl(uri, True), 0))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo

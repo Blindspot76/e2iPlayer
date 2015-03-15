@@ -88,19 +88,19 @@ class urlparser:
         
     @staticmethod
     def decorateParamsFromUrl(baseUrl, overwrite=False):
+        printDBG("urlparser.decorateParamsFromUrl >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" + baseUrl)
         tmp        = baseUrl.split('|')
-        baseUrl    = strwithmeta(tmp[0].strip(), strwithmeta(baseUrl).meta)
+        baseUrl    = urlparser.decorateUrl(tmp[0].strip(), strwithmeta(baseUrl).meta)
         if 2 == len(tmp):
             baseParams = tmp[1].strip()
-        Referer = strwithmeta(baseUrl).meta.get('Referer', '')
-        if '' == Referer or overwrite:
             try:
                 params  = parse_qs(baseParams)
-                Referer = params.get('Referer', '')[0]
-                if '' != Referer:
-                    baseUrl.meta['Referer'] = Referer
-            except:
-                printExc()
+                for key in params.keys():
+                    if key not in ["iptv_audio_url", "Host", "User-Agent", "Referer", "Cookie", "Accept", "Range"]: continue
+                    if not overwrite and key in baseUrl.meta: continue
+                    try: baseUrl.meta[key] = params[key][0]
+                    except: printExc()
+            except: printExc()
         return baseUrl
 
     def preparHostForSelect(self, v, resolveLink = False):

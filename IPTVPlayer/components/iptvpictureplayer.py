@@ -11,7 +11,7 @@
 from Plugins.Extensions.IPTVPlayer.components.cover import SimpleAnimatedCover, Cover
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIconDir, eConnectCallback
-from Plugins.Extensions.IPTVPlayer.components.iptvplayer import IPTVStandardMoviePlayer, IPTVMiniMoviePlayer
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import DownloaderCreator
 ###################################################
@@ -21,14 +21,79 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import Downloade
 ###################################################
 from Screens.Screen import Screen
 from Screens.MessageBox import MessageBox
-from enigma import getDesktop
-from enigma import eTimer
+from enigma import getDesktop, eTimer, eServiceReference, eConsoleAppContainer
 from Components.config import config
 from Components.ActionMap import ActionMap, HelpableActionMap
 from Components.Label import Label
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS
 import os
+import time
+
 ###################################################
+
+class IPTVSimpleAudioPlayer():
+    def __init__(self):
+        additionalParams = {}
+        self.gstAdditionalParams = {'buffer-duration':2}
+        self.gstAdditionalParams['download-buffer-path'] = additionalParams.get('download-buffer-path', '') # File template to store temporary files in, should contain directory and XXXXXX
+        self.gstAdditionalParams['ring-buffer-max-size'] = additionalParams.get('ring-buffer-max-size', 0) # in MB
+        self.gstAdditionalParams['buffer-duration']      = additionalParams.get('buffer-duration', -1) # in s
+        self.gstAdditionalParams['buffer-size']          = additionalParams.get('buffer-size', 0)
+            
+        self.uri = ""
+        self.playMode = ""
+        self.console = None
+        
+        self.isClosing = False
+        self.stopped = True
+    
+    def start(self, uri, mode='loop'):
+        self.uri = uri
+        self.playMode = mode
+        
+        gstplayerPath = config.plugins.iptvplayer.gstplayerpath.value
+        #'export GST_DEBUG="*:6" &&' + 
+        cmd = gstplayerPath  + ' "%s"' % self.uri
+        if "://" in self.uri: 
+            cmd += ' "%s" "%s"  "%s"  "%s" ' % (self.gstAdditionalParams['download-buffer-path'], self.gstAdditionalParams['ring-buffer-max-size'], self.gstAdditionalParams['buffer-duration'], self.gstAdditionalParams['buffer-size'])
+            tmp = strwithmeta(self.uri)
+            url,httpParams = DMHelper.getDownloaderParamFromUrl(tmp)
+            for key in httpParams: cmd += (' "%s=%s" ' % (key, httpParams[key]) )
+            if 'http_proxy' in tmp.meta:
+                tmp = tmp.meta['http_proxy']
+                if '://' in tmp:
+                    if '@' in tmp:
+                        tmp = re.search('([^:]+?://)([^:]+?):([^@]+?)@(.+?)$', tmp)
+                        if tmp: cmd += (' "proxy=%s" "proxy-id=%s" "proxy-pw=%s" ' % (tmp.group(1)+tmp.group(4), tmp.group(2), tmp.group(3)) )
+                    else: cmd += (' "proxy=%s" ' % tmp)
+        else:
+            cmd = 'exteplayer3 "%s"' % self.uri + " > /dev/null"
+        self.console = eConsoleAppContainer()
+        self.console_appClosed_conn = eConnectCallback(self.console.appClosed, self._playerFinished)
+        printDBG("IPTVSimpleAudioPlayer.start cmd[%s]" % cmd)
+        self.console.execute( cmd )
+        self.stopped = False
+        
+    def _playerFinished(self, code):
+        printDBG("IPTVSimpleAudioPlayer.eplayer3Finished code[%r]" % code)
+        if self.isClosing: return
+        if self.playMode == 'loop' and not self.stopped: self.start(self.uri, self.playMode)
+    
+    def stop(self):
+        if None == self.console: return
+        self.stopped = True
+        self.console.write( "q\n" )
+    
+    def close(self):
+        self.isClosing = True
+        if None != self.console:
+            self.stop()
+            time.sleep(1) # YES I know this is bad, but for now must be enough ;) Some, day I will fix this
+            self.console.sendCtrlC()
+            self.console_appClosed_conn = None
+            self.console = None
+
+#class IPTVSimpleAudioPlayer
 
 class IPTVPicturePlayerWidget(Screen):
     NUM_OF_ICON_FRAMES = 8
@@ -96,6 +161,7 @@ class IPTVPicturePlayerWidget(Screen):
             
         self.url           = url
         self.pictureTitle  = pictureTitle
+        self.audioUrl      = strwithmeta(url).meta.get("iptv_audio_url", '')
        
         self["actions"] = ActionMap(['IPTVAlternateVideoPlayer', 'MoviePlayerActions', 'MediaPlayerActions', 'WizardActions', 'DirectionActions'],
         {
@@ -117,8 +183,6 @@ class IPTVPicturePlayerWidget(Screen):
         for idx in range(1,self.NUM_OF_ICON_FRAMES+1): frames.append( GetIconDir('/buffering/buffering_%d.png' % idx) )
         self["icon"].loadFrames(frames) 
         
-        self.inMoviePlayer = False
-        self.canRunMoviePlayer = False # used in function updateDisplay, so must be first initialized
         #main Timer
         self.mainTimer = eTimer()
         self.mainTimerEnabled = False
@@ -134,6 +198,10 @@ class IPTVPicturePlayerWidget(Screen):
         self.refreshPostfixes = ['_0', '_1']
         self.refreshCount = 0
         self.refreshing = False
+        
+        if len(self.audioUrl) and len(config.plugins.iptvplayer.gstplayerpath.value):
+            self.audioPlayer = IPTVSimpleAudioPlayer()
+        else: self.audioPlayer  = None
        
     #end def __init__(self, session):
     
@@ -142,6 +210,7 @@ class IPTVPicturePlayerWidget(Screen):
         
     def __onClose(self):
         printDBG('IPTVPicturePlayerWidget.__onClose ------------------------------------')
+        if None != self.audioPlayer: self.audioPlayer.close()
         self.onEnd()
         self.mainTimer_conn = None
         self.mainTimer = None
@@ -158,7 +227,7 @@ class IPTVPicturePlayerWidget(Screen):
         '''
         self["picture"].hide()
         self["console"].setText(self.pictureTitle)
-        self["status"].setText(_("Pobieranie"))
+        self["status"].setText(_("--"))
         self._cleanedUp()
         if self.downloader:
             self.downloader.isWorkingCorrectly(self._startDownloader)
@@ -196,11 +265,14 @@ class IPTVPicturePlayerWidget(Screen):
         
     def key_play(self):
         if not self.autoRefresh:
+            if None != self.audioPlayer: self.audioPlayer.start(self.audioUrl)
             self.autoRefresh = True
             if not self.refreshing: self._doStart()
 
     def key_pause(self):
-        self.autoRefresh = False
+        if self.autoRefresh:
+            if None != self.audioPlayer: self.audioPlayer.stop()
+            self.autoRefresh = False
         
     def key_ok(self):
         if self.autoRefresh: self.key_pause()
@@ -210,7 +282,7 @@ class IPTVPicturePlayerWidget(Screen):
         if None != self.downloader:
             self.onEnd(False)
             if DMHelper.STS.DOWNLOADED == status:
-                self["status"].setText(_("£adowanie"))
+                self["status"].setText(_("++"))
                 self["picture"].decodeCover(self._getDownloadFilePath(), self.decodePictureEnd, ' ')
             else:
                 if 0 == self.refreshCount: self.session.openWithCallback(self.close, MessageBox, (_("Downloading file [%s] problem.") % self.url) + (" sts[%r]" % status), type=MessageBox.TYPE_ERROR, timeout=10)
@@ -262,5 +334,4 @@ class IPTVPicturePlayerWidget(Screen):
         if not self.onStartCalled:
             self.onStartCalled = True
             self.onStart()
-
-#class IPTVPlayerWidget
+            
