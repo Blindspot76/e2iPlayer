@@ -1145,11 +1145,14 @@ class pageParser:
                        'Referer':iframe_url }
         sts, data = self.cm.getPage( url, {'header':HTTP_HEADER} )
         printDBG(data)
-        data = re.findall(r'unescape\("([^"]+)"\)', data)[-1]
-        data = urllib.unquote(data)
-        data = self.cm.ph.getSearchGroups(data, r'file:\s*"([^"]+)"')[0]
-        if data.startswith('http'):
-            linkVideo = urlparser.decorateUrl(data, {'Referer': iframe_url, 'iptv_buffering':'required'})
+        try:  tmp = re.findall(r'unescape\("([^"]+)"\)', data)[-1]
+        except: tmp = ''
+        tmp = urllib.unquote(tmp)
+        tmp = self.cm.ph.getSearchGroups(tmp, r'file:\s*"([^"]+)"')[0]
+        if '' == tmp:
+            tmp  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
+        if tmp.startswith('http'):
+            linkVideo = urlparser.decorateUrl(tmp, {"Cookie": "__cfduid=1"}) # {'Referer': iframe_url, 'iptv_buffering':'required'})
         else: linkVideo = False
         return linkVideo
 
