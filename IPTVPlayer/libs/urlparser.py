@@ -1135,24 +1135,30 @@ class pageParser:
             
     def parserVIDEOMEGA(self,baseUrl):
         video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php)?\?ref=([A-Za-z0-9]+)')[0]
-        if 'iframe' in baseUrl:
-            iframe_url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
-            url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
-        else:
+        COOKIE_FILE = GetCookieDir('videomegatv.cookie')
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10' }
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        
+        
+        #if 'iframe' in baseUrl:
+        #    iframe_url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
+        #    url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
+        #else:
+        if True:
             iframe_url = 'http://videomega.tv/?ref=%s' % (video_id)
             url = 'http://videomega.tv/cdn.php?ref=%s' % (video_id)
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
-                       'Referer':iframe_url }
-        sts, data = self.cm.getPage( url, {'header':HTTP_HEADER} )
-        printDBG(data)
-        try:  tmp = re.findall(r'unescape\("([^"]+)"\)', data)[-1]
-        except: tmp = ''
-        tmp = urllib.unquote(tmp)
-        tmp = self.cm.ph.getSearchGroups(tmp, r'file:\s*"([^"]+)"')[0]
-        if '' == tmp:
-            tmp  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
+        HTTP_HEADER['Referer'] = iframe_url
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return False
+        adUrl =self.cm.ph.getSearchGroups(data, '"([^"]+?/ad\.php[^"]+?)"')[0]
+        if not adUrl.startswith("http"): 'http://videomega.tv' + adUrl
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':False} 
+        HTTP_HEADER['Referer'] = url
+        sts, tmp = self.cm.getPage(adUrl, params)
+
+        tmp  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
         if tmp.startswith('http'):
-            linkVideo = urlparser.decorateUrl(tmp, {"Cookie": "__cfduid=1", 'Referer': iframe_url, 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', 'iptv_buffering':'required'})
+            linkVideo = urlparser.decorateUrl(tmp, {"Cookie": "__cfduid=1", 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})
         else: linkVideo = False
         return linkVideo
 
