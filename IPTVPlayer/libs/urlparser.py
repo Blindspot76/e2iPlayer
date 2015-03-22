@@ -1152,7 +1152,7 @@ class pageParser:
         if '' == tmp:
             tmp  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
         if tmp.startswith('http'):
-            linkVideo = urlparser.decorateUrl(tmp, {"Cookie": "__cfduid=1"}) # {'Referer': iframe_url, 'iptv_buffering':'required'})
+            linkVideo = urlparser.decorateUrl(tmp, {"Cookie": "__cfduid=1", 'Referer': iframe_url, 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', 'iptv_buffering':'required'})
         else: linkVideo = False
         return linkVideo
 
