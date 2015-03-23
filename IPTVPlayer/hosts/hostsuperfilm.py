@@ -133,9 +133,14 @@ class SuperFilm(CBaseHostClass):
         printDBG("SuperFilm.getHostingTable")
         sts, data = self.cm.getPage( url )
         if False == sts: return []
-        url = self.cm.ph.getSearchGroups(data, 'type="video/mp4" src="(http[^"]+?mp4)"')[0]
-        if url.startswith('http'): return [ {'name' : 'url', 'url' : url } ]
-        return []
+        data = re.compile('type="video/mp4" src="(http[^"]+?mp4)"').findall(data)
+        urlTab = []
+        idx = 1
+        for url in data:
+            if url.startswith('http') and 'blank.mp4' not in url:
+                urlTab.append({'name' : 'superfilm.pl [%d]' % idx, 'url' : url } )
+                idx += 1
+        return urlTab
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG("SuperFilm.handleService")
