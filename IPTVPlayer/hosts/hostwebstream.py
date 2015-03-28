@@ -244,12 +244,19 @@ class HasBahCa(CBaseHostClass):
         url = cItem['url']
         printDBG("_listHasBahCaResolve url[%s]" % url)
         tmp = self.cm.ph.getSearchGroups(url+'"', '(http[^"]+?)"')[0]
-        if tmp.startswith('http://adf.ly/'):
+        if '' != tmp: url = tmp
+        
+        query_data = { 'url': url, 'return_data': False }       
+        response = self.cm.getURLRequestData(query_data)
+        redirectUrl = response.geturl() 
+        response.close()
+        if redirectUrl != url: url = redirectUrl
+
+        if url.startswith('http://adf.ly/'):
             sts, url = self.cm.getPage('http://www.bypassshorturl.com/get.php', {}, {'url':tmp})
             if not sts: return
             url = url.strip()
             printDBG("adf.ly [%s] -> [%s]" % (tmp, url))
-        elif '' != tmp: url = tmp
         if url.endswith('.rar'):
             progress_key = md5(url+cItem['title']).hexdigest()[:14] #'a2yas1htyel27e' #url.split('/')[-1][:14]
             tries = 0
@@ -282,7 +289,7 @@ class HasBahCa(CBaseHostClass):
                     {'category':'hasbahca_promoted',      'title':'Top Links',      'url':'http://hasbahcaiptv.com/download.php', 'icon':'', 'm1':'<b>&nbsp;&nbsp;Top Links</b', 'm2':'</table>'},
                     {'category':'hasbahca_list',          'title':'IPTV',           'url':'http://hasbahcaiptv.com/download.php', 'icon':'', 'post':{'action':'kategorie','kat_u':'','kat1':'1','kat_1':'2','kat_id':'1','spalte':'datum','sort':'ASC','dps':'150'}},
                     {'category':'hasbahca_list',          'title':'Movies-FILMLER', 'url':'http://hasbahcaiptv.com/download.php', 'icon':'', 'post':{'action':'kategorie','kat_u':'','kat1':'3','kat_1':'2','kat_id':'1','spalte':'datum','sort':'ASC','dps':'150'}},
-                    {'category':'hasbahca_haspredefined', 'title':'Predefined', 'url':'', 'icon':''}]
+                    ]
             self.listsMainMenu(main, {'name':'HasBahCa'})
         elif 'hasbahca_promoted' == category:
             self._listHasBahCaPromoted(cItem)
@@ -290,55 +297,6 @@ class HasBahCa(CBaseHostClass):
             self._listHasBahCaList(cItem)
         elif 'hasbahca_resolve' == category:
             self._listHasBahCaResolve(cItem)
-        elif 'hasbahca_haspredefined' == category:
-            predefined = [{'name': 'm3u', 'title': 'Turkey_TURKiYE_FAVORI',        'url': 'http://hasbahcaiptv.com/m3u/iptv/Turkey_TURKiYE_Favori.m3u',          'icon': 'http://hasbahcaiptv.com/xml/images/Turkey.png'}, \
-                          {'name': 'm3u', 'title': 'Turkey_TURKiYE_ULUSAL',        'url': 'http://hasbahcaiptv.com/m3u/iptv/Turkey_TURKiYE_ULUSAL.m3u',          'icon': 'http://hasbahcaiptv.com/xml/images/Turkey.png'}, \
-                          {'name': 'm3u', 'title': 'Turkey_TURKiYE_YEREL',         'url': 'http://hasbahcaiptv.com/m3u/iptv/Turkey_TURKiYE_YEREL.m3u',           'icon': 'http://hasbahcaiptv.com/xml/images/Turkey.png'}, \
-                          {'name': 'm3u', 'title': 'Turkey_TURKiYE_DSMART DTURK',  'url': 'http://hasbahcaiptv.com/m3u/iptv/DTURK_DSMART.m3u',                   'icon': 'http://hasbahcaiptv.com/xml/images/digiturk-dsmart.jpg'}, \
-                          {'name': 'm3u', 'title': 'Music_MUZiK',                  'url': 'http://hasbahcaiptv.com/m3u/iptv/Music_MUZiK.m3u',                    'icon': 'http://hasbahcaiptv.com/xml/images/Music.png'}, \
-                          {'name': 'm3u', 'title': 'Sport_SPOR ',                  'url': 'http://hasbahcaiptv.com/m3u/iptv/Sport_SPOR.m3u',                     'icon': 'http://hasbahcaiptv.com/xml/images/Sport.png'}, \
-                          {'name': 'm3u', 'title': 'Turkish_Staate_TURKi_ULKELER', 'url': 'http://hasbahcaiptv.com/m3u/iptv/Turkish_Staate_TURKi_ULKELER.m3u',   'icon': 'http://hasbahcaiptv.com/xml/images/Turki_Azeri.png'}, \
-                          {'name': 'm3u', 'title': 'Africa_AFRIKA',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Africa_AFRIKA.m3u',                  'icon': 'http://hasbahcaiptv.com/xml/images/Africa.png'}, \
-                          {'name': 'm3u', 'title': 'Asia_ASYA',                    'url': 'http://hasbahcaiptv.com/m3u/iptv/Asia_ASYA.m3u',                      'icon': 'http://hasbahcaiptv.com/xml/images/Asia.png'}, \
-                          {'name': 'm3u', 'title': 'Amerika_Latino',               'url': 'http://hasbahcaiptv.com/m3u/iptv/Amerika_Latino.m3u',                 'icon': 'http://hasbahcaiptv.com/xml/images/America.png'}, \
-                          {'name': 'm3u', 'title': 'Albania_Bosnia ARNAVUTCA',     'url': 'http://hasbahcaiptv.com/m3u/iptv/Albania_Bosnia_ARNAVUTCA_BOSNA.m3u', 'icon': 'http://hasbahcaiptv.com/xml/images/Albania.png'}, \
-                          {'name': 'm3u', 'title': 'Arabic_ARAPCA',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Arabic_ARAPCA.m3u',                  'icon': 'http://hasbahcaiptv.com/xml/images/Arabia.png'}, \
-                          {'name': 'm3u', 'title': 'Brasil_BREZILYA',              'url': 'http://hasbahcaiptv.com/m3u/iptv/Brasil_BREZILYA.m3u',                'icon': 'http://hasbahcaiptv.com/xml/images/Brasil.png'}, \
-                          {'name': 'm3u', 'title': 'Bulgar_Bulsat',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Bulgar_Bulsat.m3u',                  'icon': 'http://hasbahcaiptv.com/xml/images/Bulgaria.png'}, \
-                          {'name': 'm3u', 'title': 'China_CiN',                    'url': 'http://hasbahcaiptv.com/m3u/iptv/China_CiN.m3u',                      'icon': 'http://hasbahcaiptv.com/xml/images/China.png'}, \
-                          {'name': 'm3u', 'title': 'Ex-Yug_ESKi_YUGOSLAVYA',       'url': 'http://hasbahcaiptv.com/m3u/iptv/Ex-yug_ESKi_YUGOSLAVYA.m3u',         'icon': 'http://hasbahcaiptv.com/xml/images/Ex-Yu.png'}, \
-                          {'name': 'm3u', 'title': 'France_FRANSIZCA',             'url': 'http://hasbahcaiptv.com/m3u/iptv/France_FRANSIZCA.m3u',               'icon': 'http://hasbahcaiptv.com/xml/images/France.png'}, \
-                          {'name': 'm3u', 'title': 'German_ALMANCA',               'url': 'http://hasbahcaiptv.com/m3u/iptv/German_ALMANCA.m3u',                 'icon': 'http://hasbahcaiptv.com/xml/images/Germany.png'}, \
-                          {'name': 'm3u', 'title': 'German LIVESTREAMER.DE',       'url': 'http://hasbahcaiptv.com/m3u/iptv/German_livestreamde.m3u',            'icon': 'http://hasbahcaiptv.com/xml/images/Germany.png'}, \
-                          {'name': 'm3u', 'title': 'Georgia_GURCiSTAN',            'url': 'http://hasbahcaiptv.com/m3u/iptv/Georgia_GURCiSTAN.m3u',              'icon': 'http://hasbahcaiptv.com/xml/images/Georgia.png'}, \
-                          {'name': 'm3u', 'title': 'Greek_YUNANCA',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Greek_YUNANCA.m3u',                  'icon': 'http://hasbahcaiptv.com/xml/images/Greece.png'}, \
-                          {'name': 'm3u', 'title': 'INT_OTHERS_KARISIK',           'url': 'http://hasbahcaiptv.com/m3u/iptv/int_others.m3u',                     'icon': 'http://hasbahcaiptv.com/xml/images/International-TV.png'}, \
-                          {'name': 'm3u', 'title': 'India_Tamil_HiNDiSTAN ',       'url': 'http://hasbahcaiptv.com/m3u/iptv/India_Tamil_HiNDiSTAN.m3u',          'icon': 'http://hasbahcaiptv.com/xml/images/Hindi.png'}, \
-                          {'name': 'm3u', 'title': 'Iran_FARS',                    'url': 'http://hasbahcaiptv.com/m3u/iptv/Iran_FARS.m3u',                      'icon': 'http://hasbahcaiptv.com/xml/images/Iran.png'}, \
-                          {'name': 'm3u', 'title': 'Iraq_IRAK',                    'url': 'http://hasbahcaiptv.com/m3u/iptv/Iraq_IRAK.m3u',                      'icon': 'http://hasbahcaiptv.com/xml/images/Irak.png'}, \
-                          {'name': 'm3u', 'title': 'Israel_ISRAiL',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Israel_ISRAiL.m3u',                  'icon': 'http://www.inminds.co.uk/img/boycott-apartheid-israel-275x330.gif'}, \
-                          {'name': 'm3u', 'title': 'Italia_ITALYA',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Italia_ITALYA.m3u',                  'icon': 'http://hasbahcaiptv.com/m3u/iptv/images/Italy.png'}, \
-                          {'name': 'm3u', 'title': 'Japan_JAPONYA',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Japan_JAPONYA.m3u',                  'icon': 'http://hasbahcaiptv.com/m3u/iptv/images/Japan.png'}, \
-                          {'name': 'm3u', 'title': 'Korea_KORE',                   'url': 'http://hasbahcaiptv.com/m3u/iptv/Korea_KORE.m3u',                     'icon': 'http://hasbahcaiptv.com/xml/images/Korea.png'}, \
-                          {'name': 'm3u', 'title': 'Kurdi_KURTCE',                 'url': 'http://hasbahcaiptv.com/m3u/iptv/Kurdi_KURTCE.m3u',                   'icon': 'http://a2.mzstatic.com/us/r30/Purple4/v4/89/5e/02/895e02b5-eb82-867c-4d8d-cfc94bb2e0f8/icon256.png'}, \
-                          {'name': 'm3u', 'title': 'Magyar_MACARISTAN',            'url': 'http://hasbahcaiptv.com/m3u/iptv/Magyar_MACARISTAN.m3u',              'icon': 'http://hasbahcaiptv.com/xml/images/Hungary.png'}, \
-                          {'name': 'm3u', 'title': 'Netherland_HOLLANDA',          'url': 'http://hasbahcaiptv.com/m3u/iptv/Netherland_HOLLANDA.m3u',            'icon': 'http://hasbahcaiptv.com/xml/images/Holland.png'}, \
-                          {'name': 'm3u', 'title': 'Pakistan_Urdu',                'url': 'http://hasbahcaiptv.com/m3u/iptv/Pakistan_Urdu.m3u',                  'icon': 'http://hasbahcaiptv.com/xml/images/Pakistan.png'}, \
-                          {'name': 'm3u', 'title': 'Polski_POLONYA',               'url': 'http://hasbahcaiptv.com/m3u/iptv/Polski_POLONYA.m3u',                 'icon': 'http://hasbahcaiptv.com/xml/images/Poland.png'}, \
-                          {'name': 'm3u', 'title': 'Portugal_PORTEKiZ',            'url': 'http://hasbahcaiptv.com/m3u/iptv/Portugal_PORTEKiZ.m3u',              'icon': 'http://hasbahcaiptv.com/xml/images/Portugal.png'}, \
-                          {'name': 'm3u', 'title': 'Romania_Moldova',              'url': 'http://hasbahcaiptv.com/m3u/iptv/Romania_Moldova.m3u',                'icon': 'http://hasbahcaiptv.com/xml/images/Romania-Moldavia.png'}, \
-                          {'name': 'm3u', 'title': 'RUS EX-SSCR RUSCA',            'url': 'http://hasbahcaiptv.com/m3u/iptv/Rus.m3u',                            'icon': 'http://hasbahcaiptv.com/xml/images/Russia.png'}, \
-                          {'name': 'm3u', 'title': 'Serbia_Croatia_SIRP_HIRVAT',   'url': 'http://hasbahcaiptv.com/m3u/iptv/Serbia_Croatia_SIRPCA_HIRVATCA.m3u', 'icon': 'http://hasbahcaiptv.com/xml/images/Serbia_Croatia.png'}, \
-                          {'name': 'm3u', 'title': 'Switzerland_ISViCRE',          'url': 'http://hasbahcaiptv.com/m3u/iptv/Switzerland_ISViCRE.m3u',            'icon': 'http://hasbahcaiptv.com/xml/images/Swiss.png'}, \
-                          {'name': 'm3u', 'title': 'Skandinavia_SKANDINAV ',       'url': 'http://hasbahcaiptv.com/m3u/iptv/Skandinav.m3u',                      'icon': 'http://hasbahcaiptv.com/xml/images/Skandinavia.png'}, \
-                          {'name': 'm3u', 'title': 'Slovakia_Slovenia',            'url': 'http://hasbahcaiptv.com/m3u/iptv/Slovakia_Slovenia.m3u',              'icon': 'http://hasbahcaiptv.com/xml/images/Slovakia.png'}, \
-                          {'name': 'm3u', 'title': 'Thai TAYLAND',                 'url': 'http://hasbahcaiptv.com/m3u/iptv/Thai_TAYLAND.m3u',                   'icon': 'http://hasbahcaiptv.com/xml/images/Thai.png'}, \
-                          {'name': 'm3u', 'title': 'Usa_ABD',                      'url': 'http://hasbahcaiptv.com/m3u/iptv/Usa_ABD.m3u',                        'icon': 'http://hasbahcaiptv.com/xml/images/USA.png'}, \
-                          {'name': 'm3u', 'title': 'Ukraina_UKRAYNA+BALTIC',       'url': 'http://hasbahcaiptv.com/m3u/iptv/Ukraina_UKRAYNA.m3u',                'icon': 'http://hasbahcaiptv.com/xml/images/Ukraine.png'}, \
-                          {'name': 'm3u', 'title': 'Vietnam',                      'url': 'http://hasbahcaiptv.com/m3u/iptv/Vietnam.m3u',                        'icon': 'http://hasbahcaiptv.com/xml/images/Vietnam.png'}, \
-                          {'name': 'm3u', 'title': 'WEBCAM',                       'url': 'http://hasbahcaiptv.com/m3u/iptv/Webcam.m3u',                         'icon': 'http://hasbahcaiptv.com/xml/images/WebCam.png'}, \
-                          {'name': 'm3u', 'title': 'RUSSIA',                       'url': 'http://iptv.lamp.ufa-it.ru/generate_m3u.php'}]
-            self.listsMainMenu(predefined)
             
     def getDirectVideoHasBahCa(self, name, url):
         printDBG("getDirectVideoHasBahCa name[%s], url[%s]" % (name, url))

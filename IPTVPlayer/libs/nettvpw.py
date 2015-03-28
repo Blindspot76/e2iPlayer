@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
@@ -13,6 +13,8 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 # FOREIGN import
 ###################################################
 import re
+try: import json
+except: import simplejson
 ############################################
 
 
@@ -27,20 +29,22 @@ class NettvPw:
     def getChannelsList(self, url=''):
         printDBG("NettvPw.getChannelsList url[%s]" % url )
         channelsList = []
-
-        sts,data = self.cm.getPage(NettvPw.MAINURL + 'program.html')
+        sts,data = self.cm.getPage(NettvPw.MAINURL)
         if not sts: return channelsList
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="programs-list">', '<div id="footer">', False)[1]
-        data = re.sub('<!--[^!]+?-->', '', data)
-        data = data.split('</li>')
-        if len(data): del data[-1]
-        for item in data:            
-            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            icon  = self.cm.ph.getSearchGroups(item, 'src="(http[^"]+?)"')[0]
-            title = url.split('/')[-1].replace('.html', '').capitalize()
-            if '' == url: continue
-            if not url.startswith('http'): url = NettvPw.MAINURL + url
-            channelsList.append({'title':title, 'url':url, 'icon':icon})
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'var programs = [', ']', False)[1]
+        try:            
+            data = byteify(json.loads("[%s]" % data))
+            for item in data:            
+                url   = item['link']
+                icon  = item['image_color']
+                title = item['title']
+                if '' == url: continue
+                if not url.startswith('http'): url = NettvPw.MAINURL + url
+                if '' == icon: continue
+                if not icon.startswith('http'): icon = NettvPw.MAINURL + icon
+                channelsList.append({'title':title, 'url':url, 'icon':icon})
+        except:
+            printExc()
         return channelsList
     
     def getVideoLink(self, baseUrl):
