@@ -582,10 +582,10 @@ class pageParser:
         if vidMarker not in inUrl:
             sts, data = self.cm.getPage(inUrl)
             if sts:
-                match = CParsingHelper.getDataBeetwenMarkers(data, "Link do tego video:", '</a>', False)[1]
-                match = self.cm.ph.getSearchGroups(match, 'href="([^"]+?)"')[0] 
+                sts,match = CParsingHelper.getDataBeetwenMarkers(data, "Link do tego video:", '</a>', False)
+                if sts: match = self.cm.ph.getSearchGroups(match, 'href="([^"]+?)"')[0] 
+                else: match = self.cm.ph.getSearchGroups(data, "link[ ]*?:[ ]*?'([^']+?/video/[^']+?)'")[0]
                 if match.startswith('http'): inUrl = match
-        
         if vidMarker in inUrl: 
             vid = inUrl.split('/video/')[1]
             inUrl = 'http://www.cda.pl/video/' + vid
@@ -771,7 +771,8 @@ class pageParser:
 
     def parserDAILYMOTION(self, url):
         if not url.startswith('http://www.dailymotion.com/embed/video/'):
-            url = 'http://www.dailymotion.com/embed/video/' + url.split('/')[-1][0:7]
+            video_id  = self.cm.ph.getSearchGroups(url, 'video/([^/?_]+)')[0]
+            url = 'http://www.dailymotion.com/embed/video/' + video_id
         
         sts, data = self.cm.getPage(url)
         if not sts: return []
