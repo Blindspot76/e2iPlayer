@@ -5,12 +5,14 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled
+
 ###################################################
 # FOREIGN import
 ###################################################
 import urllib
 import urllib2
+import ssl
 import re
 import htmlentitydefs
 import cookielib
@@ -270,11 +272,23 @@ class common:
     def getURLRequestData(self, params = {}, post_data = None):
         
         def urlOpen(req, customOpeners):
+            no_ssl_cert_check = False
+            try:
+                if req.get_full_url().startswith("http") and IsHttpsCertValidationEnabled():
+                    no_ssl_cert_check = True
+            except: printExc()
+            if no_ssl_cert_check:
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                
             if len(customOpeners) > 0:
                 opener = urllib2.build_opener( *customOpeners )
-                response = opener.open(req)
+                if no_ssl_cert_check: response = opener.open(req, context=ctx)
+                else: response = opener.open(req)
             else:
-                response = urllib2.urlopen(req)
+                if no_ssl_cert_check: response = urllib2.urlopen(req, context=ctx)
+                else: response = urllib2.urlopen(req)
             return response
         
         cj = cookielib.LWPCookieJar()

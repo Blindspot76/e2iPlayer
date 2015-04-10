@@ -97,6 +97,8 @@ config.plugins.iptvplayer.pin = ConfigText(default = "0000", fixed_size = False)
 config.plugins.iptvplayer.configProtectedByPin = ConfigYesNo(default = False)
 config.plugins.iptvplayer.pluginProtectedByPin = ConfigYesNo(default = False)
 
+config.plugins.iptvplayer.httpssslcertvalidation = ConfigYesNo(default = True)
+
 #PROXY
 config.plugins.iptvplayer.proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
 config.plugins.iptvplayer.german_proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
@@ -194,6 +196,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry(_("    Number of rows"), config.plugins.iptvplayer.numOfRow))
             list.append(getConfigListEntry(_("    Number of columns"), config.plugins.iptvplayer.numOfCol))
         
+        list.append(getConfigListEntry(_("https - validate SSL certificates"), config.plugins.iptvplayer.httpssslcertvalidation))
         list.append(getConfigListEntry(_("Polish proxy server url"), config.plugins.iptvplayer.proxyurl))
         list.append(getConfigListEntry(_("German proxy server url"), config.plugins.iptvplayer.german_proxyurl))
         

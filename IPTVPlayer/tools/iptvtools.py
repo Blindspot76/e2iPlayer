@@ -126,6 +126,9 @@ class iptv_system:
     def __del__(self):
         printDBG("iptv_system.__del__ ---------------------------------")
 
+def IsHttpsCertValidationEnabled():
+    return config.plugins.iptvplayer.httpssslcertvalidation.value
+    
 #############################################################
 # returns the directory path where specified resources are
 # stored, in the future, it can be changed in the config
