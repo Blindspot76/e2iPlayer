@@ -217,6 +217,7 @@ class urlparser:
                        'divxpress.com':        self.pp.parserDIVEXPRESS    ,
                        'promptfile.com':       self.pp.parserPROMPTFILE    ,
                        'playreplay.net':       self.pp.parserPLAYEREPLAY   ,
+                       'moevideo.net':         self.pp.parserPLAYEREPLAY   ,
                        'videowood.tv':         self.pp.parserVIDEOWOODTV   ,
                        'mightyupload.com':     self.pp.parserMIGHTYUPLOAD  ,
                        'movreel.com':          self.pp.parserMOVRELLCOM    ,
@@ -244,6 +245,10 @@ class urlparser:
                        'partners.nettvplus.com': self.pp.parserNETTVPLUSCOM,
                        '7cast.net':            self.pp.parser7CASTNET      ,
                        'facebook.com':         self.pp.parserFACEBOOK      ,
+                       'openload.io':          self.pp.parserOPENLOADIO    ,
+                       'cloudyvideos.com':     self.pp.parserCLOUDYVIDEOS  ,
+                       'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
+                       'thevideo.me':          self.pp.parserTHEVIDEOME    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -421,7 +426,25 @@ class pageParser:
         self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
         
-    def __parseJWPLAYER_A(self, baseUrl, serverName=''):
+    def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]'''):
+        linksTab = []
+        srcData = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']', False)[1].split('},')
+        for item in srcData:
+            item += '},'
+            link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
+            label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
+            if '' != link:
+                linksTab.append({'name': '%s %s' % (serverName, label), 'url':link})
+                printDBG('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+        
+        if 0 == len(linksTab):
+            printDBG('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
+            link = self.cm.ph.getSearchGroups(data, linkMarker)[0].replace('\/', '/')
+            if '' != link:
+                linksTab.append({'name':serverName, 'url':link})
+        return linksTab
+        
+    def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None):
         printDBG("pageParser.__parseJWPLAYER_A serverName[%s], baseUrl[%r]" % (serverName, baseUrl))
         
         linkList = []
@@ -433,10 +456,8 @@ class pageParser:
             HTTP_HEADER = dict(self.HTTP_HEADER) 
             HTTP_HEADER['Referer'] = baseUrl
             url = self.cm.ph.getSearchGroups(data, 'iframe[ ]+src="(http://embed.[^"]+?)"')[0]
-            if serverName in url:
-                sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}) 
-            else:
-                url = baseUrl
+            if serverName in url: sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}) 
+            else: url = baseUrl
         
         if sts and '' != data:
             try:
@@ -451,20 +472,8 @@ class pageParser:
                         printExc()
                     HTTP_HEADER['Referer'] = url
                     sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
-                linkMarker = r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"],'''
-                srcData = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']', False)[1].split('},')
-                for item in srcData:
-                    link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
-                    label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
-                    if '' != link:
-                        linkList.append({'name': '%s %s' % (serverName, label), 'url':link})
-                        printDBG('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
-                
-                if 0 == len(linkList):
-                    printDBG('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
-                    link = self.cm.ph.getSearchGroups(data, linkMarker)[0].replace('\/', '/')
-                    if '' != link:
-                        linkList.append({'name':serverName, 'url':link})
+                if None != customLinksFinder: linkList = customLinksFinder(data)
+                if 0 == len(linkList): linkList = self._findLinks(data, serverName)
             except:
                 printExc()
         return linkList
@@ -2646,6 +2655,53 @@ class pageParser:
         
         return urlsTab
         
+    def parserOPENLOADIO(self, baseUrl):
+        printDBG("parserOPENLOADIO baseUrl[%s]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        videoUrl = self.cm.ph.getSearchGroups(data, '<source[^<]+?src="(http[^"]+?)"[^<]type="video/mp4"')[0]
+        if '' != videoUrl: return videoUrl
+        return False
+        
+    def parserCLOUDYVIDEOS(self, baseUrl):
+        printDBG("parserCLOUDYVIDEOS baseUrl[%s]" % baseUrl)
+        if 'embed-' in baseUrl: videoUrl = 'http://cloudyvideos.com/' + self.cm.ph.getSearchGroups(baseUrl, 'embed\-([^-]+?)\-')[0]
+        else: videoUrl = baseUrl
+        
+        def _customLinkFinder(data):
+            printDBG(data)
+            linkList = []
+            link = self.cm.ph.getSearchGroups(data, '<a href="(http[^"]+?)"[^>]*?><[^>]*?value="Click for your file"[^>]*?>')[0]
+            if '' != link: linkList.append({'name':'cloudyvideos.com', 'url':link})
+            return linkList
+        
+        return self.__parseJWPLAYER_A(videoUrl, '??fake??', _customLinkFinder)
+        
+    def parserFASTVIDEOIN(self, baseUrl):
+        printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
+        #http://fastvideo.in/nr4kzevlbuws
+        return self.__parseJWPLAYER_A(baseUrl, 'fastvideo.in')
+        
+    def parserTHEVIDEOME(self, baseUrl):
+        printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
+        #http://thevideo.me/embed-l03p7if0va9a-682x500.html
+        if 'embed' in baseUrl: url = baseUrl
+        else: url = baseUrl.replace('.me/', '.me/embed-') + '-640x360.html'
+
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        
+        # get JS player script code from confirmation page
+        sts, data = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+        if sts:
+            mark1 = "}("
+            idx1 = data.find(mark1)
+            if -1 == idx1: return False
+            idx1 += len(mark1)
+            # unpack and decode params from JS player script code
+            data = unpackJS(data[idx1:-3], VIDUPME_decryptPlayerParams)
+            printDBG(data)
+            return self._findLinks(data, 'thevideo.me')
         
     def parserBILLIONUPLOADS(self, linkUrl):
         printDBG("parserBILLIONUPLOADS linkUrl[%s]" % linkUrl)
