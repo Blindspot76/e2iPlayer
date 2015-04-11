@@ -3,7 +3,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -508,6 +508,19 @@ class AleKinoTV(CBaseHostClass):
         printDBG('getHostingTable hostingURL |%s|' % direct_url)
         return [{'name':type, 'url': direct_url}]
         
+    def getVideoLinks(self, url):
+        printDBG("getVideoLinks url[%r]" % url)
+        if 'alekino.tv' in url:
+            try:
+                query_data = { 'url': url, 'return_data': False }       
+                response = self.cm.getURLRequestData(query_data)
+                url = response.geturl() 
+                response.close()
+            except: 
+                printExc()
+                return []
+        return self.up.getVideoLinkExt( url )
+        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -619,6 +632,15 @@ class IPTVHost(CHostBase):
     # end getLinksForVideo
     
     def getResolvedURL(self, url):
+        # resolve url to get direct url to video file
+        retlist = []
+        urlList = self.host.getVideoLinks(url)
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+
+        return RetHost(RetHost.OK, value = retlist)
+    
         # resolve url to get direct url to video file
         url = self.host.up.getVideoLink( url )
         urlTab = []
