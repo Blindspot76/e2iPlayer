@@ -362,7 +362,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['url'])
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__archiveDownloadFinished, None))
         self.sourceArchive = os_path.join(self.tmpDir, 'iptvplayer_archive.tar.gz')
-        self.downloader.start(self.serversList[self.currServIdx]['url']+("?ver=%s&type=%s" % (self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['pyver'])), self.sourceArchive)
+        self.downloader.start(self.serversList[self.currServIdx]['url'], self.sourceArchive) #+("?ver=%s&type=%s" % (self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['pyver']))
         
     def stepUnpackArchive(self):
         self.destinationArchive  = os_path.join(self.tmpDir , 'iptv_archive')
@@ -449,7 +449,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 if sts:
                     newVerNum = CParsingHelper.getSearchGroups(data, '&quot;([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)&quot;')[0]
                     sourceUrl = mainUrl + "/repository/archive.tar.gz?ref=%s" % crcSum
-                    server = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'iptvplayer-for-e2-iptvplayer-for-e2/', 'pyver':'X.X', 'packagetype':'sourcecode'}
+                    server = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'iptvplayer-for-e2.git/', 'pyver':'X.X', 'packagetype':'sourcecode'}
                     printDBG("UpdateMainAppImpl.__addLastVersion server: [%s]" % str(server))
                     servers.append(server)
             else:
