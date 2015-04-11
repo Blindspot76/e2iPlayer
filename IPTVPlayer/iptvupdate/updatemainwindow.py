@@ -439,24 +439,21 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     # SERWERS LISTS STEP'S PRIVATES METHODS
     ############################################################################## 
     def __addLastVersion(self, servers):
-        mainUrl = "https://gitorious.org/iptvplayer-for-e2/iptvplayer-for-e2"
-        sts, response = self.cm.getPage(mainUrl, {'return_data':False})
+        mainUrl = "https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2"
+        sts, data = self.cm.getPage(mainUrl + '/tree/master')
         if sts:
-            finalurl = response.geturl()
-            printDBG("UpdateMainAppImpl.__addLastVersion finalurl[%s]" % finalurl)
-            response.close()
-            crcSum = finalurl.split('/')[-1].replace(':', '')
+            crcSum = CParsingHelper.getSearchGroups(data, '"/iptvplayer-for-e2/iptvplayer-for-e2/commit/([^"]+?)">')[0]
             if 40 == len(crcSum):
-                sts, data = self.cm.getPage(finalurl + "IPTVPlayer/version.py")
+                finalurl = mainUrl + '/blob/%s/IPTVPlayer/version.py' % crcSum
+                sts, data = self.cm.getPage(finalurl)
                 if sts:
                     newVerNum = CParsingHelper.getSearchGroups(data, '&quot;([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)&quot;')[0]
-                    sourceUrl = mainUrl + "/archive/%s.tar.gz" % crcSum
-                    server = {'name':'gitorious.org', 'version':newVerNum, 'url':sourceUrl, 'subdir':'iptvplayer-for-e2-iptvplayer-for-e2/', 'pyver':'X.X', 'packagetype':'sourcecode'}
+                    sourceUrl = mainUrl + "/repository/archive.tar.gz?ref=%s" % crcSum
+                    server = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'iptvplayer-for-e2-iptvplayer-for-e2/', 'pyver':'X.X', 'packagetype':'sourcecode'}
                     printDBG("UpdateMainAppImpl.__addLastVersion server: [%s]" % str(server))
                     servers.append(server)
             else:
                 printDBG("Wrong crcSum[%s]" % crcSum)
-                
 
     def __serversListDownloadFinished(self, arg, status):
         def ServerComparator(x, y):
@@ -511,7 +508,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 self.stepFinished(-1, _("Problem with downloading the server list."))
                 return
             if config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
-                self.__addLastVersion(serversList) # get last version from gitorious.org only for developers
+                self.__addLastVersion(serversList) # get last version from gitlab.com only for developers
 
             self.serversList = serversList
             if 0 < len(serversList):
