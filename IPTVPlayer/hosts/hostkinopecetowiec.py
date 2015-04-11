@@ -5,6 +5,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
@@ -310,7 +311,7 @@ class KinoPecetowiec(CBaseHostClass):
         data = data.split('<li>')
         self.listItems(data, category)  
 
-    def getLinks(self, verItem, playerType):
+    def getLinks(self, verItem, playerType, prevTab=[]):
         printDBG("getLinks verItem[%r], playerType[%r]" % (verItem, playerType) )
         hostingTab = []
         HEADER = dict(self.HEADER)
@@ -318,24 +319,30 @@ class KinoPecetowiec(CBaseHostClass):
         params = {  'action'    :'getPlayer',
                     'playerType':playerType['val'],
                     'fileId'    :'' }
-        formatLang = ''
-        if 'lang' in verItem:
-            params['fileLang'] = verItem['lang']
-            formatLang += ' | ' + verItem['lang']
-        if 'type' in verItem:
-            params['fileType'] = verItem['type']
-            formatLang += ' | ' + verItem['type']
-        if 'title' in verItem:
-            formatLang += ' | ' + verItem['title']
+        if 'hosting' in verItem: params['hId'] = verItem['hosting']
+        if 'version' in verItem: params['fileLang'] = verItem['version']
+        if 'quality' in verItem: params['fileType'] = verItem['quality']
+        if 'changed' in verItem: params['changed'] = verItem['changed']
 
-        if 'free' == playerType['val']:
-            http_params = {'header': HEADER}
-        else:
-            http_params = {'header': HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        if 'free' == playerType['val']: http_params = {'header': HEADER}
+        else: http_params = {'header': HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE}
         sts, data = self.cm.getPage(verItem['url'], http_params, params)
 
         if not sts or 'Player premium jest dostępny tylko dla' in data: 
             return hostingTab
+        
+        uniqueId = ''
+        tmp = re.compile('<span class="dropdown--selected">([^<]+?)</span>').findall(data)
+        for item in tmp: uniqueId += item 
+        
+        # check if already not exists
+        for item in prevTab:
+            if uniqueId == item['uniqueId']: return hostingTab
+        
+        try:
+            quality = self.cleanHtmlStr(tmp[1])
+            version = self.cleanHtmlStr(tmp[2])
+        except: quality, version = verItem['quality'], verItem['version']
         
         #self.cm.ph.writeToFile('/tmp/test_%s_%s_%s.html' % (playerType['title'], verItem['lang'], verItem['type']), data)
         
@@ -344,68 +351,65 @@ class KinoPecetowiec(CBaseHostClass):
         except: data = ''
         if 'stream.streamo.tv' in data:
             videoUrl = self.cm.ph.getSearchGroups(data, '"url":"([^"]+?)"')[0]
-            urlTitle = '%s %s %s' % (verItem['lang'], verItem['type'], playerType['val'])
-            hostingTab.append( {'name': urlTitle, 'url': videoUrl} )
+            urlTitle = '%s %s' % (version, quality) #, playerType['val']
+            hostingTab.append( {'name': urlTitle, 'url': videoUrl, 'uniqueId':uniqueId} )
         return hostingTab
         
             
     def getHostingTable(self, urlItem):
         printDBG("getHostingTable url[%s]" % urlItem['url'])
-        # use cache if possible
-        if 0 < len( self.linksCacheCache.get('tab', []) ) and (urlItem['url'] + urlItem.get('ver', '')) == self.linksCacheCache.get('marker', None):
-            return self.linksCacheCache['tab']
-            
         hostingTab = []
         verTab = []
         if self.loggedIn: http_params = {'header': self.HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE}
         else: http_params = {'header': self.HEADER}
         
-        sts, data = self.cm.getPage( urlItem['url'], http_params )
+        sts, data = self.cm.getPage(urlItem['url'], http_params )
         if False == sts: return hostingTab
         
-        avTypes = self.cm.ph.getDataBeetwenMarkers(data, 'var __avTypes = ', ';', False)[1]
-        try:
-            avTypes = json.loads(avTypes)
-            for type in avTypes.keys():
-                for lang in avTypes[type]:
-                    item = {'url':urlItem['url'], 'lang':lang, 'type':type}
-                    if item in verTab:
-                        printExc('KinoPecetowiec.getHostingTable: link duplication!!!')
-                    else:
-                        verTab.append(item)
-        except:
-            printExc()
-            
-        # theoretically arrays avTypes and avLangs should contain the same data, so checking avLangs is optional
-        avLangs = self.cm.ph.getDataBeetwenMarkers(data, 'var __avLangs = ', ';', False)[1]
-        try:
-            avLangs = json.loads(avLangs)
-            for lang in avLangs.keys():
-                for type in avLangs[lang]:
-                    item = {'url':urlItem['url'], 'lang':lang, 'type':type}
-                    if item not in verTab:
-                        verTab.append(item)
-                        printExc('KinoPecetowiec.getHostingTable: link in avTypes but not in avLangs!!!')
-        except:
-            printExc()
-            
-        if 0 == len(verTab):
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<li class="icons">', '</li>', False)[1]
-            data = re.compile('<a href="/?([^"]+?)">[^<]*?<span class="[^"]+?" title="([^"]+?)"').findall(data)
-            for item in data:
-                if item[1] == 'SD': continue
-                tmpUrl = item[0]
-                tmpUrl = self._getFullUrl(tmpUrl)
-                verTab.append( {'url': tmpUrl, 'title': item[1]} )
-            
-        for verItem in verTab: 
-            tmpTab = []
-            if self.loggedIn:
-                tmpTab = self.getLinks(verItem, {'val': 'premium', 'title':'Premium'})
-            if 0 == len(tmpTab):
-                tmpTab = self.getLinks(verItem, {'val': 'free', 'title':'Free'})
-            hostingTab.extend(tmpTab)
-        self.linksCacheCache = {'marker': urlItem['url'], 'tab': hostingTab}
+        # Get hosting table - hosting
+        tmp = re.compile('<li[^<]+?data-s="([^"]+?)"[^<]+?data-hid="([^"]+?)"[^<]*?>([^<]+?)</li>').findall( self.cm.ph.getDataBeetwenMarkers(data, 'data-prop="hosting">', '</ul>', False)[1] )
+        for item in tmp: 
+            hostingTab.append( {'name':self.cleanHtmlStr(item[2]), 'url':strwithmeta(urlItem['url'], {'hosting':item[1]})} )
+        return hostingTab
+    
+    def getVideoLinks(self, url):
+        printDBG("kinopecetowiec.getVideoLinks url[%r]" % url)
+        if not isinstance(url, strwithmeta): return []
+        if 'hosting' not in url.meta: return []
+        
+        hosting = url.meta['hosting']
+        hostingTab = []
+
+        if self.loggedIn: http_params = {'header': self.HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        else: http_params = {'header': self.HEADER}
+        
+        sts, data = self.cm.getPage( url, http_params )
+        if False == sts: return hostingTab
+        
+        # Get quality table - quality
+        qualityTable = []
+        tmp = re.compile('<li[^<]+?data-value="([^"]+?)"[^<]*?>([^<]+?)</li>').findall( self.cm.ph.getDataBeetwenMarkers(data, 'data-prop="quality">', '</ul>', False)[1] )
+        for item in tmp: qualityTable.append({'name':self.cleanHtmlStr(item[1]), 'fileType':item[0]})
+        
+        # Get lang table - version
+        langTable = []
+        tmp = re.compile('<li[^<]+?data-value="([^"]+?)"[^<]*?>([^<]+?)</li>').findall( self.cm.ph.getDataBeetwenMarkers(data, 'data-prop="version">', '</ul>', False)[1] )
+        for item in tmp: langTable.append({'name':self.cleanHtmlStr(item[1]), 'fileLang':item[0]})
+        
+        channged = ''
+        for version in langTable:
+            if '' == channged: channged = 'version'
+            for quality in qualityTable:
+                if '' == channged: channged = 'quality'
+                verItem = {'url':url, 'hosting':hosting, 'quality':quality['fileType'], 'version':version['fileLang'], 'channged':channged}
+                tmpTab = []
+                if self.loggedIn:
+                    tmpTab = self.getLinks(verItem, {'val': 'premium', 'title':'Premium'}, hostingTab)
+                if 0 == len(tmpTab):
+                    tmpTab = self.getLinks(verItem, {'val': 'free', 'title':'Free'}, hostingTab)
+                hostingTab.extend(tmpTab)
+                channged = ''
+            channged = ''
         return hostingTab
         
     def tryTologin(self):
@@ -522,11 +526,21 @@ class IPTVHost(CHostBase):
         
         urlList = self.host.getHostingTable(self.host.currList[Index])
         for item in urlList:
-            need_resolve = 0
+            need_resolve = 1
             retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
+    
+    def getResolvedURL(self, url):
+        # resolve url to get direct url to video file
+        retlist = []
+        urlList = self.host.getVideoLinks(url)
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+
+        return RetHost(RetHost.OK, value = retlist)
         
     def getArticleContent(self, Index = 0):
         retCode = RetHost.ERROR
