@@ -271,25 +271,12 @@ class common:
     
     def getURLRequestData(self, params = {}, post_data = None):
         
-        def urlOpen(req, customOpeners):
-            no_ssl_cert_check = False
-            try:
-                if req.get_full_url().startswith("http") and not IsHttpsCertValidationEnabled():
-                    no_ssl_cert_check = True
-                    ctx = ssl.create_default_context()
-                    ctx.check_hostname = False
-                    ctx.verify_mode = ssl.CERT_NONE
-            except:
-                no_ssl_cert_check = False
-                printExc()
-            
+        def urlOpen(req, customOpeners):            
             if len(customOpeners) > 0:
                 opener = urllib2.build_opener( *customOpeners )
-                if no_ssl_cert_check: response = opener.open(req, context=ctx)
-                else: response = opener.open(req)
+                response = opener.open(req)
             else:
-                if no_ssl_cert_check: response = urllib2.urlopen(req, context=ctx)
-                else: response = urllib2.urlopen(req)
+                response = urllib2.urlopen(req)
             return response
         
         cj = cookielib.LWPCookieJar()
@@ -336,6 +323,9 @@ class common:
         # debug 
         #customOpeners.append(urllib2.HTTPSHandler(debuglevel=1))
         #customOpeners.append(urllib2.HTTPHandler(debuglevel=1))
+        if not IsHttpsCertValidationEnabled():
+            try: customOpeners.append(urllib2.HTTPSHandler(context=ssl._create_unverified_context()))
+            except: printExc()
         #proxy support
         if self.useProxy:
             http_proxy = self.proxyURL
