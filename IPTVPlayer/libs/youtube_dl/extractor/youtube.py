@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import urllib, urllib2, re
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import *
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
 
@@ -19,6 +20,7 @@ class CVevoSignAlgoExtractor:
     def __init__(self):
         self.algoCache = {}
         self._cleanTmpVariables()
+        self.cm = common()
 
     def _cleanTmpVariables(self):
         self.fullAlgoCode = ''
@@ -77,11 +79,9 @@ class CVevoSignAlgoExtractor:
         # use algoCache
         if playerUrl not in self.algoCache:
             # get player HTML 5 sript
-            request = urllib2.Request(playerUrl)
-            try:
-                self.playerData = urllib2.urlopen(request).read()
-                self.playerData = self.playerData.decode('utf-8', 'ignore')
-            except:
+            sts, self.playerData = self.cm.getPage(playerUrl)
+            if sts: self.playerData = self.playerData.decode('utf-8', 'ignore')
+            else:
                 printExc('Unable to download playerUrl webpage')
                 self._cleanTmpVariables()
                 return ''
@@ -255,9 +255,10 @@ class InfoExtractor(object):
             self.report_download_webpage(video_id)
         elif note is not False:
             printDBG(u'%s: %s' % (video_id, note))
-        try:
-            return compat_urllib_request.urlopen(url_or_request)
-        except:
+        sts, response = self.cm.getPage(url_or_request, {'return_data':False})
+        if sts:
+            return response
+        else:
             printDBG('ERROR _request_webpage')
             raise ExtractorError(u'ERROR _request_webpage')
 
@@ -568,6 +569,11 @@ class YoutubeIE(InfoExtractor):
         if YoutubePlaylistIE.suitable(url): return False
         return re.match(cls._VALID_URL, url, re.VERBOSE) is not None
 
+    def __init__(self, params={}):
+        proxyURL = params.get('proxyURL', '')
+        useProxy = params.get('useProxy', False)
+        self.cm = common(proxyURL, useProxy)
+        
     def report_lang(self):
         """Report attempt to set language."""
         printDBG(u'Setting language')
@@ -617,22 +623,16 @@ class YoutubeIE(InfoExtractor):
     def _real_initialize(self):
 
         # Set language
-        request = compat_urllib_request.Request(self._LANG_URL)
-        try:
-            self.report_lang()
-            compat_urllib_request.urlopen(request).read()
-        except:
+        self.report_lang()
+        sts, data = self.cm.getPage(self._LANG_URL)
+        if not sts:
             self._downloader.report_warning(u'unable to set language')
-            return
 
         # No authentication to be performed
-        if username is None:
-            return
-
-        request = compat_urllib_request.Request(self._LOGIN_URL)
-        try:
-            login_page = compat_urllib_request.urlopen(request).read().decode('utf-8')
-        except:
+        if username is None: return
+        sts, login_page = self.cm.getPage(self._LOGIN_URL)
+        if sts: login_page = login_page.decode('utf-8')
+        else:
             self._downloader.report_warning(u'unable to fetch login page')
             return
 
@@ -671,29 +671,26 @@ class YoutubeIE(InfoExtractor):
         # Convert to UTF-8 *before* urlencode because Python 2.x's urlencode
         # chokes on unicode
         login_form = dict((k.encode('utf-8'), v.encode('utf-8')) for k,v in login_form_strs.items())
+        
+        
         login_data = compat_urllib_parse.urlencode(login_form).encode('ascii')
-        request = compat_urllib_request.Request(self._LOGIN_URL, login_data)
-        try:
-            self.report_login()
-            login_results = compat_urllib_request.urlopen(request).read().decode('utf-8')
+        self.report_login()
+        sts, login_results = self.cm.getPage(self._LOGIN_URL, {'raw_post_data':True}, login_data)
+        if sts:
+            login_results = login_results.decode('utf-8')
             printDBG(login_results)
             if re.search(r'(?i)<form[^>]* id="gaia_loginform"', login_results) is not None:
                 self._downloader.report_warning(u'unable to log in: bad username or password')
                 return
-        except:
+        else:
             self._downloader.report_warning(u'unable to log in')
             return
 
         # Confirm age
-        age_form = {
-                'next_url':     '/',
-                'action_confirm':   'Confirm',
-                }
-        request = compat_urllib_request.Request(self._AGE_URL, compat_urllib_parse.urlencode(age_form))
-        try:
-            self.report_age_confirmation()
-            age_results = compat_urllib_request.urlopen(request).read().decode('utf-8')
-        except:
+        age_form = { 'next_url': '/', 'action_confirm': 'Confirm',}
+        self.report_age_confirmation()
+        sts, age_results = self.cm.getPage(self._AGE_URL, {}, age_form)
+        if not sts:
             printDBG('Unable to confirm age')
             raise ExtractorError(u'Unable to confirm age')
 
@@ -716,10 +713,8 @@ class YoutubeIE(InfoExtractor):
         # Get video webpage
         self.report_video_webpage_download(video_id)
         url = 'http://www.youtube.com/watch?v=%s&gl=US&hl=en&has_verified=1' % video_id
-        request = compat_urllib_request.Request(url)
-        try:
-            video_webpage_bytes = compat_urllib_request.urlopen(request).read()
-        except:
+        sts, video_webpage_bytes = self.cm.getPage(url)
+        if not sts:
             printDBG('Unable to download video webpage')
             raise ExtractorError('Unable to download video webpage')
 
