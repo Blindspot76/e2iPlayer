@@ -19,7 +19,7 @@ except: import simplejson
 
 
 class NettvPw:
-    MAINURL      = 'http://www.nettv.pw/'
+    MAINURL      = 'http://nettv.pw/'
     HTTP_HEADER  = { 'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:12.0) Gecko/20100101 Firefox/12.0', 'Referer': MAINURL }
 
     def __init__(self):
