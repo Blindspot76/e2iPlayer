@@ -334,7 +334,7 @@ class IPTVSetupImpl:
 
     def f4mdumpStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.f4mdumpStepFinished sts[%r]" % sts)
-        if 'sh4' == self.platform and self.ffmpegVersion in ['1.0', '1.1.1', '2.0.3', '2.2.1', '2.6.2']: self.exteplayer3Step()
+        if 'sh4' == self.platform and self.ffmpegVersion in ['1.0', '1.1.1', '2.0.3', '2.2.1', '2.5', '2.6.2']: self.exteplayer3Step()
         elif "" != self.gstreamerVersion: self.gstplayerStep()
         else: self.finish()
     # self.ffmpegVersion
