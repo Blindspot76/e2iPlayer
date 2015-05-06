@@ -224,7 +224,7 @@ class SeansikTV(CBaseHostClass):
         sts, data = self.cm.getPage( self._getFullUrl( urlItem['url'] ) )
         if not sts: return hostingTab
         
-        long_hashes  = CParsingHelper.getSearchGroups(data, '_sasa[ ]*?=[ ]*?{([^}]+?)}')[0]
+        long_hashes  = CParsingHelper.getSearchGroups(data, 'setSasa\({([^}]+?)}')[0]
         short_hashes = CParsingHelper.getDataBeetwenMarkers(data, '<div id="translation_', '<div class="content"', False)[1]
         #printDBG("long_hashes[%s]" % long_hashes)
         #printDBG("short_hashes[%s]" % short_hashes)
