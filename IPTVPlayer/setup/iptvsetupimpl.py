@@ -220,7 +220,9 @@ class IPTVSetupImpl:
     def getFFmpegVerFinished(self, stsTab, dataTab):
         printDBG("IPTVSetupImpl.getFFmpegVerFinished")
         if len(stsTab) > 0 and True == stsTab[-1]:
-            try: self.ffmpegVersion = re.search("ffmpeg version ([0-9.]+?)[^0-9^.]", dataTab[-1]).group(1)
+            try: 
+                self.ffmpegVersion = re.search("ffmpeg version ([0-9.]+?)[^0-9^.]", dataTab[-1]).group(1)
+                if '.' == self.ffmpegVersion[-1]: self.ffmpegVersion = self.ffmpegVersion[:-1]
             except: self.ffmpegVersion = ""
         else: self.ffmpegVersion = ""
         self.wgetStep()

@@ -110,6 +110,7 @@ class IPTVExtMoviePlayer(Screen):
     # 
     skin = """
     <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
+            <widget name="logoIcon"           position="0,0"           size="160,40"  zPosition="4"             transparent="1" alphatest="blend" />
             <widget name="playbackInfoBaner"  position="0,30"          size="650,77"  zPosition="2" pixmap="%s" transparent="1" alphatest="blend" />
             <widget name="progressBar"        position="94,54"         size="544,7"   zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
             <widget name="bufferingBar"       position="94,54"         size="544,7"   zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
@@ -193,6 +194,7 @@ class IPTVExtMoviePlayer(Screen):
         self.updateInfoTimer_conn = eConnectCallback(self.updateInfoTimer.timeout, self.updateInfo)
         
         # playback info bar gui elements
+        self['logoIcon']          = Cover3()
         self['playbackInfoBaner'] = Cover3()
         self['statusIcon']        = Cover3()
         self['progressBar']       = ProgressBar()
@@ -219,19 +221,23 @@ class IPTVExtMoviePlayer(Screen):
                                'Status':         None
                               } )
         # load pixmaps for statusIcon
+        self.playback['logoIcon'] = None
         self.playback['statusIcons'] = {'Play':None, 'Pause':None, 'FastForward':None, 'SlowMotion':None}
         try:
             self.playback['statusIcons']['Play']        = LoadPixmap( GetIPTVDMImgDir("playback_a_play.png") )
             self.playback['statusIcons']['Pause']       = LoadPixmap( GetIPTVDMImgDir("playback_a_pause.png") )
             self.playback['statusIcons']['FastForward'] = LoadPixmap( GetIPTVDMImgDir("playback_a_ff.png") )
             self.playback['statusIcons']['SlowMotion']  = self.playback['statusIcons']['FastForward']
+            if 'gstplayer' == self.player: 
+                self.playback['logoIcon']               = LoadPixmap( GetIPTVDMImgDir("playback_gstreamer_logo.png") )
+            else: self.playback['logoIcon']             = LoadPixmap( GetIPTVDMImgDir("playback_ffmpeg_logo.png") )
         except:
             printExc()
         
         # show hide info bar functionality
         self.goToSeekRepeatCount = 0
         self.goToSeekStep = 0
-        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'statusIcon'] }
+        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'statusIcon', 'logoIcon'] }
         self.playbackInfoBar['timer'] = eTimer()
         self.playbackInfoBar['timer_conn'] = eConnectCallback(self.playbackInfoBar['timer'].timeout, self.hidePlaybackInfoBar)
         
@@ -621,6 +627,7 @@ class IPTVExtMoviePlayer(Screen):
         printDBG("onStart cmd[%s]" % cmd)
         self.console.execute( cmd )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
+        self['logoIcon'].setPixmap( self.playback['logoIcon'] )
             
     def initGuiComponentsPos(self):
 
