@@ -590,7 +590,7 @@ class IPTVExtMoviePlayer(Screen):
             if "://" in self.fileSRC: 
                 cmd += ' "%s" "%s"  "%s"  "%s" ' % (self.gstAdditionalParams['download-buffer-path'], self.gstAdditionalParams['ring-buffer-max-size'], self.gstAdditionalParams['buffer-duration'], self.gstAdditionalParams['buffer-size'])
                 tmp = strwithmeta(self.fileSRC)
-                url,httpParams = DMHelper.getDownloaderParamFromUrl(tmp)
+                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta(tmp)
                 for key in httpParams: cmd += (' "%s=%s" ' % (key, httpParams[key]) )
                 if 'http_proxy' in tmp.meta:
                     tmp = tmp.meta['http_proxy']
@@ -600,7 +600,18 @@ class IPTVExtMoviePlayer(Screen):
                             if tmp: cmd += (' "proxy=%s" "proxy-id=%s" "proxy-pw=%s" ' % (tmp.group(1)+tmp.group(4), tmp.group(2), tmp.group(3)) )
                         else: cmd += (' "proxy=%s" ' % tmp)
         else:
-            cmd = 'exteplayer3 "%s"' % self.fileSRC + " > /dev/null"
+            exteplayer3path = config.plugins.iptvplayer.exteplayer3path.value
+            cmd = exteplayer3path + ' "%s"' % self.fileSRC
+            if "://" in self.fileSRC: 
+                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta( strwithmeta(self.fileSRC) )
+                cmd += ' "%s"' %  httpParams.get('User-Agent', '')
+                cmd += ' ""' # cookies for now will be send in headers
+                headers = ''
+                for key in httpParams:
+                    if key in ['User-Agent']: continue
+                    headers += ('%s: %s\r\n' % (key, httpParams[key]) )
+                cmd += ' "%s"' % headers
+            cmd += " > /dev/null"
         
         self.console = eConsoleAppContainer()
         self.console_appClosed_conn = eConnectCallback(self.console.appClosed, self.eplayer3Finished)

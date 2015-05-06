@@ -11,6 +11,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, eConnectCallback, GetIconDir, GetBinDir
 from Plugins.Extensions.IPTVPlayer.components.iptvplayer import IPTVStandardMoviePlayer, IPTVMiniMoviePlayer
 from Plugins.Extensions.IPTVPlayer.components.iptvextmovieplayer import IPTVExtMoviePlayer
+from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu, GetMoviePlayer
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper, DMItemBase
@@ -249,25 +250,12 @@ class IPTVDMWidget(Screen):
 
     def ok_pressed(self): 
         if self.iptvclosing: return
+        
+        
         # wszystkie dostepne opcje
-        if 'sh4' == config.plugins.iptvplayer.plarform.value:
-            play = []
-            play.append((_('Play with [%s] player') % config.plugins.iptvplayer.defaultSH4MoviePlayer.value, 'play', config.plugins.iptvplayer.defaultSH4MoviePlayer.value))
-            play.append((_('Play with [%s] player') % config.plugins.iptvplayer.alternativeSH4MoviePlayer.value, 'play', config.plugins.iptvplayer.alternativeSH4MoviePlayer.value))
-        elif 'mipsel' == config.plugins.iptvplayer.plarform.value:
-            play = []
-            play.append((_('Play with [%s] player') % config.plugins.iptvplayer.defaultMIPSELMoviePlayer.value, 'play', config.plugins.iptvplayer.defaultMIPSELMoviePlayer.value))
-            play.append((_('Play with [%s] player') % config.plugins.iptvplayer.alternativeMIPSELMoviePlayer.value, 'play', config.plugins.iptvplayer.alternativeMIPSELMoviePlayer.value))   
-        elif 'i686' == config.plugins.iptvplayer.plarform.value:
-            play = []
-            play.append((_('Play with [%s] player') % config.plugins.iptvplayer.defaultI686MoviePlayer.value, 'play', config.plugins.iptvplayer.defaultI686MoviePlayer.value))
-            play.append((_('Play with [%s] player') % config.plugins.iptvplayer.alternativeI686MoviePlayer.value, 'play', config.plugins.iptvplayer.alternativeI686MoviePlayer.value))             
-        else:
-            if config.plugins.iptvplayer.NaszPlayer.value == "mini":
-                player = 'mini'
-            else:
-                player = 'standard'
-            play = ((_("Play file"), 'play', player),)
+        play = []
+        play.append((_('Play with [%s] player') % GetMoviePlayer(True, False).getText(), 'play', GetMoviePlayer(True, False).value))
+        play.append((_('Play with [%s] player') % GetMoviePlayer(True, True).getText(), 'play', GetMoviePlayer(True, True).value))
         
         cont   = ((_('Continue downloading'), 'continue'),)
         retry  = ((_('Download again'), 'retry'),)

@@ -269,7 +269,7 @@ class Twitch(CBaseHostClass):
                     url = Twitch.LIVE_URL % (cItem['channel'], urllib.quote(self._getStr(data['token'])), self._getStr(data['sig']))
                     data = getDirectM3U8Playlist(url, checkExt=False)
                     for item in data:
-                        item['url'] = urlparser.decorateUrl(item['url'], {'iptv_block_exteplayer':True, 'iptv_proto':'m3u8', 'iptv_livestream':True})
+                        item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True}) #'iptv_block_exteplayer':True, 
                         urlTab.append(item)
                 except: printExc()
         elif '' != cItem['url']:

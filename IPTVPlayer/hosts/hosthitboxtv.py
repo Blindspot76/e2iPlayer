@@ -180,23 +180,6 @@ class Hitbox(CBaseHostClass):
         url = ''
         if 'channel_link' in cItem:
             url = Hitbox.MAIN_URL + 'player/hls/%s.m3u8' % cItem['channel_link'].split('/')[-1]
-            '''
-            url = Hitbox.MAIN_URL + 'api/media/live/%s?showHidden=true' % cItem['channel_link'].split('/')[-1]
-            sts, data = self.cm.getPage(url)
-            if not sts: return urlTab
-            try:
-                data = byteify( json.loads(data) )
-                channelData = data['livestream'][0]
-                url = Hitbox.MAIN_URL +  'api/player/config/live/%s?embed=false&showHidden=true' % 
-                
-                
-                url = Hitbox.LIVE_URL % (cItem['channel'], urllib.quote(self._getStr(data['token'])), self._getStr(data['sig']))
-                data = getDirectM3U8Playlist(url, checkExt=False)
-                for item in data:
-                    item['url'] = urlparser.decorateUrl(item['url'], {'iptv_block_exteplayer':True, 'iptv_proto':'m3u8', 'iptv_livestream':True})
-                    urlTab.append(item)
-            except: printExc()
-            '''
         elif 'media_id' in cItem:
             sts, data = self.cm.getPage( Hitbox.MAIN_URL + 'api/player/config/video/%s?redis=true&embed=false&qos=false&redis=true&showHidden=true' % cItem['media_id'] )
             if sts:

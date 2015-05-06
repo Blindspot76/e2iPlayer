@@ -35,6 +35,7 @@ class IPTVSetupImpl:
         self.tmpDir = GetTmpDir()
         self.resourceServers = ["http://iptvplayer.pl/resources/", "http://iptvplayer.vline.pl/resources/"]
         
+        self.ffmpegVersion = ""
         self.gstreamerVersion = ""
         self.openSSLVersion = ""
         self.supportedPlatforms = ["sh4", "mipsel", "i686"]
@@ -66,6 +67,12 @@ class IPTVSetupImpl:
         self.gstplayerpaths = ["/usr/bin/gstplayer", GetBinDir("gstplayer", "")]
         self._gstplayerInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/gstplayer (%s)" % _("recommended")), "/usr/bin/gstplayer"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),
+                                          (_("Do not install (not recommended)"), "")]
+        # exteplayer3
+        self.exteplayer3Version = 3
+        self.exteplayer3paths = ["/usr/bin/exteplayer3", GetBinDir("exteplayer3", "")]
+        self._exteplayer3InstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/exteplayer3 (%s)" % _("recommended")), "/usr/bin/exteplayer3"),
+                                          (_('Install into the "%s".') % "IPTVPlayer/bin/exteplayer3", GetBinDir("exteplayer3", "")),
                                           (_("Do not install (not recommended)"), "")]
                                           
         # flumpegdemux
@@ -196,6 +203,26 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.getGstreamerVerFinished")
         if len(stsTab) > 0 and True == stsTab[-1]: self.gstreamerVersion = "0.10"
         else: self.gstreamerVersion = ""
+        self.getFFmpegVer()
+        
+    ###################################################
+    # STEP: GSTREAMER VERSION
+    ###################################################
+    def getFFmpegVer(self):
+        printDBG("IPTVSetupImpl.getFFmpegVer")
+        self.setInfo(_("Detection of the ffmpeg version."), None)
+        def _verValidator(code, data):
+            if 0 == code: return True,False
+            else: return False,True
+        self.workingObj = CCmdValidator(self.getFFmpegVerFinished, _verValidator, ['ffmpeg -version'])
+        self.workingObj.start()
+        
+    def getFFmpegVerFinished(self, stsTab, dataTab):
+        printDBG("IPTVSetupImpl.getFFmpegVerFinished")
+        if len(stsTab) > 0 and True == stsTab[-1]:
+            try: self.ffmpegVersion = re.search("ffmpeg version ([0-9.]+?)[^0-9^.]", dataTab[-1]).group(1)
+            except: self.ffmpegVersion = ""
+        else: self.ffmpegVersion = ""
         self.wgetStep()
             
     ###################################################
@@ -307,9 +334,47 @@ class IPTVSetupImpl:
 
     def f4mdumpStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.f4mdumpStepFinished sts[%r]" % sts)
+        if 'sh4' == self.platform and self.ffmpegVersion in ['1.0', '1.1.1', '2.0.3', '2.2.1', '2.6.2']: self.exteplayer3Step()
+        elif "" != self.gstreamerVersion: self.gstplayerStep()
+        else: self.finish()
+    # self.ffmpegVersion
+    ###################################################
+    # STEP: exteplayer3
+    ###################################################
+    def exteplayer3Step(self, ret=None):
+        printDBG("IPTVSetupImpl.exteplayer3Step")
+        def _detectValidator(code, data):
+            if '{"EPLAYER3_EXTENDED":{"version":' in data: 
+                try: ver = int(re.search('"version":([0-9]+?)[^0-9]', data).group(1))
+                except: ver = 0
+                if ver >= self.exteplayer3Version: return True,False
+            return False,True
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            sts, retPath = False, ""
+            for idx in range(len(dataTab)):
+                if '{"EPLAYER3_EXTENDED":{"version":' in dataTab[idx]: sts, retPath = True, paths[idx]
+            return sts, retPath
+        def _downloadCmdBuilder(ffmpegVersion, binName, platform, openSSLVersion, server, tmpPath):
+            url = server + 'bin/' + platform + ('/%s_ffmpeg' % binName) + ffmpegVersion
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        self.stepHelper = CBinaryStepHelper("exteplayer3", self.platform, self.openSSLVersion, config.plugins.iptvplayer.exteplayer3path)
+        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer as external movie player based on the ffmpeg and libeplayer.') % ('exteplayer3'), 1)
+        self.stepHelper.setInstallChoiseList( self._exteplayer3InstallChoiseList )
+        self.stepHelper.setPaths( self.exteplayer3paths )
+        self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( boundFunction(_downloadCmdBuilder, self.ffmpegVersion) )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.exteplayer3StepFinished )
+        self.binaryDetect()
+
+    def exteplayer3StepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.exteplayer3StepFinished sts[%r]" % sts)
         if "" != self.gstreamerVersion: self.gstplayerStep()
         else: self.finish()
-        
+    
     ###################################################
     # STEP: GSTPLAYER
     ###################################################
