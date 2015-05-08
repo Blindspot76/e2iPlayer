@@ -34,12 +34,14 @@ except: import json
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.playpuls_defaultformat = ConfigSelection(default = "999999", choices = [("0", "najgorsza"), ("999999", "najlepsza")])
+config.plugins.iptvplayer.playpuls_defaultformat = ConfigSelection(default = "999999", choices = [("0", "najgorsza"), ("600", "średnia"), ("800", "dobra"), ("999999", "najlepsza")])
 config.plugins.iptvplayer.playpuls_usedf = ConfigYesNo(default = False)
+config.plugins.iptvplayer.playpuls_defaultproto = ConfigSelection(default = "hls", choices = [("rtmp", "rtmp"), ("hls (m3u8)", "hls")])
 config.plugins.iptvplayer.playpuls_proxy = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append( getConfigListEntry( "Preferowany protokół:", config.plugins.iptvplayer.playpuls_defaultproto ) )
     optionList.append( getConfigListEntry( "Domyślny jakość video:", config.plugins.iptvplayer.playpuls_defaultformat ) )
     optionList.append( getConfigListEntry( "Używaj domyślnej jakości video:", config.plugins.iptvplayer.playpuls_usedf ) )
     optionList.append( getConfigListEntry( "PlayPuls korzystaj z proxy?", config.plugins.iptvplayer.playpuls_proxy) )
@@ -149,17 +151,42 @@ class Playpuls(CBaseHostClass):
         printDBG("Playpuls.getLinksForVideo [%s]" % cItem['url'])
         videoUrls =[]
         sts, data = self.cm.getPage(cItem['url'])
-        if sts:
+        if not sts: return videoUrls
+        if '/new-old-player.js' in data:
+            oldPlayer = True
+        else: oldPlayer = False # '/player.js'
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="section-player">', '</script>', False)
+        if not sts: return videoUrls
+        
+        sources = []
+        if oldPlayer:
             data = self.cm.ph.getSearchGroups(data, "var source = '([^']+?)'")[0]
-            data = 'http://redir.atmcdn.pl/hls/o2/pulstv/vod/' + data + '/hls/playlist.hls/playlist.m3u8'
-            videoUrls = getDirectM3U8Playlist(data, checkExt=False)
-            if 0 < len(videoUrls):
-                max_bitrate = int(config.plugins.iptvplayer.playpuls_defaultformat.value)
-                def __getLinkQuality( itemLink ):
-                    return int(itemLink['bitrate'])
-                videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
-                if config.plugins.iptvplayer.playpuls_usedf.value:
-                    videoUrls = [videoUrls[0]]            
+            if data != '':
+                sources.append({'quality':'M1', 'src': '/bucket/%s/m1.mp4' % data })
+                sources.append({'quality':'M2', 'src': '/bucket/%s/m2.mp4' % data })
+                sources.append({'quality':'D1', 'src': '/bucket/%s/d1.mp4' % data })
+                sources.append({'quality':'D2', 'src': '/bucket/%s/d2.mp4' % data })
+                sources.append({'quality':'D3', 'src': '/bucket/%s/d3.mp4' % data })
+        else:
+            data = re.compile("var source([MD][123]) = '([^']+?)'").findall(data)
+            for item in data:
+                sources.append({'quality':item[0], 'src': '/play/%s' % item[1] })
+                
+        qualityMap = {'M1':'400', 'M2':'600', 'D1':'600', 'D2':'800', 'D3':'1000'}
+        for item in sources:
+            if 'hls' == config.plugins.iptvplayer.playpuls_defaultproto.value:
+                url = "http://193.187.64.119:1935/Edge/_definst_/mp4:s3%s/playlist.m3u8" % item['src']
+            else:
+                url = 'rtmp://193.187.64.119:1935/Edge/_definst_ playpath=mp4:s3%s swfUrl=http://vjs.zencdn.net/4.12/video-js.swf pageUrl=%s' % (item['src'], cItem['url'])
+            videoUrls.append({'bitrate':qualityMap[item['quality']], 'name':'%s - %s' % (item['quality'], qualityMap[item['quality']]), 'url':url})
+        if 0 < len(videoUrls):
+            max_bitrate = int(config.plugins.iptvplayer.playpuls_defaultformat.value)
+            def __getLinkQuality( itemLink ):
+                return int(itemLink['bitrate'])
+            videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
+            if config.plugins.iptvplayer.playpuls_usedf.value:
+                videoUrls = [videoUrls[0]]            
         return videoUrls
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
