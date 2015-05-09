@@ -25,6 +25,8 @@ from Components.ActionMap import ActionMap
 from Components.config import config
 from Components.Label import Label
 from Components.ProgressBar import ProgressBar
+
+from Components.config import config # temporary player should not use config directly
 from Screens.MessageBox import MessageBox
 from Tools.LoadPixmap import LoadPixmap
 from Tools.BoundFunction import boundFunction
@@ -607,17 +609,20 @@ class IPTVExtMoviePlayer(Screen):
                         else: cmd += (' "proxy=%s" ' % tmp)
         else:
             exteplayer3path = config.plugins.iptvplayer.exteplayer3path.value
-            cmd = exteplayer3path + ' "%s"' % self.fileSRC
+            cmd = exteplayer3path
             if "://" in self.fileSRC: 
                 url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta( strwithmeta(self.fileSRC) )
-                cmd += ' "%s"' %  httpParams.get('User-Agent', '')
-                cmd += ' ""' # cookies for now will be send in headers
+                #cmd += ' ""' # cookies for now will be send in headers
                 headers = ''
                 for key in httpParams:
-                    if key in ['User-Agent']: continue
+                    if key == 'User-Agent':
+                        cmd += ' -u "%s"' %  httpParams[key]
                     headers += ('%s: %s\r\n' % (key, httpParams[key]) )
-                cmd += ' "%s"' % headers
-            cmd += " > /dev/null"
+                if len(headers):
+                    cmd += ' -h "%s"' % headers
+            if config.plugins.iptvplayer.aac_software_decode.value:
+                cmd += ' -a -p -10'
+            cmd += (' "%s"' % self.fileSRC) + " > /dev/null"
         
         self.console = eConsoleAppContainer()
         self.console_appClosed_conn = eConnectCallback(self.console.appClosed, self.eplayer3Finished)

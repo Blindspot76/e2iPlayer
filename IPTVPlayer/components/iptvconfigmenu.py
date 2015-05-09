@@ -102,6 +102,8 @@ config.plugins.iptvplayer.defaultI686MoviePlayer        = ConfigSelection(defaul
 config.plugins.iptvplayer.alternativeI686MoviePlayer    = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer')])
 # end with buffering mode players
 
+config.plugins.iptvplayer.aac_software_decode           = ConfigYesNo(default = False)
+
 config.plugins.iptvplayer.SciezkaCache = ConfigDirectory(default = "/hdd/IPTVCache/") #, fixed_size = False)
 config.plugins.iptvplayer.NaszaTMP = ConfigDirectory(default = "/tmp/") #, fixed_size = False)
 config.plugins.iptvplayer.ZablokujWMV = ConfigYesNo(default = True)
@@ -288,7 +290,8 @@ class ConfigMenu(ConfigBaseWidget):
         else: 
             list.append(getConfigListEntry(_("Movie player"), config.plugins.iptvplayer.NaszPlayer))
         
-        if 'exteplayer' in players or 'extgstplayer' in players or 'auto' in players:
+        if 'exteplayer' in players or 'extgstplayer' in players or 'auto' in [player.value for player in players]:
+            list.append(getConfigListEntry(_("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
             list.append(getConfigListEntry(_("External player infobar timeout"), config.plugins.iptvplayer.extplayer_infobar_timeout))
 
         list.append(getConfigListEntry(_("Block wmv files"), config.plugins.iptvplayer.ZablokujWMV))
