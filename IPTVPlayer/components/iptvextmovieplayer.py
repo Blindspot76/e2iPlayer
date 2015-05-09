@@ -671,6 +671,9 @@ class IPTVExtMoviePlayer(Screen):
         pass
         #Screen.hide(self) # we do not need window at now maybe in future
         
+    def consoleWrite(self, data):
+        self.console.write( data, len(data) )
+        
     def extPlayerSendCommand(self, command, arg1=''):
         printDBG("IPTVExtMoviePlayer.extPlayerSendCommand command[%s] arg1[%s]" % (command, arg1))
         if None == self.console: 
@@ -678,39 +681,39 @@ class IPTVExtMoviePlayer(Screen):
             return
             
         if   'PLAYBACK_LENGTH'       == command: 
-            self.console.write( "l\n" )
+            self.consoleWrite( "l\n" )
         elif 'PLAYBACK_CURRENT_TIME' == command: 
-            self.console.write( "j\n" )
+            self.consoleWrite( "j\n" )
         elif 'PLAYBACK_INFO'         == command: 
-            self.console.write( "i\n" )
+            self.consoleWrite( "i\n" )
         else:
             # All below commands require that 'PLAY ' status, 
             # so we first send command to resume playback
-            self.console.write( "c\n" )
+            self.consoleWrite( "c\n" )
 
             if   'PLAYBACK_CONTINUE'      == command:
                 # this is done to flush data
                 # without thos workaround for some materials 
                 # there is a lack of liquidity playback after resume             
                 if 'eplayer' == self.player: 
-                    #self.console.write( "k-2\n" ) # this causing problem for non-seekable streams
-                    self.console.write( "c\n" )
+                    #self.consoleWrite( "k-2\n" ) # this causing problem for non-seekable streams
+                    self.consoleWrite( "c\n" )
             elif 'PLAYBACK_PAUSE'         == command: 
-                self.console.write( "p\n" )
+                self.consoleWrite( "p\n" )
             elif 'PLAYBACK_SEEK_RELATIVE' == command: 
-                self.console.write( "kc%s\n" % (arg1) ) 
+                self.consoleWrite( "kc%s\n" % (arg1) ) 
             elif 'PLAYBACK_SEEK_ABS'      == command: 
-                self.console.write( "gf%s\n" % (arg1) )
+                self.consoleWrite( "gf%s\n" % (arg1) )
             elif 'PLAYBACK_FASTFORWARD'   == command:
-                self.console.write( "f%s\n" % arg1 )
+                self.consoleWrite( "f%s\n" % arg1 )
             elif 'PLAYBACK_FASTBACKWARD'  == command: 
-                self.console.write( "b%s\n" % arg1 )
+                self.consoleWrite( "b%s\n" % arg1 )
             elif 'PLAYBACK_SLOWMOTION'    == command: 
-                self.console.write( "m%s\n" % arg1 )
+                self.consoleWrite( "m%s\n" % arg1 )
             elif 'PLAYBACK_STOP'          == command: 
                 if not self.waitCloseFix['waiting']:
                     self.waitCloseFix['waiting'] = True
                     self.waitCloseFix['timer'].start(10000, True) # singleshot
-                self.console.write( "q\n" )
+                self.consoleWrite( "q\n" )
             else:
                 printDBG("IPTVExtMoviePlayer.extPlayerSendCommand unknown command[%s]" % command)
