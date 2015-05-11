@@ -36,11 +36,12 @@ from Tools.BoundFunction import boundFunction
 ###################################################
 config.plugins.iptvplayer = ConfigSubsection()
 config.plugins.iptvplayer.exteplayer3path = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.gstplayerpath = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.wgetpath      = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.rtmpdumppath  = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.f4mdumppath   = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.plarform      = ConfigSelection(default = "auto", choices = [("auto", "auto"),("mipsel", _("mipsel")),("sh4", _("sh4")),("i686", _("i686")),("unknown", _("unknown"))])
+config.plugins.iptvplayer.gstplayerpath   = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.wgetpath        = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.rtmpdumppath    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.f4mdumppath     = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.curr_title_file = ConfigText(default = "", fixed_size = False) 
+config.plugins.iptvplayer.plarform        = ConfigSelection(default = "auto", choices = [("auto", "auto"),("mipsel", _("mipsel")),("sh4", _("sh4")),("i686", _("i686")),("unknown", _("unknown"))])
 
 config.plugins.iptvplayer.showcover          = ConfigYesNo(default = True)
 config.plugins.iptvplayer.deleteIcons        = ConfigSelection(default = "3", choices = [("0", _("after closing")),("1", _("after day")),("3", _("after three days")),("7", _("after a week"))]) 
@@ -200,6 +201,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append( getConfigListEntry(_("Last checked version"), config.plugins.iptvplayer.updateLastCheckedVersion) )
             list.append( getConfigListEntry(_("Show all version in the update menu"), config.plugins.iptvplayer.hiddenAllVersionInUpdate) )
             list.append(getConfigListEntry(_("Disable host protection (error == GS)"), config.plugins.iptvplayer.devHelper))
+            list.append(getConfigListEntry(_("Write current title to file:"), config.plugins.iptvplayer.curr_title_file))
             
             list.append(getConfigListEntry("exteplayer3path", config.plugins.iptvplayer.exteplayer3path))
             list.append(getConfigListEntry("gstplayerpath", config.plugins.iptvplayer.gstplayerpath))
@@ -290,7 +292,8 @@ class ConfigMenu(ConfigBaseWidget):
         else: 
             list.append(getConfigListEntry(_("Movie player"), config.plugins.iptvplayer.NaszPlayer))
         
-        if 'exteplayer' in players or 'extgstplayer' in players or 'auto' in [player.value for player in players]:
+        playersValues = [player.value for player in players]
+        if 'exteplayer' in playersValues or 'extgstplayer' in playersValues or 'auto' in playersValues:
             list.append(getConfigListEntry(_("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
             list.append(getConfigListEntry(_("External player infobar timeout"), config.plugins.iptvplayer.extplayer_infobar_timeout))
 
@@ -361,9 +364,30 @@ class ConfigMenu(ConfigBaseWidget):
               config.plugins.iptvplayer.ListaGraficzna,
               config.plugins.iptvplayer.pluginProtectedByPin,
               config.plugins.iptvplayer.configProtectedByPin,
-              config.plugins.iptvplayer.plarform,
+              config.plugins.iptvplayer.plarform
               ]
+        players = []
+        if 'sh4' == config.plugins.iptvplayer.plarform.value:
+            players.append(config.plugins.iptvplayer.defaultSH4MoviePlayer0)
+            players.append(config.plugins.iptvplayer.alternativeSH4MoviePlayer0)
+            players.append(config.plugins.iptvplayer.defaultSH4MoviePlayer)
+            players.append(config.plugins.iptvplayer.alternativeSH4MoviePlayer)
+        elif 'mipsel' == config.plugins.iptvplayer.plarform.value:
+            players.append(config.plugins.iptvplayer.defaultMIPSELMoviePlayer0)
+            players.append(config.plugins.iptvplayer.alternativeMIPSELMoviePlayer0)
+            players.append(config.plugins.iptvplayer.defaultMIPSELMoviePlayer)
+            players.append(config.plugins.iptvplayer.alternativeMIPSELMoviePlayer)
+        elif 'i686' == config.plugins.iptvplayer.plarform.value:
+            players.append(config.plugins.iptvplayer.defaultI686MoviePlayer0)
+            players.append(config.plugins.iptvplayer.alternativeI686MoviePlayer0)
+            players.append(config.plugins.iptvplayer.defaultI686MoviePlayer)
+            players.append(config.plugins.iptvplayer.alternativeI686MoviePlayer)
+        else:
+            players.append(config.plugins.iptvplayer.NaszPlayer)
+        tab.extend(players)
         return tab
+        
+
 
     def changePin(self, pin = None, start = False):
         # 'PUT_OLD_PIN', 'PUT_NEW_PIN', 'CONFIRM_NEW_PIN'

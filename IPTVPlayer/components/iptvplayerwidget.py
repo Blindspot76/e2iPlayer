@@ -1181,6 +1181,14 @@ class IPTVPlayerWidget(Screen):
         printDBG("getMoviePlayer")
         return GetMoviePlayer(buffering, useAlternativePlayer)
 
+    def writeCurrentTitleToFile(self, title):
+        titleFilePath = config.plugins.iptvplayer.curr_title_file.value
+        if "" != titleFilePath:
+            try: 
+                with open(titleFilePath, 'w') as titleFile:
+                    titleFile.write(title)
+            except: printExc()
+        
     def playVideo(self, ret):
         printDBG( "playVideo" )
         url = ''
@@ -1232,35 +1240,37 @@ class IPTVPlayerWidget(Screen):
                         self.stopAutoPlaySequencer()
                 else:
                     self.stopAutoPlaySequencer()
-            elif isBufferingMode:
-                self.session.nav.stopService()
-                player = self.activePlayer.get('player', self.getMoviePlayer(True, self.useAlternativePlayer))
-                self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize)
             else:
-                self.session.nav.stopService()
-                player = self.activePlayer.get('player', self.getMoviePlayer(False, self.useAlternativePlayer))
-                if "mini" == player.value:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, url, self.currItem.name)
-                elif "standard" == player.value:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, url, self.currItem.name)
+                self.writeCurrentTitleToFile(titleOfMovie)
+                if isBufferingMode:
+                    self.session.nav.stopService()
+                    player = self.activePlayer.get('player', self.getMoviePlayer(True, self.useAlternativePlayer))
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize)
                 else:
-                    gstAdditionalParams = {}
-                    if "extgstplayer" == player.value:
-                        playerVal = 'gstplayer'
-                        gstAdditionalParams['download-buffer-path'] = ''
-                        gstAdditionalParams['ring-buffer-max-size'] = 0
-                        if 'sh4' == config.plugins.iptvplayer.plarform.value: # use default value, due to small amount of RAM
-                            #use the default value, due to small amount of RAM
-                            #in the future it will be configurable
-                            gstAdditionalParams['buffer-duration'] = -1
-                            gstAdditionalParams['buffer-size']     = 0
-                        else:
-                            gstAdditionalParams['buffer-duration'] = 18000 # 300min
-                            gstAdditionalParams['buffer-size']     = 10240 # 10MB
+                    self.session.nav.stopService()
+                    player = self.activePlayer.get('player', self.getMoviePlayer(False, self.useAlternativePlayer))
+                    if "mini" == player.value:
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, url, self.currItem.name)
+                    elif "standard" == player.value:
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, url, self.currItem.name)
                     else:
-                        assert("exteplayer" == player.value)
-                        playerVal = 'eplayer'
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, url, self.currItem.name, None, playerVal, gstAdditionalParams)
+                        gstAdditionalParams = {}
+                        if "extgstplayer" == player.value:
+                            playerVal = 'gstplayer'
+                            gstAdditionalParams['download-buffer-path'] = ''
+                            gstAdditionalParams['ring-buffer-max-size'] = 0
+                            if 'sh4' == config.plugins.iptvplayer.plarform.value: # use default value, due to small amount of RAM
+                                #use the default value, due to small amount of RAM
+                                #in the future it will be configurable
+                                gstAdditionalParams['buffer-duration'] = -1
+                                gstAdditionalParams['buffer-size']     = 0
+                            else:
+                                gstAdditionalParams['buffer-duration'] = 18000 # 300min
+                                gstAdditionalParams['buffer-size']     = 10240 # 10MB
+                        else:
+                            assert("exteplayer" == player.value)
+                            playerVal = 'eplayer'
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, url, self.currItem.name, None, playerVal, gstAdditionalParams)
         else:
             #There was problem in resolving direct link for video
             if not self.checkAutoPlaySequencer():
@@ -1268,6 +1278,7 @@ class IPTVPlayerWidget(Screen):
     #end playVideo(self, ret):
         
     def leaveMoviePlayer(self, answer = None, lastPosition = None, *args, **kwargs):
+        self.writeCurrentTitleToFile("")
         self.session.nav.playService(self.currentService)
         self.checkAutoPlaySequencer()
     

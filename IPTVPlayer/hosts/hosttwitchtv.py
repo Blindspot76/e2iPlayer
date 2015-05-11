@@ -56,7 +56,7 @@ class Twitch(CBaseHostClass):
     GAME_LIVE_CHANNELS_URL = MAIN_URL + 'kraken/streams?offset=0&game=%s&broadcaster_language=&on_site=1&limit=' + NUM_OF_ITEMS
     SEARCH_URL = MAIN_URL + 'kraken/search/%s?query=%s&type=suggest&offset=0&on_site=1&limit=' + NUM_OF_ITEMS
     CHANNEL_TOKEN_URL = MAIN_URLS + 'api/channels/%s/access_token'
-    LIVE_URL = 'http://usher.justin.tv/api/channel/hls/%s.m3u8?token=%s&sig=%s&allow_source=true'
+    LIVE_URL = 'http://usher.justin.tv/api/channel/hls/%s.m3u8?token=%s&sig=%s'#&allow_source=true'
     VIDEO_URL = MAIN_URL + 'api/videos/%s?on_site=1'
     VIDEOS_CATS_URL = MAIN_URL + 'kraken/videos/top?offset=0&game=%s&period=%s&on_site=1&limit=' + NUM_OF_ITEMS
     

@@ -68,7 +68,7 @@ class PlayTube(CBaseHostClass):
         "Historia wyszukiwania"
     ]
     
-    SERIALS_MENU_TAB = [{'title': 'Alfabetycznie',           'category': 'Serials_alphabetically'},
+    SERIALS_MENU_TAB = [#{'title': 'Alfabetycznie',           'category': 'Serials_alphabetically'},
                         {'title': 'Ostatnio zaktualizowane', 'category': 'Serials_last_updated'},
                         {'title': 'Ostatnio dodane',         'category': 'Serials_last_added'},
                         {'title': 'Najwyżej oceniane',       'category': 'Serials_top_rated'}]
@@ -114,12 +114,22 @@ class PlayTube(CBaseHostClass):
         rawVerFilters  = re.compile('href="[^,]+?\,[^,]+?\,([^,]+?),0\.html">([^<]+?)<').findall(rawVerFilters)
         rawCatFilters  = re.compile('href="([^,]+?\,[^.]+?)\.html">([^<]+?)<').findall(rawCatFilters)
         
-        if 0 < len(rawSortFilters) and 0 < len(rawVerFilters) and 0 < len(rawCatFilters):
+        if 0 < len(rawSortFilters):
             self.filters['sort'] = []
-            self.filters['ver'] = []
-            self.filters['cat'] = [{'tab': 'Wszystkie', 'val': 'glowna'}]
             SetFilters(rawSortFilters, self.filters['sort'])
+            self.filtersFilled = True
+            
+        if 0 < len(rawVerFilters):
+            self.filters['ver'] = []
             SetFilters(rawVerFilters, self.filters['ver'])
+            self.filtersFilled = True
+        else:
+            self.filters['ver'] = []
+            rawVerFilters = [('wszystkie', 'Wszystkie'), ('original', 'Oryginał'), ('subtitles', 'Napisy'), ('lector', 'Lektor'),('dubbing', 'Dubbing'),('pl', 'Film polski')]
+            SetFilters(rawVerFilters, self.filters['ver'])
+    
+        if 0 < len(rawCatFilters):
+            self.filters['cat'] = [{'tab': 'Wszystkie', 'val': 'glowna'}]
             SetFilters(rawCatFilters, self.filters['cat'])
             self.filtersFilled = True
         
