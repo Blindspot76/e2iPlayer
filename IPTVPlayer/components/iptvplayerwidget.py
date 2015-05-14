@@ -48,7 +48,7 @@ from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdate
 
 from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu, GetMoviePlayer
 from Plugins.Extensions.IPTVPlayer.components.confighost import ConfigHostMenu
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit, GetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetupwidget import IPTVSetupMainWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayer import IPTVStandardMoviePlayer, IPTVMiniMoviePlayer
 from Plugins.Extensions.IPTVPlayer.components.iptvextmovieplayer import IPTVExtMoviePlayer
@@ -1094,7 +1094,10 @@ class IPTVPlayerWidget(Screen):
         numOfLinks = len(links)
         if 0 == numOfLinks:
             if not self.checkAutoPlaySequencer(): 
-                self.session.open(MessageBox, _("No valid links available."), type=MessageBox.TYPE_INFO, timeout=10 )
+                message = _("No valid links available.")
+                lastErrorMsg = GetIPTVPlayerLastHostError()
+                if '' != lastErrorMsg:  message += "\n" + _('Last error: "%s"' % lastErrorMsg)
+                self.session.open(MessageBox, message, type=MessageBox.TYPE_INFO, timeout=10 )
             return
         elif 1 == numOfLinks or self.autoPlaySeqStarted:
             #call manualy selectLinksCallback - start VIDEO without links selection
@@ -1418,6 +1421,10 @@ class IPTVPlayerWidget(Screen):
             disMessage = _("No item to display. \nPress OK to refresh.\n")
             if ret.message and ret.message != '':
                 disMessage += ret.message
+            lastErrorMsg = GetIPTVPlayerLastHostError()
+            if lastErrorMsg != '':
+                disMessage += "\n" + _('Last error: "%s"' % lastErrorMsg)
+            
             self["statustext"].setText(disMessage)
             self["list"].hide()
         else:

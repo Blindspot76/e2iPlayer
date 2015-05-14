@@ -22,6 +22,7 @@ import os, sys
 gInitIPTVPlayer = True # is initialization of IPTVPlayer is needed
 PluginLanguageDomain = "IPTVPlayer"
 PluginLanguagePath = "Extensions/IPTVPlayer/locale"
+gSetIPTVPlayerLastHostError = ""
 ###################################################
 def localeInit():
     lang = language.getLanguage()[:2] # getLanguage returns e.g. "fi_FI" for "language_country"
@@ -42,4 +43,15 @@ def IPTVPlayerNeedInit(value=None):
     global gInitIPTVPlayer
     if value in [True, False]: gInitIPTVPlayer = value
     return gInitIPTVPlayer
+    
+def SetIPTVPlayerLastHostError(value=""):
+    global gSetIPTVPlayerLastHostError
+    gSetIPTVPlayerLastHostError = value
+
+def GetIPTVPlayerLastHostError(clear=True):
+    global gSetIPTVPlayerLastHostError
+    tmp = gSetIPTVPlayerLastHostError
+    if clear: gSetIPTVPlayerLastHostError = ""
+    return tmp
+
 

@@ -1771,6 +1771,7 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl)
         if sts:
             stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"]+?/stream\,[^"]+?)[\'"]')[0]
+            if '' == stream: stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"\']+?\.flv)[\'"]')[0]
             download = CParsingHelper.getSearchGroups(data, '"(http://[^"]+?/download\,[^"]+?)"')[0]
             if '' != stream:
                 vidTab.append({'name': 'http://vshare.io/stream ', 'url':stream})
