@@ -18,6 +18,7 @@ from Plugins.Extensions.IPTVPlayer.libs.vidtvpl   import VidTvApi
 from Plugins.Extensions.IPTVPlayer.libs.looknijtv import LooknijTvApi
 from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl import TvSportCdaApi
 from Plugins.Extensions.IPTVPlayer.libs.nettvpw   import NettvPw
+from Plugins.Extensions.IPTVPlayer.libs.telewizjaonline    import TelewizjaOnline, GetConfigList as TelewizjaOnline_GetConfigList
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -70,6 +71,10 @@ def GetConfigList():
     try:    optionList.extend( SatLiver_GetConfigList() )
     except: printExc()
     
+    #optionList.append(getConfigListEntry("----------Telewizja-Online.pl----------", config.plugins.iptvplayer.fake_separator))
+    #try:    optionList.extend( TelewizjaOnline_GetConfigList() )
+    #except: printExc()
+    
     optionList.append(getConfigListEntry(_("----------Other----------"), config.plugins.iptvplayer.fake_separator))
     optionList.append(getConfigListEntry("Wyłączyć możliwość buforowania dla http://prognoza.pogody.tv/", config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
     optionList.append(getConfigListEntry(_("Use Polish proxy for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weather_useproxy))
@@ -105,27 +110,28 @@ class HasBahCa(CBaseHostClass):
     HTTP_HEADER= { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
     # {'name': 'meczhd.tv',       'title': 'MeczHH TV',                         'url': 'http://meczhd.tv/',                                                  'icon': 'http://meczhd.tv/theme/img/logo.png'}, \
     # New links for webstream prepared by user @matzg
-    MAIN_GROUPED_TAB = [#{'name': 'team-cast.pl',    'title': 'Team Cast',                         'url': '',                                                                   'icon': 'http://wrzucaj.net/images/2014/09/12/logo.png'}, \
-                        #{'name': 'vidtv.pl',        'title': 'VidTV.pl',                          'url': '',                                                                   'icon': 'http://vidtv.pl/img/logotype4.png'}, \
-                        {'name': 'weeb.tv',         'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://static.weeb.tv/images/weebtv-santahat1.png'}, \
-                        {'name': 'videostar.pl',    'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
-                        {'name': 'goldvod.tv',      'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly',                                           'icon': 'http://goldvod.tv/img/logo.png'}, \
-                        {'name': 'web-live.tv',     'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
-                        #{'name': 'looknij.tv',      'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
-                        #{'name': 'tvisport.cba.pl', 'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
-                        {'name': 'nettv.pw',        'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
-                        {'name': 'm3u',             'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
-                        {'name': 'm3u',             'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
-                        {'name': 'prognoza.pogody.tv','title': 'prognoza.pogody.tv',              'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
-                        {'name': 'm3u',             'title': 'Prognoza Pogody matzg',             'url': 'http://matzg2.prv.pl/lista_pogoda.m3u',                              'icon': 'http://matzg2.prv.pl/pogoda.png'}, \
-                        {'name': 'm3u',             'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg2.prv.pl/Pogoda_METEOROGRAMY.m3u',                       'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
-                        {'name': 'webcamera.pl',    'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
-                        {'name': 'm3u',             'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
-                        {'name': 'filmon_groups',   'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
-                        {'name': 'm3u',             'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
-                        {'name': 'HasBahCa',        'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/',                                           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
-                        {'name': 'm3u',             'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
-                        {'name': 'm3u',             'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
+    MAIN_GROUPED_TAB = [#{'name': 'team-cast.pl',        'title': 'Team Cast',                         'url': '',                                                                   'icon': 'http://wrzucaj.net/images/2014/09/12/logo.png'}, \
+                        #{'name': 'vidtv.pl',            'title': 'VidTV.pl',                          'url': '',                                                                   'icon': 'http://vidtv.pl/img/logotype4.png'}, \
+                        {'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://static.weeb.tv/images/weebtv-santahat1.png'}, \
+                        {'name': 'videostar.pl',        'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
+                        {'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly',                                           'icon': 'http://goldvod.tv/img/logo.png'}, \
+                        {'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
+                        {'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
+                        #{'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
+                        {'name': 'nettv.pw',            'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
+                        #{'name': 'telewizja-online.pl', 'title': 'telewizja-online.pl',               'url': '',                                                                   'icon': ''}, \
+                        {'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
+                        {'name': 'm3u',                 'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
+                        {'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',              'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
+                        {'name': 'm3u',                 'title': 'Prognoza Pogody matzg',             'url': 'http://matzg2.prv.pl/lista_pogoda.m3u',                              'icon': 'http://matzg2.prv.pl/pogoda.png'}, \
+                        {'name': 'm3u',                 'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg2.prv.pl/Pogoda_METEOROGRAMY.m3u',                       'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
+                        {'name': 'webcamera.pl',        'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
+                        {'name': 'm3u',                 'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
+                        {'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
+                        {'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
+                        #{'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/',                                           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
+                        {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
+                        {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ]
     def __init__(self):
         self.up = urlparser()
@@ -144,6 +150,7 @@ class HasBahCa(CBaseHostClass):
         self.looknijTvApi = None
         self.tvSportCdaApi= None
         self.nettvpwApi   = None
+        self.telewizjaOnlineApi = None
         self.weebTvApi    = None
         self.teamCastTab  = {}
         
@@ -246,10 +253,13 @@ class HasBahCa(CBaseHostClass):
         tmp = self.cm.ph.getSearchGroups(url+'"', '(http[^"]+?)"')[0]
         if '' != tmp: url = tmp
         
-        query_data = { 'url': url, 'return_data': False }       
-        response = self.cm.getURLRequestData(query_data)
-        redirectUrl = response.geturl() 
-        response.close()
+        try:
+            query_data = { 'url': url, 'return_data': False }       
+            response = self.cm.getURLRequestData(query_data)
+            redirectUrl = response.geturl() 
+            response.close()
+        except:
+            printExc()
         if redirectUrl != url: url = redirectUrl
 
         if url.startswith('http://adf.ly/'):
@@ -479,6 +489,24 @@ class HasBahCa(CBaseHostClass):
             
     def getNettvpwLink(self, url):
         return self.nettvpwApi.getVideoLink(url)
+        
+    def getTelewizjaOnlineList(self, url):
+        if None == self.telewizjaOnlineApi: 
+            self.telewizjaOnlineApi = TelewizjaOnline()
+        if '' == url:
+            tmpList = self.telewizjaOnlineApi.getCategoriesList()
+            for item in tmpList:
+                params = dict(item)
+                params.update({'name':'telewizja-online.pl'})
+                self.addDir(params)
+        else:
+            tmpList = self.telewizjaOnlineApi.getChannelsList(url)
+            for item in tmpList: 
+                item.update({'name':'telewizja-online.pl'})
+                self.playVideo(item)
+            
+    def getTelewizjaOnlineLink(self, url):
+        return self.telewizjaOnlineApi.getVideoLink(url)
     
     def getWeebTvList(self, url):
         printDBG('getWeebTvList start')
@@ -794,6 +822,8 @@ class HasBahCa(CBaseHostClass):
     #nettv.pw items
         elif name == "nettv.pw":
             self.getNettvpwList(url)
+        elif name == "telewizja-online.pl":
+            self.getTelewizjaOnlineList(url)
     #weeb.tv items
         elif name == 'weeb.tv':
             self.getWeebTvList(url)
@@ -850,6 +880,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getTvSportCdaLink(url)
         elif 'nettv.pw' in url:
             urlList = self.host.getNettvpwLink(url)
+        elif 'telewizja-online.pl' in url:
+            urlList = self.host.getTelewizjaOnlineLink(url)
         elif 'weeb.tv' in name:
             url = self.host.getWeebTvLink(url)
         elif name == "team-cast.pl":
