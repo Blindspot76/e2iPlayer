@@ -1577,6 +1577,41 @@ class pageParser:
         
         
     def parserWRZUTA(self, url):
+        movieUrls = []
+        
+        # start algo from https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/wrzuta.py
+        _VALID_URL = r'https?://(?P<uploader>[0-9a-zA-Z]+)\.wrzuta\.pl/(?P<typ>film|audio)/(?P<id>[0-9a-zA-Z]+)'
+        try:
+            while True:
+                mobj = re.match(_VALID_URL, url)
+                video_id = mobj.group('id')
+                typ = mobj.group('typ')
+                uploader = mobj.group('uploader')
+                
+                #sts, data = self.cm.getPage(url)
+                #if not sts: break
+                quality = {'SD':240, 'MQ':360, 'HQ':480, 'HD':720}
+                audio_table = {'flv': 'mp3', 'webm': 'ogg', '???': 'mp3'}
+                sts, data = self.cm.getPage('http://www.wrzuta.pl/npp/embed/%s/%s' % (uploader, video_id))
+                if not sts: break
+                
+                data = byteify( json.loads(data) )
+                for media in data['url']:
+                    fmt = media['type'].split('@')[0]
+                    if typ == 'audio':
+                        ext = audio_table.get(fmt, fmt)
+                    else:
+                        ext = fmt
+                    if fmt in ['webm']: continue
+                    movieUrls.append({'name': 'wrzuta.pl: ' + str(quality.get(media['quality'], 0)) + 'p', 'url':media['url']})                
+                break;
+        
+        except: 
+            printExc()
+        # end algo
+        
+        if len(movieUrls): return movieUrls
+    
         def getShardUserFromKey(key):
             tab = ["w24", "w101", "w70", "w60", "w2", "w14", "w131", "w121", "w50", "w40", "w44", "w450", "w90", "w80", "w30", "w20", "w25", "w100", "w71", "w61", "w1", "w15", "w130", "w120", "w51", "w41", "w45", "w451", "w91", "w81", "w31", "w21"]
             abc = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -1615,7 +1650,7 @@ class pageParser:
                       {'bitrate':480, 'file':'fileHQId_h5'},\
                       {'bitrate':720, 'file':'fileHDId_h5'},\
                       {'bitrate':240, 'file':'fileId_h5'}]
-        movieUrls = []
+        
         for item in formatsTab:
             sts, url = CParsingHelper.getDataBeetwenMarkers(data, "<%s>" % item['file'], '</%s>' % item['file'], False)
             url = url.replace('<![CDATA[', '').replace(']]>', '')

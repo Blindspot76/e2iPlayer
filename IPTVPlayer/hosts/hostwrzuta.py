@@ -7,7 +7,7 @@
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, CSelOneLink, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, CSelOneLink, GetLogoDir
 
 ###################################################
 # FOREIGN import
@@ -123,7 +123,9 @@ class Wrzuta(CBaseHostClass):
         if not sts: return
         
         r2 = re.search('<a class="paging-next" rel="([^"]+?)"', data)
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="content"', '<div id="right"', withMarkers = False)
+        mEnd = '<div class="video-cat">'
+        if mEnd not in data: mEnd = '<div id="right"'
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="content"', mEnd, withMarkers = False)
         if not sts:
             printDBG("listsVideo no data beetween markers")
             data = ''
@@ -151,31 +153,24 @@ class Wrzuta(CBaseHostClass):
             params = {'name': name, 'category': r2[0], 'title': 'Następna strona', 'page': url, 'icon': ''}
             self.addDir(params)
 
-    def getVideoLinks(self,url):
+    def getVideoLinks(self, url):
         printDBG('WRZUTA.getVideoLinks')
-        nurl = url.split("/")
-        url = 'http://'+ nurl[2] + '/u/' + nurl[4]
-        retList = []
-        sts, data = self.cm.getPage(url)
-        if not sts: return retList
-        match = re.compile('var _src = {(.+?)};', re.DOTALL).findall(data)
-        if len(match) > 0:
-            match2 = re.compile("\t'(.+?)': (.+?),?\n").findall(match[0])
-            for num, item in match2[::-1]:
-                if item != '""':
-                    parts = re.compile('"(.*?)"').findall(item)
-                    linkVideo = ''.join(parts)
-                    if linkVideo.find("http://c.wrzuta.pl/wht") == -1:
-                        retList.append({'name': num, 'url': linkVideo})
-                        
-        maxRes = int(config.plugins.iptvplayer.wrzutaDefaultformat.value) * 1.1
-        def __getLinkQuality( itemLink ):
-            return int(itemLink['name'])
-        obj = CSelOneLink(retList, __getLinkQuality, maxRes)
-        if config.plugins.iptvplayer.wrzutaUseDF.value:
-            retList = obj.getOneLink()
-        else: retList = obj.getSortedLinks()
-        return retList
+        videoUrls = self.up.getVideoLinkExt(url)
+        
+        if 0 < len(videoUrls):
+            max_bitrate = int(config.plugins.iptvplayer.wrzutaDefaultformat.value)
+            def __getLinkQuality( itemLink ):
+                try:
+                    value = self.cm.ph.getSearchGroups(itemLink['name'], '[^0-9]([0-9]+?)p')[0]
+                    return int(value)
+                except:
+                    printExc()
+                    return 0
+            videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
+            if config.plugins.iptvplayer.wrzutaUseDF.value:
+                videoUrls = [videoUrls[0]]            
+        return videoUrls
+
 
     def getFavouriteData(self, cItem):
         return cItem['page']
