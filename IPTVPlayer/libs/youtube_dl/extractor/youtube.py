@@ -21,6 +21,7 @@ class CVevoSignAlgoExtractor:
         self.algoCache = {}
         self._cleanTmpVariables()
         self.cm = common()
+        self.cm.HOST = 'python-urllib/2.7'
 
     def _cleanTmpVariables(self):
         self.fullAlgoCode = ''
@@ -573,6 +574,7 @@ class YoutubeIE(InfoExtractor):
         proxyURL = params.get('proxyURL', '')
         useProxy = params.get('useProxy', False)
         self.cm = common(proxyURL, useProxy)
+        self.cm.HOST = 'Mpython-urllib/2.7'
         
     def report_lang(self):
         """Report attempt to set language."""
