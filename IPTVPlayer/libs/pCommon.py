@@ -16,6 +16,7 @@ import ssl
 import re
 import htmlentitydefs
 import cookielib
+import unicodedata
 try:
     try: from cStringIO import StringIO
     except: from StringIO import StringIO 
@@ -165,7 +166,30 @@ class CParsingHelper:
         file_path = file
         text_file = open(file_path, mode)
         text_file.write(data)
-        text_file.close()    
+        text_file.close()
+    
+    @staticmethod
+    def getNormalizeStr(txt, idx=None):
+        POLISH_CHARACTERS = {u'ą':u'a', u'ć':u'c', u'ę':u'ę', u'ł':u'l', u'ń':u'n', u'ó':u'o', u'ś':u's', u'ż':u'z', u'ź':u'z',
+                             u'Ą':u'A', u'Ć':u'C', u'Ę':u'E', u'Ł':u'L', u'Ń':u'N', u'Ó':u'O', u'Ś':u'S', u'Ż':u'Z', u'Ź':u'Z',
+                             u'á':u'a', u'é':u'e', u'í':u'i', u'ñ':u'n', u'ó':u'o', u'ú':u'u', u'ü':u'u',
+                             u'Á':u'A', u'É':u'E', u'Í':u'I', u'Ñ':u'N', u'Ó':u'O', u'Ú':u'U', u'Ü':u'U',
+                            }
+        txt = txt.decode('utf-8')
+        if None != idx: txt = txt[idx]
+        nrmtxt = unicodedata.normalize('NFC', txt)
+        ret_str = []
+        for item in nrmtxt:
+            if ord(item) > 128:
+                item = POLISH_CHARACTERS.get(item)
+                if item: ret_str.append(item)
+            else: # pure ASCII character
+                ret_str.append(item)
+        return ''.join(ret_str).encode('utf-8')
+        
+    @staticmethod
+    def isalpha(txt, idx=None):
+        return CParsingHelper.getNormalizeStr(txt, idx).isalpha()
 
 class common:
     HOST   = 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'

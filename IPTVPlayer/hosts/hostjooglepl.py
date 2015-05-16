@@ -53,7 +53,7 @@ class JooglePL(CBaseHostClass):
     FILMS_URL  = MAIN_URL + 'filmy-online/' 
     SERIES_URL = MAIN_URL + 'seriale-online/'
     MAIN_CAT_TAB = [{'category':'films_list_categories', 'title':_('Filmy'),   'url': FILMS_URL},
-                    #{'category':'series',                'title':_('Seriale'), 'url': SERIES_URL},
+                    {'category':'series_list_abc',       'title':_('Seriale'), 'url': SERIES_URL},
                     {'category':'search',                'title':_('Search'), 'search_item':True},
                     {'category':'search_history',        'title':_('Search history')} ]
     
@@ -61,6 +61,7 @@ class JooglePL(CBaseHostClass):
         printDBG("JooglePL.__init__")
         CBaseHostClass.__init__(self, {'history':'Joogle.pl'})
         self.cacheFilters = []
+        self.cacheSeries = {}
         
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
@@ -159,10 +160,106 @@ class JooglePL(CBaseHostClass):
                 params = dict(cItem)
                 params.update( {'title':title, 'url':self._getFullUrl(url), 'desc':desc, 'icon':self._getFullUrl(icon)} )
                 self.addVideo(params)
+                
+    def listSeriesABC(self, cItem, category):
+        printDBG("JooglePL.listFilms")
+        seriesABC = self._fillSeriesCache(cItem['url'])
+        if len(seriesABC):
+            params = dict(cItem)
+            params.update({'category':category, 'title':_('--Wszystkie--'), 'cat_id':'all'})
+            self.addDir(params)
+            for item in seriesABC:
+                params = dict(cItem)
+                params.update({'category':category, 'title':item + (' [%d]' % len(self.cacheSeries[item]) ), 'cat_id':item})
+                self.addDir(params)
 
+    def _fillSeriesCache(self, url):
+        printDBG("JooglePL._fillSeriesCache")
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        self.cacheSeries = {'all':[]}
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="list">', '</ul>', False)[1]
+        data = data.split('</li>')
+        seriesABC = []
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, 'href="(http[^"]+?)"')[0]
+            title = self.cleanHtmlStr(item)
+            
+            try: 
+                cat_id = ''
+                if not self.cm.ph.isalpha(title, 0):
+                    cat_id = '0-9'
+                else:
+                    cat_id = self.cm.ph.getNormalizeStr(title, 0).upper()
+                    
+                if cat_id not in seriesABC:
+                    seriesABC.append(cat_id)
+                
+                if cat_id not in self.cacheSeries:
+                    self.cacheSeries[cat_id] = []
+                self.cacheSeries[cat_id].append({'title':title, 'url':url})
+                self.cacheSeries['all'].append({'title':title, 'url':url})
+            except: 
+                printExc()
+        return seriesABC
+    
+    def listSeries(self, cItem, category):
+        printDBG("JooglePL.listSeries")
+        series = self.cacheSeries.get(cItem['cat_id'], [])
+        for item in series:
+            params = dict(cItem)
+            params.update({'category':category, 'title':item['title'], 'url':item['url']})
+            self.addDir(params)
+            
+    def listEpisodes(self, cItem):
+        printDBG("JooglePL.listEpisodes")
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        headerData = self.cm.ph.getDataBeetwenMarkers(data, '<div class="poster">', '<ul class="episode-list">', False)[1]
+        icon = self._getFullUrl( self.cm.ph.getSearchGroups(headerData, 'src="([^"]+?)"')[0] )
+        desc = self.cleanHtmlStr(headerData)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="episode-list">', '</ul>', False)[1]
+        data = data.split('</li>')
+        season = ''
+        for item in data:
+            if 'class="season"' in item:
+                season = self.cleanHtmlStr(item + '</li>')
+            elif 'class="episode"' in item:
+                title = season + ' ' + self.cleanHtmlStr(item + '</li>')
+                url   =  self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
+                params = dict(cItem)
+                params.update( {'title':title, 'url':url, 'desc':desc, 'icon':icon} )
+                self.addVideo(params)
+                
+    def listSearchSeries(self, cItem, searchPattern, category):
+        keywordList = self.cm.ph.getNormalizeStr(searchPattern).upper().split(' ')
+        keywordList = set(keywordList)
+        if len(keywordList):
+            series = self.cacheSeries.get('all', [])
+            if 0 == len(series):
+                self._fillSeriesCache(JooglePL.SERIES_URL)
+                series = self.cacheSeries.get('all', [])
+            for item in series:
+                txt = self.cm.ph.getNormalizeStr( item['title'] ).upper()
+                txtTab = txt.split(' ')
+                matches = 0
+                for word in keywordList:
+                    if word in txt: matches += 1
+                    if word in txtTab: matches += 10
+                if 0 < matches:
+                    params = dict(cItem)
+                    params.update({'category':category, 'title':item['title'], 'url':item['url'], 'matches':matches})
+                    self.addDir(params)
+            self.currList.sort(key=lambda item: item['matches'], reverse=True)
+        
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("JooglePL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        self.listSearchFilms(cItem, searchPattern)
+        if 'filmy' == searchType:
+            self.listSearchFilms(cItem, searchPattern)
+        else:
+            self.listSearchSeries(cItem, searchPattern, 'series_list_episodes')
     
     def getLinksForVideo(self, cItem):
         printDBG("JooglePL.getLinksForVideo [%s]" % cItem)
@@ -207,6 +304,13 @@ class JooglePL(CBaseHostClass):
             self.listFilmsYears(self.currItem, 'films_list')
         elif 'films_list' == category:
             self.listFilms(self.currItem)
+    #SERIES
+        elif 'series_list_abc' == category:
+            self.listSeriesABC(self.currItem, 'series_list_series')
+        elif 'series_list_series' == category:
+            self.listSeries(self.currItem, 'series_list_episodes')
+        elif 'series_list_episodes' == category:
+            self.listEpisodes(self.currItem)
     #WYSZUKAJ
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -252,7 +356,7 @@ class IPTVHost(CHostBase):
         hostList = []
         searchTypesOptions = [] # ustawione alfabetycznie
         searchTypesOptions.append(("Filmy",  "filmy"))
-        #searchTypesOptions.append(("Seriale","seriale"))
+        searchTypesOptions.append(("Seriale","seriale"))
         
         for cItem in cList:
             hostLinks = []

@@ -23,7 +23,6 @@ import time
 import random
 try:    import simplejson as json
 except: import json
-import unicodedata
 import string
 import base64
 import binascii
@@ -80,27 +79,6 @@ class SerialeNet(CBaseHostClass):
         if 0 < len(url) and not url.startswith('http'):
             url =  baseUrl + url
         return url
-        
-    def _getNormalizeStr(self, txt, idx=None):
-        POLISH_CHARACTERS = {u'ą':u'a', u'ć':u'c', u'ę':u'ę', u'ł':u'l', u'ń':u'n', u'ó':u'o', u'ś':u's', u'ż':u'z', u'ź':u'z',
-                             u'Ą':u'A', u'Ć':u'C', u'Ę':u'E', u'Ł':u'L', u'Ń':u'N', u'Ó':u'O', u'Ś':u'S', u'Ż':u'Z', u'Ź':u'Z',
-                             u'á':u'a', u'é':u'e', u'í':u'i', u'ñ':u'n', u'ó':u'o', u'ú':u'u', u'ü':u'u',
-                             u'Á':u'A', u'É':u'E', u'Í':u'I', u'Ñ':u'N', u'Ó':u'O', u'Ú':u'U', u'Ü':u'U',
-                            }
-        txt = txt.decode('utf-8')
-        if None != idx: txt = txt[idx]
-        nrmtxt = unicodedata.normalize('NFC', txt)
-        ret_str = []
-        for item in nrmtxt:
-            if ord(item) > 128:
-                item = POLISH_CHARACTERS.get(item)
-                if item: ret_str.append(item)
-            else: # pure ASCII character
-                ret_str.append(item)
-        return ''.join(ret_str).encode('utf-8')
-            
-    def _isalpha(self, txt, idx=None):
-        return self._getNormalizeStr(txt, idx).isalpha()
         
     def decodeJS(self, s):
         ret = ''
@@ -179,15 +157,15 @@ class SerialeNet(CBaseHostClass):
             t2 = item['t2']
             match = False
             if letter.isalpha():
-                if letter == self._getNormalizeStr(t1, 0).upper():
+                if letter == self.cm.ph.getNormalizeStr(t1, 0).upper():
                     match = True
-                elif len(t2) and letter == self._getNormalizeStr(t2, 0).upper():
+                elif len(t2) and letter == self.cm.ph.getNormalizeStr(t2, 0).upper():
                     match = True
                     t1,t2 = t2,t1
             else:
-                if not self._isalpha(t1, 0):
+                if not self.cm.ph.isalpha(t1, 0):
                     match = True
-                elif len(t2) and not self._isalpha(t2, 0):
+                elif len(t2) and not self.cm.ph.isalpha(t2, 0):
                     match = True
                     t1,t2 = t2,t1
             if match:
@@ -256,12 +234,12 @@ class SerialeNet(CBaseHostClass):
                     
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("SerialeNet.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        keywordList = self._getNormalizeStr(searchPattern).upper().split(' ')
+        keywordList = self.cm.ph.getNormalizeStr(searchPattern).upper().split(' ')
         keywordList = set(keywordList)
         if len(keywordList):
             series  = self._listsSeries(SerialeNet.MAIN_URL)
             for item in series:
-                txt = self._getNormalizeStr( (item['t1'] + ' ' +  item['t2']) ).upper()
+                txt = self.cm.ph.getNormalizeStr( (item['t1'] + ' ' +  item['t2']) ).upper()
                 txtTab = txt.split(' ')
                 matches = 0
                 for word in keywordList:
