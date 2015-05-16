@@ -201,7 +201,19 @@ class IPTVSetupImpl:
         
     def getGstreamerVerFinished(self, stsTab, dataTab):
         printDBG("IPTVSetupImpl.getGstreamerVerFinished")
-        if len(stsTab) > 0 and True == stsTab[-1]: self.gstreamerVersion = "0.10"
+        if len(stsTab) > 0 and True == stsTab[-1]: 
+            self.gstreamerVersion = "0.10"
+            try:
+                from boxbranding import getImageVersion
+                if getImageVersion() >= '4.2':
+                    printDBG("Patch requested by @Rango - disable gstplayer for new OE-A images")
+                    config.plugins.iptvplayer.gstplayerpath.value = ""
+                    config.plugins.iptvplayer.gstplayerpath.save()
+                    configfile.save()
+                    self.gstreamerVersion = ""
+            except:
+                printExc()
+            
         else: self.gstreamerVersion = ""
         self.getFFmpegVer()
         
@@ -336,7 +348,8 @@ class IPTVSetupImpl:
 
     def f4mdumpStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.f4mdumpStepFinished sts[%r]" % sts)
-        if 'sh4' == self.platform and self.ffmpegVersion in ['1.0', '1.1.1', '2.0.3', '2.2.1', '2.5', '2.6.2']: self.exteplayer3Step()
+        if 'sh4' == self.platform and self.ffmpegVersion in ['1.0', '1.1.1', '2.0.3', '2.0.2', '2.2.1', '2.5', '2.6.2']: 
+            self.exteplayer3Step()
         elif "" != self.gstreamerVersion: self.gstplayerStep()
         else: self.finish()
     # self.ffmpegVersion
