@@ -51,9 +51,9 @@ class Hitbox(CBaseHostClass):
     MAIN_URL   = 'http://api.hitbox.tv/'
     MAIN_URLS  = 'https://api.hitbox.tv/'
 
-    MAIN_CAT_TAB = [{'category':'games_list',     'title':_('Games played Now'), 'url': MAIN_URL+'api/games?fast=true&limit=%s&media=true&offset=%s&size=list&liveonly=true'},
-                    {'category':'media',          'title':_('Live'),   'url':MAIN_URL+'api/media/live/list?filter=popular&game=0&hiddenOnly=false&showHidden=true&fast=true&limit=%s&media=true&offset=%s&size=list&liveonly=true'},
-                    {'category':'media',          'title':_('Videos'), 'url':MAIN_URL+'api/media/video/list?filter=weekly&follower_id=&game=0&fast=true&limit=%s&media=true&offset=%s&size=list'},
+    MAIN_CAT_TAB = [{'category':'games_list',     'title':_('Games played Now'), 'url': MAIN_URL+'api/games?fast=true&limit={0}&media=true&offset={1}&size=list&liveonly=true'},
+                    {'category':'media',          'title':_('Live'),   'url':MAIN_URL+'api/media/live/list?filter=popular&game=0&hiddenOnly=false&showHidden=true&fast=true&limit={0}&media=true&offset={1}&size=list&liveonly=true'},
+                    {'category':'media',          'title':_('Videos'), 'url':MAIN_URL+'api/media/video/list?filter=weekly&follower_id=&game=0&fast=true&limit={0}&media=true&offset={1}&size=list'},
                     {'category':'search',         'title':_('Search'), 'search_item':True},
                     {'category':'search_history', 'title':_('Search history')} ]
                     
@@ -107,7 +107,7 @@ class Hitbox(CBaseHostClass):
     def listGames(self, cItem, category):
         printDBG("Hitbox.listGames")
         page = cItem.get('page', 0)
-        sts, data = self.cm.getPage(cItem['url'] % (Hitbox.NUM_OF_ITEMS, page*Hitbox.NUM_OF_ITEMS) )
+        sts, data = self.cm.getPage(cItem['url'].format(Hitbox.NUM_OF_ITEMS, page*Hitbox.NUM_OF_ITEMS) )
         if not sts: return 
         try:
             data = byteify(json.loads(data))["categories"]
@@ -133,13 +133,13 @@ class Hitbox(CBaseHostClass):
             params = dict(cItem)
             params['title'] = item['title']
             params['category'] = item['category']
-            params['url'] = Hitbox.MAIN_URL+'api/media/'+item['url']+'/list?fast=true&filter=&media=true&size=list&game='+cItem['url']+'&limit=%s&offset=%s'
+            params['url'] = Hitbox.MAIN_URL+'api/media/'+item['url']+'/list?fast=true&filter=&media=true&size=list&game='+cItem['url']+'&limit={0}&offset={1}'
             self.addDir(params)
         
     def listMedia(self, cItem):
         printDBG("Hitbox.listMedia")
         page = cItem.get('page', 0)
-        sts, data = self.cm.getPage(cItem['url'] % (Hitbox.NUM_OF_ITEMS, page*Hitbox.NUM_OF_ITEMS) )
+        sts, data = self.cm.getPage(cItem['url'].format(Hitbox.NUM_OF_ITEMS, page*Hitbox.NUM_OF_ITEMS) )
         if not sts: return 
         try:
             data = byteify(json.loads(data))
@@ -170,30 +170,54 @@ class Hitbox(CBaseHostClass):
         searchPattern = urllib.quote_plus(searchPattern)
         item = dict(cItem)
         item['category'] = 'media'
-        item['url'] = Hitbox.MAIN_URLS+'api/media/'+searchType+'/list?filter=popular&media=true&search='+searchPattern+'&limit=%s&media=true&start=%s&size=list'
+        item['url'] = Hitbox.MAIN_URLS+'api/media/'+searchType+'/list?filter=popular&media=true&search='+searchPattern+'&limit={0}&media=true&start={1}&size=list'
         if 'live' == searchType: item['url'] += '&liveonly=true'
         self.listMedia(item)
     
     def getLinksForVideo(self, cItem):
         printDBG("Hitbox.getLinksForVideo [%s]" % cItem)
-        urlTab = []
-        url = ''
+        urls = []
         if 'channel_link' in cItem:
-            url = Hitbox.MAIN_URL + 'player/hls/%s.m3u8' % cItem['channel_link'].split('/')[-1]
+            live = True
+            urls.append( { 'name':'hls', 'type':'hls', 'url':Hitbox.MAIN_URL + 'player/hls/%s.m3u8' % cItem['channel_link'].split('/')[-1] } )
         elif 'media_id' in cItem:
+            live = False
             sts, data = self.cm.getPage( Hitbox.MAIN_URL + 'api/player/config/video/%s?redis=true&embed=false&qos=false&redis=true&showHidden=true' % cItem['media_id'] )
             if sts:
                 try:
                     data = byteify( json.loads(data) )
-                    if data['clip']['url'].startswith('http'):
-                        url = data['clip']['url']
+                    baseUrl = data['clip']['baseUrl']
+                    if None == baseUrl: baseUrl = ''
+                    for item in data['clip']['bitrates']:
+                        url = item['url']
+                        if url.split('?')[0].endswith('m3u8'):
+                            type = 'hls'
+                        else: type = 'vod'
+                                
+                        if not url.startswith('http'):
+                            if 'vod' == type:
+                                url = baseUrl + '/' + url
+                            else: url = Hitbox.MAIN_URL + '/' + url
+                            
+                        if url.startswith('http'):
+                            urls.append( {'name':item.get('label', 'vod'), 'type':type, 'url':url} )
+                            if 'vod' == type: break
                 except: printExc()
-        if '' != url:
-            data = getDirectM3U8Playlist(url, checkExt=False)
-            for item in data:
-                item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True})
-                urlTab.append(item)
-    
+                
+        urlTab = []
+        for urlItem in urls:
+            if 'hls' == urlItem['type']:
+                url = urlItem['url']
+                data = getDirectM3U8Playlist(url, checkExt=False)
+                if 1 == len(data):
+                    urlItem['url'] = urlparser.decorateUrl(urlItem['url'], {'iptv_proto':'m3u8', 'iptv_livestream':live})
+                    urlTab.append(urlItem)
+                else:
+                    for item in data:
+                        item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':live})
+                        urlTab.append(item)
+            else:
+                urlTab.append(urlItem)
         return urlTab
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):

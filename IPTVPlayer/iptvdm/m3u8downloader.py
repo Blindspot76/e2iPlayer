@@ -66,6 +66,8 @@ class M3U8Downloader(BaseDownloader):
         # -1 means, starts from beginning
         self.startLiveDuration = M3U8Downloader.LIVE_START_OFFSET 
         
+        self.addStampToUrl = False
+        
     def __del__(self):
         printDBG("M3U8Downloader.__del__ ----------------------------------")
     
@@ -110,6 +112,13 @@ class M3U8Downloader(BaseDownloader):
             return self.WGET_TIMEOUT
         else:
             return 2 * self.WGET_TIMEOUT
+            
+    def _addTimeStampToUrl(self, m3u8Url):
+        if self.addStampToUrl:
+            if '?' in m3u8Url: m3u8Url += '&iptv_stamp='
+            else: m3u8Url += '?iptv_stamp='
+            m3u8Url += ('%s' % time())
+        return m3u8Url
         
     def _updateM3U8Finished(self, code=0):
         printDBG('m3u8 _updateM3U8Finished update code[%d]--- ' % (code))
@@ -135,10 +144,7 @@ class M3U8Downloader(BaseDownloader):
             if self.refreshDelay < self.M3U8UpdaterRefreshDelay or 0 != code:
                 self.M3U8UpdaterRefreshDelay = 0
                 self.M3U8ListData = ''
-                m3u8Url = self.m3u8Url
-                if '?' in m3u8Url: m3u8Url += '&iptv_stamp='
-                else: m3u8Url += '?iptv_stamp='
-                m3u8Url += ('%s' % time())
+                m3u8Url = self._addTimeStampToUrl( self.m3u8Url )
                 printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % m3u8Url)
                 cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=0 --timeout=%d ' % self._getTimeout()) + '"' + m3u8Url + '" -O - 2> /dev/null'
                 printDBG("m3u8 _updateM3U8Finished download cmd[%s]" % cmd)
@@ -212,10 +218,7 @@ class M3U8Downloader(BaseDownloader):
         # frist download m3u8 conntent
         ##############################################################################
         self.downloadType = self.DOWNLOAD_TYPE.M3U8
-        m3u8Url = self.m3u8Url
-        if '?' in m3u8Url: m3u8Url += '&iptv_stamp='
-        else: m3u8Url += '?iptv_stamp='
-        m3u8Url += ('%s' % time())
+        m3u8Url = self._addTimeStampToUrl( self.m3u8Url )
         cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=0 --timeout=%d ' % self._getTimeout()) + '"' + m3u8Url + '" -O - 2> /dev/null'
         printDBG("Download cmd[%s]" % cmd)
         self.console_appClosed_conn = eConnectCallback(self.console.appClosed,  self._cmdFinished )
