@@ -33,6 +33,7 @@ from enigma import getDesktop, eTimer
 from Plugins.Extensions.IPTVPlayer.components.iptvfavouriteswidgets import IPTVFavouritesAddItemWidget, IPTVFavouritesMainWidget
  
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import IsUrlDownloadable
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools_FreeSpace, \
@@ -1190,6 +1191,12 @@ class IPTVPlayerWidget(Screen):
             try: 
                 with open(titleFilePath, 'w') as titleFile:
                     titleFile.write(title)
+            except: printExc()
+        if config.plugins.iptvplayer.set_curr_title.value:
+            try:
+                from enigma import evfd
+                title = CParsingHelper.getNormalizeStr(title)
+                evfd.getInstance().vfd_write_string(title[0:17])
             except: printExc()
         
     def playVideo(self, ret):

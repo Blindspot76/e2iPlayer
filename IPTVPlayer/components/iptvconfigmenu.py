@@ -40,6 +40,7 @@ config.plugins.iptvplayer.gstplayerpath   = ConfigText(default = "", fixed_size 
 config.plugins.iptvplayer.wgetpath        = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.rtmpdumppath    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.f4mdumppath     = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.set_curr_title  = ConfigYesNo(default = False)
 config.plugins.iptvplayer.curr_title_file = ConfigText(default = "", fixed_size = False) 
 config.plugins.iptvplayer.plarform        = ConfigSelection(default = "auto", choices = [("auto", "auto"),("mipsel", _("mipsel")),("sh4", _("sh4")),("i686", _("i686")),("unknown", _("unknown"))])
 
@@ -201,6 +202,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append( getConfigListEntry(_("Last checked version"), config.plugins.iptvplayer.updateLastCheckedVersion) )
             list.append( getConfigListEntry(_("Show all version in the update menu"), config.plugins.iptvplayer.hiddenAllVersionInUpdate) )
             list.append(getConfigListEntry(_("Disable host protection (error == GS)"), config.plugins.iptvplayer.devHelper))
+            list.append(getConfigListEntry(_("VFD set current title:"), config.plugins.iptvplayer.set_curr_title))
             list.append(getConfigListEntry(_("Write current title to file:"), config.plugins.iptvplayer.curr_title_file))
             
             list.append(getConfigListEntry("exteplayer3path", config.plugins.iptvplayer.exteplayer3path))
