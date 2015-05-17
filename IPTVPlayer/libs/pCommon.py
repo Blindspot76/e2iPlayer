@@ -349,7 +349,7 @@ class common:
         #customOpeners.append(urllib2.HTTPHandler(debuglevel=1))
         if not IsHttpsCertValidationEnabled():
             try: customOpeners.append(urllib2.HTTPSHandler(context=ssl._create_unverified_context()))
-            except: printExc()
+            except: pass
         #proxy support
         if self.useProxy:
             http_proxy = self.proxyURL
