@@ -2142,7 +2142,7 @@ class pageParser:
                 pid = CParsingHelper.getDataBeetwenMarkers(data, "pid=", '&', False)[1]
                 data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>', False)[1]
                 sts, data = self.cm.getPage("http://yukons.net/srvload/"+id, params)
-                return False
+                printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % data)
                 if sts:
                     ip = data[4:].strip()
                     url = 'rtmp://%s:443/kuyo playpath=%s?id=%s&pid=%s  swfVfy=http://yukons.net/yplay2.swf pageUrl=%s conn=S:OK live=1' % (ip, shortChannelId, id, pid, url2)
