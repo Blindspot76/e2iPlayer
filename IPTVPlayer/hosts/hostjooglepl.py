@@ -176,7 +176,7 @@ class JooglePL(CBaseHostClass):
     def _fillSeriesCache(self, url):
         printDBG("JooglePL._fillSeriesCache")
         sts, data = self.cm.getPage(url)
-        if not sts: return
+        if not sts: return []
         self.cacheSeries = {'all':[]}
         data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="list">', '</ul>', False)[1]
         data = data.split('</li>')

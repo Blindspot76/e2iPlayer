@@ -249,6 +249,7 @@ class urlparser:
                        'cloudyvideos.com':     self.pp.parserCLOUDYVIDEOS  ,
                        'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
                        'thevideo.me':          self.pp.parserTHEVIDEOME    ,
+                       'xage.pl':              self.pp.parserXAGEPL        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2752,6 +2753,14 @@ class pageParser:
             data = unpackJS(data[idx1:-3], VIDUPME_decryptPlayerParams)
             printDBG(data)
             return self._findLinks(data, 'thevideo.me')
+            
+    def parserXAGEPL(self, baseUrl):
+        printDBG("parserXAGEPL baseUrl[%s]" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+        return urlparser().getVideoLinkExt(url)
         
     def parserBILLIONUPLOADS(self, linkUrl):
         printDBG("parserBILLIONUPLOADS linkUrl[%s]" % linkUrl)
