@@ -262,6 +262,8 @@ class IPTVExtMoviePlayer(Screen):
         try: self.autoHideTime = 1000 * int(config.plugins.iptvplayer.extplayer_infobar_timeout.value)
         except: self.autoHideTime = 1000
         
+        self.fatalErrorOccurs = False
+        
     def updateInfo(self):
         self.extPlayerCmddDispatcher.doUpdateInfo()
         if None != self.downloader:
@@ -676,9 +678,28 @@ class IPTVExtMoviePlayer(Screen):
         pass
         #Screen.hide(self) # we do not need window at now maybe in future
         
-    def consoleWrite(self, data):
-        self.console.write( data, len(data) )
+    def fatalErrorHandler(self, msg):
+        if self.fatalErrorOccurs: return
+        self.fatalErrorOccurs = True
+        self.showMessage(msg, MessageBox.TYPE_ERROR, self._fatalErrorCallback)
         
+    def _fatalErrorCallback(self):
+        self.waitCloseTimeoutCallback()
+        
+    def consoleWrite(self, data):
+        try:
+            self.console.write( data, len(data) )
+            return
+        except:
+            try: 
+                self.console.write( data )
+                return
+            except:
+                printExc()
+        msg = _("Fatal error: consoleWrite failed!")
+        self.fatalErrorHandler(msg)
+
+                
     def extPlayerSendCommand(self, command, arg1=''):
         printDBG("IPTVExtMoviePlayer.extPlayerSendCommand command[%s] arg1[%s]" % (command, arg1))
         if None == self.console: 
@@ -718,7 +739,7 @@ class IPTVExtMoviePlayer(Screen):
             elif 'PLAYBACK_STOP'          == command: 
                 if not self.waitCloseFix['waiting']:
                     self.waitCloseFix['waiting'] = True
-                    self.waitCloseFix['timer'].start(10000, True) # singleshot
+                    self.waitCloseFix['timer'].start(5000, True) # singleshot
                 self.consoleWrite( "q\n" )
             else:
                 printDBG("IPTVExtMoviePlayer.extPlayerSendCommand unknown command[%s]" % command)
