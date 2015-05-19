@@ -250,6 +250,8 @@ class urlparser:
                        'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
                        'thevideo.me':          self.pp.parserTHEVIDEOME    ,
                        'xage.pl':              self.pp.parserXAGEPL        ,
+                       'castamp.com':          self.pp.parserCASTAMPCOM    ,
+                       'crichd.tv':            self.pp.parserCRICHDTV      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -356,6 +358,14 @@ class urlparser:
             elif "yukons.net" in data:
                 channel = self.cm.ph.getDataBeetwenMarkers(data, 'channel="', '"', False)[1]
                 videoUrl = strwithmeta('http://yukons.net/watch/'+channel, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif "castamp.com" in data:
+                channel = self.cm.ph.getDataBeetwenMarkers(data, 'channel="', '"', False)[1]
+                videoUrl = strwithmeta('http://www.castamp.com/embed.php?c='+channel, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif "crichd.tv" in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, 'src="(http://crichd.tv[^"]+?)"')[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif "privatestream.tv" in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/[^"]+?)"')[0]
@@ -2761,6 +2771,84 @@ class pageParser:
         if not sts: return False
         url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
         return urlparser().getVideoLinkExt(url)
+        
+    def parserCASTAMPCOM(self, baseUrl):
+        printDBG("parserCASTAMPCOM baseUrl[%s]" % baseUrl)
+        channel = self.cm.ph.getSearchGroups(baseUrl + '&', 'c=([^&]+?)&')[0]
+
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        def _getDomainsa():
+            chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz"
+            string_length = 8
+            randomstring = ''
+            for i in range(string_length):
+                rnum = randint(0, len(chars)-1)
+                randomstring += chars[rnum]
+            return randomstring 
+        
+        linkUrl = 'http://www.castamp.com/embed.php?c={0}&tk={1}&vwidth=710&vheight=460'.format(channel, _getDomainsa())
+        
+        sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        sts, data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="player">', '</script>', False)
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
+        swfUrl = _getParam('flashplayer')
+        url    = _getParam('streamer')
+        file   = _getParam('file')
+        if '' != file and '' != url:
+            url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
+            printDBG(url)
+            return url
+        return False
+        
+    def parserCRICHDTV(self, baseUrl):
+        printDBG("parserCRICHDTV baseUrl[%s]" % baseUrl)
+        
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        
+        channelId = self.cm.ph.getSearchGroups(data, "id='([0-9]+?)'")[0]
+        linkUrl = 'http://popeoftheplayers.eu/crichd.php?id={0}&width=710&height=460'.format(channelId)
+        HTTP_HEADER['Referer'] = baseUrl
+        
+        sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        #printDBG("===================================================================")
+        #printDBG(data)
+        #printDBG("===================================================================")
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
+        swfUrl = "http://popeoftheplayers.eu/atdedead.swf"#_getParam('flashplayer')
+        url    = _getParam('streamer') #rtmp://89.248.172.159:443/liverepeater
+        file   = _getParam('file')
+        if '' != file and '' != url:
+            url += ' playpath=%s swfUrl=%s token=%s pageUrl=%s live=1 ' % (file, swfUrl, '#atd%#$ZH', linkUrl)
+            printDBG(url)
+            return url
+        return False
+        
         
     def parserBILLIONUPLOADS(self, linkUrl):
         printDBG("parserBILLIONUPLOADS linkUrl[%s]" % linkUrl)

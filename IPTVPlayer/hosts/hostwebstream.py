@@ -18,7 +18,7 @@ from Plugins.Extensions.IPTVPlayer.libs.vidtvpl   import VidTvApi
 from Plugins.Extensions.IPTVPlayer.libs.looknijtv import LooknijTvApi
 from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl import TvSportCdaApi
 from Plugins.Extensions.IPTVPlayer.libs.nettvpw   import NettvPw
-from Plugins.Extensions.IPTVPlayer.libs.telewizjaonline    import TelewizjaOnline, GetConfigList as TelewizjaOnline_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.typertv    import TyperTV
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -119,7 +119,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
                         #{'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
                         {'name': 'nettv.pw',            'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
-                        #{'name': 'telewizja-online.pl', 'title': 'telewizja-online.pl',               'url': '',                                                                   'icon': ''}, \
+                        {'name': 'typertv.com.pl',      'title': 'typertv.com.pl',                    'url': '',                                                                   'icon': 'http://www.typertv.com.pl/data/themes/Carousel/img/logo.png'}, \
                         {'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'name': 'm3u',                 'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
                         {'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',              'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
@@ -150,7 +150,8 @@ class HasBahCa(CBaseHostClass):
         self.looknijTvApi = None
         self.tvSportCdaApi= None
         self.nettvpwApi   = None
-        self.telewizjaOnlineApi = None
+        self.typerTvApi   = None
+        
         self.weebTvApi    = None
         self.teamCastTab  = {}
         
@@ -490,23 +491,23 @@ class HasBahCa(CBaseHostClass):
     def getNettvpwLink(self, url):
         return self.nettvpwApi.getVideoLink(url)
         
-    def getTelewizjaOnlineList(self, url):
-        if None == self.telewizjaOnlineApi: 
-            self.telewizjaOnlineApi = TelewizjaOnline()
+    def getTyperTvList(self, url):
+        if None == self.typerTvApi: 
+            self.typerTvApi = TyperTV()
         if '' == url:
-            tmpList = self.telewizjaOnlineApi.getCategoriesList()
+            tmpList = self.typerTvApi.getCategoriesList()
             for item in tmpList:
                 params = dict(item)
-                params.update({'name':'telewizja-online.pl'})
+                params.update({'name':'typertv.com.pl'})
                 self.addDir(params)
         else:
-            tmpList = self.telewizjaOnlineApi.getChannelsList(url)
+            tmpList = self.typerTvApi.getChannelsList(url)
             for item in tmpList: 
-                item.update({'name':'telewizja-online.pl'})
+                item.update({'name':'typertv.com.pl'})
                 self.playVideo(item)
             
-    def getTelewizjaOnlineLink(self, url):
-        return self.telewizjaOnlineApi.getVideoLink(url)
+    def getTyperTvLink(self, url):
+        return self.typerTvApi.getVideoLink(url)
     
     def getWeebTvList(self, url):
         printDBG('getWeebTvList start')
@@ -822,8 +823,8 @@ class HasBahCa(CBaseHostClass):
     #nettv.pw items
         elif name == "nettv.pw":
             self.getNettvpwList(url)
-        elif name == "telewizja-online.pl":
-            self.getTelewizjaOnlineList(url)
+        elif name == "typertv.com.pl":
+            self.getTyperTvList(url)
     #weeb.tv items
         elif name == 'weeb.tv':
             self.getWeebTvList(url)
@@ -880,8 +881,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getTvSportCdaLink(url)
         elif 'nettv.pw' in url:
             urlList = self.host.getNettvpwLink(url)
-        elif 'telewizja-online.pl' in url:
-            urlList = self.host.getTelewizjaOnlineLink(url)
+        elif 'typertv.com.pl' in url:
+            urlList = self.host.getTyperTvLink(url)
         elif 'weeb.tv' in name:
             url = self.host.getWeebTvLink(url)
         elif name == "team-cast.pl":
