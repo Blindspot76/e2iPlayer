@@ -364,8 +364,11 @@ class urlparser:
                 videoUrl = strwithmeta('http://www.castamp.com/embed.php?c='+channel, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif "crichd.tv" in data:
-                videoUrl = self.cm.ph.getSearchGroups(data, 'src="(http://crichd.tv[^"]+?)"')[0]
-                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                if baseUrl.startswith('http://crichd.tv'):
+                    videoUrl = strwithmeta(baseUrl, {'Referer':baseUrl})
+                else:
+                    videoUrl = self.cm.ph.getSearchGroups(data, 'src="(http://crichd.tv[^"]+?)"')[0]
+                    videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif "privatestream.tv" in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/[^"]+?)"')[0]
