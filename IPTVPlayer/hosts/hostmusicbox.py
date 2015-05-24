@@ -264,12 +264,12 @@ class MusicBox(CBaseHostClass):
         sts, data = self.cm.getPage("https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&q="+ url +"&type=Music&maxResults=1&key="+youtube_api_key)
         if not sts:
             return
-        match = re.compile('"videoId": "(.+?)"').findall(data)
-        if len(match) > 0:
-            for i in range(len(match)):
-                video_path = "https://www.youtube.com/watch?v=" + match[0]
-                video_path = self.getLinksForVideo(video_path)
-        return video_path
+        match = re.compile('"videoId": "([^"]+?)"').findall(data)
+        videoUrls = []
+        for item in match:
+            video_path = "https://www.youtube.com/watch?v=" + item
+            videoUrls = self.getLinksForVideo(video_path)
+        return videoUrls
 
     def getLinksForVideo(self, url):
         printDBG("Youtube.getLinksForVideo url[%s]" % url)
