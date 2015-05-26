@@ -129,7 +129,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'm3u',                 'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
                         {'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
-                        #{'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/',                                           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
+                        {'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/iptv/index.php',                         'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ]
@@ -193,121 +193,49 @@ class HasBahCa(CBaseHostClass):
             params.update(forceParams)
             self.addDir(params)
             
-    def _listHasBahCaPromoted(self, cItem):
-        url = cItem['url']
-        printDBG("_listHasBahCaPromoted url[%s]" % url)
-        sts,data = self.cm.getPage(url)
-        if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, cItem['m1'], cItem['m2'], False)[1]
-        data = data.split('</tr>')
-        if len(data): del data[-1]
-        for item in data:
-            if 'm3u/IPTV' in item:
-                url = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, "location.href='([^']+?)'")[0] )
-                if not url.startswith('http'): url = 'http://hasbahcaiptv.com/' + url
-                title = self.cleanHtmlStr(item)
-                desc = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0] )
-                params = {'name': 'HasBahCa', 'category':'hasbahca_list', 'title':title, 'url':url, 'desc':desc}
-                self.addDir(params)
-            
-    def _listHasBahCaList(self, cItem):
-        printDBG("_listHasBahCaList")
-        sts,data = self.cm.getPage(cItem['url'], {}, cItem.get('post', None))
-        if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<table class="inhalt">', '<div class="box_oben_r">Login</div>', True)[1]
-        data = data.split('<table class="inhalt">')
-        if len(data): del data[0]
-        for item in data:
-            rows = item.split('</tr>')
-            if 0 == len(rows): continue
-            title = self.cleanHtmlStr(rows[0])
-            del rows[0]
-            if '' == title: title = self.cleanHtmlStr(rows[0])
-            del rows[0]
-            desc = ''
-            for tr in rows:
-                tmp = self.cleanHtmlStr(tr)
-                if '' == tmp: continue
-                desc += tmp + ', '
-            url = self.cm.ph.getSearchGroups(item, ' title="DOWNLOAD"  href="([^"]+?)"')[0]
-            if '' != url:
-                if '' != desc: desc = desc[:-2]
-                params = {'name': 'HasBahCa', 'category':'hasbahca_resolve', 'title':title, 'url':url, 'desc':desc}
-                self.addDir(params)
-        if 1 == len(self.currList):
-            item = self.currList[0]
-            self.currList = []
-            self._listHasBahCaResolve(item)
-            
-    def _listHasBahCaFromTar(self, progress_key):
-        sts, data = self.cm.getPage('http://www.convertfiles.com/convertrogressbar.php?progress_key=%s&i=1' % progress_key)
-        if not sts: return
-        url = self.cm.ph.getSearchGroups(data, 'href="([^"]+?\.tar)"')[0]
-        if '' == url: return False
-        self.m3uList(url)
-        if len(self.currList): return True
-        else: return False
-
-    def _listHasBahCaResolve(self, cItem):
-        url = cItem['url']
-        printDBG("_listHasBahCaResolve url[%s]" % url)
-        tmp = self.cm.ph.getSearchGroups(url+'"', '(http[^"]+?)"')[0]
-        if '' != tmp: url = tmp
-        
-        try:
-            query_data = { 'url': url, 'return_data': False }       
-            response = self.cm.getURLRequestData(query_data)
-            redirectUrl = response.geturl() 
-            response.close()
-        except:
-            printExc()
-        if redirectUrl != url: url = redirectUrl
-
-        if url.startswith('http://adf.ly/'):
-            sts, url = self.cm.getPage('http://www.bypassshorturl.com/get.php', {}, {'url':tmp})
-            if not sts: return
-            url = url.strip()
-            printDBG("adf.ly [%s] -> [%s]" % (tmp, url))
-        if url.endswith('.rar'):
-            progress_key = md5(url+cItem['title']).hexdigest()[:14] #'a2yas1htyel27e' #url.split('/')[-1][:14]
-            tries = 0
-            while tries < 10:
-                if self._listHasBahCaFromTar(progress_key): return
-                post_data = [('APC_UPLOAD_PROGRESS', progress_key), ('MAX_FILE_SIZE', ''), ('storedOpt', '56'), ('FileOrURLFlag', 'url'), ('http_referer', ''),\
-                             ('aid', ''), ('fakefilepc', ''), ('file_or_url', 'url'), ('download_url', url), ('youtube_mode', 'default'),\
-                             ('input_format', '.rar'), ('output_format', '.tar'), ('email', '')]
-                sts, data = self.cm.getPage('http://www.convertfiles.com/converter.php', {'multipart_post_data':True}, post_data)
-                if not sts: continue
-                while tries < 10:
-                    time.sleep(1)
-                    sts, data = self.cm.getPage('http://www.convertfiles.com/getprogress.php?progress_key=%s' % progress_key)
-                    if not sts: continue
-                    if '100' in data:
-                        if not self._listHasBahCaFromTar(progress_key): break
-                        return
-                    tries += 1
-                time.sleep(1)
-                tries += 1
-        if url.endswith('.m3u') or 'm3u' in url: self.m3uList(url)
-    
-    def listHasBahCa(self, cItem):
-        url = cItem['url']
-        category = cItem.get('category', 'hasbahca_main')
+    def listHasBahCa(self, item):
+        url = item.get('url', '')
         printDBG("listHasBahCa url[%s]" % url)
+        BASE_URL = 'http://hasbahcaiptv.com/'
         
-        if 'hasbahca_main' == category:
-            main = [{'category':'hasbahca_promoted',      'title':'New Links',      'url':'http://hasbahcaiptv.com/download.php', 'icon':'', 'm1':'<b>&nbsp;&nbsp;New Links </b>', 'm2':'</table>'},
-                    {'category':'hasbahca_promoted',      'title':'Top Links',      'url':'http://hasbahcaiptv.com/download.php', 'icon':'', 'm1':'<b>&nbsp;&nbsp;Top Links</b', 'm2':'</table>'},
-                    {'category':'hasbahca_list',          'title':'IPTV',           'url':'http://hasbahcaiptv.com/download.php', 'icon':'', 'post':{'action':'kategorie','kat_u':'','kat1':'1','kat_1':'2','kat_id':'1','spalte':'datum','sort':'ASC','dps':'150'}},
-                    {'category':'hasbahca_list',          'title':'Movies-FILMLER', 'url':'http://hasbahcaiptv.com/download.php', 'icon':'', 'post':{'action':'kategorie','kat_u':'','kat1':'3','kat_1':'2','kat_id':'1','spalte':'datum','sort':'ASC','dps':'150'}},
-                    ]
-            self.listsMainMenu(main, {'name':'HasBahCa'})
-        elif 'hasbahca_promoted' == category:
-            self._listHasBahCaPromoted(cItem)
-        elif 'hasbahca_list' == category:
-            self._listHasBahCaList(cItem)
-        elif 'hasbahca_resolve' == category:
-            self._listHasBahCaResolve(cItem)
+        if '?' in url and '/' == url[-1]:
+            url = url[:-1]
+        
+        def _url_path_join(*parts):
+            """Normalize url parts and join them with a slash."""
+            schemes, netlocs, paths, queries, fragments = zip(*(urlsplit(part) for part in parts))
+            scheme, netloc, query, fragment = _first_of_each(schemes, netlocs, queries, fragments)
+            path = '/'.join(x.strip('/') for x in paths if x)
+            return urlunsplit((scheme, netloc, path, query, fragment))
+
+        def _first_of_each(*sequences):
+            return (next((x for x in sequence if x), '') for sequence in sequences)
+        
+        sts, data = self.cm.getPage( url )
+        if not sts: return
+        
+        data = CParsingHelper.getDataBeetwenMarkers(data, '<table class="autoindex_table">', '</table>', False)[1]    
+        data = data.split('</tr>')
+        for item in data:
+            printDBG(item)
+            if 'text.png' in item:  name = 'm3u' 
+            elif 'dir.png' in item: name = 'HasBahCa' 
+            else: continue
+            desc    = self.cm.ph.removeDoubles(clean_html(item.replace('>', '> ')).replace('\t', ' '), ' ')
+            new_url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            title   = new_url
+            printDBG("listHasBahCa new_url[%s]" % new_url)
+            if title[-1] != '/':  title = title.split('/')[-1]
+            title   = self._cleanHtmlStr(item) #title.split('dir=')[-1]
+
+            if new_url.startswith('.'): 
+                if 'm3u' == name: new_url = BASE_URL + new_url[2:]
+                else: new_url = _url_path_join(url[:url.rfind('/')+1], new_url[1:])
+            if not new_url.startswith('http'): new_url = BASE_URL + new_url
+            new_url = new_url.replace("&amp;", "&")
+
+            params = {'name':name, 'title':title.strip(), 'url':new_url, 'desc':desc}
+            self.addDir(params)
             
     def getDirectVideoHasBahCa(self, name, url):
         printDBG("getDirectVideoHasBahCa name[%s], url[%s]" % (name, url))
@@ -377,7 +305,7 @@ class HasBahCa(CBaseHostClass):
             printDBG("getHTMLlist ERROR geting [%s]" % listURL)
             return
         data = data.replace("\r","\n").replace('\n\n', '\n').split('\n')
-        #printDBG("[\n%s\n]" % data)
+        printDBG("[\n%s\n]" % data)
         title = ''
         for item in data:
             if item.startswith('#EXTINF:'):
