@@ -130,6 +130,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
                         {'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/iptv/index.php',                         'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
+                        {'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://play.tvip.ga/iptvde.m3u',                                     'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ]
@@ -314,8 +315,9 @@ class HasBahCa(CBaseHostClass):
             else:
                 if 0 < len(title):
                     item = item.replace('rtmp://$OPT:rtmp-raw=', '')
-                    urlMeta = {}
-                    itemUrl = self.up.decorateUrl(item, urlMeta)
+                    cTitle = re.sub('\[[^\]]*?\]', '', title)
+                    if len(cTitle): title = cTitle
+                    itemUrl = self.up.decorateParamsFromUrl(item)
                     params = {'title': title, 'url': itemUrl, 'desc': 'Protokół: ' + itemUrl.meta.get('iptv_proto', '')}
                     self.playVideo(params)
                     title = ''

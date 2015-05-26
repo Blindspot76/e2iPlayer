@@ -300,6 +300,7 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True):
         return []
         
     cm = common()
+    meta = strwithmeta(M3U8Url).meta
     headerParams, postData = cm.getParamsFromUrlWithMeta(M3U8Url)
     headerParams['return_data'] = False
     
@@ -313,7 +314,8 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True):
         if m3u8Obj.is_variant:
             for playlist in m3u8Obj.playlists:
                 item = {}
-                item['url']     = strwithmeta(playlist.absolute_uri, {'iptv_proto':'m3u8', 'iptv_bitrate':playlist.stream_info.bandwidth})
+                meta.update({'iptv_proto':'m3u8', 'iptv_bitrate':playlist.stream_info.bandwidth})
+                item['url']     = strwithmeta(playlist.absolute_uri, meta)
                 item['bitrate'] = playlist.stream_info.bandwidth
                 if None != playlist.stream_info.resolution:
                     item['with'] = playlist.stream_info.resolution[0]

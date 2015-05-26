@@ -61,12 +61,13 @@ class DMHelper:
     DOWNLOADER_TYPE = enum( WGET = 'WGET_DOWNLOADER',
                             F4F  = 'F4F_DOWNLOADER' )
                             
-    HEADER_PARAMS = [{'marker':'Cookie=',     'name':'Cookie'},
-                     {'marker':'Referer=',    'name':'Referer'},
-                     {'marker':'User-Agent=', 'name':'User-Agent'},
-                     {'marker':'Range=',      'name':'Range'}]
+    HEADER_PARAMS = [{'marker':'Cookie=',          'name':'Cookie'},
+                     {'marker':'Referer=',         'name':'Referer'},
+                     {'marker':'User-Agent=',      'name':'User-Agent'},
+                     {'marker':'Range=',           'name':'Range'},
+                     {'marker':'X-Forwarded-For=', 'name':'X-Forwarded-For'}]
                      
-    HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range']
+    HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'X-Forwarded-For']
 
     @staticmethod
     def GET_PWGET_PATH():
