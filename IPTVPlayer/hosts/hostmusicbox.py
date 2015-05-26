@@ -14,7 +14,8 @@ from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 ###################################################
 import re
 import urllib
-import json
+try:    import json
+except: import simplejson as json
 ####################################################
 # E2 GUI COMMPONENTS
 ####################################################
