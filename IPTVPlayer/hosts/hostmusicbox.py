@@ -7,8 +7,7 @@
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import byteify, printExc, CSelOneLink
-
-##################################################
+from Components.config import config, getConfigListEntry, ConfigYesNo, ConfigText
 from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 ###################################################
 # FOREIGN import
@@ -16,25 +15,28 @@ from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 import re
 import urllib
 import json
-from Components.config import config
-###################################################
-
-
-###################################################
+####################################################
+# E2 GUI COMMPONENTS
+####################################################
+from Screens.MessageBox import MessageBox
+####################################################
 # Config options for HOST
-###################################################
-# None
-
-###############################################################################
+####################################################
+config.plugins.iptvplayer.MusicBox_premium = ConfigYesNo(default=False)
+config.plugins.iptvplayer.MusicBox_login = ConfigText(default="", fixed_size=False)
+####################################################
 # Api keys
-###############################################################################
+####################################################
 audioscrobbler_api_key = "d49b72ffd881c2cb13b4595e67005ac4"
 youtube_api_key = 'AIzaSyBbDY0UzvF5Es77M7S1UChMzNp0KsbaDPI'
+HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:33.0) Gecko/20100101 Firefox/33.0'}
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry("Użytkownik Last.fm", config.plugins.iptvplayer.MusicBox_premium))
+    if config.plugins.iptvplayer.MusicBox_premium.value:
+        optionList.append(getConfigListEntry(" Last.fm login:", config.plugins.iptvplayer.MusicBox_login))
     return optionList
-###################################################
 
 
 def gettytul():
@@ -63,12 +65,15 @@ class MusicBox(CBaseHostClass):
         18: "Bilboard - Hot Dance/Electronic Albums",
         19: "Bilboard - Hot Latin Songs",
         20: "Bilboard - Hot Latin Albums",
+        21: "Last.fm - Moja lista",
     }
 
     def __init__(self):
         CBaseHostClass.__init__(self)
         self.ytformats = config.plugins.iptvplayer.ytformat.value
         self.ytp = YouTubeParser()
+        self.lastfm_username = config.plugins.iptvplayer.MusicBox_login.value
+        self.usePremiumAccount = config.plugins.iptvplayer.MusicBox_premium.value
 
     def setTable(self):
         return self.SERVICE_MENU_TABLE
@@ -99,7 +104,6 @@ class MusicBox(CBaseHostClass):
 
     def Itunes_track_charts(self, url):
         country = url
-        HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:33.0) Gecko/20100101 Firefox/33.0'}
         sts, data = self.cm.getPage('https://itunes.apple.com/%s/rss/topsongs/limit=100/explicit=true/json' % country, {'header': HEADER})
         if not sts:
             return
@@ -122,7 +126,6 @@ class MusicBox(CBaseHostClass):
 
     def Itunes_album_charts(self, url):
         country = url
-        HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:33.0) Gecko/20100101 Firefox/33.0'}
         sts, data = self.cm.getPage('https://itunes.apple.com/%s/rss/topalbums/limit=100/explicit=true/json' % country, {'header': HEADER})
         if not sts:
             return
@@ -144,7 +147,6 @@ class MusicBox(CBaseHostClass):
             printExc()  # wypisz co poszło nie tak
 
     def Itunes_list_album_tracks(self, url, album, country):
-        HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:33.0) Gecko/20100101 Firefox/33.0'}
         sts, data = self.cm.getPage('https://itunes.apple.com/lookup?id='+url+'&country='+country+'&entity=song&limit=200', {'header': HEADER})
         if not sts:
             return
@@ -194,7 +196,6 @@ class MusicBox(CBaseHostClass):
 ###############################################################################
 
     def Billboard_charts(self, url):
-        HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:33.0) Gecko/20100101 Firefox/33.0'}
         sts, data = self.cm.getPage(url, {'header': HEADER})
         if not sts:
             return
@@ -212,7 +213,6 @@ class MusicBox(CBaseHostClass):
             printExc()  # wypisz co poszło nie tak
 
     def Billboard_chartsalbums(self, url):
-        HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:33.0) Gecko/20100101 Firefox/33.0'}
         sts, data1 = self.cm.getPage(url, {'header': HEADER})
         if not sts:
             return
@@ -232,7 +232,6 @@ class MusicBox(CBaseHostClass):
 ###############################################################################
 
     def List_album_tracks(self, url, artist, album):
-        HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:33.0) Gecko/20100101 Firefox/33.0'}
         if url != 0:
             sts, data = self.cm.getPage('http://ws.audioscrobbler.com/2.0/?method=album.getInfo&mbid='+url+'&api_key=' + audioscrobbler_api_key + '&format=json', {'header': HEADER})
             if not sts:
@@ -256,12 +255,60 @@ class MusicBox(CBaseHostClass):
                 self.addVideo(params)
         except:
                         printExc()  # wypisz co poszło nie tak
+
+###############################################################################
+# Moja playlista z Last.fm
+###############################################################################
+
+    def Lastfmlist(self):
+        if False == self.usePremiumAccount:
+            self.sessionEx.waitForFinishOpen(MessageBox, 'Wpisz login do last.fm.', type=MessageBox.TYPE_INFO, timeout=10)
+        else:
+            url = 'http://ws.audioscrobbler.com/2.0/?method=user.getPlaylists&user=' + self.lastfm_username + '&api_key=' + audioscrobbler_api_key + '&format=json'
+            sts, data = self.cm.getPage(url, {'header': HEADER})
+            if not sts:
+                return
+            try:
+                data = byteify(json.loads(data))['playlists']['playlist']
+                for x in range(len(data)):
+                    item = data[x]
+                    playlist_name = item['title']
+                    playlist_id = item['id']
+                    params = {'name': 'Lastfmlist_track', 'title': playlist_name, 'artist': playlist_id}
+                    self.addDir(params)
+            except:
+                printExc()  # wypisz co poszło nie tak
+
+    def Lastfmlist_track(self, artist):
+        playlist_id = "lastfm://playlist/" + artist
+        url = 'http://ws.audioscrobbler.com/2.0/?method=playlist.fetch&playlistURL=' + playlist_id + '&api_key=' + audioscrobbler_api_key + '&format=json'
+        print url
+        sts, data = self.cm.getPage(url, {'header': HEADER})
+        if not sts:
+            return
+        try:
+            data = byteify(json.loads(data))['playlist']['trackList']['track']
+            print data
+            for x in range(len(data)):
+                item = data[x]
+                artist = item['creator']
+                track_name = item['title']
+                try:
+                    iconimage = item['image']
+                except:
+                    iconimage = ''
+                search_string = urllib.quote(artist + ' ' + track_name + ' music video')
+                params = {'title': track_name + ' - ' + artist, 'page': search_string, 'icon': iconimage, 'plot': ''}
+                self.addVideo(params)
+        except:
+            printExc()  # wypisz co poszło nie tak
+
 ###############################################################################
 # Szukanie linku do materiału na youtube
 ###############################################################################
 
     def Search_videoclip(self, url):
-        sts, data = self.cm.getPage("https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&q="+ url +"&type=Music&maxResults=1&key="+youtube_api_key)
+        sts, data = self.cm.getPage("https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&q=" + url + "&type=Music&maxResults=1&key=" + youtube_api_key)
         if not sts:
             return
         match = re.compile('"videoId": "([^"]+?)"').findall(data)
@@ -280,7 +327,7 @@ class MusicBox(CBaseHostClass):
         tmpTab = self.ytp.getDirectLinks(url, ytformats)
         print tmpTab
 
-        def __getLinkQuality( itemLink ):
+        def __getLinkQuality(itemLink):
             tab = itemLink['format'].split('x')
             return int(tab[0])
         tmpTab = CSelOneLink(tmpTab, __getLinkQuality, maxRes).getSortedLinks()
@@ -289,7 +336,7 @@ class MusicBox(CBaseHostClass):
 
         videoUrls = []
         for item in tmpTab:
-            videoUrls.append({'name': item['format'] + ' | ' + item['ext'] , 'url':item['url']})
+            videoUrls.append({'name': item['format'] + ' | ' + item['ext'], 'url': item['url']})
         return videoUrls
 
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
@@ -387,6 +434,8 @@ class MusicBox(CBaseHostClass):
         elif category == self.setTable()[20]:
             item = 'latin-albums'
             self.Billboard_chartsalbums('http://query.yahooapis.com/v1/public/yql?q=SELECT+*+FROM+feed(1,100)+WHERE+url=%22http://www.billboard.com/rss/charts/' + item + '%22&format=json&diagnostics=true&callback=')
+        elif category == self.setTable()[21]:
+            self.Lastfmlist()
     ###########
         elif name == 'Itunes_track_charts':
             self.Itunes_track_charts(page)
@@ -396,6 +445,8 @@ class MusicBox(CBaseHostClass):
             self.Itunes_list_album_tracks(page, album, country)
         elif name == 'List_album_tracks':
             self.List_album_tracks(page, artist, album)
+        elif name == 'Lastfmlist_track':
+            self.Lastfmlist_track(artist)
 
 
 class IPTVHost(CHostBase):
@@ -406,7 +457,7 @@ class IPTVHost(CHostBase):
     def getLogoPath(self):
         return RetHost(RetHost.OK, value=[GetLogoDir('musicbox.png')])
 
-    def getLinksForVideo(self, Index = 0, selItem = None):
+    def getLinksForVideo(self, Index=0, selItem=None):
         retCode = RetHost.ERROR
         retlist = []
         if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
@@ -414,7 +465,7 @@ class IPTVHost(CHostBase):
         for item in urlList:
             need_resolve = 0
             retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-        return RetHost(RetHost.OK, value = retlist)
+        return RetHost(RetHost.OK, value=retlist)
 
     def getResolvedURL(self, url):
 #        if url != None and url != '':
