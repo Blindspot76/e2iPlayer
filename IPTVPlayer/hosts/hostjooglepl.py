@@ -281,7 +281,10 @@ class JooglePL(CBaseHostClass):
         if directVideoUrl != '': 
             urlTab.append({'name':'Direct', 'url':directVideoUrl})
         else:
-            proxyUrl = self.cm.ph.getSearchGroups(data, 'proxy.link=(http[^"]+?)"')[0]
+            if 'proxy.link' in data:
+                proxyUrl = self.cm.ph.getSearchGroups(data, 'proxy.link=(http[^"]+?)"')[0]
+            else:
+                proxyUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
             if proxyUrl != '': urlTab.extend(self.up.getVideoLinkExt(proxyUrl))
             
         return urlTab
