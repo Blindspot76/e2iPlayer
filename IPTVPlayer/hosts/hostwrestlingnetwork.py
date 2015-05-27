@@ -153,7 +153,6 @@ class WrestlingNet(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
-        printDBG(data)
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'entry-content', 'video-meta-info', True) #'id="more-'
         if not sts:
             SetIPTVPlayerLastHostError(_("Please visit '%s' from using web-browser form the PC. If links are available please report this problem.\nEmail: samsamsam@o2.pl") % cItem['url'])
@@ -181,10 +180,10 @@ class WrestlingNet(CBaseHostClass):
         if not videoUrl:
             videoUrl = self.cm.ph.getSearchGroups(data, "file: '([^']+?)'")[0]
             if '.m3u8' in videoUrl:
-                return getDirectM3U8Playlist(videoUrl, checkExt=True)
+                urlTab = getDirectM3U8Playlist(videoUrl, checkExt=True)
             
-        return self.up.getVideoLinkExt( videoUrl )
-        
+        urlTab = self.up.getVideoLinkExt( videoUrl )
+        return urlTab
         
     def getFavouriteData(self, cItem):
         return cItem['url']
