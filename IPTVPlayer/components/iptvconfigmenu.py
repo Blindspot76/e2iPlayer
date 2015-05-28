@@ -129,7 +129,7 @@ config.plugins.iptvplayer.pin = ConfigText(default = "0000", fixed_size = False)
 config.plugins.iptvplayer.configProtectedByPin = ConfigYesNo(default = False)
 config.plugins.iptvplayer.pluginProtectedByPin = ConfigYesNo(default = False)
 
-config.plugins.iptvplayer.httpssslcertvalidation = ConfigYesNo(default = True)
+config.plugins.iptvplayer.httpssslcertvalidation = ConfigYesNo(default = False)
 
 #PROXY
 config.plugins.iptvplayer.proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
