@@ -104,7 +104,8 @@ class WrestlingNet(CBaseHostClass):
         cItem.update({'srch':'?s=' + searchPattern})
         self._listVideos(cItem)
     
-    def _listVideos(self, cItem, m1='class="item', m2='</div></div></div></div><div', sp='class="item'):
+    #def _listVideos(self, cItem, m1='class="item', m2='</div></div></div></div><div', sp='class="item'):
+    def _listVideos(self, cItem, m1='<div id="post-', m2='end .loop-content', sp='<div id="post-'):
         printDBG("WrestlingNet._listVideos")
         
         page = cItem.get('page', 1)

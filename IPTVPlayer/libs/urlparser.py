@@ -254,6 +254,7 @@ class urlparser:
                        'xage.pl':              self.pp.parserXAGEPL        ,
                        'castamp.com':          self.pp.parserCASTAMPCOM    ,
                        'crichd.tv':            self.pp.parserCRICHDTV      ,
+                       'vevo.com':             self.pp.parserVEVO          ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2853,6 +2854,11 @@ class pageParser:
             printDBG(url)
             return url
         return False
+        
+    def parserVEVO(self, baseUrl):
+        printDBG("parserVEVO baseUrl[%s]" % baseUrl)
+        
+        
         
         
     def parserBILLIONUPLOADS(self, linkUrl):
