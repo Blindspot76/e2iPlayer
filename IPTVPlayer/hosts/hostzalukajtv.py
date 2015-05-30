@@ -137,6 +137,7 @@ class ZalukajTv(CBaseHostClass):
             extract = True
         except: pass
         sts, data = self._getPage(url, {}, cItem.get('post_data', None))
+        #self.cm.ph.writeToFile("/home/sulge/zalukaj.html", data)
         if not sts: return
         sp = '<div class="tivief4">'
         if extract:
@@ -215,7 +216,7 @@ class ZalukajTv(CBaseHostClass):
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("ZalukajTv.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        searchPattern = urllib.quote_plus(searchPattern)
+        #searchPattern = urllib.quote_plus(searchPattern)
         post_data = {'searchinput':searchPattern}
         params = {'name':'category', 'category':'films_list', 'url': ZalukajTv.SEARCH_URL, 'post_data':post_data}
         self.listFilms(params)
