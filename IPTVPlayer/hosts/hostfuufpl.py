@@ -91,9 +91,9 @@ class FuufPL(CBaseHostClass):
     def listVideosFromCategory(self, cItem):
         printDBG("FuufPL.listVideosFromCategory")
         page = cItem.get('page', 1)
-        url  = cItem['url'] + "{0},{1}.html".format(page, config.plugins.iptvplayer.fuufpl_sort.value)
+        url  = cItem['url'] + "/{0},{1}.html".format(page, config.plugins.iptvplayer.fuufpl_sort.value)
         
-        sts, data = self.cm.getPage(FuufPL.MAIN_URL)
+        sts, data = self.cm.getPage(url)
         if not sts: return
         
         if '"Następna"' in data: nextPage = True
