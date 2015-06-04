@@ -255,6 +255,7 @@ class urlparser:
                        'castamp.com':          self.pp.parserCASTAMPCOM    ,
                        'crichd.tv':            self.pp.parserCRICHDTV      ,
                        'vevo.com':             self.pp.parserVEVO          ,
+                       'castto.me':            self.pp.parserCASTTOME      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -346,6 +347,11 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'castto.me' in data:
+                fid = self.cm.ph.getSearchGroups(data, """fid=['"]([0-9]+?)['"]""")[0]
+                videoUrl = 'http://static.castto.me/embed.php?channel={0}&vw=710&vh=460'.format(fid)
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
             elif 'goodcast.co' in data:
                 id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
                 videoUrl = 'http://goodcast.co/stream.php?id=' + id
@@ -2837,10 +2843,6 @@ class pageParser:
         sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
-        #printDBG("===================================================================")
-        #printDBG(data)
-        #printDBG("===================================================================")
-        
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
         
@@ -2855,10 +2857,34 @@ class pageParser:
             return url
         return False
         
-    def parserVEVO(self, baseUrl):
+        
+    def parserCASTTOME(self, baseUrl):
         printDBG("parserVEVO baseUrl[%s]" % baseUrl)
         
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
         
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
+        swfUrl = "http://www.castto.me/_.swf"
+        url    = _getParam('streamer')
+        file   = _getParam('file')
+        if '' != file and '' != url:
+            url += ' playpath=%s swfUrl=%s token=%s pageUrl=%s live=1 ' % (file, swfUrl, '#ed%h0#w@1', baseUrl)
+            printDBG(url)
+            return url
+        return False
+        
+    def parserVEVO(self, baseUrl):
+        printDBG("parserVEVO baseUrl[%s]" % baseUrl)
         
         
     def parserBILLIONUPLOADS(self, linkUrl):
