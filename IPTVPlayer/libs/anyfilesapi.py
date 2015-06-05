@@ -83,37 +83,29 @@ class AnyFilesVideoUrlExtractor:
             vidID = match.group(1)
 
         # get COOKIE
-        sts, data = self.cm.getPage(self.MAINURL + '/videos.jsp?id=' + vidID, self.defaultParams)
+        url = self.MAINURL + '/videos.jsp?id=' + vidID
+        sts, data = self.cm.getPage(url, self.defaultParams)
         if not sts: 
             return []
-        fUrl = self.MAINURL + "/w.jsp?id=%s&width=620&height=349&pos=&skin=0" % vidID
+        fUrl = self.MAINURL + "/w.jsp?id=%s&width=620&height=349&pos=0&skin=0" % vidID
         COOKIE_JSESSIONID = self.cm.getCookieItem(self.COOKIEFILE,'JSESSIONID')
-        HEADER = {'Referer' : url, 'Cookie' : 'JSESSIONID=' + COOKIE_JSESSIONID, 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:33.0) Gecko/20100101 Firefox/33.0'}
+        HEADER = {'Referer' : url, 'Cookie' : 'JSESSIONID=' + COOKIE_JSESSIONID + ';', 'User-Agent': "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"}
         request_param = {'header':HEADER}
         sts, data = self.cm.getPage(fUrl, request_param)
-        if not sts: 
-            return []
-        
-        #document.cookie = "__utdc_8a85608c7ff88b4de47cdc08107a8108=f68082abdaab664660b0c60289346552"+expires+"; path=";
-        match = re.search('document.cookie = "([^"]+?)"',data)
-        if match:
-            printDBG("========================================================================== B")
-            #printDBG(data)
-            printDBG("========================================================================== C")
-            HEADER['Cookie'] = HEADER['Cookie'] + '; ' + match.group(1)
-            HEADER['Referer'] = self.MAINURL + '/flowplaer/flowplayer.commercial-3.2.16.swf'
-            config = CParsingHelper.getSearchGroups(data, 'var flashvars = {[^"]+?config: "([^"]+?)" }', 1)[0]
-            if '' == config: 
-                printDBG("========================================================================== D")
-                config = CParsingHelper.getSearchGroups(data, 'src="/?(pcsevlet\?code=[^"]+?)"', 1)[0]
-            if '' != config:
-                printDBG("========================================================================== E")
-                sts,data = self.cm.getPage( self.MAINURL + '/' + config,  {'header': HEADER})
-                if sts:
-                    url = CParsingHelper.getSearchGroups(data, "'url':'(http[^']+?mp4)'", 1)[0]
-                    if '' != url: 
-                        return [{ 'name': 'AnyFiles', 'url': url}]
-                    url = CParsingHelper.getSearchGroups(data, "'url':'api:([^']+?)'", 1)[0]
-                    if '' != url: 
-                        return self.getYTVideoUrl('http://www.youtube.com/watch?v='+url)
+        if not sts: return []
+        HEADER['Referer'] = fUrl
+        config = CParsingHelper.getSearchGroups(data, 'src="/?(pcs\?code=[^"]+?)"', 1)[0]
+        if '' != config:
+            sts,data = self.cm.getPage( self.MAINURL + '/' + config,  {'header': HEADER})
+            if sts:
+                #var source = "<source src=\"http://50.7.220.66/video/60ExQvchsi4PbqMLr--I7A/1433518629/5e638de7a15c7a8dc7c979044cd2a953_147325.mp4\" type=\"video/mp4\" />";
+                #var track = "<track label=\"izombie.112...\" srclang=\"pl\" kind=\"captions\"  src=\"http://video.anyfiles.pl/subtit/1433508336949.srt\"></track>\n";
+                data = data.replace('\\"', '"')
+                printDBG(data)
+                url    = CParsingHelper.getSearchGroups(data, '''<source[^>]+?src=["'](http[^'^"]+?)['"]''', 1)[0]
+                subUrl = CParsingHelper.getSearchGroups(data, '''<track[^>]+?src=["'](http[^'^"]+?)['"]''', 1)[0]
+                if 'youtube' in url: 
+                    return self.getYTVideoUrl(url)
+                else:
+                    return [{'name':'AnyFiles.pl', 'url':url}]
         return []
