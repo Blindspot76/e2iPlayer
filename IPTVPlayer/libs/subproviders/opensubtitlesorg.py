@@ -15,7 +15,7 @@ http://www.opensubtitles.org/upload
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -137,7 +137,7 @@ class OpenSubOrgProvider:
         lastTime = item.get('SubLastTS', '')
         if '' != lastTime: title += ' [{0}]'.format(lastTime)
         
-        return title
+        return RemoveDisallowedFilenameChars(title)
         
     def _doSearchSubtitleCallback(self, sts, data):
         list = []

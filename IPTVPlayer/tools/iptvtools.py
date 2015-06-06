@@ -402,6 +402,12 @@ def IsValidFileName(name, NAME_MAX=255):
         return True
     return False
     
+def RemoveDisallowedFilenameChars(name, replacment='.'):
+    prohibited_characters = ['/', "\000", '\\', ':', '*', '<', '>', '|', '"']
+    for item in prohibited_characters:
+        name = name.replace(item, replacment).replace(replacment+replacment, replacment)
+    return name
+        
 def touch(fname, times=None):
     try:
         with open(fname, 'a'):
