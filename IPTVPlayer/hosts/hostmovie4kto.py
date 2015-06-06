@@ -270,11 +270,16 @@ class Movie4kTO(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'links = new Array();', '</table>', False)
-        if not sts: return urlTab
-        
-        data = data.replace('\\"', '"')
-        data = re.compile(']="(.+?)";', re.DOTALL).findall(data)
+        if 'links = new Array();' in data:
+            sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'links = new Array();', '</table>', False)
+            if not sts: return urlTab
+            data = data.replace('\\"', '"')
+            data = re.compile(']="(.+?)";', re.DOTALL).findall(data)
+        else:
+            sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<tr id="tablemoviesindex2">', '</table>', False)
+            if not sts: return urlTab
+            data = data.split('<tr id="tablemoviesindex2">')
+
         for item in data:
             url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             title = self.cleanHtmlStr( item )
