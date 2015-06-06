@@ -14,5 +14,6 @@
                 <key id="KEY_ESC"   mapto="exit"         flags="m" />
                 <key id="KEY_INFO"  mapto="info"         flags="m" />
                 <key id="KEY_HELP"  mapto="info"         flags="m" />
+                <key id="KEY_BLUE"  mapto="subtitles"    flags="m" />
         </map> 
 </keymap>

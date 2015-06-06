@@ -113,6 +113,9 @@ config.plugins.iptvplayer.ZablokujWMV = ConfigYesNo(default = True)
 config.plugins.iptvplayer.hd3d_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.hd3d_password = ConfigText(default="", fixed_size = False)
 
+config.plugins.iptvplayer.opensuborg_login    = ConfigText(default="", fixed_size = False)
+config.plugins.iptvplayer.opensuborg_password = ConfigText(default="", fixed_size = False)
+
 config.plugins.iptvplayer.debugprint = ConfigSelection(default = "", choices = [("", _("no")),("console", _("yes, to console")),("debugfile", _("yes, to file /hdd/iptv.dbg"))]) 
 
 #icons
@@ -252,6 +255,9 @@ class ConfigMenu(ConfigBaseWidget):
         list.append(getConfigListEntry(_("Start download manager per default"), config.plugins.iptvplayer.IPTVDMRunAtStart))
         list.append(getConfigListEntry(_("Show download manager after adding new item"), config.plugins.iptvplayer.IPTVDMShowAfterAdd))
         list.append(getConfigListEntry(_("Number of downloaded files simultaneously"), config.plugins.iptvplayer.IPTVDMMaxDownloadItem))
+        
+        list.append(getConfigListEntry("opensubtitles.org " + _("login"), config.plugins.iptvplayer.opensuborg_login))
+        list.append(getConfigListEntry("opensubtitles.org " + _("password"), config.plugins.iptvplayer.opensuborg_password))
         
         list.append(getConfigListEntry("HD3D " + _("login"), config.plugins.iptvplayer.hd3d_login))
         list.append(getConfigListEntry("HD3D " + _("password"), config.plugins.iptvplayer.hd3d_password))

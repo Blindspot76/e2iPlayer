@@ -89,7 +89,7 @@ class cda(CBaseHostClass):
         printDBG("cda.listSearchResult cItem[%s], searchPattern[%s]" % (cItem, searchPattern))
         searchsort = config.plugins.iptvplayer.cda_searchsort.value
         page = cItem.get('page', 1)
-        url  = cda.SEARCH_URL % (searchPattern.replace(' ', '_'), page, searchsort)
+        url  = cda.SEARCH_URL % (urllib.quote_plus(searchPattern), page, searchsort)
         tmpItem = dict(cItem)
         tmpItem.update({'category' : 'search_next_page', 'search_pattern':searchPattern})
         self.listItems(tmpItem, url, page, True)

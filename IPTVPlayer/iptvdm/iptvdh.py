@@ -205,11 +205,13 @@ class DMHelper:
         printDBG("getBaseWgetCmd downloaderParams[%r]" % downloaderParams)
         headerOptions = ''
         
+        defaultHeader = ' --header "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0" '
         for key, value in downloaderParams.items():
             if value != '':
                 if 'Cookie' == key: headerOptions += ' --cookies=off '
                 headerOptions += ' --header "%s: %s" ' % (key, value)
+                if key == 'User-Agent': defaultHeader = ''
         
-        cmd = DMHelper.GET_WGET_PATH() + ' --header "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0" ' + ' --no-check-certificate ' + headerOptions 
+        cmd = DMHelper.GET_WGET_PATH() + defaultHeader + ' --no-check-certificate ' + headerOptions 
         printDBG("getBaseWgetCmd return cmd[%s]" % cmd)
         return cmd

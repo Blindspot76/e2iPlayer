@@ -30,7 +30,7 @@ from enigma import gRGB
 
 class IPTVMultipleInputBox(Screen):
     DEF_INPUT_PARAMS = {'validator':None, 'title':'', 'useable_chars':None, 'label_font':'Regular;23', 'label_size':(550,25), 'input_font':'Regular;20', 'input_size':(550,25), 'input':dict(text="", maxSize = False, visible_width = False, type = Input.TEXT)}
-    DEF_PARAMS = {'title':_("Input"), 'list':[]}
+    DEF_PARAMS = {'title':_("Input"), 'accep_label':_("Save"), 'list':[]}
     def __init__(self, session, params={}):
         
         # Skin generator
@@ -70,7 +70,7 @@ class IPTVMultipleInputBox(Screen):
         </screen>
         """ % (maxWidth, pY, params.get('title', _("Input")), maxWidth-20, maxWidth-20, maxWidth-20, skinItems)
         
-        self["key_green"] = Label(_("Save"))
+        self["key_green"] = Label(params.get('accep_label', _("Save")))
         self["key_ok"]    = Label(_("OK"))
         self["key_red"]   = Label(_("Cancel"))
     

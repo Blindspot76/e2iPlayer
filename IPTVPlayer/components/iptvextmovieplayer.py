@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 #
 #  IPTVExtMoviePlayer
 #
@@ -13,7 +13,9 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, eConnectCallback
+from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
 ###################################################
 
 ###################################################
@@ -39,6 +41,7 @@ except:
     printExc()
 from os import chmod as os_chmod
 import re
+import time
 ###################################################
 
 class ExtPlayerCommandsDispatcher():
@@ -53,6 +56,8 @@ class ExtPlayerCommandsDispatcher():
         for item in config.seek.speeds_forward.value:
             self.SEEK_SPEED_MAP.append( item )
         self.speedIdx = self.SEEK_SPEED_MAP.index(0)
+        
+    def doAddTriggers(self, arg): self.extPlayerSendCommand('ADD_TRIGGERS', arg)
         
     def stop(self):
         self.extPlayerSendCommand('PLAYBACK_STOP')
@@ -76,7 +81,7 @@ class ExtPlayerCommandsDispatcher():
     def doUpdateInfo(self):
         self.extPlayerSendCommand('PLAYBACK_LENGTH', '', False)
         self.extPlayerSendCommand('PLAYBACK_CURRENT_TIME', '', False)
-
+        
     ##############################################
     
     def seekFwd(self):
@@ -109,7 +114,8 @@ class ExtPlayerCommandsDispatcher():
 
 
 class IPTVExtMoviePlayer(Screen):
-    # 
+    LAST_ACTIVE_SUBTITLES = {'file_name':'', 'sub_file_path':''}
+    
     skin = """
     <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
             <widget name="logoIcon"           position="0,0"           size="160,40"  zPosition="4"             transparent="1" alphatest="blend" />
@@ -123,13 +129,17 @@ class IPTVExtMoviePlayer(Screen):
             <widget name="infoBarTitle"       position="82,30"         size="568,23"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
             <widget name="currTimeLabel"      position="94,62"         size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
             <widget name="lengthTimeLabel"    position="317,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
-            <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>    
+            <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+            
+            <widget name="subLabel1"          position="0,%d"          size="%d,140"   zPosition="1" transparent="0" foregroundColor="white"     backgroundColor="transparent" font="Regular;40" halign="center" valign="bottom"/>
     </screen>""" % ( getDesktop(0).size().width(), 
                      getDesktop(0).size().height(),
                      GetIPTVDMImgDir("playback_banner.png"),
                      GetIPTVDMImgDir("playback_progress.png"),
                      GetIPTVDMImgDir("playback_buff_progress.png"),
-                     GetIPTVDMImgDir('playback_pointer.png') )
+                     GetIPTVDMImgDir('playback_pointer.png'),
+                     (getDesktop(0).size().height()-200),
+                     getDesktop(0).size().width()) ##00000000
     
     def __init__(self, session, filesrcLocation, FileName, lastPosition=None, player='eplayer', additionalParams={}):
         # 'gstplayer'
@@ -146,7 +156,7 @@ class IPTVExtMoviePlayer(Screen):
         else: self.playerName = _("external eplayer3")
 
         self.session.nav.playService(None) # current service must be None to give free access to DVB Audio and Video Sinks
-        self.fileSRC      = filesrcLocation
+        self.fileSRC      = strwithmeta(filesrcLocation)
         self.title        = FileName
         if lastPosition:
             self.lastPosition = lastPosition
@@ -179,6 +189,7 @@ class IPTVExtMoviePlayer(Screen):
                 'rigth_press'  : self.key_rigth_press,
                 'rigth_repeat' : self.key_rigth_repeat,
                 'ok'           : self.key_ok,
+                'subtitles'    : self.key_subtitles,
             }, -1)
         
         self.onClose.append(self.__onClose)
@@ -207,6 +218,23 @@ class IPTVExtMoviePlayer(Screen):
         self['currTimeLabel']     = Label("0:00:00")
         self['remainedLabel']     = Label("-0:00:00")
         self['lengthTimeLabel']   = Label("0:00:00")
+        
+        # for subtitles
+        self['subLabel1']          = Label(" ")
+        self.subHandler            = {}
+        self.subHandler['handler'] = IPTVSubtitlesHandler()
+        self.subHandler['enabled'] = False
+        self.subHandler['file']    = ''
+        if '' == self.subHandler['file']:
+            if IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES['file_name'] == FileName:
+                self.subHandler['file'] = IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES['sub_file_path']
+            else:
+                IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES = {'file_name':FileName, 'sub_file_path':''}
+            
+        self.subHandler['timer']   = eTimer()
+        self.subHandler['timer_conn '] =  eConnectCallback(self.subHandler['timer'].timeout, self.updatSubtitlesTime)
+        self.subHandler['latach_time'] = -1
+        self.subHandler['last_time']   = -1
         
         # goto seek  timer
         self.playback = {}
@@ -263,6 +291,41 @@ class IPTVExtMoviePlayer(Screen):
         except: self.autoHideTime = 1000
         
         self.fatalErrorOccurs = False
+        self.delayedClosure   = None
+        self.hasChild         = False
+        
+    def enableSubtitles(self, path):
+        sts = self.subHandler['handler'].loadSubtitles(path)
+        if not sts:
+            msg = _("An error occurred while loading a subtitle from [%s].") % path
+            self.showMessage(msg, MessageBox.TYPE_ERROR)
+            return
+        self.subHandler['enabled'] = True
+        self.subHandler['file']    = path
+        IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES['sub_file_path'] = path
+        
+    def updatSubtitlesTime(self):
+        if -1 != self.subHandler['last_time'] and -1 != self.subHandler['latach_time']:
+            timeMS = self.subHandler['last_time'] + int((time.time() - self.subHandler['latach_time']) * 1000)
+            self.updateSubtitles(timeMS)
+        
+    def latchSubtitlesTime(self, timeMS):
+        self.subHandler['latach_time'] = time.time()
+        self.subHandler['last_time']   = timeMS
+        self.updateSubtitles(timeMS)
+    
+    def updateSubtitles(self, timeMS):
+        if self.isClosing: return
+        if not self.subHandler['enabled']: return 
+        text = self.subHandler['handler'].getSubtitles(timeMS)
+        #printDBG("===============================================================")
+        #printDBG(text)
+        #printDBG("===============================================================")
+        if "" == text:
+            self['subLabel1'].hide()
+        else:
+            self['subLabel1'].setText(text)
+            self['subLabel1'].show()
         
     def updateInfo(self):
         self.extPlayerCmddDispatcher.doUpdateInfo()
@@ -407,6 +470,8 @@ class IPTVExtMoviePlayer(Screen):
     def key_ok(self):
         if 'Pause' == self.playback['Status']: self.extPlayerCmddDispatcher.play()
         else: self.extPlayerCmddDispatcher.pause()
+    def key_subtitles(self):
+        self.downloadSub()
         
     def goToSeekKey(self, direction, state='press'):
         if 'press' == state: 
@@ -499,21 +564,29 @@ class IPTVExtMoviePlayer(Screen):
                     printExc()
                     continue
                     
-                if "PLAYBACK_PLAY" == key:
+                if "T" == key: #ADD_TRIGGERS
+                    self.latchSubtitlesTime(obj['c'])
+                elif "PLAYBACK_PLAY" == key:
                     self.onStartPlayer()
-                    if 'gstplayer' != self.player: self.updateInfoTimer.start(1000)
+                    #if 'gstplayer' != self.player: 
+                    self.updateInfoTimer.start(1000)
                 elif "PLAYBACK_STOP" == key:
                     self.onLeavePlayer()
                 elif "PLAYBACK_LENGTH" == key and 0 == obj['sts']:
                     self.playbackUpdateInfo({'Length':int(obj['length'])})
                 elif "PLAYBACK_CURRENT_TIME" == key and 0 == obj['sts']:
                     self.playbackUpdateInfo({'CurrentTime':int(obj['sec'])})
+                elif "J" == key:
+                    self.playbackUpdateInfo({'CurrentTime':int(obj['ms']/1000)})
+                    self.latchSubtitlesTime(obj['ms'])
                 elif "PLAYBACK_INFO" == key:
                     if obj['isPaused']:
                         self.playbackUpdateInfo({'Status': ['Pause', '0']})
-                        if 'gstplayer' == self.player: self.updateInfoTimer.stop()
+                        #if 'gstplayer' == self.player: self.updateInfoTimer.stop()
+                        self.subHandler['timer'].stop()
                     else:
-                        if 'gstplayer' == self.player: self.updateInfoTimer.start(1000)
+                        #if 'gstplayer' == self.player: self.updateInfoTimer.start(1000)
+                        if self.subHandler['enabled']: self.subHandler['timer'].start(100)
                         if obj['isForwarding']:
                             self.playbackUpdateInfo({'Status': ['FastForward', str(obj['Speed'])]})
                         elif 0 < obj['SlowMotion']:
@@ -560,6 +633,9 @@ class IPTVExtMoviePlayer(Screen):
         self.waitEOSAbortedFix['timer_conn'] = None
         self.waitCloseFix['timer_conn'] = None
         
+        self.subHandler['timer'].stop()
+        self.subHandler['timer_conn'] = None
+        
         self.updateInfoTimer_conn = None
         self.playback['GoToSeekTimer_conn'] = None
         self.onClose.remove(self.__onClose)
@@ -573,6 +649,7 @@ class IPTVExtMoviePlayer(Screen):
         printDBG("IPTVExtMoviePlayer.onLeavePlayer")
         if self.waitCloseFix['waiting'] and None != self.waitCloseFix['timer']: self.waitCloseFix['timer'].stop()
         self.updateInfoTimer.stop()
+        self.subHandler['timer'].stop()
         self.playbackInfoBar['blocked'] = False
         self.hidePlaybackInfoBar()
         
@@ -585,8 +662,33 @@ class IPTVExtMoviePlayer(Screen):
             sts = 1
             
         self.isClosing = True
-        self.showMessage(None, None, boundFunction(self.close, sts, self.playback.get('CurrentTime', 0)))
+        self.showMessage(None, None, boundFunction(self.extmovieplayerClose, sts, self.playback.get('CurrentTime', 0)))
 
+    def extmovieplayerClose(self, sts, currentTime):
+        if self.hasChild:
+            self.delayedClosure = boundFunction(self.close, sts, currentTime)
+        else:
+            self.close(sts, currentTime)
+            
+    def openChild(self, *args):
+        self.hasChild = True
+        self.session.openWithCallback(*args)
+    
+    def childClosed(self, callback, *args):
+        if None != self.delayedClosure:
+            self.delayedClosure()
+        else:
+            self.hasChild = False
+            callback(*args)
+            
+    def downloadSub(self):
+        if self.isClosing: return
+        self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_title':self.title})
+    
+    def downloadSubCallback(self, subFile=None):
+        if None != subFile:
+            self.enableSubtitles(subFile)
+        
     def onStart(self):
         self.onLayoutFinish.remove(self.onStart)
         self['progressBar'].value = 0
@@ -609,6 +711,7 @@ class IPTVExtMoviePlayer(Screen):
                             tmp = re.search('([^:]+?://)([^:]+?):([^@]+?)@(.+?)$', tmp)
                             if tmp: cmd += (' "proxy=%s" "proxy-id=%s" "proxy-pw=%s" ' % (tmp.group(1)+tmp.group(4), tmp.group(2), tmp.group(3)) )
                         else: cmd += (' "proxy=%s" ' % tmp)
+            cmd += " > /dev/null"
         else:
             exteplayer3path = config.plugins.iptvplayer.exteplayer3path.value
             cmd = exteplayer3path
@@ -635,6 +738,9 @@ class IPTVExtMoviePlayer(Screen):
         self.console.execute( cmd )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
         self['logoIcon'].setPixmap( self.playback['logoIcon'] )
+        
+        if self.subHandler['file'] != '':
+            self.enableSubtitles(self.subHandler['file'])
             
     def initGuiComponentsPos(self):
 
@@ -705,8 +811,9 @@ class IPTVExtMoviePlayer(Screen):
         if None == self.console: 
             printExc("IPTVExtMoviePlayer.extPlayerSendCommand console not available")
             return
-            
-        if   'PLAYBACK_LENGTH'       == command: 
+        if 'ADD_TRIGGERS' == command:
+            self.consoleWrite( "t{0}\n".format(arg1) )
+        elif   'PLAYBACK_LENGTH'       == command: 
             self.consoleWrite( "l\n" )
         elif 'PLAYBACK_CURRENT_TIME' == command: 
             self.consoleWrite( "j\n" )
