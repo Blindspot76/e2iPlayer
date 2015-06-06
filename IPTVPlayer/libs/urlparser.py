@@ -1061,25 +1061,34 @@ class pageParser:
         else:
             return False
 
-    def parserSTREAMCLOUD(self,url):
-        query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-        link = self.cm.getURLRequestData(query_data)
-        ID = re.search('name="id" value="(.+?)">', link)
-        FNAME = re.search('name="fname" value="(.+?)">', link)
-        if ID and FNAME > 0:
-            time.sleep(105)
-            postdata = {'fname' : FNAME.group(1), 'hash' : '', 'id' : ID.group(1), 'imhuman' : 'Watch video now', 'op' : 'download1', 'referer' : url, 'usr_login' : '' }
-            query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': True, 'return_data': True }
-            link = self.cm.getURLRequestData(query_data, postdata)
-            match = re.compile('file: "(.+?)"').findall(link)
-            if len(match) > 0:
-                linkVideo = match[0]
-                print ('linkVideo ' + linkVideo)
-                return linkVideo
-            else:
-                return False
-        else:
-            return False
+    def parserSTREAMCLOUD(self, baseUrl):
+        printDBG("parserSTREAMCLOUD [%s]" % baseUrl)
+        # code from https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/streamcloud.py
+    
+        _VALID_URL = r'https?://streamcloud\.eu/(?P<id>[a-zA-Z0-9_-]+)(?:/(?P<fname>[^#?]*)\.html)?'
+        mobj = re.match(_VALID_URL, baseUrl)
+        video_id = mobj.group('id')
+        url = 'http://streamcloud.eu/%s' % video_id
+        
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        
+        fields = re.findall(r'''(?x)<input\s+
+            type="(?:hidden|submit)"\s+
+            name="([^"]+)"\s+
+            (?:id="[^"]+"\s+)?
+            value="([^"]*)"
+            ''', data)
+            
+        time.sleep(12)
+        
+        sts, data = self.cm.getPage(url, {}, fields)
+        if not sts: return False
+        
+        file = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]        
+        if file.startswith('http'): return file
+
+        return False
 
     def parserLIMEVIDEO(self,url):
         query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
