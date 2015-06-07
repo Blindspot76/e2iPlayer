@@ -455,6 +455,13 @@ def mkdirs(newdir):
     except:
         printExc('!!!!!!!!!! EXCEPTION mkdirs["%s"]' % newdir)
         return False
+        
+def rm(fullname):
+    try:
+        os.remove(fullname)
+        return True
+    except: printExc()
+    return False
 
 def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.

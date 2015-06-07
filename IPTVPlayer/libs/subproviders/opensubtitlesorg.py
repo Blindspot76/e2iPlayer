@@ -15,7 +15,7 @@ http://www.opensubtitles.org/upload
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars, rm
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -43,7 +43,8 @@ except: pass
 ###################################################
 
 def printDBG2(data):
-    printDBG("%s" % data)
+    pass
+    #printDBG("%s" % data)
 
 class OpenSubOrgProvider:
     USER_AGENT       = 'IPTVPlayer v1'
@@ -84,6 +85,8 @@ class OpenSubOrgProvider:
     def terminate(self):
         self.cancelRequest()
         self.doInit() # to eventually break circular references
+        for item in self.filesToRemove:
+            rm(item)
         
     def getName(self):
         return "OpenSubtitles.org"
@@ -198,8 +201,9 @@ class OpenSubOrgProvider:
         if 0 == code:
             # uncompress
             try:
-                with gzip.open(self.tmpData['tmpFile']) as f:
-                    data = f.read()
+                f = gzip.open(self.tmpData['tmpFile'])
+                data = f.read()
+                f.close()
                 subItem = self.tmpData['subItem']
                 try: 
                     data = data.decode(subItem['SubEncoding']).encode('UTF-8')
