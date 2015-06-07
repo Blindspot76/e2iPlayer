@@ -3,6 +3,9 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSubtitlesDir, byteify
 
+# INFO about subtitles format
+# https://wiki.videolan.org/Subtitles#Subtitles_support_in_VLC
+
 #def printDBG(data):
 #    print "%s" % data
 
@@ -25,7 +28,14 @@ class IPTVSubtitlesHandler:
         self.pailsOfAtoms = {}
         self.CAPACITY = 10 * 1000 # 10s
         
-    def _tc2ms2(self, tc):
+    def _srtClearText(self, text):
+        return re.sub('<[^>]*>', '', text)
+        #<b></b> : bold
+        #<i></i> : italic
+        #<u></u> : underline
+        #<font color=”#rrggbb”></font>
+        
+    def _srtTc2ms2(self, tc):
         sign    = 1
         if tc[0] in "+-":
             sign    = -1 if tc[0] == "-" else 1
@@ -35,13 +45,13 @@ class IPTVSubtitlesHandler:
         hh,mm,ss,ms = map(lambda x: 0 if x==None else int(x), match.groups())
         return ((hh*3600 + mm*60 + ss) * 1000 + ms) * sign
             
-    def _tc2ms(self, time):
+    def _srtTc2ms(self, time):
         split_time = time.split(',')
         minor = split_time[1]
         major = split_time[0].split(':')
         return (int(major[0])*3600 + int(major[1])*60 + int(major[2])) * 1000 + int(minor)
 
-    def _srtToDict(self, srtText):
+    def _srtToAtoms(self, srtText):
         subAtoms = []
         srtText = srtText.replace('\r\n', '\n').split('\n\n')
         
@@ -52,9 +62,32 @@ class IPTVSubtitlesHandler:
             if len(st)>=3:
                 try:
                     split = st[1].split(' --> ')
-                    subAtoms.append({'start':self._tc2ms(split[0].strip()), 'end':self._tc2ms(split[1].strip()), 'text':'\n'.join(j for j in st[2:len(st)])})
+                    subAtoms.append( { 'start':self._srtTc2ms(split[0].strip()), 'end':self._srtTc2ms(split[1].strip()), 'text':self._srtClearText('\n'.join(j for j in st[2:len(st)])) } )
                 except:
                     printExc("Line number [%d]" % line)
+        return subAtoms
+        
+    def _mplClearText(self, text):
+        text = text.split('|')
+        for idx in range( len(text) ):
+            if text[idx].startswith('/'):
+                text[idx] = text[idx][1:]
+        return re.sub('\{[^}]*\}', '', '\n'.join(text))
+        
+    def _mplTc2ms(self, time):
+        return int(time) * 100
+        
+    def _mplToAtoms(self, mplData):
+        # Timings          : Sequential Time
+        # Timing Precision : 100 Milliseconds (1/10th sec)
+        subAtoms = []
+        mplData = mplData.replace('\r\n', '\n').split('\n')
+        reObj = re.compile('^\[([0-9]+?)\]\[([0-9]+?)\](.+?)$')
+        
+        for s in mplData:
+            tmp = reObj.search(s)
+            if None != tmp:
+                subAtoms.append( { 'start':self._mplTc2ms(tmp.group(1)), 'end':self._mplTc2ms(tmp.group(2)), 'text':self._mplClearText( tmp.group(3) ) } )
         return subAtoms
     
     #def _preparPails(self, scope):
@@ -131,9 +164,13 @@ class IPTVSubtitlesHandler:
         if not sts:
             try:
                 with codecs.open(filePath, 'r', encoding, 'replace') as fp:
-                    srtText = fp.read().encode('utf-8')
-                    self.subAtoms = self._srtToDict(srtText)
-                sts = True
+                    subText = fp.read().encode('utf-8')
+                    if filePath.endswith('.srt'):
+                        self.subAtoms = self._srtToAtoms(subText)
+                        sts = True
+                    elif filePath.endswith('.mpl'):
+                        self.subAtoms = self._mplToAtoms(subText)
+                        sts = True
             except:
                 printExc()
         else:

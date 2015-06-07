@@ -21,7 +21,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDo
 ###################################################
 # FOREIGN import
 ###################################################
-from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer
+from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel
 from Screens.Screen import Screen
 from Components.ActionMap import ActionMap
 from Components.config import config
@@ -116,33 +116,46 @@ class ExtPlayerCommandsDispatcher():
 class IPTVExtMoviePlayer(Screen):
     LAST_ACTIVE_SUBTITLES = {'file_name':'', 'sub_file_path':''}
     
-    skin = """
-    <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
-            <widget name="logoIcon"           position="0,0"           size="160,40"  zPosition="4"             transparent="1" alphatest="blend" />
-            <widget name="playbackInfoBaner"  position="0,30"          size="650,77"  zPosition="2" pixmap="%s" transparent="1" alphatest="blend" />
-            <widget name="progressBar"        position="94,54"         size="544,7"   zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
-            <widget name="bufferingBar"       position="94,54"         size="544,7"   zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
-            <widget name="statusIcon"         position="20,45"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
-            
-            <widget name="goToSeekPointer"    position="94,0"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
-            <widget name="goToSeekLabel"      position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
-            <widget name="infoBarTitle"       position="82,30"         size="568,23"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
-            <widget name="currTimeLabel"      position="94,62"         size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
-            <widget name="lengthTimeLabel"    position="317,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
-            <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
-            
-            <widget name="subLabel1"          position="0,%d"          size="%d,140"   zPosition="1" transparent="0" foregroundColor="white"     backgroundColor="transparent" font="Regular;40" halign="center" valign="bottom" borderColor="#000000" borderWidth="3"/>
-    </screen>""" % ( getDesktop(0).size().width(), 
-                     getDesktop(0).size().height(),
-                     GetIPTVDMImgDir("playback_banner.png"),
-                     GetIPTVDMImgDir("playback_progress.png"),
-                     GetIPTVDMImgDir("playback_buff_progress.png"),
-                     GetIPTVDMImgDir('playback_pointer.png'),
-                     (getDesktop(0).size().height()-200),
-                     getDesktop(0).size().width()) ##00000000
+    
+    def __prepareSkin(self):
+        subBordersTxt = '' 
+        try:
+            tmp = dir(eLabel)
+            printDBG("eLabel.__dict__ [%s]" % tmp)
+            if 'setBorderColor' in tmp:
+                subBordersTxt = ' borderColor="#000000" borderWidth="3" ' 
+        except: printExc()
+        
+        return """
+        <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
+                <widget name="logoIcon"           position="0,0"           size="160,40"  zPosition="4"             transparent="1" alphatest="blend" />
+                <widget name="playbackInfoBaner"  position="0,30"          size="650,77"  zPosition="2" pixmap="%s" transparent="1" alphatest="blend" />
+                <widget name="progressBar"        position="94,54"         size="544,7"   zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
+                <widget name="bufferingBar"       position="94,54"         size="544,7"   zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
+                <widget name="statusIcon"         position="20,45"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
+                
+                <widget name="goToSeekPointer"    position="94,0"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
+                <widget name="goToSeekLabel"      position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
+                <widget name="infoBarTitle"       position="82,30"         size="568,23"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
+                <widget name="currTimeLabel"      position="94,62"         size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
+                <widget name="lengthTimeLabel"    position="317,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
+                <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+                
+                <widget name="subLabel1"          position="0,%d"          size="%d,140"   zPosition="1" transparent="0" foregroundColor="white"     backgroundColor="transparent" font="Regular;40" halign="center" valign="bottom" %s/>
+        </screen>""" % ( getDesktop(0).size().width(), 
+                         getDesktop(0).size().height(),
+                         GetIPTVDMImgDir("playback_banner.png"),
+                         GetIPTVDMImgDir("playback_progress.png"),
+                         GetIPTVDMImgDir("playback_buff_progress.png"),
+                         GetIPTVDMImgDir('playback_pointer.png'),
+                         (getDesktop(0).size().height()-200),
+                         getDesktop(0).size().width(),
+                         subBordersTxt
+                         ) ##00000000
     
     def __init__(self, session, filesrcLocation, FileName, lastPosition=None, player='eplayer', additionalParams={}):
         # 'gstplayer'
+        self.skin = self.__prepareSkin()
         Screen.__init__(self, session)
         self.skinName = "IPTVExtMoviePlayer"
         self.player = player

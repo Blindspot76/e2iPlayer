@@ -47,8 +47,8 @@ def printDBG2(data):
     #printDBG("%s" % data)
 
 class OpenSubOrgProvider:
-    USER_AGENT       = 'IPTVPlayer v1'
-    #USER_AGENT       = 'Subliminal v0.3' #'OSTestUserAgent'
+    #USER_AGENT       = 'IPTVPlayer v1'
+    USER_AGENT       = 'Subliminal v0.3' #'OSTestUserAgent'
     HTTP_HEADER      = {'User-Agent':USER_AGENT, 'Accept':'gzip'}#, 'Accept-Language':'pl'}
     MAIN_URL         = 'http://api.opensubtitles.org/xml-rpc'
     #MAIN_URL         = 'https://api.opensubtitles.org/xml-rpc'
@@ -66,7 +66,7 @@ class OpenSubOrgProvider:
         self.lastApiError = {'code':0, 'message':''}
         
         self.loginToken = ''
-        self.subFormats = ['srt']
+        self.subFormats = ['srt', 'mpl']
         
         self.outerCallback   = None
         self._methodCallBack = None
@@ -146,7 +146,7 @@ class OpenSubOrgProvider:
         list = []
         for item in data:
             link = item.get('SubDownloadLink', '')
-            if 'srt' == item.get('SubFormat', '') and link.startswith('http') and link.endswith('.gz'):
+            if item.get('SubFormat', '') in self.subFormats and link.startswith('http') and link.endswith('.gz'):
                 title = self._getSubtitleTitle(item)
                 list.append({'title':title, 'private_data':item})
         self.outerCallback(sts, list)
@@ -205,11 +205,12 @@ class OpenSubOrgProvider:
                 data = f.read()
                 f.close()
                 subItem = self.tmpData['subItem']
+                
                 try: 
                     data = data.decode(subItem['SubEncoding']).encode('UTF-8')
-                    title = self._getSubtitleTitle(subItem).replace('_', '.').replace('.srt', '').replace(' ', '.')
+                    title = self._getSubtitleTitle(subItem).replace('_', '.').replace('.'+subItem['SubFormat'], '').replace(' ', '.')
                     fileName = "{0}_{1}_0_{2}_{3}".format(title, subItem['ISO639'], subItem['IDSubtitle'], subItem['IDMovieImdb'])
-                    fileName = self.tmpData['subDir'] + fileName + '.srt'
+                    fileName = self.tmpData['subDir'] + fileName + '.' + subItem['SubFormat']
                     try:
                         with open(fileName, 'w') as f:
                             f.write(data)
