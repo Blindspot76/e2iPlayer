@@ -25,16 +25,19 @@ except: import simplejson as json
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Screens.MessageBox import MessageBox
-from Components.config import config, ConfigSelection, getConfigListEntry
+from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from Components.Language import language
 ###################################################
 
 
 ###################################################
 # Config options for HOST
 ###################################################
-   
+config.plugins.iptvplayer.movie4kto_language = ConfigSelection(default = "", choices = [("", _("Auto")), ("en", _("English")), ("de", _("German")), ("fr", _("French")), ("es", _("Spanish")), ("it", _("Italian")), ("jp", _("Japanese")), ("tr", _("Turkish")), ("ru", _("Russian")) ])
+
 def GetConfigList():
     optionList = []
+    optionList.append( getConfigListEntry( _("Language:"), config.plugins.iptvplayer.movie4kto_language) )
     return optionList
 ###################################################
 
@@ -60,6 +63,18 @@ class Movie4kTO(CBaseHostClass):
         printDBG("Movie4kTO.__init__")
         CBaseHostClass.__init__(self, {'history':'Movie4kTO', 'cookie':'Movie4kTO.cookie'})
         
+    def getPage(self, url, params={}, post_data=None):
+        lang = config.plugins.iptvplayer.movie4kto_language.value
+        if '' == lang:
+            try:
+                lang = language.getActiveLanguage().split('_')[0]
+            except: lang = 'en'
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Cookie':'lang=%s;' % lang }
+        params.update({'header':HTTP_HEADER})
+        
+        return self.cm.getPage(url, params, post_data)
+            
+        
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
             url =  self.MAIN_URL + url
@@ -79,10 +94,12 @@ class Movie4kTO(CBaseHostClass):
         printDBG("Movie4kTO.listsMovies1")
         url  = self._getFullUrl(cItem['url'])
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="maincontent2">', '</body>', False)
-        if not sts: return
+        if not sts: 
+            self.listsMovies2(cItem)
+            return
         data = data.split('<div id="maincontent2">')
         
         for item in data:
@@ -94,7 +111,8 @@ class Movie4kTO(CBaseHostClass):
             
             title  = self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0]
             if '' == title: self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
-            lang = self.cm.ph.getSearchGroups(item, 'watch in ([^"]+?)"')[0] 
+            lang = self.cm.ph.getSearchGroups(item, 'src="/img/([^"]+?)_small.png"')[0].replace('us', '').replace('_', '').replace('flag', '')
+            #if '' == lang: lang = 'eng'
             if '' != lang: title += ' ({0})'.format(lang)
             
             desc  = self.cm.ph.getDataBeetwenMarkers(item, 'class="info">', '</div>', False)[1]
@@ -111,7 +129,7 @@ class Movie4kTO(CBaseHostClass):
         if '{0}' in baseUrl: url = baseUrl.format(page)
         else: url = baseUrl
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         nextPage = False
@@ -137,7 +155,7 @@ class Movie4kTO(CBaseHostClass):
             except: printExc()
             
             lang = self.cm.ph.getSearchGroups(item, 'src="/img/([^"]+?)_small.png"')[0].replace('us', '').replace('_', '').replace('flag', '')
-            if '' == lang: lang = 'eng'
+            #if '' == lang: lang = 'eng'
             if '' != lang: title += ' ({0})'.format(lang)
 
             if '' != url and '' != title:
@@ -163,7 +181,7 @@ class Movie4kTO(CBaseHostClass):
         printDBG("Movie4kTO.listsMoviesGenres")
         url  = self._getFullUrl(cItem['url'])
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<TABLE id="tablemovies" cellpadding=5 cellspacing=5>', '</TABLE>', False)
         if not sts: return
@@ -183,7 +201,7 @@ class Movie4kTO(CBaseHostClass):
         
     def listCategories(self, cItem, category):
         printDBG("Movie4kTO.listCategories")
-        sts, data = self.cm.getPage(Movie4kTO.MAIN_URL)
+        sts, data = self.getPage(Movie4kTO.MAIN_URL)
         if not sts: return
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'aria-labelledby="menu_select">', '</ul>', False)
         if not sts: return
@@ -205,7 +223,7 @@ class Movie4kTO(CBaseHostClass):
         page = cItem.get('page', 1)
         url  = cItem['url'] + "/{0},{1}.html".format(page, config.plugins.iptvplayer.Movie4kTO_sort.value)
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         if '"Następna"' in data: nextPage = True
@@ -238,7 +256,7 @@ class Movie4kTO(CBaseHostClass):
         
         url = Movie4kTO.SRCH_URL + urllib.quote(searchPattern)
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         data = data.split('</TD>')
@@ -254,7 +272,7 @@ class Movie4kTO(CBaseHostClass):
         printDBG("Movie4kTO.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return retTab
         
         title = self.cm.ph.getSearchGroups(data, 'title" content="([^"]+?)"')[0]
@@ -267,17 +285,15 @@ class Movie4kTO(CBaseHostClass):
         printDBG("Movie4kTO.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, pageData = self.getPage(cItem['url'])
         if not sts: return urlTab
         
-        if 'links = new Array();' in data:
-            sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'links = new Array();', '</table>', False)
-            if not sts: return urlTab
+        if 'links = new Array();' in pageData:
+            sts, data = self.cm.ph.getDataBeetwenMarkers(pageData, 'links = new Array();', '</table>', False)
             data = data.replace('\\"', '"')
             data = re.compile(']="(.+?)";', re.DOTALL).findall(data)
         else:
-            sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<tr id="tablemoviesindex2">', '</table>', False)
-            if not sts: return urlTab
+            sts, data = self.cm.ph.getDataBeetwenMarkers(pageData, '<tr id="tablemoviesindex2">', '</table>', False)
             data = data.split('<tr id="tablemoviesindex2">')
 
         for item in data:
@@ -287,6 +303,9 @@ class Movie4kTO(CBaseHostClass):
             
             if '' != url and '' != title:
                 urlTab.append({'name':title, 'url':self._getFullUrl(url)})
+        
+        if 0 == len(urlTab):
+            urlTab.append({'name':'main url', 'url':cItem['url']})
             
         return urlTab
         
@@ -294,7 +313,7 @@ class Movie4kTO(CBaseHostClass):
         printDBG("Movie4kTO.getVideoLinks [%s]" % url)
         urlTab = []
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return urlTab
         
         videoUrl = self.cm.ph.getSearchGroups(data, '<a target="_blank" href="([^"]+?)"')[0]

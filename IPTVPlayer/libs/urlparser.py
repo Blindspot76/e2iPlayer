@@ -210,6 +210,7 @@ class urlparser:
                        'tune.pk':              self.pp.parseTUNEPK         ,
                        'netu.tv':              self.pp.parseNETUTV         ,
                        'hqq.tv':               self.pp.parseNETUTV         ,
+                       'waaw.tv':              self.pp.parseNETUTV         ,
                        'vshare.io':            self.pp.parseVSHAREIO       ,
                        'vidspot.net':          self.pp.parserVIDSPOT       ,
                        'video.tt':             self.pp.parserVIDEOTT       ,
