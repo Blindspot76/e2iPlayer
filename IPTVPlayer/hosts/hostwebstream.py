@@ -118,7 +118,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
                         {'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
                         #{'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
-                        {'name': 'nettv.pw',            'title': 'NetTV.PW',                          'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
+                        {'name': 'telewizjoner.pl',     'title': 'Telewizjoner.pl',                   'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
                         {'name': 'typertv.com.pl',      'title': 'typertv.com.pl',                    'url': '',                                                                   'icon': 'http://www.typertv.com.pl/data/themes/Carousel/img/logo.png'}, \
                         {'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'name': 'm3u',                 'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
@@ -750,8 +750,8 @@ class HasBahCa(CBaseHostClass):
     #tvisport.cba.pl items
         elif name == "tvisport.cba.pl":
             self.getTvSportCdaList(url)
-    #nettv.pw items
-        elif name == "nettv.pw":
+    #telewizjoner.pl items
+        elif name == "telewizjoner.pl":
             self.getNettvpwList(url)
         elif name == "typertv.com.pl":
             self.getTyperTvList(url)
@@ -809,7 +809,7 @@ class IPTVHost(CHostBase):
             url = self.host.getLooknijTvLink(url)
         elif 'tvisport.cba.pl' in url:
             urlList = self.host.getTvSportCdaLink(url)
-        elif 'nettv.pw' in url:
+        elif 'telewizjoner.pl' in url:
             urlList = self.host.getNettvpwLink(url)
         elif 'typertv.com.pl' in url:
             urlList = self.host.getTyperTvLink(url)
