@@ -141,7 +141,7 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="lengthTimeLabel"    position="317,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
                 <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
                 
-                <widget name="subLabel1"          position="0,%d"          size="%d,140"   zPosition="1" transparent="0" foregroundColor="white"     backgroundColor="transparent" font="Regular;40" halign="center" valign="bottom" %s/>
+                <widget name="subLabel1"          position="0,%d"          size="%d,140"   zPosition="1" transparent="1" foregroundColor="white"     backgroundColor="transparent" font="Regular;40" halign="center" valign="bottom" %s/>
         </screen>""" % ( getDesktop(0).size().width(), 
                          getDesktop(0).size().height(),
                          GetIPTVDMImgDir("playback_banner.png"),
