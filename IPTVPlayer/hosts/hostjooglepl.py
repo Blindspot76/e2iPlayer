@@ -146,8 +146,9 @@ class JooglePL(CBaseHostClass):
             
     def listSearchFilms(self, cItem, searchPattern):
         searchPattern = urllib.quote_plus(searchPattern)
-        post_data = {'search':searchPattern}
-        sts, data = self.cm.getPage(JooglePL.SEARCH_URL, {}, post_data)
+        post_data = 'search=%s' % searchPattern
+        sts, data = self.cm.getPage(JooglePL.SEARCH_URL, {'raw_post_data':True}, post_data)
+        printDBG(data)
         if not sts: return
         data = data.split('</a>')
         for item in data:
