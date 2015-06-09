@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 #  IplaPlayer based on SHOUTcast
 #
@@ -60,8 +60,6 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListIt
 from Plugins.Extensions.IPTVPlayer.components.iconmenager import IconMenager
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover, Cover3
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
-
-from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
 
 ######################################################
 gDownloadManager = None
@@ -689,10 +687,6 @@ class IPTVPlayerWidget(Screen):
         self.ok_pressed(useAlternativePlayer=False)
 
     def ok_pressed1(self):
-        
-        self.session.open(IPTVSubDownloaderWidget, {'movie_title':'Powrót do przyszłości', 'login':'iptvplayer', 'password':'3xwg4kyx'} )
-        return 
-
         player = self.getMoviePlayer(True, False)
         self.activePlayer.set({'buffering':True, 'player':player}) 
         self.ok_pressed(useAlternativePlayer=True)
