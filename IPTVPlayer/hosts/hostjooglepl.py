@@ -118,7 +118,7 @@ class JooglePL(CBaseHostClass):
         
         sts, data = self.cm.getPage(url)
         if not sts: return
-        if ('strona[%s]+' % page) in data:
+        if ('strona[%s]+' % (page+1)) in data:
             haveNextPage = True
         else: haveNextPage = False
         
