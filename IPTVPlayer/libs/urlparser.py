@@ -53,6 +53,9 @@ try:
     from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
 except:
     printExc()
+    
+try:    from urlparse import urlsplit, urlunsplit
+except: printExc()
 ###################################################
 
 class urlparser:
@@ -262,6 +265,7 @@ class urlparser:
                        'thefile.me':           self.pp.parserTHEFILEME     ,
                        'cloudtime.to':         self.pp.parserCLOUDTIME     ,
                        'nosvideo.com':         self.pp.parserNOSVIDEO      ,
+                       'realvid.net':          self.pp.parserREALVIDNET    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -469,9 +473,9 @@ class pageParser:
         self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
         
-    def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]'''):
+    def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']'):
         linksTab = []
-        srcData = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']', False)[1].split('},')
+        srcData = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1].split('},')
         for item in srcData:
             item += '},'
             link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
@@ -1224,13 +1228,23 @@ class pageParser:
         else: linkVideo = False
         return linkVideo
 
-    def parserVIDTO(self,url):
-        sts, data = self.cm.getPage(url)
+    def parserVIDTO(self, baseUrl):
+        printDBG('parserVIDTO baseUrl[%s]' % baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        if 'embed' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[\./]')[0]
+            url = 'http://vidto.me/embed-{0}-640x360.html'.format(video_id)
+        else:
+            url = baseUrl 
+        params = {'header' : HTTP_HEADER}
+        sts, data = self.cm.getPage(url, params)
+        
         # get JS player script code from confirmation page
         sts, data = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')
         if not sts: return False
         # unpack and decode params from JS player script code
         data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
+        return self._findLinks(data, 'vidto.me', m1='hd', m2=']')
         # get direct link to file from params
         data = re.search('file:"([^"]+?)"', data)
         if data:
@@ -2083,7 +2097,14 @@ class pageParser:
         
     def parserVIDEOWOODTV(self, baseUrl):
         printDBG("parserVIDEOWOODTV baseUrl[%s]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        if 'embed' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{4})/')[0]
+            url = 'http://videowood.tv/embed/{0}'.format(video_id)
+        else:
+            url = baseUrl 
+        params = {'header' : HTTP_HEADER}
+        sts, data = self.cm.getPage(url, params)
         if sts:
             data = self.cm.ph.getSearchGroups(data, """["']*file["']*:[ ]*["'](http[^"']+?)["']""")[0]
             if '' != data:
@@ -2490,9 +2511,42 @@ class pageParser:
         
     def parserFLASHXTV(self, baseUrl):
         printDBG("parserFLASHXTV baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = baseUrl
         SWF_URL = 'http://static.flashx.tv/player6/jwplayer.flash.swf'
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return False
+        
+        def _first_of_each(*sequences):
+            return (next((x for x in sequence if x), '') for sequence in sequences)
+        
+        def _url_path_join(*parts):
+            """Normalize url parts and join them with a slash."""
+            schemes, netlocs, paths, queries, fragments = zip(*(urlsplit(part) for part in parts))
+            scheme, netloc, query, fragment = _first_of_each(schemes, netlocs, queries, fragments)
+            path = '/'.join(x.strip('/') for x in paths if x)
+            return urlunsplit((scheme, netloc, path, query, fragment))
+        
+        url = baseUrl
+        post_data = None
+        if 'Proceed to video' in data:
+            sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<Form method="POST"', '</Form>', True)
+            action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'")[0]
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+            
+            try:
+                sleep_time = int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]) 
+                time.sleep(sleep_time)
+            except:
+                printExc()
+            if {} == post_data:
+                post_data = None
+            if action.startswith('/'):
+                url = _url_path_join(url[:url.rfind('/')+1], action[1:])
+            else: url = action
+            sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
+            if not sts: return False
+        
         sts, data = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')
         if not sts: return False
         data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
@@ -3013,6 +3067,22 @@ class pageParser:
         if not sts: return False
         
         videoUrl = CParsingHelper.getDataBeetwenMarkers(data, '<file>', '</file>', False)[1]
+        if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
+        return False
+        
+    def parserREALVIDNET(self, baseUrl):
+        printDBG("parserREALVIDNET baseUrl[%s]" % baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        if 'embed' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})/')[0]
+            url = 'http://realvid.net/embed-{0}-640x360.html'.format(video_id)
+        else:
+            url = baseUrl
+        post_data = None
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
+        if not sts: return False
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, """["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""")[0]
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
         return False
         

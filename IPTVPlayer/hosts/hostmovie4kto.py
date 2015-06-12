@@ -119,7 +119,7 @@ class Movie4kTO(CBaseHostClass):
 
             if '' != url and '' != title:
                 params = dict(cItem)
-                params.update( {'title':title, 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
+                params.update( {'title':self.cleanHtmlStr(title.replace('kostenlos', '')), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
                 self.addVideo(params)
             
     def listsMovies2(self, cItem):
@@ -243,7 +243,7 @@ class Movie4kTO(CBaseHostClass):
             desc   =  ''
             if '' != url and '' != title:
                 params = dict(cItem)
-                params.update( {'title':title, 'url':self._getFullUrl(url), 'desc':desc, 'icon':self._getFullUrl(icon)} )
+                params.update( {'title':self.cleanHtmlStr(title.replace('kostenlos', '')), 'url':self._getFullUrl(url), 'desc':desc, 'icon':self._getFullUrl(icon)} )
                 self.addVideo(params)
                 
         if nextPage:
