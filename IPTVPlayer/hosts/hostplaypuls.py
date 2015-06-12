@@ -153,7 +153,7 @@ class Playpuls(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return videoUrls
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="section-player">', '</script>', False)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="section-player" ', '</script>', False)
         if not sts: return videoUrls
         
         source1Data = self.cm.ph.getSearchGroups(data, "var source = '([^']+?)'")[0]
