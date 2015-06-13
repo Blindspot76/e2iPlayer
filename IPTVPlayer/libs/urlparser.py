@@ -68,22 +68,25 @@ class urlparser:
     def decorateUrl(url, metaParams={}):
         retUrl = strwithmeta( url )
         retUrl.meta.update(metaParams)
+        urlLower = url.lower()
         if 'iptv_proto' not in retUrl.meta:
-            if url.lower().split('?')[0].endswith('.m3u8'):
+            if urlLower.split('?')[0].endswith('.m3u8'):
                 retUrl.meta['iptv_proto'] = 'm3u8'
-            elif url.lower().split('?')[0].endswith('.f4m'):
+            elif urlLower.split('?')[0].endswith('.f4m'):
                 retUrl.meta['iptv_proto'] = 'f4m'
-            elif url.lower().startswith('rtmp'):
+            elif urlLower.startswith('rtmp'):
                 retUrl.meta['iptv_proto'] = 'rtmp'
-            elif url.lower().startswith('https'):
+            elif urlLower.startswith('https'):
                 retUrl.meta['iptv_proto'] = 'https'
-            elif url.lower().startswith('http'):
+            elif urlLower.startswith('http'):
                 retUrl.meta['iptv_proto'] = 'http'
-            elif url.lower().startswith('rtsp'):
+            elif urlLower.startswith('file'):
+                retUrl.meta['iptv_proto'] = 'file'
+            elif urlLower.startswith('rtsp'):
                 retUrl.meta['iptv_proto'] = 'rtsp'
-            elif url.lower().startswith('mms'):
+            elif urlLower.startswith('mms'):
                 retUrl.meta['iptv_proto'] = 'mms'
-            elif url.lower().startswith('mmsh'):
+            elif urlLower.startswith('mmsh'):
                 retUrl.meta['iptv_proto'] = 'mmsh'
             elif 'protocol=hls' in url.lower():
                 retUrl.meta['iptv_proto'] = 'm3u8'
