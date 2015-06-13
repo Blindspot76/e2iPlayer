@@ -1203,11 +1203,10 @@ class pageParser:
             return False
             
     def parserVIDEOMEGA(self,baseUrl):
-        video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php)?\?ref=([A-Za-z0-9]+)')[0]
+        video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php|cdn\.php|view\.php)?\?ref=([A-Za-z0-9]+)')[0]
         COOKIE_FILE = GetCookieDir('videomegatv.cookie')
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10' }
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
-        
         
         #if 'iframe' in baseUrl:
         #    iframe_url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
