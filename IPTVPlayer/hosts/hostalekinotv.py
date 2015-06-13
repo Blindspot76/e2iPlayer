@@ -492,11 +492,18 @@ class AleKinoTV(CBaseHostClass):
         if False == sts:
             printDBG("getHostingTable problem with get page with playerURL")
             return []   
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>[%s]<<<<<<<<<<<<<" % type)
+        printDBG(data)
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         #CParsingHelper.writeToFile("/home/test/testAleKino.html", data)
         direct_url = ''
         if type == 'vip':
-            data = re.search("ShowNormalPlayer\('([^']+?)'", data)
+            if 'ShowNewPlayer' in data:
+                data = re.search("ShowNewPlayer\('([^']+?)'", data)
+            else:
+                data = re.search("ShowNormalPlayer\('([^']+?)'", data)
             if data: direct_url = data.group(1) + '?start=0'
+            
         else:
             data = re.search('src="([^"]+?)"', data)
             if data: direct_url = data.group(1)
