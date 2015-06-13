@@ -56,8 +56,9 @@ class ArticleContent:
         self.images = images
         
 class CFavItem:
-    RESOLVER_SELF       = 'SELF'
-    RESOLVER_URLLPARSER = 'URLLPARSER'
+    RESOLVER_DIRECT_LINK = 'DIRECT_LINK'
+    RESOLVER_SELF        = 'SELF'
+    RESOLVER_URLLPARSER  = 'URLLPARSER'
     TYPE_UNKNOWN = CDisplayListItem.TYPE_UNKNOWN
     def __init__( self, name         = '', \
                   description        = '', \

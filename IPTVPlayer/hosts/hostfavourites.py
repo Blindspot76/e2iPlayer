@@ -89,10 +89,9 @@ class Favourites(CBaseHostClass):
         if not sts: return ret
         item = data[cItem['item_idx']]
         
-        if CFavItem.RESOLVER_URLLPARSER != item.resolver:
-            if self._setHost(item.resolver):
-                ret = self.host.getLinksForFavourite(item)
-        else:
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % item.resolver)
+        
+        if CFavItem.RESOLVER_URLLPARSER == item.resolver:
             self.host = None
             self.hostName = None
             retlist = []
@@ -102,6 +101,15 @@ class Favourites(CBaseHostClass):
                 url  = item["url"]
                 retlist.append(CUrlItem(name, url, 0))
             ret = RetHost(RetHost.OK, value = retlist)
+        elif CFavItem.RESOLVER_DIRECT_LINK == item.resolver:
+            self.host = None
+            self.hostName = None
+            retlist = []
+            retlist.append(CUrlItem('direct link', item.data, 0))
+            ret = RetHost(RetHost.OK, value = retlist)
+        else:
+            if self._setHost(item.resolver):
+                ret = self.host.getLinksForFavourite(item)
         return ret
         
     def getResolvedURL(self, url):
