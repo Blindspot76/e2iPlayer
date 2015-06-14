@@ -422,14 +422,20 @@ class IPTVHost(CHostBase):
         type = CDisplayListItem.TYPE_UNKNOWN
         possibleTypesOfSearch = None
 
-        if cItem['type'] == 'category':
-            if cItem['title'] == 'Wyszukaj':
+        if 'category' == cItem['type']:
+            if cItem.get('search_item', False):
                 type = CDisplayListItem.TYPE_SEARCH
                 possibleTypesOfSearch = searchTypesOptions
             else:
                 type = CDisplayListItem.TYPE_CATEGORY
         elif cItem['type'] == 'video':
             type = CDisplayListItem.TYPE_VIDEO
+        elif 'more' == cItem['type']:
+            type = CDisplayListItem.TYPE_MORE
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
+            
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
             url = cItem.get('url', '')
             if '' != url:
                 hostLinks.append(CUrlItem("Link", url, 1))

@@ -302,10 +302,10 @@ class Movie4kTO(CBaseHostClass):
             title += ' ' + self.cm.ph.getSearchGroups(item, '/img/smileys/([0-9]+?)\.gif')[0]
             
             if '' != url and '' != title:
-                urlTab.append({'name':title, 'url':self._getFullUrl(url)})
+                urlTab.append({'name':title, 'need_resolve':1, 'url':self._getFullUrl(url)})
         
         if 0 == len(urlTab):
-            urlTab.append({'name':'main url', 'url':cItem['url']})
+            urlTab.append({'name':'main url', 'need_resolve':1, 'url':cItem['url']})
             
         return urlTab
         
@@ -423,14 +423,20 @@ class IPTVHost(CHostBase):
         type = CDisplayListItem.TYPE_UNKNOWN
         possibleTypesOfSearch = None
 
-        if cItem['type'] == 'category':
-            if cItem['title'] == 'Wyszukaj':
+        if 'category' == cItem['type']:
+            if cItem.get('search_item', False):
                 type = CDisplayListItem.TYPE_SEARCH
                 possibleTypesOfSearch = searchTypesOptions
             else:
                 type = CDisplayListItem.TYPE_CATEGORY
         elif cItem['type'] == 'video':
             type = CDisplayListItem.TYPE_VIDEO
+        elif 'more' == cItem['type']:
+            type = CDisplayListItem.TYPE_MORE
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
+            
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
             url = cItem.get('url', '')
             if '' != url:
                 hostLinks.append(CUrlItem("Link", url, 1))
