@@ -56,6 +56,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvextmovieplayer import IPTVExtM
 from Plugins.Extensions.IPTVPlayer.components.iptvpictureplayer import IPTVPicturePlayerWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvlist import IPTVMainNavigatorList
 from Plugins.Extensions.IPTVPlayer.components.articleview import ArticleView
+from Plugins.Extensions.IPTVPlayer.components.iptvarticlerichvisualizer import IPTVArticleRichVisualizer
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent, CFavItem
 from Plugins.Extensions.IPTVPlayer.components.iconmenager import IconMenager
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover, Cover3
@@ -782,12 +783,15 @@ class IPTVPlayerWidget(Screen):
         if ret.status != RetHost.OK or 0 == len(ret.value):
             item = self.currList[self.currSelIndex]
             if len(item.description):
-                artItem = ArticleContent(title = item.name, text = item.description, images = [{'title':'Fot.', 'url':item.iconimage}])
+                artItem = ArticleContent(title = item.name, text = item.description, images = [{'title':'Fot.', 'url':item.iconimage}]) #richDescParams={"alternate_title":"***alternate_title", "year":"year", "rating":"rating",  "duration":"duration",  "genre":"genre",  "director":"director",  "actors":"actors",  "awards":"awards"}
         else:
             artItem = ret.value[0]
         if None != artItem:
-            self.session.openWithCallback(self.leaveArticleView, ArticleView, artItem)
-    
+            if len(artItem.images) and artItem.images[0]['url'].startswith('http'):
+                self.session.openWithCallback(self.leaveArticleView, IPTVArticleRichVisualizer, artItem, {'buffering_path':config.plugins.iptvplayer.bufferingPath.value})
+            else:
+                self.session.openWithCallback(self.leaveArticleView, ArticleView, artItem)
+            
     def selectMainVideoLinks(self, ret):
         printDBG( "selectMainVideoLinks" )
         self["statustext"].setText("")

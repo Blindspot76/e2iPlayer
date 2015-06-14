@@ -48,12 +48,31 @@ class CDisplayListItem:
         # used only for TYPE_SEARCH item
         self.possibleTypesOfSearch = possibleTypesOfSearch
         self.privateData = None
-        
+
 class ArticleContent:
-    def __init__(self, title = '', text = '', images = []):
-        self.title  = title
-        self.text   = text
-        self.images = images
+    VISUALIZER_DEFAULT = 'DEFAULT'
+    # Posible args and values for richDescParams:
+    RICH_DESC_PARAMS        = ["alternate_title", "year", "rating",  "duration",  "genre",  "director",  "actors",  "awards" ]
+    # labels here must be in english language 
+    # translation should be done using "locals" mechanism
+    RICH_DESC_LABELS = {"alternate_title":   "Alternate Title:",
+                        "year":              "Year:", 
+                        "rating":            "Rating:", 
+                        "duration":          "Duration:", 
+                        "genre":             "Genre:", 
+                        "director":          "Director:", 
+                        "actors":            "Actors:", 
+                        "awards":            "Awards:",}
+    def __init__(self, title = '', text = '', images = [], trailers = [], richDescParams = {}, visualizer=None):
+        self.title    = title
+        self.text     = text
+        self.images   = images
+        self.trailers = trailers
+        self.richDescParams = richDescParams
+        if None == visualizer: 
+            self.visualizer = ArticleContent.VISUALIZER_DEFAULT
+        else:
+            self.visualizer = visualizer
         
 class CFavItem:
     RESOLVER_DIRECT_LINK = 'DIRECT_LINK'
