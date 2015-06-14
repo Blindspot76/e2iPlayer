@@ -230,7 +230,7 @@ class NocnySeansPL(CBaseHostClass):
         versions = re.compile('href="#([^"]+?)"[^>]*?>([^<]+?)</a>').findall(versions)
         printDBG('versions: %s' % versions)
         if 1:
-            data = data.split('class="tab-pane container-fluid"')
+            data = data.split('<div role="tabpanel"') #('class="tab-pane container-fluid"')
             if len(data): del data[0]
             
             for item in data:
