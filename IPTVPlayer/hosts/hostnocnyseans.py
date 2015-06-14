@@ -227,9 +227,9 @@ class NocnySeansPL(CBaseHostClass):
         oneLink = CParsingHelper.getDataBeetwenMarkers(data, 'id="film-content"', '</div>', False)[1]
         data = CParsingHelper.getDataBeetwenMarkers(data, 'class="tabpanel">', '<div class="film-bottom">', False)[1]
         versions = CParsingHelper.getDataBeetwenMarkers(data, 'role="tablist">', '</ul>', False)[1]
-        versions = re.compile('href="#([^"]+?)"[^>]*?>([^<])</a>').findall(versions)
+        versions = re.compile('href="#([^"]+?)"[^>]*?>([^<]+?)</a>').findall(versions)
         printDBG('versions: %s' % versions)
-        if 0:
+        if 1:
             data = data.split('class="tab-pane container-fluid"')
             if len(data): del data[0]
             
@@ -267,12 +267,22 @@ class NocnySeansPL(CBaseHostClass):
         urlTab = []
         url = ''
         if baseUrl == NocnySeansPL.VIDEO_URL:
-            HTTP_HEADER= { 'User-Agent':'Mozilla/5.0' }
+            HTTP_HEADER= {  "User-Agent":"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0",
+                            "Accept":"application/json, text/javascript, */*; q=0.01",
+                            "Accept-Language":"pl,en-US;q=0.7,en;q=0.3",
+                            "Accept-Encoding":"gzip, deflate",
+                            "Content-Type":"application/x-www-form-urlencoded; charset=UTF-8",
+                            "X-Requested-With":"XMLHttpRequest" }
             HTTP_HEADER['Referer'] = baseUrl.meta['Referer']
+            
             sts, data = self.cm.getPage(NocnySeansPL.VIDEO_URL, {'header' : HTTP_HEADER}, {'hash':baseUrl.meta['hash']})
             if not sts: return urlTab
-            printDBG(data)
-            url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"', 1)[0]
+            try:
+                #printDBG(data)
+                data = byteify(json.loads(data))
+                url = data['url']
+            except:
+                printExc()
         else:
             url = baseUrl
         
