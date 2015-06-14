@@ -55,19 +55,12 @@ class NocnySeansPL(CBaseHostClass):
     SRCH_MOVIES_URL    = MAIN_URL + 'filmy/search'
     VIDEO_URL          = MAIN_URL + 'film/video'
     
-    MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'), 'url':MAIN_URL+'filmy', 'icon':''},
+    MAIN_CAT_TAB = [{'category':'latest_movies',      'title': _('Latest movies'), 'url':MAIN_URL, 'icon':''},
+                    {'category':'latest_series',      'title': _('Latest series'), 'url':MAIN_URL, 'icon':''},
+                    {'category':'genres_movies',      'title': _('Movies'), 'url':MAIN_URL+'filmy', 'icon':''},
                     {'category':'genres_series',      'title': _('Series'), 'url':MAIN_URL+'seriale', 'icon':''},
                     {'category':'search',             'title': _('Search'), 'search_item':True},
                     {'category':'search_history',     'title': _('Search history')} ]
-                    
-    MOVIES_CAT_TAB = [{'category':'list_movies',     'title':  'Ostatnio zaktualizowane', 'url':MAIN_URL+'tab/1/', 'icon':MAIN_URL + 'wp-content/themes/tvseries3/images/ostatnio-zaktualizowane.png'},
-                      {'category':'list_movies',     'title':  'Nowe filmy',              'url':MAIN_URL+'tab/2/', 'icon':MAIN_URL + 'wp-content/themes/tvseries3/images/ostatnio-ogladane.png'},
-                      {'category':'list_movies',     'title':  'Najpopularniejsze',       'url':MAIN_URL+'tab/3/', 'icon':MAIN_URL + 'wp-content/themes/tvseries3/images/najpopularniejsze.png'},
-                      {'category':'list_movies',     'title':  'Najwyżej oceniane',       'url':MAIN_URL+'tab/4/', 'icon':MAIN_URL + 'wp-content/themes/tvseries3/images/najwyzej-oceniane.png'},
-                      {'category':'year_movies',     'title':  'Rok produkcji',           'url':MAIN_URL+'rok-produkcji/'},
-                      {'category':'genres_movies',   'title': _('Genres'),                'url':MAIN_URL+'gatunki/'},
-                      {'category':'search',          'title': _('Search'), 'search_item':True},
-                      {'category':'search_history',  'title': _('Search history')}                      ]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'NocnySeansPL', 'cookie':'playtube.cookie'})
@@ -109,7 +102,34 @@ class NocnySeansPL(CBaseHostClass):
         mainItem = dict(cItem)
         mainItem.update({'category':category})
         self.listsTab(tmpList, mainItem)
+        
+    def _listLatestItemsTab(self, cItem, category):
+        printDBG("NocnySeansPL._listLatestItemsTab")
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return 
+
+        data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="col-md-6 films">', '<footer>', False)[1]
+        data = data.split('<div class="col-md-6 films">')
+        
+        if len(data) < 2: return
+        if 'video' == category:
+            data = data[0]
+        else: data = data[1]
+        data = data.split('<div class="row">')
+        if len(data): del data[0]
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title  = CParsingHelper.getDataBeetwenMarkers(item, '<h4>', '</h4>', False)[1]
             
+            params = dict(cItem)
+            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
+            if category != 'video':
+                params['category'] = category
+                self.addDir(params)
+            else: self.addVideo(params)
+        
     def _listItemsTab(self, cItem, category):
         printDBG("NocnySeansPL._listItemsTab")
         page = cItem.get('page', 1)
@@ -155,6 +175,14 @@ class NocnySeansPL(CBaseHostClass):
     def listSeries(self, cItem, category):
         printDBG("NocnySeansPL.listSeries")
         self._listItemsTab(cItem, category)
+        
+    def listLatestMovies(self, cItem):
+        printDBG("NocnySeansPL.listLatestMovies")
+        self._listLatestItemsTab(cItem, 'video')
+            
+    def listLatestSeries(self, cItem, category):
+        printDBG("NocnySeansPL.listLatestSeries")
+        self._listLatestItemsTab(cItem, category)
         
     def listEpisodes(self, cItem):
         printDBG("NocnySeansPL.listEpisodes")
@@ -247,7 +275,7 @@ class NocnySeansPL(CBaseHostClass):
                     hash = self.cm.ph.getSearchGroups(link, 'data-hash="([^"]+?)"', 1)[0]
                     title += ' ' + self.cleanHtmlStr( link )
                     url = strwithmeta(NocnySeansPL.VIDEO_URL, {'hash':hash, 'Referer':cItem['url']}) 
-                    urlTab.append({'name':title, 'url':url})
+                    urlTab.append({'name':title, 'url':url, 'need_resolve':1})
         
         if 0 == len(urlTab):
             url = re.compile('src="([^"]+?)"', re.IGNORECASE).search(oneLink)
@@ -258,7 +286,7 @@ class NocnySeansPL(CBaseHostClass):
                     title = versions[0][1] + ' '
                     title += ' '
                 title += self.up.getHostName(url)
-                urlTab.append({'name':title, 'url':url})
+                urlTab.append({'name':title, 'url':url, 'need_resolve':1})
         
         return urlTab
         
@@ -315,6 +343,8 @@ class NocnySeansPL(CBaseHostClass):
             self.listGenres(self.currItem, 'list_movies')
         elif category == 'list_movies':
             self.listMovies(self.currItem)
+        elif category == 'latest_movies':
+            self.listLatestMovies(self.currItem)
     #SERIES
         elif category == 'genres_series':
             self.listGenres(self.currItem, 'list_series')
@@ -322,6 +352,8 @@ class NocnySeansPL(CBaseHostClass):
             self.listSeries(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
+        elif category == 'latest_series':
+            self.listLatestSeries(self.currItem, 'list_episodes')
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
