@@ -37,6 +37,7 @@ class IPTVArticleRichVisualizer(Screen):
     def __prepareSkin(self):
         skin =  """
                     <screen name="IPTVArticleRichVisualizerWidget" position="center,center" size="1050,525" title="Info...">
+                        <widget name="title" position="5,10"  zPosition="1" size="1040,40"  font="Regular;30" halign="center" valign="center"   transparent="1" backgroundColor="transparent" foregroundColor="#000E83F5" shadowColor="black" shadowOffset="-1,-1" />
                         <widget name="cover"     zPosition="1" position="10,80"   size="240,320" transparent="1"  alphatest="blend" />
                         <widget name="spinner"   zPosition="3" position="98,232"  size="16,16"   transparent="1"  alphatest="blend" />
                         <widget name="spinner_1" zPosition="2" position="98,232"  size="16,16"   transparent="1"  alphatest="blend" />
@@ -58,7 +59,7 @@ class IPTVArticleRichVisualizer(Screen):
             skin += """<widget name="dsc_text_%d"  position="%d,%d"  zPosition="1" size="%d,%d"  font="Regular;20" halign="left"  valign="center"   transparent="1" backgroundColor="transparent" foregroundColor="#00EFEFEF" shadowColor="black" shadowOffset="-1,-1" />""" % (idx+1, self.richDesc['row_text_x'], y, self.richDesc['row_text_w'], self.richDesc['row_h'])
             y += self.richDesc['row_h']
         if y != self.richDesc['row_y']: y += self.richDesc['row_h']
-        skin += """<widget name="text"        position="260,%d" zPosition="1" size="590,%d" font="Regular;20" halign="left"  valign="top"      transparent="1" backgroundColor="transparent" foregroundColor="#00EFEFEF" />""" % (y, 1050 - y - 10)
+        skin += """<widget name="text"        position="260,%d" zPosition="1" size="780,%d" font="Regular;26" halign="left"  valign="top"      transparent="1" backgroundColor="transparent" foregroundColor="#00EFEFEF" />""" % (y, 1050 - y - 10)
         
         # adds pagination items
         if 1: # self.richDesc['pages_count'] > 1:
@@ -106,6 +107,7 @@ class IPTVArticleRichVisualizer(Screen):
             self["dsc_label_{0}".format(idx+1)] = Label("")
             self["dsc_text_{0}".format(idx+1)]  = Label("")
         
+        self["title"] = Label("")
         self["text"] = ScrollLabel(" ")
         self["page_marker"] = Cover3()
         #############################################
@@ -167,7 +169,8 @@ class IPTVArticleRichVisualizer(Screen):
         self.onLayoutFinish.remove(self.onStart)
         self.loadSpinner()
         self["page_marker"].setPixmap( self.spinner["pixmap"][0] ) # the same png file is used by page_maker as spinner
-        self.setTitle(self.artItem.title)
+        #self.setTitle(self.artItem.title)
+        self["title"].setText(self.artItem.title)
         self.setText()
         self.setRichDesc()
         self.hideSpinner()
