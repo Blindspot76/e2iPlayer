@@ -3,15 +3,17 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import byteify, printExc
 ###################################################
 # FOREIGN import
 ###################################################
-import re
-try:    import json
-except: import simplejson as json
+import re, urllib
+try:
+    import json
+except:
+    import simplejson as json
 ####################################################
 # E2 GUI COMMPONENTS
 ####################################################
@@ -32,6 +34,7 @@ base_link = 'http://www.gearscenter.com'
 search_link2 = '/cartoon_control/gapi-202/?param_10=AIzaSyBsxsynyeeRczZJbxE8tZjnWl_3ALYmODs&param_7=2.0.2&param_8=com.appcenter.sharecartoon&os=android&versionCode=202&op_select=search_catalog&q='
 source_link = '/cartoon_control/gapi-202/?param_10=AIzaSyBsxsynyeeRczZJbxE8tZjnWl_3ALYmODs&param_7=2.0.2&param_8=com.appcenter.sharecartoon&os=android&versionCode=202&op_select=films&param_15=0&id_select='
 search_link = 'http://gearscenter.com/cartoon_control/gapi-ios/index.php?op_select=catalog&os=ios&param_10=AIzaSyBsxsynyeeRczZJbxE8tZjnWl_3ALYmODs&param_7=1.0.0&param_8=com.appmovies.gears&type_film=Movie'
+youtube_api_key = 'AIzaSyBbDY0UzvF5Es77M7S1UChMzNp0KsbaDPI'
 
 
 def GetConfigList():
@@ -109,7 +112,6 @@ class Video(CBaseHostClass):
             printExc()  # wypisz co poszło nie tak
 
     def gvcenter_quality(self, url, film_name):
-        print 'ssssssssssss', film_name
         match = re.compile('https:(.+?)#(.+?)#').findall(url)
         if match:
             for item in match:
@@ -117,6 +119,116 @@ class Video(CBaseHostClass):
                 title = film_name + " " + item[1]
                 params = {'name': 'getVideoUrl','title': title, 'page': url, 'icon': '', 'plot': ''}
                 self.addVideo(params)
+
+###############################################################################
+# Plot and Trailers
+###############################################################################
+    def cleantitle(self, title):
+        try:
+            title = title.partition(' (')
+            movietitle = title[0].replace(' ', '+')
+            year = re.sub('\D', '', title[2])[:4]
+            return movietitle, year
+        except:
+            printExc()
+
+    def OMDB(self, title):
+        try:
+            name = self.cleantitle(title)
+            movietitle = name[0]
+            year = name[1]
+        except:
+            printExc()
+        sts, data = self.cm.getPage('http://www.omdbapi.com/?t=' + movietitle + '&y=' + year + '&plot=full&r=json', {'header': HEADER})
+        if not sts:
+            return
+        try:
+            item = json.loads(data)
+            try:
+                Title = item['Title'].encode('utf-8', '')
+            except:
+                Title = 'N/A'
+            try:
+                Year = item['Year'].encode('utf-8', '')
+            except:
+                Year = 'N/A'
+            try:
+                Rated = item['Rated'].encode('utf-8', '')
+            except:
+                Rated = 'N/A'
+            try:
+                Runtime = item['Runtime'].encode('utf-8', '')
+            except:
+                Runtime = 'N/A'
+            try:
+                Genre = item['Genre'].encode('utf-8', '')
+            except:
+                Genre = 'N/A'
+            try:
+                Director = item['Director'].encode('utf-8', '')
+            except:
+                Director = 'N/A'
+            try:
+                Actors = item['Actors'].encode('utf-8', '')
+            except:
+                Actors = 'N/A'
+            try:
+                Plot = item['Plot'].encode('utf-8', '')
+            except:
+                Plot = 'N/A'
+            try:
+                Awards = item['Awards'].encode('utf-8', '')
+            except:
+                Awards = 'N/A'
+            try:
+                Poster = item['Poster'].encode('utf-8', '')
+            except:
+                Poster = 'N/A'
+            try:
+                imdbRating = item['imdbRating'].encode('utf-8', '')
+            except:
+                imdbRating = 'N/A'
+            try:
+                imdbID = item['imdbID'].encode('utf-8', '')
+            except:
+                imdbID = 'N/A'
+            dictionary = {}
+            item = {'title': Title, 'year': Year, 'image': Poster, 'text': Plot, 'director': Director, 'genre': Genre, 'runtime': Runtime, 'rated': Rated, 'rating': imdbRating, 'avards': Awards, 'actors': Actors}
+            dictionary.update(item)
+            return dictionary
+        except:
+            printExc()
+
+    def Search_trailers(self, title):
+        try:
+            name = self.cleantitle(title)
+            movietitle = name[0]
+            year = name[1]
+            link = urllib.quote_plus(movietitle + '(' + year + ')')
+        except:
+            printExc()
+        sts, data = self.cm.getPage('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=' + link + 'trailer&key=' + youtube_api_key)
+        if not sts:
+            return
+        try:
+            data = byteify(json.loads(data))['items']
+            for x in range(len(data)):
+                item = data[x]
+                film_link = item['id']['videoId']
+                trailer = 'http://www.youtube.com/watch?v=' + film_link
+                return trailer
+        except:
+            printExc()  # wypisz co poszło nie tak
+
+    def Movie_info(self, title):
+        try:
+            textdata = self.OMDB(title)
+            trailer = self.Search_trailers(title)
+            dictionary = {'trailer': trailer}
+            dictionary.update(textdata)
+            return dictionary
+        except:
+            printExc()  # wypisz co poszło nie tak
 
 ###############################################################################
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
@@ -187,6 +299,52 @@ class IPTVHost(CHostBase):
             return RetHost(RetHost.OK, value=list)
         return RetHost(RetHost.NOT_IMPLEMENTED, value=[])
 
+    def getArticleContent(self, Index = 0):
+        retCode = RetHost.ERROR
+        retlist = []
+        if not self.isValidIndex(Index):
+            RetHost(retCode, value=retlist)
+        item = self.host.Movie_info(self.host.currList[Index]["title"])
+        title = str(item.get('title', ''))
+        year = str(item.get('year', ''))
+        text = str(item.get('text', ''))
+        image = str(item.get('image', ''))
+        trailer = str(item.get('trailer', ''))
+        director = str(item.get('director', ''))
+        genre = str(item.get('genre', ''))
+        runtime = str(item.get('runtime', ''))
+        IMDB = str(item.get('rating', ''))
+        avards = str(item.get('avards', ''))
+        actors = str(item.get('actors', ''))
+        movieTitle = title
+        description = text
+        trailersUrls = []
+        trailersUrls.append({'title':'Wysoka jakoœæ','url':trailer})
+        covers = []
+        covers.append({'title':'not_needed', 'url':image})
+        '''
+            RICH_DESC_PARAMS        = ["alternate_title", "year", "rating",  "duration",  "genre",  "director",  "actors",  "awards" ]
+            RICH_DESC_LABELS = {"alternate_title":   "Alternate Title:",
+                                "year":              "Year:",
+                                "rating":            "Rating:",
+                                "duration":          "Duration:",
+                                "genre":             "Genre:",
+                                "director":          "Director:",
+                                "actors":            "Actors:",
+                                "awards":            "Awards:",}
+        '''
+        othersInfo = {}
+        othersInfo['year'] = year
+        othersInfo['director'] = director
+        othersInfo['rating'] = IMDB
+        othersInfo['duration'] = runtime
+        othersInfo['genre'] = genre
+        othersInfo['actors'] = actors
+        othersInfo['avards'] = avards
+        article = ArticleContent(title=movieTitle, text=description, trailers=trailersUrls, images=covers, richDescParams=othersInfo)
+        return RetHost(RetHost.OK, value=[article])
+    # end getArticleContent
+
     def convertList(self, cList):
         hostList = []
         for cItem in cList:
@@ -199,6 +357,11 @@ class IPTVHost(CHostBase):
                 page = cItem.get('page', '')
                 if '' != page:
                     hostLinks.append(CUrlItem("Link", page, 1))
+            elif cItem['type'] == 'article':
+                type = CDisplayListItem.TYPE_ARTICLE
+                url = cItem.get('page', '')
+                if '' != url:
+                    hostLinks.append(CUrlItem("Link", url, 1))
             title = cItem.get('title', '')
             description = cItem.get('plot', '')
             icon = cItem.get('icon', '')
@@ -211,5 +374,3 @@ class IPTVHost(CHostBase):
             hostList.append(hostItem)
         return hostList
     # end convertList
-
-
