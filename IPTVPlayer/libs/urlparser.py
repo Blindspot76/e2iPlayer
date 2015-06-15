@@ -1799,6 +1799,9 @@ class pageParser:
         #tmp =  self.__parseJWPLAYER_A(baseUrl, 'streamin.to')
         
         def getPageUrl(data):
+            printDBG("=======================================")
+            printDBG(data)
+            printDBG("=======================================")
             vidTab = []
             streamer = self.cm.ph.getSearchGroups(data, 'streamer: "(rtmp[^"]+?)"')[0]
             printDBG(streamer)
@@ -1826,7 +1829,8 @@ class pageParser:
         if 'embed' not in baseUrl:
             baseUrl = 'http://streamin.to/embed-%s-640x500.html' % baseUrl.split('/')[-1]
         
-        sts, data = self.cm.getPage(baseUrl)
+        HTTP_HEADER = {"User-Agent":"Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10"}
+        sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER})
         if sts:
             vidTab = getPageUrl(data)
             if 0 == len(vidTab):
@@ -1837,7 +1841,6 @@ class pageParser:
                 
                 sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False)
                 post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
-                HTTP_HEADER = dict(self.HTTP_HEADER) 
                 HTTP_HEADER['Referer'] = baseUrl
                 # get cookie for streamin.to
                 if len(cookies_data):
