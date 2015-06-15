@@ -182,7 +182,6 @@ class urlparser:
                        'scs.pl':               self.pp.parserSCS           ,
                        'youwatch.org':         self.pp.parserYOUWATCH      ,
                        'played.to':            self.pp.parserYOUWATCH      ,
-                       'allmyvideos.net':      self.pp.parserALLMYVIDEOS   ,
                        'videomega.tv':         self.pp.parserVIDEOMEGA     ,
                        'vidto.me':             self.pp.parserVIDTO         ,
                        'vidstream.in':         self.pp.parserVIDSTREAM     ,
@@ -228,7 +227,6 @@ class urlparser:
                        'playreplay.net':       self.pp.parserPLAYEREPLAY   ,
                        'moevideo.net':         self.pp.parserPLAYEREPLAY   ,
                        'videowood.tv':         self.pp.parserVIDEOWOODTV   ,
-                       'mightyupload.com':     self.pp.parserMIGHTYUPLOAD  ,
                        'movreel.com':          self.pp.parserMOVRELLCOM    ,
                        'vidfile.net':          self.pp.parserVIDFILENET    ,
                        'mp4upload.com':        self.pp.parserMP4UPLOAD     ,
@@ -269,6 +267,11 @@ class urlparser:
                        'cloudtime.to':         self.pp.parserCLOUDTIME     ,
                        'nosvideo.com':         self.pp.parserNOSVIDEO      ,
                        'realvid.net':          self.pp.parserREALVIDNET    ,
+                       'letwatch.us':          self.pp.parserLETWATCHUS    ,
+                       'uploadc.com':          self.pp.parserUPLOADCCOM    ,
+                       'mightyupload.com':     self.pp.parserMIGHTYUPLOAD  ,
+                       'zalaa.com':            self.pp.parserZALAACOM      ,
+                       'allmyvideos.net':      self.pp.parserALLMYVIDEOS   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -1181,7 +1184,7 @@ class pageParser:
             return linkVideo
         else:
             return False
-
+    '''
     def parserALLMYVIDEOS(self,url):
         query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
         link = self.cm.getURLRequestData(query_data)
@@ -1201,6 +1204,7 @@ class pageParser:
                 return False
         else:
             return False
+    '''
             
     def parserVIDEOMEGA(self,baseUrl):
         video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php|cdn\.php|view\.php)?\?ref=([A-Za-z0-9]+)')[0]
@@ -1799,9 +1803,9 @@ class pageParser:
         #tmp =  self.__parseJWPLAYER_A(baseUrl, 'streamin.to')
         
         def getPageUrl(data):
-            printDBG("=======================================")
-            printDBG(data)
-            printDBG("=======================================")
+            #printDBG("=======================================")
+            #printDBG(data)
+            #printDBG("=======================================")
             vidTab = []
             streamer = self.cm.ph.getSearchGroups(data, 'streamer: "(rtmp[^"]+?)"')[0]
             printDBG(streamer)
@@ -2115,10 +2119,6 @@ class pageParser:
             if '' != data:
                 return data
         return False
-        
-    def parserMIGHTYUPLOAD(self, baseUrl):
-        printDBG("parserMIGHTYUPLOAD baseUrl[%s]" % baseUrl)
-        return self.parserVIDEOWOODTV(baseUrl)
         
     def parserMOVRELLCOM(self, baseUrl):
         printDBG("parserMOVRELLCOM baseUrl[%s]" % baseUrl)
@@ -3091,6 +3091,70 @@ class pageParser:
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
         return False
         
+    def parserLETWATCHUS(self, baseUrl):
+        printDBG("parserLETWATCHUS baseUrl[%s]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks(data, 'letwatch.us')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://letwatch.us/embed-{0}-640x360.html', _findLinks)
+        
+    def parserUPLOADCCOM(self, baseUrl):
+        printDBG("parserUPLOADCCOM baseUrl[%s]" % baseUrl)
+        def _findLinks(data):
+            videoUrl = self.cm.ph.getSearchGroups(data, 'type="video/divx"src="(http[^"]+?)"')[0]
+            if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
+            return False
+        return self._parserUNIVERSAL_A(baseUrl, 'http://www.uploadc.com/embed-{0}.html', _findLinks)
+        
+    def parserMIGHTYUPLOAD(self, baseUrl):
+        printDBG("parserMIGHTYUPLOAD baseUrl[%s]" % baseUrl)
+        def _preProcessing(data):
+            return CParsingHelper.getDataBeetwenMarkers(data, '<div id="player_code">', '</div>', False)[1]
+        
+        def _findLinks(data):
+            videoUrl = self.cm.ph.getSearchGroups(data, 'type="video/divx"src="(http[^"]+?)"')[0]
+            if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
+            return False
+        return self._parserUNIVERSAL_A(baseUrl, 'http://www.mightyupload.com/embed-{0}-645x353.html', _findLinks, _preProcessing)
+        
+    def parserZALAACOM(self, baseUrl):
+        printDBG("parserZALAACOM baseUrl[%s]" % baseUrl)
+        def _findLinks(data):
+            videoUrl = self.cm.ph.getSearchGroups(data, 'type="video/divx"src="(http[^"]+?)"')[0]
+            if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
+            return False
+        return self._parserUNIVERSAL_A(baseUrl, 'http://www.zalaa.com/embed-{0}.html', _findLinks)
+    
+    def parserALLMYVIDEOS(self, baseUrl):
+        printDBG("parserALLMYVIDEOS baseUrl[%s]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks(data, 'allmyvideos.net')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://allmyvideos.net/embed-{0}.html', _findLinks)
+        
+    def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None):
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        if 'embed' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})/')[0]
+            url = embedUrl.format(video_id)
+        else:
+            url = baseUrl
+        post_data = None
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
+        if not sts: return False
+        
+        if _preProcessing != None:
+            data = _preProcessing(data)
+        printDBG(data)
+        
+        # get JS player script code from confirmation page
+        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+        if sts:
+            data = tmpData
+            tmpData = None
+            # unpack and decode params from JS player script code
+            data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
+            printDBG(data)
+        return _findLinks(data)
+    
     #def parserMOVSHARE(self, baseUrl):
     #    printDBG("parserMOVSHARE baseUrl[%s]" % baseUrl)
         
