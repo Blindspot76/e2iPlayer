@@ -151,18 +151,21 @@ class OpenSubOrgProvider:
                 list.append({'title':title, 'private_data':item})
         self.outerCallback(sts, list)
         
-    def doGetLanguages(self, callback, lang):
-        if len(self.langsCache):
-            self._doGetLanguagesCallback(True, self.langsCache)
-            return
-        
+    def doGetLanguages(self, callback, lang):        
         self.outerCallback = callback
         self.defaultLanguage = lang
-        subParams = [{'name':'sublanguageid', 'value':lang}]
-        params = [self.loginToken, self._getArraryParam(subParams)]
-        self._methodCall(self._doGetLanguagesCallback, "GetSubLanguages", params)
+        if len(self.langsCache):
+            self._dummyCall(self._doGetLanguagesCallback)
+        else:
+            subParams = [{'name':'sublanguageid', 'value':lang}]
+            params = [self.loginToken, self._getArraryParam(subParams)]
+            self._methodCall(self._doGetLanguagesCallback, "GetSubLanguages", params)
         
     def _doGetLanguagesCallback(self, sts, data):
+        if '' == data and len(self.langsCache):
+            data = self.langsCache
+            sts  = True
+        
         list = []
         defaultLanguageItem = {}
         for item in data:
@@ -173,8 +176,8 @@ class OpenSubOrgProvider:
                     defaultLanguageItem = item
         if {} != defaultLanguageItem:
             list.insert(0, {'title':'{0} [{1}]'.format(defaultLanguageItem['LanguageName'], defaultLanguageItem['SubLanguageID']), 'private_data':defaultLanguageItem})
-        #if sts and len(list):
-        #    self.langsCache = data
+        if sts and len(list):
+            self.langsCache = data
         self.outerCallback(sts, list)
         
     def doDowanloadSubtitle(self, callback, subItem, tmpDir, subDir):
@@ -318,7 +321,14 @@ class OpenSubOrgProvider:
         if 0 != len(tagsStack): 
             raise BaseException("Some tags have not been ended")
         return retJson
-                    
+    
+    def _dummyCall(self, callback):
+        self._methodCallBack = callback
+        cmd = 'sleep 0 > > /dev/null 2>&1'
+        self.iptv_sys = iptv_system(cmd, callback)
+        
+    def _dummyCallback(self, code, data):
+        self._methodCallBack(code, data)
         
     def _methodCall(self, callback, method, paramsList=[]):
         self._methodCallBack = callback

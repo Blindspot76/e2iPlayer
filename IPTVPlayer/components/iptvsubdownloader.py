@@ -232,7 +232,7 @@ class IPTVSubDownloaderWidget(Screen):
             self.stackList.append({'type':'sub', 'list':data})
             self.displayList()
         else:
-            self["console"].setText(_('An unknown error has occurred.'))
+            self["console"].setText(_('Subtitles not found.'))
             
     def doDownloadSubtitle(self, item):
         self.setListMode(False)

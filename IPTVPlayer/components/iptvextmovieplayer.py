@@ -118,7 +118,7 @@ class IPTVExtMoviePlayer(Screen):
     
     
     def __prepareSkin(self):
-        subBordersTxt = '' 
+        subBordersTxt = ' shadowColor="black" shadowOffset="2,2" ' 
         try:
             tmp = dir(eLabel)
             printDBG("eLabel.__dict__ [%s]" % tmp)
