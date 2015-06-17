@@ -1597,13 +1597,21 @@ class pageParser:
         return r[0]
         
     def parserVIDEOMAIL(self, url):
+        printDBG("parserVIDEOMAIL baseUrl[%s]" % url)
         #http://api.video.mail.ru/videos/embed/mail/etaszto/_myvideo/852.html
         #http://my.mail.ru/video/mail/etaszto/_myvideo/852.html#video=/mail/etaszto/_myvideo/852
         COOKIEFILE = self.COOKIE_PATH + "video.mail.ru.cookie"
         movieUrls = []
         try:
             sts, data = self.cm.getPage(url, {'cookiefile': COOKIEFILE, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False})
+            if 'This video is only available on Mail.Ru' in data:
+                tmpUrl = self.cm.ph.getSearchGroups(data, 'href="([^"]+?)"')[0]
+                sts, data = self.cm.getPage(tmpUrl)
             metadataUrl =  self.cm.ph.getSearchGroups(data, """["']*metadataUrl["']*[ ]*:[ ]*["'](http[^"']+?\.json[^"']*?)["']""")[0]
+            if '' == metadataUrl:
+                tmp = self.cm.ph.getSearchGroups(data, '<link[^>]*?rel="image_src"[^>]*?href="([^"]+?)"')[0]
+                tmp = self.cm.ph.getSearchGroups(urllib.unquote(tmp), '[^0-9]([0-9]{19})[^0-9]')[0]
+                metadataUrl = 'http://videoapi.my.mail.ru/videos/{0}.json?ver=0.2.93'.format(tmp)
             sts, data = self.cm.getPage(metadataUrl, {'cookiefile': COOKIEFILE, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True})
             video_key = self.cm.getCookieItem(COOKIEFILE,'video_key')
             if '' != video_key:
