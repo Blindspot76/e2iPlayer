@@ -140,7 +140,10 @@ class Kreskoweczki(CBaseHostClass):
                     url = match.group(1)
                     if url.endswith('.m3u8'):
                         return getDirectM3U8Playlist(url)
-        else: return self.up.getVideoLinkExt(videoUrl)
+        else: 
+            if videoUrl.startswith('//'):
+                videoUrl = 'http:' + videoUrl
+            return self.up.getVideoLinkExt(videoUrl)
         return []
         
     def getFavouriteData(self, cItem):
