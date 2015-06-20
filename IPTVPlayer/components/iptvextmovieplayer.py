@@ -362,7 +362,7 @@ class IPTVExtMoviePlayer(Screen):
         printDBG("selectAspectRatioCallback ret[%r]" % [ret])
         if isinstance(ret, IPTVChoiceBoxItem):
             self.metaHandler.setAspectRatioIdx(ret.privateData)
-            self.setAspectRatio()
+        self.setAspectRatio()
             
     def selectSubtitle(self):
         printDBG("selectSubtitle")
