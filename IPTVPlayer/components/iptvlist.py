@@ -90,6 +90,7 @@ class IPTVMainNavigatorList(IPTVListComponentBase):
     ICONS_FILESNAMES = {CDisplayListItem.TYPE_CATEGORY : 'CategoryItem.png', CDisplayListItem.TYPE_MORE : 'MoreItem.png', CDisplayListItem.TYPE_VIDEO : 'VideoItem.png', CDisplayListItem.TYPE_AUDIO : 'AudioItem.png', CDisplayListItem.TYPE_SEARCH : 'SearchItem.png', CDisplayListItem.TYPE_ARTICLE : 'ArticleItem.png', CDisplayListItem.TYPE_PICTURE : 'PictureItem.png'}
     def __init__(self):
         IPTVListComponentBase.__init__(self)
+        
         self.screenwidth = getDesktop(0).size().width()
         try: self.font = skin.fonts["iptvlistitem"]
         except:
@@ -121,4 +122,21 @@ class IPTVMainNavigatorList(IPTVListComponentBase):
         res = [ None ]
         res.append((eListboxPythonMultiContent.TYPE_TEXT, 45, 0, width-45, height, 1, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.name))
         res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, 3, 1, 40, 40, self.dictPIX.get(item.type, None)))  
+        return res
+        
+class IPTVRadioButtonList(IPTVMainNavigatorList):
+    ICONS_FILESNAMES = {'on' : 'radio_button_on.png', 'off' : 'radio_button_off.png'}
+    def __init__(self):
+        IPTVMainNavigatorList.__init__(self)
+            
+    def buildEntry(self, item):
+        width  = self.l.getItemSize().width()
+        height = self.l.getItemSize().height()
+        pixmap_y = (height - 16) / 2
+        res = [ None ]
+        if None == item.type:
+            res.append((eListboxPythonMultiContent.TYPE_TEXT, 5, 0, width-5, height, 1, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.name))
+        else:
+            res.append((eListboxPythonMultiContent.TYPE_TEXT, 30, 0, width-30, height, 1, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.name))
+            res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, 3, pixmap_y, 16, 16, self.dictPIX.get(item.type, None)))  
         return res

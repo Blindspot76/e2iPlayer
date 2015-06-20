@@ -310,7 +310,7 @@ class IPTVSubDownloaderWidget(Screen):
         idx, item = self.getSelectedItem()
         if None != item:
             type = self.stackList[-1]['type']
-            self.stackItems.append({'item':item, 'idx':idx})
+            self.stackItems.append({'item':item, 'idx':idx, 'type':type})
             if type == 'movie':
                 self.doGetLanguageForSubtitle()
             elif type == 'lang':
@@ -329,7 +329,17 @@ class IPTVSubDownloaderWidget(Screen):
     def keyGreen(self):
         try: 
             if self["icon_green"].visible:
-                self.close(self.downloadedSubFilePath)
+                track = {'title':'', 'lang':'', 'path':self.downloadedSubFilePath}
+                for item in self.stackItems:
+                    printDBG(">>>>>>>>>> item[%s]" % item)
+                    type = item['type']
+                    data = item['item']
+                    if type == 'lang':
+                        track['lang'] = data.privateData.get('SubLanguageID', '')
+                    elif type == 'sub':
+                        track['title'] = data.name
+                        track['id']    = data.privateData.get('IDSubtitle', '')
+                self.close(track)
         except: printExc()
     
     def getSelectedItem(self):

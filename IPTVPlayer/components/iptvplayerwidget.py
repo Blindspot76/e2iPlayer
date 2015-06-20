@@ -1259,16 +1259,16 @@ class IPTVPlayerWidget(Screen):
                 if isBufferingMode:
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(True, self.useAlternativePlayer))
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize)
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize, {'host_name':self.hostName})
                 else:
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(False, self.useAlternativePlayer))
                     if "mini" == player.value:
-                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, url, self.currItem.name)
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, url, titleOfMovie)
                     elif "standard" == player.value:
-                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, url, self.currItem.name)
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, url, titleOfMovie)
                     else:
-                        gstAdditionalParams = {}
+                        gstAdditionalParams = {'host_name':self.hostName}
                         if "extgstplayer" == player.value:
                             playerVal = 'gstplayer'
                             gstAdditionalParams['download-buffer-path'] = ''
@@ -1284,7 +1284,7 @@ class IPTVPlayerWidget(Screen):
                         else:
                             assert("exteplayer" == player.value)
                             playerVal = 'eplayer'
-                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, url, self.currItem.name, None, playerVal, gstAdditionalParams)
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, url, titleOfMovie, None, playerVal, gstAdditionalParams)
         else:
             #There was problem in resolving direct link for video
             if not self.checkAutoPlaySequencer():

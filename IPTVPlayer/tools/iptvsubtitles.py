@@ -106,24 +106,31 @@ class IPTVSubtitlesHandler:
         return ret
     '''
     
-    
-    def getSubtitles(self, currTimeMS):
+    def getSubtitles(self, currTimeMS, prevMarker):
         #printDBG("OpenSubOrg.getSubtitles [%s]" % currTimeMS)
         #time1 = time.time()
         subsText = []
-        
         tmp = currTimeMS / self.CAPACITY
         tmp = self.pailsOfAtoms.get(tmp, [])
         
+        ret    = None
+        validAtomsIdexes = []
         for idx in tmp:
             item = self.subAtoms[idx]
             if currTimeMS >= item['start'] and currTimeMS < item['end']:
+                validAtomsIdexes.append(idx)
+                
+        marker = validAtomsIdexes
+        #printDBG("OpenSubOrg.getSubtitles marker[%s] prevMarker[%s] %.1fs" % (marker, prevMarker, currTimeMS/1000.0))
+        if prevMarker != marker:
+            for idx in validAtomsIdexes:
+                item = self.subAtoms[idx]
                 subsText.append(item['text'])
-        ret = '\n'.join(subsText)
+            ret = '\n'.join(subsText)
         #time2 = time.time()
         #printDBG('>>>>>>>>>>getSubtitles function took %0.3f ms' % ((time2-time1)*1000.0))
-        return ret
-        
+        return marker, ret
+            
     def _getCacheFileName(self, filePath):
         tmp = filePath.split('/')[-1]
         return GetSubtitlesDir(tmp+'.iptv')

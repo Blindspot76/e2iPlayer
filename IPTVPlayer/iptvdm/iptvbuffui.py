@@ -78,7 +78,7 @@ class IPTVPlayerBufferingWidget(Screen):
                         i_w, i_h, i_x, i_y  # icon
                       )
    
-    def __init__(self, session, url, pathForRecordings, movieTitle, activMoviePlayer, requestedBuffSize):
+    def __init__(self, session, url, pathForRecordings, movieTitle, activMoviePlayer, requestedBuffSize, playerAdditionalParams={}):
         self.session = session
         Screen.__init__(self, session)
         self.onStartCalled = False
@@ -121,6 +121,7 @@ class IPTVPlayerBufferingWidget(Screen):
         self.mainTimerInterval = 1000 # by default 1s
         
         self.requestedBuffSize = requestedBuffSize
+        self.playerAdditionalParams = playerAdditionalParams
         
         
     #end def __init__(self, session):
@@ -239,14 +240,17 @@ class IPTVPlayerBufferingWidget(Screen):
         
         player = self.activMoviePlayer
         printDBG('IPTVPlayerBufferingWidget.runMovePlayer [%r]' % player)
+        playerAdditionalParams = dict(self.playerAdditionalParams)
+        playerAdditionalParams['downloader'] = self.downloader
         if "mini" == player:
             self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 4)
         elif "exteplayer" == player:
-            if not exteplayerBlocked: self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 'eplayer', {'downloader':self.downloader})
-            else: self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 'gstplayer', {'downloader':self.downloader})
-        elif "extgstplayer" == player: self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 'gstplayer', {'downloader':self.downloader})
+            if not exteplayerBlocked: self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 'eplayer', playerAdditionalParams)
+            else: self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 'gstplayer', playerAdditionalParams)
+        elif "extgstplayer" == player: self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 'gstplayer', playerAdditionalParams)
         else: self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, self.filePath, self.movieTitle)
-            
+        playerAdditionalParams = None
+        
     def setMainTimerSts(self, start):
         try:
             if start:

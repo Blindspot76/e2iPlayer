@@ -14,8 +14,10 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, eConnectCallback
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
+from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
+from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
 ###################################################
 
 ###################################################
@@ -23,6 +25,8 @@ from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDo
 ###################################################
 from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel
 from Screens.Screen import Screen
+from Screens.ChoiceBox import ChoiceBox
+from Components.AVSwitch import AVSwitch
 from Components.ActionMap import ActionMap
 from Components.config import config
 from Components.Label import Label
@@ -114,8 +118,6 @@ class ExtPlayerCommandsDispatcher():
 
 
 class IPTVExtMoviePlayer(Screen):
-    LAST_ACTIVE_SUBTITLES = {'file_name':'', 'sub_file_path':''}
-    
     
     def __prepareSkin(self):
         subBordersTxt = ' shadowColor="black" shadowOffset="2,2" ' 
@@ -140,6 +142,9 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="currTimeLabel"      position="94,62"         size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
                 <widget name="lengthTimeLabel"    position="317,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
                 <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+                
+                <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
+                <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
                 
                 <widget name="subLabel1"          position="0,%d"          size="%d,140"   zPosition="1" transparent="1" foregroundColor="white"     backgroundColor="transparent" font="Regular;40" halign="center" valign="bottom" %s/>
         </screen>""" % ( getDesktop(0).size().width(), 
@@ -171,6 +176,7 @@ class IPTVExtMoviePlayer(Screen):
         self.session.nav.playService(None) # current service must be None to give free access to DVB Audio and Video Sinks
         self.fileSRC      = strwithmeta(filesrcLocation)
         self.title        = FileName
+        self.hostName     = additionalParams.get('host_name', '')
         if lastPosition:
             self.lastPosition = lastPosition
         else:
@@ -201,8 +207,15 @@ class IPTVExtMoviePlayer(Screen):
                 'left_repeat'  : self.key_left_repeat,
                 'rigth_press'  : self.key_rigth_press,
                 'rigth_repeat' : self.key_rigth_repeat,
+               
+                'up_press'     : self.key_up_press,
+                'up_repeat'    : self.key_up_repeat,
+                'down_press'   : self.key_down_press,
+                'down_repeat'  : self.key_down_repeat,
+                
                 'ok'           : self.key_ok,
                 'subtitles'    : self.key_subtitles,
+                'aspectratio'  : self.key_aspectratio,
             }, -1)
         
         self.onClose.append(self.__onClose)
@@ -235,19 +248,26 @@ class IPTVExtMoviePlayer(Screen):
         # for subtitles
         self['subLabel1']          = Label(" ")
         self.subHandler            = {}
+        self.subHandler['current_sub_time_ms'] = -1
         self.subHandler['handler'] = IPTVSubtitlesHandler()
         self.subHandler['enabled'] = False
-        self.subHandler['file']    = ''
-        if '' == self.subHandler['file']:
-            if IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES['file_name'] == FileName:
-                self.subHandler['file'] = IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES['sub_file_path']
-            else:
-                IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES = {'file_name':FileName, 'sub_file_path':''}
-            
         self.subHandler['timer']   = eTimer()
         self.subHandler['timer_conn '] =  eConnectCallback(self.subHandler['timer'].timeout, self.updatSubtitlesTime)
         self.subHandler['latach_time'] = -1
         self.subHandler['last_time']   = -1
+        self.subHandler['marker']      = None
+        self.subHandler['synchro']     = {'visible':False, 'guiElemNames':['subSynchroLabel', 'subSynchroIcon'], 'icon':None}
+        self['subSynchroLabel']        = Label("0.0s")
+        self['subSynchroIcon']         = Cover3() 
+        try: self.subHandler['synchro']['icon'] = LoadPixmap( GetIPTVDMImgDir("sub_synchro.png") )
+        except: printExc()
+        self.hideSubSynchroControl()
+        
+        # remember current aspect ratio as default it will be restored before close
+        self.defaultAspectRatio = AVSwitch().getAspectRatioSetting()
+        
+        # meta data
+        self.metaHandler = IPTVMovieMetaDataHandler( self.hostName, self.title, self.fileSRC )
         
         # goto seek  timer
         self.playback = {}
@@ -303,23 +323,123 @@ class IPTVExtMoviePlayer(Screen):
         try: self.autoHideTime = 1000 * int(config.plugins.iptvplayer.extplayer_infobar_timeout.value)
         except: self.autoHideTime = 1000
         
-        self.fatalErrorOccurs = False
-        self.delayedClosure   = None
-        self.hasChild         = False
+        self.fatalErrorOccurs  = False
+        self.delayedClosure    = None
+        self.childWindowsCount = 0
         
-    def enableSubtitles(self, path):
+    def setAspectRatio(self):
+        printDBG("setAspectRatio")
+        aspect = self.metaHandler.getAspectRatioIdx()
+        printDBG("setAspectRatio aspect[%s]" % aspect)
+        if aspect > -1:
+            AVSwitch().setAspectRatio( aspect )
+        
+    def selectAspectRatio(self):
+        printDBG("selectAspectRatio")
+        list = [_("4:3 Letterbox"), _("4:3 PanScan"), _("16:9"), _("16:9 always"), _("16:10 Letterbox"), _("16:10 PanScan"), _("16:9 Letterbox")]
+        options = []
+        
+        currIdx = self.metaHandler.getAspectRatioIdx()
+        if -1 == currIdx:
+            currIdx = self.defaultAspectRatio
+            
+        for idx in range(len(list)):
+            item = IPTVChoiceBoxItem(list[idx], "", idx)
+            if idx == currIdx:
+                item.type = IPTVChoiceBoxItem.TYPE_ON
+            else:
+                item.type = IPTVChoiceBoxItem.TYPE_OFF
+            options.append( item )
+        
+        self.openChild(boundFunction(self.childClosed, self.selectAspectRatioCallback), IPTVChoiceBoxWidget, {'selection_changed':self.aspectRatioSelectionChanged, 'current_idx':currIdx, 'title':_("Select aspect ratio"), 'options':options})
+        
+    def aspectRatioSelectionChanged(self, ret=None):
+        printDBG("aspectRatioSelectionChanged ret[%s]" % [ret])
+        if isinstance(ret, IPTVChoiceBoxItem):
+            AVSwitch().setAspectRatio(ret.privateData)
+        
+    def selectAspectRatioCallback(self, ret=None):
+        printDBG("selectAspectRatioCallback ret[%r]" % [ret])
+        if isinstance(ret, IPTVChoiceBoxItem):
+            self.metaHandler.setAspectRatioIdx(ret.privateData)
+            self.setAspectRatio()
+            
+    def selectSubtitle(self):
+        printDBG("selectSubtitle")
+        options = []
+        
+        currIdx = self.metaHandler.getSubtitleIdx()+1
+        
+        item = IPTVChoiceBoxItem(_('None'), "", {'other':'none'})
+        if 0 == currIdx:
+            item.type = IPTVChoiceBoxItem.TYPE_ON
+        else:
+            item.type = IPTVChoiceBoxItem.TYPE_OFF
+        options.append( item )
+        
+        tracksTab = self.metaHandler.getSubtitlesTracks()
+        for trackIdx in range(len(tracksTab)):
+            name = '[{0}] {1}'.format(tracksTab[trackIdx]['lang'], tracksTab[trackIdx]['title'])
+            item = IPTVChoiceBoxItem(name, "", {'track_idx':trackIdx})
+            if (trackIdx + 1) == currIdx:
+                item.type = IPTVChoiceBoxItem.TYPE_ON
+            else:
+                item.type = IPTVChoiceBoxItem.TYPE_OFF
+            options.append( item )
+        if self.subHandler['enabled'] and None != self.metaHandler.getSubtitleTrack():
+            options.append( IPTVChoiceBoxItem(_('Synchronize'), "", {'other':'synchro'}) )
+        #options.append( IPTVChoiceBoxItem(_('Open'), "", {'other':'open'}) )
+        options.append( IPTVChoiceBoxItem(_('Download'), "", {'other':'download'}) )
+        self.openChild(boundFunction(self.childClosed, self.selectSubtitleCallback), IPTVChoiceBoxWidget, {'width':600, 'current_idx':currIdx, 'title':_("Select subtitles track"), 'options':options})
+    
+    def selectSubtitleCallback(self, ret):
+        printDBG("selectSubtitleCallback ret[%r]" % [ret])
+        if isinstance(ret, IPTVChoiceBoxItem):
+            ret = ret.privateData
+            if 'other' in ret:
+                option = ret['other']
+                if option == 'none':
+                    self.metaHandler.setSubtitleIdx(-1)
+                    self.disableSubtitles()
+                elif option == 'synchro':
+                    self.showSubSynchroControl()
+                elif option == 'open':
+                    pass
+                elif option == 'download':
+                    self.downloadSub()
+            elif 'track_idx' in ret:
+                self.metaHandler.setSubtitleIdx( ret['track_idx'] )
+                self.enableSubtitles()
+
+    def disableSubtitles(self):
+        self['subLabel1'].hide()
+        self.subHandler['enabled'] = False
+        self.updateSubSynchroControl()
+        
+    def enableSubtitles(self):
+        printDBG("enableSubtitles")
+        if self.isClosing: return
+        track = self.metaHandler.getSubtitleTrack()
+        if None == track: return
+        
+        printDBG("enableSubtitles track[%s]" % track)
+        
+        path = track['path']
         sts = self.subHandler['handler'].loadSubtitles(path)
         if not sts:
+            # we will remove this subtitles track as it is can not be used
+            self.metaHandler.removeSubtitleTrack(self.metaHandler.getSubtitleIdx())
             msg = _("An error occurred while loading a subtitle from [%s].") % path
             self.showMessage(msg, MessageBox.TYPE_ERROR)
             return
+        self.subHandler['marker']  = None
         self.subHandler['enabled'] = True
-        self.subHandler['file']    = path
-        IPTVExtMoviePlayer.LAST_ACTIVE_SUBTITLES['sub_file_path'] = path
+        self.updateSubSynchroControl()
         
     def updatSubtitlesTime(self):
         if -1 != self.subHandler['last_time'] and -1 != self.subHandler['latach_time']:
             timeMS = self.subHandler['last_time'] + int((time.time() - self.subHandler['latach_time']) * 1000)
+            self.subHandler['current_sub_time_ms'] = timeMS
             self.updateSubtitles(timeMS)
         
     def latchSubtitlesTime(self, timeMS):
@@ -327,18 +447,31 @@ class IPTVExtMoviePlayer(Screen):
         self.subHandler['last_time']   = timeMS
         self.updateSubtitles(timeMS)
     
-    def updateSubtitles(self, timeMS):
+    def updateSubtitles(self, timeMS, force = False):
         if self.isClosing: return
-        if not self.subHandler['enabled']: return 
-        text = self.subHandler['handler'].getSubtitles(timeMS)
-        #printDBG("===============================================================")
-        #printDBG(text)
-        #printDBG("===============================================================")
-        if "" == text:
-            self['subLabel1'].hide()
-        else:
-            self['subLabel1'].setText(text)
-            self['subLabel1'].show()
+        if not self.subHandler['enabled']: return
+        if None == self.metaHandler.getSubtitleTrack(): return
+        
+        # marker is used for optimization 
+        # we remember some kind of fingerprint for last subtitles 
+        # subtitles handler first check this fingerprint 
+        # if the previous one is the same as current and it will return None instead 
+        # of subtitles text
+        prevMarker = self.subHandler['marker']
+        if force: prevMarker = None
+        
+        delay_ms = self.metaHandler.getSubtitleTrackDelay()
+        marker, text = self.subHandler['handler'].getSubtitles(timeMS + delay_ms, prevMarker)
+        if None != text:
+            self.subHandler['marker'] = marker
+            #printDBG("===============================================================")
+            #printDBG(text)
+            #printDBG("===============================================================")
+            if "" == text:
+                self['subLabel1'].hide()
+            else:
+                self['subLabel1'].setText(text)
+                self['subLabel1'].show()
         
     def updateInfo(self):
         self.extPlayerCmddDispatcher.doUpdateInfo()
@@ -480,11 +613,42 @@ class IPTVExtMoviePlayer(Screen):
     def key_left_repeat(self):  self.goToSeekKey(-1, 'repeat')
     def key_rigth_press(self):  self.goToSeekKey(1, 'press')
     def key_rigth_repeat(self): self.goToSeekKey(1, 'repeat')
+    def key_up_press(self):     self.goSubSynchroKey(-1, 'press')
+    def key_up_repeat(self):    self.goSubSynchroKey(-1, 'repeat') 
+    def key_down_press(self):   self.goSubSynchroKey(1, 'press')
+    def key_down_repeat(self):  self.goSubSynchroKey(1, 'repeat')
+    
     def key_ok(self):
         if 'Pause' == self.playback['Status']: self.extPlayerCmddDispatcher.play()
         else: self.extPlayerCmddDispatcher.pause()
+    
     def key_subtitles(self):
-        self.downloadSub()
+        self.selectSubtitle()
+    
+    def key_aspectratio(self):
+        self.selectAspectRatio()
+        
+    def goSubSynchroKey(self, direction, state='press'):
+        if not self.subHandler['synchro']['visible'] or not self.subHandler['enabled'] or None == self.metaHandler.getSubtitleTrack():
+            self.hideSubSynchroControl()
+            return
+        currentDelay = self.metaHandler.getSubtitleTrackDelay()
+        currentDelay += direction * 500 # in MS
+        self.metaHandler.setSubtitleTrackDelay(currentDelay)
+        self.updateSubSynchroControl()
+        
+    def updateSubSynchroControl(self):
+        if not self.subHandler['synchro']['visible'] or not self.subHandler['enabled'] or None == self.metaHandler.getSubtitleTrack():
+            self.hideSubSynchroControl()
+            return
+        currentDelay = self.metaHandler.getSubtitleTrackDelay()
+        if currentDelay > 0:
+            textDelay = '+'
+        else: textDelay = '' 
+        textDelay += "%.1fs" % (currentDelay / 1000.0)
+        self['subSynchroLabel'].setText(textDelay)
+        if -1 != self.subHandler['current_sub_time_ms']:
+            self.updateSubtitles(self.subHandler['current_sub_time_ms'])
         
     def goToSeekKey(self, direction, state='press'):
         if 'press' == state: 
@@ -504,8 +668,10 @@ class IPTVExtMoviePlayer(Screen):
         
         self.doGoToSeekPointerMove(self.goToSeekStep * direction)
         
-    def doExit(self):
-        if self.playbackInfoBar['visible']:
+    def doExit(self, fromInfo=False):
+        if not fromInfo and self.subHandler['synchro']['visible']:
+            self.hideSubSynchroControl()
+        elif self.playbackInfoBar['visible']:
             self.playbackInfoBar['blocked'] = False
             self.hidePlaybackInfoBar()
         elif not self.isClosing:
@@ -516,7 +682,7 @@ class IPTVExtMoviePlayer(Screen):
             if self.isStarted and not self.isClosing:
                 self.playbackInfoBar['blocked'] = True
                 self.showPlaybackInfoBar()
-        else: self.doExit()
+        else: self.doExit(True)
     
     def eplayer3Finished(self, code):
         printDBG("IPTVExtMoviePlayer.eplayer3Finished code[%r]" % code)
@@ -654,6 +820,11 @@ class IPTVExtMoviePlayer(Screen):
         self.onClose.remove(self.__onClose)
         self.messageQueue = []
         
+        self.metaHandler.save()
+        
+        # restore default aspect ratio
+        AVSwitch().setAspectRatio( self.defaultAspectRatio )
+        
     def onStartPlayer(self):
         self.isStarted = True
         self.showPlaybackInfoBar()
@@ -678,29 +849,30 @@ class IPTVExtMoviePlayer(Screen):
         self.showMessage(None, None, boundFunction(self.extmovieplayerClose, sts, self.playback.get('CurrentTime', 0)))
 
     def extmovieplayerClose(self, sts, currentTime):
-        if self.hasChild:
+        if self.childWindowsCount > 0:
             self.delayedClosure = boundFunction(self.close, sts, currentTime)
         else:
             self.close(sts, currentTime)
             
     def openChild(self, *args):
-        self.hasChild = True
+        self.childWindowsCount += 1
         self.session.openWithCallback(*args)
     
     def childClosed(self, callback, *args):
-        if None != self.delayedClosure:
+        self.childWindowsCount -= 1
+        callback(*args)
+        
+        if None != self.delayedClosure and self.childWindowsCount < 1:
             self.delayedClosure()
-        else:
-            self.hasChild = False
-            callback(*args)
             
     def downloadSub(self):
-        if self.isClosing: return
         self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_title':self.title})
     
-    def downloadSubCallback(self, subFile=None):
-        if None != subFile:
-            self.enableSubtitles(subFile)
+    def downloadSubCallback(self, ret = None):
+        if None != ret:
+            idx = self.metaHandler.addSubtitleTrack(ret)
+            self.metaHandler.setSubtitleIdx( idx )
+            self.enableSubtitles()
         
     def onStart(self):
         self.onLayoutFinish.remove(self.onStart)
@@ -751,12 +923,14 @@ class IPTVExtMoviePlayer(Screen):
         self.console.execute( cmd )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
         self['logoIcon'].setPixmap( self.playback['logoIcon'] )
+        self['subSynchroIcon'].setPixmap( self.subHandler['synchro']['icon'] )
         
-        if self.subHandler['file'] != '':
-            self.enableSubtitles(self.subHandler['file'])
+        self.metaHandler.load()
+        self.enableSubtitles()
+        self.setAspectRatio()
             
     def initGuiComponentsPos(self):
-
+        # info bar gui elements
         # calculate offset
         offset_x = (getDesktop(0).size().width() - self['playbackInfoBaner'].instance.size().width()) / 2
         offset_y = (getDesktop(0).size().height() - self['playbackInfoBaner'].instance.size().height()) - 50 # 10px - cropping guard
@@ -764,6 +938,16 @@ class IPTVExtMoviePlayer(Screen):
         if offset_y < 0: offset_y = 0
 
         for elem in self.playbackInfoBar['guiElemNames']:
+            self[elem].setPosition(self[elem].position[0]+offset_x, self[elem].position[1]+offset_y)
+            
+        # sub synchro elements
+        # calculate offset
+        offset_x = (getDesktop(0).size().width() - self['subSynchroIcon'].instance.size().width()) / 2
+        offset_y = (getDesktop(0).size().height() - self['subSynchroIcon'].instance.size().height()) / 2
+        if offset_x < 0: offset_x = 0
+        if offset_y < 0: offset_y = 0
+
+        for elem in self.subHandler['synchro']['guiElemNames']:
             self[elem].setPosition(self[elem].position[0]+offset_x, self[elem].position[1]+offset_y)
 
     def showPlaybackInfoBar(self, excludeElems=['goToSeekPointer', 'goToSeekLabel'], blocked=None):
@@ -793,6 +977,21 @@ class IPTVExtMoviePlayer(Screen):
             
         self.playbackInfoBar['visible'] = False
         
+    def _showHideSubSynchroControl(self, show=True):
+        for elem in self.subHandler['synchro']['guiElemNames']:
+            if show:
+                self[elem].show()
+            else:
+                self[elem].hide()
+        self.subHandler['synchro']['visible'] = show
+        
+    def showSubSynchroControl(self):
+        self._showHideSubSynchroControl(True)
+        self.updateSubSynchroControl()
+
+    def hideSubSynchroControl(self, excludeElems=[], force=False):
+        self._showHideSubSynchroControl(False)
+        
     def __onShow(self):
         pass
         #Screen.hide(self) # we do not need window at now maybe in future
@@ -817,10 +1016,9 @@ class IPTVExtMoviePlayer(Screen):
                 printExc()
         msg = _("Fatal error: consoleWrite failed!")
         self.fatalErrorHandler(msg)
-
-                
+    
     def extPlayerSendCommand(self, command, arg1=''):
-        printDBG("IPTVExtMoviePlayer.extPlayerSendCommand command[%s] arg1[%s]" % (command, arg1))
+        #printDBG("IPTVExtMoviePlayer.extPlayerSendCommand command[%s] arg1[%s]" % (command, arg1))
         if None == self.console: 
             printExc("IPTVExtMoviePlayer.extPlayerSendCommand console not available")
             return

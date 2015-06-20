@@ -167,6 +167,9 @@ def GetFavouritesDir(file = ''):
     
 def GetSubtitlesDir(file = ''):
     return GetCacheSubDir('Subtitles', file)
+    
+def GetMovieMetaDataDir(file = ''):
+    return GetCacheSubDir('MovieMetaData', file)
 
 def GetIPTVDMImgDir(file = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/') + file
