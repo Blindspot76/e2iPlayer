@@ -1760,12 +1760,16 @@ class pageParser:
                 return base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, url)
         return False
         
-    def parserVIDZER(self, url):
-        printDBG("parserVIDZER url[%s]" % url)
+    def parserVIDZER(self, baseUrl):
+        printDBG("parserVIDZER baseUrl[%s]" % baseUrl)
         try:
-            sts, data = self.cm.getPage(url)
+            sts, data = self.cm.getPage(baseUrl)
+            if not sts: return False
+            url = self.cm.ph.getSearchGroups(data, '<iframe src="(http[^"]+?)"')[0]
+            if url != '':        
+                sts, data = self.cm.getPage(url)
+                if not sts: return False
             data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="playerVidzer">', '</a>', False)[1]
-            
             match = re.search('href="(http[^"]+?)"', data)
             if match:
                 url = urllib.unquote( match.group(1) )
