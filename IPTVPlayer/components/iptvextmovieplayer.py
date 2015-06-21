@@ -334,11 +334,11 @@ class IPTVExtMoviePlayer(Screen):
         self.delayedClosure    = None
         self.childWindowsCount = 0
         
-    def setAspectRatio(self):
+    def setAspectRatio(self, init=False):
         printDBG("setAspectRatio")
         aspect = self.metaHandler.getAspectRatioIdx()
         printDBG("setAspectRatio aspect[%s]" % aspect)
-        if -1 == aspect:
+        if -1 == aspect and not init:
             aspect = self.defaultAspectRatio
         if aspect > -1:
             AVSwitch().setAspectRatio( aspect )
@@ -973,7 +973,7 @@ class IPTVExtMoviePlayer(Screen):
         
         self.metaHandler.load()
         self.enableSubtitles()
-        self.setAspectRatio()
+        self.setAspectRatio(True)
             
     def initGuiComponentsPos(self):
         # info bar gui elements
