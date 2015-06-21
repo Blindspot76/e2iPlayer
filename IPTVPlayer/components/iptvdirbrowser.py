@@ -37,7 +37,7 @@ class CListItem:
 
 class IPTVDirBrowserList(IPTVMainNavigatorList):
     def __init__(self):
-        self.ICONS_FILESNAMES = {'dir' : 'CategoryItem.png'}
+        self.ICONS_FILESNAMES = {'dir' : 'CategoryItem.png', 'file': 'FileItem.png'}
         IPTVMainNavigatorList.__init__(self)
 
 class IPTVDirectorySelectorWidget(Screen):
@@ -59,25 +59,28 @@ class IPTVDirectorySelectorWidget(Screen):
             <widget name="key_green"   position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="right"  font="Regular;22" transparent="1" foregroundColor="green" />
             <widget name="curr_dir"    position="10,50"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;18" transparent="1" foregroundColor="white" />
             <widget name="list"        position="10,85"  zPosition="1"  size="580,335" transparent="1" scrollbarMode="showOnDemand" />
-        </screen>"""      
+        </screen>"""
+        
     def __init__(self, session, currDir, title="Directory browser"):
         printDBG("IPTVDirectorySelectorWidget.__init__ -------------------------------")
         Screen.__init__(self, session)
-        self["key_red"]    = Label(_("Cancel"))
-        #self["key_yellow"] = Label(_("Odśwież"))
-        self["key_blue"]   = Label(_("New dir"))
-        self["key_green"]  = Label(_("Apply"))
-        self["curr_dir"]   = Label(_(" "))
-        self["list"]   = IPTVDirBrowserList()
-        self["FilelistActions"] = ActionMap(["SetupActions", "ColorActions"],
-            {
-                "green" : self.requestApply,
-                "red"   : self.requestCancel,
-                "yellow": self.requestRefresh,
-                "blue"  : self.requestNewDir,
-                "ok"    : self.requestOk,
-                "cancel": self.requestBack
-            })
+        if type(self) == IPTVDirectorySelectorWidget:
+            self["key_red"]    = Label(_("Cancel"))
+            #self["key_yellow"] = Label(_("Odśwież"))
+            self["key_blue"]   = Label(_("New dir"))
+            self["key_green"]  = Label(_("Apply"))
+            self["curr_dir"]   = Label(_(" "))
+            self["list"]   = IPTVDirBrowserList()
+            self["FilelistActions"] = ActionMap(["SetupActions", "ColorActions"],
+                {
+                    "green" : self.requestApply,
+                    "red"   : self.requestCancel,
+                    "yellow": self.requestRefresh,
+                    "blue"  : self.requestNewDir,
+                    "ok"    : self.requestOk,
+                    "cancel": self.requestBack
+                })
+        
         self.title = title
         self.onLayoutFinish.append(self.layoutFinished)
         self.onClose.append(self.__onClose)
@@ -118,6 +121,13 @@ class IPTVDirectorySelectorWidget(Screen):
         currSelIndex = self["list"].getCurrentIndex()
         if len(self.currList) <= currSelIndex: return None
         return self.currList[currSelIndex]
+        
+    def prepareCmd(self):
+        lsdirPath = GetBinDir("lsdir")
+        try: os_chmod(lsdirPath, 0777)
+        except: printExc()
+        cmd = '%s "%s" dl d' % (lsdirPath, self.currDir)
+        return cmd
         
     def doAction(self, action):
         if not self.underRefreshing:
@@ -164,13 +174,16 @@ class IPTVDirectorySelectorWidget(Screen):
         
     def refreshNewData(self, data):
         self.tmpData += data
-        newDirs = self.tmpData.split('\n')
+        newItems = self.tmpData.split('\n')
         if self.tmpData.endswith('\n'):
             self.tmpData = ''
         else:
-            self.tmpData = newDirs[-1]
-            del newDirs[-1]
-        for item in newDirs:
+            self.tmpData = newItems[-1]
+            del newItems[-1]
+        self.doRefreshNewData(newItems)
+            
+    def doRefreshNewData(self, newItems):
+        for item in newItems:
             params = item.split('//')
             if item.startswith('.'): continue # do not list hidden items
             #printDBG(params)
@@ -193,10 +206,7 @@ class IPTVDirectorySelectorWidget(Screen):
         self.underRefreshing = True
         self.tmpList = []
         self.tmpData = ''
-        lsdirPath = GetBinDir("lsdir")
-        try: os_chmod(lsdirPath, 0777)
-        except: printExc()
-        cmd = '%s "%s" dl d' % (lsdirPath, self.currDir)
+        cmd = self.prepareCmd()
         printDBG("IPTVDirectorySelectorWidget.requestRefresh cmd[%s]" % cmd)
         self.console.execute( cmd )
 
@@ -243,3 +253,74 @@ class IPTVDirectorySelectorWidget(Screen):
                 self.requestRefresh()
             else:
                 self.session.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout=5)
+
+class IPTVFileSelectorWidget(IPTVDirectorySelectorWidget):
+    screenwidth = getDesktop(0).size().width()
+    if screenwidth and screenwidth == 1920:  
+        skin = """
+        <screen name="IPTVFileSelectorWidget" position="center,center" size="820,860" title="">
+            <widget name="curr_dir"    position="10,50"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;28" transparent="1" foregroundColor="white" />
+            <widget name="list"        position="10,95"  zPosition="1"  size="800,725" transparent="1" scrollbarMode="showOnDemand" />
+        </screen>"""
+    else:
+        skin = """
+        <screen name="IPTVFileSelectorWidget" position="center,center" size="620,440" title="">
+            <widget name="curr_dir"    position="10,50"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;18" transparent="1" foregroundColor="white" />
+            <widget name="list"        position="10,85"  zPosition="1"  size="580,335" transparent="1" scrollbarMode="showOnDemand" />
+        </screen>"""      
+    def __init__(self, session, currDir, title="File browser", fileMatch=None):
+        printDBG("IPTVFileSelectorWidget.__init__ -------------------------------")
+        IPTVDirectorySelectorWidget.__init__(self, session, currDir, title)
+
+        if type(self) == IPTVFileSelectorWidget:
+            #self["key_yellow"] = Label(_("Odśwież"))
+            self["curr_dir"]   = Label(_(" "))
+            self["list"]   = IPTVDirBrowserList()
+            self["FilelistActions"] = ActionMap(["SetupActions", "ColorActions"],
+                {
+                    "yellow": self.requestRefresh,
+                    "ok"    : self.requestOk,
+                    "cancel": self.requestBack
+                })
+        self.fileMatch = fileMatch
+        
+    def prepareCmd(self):
+        lsdirPath = GetBinDir("lsdir")
+        try: os_chmod(lsdirPath, 0777)
+        except: printExc()
+        cmd = '%s "%s" drl dr' % (lsdirPath, self.currDir)
+        return cmd
+        
+    def doRefreshNewData(self, newItems):
+        for item in newItems:
+            params = item.split('//')
+            if item.startswith('.'): continue # do not list hidden items
+            #printDBG(params)
+            if 4 == len(params):
+                if 'd' == params[1]: type = 'dir'
+                elif 'r': 
+                    type = 'file'
+                    try:
+                        if None != self.fileMatch and None == self.fileMatch.match(params[0]):
+                            continue
+                    except:
+                        printExc()
+                        continue
+                else: continue
+                self.tmpList.append( CListItem(name=params[0], fullDir=params[3], type=type) )
+                
+    def ok(self):
+        item = self._getSelItem()
+        if None == item or '' == item.name: return
+        fullPath = os_path.join(self.currDir, item.name)
+        if item.type == 'dir':
+            if '..' == item.name: return self.back()
+            if os_path.isdir( fullPath ):
+                self.currDir = fullPath
+                self.currDirChanged()
+        elif item.type == 'file':
+            self.requestApply(fullPath)
+        
+    def requestApply(self, fullPath):
+        if self.underClosing: return
+        self.doAction( boundFunction(self._iptvDoClose, fullPath) )

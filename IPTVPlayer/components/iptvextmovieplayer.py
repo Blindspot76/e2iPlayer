@@ -12,12 +12,13 @@
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, eConnectCallback
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, GetSubtitlesDir, eConnectCallback
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
+from Plugins.Extensions.IPTVPlayer.components.iptvdirbrowser import IPTVFileSelectorWidget
 ###################################################
 
 ###################################################
@@ -36,6 +37,7 @@ from Components.config import config # temporary player should not use config di
 from Screens.MessageBox import MessageBox
 from Tools.LoadPixmap import LoadPixmap
 from Tools.BoundFunction import boundFunction
+from Tools.Directories import fileExists
 
 from datetime import timedelta
 try:
@@ -43,7 +45,7 @@ try:
     except: import simplejson as json
 except:
     printExc()
-from os import chmod as os_chmod
+from os import chmod as os_chmod, path as os_path
 import re
 import time
 ###################################################
@@ -388,7 +390,7 @@ class IPTVExtMoviePlayer(Screen):
             options.append( item )
         if self.subHandler['enabled'] and None != self.metaHandler.getSubtitleTrack():
             options.append( IPTVChoiceBoxItem(_('Synchronize'), "", {'other':'synchro'}) )
-        #options.append( IPTVChoiceBoxItem(_('Open'), "", {'other':'open'}) )
+        options.append( IPTVChoiceBoxItem(_('Load'), "", {'other':'load'}) )
         options.append( IPTVChoiceBoxItem(_('Download'), "", {'other':'download'}) )
         self.openChild(boundFunction(self.childClosed, self.selectSubtitleCallback), IPTVChoiceBoxWidget, {'width':600, 'current_idx':currIdx, 'title':_("Select subtitles track"), 'options':options})
     
@@ -403,13 +405,47 @@ class IPTVExtMoviePlayer(Screen):
                     self.disableSubtitles()
                 elif option == 'synchro':
                     self.showSubSynchroControl()
-                elif option == 'open':
-                    pass
+                elif option == 'load':
+                    self.openSubtitlesFromFile()
                 elif option == 'download':
                     self.downloadSub()
             elif 'track_idx' in ret:
                 self.metaHandler.setSubtitleIdx( ret['track_idx'] )
                 self.enableSubtitles()
+    
+    def openSubtitlesFromFile(self):
+        printDBG("openSubtitlesFromFile")
+        currDir = GetSubtitlesDir()
+        
+        fileSRC = self.fileSRC
+        tmpMatch = 'file://'
+        if fileSRC.startswith(tmpMatch): 
+            fileSRC = fileSRC[len(tmpMatch):].replace('//', '/')
+        if fileExists(fileSRC) and not fileSRC.endswith('/.iptv_buffering.flv'):
+            try: currDir, tail = os_path.split(fileSRC)
+            except: printExc()
+        fileMatch = re.compile("^.*?(:?\.mlp|\.srt)$")
+        self.openChild(boundFunction(self.childClosed, self.openSubtitlesFromFileCallback), IPTVFileSelectorWidget, currDir, _("Select subtitles file"), fileMatch)
+        
+    def openSubtitlesFromFileCallback(self, filePath=None):
+        printDBG("openSubtitlesFromFileCallback filePath[%s]" % filePath)
+        if None != filePath:
+            try: currDir, fileName = os_path.split(filePath)
+            except: 
+                printExc()
+                return
+            trackIdx = -1
+            tracks = self.metaHandler.getSubtitlesTracks()
+            for idx in range(len(tracks)):
+                try:
+                    if os_path.samefile(tracks[idx]['path'], filePath):
+                        trackIdx = idx
+                        break
+                except: printExc()
+            if -1 == trackIdx:
+                trackIdx = self.metaHandler.addSubtitleTrack( {"title":fileName, "id":"", "provider":"", "lang":"", "delay_ms":0, "path":filePath} )
+            self.metaHandler.setSubtitleIdx( trackIdx )
+            self.enableSubtitles()
 
     def disableSubtitles(self):
         self['subLabel1'].hide()
