@@ -146,14 +146,9 @@ class urlparser:
                        'video.anyfiles.pl':    self.pp.parserANYFILES      ,
                        'videoweed.es':         self.pp.parserVIDEOWEED     ,
                        'videoweed.com':        self.pp.parserVIDEOWEED     ,
-                       'embed.videoweed.es':   self.pp.parserVIDEOWEED     ,
-                       'embed.videoweed.com':  self.pp.parserVIDEOWEED     ,
                        'novamov.com':          self.pp.parserNOVAMOV       ,
-                       'embed.novamov.com':    self.pp.parserNOVAMOV       ,
                        'nowvideo.eu':          self.pp.parserNOWVIDEO      ,
                        'nowvideo.sx':          self.pp.parserNOWVIDEO      ,
-                       'embed.nowvideo.eu':    self.pp.parserNOWVIDEO      ,
-                       'embed.nowvideo.sx':    self.pp.parserNOWVIDEO      ,
                        'rapidvideo.com':       self.pp.parserRAPIDVIDEO    ,
                        'videoslasher.com':     self.pp.parserVIDEOSLASHER  ,
                        'dailymotion.com':      self.pp.parserDAILYMOTION   ,
@@ -167,8 +162,6 @@ class urlparser:
                        'divxstage.eu':         self.pp.parserDIVXSTAGE     ,
                        'divxstage.to':         self.pp.parserDIVXSTAGE     ,
                        'movshare.net':         self.pp.parserNOVAMOV       ,
-                       'embed.movshare.net':   self.pp.parserNOVAMOV       ,
-                       'embed.divxstage.eu':   self.pp.parserembedDIVXSTAGE ,
                        'tubecloud.net':        self.pp.parserTUBECLOUD     ,
                        'bestreams.net':        self.pp.parserBESTREAMS     ,
                        'freedisc.pl':          self.pp.parserFREEDISC      ,
@@ -207,7 +200,6 @@ class urlparser:
                        'wrzuta.pl':            self.pp.parserWRZUTA        ,
                        'goldvod.tv':           self.pp.parserGOLDVODTV     ,
                        'vidzer.net':           self.pp.parserVIDZER        ,
-                       'embed.nowvideo.ch':    self.pp.parserNOWVIDEOCH    ,
                        'nowvideo.ch':          self.pp.parserNOWVIDEOCH    ,
                        'streamin.to':          self.pp.parserSTREAMINTO    ,
                        'vidsso.com':           self.pp.parserVIDSSO        ,
@@ -525,6 +517,34 @@ class pageParser:
             printDBG(data)
         return _findLinks(data)
         
+    def _parserUNIVERSAL_B(self, url):
+        printDBG("_parserUNIVERSAL_B url[%s]" % url)
+        videoUrl = False
+        try:
+            sts, data = self.cm.getPage(url)
+            filekey = re.search('flashvars.filekey="([^"]+?)";', data)
+            if None == filekey: 
+                filekey = re.search("flashvars.filekey=([^;]+?);", data)
+                filekey = re.search('var {0}="([^"]+?)";'.format(filekey.group(1)), data)
+            filekey = filekey.group(1)
+            file    = re.search('flashvars.file="([^"]+?)";', data).group(1)
+            domain  = re.search('flashvars.domain="(http[^"]+?)"', data).group(1)
+            
+            url = domain + '/api/player.api.php?cid2=undefined&cid3=undefined&cid=undefined&user=undefined&pass=undefined&numOfErrors=0'
+            url = url + '&key=' + urllib.quote_plus(filekey) + '&file=' + urllib.quote_plus(file)
+            sts, data = self.cm.getPage(url)
+            videoUrl = re.search("url=([^&]+?)&", data).group(1)
+            
+            errUrl = domain + '/api/player.api.php?errorCode=404&cid=1&file=%s&cid2=undefined&cid3=undefined&key=%s&numOfErrors=1&user=undefined&errorUrl=%s&pass=undefined' % (urllib.quote_plus(file), urllib.quote_plus(filekey), urllib.quote_plus(videoUrl))
+            sts, data = self.cm.getPage(errUrl)
+            errUrl = re.search("url=([^&]+?)&", data).group(1)
+            if '' != errUrl: url = errUrl
+            if '' != url:
+                videoUrl = url
+        except:
+            printExc()
+        return videoUrl
+        
     def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None):
         printDBG("pageParser.__parseJWPLAYER_A serverName[%s], baseUrl[%r]" % (serverName, baseUrl))
         
@@ -763,13 +783,13 @@ class pageParser:
             return False
 
     def parserVIDEOWEED(self, url):
-        return self.parserNOWVIDEOCH(url)
+        return self._parserUNIVERSAL_B(url)
 
     def parserNOVAMOV(self, url):
-        return self.parserVIDEOWEED(url)
+        return self._parserUNIVERSAL_B(url)
 
     def parserNOWVIDEO(self, url):
-        tmp = self.parserVIDEOWEED(url)
+        tmp = self._parserUNIVERSAL_B(url)
         if isinstance(tmp, basestring) and 0 < len(tmp):
             tmp += '?client=FLASH'
         return tmp
@@ -962,45 +982,7 @@ class pageParser:
         return False
 
     def parserDIVXSTAGE(self,url):
-        return self.parserNOWVIDEOCH(url)
-        query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-        link = self.cm.getURLRequestData(query_data)
-        video_host = re.search('flashvars.domain="(.+?)";', link)
-        video_file = re.search('flashvars.file="(.+?)";', link)
-        video_filekey = re.search('flashvars.filekey="(.+?)";', link)
-        video_cid = re.search('flashvars.cid="(.+?)";', link)
-        if video_file and video_filekey and video_cid > 0:
-            url = video_host.group(1) + "/api/player.api.php?cid2=undefined&file=" + video_file.group(1) + "&key=" + video_filekey.group(1) + "&cid=" + video_cid.group(1) + "&cid3=undefined&user=undefined&pass=undefined"
-            query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-            link = self.cm.getURLRequestData(query_data)
-            match = re.compile('url=(.+?)&title=').findall(link)
-            if len(match) > 0:
-                linkvideo = match[0] 
-                return linkvideo
-            else:
-                return self.parserNOWVIDEOCH(url)
-        else:
-            return self.parserNOWVIDEOCH(url)
-
-    def parserembedDIVXSTAGE(self,url):
-        return self.parserNOWVIDEOCH(url)
-        query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-        link = self.cm.getURLRequestData(query_data)
-        video_host = re.search('flashvars.domain="(.+?)";', link)
-        video_file = re.search('flashvars.file="(.+?)";', link)
-        video_filekey = re.search('flashvars.filekey="(.+?)";', link)
-        if video_file and video_filekey > 0:
-            url = video_host.group(1) + "/api/player.api.php??cid2=undefined&cid3=undefined&cid=undefined&key=" + video_filekey.group(1) + "&user=undefined&pass=undefined&file=" + video_file.group(1)
-            query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-            link = self.cm.getURLRequestData(query_data)
-            match = re.compile('url=(.+?)&title=').findall(link)
-            if len(match) > 0:
-                linkvideo = match[0]
-                return linkvideo
-            else:
-                return self.parserNOWVIDEOCH(url)
-        else:
-            return self.parserNOWVIDEOCH(url)
+        return self._parserUNIVERSAL_B(url)
             
     def parserBESTREAMS(self, baseUrl):
         printDBG("parserBESTREAMS baseUrl[%s]" % baseUrl)
@@ -1812,28 +1794,7 @@ class pageParser:
             
     def parserNOWVIDEOCH(self, url):
         printDBG("parserNOWVIDEOCH url[%s]" % url)
-        try:
-            sts, data = self.cm.getPage(url)
-            filekey = re.search("flashvars.filekey=([^;]+?);", data)
-            if None == filekey: filekey = re.search('flashvars.filekey="([^"]+?)";', data)
-            filekey = filekey.group(1)
-            file    = re.search('flashvars.file="([^"]+?)";', data).group(1)
-            domain  = re.search('flashvars.domain="(http[^"]+?)"', data).group(1)
-            
-            url = domain + '/api/player.api.php?cid2=undefined&cid3=undefined&cid=undefined&user=undefined&pass=undefined&numOfErrors=0'
-            url = url + '&key=' + urllib.quote_plus(filekey) + '&file=' + urllib.quote_plus(file)
-            sts, data = self.cm.getPage(url)
-            url = re.search("url=([^&]+?)&", data).group(1)
-            
-            errUrl = domain + '/api/player.api.php?errorCode=404&cid=1&file=%s&cid2=undefined&cid3=undefined&key=%s&numOfErrors=1&user=undefined&errorUrl=%s&pass=undefined' % (urllib.quote_plus(file), urllib.quote_plus(filekey), urllib.quote_plus(url))
-            sts, data = self.cm.getPage(errUrl)
-            errUrl = re.search("url=([^&]+?)&", data).group(1)
-            if '' != errUrl: url = errUrl
-            if '' != url:
-                return url
-        except:
-            printExc()
-        return False
+        return self._parserUNIVERSAL_B(url)
     
     def parserSTREAMINTO(self, baseUrl):
         printDBG("parserSTREAMINTO baseUrl[%s]" % baseUrl)
@@ -3209,7 +3170,7 @@ class pageParser:
         
     def parserVIDGGTO(self, baseUrl):
         printDBG("parserVIDGGTO baseUrl[%s]" % baseUrl)
-        return self.parserNOWVIDEOCH(baseUrl)
+        return self._parserUNIVERSAL_B(baseUrl)
     
     #def parserMOVSHARE(self, baseUrl):
     #    printDBG("parserMOVSHARE baseUrl[%s]" % baseUrl)
