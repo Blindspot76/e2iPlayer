@@ -266,11 +266,12 @@ class IPTVExtMoviePlayer(Screen):
         self.hideSubSynchroControl()
         
         # remember current aspect ratio as default it will be restored before close
-        self.customDefaultAspectRatio = additionalParams.get('default_aspect_ratio', -1)
-        if -1 != self.customDefaultAspectRatio:
-            self.defaultAspectRatio = self.customDefaultAspectRatio
+        customDefaultAspectRatio = additionalParams.get('default_aspect_ratio', -1)
+        if -1 != customDefaultAspectRatio:
+            self.defaultAspectRatio = customDefaultAspectRatio
         else:
             self.defaultAspectRatio = AVSwitch().getAspectRatioSetting()
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> customDefaultAspectRatio[%d] defaultAspectRatio[%d]" % (customDefaultAspectRatio, self.defaultAspectRatio))
         
         # meta data
         self.metaHandler = IPTVMovieMetaDataHandler( self.hostName, self.title, self.fileSRC )
@@ -338,7 +339,7 @@ class IPTVExtMoviePlayer(Screen):
         aspect = self.metaHandler.getAspectRatioIdx()
         printDBG("setAspectRatio aspect[%s]" % aspect)
         if -1 == aspect:
-            aspect = self.customDefaultAspectRatio
+            aspect = self.defaultAspectRatio
         if aspect > -1:
             AVSwitch().setAspectRatio( aspect )
         
@@ -862,10 +863,13 @@ class IPTVExtMoviePlayer(Screen):
         self.onClose.remove(self.__onClose)
         self.messageQueue = []
         
-        self.metaHandler.save()
-        
         # restore default aspect ratio
-        AVSwitch().setAspectRatio( self.defaultAspectRatio )
+        aspect = self.metaHandler.getAspectRatioIdx()
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>> setAspectRatio aspect[%d] defaultAspectRatio[%d]" % (aspect, self.defaultAspectRatio))
+        if -1 != aspect and aspect != self.defaultAspectRatio:
+            AVSwitch().setAspectRatio( self.defaultAspectRatio )
+        
+        self.metaHandler.save()
         
     def onStartPlayer(self):
         self.isStarted = True
