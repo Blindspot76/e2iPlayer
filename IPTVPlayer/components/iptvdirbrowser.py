@@ -37,7 +37,7 @@ class CListItem:
 
 class IPTVDirBrowserList(IPTVMainNavigatorList):
     def __init__(self):
-        self.ICONS_FILESNAMES = {'dir' : 'CategoryItem.png', 'file': 'FileItem.png'}
+        self.ICONS_FILESNAMES = {'dir' : 'CategoryItem.png', 'file': 'ArticleItem.png'}
         IPTVMainNavigatorList.__init__(self)
 
 class IPTVDirectorySelectorWidget(Screen):

@@ -266,7 +266,11 @@ class IPTVExtMoviePlayer(Screen):
         self.hideSubSynchroControl()
         
         # remember current aspect ratio as default it will be restored before close
-        self.defaultAspectRatio = AVSwitch().getAspectRatioSetting()
+        self.customDefaultAspectRatio = additionalParams.get('default_aspect_ratio', -1)
+        if -1 != self.customDefaultAspectRatio:
+            self.defaultAspectRatio = self.customDefaultAspectRatio
+        else:
+            self.defaultAspectRatio = AVSwitch().getAspectRatioSetting()
         
         # meta data
         self.metaHandler = IPTVMovieMetaDataHandler( self.hostName, self.title, self.fileSRC )
@@ -333,6 +337,8 @@ class IPTVExtMoviePlayer(Screen):
         printDBG("setAspectRatio")
         aspect = self.metaHandler.getAspectRatioIdx()
         printDBG("setAspectRatio aspect[%s]" % aspect)
+        if -1 == aspect:
+            aspect = self.customDefaultAspectRatio
         if aspect > -1:
             AVSwitch().setAspectRatio( aspect )
         

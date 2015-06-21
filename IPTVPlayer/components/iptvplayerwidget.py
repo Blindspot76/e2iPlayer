@@ -1255,11 +1255,16 @@ class IPTVPlayerWidget(Screen):
                 else:
                     self.stopAutoPlaySequencer()
             else:
+                try:
+                    default_aspect_ratio = int(config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio.value)
+                except:
+                    default_aspect_ratio = -1
+                gstAdditionalParams = {'host_name':self.hostName, 'default_aspect_ratio':default_aspect_ratio}
                 self.writeCurrentTitleToFile(titleOfMovie)
                 if isBufferingMode:
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(True, self.useAlternativePlayer))
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize, {'host_name':self.hostName})
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize, gstAdditionalParams)
                 else:
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(False, self.useAlternativePlayer))
@@ -1268,7 +1273,6 @@ class IPTVPlayerWidget(Screen):
                     elif "standard" == player.value:
                         self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, url, titleOfMovie)
                     else:
-                        gstAdditionalParams = {'host_name':self.hostName}
                         if "extgstplayer" == player.value:
                             playerVal = 'gstplayer'
                             gstAdditionalParams['download-buffer-path'] = ''

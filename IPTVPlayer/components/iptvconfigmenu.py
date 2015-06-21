@@ -150,6 +150,8 @@ config.plugins.iptvplayer.possibleUpdateType       = ConfigSelection(default = "
 config.plugins.iptvplayer.fakeHostsList = ConfigSelection(default = "fake", choices = [("fake", "  ")])
 # hidden options
 config.plugins.iptvplayer.hiddenAllVersionInUpdate = ConfigYesNo(default = False)
+config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio = ConfigSelection(default = "-1", choices = [("-1", _("default")), ("0", _("4:3 Letterbox")), ("1", _("4:3 PanScan")), ("2", _("16:9")), ("3", _("16:9 always")), ("3", _("16:10 Letterbox")), ("4", _("16:10 PanScan")), ("5", _("16:9 Letterbox"))] )
+
 
 config.plugins.iptvplayer.extplayer_infobar_timeout = ConfigSelection(default = "5", choices = [
         ("1", "1 " + _("second")), ("2", "2 " + _("seconds")), ("3", "3 " + _("seconds")),
@@ -207,6 +209,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry(_("Disable host protection (error == GS)"), config.plugins.iptvplayer.devHelper))
             list.append(getConfigListEntry(_("VFD set current title:"), config.plugins.iptvplayer.set_curr_title))
             list.append(getConfigListEntry(_("Write current title to file:"), config.plugins.iptvplayer.curr_title_file))
+            list.append(getConfigListEntry(_("External movie player default aspect ratio:"), config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio))
             
             list.append(getConfigListEntry("exteplayer3path", config.plugins.iptvplayer.exteplayer3path))
             list.append(getConfigListEntry("gstplayerpath", config.plugins.iptvplayer.gstplayerpath))
