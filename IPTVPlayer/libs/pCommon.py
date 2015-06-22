@@ -198,7 +198,7 @@ class common:
     
     @staticmethod
     def getParamsFromUrlWithMeta(url):
-        HANDLED_HTTP_HEADER_PARAMS = ['Host', 'User-Agent', 'Referer', 'Cookie', 'Accept']
+        HANDLED_HTTP_HEADER_PARAMS = ['Host', 'User-Agent', 'Referer', 'Cookie', 'Accept', 'X-Forwarded-For', 'Range']
         headerOutParams = {}
         tmpParams = {}
         postData = None

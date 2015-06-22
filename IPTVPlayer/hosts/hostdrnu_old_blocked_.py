@@ -67,6 +67,7 @@ class DRnu:
 
     def __init__(self):
         self.cm = pCommon.common()
+        self.cm.HEADER = {'X-Forwarded-For':'213.173.226.190'}
         self.api = drnuapi.DrNuApi(config.plugins.iptvplayer.NaszaTMP.value,60)
         
         self.valTab = None
