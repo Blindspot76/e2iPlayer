@@ -11,6 +11,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, \
                                                                getF4MLinksWithMeta
+from Plugins.Extensions.IPTVPlayer.libs.dk_channels import TV2RChannel
 ###################################################
 
 ###################################################
@@ -63,6 +64,7 @@ class DRDK(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'DRDK', 'cookie':'dr.dk.cookie'})
         if '' != config.plugins.iptvplayer.drdk_myip.value:
             self.cm.HEADER = {'X-Forwarded-For':'213.173.226.190'}
+        self.tv2r = TV2RChannel()
         
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
@@ -94,13 +96,19 @@ class DRDK(CBaseHostClass):
             else:
                 video = False
             data = byteify(json.loads(data))
-            if video: data.sort(key=lambda item: item["WebChannel"])
+            #if video: data.sort(key=lambda item: item["WebChannel"])
             for item in data:
-                item.update({'title':item['Title'], 'icon':item['PrimaryImageUri']})
+                if item.get("WebChannel", False): continue
+                item.update({'title':item['Title'], 'icon':item.get('PrimaryImageUri')})
                 if video:
                     self.addVideo(item)
                 else:
                     self.addAudio(item)
+            if video:
+                data = self.tv2r.getChannels()
+                for item in data:
+                    params = {'title':item['title'], 'Type':'tv2r', 'tv2r_data':item}
+                    self.addVideo(params)
         except:
             printExc()
         
@@ -120,6 +128,15 @@ class DRDK(CBaseHostClass):
                             if '' != ip:
                                 url.meta['X-Forwarded-For'] = ip
                             urlTab.append({'name':title, 'url': url, 'need_resolve':1})
+            elif cItem["Type"] == "tv2r":
+                urls = self.tv2r.getLinksForChannel(cItem['tv2r_data'])
+                for item in urls:
+                    url   = self.up.decorateUrl(item['url'])
+                    title = item['name']
+                    ip    = config.plugins.iptvplayer.drdk_myip.value
+                    if '' != ip:
+                        url.meta['X-Forwarded-For'] = ip
+                    urlTab.append({'name':title, 'url': url, 'need_resolve':1})
         except:
             printExc()
         
@@ -133,6 +150,8 @@ class DRDK(CBaseHostClass):
             urlTab = getDirectM3U8Playlist(baseUrl)
         elif iptvProto == 'f4m':
             urlTab = getF4MLinksWithMeta(baseUrl)
+        else:
+            urlTab = [{'name':'direct', 'url':baseUrl}]
         return urlTab
         
     def getFavouriteData(self, cItem):
