@@ -44,7 +44,7 @@ class eConnectCallbackObj:
     
     def __del__(self):
         eConnectCallbackObj.OBJ_NUM -= 1
-        printDBG("eConnectCallbackObj.__del__ objID[%d] OBJ_NUM[%d]" % (self.objID, eConnectCallbackObj.OBJ_NUM))
+        printDBG("eConnectCallbackObj.__del__ objID[%d] OBJ_NUM[%d] " % (self.objID, eConnectCallbackObj.OBJ_NUM))
         try:
             if 'connect' not in dir(self.obj):
                 if 'get' in dir(self.obj):
