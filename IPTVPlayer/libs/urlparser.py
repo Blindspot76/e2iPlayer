@@ -267,6 +267,7 @@ class urlparser:
                        'streamplay.cc':        self.pp.parserSTREAMPLAYCC  ,
                        'yourvideohost.com':    self.pp.parserYOURVIDEOHOST ,
                        'vidgg.to':             self.pp.parserVIDGGTO       ,
+                       'tiny.cc':              self.pp.parserTINYCC        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3175,6 +3176,16 @@ class pageParser:
     def parserVIDGGTO(self, baseUrl):
         printDBG("parserVIDGGTO baseUrl[%s]" % baseUrl)
         return self._parserUNIVERSAL_B(baseUrl)
+        
+    def parserTINYCC(self, baseUrl):
+        printDBG("parserTINYCC baseUrl[%s]" % baseUrl)
+        query_data = { 'url': baseUrl, 'return_data': False }       
+        response = self.cm.getURLRequestData(query_data)
+        redirectUrl = response.geturl() 
+        response.close()
+        if baseUrl != redirectUrl:
+            return urlparser().getVideoLinkExt(redirectUrl)
+        return False
     
     #def parserMOVSHARE(self, baseUrl):
     #    printDBG("parserMOVSHARE baseUrl[%s]" % baseUrl)

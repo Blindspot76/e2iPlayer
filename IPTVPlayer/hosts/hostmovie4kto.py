@@ -288,21 +288,22 @@ class Movie4kTO(CBaseHostClass):
         sts, pageData = self.getPage(cItem['url'])
         if not sts: return urlTab
         
-        if 'links = new Array();' in pageData:
-            sts, data = self.cm.ph.getDataBeetwenMarkers(pageData, 'links = new Array();', '</table>', False)
-            data = data.replace('\\"', '"')
-            data = re.compile(']="(.+?)";', re.DOTALL).findall(data)
-        else:
-            sts, data = self.cm.ph.getDataBeetwenMarkers(pageData, '<tr id="tablemoviesindex2">', '</table>', False)
-            data = data.split('<tr id="tablemoviesindex2">')
+        for idx in range(0, 2):
+            if 0 == idx:
+                sts, data = self.cm.ph.getDataBeetwenMarkers(pageData, 'links = new Array();', '</table>', False)
+                data = data.replace('\\"', '"')
+                data = re.compile(']="(.+?)";', re.DOTALL).findall(data)
+            else:
+                sts, data = self.cm.ph.getDataBeetwenMarkers(pageData, '<tr id="tablemoviesindex2">', '</table>', False)
+                data = data.split('<tr id="tablemoviesindex2">')
 
-        for item in data:
-            url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            title = self.cleanHtmlStr( item )
-            title += ' ' + self.cm.ph.getSearchGroups(item, '/img/smileys/([0-9]+?)\.gif')[0]
-            
-            if '' != url and '' != title:
-                urlTab.append({'name':title, 'need_resolve':1, 'url':self._getFullUrl(url)})
+            for item in data:
+                url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                title = self.cleanHtmlStr( item )
+                title += ' ' + self.cm.ph.getSearchGroups(item, '/img/smileys/([0-9]+?)\.gif')[0]
+                
+                if '' != url and '' != title:
+                    urlTab.append({'name':title, 'need_resolve':1, 'url':self._getFullUrl(url)})
         
         if 0 == len(urlTab):
             urlTab.append({'name':'main url', 'need_resolve':1, 'url':cItem['url']})
