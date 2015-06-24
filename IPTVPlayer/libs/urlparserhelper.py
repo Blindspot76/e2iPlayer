@@ -46,6 +46,48 @@ def JS_toString(x, base):
 # returns timestamp in milliseconds
 def JS_DateValueOf():
     return time.time()*1000
+    
+def JS_FromCharCode(*args): 
+    return ''.join(map(unichr, args))
+
+def drdX_fx(e):
+    t = {}
+    n = 0
+    r = 0
+    i = []
+    s = ""
+    o = JS_FromCharCode
+    u = [[65, 91], [97, 123], [48, 58], [43, 44], [47, 48]]
+    
+    for z in range(len(u)):
+        n = u[z][0]
+        while n < u[z][1]:
+            i.append(o(n))
+            n += 1
+    n = 0
+    while n < 64:
+        t[i[n]] = n
+        n += 1
+        
+    n = 0
+    while n < len(e):
+        a = 0
+        f = 0
+        l = 0
+        c = 0
+        h = e[n:n+72]
+        while l < len(h):
+            f = t[h[l]]
+            a = (a << 6) + f
+            c += 6
+            while c >= 8:
+                c -= 8
+                s += o((a >> c) % 256)
+            l += 1
+        
+        n += 72
+    return s
+
 
     
 ####################################################
@@ -195,8 +237,6 @@ def VIDUPME_decryptPlayerParams(p=None, a=None, c=None, k=None, e=None, d=None):
 # VIDEOWEED HELPER FUNCTIONS
 ###############################################################################
 def VIDEOWEED_decryptPlayerParams(w, i, s, e):
-    def fromCharCode(*args): 
-        return ''.join(map(unichr, args))
     lIll = 0
     ll1I = 0
     Il1l = 0
@@ -223,7 +263,7 @@ def VIDEOWEED_decryptPlayerParams(w, i, s, e):
     while lIll < len(ll1l):
         ll11 = -1;
         if ord(I1lI[ll1I]) % 2: ll11 = 1
-        l1ll.append( fromCharCode( int( lI1l[lIll:lIll+2], 36 ) - ll11 ) )
+        l1ll.append( JS_FromCharCode( int( lI1l[lIll:lIll+2], 36 ) - ll11 ) )
         ll1I += 1;
         if ll1I >= len(l1lI): ll1I = 0
 

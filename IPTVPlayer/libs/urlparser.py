@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
+from Plugins.Extensions.IPTVPlayer.libs.gledajfilmDecrypter import gledajfilmDecrypter
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes  import AES
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML, clean_html, _unquote
@@ -21,7 +22,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                getF4MLinksWithMeta, \
                                                                MYOBFUSCATECOM_OIO, \
                                                                MYOBFUSCATECOM_0ll, \
-                                                               int2base
+                                                               int2base, drdX_fx
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
 ###################################################
@@ -268,6 +269,8 @@ class urlparser:
                        'yourvideohost.com':    self.pp.parserYOURVIDEOHOST ,
                        'vidgg.to':             self.pp.parserVIDGGTO       ,
                        'tiny.cc':              self.pp.parserTINYCC        ,
+                       'picasaweb.google.com': self.pp.parserPICASAWEB     ,
+                       'stream4k.to':          self.pp.parserSTREAM4KTO    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2358,6 +2361,22 @@ class pageParser:
                     videoTab.append({'name':'google.com: %s' % YoutubeIE._video_dimensions[item[0]].split('x')[0] + 'p', 'url':unicode_escape(item[1])})
         return videoTab[::-1]
         
+    def parserPICASAWEB(self, baseUrl):
+        printDBG("parserPICASAWEB baseUrl[%s]" % baseUrl)
+        videoTab = []
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return videoTab
+        data = re.compile('(\{"url"[^}]+?\})').findall(data)
+        printDBG(data)
+        for item in data:
+            try:
+                item = byteify(json.loads(item))
+                if 'video' in item.get('type', ''):
+                    videoTab.append({'name':'%sx%s' % (item.get('width', ''), item.get('height', '')), 'url':item['url']})
+            except:
+                printExc()
+        return videoTab
+        
     def parserMYVIRU(self, linkUrl):
         printDBG("parserMYVIRU linkUrl[%s]" % linkUrl)
         COOKIE_FILE = GetCookieDir('myviru.cookie')
@@ -3189,6 +3208,23 @@ class pageParser:
     
     #def parserMOVSHARE(self, baseUrl):
     #    printDBG("parserMOVSHARE baseUrl[%s]" % baseUrl)
+        
+    def parserSTREAM4KTO(self, baseUrl):
+        printDBG("parserSTREAM4KTO baseUrl[%s]" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        data = self.cm.ph.getSearchGroups(data, "drdX_fx\('([^']+?)'\)")[0]
+        data = drdX_fx( data )
+        data = self.cm.ph.getSearchGroups(data, 'proxy.link=linkcdn%2A([^"]+?)"')[0]
+        printDBG(data)
+        x = gledajfilmDecrypter(198,128)
+        Key = "VERTR05uak80NEpDajY1ejJjSjY="
+        data = x.decrypt(data, Key.decode('base64', 'strict'), "ECB")
+        if '' != data:
+            return urlparser().getVideoLinkExt(data)
+        return False
         
     def parserVEVO(self, baseUrl):
         printDBG("parserVEVO baseUrl[%s]" % baseUrl)
