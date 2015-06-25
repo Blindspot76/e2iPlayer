@@ -723,7 +723,7 @@ class CSearchHistoryHelper():
         orgLen = len(historyList)
         # remove duplicates
         # last 50 searches patterns are stored
-        historyList = historyList[:50]
+        historyList = historyList[:config.plugins.iptvplayer.search_history_size.value]
         uniqHistoryList = []
         for i in historyList:
             if i not in uniqHistoryList:
@@ -753,13 +753,14 @@ class CSearchHistoryHelper():
     def addHistoryItem(self, itemValue, itemType = None):
         printDBG('CSearchHistoryHelper.addHistoryItem to file = "%s"' % self.PATH_FILE)
         try:
-            file = codecs.open(self.PATH_FILE, 'a', 'utf-8', 'replace')
-            value = itemValue
-            if None != itemType:
-                value = value + self.TYPE_SEP + itemType
-            file.write(value + '\n')
-            printDBG('Added pattern: "%s"' % itemValue) 
-            file.close
+            if config.plugins.iptvplayer.search_history_size.value > 0:
+                file = codecs.open(self.PATH_FILE, 'a', 'utf-8', 'replace')
+                value = itemValue
+                if None != itemType:
+                    value = value + self.TYPE_SEP + itemType
+                file.write(value + '\n')
+                printDBG('Added pattern: "%s"' % itemValue) 
+                file.close
         except:
             printExc('CSearchHistoryHelper.addHistoryItem EXCEPTION')
 
