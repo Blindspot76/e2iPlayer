@@ -13,6 +13,7 @@ ext_x_version = '#EXT-X-VERSION'
 ext_x_allow_cache = '#EXT-X-ALLOW-CACHE'
 ext_x_endlist = '#EXT-X-ENDLIST'
 extinf = '#EXTINF'
+ext_x_program_date_time = '#EXT-X-PROGRAM-DATE-TIME'
 
 '''
 http://tools.ietf.org/html/draft-pantos-http-live-streaming-08#section-3.2
@@ -39,15 +40,7 @@ def parse(content):
     for line in string_to_lines(content):
         line = line.strip()
 
-        if state['expect_segment']:
-            _parse_ts_chunk(line, data, state)
-            state['expect_segment'] = False
-
-        elif state['expect_playlist']:
-            _parse_variant_playlist(line, data, state)
-            state['expect_playlist'] = False
-
-        elif line.startswith(ext_x_targetduration):
+        if line.startswith(ext_x_targetduration):
             _parse_simple_parameter(line, data, float)
         elif line.startswith(ext_x_media_sequence):
             _parse_simple_parameter(line, data, int)
@@ -62,13 +55,25 @@ def parse(content):
         elif line.startswith(extinf):
             _parse_extinf(line, data, state)
             state['expect_segment'] = True
-
+        
+        elif line.startswith(ext_x_program_date_time):
+            if state['expect_segment']:
+                _parse_simple_parameter(line, state)
+        
         elif line.startswith(ext_x_stream_inf):
             state['expect_playlist'] = True
             _parse_stream_inf(line, data, state)
 
         elif line.startswith(ext_x_endlist):
             data['is_endlist'] = True
+            
+        elif state['expect_segment']:
+            _parse_ts_chunk(line, data, state)
+            state['expect_segment'] = False
+
+        elif state['expect_playlist']:
+            _parse_variant_playlist(line, data, state)
+            state['expect_playlist'] = False
 
     return data
 

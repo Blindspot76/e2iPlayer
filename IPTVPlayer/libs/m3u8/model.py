@@ -235,13 +235,17 @@ class Segment(BasePathMixin):
 
     `duration`
       duration attribute from EXTINF paramter
+    
+    `date`
+      program date from EXT-X-PROGRAM-DATE-TIME paramter
 
     `base_uri`
       uri the key comes from in URI hierarchy. ex.: http://example.com/path/to
     '''
 
-    def __init__(self, uri, base_uri, duration=None, title=None):
+    def __init__(self, uri, base_uri, duration=None, title=None, program_date_time=None):
         self.uri = uri
+        self.program_date_time = program_date_time
         self.duration = duration
         self.title = title
         self.base_uri = base_uri
@@ -250,6 +254,8 @@ class Segment(BasePathMixin):
         output = ['#EXTINF:%s,' % int_or_float_to_string(self.duration)]
         if self.title:
             output.append(quoted(self.title))
+        if self.program_date_time:
+            output.extend(['\n#EXT-X-PROGRAM-DATE-TIME:%s' % self.program_date_time])
 
         output.append('\n')
         output.append(self.uri)
