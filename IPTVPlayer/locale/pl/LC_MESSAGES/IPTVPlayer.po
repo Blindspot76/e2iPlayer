@@ -30,10 +30,10 @@ msgid "Exit"
 msgstr "Wyjście"
 
 msgid "Player > Recorder"
-msgstr "Odtwarzacz > Nagrywanie"
+msgstr "Odtwarzanie > Ściąganie"
 
 msgid "Recorder > Player"
-msgstr "Nagrywanie > Odtwarzacz"
+msgstr "Ściąganie > Odtwarzanie"
 
 msgid "Refresh"
 msgstr "Odśwież listę"
@@ -51,7 +51,7 @@ msgid "Info"
 msgstr "Informacje"
 
 msgid "IPTV download manager"
-msgstr "Menadżer pobierania  IPTV"
+msgstr "Menadżer pobierania IPTV"
 
 msgid "Select option"
 msgstr "Wybór opcji"
@@ -146,7 +146,7 @@ msgid "Downloading file [%s] problem."
 msgstr "Problem przy pobraniu pliku [%s]."
 
 msgid "Input"
-msgstr "Wejście"
+msgstr "Dane wejściowe"
 
 msgid "Enter name"
 msgstr "Wprowadź nazwę"
@@ -441,7 +441,7 @@ msgstr "Problem z odczytem pliku [%s]."
 msgid "Please remember that you use the IPTVPlayer plugin at your own risk."
 msgstr ""
 "Autorzy NIE ponoszą, żadnej odpowiedzialności za uszkodzenie odbiornika spowodowanego działaniem tej wtyczki oraz wykorzystywaniem jej w celu nielegalnego pobierania materiałów wideo!\n"
-"Proszę pamiętać, że używasz wtyczki IPTVPlayer na własne ryzyko."
+"Używasz wtyczki IPTVPlayer na własne ryzyko."
 
 msgid ""
 "Restart GUI failed. \n"
@@ -497,7 +497,7 @@ msgid "Installing new version."
 msgstr "Instalowanie nowej wersji."
 
 msgid "Pending"
-msgstr "Oczekuje"
+msgstr "W oczekiwaniu"
 
 msgid "No user scripts."
 msgstr "Brak skryptów użytkownika."
@@ -505,8 +505,11 @@ msgstr "Brak skryptów użytkownika."
 msgid "Problem with user script execution [%s]."
 msgstr "Problem z wykonaniem skryptu [%s]."
 
-msgid "Completed.\n"
-msgstr "Zakończony.\n"
+msgid "Archive"
+msgstr "Archiwum"
+
+msgid "IPTV Player download manager"
+msgstr "IPTV Player menadżer pobierania"
 
 msgid ""
 "Version [%s] is ready for installation. After installation, restart of the system will be done.\n"
@@ -1195,7 +1198,7 @@ msgid "Save changes?"
 msgstr "Zapisać zmiany?"
 
 msgid "Please remember that you use this plugin at your own risk."
-msgstr "Proszę pamiętaj, że używasz tej wtyczki na własne ryzyko."
+msgstr "Pamiętaj,używasz tej wtyczki na własne ryzyko."
 
 msgid "During processing, please wait."
 msgstr "Podczas przetwarzania, proszę czekać."
@@ -1204,7 +1207,7 @@ msgid "During processing, please do not interrupt."
 msgstr "Podczas przetwarzania, proszę nie przerywać."
 
 msgid "Delegate cannot be used in MainThread!"
-msgstr "Programowanie nie może być stosowane w głównym wątku!"
+msgstr "Delegat nie może być stosowany w głównym wątku!"
 
 msgid "New folder"
 msgstr "Nowy folder"
@@ -1214,3 +1217,198 @@ msgstr "Problem z usuwaniem starych plików buforowania"
 
 msgid "Skin read error: "
 msgstr "Błąd odczytu skóry: "
+
+msgid "Test platform OK"
+msgstr "Test platformy OK"
+
+msgid "Check opennSSL version"
+msgstr "Sprawdź wersję opennSSL"
+
+msgid "GStreamer Core Library version 0.10"
+msgstr "GStreamer Core Wersja biblioteki 0,10"
+
+msgid "gst-launch --gst-version"
+msgstr "gst-wypuszczone --gst-wersja"
+
+msgid "Detection of the ffmpeg version."
+msgstr "Wykrywanie wersji ffmpeg."
+
+msgid "ffmpeg -version"
+msgstr "Wersja -ffmpeg."
+
+msgid "version"
+msgstr "wersja"
+
+msgid "The \"%s\" utility is used by the IPTVPlayer as external movie player based on the ffmpeg and libeplayer."
+msgstr "Narzędzie \"%s\" jest używane przez IPTVPlayer jako zewnętrzny odtwarzacz oparte na ffmpeg i libeplayer."
+
+msgid "detection"
+msgstr "wykrywanie"
+
+msgid ""
+" has not been detected. \n"
+"Do you want to install it? "
+msgstr ""
+"nie zostało wykryte. \n"
+"Czy chcesz zainstalować?"
+
+msgid ""
+" is deprecated. \n"
+"Do you want to install new one? "
+msgstr ""
+" jest przestarzałe.\n"
+"Czy chcesz zainstalować nowe?"
+
+msgid "[%s] will be used by IPTVPlayer."
+msgstr "[%s] będą używane przez IPTVPlayer."
+
+msgid "download"
+msgstr "pobieranie"
+
+msgid "install"
+msgstr "instalacja"
+
+msgid "Installation binary failed. Retry?"
+msgstr "Instalacja binarna nie powiodła się. Ponowić próbę?"
+
+msgid "Subtitles downloader"
+msgstr "Pobieranie napisów"
+
+msgid "title"
+msgstr "tytuł"
+
+msgid "console"
+msgstr "konsola"
+
+msgid "actions"
+msgstr "działania"
+
+msgid "Subtitles provider: %s"
+msgstr "Dostawca napisów: %s"
+
+msgid "Login user \"%s\" into %s"
+msgstr "Logowanie użytkownika \"%s\" do %s"
+
+msgid "Request token from %s"
+msgstr "żądanie symbolu z %s"
+
+msgid ""
+"Error occurs.\n"
+"[%s]"
+msgstr ""
+"Wystąpił błąd.\n"
+"[%s]"
+
+msgid "message"
+msgstr "wiadomość"
+
+msgid "Confirm title of the movie"
+msgstr "Potwierdzić tytuł filmu"
+
+msgid "Search for movie \"%s\""
+msgstr "Szukaj filmu \"%s\""
+
+msgid "Movie \"%s\" has not been found."
+msgstr "Film \"%s\" nie został odnaleziony."
+
+msgid "Get supported languages list."
+msgstr "Pobierz listę obsługiwanych języków."
+
+msgid "An unknown error has occurred."
+msgstr "Wystąpił nieznany błąd."
+
+msgid "Search for subitile for \"%s\""
+msgstr "Szukaj napisów dla \"%s\""
+
+msgid "Download subtitle \"%s\""
+msgstr "Pobierz napisy \"%s\""
+
+msgid "Subtitles downloaded successfully. [%s]"
+msgstr "Napisy pobrane poprawnie. [%s]"
+
+msgid "Select movie"
+msgstr "Wybierz film"
+
+msgid "Select language"
+msgstr "Wybierz język"
+
+msgid "Select subtitles to download"
+msgstr "Wybierz napisy do pobrania"
+
+msgid "Select aspect ratio"
+msgstr "Wybierz proporcje obrazu"
+
+msgid "options"
+msgstr "opcje"
+
+msgid "selectSubtitle"
+msgstr "wybierz napisy"
+
+msgid "Synchronize"
+msgstr "Synchronizacja"
+
+msgid "Load"
+msgstr "Załaduj"
+
+msgid "Download"
+msgstr "Pobierz"
+
+msgid "Select subtitles track"
+msgstr "Wybierz ścieżkę napisów"
+
+msgid "enabled"
+msgstr "włączone"
+
+msgid "Select subtitles file"
+msgstr "Wybierz plik z napisami"
+
+msgid "enableSubtitles track[%s]"
+msgstr "Włącz ścieżkę napisów[%s]"
+
+msgid "An error occurred while loading a subtitle from [%s]."
+msgstr "Wystąpił błąd podczas wczytywania napisów z [%s]."
+
+msgid ""
+"It seems that the video player \"%s\" does not work properly.\n"
+"\n"
+"STS: %s\n"
+"ERROR CODE: %r"
+msgstr ""
+"Wydaje się, że odtwarzacz wideo \"%s\" nie działa prawidłowo.\n"
+"\n"
+"STS: %s\n"
+"Kod błędu: %r"
+
+msgid ""
+"ERROR: pipeline could not be constructed: no element \"playbin2\" \n"
+"Please check if gstreamer plugins are available in your system."
+msgstr ""
+"BŁĄD:nie można skonstruować:, brak elementu \"playbin2\" \n"
+"Proszę sprawdzić, czy dostępne są wtyczki GStreamera w systemie."
+
+msgid "got buffer empty from driver!"
+msgstr "pusty bufor od sterowników"
+
+msgid "Status object [%r]"
+msgstr "Stan obiektu [%r]"
+
+msgid "Length"
+msgstr "Długość"
+
+msgid "length"
+msgstr "długość"
+
+msgid "Status"
+msgstr "Stan"
+
+msgid "Speed"
+msgstr "Prędkość"
+
+msgid "waiting"
+msgstr "czekaj"
+
+msgid "visible"
+msgstr "widoczne"
+
+msgid "blocked"
+msgstr "zablokowane"
