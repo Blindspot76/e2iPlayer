@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
+from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 
@@ -34,14 +35,24 @@ config.plugins.iptvplayer.videostar_defquality     = ConfigSelection(default = "
 config.plugins.iptvplayer.videostar_premium        = ConfigYesNo(default = False)
 config.plugins.iptvplayer.videostar_login          = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.videostar_password       = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.videostar_use_proxy_gateway  = ConfigYesNo(default = False)
+config.plugins.iptvplayer.videostar_proxy_gateway_url  = ConfigText(default = "http://darmowe-proxy.pl/browse.php?u={0}&b=192&f=norefer", fixed_size = False)
+config.plugins.iptvplayer.videostar_proxy_gateway_ip   = ConfigText(default = "85.128.142.29", fixed_size = False)
+
+
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry( "VideoStar " + _("preferowany protokół strumieniowania" + ": "), config.plugins.iptvplayer.videostar_streamprotocol))
-    optionList.append(getConfigListEntry( "VideoStar " + _("preferowana jakość") + ": ", config.plugins.iptvplayer.videostar_defquality))
-    optionList.append(getConfigListEntry( "VideoStar " + _("użytkownik premium") + ": ", config.plugins.iptvplayer.videostar_premium))
-    optionList.append(getConfigListEntry( "VideoStar " +_("login") + ": ", config.plugins.iptvplayer.videostar_login))
-    optionList.append(getConfigListEntry(" VideoStar " + _("hasło") + ": ", config.plugins.iptvplayer.videostar_password))
+    optionList.append(getConfigListEntry( _("Preferowany protokół strumieniowania" + ": "), config.plugins.iptvplayer.videostar_streamprotocol))
+    optionList.append(getConfigListEntry( _("Preferowana jakość") + ": ", config.plugins.iptvplayer.videostar_defquality))
+    optionList.append(getConfigListEntry( _("Użytkownik premium") + ": ", config.plugins.iptvplayer.videostar_premium))
+    optionList.append(getConfigListEntry( _("Login") + ": ", config.plugins.iptvplayer.videostar_login))
+    optionList.append(getConfigListEntry( _("Hasło") + ": ", config.plugins.iptvplayer.videostar_password))
+    if '2' == config.plugins.iptvplayer.videostar_streamprotocol.value:
+        optionList.append(getConfigListEntry(_("Użyj bramki proxy"), config.plugins.iptvplayer.videostar_use_proxy_gateway))
+        if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
+            optionList.append(getConfigListEntry("    " + _("Url:"), config.plugins.iptvplayer.videostar_proxy_gateway_url))
+            optionList.append(getConfigListEntry("    " + _("IP:"), config.plugins.iptvplayer.videostar_proxy_gateway_ip))
     return optionList
 ###################################################
 
@@ -63,7 +74,17 @@ class VideoStarApi:
     VIDEO_GUEST_M  = False
 
     def __init__(self):
-        self.cm = common()
+        self.cm = common()#proxyURL= '', useProxy = True)
+        self.up = urlparser()
+        
+
+        if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
+            self.my_ip             = config.plugins.iptvplayer.videostar_proxy_gateway_ip.value
+            self.proxy_gateway_url = config.plugins.iptvplayer.videostar_proxy_gateway_url.value
+        else:
+            self.my_ip = ''
+            self.proxy_gateway_url = ''
+        
         self.sessionEx = MainSessionWrapper()
         self._reInit()
         self.channelsList = []
@@ -87,6 +108,8 @@ class VideoStarApi:
         else:
             self.MAINURL = VideoStarApi.MAINURL_PC
             self.cm.HEADER = dict(VideoStarApi.HTTP_HEADER_PC)
+        if '' != self.my_ip:
+            self.cm.HEADER['X-Forwarded-For'] = self.my_ip
         self.PREMIUM         = config.plugins.iptvplayer.videostar_premium.value
         self.LOGIN           = config.plugins.iptvplayer.videostar_login.value
         self.PASSWORD        = config.plugins.iptvplayer.videostar_password.value
@@ -150,22 +173,13 @@ class VideoStarApi:
             self._reInit()
             if not guestMode:
                 self.doLogin(self.LOGIN, self.PASSWORD)
-                #this block of code is probably not needed
-                try:
-                    sts, data = self.cm.getPage( self._getUrl('get_ad_show') )
-                    if json.loads(data)['show']:
-                        sts, data = self.cm.getPage( self._getUrl('get_ad_urls') )                
-                        adUrls = json.loads(data)['urls']
-                        for item in adUrls:
-                            printDBG('VideoStarApi.getVideoLink get ad[%s]' % item)
-                            sts, data = self.cm.getPage( item )
-                except:
-                    printExc()
                 sts, data = self.cm.getPage( referer )
                 if not sts:
                     printExc('Error when downloading referer')
             else:
-                self.cm.HEADER = VideoStarApi.HTTP_HEADER2
+                self.cm.HEADER = dict(VideoStarApi.HTTP_HEADER2)
+                if '' != self.my_ip:
+                    self.cm.HEADER['X-Forwarded-For'] = self.my_ip
             
             url     = self._getUrl('get_channel_url') % (channelID, self.streamprotocol)
             HTTP_HEADER = dict(self.cm.HEADER)
@@ -175,6 +189,9 @@ class VideoStarApi:
                 url = url.replace('https://videostar.pl/api', 'https://api.videostar.pl/guest')
             sts, data = self.cm.getPage( url, {'header': HTTP_HEADER} )
             try:
+                #printDBG("--------------------------------------------------")
+                #printDBG(data)
+                #printDBG("--------------------------------------------------")
                 data = json.loads(data)
                 if "ok" == data['status']:
                     VideoStarApi.VIDEO_STAR_T = data['stream_channel']['url_params'][-1].decode('utf-8')
@@ -193,7 +210,17 @@ class VideoStarApi:
                     else:
                         # hls
                         url = data['stream_channel']['url_base'].decode('utf-8')
-                        urlsTab.append({'url': strwithmeta(url, {'iptv_proto':'m3u8'}), 'name': 'videostar hls', 'type':'hls'})                    
+                        meta = {'iptv_proto':'m3u8'}
+                        if '' != self.proxy_gateway_url:
+                            channelID = data['stream_channel']['channel_id']
+                            if url.startswith('https://'): url = 'http://' + url[8:]
+                            server = self.cm.ph.getSearchGroups(url, r'http://([^/]+?)/')[0]
+                            meta['iptv_m3u8_custom_base_link'] = 'http://%s:1935/%s/smil:%s.ism/list.m3u8' % (server, channelID, channelID)
+                            meta['iptv_proxy_gateway'] = self.proxy_gateway_url
+                            meta['Referer'] =  self.proxy_gateway_url
+                            meta['User-Agent'] = 'Mozilla/5.0'
+                            meta['X-Forwarded-For'] = self.my_ip
+                        urlsTab.append({'url': self.up.decorateUrl(url, meta), 'name': 'videostar hls', 'type':'hls'})                    
             except:
                 printExc()
                 

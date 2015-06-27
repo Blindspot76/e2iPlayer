@@ -15,6 +15,8 @@ def enum(**enums):
 #   "iptv_chank_url":       "http... link"
 #   "iptv_block_exteplayer" True | False - default False 
 #   "iptv_audio_url"        "http... link"
+#   "iptv_m3u8_custom_base_link" "http... link"
+#   "iptv_proxy_gateway"    "http... link"
 
 # Force buffering settings, generally this field should 
 # be used only to materials that we know that they do 

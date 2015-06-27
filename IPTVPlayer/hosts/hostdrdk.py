@@ -63,7 +63,7 @@ class DRDK(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'DRDK', 'cookie':'dr.dk.cookie'})
         if '' != config.plugins.iptvplayer.drdk_myip.value:
-            self.cm.HEADER = {'X-Forwarded-For':'213.173.226.190'}
+            self.cm.HEADER = {'X-Forwarded-For':config.plugins.iptvplayer.drdk_myip.value}
         self.tv2r = TV2RChannel()
         
     def _getFullUrl(self, url):

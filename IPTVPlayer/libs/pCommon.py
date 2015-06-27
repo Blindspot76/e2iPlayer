@@ -197,19 +197,22 @@ class common:
     ph = CParsingHelper
     
     @staticmethod
-    def getParamsFromUrlWithMeta(url):
+    def getParamsFromUrlWithMeta(url, baseHeaderOutParams=None):
         HANDLED_HTTP_HEADER_PARAMS = ['Host', 'User-Agent', 'Referer', 'Cookie', 'Accept', 'X-Forwarded-For', 'Range']
-        headerOutParams = {}
+        outParams = {}
         tmpParams = {}
         postData = None
         if isinstance(url, strwithmeta):
-            tmpParams['header'] = {}
+            if None != baseHeaderOutParams: tmpParams['header'] = baseHeaderOutParams
+            else: tmpParams['header'] = {}
             for key in url.meta:
                 if key in HANDLED_HTTP_HEADER_PARAMS:
                     tmpParams['header'][key] = url.meta[key]
             if 0 < len(tmpParams['header']):
-                headerOutParams = tmpParams
-        return headerOutParams, postData
+                outParams = tmpParams
+            if 'iptv_proxy_gateway' in url.meta:
+                outParams['proxy_gateway'] = url.meta['iptv_proxy_gateway']
+        return outParams, postData
     
     def __init__(self, proxyURL= '', useProxy = False):
         self.proxyURL = proxyURL
@@ -295,7 +298,7 @@ class common:
     
     def getURLRequestData(self, params = {}, post_data = None):
         
-        def urlOpen(req, customOpeners):            
+        def urlOpen(req, customOpeners):
             if len(customOpeners) > 0:
                 opener = urllib2.build_opener( *customOpeners )
                 response = opener.open(req)
@@ -362,6 +365,12 @@ class common:
             printDBG('getURLRequestData USE PROXY')
             customOpeners.append( urllib2.ProxyHandler({"http":http_proxy}) )
             customOpeners.append( urllib2.ProxyHandler({"https":http_proxy}) )
+        
+        pageUrl = params['url']
+        proxy_gateway = params.get('proxy_gateway', '')
+        if proxy_gateway != '':
+            pageUrl = proxy_gateway.format(urllib.quote(pageUrl, ''))
+        printDBG("pageUrl: [%s]" % pageUrl)
 
         if None != post_data:
             printDBG('pCommon - getURLRequestData() -> post data: ' + str(post_data))
@@ -372,9 +381,9 @@ class common:
                 dataPost = post_data
             else:
                 dataPost = urllib.urlencode(post_data)
-            req = urllib2.Request(params['url'], dataPost, headers)
+            req = urllib2.Request(pageUrl, dataPost, headers)
         else:
-            req = urllib2.Request(params['url'], None, headers)
+            req = urllib2.Request(pageUrl, None, headers)
 
         if not params.get('return_data', False):
             out_data = urlOpen(req, customOpeners)

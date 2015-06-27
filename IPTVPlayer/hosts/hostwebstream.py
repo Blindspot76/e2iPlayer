@@ -656,11 +656,14 @@ class HasBahCa(CBaseHostClass):
                 tmpList = getDirectM3U8Playlist(urlsTab[0]['url'], checkExt=False)
             else:
                 tmpList = urlsTab
-                
-            for item in tmpList:
-                if self.videoStarApi.getDefaultQuality() == item['bitrate']:
-                    return [dict(item)]
-            return [dict(tmpList[0])]
+            try:
+                for item in tmpList:
+                    if self.videoStarApi.getDefaultQuality() == item['bitrate']:
+                        return [dict(item)]
+                return [dict(tmpList[0])]
+            except:
+                printExc()
+                urlsTab = []
         return urlsTab
         
         

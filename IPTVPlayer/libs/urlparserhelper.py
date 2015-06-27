@@ -341,15 +341,21 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True):
         
     cm = common()
     meta = strwithmeta(M3U8Url).meta
-    headerParams, postData = cm.getParamsFromUrlWithMeta(M3U8Url)
-    headerParams['return_data'] = False
-    
+    params, postData = cm.getParamsFromUrlWithMeta(M3U8Url)
+        
     retPlaylists = []
     try:
-        sts, response = cm.getPage(M3U8Url, headerParams, postData)
-        finallM3U8Url = response.geturl()
-        data = response.read().strip()
-        response.close()
+        finallM3U8Url = meta.get('iptv_m3u8_custom_base_link', '') 
+        if '' == finallM3U8Url:
+            params['return_data'] = False
+            sts, response = cm.getPage(M3U8Url, params, postData)
+            finallM3U8Url = response.geturl()
+            data = response.read().strip()
+            response.close()
+        else:
+            sts, data = cm.getPage(M3U8Url, params, postData)
+            data = data.strip()
+            
         m3u8Obj = m3u8.inits(data, finallM3U8Url)
         if m3u8Obj.is_variant:
             for playlist in m3u8Obj.playlists:
