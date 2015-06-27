@@ -101,11 +101,12 @@ class AnyFilesVideoUrlExtractor:
                 #var source = "<source src=\"http://50.7.220.66/video/60ExQvchsi4PbqMLr--I7A/1433518629/5e638de7a15c7a8dc7c979044cd2a953_147325.mp4\" type=\"video/mp4\" />";
                 #var track = "<track label=\"izombie.112...\" srclang=\"pl\" kind=\"captions\"  src=\"http://video.anyfiles.pl/subtit/1433508336949.srt\"></track>\n";
                 data = data.replace('\\"', '"')
-                printDBG(data)
+                #printDBG(data)
+                difSourcesSrc = CParsingHelper.getSearchGroups(data, '''difSourcesSrc[^=]*?=[^"']*?["'](http[^'^"]+?)['"]''', 1)[0] 
                 url    = CParsingHelper.getSearchGroups(data, '''<source[^>]+?src=["'](http[^'^"]+?)['"]''', 1)[0]
                 subUrl = CParsingHelper.getSearchGroups(data, '''<track[^>]+?src=["'](http[^'^"]+?)['"]''', 1)[0]
-                if 'youtube' in url: 
-                    return self.getYTVideoUrl(url)
+                if 'youtube' in difSourcesSrc: 
+                    return self.getYTVideoUrl(difSourcesSrc)
                 else:
                     return [{'name':'AnyFiles.pl', 'url':url}]
         return []
