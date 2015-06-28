@@ -83,7 +83,6 @@ class IPTVDMApi():
             # manually run endCmd because when killed 
             # appClosed is not called
             self.cmdFinished(downloadIdx, -1)
-            
         
     def stopAllDownloadItem(self):
             while len(self.queueUD) > 0:
@@ -251,30 +250,18 @@ class IPTVDMApi():
                 
             if self.downloading and self.updateProgress:
                 self.updateDownloadItemsStatus()
-            
-    def makeUnikalFileName(self, fileName):
-        # if this function is called
-        # no more than once per second
-        # date and time (with second)
-        # is sufficient to provide a unique name
-        from time import gmtime, strftime
-        date = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-        newFileName = os.path.dirname(fileName) + os.sep + date.replace(':', '.') + "-" + os.path.basename(fileName)
-        tmpFileName = os.path.dirname(fileName) + os.sep + "." + date.replace(':', '.') + "-" + os.path.basename(fileName)
-        return newFileName, tmpFileName
     
     def runCMD(self, item):
         printDBG("runCMD for downloadIdx[%d]" % item.downloadIdx)
         
         if DMHelper.DOWNLOAD_TYPE.INITIAL == item.tries:
-           item.fileName, item.tmpFileName = DMHelper.makeUnikalFileName(item.fileName, True)
+           item.fileName = DMHelper.makeUnikalFileName(item.fileName, False, False)
 
         printDBG("Downloading started downloadIdx[%s] File[%s] URL[%s]" % (item.downloadIdx, item.fileName, item.url) )
       
         listUDIdx = self.findIdxInQueueUD(item.downloadIdx)
         self.queueUD[listUDIdx].status      = DMHelper.STS.DOWNLOADING
         self.queueUD[listUDIdx].fileName    = item.fileName
-        self.queueUD[listUDIdx].tmpFileName = item.tmpFileName
         
         url, downloaderParams = DMHelper.getDownloaderParamFromUrl(item.url)
         self.queueUD[listUDIdx].downloader = DownloaderCreator(url)

@@ -19,6 +19,7 @@ from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 ###################################################
 from Components.config import config
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
+from Tools.Directories import fileExists
 import datetime
 import os
 import re
@@ -100,13 +101,29 @@ class DMHelper:
             return DMHelper.getWgetCMD(downItem)
         
     @staticmethod
-    def makeUnikalFileName(fileName, withTmpFileName = True):
+    def makeUnikalFileName(fileName, withTmpFileName = True, addDateToFileName=False):
         # if this function is called
         # no more than once per second
         # date and time (with second)
         # is sufficient to provide a unique name
         from time import gmtime, strftime
         date = strftime("%Y-%m-%d_%H:%M:%S_", gmtime())
+        
+        if not addDateToFileName:
+            tries = 10
+            for idx in range(tries):
+                if idx > 0:
+                    uniqueID = str(idx+1) + '. '
+                else: uniqueID = ''
+                newFileName = os.path.dirname(fileName) + os.sep + uniqueID + os.path.basename(fileName)
+                if fileExists(newFileName): continue
+                if withTmpFileName: 
+                    tmpFileName = os.path.dirname(fileName) + os.sep + "." + uniqueID + os.path.basename(fileName)
+                    if fileExists(tmpFileName): continue
+                    return newFileName, tmpFileName
+                else:
+                    return newFileName
+                
         newFileName = os.path.dirname(fileName) + os.sep + date.replace(':', '.') + os.path.basename(fileName)
         if withTmpFileName:
             tmpFileName = os.path.dirname(fileName) + os.sep + "." + date.replace(':', '.') + os.path.basename(fileName)
