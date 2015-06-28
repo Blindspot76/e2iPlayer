@@ -30,6 +30,9 @@ from enigma import getDesktop, eTimer
 ####################################################
 #                   IPTV components
 ####################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu, GetMoviePlayer
+from Plugins.Extensions.IPTVPlayer.components.confighost import ConfigHostMenu
+
 from Plugins.Extensions.IPTVPlayer.components.iptvfavouriteswidgets import IPTVFavouritesAddItemWidget, IPTVFavouritesMainWidget
  
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import IsUrlDownloadable
@@ -47,8 +50,6 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingW
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 
-from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu, GetMoviePlayer
-from Plugins.Extensions.IPTVPlayer.components.confighost import ConfigHostMenu
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit, GetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetupwidget import IPTVSetupMainWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayer import IPTVStandardMoviePlayer, IPTVMiniMoviePlayer
@@ -1255,11 +1256,7 @@ class IPTVPlayerWidget(Screen):
                 else:
                     self.stopAutoPlaySequencer()
             else:
-                try:
-                    default_aspect_ratio = int(config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio.value)
-                except:
-                    default_aspect_ratio = -1
-                gstAdditionalParams = {'host_name':self.hostName, 'default_aspect_ratio':default_aspect_ratio}
+                gstAdditionalParams = {'host_name':self.hostName} #default_player_videooptions
                 self.writeCurrentTitleToFile(titleOfMovie)
                 if isBufferingMode:
                     self.session.nav.stopService()

@@ -893,3 +893,50 @@ def GetVersionNum(ver):
     except:
         printExc('Version[%r]' % ver)
         return 0
+        
+def GetE2OptionsFromFile(filePath):
+    options = []
+    try:
+        with open(filePath, 'r') as f:
+            data = f.read().strip()
+            data = data.split(' ')
+            for item in data:
+                opt = item.strip()
+                if '' != opt:
+                    options.append(opt)
+    except:
+        printExc()
+    return options
+
+def SetE2OptionByFile(filePath, value):
+    sts = False
+    try:
+        with open(filePath, 'w') as f:
+            data = f.write(value)
+            sts = True
+    except:
+        printExc()
+    return sts
+
+def GetE2VideoAspectChoices():
+    return GetE2OptionsFromFile('/proc/stb/video/aspect_choices')
+
+def GetE2VideoAspect():
+    options = GetE2OptionsFromFile('/proc/stb/video/aspect')
+    if 1 == len(options): return options[0]
+    return None
+    
+def SetE2VideoAspect(value):
+    return SetE2OptionByFile('/proc/stb/video/aspect', value)
+    
+def GetE2VideoPolicyChoices(num=''):
+    return GetE2OptionsFromFile('/proc/stb/video/policy%s_choices' % num)
+    
+def GetE2VideoPolicy(num=''):
+    options = GetE2OptionsFromFile('/proc/stb/video/policy'+num)
+    if 1 == len(options): return options[0]
+    return None
+    
+def SetE2VideoPolicy(value, num=''):
+    return SetE2OptionByFile('/proc/stb/video/policy'+num, value)
+    

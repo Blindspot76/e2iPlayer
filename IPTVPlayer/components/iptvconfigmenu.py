@@ -35,6 +35,9 @@ from Tools.BoundFunction import boundFunction
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer = ConfigSubsection()
+
+from Plugins.Extensions.IPTVPlayer.components.configextmovieplayer import ConfigExtMoviePlayer
+
 config.plugins.iptvplayer.exteplayer3path = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.gstplayerpath   = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.wgetpath        = ConfigText(default = "", fixed_size = False)
@@ -104,8 +107,6 @@ config.plugins.iptvplayer.defaultI686MoviePlayer        = ConfigSelection(defaul
 config.plugins.iptvplayer.alternativeI686MoviePlayer    = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer')])
 # end with buffering mode players
 
-config.plugins.iptvplayer.aac_software_decode           = ConfigYesNo(default = False)
-
 config.plugins.iptvplayer.SciezkaCache = ConfigDirectory(default = "/hdd/IPTVCache/") #, fixed_size = False)
 config.plugins.iptvplayer.NaszaTMP = ConfigDirectory(default = "/tmp/") #, fixed_size = False)
 config.plugins.iptvplayer.ZablokujWMV = ConfigYesNo(default = True)
@@ -148,15 +149,14 @@ config.plugins.iptvplayer.possibleUpdateType       = ConfigSelection(default = "
 
 # Hosts lists
 config.plugins.iptvplayer.fakeHostsList = ConfigSelection(default = "fake", choices = [("fake", "  ")])
+
+
+# External movie player settings
+config.plugins.iptvplayer.fakExtMoviePlayerList = ConfigSelection(default = "fake", choices = [("fake", "  ")])
+
 # hidden options
 config.plugins.iptvplayer.hiddenAllVersionInUpdate = ConfigYesNo(default = False)
 config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio = ConfigSelection(default = "-1", choices = [("-1", _("default")), ("0", _("4:3 Letterbox")), ("1", _("4:3 PanScan")), ("2", _("16:9")), ("3", _("16:9 always")), ("4", _("16:10 Letterbox")), ("5", _("16:10 PanScan")), ("6", _("16:9 Letterbox"))] )
-
-
-config.plugins.iptvplayer.extplayer_infobar_timeout = ConfigSelection(default = "5", choices = [
-        ("1", "1 " + _("second")), ("2", "2 " + _("seconds")), ("3", "3 " + _("seconds")),
-        ("4", "4 " + _("seconds")), ("5", "5 " + _("seconds")), ("6", "6 " + _("seconds")), ("7", "7 " + _("seconds")),
-        ("8", "8 " + _("seconds")), ("9", "9 " + _("seconds")), ("10", "10 " + _("seconds"))])
         
 config.plugins.iptvplayer.search_history_size  = ConfigInteger(50, (0, 1000000))
 
@@ -306,8 +306,7 @@ class ConfigMenu(ConfigBaseWidget):
         
         playersValues = [player.value for player in players]
         if 'exteplayer' in playersValues or 'extgstplayer' in playersValues or 'auto' in playersValues:
-            list.append(getConfigListEntry(_("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
-            list.append(getConfigListEntry(_("External player infobar timeout"), config.plugins.iptvplayer.extplayer_infobar_timeout))
+            list.append(getConfigListEntry(_("External movie player config"), config.plugins.iptvplayer.fakExtMoviePlayerList))
         
         list.append(getConfigListEntry(_("The number of items in the search history"), config.plugins.iptvplayer.search_history_size))
         list.append(getConfigListEntry(_("Block wmv files"), config.plugins.iptvplayer.ZablokujWMV))
@@ -325,7 +324,7 @@ class ConfigMenu(ConfigBaseWidget):
         
     def onSelectionChanged(self):
         currItem = self["config"].getCurrent()[1]
-        if currItem in [config.plugins.iptvplayer.fakePin, config.plugins.iptvplayer.fakeUpdate, config.plugins.iptvplayer.fakeHostsList]:
+        if currItem in [config.plugins.iptvplayer.fakePin, config.plugins.iptvplayer.fakeUpdate, config.plugins.iptvplayer.fakeHostsList, config.plugins.iptvplayer.fakExtMoviePlayerList]:
             self.isOkEnabled  = True
             self.isSelectable = False 
             self.setOKLabel()
@@ -366,6 +365,8 @@ class ConfigMenu(ConfigBaseWidget):
             self.keyUpdate()
         elif config.plugins.iptvplayer.fakeHostsList == currItem:
             self.hostsList()
+        elif config.plugins.iptvplayer.fakExtMoviePlayerList == currItem:
+            self.extMoviePlayerList()
         else:
             ConfigBaseWidget.keyOK(self)
 
@@ -431,6 +432,9 @@ class ConfigMenu(ConfigBaseWidget):
     def hostsList(self):
         global gListOfHostsNames
         self.session.open(ConfigHostsMenu, gListOfHostsNames)
+        
+    def extMoviePlayerList(self):
+        self.session.open(ConfigExtMoviePlayer)
 
 def GetMoviePlayer(buffering=False, useAlternativePlayer=False):
     printDBG("GetMoviePlayer buffering[%r], useAlternativePlayer[%r]" % (buffering, useAlternativePlayer))

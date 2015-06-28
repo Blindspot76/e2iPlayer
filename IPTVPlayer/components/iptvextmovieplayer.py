@@ -12,19 +12,22 @@
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, GetSubtitlesDir, eConnectCallback
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, GetSubtitlesDir, eConnectCallback, \
+                                                          GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
+                                                          GetE2VideoPolicy, SetE2VideoPolicy
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
 from Plugins.Extensions.IPTVPlayer.components.iptvdirbrowser import IPTVFileSelectorWidget
+from Plugins.Extensions.IPTVPlayer.components.configextmovieplayer import ConfigExtMoviePlayerBase, ConfigExtMoviePlayer
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel
+from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel, gFont, ePoint
 from Screens.Screen import Screen
 from Screens.ChoiceBox import ChoiceBox
 from Components.AVSwitch import AVSwitch
@@ -38,6 +41,7 @@ from Screens.MessageBox import MessageBox
 from Tools.LoadPixmap import LoadPixmap
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import fileExists
+from skin import parseColor, parseFont
 
 from datetime import timedelta
 try:
@@ -122,15 +126,15 @@ class ExtPlayerCommandsDispatcher():
 class IPTVExtMoviePlayer(Screen):
     
     def __prepareSkin(self):
-        subBordersTxt = ' shadowColor="black" shadowOffset="2,2" ' 
-        try:
-            tmp = dir(eLabel)
-            printDBG("eLabel.__dict__ [%s]" % tmp)
-            if 'setBorderColor' in tmp:
-                subBordersTxt = ' borderColor="#000000" borderWidth="3" ' 
-        except: printExc()
         
-        return """
+        sub = self.configObj.getSubtitleFontSettings()
+        subSkinPart = ' foregroundColor="%s" font="%s;%s" ' % (sub['font_color'], sub['font'], sub['font_size'])
+        if 'border' in sub:
+            subSkinPart += ' borderColor="%s" borderWidth="%s" ' % (sub['border']['color'], sub['border']['width']) 
+        if 'shadow' in sub:
+            subSkinPart += ' shadowColor="%s" shadowOffset="%s,%s" ' % (sub['shadow']['color'], sub['shadow']['xoffset'], sub['shadow']['yoffset']) 
+        
+        skin = """
         <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
                 <widget name="logoIcon"           position="0,0"           size="160,40"  zPosition="4"             transparent="1" alphatest="blend" />
                 <widget name="playbackInfoBaner"  position="0,30"          size="650,77"  zPosition="2" pixmap="%s" transparent="1" alphatest="blend" />
@@ -148,20 +152,23 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                 <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
                 
-                <widget name="subLabel1"          position="0,%d"          size="%d,140"   zPosition="1" transparent="1" foregroundColor="white"     backgroundColor="transparent" font="Regular;40" halign="center" valign="bottom" %s/>
+                <widget name="subLabel1"          position="0,%d"          size="%d,240"   zPosition="1" transparent="1" backgroundColor="transparent" halign="center" valign="bottom" %s/>
         </screen>""" % ( getDesktop(0).size().width(), 
                          getDesktop(0).size().height(),
                          GetIPTVDMImgDir("playback_banner.png"),
                          GetIPTVDMImgDir("playback_progress.png"),
                          GetIPTVDMImgDir("playback_buff_progress.png"),
                          GetIPTVDMImgDir('playback_pointer.png'),
-                         (getDesktop(0).size().height()-200),
+                         (getDesktop(0).size().height()-sub['pos']-240),
                          getDesktop(0).size().width(),
-                         subBordersTxt
+                         subSkinPart
                          ) ##00000000
+        sub = None
+        return skin
     
     def __init__(self, session, filesrcLocation, FileName, lastPosition=None, player='eplayer', additionalParams={}):
         # 'gstplayer'
+        self.configObj = ConfigExtMoviePlayerBase()
         self.skin = self.__prepareSkin()
         Screen.__init__(self, session)
         self.skinName = "IPTVExtMoviePlayer"
@@ -217,7 +224,8 @@ class IPTVExtMoviePlayer(Screen):
                 
                 'ok'           : self.key_ok,
                 'subtitles'    : self.key_subtitles,
-                'aspectratio'  : self.key_aspectratio,
+                'videooptions' : self.key_videooption,
+                'menu'         : self.key_menu,
             }, -1)
         
         self.onClose.append(self.__onClose)
@@ -265,13 +273,10 @@ class IPTVExtMoviePlayer(Screen):
         except: printExc()
         self.hideSubSynchroControl()
         
-        # remember current aspect ratio as default it will be restored before close
-        customDefaultAspectRatio = additionalParams.get('default_aspect_ratio', -1)
-        if -1 != customDefaultAspectRatio:
-            self.defaultAspectRatio = customDefaultAspectRatio
-        else:
-            self.defaultAspectRatio = AVSwitch().getAspectRatioSetting()
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> customDefaultAspectRatio[%d] defaultAspectRatio[%d]" % (customDefaultAspectRatio, self.defaultAspectRatio))
+        # AV options
+        self.defVideoOptions  = {'aspect':None, 'aspect_choices':[], 'policy':None, 'policy_choices':[], 'policy2':None, 'policy2_choices':[]}
+        self.videoOptSetters  = {'aspect':SetE2VideoAspect, 'policy':SetE2VideoPolicy, 'policy2':SetE2VideoPolicy} 
+        self.currVideoOptions    = {'aspect':None, 'policy':None, 'policy2':None}
         
         # meta data
         self.metaHandler = IPTVMovieMetaDataHandler( self.hostName, self.title, self.fileSRC )
@@ -327,51 +332,159 @@ class IPTVExtMoviePlayer(Screen):
         self.messageQueue = []
         self.underMessage = False
         
-        try: self.autoHideTime = 1000 * int(config.plugins.iptvplayer.extplayer_infobar_timeout.value)
+        try: self.autoHideTime = 1000 * int(self.configObj.getInfoBarTimeout())
         except: self.autoHideTime = 1000
         
         self.fatalErrorOccurs  = False
         self.delayedClosure    = None
         self.childWindowsCount = 0
         
-    def setAspectRatio(self, init=False):
-        printDBG("setAspectRatio")
-        aspect = self.metaHandler.getAspectRatioIdx()
-        printDBG("setAspectRatio aspect[%s]" % aspect)
-        if -1 == aspect and not init:
-            aspect = self.defaultAspectRatio
-        if aspect > -1:
-            AVSwitch().setAspectRatio( aspect )
-        
-    def selectAspectRatio(self):
-        printDBG("selectAspectRatio")
-        list = [_("4:3 Letterbox"), _("4:3 PanScan"), _("16:9"), _("16:9 always"), _("16:10 Letterbox"), _("16:10 PanScan"), _("16:9 Letterbox")]
+    def showMenuOptions(self):
+        printDBG("showMenuOptions")
         options = []
+        options.append(IPTVChoiceBoxItem(_("External movie player config"), "", "menu"))
+        options.append(IPTVChoiceBoxItem(_("Subtitles"), "", "subtitles"))
+        options.append(IPTVChoiceBoxItem(_("Video options"), "", "video_options"))
         
-        currIdx = self.metaHandler.getAspectRatioIdx()
-        if -1 == currIdx:
-            currIdx = self.defaultAspectRatio
+        if len(options):
+            self.openChild(boundFunction(self.childClosed, self.showMenuOptionsCallback), IPTVChoiceBoxWidget, {'width':300, 'height':170, 'current_idx':0, 'title':_("Menu"), 'options':options})
+        
+    def showMenuOptionsCallback(self, ret=None):
+        printDBG("showMenuOptionsCallback ret[%r]" % [ret])
+        if not isinstance(ret, IPTVChoiceBoxItem): return
+        
+        if "menu" == ret.privateData:
+            self.runConfigMoviePlayer()
+        elif "subtitles" == ret.privateData:
+            self.selectSubtitle()
+        elif "video_options" == ret.privateData:
+            self.selectVideoOptions()
+        
+    def runConfigMoviePlayer(self):
+        printDBG("runConfigMoviePlayerCallback")
+        self.openChild(boundFunction(self.childClosed, self.runConfigMoviePlayerCallback), ConfigExtMoviePlayer, True)
+        
+    def runConfigMoviePlayerCallback(self, confgiChanged=False):
+        printDBG("runConfigMoviePlayerCallback confgiChanged[%s]" % confgiChanged)
+        if not confgiChanged: return
+        
+        # change subtitles settings
+        sub = self.configObj.getSubtitleFontSettings()
+        self["subLabel1"].instance.setFont( gFont(sub['font'], sub['font_size']) )
+        self["subLabel1"].instance.setForegroundColor( parseColor(sub['font_color']) )
+        self['subLabel1'].setPosition(self['subLabel1'].position[0], getDesktop(0).size().height()-sub['pos']-240)
+
+        if 'border' in sub:
+            self["subLabel1"].instance.setBorderColor( parseColor(sub['border']['color']) )
+            self["subLabel1"].instance.setBorderWidth( sub['border']['width'] )
+        else:
+            try:
+                tmp = dir(eLabel)
+                if 'setBorderColor' in tmp:
+                    self["subLabel1"].instance.setBorderWidth( 0 )
+            except: printExc()
+        
+        if 'shadow' in sub:
+            self["subLabel1"].instance.setShadowColor( parseColor(sub['shadow']['color']) )
+            self["subLabel1"].instance.setShadowOffset( ePoint(sub['shadow']['xoffset'], sub['shadow']['yoffset']) )
+        else:
+            self["subLabel1"].instance.setShadowOffset( ePoint(0, 0) )
+        sub = None
+        
+        # set video options
+        videoOptionChange = False
+        videoOptions = ['aspect', 'policy', 'policy2']
+        playerDefOptions = self.configObj.getDefaultPlayerVideoOptions()
+        for opt in videoOptions:
+            playerVal = playerDefOptions[opt]
+            metaVal   = self.metaHandler.getVideoOption(opt)
+            currVal   = self.currVideoOptions[opt]
+            defVal    = playerDefOptions[opt]
             
-        for idx in range(len(list)):
-            item = IPTVChoiceBoxItem(list[idx], "", idx)
-            if idx == currIdx:
-                item.type = IPTVChoiceBoxItem.TYPE_ON
-            else:
-                item.type = IPTVChoiceBoxItem.TYPE_OFF
-            options.append( item )
+            if None == metaVal:
+                if currVal != playerVal:
+                    if None == playerVal:
+                        self.currVideoOptions[opt] = defVal
+                    else:
+                        self.currVideoOptions[opt] = playerVal
+                    videoOptionChange = True
         
-        self.openChild(boundFunction(self.childClosed, self.selectAspectRatioCallback), IPTVChoiceBoxWidget, {'selection_changed':self.aspectRatioSelectionChanged, 'current_idx':currIdx, 'title':_("Select aspect ratio"), 'options':options})
+        if videoOptionChange:
+            self.applyVideoOptions(self.currVideoOptions)
         
-    def aspectRatioSelectionChanged(self, ret=None):
-        printDBG("aspectRatioSelectionChanged ret[%s]" % [ret])
+        # set auto hide options
+        try: self.autoHideTime = 1000 * int(self.configObj.getInfoBarTimeout())
+        except: self.autoHideTime = 1000
+        
+    def getE2VideoOptions(self):
+        defVideoOptions  = {'aspect':         GetE2VideoAspect(), 
+                            'aspect_choices': GetE2VideoAspectChoices(), 
+                            'policy':         GetE2VideoPolicy(), 
+                            'policy_choices': GetE2VideoPolicyChoices(), 
+                            'policy2':        GetE2VideoPolicy('2'), 
+                            'policy2_choices':GetE2VideoPolicyChoices(),
+                            'active':         None
+                           }
+        printDBG(">>>>>>>>>>>>>>>>>>>>> getE2VideoOptions[%s]" % defVideoOptions)
+        return defVideoOptions
+        
+    def applyVideoOptions(self, newOptions):
+        options = ['aspect', 'policy', 'policy2']
+        for opt in options:
+            val = newOptions.get(opt, None)
+            if None != val:
+                self.videoOptSetters[opt](val)
+        
+    def selectVideoOptions(self):
+        printDBG("selectVideoOptions")
+        options = []
+        currIdx = 0
+        optionsTab = [{'title':_('Policy'), 'name': 'policy'}, {'title':_('Policy2'), 'name': 'policy2'}, {'title':_('Aspect'), 'name': 'aspect'}]
+        for option in optionsTab:
+            if len(self.defVideoOptions[option['name']+'_choices' ]) < 2: continue
+            if None == self.defVideoOptions[option['name']]: continue
+            if self.defVideoOptions['active'] == option['name']:
+                currIdx = len(options)
+            options.append(IPTVChoiceBoxItem(option['title'], "", option["name"]))
+        
+        if len(options):
+            self.openChild(boundFunction(self.childClosed, self.selectVideoOptionsCallback), IPTVChoiceBoxWidget, {'width':300, 'current_idx':currIdx, 'title':_("Select video option"), 'options':options})
+        
+    def selectVideoOptionsCallback(self, ret=None):
+        printDBG("selectVideoOptionsCallback ret[%r]" % [ret])
+        if not isinstance(ret, IPTVChoiceBoxItem): return
+        options = []
+        currIdx = 0
+
+        option = ret.privateData
+        self.defVideoOptions['active'] = option
+        
+        choices = self.defVideoOptions['%s_choices' % option]
+        currValue = self.currVideoOptions[option]
+        if None == currValue: currValue = self.defVideoOptions[option]
+        
+        for item in choices:
+            if item == currValue:
+                currIdx = len(options)
+            options.append(IPTVChoiceBoxItem(_(item), "", item))
+        self.openChild(boundFunction(self.childClosed, self.selectVideoOptionCallback), IPTVChoiceBoxWidget, {'selection_changed':self.videoOptionSelectionChanged, 'width':300, 'current_idx':currIdx, 'title':_("Select %s") % ret.name, 'options':options})
+
+    def videoOptionSelectionChanged(self, ret=None):
+        printDBG("videoOptionSelectionChanged ret[%s]" % [ret])
         if isinstance(ret, IPTVChoiceBoxItem):
-            AVSwitch().setAspectRatio(ret.privateData)
+            newOptions = dict(self.currVideoOptions)
+            newOptions[self.defVideoOptions['active']] = ret.privateData
+            self.applyVideoOptions(newOptions)
         
-    def selectAspectRatioCallback(self, ret=None):
-        printDBG("selectAspectRatioCallback ret[%r]" % [ret])
+    def selectVideoOptionCallback(self, ret=None):
+        printDBG("selectVideoOptionsCallback ret[%r]" % [ret])
         if isinstance(ret, IPTVChoiceBoxItem):
-            self.metaHandler.setAspectRatioIdx(ret.privateData)
-        self.setAspectRatio()
+            self.metaHandler.setVideoOption(self.defVideoOptions['active'], ret.privateData)
+            self.currVideoOptions[self.defVideoOptions['active']] = ret.privateData
+        else:
+            ret = IPTVChoiceBoxItem("", "", self.currVideoOptions[self.defVideoOptions['active']] )
+        self.videoOptionSelectionChanged(ret)
+        self.selectVideoOptions()
             
     def selectSubtitle(self):
         printDBG("selectSubtitle")
@@ -668,8 +781,11 @@ class IPTVExtMoviePlayer(Screen):
     def key_subtitles(self):
         self.selectSubtitle()
     
-    def key_aspectratio(self):
-        self.selectAspectRatio()
+    def key_videooption(self):
+        self.selectVideoOptions()
+        
+    def key_menu(self):
+        self.showMenuOptions()
         
     def goSubSynchroKey(self, direction, state='press'):
         if not self.subHandler['synchro']['visible'] or not self.subHandler['enabled'] or None == self.metaHandler.getSubtitleTrack():
@@ -863,11 +979,19 @@ class IPTVExtMoviePlayer(Screen):
         self.onClose.remove(self.__onClose)
         self.messageQueue = []
         
-        # restore default aspect ratio
-        aspect = self.metaHandler.getAspectRatioIdx()
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>> setAspectRatio aspect[%d] defaultAspectRatio[%d]" % (aspect, self.defaultAspectRatio))
-        if -1 != aspect and aspect != self.defaultAspectRatio:
-            AVSwitch().setAspectRatio( self.defaultAspectRatio )
+        # RESTORE DEFAULT AV OPTION
+        printDBG(">>>>>>>>>>>>>>>>>>>>> __onClose[%s]" % self.defVideoOptions)
+        printDBG(">>>>>>>>>>>>>>>>>>>>> __onClose[%s]" % self.currVideoOptions)
+        videoOptionChange = False
+        for opt in ['aspect', 'policy', 'policy2']:
+            val  = self.defVideoOptions[opt] 
+            val2 = self.currVideoOptions[opt]
+            if val in self.defVideoOptions['%s_choices' % opt] and val != val2:
+                videoOptionChange = True
+                break
+                
+        if videoOptionChange:
+            self.applyVideoOptions(self.defVideoOptions)
         
         self.metaHandler.save()
         
@@ -972,8 +1096,31 @@ class IPTVExtMoviePlayer(Screen):
         self['subSynchroIcon'].setPixmap( self.subHandler['synchro']['icon'] )
         
         self.metaHandler.load()
+        
+        # SET Video option
+        videoOptions = ['aspect', 'policy', 'policy2']
+        playerDefOptions = self.configObj.getDefaultPlayerVideoOptions()
+        for opt in videoOptions:
+            val = self.metaHandler.getVideoOption(opt)
+            if val != None:
+                self.currVideoOptions[opt] = val
+            elif playerDefOptions[opt] != None:
+                self.currVideoOptions[opt] = playerDefOptions[opt]
+        
+        videoOptionChange = False
+        self.defVideoOptions = self.getE2VideoOptions()
+        for opt in videoOptions:
+            val = self.currVideoOptions[opt]
+            if val in self.defVideoOptions['%s_choices' % opt] and val != self.defVideoOptions[opt]:
+                videoOptionChange = True
+                self.currVideoOptions[opt] = val
+            else:
+                self.currVideoOptions[opt] = self.defVideoOptions[opt]
+        
+        if videoOptionChange:
+            self.applyVideoOptions(self.currVideoOptions)
+        
         self.enableSubtitles()
-        self.setAspectRatio(True)
             
     def initGuiComponentsPos(self):
         # info bar gui elements

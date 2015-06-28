@@ -34,6 +34,7 @@ except: import simplejson as json
 #        }
 #    },
 #"aspect_ratio":-1,
+#"video_options":{"aspect":"4:3", "policy":None, "policy2":None}
 #"last_position":0
 #}
 
@@ -188,20 +189,22 @@ class IPTVMovieMetaDataHandler():
     ##################################################
     # SUBTITLES
     ##################################################
-    def getAspectRatioIdx(self):
-        localPrintDBG("IPTVMovieMetaDataHandler.getAspectRatioIdx")
-        idx = -1
+    def getVideoOption(self, option):
+        localPrintDBG("IPTVMovieMetaDataHandler.getVideoOption")
+        ret = None
         try:
-            idx = self.data['aspect_ratio']
+            return self.data['video_options'][option]
         except:
             printExc()
-        return idx
+        return ret
         
-    def setAspectRatioIdx(self, idx):
-        localPrintDBG("IPTVMovieMetaDataHandler.setAspectRatioIdx")
+    def setVideoOption(self, option, value):
+        localPrintDBG("IPTVMovieMetaDataHandler.getVideoOption")
         sts = False
         try:
-            self.data['aspect_ratio'] = idx
+            if 'video_options' not in self.data:
+                self.data['video_options'] = {}
+            self.data['video_options'][option] = value
             sts = True
         except:
             printExc()

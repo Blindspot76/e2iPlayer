@@ -67,7 +67,6 @@ class IPTVChoiceBoxWidget(Screen):
         
         self["title"]= Label(self.params.get('title', _("Select option")))        
         self["list"] = IPTVRadioButtonList()
-        self["list"].connectSelChanged(self.onSelectionChanged)
         
         self["actions"] = ActionMap(["ColorActions", "SetupActions", "WizardActions", "ListboxActions"],
             {
@@ -79,16 +78,17 @@ class IPTVChoiceBoxWidget(Screen):
         self.reorderingMode = False
             
     def __onClose(self):
-        self["list"].disconnectSelChanged(self.onSelectionChanged)
+        try: self["list"].disconnectSelChanged(self.onSelectionChanged)
+        except: printExc()
         self.params = None
         
     def onStart(self):
         self.onShown.remove(self.onStart)
+        
         self["list"].setList([ (x,) for x in self.params['options']])
-        try:
-            self["list"].moveToIndex(self.params['current_idx'])
-        except:
-            printExc()
+        try:    self["list"].moveToIndex(self.params['current_idx'])
+        except: printExc()
+        self["list"].connectSelChanged(self.onSelectionChanged)
             
     def key_ok(self):
         self.close(self.getSelectedItem())
