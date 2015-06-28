@@ -399,10 +399,13 @@ class IPTVExtMoviePlayer(Screen):
             playerVal = playerDefOptions[opt]
             metaVal   = self.metaHandler.getVideoOption(opt)
             currVal   = self.currVideoOptions[opt]
-            defVal    = playerDefOptions[opt]
+            defVal    = self.defVideoOptions[opt]
             
+            printDBG(">>>>>>>>>>>>> 0 [%s]" % (metaVal) )
             if None == metaVal:
+                printDBG(">>>>>>>>>>>>> A [%s] [%s]" % (currVal, playerVal) )
                 if currVal != playerVal:
+                    printDBG(">>>>>>>>>>>>> B")
                     if None == playerVal:
                         self.currVideoOptions[opt] = defVal
                     else:
@@ -429,6 +432,7 @@ class IPTVExtMoviePlayer(Screen):
         return defVideoOptions
         
     def applyVideoOptions(self, newOptions):
+        printDBG("applyVideoOptions newOptions[%s] ")
         options = ['aspect', 'policy', 'policy2']
         for opt in options:
             val = newOptions.get(opt, None)

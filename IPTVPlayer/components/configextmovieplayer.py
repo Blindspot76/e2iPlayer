@@ -78,9 +78,11 @@ class ConfigExtMoviePlayerBase():
         
         # fill policy 2 option 
         options = [(None, _("From E2 settings"))]
-        tmp = GetE2VideoPolicyChoices()
-        for item in tmp:
-            options.append((item,_(item)))
+        if None != GetE2VideoPolicy('2'):
+            tmp = GetE2VideoPolicyChoices()
+            for item in tmp:
+                options.append((item,_(item)))
+        else: tmp = []
         if config.plugins.iptvplayer.extplayer_policy2.value not in tmp:
             config.plugins.iptvplayer.extplayer_policy2.value = None
         if len(tmp):
