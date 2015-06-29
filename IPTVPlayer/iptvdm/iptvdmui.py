@@ -156,7 +156,9 @@ class IPTVDMWidget(Screen):
                         skip = True
                         break
                 if skip: continue
-                listItem = DMItemBase(url=fileName, fileName=fileName)
+                try: fileTitle = fileName.split('/')[-1]
+                except: fileTitle = fileName
+                listItem = DMItemBase(url=fileName, fileName=fileTitle)
                 try: listItem.downloadedSize = os_path.getsize(fileName)
                 except: listItem.downloadedSize = 0
                 listItem.status      = DMHelper.STS.DOWNLOADED
@@ -302,13 +304,13 @@ class IPTVDMWidget(Screen):
                 self.DM.setUpdateProgress(False)
                 player = ret[2]
                 if "mini" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, item.fileName, item.fileName)
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, item.url, item.fileName)
                 elif "exteplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, item.fileName, None, 'eplayer')
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.url, item.fileName, None, 'eplayer')
                 elif "extgstplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, item.fileName, None, 'gstplayer')
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.url, item.fileName, None, 'gstplayer')
                 else:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, item.fileName, item.fileName)
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, item.url, item.fileName)
             elif self.localMode:
                 if ret[1] == "remove": 
                     try: 
