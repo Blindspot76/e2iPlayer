@@ -1192,7 +1192,7 @@ msgid "External player use software decoder for the AAC"
 msgstr "Zew.odtwarzacz,wykorzystanie dekododowania dla AAC"
 
 msgid "External player infobar timeout"
-msgstr "Zewnętrzny odtwarzacz,czas wyswietlania info.w belce"
+msgstr "Zewnętrzny odtwarzacz,czas wyswietlania info.na belce"
 
 msgid "Save changes?"
 msgstr "Zapisać zmiany?"
@@ -1387,7 +1387,7 @@ msgstr ""
 "Proszę sprawdzić, czy dostępne są wtyczki GStreamera w systemie."
 
 msgid "got buffer empty from driver!"
-msgstr "pusty bufor od sterowników"
+msgstr "pusty bufor ze sterowników"
 
 msgid "Status object [%r]"
 msgstr "Stan obiektu [%r]"
@@ -1412,3 +1412,117 @@ msgstr "widoczne"
 
 msgid "blocked"
 msgstr "zablokowane"
+
+msgid "IPTV Player Configuring and external movie player"
+msgstr "IPTV Player Konfig.i zewnętrzny odtwarzacz filmów"
+
+msgid "External movie player config"
+msgstr "Konfig.zew.odtwarzacza filmów"
+
+msgid "Subtitles"
+msgstr "Napisy"
+
+msgid "subtitles"
+msgstr "napisy"
+
+msgid "Video options"
+msgstr "Opcje wideo"
+
+msgid "Subtitle position"
+msgstr "Pozycja napisów"
+
+msgid "Subtitle font"
+msgstr "Czcionka napisów"
+
+msgid "Subtitle font size"
+msgstr "Rozmiar czcionki napisów"
+
+msgid "Subtitle font color"
+msgstr "Kolor czcionki napisów"
+
+msgid "Subtitle border enabled"
+msgstr "Włączyć obramowanie napisów"
+
+msgid "Subtitle border color"
+msgstr "Włączyć kolory cieni"
+
+msgid "Subtitle border width"
+msgstr "Szerokość ramki napisów"
+
+msgid "Subtitle shadow color"
+msgstr "Kolor cieni napisów"
+
+msgid "Subtitle shadow enabled"
+msgstr "Włączyć cienie napisów"
+
+msgid "Subtitle shadow X offset"
+msgstr "Przesunięcie X cienie napisów"
+
+msgid "Subtitle shadow Y offset"
+msgstr "Przesunięcie Y cienie napisów"
+
+msgid "Regular"
+msgstr "Regularna"
+
+msgid "second"
+msgstr "sekunda"
+
+msgid "seconds"
+msgstr "sekund"
+
+msgid "from E2 settings"
+msgstr "z ustawień E2"
+
+msgid "Configuring an external movie player"
+msgstr "Konfiguracja zew. odtwarzacz filmów"
+
+msgid "Default video aspect ratio"
+msgstr "Domyślnie proporcje wideo obrazu"
+
+msgid "Default video policy"
+msgstr "Domyślna zasada wideo"
+
+msgid "Default second video policy"
+msgstr "Druga domyślna zasada wideo"
+
+msgid "download-buffer-path"
+msgstr "pobieranie,ścieżka bufora"
+
+msgid "ring-buffer-max-size"
+msgstr "maksymalny rozmiar bufora"
+
+msgid "buffer-duration"
+msgstr "czas trwania buforowania"
+
+msgid "buffer-size"
+msgstr "Rozmiar bufora"
+
+msgid "data"
+msgstr "dane"
+
+msgid "font"
+msgstr "czcionka"
+
+msgid "name"
+msgstr "nazwa"
+
+msgid "active"
+msgstr "aktywny"
+
+msgid "Select video option"
+msgstr "Wybierz opcję wideo"
+
+msgid "Select %s"
+msgstr "Wybierz %s"
+
+msgid "lang"
+msgstr "Język"
+
+msgid "path"
+msgstr "ścieżka"
+
+msgid "marker"
+msgstr "znacznik"
+
+msgid "Fatal error: consoleWrite failed!"
+msgstr "Błąd krytyczny:zapis w konsoli nie powiódł się!"
