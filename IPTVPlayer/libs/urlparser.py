@@ -1870,20 +1870,27 @@ class pageParser:
         
     def parseVSHAREIO(self, baseUrl):
         printDBG("parseVSHAREIO baseUrl[%s]" % baseUrl)
-        # example video: http://vshare.io/v/72f9061/width-470/height-305/
+        # example video: 
+        # http://vshare.io/v/72f9061/width-470/height-305/
+        # http://vshare.io/v/72f9061/width-470/height-305/
+        # http://vshare.io/d/72f9061/1
+        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/[dv]/([A-Za-z0-9]{7})/')[0]
+        url = 'http://vshare.io/v/{0}/width-470/height-305/'.format(video_id)
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Referer':baseUrl}
+        
         vidTab = []
-        sts, data = self.cm.getPage(baseUrl)
-        if sts:
-            stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"]+?/stream\,[^"]+?)[\'"]')[0]
-            if '' == stream: stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"\']+?\.flv)[\'"]')[0]
-            download = CParsingHelper.getSearchGroups(data, '"(http://[^"]+?/download\,[^"]+?)"')[0]
-            if '' != stream:
-                vidTab.append({'name': 'http://vshare.io/stream ', 'url':stream})
-                # '.flv' -> '.avi' | 'stream,' -> 'download,' | 'http://s4.' -> 'http://s6.'
-                if '' == download and stream.startswith('http://s4.') and stream.endswith('.flv') and 'stream,' in stream:
-                    download = stream.replace('http://s4.', 'http://s6.').replace('stream,', 'download,').replace('.flv', '.avi')
-            if '' != download:
-                vidTab.append({'name': 'http://vshare.io/download ', 'url':download})
+        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+        if not sts: return
+        stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"]+?/stream\,[^"]+?)[\'"]')[0]
+        if '' == stream: stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"\']+?\.flv)[\'"]')[0]
+        download = CParsingHelper.getSearchGroups(data, '"(http://[^"]+?/download\,[^"]+?)"')[0]
+        if '' != stream:
+            vidTab.append({'name': 'http://vshare.io/stream ', 'url':stream})
+            # '.flv' -> '.avi' | 'stream,' -> 'download,' | 'http://s4.' -> 'http://s6.'
+            if '' == download and stream.startswith('http://s4.') and stream.endswith('.flv') and 'stream,' in stream:
+                download = stream.replace('http://s4.', 'http://s6.').replace('stream,', 'download,').replace('.flv', '.avi')
+        if '' != download:
+            vidTab.append({'name': 'http://vshare.io/download ', 'url':download})
         return vidTab
             
     def parserVIDSSO(self, url):
