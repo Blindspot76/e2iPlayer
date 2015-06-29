@@ -13,6 +13,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, by
 import codecs
 try:    import json
 except: import simplejson as json
+from copy import deepcopy
 ###################################################
 #{
 #"host":"",
@@ -39,7 +40,7 @@ except: import simplejson as json
 #}
 
 def localPrintDBG(txt):
-    #printDBG(txt)
+    printDBG(txt)
     pass
 
 class IPTVMovieMetaDataHandler():
@@ -49,6 +50,7 @@ class IPTVMovieMetaDataHandler():
     ENCODING  = 'utf-8'
     
     def __init__(self, host="", title="", filePath=""):
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>... [%s]\n" % self.META_DATA)
         localPrintDBG("IPTVMovieMetaDataHandler.__init__ host[%s], title[%s], filePath[%s]" % (host, title, filePath))
         if "" != host:
             fileName = "{0}_{1}.{2}".format(host, title, self.EXTENSION)
@@ -56,7 +58,7 @@ class IPTVMovieMetaDataHandler():
             fileName = filePath.split('/')[-1]+'.' + self.EXTENSION
         
         self.filePath = GetMovieMetaDataDir( RemoveDisallowedFilenameChars( fileName ) )
-        self.data = dict( self.META_DATA )
+        self.data = deepcopy( self.META_DATA )
         self.data.update( {"host":host, "title":title, "file_path":filePath} )
         self.isModified = False
         
@@ -99,7 +101,7 @@ class IPTVMovieMetaDataHandler():
         tracks = []
         try:
             for item in self.data['tracks']['subtitles']['tracks']:
-                track = dict( self.SUBTITLE_TRACK )
+                track = deepcopy( self.SUBTITLE_TRACK )
                 track.update(item)
                 tracks.append(track)
         except:
@@ -163,7 +165,7 @@ class IPTVMovieMetaDataHandler():
         localPrintDBG("IPTVMovieMetaDataHandler.addSubtitleTrack")
         idx = -1
         try:
-            track = dict( self.SUBTITLE_TRACK )
+            track = deepcopy( self.SUBTITLE_TRACK )
             track.update(subtitlesTrack)
             localPrintDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> track[%s]" % track)
             self.data['tracks']['subtitles']['tracks'].append(track)

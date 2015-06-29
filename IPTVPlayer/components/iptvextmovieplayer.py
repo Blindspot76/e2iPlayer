@@ -389,6 +389,8 @@ class IPTVExtMoviePlayer(Screen):
             self["subLabel1"].instance.setShadowOffset( ePoint(sub['shadow']['xoffset'], sub['shadow']['yoffset']) )
         else:
             self["subLabel1"].instance.setShadowOffset( ePoint(0, 0) )
+            self["subLabel1"].instance.setShadowColor( "#ff111111" )
+            
         sub = None
         
         # set video options

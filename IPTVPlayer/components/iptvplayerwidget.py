@@ -44,7 +44,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           printDBG, printExc, iptv_system, GetHostsList, \
                                                           eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir,\
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
-                                                          CMoviePlayerPerHost, GetFavouritesDir
+                                                          CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
@@ -61,6 +61,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvarticlerichvisualizer import I
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent, CFavItem
 from Plugins.Extensions.IPTVPlayer.components.iconmenager import IconMenager
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover, Cover3
+from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
 
 ######################################################
@@ -534,17 +535,30 @@ class IPTVPlayerWidget(Screen):
                 self.runConfigHostIfAllowed()
             elif ret[1] == "SetActiveMoviePlayer":
                 options = []
-                if None != self.activePlayer.get('player', None): options.append((_("Auto selection based on the settings"), {}))
+                options.append(IPTVChoiceBoxItem(_("Auto selection based on the settings"), "", {}))
                 player = self.getMoviePlayer(True, False)
                 printDBG("SetActiveMoviePlayer [%r]" % dir(player))
-                options.append((_("[%s] with buffering") % player.getText(), {'buffering':True, 'player':player}))
-                player = self.getMoviePlayer(True, True)
-                options.append((_("[%s] with buffering") % player.getText(), {'buffering':True, 'player':player}))
-                player = self.getMoviePlayer(False, False)
-                options.append((_("[%s] without buffering") % player.getText(), {'buffering':False, 'player':player}))
-                player = self.getMoviePlayer(False, True)
-                options.append((_("[%s] without buffering") % player.getText(), {'buffering':False, 'player':player}))
-                self.session.openWithCallback(self.setActiveMoviePlayer, ChoiceBox, title = _("Select movie player"), list = options)
+                options.append(IPTVChoiceBoxItem(_("[%s] with buffering") % player.getText(), "", {'buffering':True, 'player':player}))
+                player = self.getMoviePlayer(True, True) 
+                options.append(IPTVChoiceBoxItem(_("[%s] with buffering") % player.getText(), "", {'buffering':True, 'player':player}))
+                player = self.getMoviePlayer(False, False) 
+                options.append(IPTVChoiceBoxItem(_("[%s] without buffering") % player.getText(), "", {'buffering':False, 'player':player}))
+                player = self.getMoviePlayer(False, True) 
+                options.append(IPTVChoiceBoxItem(_("[%s] without buffering") % player.getText(), "", {'buffering':False, 'player':player}))
+                
+                currIdx = -1
+                for idx in range(len(options)):
+                    try: 
+                        if options[idx].privateData.get('buffering', None) == self.activePlayer.activePlayer.get('buffering', None) and \
+                           options[idx].privateData.get('player', CFakeMoviePlayerOption('', '')).value == \
+                           self.activePlayer.activePlayer.get('player', CFakeMoviePlayerOption('', '')).value:
+                            currIdx = idx
+                    except: printExc()
+                    if idx == currIdx:
+                        options[idx].type = IPTVChoiceBoxItem.TYPE_ON
+                    else:
+                        options[idx].type = IPTVChoiceBoxItem.TYPE_OFF
+                self.session.openWithCallback(self.setActiveMoviePlayer, IPTVChoiceBoxWidget, {'width':500, 'height':250, 'current_idx':currIdx, 'title': _("Select movie player"), 'options':options})
             elif ret[1] == 'ADD_FAV':
                 currSelIndex = self.canByAddedToFavourites()[0]
                 self.requestListFromHost('ForFavItem', currSelIndex, '')
@@ -556,7 +570,8 @@ class IPTVPlayerWidget(Screen):
             self.loadHost()
     
     def setActiveMoviePlayer(self, ret):
-        if ret: self.activePlayer.set(ret[1])
+        if not isinstance(ret, IPTVChoiceBoxItem): return
+        self.activePlayer.set( ret.privateData )
 
     def runIPTVDM(self, callback=None):
         global gDownloadManager
