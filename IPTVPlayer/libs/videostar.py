@@ -3,7 +3,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
@@ -37,8 +37,12 @@ config.plugins.iptvplayer.videostar_login          = ConfigText(default = "", fi
 config.plugins.iptvplayer.videostar_password       = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.videostar_use_proxy_gateway  = ConfigYesNo(default = False)
 config.plugins.iptvplayer.videostar_proxy_gateway_url  = ConfigText(default = "http://darmowe-proxy.pl/browse.php?u={0}&b=192&f=norefer", fixed_size = False)
-config.plugins.iptvplayer.videostar_proxy_gateway_ip   = ConfigText(default = "85.128.142.29", fixed_size = False)
 
+#http://www.bramka-proxy.pl/browse.php?u={0}&b=192&f=norefer
+#185.5.99.77
+
+#http://darmowe-proxy.pl/browse.php?u={0}&b=192&f=norefer
+#85.128.142.29
 
 
 def GetConfigList():
@@ -52,7 +56,6 @@ def GetConfigList():
         optionList.append(getConfigListEntry(_("Użyj bramki proxy"), config.plugins.iptvplayer.videostar_use_proxy_gateway))
         if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
             optionList.append(getConfigListEntry("    " + _("Url:"), config.plugins.iptvplayer.videostar_proxy_gateway_url))
-            optionList.append(getConfigListEntry("    " + _("IP:"), config.plugins.iptvplayer.videostar_proxy_gateway_ip))
     return optionList
 ###################################################
 
@@ -76,19 +79,35 @@ class VideoStarApi:
     def __init__(self):
         self.cm = common()#proxyURL= '', useProxy = True)
         self.up = urlparser()
-        
+        self.sessionEx = MainSessionWrapper()
 
+    def doInit(self):
         if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
-            self.my_ip             = config.plugins.iptvplayer.videostar_proxy_gateway_ip.value
             self.proxy_gateway_url = config.plugins.iptvplayer.videostar_proxy_gateway_url.value
+            self.my_ip             = self.getProxyGatewayIP()
         else:
             self.my_ip = ''
             self.proxy_gateway_url = ''
-        
-        self.sessionEx = MainSessionWrapper()
         self._reInit()
         self.channelsList = []
         
+    def getProxyGatewayIP(self):
+        url = 'http://api.ipinfodb.com/v3/ip-city/?key=24e822dc48a930d92b04413d1d551ae86e09943a829f971c1c83b7727a16947f&format=json'
+        sts, data = self.cm.getPage(url, {'header':{'User-Agent':'Mozilla/5.0', 'Referer':self.proxy_gateway_url}, 'proxy_gateway':self.proxy_gateway_url})
+        my_ip = ''
+        if sts:
+            try:
+                printDBG(data)
+                data = byteify(json.loads(data))
+                my_ip = data['ipAddress']
+                printDBG('getProxyGatewayIP my_ip[%s]' % my_ip)
+            except:
+                printExc()
+        if '' == my_ip:
+            self.sessionEx.open(MessageBox, _('Problem z uzyskaniem IP bramki proxy!'), type = MessageBox.TYPE_INFO, timeout = 10 )
+        return my_ip
+        
+
     def _getUrl(self, key):
         if '2' == self.streamprotocol:
             MAINURL = VideoStarApi.MAINURL_IOS
@@ -119,7 +138,7 @@ class VideoStarApi:
 
     def getChannelsList(self, refresh=False):
         printDBG("VideoStarApi.getChannelsList")
-        self._reInit()
+        self.doInit()
         if not refresh and 0 < len(self.channelsList):
             return self.channelsList
 
@@ -220,7 +239,7 @@ class VideoStarApi:
                             meta['Referer'] =  self.proxy_gateway_url
                             meta['User-Agent'] = 'Mozilla/5.0'
                             meta['X-Forwarded-For'] = self.my_ip
-                        urlsTab.append({'url': self.up.decorateUrl(url, meta), 'name': 'videostar hls', 'type':'hls'})                    
+                        urlsTab.append({'url': self.up.decorateUrl(url, meta), 'name': 'videostar hls', 'type':'hls'})
             except:
                 printExc()
                 
