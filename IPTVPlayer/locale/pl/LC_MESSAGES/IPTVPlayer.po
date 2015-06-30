@@ -117,7 +117,7 @@ msgid "Search type"
 msgstr "Wybierz typ wyszukiwania"
 
 msgid "Your search entry"
-msgstr "Wprowad wzorzec wyszukiwania"
+msgstr "Wprowadź wzorzec wyszukiwania"
 
 msgid ""
 "No item to display. \n"
@@ -1198,7 +1198,7 @@ msgid "Save changes?"
 msgstr "Zapisać zmiany?"
 
 msgid "Please remember that you use this plugin at your own risk."
-msgstr "Pamiętaj,używasz tej wtyczki na własne ryzyko."
+msgstr "Używasz tej wtyczki na własne ryzyko."
 
 msgid "During processing, please wait."
 msgstr "Podczas przetwarzania, proszę czekać."
@@ -1444,10 +1444,10 @@ msgid "Subtitle border enabled"
 msgstr "Włączyć obramowanie napisów"
 
 msgid "Subtitle border color"
-msgstr "Włączyć kolory cieni"
+msgstr "Kolor obramowania napisów"
 
 msgid "Subtitle border width"
-msgstr "Szerokość ramki napisów"
+msgstr "Szerokość obramowania napisów"
 
 msgid "Subtitle shadow color"
 msgstr "Kolor cieni napisów"
@@ -1456,10 +1456,10 @@ msgid "Subtitle shadow enabled"
 msgstr "Włączyć cienie napisów"
 
 msgid "Subtitle shadow X offset"
-msgstr "Przesunięcie X cienie napisów"
+msgstr "Przesunięcie X cieni napisów"
 
 msgid "Subtitle shadow Y offset"
-msgstr "Przesunięcie Y cienie napisów"
+msgstr "Przesunięcie Y cieni napisów"
 
 msgid "Regular"
 msgstr "Regularna"
@@ -1474,7 +1474,7 @@ msgid "from E2 settings"
 msgstr "z ustawień E2"
 
 msgid "Configuring an external movie player"
-msgstr "Konfiguracja zew. odtwarzacz filmów"
+msgstr "Konfiguracja zew.odtwarzacz filmów"
 
 msgid "Default video aspect ratio"
 msgstr "Domyślnie proporcje wideo obrazu"
