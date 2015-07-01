@@ -27,7 +27,7 @@ from Plugins.Extensions.IPTVPlayer.components.configextmovieplayer import Config
 ###################################################
 # FOREIGN import
 ###################################################
-from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel, gFont, ePoint
+from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel, gFont, ePoint, eSize
 from Screens.Screen import Screen
 from Screens.ChoiceBox import ChoiceBox
 from Components.AVSwitch import AVSwitch
@@ -128,7 +128,7 @@ class IPTVExtMoviePlayer(Screen):
     def __prepareSkin(self):
         
         sub = self.configObj.getSubtitleFontSettings()
-        subSkinPart = ' foregroundColor="%s" font="%s;%s" ' % (sub['font_color'], sub['font'], sub['font_size'])
+        subSkinPart = ' valign="%s" foregroundColor="%s" font="%s;%s" ' % (sub['box_valign'], sub['font_color'], sub['font'], sub['font_size'])
         if 'border' in sub:
             subSkinPart += ' borderColor="%s" borderWidth="%s" ' % (sub['border']['color'], sub['border']['width']) 
         if 'shadow' in sub:
@@ -152,15 +152,16 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                 <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
                 
-                <widget name="subLabel1"          position="10,%d"          size="%d,240"   zPosition="1" transparent="1" backgroundColor="transparent" halign="center" valign="center" %s/>
+                <widget name="subLabel1"          position="10,%d"          size="%d,%d"   zPosition="1" transparent="1" backgroundColor="transparent" halign="center" %s/>
         </screen>""" % ( getDesktop(0).size().width(), 
                          getDesktop(0).size().height(),
                          GetIPTVDMImgDir("playback_banner.png"),
                          GetIPTVDMImgDir("playback_progress.png"),
                          GetIPTVDMImgDir("playback_buff_progress.png"),
                          GetIPTVDMImgDir('playback_pointer.png'),
-                         (getDesktop(0).size().height()-sub['pos']-240),
+                         (getDesktop(0).size().height()-sub['pos']-sub['box_height']),
                          getDesktop(0).size().width()-20,
+                         sub['box_height'],
                          subSkinPart
                          ) ##00000000 bottom
         sub = None
@@ -372,7 +373,6 @@ class IPTVExtMoviePlayer(Screen):
         sub = self.configObj.getSubtitleFontSettings()
         self["subLabel1"].instance.setFont( gFont(sub['font'], sub['font_size']) )
         self["subLabel1"].instance.setForegroundColor( parseColor(sub['font_color']) )
-        self['subLabel1'].setPosition(self['subLabel1'].position[0], getDesktop(0).size().height()-sub['pos']-240)
 
         if 'border' in sub:
             self["subLabel1"].instance.setBorderColor( parseColor(sub['border']['color']) )
@@ -390,6 +390,19 @@ class IPTVExtMoviePlayer(Screen):
         else:
             self["subLabel1"].instance.setShadowOffset( ePoint(0, 0) )
             self["subLabel1"].instance.setShadowColor( parseColor("#ff111111") )
+            
+        try:
+            valignMap = {'bottom':2,'center':1, 'top':0}
+            self["subLabel1"].instance.setVAlign(valignMap.get(sub['box_valign'], 2))
+            
+            self["subLabel1"].instance.resize(eSize(getDesktop(0).size().width()-20, sub['box_height']))
+            self["subLabel1"].resize(eSize(getDesktop(0).size().width()-20, sub['box_height']))
+            
+            self['subLabel1'].move( ePoint(self['subLabel1'].position[0], getDesktop(0).size().height()-sub['pos']-sub['box_height']) )
+        except:
+            printExc()
+
+        self['subLabel1'].instance.move( ePoint(self['subLabel1'].position[0], getDesktop(0).size().height()-sub['pos']-sub['box_height']) )
             
         sub = None
         
@@ -1125,12 +1138,6 @@ class IPTVExtMoviePlayer(Screen):
         
         if videoOptionChange:
             self.applyVideoOptions(self.currVideoOptions)
-        
-        printDBG("Try to work around some problems with setting valign")
-        try:
-            self["subLabel1"].instance.setVAlign(2)
-        except:
-            printExc()
         
         self.enableSubtitles()
             

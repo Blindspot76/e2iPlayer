@@ -47,7 +47,9 @@ config.plugins.iptvplayer.extplayer_subtitle_shadow_enabled = ConfigYesNo(defaul
 config.plugins.iptvplayer.extplayer_subtitle_border_width = ConfigInteger(3, (1, 6))
 config.plugins.iptvplayer.extplayer_subtitle_shadow_xoffset = ConfigInteger(3, (-6, 6))
 config.plugins.iptvplayer.extplayer_subtitle_shadow_yoffset = ConfigInteger(3, (-6, 6))
-config.plugins.iptvplayer.extplayer_subtitle_pos = ConfigInteger(50, (0, 200))
+config.plugins.iptvplayer.extplayer_subtitle_pos = ConfigInteger(50, (0, 400))
+config.plugins.iptvplayer.extplayer_subtitle_box_valign = ConfigSelection(default = "bottom", choices = [ ("bottom", _("bottom")), ("center", _("center")), ("top", _("top"))])
+config.plugins.iptvplayer.extplayer_subtitle_box_height  = ConfigInteger(240, (50, 400))
 
 class ConfigExtMoviePlayerBase():
     
@@ -129,6 +131,8 @@ class ConfigExtMoviePlayerBase():
             settings['shadow']['xoffset'] = config.plugins.iptvplayer.extplayer_subtitle_shadow_xoffset.value
             settings['shadow']['yoffset'] = config.plugins.iptvplayer.extplayer_subtitle_shadow_yoffset.value
         settings['pos'] = config.plugins.iptvplayer.extplayer_subtitle_pos.value
+        settings['box_valign'] = config.plugins.iptvplayer.extplayer_subtitle_box_valign.value        
+        settings['box_height'] = config.plugins.iptvplayer.extplayer_subtitle_box_height.value
         return settings
         
     def getDefaultPlayerVideoOptions(self):
@@ -183,9 +187,12 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         if self.policy2_avaliable:
             list.append(getConfigListEntry(_("Default second video policy"), config.plugins.iptvplayer.extplayer_policy2) )
         
-        list.append(getConfigListEntry(_("Subtitle position"), config.plugins.iptvplayer.extplayer_subtitle_pos) )
         list.append(getConfigListEntry(_("Subtitle font"), config.plugins.iptvplayer.extplayer_subtitle_font) )
         list.append(getConfigListEntry(_("Subtitle font size"), config.plugins.iptvplayer.extplayer_subtitle_font_size) )
+        
+        list.append(getConfigListEntry(_("Subtitle box position"), config.plugins.iptvplayer.extplayer_subtitle_pos) )
+        list.append(getConfigListEntry(_("Subtitle box height"), config.plugins.iptvplayer.extplayer_subtitle_box_height) )
+        list.append(getConfigListEntry(_("Subtitle vertical alignment"), config.plugins.iptvplayer.extplayer_subtitle_box_valign) )
        
         list.append(getConfigListEntry(_("Subtitle font color"), config.plugins.iptvplayer.extplayer_subtitle_font_color) )
         

@@ -40,7 +40,7 @@ from copy import deepcopy
 #}
 
 def localPrintDBG(txt):
-    printDBG(txt)
+    #printDBG(txt)
     pass
 
 class IPTVMovieMetaDataHandler():
