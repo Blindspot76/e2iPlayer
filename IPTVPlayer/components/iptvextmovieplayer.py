@@ -143,16 +143,16 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="statusIcon"         position="20,45"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
                 
                 <widget name="goToSeekPointer"    position="94,0"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
-                <widget name="goToSeekLabel"      position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
-                <widget name="infoBarTitle"       position="82,30"         size="568,23"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
-                <widget name="currTimeLabel"      position="94,62"         size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
-                <widget name="lengthTimeLabel"    position="317,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
-                <widget name="remainedLabel"      position="538,62"        size="100,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+                <widget name="goToSeekLabel"      noWrap="1" position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
+                <widget name="infoBarTitle"       noWrap="1" position="82,30"         size="568,23"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
+                <widget name="currTimeLabel"      noWrap="1" position="94,62"         size="120,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
+                <widget name="lengthTimeLabel"    noWrap="1" position="307,62"        size="120,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
+                <widget name="remainedLabel"      noWrap="1" position="518,62"        size="120,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
                 
                 <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                 <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
                 
-                <widget name="subLabel1"          position="0,%d"          size="%d,240"   zPosition="1" transparent="1" backgroundColor="transparent" halign="center" valign="bottom" %s/>
+                <widget name="subLabel1"          position="10,%d"          size="%d,240"   zPosition="1" transparent="1" backgroundColor="transparent" halign="center" valign="center" %s/>
         </screen>""" % ( getDesktop(0).size().width(), 
                          getDesktop(0).size().height(),
                          GetIPTVDMImgDir("playback_banner.png"),
@@ -160,9 +160,9 @@ class IPTVExtMoviePlayer(Screen):
                          GetIPTVDMImgDir("playback_buff_progress.png"),
                          GetIPTVDMImgDir('playback_pointer.png'),
                          (getDesktop(0).size().height()-sub['pos']-240),
-                         getDesktop(0).size().width(),
+                         getDesktop(0).size().width()-20,
                          subSkinPart
-                         ) ##00000000
+                         ) ##00000000 bottom
         sub = None
         return skin
     
@@ -1125,6 +1125,12 @@ class IPTVExtMoviePlayer(Screen):
         
         if videoOptionChange:
             self.applyVideoOptions(self.currVideoOptions)
+        
+        printDBG("Try to work around some problems with setting valign")
+        try:
+            self["subLabel1"].instance.setVAlign(2)
+        except:
+            printExc()
         
         self.enableSubtitles()
             
