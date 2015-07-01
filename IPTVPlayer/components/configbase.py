@@ -175,8 +175,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
             if failCallBackFun: failCallBackFun()
 
     def keySave(self):
-        self.save()
-        self.close()
+        self.saveAndClose()
         
     def saveOrCancel(self, operation="save"):
         for x in self["config"].list:
