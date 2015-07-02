@@ -22,7 +22,8 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                getF4MLinksWithMeta, \
                                                                MYOBFUSCATECOM_OIO, \
                                                                MYOBFUSCATECOM_0ll, \
-                                                               int2base, drdX_fx
+                                                               int2base, drdX_fx, \
+                                                               unicode_escape
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
 ###################################################
@@ -37,7 +38,7 @@ import base64
 import math
 
 from xml.etree import cElementTree
-from random import random, randint
+from random import random, randint, randrange
 from urlparse import urlparse, parse_qs
 from binascii import hexlify, unhexlify, a2b_hex
 from hashlib import md5
@@ -271,6 +272,8 @@ class urlparser:
                        'tiny.cc':              self.pp.parserTINYCC        ,
                        'picasaweb.google.com': self.pp.parserPICASAWEB     ,
                        'stream4k.to':          self.pp.parserSTREAM4KTO    ,
+                       'onet.pl':              self.pp.parserONETTV        ,
+                       'onet.tv':              self.pp.parserONETTV        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2353,10 +2356,6 @@ class pageParser:
     def parserGOOGLE(self, linkUrl):
         printDBG("parserGOOGLE linkUrl[%s]" % linkUrl)
         
-        def unicode_escape(s):
-            decoder = codecs.getdecoder('unicode_escape')
-            return re.sub(r'\\u[0-9a-fA-F]{4,}', lambda m: decoder(m.group(0))[0], s)
-        
         videoTab = []
         sts, data = self.cm.getPage(linkUrl)
         if sts: 
@@ -3235,6 +3234,44 @@ class pageParser:
         
     def parserVEVO(self, baseUrl):
         printDBG("parserVEVO baseUrl[%s]" % baseUrl)
+        
+    def parserONETTV(self, baseUrl):
+        printDBG("Ekstraklasa.parserONETTV baseUrl[%r]" % baseUrl )
+        
+        videoUrls = []
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return videoUrls
+        ckmId = self.cm.ph.getSearchGroups(data, 'data-params-mvp="([^"]+?)"')[0]
+        if '' == ckmId: ckmId = self.cm.ph.getSearchGroups(data, 'id="mvp:([^"]+?)"')[0]
+        if '' == ckmId: return videoUrls
+        
+        tm = str(int(time.time() * 1000))
+        jQ = str(randrange(562674473039806,962674473039806))
+        authKey = 'FDF9406DE81BE0B573142F380CFA6043'
+        hostName = urlparser().getHostName(baseUrl)
+        contentUrl = 'http://qi.ckm.onetapi.pl/?callback=jQuery183040'+ jQ + '_' + tm + '&body%5Bid%5D=' + authKey + '&body%5Bjsonrpc%5D=2.0&body%5Bmethod%5D=get_asset_detail&body%5Bparams%5D%5BID_Publikacji%5D=' + ckmId + '&body%5Bparams%5D%5BService%5D={0}&content-type=application%2Fjsonp&x-onet-app=player.front.onetapi.pl&_='.format(hostName) + tm
+        sts, data = self.cm.getPage(contentUrl)
+        if sts:
+            try:
+                printDBG(data)
+                data = byteify( json.loads(data[data.find("(")+1:-2]) )
+                data = data['result']['0']['formats']['wideo']
+                for type in data:
+                    for vidItem in data[type]:
+                        if None != vidItem.get('drm_key', None): continue
+                        vidUrl = vidItem.get('url', '')
+                        if '' == vidUrl: continue
+                        if 'hls' == type:
+                            tmpTab = getDirectM3U8Playlist(vidUrl)
+                            for tmp in tmpTab:
+                                videoUrls.append({'name':'ONET type:%s :%s' % (type, tmp.get('bitrate', '0')), 'url':tmp['url']})
+                        elif None != vidItem.get('video_bitrate', None):
+                            videoUrls.append({'name':'ONET type:%s :%s' % (type, vidItem.get('video_bitrate', '0')), 'url':vidUrl})
+                        elif None != vidItem.get('audio_bitrate', None):
+                            videoUrls.append({'name':'ONET type:%s :%s' % (type, vidItem.get('audio_bitrate', '0')), 'url':vidUrl})
+            except:
+                printExc()
+        return videoUrls
         
     def parseNETUTV(self, url):
         printDBG("parserDIVEXPRESS url[%s]" % url)

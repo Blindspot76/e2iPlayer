@@ -14,6 +14,7 @@ from binascii import hexlify
 import re
 import time
 import string
+import codecs
 ###################################################
 try:
     from hashlib import md5
@@ -49,6 +50,10 @@ def JS_DateValueOf():
     
 def JS_FromCharCode(*args): 
     return ''.join(map(unichr, args))
+    
+def unicode_escape(s):
+    decoder = codecs.getdecoder('unicode_escape')
+    return re.sub(r'\\u[0-9a-fA-F]{4,}', lambda m: decoder(m.group(0))[0], s).encode('utf-8')
 
 def drdX_fx(e):
     t = {}
