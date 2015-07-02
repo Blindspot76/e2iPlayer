@@ -95,14 +95,12 @@ class MoviesHDCO(CBaseHostClass):
         data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="listing-cat">', '</ul>', False)[1]
         data = data.split('</li>')
         if len(data): del data[-1]
-        tmpList = []
+        tmpList = [{'title': _("***Any***"), 'url':self.MAIN_URL+'/page/{page}?display=tube&filtre={sort_by}'}]
         for item in data:
             url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             title  = self.cleanHtmlStr(item)
             tmpList.append({'title': title, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)+'/page/{page}?display=tube&filtre={sort_by}'})
-        if len(tmpList):
-            tmpList.insert(0,  {'title': _("***Any***"), 'url':self.MAIN_URL+'/page/{page}?display=tube&filtre={sort_by}'})
         
         mainItem = dict(cItem)
         mainItem.update({'category':category})
@@ -127,7 +125,11 @@ class MoviesHDCO(CBaseHostClass):
             nextPage = True
         else: nextPage = False
         
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="listing-videos listing-tube">', '</ul>', False)[1]
+        m = '<ul class="listing-videos listing-tube">'
+        if m not in data:
+            m = '<li class="border-radius-5 box-shadow">'
+
+        data = CParsingHelper.getDataBeetwenMarkers(data, m, '</ul>', False)[1]
         data = data.split('</li>')
         if len(data): del data[-1]
 
