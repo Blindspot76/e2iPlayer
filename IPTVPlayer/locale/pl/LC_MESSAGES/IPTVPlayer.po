@@ -1428,8 +1428,8 @@ msgstr "napisy"
 msgid "Video options"
 msgstr "Opcje wideo"
 
-msgid "Subtitle position"
-msgstr "Pozycja napisów"
+msgid "Subtitles box position"
+msgstr "Pozycja ramki napisów"
 
 msgid "Subtitle font"
 msgstr "Czcionka napisów"
