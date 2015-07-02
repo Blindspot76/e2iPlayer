@@ -212,6 +212,9 @@ class OpenSubOrgProvider:
                 try: 
                     data = data.decode(subItem['SubEncoding']).encode('UTF-8')
                     title = self._getSubtitleTitle(subItem).replace('_', '.').replace('.'+subItem['SubFormat'], '').replace(' ', '.')
+                    match = re.search(r'[^.]', title)
+                    if match: title = title[match.start():]
+    
                     fileName = "{0}_{1}_0_{2}_{3}".format(title, subItem['ISO639'], subItem['IDSubtitle'], subItem['IDMovieImdb'])
                     fileName = self.tmpData['subDir'] + fileName + '.' + subItem['SubFormat']
                     try:
