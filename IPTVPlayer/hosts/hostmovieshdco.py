@@ -63,6 +63,38 @@ class MoviesHDCO(CBaseHostClass):
                       {'title':_('random'),      'sort_by':'random'},
                      ]
     
+    DISCAVERED_MOVIE_CATEGORY = ['action', 'adventure', 'animation', 'biography', 'bollywood', 'comedy', 'crime', 'disneys', 'documentary', 'drama', 'family', 'fantasy', 'featured', 'history', 'horror', 'marvel', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sports', 'thriller', 'war', 'western']
+    
+    #[{'url': 'http://movieshd.co/?filtre=random&cat=1', 'url2': 'http://movieshd.co/watch-online/category/featured?filtre=random', 'title': 'featured'}, {'url': 'http://movieshd.co/?filtre=random&cat=3', 'url2': 'http://movieshd.co/watch-online/category/comedy?filtre=random', 'title': 'comedy'}, {'url': 'http://movieshd.co/?filtre=random&cat=4', 'url2': 'http://movieshd.co/watch-online/category/romance?filtre=random', 'title': 'romance'}, {'url': 'http://movieshd.co/?filtre=random&cat=14', 'url2': 'http://movieshd.co/watch-online/category/action?filtre=random', 'title': 'action'}, {'url': 'http://movieshd.co/?filtre=random&cat=15', 'url2': 'http://movieshd.co/watch-online/category/crime?filtre=random', 'title': 'crime'}, {'url': 'http://movieshd.co/?filtre=random&cat=19', 'url2': 'http://movieshd.co/watch-online/category/drama?filtre=random', 'title': 'drama'}, {'url': 'http://movieshd.co/?filtre=random&cat=20', 'url2': 'http://movieshd.co/watch-online/category/music?filtre=random', 'title': 'music'}, {'url': 'http://movieshd.co/?filtre=random&cat=24', 'url2': 'http://movieshd.co/watch-online/category/history?filtre=random', 'title': 'history'}, {'url': 'http://movieshd.co/?filtre=random&cat=25', 'url2': 'http://movieshd.co/watch-online/category/biography?filtre=random', 'title': 'biography'}, {'url': 'http://movieshd.co/?filtre=random&cat=29', 'url2': 'http://movieshd.co/watch-online/category/adventure?filtre=random', 'title': 'adventure'}, {'url': 'http://movieshd.co/?filtre=random&cat=30', 'url2': 'http://movieshd.co/watch-online/category/sci-fi?filtre=random', 'title': 'sci-fi'}, {'url': 'http://movieshd.co/?filtre=random&cat=34', 'url2': 'http://movieshd.co/watch-online/category/thriller?filtre=random', 'title': 'thriller'}, {'url': 'http://movieshd.co/?filtre=random&cat=38', 'url2': 'http://movieshd.co/watch-online/category/horror?filtre=random', 'title': 'horror'}, {'url': 'http://movieshd.co/?filtre=random&cat=42', 'url2': 'http://movieshd.co/watch-online/category/fantasy?filtre=random', 'title': 'fantasy'}, {'url': 'http://movieshd.co/?filtre=random&cat=53', 'url2': 'http://movieshd.co/watch-online/category/mystery?filtre=random', 'title': 'mystery'}, {'url': 'http://movieshd.co/?filtre=random&cat=92', 'url2': 'http://movieshd.co/watch-online/category/animation?filtre=random', 'title': 'animation'}, {'url': 'http://movieshd.co/?filtre=random&cat=93', 'url2': 'http://movieshd.co/watch-online/category/family?filtre=random', 'title': 'family'}, {'url': 'http://movieshd.co/?filtre=random&cat=100', 'url2': 'http://movieshd.co/watch-online/category/war?filtre=random', 'title': 'war'}, {'url': 'http://movieshd.co/?filtre=random&cat=113', 'url2': 'http://movieshd.co/watch-online/category/sports?filtre=random', 'title': 'sports'}, {'url': 'http://movieshd.co/?filtre=random&cat=122', 'url2': 'http://movieshd.co/watch-online/category/disneys?filtre=random', 'title': 'disneys'}, {'url': 'http://movieshd.co/?filtre=random&cat=299', 'url2': 'http://movieshd.co/watch-online/category/western?filtre=random', 'title': 'western'}, {'url': 'http://movieshd.co/?filtre=random&cat=460', 'url2': 'http://movieshd.co/watch-online/category/marvel?filtre=random', 'title': 'marvel'}, {'url': 'http://movieshd.co/?filtre=random&cat=468', 'url2': 'http://movieshd.co/watch-online/category/documentary?filtre=random', 'title': 'documentary'}, {'url': 'http://movieshd.co/?filtre=random&cat=539', 'url2': 'http://movieshd.co/watch-online/category/musical?filtre=random', 'title': 'musical'}]
+    #[{'url': 'http://movieshd.co/?filtre=random&cat=539', 'url2': 'http://movieshd.co/watch-online/category/musical?filtre=random', 'title': 'musical'}, {'url': 'http://movieshd.co/?filtre=random&cat=1185', 'url2': 'http://movieshd.co/watch-online/category/bollywood?filtre=random', 'title': 'bollywood'}]
+    #2066
+    # DISCAVE PROCEDURE:
+    # import time
+    # import urllib2
+    # import re
+    # cat_id=1
+    # catTan = []
+    # while True:
+        # mainUrl = 'http://movieshd.co/?filtre=random&cat=%d' % cat_id
+        # headers = { 'User-Agent' : 'Mozilla/5.0' }
+        # try:
+            # req = urllib2.Request(mainUrl, None, headers)
+            # response = urllib2.urlopen(req)
+            # redirectUrl = response.geturl()
+            # response.close()
+        # except:
+            # redirectUrl = ''
+            # pass
+        # if '/category/' in redirectUrl:
+            # title = re.search('/([^/\?]+?)\?', redirectUrl).group(1)
+            # print "--------------------------------------------->"
+            # print title
+            # print mainUrl
+            # print redirectUrl
+            # print '\n'
+            # catTan.append({'title':title, 'url':mainUrl, 'url2':redirectUrl})
+        # cat_id += 1
+        # time.sleep(1)
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesHDCO', 'cookie':'movieshdco.cookie'})
@@ -87,20 +119,30 @@ class MoviesHDCO(CBaseHostClass):
                 self.addDir(params)
             else: self.addVideo(params)
             
+    def getDiscaeredGenres(self):
+        printDBG("MoviesHDCO.getDiscaeredGenres")
+        tmpList = []
+        catUrl = self.MAIN_URL + 'watch-online/category/%s/page/{page}?display=tube&filtre={sort_by}'
+        for item in self.DISCAVERED_MOVIE_CATEGORY:
+            #.capitalize()
+            tmpList.append({'title': item.upper(), 'url':catUrl % item})
+        return tmpList
+            
     def listGenres(self, cItem, category):
         printDBG("MoviesHDCO.listMoviesGenres")
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return 
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="listing-cat">', '</ul>', False)[1]
-        data = data.split('</li>')
-        if len(data): del data[-1]
         tmpList = [{'title': _("***Any***"), 'url':self.MAIN_URL+'/page/{page}?display=tube&filtre={sort_by}'}]
-        for item in data:
-            url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            title  = self.cleanHtmlStr(item)
-            tmpList.append({'title': title, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)+'/page/{page}?display=tube&filtre={sort_by}'})
+        tmpList.extend( self.getDiscaeredGenres() )
+        if 0:
+            sts, data = self.cm.getPage(cItem['url'])
+            if not sts: return 
+            data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="listing-cat">', '</ul>', False)[1]
+            data = data.split('</li>')
+            if len(data): del data[-1]
+            for item in data:
+                url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+                title  = self.cleanHtmlStr(item)
+                tmpList.append({'title': title, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)+'/page/{page}?display=tube&filtre={sort_by}'})
         
         mainItem = dict(cItem)
         mainItem.update({'category':category})
