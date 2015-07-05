@@ -31,7 +31,6 @@ from Components.Sources.StaticText import StaticText
 from Components.config import config
 
 from os import chmod as os_chmod, path as os_path, remove as os_remove
-
 ###################################################
 
 #########################################################
@@ -156,9 +155,7 @@ class IPTVDMWidget(Screen):
                         skip = True
                         break
                 if skip: continue
-                try: fileTitle = fileName.split('/')[-1]
-                except: fileTitle = fileName
-                listItem = DMItemBase(url=fileName, fileName=fileTitle)
+                listItem = DMItemBase(url=fileName, fileName=fileName)
                 try: listItem.downloadedSize = os_path.getsize(fileName)
                 except: listItem.downloadedSize = 0
                 listItem.status      = DMHelper.STS.DOWNLOADED
@@ -300,17 +297,23 @@ class IPTVDMWidget(Screen):
         if None != ret and None != item:
             printDBG("makeActionOnDownloadItem " + ret[1] + (" for downloadIdx[%d]" % item.downloadIdx) )
             if ret[1] == "play":
+                title = item.fileName
+                try:
+                    title = os_path.basename(title)
+                    title = os_path.splitext(title)[0]
+                except:
+                    printExc()
                 # when we watch we no need update sts
                 self.DM.setUpdateProgress(False)
                 player = ret[2]
                 if "mini" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, item.url, item.fileName)
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, item.fileName, title)
                 elif "exteplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.url, item.fileName, None, 'eplayer')
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'eplayer')
                 elif "extgstplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.url, item.fileName, None, 'gstplayer')
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'gstplayer')
                 else:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, item.url, item.fileName)
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, item.fileName, title)
             elif self.localMode:
                 if ret[1] == "remove": 
                     try: 
