@@ -130,10 +130,11 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
                         {'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/iptv/index.php',                         'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
-                        {'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://play.tvip.ga/iptvde.m3u',                                     'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
+                        {'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://pastebin.com/raw.php?i=USTxVCRs',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ]
+    #http://play.tvip.ga/iptvde.m3u
     def __init__(self):
         self.up = urlparser()
         self.cm = common()

@@ -23,7 +23,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                MYOBFUSCATECOM_OIO, \
                                                                MYOBFUSCATECOM_0ll, \
                                                                int2base, drdX_fx, \
-                                                               unicode_escape
+                                                               unicode_escape, JS_FromCharCode, pythonUnescape
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
 ###################################################
@@ -274,6 +274,7 @@ class urlparser:
                        'stream4k.to':          self.pp.parserSTREAM4KTO    ,
                        'onet.pl':              self.pp.parserONETTV        ,
                        'onet.tv':              self.pp.parserONETTV        ,
+                       'swirownia.com.usrfiles.com': self.pp.parserSWIROWNIA,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -796,6 +797,19 @@ class pageParser:
         return self._parserUNIVERSAL_B(url)
 
     def parserNOWVIDEO(self, url):
+        urlTab = []
+        if '/mobile/video.php?id' in url:
+            sts, data = self.cm.getPage(url)
+            if sts:
+                data = re.compile('<source ([^>]*?)>').findall(data)
+                for item in data:
+                    type = self.cm.ph.getSearchGroups(item, 'type="([^"]+?)"')[0]
+                    if 'video' not in type: continue 
+                    url  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+                    name = url.split('?')[0].split('.')[-1]
+                    urlTab.append({'name':type, 'url':url})
+                if len(urlTab): return urlTab
+        
         tmp = self._parserUNIVERSAL_B(url)
         if isinstance(tmp, basestring) and 0 < len(tmp):
             tmp += '?client=FLASH'
@@ -3272,6 +3286,109 @@ class pageParser:
             except:
                 printExc()
         return videoUrls
+        
+    def parserSWIROWNIA(self, baseUrl):
+        printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
+        def fun1(x):
+            o = ""
+            l = len(x)
+            i = l - 1;
+            while i >= 0:
+                try:
+                    o += x[i]
+                except:
+                    pass
+                i -= 1
+            return o
+        def fun2(x):
+            o = ""
+            ol = len(x)
+            l = ol
+            while ord(x[l/13]) != 48:
+                try:
+                    x += x
+                    l += l
+                except:
+                    pass
+            i = l - 1
+            while i >= 0:
+                try:
+                    o += x[i]
+                except:
+                    pass
+                i -= 1
+            return o[:ol]
+        def fun3(x, y):
+            o = ""
+            i = 0
+            l = len(x)
+            while i<l:
+                if i<23:
+                    y += 1
+                y %= 127
+                o += JS_FromCharCode(ord(x[i]) ^ y)
+                y += 1
+                i += 1
+            return o
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return []
+        data = data[data.find('x="')+2 : data.rfind('"')+1]
+        dataTab = data.split('+\n')
+        data = ""
+        for line in dataTab:
+            line = line.strip()
+            if '"' != line[0] or '"' != line[-1]:
+                raise Exception("parserSWIROWNIA parsing ERROR")
+            data += line[1:-1]
+
+
+        def backslashUnEscaped(data):
+            return re.sub(r'\\(.)', r'\1', data)
+            try:
+                return data.decode('unicode-escape')
+            except:
+                printExc()
+                #return re.sub(r'\\(.)', r'\1', data)
+            tmp = ''
+            idx = 0
+            while idx < len(data):
+                if data[idx] == '\\':
+                    tmp += data[idx+1]
+                    idx += 2
+                else:
+                    tmp += data[idx]
+                    idx += 1
+            return tmp
+        
+        data = backslashUnEscaped(data)
+        
+        data = data[data.find('f("')+3:data.rfind('"')]
+        data = fun1( data )
+        data = backslashUnEscaped(data)        
+
+        data = data[data.find('f("')+3:data.rfind('"')]
+        data = fun2( data )
+        data = data.decode('string-escape')
+
+        data = data[data.find('f("')+3:data.rfind('"')]
+        data = fun3( data, 23 )
+        data = backslashUnEscaped(data)
+        
+        printDBG(data)
+        printDBG("------------------------------------------------------------------------------------")
+        return
+        #data = data.decode('string_escape')
+        #printDBG(data)
+        data = fun3( data, 23 )
+        #data = data.decode('string_escape')
+        data = backslashUnEscaped(data)
+        
+        printDBG("------------------------------------------------------------------------------------")
+        printDBG(data)
+        printDBG("------------------------------------------------------------------------------------")
+
+        
         
     def parseNETUTV(self, url):
         printDBG("parserDIVEXPRESS url[%s]" % url)

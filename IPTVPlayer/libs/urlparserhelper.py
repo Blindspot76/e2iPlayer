@@ -312,6 +312,24 @@ def VIDEOWEED_unpackJSPlayerParams(code):
             printDBG('decryptPlayerParams EXCEPTION')
             return ''
     return ''
+    
+    
+def pythonUnescape(data):
+    sourceCode = "retData = '''%s'''" % data
+    try:
+        code = compile(sourceCode, '', 'exec')
+    except:
+        printExc('pythonUnescape compile algo code EXCEPTION')
+        return ''
+    vGlobals = {"__builtins__": None, 'string': string}
+    vLocals = { 'paramsTouple': None }
+    try:
+        exec( code, vGlobals, vLocals )
+    except:
+        printExc('pythonUnescape exec code EXCEPTION')
+        return ''
+    return vLocals['retData']
+    
 ###############################################################################
 
 class captchaParser:
