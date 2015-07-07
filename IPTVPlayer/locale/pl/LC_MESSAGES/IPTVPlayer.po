@@ -51,7 +51,7 @@ msgid "Info"
 msgstr "Informacje"
 
 msgid "IPTV download manager"
-msgstr "Menadżer pobierania IPTV"
+msgstr "Menadżer Ściągania IPTV"
 
 msgid "Select option"
 msgstr "Wybór opcji"
@@ -108,7 +108,7 @@ msgid "Refreshing"
 msgstr "Odświeżanie"
 
 msgid "Downloading"
-msgstr "Pobieranie"
+msgstr "Ściąganie"
 
 msgid "Loading"
 msgstr "Ładowanie"
@@ -130,7 +130,7 @@ msgid ""
 "Downloading cannot be started.\n"
 " Invalid URI[%s]."
 msgstr ""
-"Nie można uruchomić pobierania.\n"
+"Nie można uruchomić ściągania.\n"
 " Podany adres ('%s') jest niepoprawny."
 
 msgid ""
@@ -138,12 +138,12 @@ msgid ""
 " Downloader [%s] not working properly.\n"
 " Status[%s]"
 msgstr ""
-"Pobieranie nie może zostać rozpoczęte.\n"
-" Pobieranie %s nie działa prawidłowo.\n"
+"Ściąganie nie może zostać rozpoczęte.\n"
+" Ściąganie %s nie działa prawidłowo.\n"
 "Stan[%s]"
 
 msgid "Downloading file [%s] problem."
-msgstr "Problem przy pobraniu pliku [%s]."
+msgstr "Problem przy ściąganiu pliku [%s]."
 
 msgid "Input"
 msgstr "Dane wejściowe"
@@ -269,13 +269,13 @@ msgid "Records path"
 msgstr "Ścieżka do ściągania"
 
 msgid "Start download manager per default"
-msgstr "Domyślnie uruchomić menadżera pobierania plików"
+msgstr "Domyślnie uruchomić menadżera ściągania plików"
 
 msgid "Show download manager after adding new item"
-msgstr "Pokazać menadżera pobierania po dodaniu pliku"
+msgstr "Pokazać menadżera ściągania po dodaniu pliku"
 
 msgid "Number of downloaded files simultaneously"
-msgstr "Ilość pobieranych plików jednocześnie"
+msgstr "Ilość ściąganych plików jednocześnie"
 
 msgid "login"
 msgstr "login"
@@ -329,7 +329,7 @@ msgid "Pin has been changed."
 msgstr "Kod pin został zmieniony."
 
 msgid "Confirmation error."
-msgstr "Błąd potwierdzenia."
+msgstr "Potwierdzenie błędu."
 
 msgid "Configuration for service[%s]"
 msgstr "Konfiguracja ustawień dla serwisu[%s]"
@@ -356,7 +356,7 @@ msgid "ABORTED"
 msgstr "PRZERWANY"
 
 msgid "DOWNLOAD ERROR"
-msgstr "BŁĄD POBIERANIA"
+msgstr "BŁĄD ŚCIĄGANIA"
 
 msgid "Stop"
 msgstr "Zatrzymać"
@@ -509,7 +509,7 @@ msgid "Archive"
 msgstr "Archiwum"
 
 msgid "IPTV Player download manager"
-msgstr "IPTV Player menadżer pobierania"
+msgstr "IPTV Player menadżer ściągania"
 
 msgid ""
 "Version [%s] is ready for installation. After installation, restart of the system will be done.\n"
@@ -525,10 +525,10 @@ msgid "Installation has been aborted."
 msgstr "Instalacja została przerwana."
 
 msgid "Problem with downloading the server list from [%s]."
-msgstr "Problem z pobraniem listy serwerów z [%s]."
+msgstr "Problem z ściąganiem listy serwerów z [%s]."
 
 msgid "Problem with downloading the server list."
-msgstr "Problem z pobieraniem listy serwerów."
+msgstr "Problem z ściąganiem listy serwerów."
 
 msgid "Select update server"
 msgstr "Wybierz aktualizacje serwera"
@@ -549,11 +549,11 @@ msgid ""
 "Problem with downloading the update packet:\n"
 "[%s]."
 msgstr ""
-"Problem z pobieraniem aktualizacji pakietów:\n"
+"Problem z ściąganiem aktualizacji pakietów:\n"
 "[%s]."
 
 msgid "Update packet was downloaded successfully."
-msgstr "Aktualizacja pakietów została pobrana pomyślnie."
+msgstr "Aktualizacja pakietów została ściągnięta pomyślnie."
 
 msgid ""
 "Problem with extracting the archive. Return code [%d]\n"
@@ -769,7 +769,7 @@ msgid "based on IP"
 msgstr "na podstawie IP"
 
 msgid "Number of songs fetched at once for the station"
-msgstr "Liczba utworów pobieranych dla stacji"
+msgstr "Ilość piosenek pobieranych na raz ze stacji"
 
 msgid "Device ID"
 msgstr "ID urządzenia"
@@ -1263,7 +1263,7 @@ msgid "[%s] will be used by IPTVPlayer."
 msgstr "[%s] będą używane przez IPTVPlayer."
 
 msgid "download"
-msgstr "pobieranie"
+msgstr "ściąganie"
 
 msgid "install"
 msgstr "instalacja"
@@ -1526,3 +1526,36 @@ msgstr "znacznik"
 
 msgid "Fatal error: consoleWrite failed!"
 msgstr "Błąd krytyczny:zapis w konsoli nie powiódł się!"
+
+msgid "The number of items in the search history"
+msgstr "Liczba pozycji w historii wyszukiwania"
+
+msgid "Video default quality:"
+msgstr "Domyślna jakość wideo:"
+
+msgid "High"
+msgstr "Wysoka"
+
+msgid "The best"
+msgstr "Najlepsza"
+
+msgid "The worst"
+msgstr "Najgorsza"
+
+msgid "Mid"
+msgstr "Średnia"
+
+msgid "Deutsch"
+msgstr "Niemiecki"
+
+msgid "Use default quality:"
+msgstr "Użyć domyślnej jakości:"
+
+msgid "Language:"
+msgstr "Język:"
+
+msgid "Alternative geolocation IP 1:"
+msgstr "Alternatywna geo.lokalizacja IP 1:"
+
+msgid "Alternative geolocation IP 2:"
+msgstr "Alternatywna geo.lokalizacja IP 2:"
