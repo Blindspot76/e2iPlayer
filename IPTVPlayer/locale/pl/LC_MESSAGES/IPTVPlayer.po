@@ -1559,3 +1559,9 @@ msgstr "Alternatywna geo.lokalizacja IP 1:"
 
 msgid "Alternative geolocation IP 2:"
 msgstr "Alternatywna geo.lokalizacja IP 2:"
+
+msgid "----------Other----------"
+msgstr "----------Inne----------"
+
+msgid "Use Polish proxy for http://prognoza.pogody.tv/"
+msgstr "Użyć Polskiej proxy dla http://prognoza.pogody.tv/"
