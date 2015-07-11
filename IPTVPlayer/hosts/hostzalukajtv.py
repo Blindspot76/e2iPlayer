@@ -232,7 +232,10 @@ class ZalukajTv(CBaseHostClass):
             if not sts: continue
             url = self._getFullUrl( self.cm.ph.getSearchGroups(data, '"(/player.php[^"]+?)"', 1)[0] )
             if '' == url:
-                printDBG( 'No player.php in data[%s]' % '')
+                printDBG( 'No player.php in data')
+                data = self.cm.ph.getDataBeetwenMarkers(data, 'Oglądaj Film Online', '<div class="doln">', False)[1]
+                url = self.cm.ph.getSearchGroups(data, 'href="([^"]+?)"[^>]*?target', 1)[0]
+                urlTab.extend(self.up.getVideoLinkExt(url))
                 continue 
             sts, data = self._getPage(url)
             if not sts: continue
