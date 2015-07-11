@@ -275,6 +275,7 @@ class urlparser:
                        'onet.pl':              self.pp.parserONETTV        ,
                        'onet.tv':              self.pp.parserONETTV        ,
                        'swirownia.com.usrfiles.com': self.pp.parserSWIROWNIA,
+                       'byetv.org':            self.pp.paserBYETVORG       ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -328,6 +329,7 @@ class urlparser:
         
     def getVideoLink(self, url, acceptsList = False):
         try:
+            url = self.decorateParamsFromUrl(url)
             nUrl=''
             parser = self.getParser(url)
             if None != parser:
@@ -347,7 +349,7 @@ class urlparser:
         return False
         
     def getAutoDetectedStreamLink(self, baseUrl, data=None):
-        printDBG("NettvPw.getAutoDetectedStreamLink baseUrl[%s]" % baseUrl)
+        printDBG("urlparser.getAutoDetectedStreamLink baseUrl[%s]" % baseUrl)
         url = baseUrl
         num = 0
         while True:
@@ -366,6 +368,12 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'byetv.org' in data:
+                file = self.cm.ph.getSearchGroups(data, "file=([0-9]+?)[^0-9]")[0]
+                if '' == file: file = self.cm.ph.getSearchGroups(data, "a=([0-9]+?)[^0-9]")[0]
+                videoUrl = "http://www.byetv.org/embed.php?a={0}&id=&width=710&height=460&autostart=true&strech=".format(file)
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
             elif 'castto.me' in data:
                 fid = self.cm.ph.getSearchGroups(data, """fid=['"]([0-9]+?)['"]""")[0]
                 videoUrl = 'http://static.castto.me/embed.php?channel={0}&vw=710&vh=460'.format(fid)
@@ -491,10 +499,10 @@ class pageParser:
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
             if '' != link:
                 linksTab.append({'name': '%s %s' % (serverName, label), 'url':link})
-                printDBG('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
+                printDBG('_findLinks A')
         
         if 0 == len(linksTab):
-            printDBG('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
+            printDBG('_findLinks B')
             link = self.cm.ph.getSearchGroups(data, linkMarker)[0].replace('\/', '/')
             if '' != link:
                 linksTab.append({'name':serverName, 'url':link})
@@ -3250,7 +3258,7 @@ class pageParser:
         printDBG("parserVEVO baseUrl[%s]" % baseUrl)
         
     def parserONETTV(self, baseUrl):
-        printDBG("Ekstraklasa.parserONETTV baseUrl[%r]" % baseUrl )
+        printDBG("parserONETTV baseUrl[%r]" % baseUrl )
         
         videoUrls = []
         sts, data = self.cm.getPage(baseUrl)
@@ -3287,6 +3295,32 @@ class pageParser:
                 printExc()
         return videoUrls
         
+    def paserBYETVORG(self, baseUrl):
+        printDBG("paserBYETVORG baseUrl[%r]" % baseUrl )
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl.meta.get('Referer', baseUrl) }
+        file = self.cm.ph.getSearchGroups(baseUrl, "file=([0-9]+?)[^0-9]")[0]
+        if '' == file: file = self.cm.ph.getSearchGroups(baseUrl, "a=([0-9]+?)[^0-9]")[0]
+        linkUrl = "http://www.byetv.org/embed.php?a={0}&id=&width=710&height=460&autostart=true&strech=".format(file)
+        sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
+        if not sts: return False 
+        sts, data = CParsingHelper.getDataBeetwenMarkers(data, '"jwplayer1"', '</script>', False)
+        if not sts: return False 
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, "'%s',[ ]*?'([^']+?)'" % name)[0] 
+        
+        swfUrl  = "http://p.jwpcdn.com/6/8/jwplayer.flash.swf"
+        streamer = _getParam('streamer')
+        file     = _getParam('file')
+        token    = _getParam('token')
+        provider = _getParam('provider')
+        rtmpUrl  = provider + streamer[streamer.find(':'):]
+        if '' != file and '' != rtmpUrl:
+            rtmpUrl += ' playpath=file:%s swfUrl=%s token=%s pageUrl=%s live=1 ' % (file, swfUrl, token, linkUrl)
+            printDBG(rtmpUrl)
+            return rtmpUrl
+        return False
+
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
         def fun1(x):
