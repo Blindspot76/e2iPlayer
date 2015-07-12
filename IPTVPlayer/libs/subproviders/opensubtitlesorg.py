@@ -47,8 +47,8 @@ def printDBG2(data):
     #printDBG("%s" % data)
 
 class OpenSubOrgProvider:
-    USER_AGENT       = 'IPTVPlayer v1'
-    #USER_AGENT       = 'Subliminal v0.3' #'OSTestUserAgent'
+    #USER_AGENT       = 'IPTVPlayer v1'
+    USER_AGENT       = 'Subliminal v0.3' #'OSTestUserAgent'
     HTTP_HEADER      = {'User-Agent':USER_AGENT, 'Accept':'gzip'}#, 'Accept-Language':'pl'}
     MAIN_URL         = 'http://api.opensubtitles.org/xml-rpc'
     #MAIN_URL         = 'https://api.opensubtitles.org/xml-rpc'
