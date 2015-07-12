@@ -276,6 +276,7 @@ class urlparser:
                        'onet.tv':              self.pp.parserONETTV        ,
                        'swirownia.com.usrfiles.com': self.pp.parserSWIROWNIA,
                        'byetv.org':            self.pp.paserBYETVORG       ,
+                       'putlive.in':           self.pp.paserPUTLIVEIN      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -368,6 +369,10 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'putlive.in' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]*?putlive.in/[^"]+?)"')[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
             elif 'byetv.org' in data:
                 file = self.cm.ph.getSearchGroups(data, "file=([0-9]+?)[^0-9]")[0]
                 if '' == file: file = self.cm.ph.getSearchGroups(data, "a=([0-9]+?)[^0-9]")[0]
@@ -3320,6 +3325,39 @@ class pageParser:
             printDBG(rtmpUrl)
             return rtmpUrl
         return False
+        
+    def paserPUTLIVEIN(self, baseUrl):
+        printDBG("paserPUTLIVEIN baseUrl[%r]" % baseUrl )
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl.meta.get('Referer', baseUrl) }
+        file = self.cm.ph.getSearchGroups(baseUrl, "file=([0-9]+?)[^0-9]")[0]
+        if '' == file: file = self.cm.ph.getSearchGroups(baseUrl+'/', "/e/([^/]+?)/")[0]
+        
+        linkUrl = "http://www.putlive.in/e/{0}".format(file)
+        sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
+        if not sts: return False 
+        #printDBG("=======================================================")
+        #printDBG(data)
+        #printDBG("=======================================================")
+        token =  self.cm.ph.getSearchGroups(data, "'key' : '([^']+?)'")[0]
+        if token != "": token = ' token=%s ' % token
+        sts, data = CParsingHelper.getDataBeetwenMarkers(data, 'unescape("', '")', False)
+        if not sts: return False 
+        data = urllib.unquote(data)
+        #printDBG(data)
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, "%s=([^&]+?)&" % name)[0] 
+        
+        swfUrl  = "http://putlive.in/player59.swf"
+        streamer = _getParam('streamer')
+        file     = _getParam('file')
+        provider = _getParam('provider')
+        rtmpUrl  = provider + streamer[streamer.find(':'):]
+        if '' != file and '' != rtmpUrl:
+            rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s live=1 ' % (file, swfUrl, token, linkUrl)
+            printDBG(rtmpUrl)
+            return rtmpUrl
+        return False
 
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
@@ -3352,19 +3390,19 @@ class pageParser:
                     pass
                 i -= 1
             return o[:ol]
-        def fun3(x, y):
+        def fun3(x, y, a=1):
             o = ""
             i = 0
             l = len(x)
             while i<l:
-                if i<23:
-                    y += 1
+                if i<y:
+                    y += a
                 y %= 127
                 o += JS_FromCharCode(ord(x[i]) ^ y)
                 y += 1
                 i += 1
             return o
-        
+              
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return []
         data = data[data.find('x="')+2 : data.rfind('"')+1]
@@ -3378,11 +3416,13 @@ class pageParser:
 
 
         def backslashUnEscaped(data):
-            return re.sub(r'\\(.)', r'\1', data)
-            try:
-                return data.decode('unicode-escape')
-            except:
-                printExc()
+            #return pythonUnescape(data)
+            #return codecs.decode(data, "unicode_escape").replace('\\,', ',')
+            #return re.sub(r'\\(.)', r'\1', data)
+            #try:
+            #    return data.decode('unicode-escape')
+            #except:
+            #    printExc()
                 #return re.sub(r'\\(.)', r'\1', data)
             tmp = ''
             idx = 0
@@ -3394,19 +3434,36 @@ class pageParser:
                     tmp += data[idx]
                     idx += 1
             return tmp
-        
+            
+        def printDBG2(data):
+            printDBG("================================================================")
+            printDBG( data )
+            printDBG("================================================================")
         data = backslashUnEscaped(data)
         
         data = data[data.find('f("')+3:data.rfind('"')]
         data = fun1( data )
-        data = backslashUnEscaped(data)        
-
+        printDBG2(data)
+        data = backslashUnEscaped(data)
+        
+        printDBG2(data)
+        
+        data = data[data.find('f("')+3:data.rfind('"')]
+        printDBG2(data)
+        data = data.decode('string_escape')
+        data = fun3( data, 50, 0)
+        data = backslashUnEscaped(data)
+        
+        printDBG2(data)
+        
+        return
+        
         data = data[data.find('f("')+3:data.rfind('"')]
         data = fun2( data )
         data = data.decode('string-escape')
 
         data = data[data.find('f("')+3:data.rfind('"')]
-        data = fun3( data, 23 )
+        data = fun3( data, 23, 1)
         data = backslashUnEscaped(data)
         
         printDBG(data)
@@ -3414,7 +3471,7 @@ class pageParser:
         return
         #data = data.decode('string_escape')
         #printDBG(data)
-        data = fun3( data, 23 )
+        data = fun3( data, 23, 1)
         #data = data.decode('string_escape')
         data = backslashUnEscaped(data)
         
