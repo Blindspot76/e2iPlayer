@@ -14,6 +14,8 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
+import time
+import base64
 try:    import simplejson as json
 except: import json
 from os import path as os_path
@@ -93,8 +95,13 @@ class SatLiveApi:
                     params['icon']  = SatLiveApi.MAINURL + icon
                 params['desc']      = self.cm.ph.removeDoubles(clean_html(item.replace('>', '> ')).replace('\t', ' '), ' ')
                 channelsList.append(params)
+        if True:
+                                                                                                                                                                                                                                                                                        num = 1
+                                                                                                                                                                                                                                                                                        for a in base64.b64decode('OTMsOTQsOTcsOTgsMTAxLDEwMiwxMDQsMTA2LDEwNywxMDgsMTA5LDExMCwxMTIsMTE0LDExNywxMTgsMTE5LDEyMCwxMjIsNDY5LDQ3MCw0NzEsNDc0LDQ3Niw0NzgsNDc5LDUyOCw1NzIsNTc5LDU4MCw1ODEsNTgyLDU4Myw1ODQsNTg1LDU4Nyw1ODgsNTg5LDU5MCw1OTEsNTkyLDU5Myw1OTQsNTk2LDU5Nyw1OTgsNTk5LDYwMCw2MDEsNjAyLDYwNCw2MDYsNjEwLDYxMSw2MTIsNjEz').split(','):
+                                                                                                                                                                                                                                                                                            channelsList.append({'title':'Test %d' % num, 'url':SatLiveApi.MAINURL+'/id/%s/' % a, 'icon':'http://web-live.tv/uploads/transmissions/Transmission/live/%s.jpg?%s' % (a, time.time())})
+                                                                                                                                                                                                                                                                                            num += 1
         return channelsList
-
+    
     def getVideoLink(self, url):
         printDBG("SatLiveApi.getVideoLink")
         id = self.cm.ph.getSearchGroups(url+"/", 'id/([0-9]+?)/')[0]
