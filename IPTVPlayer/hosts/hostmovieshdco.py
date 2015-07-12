@@ -131,8 +131,7 @@ class MoviesHDCO(CBaseHostClass):
     def listGenres(self, cItem, category):
         printDBG("MoviesHDCO.listMoviesGenres")
         tmpList = [{'title': _("***Any***"), 'url':self.MAIN_URL+'/page/{page}?display=tube&filtre={sort_by}'}]
-        tmpList.extend( self.getDiscaeredGenres() )
-        if 0:
+        if 1:
             sts, data = self.cm.getPage(cItem['url'])
             if not sts: return 
             data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="listing-cat">', '</ul>', False)[1]
@@ -144,6 +143,8 @@ class MoviesHDCO(CBaseHostClass):
                 title  = self.cleanHtmlStr(item)
                 tmpList.append({'title': title, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)+'/page/{page}?display=tube&filtre={sort_by}'})
         
+        if 1 == len(tmpList):
+            tmpList.extend( self.getDiscaeredGenres() )
         mainItem = dict(cItem)
         mainItem.update({'category':category})
         self.listsTab(tmpList, mainItem)

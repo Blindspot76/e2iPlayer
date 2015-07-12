@@ -4,7 +4,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -330,14 +330,17 @@ class TvnVod(CBaseHostClass):
                     plot = self._getJItemStr(data, 'lead', '')
                     printDBG("data:\n%s\n" % data)
                     videos = data['videos']['main']['video_content']
-
-                    for video in videos:
-                        url = self._getJItemStr(video, 'url', '')
-                        #if '' == url:
-                        #    url = self._getJItemStr(video, 'src', '')
-                        if '' != url:
-                            qualityName = self._getJItemStr(video, 'profile_name', '')
-                            videoUrls.append({'name':qualityName, 'profile_name':qualityName, 'url':url, 'need_resolve':1})
+                    if None == videos:
+                        SetIPTVPlayerLastHostError("DRM protection.")
+                    else:
+                        for video in videos:
+                            url = self._getJItemStr(video, 'url', '')
+                            if '' == url:
+                                SetIPTVPlayerLastHostError("DRM protection.")
+                            #    url = self._getJItemStr(video, 'src', '')
+                            if '' != url:
+                                qualityName = self._getJItemStr(video, 'profile_name', '')
+                                videoUrls.append({'name':qualityName, 'profile_name':qualityName, 'url':url, 'need_resolve':1})
                     if  1 < len(videoUrls):
                         max_bitrate = int(config.plugins.iptvplayer.TVNDefaultformat.value)
                         def __getLinkQuality( itemLink ):
