@@ -855,7 +855,7 @@ class IPTVHost(CHostBase):
                         retlist.append(CUrlItem(item['name'], item['url']))
                 else:
                     if '://' in url:
-                        ua  = url.meta.get('User-Agent', '')
+                        ua  = strwithmeta(url).meta.get('User-Agent', '')
                         if 'balkanstream.com' in url:
                             if '' == ua: url.meta['User-Agent'] = 'Mozilla/5.0'
                                 
