@@ -278,6 +278,7 @@ class urlparser:
                        'byetv.org':            self.pp.paserBYETVORG       ,
                        'putlive.in':           self.pp.paserPUTLIVEIN      ,
                        'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
+                       'megom.tv':             self.pp.paserMEGOMTV        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -371,11 +372,15 @@ class urlparser:
                 data = None
                 continue
             elif 'putlive.in' in data:
-                videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]*?putlive.in/[^"]+?)"')[0]
+                videoUrl = self.cm.ph.getSearchGroups(data, '="([^"]*?putlive.in/[^"]+?)"')[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'streamlive.to' in data:
-                videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]*?streamlive.to/[^"]+?)"')[0]
+                videoUrl = self.cm.ph.getSearchGroups(data, '="([^"]*?streamlive.to/[^"]+?)"')[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'megom.tv' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, '="([^"]*?megom.tv/[^"]+?)"')[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'byetv.org' in data:
@@ -3401,7 +3406,32 @@ class pageParser:
             printDBG(rtmpUrl)
             return rtmpUrl
         return False
-
+        
+    def paserMEGOMTV(self, baseUrl):
+        printDBG("paserMEGOMTV baseUrl[%r]" % baseUrl )
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl.meta.get('Referer', baseUrl) }
+        
+        id = self.cm.ph.getSearchGroups(baseUrl, "id=([^&]+?)&")[0]
+        linkUrl = "http://distro.megom.tv/player-inside.php?id={0}&width=100%&height=450".format(id)
+        
+        sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
+        if not sts: return False 
+        
+        sts, data = CParsingHelper.getDataBeetwenMarkers(data, '<head>', 'var ad_data;', False)
+        if not sts: return False 
+        swfUrl = 'http://lds.megom.tv/jwplayer.flash.swf'
+        a = int(self.cm.ph.getSearchGroups(data, 'var a = ([0-9]+?);')[0])
+        b = int(self.cm.ph.getSearchGroups(data, 'var b = ([0-9]+?);')[0])
+        c = int(self.cm.ph.getSearchGroups(data, 'var c = ([0-9]+?);')[0])
+        d = int(self.cm.ph.getSearchGroups(data, 'var d = ([0-9]+?);')[0])
+        f = int(self.cm.ph.getSearchGroups(data, 'var f = ([0-9]+?);')[0])
+        v_part = self.cm.ph.getSearchGroups(data, "var v_part = '([^']+?)'")[0]
+        
+        rtmpUrl = ('rtmp://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) ) + v_part
+        rtmpUrl += ' swfUrl=%s pageUrl=%s live=1 ' % (swfUrl, linkUrl)
+        printDBG(rtmpUrl)
+        return rtmpUrl
+    
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
         def fun1(x):

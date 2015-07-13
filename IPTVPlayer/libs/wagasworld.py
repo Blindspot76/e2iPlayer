@@ -64,5 +64,5 @@ class WagasWorldApi:
         
         sts,data = self.cm.getPage(baseUrl)
         if not sts: return []
-        data = self.cm.ph.getDataBeetwenMarkers(data, '</iframe>', '<br><br>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '</iframe>', ' <section>', False)[1]
         return self.up.getAutoDetectedStreamLink(baseUrl, data)
