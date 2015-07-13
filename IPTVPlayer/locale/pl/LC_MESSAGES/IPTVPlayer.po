@@ -1306,7 +1306,7 @@ msgid "Confirm title of the movie"
 msgstr "Potwierdzić tytuł filmu"
 
 msgid "Search for movie \"%s\""
-msgstr "Szukaj filmu \"%s\""
+msgstr "Szukam filmu \"%s\""
 
 msgid "Movie \"%s\" has not been found."
 msgstr "Film \"%s\" nie został odnaleziony."
@@ -1318,7 +1318,7 @@ msgid "An unknown error has occurred."
 msgstr "Wystąpił nieznany błąd."
 
 msgid "Search for subitile for \"%s\""
-msgstr "Szukaj napisów dla \"%s\""
+msgstr "Szukam napisów dla \"%s\""
 
 msgid "Download subtitle \"%s\""
 msgstr "Pobierz napisy \"%s\""
@@ -1565,3 +1565,6 @@ msgstr "----------Inne----------"
 
 msgid "Use Polish proxy for http://prognoza.pogody.tv/"
 msgstr "Użyć Polskiej proxy dla http://prognoza.pogody.tv/"
+
+msgid "Subtitles not found."
+msgstr "Nie znaleziono napisów."
