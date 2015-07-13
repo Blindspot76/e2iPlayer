@@ -277,6 +277,7 @@ class urlparser:
                        'swirownia.com.usrfiles.com': self.pp.parserSWIROWNIA,
                        'byetv.org':            self.pp.paserBYETVORG       ,
                        'putlive.in':           self.pp.paserPUTLIVEIN      ,
+                       'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -371,6 +372,10 @@ class urlparser:
                 continue
             elif 'putlive.in' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]*?putlive.in/[^"]+?)"')[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'streamlive.to' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]*?streamlive.to/[^"]+?)"')[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'byetv.org' in data:
@@ -3355,6 +3360,44 @@ class pageParser:
         rtmpUrl  = provider + streamer[streamer.find(':'):]
         if '' != file and '' != rtmpUrl:
             rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s live=1 ' % (file, swfUrl, token, linkUrl)
+            printDBG(rtmpUrl)
+            return rtmpUrl
+        return False
+        
+    def paserSTREAMLIVETO(self, baseUrl):
+        printDBG("paserSTREAMLIVETO baseUrl[%r]" % baseUrl )
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl.meta.get('Referer', baseUrl) }
+        
+        _url_re = re.compile("http(s)?://(\w+\.)?(ilive.to|streamlive.to)/.*/(?P<channel>\d+)")
+        channel = _url_re.match(baseUrl).group("channel")
+        
+        linkUrl = "http://www.streamlive.to/embedplayer_new.php?width=640&height=480&channel={0}&autoplay=true".format(channel)
+        sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
+        if not sts: return False 
+        
+        # get token
+        token = CParsingHelper.getDataBeetwenMarkers(data, 'var token="";', '});', False)[1]
+        token = self.cm.ph.getSearchGroups(token, '"([^"]+?/server.php[^"]+?)"')[0]
+        if token.startswith('//'): token = 'http:' + token
+        sts, token = self.cm.getPage(token, {'header':HTTP_HEADER})
+        if not sts: return False 
+        token = byteify(json.loads(token))['token']
+        if token != "": token = ' token=%s ' % token
+
+        # get others params
+        data = CParsingHelper.getDataBeetwenMarkers(data, '.setup(', '</script>', False)[1]
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, """['"]*%s['"]*[^'^"]+?['"]([^'^"]+?)['"]""" % name)[0].replace('\\/', '/')
+        
+        swfUrl  = "http://www.streamlive.to/ads/embed/player_ilive_embed.swf"
+        streamer = _getParam('streamer')
+        file     = _getParam('file').replace('.flv', '')
+        app      = 'edge/' + streamer.split('/edge/')[-1]
+        provider = _getParam('provider')
+        rtmpUrl  = provider + streamer[streamer.find(':'):]
+        if '' != file and '' != rtmpUrl:
+            rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s app=%s live=1 ' % (file, swfUrl, token, linkUrl, app)
             printDBG(rtmpUrl)
             return rtmpUrl
         return False
