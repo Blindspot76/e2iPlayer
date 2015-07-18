@@ -118,7 +118,7 @@ class MoviesHDCO(CBaseHostClass):
         return vLocals['a']
         
     def getPage(self, url, params={}, post_data=None):
-        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':{'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.00'}})
+        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':{'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}})
         sts, data = self.cm.getPage(url, params, post_data)
         
         current = 0
@@ -168,7 +168,7 @@ class MoviesHDCO(CBaseHostClass):
                     params2 = dict(params)
                     params2['load_cookie'] = True
                     params2['save_cookie'] = True
-                    params2['header'] = {'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'}
+                    params2['header'] = {'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
                     sleep(4)
                     sts, data = self.cm.getPage(verUrl, params2, post_data)
                 except:
