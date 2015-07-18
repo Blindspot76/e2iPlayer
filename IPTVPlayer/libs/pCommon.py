@@ -251,6 +251,10 @@ class common:
                 addParams['return_data'] = True
             response = self.getURLRequestData(addParams, post_data)
             status = True
+        except urllib2.HTTPError, e:
+            printExc()
+            response = e
+            status = False
         except:
             printExc()
             response = None
@@ -403,6 +407,12 @@ class common:
                     data = e.fp.read()
                     #e.msg
                     #e.headers
+                elif e.code == 503:
+                    if params.get('use_cookie', False):
+                        new_cookie = e.fp.info().get('Set-Cookie', '')
+                        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> new_cookie[%s]" % new_cookie)
+                        cj.save(params['cookiefile'], ignore_discard = True)
+                    raise e
                 else:
                     if e.code in [300, 302, 303, 307] and params.get('use_cookie', False) and params.get('save_cookie', False):
                         new_cookie = e.fp.info().get('Set-Cookie', '')

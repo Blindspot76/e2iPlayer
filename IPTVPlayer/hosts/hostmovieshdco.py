@@ -17,8 +17,10 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 import re
 import urllib
 import base64
+import string
 try:    import json
 except: import simplejson as json
+from time import sleep
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -99,10 +101,87 @@ class MoviesHDCO(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesHDCO', 'cookie':'movieshdco.cookie'})
         
+    def calcAnswer(self, data):
+        sourceCode = data
+        try:
+            code = compile(sourceCode, '', 'exec')
+        except:
+            printExc()
+            return 0
+        vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
+        vLocals = { 'paramsTouple': None }
+        try:
+            exec( code, vGlobals, vLocals )
+        except:
+            printExc()
+            return 0
+        return vLocals['a']
+        
+    def getPage(self, url, params={}, post_data=None):
+        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':{'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.00'}})
+        sts, data = self.cm.getPage(url, params, post_data)
+        
+        current = 0
+        while current < 10:
+            current += 1
+            if not sts and None != data:
+                doRefresh = False
+                try:
+                    verData = data.fp.read()
+                    dat = self.cm.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
+                    tmp = self.cm.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
+                    varName = tmp[0]
+                    expresion= ['a=%s' % tmp[1]]
+                    e = re.compile('%s([-+*])=([^;]+?);' % varName).findall(dat)
+                    for item in e:
+                        expresion.append('a%s=%s' % (item[0], item[1]) )
+                    
+                    for idx in range(len(expresion)):
+                        e = expresion[idx]
+                        e = e.replace('!+[]', '1')
+                        e = e.replace('!![]', '1')
+                        e = e.replace('=+(', '=int(')
+                        if '+[]' in e:
+                            e = e.replace(')+(', ')+str(')
+                            e = e.replace('int((', 'int(str(')
+                            e = e.replace('+[]', '')
+                            e = e.replace('(+[])', '(0)')
+                        expresion[idx] = e
+                    
+                    answer = self.calcAnswer('\n'.join(expresion)) + 11
+                    #printDBG("-------------------------------------")
+                    #printDBG(answer)
+                    #printDBG("-------------------------------------")
+                    #printDBG(data.fp.info())
+                    #printDBG(verData)
+                    #refreshData = data.fp.info().get('Refresh', '')
+                    #verUrl = self._getFullUrl( refreshData.split('URL=')[1] )
+                    
+                    verData = self.cm.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
+                    verUrl =  self._getFullUrl( self.cm.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
+                    get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
+                    get_data['jschl_answer'] = answer
+                    verUrl += '?'
+                    for key in get_data:
+                        verUrl += '%s=%s&' % (key, get_data[key])
+                    verUrl = self._getFullUrl( self.cm.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
+                    params2 = dict(params)
+                    params2['load_cookie'] = True
+                    params2['save_cookie'] = True
+                    params2['header'] = {'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'}
+                    sleep(4)
+                    sts, data = self.cm.getPage(verUrl, params2, post_data)
+                except:
+                    printExc()
+            else:
+                break
+        return sts, data
+        
     def _getFullUrl(self, url):
         if url.startswith('//'):
             url = 'http:' + url
         elif 0 < len(url) and not url.startswith('http'):
+            if url.startswith('/'): url = url[1:]
             url =  self.MAIN_URL + url
         
         if self.MAIN_URL.startswith('https://'):
@@ -132,7 +211,7 @@ class MoviesHDCO(CBaseHostClass):
         printDBG("MoviesHDCO.listMoviesGenres")
         tmpList = [{'title': _("***Any***"), 'url':self.MAIN_URL+'/page/{page}?display=tube&filtre={sort_by}'}]
         if 1:
-            sts, data = self.cm.getPage(cItem['url'])
+            sts, data = self.getPage(cItem['url'])
             if not sts: return 
             data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="listing-cat">', '</ul>', False)[1]
             data = data.split('</li>')
@@ -161,7 +240,7 @@ class MoviesHDCO(CBaseHostClass):
         page    = cItem.get('page', 1)
         sort_by = cItem.get('sort_by', config.plugins.iptvplayer.movieshdco_sortby.value)
         url     = cItem['url'].format(page=page, sort_by=sort_by) 
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return 
         
         if '"nextLink":"' in data:
@@ -203,7 +282,7 @@ class MoviesHDCO(CBaseHostClass):
         printDBG("MoviesHDCO.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return retTab
         
         sts, data = CParsingHelper.getDataBeetwenMarkers(data, '<table id="imdbinfo">', '</table>', False)
@@ -237,16 +316,20 @@ class MoviesHDCO(CBaseHostClass):
         printDBG("MoviesHDCO.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return 
+        
+        #printDBG(data)
         
         data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="video-embed">', '</div>', False)[1]
         oneLink = CParsingHelper.getDataBeetwenMarkers(data, 'data-rocketsrc="', '"', False)[1]
+        if oneLink == '': oneLink =  self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
+        
         if oneLink.startswith('//'):
             oneLink = 'http:' + oneLink
         
         if 'videomega.tv/validatehash.php?' in oneLink:
-            sts, data = self.cm.getPage(oneLink, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
+            sts, data = self.getPage(oneLink, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
             if not sts: return urlTab
             data = self.cm.ph.getSearchGroups(data, 'ref="([^"]+?)"')[0]
             if '' == data: return urlTab

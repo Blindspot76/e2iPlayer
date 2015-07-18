@@ -279,6 +279,7 @@ class urlparser:
                        'putlive.in':           self.pp.paserPUTLIVEIN      ,
                        'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
                        'megom.tv':             self.pp.paserMEGOMTV        ,
+                       'openload.io':          self.pp.parserOPENLOADIO    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3431,7 +3432,19 @@ class pageParser:
         rtmpUrl += ' swfUrl=%s pageUrl=%s live=1 ' % (swfUrl, linkUrl)
         printDBG(rtmpUrl)
         return rtmpUrl
-    
+        
+    def parserOPENLOADIO(self, baseUrl):
+        printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{11})[^A-Z^a-z^0-9]')[0]
+        url = 'https://openload.io/embed/' + video_id
+        post_data = None
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
+        if not sts: return False
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"]''')[0]
+        if videoUrl.startswith('http'): return videoUrl
+        return False
+        
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
         def fun1(x):
