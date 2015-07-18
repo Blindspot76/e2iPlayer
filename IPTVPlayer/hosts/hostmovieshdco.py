@@ -324,12 +324,13 @@ class MoviesHDCO(CBaseHostClass):
         data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="video-embed">', '</div>', False)[1]
         oneLink = CParsingHelper.getDataBeetwenMarkers(data, 'data-rocketsrc="', '"', False)[1]
         if oneLink == '': oneLink =  self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
+        if oneLink == '': oneLink =  self.cm.ph.getSearchGroups(data, '<script[^>]+?src="([^"]+?)"')[0]
         
         if oneLink.startswith('//'):
             oneLink = 'http:' + oneLink
         
         if 'videomega.tv/validatehash.php?' in oneLink:
-            sts, data = self.getPage(oneLink, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
+            sts, data = self.cm.getPage(oneLink, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
             if not sts: return urlTab
             data = self.cm.ph.getSearchGroups(data, 'ref="([^"]+?)"')[0]
             if '' == data: return urlTab
