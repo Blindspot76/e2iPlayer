@@ -792,16 +792,19 @@ class CSearchHistoryHelper():
     @staticmethod
     def loadLastPattern():
         filePath = GetSearchHistoryDir("pattern")
-        sts, ret = False, ''
-        try:
-            file = codecs.open(filePath, 'r', 'utf-8', 'ignore')
-            ret = file.read().encode('utf-8', 'ignore')
-            file.close()
-            sts = True
-        except:
-            printExc()
-        return sts, ret
+        return ReadTextFile(filePath)
 # end CSearchHistoryHelper
+
+def ReadTextFile(filePath, encode='utf-8', errors='ignore'):
+    sts, ret = False, ''
+    try:
+        file = codecs.open(filePath, 'r', encode, errors)
+        ret = file.read().encode(encode, errors)
+        file.close()
+        sts = True
+    except:
+        printExc()
+    return sts, ret
 
 class CFakeMoviePlayerOption():
     def __init__(self, value, text):

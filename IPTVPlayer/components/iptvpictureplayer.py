@@ -192,7 +192,8 @@ class IPTVPicturePlayerWidget(Screen):
         self.downloader = DownloaderCreator(self.url)
         
         self.onClose.append(self.__onClose)
-        self.onLayoutFinish.append(self.doStart)
+        self.onShow.append(self.doStart)
+        #self.onLayoutFinish.append(self.doStart)
         
         self.autoRefresh = False
         self.refreshPostfixes = ['_0', '_1']
@@ -216,11 +217,11 @@ class IPTVPicturePlayerWidget(Screen):
         self.mainTimer = None
         
         self.onClose.remove(self.__onClose)
-        self.onLayoutFinish.remove(self.doStart)
+        #self.onLayoutFinish.remove(self.doStart)
         
     def _getDownloadFilePath(self):
         return self.filePath + self.refreshPostfixes[self.refreshCount % len(self.refreshPostfixes) ]
- 
+        
     def onStart(self):
         '''
             this method is called once like __init__ but in __init__ we cannot display MessageBox
@@ -229,10 +230,17 @@ class IPTVPicturePlayerWidget(Screen):
         self["console"].setText(self.pictureTitle)
         self["status"].setText(_("--"))
         self._cleanedUp()
-        if self.downloader:
-            self.downloader.isWorkingCorrectly(self._startDownloader)
+        
+        if self.url.startswith('file://'):
+            self.filePath = self.url[7:]
+            self["status"].setText(_("++"))
+            if -1 == self["picture"].decodeCover(self.filePath, self.decodePictureEnd, ' '):
+                self.decodePictureEnd()
         else:
-            self.session.openWithCallback(self.close, MessageBox, _("Downloading cannot be started.\n Invalid URI[%s].") % self.url, type = MessageBox.TYPE_ERROR, timeout = 10)
+            if self.downloader:
+                self.downloader.isWorkingCorrectly(self._startDownloader)
+            else:
+                self.session.openWithCallback(self.close, MessageBox, _("Downloading cannot be started.\n Invalid URI[%s].") % self.url, type = MessageBox.TYPE_ERROR, timeout = 10)
             
     def _doStart(self, force=False):
         if self.autoRefresh or force:
@@ -264,7 +272,7 @@ class IPTVPicturePlayerWidget(Screen):
         self.close()
         
     def key_play(self):
-        if not self.autoRefresh:
+        if not self.autoRefresh and not self.url.startswith('file://'):
             if None != self.audioPlayer: self.audioPlayer.start(self.audioUrl)
             self.autoRefresh = True
             if not self.refreshing: self._doStart()
@@ -283,14 +291,16 @@ class IPTVPicturePlayerWidget(Screen):
             self.onEnd(False)
             if DMHelper.STS.DOWNLOADED == status:
                 self["status"].setText(_("++"))
-                self["picture"].decodeCover(self._getDownloadFilePath(), self.decodePictureEnd, ' ')
+                if -1 == self["picture"].decodeCover(self._getDownloadFilePath(), self.decodePictureEnd, ' '):
+                    self.decodePictureEnd()
             else:
                 if 0 == self.refreshCount: self.session.openWithCallback(self.close, MessageBox, (_("Downloading file [%s] problem.") % self.url) + (" sts[%r]" % status), type=MessageBox.TYPE_ERROR, timeout=10)
                 self._doStart()
 
     def decodePictureEnd(self, ret={}):
+        printDBG('IPTVPicturePlayerWidget.decodePictureEnd')
         if None == ret.get('Pixmap', None):
-            if 0 == self.refreshCount: self.session.openWithCallback(self.close, MessageBox, _("Downloading file [%s] problem.") % self.filePath, type=MessageBox.TYPE_ERROR, timeout=10)        
+            if 0 == self.refreshCount: self.session.openWithCallback(self.close, MessageBox, _("Decode file [%s] problem.") % self.filePath, type=MessageBox.TYPE_ERROR, timeout=10)        
         else:
             self.refreshCount += 1
             self["status"].hide()
@@ -331,6 +341,7 @@ class IPTVPicturePlayerWidget(Screen):
                 except: printDBG('Problem with removing old buffering file')
             
     def doStart(self):
+        self.onShow.remove(self.doStart)
         if not self.onStartCalled:
             self.onStartCalled = True
             self.onStart()

@@ -146,7 +146,7 @@ class IPTVHost(CHostBase):
             printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
             return RetHost(RetHost.ERROR, value = [])
         
-        if self.host.currList[Index]["type"] not in ['audio', 'video']:
+        if self.host.currList[Index]["type"] not in ['audio', 'video', 'picture']:
             printDBG( "ERROR getLinksForVideo - current item has wrong type" )
             return RetHost(RetHost.ERROR, value = [])
         return self.host.getLinksForVideo(self.host.currList[Index])
@@ -175,8 +175,8 @@ class IPTVHost(CHostBase):
                 type = CDisplayListItem.TYPE_MORE
             elif 'audio' == cItem['type']:
                 type = CDisplayListItem.TYPE_AUDIO
-                
-
+            elif 'picture' == cItem['type']:
+                type = CDisplayListItem.TYPE_PICTURE
                 
             title       =  self.host.cleanHtmlStr( cItem.get('title', '') )
             description =  self.host.cleanHtmlStr( cItem.get('desc', '') )

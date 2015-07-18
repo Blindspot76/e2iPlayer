@@ -68,6 +68,7 @@ class Cover(Pixmap):
                     printDBG("_______________error start decodeCover[%d]" % ret)
                     self.picload_conn = None
                     self.decoding = False
+                    return -1
             return True
         else:
             printDBG("___________________________decodeCover not need (%s)" % filename)
