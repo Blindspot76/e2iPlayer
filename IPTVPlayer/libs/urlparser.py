@@ -3436,7 +3436,7 @@ class pageParser:
     def parserOPENLOADIO(self, baseUrl):
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
-        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{11})[^A-Z^a-z^0-9]')[0]
+        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_]{11})[/~]')[0]
         url = 'https://openload.io/embed/' + video_id
         post_data = None
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
