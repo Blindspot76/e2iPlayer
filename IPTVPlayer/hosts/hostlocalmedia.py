@@ -95,9 +95,12 @@ class LocalMedia(CBaseHostClass):
     def listsMainMenu(self, cItem):
         printDBG("LocalMedia.listsMainMenu [%s]" % cItem)
         # list mount points
-        params = dict(cItem)
-        params.update( {'title':'rootfs', 'path':'/'} ) 
-        self.addDir(params)
+        predefined = [{'title':_('IPTV Recordings'), 'path':config.plugins.iptvplayer.NaszaSciezka.value}, {'title':_('rootfs'), 'path':'/'}]
+        for item in predefined:
+            params = dict(cItem)
+            params.update( item ) 
+            self.addDir(params)
+        
         sts, data = ReadTextFile('/proc/mounts')
         if sts:
             # item[0] # device, item[1] # path, item[2] # filesystem
