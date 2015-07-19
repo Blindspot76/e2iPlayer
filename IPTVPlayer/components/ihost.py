@@ -467,6 +467,10 @@ class CBaseHostClass:
             self.beforeMoreItemList = self.currList[0:index]
             self.afterMoreItemList = self.currList[index+1:]
             self.moreMode = True
+            if -1 == index:
+                self.currItem = { "name": None }
+            else:
+                self.currItem = self.currList[index]
     
     def endHandleService(self, index, refresh):
         if 2 == refresh: # refresh for more items

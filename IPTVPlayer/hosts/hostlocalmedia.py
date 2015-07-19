@@ -40,13 +40,13 @@ from Screens.MessageBox import MessageBox
 ###################################################
 config.plugins.iptvplayer.local_showhiddensdir = ConfigYesNo(default = False)
 config.plugins.iptvplayer.local_showhiddensfiles = ConfigYesNo(default = False)
-config.plugins.iptvplayer.local_maxitems    = ConfigInteger(1000, (100, 1000000))
+config.plugins.iptvplayer.local_maxitems    = ConfigInteger(1000, (10, 1000000))
 
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Show hiddens files"), config.plugins.iptvplayer.local_showhiddensfiles ))
     optionList.append(getConfigListEntry(_("Show hiddens catalogs"), config.plugins.iptvplayer.local_showhiddensdir ))
-    optionList.append(getConfigListEntry(_("Max items per page"), config.plugins.iptvplayer.local.maxitems ))
+    optionList.append(getConfigListEntry(_("Max items per page"), config.plugins.iptvplayer.local_maxitems ))
     return optionList
 ###################################################
 
@@ -136,14 +136,18 @@ class LocalMedia(CBaseHostClass):
         printDBG("LocalMedia.listDir [%s]" % cItem)
         page = cItem.get('page', 0)
         
-        start = 0
-        end   = config.plugins.iptvplayer.local_maxitems.value + 1
+        start = cItem.get('start', 0)
+        end   = start + config.plugins.iptvplayer.local_maxitems.value
+        
+        cItem = dict(cItem)
+        cItem['start'] = end
         
         path  = cItem['path']
-        cmd = self.prepareCmd(path, start, end) + ' 2>&1'
+        cmd = self.prepareCmd(path, start, end+1) + ' 2>&1'
         printDBG("cmd [%s]" % cmd) 
         ret = iptv_execute()(cmd)
         printDBG(ret)
+        
         if ret['sts'] and 0 == ret['code']:
             data = ret['data'].split('\n')
             dirTab = []
@@ -152,6 +156,8 @@ class LocalMedia(CBaseHostClass):
             audTab = []
             picTab = []
             for item in data:
+                start += 1
+                if start > end: break 
                 item = item.split('//')
                 if 4 != len(item): continue
                 if 'd' == item[1]:
@@ -171,6 +177,11 @@ class LocalMedia(CBaseHostClass):
             self.addFromTab(cItem, vidTab, path, 'video')
             self.addFromTab(cItem, audTab, path, 'audio')
             self.addFromTab(cItem, picTab, path, 'picture')
+            
+            if start > end:
+                params = dict(cItem)
+                params.update({'category':'more', 'title':_('More')})
+                self.addMore(params)
 
     def addFromTab(self, params, tab, path, category='', need_resolve=0):
         tab.sort()
