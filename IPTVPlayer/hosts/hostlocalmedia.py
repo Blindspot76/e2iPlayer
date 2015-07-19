@@ -38,7 +38,6 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.movieshdco_sortby = ConfigSelection(default = "date", choices = [("date", _("Lastest")), ("views", _("Most viewed")), ("duree", _("Longest")), ("rate", _("Top rated")), ("random", _("Tandom"))]) 
 config.plugins.iptvplayer.local_showhiddensdir = ConfigYesNo(default = False)
 config.plugins.iptvplayer.local_showhiddensfiles = ConfigYesNo(default = False)
 config.plugins.iptvplayer.local_maxitems    = ConfigInteger(1000, (100, 1000000))
@@ -57,9 +56,9 @@ def gettytul():
 
 class LocalMedia(CBaseHostClass):
     FILE_SYSTEMS = ['ext2', 'ext3', 'ext4', 'vfat', 'msdos', 'iso9660', 'nfs', 'jffs2', 'autofs', 'cifs', 'ntfs']
-    VIDEO_FILE_EXTENSIONS    = ['avi', 'flv', 'mp4', 'ts', 'mov', 'wmv', 'mpeg', 'mkv']
+    VIDEO_FILE_EXTENSIONS    = ['avi', 'flv', 'mp4', 'ts', 'mov', 'wmv', 'mpeg', 'mkv', 'vob']
     AUDIO_FILES_EXTENSIONS   = ['mp3', 'm4a', 'ogg', 'wma', 'fla']
-    PICTURE_FILES_EXTENSIONS = ['jpg', 'jepg', 'png']
+    PICTURE_FILES_EXTENSIONS = ['jpg', 'jpeg', 'png']
     M3U_FILES_EXTENSIONS     = ['m3u']
     
     def __init__(self):
@@ -71,7 +70,7 @@ class LocalMedia(CBaseHostClass):
             path, ext = os_path.splitext(path)
             ext = ext[1:]
         except: pass
-        return ext
+        return ext.lower()
         
     def prepareCmd(self, path, start, end):
         lsdirPath = GetBinDir("lsdir")
@@ -87,7 +86,10 @@ class LocalMedia(CBaseHostClass):
             if config.plugins.iptvplayer.local_showhiddensfiles.value:
                 wilcard = ''
             else: wilcard = '[^.]*'
-            wilcard += '.' + ext
+            insensitiveExt=''
+            for l in ext:
+                insensitiveExt += '[%s%s]' % (l.upper(), l.lower())
+            wilcard += '.' + insensitiveExt
             fWildcards.append(wilcard)
         cmd = '%s "%s" rdl rd %d %d "%s" "%s"' % (lsdirPath, path, start, end, '|'.join(fWildcards), dWildcards)
         return cmd
