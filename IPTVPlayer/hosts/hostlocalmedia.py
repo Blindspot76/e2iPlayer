@@ -206,7 +206,10 @@ class LocalMedia(CBaseHostClass):
         printDBG(params)
         uri = urlparser.decorateUrl(uri, params)
         
-        urlSupport = self.up.checkHostSupport( uri )
+        if uri.meta['iptv_proto'] in ['http', 'https']:
+            urlSupport = self.up.checkHostSupport( uri )
+        else:
+            urlSupport = 0
         if 1 == urlSupport:
             retTab = self.up.getVideoLinkExt( uri )
             videoUrls.extend(retTab)

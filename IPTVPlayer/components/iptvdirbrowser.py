@@ -46,8 +46,8 @@ class IPTVDirectorySelectorWidget(Screen):
         skin = """
         <screen name="IPTVDirectorySelectorWidget" position="center,center" size="820,860" title="">
             <widget name="key_red"     position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;28" transparent="1" foregroundColor="red" />
-            <widget name="key_blue"    position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="center" font="Regular;28" transparent="1" foregroundColor="blue" />
-            <widget name="key_green"   position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="right"  font="Regular;28" transparent="1" foregroundColor="green" />
+            <widget name="key_green"   position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="center"  font="Regular;28" transparent="1" foregroundColor="green" />
+            <widget name="key_blue"    position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="right" font="Regular;28" transparent="1" foregroundColor="blue" />
             <widget name="curr_dir"    position="10,50"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;28" transparent="1" foregroundColor="white" />
             <widget name="list"        position="10,95"  zPosition="1"  size="800,725" transparent="1" scrollbarMode="showOnDemand" />
         </screen>"""
@@ -55,8 +55,8 @@ class IPTVDirectorySelectorWidget(Screen):
         skin = """
         <screen name="IPTVDirectorySelectorWidget" position="center,center" size="620,440" title="">
             <widget name="key_red"     position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;22" transparent="1" foregroundColor="red" />
-            <widget name="key_blue"    position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="center" font="Regular;22" transparent="1" foregroundColor="blue" />
-            <widget name="key_green"   position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="right"  font="Regular;22" transparent="1" foregroundColor="green" />
+            <widget name="key_green"   position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="center"  font="Regular;22" transparent="1" foregroundColor="green" />
+            <widget name="key_blue"    position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="right" font="Regular;22" transparent="1" foregroundColor="blue" />
             <widget name="curr_dir"    position="10,50"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;18" transparent="1" foregroundColor="white" />
             <widget name="list"        position="10,85"  zPosition="1"  size="580,335" transparent="1" scrollbarMode="showOnDemand" />
         </screen>"""
@@ -71,10 +71,10 @@ class IPTVDirectorySelectorWidget(Screen):
             self["key_green"]  = Label(_("Apply"))
             self["curr_dir"]   = Label(_(" "))
             self["list"]   = IPTVDirBrowserList()
-            self["FilelistActions"] = ActionMap(["SetupActions", "ColorActions"],
+            self["FilelistActions"] = ActionMap(["ColorActions", "SetupActions"],
                 {
-                    "green" : self.requestApply,
                     "red"   : self.requestCancel,
+                    "green" : self.requestApply,
                     "yellow": self.requestRefresh,
                     "blue"  : self.requestNewDir,
                     "ok"    : self.requestOk,
@@ -197,6 +197,7 @@ class IPTVDirectorySelectorWidget(Screen):
         self.doAction( boundFunction(self._iptvDoClose, self.getCurrentDirectory()) )
         
     def requestCancel(self):
+        printDBG(">>>REQUEST CANCEL<<<")
         if self.underClosing: return
         self.doAction( boundFunction(self._iptvDoClose, None) )
         
@@ -259,12 +260,14 @@ class IPTVFileSelectorWidget(IPTVDirectorySelectorWidget):
     if screenwidth and screenwidth == 1920:  
         skin = """
         <screen name="IPTVFileSelectorWidget" position="center,center" size="820,860" title="">
+            <widget name="key_red"     position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;28" transparent="1" foregroundColor="red" />
             <widget name="curr_dir"    position="10,50"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;28" transparent="1" foregroundColor="white" />
             <widget name="list"        position="10,95"  zPosition="1"  size="800,725" transparent="1" scrollbarMode="showOnDemand" />
         </screen>"""
     else:
         skin = """
         <screen name="IPTVFileSelectorWidget" position="center,center" size="620,440" title="">
+            <widget name="key_red"     position="10,10"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;22" transparent="1" foregroundColor="red" />
             <widget name="curr_dir"    position="10,50"  zPosition="2"  size="600,35" valign="center"  halign="left"   font="Regular;18" transparent="1" foregroundColor="white" />
             <widget name="list"        position="10,85"  zPosition="1"  size="580,335" transparent="1" scrollbarMode="showOnDemand" />
         </screen>"""      
@@ -273,11 +276,12 @@ class IPTVFileSelectorWidget(IPTVDirectorySelectorWidget):
         IPTVDirectorySelectorWidget.__init__(self, session, currDir, title)
 
         if type(self) == IPTVFileSelectorWidget:
-            #self["key_yellow"] = Label(_("Odśwież"))
+            self["key_red"]    = Label(_("Cancel"))
             self["curr_dir"]   = Label(_(" "))
             self["list"]   = IPTVDirBrowserList()
-            self["FilelistActions"] = ActionMap(["SetupActions", "ColorActions"],
+            self["FilelistActions"] = ActionMap(["ColorActions", "SetupActions"],
                 {
+                    "red"   : self.requestCancel,
                     "yellow": self.requestRefresh,
                     "ok"    : self.requestOk,
                     "cancel": self.requestBack
