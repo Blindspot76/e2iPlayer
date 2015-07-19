@@ -140,7 +140,7 @@ class LocalMedia(CBaseHostClass):
         end   = start + config.plugins.iptvplayer.local_maxitems.value
         
         cItem = dict(cItem)
-        cItem['start'] = end
+        cItem['start'] = 0
         
         path  = cItem['path']
         cmd = self.prepareCmd(path, start, end+1) + ' 2>&1'
@@ -180,7 +180,7 @@ class LocalMedia(CBaseHostClass):
             
             if start > end:
                 params = dict(cItem)
-                params.update({'category':'more', 'title':_('More')})
+                params.update({'category':'more', 'title':_('More'), 'start':end})
                 self.addMore(params)
 
     def addFromTab(self, params, tab, path, category='', need_resolve=0):
