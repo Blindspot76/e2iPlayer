@@ -119,7 +119,7 @@ class Hitbox(CBaseHostClass):
                 #params['seo_key'] = item['category_seo_key']
                 self.addDir(params)
             # check next page
-            sts, data = self.cm.getPage(cItem['url'] % (1, (page+1)*Hitbox.NUM_OF_ITEMS) )
+            sts, data = self.cm.getPage(cItem['url'].format(1, (page+1)*Hitbox.NUM_OF_ITEMS) )
             if not sts: return 
             if len(json.loads(data)["categories"]):
                 params = dict(cItem)
@@ -157,7 +157,7 @@ class Hitbox(CBaseHostClass):
                 else: params['channel_link'] = item['channel']['channel_link']
                 self.addVideo(params)
             # check next page
-            sts, data = self.cm.getPage(cItem['url'] % (1, (page+1)*Hitbox.NUM_OF_ITEMS) )
+            sts, data = self.cm.getPage(cItem['url'].format(1, (page+1)*Hitbox.NUM_OF_ITEMS) )
             if not sts: return 
             if len(json.loads(data)[key]):
                 params = dict(cItem)
