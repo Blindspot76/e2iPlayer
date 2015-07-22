@@ -144,17 +144,20 @@ class MoviesHDCO(CBaseHostClass):
                         if '+[]' in e:
                             e = e.replace(')+(', ')+str(')
                             e = e.replace('int((', 'int(str(')
-                            e = e.replace('+[]', '')
                             e = e.replace('(+[])', '(0)')
+                            e = e.replace('+[]', '')
                         expresion[idx] = e
                     
+                    #printDBG("-------------------------------------")
+                    #printDBG(expresion)
+                    #printDBG("-------------------------------------")
                     answer = self.calcAnswer('\n'.join(expresion)) + 11
                     #printDBG("-------------------------------------")
                     #printDBG(answer)
                     #printDBG("-------------------------------------")
                     #printDBG(data.fp.info())
                     #printDBG(verData)
-                    #refreshData = data.fp.info().get('Refresh', '')
+                    refreshData = data.fp.info().get('Refresh', '')
                     #verUrl = self._getFullUrl( refreshData.split('URL=')[1] )
                     
                     verData = self.cm.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
