@@ -240,5 +240,8 @@ class IconMenager:
         else:
             self.checkSpace -= 1
         file_path = "%s%s" % (path, filename)
-        return self.cm.saveWebFile(file_path, img_url, {'maintype': 'image'})['sts']
+        params = {'maintype': 'image'}
+        if config.plugins.iptvplayer.allowedcoverformats.value != 'all':
+            params['subtypes'] = config.plugins.iptvplayer.allowedcoverformats.value.split(',')
+        return self.cm.saveWebFile(file_path, img_url, params)['sts']
     

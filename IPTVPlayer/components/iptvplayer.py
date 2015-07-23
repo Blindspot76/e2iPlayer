@@ -1,5 +1,5 @@
 from Screens.Screen import Screen
-from Screens.InfoBarGenerics import InfoBarSeek, InfoBarAudioSelection, InfoBarNotifications, InfoBarShowHide
+from Screens.InfoBarGenerics import InfoBarSeek, InfoBarAudioSelection, InfoBarNotifications, InfoBarSubtitleSupport, InfoBarShowHide
    
 
 from Screens.HelpMenu import HelpableScreen
@@ -11,7 +11,7 @@ from Components.ServiceEventTracker import ServiceEventTracker
 from enigma import iPlayableService, eTimer
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, eConnectCallback
 
-class customMoviePlayer(InfoBarShowHide, InfoBarSeek, InfoBarAudioSelection, HelpableScreen, InfoBarNotifications, Screen):
+class customMoviePlayer(InfoBarShowHide, InfoBarSeek, InfoBarAudioSelection, InfoBarSubtitleSupport, HelpableScreen, InfoBarNotifications, Screen):
 
     STATE_IDLE = 0
     STATE_PLAYING = 1
@@ -35,7 +35,7 @@ class customMoviePlayer(InfoBarShowHide, InfoBarSeek, InfoBarAudioSelection, Hel
                 "leavePlayer": (self.leavePlayer, _("leave movie player...")),
             }, -5)
         
-        for x in HelpableScreen, InfoBarShowHide, InfoBarSeek, InfoBarAudioSelection, InfoBarNotifications:
+        for x in HelpableScreen, InfoBarShowHide, InfoBarSeek, InfoBarAudioSelection, InfoBarSubtitleSupport, InfoBarNotifications:
             x.__init__(self)
             
         # InfoBarServiceNotifications

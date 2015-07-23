@@ -278,11 +278,19 @@ class common:
                 contentLength = int(meta.getheaders("Content-Length")[0])
             else:
                 contentLength = None
-
+                
+            OK = True
             if 'maintype' in addParams and addParams['maintype'] != downHandler.headers.maintype:
                 downHandler.close()
                 printDBG("common.getFile wrong maintype! requested[%r], retrieved[%r]" % (addParams['maintype'], downHandler.headers.maintype))
-            else:
+                OK = False
+            if 'subtypes' in addParams:
+                OK = False
+                for item in addParams['subtypes']:
+                    if item == downHandler.headers.subtype:
+                        OK = True
+                        break
+            if OK:
                 blockSize = addParams.get('block_size', 8192)
                 fileHandler = file(file_path, "wb")
                 while True:

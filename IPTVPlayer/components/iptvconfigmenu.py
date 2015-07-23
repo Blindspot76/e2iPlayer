@@ -49,6 +49,7 @@ config.plugins.iptvplayer.plarform        = ConfigSelection(default = "auto", ch
 
 config.plugins.iptvplayer.showcover          = ConfigYesNo(default = True)
 config.plugins.iptvplayer.deleteIcons        = ConfigSelection(default = "3", choices = [("0", _("after closing")),("1", _("after day")),("3", _("after three days")),("7", _("after a week"))]) 
+config.plugins.iptvplayer.allowedcoverformats= ConfigSelection(default = "jpeg,png", choices = [("jpeg,png,gif", _("jpeg,png,gif")),("jpeg,png", _("jpeg,png")),("jpeg", _("jpeg")),("all", _("all"))]) 
 config.plugins.iptvplayer.showinextensions   = ConfigYesNo(default = True)
 config.plugins.iptvplayer.showinMainMenu     = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ListaGraficzna     = ConfigYesNo(default = True)
@@ -230,6 +231,7 @@ class ConfigMenu(ConfigBaseWidget):
         list.append(getConfigListEntry(_("Skin"), config.plugins.iptvplayer.skin))
         list.append(getConfigListEntry(_("Display thumbnails"), config.plugins.iptvplayer.showcover))
         if config.plugins.iptvplayer.showcover.value:
+            list.append(getConfigListEntry(_("    Allowed formats of thumbnails"), config.plugins.iptvplayer.allowedcoverformats))
             list.append(getConfigListEntry(_("    Remove thumbnails"), config.plugins.iptvplayer.deleteIcons))
         #list.append(getConfigListEntry("Sortować listy?", config.plugins.iptvplayer.sortuj))            
         list.append(getConfigListEntry(_("Graphic services selector"), config.plugins.iptvplayer.ListaGraficzna))
