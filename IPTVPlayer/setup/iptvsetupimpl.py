@@ -63,7 +63,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # gstplayer
-        self.gstplayerVersion = 13
+        self.gstplayerVersion = {'0.10':13, '1.0':1}
         self.gstplayerpaths = ["/usr/bin/gstplayer", GetBinDir("gstplayer", "")]
         self._gstplayerInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/gstplayer (%s)" % _("recommended")), "/usr/bin/gstplayer"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),
@@ -194,26 +194,20 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.getGstreamerVer")
         self.setInfo(_("Detection of the gstreamer version."), None)
         def _verValidator(code, data):
-            if 'GStreamer Core Library version 0.10' in data: return True,False
+            if 'GStreamer Core Library version ' in data: return True,False
             else: return False,True
-        self.workingObj = CCmdValidator(self.getGstreamerVerFinished, _verValidator, ['gst-launch --gst-version'])
+        self.workingObj = CCmdValidator(self.getGstreamerVerFinished, _verValidator, ['gst-launch-1.0 --gst-version', 'gst-launch --gst-version'])
         self.workingObj.start()
         
     def getGstreamerVerFinished(self, stsTab, dataTab):
         printDBG("IPTVSetupImpl.getGstreamerVerFinished")
         if len(stsTab) > 0 and True == stsTab[-1]: 
-            self.gstreamerVersion = "0.10"
-            try:
-                from boxbranding import getImageVersion
-                if getImageVersion() > '4.2':
-                    printDBG("Patch requested by @Rango - disable gstplayer for new OE-A images")
-                    config.plugins.iptvplayer.gstplayerpath.value = ""
-                    config.plugins.iptvplayer.gstplayerpath.save()
-                    configfile.save()
-                    self.gstreamerVersion = ""
-            except:
-                printExc()
-            
+            if ' version 1.' in dataTab[-1]:
+                self.gstreamerVersion = "1.0"
+            elif ' version 0.' in dataTab[-1]:
+                self.gstreamerVersion = "0.10"
+            else: 
+                self.gstreamerVersion = ""
         else: self.gstreamerVersion = ""
         self.getFFmpegVer()
         
@@ -399,7 +393,7 @@ class IPTVSetupImpl:
             if '{"GSTPLAYER_EXTENDED":{"version":' in data: 
                 try: ver = int(re.search('"version":([0-9]+?)[^0-9]', data).group(1))
                 except: ver = 0
-                if ver >= self.gstplayerVersion: return True,False
+                if ver >= self.gstplayerVersion.get(self.gstreamerVersion, 0): return True,False
             return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
@@ -407,7 +401,7 @@ class IPTVSetupImpl:
                 if '{"GSTPLAYER_EXTENDED":{"version":' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
-            url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + "0.10"
+            url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + self.gstreamerVersion
             tmpFile = tmpPath + binName
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
