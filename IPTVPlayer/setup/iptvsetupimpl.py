@@ -418,8 +418,10 @@ class IPTVSetupImpl:
 
     def gstplayerStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.gstplayerStepFinished sts[%r]" % sts)
-        if sts: self.flumpegdemuxStep()
-        else: self.finish()
+        if sts and '0.10' == self.gstreamerVersion:
+            self.flumpegdemuxStep()
+        else: 
+            self.finish()
         
     ###################################################
     # STEP: FLUENDO MPEGDEMUX
