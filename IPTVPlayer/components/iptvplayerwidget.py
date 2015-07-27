@@ -1241,8 +1241,12 @@ class IPTVPlayerWidget(Screen):
             if blocked:
                 self.session.open(MessageBox, reaseon, type = MessageBox.TYPE_INFO, timeout = 10)
                 return
-
-            isBufferingMode = self.activePlayer.get('buffering', self.checkBuffering(url))
+            
+            if url.startswith('file://'):
+                isBufferingMode = False
+            else:
+                isBufferingMode = self.activePlayer.get('buffering', self.checkBuffering(url))
+            
             if not self.recorderMode:
                 pathForRecordings = config.plugins.iptvplayer.bufferingPath.value
             else:

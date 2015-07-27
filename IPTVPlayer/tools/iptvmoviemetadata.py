@@ -92,6 +92,29 @@ class IPTVMovieMetaDataHandler():
             except: 
                 printExc()
         return sts
+        
+    ##################################################
+    # AUDIO
+    ##################################################
+    def getAudioTrackId(self):
+        localPrintDBG("IPTVMovieMetaDataHandler.getAudioTrackId")
+        id = -1
+        try:
+            id = int(self.data['tracks']['audio'])
+        except:
+            printExc()
+        return id
+        
+    def setAudioTrackId(self, id):
+        localPrintDBG("IPTVMovieMetaDataHandler.setAudioTrackId id[%s]" % id)
+        sts = False
+        try:
+            self.data['tracks']['audio'] = int(id)
+            sts = True
+        except:
+            printExc()
+        if sts: self.isModified = True
+        return sts
     
     ##################################################
     # SUBTITLES
