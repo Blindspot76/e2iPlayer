@@ -523,7 +523,7 @@ class IPTVExtMoviePlayer(Screen):
             currIdx = 0
             for trackIdx in range(len(tracksTab)):
                 name = '[{0}] {1}'.format(tracksTab[trackIdx]['name'], tracksTab[trackIdx]['encode'])
-                item = IPTVChoiceBoxItem(name, "", {'track_id':tracksTab[trackIdx]['id']})
+                item = IPTVChoiceBoxItem(name, "", {'track_id':tracksTab[trackIdx]['id'], 'track_idx':trackIdx})
                 if tracksTab[trackIdx]['id'] == currentId:
                     item.type = IPTVChoiceBoxItem.TYPE_ON
                     currIdx = trackIdx
@@ -539,7 +539,7 @@ class IPTVExtMoviePlayer(Screen):
         if isinstance(ret, IPTVChoiceBoxItem):
             ret = ret.privateData
             if 'track_id' in ret and ret['track_id'] != self.playback['AudioTrack'].get('id', -1):
-                self.metaHandler.setAudioTrackId( ret['track_id'] )
+                self.metaHandler.setAudioTrackIdx( ret.get('track_idx', -1) )
                 self.extPlayerCmddDispatcher.setAudioTrack( ret['track_id'] )
             
     def selectSubtitle(self):
@@ -1138,6 +1138,9 @@ class IPTVExtMoviePlayer(Screen):
             gstplayerPath = config.plugins.iptvplayer.gstplayerpath.value
             #'export GST_DEBUG="*:6" &&' + 
             cmd = gstplayerPath  + ' "%s"' % self.fileSRC
+            audioTrackIdx = self.metaHandler.getAudioTrackIdx()
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)
+            cmd += ' %d ' % audioTrackIdx
             if "://" in self.fileSRC: 
                 cmd += ' "%s" "%s"  "%s"  "%s" ' % (self.gstAdditionalParams['download-buffer-path'], self.gstAdditionalParams['ring-buffer-max-size'], self.gstAdditionalParams['buffer-duration'], self.gstAdditionalParams['buffer-size'])
                 tmp = strwithmeta(self.fileSRC)
@@ -1150,8 +1153,6 @@ class IPTVExtMoviePlayer(Screen):
                             tmp = re.search('([^:]+?://)([^:]+?):([^@]+?)@(.+?)$', tmp)
                             if tmp: cmd += (' "proxy=%s" "proxy-id=%s" "proxy-pw=%s" ' % (tmp.group(1)+tmp.group(4), tmp.group(2), tmp.group(3)) )
                         else: cmd += (' "proxy=%s" ' % tmp)
-            audioTrackId = self.metaHandler.getAudioTrackId()
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackId[%d]" % audioTrackId)
             cmd += " > /dev/null"
         else:
             exteplayer3path = config.plugins.iptvplayer.exteplayer3path.value
@@ -1168,10 +1169,10 @@ class IPTVExtMoviePlayer(Screen):
                     cmd += ' -h "%s"' % headers
             if config.plugins.iptvplayer.aac_software_decode.value:
                 cmd += ' -a -p -10'
-            audioTrackId = self.metaHandler.getAudioTrackId()
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackId[%d]" % audioTrackId)
-            if audioTrackId >= 0:
-                cmd += ' -t %d ' % audioTrackId
+            audioTrackIdx = self.metaHandler.getAudioTrackIdx()
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)
+            if audioTrackIdx >= 0:
+                cmd += ' -t %d ' % audioTrackIdx
             cmd += (' "%s"' % self.fileSRC) + " > /dev/null"
         
         self.console = eConsoleAppContainer()
@@ -1179,7 +1180,7 @@ class IPTVExtMoviePlayer(Screen):
         self.console_stderrAvail_conn = eConnectCallback(self.console.stderrAvail, self.eplayer3DataAvailable)
         #if 'gstplayer' == self.player: 
         #    self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self.eplayer3DataAvailable2 ) # work around to catch EOF event after seeking, pause .etc
-        printDBG("onStart cmd[%s]" % cmd)
+        printDBG("->||||||| onStart cmd[%s]" % cmd)
         self.console.execute( cmd )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
         self['logoIcon'].setPixmap( self.playback['logoIcon'] )
