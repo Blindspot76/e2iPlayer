@@ -63,7 +63,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # gstplayer
-        self.gstplayerVersion = {'0.10':14, '1.0':14}
+        self.gstplayerVersion = {'0.10':15, '1.0':15}
         self.gstplayerpaths = ["/usr/bin/gstplayer", GetBinDir("gstplayer", "")]
         self._gstplayerInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/gstplayer (%s)" % _("recommended")), "/usr/bin/gstplayer"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),
@@ -76,7 +76,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # flumpegdemux
-        self.flumpegdemuxVersion = "0.10.85" #{'i686':199720, 'mipsel':275752, 'sh4':151664}
+        self.flumpegdemuxVersion = "0.10.85a" #{'i686':199720, 'mipsel':275752, 'sh4':151664}
         self.flumpegdemuxpaths = ["/usr/lib/gstreamer-0.10/libgstflumpegdemux.so"]
         
         self.binaryInstalledSuccessfully = False
