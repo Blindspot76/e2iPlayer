@@ -897,21 +897,43 @@ class pageParser:
         else:
             return False
 
-    def parserDAILYMOTION(self, url):
-        if not url.startswith('http://www.dailymotion.com/embed/video/'):
-            video_id  = self.cm.ph.getSearchGroups(url, 'video/([^/?_]+)')[0]
-            url = 'http://www.dailymotion.com/embed/video/' + video_id
+    def parserDAILYMOTION(self, baseUrl):
+        # https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/dailymotion.py
+        _VALID_URL = r'(?i)(?:https?://)?(?:(www|touch)\.)?dailymotion\.[a-z]{2,3}/(?:(embed|#)/)?video/(?P<id>[^/?_]+)'
+        mobj = re.match(_VALID_URL, baseUrl)
+        video_id = mobj.group('id')
         
+        url = 'http://www.dailymotion.com/embed/video/' + video_id
         sts, data = self.cm.getPage(url)
         if not sts: return []
         
         vidTab = []
-        data = CParsingHelper.getDataBeetwenMarkers(data, 'id="player"', '</script>', False)[1].replace('\/', '/')
-        match = re.compile('"stream_h264.+?url":"(http[^"]+?H264-)([^/]+?)(/[^"]+?)"').findall(data)
-        for i in range(len(match)):
-            url = match[i][0] + match[i][1] + match[i][2]
-            name = match[i][1]
-            vidTab.append({'name': 'dailymotion.com: ' + name, 'url':url})
+        player_v5 = self.cm.ph.getSearchGroups(data, r'playerV5\s*=\s*dmp\.create\([^,]+?,\s*({.+?})\);')[0]
+        if '' != player_v5:
+            player_v5 = byteify(json.loads(player_v5))['metadata']['qualities']
+            for quality, media_list in player_v5.items():
+                for media in media_list:
+                    media_url = media.get('url')
+                    if not media_url:
+                        continue
+                    type_ = media.get('type')
+                    if type_ == 'application/vnd.lumberjack.manifest':
+                        continue
+                    if type_ == 'application/x-mpegURL' or media_url.split('?')[-1].endswith('m3u8'):
+                        continue
+                        tmpTab = getDirectM3U8Playlist(media_url, False)
+                        for tmp in tmpTab:
+                            vidTab.append({'name':'dailymotion.com: %s hls' % (tmp.get('bitrate', '0')), 'url':tmp['url']})
+                    else:
+                        vidTab.append({'name':'dailymotion.com: %s' % quality, 'url':media_url})
+            
+        if 0 == len(vidTab):
+            data = CParsingHelper.getDataBeetwenMarkers(data, 'id="player"', '</script>', False)[1].replace('\/', '/')
+            match = re.compile('"stream_h264.+?url":"(http[^"]+?H264-)([^/]+?)(/[^"]+?)"').findall(data)
+            for i in range(len(match)):
+                url = match[i][0] + match[i][1] + match[i][2]
+                name = match[i][1]
+                vidTab.append({'name': 'dailymotion.com: ' + name, 'url':url})
 
         return vidTab[::-1]
 
