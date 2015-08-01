@@ -82,6 +82,9 @@ class ExtPlayerCommandsDispatcher():
         
     def setAudioTrack(self, id):
         self.extPlayerSendCommand('PLAYBACK_SET_AUDIO_TRACK', id, False)
+        
+    def setDownloadFileTimeout(self, timeout):
+        self.extPlayerSendCommand('PLAYBACK_SET_DOWNLOAD_FILE_TIMEOUT', timeout, False)
     
     def doSeek(self, diff):       
         self.extPlayerSendCommand('PLAYBACK_SEEK_RELATIVE', '%d' %diff)
@@ -185,6 +188,8 @@ class IPTVExtMoviePlayer(Screen):
             self.gstAdditionalParams['ring-buffer-max-size'] = additionalParams.get('ring-buffer-max-size', 0) # in MB
             self.gstAdditionalParams['buffer-duration']      = additionalParams.get('buffer-duration', -1) # in s
             self.gstAdditionalParams['buffer-size']          = additionalParams.get('buffer-size', 0) # in KB
+            self.gstAdditionalParams['file-download-timeout']= additionalParams.get('file-download-timeout', 0) # in MS
+            self.gstAdditionalParams['file-download-live']   = additionalParams.get('file-download-live', False) # True or False
         else: self.playerName = _("external eplayer3")
 
         self.session.nav.playService(None) # current service must be None to give free access to DVB Audio and Video Sinks
@@ -1039,6 +1044,11 @@ class IPTVExtMoviePlayer(Screen):
                 # u'Speed': 1, 
                 # u'isSubtitle': False, 
                 # u'isDvbSubtitle': False}}
+                
+    def onDownloadFinished(self, sts):
+        printDBG("IPTVExtMoviePlayer.onDownloadFinished sts[%s]" % sts)
+        if None != self.extPlayerCmddDispatcher:
+            self.extPlayerCmddDispatcher.setDownloadFileTimeout(0)
 
     def __onClose(self):
         self.isClosing = True
@@ -1048,6 +1058,8 @@ class IPTVExtMoviePlayer(Screen):
             self.console_stdoutAvail_conn = None
             self.console.sendCtrlC()
             self.console = None
+        if None != self.downloader:
+            self.downloader.unsubscribeFor_Finish(self.onDownloadFinished)
         self.downloader = None
         self.playbackInfoBar['timer'].stop()
         self.playbackInfoBar['timer_conn'] = None
@@ -1135,12 +1147,28 @@ class IPTVExtMoviePlayer(Screen):
         self.initGuiComponentsPos()
         self.metaHandler.load()
         if 'gstplayer' == self.player:
+            if None != self.downloader:
+                self.downloader.subscribeFor_Finish(self.onDownloadFinished)
+            
             gstplayerPath = config.plugins.iptvplayer.gstplayerpath.value
             #'export GST_DEBUG="*:6" &&' + 
             cmd = gstplayerPath  + ' "%s"' % self.fileSRC
+            
+            # active audio track 
             audioTrackIdx = self.metaHandler.getAudioTrackIdx()
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)
             cmd += ' %d ' % audioTrackIdx
+            
+            # file download timeout
+            if None != self.downloader and self.downloader.isDownloading():
+                timeout = self.gstAdditionalParams['file-download-timeout']
+            else: timeout = 0
+            cmd += ' {0} '.format( timeout )
+            
+            # file download live
+            if self.gstAdditionalParams['file-download-live']:
+                cmd += ' {0} '.format(1)
+            else: cmd += ' {0} '.format(0)
+            
             if "://" in self.fileSRC: 
                 cmd += ' "%s" "%s"  "%s"  "%s" ' % (self.gstAdditionalParams['download-buffer-path'], self.gstAdditionalParams['ring-buffer-max-size'], self.gstAdditionalParams['buffer-duration'], self.gstAdditionalParams['buffer-size'])
                 tmp = strwithmeta(self.fileSRC)
@@ -1315,6 +1343,8 @@ class IPTVExtMoviePlayer(Screen):
         elif 'PLAYBACK_SET_AUDIO_TRACK' == command:
             self.consoleWrite( "a%s\n" % arg1)
             self.consoleWrite( "ac\n")
+        elif 'PLAYBACK_SET_DOWNLOAD_FILE_TIMEOUT' == command:
+            self.consoleWrite( "t%s\n" % arg1)
         else:
             # All below commands require that 'PLAY ' status, 
             # so we first send command to resume playback

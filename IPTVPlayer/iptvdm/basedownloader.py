@@ -57,6 +57,11 @@ class BaseDownloader:
 
     def getStatus(self):
         return self.status
+        
+    def isDownloading(self):
+        if DMHelper.STS.DOWNLOADING == self.status:
+            return True
+        return False
 
     def isWorkingCorrectly(self, callBackFun):
         ''' Check if this downloader has all needed components 

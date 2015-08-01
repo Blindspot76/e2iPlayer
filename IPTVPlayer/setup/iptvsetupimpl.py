@@ -63,7 +63,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # gstplayer
-        self.gstplayerVersion = {'0.10':15, '1.0':15}
+        self.gstplayerVersion = {'0.10':18, '1.0':10018}
         self.gstplayerpaths = ["/usr/bin/gstplayer", GetBinDir("gstplayer", "")]
         self._gstplayerInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/gstplayer (%s)" % _("recommended")), "/usr/bin/gstplayer"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),
@@ -76,8 +76,12 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # flumpegdemux
-        self.flumpegdemuxVersion = "0.10.85a" #{'i686':199720, 'mipsel':275752, 'sh4':151664}
+        self.flumpegdemuxVersion = "0.10.85"
         self.flumpegdemuxpaths = ["/usr/lib/gstreamer-0.10/libgstflumpegdemux.so"]
+        
+        # gstifdsrc
+        self.gstifdsrcVersion = "1.0.0"
+        self.gstifdsrcPaths = ["/usr/lib/gstreamer-1.0/libgstifdsrc.so"]
         
         self.binaryInstalledSuccessfully = False
         self.tries = 0
@@ -196,7 +200,11 @@ class IPTVSetupImpl:
         def _verValidator(code, data):
             if 'GStreamer Core Library version ' in data: return True,False
             else: return False,True
-        self.workingObj = CCmdValidator(self.getGstreamerVerFinished, _verValidator, ['gst-launch-1.0 --gst-version', 'gst-launch --gst-version'])
+        verCmdTab = []
+        if 'sh4' != self.platform:
+            verCmdTab.append('gst-launch-1.0 --gst-version')
+        verCmdTab.append('gst-launch --gst-version')
+        self.workingObj = CCmdValidator(self.getGstreamerVerFinished, _verValidator, verCmdTab)
         self.workingObj.start()
         
     def getGstreamerVerFinished(self, stsTab, dataTab):
@@ -420,7 +428,9 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.gstplayerStepFinished sts[%r]" % sts)
         if sts and '0.10' == self.gstreamerVersion:
             self.flumpegdemuxStep()
-        else: 
+        elif 'sh4' != self.platform: 
+            self.gstifdsrcStep()
+        else:
             self.finish()
         
     ###################################################
@@ -459,9 +469,46 @@ class IPTVSetupImpl:
         self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
         self.stepHelper.setFinishHandler( self.flumpegdemuxStepFinished )
         self.binaryDetect()
+        
+    ###################################################
+    # STEP: GST IFDSRC
+    ###################################################
+    def gstifdsrcStep(self, ret=None):
+        printDBG("IPTVSetupImpl.gstifdsrcStep")
+        def _detectValidator(code, data):
+            if 0 == code: return True,False
+            return False,True
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            sts, retPath = False, ""
+            try: currentSize = os_path.getsize(self.gstifdsrcPaths[0])
+            except: currentSize = -1
+            if -1 < currentSize: sts, retPath = True, paths[0]
+            return sts, retPath
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + "1.0"
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        self.stepHelper = CBinaryStepHelper("libgstifdsrc.so", self.platform, self.openSSLVersion, None)
+        msg1 = "GST-IFDSRC for GSTREAMER 1.X"
+        msg2 = "\nFor more info please ask the author samsamsam@o2.pl"
+        msg3 = _('It improves buffering mode with the gstplayer.\n')
+        self.stepHelper.updateMessage('detection', msg1, 0)
+        self.stepHelper.updateMessage('detection', msg2, 1)
+        self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+        self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+        
+        self.stepHelper.setInstallChoiseList( [('gst-ifdsrc', self.gstifdsrcPaths[0])] )
+        self.stepHelper.setPaths( self.gstifdsrcPaths )
+        self.stepHelper.setDetectCmdBuilder( lambda path: ('grep "%s" "%s" 2>&1 ' % (self.gstifdsrcVersion, path)) )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.gstifdsrcStepFinished )
+        self.binaryDetect()
 
-    def flumpegdemuxStepFinished(self, sts, ret=None):
-        printDBG("IPTVSetupImpl.flumpegdemuxStepFinished sts[%r]" % sts)
+    def gstifdsrcStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.gstifdsrcStepFinished sts[%r]" % sts)
         self.finish()
 
     ###################################################

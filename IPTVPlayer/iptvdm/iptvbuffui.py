@@ -242,6 +242,8 @@ class IPTVPlayerBufferingWidget(Screen):
         printDBG('IPTVPlayerBufferingWidget.runMovePlayer [%r]' % player)
         playerAdditionalParams = dict(self.playerAdditionalParams)
         playerAdditionalParams['downloader'] = self.downloader
+        playerAdditionalParams['file-download-timeout'] = 5000 # 5s
+        playerAdditionalParams['file-download-live'] = self._isInLiveMode()
         if "mini" == player:
             self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, self.filePath, self.movieTitle, self.lastPosition, 4)
         elif "exteplayer" == player:
