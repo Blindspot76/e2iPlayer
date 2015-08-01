@@ -470,6 +470,10 @@ class IPTVSetupImpl:
         self.stepHelper.setFinishHandler( self.flumpegdemuxStepFinished )
         self.binaryDetect()
         
+    def flumpegdemuxStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.flumpegdemuxStepFinished sts[%r]" % sts)
+        self.finish()
+    
     ###################################################
     # STEP: GST IFDSRC
     ###################################################
