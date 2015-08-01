@@ -92,40 +92,74 @@ class AnyFiles(CBaseHostClass):
     def listMovies(self, cItem, m1='<div  class="kat-box-div">', m2='<script type="text/javascript">', reTitle='class="kat-box-name">([^<]+?)<'):
         printDBG("AnyFiles.listMovies")
         
+        cItem = dict(cItem)
+        
         page = cItem.get('page', 1)
-        if 1 == page: url = cItem['url']
+        if 1 == page: 
+            sts, data = self.cm.getPage(self._getFullUrl('/all.jsp?reset_f=true'), self.defaultParams)
+            if not sts: return 
+            url = cItem['url']
         else: url = cItem['url'] + str(page * cItem['page_size'])
             
         post_data = cItem.get('post_data', None)
         httpParams = dict(self.defaultParams)
         ContentType =  cItem.get('Content-Type', None)
         Referer = cItem.get('Referer', None)
-        if None != Referer: httpParams['header'] =  {'Referer':Referer, 'User-Agent':self.cm.HOST}
+        if None != Referer: httpParams['header'] =  {'DNT': '1', 'Referer':Referer, 'User-Agent':self.cm.HOST}
+        else: {'DNT':'1', 'User-Agent':self.cm.HOST}
+        
         
         sts, data = self.cm.getPage(url, httpParams, post_data)
         if not sts: return
         #printDBG(data)
         tmp = self.cm.ph.getSearchGroups(data, 'new Paginator\("paginator0",[^,]*?([0-9]+?)\,[^,]*?[0-9]+?\,[^,]*?[0-9]+?\,[^"]*?"([^"]+?)"\,[^,]*?([0-9]+?)[^0-9]', 3)
-        try: cItem['url'] = self._getFullUrl(tmp[1])
-        except: pass
+        if '' == tmp[1]:
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '.paginator(', ');', False)[1]
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s" % tmp)
+            tmpTab = []
+            tmpTab.append( self.cm.ph.getSearchGroups(tmp, 'pagesTotal:[^0-9]([0-9]+?)[^0-9]', 1)[0])
+            tmpTab.append( '/all.jsp?st=')
+            tmpTab.append( self.cm.ph.getSearchGroups(tmp, 'numberObjects:[^0-9]([0-9]+?)[^0-9]', 1)[0])
+            tmp = tmpTab
+        
         try: cItem['num_of_pages'] = int(tmp[0])
         except: cItem['num_of_pages'] = 1
+        try: cItem['url'] = self._getFullUrl(tmp[1])
+        except: pass
         try: cItem['page_size'] = int(tmp[2])
         except: cItem['page_size'] = 1
             
+        if '/pageloading/all-loader.jsp' in data:
+            httpParams['header'] =  {'DNT': '1', 'Referer':url, 'User-Agent':self.cm.HOST}
+            url = self._getFullUrl('/pageloading/all-loader.jsp?ads=false')
+            sts, data = self.cm.getPage(url, httpParams, None)
+            if not sts: return
+            #printDBG(data)
+            m1 = '<div class="thumbnail"'
+            m2 = '</li>'
+            newhandle = True
+        else:
+            newhandle = False
+        
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
         data = data.split(m1)
         #if len(data): del data[0]
         
         for item in data:
             url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"', 1)[0]
-            title = self.cm.ph.getSearchGroups(item, reTitle, 1)[0]
             icon  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"', 1)[0]
-            try: desc = self.cleanHtmlStr(item.split('</tr>')[1])
-            except: desc = ''
-            params = dict(cItem)
-            params.update( {'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon), 'desc':desc} )
-            self.addVideo(params)
+            if newhandle:
+                title = self.cm.ph.getDataBeetwenMarkers(item, '<strong>', '</strong>', False)[1]
+                try: desc = self.cleanHtmlStr(item.split('</div>')[1])
+                except: desc = ''
+            else:
+                title = self.cm.ph.getSearchGroups(item, reTitle, 1)[0]
+                try: desc = self.cleanHtmlStr(item.split('</tr>')[1])
+                except: desc = ''
+            if title != '' and url != '':
+                params = dict(cItem)
+                params.update( {'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon), 'desc':desc} )
+                self.addVideo(params)
             
         if page < cItem['num_of_pages']:
             params = dict(cItem)
