@@ -238,3 +238,6 @@ class ExtractorError(Exception):
             return None
         return u''.join(traceback.format_tb(self.traceback))
 
+def url_basename(url):
+    path = compat_urllib_parse_urlparse(url).path
+    return path.strip('/').split('/')[-1]

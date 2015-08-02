@@ -53,8 +53,8 @@ except: printExc()
 try:
     import codecs
     from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
-except:
-    printExc()
+except: printExc()
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.mtv import GametrailersIE
     
 try:    from urlparse import urlsplit, urlunsplit
 except: printExc()
@@ -280,6 +280,7 @@ class urlparser:
                        'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
                        'megom.tv':             self.pp.paserMEGOMTV        ,
                        'openload.io':          self.pp.parserOPENLOADIO    ,
+                       'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3467,6 +3468,14 @@ class pageParser:
         if videoUrl.startswith('http'): return videoUrl
         return False
         
+    def parserGAMETRAILERS(self, baseUrl):
+        printDBG("parserGAMETRAILERS baseUrl[%r]" % baseUrl )
+        list = GametrailersIE()._real_extract(baseUrl)[0]['formats']
+
+        for idx in range(len(list)):
+            list[idx]['name'] = '%sx%s' % (list[idx]['width'], list[idx]['height'])
+        return list
+        
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
         def fun1(x):
@@ -3586,8 +3595,6 @@ class pageParser:
         printDBG("------------------------------------------------------------------------------------")
         printDBG(data)
         printDBG("------------------------------------------------------------------------------------")
-
-        
         
     def parseNETUTV(self, url):
         printDBG("parserDIVEXPRESS url[%s]" % url)
