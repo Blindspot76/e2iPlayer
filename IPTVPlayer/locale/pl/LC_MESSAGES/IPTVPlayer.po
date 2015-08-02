@@ -226,6 +226,63 @@ msgstr "Skóra"
 msgid "Display thumbnails"
 msgstr "Wyświetlać miniatury"
 
+msgid "    Allowed formats of thumbnails"
+msgstr "Dozwolony format miniatur"
+
+msgid "all"
+msgstr "wszystkie"
+
+msgid "Subtitle box position"
+msgstr "Pozycja napisów"
+
+msgid "Subtitle box height"
+msgstr "Wysokość napisów"
+
+msgid "Subtitle vertical alignment"
+msgstr "Wyrównanie pionowe napisów"
+
+msgid "bottom"
+msgstr "dół"
+
+msgid "bestfit"
+msgstr "Najlepsze dopasowanie"
+
+msgid "nonlinear"
+msgstr "Nie liniowa"
+
+msgid "From E2 settings"
+msgstr "Z ustawień E2"
+
+msgid "lime"
+msgstr "cytrynowo zielony"
+
+msgid "olive"
+msgstr "oliwkowy"
+
+msgid "navy"
+msgstr "granatowy"
+
+msgid "teal"
+msgstr "turkusowy"
+
+msgid "aqua"
+msgstr "zielonkawo niebieski"
+
+msgid "silver"
+msgstr "srebrny"
+
+msgid "gray"
+msgstr "szary"
+
+msgid "maroon"
+msgstr "kasztanowy"
+
+msgid "purple"
+msgstr "fioletowy"
+
+msgid "fuchsia"
+msgstr "różowy"
+
 msgid "    Remove thumbnails"
 msgstr "Usunąć miniatury"
 
@@ -1568,15 +1625,3 @@ msgstr "Użyć Polskiej proxy dla http://prognoza.pogody.tv/"
 
 msgid "Subtitles not found."
 msgstr "Nie znaleziono napisów."
-
-msgid "Show hiddens files"
-msgstr "Pokazać ukryte pliki"
-
-msgid "Show hiddens catalogs"
-msgstr "Pokazać ukryte katalogi"
-
-msgid "Max items per page"
-msgstr "Maks.liczba elementów na jednej stronie"
-
-msgid "Buffering"
-msgstr "Buforowanie"
