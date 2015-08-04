@@ -290,7 +290,7 @@ class CartoonHD(CBaseHostClass):
                 if item['id'] in data:
                     url = data[item['id']].replace('\\/', '/')
                     url = self.cm.ph.getDataBeetwenMarkers(url, 'src="', '"', False, False)[1]
-                    if 'googlevideo.com' in url:
+                    if 'googlevideo.com' in url or 'googleusercontent.com' in url:
                         need_resolve = 0
                     else: need_resolve = 1
                     urlTab.append({'name':item['name'], 'url':url, 'need_resolve':need_resolve})
