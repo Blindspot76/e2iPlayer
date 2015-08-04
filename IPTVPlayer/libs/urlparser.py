@@ -3425,7 +3425,9 @@ class pageParser:
         app      = 'edge/' + streamer.split('/edge/')[-1]
         provider = _getParam('provider')
         rtmpUrl  = provider + streamer[streamer.find(':'):]
-        if '' != file and '' != rtmpUrl:
+        if rtmpUrl.startswith('video://'):
+            return rtmpUrl.replace('video://', 'http://')
+        elif '' != file and '' != rtmpUrl:
             rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s app=%s live=1 ' % (file, swfUrl, token, linkUrl, app)
             printDBG(rtmpUrl)
             return rtmpUrl
