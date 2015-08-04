@@ -125,8 +125,8 @@ class JooglePL(CBaseHostClass):
         errorMessage = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="alert alert-danger">', '</div>', False)[1] )
         if len(errorMessage): SetIPTVPlayerLastHostError(errorMessage)
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'box-with-movies">', '<div class="row">', False)[1]
-        data = data.split('box-with-movies">')
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'box-with-movies"', '<div class="row">', False)[1]
+        data = data.split('box-with-movies"')
        
         for item in data:
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
