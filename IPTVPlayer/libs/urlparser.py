@@ -246,7 +246,6 @@ class urlparser:
                        'partners.nettvplus.com': self.pp.parserNETTVPLUSCOM,
                        '7cast.net':            self.pp.parser7CASTNET      ,
                        'facebook.com':         self.pp.parserFACEBOOK      ,
-                       'openload.io':          self.pp.parserOPENLOADIO    ,
                        'cloudyvideos.com':     self.pp.parserCLOUDYVIDEOS  ,
                        'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
                        'thevideo.me':          self.pp.parserTHEVIDEOME    ,
@@ -2893,14 +2892,6 @@ class pageParser:
         
         return urlsTab
         
-    def parserOPENLOADIO(self, baseUrl):
-        printDBG("parserOPENLOADIO baseUrl[%s]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
-        if not sts: return False
-        videoUrl = self.cm.ph.getSearchGroups(data, '<source[^<]+?src="(http[^"]+?)"[^<]type="video/mp4"')[0]
-        if '' != videoUrl: return videoUrl
-        return False
-        
     def parserCLOUDYVIDEOS(self, baseUrl):
         printDBG("parserCLOUDYVIDEOS baseUrl[%s]" % baseUrl)
         video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
@@ -3462,12 +3453,13 @@ class pageParser:
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_]{11})[/~]')[0]
-        url = 'https://openload.io/embed/' + video_id
+        url = 'http://openload.io/embed/' + video_id
         post_data = None
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
         if not sts: return False
         videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"]''')[0]
-        if videoUrl.startswith('http'): return videoUrl
+        if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''attr\([^"]*?"src",[^"]*?"(http[^"]+?)"''')[0]
+        if videoUrl.startswith('http'): return videoUrl.replace('https://', 'http://').replace('\\/', '/')
         return False
         
     def parserGAMETRAILERS(self, baseUrl):
