@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
@@ -291,8 +291,16 @@ class SerialeNet(CBaseHostClass):
                         printDBG( 'Host resolveUrl html5' )
                         match = re.search('file: "([^"]+?)"', data)
                         if match: videoUrl = match.group(1)
-                    if videoUrl.startswith('http'):
+                    elif 'sources:' in data:
+                        data2 = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
+                        videoUrl = self.cm.ph.getSearchGroups(data2, '''src[^'"]*?['"](http[^'"]+?)['"]''')[0]
+                        data2 = None
+                    if videoUrl.startswith('http') and videoUrl != 'http://serialnet.pl/':
                         videoUrlTab.append({'name':item['title'], 'url':videoUrl})
+                    else:
+                        data = self.cm.ph.getDataBeetwenMarkers(data, 'on("error"', '}', False)[1]
+                        data = self.cm.ph.getSearchGroups(data, "text\('([^']+?)'")[0]
+                        SetIPTVPlayerLastHostError(data)
                     printDBG("SerialeNet.getLinksForVideo >>>>>>>>>>>>>>>> videoUrl[%s]" % videoUrl)
                 except: printExc()
         except: printExc()
