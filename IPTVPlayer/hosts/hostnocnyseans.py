@@ -250,7 +250,7 @@ class NocnySeansPL(CBaseHostClass):
         urlTab = []
         
         sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return 
+        if not sts: return urlTab
         
         oneLink = CParsingHelper.getDataBeetwenMarkers(data, 'id="film-content"', '</div>', False)[1]
         data = CParsingHelper.getDataBeetwenMarkers(data, 'class="tabpanel">', '<div class="film-bottom">', False)[1]
@@ -400,7 +400,7 @@ class IPTVHost(CHostBase):
     def getArticleContent(self, Index = 0):
         retCode = RetHost.ERROR
         retlist = []
-        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
 
         hList = self.host.getArticleContent(self.host.currList[Index])
         for item in hList:

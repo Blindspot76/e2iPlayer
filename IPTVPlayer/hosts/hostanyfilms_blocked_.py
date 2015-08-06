@@ -309,7 +309,7 @@ class IPTVHost(CHostBase):
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
         retlist = []
-        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
         
         urlList = self.host.getLinksForVideo(self.host.currList[Index])
         for item in urlList:
@@ -332,7 +332,7 @@ class IPTVHost(CHostBase):
     def getArticleContent(self, Index = 0):
         retCode = RetHost.ERROR
         retlist = []
-        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
 
         hList = self.host.getArticleContent(self.host.currList[Index])
         for item in hList:

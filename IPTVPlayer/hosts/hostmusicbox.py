@@ -461,7 +461,7 @@ class IPTVHost(CHostBase):
     def getLinksForVideo(self, Index=0, selItem=None):
         retCode = RetHost.ERROR
         retlist = []
-        if not self.isValidIndex(Index): RetHost(retCode, value=retlist)
+        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
         urlList = self.host.Search_videoclip(self.host.currList[Index].get('page', ''))
         for item in urlList:
             need_resolve = 0
