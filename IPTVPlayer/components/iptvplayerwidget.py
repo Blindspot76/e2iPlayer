@@ -362,9 +362,16 @@ class IPTVPlayerWidget(Screen):
                         self.spinnerTimer.start(self.spinnerTimer_interval, True)
                         return
                 elif not self.workThread.isFinished():
-                    message = _('It seems that the host "%s" has crashed. Do you want to report this problem?') % self.hostName
-                    message += _('\nMake sure you are using the latest version of the plugin.')
-                    self.session.openWithCallback(self.reportHostCrash, MessageBox, text=message, type=MessageBox.TYPE_YESNO)
+                    if 'XXX' == self.hostName:
+                        message = _('It seems that the host "%s" has crashed.') % self.hostName
+                        message += _('\nThis host is not integral part of the IPTVPlayer plugin.\nIt is not supported by IPTVPlayer team.')
+                        self.session.open(MessageBox, message, type = MessageBox.TYPE_ERROR)
+                    else:
+                        message = _('It seems that the host "%s" has crashed. Do you want to report this problem?') % self.hostName
+                        message += "\n"
+                        message += _('\nMake sure you are using the latest version of the plugin.')
+                        message += _('\nYou can also report problem here: \nhttps://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/issues\nor here: samsamsam@o2.pl')
+                        self.session.openWithCallback(self.reportHostCrash, MessageBox, text=message, type=MessageBox.TYPE_YESNO)
             self.hideSpinner()
         except: printExc()
         
