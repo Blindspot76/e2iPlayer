@@ -152,6 +152,8 @@ class Filmy3dEU(CBaseHostClass):
         printDBG("Filmy3dEU.getArticleContent [%s]" % cItem)
         retTab = []
         
+        if 'url' not in cItem: return retTab
+        
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return retTab
         
@@ -169,7 +171,7 @@ class Filmy3dEU(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], {'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
         if not sts:
             # no cookie file?
-            sts, data = self.getPage(cItem['url'])
+            sts, data = self.cm.getPage(cItem['url'])
             if not sts: return urlTab
             
         match = re.search('<iframe[^>]+?src="([^"]+?)"', data, re.IGNORECASE)

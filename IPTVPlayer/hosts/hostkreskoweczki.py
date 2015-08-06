@@ -108,6 +108,9 @@ class Kreskoweczki(CBaseHostClass):
         videoUrl = ''
         videosTab = []
         vid = re.compile("kreskowka/(.+?)/").findall(url)
+        
+        if 0 == len(vid): return []
+        
         HEADER = {'Referer' : url}
         query_data = {'url': 'http://www.kreskoweczki.pl/fullscreen/', 'header': HEADER, 'return_data': True}
         postdata = {'v_id' : vid[0]}

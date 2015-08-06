@@ -147,6 +147,8 @@ class FuufPL(CBaseHostClass):
         printDBG("FuufPL.getArticleContent [%s]" % cItem)
         retTab = []
         
+        if 'url' not in cItem: return retTab
+        
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return retTab
         

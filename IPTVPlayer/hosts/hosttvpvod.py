@@ -331,7 +331,7 @@ class TvpVod(CBaseHostClass):
         self.listItems1(cItem, cItem['category'])
     
     def getLinksForVideo(self, cItem):
-        asset_id = str(cItem['object_id'])
+        asset_id = str(cItem.get('object_id', ''))
         return self.getVideoLink(asset_id)
         
     def getVideoLink(self, asset_id):

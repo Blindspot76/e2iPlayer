@@ -311,7 +311,7 @@ class MusicBox(CBaseHostClass):
     def Search_videoclip(self, url):
         sts, data = self.cm.getPage("https://www.googleapis.com/youtube/v3/search?part=id%2Csnippet&q=" + url + "&type=Music&maxResults=1&key=" + youtube_api_key)
         if not sts:
-            return
+            return []
         match = re.compile('"videoId": "([^"]+?)"').findall(data)
         videoUrls = []
         for item in match:
@@ -326,7 +326,6 @@ class MusicBox(CBaseHostClass):
         if not url.startswith("http://") and not url.startswith("https://"):
             url = url
         tmpTab = self.ytp.getDirectLinks(url, ytformats)
-        print tmpTab
 
         def __getLinkQuality(itemLink):
             tab = itemLink['format'].split('x')

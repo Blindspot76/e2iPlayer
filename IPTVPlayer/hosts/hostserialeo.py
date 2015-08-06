@@ -219,7 +219,7 @@ class serialeo:
                     title = r3[i].replace('pl1', 'Napisy').replace('eng', 'Oryginał').replace('pol', 'Lektor') + ' - ' + self.up.getHostName(r2[i])
                     valTab.append(self.cm.setLinkTable(r2[i], title))
                 return valTab
-
+        return valTab
 
     def handleService(self, index, refresh = 0, searchPattern = ''):
         if 0 == refresh:
@@ -338,7 +338,7 @@ class IPTVHost(IHost):
 
     def getLinksForVideo(self, Index = 0, selItem = None):
         listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
+        if listLen < Index or listLen == 0:
             printDBG("ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index))
             return RetHost(RetHost.ERROR, value = [])
         
