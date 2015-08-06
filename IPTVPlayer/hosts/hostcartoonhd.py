@@ -308,10 +308,10 @@ class CartoonHD(CBaseHostClass):
         return urlTab
         
     def getFavouriteData(self, cItem):
-        return json.dumps(cItem['url'])
+        return cItem['url']
         
     def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo(fav_data)
+        return self.getLinksForVideo({'url':fav_data})
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')

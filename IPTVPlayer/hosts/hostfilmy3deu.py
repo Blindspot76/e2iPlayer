@@ -192,7 +192,7 @@ class Filmy3dEU(CBaseHostClass):
         if self.catCache['filled']: return
         
         sts, data = self.cm.getPage(url)
-        if not sts: return retTab
+        if not sts: return
         
         reCatObj = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>')
         for catType in [{'type':'cat_movies', 'm1':'<span>Kategorie</span>'}, {'type':'cat_az', 'm1':'<span>Katalog A-Z</span>'}]:

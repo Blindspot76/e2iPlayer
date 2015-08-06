@@ -33,6 +33,7 @@ from Components.config import config, ConfigSelection, ConfigInteger, ConfigYesN
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_execute
 from Screens.MessageBox import MessageBox
+from Tools.Directories import fileExists
 ###################################################
 
 ###################################################
@@ -213,11 +214,15 @@ class LocalMedia(CBaseHostClass):
     def getResolvedURL(self, url):
         printDBG("LocalMedia.getResolvedURL [%s]" % url)
         videoUrls = []
+        
+        if url.startswith('/') and fileExists(url):
+            url = 'file://'+url
+        
         uri, params   = DMHelper.getDownloaderParamFromUrl(url)
         printDBG(params)
         uri = urlparser.decorateUrl(uri, params)
         
-        if uri.meta['iptv_proto'] in ['http', 'https']:
+        if uri.meta.get('iptv_proto', '') in ['http', 'https']:
             urlSupport = self.up.checkHostSupport( uri )
         else:
             urlSupport = 0

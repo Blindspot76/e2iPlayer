@@ -369,13 +369,17 @@ class Movie4kTO(CBaseHostClass):
         printDBG("Movie4kTO.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return retTab
-        
-        title = self.cm.ph.getSearchGroups(data, 'title" content="([^"]+?)"')[0]
-        icon = self.cm.ph.getSearchGroups(data, 'image" content="([^"]+?)"')[0]
-        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="moviedescription">', '</div>', False)[1] )
-        
+        if 'url' in cItem:
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return retTab
+            
+            title = self.cm.ph.getSearchGroups(data, 'title" content="([^"]+?)"')[0]
+            icon = self.cm.ph.getSearchGroups(data, 'image" content="([^"]+?)"')[0]
+            desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="moviedescription">', '</div>', False)[1] )
+        else:
+            title = ''
+            icon  = ''
+            desc  = ''
         return [{'title':title, 'text':desc, 'images':[]}]
     
     def getLinksForVideo(self, cItem):

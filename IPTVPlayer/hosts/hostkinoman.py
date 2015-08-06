@@ -190,8 +190,11 @@ class Kinoman(CBaseHostClass):
         sts, data = self.cm.getPage( url, {'header': self.HEADER } )
         if not sts: return
         
-        icon = re.compile('<img src="(.+?)" alt=""/>').findall(data)
-        img = icon[0].replace('m.jpg', 'o.jpg')
+        icon = re.compile('<img src="([^"]+?)" alt=""/>').findall(data)
+        if len(icon) > 0:
+            img = icon[0].replace('m.jpg', 'o.jpg')
+        else:
+            img = ''
         match = re.compile('<button data-action="scrollTo" data-scroll="(.+?)"').findall(data)
         if len(match) > 0:
             for i in range(len(match)):
