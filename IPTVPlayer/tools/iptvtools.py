@@ -17,6 +17,7 @@
 from Components.config import config
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS, SCOPE_CONFIG
 from enigma import eConsoleAppContainer
+from Components.Language import language
 from time import sleep as time_sleep, time
 from urllib2 import Request, urlopen, URLError, HTTPError
 from datetime import datetime
@@ -31,6 +32,13 @@ import codecs
 try:    import json
 except: import simplejson as json
 ###################################################
+def GetDefaultLang():
+    try: defaultLanguage = language.getActiveLanguage().split('_')[0]
+    except:
+        printExc()
+        defaultLanguage = 'en'
+    return defaultLanguage
+
 class eConnectCallbackObj:
     OBJ_ID = 0
     OBJ_NUM = 0

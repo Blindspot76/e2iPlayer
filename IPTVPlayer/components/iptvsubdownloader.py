@@ -4,7 +4,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsValidFileName, GetTmpDir, GetSubtitlesDir, GetIconDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, IsValidFileName, GetTmpDir, GetSubtitlesDir, GetIconDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvfavourites import IPTVFavourites
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CFavItem, CDisplayListItem
@@ -104,10 +104,7 @@ class IPTVSubDownloaderWidget(Screen):
         self.stackList  = []
         self.stackItems = []
         
-        try:
-            self.defaultLanguage = language.getActiveLanguage().split('_')[0]
-        except:
-            self.defaultLanguage = 'en'
+        self.defaultLanguage = GetDefaultLang()
     
         self.listMode = False
         self.downloadedSubFilePath = ''
