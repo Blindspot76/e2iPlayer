@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
@@ -158,7 +158,7 @@ class Host:
 
     def listsItems(self, Index, url, name = ''):
         printDBG( 'Host listsItems begin' )
-        printDBG( 'Host listsItems url: '+url )
+        printDBG( 'Host listsItems url[%r] '% url )
         valTab = []
         if name == 'main-menu':
            printDBG( 'Host listsItems begin name='+name )
@@ -174,8 +174,7 @@ class Host:
            self.MAIN_URL = 'http://player.dancetrippin.tv' 
            try: data = self.cm.getURLRequestData({ 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True })
            except:
-              printDBG( 'Host listsItems query error' )
-              printDBG( 'Host listsItems query error url:'+url )
+              printExc( 'Host listsItems query error url[%r]' % url )
               return valTab
            #printDBG( 'Host listsItems data: '+data )
            result = simplejson.loads(data)
@@ -207,13 +206,12 @@ class Host:
 
     def getResolvedURL(self, url):
         printDBG( 'Host getResolvedURL begin' )
-        printDBG( 'Host getResolvedURL url: '+url )
+        printDBG( 'Host getResolvedURL url[%r] ' % url )
         videoUrl = ''
         valTab = []
         try: data = self.cm.getURLRequestData({'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True})
         except:
-           printDBG( 'Host getResolvedURL query error' )
-           printDBG( 'Host getResolvedURL query error url: '+url )
+           printExc( 'Host getResolvedURL query error url[%r]' % url )
            return ''
         #printDBG( 'Host getResolvedURL data: '+data )   
         parse = re.search('<div class=player>.*?href="(.*?)"', data, re.S)
