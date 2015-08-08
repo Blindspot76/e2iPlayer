@@ -362,9 +362,11 @@ class IPTVPlayerWidget(Screen):
                         self.spinnerTimer.start(self.spinnerTimer_interval, True)
                         return
                 elif not self.workThread.isFinished():
-                    if 'XXX' == self.hostName:
+                    if self.hostName in ['XXX', 'weebtv', 'webstream']:
                         message = _('It seems that the host "%s" has crashed.') % self.hostName
                         message += _('\nThis host is not integral part of the IPTVPlayer plugin.\nIt is not supported by IPTVPlayer team.')
+                        if 'webstream' == self.hostName:
+                            message += _('\nPlease use "Web" streams player -> WeebTV instead.')
                         self.session.open(MessageBox, message, type = MessageBox.TYPE_ERROR)
                     else:
                         message = _('It seems that the host "%s" has crashed. Do you want to report this problem?') % self.hostName
