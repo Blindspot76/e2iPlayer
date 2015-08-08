@@ -5,24 +5,18 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import *
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.base import InfoExtractor
 
 try: import json
 except: import simplejson as json
 
-NO_DEFAULT = None
-compiled_regex_type = type(re.compile(''))
-
-class MTVServicesInfoExtractor():
+class MTVServicesInfoExtractor(InfoExtractor):
     _MOBILE_TEMPLATE = None
     _LANG = None
     
     def __init__(self):
-        self.cm = common()
+        InfoExtractor.__init__(self)
         self.cm.HOST = 'python-urllib/2.7'
-        
-    def _download_webpage(self, url, a=None, params={}):
-        sts, data = self.cm.getPage(url, params)
-        return data
 
     @staticmethod
     def _id_from_uri(uri):
@@ -50,7 +44,7 @@ class MTVServicesInfoExtractor():
 
     def _extract_mobile_video_formats(self, mtvn_id):
         webpage_url = self._MOBILE_TEMPLATE % mtvn_id
-        webpage = self._download_webpage(webpage_url, mtvn_id, {'header':{'User-Agent':'curl/7'}})
+        webpage = self._download_webpage(webpage_url, mtvn_id, params={'header':{'User-Agent':'curl/7'}})
         metrics_url = unescapeHTML(self._search_regex(r'<a href="(http://metrics.+?)"', webpage, 'url'))
         req = HEADRequest(metrics_url)
         response = self._request_webpage(req, mtvn_id, 'Resolving url')
@@ -99,12 +93,6 @@ class MTVServicesInfoExtractor():
                 'ext': typographic.get('format')
             } for typographic in transcript.findall('./typographic')]
         return subtitles
-        
-    def xmlGetArg(self, data, name):
-        return self.cm.ph.getDataBeetwenMarkers(data, '%s="' % name, '"', False)[1]
-        
-    def xmlGetText(self, data, name):
-        return self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<%s[^>]*?>' % name), re.compile('</%s>' % name), False)[1]
 
     def _get_video_info(self, itemdoc):
         uri = self.xmlGetText(itemdoc, 'guid')
@@ -168,37 +156,6 @@ class MTVServicesInfoExtractor():
 
         videos_info = self._get_videos_info(mgid)
         return videos_info
-        
-    def _search_regex(self, pattern, string, name, default=NO_DEFAULT, fatal=True, flags=0, group=None):
-        """
-        Perform a regex search on the given string, using a single or a list of
-        patterns returning the first matching group.
-        In case of failure return a default value or raise a WARNING or a
-        RegexNotFoundError, depending on fatal, specifying the field name.
-        """
-        if isinstance(pattern, (str, compat_str, compiled_regex_type)):
-            mobj = re.search(pattern, string, flags)
-        else:
-            for p in pattern:
-                mobj = re.search(p, string, flags)
-                if mobj:
-                    break
-
-        _name = name
-
-        if mobj:
-            if group is None:
-                # return the first matching group
-                return next(g for g in mobj.groups() if g is not None)
-            else:
-                return mobj.group(group)
-        elif default is not NO_DEFAULT:
-            return default
-        elif fatal:
-            raise RegexNotFoundError('Unable to extract %s' % _name)
-        else:
-            return None
-
 
 class MTVServicesEmbeddedIE(MTVServicesInfoExtractor):
     IE_NAME = 'mtvservices:embedded'

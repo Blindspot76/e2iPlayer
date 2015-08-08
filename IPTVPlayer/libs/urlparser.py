@@ -6,7 +6,7 @@
 ###################################################
 from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.gledajfilmDecrypter import gledajfilmDecrypter
@@ -45,15 +45,11 @@ from hashlib import md5
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 from Components.config import config
 
-try:
-    try: import json
-    except: import simplejson as json
-except: printExc()
+try: import json
+except: import simplejson as json
     
-try:
-    import codecs
-    from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
-except: printExc()
+import codecs
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.mtv import GametrailersIE
     
 try:    from urlparse import urlsplit, urlunsplit
@@ -252,7 +248,6 @@ class urlparser:
                        'xage.pl':              self.pp.parserXAGEPL        ,
                        'castamp.com':          self.pp.parserCASTAMPCOM    ,
                        'crichd.tv':            self.pp.parserCRICHDTV      ,
-                       'vevo.com':             self.pp.parserVEVO          ,
                        'castto.me':            self.pp.parserCASTTOME      ,
                        'filenuke.com':         self.pp.parserFILENUKE      ,
                        'sharesix.com':         self.pp.parserFILENUKE      ,
@@ -280,6 +275,7 @@ class urlparser:
                        'megom.tv':             self.pp.paserMEGOMTV        ,
                        'openload.io':          self.pp.parserOPENLOADIO    ,
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
+                       'vevo.com':             self.pp.parserVEVO          ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -500,6 +496,12 @@ class pageParser:
         except:
             printExc()
             self.ytParser = None
+        try:
+            from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.vevo import VevoIE
+            self.vevoIE = VevoIE()
+        except:
+            self.vevoIE = None
+            printExc()
         
         #config
         self.COOKIE_PATH = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/cache/')
@@ -3036,7 +3038,7 @@ class pageParser:
         
         
     def parserCASTTOME(self, baseUrl):
-        printDBG("parserVEVO baseUrl[%s]" % baseUrl)
+        printDBG("parserCASTTOME baseUrl[%s]" % baseUrl)
         
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', '')
@@ -3285,9 +3287,6 @@ class pageParser:
             return urlparser().getVideoLinkExt(data)
         return False
         
-    def parserVEVO(self, baseUrl):
-        printDBG("parserVEVO baseUrl[%s]" % baseUrl)
-        
     def parserONETTV(self, baseUrl):
         printDBG("parserONETTV baseUrl[%r]" % baseUrl )
         
@@ -3466,11 +3465,46 @@ class pageParser:
     def parserGAMETRAILERS(self, baseUrl):
         printDBG("parserGAMETRAILERS baseUrl[%r]" % baseUrl )
         list = GametrailersIE()._real_extract(baseUrl)[0]['formats']
-
+        
         for idx in range(len(list)):
-            list[idx]['name'] = '%sx%s' % (list[idx]['width'], list[idx]['height'])
+            width   = int(list[idx].get('width', 0))
+            height  = int(list[idx].get('height', 0))
+            bitrate = int(list[idx].get('bitrate', 0))
+            if 0 != width or 0 != height:
+                name = '%sx%s' % (width, height)
+            elif 0 != bitrate:
+                name = 'bitrate %s' % (bitrate)
+            else:
+                name = '%s.' % (idx + 1)
+            list[idx]['name'] = name
         return list
         
+    def parserVEVO(self, baseUrl):
+        printDBG("parserVEVO baseUrl[%r]" % baseUrl )
+        self.vevoIE._real_initialize()
+        videoUrls = self.vevoIE._real_extract(baseUrl)['formats']
+        
+        for idx in range(len(videoUrls)):
+            width   = int(videoUrls[idx].get('width', 0))
+            height  = int(videoUrls[idx].get('height', 0))
+            bitrate = int(videoUrls[idx].get('bitrate', 0)) / 8
+            name = ''
+            if 0 != bitrate:
+                name = 'bitrate %s' % (formatBytes(bitrate, 0).replace('.0', '')+'/s')
+            if 0 != width or 0 != height:
+                name += ' %sx%s' % (width, height)
+            if '' == name:
+                name = '%s.' % (idx + 1)
+            videoUrls[idx]['name'] = name
+        if 0 < len(videoUrls):
+            max_bitrate = int(config.plugins.iptvplayer.vevo_default_quality.value)
+            def __getLinkQuality( itemLink ):
+                return int(itemLink['bitrate'])
+            videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
+            if config.plugins.iptvplayer.vevo_use_default_quality.value:
+                videoUrls = [videoUrls[0]]
+        return videoUrls
+    
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
         def fun1(x):
