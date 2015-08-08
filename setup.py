@@ -7,6 +7,7 @@ setup (name = 'enigma2-plugin-extensions-iptvplayer',
        description = 'IPTV Player for E2',
        package_dir = {pkg: 'IPTVPlayer'},
        packages = [pkg],
-       package_data = {pkg: ['*.*', '*/*.*', '*/*/*.*', '*/*/*/*.*', '*/*/*/*/*.*']},
+       package_data = {pkg: ['*.*', '*/*.*', '*/*/*.*', '*/*/*/*.*', '*/*/*/*/*.*',
+                             '*/*/platformtester', '*/*/lsdir']},
        cmdclass = setup_translate.cmdclass, # for translation
       )
