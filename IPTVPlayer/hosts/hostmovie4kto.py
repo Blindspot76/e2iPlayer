@@ -34,10 +34,15 @@ from Components.Language import language
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.movie4kto_language = ConfigSelection(default = "", choices = [("", _("Auto")), ("en", _("English")), ("de", _("German")), ("fr", _("French")), ("es", _("Spanish")), ("it", _("Italian")), ("jp", _("Japanese")), ("tr", _("Turkish")), ("ru", _("Russian")) ])
+#config.plugins.iptvplayer.movie4kto_use_proxy_gateway  = ConfigYesNo(default = True)
+#config.plugins.iptvplayer.movie4kto_proxy_gateway_url  = ConfigText(default = "http://www.proxy-german.de/index.php?q={0}&hl=2e5", fixed_size = False)
 
 def GetConfigList():
     optionList = []
     optionList.append( getConfigListEntry( _("Language:"), config.plugins.iptvplayer.movie4kto_language) )
+    #optionList.append(getConfigListEntry(_("Use proxy gateway"), config.plugins.iptvplayer.movie4kto_use_proxy_gateway))
+    #if config.plugins.iptvplayer.movie4kto_use_proxy_gateway.value:
+    #    optionList.append(getConfigListEntry("    " + _("Url:"), config.plugins.iptvplayer.movie4kto_proxy_gateway_url))
     return optionList
 ###################################################
 
@@ -80,10 +85,21 @@ class Movie4kTO(CBaseHostClass):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Cookie':'lang=%s;' % lang }
         params.update({'header':HTTP_HEADER})
         
+        if 'movie4k.to' in url:
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url))
+            params['header']['Referer'] = proxy
+            params['header']['Cookie'] = 'flags=2e5; COOKIE%253Blang%253B%252F%253Bwww.movie4k.to={0}%3B'.format(lang)
+            url = proxy
+        #sts, data = self.cm.getPage(url, params, post_data)
+        #printDBG(data)
         return self.cm.getPage(url, params, post_data)
             
         
     def _getFullUrl(self, url):
+        if 'proxy-german.de' in url:
+            #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + url)
+            url = urllib.unquote(url.split('?q=')[1])
+            
         if 0 < len(url) and not url.startswith('http'):
             url =  self.MAIN_URL + url
         if not self.MAIN_URL.startswith('https://'):
@@ -417,6 +433,10 @@ class Movie4kTO(CBaseHostClass):
         if 0 == len(urlTab):
             urlTab.append({'name':'main url', 'need_resolve':1, 'url':cItem['url']})
             
+        for idx in range(len(urlTab)):
+            urlTab[idx]['name'] = urlTab[idx]['name'].split('Quality:')[0]
+            
+        urlTab.sort(key=lambda item:item['name'], reverse=True)
         return urlTab
         
     def getVideoLinks(self, url):
@@ -430,6 +450,8 @@ class Movie4kTO(CBaseHostClass):
         if '' == videoUrl:
             videoUrl = self.cm.ph.getDataBeetwenMarkers(data, '-Download-', 'id="underplayer"', False)[1]
             videoUrl = self.cm.ph.getSearchGroups(videoUrl, '<iframe[^>]+?src="(http[^"]+?)"[^>]*?>')[0]
+            
+        videoUrl = self._getFullUrl(videoUrl)
         urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
         

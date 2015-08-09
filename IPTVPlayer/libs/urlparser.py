@@ -5,6 +5,7 @@
 # LOCAL import
 ###################################################
 from pCommon import common, CParsingHelper
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
@@ -276,6 +277,7 @@ class urlparser:
                        'openload.io':          self.pp.parserOPENLOADIO    ,
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        'vevo.com':             self.pp.parserVEVO          ,
+                       'shared.sx':            self.pp.parserSHAREDSX      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3504,6 +3506,25 @@ class pageParser:
             if config.plugins.iptvplayer.vevo_use_default_quality.value:
                 videoUrls = [videoUrls[0]]
         return videoUrls
+        
+    def parserSHAREDSX(self, baseUrl):
+        printDBG("parserSHAREDSX baseUrl[%r]" % baseUrl )
+        # based on https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/shared.py
+        sts, data = self.cm.getPage(baseUrl)
+
+        if '>File does not exist<' in data:
+            SetIPTVPlayerLastHostError('Video %s does not exist' % baseUrl)
+            return False
+
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>', False)[1]
+        data = re.compile('name="([^"]+?)"[^>]*?value="([^"]+?)"').findall(data)
+        post_data = dict(data)
+        sts, data = self.cm.getPage(baseUrl, {'header':self.HTTP_HEADER}, post_data)
+        if not sts: return False        
+            
+        videoUrl = self.cm.ph.getSearchGroups(data, 'data-url="([^"]+)"')[0]
+        if videoUrl.startswith('http'): return videoUrl
+        return False
     
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
