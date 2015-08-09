@@ -173,10 +173,23 @@ class Movie4kTO(CBaseHostClass):
             
     def listsItems1(self, cItem, category, m1='<div id="maincontent2">', m2='</body>', sp='<div id="maincontent2">'):
         printDBG("Movie4kTO.listsMovies1")
+        page = cItem.get('page', 1)
         url  = self._getFullUrl(cItem['url'])
+        if page > 1:
+            if '?' in url: url += '?'
+            else: url += '&'
+            url += 'page=%s' % page
         
         sts, data = self.getPage(url)
         if not sts: return
+        
+        sts, nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'class="pagination"', '</div>', False)
+        if sts:
+            if ('>{0}<'.format(page + 1)) in nextPage:
+                nextPage = True
+        if nextPage != True:
+            nextPage = False
+        
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)
         if not sts: 
             self.listsMovies2(cItem)
@@ -206,6 +219,9 @@ class Movie4kTO(CBaseHostClass):
                     self.addVideo(params)
                 else:
                     self.addDir(params)
+        if nextPage:
+            params = dict(cItem)
+            params.update({'title':_('Next page'), 'page':page+1})
                     
                     
     def listsTVShow2(self, cItem, category):
@@ -284,11 +300,11 @@ class Movie4kTO(CBaseHostClass):
             
     def listsTVShowGenres(self, cItem, category):
         printDBG("Movie4kTO.listsTVShowGenres")
-        self.listGenres(cItem, category, '"tvshows-genre-', self.TV_SHOWS_GENRES_URL)
+        self.listGenres(cItem, category, 'tvshows-genre-', self.TV_SHOWS_GENRES_URL)
         
     def listsMoviesGenres(self, cItem, category):
         printDBG("Movie4kTO.listsMoviesGenres")
-        self.listGenres(cItem, category, '"movies-genre-', self.MOVIE_GENRES_URL)
+        self.listGenres(cItem, category, 'movies-genre-', self.MOVIE_GENRES_URL)
         
     def listGenres(self, cItem, category, genreMarker, GENRES_URL):
         printDBG("Movie4kTO.listGenres")
