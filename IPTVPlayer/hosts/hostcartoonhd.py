@@ -43,14 +43,14 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'CartoonHD.tv'
+    return 'CartoonHD.mobi'
 
 class CartoonHD(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL = 'http://www.cartoonhd.tv/'
+    MAIN_URL = 'http://www.cartoonhd.mobi/'
     SEARCH_URL = MAIN_URL + 'ajax/search.php'
     
     MAIN_CAT_TAB = [{'category':'new',            'mode':'',            'title': 'New',       'url':'search.php',    'icon':''},
@@ -100,7 +100,7 @@ class CartoonHD(CBaseHostClass):
         if not sts: return
         
         moviesTab = [{'title':'All', 'url':self._getFullUrl('movies')}]
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<a href="http://www.cartoonhd.tv/movies">Movies</a>', '</ul>', False)[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '>Movies</a>', '</ul>', False)[1]
         tmp = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(tmp)
         for item in tmp:
             moviesTab.append({'title':item[1], 'url':self._getFullUrl(item[0])})
