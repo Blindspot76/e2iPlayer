@@ -134,6 +134,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/iptv/index.php',                         'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://play.tvip.ga/iptvde.m3u',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'name': 'm3u',                 'title': 'Greek-IPTV',                        'url': 'https://raw.githubusercontent.com/free-greek-iptv/greek-iptv/master/greek.m3u', 'icon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Coat_of_arms_of_Greece.svg/538px-Coat_of_arms_of_Greece.svg.png'}, \
+                        {'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
                         {'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
@@ -200,6 +201,56 @@ class HasBahCa(CBaseHostClass):
             params = dict(item)
             params.update(forceParams)
             self.addDir(params)
+            
+    def listHellenicTv(self, cItem):
+        printDBG("listHellenicTv")
+        if '' == cItem.get('url'):
+            tab = [{'group':'cartoons', 'title':'Cartoons', 'url':'http://olympia.watchkodi.com/hellenic-tv/cartoons.xml', 'icon':'http://i.ytimg.com/vi/s4XfOGh_leQ/hqdefault.jpg'},
+                   {'group':'channels', 'title':'Channels', 'url':'http://olympia.watchkodi.com/hellenic-tv/channels.xml', 'icon':'http://greektvchannels.com/wp-content/uploads/2014/10/greektvlogo.png'}]
+            for item in tab:
+                params = dict(cItem)
+                params.update(item)
+                self.addDir(params)
+        else:
+            sts, data = self.cm.getPage(cItem['url'])
+            if not sts: return
+            if cItem['group'] == 'channels':
+                data = data.split('</channel>')
+                for item in data:
+                    if 'active="True"' not in item: continue
+                    title = CParsingHelper.getDataBeetwenMarkers(item, '<name>', '</name>', False)[1].strip()
+                    type = CParsingHelper.getDataBeetwenMarkers(item, '<type>', '</type>', False)[1].strip()
+                    url  = CParsingHelper.getDataBeetwenMarkers(item, '<url>', '</url>', False)[1].strip()
+                    params = dict(cItem)
+                    params.update({'title':title, 'url':url, 'link_type':type})
+                    self.addVideo(params)
+            else:
+                data = data.split('</item>')
+                for item in data:
+                    title = CParsingHelper.getDataBeetwenMarkers(item, '<title>', '</title>', False)[1].strip()
+                    icon  = CParsingHelper.getDataBeetwenMarkers(item, '<image>', '</image>', False)[1].strip()
+                    url   = CParsingHelper.getDataBeetwenMarkers(item, '<url>', '</url>', False)[1].strip()
+                    type  = CParsingHelper.getDataBeetwenMarkers(item, '<type>', '</type>', False)[1].strip()
+                    desc  = CParsingHelper.getDataBeetwenMarkers(item, '<language>', '</language>', False)[1].strip()
+                    desc  += ', ' + type
+                    if '' != url and '' != title:
+                        params = dict(cItem)
+                        params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc, 'link_type':type})
+                        self.addVideo(params)
+            
+    def listHellenicTvLink(self, cItem):
+        printDBG("listHellenicTv")
+        urlsList = []
+        if cItem['group'] == 'channels':
+            if 'hls' == cItem['link_type']:
+                urlsList = getDirectM3U8Playlist(cItem['url'], checkExt=False)
+            else:
+                urlsList = [{'name':cItem['link_type'], 'url':cItem['url']}] 
+            for idx in range(len(urlsList)):
+                urlsList[idx]['url'] = self.up.decorateUrl(urlsList[idx]['url'], {'iptv_livestream':True})
+        else:
+            urlsList = self.up.getVideoLinkExt(cItem['url'])
+        return urlsList
             
     def listHasBahCa(self, item):
         url = item.get('url', '')
@@ -751,6 +802,9 @@ class HasBahCa(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsMainMenu(self.MAIN_GROUPED_TAB)
+    #hellenic-tv  list
+        elif name == "hellenic-tv":
+            self.listHellenicTv(self.currItem)
     #HasBahCa list
         elif name == "HasBahCa":
             self.listHasBahCa(self.currItem)
@@ -821,8 +875,9 @@ class IPTVHost(CHostBase):
             return RetHost(RetHost.ERROR, value = [])
 
         retlist = []
-        url = self.host.currList[Index].get("url", '')
-        name = self.host.currList[Index].get("name", '')
+        cItem = self.host.currList[Index]
+        url   = self.host.currList[Index].get("url", '')
+        name  = self.host.currList[Index].get("name", '')
         
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s] [%s]" % (name, url))
         urlList = None
@@ -863,6 +918,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getWebCameraLink(url)
         elif name == "prognoza.pogody.tv":
             urlList = self.host.prognozaPogodyLink(url)
+        elif name == "hellenic-tv":
+            urlList = self.host.listHellenicTvLink(cItem)
             
         if isinstance(urlList, list):
             for item in urlList:
