@@ -267,7 +267,7 @@ class JooglePL(CBaseHostClass):
         urlTab = []
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return []
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player-content">', '</div>', True)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player-content">', '<script>', True)
         if not sts:
             SetIPTVPlayerLastHostError(_("Cannot find player content"))
             return []
