@@ -52,7 +52,7 @@ class MoviesHDCO(CBaseHostClass):
     #SRCH_SERIES_URL    = MAIN_URL + 'seriale/search'
     SRCH_MOVIES_URL    = MAIN_URL + 'page/{page}?s='
     
-    MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),          'url':MAIN_URL + 'genre', 'icon':'http://pbs.twimg.com/profile_images/545684030885093377/Hfd166Di.jpeg'},
+    MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),          'url':MAIN_URL + 'categories', 'icon':'http://pbs.twimg.com/profile_images/545684030885093377/Hfd166Di.jpeg'},
                     #{'category':'latest_series',      'title': _('Latest series'), 'url':MAIN_URL, 'icon':''},
                     #{'category':'genres_series',      'title': _('Series'), 'url':MAIN_URL+'seriale', 'icon':''},
                     {'category':'search',             'title': _('Search'), 'search_item':True},
@@ -116,8 +116,8 @@ class MoviesHDCO(CBaseHostClass):
             printExc()
             return 0
         return vLocals['a']
-        
-    def getPage2(self, url, params={}, post_data=None):
+    '''
+    def getPage(self, url, params={}, post_data=None):
         params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':{'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}})
         sts, data = self.cm.getPage(url, params, post_data)
         
@@ -179,6 +179,7 @@ class MoviesHDCO(CBaseHostClass):
             else:
                 break
         return sts, data
+    '''
         
     def getPage(self, url, params={}, post_data=None):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
@@ -186,7 +187,7 @@ class MoviesHDCO(CBaseHostClass):
         
         if 'movieshd.' in url:
             printDBG(url)
-            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url))
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote_plus(url))
             params['header']['Referer'] = proxy
             url = proxy
         #sts, data = self.cm.getPage(url, params, post_data)
@@ -256,9 +257,15 @@ class MoviesHDCO(CBaseHostClass):
     def listMovies(self, cItem):
         printDBG("MoviesHDCO.listMovies")
         
-        page    = cItem.get('page', 1)
         sort_by = cItem.get('sort_by', config.plugins.iptvplayer.movieshdco_sortby.value)
-        url     = cItem['url'].format(page=page, sort_by=sort_by) 
+        page    = cItem.get('page', 1)
+        url = cItem['url']
+        if 1 == page:
+            url = url.replace('/page/{page}', '')
+            url = url.format(sort_by=sort_by) 
+        else:
+            url = url.format(page=page, sort_by=sort_by) 
+        
         sts, data = self.getPage(url)
         if not sts: return 
         
