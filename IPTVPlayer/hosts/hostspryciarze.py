@@ -29,6 +29,7 @@ class Spryciarze():
     def __init__(self):
         self.COOKIEFILE = GetCookieDir('spryciarze.cookie')
         self.cm = pCommon.common()
+        self.up = urlparser.urlparser()
         self.catTree = []
         self.currList = []
         
@@ -337,56 +338,35 @@ class Spryciarze():
         
         if None == url or 0 == len(url):
             return []
-            
-        # get videoID
-        query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
-        try:
-            data = self.cm.getURLRequestData(query_data)
-        except:
-            printDBG('getVideoLink getURLRequestData for videoID except')
-            return []
         
-        match = re.compile('swf\?VideoID=([0-9]+?)[^0-9]').findall(data)
-        if 0 == len(match): 
-            match = re.compile('<form action="(http://[^"]+?)" method="post" class="form_blokada">').findall(data)
-            if 0 == len(match): return ''
-            adultUrl = match[0]
-            # get agree cookie videoID
-            strID = url.split('/')
-            if len(strID) < 1: return ''
-            query_data = {'url': adultUrl, 'use_host': False, 'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True}
-            postdata = { 's': strID[len(strID)-1], "yes": "" }
-            try:
-                data = self.cm.getURLRequestData(query_data, postdata)
-            except:
-                printDBG('getVideoLink getURLRequestData for videoID adult except')
-                return []
-                
+        post_data = None
+        tries = 2
+        while tries > 0:
+            tries -= 1
             # get videoID
-            match = re.compile('swf\?VideoID=([0-9]+?)\&').findall(data)
-            if 0 == len(match): return ''
+            sts, data = self.cm.getPage(url, {'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': self.COOKIEFILE}, post_data)
+            if not sts: return []
             
-        
-        videoID = match[0]
-        
-        query_data = {'url': self.VIDEO_URL+videoID, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
-        try:
-            data = self.cm.getURLRequestData(query_data)
-        except:
-            printDBG('getVideoLink getURLRequestData except')
-            return []
-
-        match = re.compile('<url[^>]+?>([^<]+?)</url[^>]+?>').findall(data)
-        if 0 == len(match): return ''
-        
-        urlList = []
-        for i in range(len(match)):
-            urlList.append(match[0])
-            printDBG('Spryciarze.getVideoLink video direct url: ' + match[0])
+            sts, block = self.cm.ph.getDataBeetwenMarkers(data, '<div class="film_blokada">', '</form>', False)
+            if sts:
+                url = self.cm.ph.getSearchGroups(block, 'action="(http[^"]+?)"')[0]
+                val_s = self.cm.ph.getSearchGroups(block, 'name="s"[^>]*?value="([^"]+?)"')[0]
+                post_data = {}
+                post_data['s'] = val_s
+                post_data['yes'] = ''
+                continue
             
-        urlList = list(set(urlList))
-        
-        return urlList
+            sts, player = self.cm.ph.getDataBeetwenMarkers(data, '<div id="video_container">', '</object>', False)
+            if sts:
+                videoUrl = self.cm.ph.getSearchGroups(data, 'dara="(http[^"]+?)"')[0]
+                if 'youtube' in videoUrl: return self.up.getVideoLinkExt( videoUrl )
+                videoUrl = self.cm.ph.getSearchGroups(data, 'src="(http://player.spryciarze.pl[^"]+?)"')[0]
+                sts, player = self.cm.getPage(videoUrl)
+                if sts:
+                    videoUrl = self.cm.ph.getSearchGroups(player, '<source[^>]*?src="([^"]+?)"[^>]*?type="video/mp4"[^>]*?>')[0]
+                    if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(player, '<source[^>]*?type="video/mp4"[^>]*?src="([^"]+?)"[^>]*?>')[0]
+                    if '' != videoUrl: return [{'name':'Native player', 'url':videoUrl}]
+        return []
     # end getVideoLink
     
     def handleService(self, index, refresh = 0, searchPattern = ''):
@@ -514,10 +494,8 @@ class IPTVHost(IHost):
         if None != selItem and 'url' in selItem and 1 < len(selItem['url']):
             tmpList = self.host.getVideoLinks( selItem['url'] )
             
-            idx = 1
             for item in tmpList:
-                retlist.append(CUrlItem('URL %d' % idx, item, 0))
-                idx += 1
+                retlist.append(CUrlItem(item['name'], item['url'], 0))
             
         return RetHost(RetHost.OK, value = retlist)
             
