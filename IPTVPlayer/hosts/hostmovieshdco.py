@@ -45,12 +45,12 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'movieshd.co'
+    return 'movieshd.eu'
 
 class MoviesHDCO(CBaseHostClass):
-    MAIN_URL    = 'http://movieshd.co/'
+    MAIN_URL    = 'http://movieshd.eu/'
     #SRCH_SERIES_URL    = MAIN_URL + 'seriale/search'
-    SRCH_MOVIES_URL    = MAIN_URL + 'page/{page}/?s='
+    SRCH_MOVIES_URL    = MAIN_URL + 'page/{page}?s='
     
     MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),          'url':MAIN_URL + 'genre', 'icon':'http://pbs.twimg.com/profile_images/545684030885093377/Hfd166Di.jpeg'},
                     #{'category':'latest_series',      'title': _('Latest series'), 'url':MAIN_URL, 'icon':''},
@@ -61,7 +61,7 @@ class MoviesHDCO(CBaseHostClass):
     MOVIES_SORT_BY = [{'title':_('Lastest'),     'sort_by':'date'  },
                       {'title':_('most viewed'), 'sort_by':'views' },
                       {'title':_('longest'),     'sort_by':'duree' },
-                      {'title':_('top rated'),   'sort_by':'rate'  },
+                      #{'title':_('top rated'),   'sort_by':'rate'  },
                       {'title':_('random'),      'sort_by':'random'},
                      ]
     
@@ -117,7 +117,7 @@ class MoviesHDCO(CBaseHostClass):
             return 0
         return vLocals['a']
         
-    def getPage(self, url, params={}, post_data=None):
+    def getPage2(self, url, params={}, post_data=None):
         params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':{'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}})
         sts, data = self.cm.getPage(url, params, post_data)
         
@@ -180,7 +180,23 @@ class MoviesHDCO(CBaseHostClass):
                 break
         return sts, data
         
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
+        params.update({'header':HTTP_HEADER})
+        
+        if 'movieshd.' in url:
+            printDBG(url)
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url))
+            params['header']['Referer'] = proxy
+            url = proxy
+        #sts, data = self.cm.getPage(url, params, post_data)
+        #printDBG(data)
+        return self.cm.getPage(url, params, post_data)
+        
     def _getFullUrl(self, url):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote(url.split('?q=')[1])
+            
         if url.startswith('//'):
             url = 'http:' + url
         elif 0 < len(url) and not url.startswith('http'):
@@ -225,8 +241,8 @@ class MoviesHDCO(CBaseHostClass):
                 title  = self.cleanHtmlStr(item)
                 tmpList.append({'title': title, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)+'/page/{page}?display=tube&filtre={sort_by}'})
         
-        if 1 == len(tmpList):
-            tmpList.extend( self.getDiscaeredGenres() )
+        #if 1 == len(tmpList):
+        #    tmpList.extend( self.getDiscaeredGenres() )
         mainItem = dict(cItem)
         mainItem.update({'category':category})
         self.listsTab(tmpList, mainItem)
@@ -331,6 +347,8 @@ class MoviesHDCO(CBaseHostClass):
         
         if oneLink.startswith('//'):
             oneLink = 'http:' + oneLink
+            
+        oneLink = self._getFullUrl(oneLink)
         
         if 'videomega.tv/validatehash.php?' in oneLink:
             sts, data = self.cm.getPage(oneLink, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
