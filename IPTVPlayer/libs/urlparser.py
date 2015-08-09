@@ -244,7 +244,6 @@ class urlparser:
                        '7cast.net':            self.pp.parser7CASTNET      ,
                        'facebook.com':         self.pp.parserFACEBOOK      ,
                        'cloudyvideos.com':     self.pp.parserCLOUDYVIDEOS  ,
-                       'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
                        'thevideo.me':          self.pp.parserTHEVIDEOME    ,
                        'xage.pl':              self.pp.parserXAGEPL        ,
                        'castamp.com':          self.pp.parserCASTAMPCOM    ,
@@ -278,6 +277,14 @@ class urlparser:
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        'vevo.com':             self.pp.parserVEVO          ,
                        'shared.sx':            self.pp.parserSHAREDSX      ,
+                       'gorillavid.in':        self.pp.parserFASTVIDEOIN   , 
+                       'daclips.in':           self.pp.parserFASTVIDEOIN   ,
+                       'movpod.in':            self.pp.parserFASTVIDEOIN   ,
+                       'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
+                       'realvid.net':          self.pp.parserFASTVIDEOIN   ,
+                       'rapidvideo.ws':        self.pp.parserRAPIDVIDEOWS  ,
+                       'hdvid.tv':             self.pp.parserHDVIDTV       ,
+                       'exashare.com':         self.pp.parserEXASHARECOM   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -528,10 +535,17 @@ class pageParser:
                 linksTab.append({'name':serverName, 'url':link})
         return linksTab
         
+    def _findLinks2(self, data, baseUrl):
+        videoUrl = self.cm.ph.getSearchGroups(data, 'type="video/divx"src="(http[^"]+?)"')[0]
+        if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*[:,][ ]*['"](http[^"^']+)['"][,}\)]''')[0]
+        if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
+        return False
+        
     def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None):
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         if 'embed' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})/')[0]
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
             url = embedUrl.format(video_id)
         else:
             url = baseUrl
@@ -541,7 +555,7 @@ class pageParser:
         
         if _preProcessing != None:
             data = _preProcessing(data)
-        printDBG(data)
+        #printDBG(data)
         
         # get JS player script code from confirmation page
         sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
@@ -550,7 +564,7 @@ class pageParser:
             tmpData = None
             # unpack and decode params from JS player script code
             data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
-            printDBG(data)
+            #printDBG(data)
         return _findLinks(data)
         
     def _parserUNIVERSAL_B(self, url):
@@ -585,34 +599,39 @@ class pageParser:
         printDBG("pageParser.__parseJWPLAYER_A serverName[%s], baseUrl[%r]" % (serverName, baseUrl))
         
         linkList = []
-        HTTP_HEADER = dict(self.HTTP_HEADER) 
-        HTTP_HEADER['Referer'] = baseUrl
-        sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER})
-
-        if sts:
+        tries = 2
+        while tries > 0:
+            tries -= 1
             HTTP_HEADER = dict(self.HTTP_HEADER) 
             HTTP_HEADER['Referer'] = baseUrl
-            url = self.cm.ph.getSearchGroups(data, 'iframe[ ]+src="(http://embed.[^"]+?)"')[0]
-            if serverName in url: sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}) 
-            else: url = baseUrl
-        
-        if sts and '' != data:
-            try:
-                sts, data2 = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)
-                if sts:
-                    post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data2))
+            sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER})
 
-                    try:
-                        sleep_time = self.cm.ph.getSearchGroups(data2, '>([0-9])</span> seconds<')[0]
-                        if '' != sleep_time: time.sleep(int(sleep_time))
-                    except:
-                        printExc()
-                    HTTP_HEADER['Referer'] = url
-                    sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
-                if None != customLinksFinder: linkList = customLinksFinder(data)
-                if 0 == len(linkList): linkList = self._findLinks(data, serverName)
-            except:
-                printExc()
+            if sts:
+                HTTP_HEADER = dict(self.HTTP_HEADER) 
+                HTTP_HEADER['Referer'] = baseUrl
+                url = self.cm.ph.getSearchGroups(data, 'iframe[ ]+src="(http://embed.[^"]+?)"')[0]
+                if serverName in url: sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}) 
+                else: url = baseUrl
+            
+            if sts and '' != data:
+                try:
+                    sts, data2 = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)
+                    if sts:
+                        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data2))
+                        if tries == 0:
+                            try:
+                                sleep_time = self.cm.ph.getSearchGroups(data2, '>([0-9]+?)</span> seconds<')[0]
+                                if '' != sleep_time: time.sleep(int(sleep_time))
+                            except:
+                                printExc()
+                        HTTP_HEADER['Referer'] = url
+                        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
+                    if None != customLinksFinder: linkList = customLinksFinder(data)
+                    if 0 == len(linkList): linkList = self._findLinks(data, serverName)
+                except:
+                    printExc()
+            if len(linkList) > 0:
+                break
         return linkList
             
     def parserFIREDRIVE(self,url):
@@ -2072,6 +2091,13 @@ class pageParser:
                 printExc()
         return linkList
         
+    def parserEXASHARECOM(self, url):
+        printDBG("parserVODLOCKER url[%r]" % url)
+        # example video: http://www.exashare.com/s4o73bc1kd8a
+        def _findLinks(data):
+            return self._findLinks(data, 'exashare.com', m1='setup(', m2=')')
+        return self.__parseJWPLAYER_A(url, 'exashare.com', _findLinks)
+        
     def parserVODLOCKER(self, url):
         printDBG("parserVODLOCKER url[%r]" % url)
         # example video: http://vodlocker.com/txemekqfbopy
@@ -2930,7 +2956,8 @@ class pageParser:
     def parserFASTVIDEOIN(self, baseUrl):
         printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
         #http://fastvideo.in/nr4kzevlbuws
-        return self.__parseJWPLAYER_A(baseUrl, 'fastvideo.in')
+        hostName = urlparser().getHostName(baseUrl)
+        return self.__parseJWPLAYER_A(baseUrl, hostName) #'fastvideo.in')
         
     def parserTHEVIDEOME(self, baseUrl):
         printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
@@ -3203,28 +3230,21 @@ class pageParser:
     def parserUPLOADCCOM(self, baseUrl):
         printDBG("parserUPLOADCCOM baseUrl[%s]" % baseUrl)
         def _findLinks(data):
-            videoUrl = self.cm.ph.getSearchGroups(data, 'type="video/divx"src="(http[^"]+?)"')[0]
-            if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
-            return False
+            return self._findLinks2(data, baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://www.uploadc.com/embed-{0}.html', _findLinks)
         
     def parserMIGHTYUPLOAD(self, baseUrl):
         printDBG("parserMIGHTYUPLOAD baseUrl[%s]" % baseUrl)
         def _preProcessing(data):
             return CParsingHelper.getDataBeetwenMarkers(data, '<div id="player_code">', '</div>', False)[1]
-        
         def _findLinks(data):
-            videoUrl = self.cm.ph.getSearchGroups(data, 'type="video/divx"src="(http[^"]+?)"')[0]
-            if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
-            return False
+            return self._findLinks2(data, baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://www.mightyupload.com/embed-{0}-645x353.html', _findLinks, _preProcessing)
         
     def parserZALAACOM(self, baseUrl):
         printDBG("parserZALAACOM baseUrl[%s]" % baseUrl)
         def _findLinks(data):
-            videoUrl = self.cm.ph.getSearchGroups(data, 'type="video/divx"src="(http[^"]+?)"')[0]
-            if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
-            return False
+            return self._findLinks2(data, baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://www.zalaa.com/embed-{0}.html', _findLinks)
     
     def parserALLMYVIDEOS(self, baseUrl):
@@ -3232,6 +3252,18 @@ class pageParser:
         def _findLinks(data):
             return self._findLinks(data, 'allmyvideos.net')
         return self._parserUNIVERSAL_A(baseUrl, 'http://allmyvideos.net/embed-{0}.html', _findLinks)
+        
+    def parserRAPIDVIDEOWS(self, baseUrl):
+        printDBG("parserRAPIDVIDEOWS baseUrl[%s]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks2(data, baseUrl)
+        return self._parserUNIVERSAL_A(baseUrl, 'http://rapidvideo.ws/embed-{0}-720x420.html', _findLinks)
+        
+    def parserHDVIDTV(self, baseUrl):
+        printDBG("parserHDVIDTV baseUrl[%s]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks2(data, baseUrl)
+        return self._parserUNIVERSAL_A(baseUrl, 'http://hdvid.tv/embed-{0}-950x480.html', _findLinks)
         
     def parserSTREAMPLAYCC(self, baseUrl):
         printDBG("parserSTREAMPLAYCC baseUrl[%s]" % baseUrl)
