@@ -343,7 +343,7 @@ class MoviesHDCO(CBaseHostClass):
         urlTab = []
         
         sts, data = self.getPage(cItem['url'])
-        if not sts: return 
+        if not sts: return urlTab
         
         #printDBG(data)
         
