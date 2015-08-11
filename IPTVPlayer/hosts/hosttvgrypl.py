@@ -38,7 +38,7 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.tvgrypl                 = ConfigSelection(default = "small", choices = [ ("large", _("large")), ("medium", _("medium")), ("small", _("small")) ])
-config.plugins.iptvplayer.tvgrypl_default_quality = ConfigSelection(default = "SD", choices = [("MOB", "MOB: niska"),("SD", "SD: standardowa"),("HD", "HD: wysoka")])
+config.plugins.iptvplayer.tvgrypl_default_quality = ConfigSelection(default = "SD", choices = [("MOB", "MOB: niska"),("SD", "SD: standardowa"),("HD", "HD: wysoka")]) #, ("FHD", "FHD: bardzo wysoka")
 config.plugins.iptvplayer.tvgrypl_use_dq          = ConfigYesNo(default = True)
 
 def GetConfigList():
@@ -189,17 +189,33 @@ class TvGryPL(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("TvGryPL.getLinksForVideo [%s]" % cItem)
         id = self.cm.ph.getSearchGroups(cItem['url'] + '_', 'ID=([0-9]+?)[^0-9]', 1)[0]
-
+        
         urlTab = []
-        for item in ['MOB', 'SD', 'HD']:
-            url = 'http://tvgry.pl/video/source.asp?SC=TV&ID=%s&QL=%s' % (id, item[:2])
-            sts,data = self.getPage(url)
-            if not sts: continue
-            url = self.cm.ph.getSearchGroups(data, 'file>(http[^<]+?)<', 1)[0]
-            if '' != url: urlTab.append({'name':item, 'url':url, 'q':item})
+        sts, data = self.cm.getPage('http://tvgry.pl/video/source.v2.asp?SC=TV&ID=%s&QL=SD' % id)
+        if not sts: return urlTab
+        data = re.compile('file="([^"]+?)"[^>]*?label="([^"]+?)"').findall(data)
+        for item in data:
+            q = ""
+            if '_C/500_' in item[0] or "Mobile" in item[1]:
+                q = 'MOB'
+            elif '_C/750_' in item[0] or "SD" in item[1]:
+                q = 'SD'
+            elif '_C/1280_' in item[0] or "720p" in item[1]:
+                q = 'HD'
+            #elif '_C/1920_' in item[0] or "1080p" in item[1]:
+            #    q = 'FHD'
+            if '' != q:
+                urlTab.append({'name':item[1], 'url':urlparser.decorateUrl(item[0], {'Referer':'http://p.jwpcdn.com/6/12/jwplayer.flash.swf'}), 'q':q}) 
+        
+        # for item in ['MOB', 'SD', 'HD']:
+            # url = 'http://tvgry.pl/video/source.asp?SC=TV&ID=%s&QL=%s' % (id, item[:2])
+            # sts,data = self.getPage(url)
+            # if not sts: continue
+            # url = self.cm.ph.getSearchGroups(data, 'file>(http[^<]+?)<', 1)[0]
+            # if '' != url: urlTab.append({'name':item, 'url':url, 'q':item})
             
         if 1 < len(urlTab):
-            map = {'MOB':0, 'SD':1, 'HD':2}
+            map = {'MOB':0, 'SD':1, 'HD':2, 'FHD':3}
             oneLink = CSelOneLink(urlTab, lambda x: map[x['q']], map[config.plugins.iptvplayer.tvgrypl_default_quality.value])
             if config.plugins.iptvplayer.tvgrypl_use_dq.value: urlTab = oneLink.getOneLink()
             else: urlTab = oneLink.getSortedLinks()
