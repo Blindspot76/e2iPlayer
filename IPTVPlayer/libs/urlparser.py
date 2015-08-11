@@ -922,12 +922,15 @@ class pageParser:
 
     def parserDAILYMOTION(self, baseUrl):
         # https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/dailymotion.py
+        COOKIEFILE = self.COOKIE_PATH + "dailymotion.cookie"
         _VALID_URL = r'(?i)(?:https?://)?(?:(www|touch)\.)?dailymotion\.[a-z]{2,3}/(?:(embed|#)/)?video/(?P<id>[^/?_]+)'
         mobj = re.match(_VALID_URL, baseUrl)
         video_id = mobj.group('id')
         
+        
         url = 'http://www.dailymotion.com/embed/video/' + video_id
-        sts, data = self.cm.getPage(url)
+        url = 'http://www.dailymotion.com/family_filter?enable=false&urlback=' + urllib.quote_plus('/embed/video/' + video_id)
+        sts, data = self.cm.getPage(url, {'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIEFILE})
         if not sts: return []
         
         vidTab = []
