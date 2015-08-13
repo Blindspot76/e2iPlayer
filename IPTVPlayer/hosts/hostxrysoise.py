@@ -97,7 +97,7 @@ class XrysoiSE(CBaseHostClass):
         self.cacheFilters = {}
         sts, data = self.cm.getPage(self.MAIN_URL)
         if not sts: return
-        
+
         moviesTab = [{'title':'Όλα', 'url':self._getFullUrl('category/new-good/')}]
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '>Ταινιες<', '</ul>', False)[1]
         tmp = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(tmp)
@@ -105,17 +105,21 @@ class XrysoiSE(CBaseHostClass):
             if item[0].endswith('collection/'): continue # at now we are not able to handle colletion
             if item[0].endswith('προσεχώς/'): continue # soon, so there is only trailer link available
             moviesTab.append({'title':self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
-            
+
+        moviesTab.append({'title': 'Κινούμενα Σχέδια (με μετάφραση)', 'url':self._getFullUrl('category/κιν-σχέδια/')})
+        moviesTab.append({'title': 'Κινούμενα Σχέδια (με υπότιτλους)', 'url':self._getFullUrl('category/κιν-σχέδια-subs/')})
+        moviesTab.append({'title': 'Anime Movies', 'url':self._getFullUrl('category/animemovies/')})
+
         #tvshowsTab = [{'title':'All', 'url':self._getFullUrl('tv-shows')}]
         #tmp = self.cm.ph.getDataBeetwenMarkers(data, 'TV Shows</a>', '</ul>', False)[1]
         #tmp = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(tmp)
         #for item in tmp:
         #    tvshowsTab.append({'title':item[1], 'url':self._getFullUrl(item[0])})
-            
+ 
         #newsTab = [{'title':'New Episodes',           'mode':'movies',   'category':'list_items',   'url':self._getFullUrl('new-shows')}]
         #newsTab.append( {'title':'New Movies',        'mode':'movies',   'category':'list_items',   'url':self._getFullUrl('new-movies')} )
         #newsTab.append( {'title':'Box Office Movies', 'mode':'movies',   'category':'list_items',   'url':self._getFullUrl('featuredmovies')} )
-            
+
         #self.cacheFilters['new']      = newsTab
         self.cacheFilters['movies']   = moviesTab
         #self.cacheFilters['tv_shows'] = tvshowsTab
