@@ -241,8 +241,8 @@ class IPTVExtMoviePlayer(Screen):
             }, -1)
         
         self.onClose.append(self.__onClose)
-        #self.onShow.append(self.__onShow)
-        self.onLayoutFinish.append(self.onStart)
+        self.onShow.append(self.onStart)
+        #self.onLayoutFinish.append(self.onStart)
         
         self.console = None
         
@@ -1171,7 +1171,8 @@ class IPTVExtMoviePlayer(Screen):
             self.enableSubtitles()
         
     def onStart(self):
-        self.onLayoutFinish.remove(self.onStart)
+        self.onShow.remove(self.onStart)
+        #self.onLayoutFinish.remove(self.onStart)
         self['progressBar'].value = 0
         self['bufferingBar'].range = (0, 100000)
         self['bufferingBar'].value = 0
