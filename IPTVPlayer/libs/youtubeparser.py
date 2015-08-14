@@ -93,6 +93,14 @@ class YouTubeParser():
             if '' == title: sts,title = CParsingHelper.getDataBeetwenReMarkers(data[i], re.compile('<span [^>]*?class="title[^>]*?>'), re.compile('</span>'), False) 
             if '' == title: sts,title = CParsingHelper.getDataBeetwenReMarkers(data[i], re.compile('class="pl-video-title-link[^>]*?>'), re.compile('<'), False)
             
+            if '' == title:
+                titleMarker = self.cm.ph.getSearchGroups(data[i], '(<[^">]+?"yt-lockup-title[^"]*?"[^>]*?>)')[0]
+                if '' != titleMarker:
+                    tidx = titleMarker.find(' ')
+                    if tidx > 0:
+                        tmarker = titleMarker[1:tidx]
+                        title = self.cm.ph.getDataBeetwenMarkers(data[i],  titleMarker, '</%s>' % tmarker)[1]
+            
             if '' != title: title = CParsingHelper.removeDoubles(remove_html_markup(title, ' '), ' ')
                 
             img   = self.getAttributes('data-thumb="([^"]+?\.jpg)"', data[i])
