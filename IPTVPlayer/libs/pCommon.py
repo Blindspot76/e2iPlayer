@@ -336,6 +336,9 @@ class common:
             headers = self.HEADER
         else:
             headers = { 'User-Agent' : host }
+            
+        if 'User-Agent' not in headers:
+            headers['User-Agent'] = host
 
         printDBG('pCommon - getURLRequestData() -> params: ' + str(params))
         printDBG('pCommon - getURLRequestData() -> headers: ' + str(headers)) 
@@ -381,7 +384,7 @@ class common:
         pageUrl = params['url']
         proxy_gateway = params.get('proxy_gateway', '')
         if proxy_gateway != '':
-            pageUrl = proxy_gateway.format(urllib.quote(pageUrl, ''))
+            pageUrl = proxy_gateway.format(urllib.quote_plus(pageUrl, ''))
         printDBG("pageUrl: [%s]" % pageUrl)
 
         if None != post_data:

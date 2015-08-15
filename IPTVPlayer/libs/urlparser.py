@@ -285,6 +285,7 @@ class urlparser:
                        'rapidvideo.ws':        self.pp.parserRAPIDVIDEOWS  ,
                        'hdvid.tv':             self.pp.parserHDVIDTV       ,
                        'exashare.com':         self.pp.parserEXASHARECOM   ,
+                       'posiedze.pl':          self.pp.parserPOSIEDZEPL    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3566,9 +3567,24 @@ class pageParser:
         videoUrl = self.cm.ph.getSearchGroups(data, 'data-url="([^"]+)"')[0]
         if videoUrl.startswith('http'): return videoUrl
         return False
+        
+    def parserPOSIEDZEPL(self, baseUrl):
+        printDBG("Ekstraklasa.parserPOSIEDZEPL baseUrl[%r]" % baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        if '/e.' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{10})[/.?]')[0]
+            url = 'http://e.posiedze.pl/' + video_id
+        else:
+            url = baseUrl
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, """["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""")[0]
+        if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
+        return False
     
     def parserSWIROWNIA(self, baseUrl):
-        printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl )
+        printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl)
         def fun1(x):
             o = ""
             l = len(x)

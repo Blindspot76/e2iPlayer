@@ -930,8 +930,18 @@ class IPTVHost(CHostBase):
                 for item in tmpList:
                     retlist.append(CUrlItem(item['name'], item['url']))
             else:
-                iptv_proto = urlparser.decorateUrl(url).meta.get('iptv_proto', '')
+                url = urlparser.decorateUrl(url)
+                iptv_proto = url.meta.get('iptv_proto', '')
                 if 'm3u8' == iptv_proto:
+                    if '84.114.88.26' == url.meta.get('X-Forwarded-For', ''):
+                        url.meta['iptv_m3u8_custom_base_link'] = '' + url
+                        url.meta['iptv_proxy_gateway'] = 'http://webproxy.at/surf/printer.php?u={0}&b=192&f=norefer'
+                        url.meta['Referer'] =  url.meta['iptv_proxy_gateway'].format(urllib.quote_plus(url))
+                        meta = url.meta
+                        tmpList = getDirectM3U8Playlist(url, checkExt=False)
+                        if 1 == len(tmpList):
+                            url = urlparser.decorateUrl(tmpList[0]['url'], meta)
+                            
                     tmpList = getDirectM3U8Playlist(url, checkExt=False)
                     for item in tmpList:
                         retlist.append(CUrlItem(item['name'], item['url']))
