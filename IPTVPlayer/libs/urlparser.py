@@ -803,10 +803,13 @@ class pageParser:
                 return linkvideo
         return False
 
-    def parserANYFILES(self,url):
+    def parserANYFILES(self, url):
         from anyfilesapi import AnyFilesVideoUrlExtractor
         self.anyfiles = AnyFilesVideoUrlExtractor()
         
+        id = self.cm.ph.getSearchGroups(url+'|', 'id=([0-9]+?)[^0-9]')[0]
+        if id != '':
+            url = 'http://video.anyfiles.pl/videos.jsp?id=' + id
         retVal = self.anyfiles.getVideoUrl(url)
         return retVal
 
