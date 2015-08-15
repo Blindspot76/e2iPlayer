@@ -40,8 +40,8 @@ def gettytul():
 class Youtube(CBaseHostClass):
     UTLIST_FILE      = 'ytlist.txt'
     MAIN_GROUPED_TAB = [{'category': 'from_file',             'title': _("User links"),     'desc': _("User links stored in the ytlist.txt file.")}, \
-                        {'category': 'Historia wyszukiwania', 'title': _("Search history"), 'desc': _("History of searched phrases.")}, \
-                        {'category': 'Wyszukaj',              'title': _("Search"),         'desc': _("Search youtube materials "), 'search_item':True}]
+                        {'category': 'Wyszukaj',              'title': _("Search"),         'desc': _("Search youtube materials "), 'search_item':True}, \
+                        {'category': 'Historia wyszukiwania', 'title': _("Search history"), 'desc': _("History of searched phrases.")}]
     SEARCH_TYPES = [  (_("Video"),    "video"   ), 
                       (_("Channel"),  "channel" ),
                       (_("Playlist"), "playlist"),
