@@ -55,9 +55,12 @@ class MultipartPostHandler(urllib2.BaseHandler):
 
 class CParsingHelper:
     @staticmethod
-    def getSearchGroups(data, pattern, grupsNum=1):
+    def getSearchGroups(data, pattern, grupsNum=1, ignoreCase=False):
         tab = []
-        match = re.search(pattern, data)
+        if ignoreCase:
+            match = re.search(pattern, data, re.IGNORECASE)
+        else:
+            match = re.search(pattern, data)
         
         for idx in range(grupsNum):
             try:    value = match.group(idx + 1)
