@@ -43,6 +43,7 @@ config.plugins.iptvplayer.videostar_proxy_gateway_url  = ConfigText(default = "h
 
 #http://darmowe-proxy.pl/browse.php?u={0}&b=192&f=norefer
 #85.128.142.29
+#http://proksiak.pl/show.php?u={0}&b=32
 
 
 def GetConfigList():
@@ -54,8 +55,8 @@ def GetConfigList():
     optionList.append(getConfigListEntry( _("Hasło") + ": ", config.plugins.iptvplayer.videostar_password))
     if '2' == config.plugins.iptvplayer.videostar_streamprotocol.value:
         optionList.append(getConfigListEntry(_("Użyj bramki proxy"), config.plugins.iptvplayer.videostar_use_proxy_gateway))
-        if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
-            optionList.append(getConfigListEntry("    " + _("Url:"), config.plugins.iptvplayer.videostar_proxy_gateway_url))
+        #if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
+        #    optionList.append(getConfigListEntry("    " + _("Url:"), config.plugins.iptvplayer.videostar_proxy_gateway_url))
     return optionList
 ###################################################
 
@@ -83,7 +84,8 @@ class VideoStarApi:
 
     def doInit(self):
         if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
-            self.proxy_gateway_url = config.plugins.iptvplayer.videostar_proxy_gateway_url.value
+            self.proxy_gateway_url = "http://darmowe-proxy.pl/browse.php?u={0}&b=192&f=norefer" #config.plugins.iptvplayer.videostar_proxy_gateway_url.value
+            self.proxy_gateway_ssl = "http://darmowe-proxy.pl/includes/process.php?action=sslagree"
             self.my_ip             = self.getProxyGatewayIP()
         else:
             self.my_ip = ''
@@ -232,13 +234,15 @@ class VideoStarApi:
                         meta = {'iptv_proto':'m3u8'}
                         if '' != self.proxy_gateway_url:
                             channelID = data['stream_channel']['channel_id']
-                            if url.startswith('https://'): url = 'http://' + url[8:]
-                            server = self.cm.ph.getSearchGroups(url, r'http://([^/]+?)/')[0]
+                            #if url.startswith('https://'): url = 'http://' + url[8:]
+                            server = self.cm.ph.getSearchGroups(url, r'://([^/]+?)/')[0]
                             meta['iptv_m3u8_custom_base_link'] = 'http://%s:1935/%s/smil:%s.ism/list.m3u8' % (server, channelID, channelID)
                             meta['iptv_proxy_gateway'] = self.proxy_gateway_url
                             meta['Referer'] =  self.proxy_gateway_url
                             meta['User-Agent'] = 'Mozilla/5.0'
                             meta['X-Forwarded-For'] = self.my_ip
+                            
+                            meta['Cookie'] = self.getCookieItem('s', self.proxy_gateway_ssl, {'header':{'User-Agent':'Mozilla/5.0'}})
                         urlsTab.append({'url': self.up.decorateUrl(url, meta), 'name': 'videostar hls', 'type':'hls'})
             except:
                 printExc()
@@ -290,3 +294,20 @@ class VideoStarApi:
             except:
                 printExc()
         return False
+        
+        
+    def getCookieItem(self, key, url, params={}, post_data=None):
+        
+        cookiePath = GetCookieDir('tmp.cookie')
+        params.update({'cookiefile': cookiePath, 'use_cookie': True, 'save_cookie':True})
+        sts, data = self.cm.getPage(url, params, post_data)
+        itemValue = ''
+        if sts:
+            # the LWP has problem to read prepared Cookie, so we will manually read them and add to header
+            try:
+                with open(cookiePath, 'r') as infile:
+                    data = infile.read()
+                    itemValue = re.search(' (%s=[^;]+?;)' % key, data).group(1)
+            except:
+                printExc()
+        return itemValue
