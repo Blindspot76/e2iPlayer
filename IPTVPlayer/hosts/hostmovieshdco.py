@@ -48,7 +48,7 @@ def gettytul():
     return 'movieshd.eu'
 
 class MoviesHDCO(CBaseHostClass):
-    MAIN_URL    = 'http://movieshd.eu/'
+    MAIN_URL    = 'https://movieshd.eu/'
     #SRCH_SERIES_URL    = MAIN_URL + 'seriale/search'
     SRCH_MOVIES_URL    = MAIN_URL + 'page/{page}?s='
     
@@ -204,8 +204,8 @@ class MoviesHDCO(CBaseHostClass):
             if url.startswith('/'): url = url[1:]
             url =  self.MAIN_URL + url
         
-        if self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
+        #if self.MAIN_URL.startswith('https://'):
+        #    url = url.replace('https://', 'http://')
         return url
 
     def listsTab(self, tab, cItem, type='dir'):

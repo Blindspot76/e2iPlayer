@@ -274,6 +274,7 @@ class urlparser:
                        'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
                        'megom.tv':             self.pp.paserMEGOMTV        ,
                        'openload.io':          self.pp.parserOPENLOADIO    ,
+                       'openload.co':          self.pp.parserOPENLOADIO    ,
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        'vevo.com':             self.pp.parserVEVO          ,
                        'shared.sx':            self.pp.parserSHAREDSX      ,
@@ -3495,7 +3496,10 @@ class pageParser:
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         if '/embed/' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_]{11})[/~]')[0]
-            url = 'http://openload.io/embed/' + video_id
+            if 'openload.co' in baseUrl:
+                url = 'http://openload.co/embed/' + video_id
+            else:
+                url = 'http://openload.io/embed/' + video_id
         else:
             url = baseUrl
         post_data = None
