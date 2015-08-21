@@ -136,6 +136,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'm3u',                 'title': 'Greek-IPTV',                        'url': 'https://raw.githubusercontent.com/free-greek-iptv/greek-iptv/master/greek.m3u', 'icon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Coat_of_arms_of_Greece.svg/538px-Coat_of_arms_of_Greece.svg.png'}, \
                         {'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
                         {'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
+                        {'name': 'others',              'title': 'Others',                            'url': '',                                                                    'icon': ''}, \
                         {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ] 
@@ -514,6 +515,24 @@ class HasBahCa(CBaseHostClass):
             
     def getWagasWorldLink(self, url):
         return self.wagasWorldApi.getVideoLink(url)
+        
+        
+    def getOthersList(self, cItem):
+        sts, data = self.cm.getPage("http://www.elevensports.pl/")
+        if not sts: return
+        channels = {0:"ELEVEN", 1:"ELEVEN SPORTS"}
+        data = re.compile('stream=(http[^"]+?)"').findall(data)
+        for idx in range(len(data)):
+            params = dict(cItem)
+            params.update({'title':channels.get(idx, 'Unknown'), 'provider':'elevensports', 'url':data[idx].replace('~', '=')})
+            self.playVideo(params)
+    
+    def getOthersLinks(self, cItem):
+        urlTab = []
+        url = cItem.get('url', '')
+        if url != '':
+            urlTab = getDirectM3U8Playlist(url, False)
+        return urlTab
     
     def getWeebTvList(self, url):
         printDBG('getWeebTvList start')
@@ -855,6 +874,9 @@ class HasBahCa(CBaseHostClass):
     # filmon.com channels
         elif name == "filmon_channels":
             self.getFilmOnChannels()
+    # others
+        elif name == 'others':
+            self.getOthersList(self.currItem)
 
 class IPTVHost(CHostBase):
 
@@ -901,6 +923,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getTyperTvLink(url)
         elif 'wagasworld.com' == name:
             urlList = self.host.getWagasWorldLink(url)
+        elif 'others' == name:
+            urlList = self.host.getOthersLinks(cItem)
         elif 'weeb.tv' in name:
             url = self.host.getWeebTvLink(url)
         elif name == "team-cast.pl":
