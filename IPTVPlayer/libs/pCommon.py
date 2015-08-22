@@ -12,11 +12,14 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Is
 ###################################################
 import urllib
 import urllib2
-import ssl
+try: import ssl
+except: pass
 import re
 import htmlentitydefs
 import cookielib
 import unicodedata
+try:    import json
+except: import simplejson as json
 try:
     try: from cStringIO import StringIO
     except: from StringIO import StringIO 
@@ -220,6 +223,17 @@ class common:
     def __init__(self, proxyURL= '', useProxy = False):
         self.proxyURL = proxyURL
         self.useProxy = useProxy
+        self.geolocation = {}
+        
+    def getCountryCode(self, lower=True):
+        if 'countryCode' not in self.geolocation:
+            sts, data = self.getPage('http://ip-api.com/json')
+            if sts:
+                try:
+                    self.geolocation['countryCode'] = byteify(json.loads(data))['countryCode']
+                except:
+                    printExc()
+        return self.geolocation.get('countryCode', '').lower()
         
     def getCookieItem(self, cookiefile, item):
         ret = ''

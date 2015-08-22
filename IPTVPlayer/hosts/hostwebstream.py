@@ -516,7 +516,6 @@ class HasBahCa(CBaseHostClass):
     def getWagasWorldLink(self, url):
         return self.wagasWorldApi.getVideoLink(url)
         
-        
     def getOthersList(self, cItem):
         sts, data = self.cm.getPage("http://www.elevensports.pl/")
         if not sts: return

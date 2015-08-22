@@ -111,7 +111,7 @@ class ExtPlayerCommandsDispatcher():
         printDBG('seekBack skipped')
         return
         self.speedIdx -= 1
-        self.tipMode()        
+        self.tipMode()
     def tipMode(self):
         printDBG("ExtPlayerCommandsDispatcher.tipMode speedIdx[%d]" % self.speedIdx)
         if self.speedIdx >= len(self.SEEK_SPEED_MAP): self.speedIdx = len(self.SEEK_SPEED_MAP) - 1
