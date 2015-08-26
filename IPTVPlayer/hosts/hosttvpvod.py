@@ -77,11 +77,12 @@ class TvpVod(CBaseHostClass):
     AJAX_VOD_URL = MAIN_VOD_URL + "vod/%sAjax?"
     SEARCH_VOD_URL = MAIN_VOD_URL + 'portal/SearchContent?contentName=vod&keywords=%s&X-Requested-With=XMLHttpRequest&SortField=id&SortDir=asc&'
     HTTP_HEADERS = {}
-    VOD_CAT_TAB  = [{'category':'vods_list_items1',    'title':_('Polecane'),             'url':MAIN_VOD_URL},
-                    {'category':'vods_sub_categories', 'title':_('VOD'),                  'marker':'VOD'},
-                    {'category':'vods_sub_categories', 'title':_('Serwisy Informacyjne'), 'marker':'Serwisy Informacyjne'},
-                    {'category':'vods_sub_categories', 'title':_('Programy'),             'marker':'<li><h2>Programy</h2></li>'},
-                    {'category':'vods_sub_categories', 'title':_('Publicystyka'),         'marker':'<li><h2>Publicystyka</h2></li>'},
+    VOD_CAT_TAB  = [{'category':'vods_list_items1',    'title':'Polecane',                  'url':MAIN_VOD_URL},
+                    {'category':'vods_sub_categories', 'title':'VOD',                       'marker':'VOD'},
+                    {'category':'vods_sub_categories', 'title':'Programy',                  'marker':'<li><h2>Programy</h2></li>'},
+                    {'category':'vods_sub_categories', 'title':'Informacje i publicystyka', 'marker':'Informacje i publicystyka'},
+                    #{'category':'vods_sub_categories', 'title':'Serwisy Informacyjne',     'marker':'Serwisy Informacyjne'},
+                    #{'category':'vods_sub_categories', 'title':'Publicystyka',             'marker':'<li><h2>Publicystyka</h2></li>'},
                     {'category':'search',          'title':_('Search'), 'search_item':True},
                     {'category':'search_history',  'title':_('Search history')} ]
     
