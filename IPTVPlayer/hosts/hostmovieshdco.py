@@ -48,7 +48,7 @@ def gettytul():
     return 'movieshd.eu'
 
 class MoviesHDCO(CBaseHostClass):
-    MAIN_URL    = 'https://movieshd.eu/'
+    MAIN_URL    = 'http://movieshd.eu/'
     #SRCH_SERIES_URL    = MAIN_URL + 'seriale/search'
     SRCH_MOVIES_URL    = MAIN_URL + 'page/{page}?s='
     

@@ -51,20 +51,24 @@ def gettytul():
 
 class NocnySeansPL(CBaseHostClass):
     MAIN_URL    = 'http://nocnyseans.pl/'
-    SRCH_SERIES_URL    = MAIN_URL + 'seriale/search'
-    SRCH_MOVIES_URL    = MAIN_URL + 'filmy/search'
-    VIDEO_URL          = MAIN_URL + 'film/video'
+    SRCH_URL    = MAIN_URL + 'szukaj'
+    VIDEO_URL   = MAIN_URL + 'film/video'
     
-    MAIN_CAT_TAB = [{'category':'latest_movies',      'title': _('Latest movies'), 'url':MAIN_URL, 'icon':''},
-                    {'category':'latest_series',      'title': _('Latest series'), 'url':MAIN_URL, 'icon':''},
-                    {'category':'genres_movies',      'title': _('Movies'), 'url':MAIN_URL+'filmy', 'icon':''},
-                    {'category':'genres_series',      'title': _('Series'), 'url':MAIN_URL+'seriale', 'icon':''},
+    MAIN_CAT_TAB = [{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':''},
+                    {'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':''},
+                    {'category':'list_series',        'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':''},
+                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'2,3,5', 'icon':''},
+                    {'category':'list_rank',          'title': _('Ranking'),       'url':MAIN_URL+'ranking', 'icon':''},
                     {'category':'search',             'title': _('Search'), 'search_item':True},
                     {'category':'search_history',     'title': _('Search history')} ]
+                    
+    LAST_ADDED_TAB = [{'category':'latest_added_movies',  'title': _('Movies'),        'url':MAIN_URL, 'icon':''},
+                      {'category':'latest_added_series',  'title': _('Series'),        'url':MAIN_URL, 'icon':''},
+                      {'category':'latest_added_episodes','title': _('Episodes'),      'url':MAIN_URL, 'icon':''} ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'NocnySeansPL', 'cookie':'playtube.cookie'})
-
+        CBaseHostClass.__init__(self, {'history':'NocnySeansPL', 'cookie':'nocnyseans.cookie'})
+        self.filterCache = {}
         
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
@@ -83,78 +87,112 @@ class NocnySeansPL(CBaseHostClass):
                 self.addDir(params)
             else: self.addVideo(params)
             
-    def listGenres(self, cItem, category):
-        printDBG("NocnySeansPL.listMoviesGenres")
+    def _listLatestAddedTab(self, cItem, m1, m2, category='video'):
+        printDBG("NocnySeansPL._listLatestAddedTab >>>>>>> cItem[%r]" % cItem)
+        url = cItem['url']
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(url)
         if not sts: return 
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<h2>Kategorie</h2>', '</ul>', False)[1]
-        data = data.split('</li>')
-        if len(data): del data[-1]
-        tmpList = []
-        for item in data:
-            url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            title  = self.cleanHtmlStr(item)
-            tmpList.append({'title': title, 'url':self._getFullUrl(url)})
-        if len(tmpList):
-            tmpList.insert(0,  {'title': "**Wszystkie***"})
         
-        mainItem = dict(cItem)
-        mainItem.update({'category':category})
-        self.listsTab(tmpList, mainItem)
-        
-    def _listLatestItemsTab(self, cItem, category):
-        printDBG("NocnySeansPL._listLatestItemsTab")
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return 
-
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="col-md-6 films">', '<footer>', False)[1]
-        data = data.split('<div class="col-md-6 films">')
-        
-        if len(data) < 2: return
-        if 'video' == category:
-            data = data[0]
-        else: data = data[1]
-        data = data.split('<div class="row">')
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
+        data = data.split('<div class="listing-item">')
         if len(data): del data[0]
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            title  = CParsingHelper.getDataBeetwenMarkers(item, '<h4>', '</h4>', False)[1]
+            title  = self.cm.ph.getDataBeetwenMarkers(item, '<div class="title">', '</div>', False)[1]
+            desc   = self.cm.ph.getDataBeetwenMarkers(item, '<div class="description">', '</div>', False)[1]
             
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
+            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
             if category != 'video':
                 params['category'] = category
                 self.addDir(params)
             else: self.addVideo(params)
+            
+    def listLatestAddedMovies(self, cItem):
+        printDBG("NocnySeansPL.listLatestAddedMovies")
+        self._listLatestAddedTab(cItem, 'Ostatnio dodane filmy', '<div class="normal radius">', 'video')
         
-    def _listItemsTab(self, cItem, category):
-        printDBG("NocnySeansPL._listItemsTab")
-        page = cItem.get('page', 1)
+    def listLatestAddedSeries(self, cItem, category):
+        printDBG("NocnySeansPL.listLatestAddedSeries")
+        self._listLatestAddedTab(cItem, 'Ostatnio dodane seriale', '<div class="normal radius">', category)
+        
+    def listLatestAddedEpisodes(self, cItem):
+        printDBG("NocnySeansPL.listLatestAddedEpisodes")
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Ostatnio dodane odcinki', '</table>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+        data = data.split('</tr>')
+        if len(data): del data[-1]
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'data-url="([^"]+?)"')[0]
+            tmp    = self.cm.ph.getAllItemsBeetwenMarkers(item, '<td>', '</td>')
+            if len(tmp) < 5: continue
+            title = self.cleanHtmlStr( tmp[4] ) + ': ' + '[s{0}e{1}]'.format(self.cleanHtmlStr(tmp[3]), self.cleanHtmlStr(tmp[2])) + ' ' + self.cleanHtmlStr( tmp[1] )
+            params = dict(cItem)
+            params.update( {'title': title, 'url':self._getFullUrl(url)} )
+            self.addVideo(params)
+            
+    def fillFilterCache(self, url):
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        def _getFilters(m1, m2, key):
+            tab = []
+            dat = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
+            dat = re.compile('<li[^>]*?data-id="([^>]+?)"[^>]*?>([^>]+?)</li>').findall(dat)
+            for item in dat:
+                tab.append({key:item[0], 'title':item[1]})
+            if len(tab):
+                tab.insert(0, {'title':_('All')})
+            return tab
+        self.filterCache['category'] = _getFilters('<ul id="filter-category">', '</ul>', 'cat')
+        self.filterCache['version']  = _getFilters('<ul id="filter-version">', '</ul>', 'ver')
+        self.filterCache['year']     = _getFilters('<ul id="filter-year">', '</ul>', 'year')
+        
+    def listFilters(self, cItem, filter, category):
+        printDBG("NocnySeansPL.listFilters")
+        tab = self.filterCache.get(filter, [])
+        if 0 == len(tab):
+            self.fillFilterCache(self.MAIN_URL + 'filmy-online/')
+            tab = self.filterCache.get(filter, [])
+        cItem = dict(cItem)
+        cItem['category'] = category
+        self.listsTab(tab, cItem)
+        
+    def _listItemsTab(self, cItem, category='video'):
+        printDBG("NocnySeansPL._listItemsTab >>>>>>> cItem[%r]" % cItem)
         url = cItem['url']
-        tmp = url.split('?')
-        if page > 1: tmp[0] += '/strona/%s' % page
-        url = '?'.join(tmp)
+        page = cItem.get('page', 1)
+        if page > 1:
+            url += 'strona[%s]+' % page
+        if '' != cItem.get('cat', ''):
+            url += 'kategoria[%s]+' % cItem['cat']
+        if '' != cItem.get('ver', ''):
+            url += 'wersja[%s]+' % cItem['ver']
+        if '' != cItem.get('year', ''):
+            url += 'rok[%s]+' % cItem['year']
         
         sts, data = self.cm.getPage(url)
         if not sts: return 
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="list', '<footer>', False)[1]
-        data = data.split('<div class="row">')
-        if len(data): del data[0]
         
-        if len(data) and ('/strona/{0}"'.format(page+1)) in data[-1]:
+        if ('strona[%s]+' % (page + 1)) in data:
             nextPage = True
         else: nextPage = False
         
+        data = CParsingHelper.getDataBeetwenMarkers(data, 'name="filter-year">', '<div class="col-xs-12">', False)[1]
+        data = data.split('<div class="normal radius">')
+        if len(data): del data[0]
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            title  = CParsingHelper.getDataBeetwenMarkers(item, '<h3>', '</h3>', False)[1]
-            desc   = CParsingHelper.getDataBeetwenMarkers(item, '<p class="description">', '</p>', False)[1]
-            cats   = CParsingHelper.getDataBeetwenMarkers(item, '<p class="categories">', '</p>', False)[1]
-            if cats.replace('Kategorie:', '').strip() != '': desc = cats + ', ' + desc
+            
+            tmp    = item.split('<div class="row">')
+            if len(tmp) < 2: continue
+            title  = tmp[0]
+            desc   = tmp[1]
             
             params = dict(cItem)
             params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
@@ -167,14 +205,28 @@ class NocnySeansPL(CBaseHostClass):
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
-        
+            
     def listMovies(self, cItem):
         printDBG("NocnySeansPL.listMovies")
         self._listItemsTab(cItem, 'video')
-            
+        
     def listSeries(self, cItem, category):
         printDBG("NocnySeansPL.listSeries")
-        self._listItemsTab(cItem, category)
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return 
+
+        data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="term-list">', '</ul>', False)[1]
+        data = data.split('</li>')
+        if len(data): del data[-1]
+
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon   = ''
+            params = dict(cItem)
+            params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
+            params['category'] = category
+            self.addDir(params)
         
     def listLatestMovies(self, cItem):
         printDBG("NocnySeansPL.listLatestMovies")
@@ -189,104 +241,99 @@ class NocnySeansPL(CBaseHostClass):
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return 
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="serial-series">', '<div class="film-bottom">', False)[1]
+        seriesTitle = cItem['title']
         
-        # get seasons
-        data = data.split('<div class="row">')
-        if len(data): del data[0]
-        episodesList = [] 
-        for seanon in data:
-            tmp = seanon.split('<div class="row row-episode">')
-            seasonTitle = self.cleanHtmlStr(tmp[0].split('</div>')[0]).replace(':', ' ').strip()
-            if len(tmp): del tmp[0]
-            for item in tmp:
-                episodesNum = self.cm.ph.getSearchGroups(item, '>([0-9]+?)<', 1)[0]
-                titleAndUrl = self.cm.ph.getSearchGroups(item, '<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>', 2)
-                title = seasonTitle + ':'
-                if episodesNum != '' and (episodesNum+' ') not in titleAndUrl[1]:
-                    title += ' {0}.'.format(episodesNum)
-                title += ' {0}.'.format(titleAndUrl[1])
-                episodesList.append({'title':title, 'url':titleAndUrl[0]})
-        episodesList.reverse()
+        desc = self.cm.ph.getDataBeetwenMarkers(data, '<div id="single-series" class="normal-content clearfix">', '<ul class="episode-list">', False)[1]
+        icon = self.cm.ph.getSearchGroups(desc, 'src="([^"]+?)"')[0]
+        desc = self.cleanHtmlStr( desc )
+        icon = self._getFullUrl( icon )
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="episode-list">', '</ul>', False)[1]
+        data = re.compile('<li[^>]*?class="episode"[^>]*?><a[^>]*?href="([^"]+?)">([^<]+?)</a></li>').findall( data )
+        sort = True
+        episodesList = []
+        for item in data:
+            try:
+                tmp = self.cm.ph.getSearchGroups(item[0], 'odcinek-([0-9]+?)-sezon-([0-9]+?)[^0-9]', 2)
+                season  = int(tmp[1])
+                episode = int(tmp[0])
+            except:
+                printExc()
+                season  = 0
+                episode = 0
+                sort    = False
+            episodesList.append( {'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
+        if sort:
+            episodesList.sort(key=lambda item: item['season']*1000 + item['episode'])#, reverse=True)
+            #episodesList.reverse()
         self.listsTab(episodesList, cItem, 'video')
+        
+    def listRanking(self, cItem):
+        printDBG("NocnySeansPL.listRanking")
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        data = CParsingHelper.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+        data = data.split('</tr>')
+        if len(data): del data[-1]
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title  = self.cm.ph.getDataBeetwenMarkers(item, '<strong>', '</strong>', False)[1]
+            if '' == title: title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
+            desc   = self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>', False)[1]
+            rank   = self.cm.ph.getSearchGroups(item, '>([0-9.]+?)<')[0]
+            
+            params = dict(cItem)
+            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': rank + ', ' + self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
+            self.addVideo(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("NocnySeansPL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        url = urllib.quote(searchPattern)
+        post_data = {'search':searchPattern}
+        sts, data = self.cm.getPage(self.SRCH_URL, {}, post_data)
+        if not sts: return
+        
         if searchType == 'movies':
-            url = NocnySeansPL.SRCH_MOVIES_URL + '/' + url
+            key = 'film'
         elif searchType == 'series':
-            url = NocnySeansPL.SRCH_SERIES_URL + '/' + url
-        else:
-            printExc("NocnySeansPL.listSearchResult NO ENTRY")
-            return
-        cItem.update({'url':url})
-        if searchType == 'movies':
-            self.listMovies(cItem)
-        elif searchType == 'series':
-            self.listSeries(cItem, 'list_episodes')
+            key = 'serial'
         
-    '''
-    def getArticleContent(self, cItem):
-        printDBG("NocnySeansPL.getArticleContent [%s]" % cItem)
-        retTab = []
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return retTab
-        
-        sts, data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="contentwrap">', '<div class="entry">', True)
-        title = CParsingHelper.getDataBeetwenMarkers(data, '<h3 style="line-height: 30px;">', '</h3>', False)[1]
-        icon = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
-        
-        desc = self.cm.ph.rgetDataBeetwenMarkers(data, 'block;">', '<div class="entry">', False)[1]
-        #desc = self.cm.ph.getDataBeetwenMarkers(data, 'block;"><p>', '</p>', False)[1]
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[]}]
-    '''
+        data = data.split('</a>')
+        if len(data): del data[-1]
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]*?/%s/[^"]*?)"' % key)[0]
+            if '' == url: continue
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            
+            title  = self.cleanHtmlStr( item )
+            if '' == title: title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0] )
+            if '' == title: title = self.cm.ph.getSearchGroups(url, '/%s/([^"/]*?)[/"]' % key)[0].replace('-', ' ').capitalize()
+
+            params = dict(cItem)
+            params.update( {'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon)} )
+            if searchType == 'movies':
+                self.addVideo(params)
+            elif searchType == 'series':
+                params['category'] =  'list_episodes'
+                self.addDir(params)
         
     def getLinksForVideo(self, cItem):
         printDBG("NocnySeansPL.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
         sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return urlTab
+        if not sts: return
         
-        oneLink = CParsingHelper.getDataBeetwenMarkers(data, 'id="film-content"', '</div>', False)[1]
-        data = CParsingHelper.getDataBeetwenMarkers(data, 'class="tabpanel">', '<div class="film-bottom">', False)[1]
-        versions = CParsingHelper.getDataBeetwenMarkers(data, 'role="tablist">', '</ul>', False)[1]
-        versions = re.compile('href="#([^"]+?)"[^>]*?>([^<]+?)</a>').findall(versions)
-        printDBG('versions: %s' % versions)
-        if 1:
-            data = data.split('<div role="tabpanel"') #('class="tab-pane container-fluid"')
-            if len(data): del data[0]
-            
-            for item in data:
-                # find version
-                version = ''
-                for ver in versions:
-                    if ver[0] in item:
-                        version = ver[1]
-                        break
-                links = item.split('<div class="row">')
-                if len(links): del links[0]
-                for link in links:
-                    title = version 
-                    hash = self.cm.ph.getSearchGroups(link, 'data-hash="([^"]+?)"', 1)[0]
-                    title += ' ' + self.cleanHtmlStr( link )
-                    url = strwithmeta(NocnySeansPL.VIDEO_URL, {'hash':hash, 'Referer':cItem['url']}) 
-                    urlTab.append({'name':title, 'url':url, 'need_resolve':1})
-        
-        if 0 == len(urlTab):
-            url = re.compile('src="([^"]+?)"', re.IGNORECASE).search(oneLink)
-            if url:
-                url = strwithmeta(url.group(1)) 
-                title = ''
-                if len(versions):
-                    title = versions[0][1] + ' '
-                    title += ' '
-                title += self.up.getHostName(url)
-                urlTab.append({'name':title, 'url':url, 'need_resolve':1})
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+        data = data.split('</tr>')
+        if len(data): del data[-1]
+        for item in data:
+            url  = self.cm.ph.getSearchGroups(item, 'data-iframe="([^"]+?)"')[0]
+            name = self.cleanHtmlStr(item)
+            urlTab.append({'name':name, 'url':url, 'need_resolve':1})
         
         return urlTab
         
@@ -340,20 +387,35 @@ class NocnySeansPL(CBaseHostClass):
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
     #MOVIES
         elif category == 'genres_movies':
-            self.listGenres(self.currItem, 'list_movies')
+            self.listFilters(self.currItem, 'category', 'list_version_filter')
+        elif category == 'list_version_filter':
+            self.listFilters(self.currItem, 'version', 'list_yer_filter')
+        elif category == 'list_yer_filter':
+            self.listFilters(self.currItem, 'year', 'list_movies')
         elif category == 'list_movies':
             self.listMovies(self.currItem)
         elif category == 'latest_movies':
             self.listLatestMovies(self.currItem)
+        elif category == 'list_rank':
+            self.listRanking(self.currItem)
     #SERIES
-        elif category == 'genres_series':
-            self.listGenres(self.currItem, 'list_series')
+        #elif category == 'genres_series':
+        #    self.listGenres(self.currItem, 'list_series')
         elif category == 'list_series':
             self.listSeries(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
         elif category == 'latest_series':
             self.listLatestSeries(self.currItem, 'list_episodes')
+    #LATEST ADDED
+        elif category == 'latest_added':
+            self.listsTab(self.LAST_ADDED_TAB, {'name':'category'})
+        elif category == 'latest_added_movies':
+            self.listLatestAddedMovies(self.currItem)
+        elif category == 'latest_added_series':
+            self.listLatestAddedSeries(self.currItem, 'list_episodes')
+        elif category == 'latest_added_episodes':
+            self.listLatestAddedEpisodes(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -372,7 +434,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, NocnySeansPL(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('nocnyseanslogo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('nocnyseans2logo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -381,8 +443,7 @@ class IPTVHost(CHostBase):
         
         urlList = self.host.getLinksForVideo(self.host.currList[Index])
         for item in urlList:
-            need_resolve = 1
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
