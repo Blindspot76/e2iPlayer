@@ -53,7 +53,7 @@ class XrysoiSE(CBaseHostClass):
     SEARCH_SUFFIX = '?s='
     
     MAIN_CAT_TAB = [{'category':'movies',         'mode':'movies',     'title': 'Ταινιες',      'url':'',                                     'icon':''},
-                    {'category':'list_items',     'mode':'series',     'title': 'ξένες σειρές', 'url':MAIN_URL + 'category/ξένες-σειρές/',    'icon':''},
+                    {'category':'list_items',     'mode':'series',     'title': 'Ξένες σειρές', 'url':MAIN_URL + 'category/ξένες-σειρές/',    'icon':''},
                     #{'category':'list_items',     'mode':'collection', 'title': 'Συλλογες',     'url':MAIN_URL + 'category/collection/',      'icon':''},
                     {'category':'search',          'title': _('Search'), 'search_item':True},
                     {'category':'search_history',  'title': _('Search history')} ]
@@ -275,13 +275,15 @@ class XrysoiSE(CBaseHostClass):
     
     def getLinksForVideo(self, cItem):
         printDBG("XrysoiSE.getLinksForVideo [%s]" % cItem)
-        urlTab = self.cacheLinks.get(cItem['mode'] + cItem['url'],  [])
+        # Use Season and Episode information when exist for cache index
+        idx = cItem['mode'] + cItem['url'] + cItem.get('season','') + cItem.get('episode','')
+        urlTab = self.cacheLinks.get(idx,  [])
         if len(urlTab): return urlTab
         self.cacheLinks = {}
         
         urlTab = cItem.get('links', [])
 
-        self.cacheLinks[cItem['mode'] + cItem['url']] = urlTab
+        self.cacheLinks[idx] = urlTab
         return urlTab
         
     def getVideoLinks(self, videoUrl):
