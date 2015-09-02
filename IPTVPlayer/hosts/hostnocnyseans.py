@@ -325,7 +325,7 @@ class NocnySeansPL(CBaseHostClass):
         urlTab = []
         
         sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return
+        if not sts: return urlTab
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
         data = data.split('</tr>')

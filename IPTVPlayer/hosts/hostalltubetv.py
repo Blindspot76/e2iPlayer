@@ -287,7 +287,7 @@ class AlltubeTV(CBaseHostClass):
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return 
-        seriesTitle =  self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-xs-12 col-sm-9">', '<div class="custome-panel clearfix">', False)[1] )
+        seriesTitle =  self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-xs-12 col-sm-9">', '</h3>', False)[1] )
         if '' == seriesTitle: seriesTitle = cItem['title']    
         
         desc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="custome-panel clearfix">', '</div>', False)[1]
@@ -376,7 +376,7 @@ class AlltubeTV(CBaseHostClass):
         urlTab = []
         
         sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return
+        if not sts: return urlTab
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
         data = data.split('</tr>')

@@ -177,7 +177,7 @@ class Vevo(CBaseHostClass):
             if '' == icon: icon = item.get('mobile_image_url', '')
             if '' == icon: icon = item.get('thumbnail_image_url', '')
             
-            if 1 <= len(item['seasons']):
+            if 1 <= len(item.get('seasons', [])):
                 category = 'list_show_videos'
             params.update({'category':category, 'title':item['title'], 'icon':icon, 'desc':item['description'], 'show_id':idx, 'season_id':0})
             self.addDir(params)

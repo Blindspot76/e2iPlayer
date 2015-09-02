@@ -251,7 +251,7 @@ class SerialeNet(CBaseHostClass):
                     params = dict(cItem)
                     params.update({'title':title, 'url':item['url'], 'matches':matches})
                     self.addDir(params)
-            self.currList.sort(key=lambda item: item['matches'], reverse=True)
+            self.currList.sort(key=lambda item: item.get('matches', 0), reverse=True)
     
     def getLinksForVideo(self, cItem):
         videoUrlTab = []
