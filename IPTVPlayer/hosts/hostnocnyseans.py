@@ -301,19 +301,20 @@ class NocnySeansPL(CBaseHostClass):
         elif searchType == 'series':
             key = 'serial'
         
-        data = data.split('</a>')
-        if len(data): del data[-1]
+        data = data.split('<div class="listing-item">')
+        if len(data): del data[0]
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]*?/%s/[^"]*?)"' % key)[0]
             if '' == url: continue
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             
-            title  = self.cleanHtmlStr( item )
+            title  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<b>', '</b>', False)[1] )
             if '' == title: title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0] )
             if '' == title: title = self.cm.ph.getSearchGroups(url, '/%s/([^"/]*?)[/"]' % key)[0].replace('-', ' ').capitalize()
+            desc  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="description">', '</div>', False)[1] )
 
             params = dict(cItem)
-            params.update( {'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon)} )
+            params.update( {'title':title, 'url':self._getFullUrl(url), 'desc':desc, 'icon':self._getFullUrl(icon)} )
             if searchType == 'movies':
                 self.addVideo(params)
             elif searchType == 'series':
