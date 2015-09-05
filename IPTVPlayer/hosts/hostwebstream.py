@@ -520,7 +520,7 @@ class HasBahCa(CBaseHostClass):
         sts, data = self.cm.getPage("http://www.elevensports.pl/")
         if not sts: return
         channels = {0:"ELEVEN", 1:"ELEVEN SPORTS"}
-        data = re.compile('stream=(http[^"]+?)"').findall(data)
+        data = re.compile('''stream=(http[^"']+?)["']''').findall(data)
         for idx in range(len(data)):
             params = dict(cItem)
             params.update({'title':channels.get(idx, 'Unknown'), 'provider':'elevensports', 'url':data[idx].replace('~', '=')})
