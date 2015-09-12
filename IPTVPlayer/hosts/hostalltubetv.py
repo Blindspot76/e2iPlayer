@@ -405,6 +405,8 @@ class AlltubeTV(CBaseHostClass):
         
         if '' != url: 
             videoUrl = url
+            if url.startswith('//'):
+                videoUrl = 'http:' + videoUrl
             urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
