@@ -160,7 +160,33 @@ def SAWLIVETV_decryptPlayerParams(p, a, c, k, e, d):
             reg = '\\b' + e(c) + '\\b'
             p = re.sub(reg, k[c], p)
     return p
-    
+
+def OPENLOADIO_decryptPlayerParams(p, a, c, k, e, d):
+    def e1(c):
+        return c
+    def e2(t=None):
+        return '\\w+'
+    def k1(matchobj):
+        return d[int(matchobj.group(0))]
+    e = e1
+    if True:
+        while c != 0:
+            c -= 1
+            d[c] = k[c]
+            if c < len(k):
+                d[c] = k[c]
+            else:
+                d[c] = c
+        c = 1
+        k = [k1]
+        e = e2
+    while c != 0:
+        c -= 1
+        if k[c]:
+            reg = '\\b' + e(c) + '\\b'
+            p = re.sub(reg, k[c], p)
+    return p
+
 def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
     def e1(c):
         if c < a:
@@ -194,14 +220,20 @@ def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
 #<br></div>
 #
 #       
-def unpackJSPlayerParams(code, decryptionFun, type=1):
+def unpackJSPlayerParams(code, decryptionFun, type=1, r1=False, r2=False):
     printDBG('unpackJSPlayerParams')
     mark1 = "}("
     mark2 = "))"
-    idx1 = code.find(mark1)
+    if r1:
+        idx1 = code.rfind(mark1)
+    else:
+        idx1 = code.find(mark1)
     if -1 == idx1: return ''
     idx1 += len(mark1)
-    idx2 = code.find(mark2, idx1)
+    if r2:
+        idx2 = code.rfind(mark2, idx1)
+    else:
+        idx2 = code.find(mark2, idx1)
     if -1 == idx2: return ''
     idx2 += type
     return unpackJS(code[idx1:idx2], decryptionFun)
@@ -212,7 +244,7 @@ def unpackJS(data, decryptionFun):
     try:
         paramsAlgoObj = compile(paramsCode, '', 'exec')
     except:
-        printExc('unpackJSPlayerParams compile algo code EXCEPTION')
+        printExc('unpackJS compile algo code EXCEPTION')
         return ''
     vGlobals = {"__builtins__": None, 'string': string}
     vLocals = { 'paramsTouple': None }
@@ -220,7 +252,7 @@ def unpackJS(data, decryptionFun):
     try:
         exec( paramsAlgoObj, vGlobals, vLocals )
     except:
-        printExc('unpackJSPlayerParams exec code EXCEPTION')
+        printExc('unpackJS exec code EXCEPTION')
         return ''
     # decrypt JS Player params
     try:
@@ -235,6 +267,7 @@ def VIDUPME_decryptPlayerParams(p=None, a=None, c=None, k=None, e=None, d=None):
         if k[c]:
             p = re.sub('\\b'+ int2base(c, a) +'\\b', k[c], p)
     return p
+    
 ###############################################################################
 
 

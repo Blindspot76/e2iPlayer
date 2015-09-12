@@ -18,6 +18,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                VIDUPME_decryptPlayerParams,    \
                                                                VIDEOWEED_unpackJSPlayerParams, \
                                                                SAWLIVETV_decryptPlayerParams,  \
+                                                               OPENLOADIO_decryptPlayerParams, \
                                                                captchaParser, \
                                                                getDirectM3U8Playlist, \
                                                                getF4MLinksWithMeta, \
@@ -131,6 +132,9 @@ class urlparser:
             out.append(value[0])
         return out
 
+#anyfiles, bestreams, cda, cloudyvideos, flashx, neodrive, novamov, nowvideo, openload, played, realvid, streamin, streamplay, thevideo, video, videomega, videowood, vidgg, vidspot, 
+#vidto, vidup, vidzer, vodlocker, vshare, vshareio, yourvideohost, youtube, youwatch
+#    neodrive
     def setHostsMap(self):
         self.hostMap = {
                        'putlocker.com':        self.pp.parserFIREDRIVE     , 
@@ -254,7 +258,6 @@ class urlparser:
                        'thefile.me':           self.pp.parserTHEFILEME     ,
                        'cloudtime.to':         self.pp.parserCLOUDTIME     ,
                        'nosvideo.com':         self.pp.parserNOSVIDEO      ,
-                       'realvid.net':          self.pp.parserREALVIDNET    ,
                        'letwatch.us':          self.pp.parserLETWATCHUS    ,
                        'uploadc.com':          self.pp.parserUPLOADCCOM    ,
                        'mightyupload.com':     self.pp.parserMIGHTYUPLOAD  ,
@@ -287,6 +290,7 @@ class urlparser:
                        'hdvid.tv':             self.pp.parserHDVIDTV       ,
                        'exashare.com':         self.pp.parserEXASHARECOM   ,
                        'posiedze.pl':          self.pp.parserPOSIEDZEPL    ,
+                       'neodrive.co':          self.pp.parserNEODRIVECO    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3213,22 +3217,6 @@ class pageParser:
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
         return False
         
-    def parserREALVIDNET(self, baseUrl):
-        printDBG("parserREALVIDNET baseUrl[%s]" % baseUrl)
-        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
-        if 'embed' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})/')[0]
-            url = 'http://realvid.net/embed-{0}-640x360.html'.format(video_id)
-        else:
-            url = baseUrl
-        post_data = None
-        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
-        if not sts: return False
-        
-        videoUrl = self.cm.ph.getSearchGroups(data, """["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""")[0]
-        if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
-        return False
-        
     def parserLETWATCHUS(self, baseUrl):
         printDBG("parserLETWATCHUS baseUrl[%s]" % baseUrl)
         def _findLinks(data):
@@ -3495,7 +3483,7 @@ class pageParser:
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         if '/embed/' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_]{11})[/~]')[0]
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_-]{11})[/~]')[0]
             if 'openload.co' in baseUrl:
                 url = 'http://openload.co/embed/' + video_id
             else:
@@ -3505,6 +3493,28 @@ class pageParser:
         post_data = None
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
         if not sts: return False
+
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1]
+        data = unpackJSPlayerParams(data, OPENLOADIO_decryptPlayerParams, 0, False, True)
+        
+        O = {'___': 0, '$$$$': "f", '__$': 1, '$_$_': "a", '_$_': 2, '$_$$': "b", '$$_$': "d", '_$$': 3, '$$$_': "e", '$__': 4, '$_$': 5, '$$__': "c", '$$_': 6, '$$$': 7, '$___': 8, '$__$': 9, '$_': "constructor", '$$': "return", '_$': "o", '_': "u", '__': "t",}
+        s1 = re.search('O\.\$\(O\.\$\((.*?)\)\(\)\)\(\);', data).group(1)
+        s1 = s1.replace(' ', '')
+        s1 = s1.replace('(![]+"")', 'false')
+        data = ''
+        for s2 in s1.split('+'):
+            if s2.startswith('O.'):
+                data += str(O[s2[2:]])
+            elif '[' in s2 and ']' in s2:
+                key = s2[s2.find('[') + 3:-1]
+                data += s2[O[key]]
+            else:
+                data += s2[1:-1]
+        data = data.replace('\\\\', '\\')
+        data = data.decode('unicode_escape')
+        data = data.replace('\\/', '/')
+        data = data.replace('\\\\"', '"')
+        data = data.replace('\\"', '"')
         videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"]''')[0]
         if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''attr\([^"]*?"src",[^"]*?"(http[^"]+?)"''')[0]
         if videoUrl.startswith('http'): return videoUrl.replace('https://', 'http://').replace('\\/', '/')
@@ -3586,6 +3596,17 @@ class pageParser:
         videoUrl = self.cm.ph.getSearchGroups(data, """["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""")[0]
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
         return False
+        
+    def parserNEODRIVECO(self, baseUrl):
+        printDBG("Ekstraklasa.parserNEODRIVECO baseUrl[%r]" % baseUrl)
+        #http://neodrive.co/embed/EG0F2UYFNR2CN1CUDNT2I5OPN/
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, """["']*vurl["']*[ ]*?=[ ]*?["']([^"^']+?)['"]""")[0]
+        if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
+        return False        
     
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl)
