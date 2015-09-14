@@ -15,6 +15,7 @@ import re
 import time
 import string
 import codecs
+import urllib
 ###################################################
 try:
     from hashlib import md5
@@ -246,7 +247,7 @@ def unpackJS(data, decryptionFun):
     except:
         printExc('unpackJS compile algo code EXCEPTION')
         return ''
-    vGlobals = {"__builtins__": None, 'string': string}
+    vGlobals = {"__builtins__": None, 'string': string, 'decodeURIComponent':urllib.unquote}
     vLocals = { 'paramsTouple': None }
 
     try:

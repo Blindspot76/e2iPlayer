@@ -3496,14 +3496,15 @@ class pageParser:
 
         data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1]
         data = unpackJSPlayerParams(data, OPENLOADIO_decryptPlayerParams, 0, False, True)
+        oo = self.cm.ph.getSearchGroups(data, '([^=]+?)=~\[\];')[0].strip()
         
         O = {'___': 0, '$$$$': "f", '__$': 1, '$_$_': "a", '_$_': 2, '$_$$': "b", '$$_$': "d", '_$$': 3, '$$$_': "e", '$__': 4, '$_$': 5, '$$__': "c", '$$_': 6, '$$$': 7, '$___': 8, '$__$': 9, '$_': "constructor", '$$': "return", '_$': "o", '_': "u", '__': "t",}
-        s1 = re.search('O\.\$\(O\.\$\((.*?)\)\(\)\)\(\);', data).group(1)
+        s1 = re.search('%s\.\$\(%s\.\$\((.*?)\)\(\)\)\(\);' % (oo, oo), data).group(1)
         s1 = s1.replace(' ', '')
         s1 = s1.replace('(![]+"")', 'false')
         data = ''
         for s2 in s1.split('+'):
-            if s2.startswith('O.'):
+            if s2.startswith('%s.' % oo):
                 data += str(O[s2[2:]])
             elif '[' in s2 and ']' in s2:
                 key = s2[s2.find('[') + 3:-1]
