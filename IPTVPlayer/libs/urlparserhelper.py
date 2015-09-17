@@ -221,8 +221,7 @@ def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
 #<br></div>
 #
 #       
-def unpackJSPlayerParams(code, decryptionFun, type=1, r1=False, r2=False):
-    printDBG('unpackJSPlayerParams')
+def getParamsTouple(code, type=1, r1=False, r2=False ):
     mark1 = "}("
     mark2 = "))"
     if r1:
@@ -237,7 +236,12 @@ def unpackJSPlayerParams(code, decryptionFun, type=1, r1=False, r2=False):
         idx2 = code.find(mark2, idx1)
     if -1 == idx2: return ''
     idx2 += type
-    return unpackJS(code[idx1:idx2], decryptionFun)
+    return code[idx1:idx2]
+ 
+def unpackJSPlayerParams(code, decryptionFun, type=1, r1=False, r2=False):
+    printDBG('unpackJSPlayerParams')
+    code = getParamsTouple(code, type, r1, r2)
+    return unpackJS(code, decryptionFun)
     
 def unpackJS(data, decryptionFun):
     

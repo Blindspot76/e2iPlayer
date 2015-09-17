@@ -15,6 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes  import AES
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML, clean_html, _unquote
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, \
+                                                               getParamsTouple, JS_FromCharCode, \
                                                                VIDUPME_decryptPlayerParams,    \
                                                                VIDEOWEED_unpackJSPlayerParams, \
                                                                SAWLIVETV_decryptPlayerParams,  \
@@ -3495,7 +3496,32 @@ class pageParser:
         if not sts: return False
 
         data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1]
-        data = unpackJSPlayerParams(data, OPENLOADIO_decryptPlayerParams, 0, False, True)
+        #printDBG(data)
+        data = getParamsTouple(data, 0, False, True)
+        data = data.split(',')
+        paramsTouple = data[-5:]
+        data = ','.join(data[0:-5])
+        z = int(self.cm.ph.getSearchGroups(data, '\}\(([0-9]+?)\)')[0])
+        data = self.cm.ph.getSearchGroups(data, 'var[^"]+?"([^"]+?)"')[0]
+        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ: [%d]" % z)
+        def _transform(c):
+            c = c.group(0)
+            if c <= "Z":
+                tmp = 90
+            else:
+                tmp = 122
+            c = ord(c[0]) + z
+            if tmp > c:
+                tmp = c
+            else:
+                tmp = c - 26
+            return JS_FromCharCode(tmp)
+        #printDBG(data)
+        data = re.sub(r'[a-zA-Z]', _transform, data)
+        paramsTouple.insert(0, 'decodeURIComponent("' + data + '")')
+        data = ','.join(paramsTouple)
+        data = unpackJS(data, OPENLOADIO_decryptPlayerParams)
+        #data = unpackJSPlayerParams(data, OPENLOADIO_decryptPlayerParams, 0, False, True)
         oo = self.cm.ph.getSearchGroups(data, '([^=]+?)=~\[\];')[0].strip()
         
         O = {'___': 0, '$$$$': "f", '__$': 1, '$_$_': "a", '_$_': 2, '$_$$': "b", '$$_$': "d", '_$$': 3, '$$$_': "e", '$__': 4, '$_$': 5, '$$__': "c", '$$_': 6, '$$$': 7, '$___': 8, '$__$': 9, '$_': "constructor", '$$': "return", '_$': "o", '_': "u", '__': "t",}
