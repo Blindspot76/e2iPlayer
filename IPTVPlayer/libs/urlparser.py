@@ -27,6 +27,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                MYOBFUSCATECOM_0ll, \
                                                                int2base, drdX_fx, \
                                                                unicode_escape, JS_FromCharCode, pythonUnescape
+from Plugins.Extensions.IPTVPlayer.libs.aadecoder import AADecoder
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
 ###################################################
@@ -3495,53 +3496,12 @@ class pageParser:
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
         if not sts: return False
 
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1]
-        #printDBG(data)
-        data = getParamsTouple(data, 0, False, True)
-        data = data.split(',')
-        paramsTouple = data[-5:]
-        data = ','.join(data[0:-5])
-        z = int(self.cm.ph.getSearchGroups(data, '\}\(([0-9]+?)\)')[0])
-        data = self.cm.ph.getSearchGroups(data, 'var[^"]+?"([^"]+?)"')[0]
-        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ: [%d]" % z)
-        def _transform(c):
-            c = c.group(0)
-            if c <= "Z":
-                tmp = 90
-            else:
-                tmp = 122
-            c = ord(c[0]) + z
-            if tmp > c:
-                tmp = c
-            else:
-                tmp = c - 26
-            return JS_FromCharCode(tmp)
-        #printDBG(data)
-        data = re.sub(r'[a-zA-Z]', _transform, data)
-        paramsTouple.insert(0, 'decodeURIComponent("' + data + '")')
-        data = ','.join(paramsTouple)
-        data = unpackJS(data, OPENLOADIO_decryptPlayerParams)
-        #data = unpackJSPlayerParams(data, OPENLOADIO_decryptPlayerParams, 0, False, True)
-        oo = self.cm.ph.getSearchGroups(data, '([^=]+?)=~\[\];')[0].strip()
-        
-        O = {'___': 0, '$$$$': "f", '__$': 1, '$_$_': "a", '_$_': 2, '$_$$': "b", '$$_$': "d", '_$$': 3, '$$$_': "e", '$__': 4, '$_$': 5, '$$__': "c", '$$_': 6, '$$$': 7, '$___': 8, '$__$': 9, '$_': "constructor", '$$': "return", '_$': "o", '_': "u", '__': "t",}
-        s1 = re.search('%s\.\$\(%s\.\$\((.*?)\)\(\)\)\(\);' % (oo, oo), data).group(1)
-        s1 = s1.replace(' ', '')
-        s1 = s1.replace('(![]+"")', 'false')
-        data = ''
-        for s2 in s1.split('+'):
-            if s2.startswith('%s.' % oo):
-                data += str(O[s2[2:]])
-            elif '[' in s2 and ']' in s2:
-                key = s2[s2.find('[') + 3:-1]
-                data += s2[O[key]]
-            else:
-                data += s2[1:-1]
-        data = data.replace('\\\\', '\\')
-        data = data.decode('unicode_escape')
-        data = data.replace('\\/', '/')
-        data = data.replace('\\\\"', '"')
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</script>', True)[1]
+        data = AADecoder(data).decode()
         data = data.replace('\\"', '"')
+        data = data.replace('\\/', '/')
+        #printDBG(data)
+        
         videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"]''')[0]
         if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''attr\([^"]*?"src",[^"]*?"(http[^"]+?)"''')[0]
         if videoUrl.startswith('http'): return videoUrl.replace('https://', 'http://').replace('\\/', '/')
