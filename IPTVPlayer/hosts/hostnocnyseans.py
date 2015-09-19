@@ -361,6 +361,13 @@ class NocnySeansPL(CBaseHostClass):
                 printExc()
         else:
             url = baseUrl
+            
+        if 'nocnyseans.pl' in url:
+            sts, data = self.cm.getPage(url)
+            if sts:
+                data = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
+                if '' != data:
+                    url = data
         
         if '' != url: 
             videoUrl = url
