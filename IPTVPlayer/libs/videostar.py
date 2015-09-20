@@ -84,8 +84,8 @@ class VideoStarApi:
 
     def doInit(self):
         if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
-            self.proxy_gateway_url = "http://darmowe-proxy.pl/browse.php?u={0}&b=192&f=norefer" #config.plugins.iptvplayer.videostar_proxy_gateway_url.value
-            self.proxy_gateway_ssl = "http://darmowe-proxy.pl/includes/process.php?action=sslagree"
+            self.proxy_gateway_url = "http://www.bramka-proxy.pl/browse.php?u={0}&b=192&f=norefer" #config.plugins.iptvplayer.videostar_proxy_gateway_url.value
+            self.proxy_gateway_ssl = "http://www.bramka-proxy.pl/includes/process.php?action=sslagree"
             self.my_ip             = self.getProxyGatewayIP()
         else:
             self.my_ip = ''
