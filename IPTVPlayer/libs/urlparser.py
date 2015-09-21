@@ -3497,7 +3497,8 @@ class pageParser:
         if not sts: return False
 
         data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</script>', True)[1]
-        data = AADecoder(data).decode()
+        #printDBG(data)
+        data = AADecoder(data.replace('\n', '')).decode()
         data = data.replace('\\"', '"')
         data = data.replace('\\/', '/')
         #printDBG(data)
