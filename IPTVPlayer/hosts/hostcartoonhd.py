@@ -217,7 +217,7 @@ class CartoonHD(CBaseHostClass):
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("CartoonHD.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        
+    
         sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return
         
@@ -256,6 +256,50 @@ class CartoonHD(CBaseHostClass):
     
     def getLinksForVideo(self, cItem):
         printDBG("CartoonHD.getLinksForVideo [%s]" % cItem)
+        
+        def gettt():
+            data = str(int(time.time()))
+            b64="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+            i       = 0
+            enc     = ""
+            tmp_arr = []
+            mask    = 0x3f
+            while True:
+                o1 = ord(data[i])
+                i += 1
+                if i < len(data):
+                    o2 = ord(data[i])
+                else:
+                    o2 = 0
+                i += 1
+                if i < len(data):
+                    o3 = ord(data[i])
+                else:
+                    o3 = 0
+                i += 1
+                bits = o1 << 16 | o2 << 8 | o3
+                h1   = bits >> 18 & mask
+                h2   = bits >> 12 & mask
+                h3   = bits >> 6 & mask
+                h4   = bits & mask
+                tmp_arr.append( b64[h1] + b64[h2] + b64[h3] + b64[h4] )
+                if i >= len(data):
+                    break
+            enc = ''.join(tmp_arr)
+            r   = len(data) % 3
+            if r > 0:
+                fill = '===' 
+                enc  = enc[0:r-3] + fill[r:]
+            return enc
+            
+        def getCookieItem(name):
+            value = ''
+            try:
+                value = self.cm.getCookieItem(self.COOKIE_FILE, name)
+            except:
+                printExc()
+            return value
+        
         urlTab = self.cacheLinks.get(cItem['url'],  [])
         if len(urlTab): return urlTab
         self.cacheLinks = {}
@@ -267,23 +311,27 @@ class CartoonHD(CBaseHostClass):
         elid = self.cm.ph.getSearchGroups(data, 'data-movie="([^"]+?)"')[0]
         if '' == elid: elid = self.cm.ph.getSearchGroups(data, 'elid="([^"]+?)"')[0]
         if '' == elid: return []
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'Change Source/Quality</option>', '</select>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Change Source/Quality', '</select>', False)[1]
         hostings = []
         data = re.compile('<option[^>]*?value="([^"]+?)"[^>]*?>([^<]+?)</option>').findall(data)
         for item in data:
             hostings.append({'id':item[0], 'name':item[1]})
         
-        httpParams = dict(self.defaultParams)
+        httpParams = {} #dict(self.defaultParams)
         httpParams['header'] =  {'Referer':cItem['url'], 'User-Agent':self.cm.HOST, 'X-Requested-With':'XMLHttpRequest', 'Accept':'application/json, text/javascript, */*; q=0.01'}
         if '/movie/' in cItem['url']:
             type = 'getMovieEmb'
         else: type = 'getEpisodeEmb'
-        url = 'ajax/embeds.php?action={0}&idEl={1}&token={2}'.format(type, elid, tor)
-        sts, data = self.cm.getPage(self._getFullUrl(url), httpParams, None)
+        encElid = gettt()
+        httpParams['header']['Cookie'] = '%s=%s; PHPSESSID=%s; flixy=%s;'% (elid, urllib.quote(encElid), getCookieItem('PHPSESSID'), getCookieItem('flixy'))
+        url = 'ajax/embeds.php'
+        post_data = {'action':type, 'idEl':elid, 'token':tor, 'elid':urllib.quote(encElid)}
+        sts, data = self.cm.getPage(self._getFullUrl(url), httpParams, post_data)
         if not sts: return []
         #printDBG('===============================================================')
         #printDBG(data)
         #printDBG('===============================================================')
+        #printDBG(hostings)
         try:
             data = byteify(json.loads(data))
             for item in hostings:
@@ -292,7 +340,10 @@ class CartoonHD(CBaseHostClass):
                     url = self.cm.ph.getDataBeetwenMarkers(url, 'src="', '"', False, False)[1]
                     if 'googlevideo.com' in url or 'googleusercontent.com' in url:
                         need_resolve = 0
-                    else: need_resolve = 1
+                    elif 1 == self.up.checkHostSupport(url):
+                        need_resolve = 1
+                    else: 
+                        need_resolve = 0
                     urlTab.append({'name':item['name'], 'url':url, 'need_resolve':need_resolve})
         except:
             printExc()
