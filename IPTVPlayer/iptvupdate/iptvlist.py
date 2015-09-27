@@ -18,17 +18,28 @@ from Plugins.Extensions.IPTVPlayer.components.iptvlist import IPTVListComponentB
 ###################################################
 from enigma import eListboxPythonMultiContent, eListbox, gFont, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER
 from Tools.LoadPixmap import LoadPixmap
+import skin
 ###################################################
 
 class IPTVUpdateList(IPTVListComponentBase):
 
     def __init__(self, iconsPaths):
         IPTVListComponentBase.__init__(self)
+        
+        self.fonts = {}
+        try: self.fonts[0] = skin.fonts["iptvupdatelistitem_0"]
+        except: self.fonts[0] = ("Regular", 16, 20, 0)
+        try: self.fonts[1] = skin.fonts["iptvupdatelistitem_1"]
+        except: self.fonts[1] = ("Regular", 26, 50, 0)
     
-        self.l.setFont(2, gFont("Regular", 20))
-        self.l.setFont(1, gFont("Regular", 26))
-        self.l.setFont(0, gFont("Regular", 16))
-        self.l.setItemHeight(70)
+        self.l.setFont(0, gFont(self.fonts[0][0], self.fonts[0][1]))
+        self.l.setFont(1, gFont(self.fonts[1][0], self.fonts[1][1]))
+
+        height = self.fonts[0][2] + self.fonts[1][2]
+        if height < 70:
+            height = 70
+        
+        self.l.setItemHeight(height)
         self.iconsPaths    = iconsPaths
         self.iconsPixList  = [ None for x in self.iconsPaths ]
         self.releaseIcons()
@@ -44,16 +55,19 @@ class IPTVUpdateList(IPTVListComponentBase):
         self.releaseIcons()
         
     def buildEntry(self, item):
-        width = self.l.getItemSize().width()
+        width  = self.l.getItemSize().width()
+        height = self.l.getItemSize().height()
         res = [ None ]
-        res.append((eListboxPythonMultiContent.TYPE_TEXT, 70, 3, width-70, 25, 2, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.get('title', '')))
-        res.append((eListboxPythonMultiContent.TYPE_TEXT, 70, 25, width-70, 35, 0, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.get('info', '')))
+        
+        res.append((eListboxPythonMultiContent.TYPE_TEXT, 70, 0,                width-70, self.fonts[1][2], 1, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.get('title', '')))
+        res.append((eListboxPythonMultiContent.TYPE_TEXT, 70, self.fonts[1][2], width-70, self.fonts[0][2], 0, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.get('info', '')))
+        
         idx = item.get('icon', None)
         if None != idx and idx < len(self.iconsPixList):
             iconPix = self.iconsPixList[idx]
         else:
             iconPix = None
-        res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, 3, 1, 64, 64, iconPix))
+        res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, 3, (height-64)/2, 64, 64, iconPix))
         return res
         
     def releaseIcons(self):
