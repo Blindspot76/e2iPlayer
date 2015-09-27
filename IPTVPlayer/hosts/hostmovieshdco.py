@@ -64,123 +64,10 @@ class MoviesHDCO(CBaseHostClass):
                       #{'title':_('top rated'),   'sort_by':'rate'  },
                       {'title':_('random'),      'sort_by':'random'},
                      ]
-    
-    DISCAVERED_MOVIE_CATEGORY = ['action', 'adventure', 'animation', 'biography', 'bollywood', 'comedy', 'crime', 'disneys', 'documentary', 'drama', 'family', 'fantasy', 'featured', 'history', 'horror', 'marvel', 'music', 'musical', 'mystery', 'romance', 'sci-fi', 'sports', 'thriller', 'war', 'western']
-    
-    #[{'url': 'http://movieshd.co/?filtre=random&cat=1', 'url2': 'http://movieshd.co/watch-online/category/featured?filtre=random', 'title': 'featured'}, {'url': 'http://movieshd.co/?filtre=random&cat=3', 'url2': 'http://movieshd.co/watch-online/category/comedy?filtre=random', 'title': 'comedy'}, {'url': 'http://movieshd.co/?filtre=random&cat=4', 'url2': 'http://movieshd.co/watch-online/category/romance?filtre=random', 'title': 'romance'}, {'url': 'http://movieshd.co/?filtre=random&cat=14', 'url2': 'http://movieshd.co/watch-online/category/action?filtre=random', 'title': 'action'}, {'url': 'http://movieshd.co/?filtre=random&cat=15', 'url2': 'http://movieshd.co/watch-online/category/crime?filtre=random', 'title': 'crime'}, {'url': 'http://movieshd.co/?filtre=random&cat=19', 'url2': 'http://movieshd.co/watch-online/category/drama?filtre=random', 'title': 'drama'}, {'url': 'http://movieshd.co/?filtre=random&cat=20', 'url2': 'http://movieshd.co/watch-online/category/music?filtre=random', 'title': 'music'}, {'url': 'http://movieshd.co/?filtre=random&cat=24', 'url2': 'http://movieshd.co/watch-online/category/history?filtre=random', 'title': 'history'}, {'url': 'http://movieshd.co/?filtre=random&cat=25', 'url2': 'http://movieshd.co/watch-online/category/biography?filtre=random', 'title': 'biography'}, {'url': 'http://movieshd.co/?filtre=random&cat=29', 'url2': 'http://movieshd.co/watch-online/category/adventure?filtre=random', 'title': 'adventure'}, {'url': 'http://movieshd.co/?filtre=random&cat=30', 'url2': 'http://movieshd.co/watch-online/category/sci-fi?filtre=random', 'title': 'sci-fi'}, {'url': 'http://movieshd.co/?filtre=random&cat=34', 'url2': 'http://movieshd.co/watch-online/category/thriller?filtre=random', 'title': 'thriller'}, {'url': 'http://movieshd.co/?filtre=random&cat=38', 'url2': 'http://movieshd.co/watch-online/category/horror?filtre=random', 'title': 'horror'}, {'url': 'http://movieshd.co/?filtre=random&cat=42', 'url2': 'http://movieshd.co/watch-online/category/fantasy?filtre=random', 'title': 'fantasy'}, {'url': 'http://movieshd.co/?filtre=random&cat=53', 'url2': 'http://movieshd.co/watch-online/category/mystery?filtre=random', 'title': 'mystery'}, {'url': 'http://movieshd.co/?filtre=random&cat=92', 'url2': 'http://movieshd.co/watch-online/category/animation?filtre=random', 'title': 'animation'}, {'url': 'http://movieshd.co/?filtre=random&cat=93', 'url2': 'http://movieshd.co/watch-online/category/family?filtre=random', 'title': 'family'}, {'url': 'http://movieshd.co/?filtre=random&cat=100', 'url2': 'http://movieshd.co/watch-online/category/war?filtre=random', 'title': 'war'}, {'url': 'http://movieshd.co/?filtre=random&cat=113', 'url2': 'http://movieshd.co/watch-online/category/sports?filtre=random', 'title': 'sports'}, {'url': 'http://movieshd.co/?filtre=random&cat=122', 'url2': 'http://movieshd.co/watch-online/category/disneys?filtre=random', 'title': 'disneys'}, {'url': 'http://movieshd.co/?filtre=random&cat=299', 'url2': 'http://movieshd.co/watch-online/category/western?filtre=random', 'title': 'western'}, {'url': 'http://movieshd.co/?filtre=random&cat=460', 'url2': 'http://movieshd.co/watch-online/category/marvel?filtre=random', 'title': 'marvel'}, {'url': 'http://movieshd.co/?filtre=random&cat=468', 'url2': 'http://movieshd.co/watch-online/category/documentary?filtre=random', 'title': 'documentary'}, {'url': 'http://movieshd.co/?filtre=random&cat=539', 'url2': 'http://movieshd.co/watch-online/category/musical?filtre=random', 'title': 'musical'}]
-    #[{'url': 'http://movieshd.co/?filtre=random&cat=539', 'url2': 'http://movieshd.co/watch-online/category/musical?filtre=random', 'title': 'musical'}, {'url': 'http://movieshd.co/?filtre=random&cat=1185', 'url2': 'http://movieshd.co/watch-online/category/bollywood?filtre=random', 'title': 'bollywood'}]
-    #2066
-    # DISCAVE PROCEDURE:
-    # import time
-    # import urllib2
-    # import re
-    # cat_id=1
-    # catTan = []
-    # while True:
-        # mainUrl = 'http://movieshd.co/?filtre=random&cat=%d' % cat_id
-        # headers = { 'User-Agent' : 'Mozilla/5.0' }
-        # try:
-            # req = urllib2.Request(mainUrl, None, headers)
-            # response = urllib2.urlopen(req)
-            # redirectUrl = response.geturl()
-            # response.close()
-        # except:
-            # redirectUrl = ''
-            # pass
-        # if '/category/' in redirectUrl:
-            # title = re.search('/([^/\?]+?)\?', redirectUrl).group(1)
-            # print "--------------------------------------------->"
-            # print title
-            # print mainUrl
-            # print redirectUrl
-            # print '\n'
-            # catTan.append({'title':title, 'url':mainUrl, 'url2':redirectUrl})
-        # cat_id += 1
-        # time.sleep(1)
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesHDCO', 'cookie':'movieshdco.cookie'})
-        
-    def calcAnswer(self, data):
-        sourceCode = data
-        try:
-            code = compile(sourceCode, '', 'exec')
-        except:
-            printExc()
-            return 0
-        vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
-        vLocals = { 'paramsTouple': None }
-        try:
-            exec( code, vGlobals, vLocals )
-        except:
-            printExc()
-            return 0
-        return vLocals['a']
-    '''
-    def getPage(self, url, params={}, post_data=None):
-        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':{'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}})
-        sts, data = self.cm.getPage(url, params, post_data)
-        
-        current = 0
-        while current < 10:
-            current += 1
-            if not sts and None != data:
-                doRefresh = False
-                try:
-                    verData = data.fp.read()
-                    dat = self.cm.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
-                    tmp = self.cm.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
-                    varName = tmp[0]
-                    expresion= ['a=%s' % tmp[1]]
-                    e = re.compile('%s([-+*])=([^;]+?);' % varName).findall(dat)
-                    for item in e:
-                        expresion.append('a%s=%s' % (item[0], item[1]) )
-                    
-                    for idx in range(len(expresion)):
-                        e = expresion[idx]
-                        e = e.replace('!+[]', '1')
-                        e = e.replace('!![]', '1')
-                        e = e.replace('=+(', '=int(')
-                        if '+[]' in e:
-                            e = e.replace(')+(', ')+str(')
-                            e = e.replace('int((', 'int(str(')
-                            e = e.replace('(+[])', '(0)')
-                            e = e.replace('+[]', '')
-                        expresion[idx] = e
-                    
-                    #printDBG("-------------------------------------")
-                    #printDBG(expresion)
-                    #printDBG("-------------------------------------")
-                    answer = self.calcAnswer('\n'.join(expresion)) + 11
-                    #printDBG("-------------------------------------")
-                    #printDBG(answer)
-                    #printDBG("-------------------------------------")
-                    #printDBG(data.fp.info())
-                    #printDBG(verData)
-                    refreshData = data.fp.info().get('Refresh', '')
-                    #verUrl = self._getFullUrl( refreshData.split('URL=')[1] )
-                    
-                    verData = self.cm.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
-                    verUrl =  self._getFullUrl( self.cm.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
-                    get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
-                    get_data['jschl_answer'] = answer
-                    verUrl += '?'
-                    for key in get_data:
-                        verUrl += '%s=%s&' % (key, get_data[key])
-                    verUrl = self._getFullUrl( self.cm.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
-                    params2 = dict(params)
-                    params2['load_cookie'] = True
-                    params2['save_cookie'] = True
-                    params2['header'] = {'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
-                    sleep(4)
-                    sts, data = self.cm.getPage(verUrl, params2, post_data)
-                except:
-                    printExc()
-            else:
-                break
-        return sts, data
-    '''
-        
+    
     def getPage(self, url, params={}, post_data=None):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
         params.update({'header':HTTP_HEADER})
@@ -218,15 +105,6 @@ class MoviesHDCO(CBaseHostClass):
                 self.addDir(params)
             else: self.addVideo(params)
             
-    def getDiscaeredGenres(self):
-        printDBG("MoviesHDCO.getDiscaeredGenres")
-        tmpList = []
-        catUrl = self.MAIN_URL + 'watch-online/category/%s/page/{page}?display=tube&filtre={sort_by}'
-        for item in self.DISCAVERED_MOVIE_CATEGORY:
-            #.capitalize()
-            tmpList.append({'title': item.upper(), 'url':catUrl % item})
-        return tmpList
-            
     def listGenres(self, cItem, category):
         printDBG("MoviesHDCO.listMoviesGenres")
         tmpList = [{'title': _("***Any***"), 'url':self.MAIN_URL+'/page/{page}?display=tube&filtre={sort_by}'}]
@@ -242,8 +120,6 @@ class MoviesHDCO(CBaseHostClass):
                 title  = self.cleanHtmlStr(item)
                 tmpList.append({'title': title, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)+'/page/{page}?display=tube&filtre={sort_by}'})
         
-        #if 1 == len(tmpList):
-        #    tmpList.extend( self.getDiscaeredGenres() )
         mainItem = dict(cItem)
         mainItem.update({'category':category})
         self.listsTab(tmpList, mainItem)

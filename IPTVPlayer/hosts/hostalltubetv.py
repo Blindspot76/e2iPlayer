@@ -135,11 +135,11 @@ class AlltubeTV(CBaseHostClass):
             
     def listLatestAddedMovies(self, cItem):
         printDBG("AlltubeTV.listLatestAddedMovies")
-        self._listItemsTab(cItem, '<div class="custome-panel">', '<div class="custome-panel">', '<div class="col-sm-6">', category='video')
+        self._listItemsTab(cItem, 'statnio dodane Filmy', 'statnio dodane seriale', '<div class="col-sm-6">', category='video')
         
     def listLatestAddedSeries(self, cItem, category):
         printDBG("AlltubeTV.listLatestAddedSeries")
-        self._listItemsTab(cItem, 'statnio dodane seriale</h2>', '<div class="col-sm-4">', '<div class="col-sm-6">', category)
+        self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-4">', '<div class="col-sm-6">', category)
             
     def fillFilterCache(self, url):
         sts, data = self.cm.getPage(url)
