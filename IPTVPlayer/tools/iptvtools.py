@@ -32,11 +32,17 @@ import codecs
 try:    import json
 except: import simplejson as json
 ###################################################
-def GetDefaultLang():
-    try: defaultLanguage = language.getActiveLanguage().split('_')[0]
-    except:
-        printExc()
-        defaultLanguage = 'en'
+def GetDefaultLang(full=False):
+    if full:
+        try: defaultLanguage = language.getActiveLanguage()
+        except:
+            printExc()
+            defaultLanguage = 'en_EN' 
+    else:
+        try: defaultLanguage = language.getActiveLanguage().split('_')[0]
+        except:
+            printExc()
+            defaultLanguage = 'en'
     return defaultLanguage
 
 class eConnectCallbackObj:

@@ -41,7 +41,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'alltube.tv'
+    return 'yify.tv'
 
 class YifyTV(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
