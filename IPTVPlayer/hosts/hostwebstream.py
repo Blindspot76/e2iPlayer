@@ -135,7 +135,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://play.tvip.ga/iptvde.m3u',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'name': 'm3u',                 'title': 'Greek-IPTV',                        'url': 'https://raw.githubusercontent.com/free-greek-iptv/greek-iptv/master/greek.m3u', 'icon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Coat_of_arms_of_Greece.svg/538px-Coat_of_arms_of_Greece.svg.png'}, \
                         {'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
-                        #{'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
+                        {'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'name': 'others',              'title': 'Others',                            'url': '',                                                                    'icon': ''}, \
                         {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
@@ -498,20 +498,18 @@ class HasBahCa(CBaseHostClass):
     def getTyperTvLink(self, url):
         return self.typerTvApi.getVideoLink(url)
         
-    def getWagasWorldList(self, url):
+    def getWagasWorldList(self, cItem):
         if None == self.wagasWorldApi: 
             self.wagasWorldApi = WagasWorldApi()
-        if 0: #'' == url:
-            tmpList = self.wagasWorldApi.getCategoriesList()
-            for item in tmpList:
-                params = dict(item)
-                params.update({'name':'wagasworld.com'})
+
+        tmpList = self.wagasWorldApi.getChannelsList(cItem)
+        for item in tmpList: 
+            params = dict(item)
+            params.update({'name':'wagasworld.com'})
+            if 'video' == item['type']:
+                self.playVideo(params)
+            else:
                 self.addDir(params)
-        else:
-            tmpList = self.wagasWorldApi.getChannelsList(url)
-            for item in tmpList: 
-                item.update({'name':'wagasworld.com'})
-                self.playVideo(item)
             
     def getWagasWorldLink(self, url):
         return self.wagasWorldApi.getVideoLink(url)
@@ -857,7 +855,7 @@ class HasBahCa(CBaseHostClass):
             self.getTyperTvList(url)
     #wagasworld.com items
         elif name == "wagasworld.com":
-            self.getWagasWorldList(url)
+            self.getWagasWorldList(self.currItem)
     #weeb.tv items
         elif name == 'weeb.tv':
             self.getWeebTvList(url)
