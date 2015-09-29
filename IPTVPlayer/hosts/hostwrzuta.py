@@ -1,19 +1,33 @@
 # -*- coding: utf-8 -*-
-# based on plugin.video.polishtv.live.r670
-
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, CSelOneLink, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import re, urllib
-from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
+from datetime import timedelta
+import re
+import urllib
+import base64
+try:    import json
+except: import simplejson as json
+from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+###################################################
+
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Screens.MessageBox import MessageBox
 ###################################################
 
 ###################################################
@@ -31,131 +45,84 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'Wrzuta Player'
-    
+    return 'wrzuta.pl'
+
 class Wrzuta(CBaseHostClass):
-    SERVICE = 'wrzuta'
-    MAINURL = 'http://www.wrzuta.pl'
-    TOPURL = MAINURL + '/filmy/popularne/'
-    NEWURL = MAINURL + '/filmy/najnowsze/'
-    CHANURL= MAINURL + '/kanaly'
-    CHANLIST = '/wrzucone/katalogi/nazwa_rosnaca/'
-
-    SERVICE_MENU_TABLE =  {
-        1: "Najpopularniejsze",
-        2: "Najnowsze",
-        3: "Kanały",
-        6: "Historia Wyszukiwania",
-        5: "Wyszukaj",
-    }
-
-    CATEGORIES = {
-        '': 'Wszystkie',
-        'muzyka': 'Muzyka',
-        'filmy_trailery': 'Filmy & Trailery',
-        'seriale_animacje': 'Seriale & Animacje',
-        'sport': 'Sport',
-        'motoryzacja': 'Motoryzacja',
-        'humor_rozrywka': 'Humor & Rozrywka',
-        'zwierzaki': 'Zwierzaki',
-        'gry_tech': 'Gry & Tech',
-        'erotyka': 'Erotyka'
-    }
-    def __init__(self):
-        printDBG('WRZUTA.__init__')
-        CBaseHostClass.__init__(self, {'history':'wrzuta.pl'})
+    MAIN_URL    = 'http://www.wrzuta.pl/'
+    SEARCH_URL  = MAIN_URL + 'szukaj/audio/'
+    MAIN_CAT_TAB = [{'category':'music_cats',            'title': 'Muzyka', 'url':MAIN_URL + 'audio/najnowsze' },
+                    {'category':'search',                'title': _('Search'), 'search_item':True},
+                    {'category':'search_history',        'title': _('Search history')} ]
+                    
     
-    def setTable(self):
-        printDBG('WRZUTA.setTable') 
-        return self.SERVICE_MENU_TABLE
+    def __init__(self):
+        CBaseHostClass.__init__(self, {'history':'Wrzuta', 'cookie':'wrzuta.cookie'})
+        self.filterCache = {}
 
-    def listsMainMenu(self, table):
-        printDBG('WRZUTA.listsMainMenu') 
-        for num, val in table.items():
-            params = {'name': 'main-menu','category': val, 'title': val, 'icon': ''}
-            self.addDir(params)
-
-    def listsCategories(self, url, category):
-        printDBG('WRZUTA.listsCategories') 
-        for num, val in self.CATEGORIES.items():
-            params = {'name': category, 'page': url+num, 'title': val, 'icon': ''}
-            self.addDir(params)
-
-    def listsChannels(self, url, page, category):
-        printDBG('WRZUTA.listsChannels') 
-        
-        sts, data = self.cm.getPage(url+'/'+page)
-        if not sts: return
-        
-        r = re.compile('class="big-avatar">.+?<img src="(.+?)".+?<a href="(.+?)" class="channel-name">(.+?)</a>', re.DOTALL).findall(data)
-        if len(r)>0:
-            for i in range(len(r)):
-                params = {'name': 'chanvideo', 'title': r[i][2], 'page': r[i][1], 'icon': r[i][0]}
+    
+    def listsTab(self, tab, cItem, type='dir'):
+        printDBG("Wrzuta.listsTab")
+        for item in tab:
+            params = dict(cItem)
+            params.update(item)
+            params['name']  = 'category'
+            if type == 'dir':
                 self.addDir(params)
-        r2 = re.compile('<a class="paging-next" rel="(.+?)"').findall(data)
-        if len(r2)>0:
-            params = {'name': 'nextpage', 'category': category, 'title': 'Następna strona', 'page': r2[0], 'icon': ''}
-            self.addDir(params)
-
-    def listsChanDirs(self, url, page): #img maybe?
-        printDBG('WRZUTA.listsChanDirs')
-        sts, data = self.cm.getPage(url+self.CHANLIST+page)
-        if not sts: return 
-        r = re.compile('<a href="(.+?)" class="file-name">(.+?)</a>').findall(data)
-        printDBG("tst2 "+str(r))
-        if len(r)>0:
-            params = {'name': 'chandirvideo', 'title': 'Ostatnio dodane', 'page': url+'/materialy/filmy', 'icon': ''}
-            self.addDir(params)
-            for i in range(len(r)):
-                params = {'name': 'chandirvideo', 'title': r[i][1], 'page': r[i][0], 'icon': ''}
-                self.addDir(params)
-        r2 = re.compile('<a class="paging-next" rel="(.+?)"').findall(data)
-        if len(r2)>0:
-            params = {'name': 'chanvideo', 'category': r2[0], 'title': 'Następna strona', 'page': url, 'icon': ''}
-            self.addDir(params)
-
-    def listsVideo(self,url, name, category): #Duration #mod & join next
-        printDBG('WRZUTA.listsVideo')
-        if category != '': nUrl = url+'/'+category
-        else: nUrl = url
-
-        sts, data = self.cm.getPage(nUrl)
+            else: self.addVideo(params)
+        
+    def listMusicCategories(self, cItem, category):
+        printDBG("Wrzuta.listMusicCategories [%s]" % cItem)
+        sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="music-menu">', '<div class="advertisement', False)[1]
+        data = data.split('</a>')
+        if len(data): del data[-1]
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            title  = self.cleanHtmlStr( item )
+            params = dict(cItem)
+            params.update( {'title':title, 'url':url} )
+            params['category'] = category
+            self.addDir(params)
+    
+    def listItems(self, cItem, m1 = '<div class="music-cat">', m2 = '</ul>', sp ='</li>'):
+        printDBG("Wrzuta.listItems [%s]" % cItem)
+        url = cItem['url']
+        page = cItem.get('page', 1)
+        if url[-1] != '/': url += '/{0}'.format(page)
         
-        r2 = re.search('<a class="paging-next" rel="([^"]+?)"', data)
-        mEnd = '<div class="video-cat">'
-        if mEnd not in data: mEnd = '<div id="right"'
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="content"', mEnd, withMarkers = False)
-        if not sts:
-            printDBG("listsVideo no data beetween markers")
-            data = ''
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        nextPage = False
+        if '<a class="paging-next"' in data:
+            nextPage = True
         
-        r = re.compile('<img src="([^"]+?)".+? (?:height="81" width="144"|width="144" height="81").+?class="(?:box-entry-duration|mini-time|file-time)">(.+?)<.+?<div class="(?:file-info|info-inside|file-detail)">.+?<a href="(.+?)".+?>(.+?)</a>', re.DOTALL).findall(data)
-        if len(r)>0:
-            for i in range(len(r)):
-                params = {'title': self.cm.html_entity_decode(r[i][3].strip()), 'page': r[i][2], 'icon': r[i][0]}
-                self.addVideo(params)
-        if r2:
-            params = {'name': name, 'category': r2.group(1), 'title': 'Następna strona', 'page': url, 'icon': ''}
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
+        data = data.split(sp)
+        if len(data): del data[-1]
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title  = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
+            desc   = self.cleanHtmlStr( item )
+            params = dict(cItem)
+            params.update( {'title':title, 'url':url, 'icon':icon, 'desc':desc} )
+            self.addVideo(params)
+        if nextPage:
+            params = dict(cItem)
+            params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
 
-    def listsChanVideo(self, url, name, category): #Duration
-        printDBG('WRZUTA.listsChanVideo')
-        sts, data = self.cm.getPage(url+'/'+category)
-        if not sts: return 
-        r = re.compile('<img (?:width="184" height="104"|width="144" height="81") src="(.+?)".+?<div class="file-time">(.+?)</div>.+?<a class="file-name" href="(.+?)">(.+?)</a>', re.DOTALL).findall(data)
-        if len(r)>0:
-            for i in range(len(r)):
-                params = {'title': self.cm.html_entity_decode(r[i][3].strip()), 'page': r[i][2], 'icon': r[i][0]}
-                self.addVideo(params)
-        r2 = re.compile('<a class="paging-next" rel="(.+?)"').findall(data)
-        if len(r2)>0:
-            params = {'name': name, 'category': r2[0], 'title': 'Następna strona', 'page': url, 'icon': ''}
-            self.addDir(params)
-
-    def getVideoLinks(self, url):
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("Wrzuta.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        
+        currItem = dict(cItem)
+        currItem['url'] = self.SEARCH_URL + urllib.quote_plus(searchPattern)
+        self.listItems(currItem, m1='<ul class="result-files music">')
+        
+    def getLinksForVideo(self, cItem):
         printDBG('WRZUTA.getVideoLinks')
-        videoUrls = self.up.getVideoLinkExt(url)
+        videoUrls = self.up.getVideoLinkExt(cItem['url'])
         
         if 0 < len(videoUrls):
             max_bitrate = int(config.plugins.iptvplayer.wrzutaDefaultformat.value)
@@ -168,115 +135,115 @@ class Wrzuta(CBaseHostClass):
                     return 0
             videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
             if config.plugins.iptvplayer.wrzutaUseDF.value:
-                videoUrls = [videoUrls[0]]            
+                videoUrls = [videoUrls[0]]      
+        for idx in range(len(videoUrls)):
+            videoUrls[idx]['need_resolve'] = 0
         return videoUrls
-
-
+        
     def getFavouriteData(self, cItem):
-        return cItem['page']
+        return cItem['url']
         
     def getLinksForFavourite(self, fav_data):
-        return self.getVideoLinks(fav_data)
-    
+        return self.getLinksForVideo({'url':fav_data})
+
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
-        printDBG( "WRZUTA.handleService %d" % refresh)
-        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        printDBG('handleService start')
         
-        name = self.currItem.get( "name", None )
-        title = self.currItem.get( "title", '')
-        category = self.currItem.get( "category", '')
-        page = self.currItem.get( "page", '')
-        icon = self.currItem.get( "icon", '')
-        link = self.currItem.get( "url", '')
-        action = self.currItem.get( "action", '')
-        path = self.currItem.get( "path", '')
+        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| [%s] " % name )
+        name     = self.currItem.get("name", '')
+        category = self.currItem.get("category", '')
+        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
-
-        if category == None: category = ''
-        if page == None: page = ''
-
+        
     #MAIN MENU
         if name == None:
-            self.listsMainMenu(self.SERVICE_MENU_TABLE)
-    #NAJPOPULARNIEJSZE
-        elif category == self.setTable()[1]:
-            self.listsCategories(self.TOPURL, 'topvideo')
-    #NAJNOWSZE
-        elif category == self.setTable()[2]:
-            self.listsCategories(self.NEWURL, 'newvideo')
-    #KANAŁY
-        elif category == self.setTable()[3]:
-            self.listsChannels(self.CHANURL, page, category)
-    #WYSZUKAJ
-        elif category == self.setTable()[5]:
-            url = self.MAINURL + '/szukaj/filmow/' + urllib.quote_plus(searchPattern)
-            self.listsVideo(url, 'servideo', '')
-    #HISTORIA WYSZUKIWANIA
-        elif category == self.setTable()[6]:
-            self.listsHistory()
-    #LISTA FILMÓW
-        elif name == 'topvideo' or name == 'newvideo' or name == 'servideo':
-            self.listsVideo(page, name, category)
-
-        elif name == 'chanvideo':
-            self.listsChanDirs(page, category)
-
-        elif name == 'chandirvideo':
-            self.listsChanVideo(page, name, category)
-    
+            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+    #CATEGORIES
+        elif category == 'music_cats':
+            self.listMusicCategories(self.currItem, 'category')
+    #CATEGORY
+        elif category == 'category':
+            self.listItems(self.currItem)
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+        else:
+            printExc()
+        
+        CBaseHostClass.endHandleService(self, index, refresh)
 class IPTVHost(CHostBase):
+
     def __init__(self):
         CHostBase.__init__(self, Wrzuta(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-        
-    def getLogoPath(self):  
-        return RetHost(RetHost.OK, value = [ GetLogoDir('wrzutalogo.png') ])
+
+    def getLogoPath(self):
+        return RetHost(RetHost.OK, value = [GetLogoDir('wrzutalogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
         retlist = []
         if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        urlList = self.host.getVideoLinks(self.host.currList[Index]["page"])
+        
+        urlList = self.host.getLinksForVideo(self.host.currList[Index])
         for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], 0))
-        return RetHost(RetHost.OK, value = retlist)
+            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
 
+        return RetHost(RetHost.OK, value = retlist)
+    # end getLinksForVideo
+    
+    
     def converItem(self, cItem):
         hostList = []
+        searchTypesOptions = [] # ustawione alfabetycznie
+        #searchTypesOptions.append((_("Movies"), "movies"))
+        #searchTypesOptions.append((_("Series"), "series"))
+    
         hostLinks = []
         type = CDisplayListItem.TYPE_UNKNOWN
-        
-        url = ''
-        desc = ''
-        if cItem['type'] in ['category']:
-            if cItem.get('title', '')  == 'Wyszukaj':
+        possibleTypesOfSearch = None
+
+        if 'category' == cItem['type']:
+            if cItem.get('search_item', False):
                 type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
             else:
                 type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type']  == 'video':
+        elif cItem['type'] == 'video':
             type = CDisplayListItem.TYPE_VIDEO
-            url = cItem.get('page', '')
-            hostLinks.append(CUrlItem('', url, 0))
+        elif 'more' == cItem['type']:
+            type = CDisplayListItem.TYPE_MORE
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
             
-        name = cItem.get('title', '')
-        icon = cItem.get('icon', '')
-        desc = ' ' + cItem.get('page', '')
-
-        return CDisplayListItem(name = name,
-                                description = desc,
-                                type = type,
-                                urlItems = hostLinks,
-                                urlSeparateRequest = 1,
-                                iconimage = icon,
-                                possibleTypesOfSearch = [])
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
+            
+        title       =  cItem.get('title', '')
+        description =  cItem.get('desc', '')
+        icon        =  cItem.get('icon', '')
         
+        return CDisplayListItem(name = title,
+                                    description = description,
+                                    type = type,
+                                    urlItems = hostLinks,
+                                    urlSeparateRequest = 1,
+                                    iconimage = icon,
+                                    possibleTypesOfSearch = possibleTypesOfSearch)
+    # end converItem
+
     def getSearchItemInx(self):
-        # Find 'Wyszukaj' item
         try:
             list = self.host.getCurrList()
             for i in range( len(list) ):
-                if list[i]['category'] == 'Wyszukaj':
+                if list[i]['category'] == 'search':
                     return i
         except:
             printDBG('getSearchItemInx EXCEPTION')
@@ -287,10 +254,12 @@ class IPTVHost(CHostBase):
             list = self.host.getCurrList()
             if 'history' == list[self.currIndex]['name']:
                 pattern = list[self.currIndex]['title']
-                self.host.history.addHistoryItem( pattern )
+                search_type = list[self.currIndex]['search_type']
+                self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
+                self.searchType = search_type
         except:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
+            self.searchType = ''
         return
-        
