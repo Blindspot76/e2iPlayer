@@ -366,18 +366,34 @@ class HasBahCa(CBaseHostClass):
             return
         data = data.replace("\r","\n").replace('\n\n', '\n').split('\n')
         printDBG("[\n%s\n]" % data)
-        title = ''
+        title    = ''
+        nr       = ''
+        catTitle = ''
+        icon     = ''
         for item in data:
             if item.startswith('#EXTINF:'):
-                try:    title = item.split(',')[1]
-                except: title = item
+                try:    
+                    nr       = self.cm.ph.getDataBeetwenMarkers(item, 'tvg-id="', '"', False)[1]
+                    catTitle = self.cm.ph.getDataBeetwenMarkers(item, 'group-title="', '"', False)[1]
+                    icon     = self.cm.ph.getDataBeetwenMarkers(item, 'tvg-logo="', '"', False)[1]
+                    title    = item.split(',')[1]
+                except: 
+                    title = item
             else:
                 if 0 < len(title):
                     item = item.replace('rtmp://$OPT:rtmp-raw=', '')
                     cTitle = re.sub('\[[^\]]*?\]', '', title)
                     if len(cTitle): title = cTitle
                     itemUrl = self.up.decorateParamsFromUrl(item)
-                    params = {'title': title, 'url': itemUrl, 'desc': 'Protokół: ' + itemUrl.meta.get('iptv_proto', '')}
+                    if 'http://wownet.ro/' in itemUrl:
+                        icon = 'http://wownet.ro/logo/' + icon
+                    else: icon = ''
+                    if '' != catTitle:
+                        desc = catTitle + ', '
+                    else: desc = ''
+                    desc += _('proto: ') + itemUrl.meta.get('iptv_proto', '')
+                    
+                    params = {'title': title, 'url': itemUrl, 'icon':icon, 'desc':desc}
                     self.playVideo(params)
                     title = ''
 
