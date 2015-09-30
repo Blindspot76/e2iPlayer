@@ -506,24 +506,33 @@ class pageParser:
     def __init__(self):
         self.cm = common()
         self.captcha = captchaParser()
-        
-        try:
-            from youtubeparser import YouTubeParser
-            self.ytParser = YouTubeParser()
-        except:
-            printExc()
-            self.ytParser = None
-        try:
-            from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.vevo import VevoIE
-            self.vevoIE = VevoIE()
-        except:
-            self.vevoIE = None
-            printExc()
+        self.ytParser = None
+        self.vevoIE = None
         
         #config
         self.COOKIE_PATH = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/cache/')
         self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
+        
+    def getYTParser(self):
+        if self.ytParser == None:
+            try:
+                from youtubeparser import YouTubeParser
+                self.ytParser = YouTubeParser()
+            except:
+                printExc()
+                self.ytParser = None
+        return self.ytParser
+        
+    def getVevoIE(self):
+        if self.vevoIE == None:
+            try:
+                from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.vevo import VevoIE
+                self.vevoIE = VevoIE()
+            except:
+                self.vevoIE = None
+                printExc()
+        return self.vevoIE
         
     def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']'):
         linksTab = []
@@ -1554,7 +1563,7 @@ class pageParser:
                 formats = "mp4"
                 bitrate = "360"
             
-            tmpTab = self.ytParser.getDirectLinks(url, formats)
+            tmpTab = self.getYTParser().getDirectLinks(url, formats)
             # move default URL to the TOP of list
             if 1 < len(tmpTab):
                 def __getLinkQuality( itemLink ):
@@ -3527,8 +3536,8 @@ class pageParser:
         
     def parserVEVO(self, baseUrl):
         printDBG("parserVEVO baseUrl[%r]" % baseUrl )
-        self.vevoIE._real_initialize()
-        videoUrls = self.vevoIE._real_extract(baseUrl)['formats']
+        self.getVevoIE()._real_initialize()
+        videoUrls = self.getVevoIE()._real_extract(baseUrl)['formats']
         
         for idx in range(len(videoUrls)):
             width   = int(videoUrls[idx].get('width', 0))

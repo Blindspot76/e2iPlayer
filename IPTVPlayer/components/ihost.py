@@ -366,7 +366,10 @@ class CBaseHostClass:
         
         proxyURL = params.get('proxyURL', '')
         useProxy = params.get('useProxy', False)
-        self.cm = common(proxyURL, useProxy)
+        if 'MozillaCookieJar' == params.get('cookie_type', ''):
+            self.cm = common(proxyURL, useProxy, True)
+        else:
+            self.cm = common(proxyURL, useProxy)
 
         self.currList = []
         self.currItem = {}

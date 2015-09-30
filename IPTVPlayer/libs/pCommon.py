@@ -220,10 +220,12 @@ class common:
                 outParams['proxy_gateway'] = url.meta['iptv_proxy_gateway']
         return outParams, postData
     
-    def __init__(self, proxyURL= '', useProxy = False):
+    def __init__(self, proxyURL= '', useProxy = False, useMozillaCookieJar=False):
         self.proxyURL = proxyURL
         self.useProxy = useProxy
         self.geolocation = {}
+        self.useMozillaCookieJar = useMozillaCookieJar
+        
         
     def getCountryCode(self, lower=True):
         if 'countryCode' not in self.geolocation:
@@ -237,7 +239,10 @@ class common:
         
     def getCookieItem(self, cookiefile, item):
         ret = ''
-        cj = cookielib.LWPCookieJar()
+        if not self.useMozillaCookieJar:
+            cj = cookielib.LWPCookieJar()
+        else:
+            cj = cookielib.MozillaCookieJar()
         cj.load(cookiefile, ignore_discard = True)
         for cookie in cj:
             if cookie.name == item: ret = cookie.value
@@ -335,8 +340,10 @@ class common:
                 response = urllib2.urlopen(req)
             return response
         
-        cj = cookielib.LWPCookieJar()
-
+        if not self.useMozillaCookieJar:
+            cj = cookielib.LWPCookieJar()
+        else:
+            cj = cookielib.MozillaCookieJar()
         response = None
         req      = None
         out_data = None
