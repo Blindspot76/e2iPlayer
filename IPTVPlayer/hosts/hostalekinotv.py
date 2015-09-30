@@ -502,7 +502,8 @@ class AleKinoTV(CBaseHostClass):
                 data = re.search("ShowNewPlayer\('([^']+?)'", data)
             else:
                 data = re.search("ShowNormalPlayer\('([^']+?)'", data)
-            if data: direct_url = data.group(1) + '?start=0'
+            if data: direct_url = data.group(1) 
+            #+ '?start=0'
             
         else:
             data = re.search('src="([^"]+?)"', data)
