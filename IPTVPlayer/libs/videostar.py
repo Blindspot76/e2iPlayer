@@ -236,7 +236,7 @@ class VideoStarApi:
                             channelID = data['stream_channel']['channel_id']
                             #if url.startswith('https://'): url = 'http://' + url[8:]
                             server = self.cm.ph.getSearchGroups(url, r'://([^/]+?)/')[0]
-                            meta['iptv_m3u8_custom_base_link'] = 'http://%s:1935/%s/smil:%s.ism/list.m3u8' % (server, channelID, channelID)
+                            meta['iptv_m3u8_custom_base_link'] = 'http://%s:1935/%s/smil:%s.ism/list.m3u8' % (server, channelID, 'basic')
                             meta['iptv_proxy_gateway'] = self.proxy_gateway_url
                             meta['Referer'] =  self.proxy_gateway_url
                             meta['User-Agent'] = 'Mozilla/5.0'
