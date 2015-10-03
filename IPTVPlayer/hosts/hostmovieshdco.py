@@ -68,7 +68,86 @@ class MoviesHDCO(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesHDCO', 'cookie':'movieshdco.cookie'})
     
+    def calcAnswer(self, data):
+        sourceCode = data
+        try:
+            code = compile(sourceCode, '', 'exec')
+        except:
+            printExc()
+            return 0
+        vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
+        vLocals = { 'paramsTouple': None }
+        try:
+            exec( code, vGlobals, vLocals )
+        except:
+            printExc()
+            return 0
+        return vLocals['a']
+    
     def getPage(self, url, params={}, post_data=None):
+        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':{'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}})
+        sts, data = self.cm.getPage(url, params, post_data)
+        
+        current = 0
+        while current < 10:
+            current += 1
+            if not sts and None != data:
+                doRefresh = False
+                try:
+                    verData = data.fp.read()
+                    dat = self.cm.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
+                    tmp = self.cm.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
+                    varName = tmp[0]
+                    expresion= ['a=%s' % tmp[1]]
+                    e = re.compile('%s([-+*])=([^;]+?);' % varName).findall(dat)
+                    for item in e:
+                        expresion.append('a%s=%s' % (item[0], item[1]) )
+                    
+                    for idx in range(len(expresion)):
+                        e = expresion[idx]
+                        e = e.replace('!+[]', '1')
+                        e = e.replace('!![]', '1')
+                        e = e.replace('=+(', '=int(')
+                        if '+[]' in e:
+                            e = e.replace(')+(', ')+str(')
+                            e = e.replace('int((', 'int(str(')
+                            e = e.replace('(+[])', '(0)')
+                            e = e.replace('+[]', '')
+                        expresion[idx] = e
+                    
+                    #printDBG("-------------------------------------")
+                    #printDBG(expresion)
+                    #printDBG("-------------------------------------")
+                    answer = self.calcAnswer('\n'.join(expresion)) + 11
+                    #printDBG("-------------------------------------")
+                    #printDBG(answer)
+                    #printDBG("-------------------------------------")
+                    #printDBG(data.fp.info())
+                    #printDBG(verData)
+                    refreshData = data.fp.info().get('Refresh', '')
+                    #verUrl = self._getFullUrl( refreshData.split('URL=')[1] )
+                    
+                    verData = self.cm.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
+                    verUrl =  self._getFullUrl( self.cm.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
+                    get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
+                    get_data['jschl_answer'] = answer
+                    verUrl += '?'
+                    for key in get_data:
+                        verUrl += '%s=%s&' % (key, get_data[key])
+                    verUrl = self._getFullUrl( self.cm.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
+                    params2 = dict(params)
+                    params2['load_cookie'] = True
+                    params2['save_cookie'] = True
+                    params2['header'] = {'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
+                    sleep(4)
+                    sts, data = self.cm.getPage(verUrl, params2, post_data)
+                except:
+                    printExc()
+            else:
+                break
+        return sts, data
+        
+    def getPage2(self, url, params={}, post_data=None):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
         params.update({'header':HTTP_HEADER})
         
