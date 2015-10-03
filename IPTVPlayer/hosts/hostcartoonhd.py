@@ -311,7 +311,7 @@ class CartoonHD(CBaseHostClass):
         elid = self.cm.ph.getSearchGroups(data, 'data-movie="([^"]+?)"')[0]
         if '' == elid: elid = self.cm.ph.getSearchGroups(data, 'elid="([^"]+?)"')[0]
         if '' == elid: return []
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'Change Source/Quality', '</select>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<select', '</select>', False)[1]
         hostings = []
         data = re.compile('<option[^>]*?value="([^"]+?)"[^>]*?>([^<]+?)</option>').findall(data)
         for item in data:
