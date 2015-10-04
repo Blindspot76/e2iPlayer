@@ -54,7 +54,7 @@ class NaszeKino(CBaseHostClass):
                     {'category':'search',                          'title': _('Search'), 'search_item':True, 'icon':LOGO_URL},
                     {'category':'search_history',                  'title': _('Search history'), 'icon':LOGO_URL} ]
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'NaszeKino', 'cookie':'tvproart.cookie'})
+        CBaseHostClass.__init__(self, {'history':'NaszeKino', 'cookie':'naszekino.cookie'})
         self.categories = {}
         
     def _getFullUrl(self, url):
