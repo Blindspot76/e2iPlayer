@@ -44,6 +44,7 @@ def gettytul():
     return 'pl.wwe.com'
 
 class PLWWECOM(CBaseHostClass):
+    HTTP_HEADER= {  'User-Agent'  : 'Mozilla/5.0' }
     MAIN_URL    = 'http://pl.wwe.com/'
     BASE_URL    = MAIN_URL +'_hn:component-rendering%7C'
     SEARCH_URL  = MAIN_URL + '?q='
@@ -74,6 +75,8 @@ class PLWWECOM(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'PLWWECOM', 'cookie':'PLWWECOM.cookie'})
+        self.countryCode = ''
+        self.proxy_gateway = 'http://darmowe-proxy.pl/browse.php?u={0}&b=28&f=norefer'
         
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
@@ -157,6 +160,9 @@ class PLWWECOM(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: urlTab
         
+        if '' == self.countryCode:
+            self.countryCode = self.cm.getCountryCode()
+        
         baseUrl     = 'http://c.brightcove.com/services/viewer/htmlFederated?playerID={0}&playerKey={1}&purl={2}&%40videoPlayer={3}&flashID={4}'
         data        = self.cm.ph.getDataBeetwenMarkers(data, '<object id=', '</object>', True)[1]
         playerID    = self.cm.ph.getSearchGroups(data, ' name="playerID"[^>]+?value="([^"]+?)"')[0]
@@ -165,7 +171,14 @@ class PLWWECOM(CBaseHostClass):
         flashID     = self.cm.ph.getSearchGroups(data, ' id="([^"]+?)"')[0]
         url = baseUrl.format(playerID, playerKey, urllib.quote(cItem['url']), videoPlayer, flashID)
         
-        sts, data = self.cm.getPage(url)
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        if 'pl' != self.countryCode:
+            HTTP_HEADER['Referer'] = self.proxy_gateway
+            params =  {'header' : HTTP_HEADER, 'proxy_gateway':self.proxy_gateway}
+        else:
+            params =  {}
+            
+        sts, data = self.cm.getPage(url, params)
         if not sts: urlTab
         data = self.cm.ph.getDataBeetwenMarkers(data, 'var experienceJSON = {', '};', False)[1]
         data = '{%s}' % data
