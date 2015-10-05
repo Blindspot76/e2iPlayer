@@ -147,7 +147,7 @@ class NaszeKino(CBaseHostClass):
             params = dict(cItem)
             params.update({'desc':self.cleanHtmlStr(desc)})
             params.update(base)
-            if '-serial-' in url or '-sezon-' in url:
+            if '-serial-' in base['url'] or '-sezon-' in base['url']:
                 params['category'] = category
                 self.addDir(params)
             else:
