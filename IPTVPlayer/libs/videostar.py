@@ -94,14 +94,12 @@ class VideoStarApi:
         self.channelsList = []
         
     def getProxyGatewayIP(self):
-        url = 'http://api.ipinfodb.com/v3/ip-city/?key=24e822dc48a930d92b04413d1d551ae86e09943a829f971c1c83b7727a16947f&format=json'
+        url = 'http://showip.net/'
         sts, data = self.cm.getPage(url, {'header':{'User-Agent':'Mozilla/5.0', 'Referer':self.proxy_gateway_url}, 'proxy_gateway':self.proxy_gateway_url})
         my_ip = ''
         if sts:
             try:
-                printDBG(data)
-                data = byteify(json.loads(data))
-                my_ip = data['ipAddress']
+                my_ip = self.cm.ph.getSearchGroups(data, 'name="check_ip"[^>]+?value="([^"]+?)"')[0]
                 printDBG('getProxyGatewayIP my_ip[%s]' % my_ip)
             except:
                 printExc()
