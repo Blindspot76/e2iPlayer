@@ -2618,10 +2618,13 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
         if not sts: return False
         def _getParam(name):
-            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
-        swfUrl = _getParam('flashplayer')
-        url    = _getParam('streamer')
-        file   = _getParam('file')
+            return self.cm.ph.getDataBeetwenMarkers(data, "'%s':" % name, ',', False)[1].strip() + ", '{0}'".format(name)
+            #self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
+        def _getParamVal(value, name):
+            return value
+        swfUrl = unpackJS(_getParam('flashplayer'), _getParamVal)
+        url    = unpackJS(_getParam('streamer'), _getParamVal)
+        file   = unpackJS(_getParam('file'), _getParamVal)
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
             printDBG(url)
