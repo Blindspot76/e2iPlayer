@@ -173,11 +173,11 @@ class AnyFiles(CBaseHostClass):
         if None == post_data:
             sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
             if not sts: return
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<form class', '</form>', False)[1]
-            data = re.compile('name="([^"]+?)"[^<]*?value="([^"]+?)"').findall(data)
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'POST', ';', False)[1]
+            data = re.compile('[ ]*?se:[ ]*?"([^"]+?)"').findall(data)
             post_data = {}
             for item in data:
-                post_data[item[0]] = item[1]
+                post_data['se'] = item
             post_data['q'] = searchPattern
             cItem = dict(cItem)
             cItem['post_data'] = post_data
