@@ -255,6 +255,8 @@ class urlparser:
                        'castamp.com':          self.pp.parserCASTAMPCOM    ,
                        'crichd.tv':            self.pp.parserCRICHDTV      ,
                        'castto.me':            self.pp.parserCASTTOME      ,
+                       'deltatv.pw':           self.pp.parserDELTATVPW     ,
+                       'pxstream.tv':          self.pp.parserPXSTREAMTV    ,
                        'filenuke.com':         self.pp.parserFILENUKE      ,
                        'sharesix.com':         self.pp.parserFILENUKE      ,
                        'thefile.me':           self.pp.parserTHEFILEME     ,
@@ -407,6 +409,16 @@ class urlparser:
                 fid = self.cm.ph.getSearchGroups(data, """fid=['"]([0-9]+?)['"]""")[0]
                 videoUrl = 'http://static.castto.me/embed.php?channel={0}&vw=710&vh=460'.format(fid)
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'deltatv.pw' in data:
+                id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
+                videoUrl = 'http://deltatv.pw/stream.php?id=' + id
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'pxstream.tv' in data:
+                id = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
+                videoUrl = 'http://pxstream.tv/embed.php?file=' + id
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif 'goodcast.co' in data:
                 id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
@@ -3117,6 +3129,58 @@ class pageParser:
             return url
         return False
         
+    def parserDELTATVPW(self, baseUrl):
+        printDBG("parserDELTATVPW baseUrl[%s]" % baseUrl)
+        
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, "%s=([^&]+?)&" % name)[0] 
+        swfUrl = "http://cdn.deltatv.pw/players.swf"
+        url    = _getParam('streamer')
+        file   = _getParam('file')
+        if '' != file and '' != url:
+            url += ' playpath=%s swfUrl=%s token=%s pageUrl=%s live=1 ' % (file, swfUrl, 'Fo5_n0w?U.rA6l3-70w47ch', baseUrl)
+            printDBG(url)
+            return url
+        return False
+        
+    def parserPXSTREAMTV(self, baseUrl):
+        printDBG("parserPXSTREAMTV baseUrl[%s]" % baseUrl)
+        
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        printDBG(data)
+        
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, """%s:[^'^"]*?['"]([^'^"]+?)['"]""" % name)[0] 
+        swfUrl = "http://pxstream.tv/player510.swf"
+        url    = _getParam('streamer')
+        file   = _getParam('file')
+        if '' != file and '' != url:
+            url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
+            printDBG(url)
+            return url
+        return False
+    
     def parserFILENUKE(self, baseUrl):
         printDBG("parserFILENUKE baseUrl[%s]" % baseUrl)
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0' }
