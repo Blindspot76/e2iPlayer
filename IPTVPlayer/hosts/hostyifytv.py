@@ -9,12 +9,14 @@ from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
 from datetime import datetime
+import string
 import re
 import urllib
 import base64
@@ -199,6 +201,32 @@ class YifyTV(CBaseHostClass):
         currItem['url'] = self.SRCH_URL + urllib.quote_plus(searchPattern)
         self.listItems(currItem)
         
+    def unpackJS(self, data, name):
+        data = data.replace('Math.min', 'min').replace(' + (', ' + str(').replace('String.fromCharCode', 'chr').replace('return b[a]', 'return saveGet(b, a)')
+        def saveGet(b, a):
+            try:
+                return b[a]
+            except:
+                return 'pic'
+        try:
+            paramsAlgoObj = compile(data, '', 'exec')
+        except:
+            printExc('unpackJS compile algo code EXCEPTION')
+            return ''
+        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet}
+        vLocals = { name: None }
+
+        try:
+            exec( data, vGlobals, vLocals )
+        except:
+            printExc('unpackJS exec code EXCEPTION')
+            return ''
+        try:
+            return vLocals[name]
+        except:
+            printExc('decryptPlayerParams EXCEPTION')
+        return ''
+        
     def getLinksForVideo(self, cItem):
         printDBG("YifyTV.getLinksForVideo [%s]" % cItem)
         urlTab = []
@@ -206,17 +234,44 @@ class YifyTV(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
-        data = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^"]*?=[^"]*?"([^"]+?)"')[0]
+        #data = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^"]*?=[^"]*?"([^"]+?)"')[0]
+        dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var parametros')[0].replace('var ', '')
+        
+        parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var parametros', ';', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var parametros', False)[1]
+        funData = re.compile('function ([^\(]*?\([^\)]*?\))[^\{]*?\{([^\{]*?)\}').findall(data)
+        
+        pyCode = ''
+        for item in funData:
+            funHeader = item[0]
+            
+            funBody = item[1]
+            funIns = funBody.split(';')
+            funBody = ''
+            for ins in funIns:
+                ins = ins.replace('var', ' ').strip()
+                if len(ins) and ins[-1] not in [')', ']']:
+                    ins += '()'
+                funBody += '\t%s\n' % ins
+            pyCode += 'def %s:' % funHeader.strip() + '\n' + funBody
+        
+        pyCode = dat1.strip() + '\n' +  pyCode  + 'parametros ' + parametros.strip()
+        pyCode = 'def retA():\n\t' + pyCode.replace('\n', '\n\t') + '\n\treturn parametros\n' + 'param = retA()'
+        data = self.unpackJS(pyCode, 'param')
+        printDBG(pyCode)
+        printDBG(data)
+        
         data = data.split('&')
         idx = 1
         for item in data:
-            tmp = item.split('pic=')
-            if 2 != len(tmp):
-                continue
-            url = strwithmeta( tmp[1] )
-            url.meta['Referer'] = cItem['url']
-            urlTab.append({'name':_('Mirror') + ' %s' % idx, 'url':url, 'need_resolve':1})
-            idx += 1
+            tmp = item.split('=')
+            if len(tmp)!= 2: continue
+            if tmp[1].endswith('enc'):
+                url = strwithmeta( tmp[1] )
+                url.meta['Referer'] = cItem['url']
+                url.meta['sou'] = tmp[0]
+                urlTab.append({'name':_('Mirror') + ' %s' % idx, 'url':url, 'need_resolve':1})
+                idx += 1
         return urlTab
         
     def getVideoLinks(self, baseUrl):
@@ -224,7 +279,7 @@ class YifyTV(CBaseHostClass):
         urlTab = []
         header = dict(self.AJAX_HEADER)
         header['Referer'] = baseUrl.meta['Referer']
-        post_data = {'fv':'18', 'url':baseUrl}
+        post_data = {'fv':'18', 'url':baseUrl, 'sou':baseUrl.meta.get('sou', '')}
         url = self._getFullUrl('/player/pk/pk/plugins/player_p2.php')
         sts, data = self.cm.getPage(url, {'header':header}, post_data)
         if not sts: return []
