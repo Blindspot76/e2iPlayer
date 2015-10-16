@@ -257,6 +257,7 @@ class urlparser:
                        'castto.me':            self.pp.parserCASTTOME      ,
                        'deltatv.pw':           self.pp.parserDELTATVPW     ,
                        'pxstream.tv':          self.pp.parserPXSTREAMTV    ,
+                       'coolcast.eu':          self.pp.parserCOOLCASTEU    ,
                        'filenuke.com':         self.pp.parserFILENUKE      ,
                        'sharesix.com':         self.pp.parserFILENUKE      ,
                        'thefile.me':           self.pp.parserTHEFILEME     ,
@@ -418,6 +419,11 @@ class urlparser:
             elif 'pxstream.tv' in data:
                 id = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
                 videoUrl = 'http://pxstream.tv/embed.php?file=' + id
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'coolcast.eu' in data:
+                id = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
+                videoUrl = 'http://coolcast.eu/?name=' + id
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif 'goodcast.co' in data:
@@ -3156,20 +3162,14 @@ class pageParser:
         
     def parserPXSTREAMTV(self, baseUrl):
         printDBG("parserPXSTREAMTV baseUrl[%s]" % baseUrl)
-        
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', '')
         HTTP_HEADER = dict(self.HTTP_HEADER) 
         HTTP_HEADER['Referer'] = Referer
-        
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
-        
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
-        
-        printDBG(data)
-        
         def _getParam(name):
             return self.cm.ph.getSearchGroups(data, """%s:[^'^"]*?['"]([^'^"]+?)['"]""" % name)[0] 
         swfUrl = "http://pxstream.tv/player510.swf"
@@ -3177,6 +3177,28 @@ class pageParser:
         file   = _getParam('file')
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
+            printDBG(url)
+            return url
+        return False
+    
+    def parserCOOLCASTEU(self, baseUrl):
+        printDBG("parserCOOLCASTEU baseUrl[%s]" % baseUrl)
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        printDBG(data)
+        def _getParam(name):
+            return self.cm.ph.getSearchGroups(data, """['"]%s['"]:[^'^"]*?['"]([^'^"]+?)['"]""" % name)[0] 
+        swfUrl = "http://coolcast.eu/file/1444766476/player.swf"
+        url    = _getParam('streamer')
+        file   = _getParam('file')
+        if '' != file and '' != url:
+            url += ' playpath=%s swfVfy=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
             printDBG(url)
             return url
         return False
@@ -3571,16 +3593,44 @@ class pageParser:
         post_data = None
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
         if not sts: return False
-
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</script>', True)[1]
-        #printDBG(data)
-        data = AADecoder(data.replace('\n', '')).decode()
-        data = data.replace('\\"', '"')
-        data = data.replace('\\/', '/')
-        #printDBG(data)
         
-        videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"]''')[0]
-        if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''attr\([^"]*?"src",[^"]*?"(http[^"]+?)"''')[0]
+        # start https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
+        def decodeOpenLoad(html):
+
+            aastring = re.search(r"<video(?:.|\s)*?<script\s[^>]*?>((?:.|\s)*?)</script", html, re.DOTALL | re.IGNORECASE).group(1)
+            aastring = aastring.replace("((ﾟｰﾟ) + (ﾟｰﾟ) + (ﾟΘﾟ))", "9")
+            aastring = aastring.replace("((ﾟｰﾟ) + (ﾟｰﾟ))","8")
+            aastring = aastring.replace("((ﾟｰﾟ) + (o^_^o))","7")
+            aastring = aastring.replace("((o^_^o) +(o^_^o))","6")
+            aastring = aastring.replace("((ﾟｰﾟ) + (ﾟΘﾟ))","5")
+            aastring = aastring.replace("(ﾟｰﾟ)","4")
+            aastring = aastring.replace("((o^_^o) - (ﾟΘﾟ))","2")
+            aastring = aastring.replace("(o^_^o)","3")
+            aastring = aastring.replace("(ﾟΘﾟ)","1")
+            aastring = aastring.replace("(c^_^o)","0")
+            aastring = aastring.replace("(ﾟДﾟ)[ﾟεﾟ]","\\")
+            aastring = aastring.replace("(3 +3 +0)","6")
+            aastring = aastring.replace("(3 - 1 +0)","2")
+            aastring = aastring.replace("(1 -0)","1")
+
+            decodestring = re.search(r"\\\+([^(]+)", aastring, re.DOTALL | re.IGNORECASE).group(1)
+            decodestring = "\\+"+ decodestring
+            decodestring = decodestring.replace("+","")
+            decodestring = decodestring.replace(" ","")
+            
+            decodestring = decode(decodestring)
+            decodestring = decodestring.replace("\\/","/")
+            
+            videourl = re.search(r'src=\\"([^\\]+)', decodestring, re.DOTALL | re.IGNORECASE).group(1)
+            return videourl
+
+        def decode(encoded):
+            for octc in (c for c in re.findall(r'\\(\d{2,3})', encoded)):
+                encoded = encoded.replace(r'\%s' % octc, chr(int(octc, 8)))
+            return encoded.decode('utf8')
+        # end https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
+
+        videoUrl = decodeOpenLoad(data)
         if videoUrl.startswith('http'): return videoUrl.replace('https://', 'http://').replace('\\/', '/')
         return False
         
