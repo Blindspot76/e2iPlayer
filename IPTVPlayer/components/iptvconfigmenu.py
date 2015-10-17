@@ -85,8 +85,8 @@ config.plugins.iptvplayer.defaultSH4MoviePlayer0         = ConfigSelection(defau
 config.plugins.iptvplayer.alternativeSH4MoviePlayer0     = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('exteplayer'),ConfigPlayer('extgstplayer')]) 
 
 #mipsel
-config.plugins.iptvplayer.defaultMIPSELMoviePlayer0      = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer')])
-config.plugins.iptvplayer.alternativeMIPSELMoviePlayer0  = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer')])
+config.plugins.iptvplayer.defaultMIPSELMoviePlayer0      = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer'),ConfigPlayer('exteplayer')])
+config.plugins.iptvplayer.alternativeMIPSELMoviePlayer0  = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer'),ConfigPlayer('exteplayer')])
 
 #i686
 config.plugins.iptvplayer.defaultI686MoviePlayer0        = ConfigSelection(default = "auto", choices = [ConfigPlayer("auto"),ConfigPlayer("mini"),ConfigPlayer("standard"),ConfigPlayer('extgstplayer')])
@@ -443,7 +443,7 @@ def GetMoviePlayer(buffering=False, useAlternativePlayer=False):
     # select movie player
     
     availablePlayers = []
-    if config.plugins.iptvplayer.plarform.value in ['sh4'] and IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
+    if config.plugins.iptvplayer.plarform.value in ['sh4', 'mipsel'] and IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
         availablePlayers.append('exteplayer')
     if IsExecutable(config.plugins.iptvplayer.gstplayerpath.value): #config.plugins.iptvplayer.plarform.value in ['sh4', 'mipsel', 'i686'] and 
         availablePlayers.append('extgstplayer')
