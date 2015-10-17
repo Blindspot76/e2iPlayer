@@ -32,6 +32,26 @@ import codecs
 try:    import json
 except: import simplejson as json
 ###################################################
+def GetNice(pid=None):
+    nice = 0
+    if None == pid:
+        pid = 'self'
+    filePath = '/proc/%s/stat' % pid
+    try:
+        with open(filePath, 'r') as f:
+            data = f.read()
+            data = data.split(' ')[19]
+            nice = int(data)
+    except:
+        printExc()
+    return nice
+    
+def E2PrioFix(cmd):
+    if 'mipsel' == config.plugins.iptvplayer.plarform.value:
+        return 'nice -n %d %s' % (GetNice()+2, cmd)
+    else:
+        return cmd
+    
 def GetDefaultLang(full=False):
     if full:
         try: defaultLanguage = language.getActiveLanguage()
@@ -107,7 +127,7 @@ class iptv_system:
             self.console_appClosed_conn = eConnectCallback(self.console.appClosed, self._cmdFinished)
             self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self._dataAvail)
             self.outData     = ""
-        self.console.execute( cmd )
+        self.console.execute( E2PrioFix( cmd ) )
         
     def terminate(self, doCallBackFun=False):
         self.kill(doCallBackFun)

@@ -14,7 +14,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, GetSubtitlesDir, eConnectCallback, \
                                                           GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
-                                                          GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang
+                                                          GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang, E2PrioFix
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -1228,7 +1228,9 @@ class IPTVExtMoviePlayer(Screen):
                 if len(headers):
                     cmd += ' -h "%s"' % headers
             if config.plugins.iptvplayer.aac_software_decode.value:
-                cmd += ' -a -p -10'
+                cmd += ' -a -p 10'
+            elif 'mipsel' == config.plugins.iptvplayer.plarform.value:
+                cmd += ' -p 2'
             audioTrackIdx = self.metaHandler.getAudioTrackIdx()
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)
             if audioTrackIdx >= 0:
@@ -1241,7 +1243,7 @@ class IPTVExtMoviePlayer(Screen):
         #if 'gstplayer' == self.player: 
         #    self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self.eplayer3DataAvailable2 ) # work around to catch EOF event after seeking, pause .etc
         printDBG("->||||||| onStart cmd[%s]" % cmd)
-        self.console.execute( cmd )
+        self.console.execute( E2PrioFix( cmd ) )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
         self['logoIcon'].setPixmap( self.playback['logoIcon'] )
         self['subSynchroIcon'].setPixmap( self.subHandler['synchro']['icon'] )
