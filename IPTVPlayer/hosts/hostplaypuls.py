@@ -57,7 +57,9 @@ class Playpuls(CBaseHostClass):
     
     def __init__(self):
         printDBG("Playpuls.__init__")
-        CBaseHostClass.__init__(self, {'history':'Playpuls', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.playpuls_proxy.value})        
+        self.HOST = 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.18) Gecko/20110621 Mandriva Linux/1.9.2.18-0.1mdv2010.2 (2010.2) Firefox/3.6.18'
+        self.HEADER = {'User-Agent': self.HOST, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        CBaseHostClass.__init__(self, {'history':'Playpuls', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.playpuls_proxy.value, 'cookie':'playpuls.cookie'})        
         self.cacheMenuTree = []
     
     def _cleanHtmlStr(self, str):
@@ -150,7 +152,11 @@ class Playpuls(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("Playpuls.getLinksForVideo [%s]" % cItem['url'])
         videoUrls =[]
-        sts, data = self.cm.getPage(cItem['url'])
+        header = dict(self.HEADER)
+        header['Referer'] = cItem['url']
+        sts, data = self.cm.getPage(cItem['url'], {'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':header})
+        if not sts: return videoUrls
+        sts, data = self.cm.getPage(cItem['url'], {'use_cookie': True, 'load_cookie': True, 'save_cookie': False, 'cookiefile': self.COOKIE_FILE, 'header':header})
         if not sts: return videoUrls
         
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="section-player" ', '</script>', False)
