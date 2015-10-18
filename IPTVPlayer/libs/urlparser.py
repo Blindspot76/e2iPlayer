@@ -279,6 +279,8 @@ class urlparser:
                        'swirownia.com.usrfiles.com': self.pp.parserSWIROWNIA,
                        'byetv.org':            self.pp.paserBYETVORG       ,
                        'putlive.in':           self.pp.paserPUTLIVEIN      ,
+                       'liveall.tv':           self.pp.paserLIVEALLTV      ,
+                       'p2pcast.tv':           self.pp.paserP2PCASTTV      ,
                        'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
                        'megom.tv':             self.pp.paserMEGOMTV        ,
                        'openload.io':          self.pp.parserOPENLOADIO    ,
@@ -388,6 +390,15 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'p2pcast' in data:
+                id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"]""")[0]
+                videoUrl = 'http://p2pcast.tv/stream.php?id={0}&live=0&p2p=0&stretching=uniform'.format(id)
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'liveall.tv' in data: 
+                videoUrl = self.cm.ph.getSearchGroups(data, 'SRC="([^"]+?liveall.tv[^"]+?)"', 1, True)[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
             elif 'putlive.in' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, '="([^"]*?putlive.in/[^"]+?)"')[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
@@ -2440,6 +2451,7 @@ class pageParser:
             if not sts: return False
             videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/player?[^"]+?)"')[0]
         sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
+        printDBG(data)
         if sts:
             try:
                 a = int(self.cm.ph.getSearchGroups(data, 'var a = ([0-9]+?);')[0])
@@ -2485,6 +2497,37 @@ class pageParser:
             return url
         return False
         
+    def paserLIVEALLTV(self, linkUrl):
+        printDBG("paserLIVEALLTV linkUrl[%s]" % linkUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        videoUrl = strwithmeta(linkUrl)
+        HTTP_HEADER['Referer'] = videoUrl.meta.get('Referer', videoUrl)
+        sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
+        if not sts: return False
+        
+        a = int(self.cm.ph.getSearchGroups(data, 'var a = ([0-9]+?);')[0])
+        b = int(self.cm.ph.getSearchGroups(data, 'var b = ([0-9]+?);')[0])
+        c = int(self.cm.ph.getSearchGroups(data, 'var c = ([0-9]+?);')[0])
+        d = int(self.cm.ph.getSearchGroups(data, 'var d = ([0-9]+?);')[0])
+        f = int(self.cm.ph.getSearchGroups(data, 'var f = ([0-9]+?);')[0])
+        v_part = self.cm.ph.getSearchGroups(data, "var v_part = '([^']+?)'")[0]
+        
+        url = ('rtmp://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) ) + v_part
+        url += ' swfUrl=http://wds.liveall.tv/jwplayer.flash.swf pageUrl=%s' % (linkUrl)
+        return url
+        
+    def paserP2PCASTTV(self, linkUrl):
+        printDBG("paserP2PCASTTV linkUrl[%s]" % linkUrl)
+        HTTP_HEADER = {}
+        videoUrl = strwithmeta(linkUrl)
+        HTTP_HEADER['Referer'] = videoUrl.meta.get('Referer', videoUrl)
+        HTTP_HEADER['User-Agent'] = "Mozilla/5.0"
+        sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
+        if not sts: return False
+        url = self.cm.ph.getSearchGroups(data, 'curl[^"]*?=[^"]*?"([^"]+?)"')[0]
+        url = base64.b64decode(url)
+        return urlparser.decorateUrl(url, {'Referer':'http://cdn.p2pcast.tv/jwplayer.flash.swf', "User-Agent": HTTP_HEADER['User-Agent']})
+    
     def parserGOOGLE(self, linkUrl):
         printDBG("parserGOOGLE linkUrl[%s]" % linkUrl)
         
@@ -3720,7 +3763,7 @@ class pageParser:
         
         videoUrl = self.cm.ph.getSearchGroups(data, """["']*vurl["']*[ ]*?=[ ]*?["']([^"^']+?)['"]""")[0]
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
-        return False        
+        return False
     
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl)

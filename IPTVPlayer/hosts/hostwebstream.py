@@ -113,7 +113,6 @@ class HasBahCa(CBaseHostClass):
     # {'name': 'meczhd.tv',       'title': 'MeczHH TV',                         'url': 'http://meczhd.tv/',                                                  'icon': 'http://meczhd.tv/theme/img/logo.png'}, \
     # New links for webstream prepared by user @matzg
     MAIN_GROUPED_TAB = [#{'name': 'team-cast.pl',        'title': 'Team Cast',                         'url': '',                                                                   'icon': 'http://wrzucaj.net/images/2014/09/12/logo.png'}, \
-                        #{'name': 'vidtv.pl',            'title': 'VidTV.pl',                          'url': '',                                                                   'icon': 'http://vidtv.pl/img/logotype4.png'}, \
                         {'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://static.weeb.tv/images/weebtv-santahat1.png'}, \
                         {'name': 'videostar.pl',        'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
                         {'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly',                                           'icon': 'http://goldvod.tv/img/logo.png'}, \
@@ -122,6 +121,7 @@ class HasBahCa(CBaseHostClass):
                         #{'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
                         #{'name': 'telewizjoner.pl',     'title': 'Telewizjoner.pl',                   'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
                         {'name': 'typertv.com.pl',      'title': 'typertv.com.pl',                    'url': '',                                                                   'icon': 'http://www.typertv.com.pl/data/themes/Carousel/img/logo.png'}, \
+                        {'name': 'vidtv.pl',            'title': 'VidTV.pl',                          'url': '',                                                                   'icon': 'http://vidtv.pl/img/logotype4.png'}, \
                         {'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'name': 'm3u',                 'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
                         {'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',              'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
@@ -438,15 +438,15 @@ class HasBahCa(CBaseHostClass):
         printDBG('getVidTvList start')
         if None == self.vidTvApi:
             self.vidTvApi = VidTvApi()
-        if '' == url:
-            tmpList = self.vidTvApi.getCategoriesList()
-            for item in tmpList:
-                params = dict(item)
-                params.update({'name':'vidtv.pl'})
-                self.addDir(params)
-        else:
-            tmpList = self.vidTvApi.getChannelsList(url)
-            for item in tmpList: self.playVideo(item)
+        #if '' == url:
+        #    tmpList = self.vidTvApi.getCategoriesList()
+        #    for item in tmpList:
+        #        params = dict(item)
+        #        params.update({'name':'vidtv.pl'})
+        #        self.addDir(params)
+        #else:
+        tmpList = self.vidTvApi.getChannelsList(url)
+        for item in tmpList: self.playVideo(item)
             
     def getVidTvLink(self, url):
         printDBG("getVidTvLink url[%s]" % url)
@@ -925,7 +925,7 @@ class IPTVHost(CHostBase):
         elif 'web-live.tv' in url:
             url = self.host.getSatLiveLink(url)
         elif 'vidtv.pl' in url:
-            url = self.host.getVidTvLink(url)
+            urlList = self.host.getVidTvLink(url)
         elif 'looknij.tv' in url:
             url = self.host.getLooknijTvLink(url)
         elif 'tvisport.cba.pl' in url:

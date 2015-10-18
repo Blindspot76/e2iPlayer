@@ -1,10 +1,13 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
+from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 
@@ -21,39 +24,54 @@ class VidTvApi:
 
     def __init__(self):
         self.cm = common()
-        self.channlesTree = []
-
-    def getCategoriesList(self):
-        printDBG("VidTvApi.getCategoriesList")
-        catsList = []
-        sts,data = self.cm.getPage(VidTvApi.MAINURL + 'index.php')
-        if sts:
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="accordion clr">', '<script>', False)[1]
-            data = data.split('<div class="accordion clr">')
-            cat_id = 0
-            for item in data:
-                title = self.cm.ph.getDataBeetwenMarkers(item, '<div class="title">', '</div>', False)[1]
-                channelList = []
-                tmp = re.findall('href="([^"]+?)">([^<]+?)<', item)
-                for channel in tmp:
-                    channelList.append({'title':channel[1], 'url':VidTvApi.MAINURL + channel[0]})
-                self.channlesTree.append({'title':title, 'channel_list':channelList})
-                catsList.append({'title':title, 'url':str(cat_id)})
-                cat_id += 1
-        return catsList
-
-    def getChannelsList(self, url):
-        printDBG("VidTvApi.getChannelsList url[%s]" % url)
-        cat_id = int(url)
-        if cat_id < len(self.channlesTree):
-            return self.channlesTree[cat_id]['channel_list']
-        else: return []
+        self.up = urlparser()
     
-    def getVideoLink(self, url):
-        printDBG("VidTvApi.getVideoLink")
-        sts,data = self.cm.getPage(url)
-        if sts:
-            r = self.cm.ph.getSearchGroups(data, '(rtmp://[^"]+?)"')[0]
-            if r.startswith('rtmp'):
-                return r + ' live=1' #swfUrl=%s
-        return ''
+    def getChannelsList(self, url):
+        channelList = []
+        sts, data = self.cm.getPage(VidTvApi.MAINURL + 'index.php')
+        if not sts: return channelList
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="sixths_team">', '</div>', False)
+        
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title = self.cm.ph.getDataBeetwenMarkers(icon, '/', '.png', False)[1]
+            if not url.startswith('http'):
+                channelList.append({'title':title, 'url':VidTvApi.MAINURL[:-1] + url, 'icon': VidTvApi.MAINURL + icon})
+        return channelList
+    
+    def getVideoLink(self, baseUrl):
+        printDBG("NettvPw.getVideoLink url[%s]" % baseUrl)
+        urlsTab = []
+        sts,data = self.cm.getPage(baseUrl)
+        if not sts: return urlsTab
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Oglądasz', '<div class="title-medium">', False)[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'value="src=', '"', False)[1]
+        if 'plugin_hls=http' in tmp:
+            urlsTab = getDirectM3U8Playlist(tmp.split('&amp;')[0], checkExt=False)
+        
+        if '.setup(' in tmp:
+            tmp = self.cm.ph.getSearchGroups(data, "file[^']*?:[^']*?'([^']+?'")[0]
+            if '.m3u8' in tmp:
+                urlsTab.extend(getDirectM3U8Playlist(tmp, checkExt=False))
+                
+        if 'type=rtmp' in data:
+            video = self.cm.ph.getDataBeetwenMarkers(data, 'video=', '&#038;', False)[1]
+            streamer = self.cm.ph.getDataBeetwenMarkers(data, 'streamer=', '&#038;', False)[1]
+            urlsTab.append({'name':'rtmp', 'url':streamer + video})
+        
+        if 0 == len(urlsTab):
+            tmp = self.up.getAutoDetectedStreamLink(baseUrl, data)
+            urlsTab.extend(tmp)
+            
+        if 0 == len(urlsTab):
+            tmp = self.cm.ph.getSearchGroups(data, 'SRC="([^"]+?)"', 1, True)[0]
+            tmp = self.up.getAutoDetectedStreamLink(tmp)
+            urlsTab.extend(tmp)
+            
+        if 0 == len(urlsTab):
+            if 'Microsoft Silverlight' in data or 'x-silverlight' in data:
+                SetIPTVPlayerLastHostError('Silverlight stream not supported.')
+
+        return urlsTab
