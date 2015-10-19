@@ -3655,6 +3655,7 @@ class pageParser:
             aastring = aastring.replace("(3 +3 +0)","6")
             aastring = aastring.replace("(3 - 1 +0)","2")
             aastring = aastring.replace("(1 -0)","1")
+            aastring = aastring.replace("(4 -0)","4")
 
             decodestring = re.search(r"\\\+([^(]+)", aastring, re.DOTALL | re.IGNORECASE).group(1)
             decodestring = "\\+"+ decodestring
