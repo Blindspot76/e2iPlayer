@@ -54,22 +54,28 @@ class Filmovita(CBaseHostClass):
     SRCH_URL    = MAIN_URL + 'szukaj'
     DEFAULT_ICON_URL = 'http://skini.filmovita.com/grafika/logo.png'
     
-    MAIN_CAT_TAB = [{'category':'list_movies',        'title': _('Main'),          'url':MAIN_URL, 'icon':DEFAULT_ICON_URL},
-                    {'category':'genres_movies',      'title': _('Categories'),    'url':MAIN_URL, 'icon':DEFAULT_ICON_URL},
+    MAIN_URL    = 'http://filmovita.com/'
+    S_MAIN_URL  = 'http://serijex.com/'
+    
+    MAIN_CAT_TAB = [{'category':'list_movies',        'title': _('Main'),          'url':MAIN_URL,   'icon':DEFAULT_ICON_URL},
+                    {'category':'genres_movies',      'title': _('Categories'),    'url':MAIN_URL,   'icon':DEFAULT_ICON_URL},
+                    {'category':'list_series',        'title': _('TV series'),     'url':S_MAIN_URL, 'icon':DEFAULT_ICON_URL},
                     #{'category':'search',             'title': _('Search'), 'search_item':True},
                     #{'category':'search_history',     'title': _('Search history')} 
                    ]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'Filmovita', 'cookie':'filmovita.cookie'})
-        self.filterCache = {}
         self.seriesCache = {}
-        self.seriesLetters = []
         
-    def _getFullUrl(self, url):
+    def _getFullUrl(self, url, series=False):
+        if not series:
+            mainUrl = self.MAIN_URL
+        else:
+            mainUrl = self.S_MAIN_URL
         if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        if not self.MAIN_URL.startswith('https://'):
+            url = mainUrl + url
+        if not mainUrl.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
 
@@ -129,6 +135,57 @@ class Filmovita(CBaseHostClass):
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
+            
+    def listSeries(self, cItem, category):
+        printDBG("Filmotopia.listSeries")
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        self.seriesCache = {}
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', '<div class="content">', False)[1]
+        data = data.split('<center>')
+        if len(data): del data[0]
+        for item in data:
+            idx  = item.find('</strong></p>')
+            if idx < 0: continue
+            icon = self.cm.ph.getSearchGroups(item[:idx], 'src="([^"]+?)"')[0]
+            serieTitle = self.cleanHtmlStr( item[:idx].split('<strong>')[-1] )
+            if '' == serieTitle: continue
+            # get seasons items
+            tmp = item[idx:].split('<p><strong>')
+            seasons = {}
+            seasonTab = []
+            for season in tmp:
+                seasonTitle = self.cleanHtmlStr( season.split('</strong><br/>')[0] )
+                if '' == seasonTitle: continue
+                eData = re.compile('<a[^>]*?href="(http[^"]+?)"[^>]*?>([^<]+?)</a>').findall(season)
+                episodesTab = []
+                for episode in eData:
+                    if '-epizoda-' not in episode[0]: continue
+                    episodesTab.append({'title':seasonTitle + ' - ' + episode[1], 'url':episode[0], 'season_id':seasonTitle})
+                if len(episodesTab):
+                    seasons[seasonTitle] = episodesTab
+                    seasonTab.append({'title':seasonTitle, 'season_id':seasonTitle, 'serie_id':serieTitle})
+            if len(seasonTab):
+                self.seriesCache[serieTitle] = {'season_tab':seasonTab, 'seasons':seasons}
+                params = dict(cItem)
+                params.update( {'category':category, 'title': self.cleanHtmlStr( serieTitle ), 'serie_id':serieTitle, 'icon':icon} )
+                self.addDir(params)
+        
+    def listSeasons(self, cItem, category):
+        printDBG("Filmotopia.listSeasons")
+        serie = cItem.get('serie_id', '')
+        cItem = dict(cItem)
+        cItem['category'] = category
+        self.listsTab(self.seriesCache.get(serie, {}).get('season_tab', []), cItem, 'dir')
+        
+    def listEpisodes(self, cItem):
+        printDBG("Filmotopia.listEpisodes")
+        serie = cItem.get('serie_id', '')
+        season = cItem.get('season_id', '')
+        cItem = dict(cItem)
+        self.listsTab(self.seriesCache.get(serie, {}).get('seasons', {}).get(season, []), cItem, 'video')
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         pass
@@ -140,8 +197,13 @@ class Filmovita(CBaseHostClass):
         sts, mainData = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
-        tmp = self.cm.ph.getDataBeetwenMarkers(mainData, '</iframe>', '</div>', False)[1]
-        linksUrl = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
+        if 'serijex.com' in cItem['url']:
+            marker1 = '</strong><br/>'
+        else:
+            marker1 = '</iframe>'
+        tmp = self.cm.ph.getDataBeetwenMarkers(mainData, marker1, '</div>', False)[1]
+        
+        linksUrl = self.cm.ph.getSearchGroups(tmp, '''src=["']([^"^']+?)["']''')[0]
         if 1 == self.up.checkHostSupport(linksUrl): 
             if 'videomega.tv/validatehash.php?' in linksUrl:
                 sts, data = self.cm.getPage(linksUrl, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
@@ -150,21 +212,36 @@ class Filmovita(CBaseHostClass):
                     linksUrl = 'http://videomega.tv/view.php?ref={0}&width=700&height=460&val=1'.format(data)
                 else:
                     linksUrl = ''
-            if linksUrl != '':
+            if 1 == self.up.checkHostSupport(linksUrl):
                 urlTab.append({'name':self.up.getHostName(linksUrl), 'url':linksUrl, 'need_resolve':1})
         
-        linksUrl = self.cm.ph.getSearchGroups(mainData, 'src="(http[^"]+?\/links\/[^"]+?)"')[0] 
-        printDBG("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR>>>>>>>>> " + linksUrl)
-        if linksUrl != '':
-            sts, data = self.cm.getPage(linksUrl)
-            if not sts: return urlTab
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<body>', '</body>', False)[1]
-            data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(data)
-            for item in data:
-                name = item[1].split('servisu ')[-1]
-                url  = item[0]
-                #name = self.up.getHostName(url)
-                urlTab.append({'name':name, 'url':url, 'need_resolve':1})
+        if 'serijex.com' in cItem['url']:
+            enigmav = self.cm.ph.getSearchGroups(mainData, '''data-enigmav=['"]([^'^"]+?)['"]''')[0]
+            enigmav = enigmav.replace('-', '\\u00').replace('=', '\\u')
+            try:
+                enigmav = byteify( json.loads('{"data":"%s"}' % enigmav) )['data']
+                tab1 = re.compile('src="([^"]+?)"', re.IGNORECASE).findall(enigmav)
+                tab2 = re.compile('href="([^"]+?)"', re.IGNORECASE).findall(enigmav)
+                for tab in [tab1, tab2]:
+                    for item in tab:
+                        item = item.strip()
+                        name = self.up.getHostName(item).strip()
+                        if name == '' or not item.startswith('http') or 1 != self.up.checkHostSupport(item): continue
+                        urlTab.append({'name':name, 'url':item, 'need_resolve':1})
+            except:
+                printExc()
+        else:
+            linksUrl = self.cm.ph.getSearchGroups(mainData, 'src="(http[^"]+?\/links\/[^"]+?)"')[0] 
+            if linksUrl != '':
+                sts, data = self.cm.getPage(linksUrl)
+                if not sts: return urlTab
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<body>', '</body>', False)[1]
+                data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(data)
+                for item in data:
+                    name = item[1].split('servisu ')[-1]
+                    url  = item[0]
+                    #name = self.up.getHostName(url)
+                    urlTab.append({'name':name, 'url':url, 'need_resolve':1})
         
         return urlTab
         
@@ -212,6 +289,13 @@ class Filmovita(CBaseHostClass):
             self.listGenres(self.currItem, 'list_movies')
         elif category == 'list_movies':
             self.listMovies(self.currItem)
+    #SERIES
+        elif category == 'list_series':
+            self.listSeries(self.currItem, 'list_seasons')
+        elif category == 'list_seasons':
+            self.listSeasons(self.currItem, 'list_episodes')
+        elif category == 'list_episodes':
+            self.listEpisodes(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
