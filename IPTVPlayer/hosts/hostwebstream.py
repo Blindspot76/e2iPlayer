@@ -136,7 +136,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'm3u',                 'title': 'Greek-IPTV',                        'url': 'https://raw.githubusercontent.com/free-greek-iptv/greek-iptv/master/greek.m3u', 'icon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Coat_of_arms_of_Greece.svg/538px-Coat_of_arms_of_Greece.svg.png'}, \
                         {'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
                         {'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
-                        {'name': 'others',              'title': 'Others',                            'url': '',                                                                    'icon': ''}, \
+                        #{'name': 'others',              'title': 'Others',                            'url': '',                                                                    'icon': ''}, \
                         {'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                        ] 
