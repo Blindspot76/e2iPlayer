@@ -235,10 +235,10 @@ class YifyTV(CBaseHostClass):
         if not sts: return urlTab
         
         #data = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^"]*?=[^"]*?"([^"]+?)"')[0]
-        dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var parametros')[0].replace('var ', '')
+        dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var mouse_and_cat_playing_for_ever')[0].replace('var ', '')
         
-        parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var parametros', ';', False)[1]
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var parametros', False)[1]
+        parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
         funData = re.compile('function ([^\(]*?\([^\)]*?\))[^\{]*?\{([^\{]*?)\}').findall(data)
         
         pyCode = ''
@@ -258,8 +258,8 @@ class YifyTV(CBaseHostClass):
         pyCode = dat1.strip() + '\n' +  pyCode  + 'parametros ' + parametros.strip()
         pyCode = 'def retA():\n\t' + pyCode.replace('\n', '\n\t') + '\n\treturn parametros\n' + 'param = retA()'
         data = self.unpackJS(pyCode, 'param')
-        printDBG(pyCode)
-        printDBG(data)
+        #printDBG(pyCode)
+        #printDBG(data)
         
         data = data.split('&')
         idx = 1
