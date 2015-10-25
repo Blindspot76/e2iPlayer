@@ -43,6 +43,7 @@ config.plugins.iptvplayer.gstplayerpath   = ConfigText(default = "", fixed_size 
 config.plugins.iptvplayer.wgetpath        = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.rtmpdumppath    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.f4mdumppath     = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.uchardetpath    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.set_curr_title  = ConfigYesNo(default = False)
 config.plugins.iptvplayer.curr_title_file = ConfigText(default = "", fixed_size = False) 
 config.plugins.iptvplayer.plarform        = ConfigSelection(default = "auto", choices = [("auto", "auto"),("mipsel", _("mipsel")),("sh4", _("sh4")),("i686", _("i686")),("unknown", _("unknown"))])
@@ -218,6 +219,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("wgetpath", config.plugins.iptvplayer.wgetpath))
             list.append(getConfigListEntry("rtmpdumppath", config.plugins.iptvplayer.rtmpdumppath))
             list.append(getConfigListEntry("f4mdumppath", config.plugins.iptvplayer.f4mdumppath))
+            list.append(getConfigListEntry("uchardetpath", config.plugins.iptvplayer.uchardetpath))
         
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )

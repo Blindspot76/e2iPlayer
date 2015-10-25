@@ -62,6 +62,15 @@ class IPTVSetupImpl:
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/f4mdump _static_libstdc++", GetBinDir("f4mdump", "")),
                                           (_("Do not install (not recommended)"), "")]
                                           
+        # uchardet member
+        self.uchardetVersion = "Version 0.0.1"
+        self.uchardetpaths = ["/usr/bin/uchardet", GetBinDir("uchardet", "")]
+        self._uchardetInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/uchardet (%s)" % _("recommended")), "/usr/bin/uchardet"),
+                                          (_('Install into the "%s".') % "IPTVPlayer/bin/uchardet", GetBinDir("uchardet", "")),
+                                          (_("Do not install (not recommended)"), "")]
+        self._uchardetInstallChoiseList2 = [(_('Install into the "%s".') % ("/usr/bin/uchardet static libstdc++ (%s)" % _("recommended")), "/usr/bin/uchardet"),
+                                          (_('Install into the "%s".') % "IPTVPlayer/bin/uchardet _static_libstdc++", GetBinDir("uchardet", "")),
+                                          (_("Do not install (not recommended)"), "")]
         # gstplayer
         self.gstplayerVersion = {'0.10':18, '1.0':10018}
         self.gstplayerpaths = ["/usr/bin/gstplayer", GetBinDir("gstplayer", "")]
@@ -309,7 +318,49 @@ class IPTVSetupImpl:
 
     def rtmpdumpStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.rtmpdumpStepFinished sts[%r]" % sts)
+        self.uchardetStep()
+        
+    ###################################################
+    # STEP: uchardet
+    ###################################################
+    def uchardetStep(self, ret=None):
+        printDBG("IPTVSetupImpl.uchardetStep")
+        self.binaryInstalledSuccessfully = False
+        def _detectValidator(code, data):
+            if self.binaryInstalledSuccessfully: self.stepHelper.setInstallChoiseList( self._uchardetInstallChoiseList2 )
+            else: self.stepHelper.setInstallChoiseList( self._uchardetInstallChoiseList )
+            if self.uchardetVersion in data: return True,False
+            else: return False,True
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            sts, retPath = False, ""
+            for idx in range(len(dataTab)):
+                if 'Author: BYVoid' in dataTab[idx]: sts, retPath = True, paths[idx]
+            return sts, retPath
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            if self.binaryInstalledSuccessfully:
+                url = server + 'bin/' + platform + ('/%s' % binName) + '_static_libstdc++'
+                self.binaryInstalledSuccessfully = False
+            else: url = server + 'bin/' + platform + ('/%s' % binName)
+                
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+            
+        self.stepHelper = CBinaryStepHelper("uchardet", self.platform, self.openSSLVersion, config.plugins.iptvplayer.uchardetpath)
+        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to determine the encoding of the text.' % ('uchardet')), 1)
+        self.stepHelper.setInstallChoiseList( self._uchardetInstallChoiseList )
+        self.stepHelper.setPaths( self.uchardetpaths )
+        self.stepHelper.setDetectCmdBuilder( lambda path: path + " --version 2>&1 " )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.uchardetStepFinished )
+        self.binaryDetect()
+
+    def uchardetStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.uchardetStepFinished sts[%r]" % sts)
         self.f4mdumpStep()
+    # self.ffmpegVersion
         
     ###################################################
     # STEP: F4MDUMP

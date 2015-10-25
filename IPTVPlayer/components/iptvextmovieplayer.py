@@ -14,7 +14,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, GetSubtitlesDir, eConnectCallback, \
                                                           GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
-                                                          GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang, E2PrioFix
+                                                          GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang, E2PrioFix, iptv_system
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -354,6 +354,8 @@ class IPTVExtMoviePlayer(Screen):
         self.delayedClosure    = None
         self.childWindowsCount = 0
         
+        self.workconsole = None
+        
     def showMenuOptions(self):
         printDBG("showMenuOptions")
         options = []
@@ -611,7 +613,16 @@ class IPTVExtMoviePlayer(Screen):
         
     def openSubtitlesFromFileCallback(self, filePath=None):
         printDBG("openSubtitlesFromFileCallback filePath[%s]" % filePath)
+        if None != filePath:
+            cmd = '%s "%s"' % (config.plugins.iptvplayer.uchardetpath.value, filePath) 
+            self.workconsole = iptv_system(cmd, boundFunction(self.enableSubtitlesFromFile, filePath))
         
+    def enableSubtitlesFromFile(self, filePath, code=127, encoding=""):
+        if 0 != code or 'unknown' in encoding:
+            encoding = ''
+        else:
+            encoding = encoding.strip()
+        printDBG("enableSubtitlesFromFile filePath[%s] encoding[%s]" % (filePath, encoding))
         def _getEncoding(filePath, lang=''):
             encoding = 'utf-8'
             if GetDefaultLang() == 'pl' and '' == lang:
@@ -657,7 +668,9 @@ class IPTVExtMoviePlayer(Screen):
             if -1 == trackIdx:
                 trackIdx = self.metaHandler.addSubtitleTrack( {"title":fileName, "id":"", "provider":"", "lang":lang, "delay_ms":0, "path":filePath} )
             self.metaHandler.setSubtitleIdx( trackIdx )
-            self.enableSubtitles(_getEncoding(filePath, lang))
+            if '' == encoding:
+                encoding = _getEncoding(filePath, lang)
+            self.enableSubtitles(encoding)
 
     def disableSubtitles(self):
         self['subLabel1'].hide()
@@ -1083,6 +1096,7 @@ class IPTVExtMoviePlayer(Screen):
 
     def __onClose(self):
         self.isClosing = True
+        self.workconsole = None
         if None != self.console:
             self.console_appClosed_conn   = None
             self.console_stderrAvail_conn = None
@@ -1383,15 +1397,8 @@ class IPTVExtMoviePlayer(Screen):
             # All below commands require that 'PLAY ' status, 
             # so we first send command to resume playback
             self.consoleWrite( "c\n" )
-
-            if   'PLAYBACK_CONTINUE'      == command:
-                # this is done to flush data
-                # without thos workaround for some materials 
-                # there is a lack of liquidity playback after resume             
-                if 'eplayer' == self.player: 
-                    #self.consoleWrite( "k-2\n" ) # this causing problem for non-seekable streams
-                    self.consoleWrite( "c\n" )
-            elif 'PLAYBACK_PAUSE'         == command: 
+            
+            if 'PLAYBACK_PAUSE'           == command: 
                 self.consoleWrite( "p\n" )
             elif 'PLAYBACK_SEEK_RELATIVE' == command: 
                 self.consoleWrite( "kc%s\n" % (arg1) ) 
