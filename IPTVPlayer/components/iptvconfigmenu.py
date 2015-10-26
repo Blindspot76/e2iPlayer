@@ -113,8 +113,8 @@ config.plugins.iptvplayer.SciezkaCache = ConfigDirectory(default = "/hdd/IPTVCac
 config.plugins.iptvplayer.NaszaTMP = ConfigDirectory(default = "/tmp/") #, fixed_size = False)
 config.plugins.iptvplayer.ZablokujWMV = ConfigYesNo(default = True)
 
-config.plugins.iptvplayer.hd3d_login    = ConfigText(default="", fixed_size = False)
-config.plugins.iptvplayer.hd3d_password = ConfigText(default="", fixed_size = False)
+#config.plugins.iptvplayer.hd3d_login    = ConfigText(default="", fixed_size = False)
+#config.plugins.iptvplayer.hd3d_password = ConfigText(default="", fixed_size = False)
 
 config.plugins.iptvplayer.opensuborg_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.opensuborg_password = ConfigText(default="", fixed_size = False)
@@ -267,8 +267,8 @@ class ConfigMenu(ConfigBaseWidget):
         list.append(getConfigListEntry("opensubtitles.org " + _("login"), config.plugins.iptvplayer.opensuborg_login))
         list.append(getConfigListEntry("opensubtitles.org " + _("password"), config.plugins.iptvplayer.opensuborg_password))
         
-        list.append(getConfigListEntry("HD3D " + _("login"), config.plugins.iptvplayer.hd3d_login))
-        list.append(getConfigListEntry("HD3D " + _("password"), config.plugins.iptvplayer.hd3d_password))
+        #list.append(getConfigListEntry("HD3D " + _("login"), config.plugins.iptvplayer.hd3d_login))
+        #list.append(getConfigListEntry("HD3D " + _("password"), config.plugins.iptvplayer.hd3d_password))
         
         players = []
         bufferingMode = config.plugins.iptvplayer.buforowanie.value or config.plugins.iptvplayer.buforowanie_m3u8.value or config.plugins.iptvplayer.buforowanie_rtmp.value

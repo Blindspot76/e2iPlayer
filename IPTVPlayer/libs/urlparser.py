@@ -143,7 +143,7 @@ class urlparser:
                        'firedrive.com':        self.pp.parserFIREDRIVE     , 
                        'sockshare.com':        self.pp.parserSOCKSHARE     ,
                        'megustavid.com':       self.pp.parserMEGUSTAVID    ,
-                       'hd3d.cc':              self.pp.parserHD3D          ,
+                       #'hd3d.cc':              self.pp.parserHD3D          ,
                        'sprocked.com':         self.pp.parserSPROCKED      ,
                        'wgrane.pl':            self.pp.parserWGRANE        ,
                        'cda.pl':               self.pp.parserCDA           ,
@@ -271,6 +271,7 @@ class urlparser:
                        'streamplay.cc':        self.pp.parserSTREAMPLAYCC  ,
                        'yourvideohost.com':    self.pp.parserYOURVIDEOHOST ,
                        'vidgg.to':             self.pp.parserVIDGGTO       ,
+                       'vid.gg':               self.pp.parserVIDGGTO       ,
                        'tiny.cc':              self.pp.parserTINYCC        ,
                        'picasaweb.google.com': self.pp.parserPICASAWEB     ,
                        'stream4k.to':          self.pp.parserSTREAM4KTO    ,
@@ -298,6 +299,8 @@ class urlparser:
                        'exashare.com':         self.pp.parserEXASHARECOM   ,
                        'posiedze.pl':          self.pp.parserPOSIEDZEPL    ,
                        'neodrive.co':          self.pp.parserNEODRIVECO    ,
+                       'cloudy.ec':            self.pp.parserCLOUDYEC      ,
+                       'ideoraj.ch':           self.pp.parserCLOUDYEC      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -540,8 +543,8 @@ class pageParser:
         
         #config
         self.COOKIE_PATH = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/cache/')
-        self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
-        self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
+        #self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
+        #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
         
     def getYTParser(self):
         if self.ytParser == None:
@@ -723,26 +726,26 @@ class pageParser:
         else:
             return False
 
-    def parserHD3D(self,url):
-        if not 'html' in url:
-            url = url + '.html?i'
-        else:
-            url = url
-        username = self.hd3d_login
-        password = self.hd3d_password
-        urlL = 'http://hd3d.cc/login.html'
-        self.COOKIEFILE = self.COOKIE_PATH + "hd3d.cookie"
-        query_dataL = { 'url': urlL, 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
-        postdata = {'user_login': username, 'user_password': password}
-        data = self.cm.getURLRequestData(query_dataL, postdata)
-        query_data = { 'url': url, 'use_host': False, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
-        link = self.cm.getURLRequestData(query_data)
-        match = re.compile("""url: ["'](.+?)["'],.+?provider:""").findall(link)
-        if len(match) > 0:
-            ret = match[0]
-        else:
-         ret = False
-        return ret
+    #def parserHD3D(self,url):
+    #    if not 'html' in url:
+    #        url = url + '.html?i'
+    #    else:
+    #        url = url
+    #    username = self.hd3d_login
+    #    password = self.hd3d_password
+    #    urlL = 'http://hd3d.cc/login.html'
+    #    self.COOKIEFILE = self.COOKIE_PATH + "hd3d.cookie"
+    #    query_dataL = { 'url': urlL, 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
+    #    postdata = {'user_login': username, 'user_password': password}
+    #    data = self.cm.getURLRequestData(query_dataL, postdata)
+    #    query_data = { 'url': url, 'use_host': False, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
+    #    link = self.cm.getURLRequestData(query_data)
+    #    match = re.compile("""url: ["'](.+?)["'],.+?provider:""").findall(link)
+    #    if len(match) > 0:
+    #        ret = match[0]
+    #    else:
+    #     ret = False
+    #    return ret
 
     def parserSPROCKED(self,url):
         url = url.replace('embed', 'show')
@@ -1313,14 +1316,19 @@ class pageParser:
         else:
             return False
 
-    def parserYOUWATCH(self,url):
-        if 'embed' in url:
-            Url = url
+    def parserYOUWATCH(self, baseUrl):
+        if 'embed' in baseUrl:
+            url = baseUrl
         else:
-            Url = url.replace('org/', 'org/embed-').replace('to/', 'to/embed-') + '-640x360.html'
+            url = baseUrl.replace('org/', 'org/embed-').replace('to/', 'to/embed-') + '-640x360.html'
 
-        sts, data = self.cm.getPage(Url)
+        sts, data = self.cm.getPage(url)
         if not sts: return False
+        
+        url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="(http[^"]+?)"', 1, True)[0]
+        if url != '':
+            sts, data = self.cm.getPage(url, {'header':{'Referer':url, 'User-Agent':'Mozilla/5.0'}})
+            if not sts: return False
         
         # get JS player script code from confirmation page
         sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
@@ -3656,6 +3664,8 @@ class pageParser:
             aastring = aastring.replace("(3 - 1 +0)","2")
             aastring = aastring.replace("(1 -0)","1")
             aastring = aastring.replace("(4 -0)","4")
+            
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> \n %s <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" % aastring)
 
             decodestring = re.search(r"\\\+([^(]+)", aastring, re.DOTALL | re.IGNORECASE).group(1)
             decodestring = "\\+"+ decodestring
@@ -3765,6 +3775,60 @@ class pageParser:
         videoUrl = self.cm.ph.getSearchGroups(data, """["']*vurl["']*[ ]*?=[ ]*?["']([^"^']+?)['"]""")[0]
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
         return False
+        
+    def parserCLOUDYEC(self, baseUrl):
+        printDBG("Ekstraklasa.parserCLOUDYEC baseUrl[%r]" % baseUrl)
+        #based on https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/cloudy.py
+        
+        _VALID_URL = r'''(?x)
+            https?://(?:www\.)?(?P<host>cloudy\.ec|videoraj\.ch)/
+            (?:v/|embed\.php\?id=)
+            (?P<id>[A-Za-z0-9]+)
+            '''
+        _EMBED_URL = 'http://www.%s/embed.php?id=%s'
+        _API_URL = 'http://www.%s/api/player.api.php?%s'
+        _MAX_TRIES = 2
+        
+        mobj = re.match(_VALID_URL, baseUrl)
+        video_host = mobj.group('host')
+        video_id = mobj.group('id')
+
+        url = _EMBED_URL % (video_host, video_id)
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+
+        file_key = self.cm.ph.getSearchGroups(data, r'key\s*:\s*"([^"]+)"')[0]
+        if '' == file_key:
+            file_key = self.cm.ph.getSearchGroups(data, r'filekey\s*=\s*"([^"]+)"')[0]
+
+        def _extract_video(video_host, video_id, file_key, error_url=None, try_num=0):
+
+            if try_num > _MAX_TRIES - 1:
+                return False
+
+            form = {'file': video_id, 'key': file_key}
+            if error_url:
+                form.update({'numOfErrors': try_num, 'errorCode': '404', 'errorUrl': error_url})
+
+            data_url = _API_URL % (video_host, urllib.urlencode(form))
+            sts, player_data = self.cm.getPage(data_url)
+            if not sts: return sts
+
+            data = parse_qs(player_data)
+            try_num += 1
+            if 'error' in data:
+                return False
+            title = data.get('title', [None])[0]
+            if title:
+                title = title.replace('&asdasdas', '').strip()
+            video_url = data.get('url', [None])[0]
+            if video_url:
+                sts, data = self.cm.getPage(video_url, {'return_data':False})
+                data.close()
+                if not sts:
+                    return self._extract_video(video_host, video_id, file_key, video_url, try_num)
+            return [{'id': video_id, 'url': video_url, 'name': title}]
+        return _extract_video(video_host, video_id, file_key)
     
     def parserSWIROWNIA(self, baseUrl):
         printDBG("Ekstraklasa.parserSWIROWNIA baseUrl[%r]" % baseUrl)
