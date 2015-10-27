@@ -707,30 +707,43 @@ class HasBahCa(CBaseHostClass):
         
     def getWebCamera(self, cItem):
         printDBG("getWebCamera start")
-        sts, data = self.cm.getPage(cItem['url'])
+        sts = True
+        if 'sub_cats' not in cItem:
+            sts, data = self.cm.getPage(cItem['url'])
         if sts:
-            if cItem['title'] == 'WebCamera PL':
+            wc_cat = cItem.get('wc_cat', None)
+            if wc_cat == None:
                 params = dict(cItem)
-                params.update({'title':'Polecane kamery'})
+                params.update({'title':'Polecane kamery', 'wc_cat':'list_videos'})
                 self.addDir(params)
-                data = CParsingHelper.getDataBeetwenMarkers(data, '<h4>Kamery wg kategorii</h4>', '</div>', False)[1]
-                data = data.split('</a>')
-                del data[-1]
-                for item in data:
-                    url = self.cm.ph.getSearchGroups(item, """href=['"](http[^'^"]+?)['"]""")[0]
-                    if '' != url:
+                data = self.cm.ph.getDataBeetwenMarkers(data, 'kategorie kamer', '</nav>', False)[1]
+                data = data.split('<li class="has-children"')
+                if len(data): del data[0]
+                for cat in data:
+                    cat = cat.split('<ul class="is-hidden">')
+                    catTitle = self._cleanHtmlStr(cat[0])
+                    tmp = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(cat[-1])
+                    subCats = []
+                    for item in tmp:
                         params = dict(cItem)
-                        params.update({'title':self._cleanHtmlStr(item), 'url':url})
+                        params.update({'title':self._cleanHtmlStr(item[1]), 'url':item[0], 'wc_cat':'list_videos'})
+                        subCats.append(params)
+                    if len(subCats):
+                        params = dict(cItem)
+                        params.update({'title':catTitle, 'url':'', 'sub_cats':subCats, 'wc_cat':'list_sub'})
                         self.addDir(params)
-            else:
-                data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="inlinecam', '<div id="footerbar">', False)[1]
+            elif wc_cat == 'list_sub':
+                for item in cItem['sub_cats']:
+                    self.addDir(item)
+            elif wc_cat == 'list_videos':
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="inlinecam', '<div id="footerbar">', False)[1]
                 data = data.split('<div class="inlinecam')
                 for item in data:
-                    item = CParsingHelper.getDataBeetwenMarkers(item, '<a', '</div>', True)[1]
+                    item = self.cm.ph.getDataBeetwenMarkers(item, '<a', '</div>', True)[1]
                     url = self.cm.ph.getSearchGroups(item, """href=['"](http[^'^"]+?)['"]""")[0]
                     if '' != url:
-                        title = self._cleanHtmlStr(CParsingHelper.getDataBeetwenMarkers(item, '<div class="bar">', '</div>', False)[1])
-                        icon  = self.cm.ph.getSearchGroups(item, """data-src=['"](http[^'^"]+?)['"]""")[0]
+                        title = self.cm.ph.getSearchGroups(item, """<[^>]*?class="bar"[^>]*?>([^<]+?)<""")[0]
+                        icon  = self.cm.ph.getSearchGroups(item, """src=['"](http[^'^"]+?)['"]""")[0]
                         params = dict(cItem)
                         params.update({'title':title, 'url':url, 'icon':icon})
                         self.playVideo(params)
