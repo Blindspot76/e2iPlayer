@@ -301,6 +301,10 @@ class urlparser:
                        'neodrive.co':          self.pp.parserNEODRIVECO    ,
                        'cloudy.ec':            self.pp.parserCLOUDYEC      ,
                        'ideoraj.ch':           self.pp.parserCLOUDYEC      ,
+                       'miplayer.net':         self.pp.parserMIPLAYERNET   ,
+                       'yocast.tv':            self.pp.parserYOCASTTV      ,
+                       'liveonlinetv247.info': self.pp.parserLIVEONLINE247 ,
+                       'liveonlinetv247.net':  self.pp.parserLIVEONLINE247 ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -393,6 +397,19 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'liveonlinetv247' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"](http://[^'^"]*?liveonlinetv247[^'^"]+?)['"]""")[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'yocast.tv' in data:
+                fid = self.cm.ph.getSearchGroups(data, """fid=['"]([^'"]+?)['"]""")[0]
+                videoUrl = 'http://www.yocast.tv/embed.php?live={0}&vw=620&vh=490'.format(fid)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'miplayer.net' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"](http://miplayer.net[^'^"]+?)['"]""")[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
             elif 'p2pcast' in data:
                 id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"]""")[0]
                 videoUrl = 'http://p2pcast.tv/stream.php?id={0}&live=0&p2p=0&stretching=uniform'.format(id)
@@ -2639,13 +2656,13 @@ class pageParser:
         linkUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?)"')[0]
         sts, data = self.cm.getPage(linkUrl, {'header': HTTP_HEADER})
         if not sts: return False
-        printDBG(data)
+        #printDBG(data)
         swfUrl = self.cm.ph.getSearchGroups(data, "'(http[^']+?swf)'")[0]
         url    = self.cm.ph.getSearchGroups(data, "streamer'[^']+?'(rtmp[^']+?)'")[0]
         file   = self.cm.ph.getSearchGroups(data, "file'[^']+?'([^']+?)'")[0]
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s ' % (file, swfUrl, linkUrl)
-            printDBG(url)
+            #printDBG(url)
             return url
         return False
         
@@ -3751,7 +3768,7 @@ class pageParser:
         return False
         
     def parserPOSIEDZEPL(self, baseUrl):
-        printDBG("Ekstraklasa.parserPOSIEDZEPL baseUrl[%r]" % baseUrl)
+        printDBG("parserPOSIEDZEPL baseUrl[%r]" % baseUrl)
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         if '/e.' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{10})[/.?]')[0]
@@ -3766,7 +3783,7 @@ class pageParser:
         return False
         
     def parserNEODRIVECO(self, baseUrl):
-        printDBG("Ekstraklasa.parserNEODRIVECO baseUrl[%r]" % baseUrl)
+        printDBG("parserNEODRIVECO baseUrl[%r]" % baseUrl)
         #http://neodrive.co/embed/EG0F2UYFNR2CN1CUDNT2I5OPN/
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
@@ -3776,8 +3793,61 @@ class pageParser:
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
         return False
         
+    def parserMIPLAYERNET(self, baseUrl):
+        printDBG("parserMIPLAYERNET baseUrl[%r]" % baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        url2 = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=["'](http://miplayer.net[^"^']+?)["']''', 1, True)[0]
+        if url2 != '':
+            sts, data = self.cm.getPage(url2, {'header':HTTP_HEADER})
+            if not sts: return False
+        curl = self.cm.ph.getSearchGroups(data, '''curl[ ]*?=[ ]*?["']([^"^']+?)["']''', 1, True)[0]
+        curl = base64.b64decode(curl)
+        if curl.split('?')[0].endswith('.m3u8'):
+            return getDirectM3U8Playlist(curl, checkExt=False)
+        return False
+        
+    def parserYOCASTTV(self, baseUrl):
+        printDBG("parserYOCASTTV baseUrl[%r]" % baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        swfUrl = self.cm.ph.getSearchGroups(data, '''["'](http[^'^"]+?swf)['"]''')[0]
+        url    = self.cm.ph.getSearchGroups(data, '''streamer[^'^"]*?['"](rtmp[^'^"]+?)['"]''')[0]
+        file   = self.cm.ph.getSearchGroups(data, '''file[^'^"]*?['"]([^'^"]+?)['"]''')[0].replace('.flv', '')
+        if '' != file and '' != url:
+            url += ' playpath=%s swfVfy=%s pageUrl=%s ' % (file, swfUrl, baseUrl)
+            printDBG(url)
+            return url
+        return False
+        
+    def parserLIVEONLINE247(self, baseUrl):
+        printDBG("parserLIVEONLINE247 baseUrl[%r]" % baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        printDBG(data)
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        swfUrl = self.cm.ph.getSearchGroups(data, '''["'](http[^'^"]+?swf)['"]''')[0]
+        if swfUrl == '':
+            swfUrl = 'http://p.jwpcdn.com/6/12/jwplayer.flash.swf'
+        url   = self.cm.ph.getSearchGroups(data, '''file[^'^"]*?['"]([^'^"]+?)['"]''')[0]
+        if url.startswith('rtmp'):
+            url += ' swfVfy=%s pageUrl=%s ' % (swfUrl, baseUrl)
+            printDBG(url)
+            return url
+        return False
+        
     def parserCLOUDYEC(self, baseUrl):
-        printDBG("Ekstraklasa.parserCLOUDYEC baseUrl[%r]" % baseUrl)
+        printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)
         #based on https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/cloudy.py
         
         _VALID_URL = r'''(?x)
