@@ -239,6 +239,24 @@ class YifyTV(CBaseHostClass):
         
         parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
         data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
+        
+        globalTabCode = []
+        tmp = re.compile('var([^;]+?)=[^;]*?(\[[^\]]+?\]);').findall(data)
+        for item in tmp:
+            var = item[0].strip()
+            val = item[1].strip()
+            if var == '': continue
+            if val == '': continue
+            globalTabCode.append('%s = %s' % (var, val))
+        globalTabCode = '\n'.join( globalTabCode )
+        
+        data2 = data.split('\n')
+        data = []
+        for item in data2:
+            if 'try{' in item: continue
+            if '}catch' in item: continue
+            data.append(item)
+        data = '\n'.join(data)
         funData = re.compile('function ([^\(]*?\([^\)]*?\))[^\{]*?\{([^\{]*?)\}').findall(data)
         
         pyCode = ''
@@ -253,10 +271,13 @@ class YifyTV(CBaseHostClass):
                 if len(ins) and ins[-1] not in [')', ']']:
                     ins += '()'
                 funBody += '\t%s\n' % ins
+            if '' == funBody.replace('\t', '').replace('\n', '').strip():
+                continue
             pyCode += 'def %s:' % funHeader.strip() + '\n' + funBody
         
         pyCode = dat1.strip() + '\n' +  pyCode  + 'parametros ' + parametros.strip()
-        pyCode = 'def retA():\n\t' + pyCode.replace('\n', '\n\t') + '\n\treturn parametros\n' + 'param = retA()'
+        pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n' + pyCode.replace('\n', '\n\t') + '\n\treturn parametros\n' + 'param = retA()'
+        #printDBG(pyCode)
         data = self.unpackJS(pyCode, 'param')
         #printDBG(pyCode)
         #printDBG(data)
