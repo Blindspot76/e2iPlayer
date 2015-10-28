@@ -19,6 +19,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandl
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
+from Plugins.Extensions.IPTVPlayer.components.iptvsubsimpledownloader import IPTVSubSimpleDownloaderWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
 from Plugins.Extensions.IPTVPlayer.components.iptvdirbrowser import IPTVFileSelectorWidget
 from Plugins.Extensions.IPTVPlayer.components.configextmovieplayer import ConfigExtMoviePlayerBase, ConfigExtMoviePlayer
@@ -202,6 +203,7 @@ class IPTVExtMoviePlayer(Screen):
         else:
             self.lastPosition = 0 
         self.downloader = additionalParams.get('downloader', None)
+        self.externalSubTracks = additionalParams.get('external_sub_tracks', []) #[{'title':'', 'lang':'', 'url':''}, ...]
         
         printDBG('IPTVExtMoviePlayer.__init__ lastPosition[%r]' % self.lastPosition)
         
@@ -574,6 +576,8 @@ class IPTVExtMoviePlayer(Screen):
             options.append( item )
         if self.subHandler['enabled'] and None != self.metaHandler.getSubtitleTrack():
             options.append( IPTVChoiceBoxItem(_('Synchronize'), "", {'other':'synchro'}) )
+        if len(self.externalSubTracks):
+            options.append( IPTVChoiceBoxItem(_('Download suggested'), "", {'other':'download_suggested'}) )
         options.append( IPTVChoiceBoxItem(_('Load'), "", {'other':'load'}) )
         options.append( IPTVChoiceBoxItem(_('Download'), "", {'other':'download'}) )
         self.openChild(boundFunction(self.childClosed, self.selectSubtitleCallback), IPTVChoiceBoxWidget, {'width':600, 'current_idx':currIdx, 'title':_("Select subtitles track"), 'options':options})
@@ -593,6 +597,8 @@ class IPTVExtMoviePlayer(Screen):
                     self.openSubtitlesFromFile()
                 elif option == 'download':
                     self.downloadSub()
+                elif option == 'download_suggested':
+                    self.downloadSub(True)
             elif 'track_idx' in ret:
                 self.metaHandler.setSubtitleIdx( ret['track_idx'] )
                 self.enableSubtitles()
@@ -1096,6 +1102,8 @@ class IPTVExtMoviePlayer(Screen):
 
     def __onClose(self):
         self.isClosing = True
+        if None != self.workconsole:
+            self.workconsole.kill()
         self.workconsole = None
         if None != self.console:
             self.console_appClosed_conn   = None
@@ -1175,9 +1183,12 @@ class IPTVExtMoviePlayer(Screen):
         if None != self.delayedClosure and self.childWindowsCount < 1:
             self.delayedClosure()
             
-    def downloadSub(self):
-        self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_title':self.title})
-    
+    def downloadSub(self, simple=False):
+        if not simple:
+            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_title':self.title})
+        else:
+            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubSimpleDownloaderWidget, {'movie_title':self.title, 'sub_list':self.externalSubTracks})
+        
     def downloadSubCallback(self, ret = None):
         if None != ret:
             idx = self.metaHandler.addSubtitleTrack(ret)

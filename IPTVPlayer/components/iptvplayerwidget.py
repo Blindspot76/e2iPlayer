@@ -1284,7 +1284,7 @@ class IPTVPlayerWidget(Screen):
                 else:
                     self.stopAutoPlaySequencer()
             else:
-                gstAdditionalParams = {'host_name':self.hostName} #default_player_videooptions
+                gstAdditionalParams = {'host_name':self.hostName, 'external_sub_tracks':url.meta.get('external_sub_tracks', [])} #default_player_videooptions
                 self.writeCurrentTitleToFile(titleOfMovie)
                 if isBufferingMode:
                     self.session.nav.stopService()

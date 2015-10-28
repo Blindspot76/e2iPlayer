@@ -255,17 +255,19 @@ class IPTVSubDownloaderWidget(Screen):
         tmpList = self.stackList[-1]['list']
         type    = self.stackList[-1]['type']
         
+        iconType = CDisplayListItem.TYPE_CATEGORY
         if type == 'movie':
             self["title"].setText(_("Select movie"))
         elif type == "lang":
             self["title"].setText(_("Select language"))
         elif type == "sub":
+            iconType = CDisplayListItem.TYPE_ARTICLE
             self["title"].setText(_("Select subtitles to download"))
         
         self["title"].show()
         
         for item in tmpList:
-            dItem = CDisplayListItem(name = clean_html(item['title']), type=CDisplayListItem.TYPE_CATEGORY)
+            dItem = CDisplayListItem(name = clean_html(item['title']), type=iconType)
             dItem.privateData = item['private_data']
             list.append( (dItem,) )
         self["list"].setList(list)
