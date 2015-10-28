@@ -155,11 +155,12 @@ class IPTVSubSimpleDownloaderWidget(Screen):
             with codecs.open(self.downloader.getFullFileName(), 'r', encoding, 'replace') as fp:
                 subText = fp.read().encode('utf-8')
             
-            ext = self.currItem.get('url', '').split('?')[-1].split('.')[-1]
+            ext = self.currItem.get('format', '')
+            if ext == '':
+                ext = self.currItem.get('url', '').split('?')[-1].split('.')[-1]
             filePath = '{0}_{1}_{2}'.format(self.params['movie_title'], self.currItem.get('title', ''), self.currItem.get('lang', ''))
             filePath = RemoveDisallowedFilenameChars(filePath)
-            if ext == 'srt':
-                filePath += '.srt'
+            filePath += '.' + ext
             
             with open(GetSubtitlesDir(filePath), 'w') as fp:
                 fp.write(subText)

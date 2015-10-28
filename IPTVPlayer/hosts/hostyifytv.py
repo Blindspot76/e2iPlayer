@@ -282,13 +282,20 @@ class YifyTV(CBaseHostClass):
         #printDBG(pyCode)
         #printDBG(data)
         
+        subLangs = self.cm.ph.getSearchGroups(data, '&sub=([^&]+?)&')[0]
+        subID    = self.cm.ph.getSearchGroups(data, '&id=(tt[^&]+?)&')[0]
+        subLangs = subLangs.split(',')
+        sub_tracks = []
+        for lang in subLangs:
+            sub_tracks.append({'title':lang, 'url':'http://yify.tv/player/bajarsub.php?%s_%s' % (subID, lang), 'lang':lang, 'format':'srt'})
+        
         data = data.split('&')
         idx = 1
         for item in data:
             tmp = item.split('=')
             if len(tmp)!= 2: continue
             if tmp[1].endswith('enc'):
-                url = strwithmeta( tmp[1] )
+                url = strwithmeta(tmp[1], {'external_sub_tracks':sub_tracks})
                 url.meta['Referer'] = cItem['url']
                 url.meta['sou'] = tmp[0]
                 urlTab.append({'name':_('Mirror') + ' %s' % idx, 'url':url, 'need_resolve':1})
@@ -298,13 +305,15 @@ class YifyTV(CBaseHostClass):
     def getVideoLinks(self, baseUrl):
         printDBG("Movie4kTO.getVideoLinks [%s]" % baseUrl)
         urlTab = []
+        sub_tracks = strwithmeta(baseUrl).meta.get('external_sub_tracks', [])
+        
         header = dict(self.AJAX_HEADER)
         header['Referer'] = baseUrl.meta['Referer']
         post_data = {'fv':'18', 'url':baseUrl, 'sou':baseUrl.meta.get('sou', '')}
         url = self._getFullUrl('/player/pk/pk/plugins/player_p2.php')
         sts, data = self.cm.getPage(url, {'header':header}, post_data)
         if not sts: return []
-        printDBG(data)
+        #printDBG(data)
         try:
             data = byteify(json.loads(data))
             for item in data:
@@ -319,6 +328,9 @@ class YifyTV(CBaseHostClass):
             if url.startswith('//'):
                 videoUrl = 'http:' + videoUrl
             urlTab = self.up.getVideoLinkExt(videoUrl)
+        for idx in range(len(urlTab)):
+            urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'external_sub_tracks':sub_tracks})
+        
         return urlTab
         
     def getFavouriteData(self, cItem):
