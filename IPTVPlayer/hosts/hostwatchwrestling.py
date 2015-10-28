@@ -197,16 +197,34 @@ class Watchwrestling(CBaseHostClass):
         cItem['sort'] = searchType
         self.listMovies(cItem, 'list_server')
         
+    def _clearData(self, data):
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        return data
+        
     def getLinksForVideo(self, cItem):
         printDBG("Watchwrestling.getLinksForVideo [%s]" % cItem)
         urlTab = []
         url = cItem['url']
-        if 1 != self.up.checkHostSupport(url):
-            sts, data = self.cm.getPage(url, {'header':{'Referer':cItem['Referer'], 'User-Agent':'Mozilla/5.0'}})
-            if not sts: return urlTab
-            url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="([^"]+?)"', 1, True)[0]
+        Referer =  cItem['Referer']
+        if 1 != self.up.checkHostSupport(url):  
+            tries = 0
+            while tries < 3:
+                sts, data = self.cm.getPage(url, {'header':{'Referer':Referer, 'User-Agent':'Mozilla/5.0'}})
+                if not sts: return urlTab
+                data = data.replace('// -->', '')
+                data = self._clearData(data)
+                #printDBG(data)
+                if 'eval(unescape' in data:
+                    data = urllib.unquote(self.cm.ph.getSearchGroups(data, '''eval\(unescape\(['"]([^"^']+?)['"]''')[0])
+                url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="([^"]+?)"', 1, True)[0]
+                if 'protect.cgi' in url:
+                    Referer = cItem['url']
+                else:
+                    break
+                tries += 1
         url = strwithmeta(url)
-        url.meta['Referer'] = cItem['Referer']
+        url.meta['Referer'] = Referer
         url.meta['live'] = cItem.get('live', False)
         
         urlTab.append({'name':cItem['title'], 'url':url, 'need_resolve':1})
