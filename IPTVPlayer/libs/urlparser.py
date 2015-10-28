@@ -22,6 +22,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                OPENLOADIO_decryptPlayerParams, \
                                                                captchaParser, \
                                                                getDirectM3U8Playlist, \
+                                                               decorateUrl, \
                                                                getF4MLinksWithMeta, \
                                                                MYOBFUSCATECOM_OIO, \
                                                                MYOBFUSCATECOM_0ll, \
@@ -68,31 +69,7 @@ class urlparser:
     
     @staticmethod
     def decorateUrl(url, metaParams={}):
-        retUrl = strwithmeta( url )
-        retUrl.meta.update(metaParams)
-        urlLower = url.lower()
-        if 'iptv_proto' not in retUrl.meta:
-            if urlLower.split('?')[0].endswith('.m3u8'):
-                retUrl.meta['iptv_proto'] = 'm3u8'
-            elif urlLower.split('?')[0].endswith('.f4m'):
-                retUrl.meta['iptv_proto'] = 'f4m'
-            elif urlLower.startswith('rtmp'):
-                retUrl.meta['iptv_proto'] = 'rtmp'
-            elif urlLower.startswith('https'):
-                retUrl.meta['iptv_proto'] = 'https'
-            elif urlLower.startswith('http'):
-                retUrl.meta['iptv_proto'] = 'http'
-            elif urlLower.startswith('file'):
-                retUrl.meta['iptv_proto'] = 'file'
-            elif urlLower.startswith('rtsp'):
-                retUrl.meta['iptv_proto'] = 'rtsp'
-            elif urlLower.startswith('mms'):
-                retUrl.meta['iptv_proto'] = 'mms'
-            elif urlLower.startswith('mmsh'):
-                retUrl.meta['iptv_proto'] = 'mmsh'
-            elif 'protocol=hls' in url.lower():
-                retUrl.meta['iptv_proto'] = 'm3u8'
-        return retUrl
+        return decorateUrl(url, metaParams)
         
     @staticmethod
     def decorateParamsFromUrl(baseUrl, overwrite=False):
@@ -1005,7 +982,9 @@ class pageParser:
         vidTab = []
         player_v5 = self.cm.ph.getSearchGroups(data, r'playerV5\s*=\s*dmp\.create\([^,]+?,\s*({.+?})\);')[0]
         if '' != player_v5:
-            player_v5 = byteify(json.loads(player_v5))['metadata']['qualities']
+            player_v5 = byteify(json.loads(player_v5))
+            printDBG(player_v5)
+            player_v5 = player_v5['metadata']['qualities']
             for quality, media_list in player_v5.items():
                 for media in media_list:
                     media_url = media.get('url')

@@ -396,7 +396,34 @@ class captchaParser:
     
 ################################################################################
 
-def getDirectM3U8Playlist(M3U8Url, checkExt=True):
+def decorateUrl(url, metaParams={}):
+    retUrl = strwithmeta( url )
+    retUrl.meta.update(metaParams)
+    urlLower = url.lower()
+    if 'iptv_proto' not in retUrl.meta:
+        if urlLower.split('?')[0].endswith('.m3u8'):
+            retUrl.meta['iptv_proto'] = 'm3u8'
+        elif urlLower.split('?')[0].endswith('.f4m'):
+            retUrl.meta['iptv_proto'] = 'f4m'
+        elif urlLower.startswith('rtmp'):
+            retUrl.meta['iptv_proto'] = 'rtmp'
+        elif urlLower.startswith('https'):
+            retUrl.meta['iptv_proto'] = 'https'
+        elif urlLower.startswith('http'):
+            retUrl.meta['iptv_proto'] = 'http'
+        elif urlLower.startswith('file'):
+            retUrl.meta['iptv_proto'] = 'file'
+        elif urlLower.startswith('rtsp'):
+            retUrl.meta['iptv_proto'] = 'rtsp'
+        elif urlLower.startswith('mms'):
+            retUrl.meta['iptv_proto'] = 'mms'
+        elif urlLower.startswith('mmsh'):
+            retUrl.meta['iptv_proto'] = 'mmsh'
+        elif 'protocol=hls' in url.lower():
+            retUrl.meta['iptv_proto'] = 'm3u8'
+    return retUrl
+
+def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True):
     if checkExt and not M3U8Url.split('?')[0].endswith('.m3u8'):
         return []
         
@@ -421,8 +448,13 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True):
         if m3u8Obj.is_variant:
             for playlist in m3u8Obj.playlists:
                 item = {}
-                meta.update({'iptv_proto':'m3u8', 'iptv_bitrate':playlist.stream_info.bandwidth})
-                item['url']     = strwithmeta(playlist.absolute_uri, meta)
+                if not variantCheck or playlist.absolute_uri.split('?')[-1].endswith('.m3u8'):
+                    meta.update({'iptv_proto':'m3u8', 'iptv_bitrate':playlist.stream_info.bandwidth})
+                    item['url'] = strwithmeta(playlist.absolute_uri, meta)
+                else:
+                    meta.pop('iptv_proto', None)
+                    item['url'] = decorateUrl(playlist.absolute_uri, meta)
+                
                 item['bitrate'] = playlist.stream_info.bandwidth
                 if None != playlist.stream_info.resolution:
                     item['with'] = playlist.stream_info.resolution[0]
