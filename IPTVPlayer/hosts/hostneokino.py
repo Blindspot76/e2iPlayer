@@ -93,9 +93,10 @@ class NeoKinoNet(CBaseHostClass):
         idx = 0
         for item in data:
             item = item.split('</li>')
+            #printDBG(item)
             if len(item): del item[-1]
             for it in item: 
-                url    = self.cm.ph.getSearchGroups(it, '''href=['"]([^"^']+?)["']''')[0]
+                url    = self.cm.ph.getSearchGroups(it, '''href=['"]([^"^']+?)["']''', 1, True)[0]
                 if url == '': continue
                 title  = self.cleanHtmlStr(it)
                 self.filterCache[idx].append({'title':title, 'url':self._getFullUrl(url)})

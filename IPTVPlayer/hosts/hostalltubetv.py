@@ -56,7 +56,7 @@ class AlltubeTV(CBaseHostClass):
     MAIN_CAT_TAB = [{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':''},
                     {'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':''},
                     {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':''},
-                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'5', 'icon':''},
+                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'5', 'icon':'', 'mtype':True},
                     {'category':'list_rank',          'title': _('Ranking'),       'url':MAIN_URL+'ranking', 'icon':''},
                     {'category':'search',             'title': _('Search'), 'search_item':True},
                     {'category':'search_history',     'title': _('Search history')} ]
@@ -64,7 +64,7 @@ class AlltubeTV(CBaseHostClass):
     LAST_ADDED_TAB = [{'category':'latest_added_movies',  'title': _('Movies'),        'url':MAIN_URL, 'icon':''},
                       {'category':'latest_added_series',  'title': _('Series'),        'url':MAIN_URL, 'icon':''} ]
                       
-    SERIES_CAT_TAB = [{'category':'list_series_abc',  'title': _('ABC'),                           'url':MAIN_URL, 'icon':''},
+    SERIES_CAT_TAB = [{'category':'list_series_abc',  'title': _('ABC'),                        'url':MAIN_URL, 'icon':''},
                       {'category':'list_series',      'title': _('All'), 'letter':'all',        'url':MAIN_URL, 'icon':''} ]
  
     def __init__(self):
@@ -94,15 +94,15 @@ class AlltubeTV(CBaseHostClass):
         printDBG("AlltubeTV._listItemsTab >>>>>>> cItem[%r]" % cItem)
         
         url = cItem['url']
-        page = cItem.get('page', 1)
-        if page > 1:
-            url += 'strona[%s]+' % page
         if '' != cItem.get('cat', ''):
             url += 'kategoria[%s]+' % cItem['cat']
         if '' != cItem.get('ver', ''):
             url += 'wersja[%s]+' % cItem['ver']
         if '' != cItem.get('year', ''):
             url += 'rok[%s]+' % cItem['year']
+        page = cItem.get('page', 1)
+        if page > 1:
+            url += 'strona[%s]+' % page
         
         sts, data = self.cm.getPage(url)
         if not sts: return 
@@ -119,7 +119,13 @@ class AlltubeTV(CBaseHostClass):
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             title  = self.cm.ph.getDataBeetwenMarkers(item, '<div class="title">', '</div>', False)[1]
+            if '' == title: 
+                title = self.cm.ph.getDataBeetwenMarkers(item, '<h3>', '</h3>', False)[1]
+            if '' == title: 
+                title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
             desc   = self.cm.ph.getDataBeetwenMarkers(item, '<div class="description">', '</div>', False)[1]
+            if '' == desc:
+                desc = item.split('<p>')[-1]
             
             params = dict(cItem)
             params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
@@ -135,11 +141,11 @@ class AlltubeTV(CBaseHostClass):
             
     def listLatestAddedMovies(self, cItem):
         printDBG("AlltubeTV.listLatestAddedMovies")
-        self._listItemsTab(cItem, 'statnio dodane Filmy', 'statnio dodane seriale', '<div class="col-sm-6">', category='video')
+        self._listItemsTab(cItem, 'statnio dodane filmy', '<div class="col-sm-6">', '<div class="item clearfix">', category='video')
         
     def listLatestAddedSeries(self, cItem, category):
         printDBG("AlltubeTV.listLatestAddedSeries")
-        self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-4">', '<div class="col-sm-6">', category)
+        self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-6">', '<div class="item clearfix">', category)
             
     def fillFilterCache(self, url):
         sts, data = self.cm.getPage(url)
@@ -170,15 +176,15 @@ class AlltubeTV(CBaseHostClass):
     def _listItemsTab2(self, cItem, category='video'):
         printDBG("AlltubeTV._listItemsTab >>>>>>> cItem[%r]" % cItem)
         url = cItem['url']
-        page = cItem.get('page', 1)
-        if page > 1:
-            url += 'strona[%s]+' % page
         if '' != cItem.get('cat', ''):
             url += 'kategoria[%s]+' % cItem['cat']
         if '' != cItem.get('ver', ''):
             url += 'wersja[%s]+' % cItem['ver']
         if '' != cItem.get('year', ''):
             url += 'rok[%s]+' % cItem['year']
+        page = cItem.get('page', 1)
+        if page > 1:
+            url += 'strona[%s]+' % page
         
         sts, data = self.cm.getPage(url)
         if not sts: return 
@@ -211,7 +217,10 @@ class AlltubeTV(CBaseHostClass):
             
     def listMovies(self, cItem):
         printDBG("AlltubeTV.listMovies")
-        self._listItemsTab(cItem, '<div class="col-sm-9">', '<div class="container">', '<div class="col-sm-6">', category='video')
+        if cItem.get('mtype', False):
+            self._listItemsTab(cItem, '<div id="list-movie">', '<div class="col-sm-12">', '<div class="col-xs-3 col-md-2">', category='video')
+        else:
+            self._listItemsTab(cItem, '<div class="col-sm-8">', '<div class="col-sm-12">', '<div class="border-box clearfix">', category='video')
         
     def fillSeriesCache(self, url):
         printDBG("AlltubeTV.fillSeriesCache")
@@ -219,7 +228,7 @@ class AlltubeTV(CBaseHostClass):
         self.seriesLetters = []
         sts, data = self.cm.getPage(url)
         if not sts: return
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="term-list">', '</ul>', False)[1]
+        data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="term-list clearfix">', '</ul>', False)[1]
         data = re.compile('<li[^>]*?data-letter="([^"]+)"[^>]*?>[^<]*?<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
         for item in data:
             letter = item[0]
@@ -273,14 +282,6 @@ class AlltubeTV(CBaseHostClass):
             params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
             params['category'] = category
             self.addDir(params)
-        
-    def listLatestMovies(self, cItem):
-        printDBG("AlltubeTV.listLatestMovies")
-        self._listLatestItemsTab(cItem, 'video')
-            
-    def listLatestSeries(self, cItem, category):
-        printDBG("AlltubeTV.listLatestSeries")
-        self._listLatestItemsTab(cItem, category)
         
     def listEpisodes(self, cItem):
         printDBG("AlltubeTV.listEpisodes")
@@ -350,6 +351,18 @@ class AlltubeTV(CBaseHostClass):
             key = 'film'
         elif searchType == 'series':
             key = 'serial'
+            
+        data = re.compile('<a[^>]*?href="([^"]*?/%s/[^"]*?)"[^>]*?>([^<]+?)<' % key).findall(data)
+        for item in data:
+            if item[0] == '': continue
+            params = dict(cItem)
+            params.update( {'title':self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0])} )
+            if searchType == 'movies':
+                self.addVideo(params)
+            elif searchType == 'series':
+                params['category'] =  'list_episodes'
+                self.addDir(params)
+        return
         
         data = data.split('</a>')
         if len(data): del data[-1]
@@ -438,8 +451,6 @@ class AlltubeTV(CBaseHostClass):
             self.listFilters(self.currItem, 'year', 'list_movies')
         elif category == 'list_movies':
             self.listMovies(self.currItem)
-        elif category == 'latest_movies':
-            self.listLatestMovies(self.currItem)
         elif category == 'list_rank':
             self.listRanking(self.currItem)
     #SERIES
@@ -451,8 +462,6 @@ class AlltubeTV(CBaseHostClass):
             self.listSeries(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
-        elif category == 'latest_series':
-            self.listLatestSeries(self.currItem, 'list_episodes')
     #LATEST ADDED
         elif category == 'latest_added':
             self.listsTab(self.LAST_ADDED_TAB, {'name':'category'})
