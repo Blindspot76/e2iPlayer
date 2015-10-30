@@ -38,6 +38,9 @@ config.plugins.iptvplayer.extplayer_policy2 = ConfigSelection(default = None, ch
 config.plugins.iptvplayer.extplayer_subtitle_font = ConfigSelection(default = "Regular", choices = [("Regular", "Regular")])
 config.plugins.iptvplayer.extplayer_subtitle_font_size = ConfigInteger(40, (20, 90))
 config.plugins.iptvplayer.extplayer_subtitle_font_color = ConfigSelection(default = "#FFFFFF", choices = COLORS_DEFINITONS)
+config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled = ConfigYesNo(default = False)
+config.plugins.iptvplayer.extplayer_subtitle_background = ConfigSelection(default = "#000000", choices = [('transparent', _('Transparent')), ('#000000', _('Black')), ('#80000000', _('Darkgray')), ('#cc000000', _('Lightgray'))])
+
 config.plugins.iptvplayer.extplayer_subtitle_border_color = ConfigSelection(default = "#000000", choices = COLORS_DEFINITONS)
 config.plugins.iptvplayer.extplayer_subtitle_shadow_color = ConfigSelection(default = "#000000", choices = COLORS_DEFINITONS)
 
@@ -116,9 +119,11 @@ class ConfigExtMoviePlayerBase():
     
     def getSubtitleFontSettings(self):
         settings = {}
+        settings['wrapping_enabled'] = config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled.value
         settings['font'] = config.plugins.iptvplayer.extplayer_subtitle_font.value
         settings['font_size'] = config.plugins.iptvplayer.extplayer_subtitle_font_size.value
         settings['font_color'] = config.plugins.iptvplayer.extplayer_subtitle_font_color.value
+        settings['background'] = config.plugins.iptvplayer.extplayer_subtitle_background.value
 
         if self.subtitle_border_avaliable and config.plugins.iptvplayer.extplayer_subtitle_border_enabled.value:
             settings['border'] = {} 
@@ -187,14 +192,19 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         if self.policy2_avaliable:
             list.append(getConfigListEntry(_("Default second video policy"), config.plugins.iptvplayer.extplayer_policy2) )
         
+        if not self.operatingPlayer:
+            list.append(getConfigListEntry(_("Subtitle line wrapping"), config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled) )
         list.append(getConfigListEntry(_("Subtitle font"), config.plugins.iptvplayer.extplayer_subtitle_font) )
         list.append(getConfigListEntry(_("Subtitle font size"), config.plugins.iptvplayer.extplayer_subtitle_font_size) )
         
-        list.append(getConfigListEntry(_("Subtitle box position"), config.plugins.iptvplayer.extplayer_subtitle_pos) )
-        list.append(getConfigListEntry(_("Subtitle box height"), config.plugins.iptvplayer.extplayer_subtitle_box_height) )
-        list.append(getConfigListEntry(_("Subtitle vertical alignment"), config.plugins.iptvplayer.extplayer_subtitle_box_valign) )
-       
         list.append(getConfigListEntry(_("Subtitle font color"), config.plugins.iptvplayer.extplayer_subtitle_font_color) )
+        list.append(getConfigListEntry(_("Subtitle background"), config.plugins.iptvplayer.extplayer_subtitle_background) )
+        
+        list.append(getConfigListEntry(_("Subtitle box position"), config.plugins.iptvplayer.extplayer_subtitle_pos) )
+        if config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled.value:
+            if 'transparent' == config.plugins.iptvplayer.extplayer_subtitle_background.value:
+                list.append(getConfigListEntry(_("Subtitle box height"), config.plugins.iptvplayer.extplayer_subtitle_box_height) )
+                list.append(getConfigListEntry(_("Subtitle vertical alignment"), config.plugins.iptvplayer.extplayer_subtitle_box_valign) )
         
         if self.subtitle_border_avaliable:
             list.append(getConfigListEntry(_("Subtitle border enabled"), config.plugins.iptvplayer.extplayer_subtitle_border_enabled) )
@@ -213,7 +223,9 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         
     def getSubOptionsList(self):
         tab = [config.plugins.iptvplayer.extplayer_subtitle_border_enabled,
-               config.plugins.iptvplayer.extplayer_subtitle_shadow_enabled
+               config.plugins.iptvplayer.extplayer_subtitle_shadow_enabled,
+               config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled,
+               config.plugins.iptvplayer.extplayer_subtitle_background,
               ]
 
     def changeSubOptions(self):

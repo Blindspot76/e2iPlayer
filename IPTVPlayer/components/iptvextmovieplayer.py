@@ -136,13 +136,33 @@ class IPTVExtMoviePlayer(Screen):
     
     def __prepareSkin(self):
         
-        sub = self.configObj.getSubtitleFontSettings()
-        subSkinPart = ' valign="%s" foregroundColor="%s" font="%s;%s" ' % (sub['box_valign'], sub['font_color'], sub['font'], sub['font_size'])
+        self.subConfig = self.configObj.getSubtitleFontSettings()
+        
+        if self.subConfig['wrapping_enabled']:
+            self.subLinesNum = 1
+        else:
+            self.subLinesNum = 4
+        
+        sub = self.subConfig
+        if self.subLinesNum > 1 or 'transparent' != self.subConfig['background']:
+            valign = "center"
+        else:
+            valign = sub['box_valign']
+        subSkinPart = ' valign="%s" foregroundColor="%s" font="%s;%s" ' % (valign, sub['font_color'], sub['font'], sub['font_size'])
         if 'border' in sub:
             subSkinPart += ' borderColor="%s" borderWidth="%s" ' % (sub['border']['color'], sub['border']['width']) 
         if 'shadow' in sub:
             subSkinPart += ' shadowColor="%s" shadowOffset="%s,%s" ' % (sub['shadow']['color'], sub['shadow']['xoffset'], sub['shadow']['yoffset']) 
+        subSkinPart += ' backgroundColor="%s" ' % (sub['background'])
         
+        if self.subLinesNum > 1:
+            subSkinPart += ' noWrap="1" '
+        
+        subSkinPart = '<widget name="subLabel{0}" position="10,%d" size="%d,%d" zPosition="1" halign="center" %s/>' % (getDesktop(0).size().height()-sub['pos']-sub['box_height'], getDesktop(0).size().width()-20, sub['box_height'], subSkinPart)
+        subSkin = ''
+        for idx in range(self.subLinesNum):
+            subSkin += subSkinPart.format(idx+1)
+            
         skin = """
         <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
                 <widget name="logoIcon"           position="0,0"           size="160,40"  zPosition="4"             transparent="1" alphatest="blend" />
@@ -161,17 +181,14 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                 <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
                 
-                <widget name="subLabel1"          position="10,%d"          size="%d,%d"   zPosition="1" transparent="1" backgroundColor="transparent" halign="center" %s/>
+                %s
         </screen>""" % ( getDesktop(0).size().width(), 
                          getDesktop(0).size().height(),
                          GetIPTVDMImgDir("playback_banner.png"),
                          GetIPTVDMImgDir("playback_progress.png"),
                          GetIPTVDMImgDir("playback_buff_progress.png"),
                          GetIPTVDMImgDir('playback_pointer.png'),
-                         (getDesktop(0).size().height()-sub['pos']-sub['box_height']),
-                         getDesktop(0).size().width()-20,
-                         sub['box_height'],
-                         subSkinPart
+                         subSkin
                          ) ##00000000 bottom
         sub = None
         return skin
@@ -182,6 +199,7 @@ class IPTVExtMoviePlayer(Screen):
         self.skin = self.__prepareSkin()
         Screen.__init__(self, session)
         self.skinName = "IPTVExtMoviePlayer"
+        
         self.player = player
         if 'gstplayer' == self.player: 
             self.playerName = _("external gstplayer")
@@ -270,8 +288,11 @@ class IPTVExtMoviePlayer(Screen):
         self['lengthTimeLabel']   = Label("0:00:00")
         
         # for subtitles
-        self['subLabel1']          = Label(" ")
-        self.subHandler            = {}
+        for idx in range(self.subLinesNum):
+            #printf('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' % ('subLabel%d'%(idx+1)))
+            self['subLabel%d'%(idx+1)] = Label(" ")
+        self.hideSubtitles()
+        self.subHandler = {}
         self.subHandler['current_sub_time_ms'] = -1
         self.subHandler['handler'] = IPTVSubtitlesHandler()
         self.subHandler['enabled'] = False
@@ -388,40 +409,48 @@ class IPTVExtMoviePlayer(Screen):
         if not confgiChanged: return
         
         # change subtitles settings
-        sub = self.configObj.getSubtitleFontSettings()
-        self["subLabel1"].instance.setFont( gFont(sub['font'], sub['font_size']) )
-        self["subLabel1"].instance.setForegroundColor( parseColor(sub['font_color']) )
-
-        if 'border' in sub:
-            self["subLabel1"].instance.setBorderColor( parseColor(sub['border']['color']) )
-            self["subLabel1"].instance.setBorderWidth( sub['border']['width'] )
-        else:
-            try:
-                tmp = dir(eLabel)
-                if 'setBorderColor' in tmp:
-                    self["subLabel1"].instance.setBorderWidth( 0 )
-            except: printExc()
+        self.subConfig = self.configObj.getSubtitleFontSettings()
+        sub = self.subConfig
         
-        if 'shadow' in sub:
-            self["subLabel1"].instance.setShadowColor( parseColor(sub['shadow']['color']) )
-            self["subLabel1"].instance.setShadowOffset( ePoint(sub['shadow']['xoffset'], sub['shadow']['yoffset']) )
-        else:
-            self["subLabel1"].instance.setShadowOffset( ePoint(0, 0) )
-            self["subLabel1"].instance.setShadowColor( parseColor("#ff111111") )
-            
-        try:
-            valignMap = {'bottom':2,'center':1, 'top':0}
-            self["subLabel1"].instance.setVAlign(valignMap.get(sub['box_valign'], 2))
-            
-            self["subLabel1"].instance.resize(eSize(getDesktop(0).size().width()-20, sub['box_height']))
-            self["subLabel1"].resize(eSize(getDesktop(0).size().width()-20, sub['box_height']))
-            
-            self['subLabel1'].move( ePoint(self['subLabel1'].position[0], getDesktop(0).size().height()-sub['pos']-sub['box_height']) )
-        except:
-            printExc()
+        for idx in range(self.subLinesNum):
+            subLabel = "subLabel%d"%(idx+1)
+            self[subLabel].instance.setFont( gFont(sub['font'], sub['font_size']) )
+            self[subLabel].instance.setForegroundColor( parseColor(sub['font_color']) )
+            self[subLabel].instance.setBackgroundColor( parseColor(sub['background']) )
 
-        self['subLabel1'].instance.move( ePoint(self['subLabel1'].position[0], getDesktop(0).size().height()-sub['pos']-sub['box_height']) )
+            if 'border' in sub:
+                self[subLabel].instance.setBorderColor( parseColor(sub['border']['color']) )
+                self[subLabel].instance.setBorderWidth( sub['border']['width'] )
+            else:
+                try:
+                    tmp = dir(eLabel)
+                    if 'setBorderColor' in tmp:
+                        self[subLabel].instance.setBorderWidth( 0 )
+                except: printExc()
             
+            if 'shadow' in sub:
+                self[subLabel].instance.setShadowColor( parseColor(sub['shadow']['color']) )
+                self[subLabel].instance.setShadowOffset( ePoint(sub['shadow']['xoffset'], sub['shadow']['yoffset']) )
+            else:
+                self[subLabel].instance.setShadowOffset( ePoint(0, 0) )
+                self[subLabel].instance.setShadowColor( parseColor("#ff111111") )
+            
+            if self.subLinesNum > 1 or 'transparent' != self.subConfig['background']:
+                self[subLabel].instance.setVAlign(1)
+            else:
+                try:
+                    valignMap = {'bottom':2,'center':1, 'top':0}
+                    self[subLabel].instance.setVAlign(valignMap.get(sub['box_valign'], 2))
+                    
+                    self[subLabel].instance.resize(eSize(getDesktop(0).size().width()-20, sub['box_height']))
+                    self[subLabel].resize(eSize(getDesktop(0).size().width()-20, sub['box_height']))
+                    self[subLabel].move( ePoint(10, getDesktop(0).size().height()-sub['pos']-sub['box_height']) )
+                    self[subLabel].instance.move( ePoint(10, getDesktop(0).size().height()-sub['pos']-sub['box_height']) )
+                except:
+                    printExc()
+            self.setSubtitlesText(" ", False)
+        if -1 != self.subHandler['current_sub_time_ms']:
+            self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
         sub = None
         
         # set video options
@@ -679,7 +708,7 @@ class IPTVExtMoviePlayer(Screen):
             self.enableSubtitles(encoding)
 
     def disableSubtitles(self):
-        self['subLabel1'].hide()
+        self.hideSubtitles()
         self.subHandler['enabled'] = False
         self.updateSubSynchroControl()
         
@@ -735,10 +764,59 @@ class IPTVExtMoviePlayer(Screen):
             #printDBG(text)
             #printDBG("===============================================================")
             if "" == text:
-                self['subLabel1'].hide()
+                self.hideSubtitles()
             else:
-                self['subLabel1'].setText(text)
-                self['subLabel1'].show()
+                self.setSubtitlesText(text)
+                
+    def hideSubtitles(self):
+        for idx in range(self.subLinesNum):
+            self['subLabel%d'%(idx+1)].hide()
+    
+    def setSubtitlesText(self, text, stripLine = True):
+        back = True
+        desktopW = getDesktop(0).size().width()
+        desktopH = getDesktop(0).size().height()
+        
+        dW = desktopW - 20
+        dH = self.subConfig['box_height']
+        
+        if self.subLinesNum == 1 and 'transparent' == self.subConfig['background']:
+            self['subLabel1'].setText(text)
+            self['subLabel1'].show()
+        else:
+            if self.subLinesNum == 1:
+                text = [text]
+            else:
+                text = text.split('\n')
+                text.reverse()
+            y = self.subConfig['pos']
+            for lnIdx in range(self.subLinesNum):
+                subLabel = 'subLabel%d' % (lnIdx+1)
+                if lnIdx < len(text):
+                    lnText = text[lnIdx]
+                    if stripLine:
+                        lnText = lnText.strip()
+                else:
+                    lnText = ''
+
+                if '' == lnText:
+                    self[subLabel].hide()
+                    continue
+                try:
+                    self[subLabel].instance.resize(eSize(dW, dH))
+                    self[subLabel].resize(eSize(dW, dH))
+                    
+                    self[subLabel].setText(lnText)
+                    textSize = self[subLabel].getSize()
+                    lW = textSize[0] + self.subConfig['font_size'] / 2
+                    lH = textSize[1] + self.subConfig['font_size'] / 2
+                    self[subLabel].instance.resize(eSize(lW, lH))
+                    
+                    self[subLabel].instance.move( ePoint((desktopW-lW) / 2, desktopH - y - lH) )
+                    y += lH 
+                    self[subLabel].show()
+                except:
+                    printExc()
         
     def updateInfo(self):
         self.extPlayerCmddDispatcher.doUpdateInfo()
