@@ -40,6 +40,7 @@ config.plugins.iptvplayer.extplayer_subtitle_font_size = ConfigInteger(40, (20, 
 config.plugins.iptvplayer.extplayer_subtitle_font_color = ConfigSelection(default = "#FFFFFF", choices = COLORS_DEFINITONS)
 config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled = ConfigYesNo(default = False)
 config.plugins.iptvplayer.extplayer_subtitle_line_height = ConfigInteger(40, (20, 999))
+config.plugins.iptvplayer.extplayer_subtitle_line_spacing = ConfigInteger(4, (0, 99))
 config.plugins.iptvplayer.extplayer_subtitle_background = ConfigSelection(default = "#000000", choices = [('transparent', _('Transparent')), ('#000000', _('Black')), ('#80000000', _('Darkgray')), ('#cc000000', _('Lightgray'))])
 
 config.plugins.iptvplayer.extplayer_subtitle_border_color = ConfigSelection(default = "#000000", choices = COLORS_DEFINITONS)
@@ -126,6 +127,7 @@ class ConfigExtMoviePlayerBase():
         settings['font_color'] = config.plugins.iptvplayer.extplayer_subtitle_font_color.value
         settings['background'] = config.plugins.iptvplayer.extplayer_subtitle_background.value
         settings['line_height'] = config.plugins.iptvplayer.extplayer_subtitle_line_height.value
+        settings['line_spacing'] = config.plugins.iptvplayer.extplayer_subtitle_line_spacing.value
 
         if self.subtitle_border_avaliable and config.plugins.iptvplayer.extplayer_subtitle_border_enabled.value:
             settings['border'] = {} 
@@ -198,8 +200,10 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
             list.append(getConfigListEntry(_("Subtitle line wrapping"), config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled) )
         list.append(getConfigListEntry(_("Subtitle font"), config.plugins.iptvplayer.extplayer_subtitle_font) )
         list.append(getConfigListEntry(_("Subtitle font size"), config.plugins.iptvplayer.extplayer_subtitle_font_size) )
-        if not config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled.value or \
-           'transparent' != config.plugins.iptvplayer.extplayer_subtitle_background.value:
+        if not config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled.value:
+            list.append(getConfigListEntry(_("Subtitle line height"), config.plugins.iptvplayer.extplayer_subtitle_line_height) )
+            list.append(getConfigListEntry(_("Line Spacing"), config.plugins.iptvplayer.extplayer_subtitle_line_spacing) )
+        elif 'transparent' != config.plugins.iptvplayer.extplayer_subtitle_background.value:
             list.append(getConfigListEntry(_("Subtitle line height"), config.plugins.iptvplayer.extplayer_subtitle_line_height) )
         
         list.append(getConfigListEntry(_("Subtitle font color"), config.plugins.iptvplayer.extplayer_subtitle_font_color) )
