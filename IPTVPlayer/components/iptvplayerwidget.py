@@ -1596,7 +1596,11 @@ class IPTVPlayerWidget(Screen):
         linkList = []
         if ret.status == RetHost.OK and \
            isinstance(ret.value, list) and 1 == len(ret.value):
-            self.yellow_pressed()
+           self.yellow_pressed()
+        elif ret.status == RetHost.ERROR and \
+             isinstance(ret.value, list) and 1 == len(ret.value) and \
+             isinstance(ret.value[0], basestring):
+           self.session.open(MessageBox, ret.value[0], type = MessageBox.TYPE_ERROR)
         
 #class IPTVPlayerWidget
 

@@ -24,7 +24,7 @@ import urllib
 import base64
 try:    import json
 except: import simplejson as json
-from os import path as os_path, chmod as os_chmod, remove as os_remove
+from os import path as os_path, chmod as os_chmod, remove as os_remove, rename as os_rename
 from Components.config import config, ConfigSelection, ConfigInteger, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -34,6 +34,7 @@ from Components.config import config, ConfigSelection, ConfigInteger, ConfigYesN
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_execute
 from Screens.MessageBox import MessageBox
+from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Tools.Directories import fileExists
 ###################################################
 
@@ -283,10 +284,16 @@ class IPTVHost(CHostBase):
         if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
         if self.host.currList[Index]['type'] in ['video', 'audio', 'picture'] and \
            self.host.currList[Index].get('url', '').startswith('file://'):
-            retlist = [IPTVChoiceBoxItem(_('Remove file'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['url'][7:]})]
+            params = IPTVChoiceBoxItem(_('Rename file'), "", {'action':'rename_file', 'file_path':self.host.currList[Index]['url'][7:]})
+            retlist.append(params)
+            params = IPTVChoiceBoxItem(_('Remove file'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['url'][7:]})
+            retlist.append(params)
             retCode = RetHost.OK
         elif self.host.currList[Index].get("category", '') == 'm3u':
-            retlist = [IPTVChoiceBoxItem(_('Remove m3u list'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['path']})]
+            params = IPTVChoiceBoxItem(_('Rename m3u list'), "", {'action':'rename_file', 'file_path':self.host.currList[Index]['path']})
+            retlist.append(params)
+            params = IPTVChoiceBoxItem(_('Remove m3u list'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['path']})
+            retlist.append(params)
             retCode = RetHost.OK
         return RetHost(retCode, value = retlist)
         
@@ -295,9 +302,28 @@ class IPTVHost(CHostBase):
         retlist = []
         if privateData['action'] == 'remove_file':
             try:
-                os_remove(privateData['file_path'])
-                retlist = ['refresh']
-                retCode = RetHost.OK
+                ret = self.host.sessionEx.waitForFinishOpen(MessageBox, text=_('Are you sure you want to remove file "%s"?') % privateData['file_path'], type=MessageBox.TYPE_YESNO, default=False)
+                if ret[0]:
+                    os_remove(privateData['file_path'])
+                    retlist = ['refresh']
+                    retCode = RetHost.OK
+            except:
+                printExc()
+        if privateData['action'] == 'rename_file':
+            try:
+                path, fileName = os_path.split(privateData['file_path'])
+                name, ext = os_path.splitext(fileName)
+                ret = self.host.sessionEx.waitForFinishOpen(VirtualKeyBoard, title=_('Set file name'), text=name)
+                printDBG('rename_file new name[%s]' % ret)
+                if isinstance(ret[0], basestring):
+                    newPath = os_path.join(path, ret[0] + ext)
+                    printDBG('rename_file new path[%s]' % newPath)
+                    if not os_path.isfile(newPath) and not os_path.islink(newPath):
+                        os_rename(privateData['file_path'], newPath)
+                        retlist = ['refresh']
+                        retCode = RetHost.OK
+                    else:
+                        retlist = [_('File "%s" already exists!') % newPath]
             except:
                 printExc()
         return RetHost(retCode, value=retlist)
