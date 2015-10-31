@@ -13,6 +13,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.m3uparser import ParseM3u
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
+from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxItem
 ###################################################
 
 ###################################################
@@ -23,7 +24,7 @@ import urllib
 import base64
 try:    import json
 except: import simplejson as json
-from os import path as os_path, chmod as os_chmod
+from os import path as os_path, chmod as os_chmod, remove as os_remove
 from Components.config import config, ConfigSelection, ConfigInteger, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -275,6 +276,31 @@ class IPTVHost(CHostBase):
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('localmedialogo.png')])
+        
+    def getCustomActions(self, Index = 0):
+        retCode = RetHost.ERROR
+        retlist = []
+        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
+        if self.host.currList[Index]['type'] in ['video', 'audio', 'picture'] and \
+           self.host.currList[Index].get('url', '').startswith('file://'):
+            retlist = [IPTVChoiceBoxItem(_('Remove file'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['url'][7:]})]
+            retCode = RetHost.OK
+        elif self.host.currList[Index].get("category", '') == 'm3u':
+            retlist = [IPTVChoiceBoxItem(_('Remove m3u list'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['path']})]
+            retCode = RetHost.OK
+        return RetHost(retCode, value = retlist)
+        
+    def performCustomAction(self, privateData):
+        retCode = RetHost.ERROR
+        retlist = []
+        if privateData['action'] == 'remove_file':
+            try:
+                os_remove(privateData['file_path'])
+                retlist = ['refresh']
+                retCode = RetHost.OK
+            except:
+                printExc()
+        return RetHost(retCode, value=retlist)
         
     def getResolvedURL(self, url):
         # resolve url to get direct url to video file

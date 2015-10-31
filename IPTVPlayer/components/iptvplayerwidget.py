@@ -162,7 +162,8 @@ class IPTVPlayerWidget(Screen):
             "2"       :   self.ok_pressed2,
             "3"       :   self.ok_pressed3,
             "4"       :   self.ok_pressed4,
-            "play"    :   self.startAutoPlaySequencer
+            "play"    :   self.startAutoPlaySequencer,
+            "menu"    :   self.menu_pressed
         }, -1)
 
         self["headertext"] = Label()
@@ -1325,12 +1326,12 @@ class IPTVPlayerWidget(Screen):
         self.session.nav.playService(self.currentService)
         self.checkAutoPlaySequencer()
     
-    def requestListFromHost(self, type, currSelIndex = -1, videoUrl = ''):
+    def requestListFromHost(self, type, currSelIndex = -1, privateData = ''):
         
         if not self.isInWorkThread():
             self["list"].hide()
             
-            if type not in ['ForVideoLinks', 'ResolveURL', 'ForArticleContent', 'ForFavItem']:
+            if type not in ['ForVideoLinks', 'ResolveURL', 'ForArticleContent', 'ForFavItem', 'PerformCustomAction']:
                 #hide bottom panel
                 self["cover"].hide()
                 self["console"].setText('')
@@ -1373,7 +1374,7 @@ class IPTVPlayerWidget(Screen):
                     self.workThread = asynccall.AsyncMethod(self.host.getLinksForVideo, self.selectHostVideoLinksCallback, True)(currSelIndex, selItem)
                 elif type == 'ResolveURL':
                     self["statustext"].setText(IDS_LOADING)
-                    self.workThread = asynccall.AsyncMethod(self.host.getResolvedURL, self.getResolvedURLCallback, True)(videoUrl)
+                    self.workThread = asynccall.AsyncMethod(self.host.getResolvedURL, self.getResolvedURLCallback, True)(privateData)
                 elif type == 'ForSearch':
                     self["statustext"].setText(IDS_LOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getSearchResults, boundFunction(self.callbackGetList, {}), True)(self.searchPattern, self.searchType)
@@ -1383,12 +1384,14 @@ class IPTVPlayerWidget(Screen):
                 elif type == 'ForFavItem':
                     self["statustext"].setText(IDS_LOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getFavouriteItem, self.getFavouriteItemCallback, True)(currSelIndex)
+                elif type == 'PerformCustomAction':
+                    self.workThread = asynccall.AsyncMethod(self.host.performCustomAction, self.performCustomActionCallback, True)(privateData)
                 else:
                     printDBG( 'requestListFromHost unknown list type: ' + type )
                 self.showSpinner()
             except:
                 printExc('The current host crashed')
-    #end requestListFromHost(self, type, currSelIndex = -1, videoUrl = ''):
+    #end requestListFromHost(self, type, currSelIndex = -1, privateData = ''):
         
     def startSearchProcedure(self, searchTypes):
         sts, prevPattern = CSearchHistoryHelper.loadLastPattern()
@@ -1552,7 +1555,49 @@ class IPTVPlayerWidget(Screen):
             if CFavItem.RESOLVER_SELF == favItem.resolver: favItem.resolver = self.hostName
             self.session.open(IPTVFavouritesAddItemWidget, favItem)
         else: self.session.open(MessageBox, _("No valid links available."), type=MessageBox.TYPE_INFO, timeout=10 )
-    
+        
+    def menu_pressed(self):
+        printDBG("IPTVPlayerWidget.menu_pressed")
+        # we have to be careful here as we will call method 
+        # directly from host
+        options = []
+        try:
+            if self.visible and not self.isInWorkThread():
+                try: 
+                    item = self.getSelItem()
+                except:
+                    printExc()
+                    item = None
+                if None != item:
+                    self.stopAutoPlaySequencer()
+                    self.currSelIndex = currSelIndex = self["list"].getCurrentIndex()        
+                    hRet= self.host.getCustomActions(self.currSelIndex)
+                    if hRet.status == RetHost.OK and  len(hRet.value):
+                        for item in hRet.value:
+                            if isinstance(item, IPTVChoiceBoxItem):
+                                options.append( item )
+            if len(options):
+                self.session.openWithCallback(self.requestCustomActionFromHost, IPTVChoiceBoxWidget, {'width':600, 'current_idx':0, 'title':_("Select action"), 'options':options})
+        except:
+            printExc()
+            
+    def requestCustomActionFromHost(self, ret):
+        printDBG("IPTVPlayerWidget.requestCustomActionFromHost ret[%r]" % [ret])
+        if isinstance(ret, IPTVChoiceBoxItem):
+            self.requestListFromHost('PerformCustomAction', -1, ret.privateData)
+            
+    def performCustomActionCallback(self, thread, ret):
+        asynccall.gMainFunctionsQueue.addToQueue("handlePerformCustomActionCallback", [thread, ret])
+            
+    def handlePerformCustomActionCallback(self, ret):
+        printDBG("IPTVPlayerWidget.handlePerformCustomActionCallback")
+        self["statustext"].setText("")
+        self["list"].show()
+        linkList = []
+        if ret.status == RetHost.OK and \
+           isinstance(ret.value, list) and 1 == len(ret.value):
+            self.yellow_pressed()
+        
 #class IPTVPlayerWidget
 
 class IPTVPlayerLCDScreen(Screen):

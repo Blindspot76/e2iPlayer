@@ -198,6 +198,17 @@ class IHost:
         
     def getSearchResults(self, pattern, searchType = None):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+
+    # return list of custom actions 
+    # for given Index,  
+    # this function is called directly from main theread
+    # it should be very quick and can not perform long actions,
+    # like reading file, download web page etc.
+    def getCustomActions(self, Index = 0):
+        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+        
+    def performCustomAction(self, privateData):
+        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
 '''
 CHostBase implements some typical methods
           from IHost interface
