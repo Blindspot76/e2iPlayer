@@ -708,7 +708,7 @@ class YoutubeIE(InfoExtractor):
     def _get_subtitles(self, video_id):
         sub_tracks = []
         try:
-            url = 'https://video.google.com/timedtext?hl=&type=list&v=%s' % (GetDefaultLang(), video_id)
+            url = 'https://video.google.com/timedtext?hl=%s&type=list&v=%s' % (GetDefaultLang(), video_id)
             sts, data = self.cm.getPage(url)
             if not sts: return sub_tracks
             
