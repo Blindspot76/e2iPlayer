@@ -763,7 +763,8 @@ class pageParser:
             url = "http://www.wgrane.pl/index.html?%s=%s" % (agree, vidHash.group(1))
             sts, data = self.cm.getPage(url, params)
             if not sts: return False
-        tmp = re.search('"(http[^"]+?/video/[^"]+?\.mp4[^"]*?)"', data)
+
+        tmp = re.search('''["'](http[^"^']+?/video/[^"^']+?\.mp4[^"^']*?)["']''', data)
         if tmp: return tmp.group(1)
         data = re.search("<meta itemprop='contentURL' content='([^']+?)'", data)
         if not data: return False

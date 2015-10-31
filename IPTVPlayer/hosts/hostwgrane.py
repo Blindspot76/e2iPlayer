@@ -147,7 +147,10 @@ class Wgrane:
                 plot = CParsingHelper.removeDoubles(remove_html_markup(item, ' ').replace(title, ''), ' ')
             
                 params = { 'title': title, 'url': self.MAINURL + "/" +vid_hash, 'icon': img, 'plot': plot}
-                self.playVideo(params)
+                if 'Rozmiar:' in item:
+                    continue
+                else:
+                    self.playVideo(params)
             
         if nextPage:
             params = {'title': "Następna strona", 'category': cat, 'cat_id':cat_id, 'sort':sort, 'page':str(int(page)+1), 'search_pattern':search_pattern}
@@ -186,7 +189,10 @@ class Wgrane:
             else: plot = ''
             
             params = { 'title': title, 'url': url, 'icon': img, 'plot': plot}
-            self.playVideo(params)
+            if 'Rozmiar:' in item:
+                continue
+            else:
+                self.playVideo(params)
             
         if nextPage:
             params = {'title': "Następna strona", 'url': baseUrl, 'category': cat, 'page':str(int(page)+1)}
@@ -289,41 +295,39 @@ class IPTVHost(CHostBase):
 
         return RetHost(RetHost.OK, value = urlTab)
 
-    def convertList(self, cList):
-        hostList = []
-    
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
+    def converItem(self, cItem):
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            if cItem['type'] == 'category':
-                if cItem['title'] == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  cItem.get('title', '')
-            title       =  clean_html(title.decode("utf-8")).encode("utf-8")
-            description =  cItem.get('plot', '')
-            description =  clean_html(description.decode("utf-8")).encode("utf-8")
-            icon        =  cItem.get('icon', '')
+        if cItem['type'] == 'category':
+            if cItem['title'] == 'Wyszukaj':
+                type = CDisplayListItem.TYPE_SEARCH
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
+        elif 'picture' == cItem['type']:
+            type = CDisplayListItem.TYPE_PICTURE
+        
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_PICTURE]:
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
             
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
+        title       =  clean_html( cItem.get('title', '') )
+        description =  clean_html( cItem.get('plot', '') )
+        icon        =  cItem.get('icon', '')
+        
+        return CDisplayListItem(name = title,
+                                    description = description,
+                                    type = type,
+                                    urlItems = hostLinks,
+                                    urlSeparateRequest = 1,
+                                    iconimage = icon,
+                                    possibleTypesOfSearch = possibleTypesOfSearch)
     # end convertList
 
     def getSearchItemInx(self):
