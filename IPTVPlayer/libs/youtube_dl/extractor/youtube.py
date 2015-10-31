@@ -3,8 +3,9 @@
 import urllib, urllib2, re
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import *
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 
 try:
     import json
@@ -703,6 +704,33 @@ class YoutubeIE(InfoExtractor):
             raise ExtractorError(u'Invalid URL: %s' % url)
         video_id = mobj.group(2)
         return video_id
+        
+    def _get_subtitles(self, video_id):
+        sub_tracks = []
+        try:
+            url = 'https://video.google.com/timedtext?hl=en&type=list&v=%s' % video_id
+            sts, data = self.cm.getPage(url)
+            if not sts: return sub_tracks
+            
+            def getArg(item, name):
+                return self.cm.ph.getDataBeetwenMarkers(item, '%s="' % name, '"', False)[1].encode('utf-8')
+            
+            data = data.split('/>')
+            for item in data:
+                if 'lang_code' not in item: continue
+                id = getArg(item, 'id')
+                name = getArg(item, 'name')
+                lang_code = getArg(item, 'lang_code')
+                lang_original = getArg(item, 'lang_original')
+                lang_translated = getArg(item, 'lang_translated')
+
+                title = (name + ' ' + lang_translated).strip()
+                params = {'lang':lang_code, 'v':video_id, 'fmt':'srt', 'name':name}
+                url = 'https://www.youtube.com/api/timedtext?' + urllib.urlencode(params)
+                sub_tracks.append({'title':title, 'url':url, 'lang':lang_code, 'format':'srt'})
+        except:
+            printExc()
+        return sub_tracks
 
     def _real_extract(self, url, ):
         # Extract original video URL from URL with redirection, like age verification, using next_url parameter
@@ -887,6 +915,7 @@ class YoutubeIE(InfoExtractor):
             printDBG('no conn, hlsvp or url_encoded_fmt_stream_map information found in video info')
             raise
 
+        sub_tracks = self._get_subtitles(video_id)
         results = []
         for format_param, video_real_url in video_url_list:
             # Extension
@@ -895,18 +924,21 @@ class YoutubeIE(InfoExtractor):
             #video_format = '{0} - {1}'.format(format_param if format_param else video_extension,
             #                                  self._video_dimensions.get(format_param, '???'))
             video_format = self._video_dimensions.get(format_param, '???')
+            video_real_url = video_real_url.encode('utf-8')
+            if len(sub_tracks):
+                video_real_url = strwithmeta(video_real_url, {'external_sub_tracks':sub_tracks})
 
             results.append({
-                'id':       video_id,
+                'id':       video_id.encode('utf-8'),
                 'url':      video_real_url,
-                'uploader': video_uploader,
-                'title':    video_title,
-                'ext':      video_extension,
-                'format':   video_format,
-                'thumbnail':    video_thumbnail,
-                'duration':     video_duration,
-                'player_url':   player_url,
-                'm3u8'      :   is_m3u8,
+                'uploader': video_uploader.encode('utf-8'),
+                'title':    video_title.encode('utf-8'),
+                'ext':      video_extension.encode('utf-8'),
+                'format':   video_format.encode('utf-8'),
+                'thumbnail':    video_thumbnail.encode('utf-8'),
+                'duration':     video_duration.encode('utf-8'),
+                'player_url':   player_url.encode('utf-8'),
+                'm3u8'      :   is_m3u8.encode('utf-8'),
             })
             
         return results

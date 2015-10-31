@@ -40,14 +40,14 @@ class YouTubeParser():
         try:
             list = YoutubeIE()._real_extract(url)
         except:
-            printExc('YouTubeParser.getDirectLinks Exception')
+            printExc()
             return []
-
+        
         retList = []
         for item in list:
-            #printDBG("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            #printDBG(">>>>>>>>>>>>>>>>>>>>>")
             #printDBG( item )
-            #printDBG("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            #printDBG("<<<<<<<<<<<<<<<<<<<<<")
             if -1 < formats.find( item['ext'] ):
                 if 'yes' == item['m3u8']:
                     format = re.search('([0-9]+?)p$', item['format'])
@@ -60,12 +60,6 @@ class YouTubeParser():
                     if format != None:
                         item['format'] = format.group(1)
                         retList.append(item)
-                    
-        # onverts all keys
-        for idx  in range(len(retList)):
-            for key in retList[idx].keys():
-                retList[idx][key] = retList[idx][key].encode('utf-8')
-                
         return retList
         
     ########################################################
