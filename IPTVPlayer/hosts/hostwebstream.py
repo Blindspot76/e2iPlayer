@@ -271,7 +271,7 @@ class HasBahCa(CBaseHostClass):
         def _first_of_each(*sequences):
             return (next((x for x in sequence if x), '') for sequence in sequences)
         
-        sts, data = self.cm.getPage( url )
+        sts, data = self.cm.getPage( url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('hasbahcaiptv')}, {'username':'member', 'password':'hasbahcaiptv'} )
         if not sts: return
         
         data = CParsingHelper.getDataBeetwenMarkers(data, '<table class="autoindex_table">', '</table>', False)[1]    
@@ -294,13 +294,18 @@ class HasBahCa(CBaseHostClass):
             if not new_url.startswith('http'): new_url = BASE_URL + new_url
             new_url = new_url.replace("&amp;", "&")
 
+            new_url = strwithmeta(new_url, {'cookiefile':'hasbahcaiptv'})
             params = {'name':name, 'title':title.strip(), 'url':new_url, 'desc':desc}
             self.addDir(params)
             
     def getDirectVideoHasBahCa(self, name, url):
         printDBG("getDirectVideoHasBahCa name[%s], url[%s]" % (name, url))
         videoTabs = []
-        sts, data = self.cm.getPage( url )
+        url = strwithmeta(url)
+        if 'cookiefile' in url.meta:
+            sts, data = self.cm.getPage( url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir(url.meta['cookiefile'])} )
+        else:
+            sts, data = self.cm.getPage( url )
         if sts:
             data = data.strip()
             if data.startswith('http'):
@@ -360,6 +365,11 @@ class HasBahCa(CBaseHostClass):
     def m3uList(self, listURL):
         printDBG('m3uList entry')
         params = {'header': self.HTTP_HEADER}
+        
+        listURL = strwithmeta(listURL)
+        if 'cookiefile' in listURL.meta:
+            params.update({'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir(listURL.meta['cookiefile'])} )
+            
         sts, data = self.cm.getPage(listURL, params)
         if not sts:
             printDBG("getHTMLlist ERROR geting [%s]" % listURL)
