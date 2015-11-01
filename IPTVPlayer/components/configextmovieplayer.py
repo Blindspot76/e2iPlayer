@@ -35,6 +35,7 @@ config.plugins.iptvplayer.extplayer_aspect = ConfigSelection(default = None, cho
 config.plugins.iptvplayer.extplayer_policy = ConfigSelection(default = None, choices = [(None, _("from E2 settings"))])
 config.plugins.iptvplayer.extplayer_policy2 = ConfigSelection(default = None, choices = [(None, _("from E2 settings"))])
 
+config.plugins.iptvplayer.extplayer_subtitle_auto_enable = ConfigYesNo(default = True)
 config.plugins.iptvplayer.extplayer_subtitle_font = ConfigSelection(default = "Regular", choices = [("Regular", "Regular")])
 config.plugins.iptvplayer.extplayer_subtitle_font_size = ConfigInteger(40, (20, 90))
 config.plugins.iptvplayer.extplayer_subtitle_font_color = ConfigSelection(default = "#FFFFFF", choices = COLORS_DEFINITONS)
@@ -121,6 +122,7 @@ class ConfigExtMoviePlayerBase():
     
     def getSubtitleFontSettings(self):
         settings = {}
+        settings['auto_enable'] = config.plugins.iptvplayer.extplayer_subtitle_auto_enable.value
         settings['wrapping_enabled'] = config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled.value
         settings['font'] = config.plugins.iptvplayer.extplayer_subtitle_font.value
         settings['font_size'] = config.plugins.iptvplayer.extplayer_subtitle_font_size.value
@@ -196,6 +198,7 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         if self.policy2_avaliable:
             list.append(getConfigListEntry(_("Default second video policy"), config.plugins.iptvplayer.extplayer_policy2) )
         
+        list.append(getConfigListEntry(_("Load automatically the subtitle from file with the same name"), config.plugins.iptvplayer.extplayer_subtitle_auto_enable) )
         if not self.operatingPlayer:
             list.append(getConfigListEntry(_("Subtitle line wrapping"), config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled) )
         list.append(getConfigListEntry(_("Subtitle font"), config.plugins.iptvplayer.extplayer_subtitle_font) )

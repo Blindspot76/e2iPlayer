@@ -119,6 +119,16 @@ class IPTVMovieMetaDataHandler():
     ##################################################
     # SUBTITLES
     ##################################################
+    def hasSubtitlesTracks(self):
+        localPrintDBG("IPTVMovieMetaDataHandler.hasSubtitlesTracks")
+        ret = False
+        try:
+            if len(self.data['tracks']['subtitles']['tracks']):
+                ret = True
+        except:
+            printExc()
+        return ret
+        
     def getSubtitlesTracks(self):
         localPrintDBG("IPTVMovieMetaDataHandler.getSubtitlesTracks")
         tracks = []

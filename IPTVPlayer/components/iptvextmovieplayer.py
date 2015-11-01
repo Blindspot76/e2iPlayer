@@ -657,35 +657,9 @@ class IPTVExtMoviePlayer(Screen):
             encoding = ''
         else:
             encoding = encoding.strip()
-        printDBG("enableSubtitlesFromFile filePath[%s] encoding[%s]" % (filePath, encoding))
-        def _getEncoding(filePath, lang=''):
+        if '' == encoding:
             encoding = 'utf-8'
-            if GetDefaultLang() == 'pl' and '' == lang:
-                # Method provided by @areq: http://forum.dvhk.to/showpost.php?p=5367956&postcount=5331
-                try:
-                    f = open(filePath)
-                    sub = f.read()
-                    f.close()
-                    iso = 0
-                    for i in (161, 166, 172, 177, 182, 188):
-                        iso += sub.count(chr(i))
-                    win = 0
-                    for i in (140, 143, 156, 159, 165, 185):
-                        win += sub.count(chr(i))
-                    utf = 0
-                    for i in (195, 196, 197):
-                        utf += sub.count(chr(i))
-                    if win > utf and win > iso:
-                        encoding = "CP1250"
-                    elif utf > iso and utf > win:
-                        encoding = "utf-8"
-                    else:
-                        encoding = "iso-8859-2"
-                    printDBG("IPTVExtMoviePlayer _getEncoding iso[%d] win[%d ] utf[%d] -> [%s]" % (iso, win, utf, encoding))
-                except:
-                    printExc()
-            return encoding
-        
+        printDBG("enableSubtitlesFromFile filePath[%s] encoding[%s]" % (filePath, encoding))
         if None != filePath:
             lang = CParsingHelper.getSearchGroups(filePath, "_([a-z]{2})_[0-9]+?_[0-9]+?_[0-9]+?(:?\.mlp|\.srt)$")[0]
             try: currDir, fileName = os_path.split(filePath)
@@ -703,8 +677,6 @@ class IPTVExtMoviePlayer(Screen):
             if -1 == trackIdx:
                 trackIdx = self.metaHandler.addSubtitleTrack( {"title":fileName, "id":"", "provider":"", "lang":lang, "delay_ms":0, "path":filePath} )
             self.metaHandler.setSubtitleIdx( trackIdx )
-            if '' == encoding:
-                encoding = _getEncoding(filePath, lang)
             self.enableSubtitles(encoding)
 
     def disableSubtitles(self):
@@ -716,7 +688,25 @@ class IPTVExtMoviePlayer(Screen):
         printDBG("enableSubtitles")
         if self.isClosing: return
         track = self.metaHandler.getSubtitleTrack()
-        if None == track: return
+        if None == track:
+            if not self.metaHandler.hasSubtitlesTracks() and self.subConfig['auto_enable']:
+                fileSRC = self.fileSRC
+                tmpMatch = 'file://'
+                if fileSRC.startswith(tmpMatch): 
+                    fileSRC = fileSRC[len(tmpMatch):].replace('//', '/')
+                if fileExists(fileSRC) and not fileSRC.endswith('/.iptv_buffering.flv'):
+                    subFile = ''
+                    try:
+                        name, ext = os_path.splitext(fileSRC)
+                        for ext in ['.srt', '.mlp']:
+                            if fileExists(name + ext):
+                                subFile = name + ext
+                                break
+                    except:
+                        printExc()
+                    if '' != subFile:
+                        self.openSubtitlesFromFileCallback(subFile)
+            return
         
         printDBG("enableSubtitles track[%s]" % track)
         
