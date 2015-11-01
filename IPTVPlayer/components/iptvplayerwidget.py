@@ -1579,14 +1579,16 @@ class IPTVPlayerWidget(Screen):
                     printExc()
                     item = None
                 if None != item:
-                    self.stopAutoPlaySequencer()
-                    self.currSelIndex = currSelIndex = self["list"].getCurrentIndex()        
-                    hRet= self.host.getCustomActions(self.currSelIndex)
-                    if hRet.status == RetHost.OK and  len(hRet.value):
-                        for item in hRet.value:
-                            if isinstance(item, IPTVChoiceBoxItem):
-                                options.append( item )
+                    currSelIndex = self["list"].getCurrentIndex()
+                else:
+                    currSelIndex = -1
+                hRet= self.host.getCustomActions(currSelIndex)
+                if hRet.status == RetHost.OK and  len(hRet.value):
+                    for item in hRet.value:
+                        if isinstance(item, IPTVChoiceBoxItem):
+                            options.append( item )
             if len(options):
+                self.stopAutoPlaySequencer()
                 self.session.openWithCallback(self.requestCustomActionFromHost, IPTVChoiceBoxWidget, {'width':600, 'current_idx':0, 'title':_("Select action"), 'options':options})
         except:
             printExc()

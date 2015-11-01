@@ -66,6 +66,13 @@ class LocalMedia(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'LocalMedia'})
+        self.currDir = ''
+
+    def getCurrDir(self):
+        return self.currDir
+        
+    def setCurrDir(self, currDir):
+        self.currDir = currDir
         
     def getExtension(self, path):
         ext = ''
@@ -132,7 +139,7 @@ class LocalMedia(CBaseHostClass):
             if url.startswith('/'):
                 url = 'file://' + url
                 need_resolve = 0
-            params.update( {'title':item['title'], 'url':url, 'need_resolve':need_resolve} )
+            params.update( {'title':item['title'], 'category':'m3u_item', 'url':url, 'need_resolve':need_resolve} )
             self.addVideo(params)
         
     def listDir(self, cItem):
@@ -152,6 +159,7 @@ class LocalMedia(CBaseHostClass):
         printDBG(ret)
         
         if ret['sts'] and 0 == ret['code']:
+            self.setCurrDir(path)
             data = ret['data'].split('\n')
             dirTab = []
             m3uTab = []
@@ -274,27 +282,81 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, LocalMedia(), False, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE])
+        self.cFilePath = ''
+        self.cType = ''
+        self.needRefresh = ''
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('localmedialogo.png')])
         
+    def getPrevList(self, refresh = 0):
+        self.host.setCurrDir('')
+        if(len(self.listOfprevList) > 0):
+            hostList = self.listOfprevList.pop()
+            hostCurrItem = self.listOfprevItems.pop()
+            self.host.setCurrList(hostList)
+            self.host.setCurrItem(hostCurrItem)
+            
+            convList = None
+            if '' != self.needRefresh: 
+                path = hostCurrItem.get('path', '')
+                if '' != path and os_path.realpath(path) == os_path.realpath(self.needRefresh):
+                    self.needRefresh = ''
+                    self.host.handleService(self.currIndex, 1, self.searchPattern, self.searchType)
+                    convList = self.convertList(self.host.getCurrList())
+            if None == convList:
+                convList = self.convertList(hostList)
+            return RetHost(RetHost.OK, value = convList)
+        else:
+            return RetHost(RetHost.ERROR, value = [])
+        
     def getCustomActions(self, Index = 0):
         retCode = RetHost.ERROR
         retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
+        
+        def addPasteAction(path):
+            if os_path.isdir(path):
+                if '' != self.cFilePath:
+                    cutPath, cutFileName = os_path.split(self.cFilePath)
+                    params = IPTVChoiceBoxItem(_('Paste "%s"') % cutFileName, "", {'action':'paste_file', 'path':path})
+                    retlist.append(params)
+        
+        ok = False
+        if not self.isValidIndex(Index):
+            path = self.host.getCurrDir()
+            addPasteAction(path)
+            retCode = RetHost.OK 
+            return RetHost(retCode, value=retlist)
+        
         if self.host.currList[Index]['type'] in ['video', 'audio', 'picture'] and \
            self.host.currList[Index].get('url', '').startswith('file://'):
-            params = IPTVChoiceBoxItem(_('Rename file'), "", {'action':'rename_file', 'file_path':self.host.currList[Index]['url'][7:]})
-            retlist.append(params)
-            params = IPTVChoiceBoxItem(_('Remove file'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['url'][7:]})
-            retlist.append(params)
-            retCode = RetHost.OK
+            fullPath = self.host.currList[Index]['url'][7:]
+            ok = True
         elif self.host.currList[Index].get("category", '') == 'm3u':
-            params = IPTVChoiceBoxItem(_('Rename m3u list'), "", {'action':'rename_file', 'file_path':self.host.currList[Index]['path']})
-            retlist.append(params)
-            params = IPTVChoiceBoxItem(_('Remove m3u list'), "", {'action':'remove_file', 'file_path':self.host.currList[Index]['path']})
-            retlist.append(params)
+            fullPath = self.host.currList[Index]['path']
+            ok = True
+        elif self.host.currList[Index].get("category", '') == 'dir':
+            fullPath = self.host.currList[Index]['path']
+            ok = True
+        if ok:
+            path, fileName = os_path.split(fullPath)
+            name, ext = os_path.splitext(fileName)
+            
+            if os_path.isfile(fullPath):
+                params = IPTVChoiceBoxItem(_('Rename'), "", {'action':'rename_file', 'file_path':fullPath})
+                retlist.append(params)
+                params = IPTVChoiceBoxItem(_('Remove'), "", {'action':'remove_file', 'file_path':fullPath})
+                retlist.append(params)
+                
+                params = IPTVChoiceBoxItem(_('Copy'), "", {'action':'copy_file', 'file_path':fullPath})
+                retlist.append(params)
+                
+                params = IPTVChoiceBoxItem(_('Cut'), "", {'action':'cut_file', 'file_path':fullPath})
+                retlist.append(params)
+            
+            addPasteAction(path)
             retCode = RetHost.OK
+        
         return RetHost(retCode, value = retlist)
         
     def performCustomAction(self, privateData):
@@ -326,6 +388,37 @@ class IPTVHost(CHostBase):
                         retlist = [_('File "%s" already exists!') % newPath]
             except:
                 printExc()
+        elif privateData['action'] == 'cut_file':
+            self.cFilePath = privateData['file_path']
+            self.cType = 'cut'
+            retCode = RetHost.OK
+        elif privateData['action'] == 'copy_file':
+            self.cFilePath = privateData['file_path']
+            self.cType = 'copy'
+            retCode = RetHost.OK
+        elif privateData['action'] == 'paste_file':
+            try:
+                ok = True
+                cutPath, cutFileName = os_path.split(self.cFilePath)
+                newPath = os_path.join(privateData['path'], cutFileName)
+                if os_path.isfile(newPath):
+                    retlist = [_('File "%s" already exists') % newPath]
+                    ok = False
+                else:
+                    if self.cType == 'cut':
+                        os_rename(self.cFilePath, newPath)
+                        self.needRefresh = cutPath
+                    elif self.cType == 'copy':
+                        cmd = 'cp "%s" "%s"' % (self.cFilePath, newPath)
+                        ret = iptv_execute()(cmd)
+                if ok:
+                    self.cType =  ''
+                    self.cFilePath =  ''
+                    retlist = ['refresh']
+                    retCode = RetHost.OK
+            except:
+                printExc()
+        
         return RetHost(retCode, value=retlist)
         
     def getResolvedURL(self, url):
