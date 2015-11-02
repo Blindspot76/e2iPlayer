@@ -80,7 +80,11 @@ class WgetDownloader(BaseDownloader):
             info_from = WgetDownloader.INFO.FROM_FILE
         self.infoFrom    = info_from
         
-        cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --progress=dot:default -t %d ' % retries) + '"' + self.url + '" -O "' + self.filePath + '" > /dev/null'
+        if self.infoFrom == WgetDownloader.INFO.FROM_DOTS:
+            info = "--progress=dot:default"
+        else: info = ""
+        
+        cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' %s -t %d ' % (info, retries)) + '"' + self.url + '" -O "' + self.filePath + '" > /dev/null'
         printDBG("Download cmd[%s]" % cmd)
         
         self.console = eConsoleAppContainer()
@@ -97,7 +101,18 @@ class WgetDownloader(BaseDownloader):
     def _dataAvail(self, data):
         if None != data:
             self.outData += data
-            if self.WGET_STS.CONNECTING == self.wgetStatus:
+            if self.infoFrom == WgetDownloader.INFO.FROM_FILE:
+                if 'Saving to:' in self.outData:
+                    self.console_stderrAvail_conn = None
+                    lines = self.outData.replace('\r', '\n').split('\n')
+                    for idx in range(len(lines)):
+                        if 'Length:' in lines[idx]:
+                            match = re.search(" ([0-9]+?) ", lines[idx])
+                            if match: self.remoteFileSize = int(match.group(1))
+                            match = re.search("(\[[^]]+?\])", lines[idx])
+                            if match: self.remoteContentType = match.group(1)
+                    self.outData = ''
+            elif self.WGET_STS.CONNECTING == self.wgetStatus:
                 self.outData += data 
                 lines = self.outData.replace('\r', '\n').split('\n')
                 for idx in range(len(lines)):
