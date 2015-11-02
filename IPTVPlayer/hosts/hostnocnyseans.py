@@ -339,7 +339,7 @@ class NocnySeansPL(CBaseHostClass):
         return urlTab
         
     def getVideoLinks(self, baseUrl):
-        printDBG("Movie4kTO.getVideoLinks [%s]" % baseUrl)
+        printDBG("NocnySeansPL.getVideoLinks [%s]" % baseUrl)
         urlTab = []
         url = ''
         if baseUrl == NocnySeansPL.VIDEO_URL:
@@ -368,6 +368,9 @@ class NocnySeansPL(CBaseHostClass):
                 data = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
                 if '' != data:
                     url = data
+        
+        if url.startswith('//'):
+            url = 'http:' + url
         
         if '' != url: 
             videoUrl = url

@@ -2025,16 +2025,16 @@ class pageParser:
         vidTab = []
         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts: return
-        stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"]+?/stream\,[^"]+?)[\'"]')[0]
-        if '' == stream: stream   = CParsingHelper.getSearchGroups(data, '[\'"](http://[^"\']+?\.flv)[\'"]')[0]
-        download = CParsingHelper.getSearchGroups(data, '"(http://[^"]+?/download\,[^"]+?)"')[0]
+        
+        stream   = self.cm.ph.getSearchGroups(data, '''['"](http://[^"^']+?/stream\,[^"^']+?)['"]''')[0]
+        if '' == stream: stream   = self.cm.ph.getSearchGroups(data, '''['"](http://[^"^']+?\.flv)['"]''')[0]
         if '' != stream:
             vidTab.append({'name': 'http://vshare.io/stream ', 'url':stream})
-            # '.flv' -> '.avi' | 'stream,' -> 'download,' | 'http://s4.' -> 'http://s6.'
-            if '' == download and stream.startswith('http://s4.') and stream.endswith('.flv') and 'stream,' in stream:
-                download = stream.replace('http://s4.', 'http://s6.').replace('stream,', 'download,').replace('.flv', '.avi')
-        if '' != download:
-            vidTab.append({'name': 'http://vshare.io/download ', 'url':download})
+            
+        if 0 == len(vidTab):
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'clip:', '}', False)[1]
+            url = self.cm.ph.getSearchGroups(data, '''['"](http[^"^']+?)['"]''')[0]
+            vidTab.append({'name': 'http://vshare.io/ ', 'url':url})
         return vidTab
             
     def parserVIDSSO(self, url):
