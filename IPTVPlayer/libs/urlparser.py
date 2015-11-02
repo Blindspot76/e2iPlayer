@@ -3662,7 +3662,7 @@ class pageParser:
             aastring = aastring.replace("(1 -0)","1")
             aastring = aastring.replace("(4 -0)","4")
             
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> \n %s <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" % aastring)
+            #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> \n %s <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" % aastring)
 
             decodestring = re.search(r"\\\+([^(]+)", aastring, re.DOTALL | re.IGNORECASE).group(1)
             decodestring = "\\+"+ decodestring
@@ -3672,7 +3672,11 @@ class pageParser:
             decodestring = decode(decodestring)
             decodestring = decodestring.replace("\\/","/")
             
-            videourl = re.search(r'src=\\"([^\\]+)', decodestring, re.DOTALL | re.IGNORECASE).group(1)
+            #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> \n %s <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n" % decodestring)
+            
+            videourl = self.cm.ph.getSearchGroups(decodestring, '''src=['"](http[^"^']+?)['"]''', 1, True)[0]
+            if '' == videourl: videourl = self.cm.ph.getSearchGroups(decodestring, '''['"](http[^"^']*?openload[^"^']+?)['"]''', 1, True)[0]
+            if '' == videourl: videourl = self.cm.ph.getSearchGroups(decodestring, '''['"](http[^"^']+?)['"]''', 1, True)[0]
             return videourl
 
         def decode(encoded):

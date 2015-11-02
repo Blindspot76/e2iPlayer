@@ -280,14 +280,17 @@ class YifyTV(CBaseHostClass):
         #printDBG(pyCode)
         data = self.unpackJS(pyCode, 'param')
         #printDBG(pyCode)
-        #printDBG(data)
+        printDBG(data)
         
         subLangs = self.cm.ph.getSearchGroups(data, '&sub=([^&]+?)&')[0]
         subID    = self.cm.ph.getSearchGroups(data, '&id=(tt[^&]+?)&')[0]
+        if subID == '':
+            subID    = self.cm.ph.getSearchGroups(data, '&pic=(tt[^&]+?)&')[0]
         subLangs = subLangs.split(',')
         sub_tracks = []
         for lang in subLangs:
-            sub_tracks.append({'title':lang, 'url':'http://yify.tv/player/bajarsub.php?%s_%s' % (subID, lang), 'lang':lang, 'format':'srt'})
+            if subID != '':
+                sub_tracks.append({'title':lang, 'url':'http://yify.tv/player/bajarsub.php?%s_%s' % (subID, lang), 'lang':lang, 'format':'srt'})
         
         data = data.split('&')
         idx = 1
