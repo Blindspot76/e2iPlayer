@@ -649,6 +649,7 @@ class IPTVExtMoviePlayer(Screen):
     def openSubtitlesFromFileCallback(self, filePath=None):
         printDBG("openSubtitlesFromFileCallback filePath[%s]" % filePath)
         if None != filePath:
+            self.subHandler['handler'].removeCacheFile(filePath)
             cmd = '%s "%s"' % (config.plugins.iptvplayer.uchardetpath.value, filePath) 
             self.workconsole = iptv_system(cmd, boundFunction(self.enableSubtitlesFromFile, filePath))
         
@@ -1260,6 +1261,7 @@ class IPTVExtMoviePlayer(Screen):
         
     def downloadSubCallback(self, ret = None):
         if None != ret:
+            self.subHandler['handler'].removeCacheFile(ret.get('path', ''))
             idx = self.metaHandler.addSubtitleTrack(ret)
             self.metaHandler.setSubtitleIdx( idx )
             self.enableSubtitles()

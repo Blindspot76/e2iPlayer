@@ -19,6 +19,7 @@ import codecs
 import time
 try:    import json
 except: import simplejson as json
+from os import remove as os_remove
 ###################################################
 
 class IPTVSubtitlesHandler:
@@ -130,6 +131,13 @@ class IPTVSubtitlesHandler:
         #time2 = time.time()
         #printDBG('>>>>>>>>>>getSubtitles function took %0.3f ms' % ((time2-time1)*1000.0))
         return marker, ret
+        
+    def removeCacheFile(self, filePath):
+        cacheFile = self._getCacheFileName(filePath)
+        try:
+            os_remove(cacheFile)
+        except:
+            printExc()
             
     def _getCacheFileName(self, filePath):
         tmp = filePath.split('/')[-1]
