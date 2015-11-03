@@ -75,6 +75,17 @@ class YifyTV(CBaseHostClass):
         if not self.MAIN_URL.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
+    
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
+        params.update({'header':HTTP_HEADER})
+        
+        proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote_plus(url))
+        params['header']['Referer'] = proxy
+        url = proxy
+        #sts, data = self.cm.getPage(url, params, post_data)
+        #printDBG(data)
+        return self.cm.getPage(url, params, post_data)
 
     def listsTab(self, tab, cItem, type='dir'):
         printDBG("YifyTV.listsTab")
@@ -208,12 +219,16 @@ class YifyTV(CBaseHostClass):
                 return b[a]
             except:
                 return 'pic'
+        
+        def justRet(data):
+            return data
+        
         try:
             paramsAlgoObj = compile(data, '', 'exec')
         except:
             printExc('unpackJS compile algo code EXCEPTION')
             return ''
-        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet}
+        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet, 'justRet':justRet}
         vLocals = { name: None }
 
         try:
@@ -227,20 +242,11 @@ class YifyTV(CBaseHostClass):
             printExc('decryptPlayerParams EXCEPTION')
         return ''
         
-    def getLinksForVideo(self, cItem):
-        printDBG("YifyTV.getLinksForVideo [%s]" % cItem)
-        urlTab = []
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return urlTab
-        
-        #data = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^"]*?=[^"]*?"([^"]+?)"')[0]
-        dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var mouse_and_cat_playing_for_ever')[0].replace('var ', '')
-        
-        parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
-        
+    def getPyCode(self, data):
+        printDBG('getPyCode')
+        self.pyCode = ''
         globalTabCode = []
+        data = data.replace('"]"', '"--zz--"')
         tmp = re.compile('var([^;]+?)=[^;]*?(\[[^\]]+?\]);').findall(data)
         for item in tmp:
             var = item[0].strip()
@@ -249,6 +255,30 @@ class YifyTV(CBaseHostClass):
             if val == '': continue
             globalTabCode.append('%s = %s' % (var, val))
         globalTabCode = '\n'.join( globalTabCode )
+        globalTabCode = globalTabCode.replace('"--zz--"', '"]"')
+        data = data.replace('"--zz--"', '"]"')
+        
+        self.evalNum = 0
+        def evalSimple(data):
+            dat = data.group(0)
+            funName = 'eval%d()' % self.evalNum
+            funData = 'def %s:' % funName
+            self.evalNum += 1
+            #printDBG("----------------------\n%s\n------------------" % dat)
+            cond   = self.cm.ph.getDataBeetwenMarkers(dat, 'if', '{', False)[1]
+            body   = self.cm.ph.getAllItemsBeetwenMarkers(dat, 'return', ';', False)
+            funData += '\n\tif %s:' % cond.strip()
+            funData += '\n\t\treturn str(%s)' % body[0]
+            funData += '\n\telse:'
+            funData += '\n\t\treturn str(%s)' % body[1]          
+            funData += '\n'
+            
+            self.pyCode += funData
+            #printDBG("====================\n%s\n====================" % funData)
+            return funName
+        
+        data = re.sub('\(eval\("[^"]+?"\)\)', evalSimple, data)
+        args = self.cm.ph.getDataBeetwenMarkers(data, 'parseRes2', ";})", False)[1]
         
         data2 = data.split('\n')
         data = []
@@ -259,7 +289,7 @@ class YifyTV(CBaseHostClass):
         data = '\n'.join(data)
         funData = re.compile('function ([^\(]*?\([^\)]*?\))[^\{]*?\{([^\{]*?)\}').findall(data)
         
-        pyCode = ''
+        pyCode = self.pyCode
         for item in funData:
             funHeader = item[0]
             
@@ -274,6 +304,22 @@ class YifyTV(CBaseHostClass):
             if '' == funBody.replace('\t', '').replace('\n', '').strip():
                 continue
             pyCode += 'def %s:' % funHeader.strip() + '\n' + funBody
+        return globalTabCode, pyCode, args
+    
+    def getLinksForVideo(self, cItem):
+        printDBG("YifyTV.getLinksForVideo [%s]" % cItem)
+        urlTab = []
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return urlTab
+        
+        #data = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^"]*?=[^"]*?"([^"]+?)"')[0]
+        dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var mouse_and_cat_playing_for_ever')[0].replace('var ', '')
+        
+        parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
+        
+        globalTabCode, pyCode, args = self.getPyCode(data)
         
         pyCode = dat1.strip() + '\n' +  pyCode  + 'parametros ' + parametros.strip()
         pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n' + pyCode.replace('\n', '\n\t') + '\n\treturn parametros\n' + 'param = retA()'
@@ -306,6 +352,20 @@ class YifyTV(CBaseHostClass):
                 idx += 1
         return urlTab
         
+    def _evalJscode(self, data):
+        try:
+            data = byteify(json.loads(data))
+            code = data[0]['jscode']
+            m1 = '(function (){'
+            code = code[len(m1):]
+            globalTabCode, pyCode, args = self.getPyCode(code)
+            pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n\t' + pyCode.replace('\n', '\n\t') + ('\n\treturn justRet%s\n' % args) + 'param = retA()'
+            #printDBG(pyCode)
+            data = self.unpackJS(pyCode, 'param')
+        except:
+            printExc()
+        return data
+        
     def getVideoLinks(self, baseUrl):
         printDBG("Movie4kTO.getVideoLinks [%s]" % baseUrl)
         urlTab = []
@@ -313,19 +373,28 @@ class YifyTV(CBaseHostClass):
         
         header = dict(self.AJAX_HEADER)
         header['Referer'] = baseUrl.meta['Referer']
-        post_data = {'fv':'18', 'url':baseUrl, 'sou':baseUrl.meta.get('sou', '')}
-        url = self._getFullUrl('/player/pk/pk/plugins/player_p2.php')
-        sts, data = self.cm.getPage(url, {'header':header}, post_data)
-        if not sts: return []
-        #printDBG(data)
-        try:
-            data = byteify(json.loads(data))
-            for item in data:
-                if item.get('type', '').startswith('video/') and item.get('url', '').startswith('http'):
-                    urlTab.append({'name':'{0}x{1}'.format(item.get('height', ''), item.get('width', '')), 'url':item['url'], 'need_resolve':0})
-        except:
-            SetIPTVPlayerLastHostError('The Mirror is broken.\nIf available you can choose other source.')
-            printExc()
+        
+        souTab = [baseUrl.meta.get('sou', '')]
+        #if souTab[0] == 'pic':
+        #    souTab.append('adr')
+        for sou in souTab:
+            post_data = {'fv':'18', 'url':baseUrl, 'sou':baseUrl.meta.get('sou', '')}
+            url = 'http://yify.tv/player/pk/pk/plugins/player_p2.php'
+            sts, data = self.cm.getPage(url, {'header':header}, post_data)
+            if not sts: return []
+            #printDBG('>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<' % data)
+            try:
+                if 'jscode' in data:
+                    data = self._evalJscode(data)
+                data = byteify(json.loads(data))
+                for item in data:
+                    #printDBG('++++++++++++++++++++++\n%s\n++++++++++++++++++++++' % item)
+                    if item.get('type', '').startswith('video/') and item.get('url', '').startswith('http'):
+                        urlTab.append({'name':'{0}x{1}'.format(item.get('height', ''), item.get('width', '')), 'url':item['url'], 'need_resolve':0})
+            except:
+                SetIPTVPlayerLastHostError('The Mirror is broken.\nIf available you can choose other source.')
+                printExc()
+            if len(urlTab): break;
         
         if False: 
             videoUrl = url
