@@ -330,6 +330,16 @@ class YifyTV(CBaseHostClass):
         
         sub_tracks = []
         subLangs = self.cm.ph.getSearchGroups(data, '&sub=([^&]+?)&')[0]
+        if subLangs == '':
+            tmp = re.compile("\=([^&]*?)&").findall(data)
+            for it in tmp:
+                for e in ['PT2', 'EN', 'FR', 'ES']:
+                    if e in it:
+                        subLangs = it
+                        break
+                if '' != subLangs:
+                    break
+        
         if subLangs != '':
             subID    = self.cm.ph.getSearchGroups(data, '&id=(tt[^&]+?)&')[0]
             if subID == '':
