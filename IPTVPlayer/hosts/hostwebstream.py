@@ -165,6 +165,19 @@ class HasBahCa(CBaseHostClass):
         self.weebTvApi    = None
         self.teamCastTab  = {}
         
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
+        params.update({'header':HTTP_HEADER})
+        
+        if 'hasbahcaiptv.com' in url:
+            printDBG(url)
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e5'.format(urllib.quote_plus(url))
+            params['header']['Referer'] = proxy
+            url = proxy
+        #sts, data = self.cm.getPage(url, params, post_data)
+        #printDBG(data)
+        return self.cm.getPage(url, params, post_data)
+        
     def _cleanHtmlStr(self, str):
         str = str.replace('<', ' <').replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
         return self.cm.ph.removeDoubles(clean_html(str), ' ').strip()
@@ -255,6 +268,9 @@ class HasBahCa(CBaseHostClass):
             
     def listHasBahCa(self, item):
         url = item.get('url', '')
+        if 'proxy-german.de' in url:
+            url = urllib.unquote(url.split('?q=')[-1])
+        
         printDBG("listHasBahCa url[%s]" % url)
         BASE_URL = 'http://hasbahcaiptv.com/'
         
@@ -271,7 +287,7 @@ class HasBahCa(CBaseHostClass):
         def _first_of_each(*sequences):
             return (next((x for x in sequence if x), '') for sequence in sequences)
         
-        sts, data = self.cm.getPage( url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('hasbahcaiptv')}, {'username':'member', 'password':'hasbahcaiptv'} )
+        sts, data = self.getPage( url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('hasbahcaiptv')}, {'username':'member', 'password':'hasbahcaiptv'} )
         if not sts: return
         
         data = CParsingHelper.getDataBeetwenMarkers(data, '<table class="autoindex_table">', '</table>', False)[1]    
@@ -367,10 +383,15 @@ class HasBahCa(CBaseHostClass):
         params = {'header': self.HTTP_HEADER}
         
         listURL = strwithmeta(listURL)
+        meta = listURL.meta
+        if 'proxy-german.de' in listURL:
+            listURL = urllib.unquote(listURL.split('?q=')[-1])
+        
+        listURL = strwithmeta(listURL, meta)
         if 'cookiefile' in listURL.meta:
             params.update({'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir(listURL.meta['cookiefile'])} )
             
-        sts, data = self.cm.getPage(listURL, params)
+        sts, data = self.getPage(listURL, params)
         if not sts:
             printDBG("getHTMLlist ERROR geting [%s]" % listURL)
             return
