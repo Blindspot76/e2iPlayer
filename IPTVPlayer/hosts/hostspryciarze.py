@@ -6,13 +6,15 @@
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetLogoDir,GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir,GetCookieDir, byteify
 
 ###################################################
 # FOREIGN import
 ###################################################
 import re
 import copy
+try:    import json 
+except: import simplejson as json
 
 ###################################################
 def gettytul():
@@ -81,12 +83,6 @@ class Spryciarze():
                 
                 if len(match) == 1:
                     catItem = {'type': 'main', 'url': match[0][1], 'name': match[0][2], 'ilosc': match[0][3], 'subCatList': []}
-                    
-                    #printDBG('cat_ico: ' + catItem['ico'])
-                    #printDBG('cat_url: ' + catItem['url'])
-                    #printDBG('cat_name: ' + catItem['name'])
-                    #printDBG('cat_ilosc: ' + catItem['ilosc'])
-                    
                     self.currList.append(catItem)
 
                 else:
@@ -144,21 +140,12 @@ class Spryciarze():
                 if len(match) == 1:
                     catItem = {'type': 'sub', 'url': match[0][1], 'name': match[0][2], 'ilosc': match[0][3], 'subCatList': []}
                     
-                    #printDBG('cat_ico: ' + catItem['ico'])
-                    #printDBG('cat_url: ' + catItem['url'])
-                    #printDBG('cat_name: ' + catItem['name'])
-                    #printDBG('cat_ilosc: ' + catItem['ilosc'])
-                    
                     #Get sub-categories data
                     pattern = '<a href="(.+?)"[^>]*?>(.+?)<span> \(([0-9]+?)\)</span></a>'
                     match = re.compile(pattern, re.DOTALL).findall(subTab[1])
 
                     for j in range(len(match)):
-                        subItem = {'type': 'subSub', 'url': match[j][0], 'name': match[j][1], 'ilosc': match[j][2]}
-                        #printDBG('                 sub_url:' + subItem['url'])
-                        #printDBG('                 sub_name:' + subItem['name'])
-                        #printDBG('                 sub_ilosc:' + subItem['ilosc'])
-                        
+                        subItem = {'type': 'subSub', 'url': match[j][0], 'name': match[j][1], 'ilosc': match[j][2]}                        
                         catItem['subCatList'].append(subItem)
                         
                     if(len(catItem['subCatList'])):
@@ -321,13 +308,6 @@ class Spryciarze():
             tab[i] = ''
             if False == ignore:
                 self.currList.append(videoItem)
-                #printDBG('                 name:' + videoItem['name'])
-                #printDBG('                 url:' + videoItem['url'])
-                #printDBG('                 ico:' + videoItem['ico'])
-                #printDBG('                 odslony:' + videoItem['odslony'])
-                #printDBG('                 data:' + videoItem['data'])
-                #printDBG('                 godzina:' + videoItem['godzina'])
-                #printDBG('                 opis:' + videoItem['opis'])
 
         printDBG('Spryciarze.getVideoList len(self.currList): %d' % len(self.currList))
         return
@@ -336,15 +316,16 @@ class Spryciarze():
     def getVideoLinks(self, url):
         printDBG('Spryciarze.getVideoLink: ' + url)
         
+        linkstTab = []
         if None == url or 0 == len(url):
-            return []
+            return linkstTab
         
         post_data = None
         tries = 2
         while tries > 0:
             tries -= 1
             # get videoID
-            sts, data = self.cm.getPage(url, {'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': self.COOKIEFILE}, post_data)
+            sts, data = self.cm.getPage(url, {'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': self.COOKIEFILE}, post_data)
             if not sts: return []
             
             sts, block = self.cm.ph.getDataBeetwenMarkers(data, '<div class="film_blokada">', '</form>', False)
@@ -356,17 +337,22 @@ class Spryciarze():
                 post_data['yes'] = ''
                 continue
             
-            sts, player = self.cm.ph.getDataBeetwenMarkers(data, '<div id="video_container">', '</object>', False)
-            if sts:
-                videoUrl = self.cm.ph.getSearchGroups(data, 'dara="(http[^"]+?)"')[0]
-                if 'youtube' in videoUrl: return self.up.getVideoLinkExt( videoUrl )
-                videoUrl = self.cm.ph.getSearchGroups(data, 'src="(http://player.spryciarze.pl[^"]+?)"')[0]
-                sts, player = self.cm.getPage(videoUrl)
-                if sts:
-                    videoUrl = self.cm.ph.getSearchGroups(player, '<source[^>]*?src="([^"]+?)"[^>]*?type="video/mp4"[^>]*?>')[0]
-                    if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(player, '<source[^>]*?type="video/mp4"[^>]*?src="([^"]+?)"[^>]*?>')[0]
-                    if '' != videoUrl: return [{'name':'Native player', 'url':videoUrl}]
-        return []
+            player = self.cm.ph.getSearchGroups(data, 'src="(http://player.spryciarze.pl[^"]+?)"')[0]
+            sts, player = self.cm.getPage(player, {'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE})
+            if not sts: break
+            player = self.cm.ph.getSearchGroups(player, 'var data[^=]*?=[^\{]*?(\{[^;]+?);')[0]
+            try:
+                printDBG(player)
+                player = byteify(json.loads(player))
+                player = player['mediaFiles']
+                for item in player:
+                    if 'mp4' in item['type']:
+                        linkstTab.append({'name':'Native player', 'url':item['src']})
+            except:
+                printExc()
+            if len(linkstTab):
+                break
+        return linkstTab
     # end getVideoLink
     
     def handleService(self, index, refresh = 0, searchPattern = ''):
@@ -409,8 +395,6 @@ class Spryciarze():
         elif self.type == 'search':
             self.getSearchResut( searchPattern )
     # end handleService
- 
-
 
 class IPTVHost(IHost):
 
