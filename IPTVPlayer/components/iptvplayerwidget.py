@@ -136,7 +136,8 @@ class IPTVPlayerWidget(Screen):
         self.recorderMode = False #j00zek
 
         self.currentService = self.session.nav.getCurrentlyPlayingServiceReference()
-        #self.session.nav.stopService()
+        if config.plugins.iptvplayer.disable_live.value:
+            self.session.nav.stopService()
 
         self["key_red"]    = StaticText(_("Exit"))
         self["key_green"]  = StaticText(_("Player > Recorder"))
@@ -1333,7 +1334,8 @@ class IPTVPlayerWidget(Screen):
         
     def leaveMoviePlayer(self, answer = None, lastPosition = None, *args, **kwargs):
         self.writeCurrentTitleToFile("")
-        self.session.nav.playService(self.currentService)
+        if not config.plugins.iptvplayer.disable_live.value:
+            self.session.nav.playService(self.currentService)
         self.checkAutoPlaySequencer()
     
     def requestListFromHost(self, type, currSelIndex = -1, privateData = ''):
