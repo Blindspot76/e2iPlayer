@@ -72,6 +72,7 @@ class AlltubeTV(CBaseHostClass):
         self.filterCache = {}
         self.seriesCache = {}
         self.seriesLetters = []
+        self.episodesCache = []
         
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
@@ -282,9 +283,10 @@ class AlltubeTV(CBaseHostClass):
             params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
             params['category'] = category
             self.addDir(params)
-        
-    def listEpisodes(self, cItem):
-        printDBG("AlltubeTV.listEpisodes")
+            
+    def listSeasons(self, cItem, category):
+        printDBG("AlltubeTV.listSeasons")
+        self.episodesCache = []
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return 
@@ -299,25 +301,40 @@ class AlltubeTV(CBaseHostClass):
         if '' == icon: icon = cItem.get('icon', '')
         if '' == desc: desc = cItem.get('desc', '')
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="episode-list">', '</ul>', False)[1]
-        data = re.compile('<li[^>]*?class="episode"[^>]*?><a[^>]*?href="([^"]+?)">([^<]+?)</a></li>').findall( data )
-        sort = True
-        episodesList = []
-        for item in data:
-            try:
-                tmp = self.cm.ph.getSearchGroups(item[0], 'odcinek-([0-9]+?)-sezon-([0-9]+?)[^0-9]', 2)
-                season  = int(tmp[1])
-                episode = int(tmp[0])
-            except:
-                printExc()
-                season  = 0
-                episode = 0
-                sort    = False
-            episodesList.append( {'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
-        if sort:
-            episodesList.sort(key=lambda item: item['season']*1000 + item['episode'])#, reverse=True)
-            #episodesList.reverse()
-        self.listsTab(episodesList, cItem, 'video')
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-sm-4">', '<script>', False)[1]
+        data = data.split('</ul>')
+        for season in data:
+            seasonTitle = self.cm.ph.getDataBeetwenMarkers(season, '<h3>', '</h3>', False)[1].strip()
+            episodes = re.compile('<li[^>]*?class="episode"[^>]*?><a[^>]*?href="([^"]+?)">([^<]+?)</a></li>').findall( season )
+            sort = True
+            episodesList = []
+            for item in episodes:
+                try:
+                    tmp = self.cm.ph.getSearchGroups(item[0], 'odcinek-([0-9]+?)-sezon-([0-9]+?)[^0-9]', 2)
+                    season  = int(tmp[1])
+                    episode = int(tmp[0])
+                except:
+                    printExc()
+                    season  = 0
+                    episode = 0
+                    sort    = False
+                episodesList.append( {'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
+            if sort:
+                episodesList.sort(key=lambda item: item['season']*1000 + item['episode'])#, reverse=True)
+                #episodesList.reverse()
+            if len(episodesList):
+                params = dict(cItem)
+                params.update({'category':category, 'season_idx':len(self.episodesCache), 'title':seasonTitle, 'desc':  desc, 'icon':icon})
+                self.addDir(params)
+                self.episodesCache.append(episodesList)
+        
+    def listEpisodes(self, cItem):
+        printDBG("AlltubeTV.listEpisodes")
+        seasonIdx = cItem['season_idx']
+        
+        if seasonIdx >= 0 and seasonIdx < len(self.episodesCache):
+            episodesList = self.episodesCache[seasonIdx]
+            self.listsTab(episodesList, cItem, 'video')
         
     def listRanking(self, cItem):
         printDBG("AlltubeTV.listRanking")
@@ -360,7 +377,7 @@ class AlltubeTV(CBaseHostClass):
             if searchType == 'movies':
                 self.addVideo(params)
             elif searchType == 'series':
-                params['category'] =  'list_episodes'
+                params['category'] =  'list_seasons'
                 self.addDir(params)
         return
         
@@ -381,7 +398,7 @@ class AlltubeTV(CBaseHostClass):
             if searchType == 'movies':
                 self.addVideo(params)
             elif searchType == 'series':
-                params['category'] =  'list_episodes'
+                params['category'] =  'list_seasons'
                 self.addDir(params)
         
     def getLinksForVideo(self, cItem):
@@ -459,7 +476,9 @@ class AlltubeTV(CBaseHostClass):
         elif category == 'list_series_abc':
             self.listSeriesABC(self.currItem, 'list_series')
         elif category == 'list_series':
-            self.listSeries(self.currItem, 'list_episodes')
+            self.listSeries(self.currItem, 'list_seasons')
+        elif category == 'list_seasons':
+            self.listSeasons(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
     #LATEST ADDED
