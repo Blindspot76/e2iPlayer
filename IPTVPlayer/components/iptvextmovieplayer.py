@@ -859,7 +859,7 @@ class IPTVExtMoviePlayer(Screen):
                     self.playback['IsLive'] = False
                 if 0 < val:
                     # restore last position
-                    if 10 < self.lastPosition and self.lastPosition < self.playback['Length']:
+                    if 10 < self.lastPosition and self.lastPosition < (self.playback['Length'] - 10):
                         self.showPlaybackInfoBar()
                         self.extPlayerCmddDispatcher.doGoToSeek(str(self.lastPosition-5))
                         self.lastPosition = 0
@@ -929,12 +929,22 @@ class IPTVExtMoviePlayer(Screen):
         self["goToSeekLabel"].setPosition(x, self['goToSeekLabel'].position[1])
         
         # trigger delayed seek
-        self.playback['GoToSeekTimer'].start(1000) 
-
+        self.playback['GoToSeekTimer'].start(1000)
+        
+    def saveLastPlaybackTime(self):
+        lastPosition = self.playback.get('CurrentTime', 0)
+        if config.plugins.iptvplayer.remember_last_position.value and lastPosition > 0:
+            self.metaHandler.setLastPosition( lastPosition )
+            
+    def loadLastPlaybackTime(self):
+        if config.plugins.iptvplayer.remember_last_position.value and self.lastPosition < 1:
+            self.lastPosition = self.metaHandler.getLastPosition()
+    
     # handling of RCU keys
     def key_stop(self):
         self.isCloseRequestedByUser = True
         self.extPlayerCmddDispatcher.stop()
+        self.saveLastPlaybackTime()
     def key_play(self):         self.extPlayerCmddDispatcher.play()
     def key_pause(self):        self.extPlayerCmddDispatcher.pause()
     def key_exit(self):         self.doExit()
@@ -1020,6 +1030,7 @@ class IPTVExtMoviePlayer(Screen):
             self.hidePlaybackInfoBar()
         elif not self.isClosing:
             self.extPlayerCmddDispatcher.stop()
+            self.saveLastPlaybackTime()
             
     def doInfo(self):
         if not self.playbackInfoBar['visible']:
@@ -1274,6 +1285,7 @@ class IPTVExtMoviePlayer(Screen):
         self['bufferingBar'].value = 0
         self.initGuiComponentsPos()
         self.metaHandler.load()
+        self.loadLastPlaybackTime()
         if 'gstplayer' == self.player:
             if None != self.downloader:
                 self.downloader.subscribeFor_Finish(self.onDownloadFinished)

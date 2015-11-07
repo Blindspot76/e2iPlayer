@@ -26,6 +26,7 @@ from Components.config import config, ConfigSubsection, ConfigSelection, ConfigD
 COLORS_DEFINITONS = [("#000000", _("black")), ("#C0C0C0", _("silver")), ("#808080", _("gray")), ("#FFFFFF", _("white")), ("#800000", _("maroon")), ("#FF0000", _("red")), ("#800080", _("purple")), ("#FF00FF", _("fuchsia")), \
                      ("#008000", _("green")), ("#00FF00", _("lime")), ("#808000", _("olive")), ("#FFFF00", _("yellow")), ("#000080", _("navy")), ("#0000FF", _("blue")), ("#008080", _("teal")), ("#00FFFF", _("aqua"))]
 
+config.plugins.iptvplayer.remember_last_position = ConfigYesNo(default = False)
 config.plugins.iptvplayer.aac_software_decode = ConfigYesNo(default = False)
 config.plugins.iptvplayer.extplayer_infobar_timeout = ConfigSelection(default = "5", choices = [
         ("1", "1 " + _("second")), ("2", "2 " + _("seconds")), ("3", "3 " + _("seconds")),
@@ -187,6 +188,8 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
 
     def runSetup(self):
         list = []
+        
+        list.append(getConfigListEntry(_("Remember last watched position"), config.plugins.iptvplayer.remember_last_position))
         if not self.operatingPlayer:
             list.append(getConfigListEntry(_("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
         list.append(getConfigListEntry(_("External player infobar timeout"), config.plugins.iptvplayer.extplayer_infobar_timeout))
