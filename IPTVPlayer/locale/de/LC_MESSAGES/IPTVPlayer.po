@@ -470,7 +470,7 @@ msgid ""
 "E2 GUI restart after IPTVPlayer update to version[%s].\n"
 "\n"
 msgstr ""
-"Enigma2 Neustart nuch Update\n"
+"Enigma2 Neustart nach Update\n"
 "Von IPTV-Player auf Version [%s]\n"
 
 msgid "Currently you have version [%s]."
