@@ -204,7 +204,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         else:
             self.session.openWithCallback(self.closeAfterMessage, MessageBox, text = message, type = MessageBox.TYPE_INFO)
             
-    def closeAfterMessage(self, arg=None)
+    def closeAfterMessage(self, arg=None):
         self.close()
         
     def cancelAndClose(self):
