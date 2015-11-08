@@ -7,7 +7,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSkinsList, GetHostsList, IsHostEnabled, IsExecutable, CFakeMoviePlayerOption
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSkinsList, GetHostsList, IsHostEnabled, IsExecutable, CFakeMoviePlayerOption, GetAvailableIconSize
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
 from Plugins.Extensions.IPTVPlayer.components.configbase import ConfigBaseWidget
@@ -357,6 +357,12 @@ class ConfigMenu(ConfigBaseWidget):
            # plugin must be restarted if we wont to this options take effect
         if self.platformOld != config.plugins.iptvplayer.plarform.value:
             IPTVPlayerNeedInit(True)
+            
+    def getMessageAfterSave(self):
+        if config.plugins.iptvplayer.ListaGraficzna.value and 0 == GetAvailableIconSize(False):
+            return _('Some changes will be applied only after plugin update.')
+        else:
+            return ''
 
     def keyOK(self):
         curIndex = self["config"].getCurrentIndex()

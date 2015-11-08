@@ -15,7 +15,7 @@
 # FOREIGN import
 ###################################################
 from Components.config import config
-from Tools.Directories import resolveFilename, SCOPE_PLUGINS, SCOPE_CONFIG
+from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS, SCOPE_CONFIG
 from enigma import eConsoleAppContainer
 from Components.Language import language
 from time import sleep as time_sleep, time
@@ -162,6 +162,21 @@ class iptv_system:
 
 def IsHttpsCertValidationEnabled():
     return config.plugins.iptvplayer.httpssslcertvalidation.value
+    
+def GetAvailableIconSize(checkAll=True):
+    iconSizes = [config.plugins.iptvplayer.IconsSize.value]
+    if checkAll:
+        iconSizes.extend(['135', '120', '100'])
+    confirmedIconSize = 0
+    for size in iconSizes:
+        try:
+            file = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/PlayerSelector/marker{0}.png').format(int(size) + 45)
+            if fileExists(file):
+                confirmedIconSize = int(size)
+                break
+        except:
+            printExc()
+    return confirmedIconSize
     
 #############################################################
 # returns the directory path where specified resources are

@@ -161,7 +161,10 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
                 break
         printDBG("ConfigMenu.isChanged bChanged[%r]" % bChanged)
         return bChanged
-        
+    
+    def getMessageAfterSave(self):
+        return ''
+    
     def askForSave(self, callbackYesFun, callBackNoFun):
         self.session.openWithCallback(boundFunction(self.saveOrCancelChanges, callbackYesFun, callBackNoFun), MessageBox, text = _("Save changes?"), type = MessageBox.TYPE_YESNO)
         return
@@ -195,7 +198,11 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         
     def saveAndClose(self):
         self.save()
-        self.close()
+        message = self.getMessageAfterSave()
+        if message == '':
+            self.close()
+        else:
+            self.session.openWithCallback(self.close, MessageBox, text = message, type = MessageBox.TYPE_INFO)
         
     def cancelAndClose(self):
         self.cancel()

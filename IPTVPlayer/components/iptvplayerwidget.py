@@ -44,7 +44,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           printDBG, printExc, iptv_system, GetHostsList, \
                                                           eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir,\
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
-                                                          CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption
+                                                          CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
@@ -969,7 +969,7 @@ class IPTVPlayerWidget(Screen):
         return
 
     def displayListOfHosts(self, arg = None):
-        if config.plugins.iptvplayer.ListaGraficzna.value == False:
+        if config.plugins.iptvplayer.ListaGraficzna.value == False or 0 == GetAvailableIconSize():
             self.session.openWithCallback(self.selectHostCallback, ChoiceBox, title=_("Select service"), list = self.displayHostsList)
         else:
             from playerselector import PlayerSelectorWidget

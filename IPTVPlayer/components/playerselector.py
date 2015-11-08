@@ -13,7 +13,7 @@ from Components.Label import Label
 from Components.config import config
 
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetIPTVPlayerVerstion, GetIconDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetIPTVPlayerVerstion, GetIconDir, GetAvailableIconSize
 
 
 class PlayerSelectorWidget(Screen):
@@ -21,10 +21,11 @@ class PlayerSelectorWidget(Screen):
     def __init__(self, session, list):
         printDBG("PlayerSelectorWidget.__init__ --------------------------------")
         screenwidth = getDesktop(0).size().width()
-        if len(list) > 16 and int(config.plugins.iptvplayer.IconsSize.value) == 100:
+        iconSize = GetAvailableIconSize()
+        if len(list) > 16 and iconSize == 100:
             numOfRow = 4
             numOfCol = 5
-        elif len(list) > 12 and int(config.plugins.iptvplayer.IconsSize.value) == 100:
+        elif len(list) > 12 and iconSize == 100:
             numOfRow = 4
             numOfCol = 4
         elif len(list) > 9:
@@ -61,8 +62,8 @@ class PlayerSelectorWidget(Screen):
             offsetCoverY = 80
         
         # image size
-        coverWidth = int(config.plugins.iptvplayer.IconsSize.value)
-        coverHeight = int(config.plugins.iptvplayer.IconsSize.value)
+        coverWidth  = iconSize
+        coverHeight = iconSize
         
         # space/distance between images
         disWidth = int(coverWidth / 3 )
@@ -108,7 +109,7 @@ class PlayerSelectorWidget(Screen):
         self.currList = list
         # numbers of items in self.currList
         self.numOfItems = len(self.currList)
-        self.IconsSize = int(config.plugins.iptvplayer.IconsSize.value) #do ladowania ikon
+        self.IconsSize  = iconSize #do ladowania ikon
         self.MarkerSize = self.IconsSize + 45
         
         # numbers of lines

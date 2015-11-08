@@ -332,6 +332,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         list.append( __getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
         list.append( __getStepDesc(title = _("Executing user scripts."),         execFunction = self.stepExecuteUserScripts ) )
         list.append( __getStepDesc(title = _("Checking version."),               execFunction = self.stepCheckFiles ) )
+        list.append( __getStepDesc(title = _("Removing unnecessary files."),     execFunction = self.stepRemoveUnnecessaryFiles, breakable=True, ignoreError=True) )
         list.append( __getStepDesc(title = _("Confirmation of installation."),   execFunction = self.stepConfirmInstalation) )
         list.append( __getStepDesc(title = _("Removing the old version."),       execFunction = self.stepRemoveOldVersion, breakable=False, ignoreError=True, repeatCount=2) )
         list.append( __getStepDesc(title = _("Installing new version."),         execFunction = self.stepInstallNewVersion,   breakable=False, ignoreError=False, repeatCount=3) )
@@ -379,6 +380,21 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     def stepCheckFiles(self):
         code, msg = self.checkVersionFile( os_path.join(self.ExtensionTmpPath, 'IPTVPlayer') )
         self.stepFinished(code, msg)
+        
+    def stepRemoveUnnecessaryFiles(self):
+        printDBG("stepRemoveUnnecessaryFiles")
+        path = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/PlayerSelector/')
+        cmds = []
+        iconSize = int(config.plugins.iptvplayer.IconsSize.value)
+        if not config.plugins.iptvplayer.ListaGraficzna.value:
+            iconSize = 0
+        for size in [135, 120, 100]:
+            if size != iconSize:
+                cmds.append('rm -f %s' % (path + '*{0}.png'.format(size)) )
+                cmds.append('rm -f %s' % (path + 'marker{0}.png'.format(size + 45)) )
+        cmd = ' && '.join(cmds)
+        printDBG("stepRemoveUnnecessaryFiles cmdp[%s]" % cmd)
+        self.cmd = iptv_system( cmd, self.__removeUnnecessaryFilesCmdFinished )
         
     def stepExecuteUserScripts(self, init=True, code=0, msg=''):
         # get users scripts
@@ -587,6 +603,21 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 printExc()
             code = 0
             msg  = _("Unpacking the archive completed successfully.")
+        self.stepFinished(code, msg)
+    
+    ##############################################################################
+    # REMOVE UNNECESSARY FILES STEP'S PRIVATES METHODS
+    ##############################################################################
+    def __removeUnnecessaryFilesCmdFinished(self, status, outData):
+        code = -1
+        msg  = ""
+        self.cmd = None
+        if 0 != status:
+            code = -1
+            msg  = _("Error. Return code [%d]\n%s.") % (status, outData)
+        else:
+            code = 0
+            msg  = _("Success.")
         self.stepFinished(code, msg)
         
     ##############################################################################
