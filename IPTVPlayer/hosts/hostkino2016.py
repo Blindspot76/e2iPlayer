@@ -298,12 +298,21 @@ class Kino2016PL(CBaseHostClass):
                     link = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
                     if 1 == self.up.checkHostSupport(link):
                         urlTab.append({'name':self.up.getHostName(link), 'url':link, 'need_resolve':1})
+                if 'stream.kino2016.pl' in link:    
+                    urlTab.append({'name':'tream.kino2016.pl', 'url':link, 'need_resolve':1})
+                    
         return urlTab
         
     def getVideoLinks(self, baseUrl):
         printDBG("Kino2016PL.getVideoLinks [%s]" % baseUrl)
         urlTab = []
-        urlTab = self.up.getVideoLinkExt(baseUrl)
+        
+        videoUrl = baseUrl
+        if 'kino2016.pl' in baseUrl:
+            sts, data = self.cm.getPage(baseUrl)
+            if sts:
+                videoUrl = self.cm.ph.getSearchGroups(data, 'link[^;^<]*?"(http[^"]+?)"')[0]
+        urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
     def getFavouriteData(self, cItem):
