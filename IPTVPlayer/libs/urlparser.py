@@ -539,7 +539,7 @@ class pageParser:
         self.COOKIE_PATH = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/cache/')
         #self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
-        
+    
     def getYTParser(self):
         if self.ytParser == None:
             try:
@@ -1382,14 +1382,20 @@ class pageParser:
             url = 'http://videomega.tv/cdn.php?ref=%s' % (video_id)
         HTTP_HEADER['Referer'] = iframe_url
         sts, data = self.cm.getPage(url, params)
-        if not sts: return False
+        if not sts: 
+            return False
+        
         adUrl =self.cm.ph.getSearchGroups(data, '"([^"]+?/ad\.php[^"]+?)"')[0]
-        if not adUrl.startswith("http"): 'http://videomega.tv' + adUrl
+        if adUrl.startswith("/"): 
+            adUrl = 'http://videomega.tv' + adUrl
+        
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':False} 
         HTTP_HEADER['Referer'] = url
         sts, tmp = self.cm.getPage(adUrl, params)
-
         tmp  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
+        printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+        printDBG(tmp)
+        printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
         if tmp.startswith('http'):
             linkVideo = urlparser.decorateUrl(tmp, {"Cookie": "__cfduid=1", 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})
         else: linkVideo = False
@@ -3640,9 +3646,16 @@ class pageParser:
                 url = 'http://openload.io/embed/' + video_id
         else:
             url = baseUrl
-        post_data = None
-        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
-        if not sts: return False
+        
+        if True:
+            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
+            data = iptv_execute()( cmd )
+            printDBG(data)
+            if not data['sts'] or 0 != data['code']: return False
+            data = data['data']
+        else:
+            sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+            if not sts: return False
         
         # start https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         def decodeOpenLoad(html):
