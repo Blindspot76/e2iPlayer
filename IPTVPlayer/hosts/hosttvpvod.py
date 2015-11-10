@@ -356,7 +356,10 @@ class TvpVod(CBaseHostClass):
                         if 'm3u8' == formatType:
                             videoTab.extend( getDirectM3U8Playlist(url) )
                         else:
-                            videoTab.append( {'name' : name, 'bitrate': str(item['totalBitrate']), 'url' : self.up.decorateUrl(url, {'iptv_format':format}) })
+                            meta = {'iptv_format':format}
+                            if config.plugins.iptvplayer.tvpVodProxyEnable.value:
+                                meta['http_proxy'] = config.plugins.iptvplayer.proxyurl.value
+                            videoTab.append( {'name' : name, 'bitrate': str(item['totalBitrate']), 'url' : self.up.decorateUrl(url, meta) })
                 if 1 < len(videoTab):
                     max_bitrate = int(config.plugins.iptvplayer.tvpVodDefaultformat.value)
                     def __getLinkQuality( itemLink ):

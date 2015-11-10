@@ -194,6 +194,8 @@ class DMHelper:
         for key in url.meta:
             if key in DMHelper.HANDLED_HTTP_HEADER_PARAMS:
                 downloaderParams[key] = url.meta[key]
+            elif key == 'http_proxy':
+                downloaderParams[key] = url.meta[key]
         return url, downloaderParams
     
     @staticmethod
@@ -221,14 +223,19 @@ class DMHelper:
     def getBaseWgetCmd(downloaderParams = {}):
         printDBG("getBaseWgetCmd downloaderParams[%r]" % downloaderParams)
         headerOptions = ''
+        proxyOptions = ''
         
         defaultHeader = ' --header "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0" '
         for key, value in downloaderParams.items():
             if value != '':
-                if 'Cookie' == key: headerOptions += ' --cookies=off '
-                headerOptions += ' --header "%s: %s" ' % (key, value)
-                if key == 'User-Agent': defaultHeader = ''
+                if key in DMHelper.HANDLED_HTTP_HEADER_PARAMS:
+                    if 'Cookie' == key: headerOptions += ' --cookies=off '
+                    headerOptions += ' --header "%s: %s" ' % (key, value)
+                    if key == 'User-Agent': defaultHeader = ''
+                elif key == 'http_proxy':
+                    proxyOptions += ' -e use_proxy=yes -e http_proxy="%s" -e https_proxy="%s" ' % (value, value)
+                
         
-        cmd = DMHelper.GET_WGET_PATH() + defaultHeader + ' --no-check-certificate ' + headerOptions 
+        cmd = DMHelper.GET_WGET_PATH() + defaultHeader + ' --no-check-certificate ' + headerOptions + proxyOptions
         printDBG("getBaseWgetCmd return cmd[%s]" % cmd)
         return cmd
