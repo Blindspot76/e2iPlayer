@@ -197,23 +197,34 @@ class Filmovita(CBaseHostClass):
         sts, mainData = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
-        if 'serijex.com' in cItem['url']:
-            marker1 = '</strong><br/>'
-        else:
-            marker1 = '</iframe>'
-        tmp = self.cm.ph.getDataBeetwenMarkers(mainData, marker1, '</div>', False)[1]
+        marker1 = '<div class="entry-content">'
+        marker2 = '<div class="content">'
+        tmp = self.cm.ph.getDataBeetwenMarkers(mainData, marker1, marker2, False)[1]
         
-        linksUrl = self.cm.ph.getSearchGroups(tmp, '''src=["']([^"^']+?)["']''')[0]
-        if 1 == self.up.checkHostSupport(linksUrl): 
-            if 'videomega.tv/validatehash.php?' in linksUrl:
-                sts, data = self.cm.getPage(linksUrl, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
-                if sts:
-                    data = self.cm.ph.getSearchGroups(data, 'ref="([^"]+?)"')[0]
-                    linksUrl = 'http://videomega.tv/view.php?ref={0}&width=700&height=460&val=1'.format(data)
-                else:
-                    linksUrl = ''
-            if 1 == self.up.checkHostSupport(linksUrl):
-                urlTab.append({'name':self.up.getHostName(linksUrl), 'url':linksUrl, 'need_resolve':1})
+        linksUrlTab = []
+        tab = re.compile(' src="([^"]+?)"', re.IGNORECASE).findall(tmp)
+        for item in tab: linksUrlTab.append([item,''])
+        tab = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<', re.IGNORECASE).findall(tmp)
+        if len(tab): linksUrlTab.extend(tab)
+        for item in linksUrlTab:
+            linksUrl = item[0]
+            if 1 == self.up.checkHostSupport(linksUrl): 
+                if 'videomega.tv/validatehash.php?' in linksUrl:
+                    sts, data = self.cm.getPage(linksUrl, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
+                    if sts:
+                        data = self.cm.ph.getSearchGroups(data, 'ref="([^"]+?)"')[0]
+                        linksUrl = 'http://videomega.tv/view.php?ref={0}&width=700&height=460&val=1'.format(data)
+                    else:
+                        linksUrl = ''
+                elif 'videomega.tv/validateemb.php' in linksUrl:
+                    continue
+                elif 'facebook' in linksUrl:
+                    continue
+                if '' != linksUrl:
+                    urlTab.append({'name':self.up.getHostName(linksUrl), 'url':linksUrl, 'need_resolve':1})
+            elif 'serijex.com' in linksUrl:
+                name = item[1].replace('Gledaj na video servisu', '').strip()
+                urlTab.append({'name':name, 'url':linksUrl, 'need_resolve':1})
         
         if 'serijex.com' in cItem['url']:
             enigmav = self.cm.ph.getSearchGroups(mainData, '''data-enigmav=['"]([^'^"]+?)['"]''')[0]
@@ -249,10 +260,9 @@ class Filmovita(CBaseHostClass):
         printDBG("Filmovita.getVideoLinks [%s]" % baseUrl)
         urlTab = []
         
-        if 'filmovita.com' in baseUrl:
+        if 'filmovita.com' in baseUrl or 'serijex.com' in baseUrl:
             sts, data = self.cm.getPage(baseUrl)
-            if not sts: 
-                return []
+            if not sts: return []
             enigmav = self.cm.ph.getSearchGroups(data, '''data-enigmav=['"]([^'^"]+?)['"]''')[0]
             enigmav = enigmav.replace('-', '\\u00').replace('=', '\\u')
             try:
@@ -261,7 +271,7 @@ class Filmovita(CBaseHostClass):
             except:
                 printExc()
                 return []
-        
+            
         urlTab = self.up.getVideoLinkExt(baseUrl)
         return urlTab
         
