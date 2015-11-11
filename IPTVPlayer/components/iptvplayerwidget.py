@@ -662,6 +662,7 @@ class IPTVPlayerWidget(Screen):
         if selItem and selItem.description != '':
             data = selItem.description
             sData = data.replace('\n','')
+            sData = data.replace('[/br]', '\n')
             self["console"].setText(sData)
         else:
             self["console"].setText('')

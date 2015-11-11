@@ -284,7 +284,7 @@ class IPTVArticleRichVisualizer(Screen):
     # RICH DESC HANDLING 
     #######################################################################
     def setText(self):
-        self["text"].setText(self.artItem.text)
+        self["text"].setText(self.artItem.text.replace('[/br]', '\n'))
         
     def setRichDesc(self):
         printDBG("IPTVArticleRichVisualizer.setRichDesc")

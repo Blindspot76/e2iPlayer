@@ -18,8 +18,8 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
 import urllib
-try:    import simplejson as json
-except: import json
+try:    import json
+except: import simplejson as json
 ############################################
 
 ###################################################
@@ -37,6 +37,8 @@ from Screens.MessageBox import MessageBox
 #config.plugins.iptvplayer.ustvnow_premium        = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ustvnow_login          = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.ustvnow_password       = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.ustvnow_only_available = ConfigYesNo(default = True)
+config.plugins.iptvplayer.ustvnow_epg            = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
@@ -45,6 +47,9 @@ def GetConfigList():
     #optionList.append(getConfigListEntry( _("Subscription") + ": ", config.plugins.iptvplayer.ustvnow_premium))
     optionList.append(getConfigListEntry( _("Email") + ": ", config.plugins.iptvplayer.ustvnow_login))
     optionList.append(getConfigListEntry( _("Password") + ": ", config.plugins.iptvplayer.ustvnow_password))
+    optionList.append(getConfigListEntry( _("List only channels with subscription") + ": ", config.plugins.iptvplayer.ustvnow_only_available))
+    optionList.append(getConfigListEntry( _("Get EPG") + ": ", config.plugins.iptvplayer.ustvnow_epg))
+    
     return optionList
     
 ###################################################
@@ -129,6 +134,7 @@ class UstvnowApi:
         channelsTab = []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div data-role="content" data-theme="c">', '</ul>', False)[1]
         data = data.split('</li>')
+        prgsvcidMap = {}
         for item in data:
             url  = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             ui   = url.split('ui-page=')[-1]
@@ -140,8 +146,26 @@ class UstvnowApi:
             
             for nameItem in channelsNames:
                 if nameItem['img'] in icon:
-                    params['title'] = nameItem['sname']
+                    if config.plugins.iptvplayer.ustvnow_only_available.value and 0 == nameItem['t']:
+                        break
+                    params['title'] = nameItem['sname'] + ' [%s]' % nameItem['t']
+                    params['prgsvcid'] = nameItem['prgsvcid']
+                    prgsvcidMap[params['prgsvcid']] = len(channelsTab)
                     channelsTab.append(params)
+                    break
+                    
+        if config.plugins.iptvplayer.ustvnow_epg.value:
+            sts, data = self.cm.getPage(self.MAIN_URL + 'gtv/1/live/channelguide', self.defParams)
+            if sts:
+                try:
+                    data = byteify(json.loads(data))
+                    for item in data['results']:
+                        if item['prgsvcid'] in prgsvcidMap:
+                            idx = prgsvcidMap[item['prgsvcid']]
+                            channelsTab[idx]['desc'] += '[/br][/br] [%s %s][/br]%s[/br]%s[/br]%s[/br]%s' % (item.get('event_date', ''), item.get('event_time', ''), item.get('title', ''), item.get('synopsis', ''), item.get('description', ''), item.get('episode_title', ''))
+                except:
+                    printExc()
+            
         return channelsTab
         
     def doLogin(self, login, password):
