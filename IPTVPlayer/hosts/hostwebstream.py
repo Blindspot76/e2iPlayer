@@ -20,6 +20,7 @@ from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl import TvSportCdaApi
 from Plugins.Extensions.IPTVPlayer.libs.nettvpw    import NettvPw
 from Plugins.Extensions.IPTVPlayer.libs.typertv    import TyperTV
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld import WagasWorldApi
+from Plugins.Extensions.IPTVPlayer.libs.ustvnow    import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
@@ -71,6 +72,10 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry("----------Web-Live TV----------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( SatLiver_GetConfigList() )
+    except: printExc()
+    
+    optionList.append(getConfigListEntry("----------ustvnow.com----------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( Ustvnow_GetConfigList() )
     except: printExc()
     
     #optionList.append(getConfigListEntry("----------Telewizja-Online.pl----------", config.plugins.iptvplayer.fake_separator))
@@ -130,6 +135,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'webcamera.pl',        'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
                         {'name': 'm3u',                 'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
                         {'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
+                        {'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://ftp.vectranet.pl/xbmc/addons/helix/plugin.video.ustvnow/icon.png'}, \
                         {'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
                         {'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa_IPTV/index.php?dir=IPTV/',                         'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://wownet.ro/iptv/',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
@@ -162,6 +168,7 @@ class HasBahCa(CBaseHostClass):
         self.nettvpwApi   = None
         self.typerTvApi   = None
         self.wagasWorldApi= None
+        self.ustvnowApi   = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -829,6 +836,22 @@ class HasBahCa(CBaseHostClass):
         return urlsTab
         
         
+    #############################################################
+    def getUstvnowList(self, cItem):
+        printDBG("getUstvnowList start")
+        if None == self.ustvnowApi:
+            self.ustvnowApi = UstvnowApi()
+        tmpList = self.ustvnowApi.getChannelsList(cItem)
+        for item in tmpList:
+            self.playVideo(item)
+        
+    def getUstvnowLink(self, cItem):
+        printDBG("getUstvnowLink start")
+        urlsTab = self.ustvnowApi.getVideoLink(cItem)
+        return urlsTab
+    #############################################################
+        
+        
     def prognozaPogodyList(self, url):
         printDBG("prognozaPogodyList start")
         if config.plugins.iptvplayer.weather_useproxy.value: params = {'http_proxy':config.plugins.iptvplayer.proxyurl.value}
@@ -906,6 +929,9 @@ class HasBahCa(CBaseHostClass):
     #videostar.pl items
         elif name == "videostar.pl":
             self.getVideostarList()
+    #ustvnow.com items
+        elif name == 'ustvnow':
+            self.getUstvnowList(self.currItem)
     #sat-live.tv items
         elif name == "web-live.tv":
             self.getSatLiveList(url)
@@ -1005,6 +1031,8 @@ class IPTVHost(CHostBase):
             #        retlist.append(CUrlItem(item['name'], item['url']))
             #elif 1 == len(tmpList):
             #    url =  tmpList[0]['url']
+        elif name == 'ustvnow':
+            urlList = self.host.getUstvnowLink(cItem)
         elif name == "webcamera.pl":
             urlList = self.host.getWebCameraLink(url)
         elif name == "prognoza.pogody.tv":

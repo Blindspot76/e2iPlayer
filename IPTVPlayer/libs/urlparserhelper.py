@@ -423,14 +423,15 @@ def decorateUrl(url, metaParams={}):
             retUrl.meta['iptv_proto'] = 'm3u8'
     return retUrl
 
-def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True):
+def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParams={}):
     if checkExt and not M3U8Url.split('?')[0].endswith('.m3u8'):
         return []
         
     cm = common()
     meta = strwithmeta(M3U8Url).meta
     params, postData = cm.getParamsFromUrlWithMeta(M3U8Url)
-        
+    params.update(cookieParams)
+    
     retPlaylists = []
     try:
         finallM3U8Url = meta.get('iptv_m3u8_custom_base_link', '') 
