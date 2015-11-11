@@ -3803,10 +3803,16 @@ class pageParser:
         if url2 != '':
             sts, data = self.cm.getPage(url2, {'header':HTTP_HEADER})
             if not sts: return False
+        
         curl = self.cm.ph.getSearchGroups(data, '''curl[ ]*?=[ ]*?["']([^"^']+?)["']''', 1, True)[0]
         curl = base64.b64decode(curl)
         if curl.split('?')[0].endswith('.m3u8'):
             return getDirectM3U8Playlist(curl, checkExt=False)
+        elif curl.startswith('rtmp'):
+            swfUrl = 'http://p.jwpcdn.com/6/12/jwplayer.flash.swf'
+            curl += ' swfUrl=%s pageUrl=%s token=OOG17t.x#K9Vh#| ' % (swfUrl, url2)
+            #curl += ' token=OOG17t.x#K9Vh#| '
+            return curl
         return False
         
     def parserYOCASTTV(self, baseUrl):
@@ -3843,6 +3849,10 @@ class pageParser:
             url += ' swfVfy=%s pageUrl=%s ' % (swfUrl, baseUrl)
             printDBG(url)
             return url
+        else:
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'source:', '}', False)[1]
+            url = self.cm.ph.getSearchGroups(data, '''hls[^'^"]*?['"]([^'^"]+?)['"]''')[0]
+            return getDirectM3U8Playlist(url)
         return False
         
     def parserCLOUDYEC(self, baseUrl):

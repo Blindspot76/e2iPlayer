@@ -217,7 +217,7 @@ class Watchwrestling(CBaseHostClass):
                 #printDBG(data)
                 if 'eval(unescape' in data:
                     data = urllib.unquote(self.cm.ph.getSearchGroups(data, '''eval\(unescape\(['"]([^"^']+?)['"]''')[0])
-                url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="([^"]+?)"', 1, True)[0]
+                url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=['"]([^"^']+?)['"]''', 1, True)[0]
                 if 'protect.cgi' in url:
                     Referer = cItem['url']
                 else:
