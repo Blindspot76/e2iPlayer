@@ -879,6 +879,8 @@ class YoutubeIE(InfoExtractor):
                         encrypted_sig = url_data['s'][0]
                         signature = ''
                         match = re.search('"([^"]+?html5player-[^"]+?\.js)"', video_webpage)
+                        if None == match:
+                            match = re.search('"([^"]+?(?:www|player)-([^/]+)/base\.js)"', video_webpage)
                         if match:
                             playerUrl = match.group(1).replace('\\', '').replace('https:', 'http:')
                             if not playerUrl.startswith('http'):

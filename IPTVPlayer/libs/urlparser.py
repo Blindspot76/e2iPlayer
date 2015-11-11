@@ -1596,7 +1596,7 @@ class pageParser:
             return []
     
     def parserYOUTUBE(self, url):
-        if None != self.ytParser:
+        if None != self.getYTParser():
             try:
                 formats = config.plugins.iptvplayer.ytformat.value
                 bitrate = config.plugins.iptvplayer.ytDefaultformat.value
