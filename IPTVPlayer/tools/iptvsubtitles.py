@@ -47,7 +47,10 @@ class IPTVSubtitlesHandler:
         return ((hh*3600 + mm*60 + ss) * 1000 + ms) * sign
             
     def _srtTc2ms(self, time):
-        split_time = time.split(',')
+        if ',' in time:
+            split_time = time.split(',')
+        else:
+            split_time = time.split('.')
         minor = split_time[1]
         major = split_time[0].split(':')
         return (int(major[0])*3600 + int(major[1])*60 + int(major[2])) * 1000 + int(minor)
@@ -57,9 +60,9 @@ class IPTVSubtitlesHandler:
         srtText = srtText.replace('\r\n', '\n').split('\n\n')
         
         line = 0
-        for s in srtText:
+        for idx in range(len(srtText)):
             line += 1
-            st = s.split('\n')
+            st = srtText[idx].split('\n')
             if len(st)>=3:
                 try:
                     split = st[1].split(' --> ')

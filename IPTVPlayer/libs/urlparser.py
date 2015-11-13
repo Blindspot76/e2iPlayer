@@ -282,6 +282,7 @@ class urlparser:
                        'yocast.tv':            self.pp.parserYOCASTTV      ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINE247 ,
                        'liveonlinetv247.net':  self.pp.parserLIVEONLINE247 ,
+                       'filepup.net':          self.pp.parserFILEPUPNET    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3854,6 +3855,38 @@ class pageParser:
             url = self.cm.ph.getSearchGroups(data, '''hls[^'^"]*?['"]([^'^"]+?)['"]''')[0]
             return getDirectM3U8Playlist(url)
         return False
+        
+    def parserFILEPUPNET(self, baseUrl):
+        printDBG("parserFILEPUPNET baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'window.onload', '</script>', False)[1]
+        qualities = self.cm.ph.getSearchGroups(data, 'qualities:[ ]*?\[([^\]]+?)\]')[0]
+        qualities = self.cm.ph.getAllItemsBeetwenMarkers(qualities, '"', '"', False)
+        defaultQuality = self.cm.ph.getSearchGroups(data, 'defaultQuality:[ ]*?"([^"]+?)"')[0]
+        qualities.remove(defaultQuality)
+        
+        sub_tracks = []
+        subData = self.cm.ph.getDataBeetwenMarkers(data, 'subtitles:', ']', False)[1].split('}')
+        for item in subData:
+            if '"subtitles"' in item:
+                label   = self.cm.ph.getSearchGroups(item, 'label:[ ]*?"([^"]+?)"')[0]
+                srclang = self.cm.ph.getSearchGroups(item, 'srclang:[ ]*?"([^"]+?)"')[0]
+                src     = self.cm.ph.getSearchGroups(item, 'src:[ ]*?"([^"]+?)"')[0]
+                if not src.startswith('http'): continue
+                sub_tracks.append({'title':label, 'url':src, 'lang':srclang, 'format':'srt'})
+                
+        printDBG(">>>>>>>>>>>>>>>>> sub_tracks[%s]\n[%s]" % (sub_tracks, subData))
+            
+        linksTab = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
+        defaultUrl = self.cm.ph.getSearchGroups(data, '"(http[^"]+?)"')[0]
+        linksTab.append({'name':defaultQuality, 'url': strwithmeta(defaultUrl, {'external_sub_tracks':sub_tracks})})
+        for item in qualities:
+            if '.mp4' in defaultUrl:
+                url = defaultUrl.replace('.mp4', '-%s.mp4' % item)
+                linksTab.append({'name':item, 'url': strwithmeta(url, {'external_sub_tracks':sub_tracks})})
+        return linksTab
         
     def parserCLOUDYEC(self, baseUrl):
         printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)
