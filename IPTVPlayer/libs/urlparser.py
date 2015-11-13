@@ -3648,15 +3648,13 @@ class pageParser:
         else:
             url = baseUrl
         
-        if True:
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts:
             cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
             data = iptv_execute()( cmd )
             printDBG(data)
             if not data['sts'] or 0 != data['code']: return False
             data = data['data']
-        else:
-            sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-            if not sts: return False
         
         # start https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         def decodeOpenLoad(html):
