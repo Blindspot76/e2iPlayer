@@ -15,7 +15,7 @@ http://www.opensubtitles.org/upload
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars, rm, GetDefaultLang, GetPolishSubEncoding
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -27,6 +27,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 ###################################################
 from Components.config import config
 from binascii import hexlify
+import urllib
 import math 
 import random
 import base64
@@ -48,6 +49,7 @@ def printDBG2(data):
 
 class OpenSubOrgProvider:
     #USER_AGENT       = 'IPTVPlayer v1'
+    NAPISY24_USER_AGENT = 'DMnapi 13.1.30'
     USER_AGENT       = 'Subliminal v0.3' #'OSTestUserAgent'
     HTTP_HEADER      = {'User-Agent':USER_AGENT, 'Accept':'gzip'}#, 'Accept-Language':'pl'}
     MAIN_URL         = 'http://api.opensubtitles.org/xml-rpc'
@@ -111,18 +113,108 @@ class OpenSubOrgProvider:
         
     def doSearchMovie(self, callback, title):
         self.outerCallback = callback
-        params = [self.loginToken, title]
+        self.tmpData = {'title':title, 'list':[]}
+        if GetDefaultLang() == 'pl':
+            self._doSearchMovieNapisy24()
+        else:
+            self._RealDoSearchMovie()
+            
+    def _mapNapisy24Item(self, data):
+        keys = ['id', 'title', 'altTitle', 'imdb', 'year', 'release', 'language', 'cd', 'time', 'size', 'fps', 'resolution', 'author', 'rating']
+        private_data = {}
+        for key in keys:
+            private_data[key] = self.cm.ph.getDataBeetwenMarkers(data, '<%s>' % key, '</%s>' % key, False)[1]
+        return private_data
+    
+    def _doSearchMovieNapisy24(self):
+        params = {'User-Agent': self.NAPISY24_USER_AGENT, 'Referer':'http://napisy24.pl/'}
+        query = 'title={0}'.format(urllib.quote(self.tmpData['title']))
+        url     = "'http://napisy24.pl/libs/webapi.php?{0}'".format(query)
+        cmd = DMHelper.getBaseWgetCmd(params) + url + ' -O - 2> /dev/null '
+        printDBG('_doSearchMovieNapisy24 cmd[%s]' % cmd)
+        self.iptv_sys = iptv_system(cmd, self._doSearchMovieNapisy24Callback)
+    
+    def _doSearchMovieNapisy24Callback(self, code, data):
+        if code == 0:
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<subtitle>', '</subtitle>', False)
+            imdbs = []
+            for item in data:
+                private_data = self._mapNapisy24Item(item)
+                if private_data['imdb'] != '' and private_data['imdb'] not in imdbs:
+                    imdbs.append(private_data['imdb'])
+                    title = self._getSubtitleNapisy24Title(private_data)
+                    self.tmpData['list'].append({'title':title, 'private_data':{'napisy_24':True, 'id':private_data['imdb'][2:], 'title':title}})
+        self._RealDoSearchMovie()
+        
+    def _RealDoSearchMovie(self):
+        params = [self.loginToken, self.tmpData['title']]
         self._methodCall(self._doSearchMovieCallback, "SearchMoviesOnIMDB", params)
     
     def _doSearchMovieCallback(self, sts, data):
-        list = []
+        list = self.tmpData.get('list', [])
         for item in data:
             if 'title' in item and 'id' in item:
-                list.append({'title':item['title'], 'private_data':item['id']})
+                list.append({'title':item['title'], 'private_data':{'id':item['id'], 'title':item['title']}})
         self.outerCallback(sts, list)
         
-    def doSearchSubtitle(self, callback, imdbid, langItem):
+    def doSearchSubtitle(self, callback, privateData, langItem):       
         self.outerCallback = callback
+        if 'pol' == langItem.get('SubLanguageID', ''):
+            imdbid = privateData['id']
+            title  = privateData['title']
+            # we will first check subttiles on napisy24.pl
+            self.tmpData = {'langItem':langItem, 'imdbid':imdbid, 'title':title, 'list':[]}
+            self._doSearchSubtitleNapisy24()
+        else:
+            self._realDoSearchSubtitle(privateData['id'], privateData['title'])
+            
+    def _doSearchSubtitleNapisy24(self, type='imdb'):
+        self.tmpData['type'] = type
+        params = {'User-Agent': self.NAPISY24_USER_AGENT, 'Referer':'http://napisy24.pl/'}
+        
+        if type == 'imdb':
+            query = 'imdb=tt{0}'.format(self.tmpData['imdbid'])
+        else:
+            query = 'title={0}'.format(urllib.quote(self.tmpData['title']))
+        
+        url     = "'http://napisy24.pl/libs/webapi.php?{0}'".format(query)
+        cmd = DMHelper.getBaseWgetCmd(params) + url + ' -O - 2> /dev/null '
+        printDBG('_doSearchSubtitleNapisy24Callback cmd[%s]' % cmd)
+        self.iptv_sys = iptv_system(cmd, self._doSearchSubtitleNapisy24Callback)
+            
+    def _doSearchSubtitleNapisy24Callback(self, code, data):
+        list = self.tmpData.get('list', [])
+        if code == 0:
+            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            printDBG(data)
+            printDBG('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
+            keys = ['id', 'title', 'altTitle', 'imdb', 'year', 'release', 'language', 'cd', 'time', 'size', 'fps', 'resolution', 'author', 'rating']
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<subtitle>', '</subtitle>', False)
+            for item in data:
+                private_data = self._mapNapisy24Item(item)
+                if private_data['id'] != '' and 'pl' == private_data['language']:
+                    private_data['napisy_24'] = True
+                    title = self._getSubtitleNapisy24Title(private_data)
+                    self.tmpData['list'].append({'title':title, 'private_data':private_data})
+        
+        if 0 == len(self.tmpData['list']) and 'imdb' == self.tmpData.get('type', ''):
+            self._doSearchSubtitleNapisy24('title')
+        else:
+            self._realDoSearchSubtitle(self.tmpData.get('imdbid', ''), self.tmpData.get('langItem', ''))
+        
+    def _getSubtitleNapisy24Title(self, item):
+        title = '[Napisy24.pl] %s.%s.%s.' % (item.get('title', ''), item.get('altTitle', ''), item.get('year', ''))
+        title += item.get('resolution', '')
+        
+        cd = item.get('cd', '1')
+        title += ' CD[{0}]'.format(cd)
+        
+        time = item.get('time', '')
+        if '' != time: title += ' [{0}]'.format(time)
+        
+        return RemoveDisallowedFilenameChars(title)
+        
+    def _realDoSearchSubtitle(self, imdbid, langItem):
         sublanguageid = langItem.get('SubLanguageID', '')
         subParams = [{'name':'sublanguageid', 'value':sublanguageid}, {'name':'imdbid', 'value':imdbid}]
         params = [self.loginToken, self._getArraryParam(subParams)]
@@ -143,12 +235,13 @@ class OpenSubOrgProvider:
         return RemoveDisallowedFilenameChars(title)
         
     def _doSearchSubtitleCallback(self, sts, data):
-        list = []
+        list = self.tmpData.get('list', [])
         for item in data:
             link = item.get('SubDownloadLink', '')
             if item.get('SubFormat', '') in self.subFormats and link.startswith('http') and link.endswith('.gz'):
                 title = self._getSubtitleTitle(item)
                 list.append({'title':title, 'private_data':item})
+        self.tmpData = {}
         self.outerCallback(sts, list)
         
     def doGetLanguages(self, callback, lang):        
@@ -183,20 +276,90 @@ class OpenSubOrgProvider:
     def doDowanloadSubtitle(self, callback, subItem, tmpDir, subDir):
         self.tmpData = {'subItem':subItem, 'tmpDir':tmpDir, 'subDir':subDir}
         self.outerCallback = callback
+        # subItem === private_data
         
-        params = {'User-Agent': OpenSubOrgProvider.USER_AGENT}
-            
-        url     = " '{0}' ".format(subItem['SubDownloadLink'])
         tmpFile = tmpDir + OpenSubOrgProvider.TMP_FILE_NAME
         self.filesToRemove.append(tmpFile)
         self.tmpData['tmpFile'] = tmpFile
-        
         tmpFile = " '{0}' ".format(tmpFile)
         
-        cmd = DMHelper.getBaseWgetCmd(params) + url + ' -O ' + tmpFile + ' > /dev/null 2>&1 '
-        printDBG('doDowanloadSubtitle cmd[%s]' % cmd)
+        if not subItem.get('napisy_24', False):
+            params = {'User-Agent': OpenSubOrgProvider.USER_AGENT}
+            url     = " '{0}' ".format(subItem['SubDownloadLink'])
+            cmd = DMHelper.getBaseWgetCmd(params) + url + ' -O ' + tmpFile + ' > /dev/null 2>&1 '
+            printDBG('doDowanloadSubtitle cmd[%s]' % cmd)
+            self.iptv_sys = iptv_system(cmd, self._doDowanloadSubtitleCallback)
+        else:
+            tmpFileZip = self.tmpData['tmpFile'] + '.zip'
+            self.tmpData['tmpFileZip'] = tmpFileZip
+            self.filesToRemove.append(tmpFileZip)
+            tmpFileZip = " '{0}' ".format(tmpFileZip)
+            params = {'User-Agent': self.NAPISY24_USER_AGENT, 'Referer':'http://napisy24.pl/'}
+            url     = "'http://napisy24.pl/run/pages/download.php?napisId={0}&typ=sr'".format(subItem['id'])
+            cmd = DMHelper.getBaseWgetCmd(params) + url + ' -O ' + tmpFileZip + ' > /dev/null 2>&1 '
+            printDBG('_doSearchSubtitleNapisy24Callback cmd[%s]' % cmd)
+            self.iptv_sys = iptv_system(cmd, self._doDowanloadSubtitle24Callback)
+        
+    def _doDowanloadSubtitle24Callback(self, code, data):
+        if 0 == code:
+            tmpFileZip = self.tmpData['tmpFileZip']
+            tmpFile    = self.tmpData['tmpFile']
+            # unzip file
+            cmd = "unzip -po '{0}' -x Napisy24.pl.url > '{1}' 2>/dev/null".format(tmpFileZip, tmpFile)
+            self.iptv_sys = iptv_system(cmd, self._doUnzipSubtitle24Callback)
+        else:
+            self.lastApiError = {'code':code, 'message':_('Download subtitles error.\nwget error code[%d].') % code}
+            self.outerCallback(False, '')
+    
+    def _doUnzipSubtitle24Callback(self, code, data):
+        if 0 == code:
+            # unzip file
+            cmd = '%s "%s"' % (config.plugins.iptvplayer.uchardetpath.value, self.tmpData['tmpFile'])
+            self.iptv_sys = iptv_system(cmd, self._doGetEncodingSubtitle24Callback)
+        else:
+            self.lastApiError = {'code':-999, 'message':_('unzip error - please check if utitlity unzip is available')}
+            self.outerCallback(False, self.tmpData.get('tmpFileZip', ''))
+            
+    def _doGetEncodingSubtitle24Callback(self, code, data):
+        encoding = data
+        if 0 != code or 'unknown' in encoding:
+            encoding = ''
+        else:
+            encoding = encoding.strip()
+        
+        if GetDefaultLang() == 'pl' and encoding == 'iso-8859-2':
+            encoding = GetPolishSubEncoding(self.tmpData['tmpFile'])
+        elif '' == encoding:
+            encoding = 'utf-8'
+        fileName = ''
+        sts = False
+        try:
+            f = open(self.tmpData['tmpFile'])
+            data = f.read()
+            f.close()
+            subItem = self.tmpData['subItem']
+            try:
+                data = data.decode(encoding).encode('UTF-8')
+                title = self._getSubtitleNapisy24Title(subItem).replace('_', '.').replace('.srt', '').replace(' ', '.')
+                match = re.search(r'[^.]', title)
+                if match: title = title[match.start():]
 
-        self.iptv_sys = iptv_system(cmd, self._doDowanloadSubtitleCallback)
+                fileName = "{0}_{1}_0_{2}_{3}".format(title, 'pl', subItem['id'][2:], subItem['imdb'])
+                fileName = self.tmpData['subDir'] + fileName + '.srt'
+                try:
+                    with open(fileName, 'w') as f:
+                        f.write(data)
+                    sts = True
+                except: 
+                    self.lastApiError = {'code':-999, 'message':_('write error')}
+                    printExc()
+            except:
+                self.lastApiError = {'code':-999, 'message':_('decode error')}
+                printExc()  
+        except:
+            self.lastApiError = {'code':-999, 'message':_('read error')}
+            printExc()
+        self.outerCallback(sts, fileName)
         
     def _doDowanloadSubtitleCallback(self, code, data):
         fileName = ''
@@ -220,10 +383,10 @@ class OpenSubOrgProvider:
                     try:
                         with open(fileName, 'w') as f:
                             f.write(data)
+                        sts = True
                     except: 
                         self.lastApiError = {'code':-999, 'message':_('write error')}
                         printExc()
-                    sts = True
                 except: 
                     self.lastApiError = {'code':-999, 'message':_('decode error')}
                     printExc()

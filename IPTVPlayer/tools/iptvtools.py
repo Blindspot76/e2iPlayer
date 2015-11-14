@@ -64,6 +64,33 @@ def GetDefaultLang(full=False):
             printExc()
             defaultLanguage = 'en'
     return defaultLanguage
+    
+def GetPolishSubEncoding(filePath):
+    encoding = 'utf-8'
+    # Method provided by @areq: http://forum.dvhk.to/showpost.php?p=5367956&postcount=5331
+    try:
+        f = open(filePath)
+        sub = f.read()
+        f.close()
+        iso = 0
+        for i in (161, 166, 172, 177, 182, 188):
+            iso += sub.count(chr(i))
+        win = 0
+        for i in (140, 143, 156, 159, 165, 185):
+            win += sub.count(chr(i))
+        utf = 0
+        for i in (195, 196, 197):
+            utf += sub.count(chr(i))
+        if win > utf and win > iso:
+            encoding = "CP1250"
+        elif utf > iso and utf > win:
+            encoding = "utf-8"
+        else:
+            encoding = "iso-8859-2"
+        printDBG("IPTVExtMoviePlayer _getEncoding iso[%d] win[%d ] utf[%d] -> [%s]" % (iso, win, utf, encoding))
+    except:
+        printExc()
+    return encoding
 
 class eConnectCallbackObj:
     OBJ_ID = 0

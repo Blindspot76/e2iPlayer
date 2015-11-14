@@ -283,6 +283,7 @@ class urlparser:
                        'liveonlinetv247.info': self.pp.parserLIVEONLINE247 ,
                        'liveonlinetv247.net':  self.pp.parserLIVEONLINE247 ,
                        'filepup.net':          self.pp.parserFILEPUPNET    ,
+                       'superfilm.pl':         self.pp.parserSUPERFILMPL   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3885,6 +3886,15 @@ class pageParser:
                 url = defaultUrl.replace('.mp4', '-%s.mp4' % item)
                 linksTab.append({'name':item, 'url': strwithmeta(url, {'external_sub_tracks':sub_tracks})})
         return linksTab
+        
+    def parserSUPERFILMPL(self, baseUrl):
+        printDBG("parserSUPERFILMPL baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video ', '</video>', False)[1]
+        linkUrl = self.cm.ph.getSearchGroups(data, '<source[^>]+?src="(http[^"]+?)"')[0]
+        return linkUrl
+        
         
     def parserCLOUDYEC(self, baseUrl):
         printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)
