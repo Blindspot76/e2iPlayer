@@ -1546,11 +1546,12 @@ class IPTVPlayerWidget(Screen):
         cItem = None
         index = -1
         # we need to check if fav is available
-        if favouritesHostActive and len(self.hostFavTypes) and self.visible and \
-           None != self.getSelectedItem() and \
-           self.getSelItem().type in self.hostFavTypes:
+        if not self.isInWorkThread() and favouritesHostActive and len(self.hostFavTypes) and self.visible:
             cItem = self.getSelItem()
-            index = self.getSelIndex()
+            if None != cItem and cItem.type in self.hostFavTypes:
+                index = self.getSelIndex()
+            else:
+                cItem = None
         return index, cItem
         
     def getFavouriteItemCallback(self, thread, ret):
