@@ -109,10 +109,12 @@ class IPTVSubDownloaderWidget(Screen):
         self.listMode = False
         self.downloadedSubFilePath = ''
         self.loginPassed = False
+        self.tmpItem = None
         
     def __onClose(self):
         self["list"].disconnectSelChanged(self.onSelectionChanged)
         self.subProvider.terminate()
+        self.tmpItem = None
         
     def loadIcons(self):
         try:
@@ -199,6 +201,35 @@ class IPTVSubDownloaderWidget(Screen):
         else:
             self["console"].setText(_('Movie "%s" has not been found.') % self.movieTitle)
             
+    def doGetItemType(self, item):
+        self.setListMode(False)
+        self["console"].setText(_('Get item type.'))
+        self["console"].show()
+        self.tmpItem = item
+        self.subProvider.doGetItemType(self.doGetItemTypeCallback, item)
+    
+    def doGetItemTypeCallback(self, sts, type='movie'):
+        if not sts or type != 'series':
+            self.doGetLanguageForSubtitle()
+        else:
+            self.doGetEpisodes(self.tmpItem)
+            
+    def doGetEpisodes(self, item):
+        self.setListMode(False)
+        self["console"].setText(_('Get episodes list.'))
+        self["console"].show()
+        self.subProvider.doGetEpisodes(self.doGetEpisodesCallback, item)
+        
+    def doGetEpisodesCallback(self, sts, data):
+        if not sts:
+            sts = self.subProvider.getLastApiError()
+            self["console"].setText( _('Error occurs.\n[%s]') % (sts['message']) )
+        elif len(data):
+            self.stackList.append({'type':'episode', 'list':data})
+            self.displayList()
+        else:
+            self["console"].setText(_('An unknown error has occurred.'))
+    
     def doGetLanguageForSubtitle(self):
         self.setListMode(False)
         self["console"].setText(_('Get supported languages list.'))
@@ -310,8 +341,10 @@ class IPTVSubDownloaderWidget(Screen):
         if None != item:
             type = self.stackList[-1]['type']
             self.stackItems.append({'item':item, 'idx':idx, 'type':type})
-            if type == 'movie':
+            if type == 'episode':
                 self.doGetLanguageForSubtitle()
+            elif type == 'movie':
+                self.doGetItemType(item.privateData)
             elif type == 'lang':
                 self.doSearchSubtitle(self.stackItems[-2]['item'], item.privateData)
             elif type == 'sub':

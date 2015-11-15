@@ -15,7 +15,7 @@ http://www.opensubtitles.org/upload
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars, rm, GetDefaultLang, GetPolishSubEncoding
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars, rm, GetDefaultLang, GetPolishSubEncoding, byteify
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -157,8 +157,90 @@ class OpenSubOrgProvider:
                 list.append({'title':item['title'], 'private_data':{'id':item['id'], 'title':item['title']}})
         self.outerCallback(sts, list)
         
+    def doGetItemType(self, callback, privateData):
+        self.outerCallback = callback
+        self.itemTypeCache = {'type':'movie'}        
+        url     = "'http://www.omdbapi.com/?i=tt{0}&plot=short&r=json'".format(privateData['id'])
+        cmd = DMHelper.getBaseWgetCmd({}) + url + ' -O - 2> /dev/null '
+        printDBG('doGetItemType cmd[%s]' % cmd)
+        self.iptv_sys = iptv_system(cmd, self._doGetItemTypeCallback)
+        
+    def _doGetItemTypeCallback(self, code, data):
+        sts = False
+        itemType = 'movie'
+        if code == 0:
+            try:
+                data = byteify(json.loads(data))
+                if data["Type"] == 'series':
+                    itemType = 'series'
+                year = data["Year"][0:4]
+                self.itemTypeCache = {'type':itemType, 'title':data["Title"], 'year':year}
+                sts = True
+            except:
+                printExc()
+                self.lastApiError = {'code':-999, 'message':_('json load error')}
+        self.outerCallback(sts, itemType)
+        
+    def doGetEpisodes(self, callback, privateData):
+        self.outerCallback = callback
+        self.tmpData = {'private_data':privateData}
+        
+        year = self.itemTypeCache.get('year', '')
+        if year != '':
+            year = '&year=%s' % year
+        else:
+            year = ''
+        
+        url     = "'http://imdbapi.poromenos.org/js/?name={0}{1}'".format(urllib.quote(self.itemTypeCache.get('title', '')), year)
+        cmd = DMHelper.getBaseWgetCmd({}) + url + ' -O - 2> /dev/null '
+        printDBG('doGetEpisodes cmd[%s]' % cmd)
+        self.iptv_sys = iptv_system(cmd, self._doGetEpisodesCallback)
+        
+    def _doGetEpisodesCallback(self, code, data):
+        sts = False
+        list = []
+        if code == 0:
+            try:
+                data = byteify(json.loads(data))
+                key, value = data.popitem()
+                for item in value["episodes"]:
+                    params = dict(self.tmpData['private_data'])
+                    params.update({"season": item["season"], "episode_title":item["name"], "episode":item["number"]})
+                    title = 's{0}e{1} {2}'.format(str(item["season"]).zfill(2), str(item["number"]).zfill(2), item['name'])
+                    list.append({'title':title, 'private_data':params})
+                sts = True
+            except:
+                printExc()
+                self.lastApiError = {'code':-999, 'message':_('json load error 2')}
+        self.tmpData = {}
+        self.outerCallback(sts, list)
+        
     def doSearchSubtitle(self, callback, privateData, langItem):       
         self.outerCallback = callback
+        if 'episode' in privateData and 'season' in privateData :
+            self.tmpData = {'private_data':privateData, 'langItem':langItem}
+            self.goGetEpisodeType(privateData)
+        else:
+            self.doSearchSubtitleNext(privateData, langItem)
+            
+    def goGetEpisodeType(self, privateData):
+        url  = "'http://www.imdb.com/title/tt{0}/episodes/_ajax?season={1}'".format(privateData['id'], privateData['season'])
+        grep =  '?ref_=ttep_ep{0}"'.format(privateData['episode'])
+        grep = " | grep '{0}'".format(grep)
+        cmd  = DMHelper.getBaseWgetCmd({}) + url + ' -O - 2>/dev/null ' + grep
+        printDBG('doGetEpisodes cmd[%s]' % cmd)
+        self.iptv_sys = iptv_system(cmd, self._goGetEpisodeTypeCallback)
+        
+    def _goGetEpisodeTypeCallback(self, code, data):
+        privateData = self.tmpData['private_data']
+        langItem    = self.tmpData['langItem']
+        self.tmpData = {}
+        if 0 == code:
+            id = self.cm.ph.getSearchGroups(data, '/tt([0-9]+?)/')[0]
+            if id != '': privateData['id'] = id
+        self.doSearchSubtitleNext(privateData, langItem)
+    
+    def doSearchSubtitleNext(self, privateData, langItem):       
         if 'pol' == langItem.get('SubLanguageID', ''):
             imdbid = privateData['id']
             title  = privateData['title']
@@ -166,7 +248,7 @@ class OpenSubOrgProvider:
             self.tmpData = {'langItem':langItem, 'imdbid':imdbid, 'title':title, 'list':[]}
             self._doSearchSubtitleNapisy24()
         else:
-            self._realDoSearchSubtitle(privateData['id'], privateData['title'])
+            self._realDoSearchSubtitle(privateData['id'], langItem)
             
     def _doSearchSubtitleNapisy24(self, type='imdb'):
         self.tmpData['type'] = type
