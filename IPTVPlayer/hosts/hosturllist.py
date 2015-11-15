@@ -35,10 +35,10 @@ config.plugins.iptvplayer.grupujurllist  = ConfigYesNo(default = True)
 config.plugins.iptvplayer.sortuj         = ConfigYesNo(default = True)
 
 def GetConfigList():
-    optionList = []
-    optionList.append(getConfigListEntry(_("Pliki tekstowe ytlist i urllist znajdują się w:"), config.plugins.iptvplayer.Sciezkaurllist))
-    optionList.append(getConfigListEntry(_("Sortuj listy:"), config.plugins.iptvplayer.sortuj))
-    optionList.append(getConfigListEntry(_("Grupuj linki w kategorie: "), config.plugins.iptvplayer.grupujurllist))
+    optionList = []    
+    optionList.append(getConfigListEntry(_('Text files ytlist and urllist are in:'), config.plugins.iptvplayer.Sciezkaurllist))
+    optionList.append(getConfigListEntry(_('Sort the list:'), config.plugins.iptvplayer.sortuj))
+    optionList.append(getConfigListEntry(_('Group links into categories: '), config.plugins.iptvplayer.grupujurllist))
     return optionList
 ###################################################
 
@@ -49,10 +49,10 @@ class Urllist(CBaseHostClass):
     URLLIST_FILE    = 'urllist.txt'
     URRLIST_STREAMS = 'urllist.stream'
     URRLIST_USER    = 'urllist.user'
-    MAIN_GROUPED_TAB = [{'category': 'all',           'title': 'All in one',        'desc': 'Linki to filmów i przekazów, bez podziału na kategorie'}, \
-                        {'category': URLLIST_FILE,    'title': 'Pliki video',       'desc': 'Linki do plikow video z pliku urllist.txt'}, \
-                        {'category': URRLIST_STREAMS, 'title': 'Przekazy live',     'desc': 'Przekazy na żywo z pliku urllist.stream'}, \
-                        {'category': URRLIST_USER,    'title': 'Pliki użytkownika', 'desc': 'Ulubione adresy użytkownika zapisane w pliku urllist.user'}]
+    MAIN_GROUPED_TAB = [{'category': 'all',           'title': (_("All in one")),        'desc': (_("Links are videos and messages, without division into categories"))}, \
+                        {'category': URLLIST_FILE,    'title': (_("Videos")),            'desc': (_("Links to the video files from the file urllist.txt"))}, \
+                        {'category': URRLIST_STREAMS, 'title': (_("live transfers")),    'desc': (_("Live broadcasts from the file urllist.stream"))}, \
+                        {'category': URRLIST_USER,    'title': (_("User files")),        'desc': (_("Favorite addresses are stored under the file urllist.user"))}]
     
     def __init__(self):
         printDBG("Urllist.__init__")
@@ -67,9 +67,9 @@ class Urllist(CBaseHostClass):
         if 0 != self.up.checkHostSupport(url):
             return self.up.getHostName(url)
         elif self._uriIsValid(url):
-            return 'link bezpośredni'
+            return (_('direct link'))
         else:
-            return 'nieznany'
+            return (_('unknown'))
     
     def _uriIsValid(self, url):
         if '://' in url:
@@ -94,14 +94,14 @@ class Urllist(CBaseHostClass):
             if 'all' != cItem['category'] and groupList:
                 tmpList = self.currFileHost.getGroups(sortList)
                 for item in tmpList:
-                    if '' == item: title = 'Pozostałe'
+                    if '' == item: title = (_("Other"))
                     else:          title = item
                     params = {'name': 'category', 'category':'group', 'title':title, 'group':item}
                     self.addDir(params)
             else:
                 tmpList = self.currFileHost.getAllItems(sortList)
                 for item in tmpList:
-                    params = {'title':item['full_title'], 'url':item['url'], 'desc': 'Hosting: %s, %s' % (self._getHostingName(item['url']), item['url'])}
+                    params = {'title':item['full_title'], 'url':item['url'], 'desc': (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])}
                     self.addVideo(params)
         elif 'group' in cItem:
             tmpList = self.currFileHost.getItemsInGroup(cItem['group'], sortList)
@@ -110,7 +110,7 @@ class Urllist(CBaseHostClass):
                     title = item['full_title']
                 else:
                     title = item['title_in_group']
-                params = {'title':title, 'url':item['url'], 'desc': 'Hosting: %s, %s' % (self._getHostingName(item['url']), item['url'])}
+                params = {'title':title, 'url':item['url'], 'desc': (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])}
                 self.addVideo(params)
                 
     def getLinksForVideo(self, cItem):

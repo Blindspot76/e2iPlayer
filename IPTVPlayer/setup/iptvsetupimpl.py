@@ -268,7 +268,7 @@ class IPTVSetupImpl:
             return sts, retPath
         
         self.stepHelper = CBinaryStepHelper("wget", self.platform, self.openSSLVersion, config.plugins.iptvplayer.wgetpath)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.' % ('wget', 'http, https, f4m, uds, hls')), 1)
+        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.') % ('wget', 'http, https, f4m, uds, hls')), 1)
         self.stepHelper.setInstallChoiseList( self._wgetInstallChoiseList )
         self.stepHelper.setPaths( self.wgetpaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " -V 2>&1 " )
@@ -305,7 +305,7 @@ class IPTVSetupImpl:
             return cmd
             
         self.stepHelper = CBinaryStepHelper("rtmpdump", self.platform, self.openSSLVersion, config.plugins.iptvplayer.rtmpdumppath)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.' % ('rtmpdump', 'rtmp, rtmpt, rtmpe, rtmpte, rtmps')), 1)
+        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.') % ('rtmpdump', 'rtmp, rtmpt, rtmpe, rtmpte, rtmps')), 1)
         self.stepHelper.setInstallChoiseList( [('rtmpdump', '/usr/bin/rtmpdump')] )
         self.stepHelper.setPaths( self.rtmpdumppaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " -V 2>&1 " )
@@ -389,7 +389,7 @@ class IPTVSetupImpl:
             return cmd
             
         self.stepHelper = CBinaryStepHelper("f4mdump", self.platform, self.openSSLVersion, config.plugins.iptvplayer.f4mdumppath)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.' % ('f4mdump', 'f4m, uds')), 1)
+        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.') % ('f4mdump', 'f4m, uds')), 1)
         self.stepHelper.setInstallChoiseList( self._f4mdumpInstallChoiseList )
         self.stepHelper.setPaths( self.f4mdumppaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
@@ -506,8 +506,8 @@ class IPTVSetupImpl:
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
         self.stepHelper = CBinaryStepHelper("libgstflumpegdemux.so", self.platform, self.openSSLVersion, None)
-        msg1 = "Fluendo mpegdemux for GSTREAMER 0.10"
-        msg2 = "\nFor more info please visit http://fluendo.com/"
+        msg1 = _("Fluendo mpegdemux for GSTREAMER 0.10")
+        msg2 = _("\nFor more info please visit http://fluendo.com/")
         msg3 = _('It improves playing of streams hls/m3u8.\n')
         self.stepHelper.updateMessage('detection', msg1, 0)
         self.stepHelper.updateMessage('detection', msg2, 1)
@@ -547,8 +547,8 @@ class IPTVSetupImpl:
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
         self.stepHelper = CBinaryStepHelper("libgstifdsrc.so", self.platform, self.openSSLVersion, None)
-        msg1 = "GST-IFDSRC for GSTREAMER 1.X"
-        msg2 = "\nFor more info please ask the author samsamsam@o2.pl"
+        msg1 = _("GST-IFDSRC for GSTREAMER 1.X")
+        msg2 = _("\nFor more info please ask the author samsamsam@o2.pl")
         msg3 = _('It improves buffering mode with the gstplayer.\n')
         self.stepHelper.updateMessage('detection', msg1, 0)
         self.stepHelper.updateMessage('detection', msg2, 1)

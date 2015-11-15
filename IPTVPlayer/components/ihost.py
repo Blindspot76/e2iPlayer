@@ -452,7 +452,7 @@ class CBaseHostClass:
         self.currList.append(params)
         return
     
-    def listsHistory(self, baseItem={'name': 'history', 'category': 'Wyszukaj'}, desc_key='plot', desc_base='Typ: '):
+    def listsHistory(self, baseItem={'name': 'history', 'category': 'Wyszukaj'}, desc_key='plot', desc_base=(_("Type: ")) ):
         list = self.history.getHistoryList()
         for histItem in list:
             plot = ''

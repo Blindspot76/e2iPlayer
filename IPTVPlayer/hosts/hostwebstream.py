@@ -88,14 +88,14 @@ def GetConfigList():
     #except: printExc()
     
     optionList.append(getConfigListEntry(_("----------Other----------"), config.plugins.iptvplayer.fake_separator))
-    optionList.append(getConfigListEntry("Wyłączyć możliwość buforowania dla http://prognoza.pogody.tv/", config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
+    optionList.append(getConfigListEntry(_("Turn off buffering for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
     optionList.append(getConfigListEntry(_("Use Polish proxy for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weather_useproxy))
     return optionList
 
 ###################################################
 # "HasBahCa"
 def gettytul():
-    return '"Web" streams player'
+    return (_('"Web" streams player'))
     
 ###################################################
 # ToDo: move this code to the lib dir
@@ -437,7 +437,7 @@ class HasBahCa(CBaseHostClass):
                     if '' != catTitle:
                         desc = catTitle + ', '
                     else: desc = ''
-                    desc += _('proto: ') + itemUrl.meta.get('iptv_proto', '')
+                    desc += (_("Protocol: ")) + itemUrl.meta.get('iptv_proto', '')
                     
                     if 'headers=' in itemUrl:
                         headers = self.cm.ph.getSearchGroups(itemUrl, 'headers\=(\{[^\}]+?\})')[0]

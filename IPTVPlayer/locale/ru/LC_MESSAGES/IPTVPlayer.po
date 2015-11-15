@@ -1602,7 +1602,7 @@ msgstr "Музыка"
 msgid "Teletext decoder"
 msgstr "Декодер телетекста"
 
-msgid "Turn off the ability to cache for http://prognoza.pogody.tv/"
+msgid "Turn off buffering for http://prognoza.pogody.tv/"
 msgstr "Выключите возможность кэшировать для http://prognoza.pogody.tv/"
 
 msgid "Use Polish proxy for http://prognoza.pogody.tv/"
@@ -2220,81 +2220,6 @@ msgstr ""
 msgid "Writer"
 msgstr "Писатель"
 
-msgid "Actors:"
-msgstr "Актеры:"
-
-msgid "Stars:"
-msgstr "Звезды:"
-
-msgid "Awards:"
-msgstr "Награды:"
-
-msgid "Alternate Title:"
-msgstr "Альтернативное название:"
-
-msgid "Country:"
-msgstr "Страна:"
-
-msgid "Year:"
-msgstr "Год:"
-
-msgid "Released:"
-msgstr "Выпущенный:"
-
-msgid "Rating:"
-msgstr "Рейтинг:"
-
-msgid "Rated:"
-msgstr "Номинальная:"
-
-msgid "Duration:"
-msgstr "Продолжительность:"
-
-msgid "Genre:"
-msgstr "Жанр:"
-
-msgid "Director:"
-msgstr "Режиссер:"
-
-msgid "country"
-msgstr "страна"
-
-msgid "year"
-msgstr "год"
-
-msgid "released"
-msgstr "выпущенный"
-
-msgid "rating"
-msgstr "рейтинг"
-
-msgid "rated"
-msgstr "номинальная"
-
-msgid "duration"
-msgstr "продолжительность"
-
-msgid "genre"
-msgstr "жанр"
-
-msgid "director"
-msgstr "режиссер"
-
-msgid "writer"
-msgstr "писатель"
-
-msgid "actors"
-msgstr "актеры"
-
-msgid "stars"
-msgstr "звезды"
-
-msgid "awards"
-msgstr "Награды:"
-
-msgid "alternate_title"
-msgstr "альтернативное название:"
-
 msgid "XXX"
 msgstr "Видео Порно"
 
@@ -2482,6 +2407,9 @@ msgstr ""
 
 msgid "You need to enter email and password in configuration."
 msgstr "Вы должны ввести адрес электронной почты и пароль в конфигурации."
+
+msgid "Removing unnecessary files."
+msgstr "Удаление ненужных файлов."
 
 msgid "Rename"
 msgstr "Переименовать"

@@ -59,7 +59,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         self.onChangedEntry = [ ]
         self.list = [ ]
         ConfigListScreen.__init__(self, self.list, session = session, on_change = self.changedEntry)
-        self.setup_title = "IPTV Player - ustawienia"
+        self.setup_title = (_("IPTV Player - settings"))
 
         self["key_green"] = Label(_("Save"))
         self["key_ok"] = Label(_(" "))
@@ -108,7 +108,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
             self["config"].onSelectionChanged.remove(self.onSelectionChanged)
 
     def layoutFinished(self):
-        self.setTitle("IPTV Player - ustawienia")
+        self.setTitle(_("IPTV Player - settings"))
         if not self.onSelectionChanged in self["config"].onSelectionChanged:
             self["config"].onSelectionChanged.append(self.onSelectionChanged)
         self.runSetup()
@@ -166,7 +166,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         return ''
     
     def askForSave(self, callbackYesFun, callBackNoFun):
-        self.session.openWithCallback(boundFunction(self.saveOrCancelChanges, callbackYesFun, callBackNoFun), MessageBox, text = _("Save changes?"), type = MessageBox.TYPE_YESNO)
+        self.session.openWithCallback(boundFunction(self.saveOrCancelChanges, callbackYesFun, callBackNoFun), MessageBox, text=_('Save changes?'), type = MessageBox.TYPE_YESNO)
         return
         
     def saveOrCancelChanges(self, callbackFun=None, failCallBackFun=None, answer=None):
@@ -220,12 +220,12 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         if isinstance(currItem, ConfigDirectory):
             def SetDirPathCallBack(curIndex, newPath):
                 if None != newPath: self["config"].list[curIndex][1].value = newPath
-            self.session.openWithCallback(boundFunction(SetDirPathCallBack, curIndex), IPTVDirectorySelectorWidget, currDir=currItem.value, title="Wybierz katalog")
+            self.session.openWithCallback(boundFunction(SetDirPathCallBack, curIndex), IPTVDirectorySelectorWidget, currDir=currItem.value,  title=_('Select the directory'))
             return
         elif isinstance(currItem, ConfigText):
             def VirtualKeyBoardCallBack(curIndex, newTxt):
                 if isinstance(newTxt, basestring): self["config"].list[curIndex][1].value = newTxt
-            self.session.openWithCallback(boundFunction(VirtualKeyBoardCallBack, curIndex), VirtualKeyBoard, title=(_("Wprowadź wartość")), text=currItem.value)
+            self.session.openWithCallback(boundFunction(VirtualKeyBoardCallBack, curIndex), VirtualKeyBoard, title=(_("Enter a value")), text=currItem.value)
             return
 
         ConfigListScreen.keyOK(self)

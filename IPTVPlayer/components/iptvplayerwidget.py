@@ -676,7 +676,7 @@ class IPTVPlayerWidget(Screen):
             if self.isInWorkThread():
                 if self.workThread.kill():
                     self.workThread = None
-                    self["statustext"].setText("Operation aborted!")
+                    self["statustext"].setText(_("Operation aborted!"))
                 return
         except: return    
         if self.visible:
@@ -1352,7 +1352,7 @@ class IPTVPlayerWidget(Screen):
             if type == 'ForItem' or type == 'ForSearch':
                 self.prevSelList.append(self.currSelIndex)
                 if type == 'ForSearch':
-                    self.categoryList.append('Search results')
+                    self.categoryList.append(_("Search results"))
                 else:
                     self.categoryList.append(self.currItem.name) 
                 #new list, so select first index

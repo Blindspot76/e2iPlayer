@@ -35,7 +35,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'Youtubes player'
+    return (_("Youtube player"))
 
 class Youtube(CBaseHostClass):
     UTLIST_FILE      = 'ytlist.txt'
