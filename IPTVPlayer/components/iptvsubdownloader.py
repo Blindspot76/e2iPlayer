@@ -68,6 +68,8 @@ class IPTVSubDownloaderWidget(Screen):
         self.params['login']    = config.plugins.iptvplayer.opensuborg_login.value
         self.params['password'] = config.plugins.iptvplayer.opensuborg_password.value
         
+        self.searchPattern = CParsingHelper.getNormalizeStr( self.params.get('movie_title', '') )
+        
         self.onShown.append(self.onStart)
         self.onClose.append(self.__onClose)
         
@@ -173,11 +175,12 @@ class IPTVSubDownloaderWidget(Screen):
             self["console"].setText( _('Error occurs.\n[%s]') % (sts['message']) )
         else:
             self.loginPassed = True
-            self.session.openWithCallback(self.getMovieTitleCallBack, VirtualKeyBoard, title=self.params.get('vk_title', _("Confirm title of the movie")), text=CParsingHelper.getNormalizeStr( self.params.get('movie_title', '') ))
+            self.session.openWithCallback(self.getMovieTitleCallBack, VirtualKeyBoard, title=self.params.get('vk_title', _("Confirm title of the movie")), text=self.searchPattern)
         
         
     def getMovieTitleCallBack(self, title):
         if isinstance(title, basestring): 
+            self.searchPattern = title
             self.movieTitle = title
             self.doSearchMovie()
         else:
