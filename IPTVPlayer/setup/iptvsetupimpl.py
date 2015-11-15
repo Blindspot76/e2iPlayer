@@ -492,7 +492,8 @@ class IPTVSetupImpl:
     def flumpegdemuxStep(self, ret=None):
         printDBG("IPTVSetupImpl.flumpegdemuxStep")
         def _detectValidator(code, data):
-            if 0 == code: return True,False
+            # some grep return code 1 even if the pattern has been found  and printed
+            if 0 == code or self.flumpegdemuxVersion in data: return True,False
             return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
@@ -533,7 +534,8 @@ class IPTVSetupImpl:
     def gstifdsrcStep(self, ret=None):
         printDBG("IPTVSetupImpl.gstifdsrcStep")
         def _detectValidator(code, data):
-            if 0 == code: return True,False
+            # some grep return code 1 even if the pattern has been found  and printed
+            if 0 == code or self.gstifdsrcVersion in data: return True,False
             return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
