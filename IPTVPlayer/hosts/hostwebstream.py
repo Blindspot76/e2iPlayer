@@ -14,6 +14,7 @@ from Plugins.Extensions.IPTVPlayer.libs.filmonapi import FilmOnComApi, GetConfig
 from Plugins.Extensions.IPTVPlayer.libs.videostar import VideoStarApi, GetConfigList as VideoStar_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.satlive   import SatLiveApi, GetConfigList as SatLiver_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.weebtv    import WeebTvApi, GetConfigList as WeebTv_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.purecastnet import PurecastNetApi, GetConfigList as PurecastNet_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.vidtvpl   import VidTvApi
 from Plugins.Extensions.IPTVPlayer.libs.looknijtv import LooknijTvApi
 from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl import TvSportCdaApi
@@ -64,6 +65,10 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry("----------WeebTV----------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WeebTv_GetConfigList() )
+    except: printExc()
+    
+    optionList.append(getConfigListEntry("----------Pure-Cast.net----------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( PurecastNet_GetConfigList() )
     except: printExc()
     
     optionList.append(getConfigListEntry("----------FilmOn TV----------", config.plugins.iptvplayer.fake_separator))
@@ -121,6 +126,7 @@ class HasBahCa(CBaseHostClass):
                         {'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://static.weeb.tv/images/weebtv-santahat1.png'}, \
                         {'name': 'videostar.pl',        'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
                         {'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly',                                           'icon': 'http://goldvod.tv/img/logo.png'}, \
+                        {'name': 'pure-cast.net',       'title': 'Pure-Cast.net',                     'url': '',                                                                   'icon': 'http://blog-social-stream.dit.upm.es/wp-content/uploads/2013/05/logo.png'}, \
                         #{'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
                         {'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
                         #{'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
@@ -169,6 +175,7 @@ class HasBahCa(CBaseHostClass):
         self.typerTvApi   = None
         self.wagasWorldApi= None
         self.ustvnowApi   = None
+        self.purecastNetApi = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -851,6 +858,21 @@ class HasBahCa(CBaseHostClass):
         return urlsTab
     #############################################################
         
+    def getPurecastNetList(self, cItem):
+        printDBG("getPurecastNetList start")
+        if None == self.purecastNetApi:
+            self.purecastNetApi = PurecastNetApi()
+        tmpList = self.purecastNetApi.getChannelsList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']:
+                self.playVideo(item) 
+            else:
+                self.addDir(item)
+        
+    def getPurecastNetLink(self, cItem):
+        printDBG("getPurecastNetLink start")
+        urlsTab = self.purecastNetApi.getVideoLink(cItem)
+        return urlsTab
         
     def prognozaPogodyList(self, url):
         printDBG("prognozaPogodyList start")
@@ -932,6 +954,9 @@ class HasBahCa(CBaseHostClass):
     #ustvnow.com items
         elif name == 'ustvnow':
             self.getUstvnowList(self.currItem)
+    #pure-cast.net items
+        elif name == 'pure-cast.net':
+            self.getPurecastNetList(self.currItem)
     #sat-live.tv items
         elif name == "web-live.tv":
             self.getSatLiveList(url)
@@ -1033,6 +1058,8 @@ class IPTVHost(CHostBase):
             #    url =  tmpList[0]['url']
         elif name == 'ustvnow':
             urlList = self.host.getUstvnowLink(cItem)
+        elif name == 'pure-cast.net':
+            urlList = self.host.getPurecastNetLink(cItem)
         elif name == "webcamera.pl":
             urlList = self.host.getWebCameraLink(url)
         elif name == "prognoza.pogody.tv":
