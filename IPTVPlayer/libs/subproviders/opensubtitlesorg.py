@@ -98,6 +98,7 @@ class OpenSubOrgProvider:
         
     def doLogin(self, callback, login, password, lang='en'):
         self.outerCallback = callback
+        self.tmpData = {}
         self.login = login
         params = [login, hex_md5(password), lang, OpenSubOrgProvider.USER_AGENT]
         self._methodCall(self.doLoginCallback, "LogIn", params)
@@ -159,6 +160,7 @@ class OpenSubOrgProvider:
         
     def doGetItemType(self, callback, privateData):
         self.outerCallback = callback
+        self.tmpData = {}
         self.itemTypeCache = {'type':'movie'}        
         url     = "'http://www.omdbapi.com/?i=tt{0}&plot=short&r=json'".format(privateData['id'])
         cmd = DMHelper.getBaseWgetCmd({}) + url + ' -O - 2> /dev/null '
@@ -217,6 +219,7 @@ class OpenSubOrgProvider:
         
     def doSearchSubtitle(self, callback, privateData, langItem):       
         self.outerCallback = callback
+        self.tmpData = {}
         if 'episode' in privateData and 'season' in privateData :
             self.tmpData = {'private_data':privateData, 'langItem':langItem}
             self.goGetEpisodeType(privateData)
@@ -328,6 +331,7 @@ class OpenSubOrgProvider:
         
     def doGetLanguages(self, callback, lang):        
         self.outerCallback = callback
+        self.tmpData = {}
         self.defaultLanguage = lang
         if len(self.langsCache):
             self._dummyCall(self._doGetLanguagesCallback)
@@ -356,8 +360,8 @@ class OpenSubOrgProvider:
         self.outerCallback(sts, list)
         
     def doDowanloadSubtitle(self, callback, subItem, tmpDir, subDir):
-        self.tmpData = {'subItem':subItem, 'tmpDir':tmpDir, 'subDir':subDir}
         self.outerCallback = callback
+        self.tmpData = {'subItem':subItem, 'tmpDir':tmpDir, 'subDir':subDir}
         # subItem === private_data
         
         tmpFile = tmpDir + OpenSubOrgProvider.TMP_FILE_NAME
