@@ -404,30 +404,30 @@ def SortHostsList(hostsList):
     sortedList.extend(hostsList)
     return sortedList
 
-def SaveHostsOrderList(lhosts):
+def SaveHostsOrderList(list, fileName="iptvplayerhostsorder"):
     printDBG('SaveHostsOrderList begin')
-    fname = GetConfigDir("iptvplayerhostsorder")
+    fname = GetConfigDir(fileName)
     try:
         f = open(fname, 'w')
-        for item in lhosts:
+        for item in list:
             f.write(item + '\n')
         f.close()
     except:
         printExc()
     
-def GetHostsOrderList():
+def GetHostsOrderList(fileName="iptvplayerhostsorder"):
     printDBG('GetHostsOrderList begin')
-    fname = GetConfigDir("iptvplayerhostsorder")
-    lhosts = []
+    fname = GetConfigDir(fileName)
+    list = []
     try:
         with open(fname, 'r') as f:
             content = f.readlines()
         for item in content:
             item = item.strip()
-            if len(item): lhosts.append(item)
+            if len(item): list.append(item)
     except:
         printExc()
-    return lhosts
+    return list
 
 def GetSkinsList():
     printDBG('getSkinsList begin')
