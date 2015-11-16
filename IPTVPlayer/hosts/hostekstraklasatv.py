@@ -246,19 +246,25 @@ class IPTVHost(CHostBase):
         if 'ekstraklasa.tv' in self.host.currList[Index].get('host', ''):        
             tab = self.host.getLinks_ETV(self.host.currList[Index].get('url', ''))
             
+            tmp = tab
+            tab = []
+            for item in tmp:
+                if item[0] == Ekstraklasa.ETV_FORMAT:
+                    tab.append(item)
+            
             def __getLinkQuality( itemLink ):
                 return int(itemLink[2])
             
             maxRes = int(config.plugins.iptvplayer.ekstraklasa_defaultformat.value) * 1.1
             tab = CSelOneLink(tab, __getLinkQuality, maxRes).getSortedLinks()
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>. tab[%s]" % tab)
             if config.plugins.iptvplayer.ekstraklasa_usedf.value and 0 < len(tab):
                 tab = [tab[0]]
             
             for item in tab:
-                if item[0] == Ekstraklasa.ETV_FORMAT:
-                    nameLink = "type: %s \t bitrate: %s" % (item[0], item[2])
-                    url = item[1]
-                    retlist.append(CUrlItem(nameLink.encode('utf-8'), url.encode('utf-8'), 0))
+                nameLink = "type: %s \t bitrate: %s" % (item[0], item[2])
+                url = item[1]
+                retlist.append(CUrlItem(nameLink.encode('utf-8'), url.encode('utf-8'), 0))
         elif 'ekstraklasa.org' in self.host.currList[Index].get('host', ''):
             pass
         return RetHost(RetHost.OK, value = retlist)
