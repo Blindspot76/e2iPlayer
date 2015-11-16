@@ -162,12 +162,37 @@ class OpenSubOrgProvider:
         self.outerCallback = callback
         self.tmpData = {}
         self.itemTypeCache = {'type':'movie'}        
+        url     = "'https://api.themoviedb.org/3/find/tt{0}?api_key={1}&external_source=imdb_id'".format(privateData['id'], base64.b64decode('NjMxMWY4MmQ1MjAxNDI2NWQ3NjVkMzk4MDJhYWZhYTc='))
+        cmd = DMHelper.getBaseWgetCmd({}) + url + ' -O - 2> /dev/null '
+        self.iptv_sys = iptv_system(cmd, self._doGetItemTypeCallback)
+        
+    def _doGetItemTypeCallback(self, code, data):
+        sts = False
+        itemType = 'movie'
+        if code == 0:
+            try:
+                data = byteify(json.loads(data))
+                if len(data["tv_results"]):
+                    data = data["tv_results"][0]
+                    itemType = 'series'
+                    year = data["first_air_date"][0:4]
+                    self.itemTypeCache = {'type':itemType, 'title':data["original_name"], 'year':year}
+                    sts = True
+            except:
+                printExc()
+                self.lastApiError = {'code':-999, 'message':_('json load error')}
+        self.outerCallback(sts, itemType)
+        
+    def doGetItemTypeOLD(self, callback, privateData):
+        self.outerCallback = callback
+        self.tmpData = {}
+        self.itemTypeCache = {'type':'movie'}        
         url     = "'http://www.omdbapi.com/?i=tt{0}&plot=short&r=json'".format(privateData['id'])
         cmd = DMHelper.getBaseWgetCmd({}) + url + ' -O - 2> /dev/null '
         printDBG('doGetItemType cmd[%s]' % cmd)
         self.iptv_sys = iptv_system(cmd, self._doGetItemTypeCallback)
         
-    def _doGetItemTypeCallback(self, code, data):
+    def _doGetItemTypeCallbackOLD(self, code, data):
         sts = False
         itemType = 'movie'
         if code == 0:
