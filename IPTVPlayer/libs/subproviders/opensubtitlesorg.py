@@ -208,9 +208,9 @@ class OpenSubOrgProvider:
                 self.lastApiError = {'code':-999, 'message':_('json load error')}
         self.outerCallback(sts, itemType)
         
-    def doGetEpisodes(self, callback, privateData):
+    def doGetEpisodes(self, callback, privateData, episodeData):
         self.outerCallback = callback
-        self.tmpData = {'private_data':privateData}
+        self.tmpData = {'private_data':privateData, 'episode_data':episodeData}
         
         year = self.itemTypeCache.get('year', '')
         if year != '':
@@ -226,19 +226,29 @@ class OpenSubOrgProvider:
     def _doGetEpisodesCallback(self, code, data):
         sts = False
         list = []
+        promotItem = {}
         if code == 0:
             try:
+                season = self.tmpData['episode_data'].get('season', -1)
+                episode = self.tmpData['episode_data'].get('episode', -1)
+                printDBG("_doGetEpisodesCallback s[%s] e[%s]" % (season, episode) )
+                
                 data = byteify(json.loads(data))
                 key, value = data.popitem()
                 for item in value["episodes"]:
                     params = dict(self.tmpData['private_data'])
                     params.update({"season": item["season"], "episode_title":item["name"], "episode":item["number"]})
                     title = 's{0}e{1} {2}'.format(str(item["season"]).zfill(2), str(item["number"]).zfill(2), item['name'])
-                    list.append({'title':title, 'private_data':params})
+                    if season == item["season"] and episode == item["number"] and promotItem == {}:
+                        promotItem = {'title':title, 'private_data':params}
+                    else:
+                        list.append({'title':title, 'private_data':params})
                 sts = True
             except:
                 printExc()
                 self.lastApiError = {'code':-999, 'message':_('json load error 2')}
+        if promotItem != {}:
+            list.insert(0, promotItem)
         self.tmpData = {}
         self.outerCallback(sts, list)
         
