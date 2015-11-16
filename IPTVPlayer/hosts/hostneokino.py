@@ -265,7 +265,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, NeoKinoNet(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('neokinologologo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('neokinologo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR

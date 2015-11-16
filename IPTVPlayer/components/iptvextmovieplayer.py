@@ -387,7 +387,7 @@ class IPTVExtMoviePlayer(Screen):
         options.append(IPTVChoiceBoxItem(_("Video options"), "", "video_options"))
         
         if len(options):
-            self.openChild(boundFunction(self.childClosed, self.showMenuOptionsCallback), IPTVChoiceBoxWidget, {'width':300, 'height':170, 'current_idx':0, 'title':_("Menu"), 'options':options})
+            self.openChild(boundFunction(self.childClosed, self.showMenuOptionsCallback), IPTVChoiceBoxWidget, {'width':400, 'height':240, 'current_idx':0, 'title':_("Menu"), 'options':options})
         
     def showMenuOptionsCallback(self, ret=None):
         printDBG("showMenuOptionsCallback ret[%r]" % [ret])
@@ -514,7 +514,7 @@ class IPTVExtMoviePlayer(Screen):
             options.append(IPTVChoiceBoxItem(option['title'], "", option["name"]))
         
         if len(options):
-            self.openChild(boundFunction(self.childClosed, self.selectVideoOptionsCallback), IPTVChoiceBoxWidget, {'width':300, 'current_idx':currIdx, 'title':_("Select video option"), 'options':options})
+            self.openChild(boundFunction(self.childClosed, self.selectVideoOptionsCallback), IPTVChoiceBoxWidget, {'width':400, 'current_idx':currIdx, 'title':_("Select video option"), 'options':options})
         
     def selectVideoOptionsCallback(self, ret=None):
         printDBG("selectVideoOptionsCallback ret[%r]" % [ret])
@@ -569,7 +569,7 @@ class IPTVExtMoviePlayer(Screen):
                 else:
                     item.type = IPTVChoiceBoxItem.TYPE_OFF
                 options.append( item )
-            self.openChild(boundFunction(self.childClosed, self.selectAudioTrackCallback), IPTVChoiceBoxWidget, {'width':300, 'height':170, 'current_idx':currIdx, 'title':_("Select audio track"), 'options':options})
+            self.openChild(boundFunction(self.childClosed, self.selectAudioTrackCallback), IPTVChoiceBoxWidget, {'width':400, 'height':240, 'current_idx':currIdx, 'title':_("Select audio track"), 'options':options})
         else:
             self.showMessage(_("Information about audio tracks not available."), MessageBox.TYPE_INFO, None)
             

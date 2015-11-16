@@ -455,7 +455,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, MusicBox(), False)
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value=[GetLogoDir('musicbox.png')])
+        return RetHost(RetHost.OK, value=[GetLogoDir('musicboxlogo.png')])
 
     def getLinksForVideo(self, Index=0, selItem=None):
         retCode = RetHost.ERROR

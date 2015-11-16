@@ -43,7 +43,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'Urllists player'
+    return (_('Urllists player'))
 
 class Urllist(CBaseHostClass):
     URLLIST_FILE    = 'urllist.txt'
@@ -164,7 +164,7 @@ class IPTVHost(CHostBase):
         return False
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('urllist.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('urllistlogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
         listLen = len(self.host.currList)

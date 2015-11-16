@@ -55,7 +55,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'LocalMedia'
+    return (_('LocalMedia'))
 
 class LocalMedia(CBaseHostClass):
     FILE_SYSTEMS = ['ext2', 'ext3', 'ext4', 'vfat', 'msdos', 'iso9660', 'nfs', 'jffs2', 'autofs', 'cifs', 'ntfs']

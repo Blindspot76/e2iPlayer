@@ -31,7 +31,7 @@ from Screens.MessageBox import MessageBox
 ###################################################
 
 config.plugins.iptvplayer.videostar_streamprotocol = ConfigSelection(default = "2", choices = [("1", "rtmp"),("2", "HLS - m3u8")]) 
-config.plugins.iptvplayer.videostar_defquality     = ConfigSelection(default = "950000", choices = [("400000", "niska"),("950000", "średnia"),("1600000", "wysoka")]) 
+config.plugins.iptvplayer.videostar_defquality     = ConfigSelection(default = "950000", choices = [("400000", _("low")),("950000", _("average")),("1600000", _("high"))])
 config.plugins.iptvplayer.videostar_premium        = ConfigYesNo(default = False)
 config.plugins.iptvplayer.videostar_login          = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.videostar_password       = ConfigText(default = "", fixed_size = False)
@@ -48,13 +48,13 @@ config.plugins.iptvplayer.videostar_proxy_gateway_url  = ConfigText(default = "h
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry( _("Preferowany protokół strumieniowania" + ": "), config.plugins.iptvplayer.videostar_streamprotocol))
-    optionList.append(getConfigListEntry( _("Preferowana jakość") + ": ", config.plugins.iptvplayer.videostar_defquality))
-    optionList.append(getConfigListEntry( _("Użytkownik premium") + ": ", config.plugins.iptvplayer.videostar_premium))
+    optionList.append(getConfigListEntry(_('Preferred streaming protocol') + ": ", config.plugins.iptvplayer.videostar_streamprotocol))
+    optionList.append(getConfigListEntry(_('Preferred quality') + ": ", config.plugins.iptvplayer.videostar_defquality))
+    optionList.append(getConfigListEntry(_('Premium user') + ": ", config.plugins.iptvplayer.videostar_premium))
     optionList.append(getConfigListEntry( _("Login") + ": ", config.plugins.iptvplayer.videostar_login))
-    optionList.append(getConfigListEntry( _("Hasło") + ": ", config.plugins.iptvplayer.videostar_password))
+    optionList.append(getConfigListEntry( _("Password") + ": ", config.plugins.iptvplayer.videostar_password))
     if '2' == config.plugins.iptvplayer.videostar_streamprotocol.value:
-        optionList.append(getConfigListEntry(_("Użyj bramki proxy"), config.plugins.iptvplayer.videostar_use_proxy_gateway))
+        optionList.append(getConfigListEntry(_("Use a proxy gateway"), config.plugins.iptvplayer.videostar_use_proxy_gateway))
         #if config.plugins.iptvplayer.videostar_use_proxy_gateway.value:
         #    optionList.append(getConfigListEntry("    " + _("Url:"), config.plugins.iptvplayer.videostar_proxy_gateway_url))
     return optionList
