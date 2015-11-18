@@ -487,7 +487,7 @@ class AlltubeTV(CBaseHostClass):
         elif category == 'latest_added_movies':
             self.listLatestAddedMovies(self.currItem)
         elif category == 'latest_added_series':
-            self.listLatestAddedSeries(self.currItem, 'list_episodes')
+            self.listLatestAddedSeries(self.currItem, 'list_seasons')
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
