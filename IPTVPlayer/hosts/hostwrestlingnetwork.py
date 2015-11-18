@@ -48,10 +48,10 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'wrestling-network.net'
+    return 'http://wrestlingnetwork.tv/'
 
 class WrestlingNet(CBaseHostClass):
-    MAIN_URL   = 'http://wrestling-network.net/'
+    MAIN_URL   = 'http://wrestlingnetwork.tv/'
     BASE_IMAGE = MAIN_URL + 'public/images/'
     
     MAIN_CAT_TAB = [{'category':'latest',   'url':"",                           'title': _("LATEST VIDEOS"),     'icon':''},
