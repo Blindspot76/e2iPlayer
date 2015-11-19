@@ -179,6 +179,7 @@ class ExUA(CBaseHostClass):
         if len(data):
             del data[-1]
         
+        hasItems = False
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, '''href=["']([^"^']+?)["']''')[0]
             icon   = self.cm.ph.getSearchGroups(item, '''src=["']([^"^']+?)["']''')[0]
@@ -196,29 +197,51 @@ class ExUA(CBaseHostClass):
             if '/' in url:
                 params = dict(cItem)
                 params.update( {'title': title, 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( item )} )
-                if category == 'video':
-                    params['icon'] = self._getFullUrl(icon)
-                    self.addVideo(params)
-                else:
-                    self.addDir(params)
+                icon = self._getFullUrl(icon)
+                if icon.startswith('http'):
+                    params['icon'] = icon
+                self.addDir(params)
+                hasItems = True
         
-        if nextPage:
+        if hasItems:
+            if nextPage:
+                params = dict(cItem)
+                if 'rek' in params:
+                    params.pop('rek', None)
+                params.update( {'title':_('Next page'), 'page':page+1} )
+                self.addDir(params)
+        else:
+            self.listVideoItems(cItem)
+            
+    def listVideoItems(self, cItem):
+        printDBG("ExUA.listVideoItems")
+        urlTab = self.getLinksForVideo(cItem)
+            
+        for item in urlTab:
             params = dict(cItem)
-            params.update( {'title':_('Next page'), 'page':page+1} )
-            self.addDir(params)
+            params.update( item )
+            params['title'] = item['name']
+            params['fav_url'] = cItem['url']
+            if 'pic' in item:
+                self.addPicture(params)
+            else:
+                self.addVideo(params)
+
     
     def listSearchResult(self, cItem, searchPattern, searchType):
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
-        try:
-            id  = int(cItem['original_id'])
-        except:
-            printExc()
-            return
-        cItem['url'] = self.SRCH_URL.format( id ) + urllib.quote_plus(searchPattern)
+        if 0 == cItem.get('rek', 0):
+            try:
+                id  = int(cItem['original_id'])
+            except:
+                printExc()
+                return
+            cItem['url'] = self.SRCH_URL.format( id ) + urllib.quote_plus(searchPattern)
+        cItem['rek'] = 1
         self.listItems(cItem, 'video', 'class=panel>')
         
-    def getLinksForVideo(self, cItem):
+    def getLinksForVideo(self, cItem, withPicture=True):
         printDBG("ExUA.getLinksForVideo [%s]" % cItem)
         urlTab = []
         url = cItem['url']
@@ -233,6 +256,7 @@ class ExUA(CBaseHostClass):
         # download urls
         downloadUrls = []
         subTracks = []
+        picturesTab = []
         downData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<td width=17>', '</tr>', False)
         for item in downData:
             printDBG(">>>>>>>>>>>>>>>>>>>> [%s]" % item)
@@ -246,6 +270,8 @@ class ExUA(CBaseHostClass):
                 downloadUrls.append({'name':title, 'url':url, 'need_resolve':0})
             elif title.lower().endswith('.srt'):
                 subTracks.append({'title':title, 'url':self.up.decorateUrl(self._getFullUrl(url), meta), 'lang':'', 'format':'srt'})
+            elif 'picture_0' in item:
+                picturesTab.append({'name':title, 'url':self._getFullUrl(url)})
         
         if len (subTracks):
             meta['external_sub_tracks'] = subTracks
@@ -263,33 +289,22 @@ class ExUA(CBaseHostClass):
                     title = str(len(tmpAdded))
                 iMeta = dict(meta) 
                 iMeta['iptv_format'] = 'video/mp4'
-                urlTab.append({'name':_('[watch] %s') % title, 'url':self.up.decorateUrl(item, iMeta), 'need_resolve':0})
+                urlTab.append({'name':_('%s [watch]') % title, 'url':self.up.decorateUrl(item, iMeta), 'need_resolve':0})
             
         for item in downloadUrls:
-            item['name'] = _('[download] %s') % item['name']
+            item['name'] = _('%s [download]') % item['name']
             item['url'] = self.up.decorateUrl(self._getFullUrl(item['url']), meta)
             urlTab.append(item)
-
-        return urlTab
-        
-    def getVideoLinks(self, baseUrl):
-        printDBG("ExUA.getVideoLinks [%s]" % baseUrl)
-        urlTab = []
-        
-        videoUrl = ''
-        if '/get/' in baseUrl:
-            sts, data = self.cm.getPage(baseUrl)
-            if not sts: return []
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'fullyGreenButton', '</a>', False)[1]
-            url = self.cm.ph.getSearchGroups(data, 'href="([^"]*?/link/play/[^"]+?)"')[0]
-            sts, data = self.cm.getPage(self._getFullUrl(url))
-            if not sts: return []
-            videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"', 1, True)[0]
+            
+        for item in picturesTab:
+            item['pic'] = True
+            item['need_resolve'] = 0
+            urlTab.append(item)
         
         return urlTab
         
     def getFavouriteData(self, cItem):
-        return cItem['url']
+        return cItem['fav_url']
         
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})
@@ -428,11 +443,14 @@ class IPTVHost(CHostBase):
             type = CDisplayListItem.TYPE_MORE
         elif 'audio' == cItem['type']:
             type = CDisplayListItem.TYPE_AUDIO
+        elif 'picture' == cItem['type']:
+            type = CDisplayListItem.TYPE_PICTURE
             
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_PICTURE]:
             url = cItem.get('url', '')
+            need_resolve = cItem.get('need_resolve', 1)
             if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
+                hostLinks.append(CUrlItem("Link", url, need_resolve))
             
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
@@ -442,7 +460,7 @@ class IPTVHost(CHostBase):
                                     description = description,
                                     type = type,
                                     urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
+                                    urlSeparateRequest = 0,
                                     iconimage = icon,
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
