@@ -141,7 +141,7 @@ config.plugins.iptvplayer.httpssslcertvalidation = ConfigYesNo(default = False)
 #PROXY
 config.plugins.iptvplayer.proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
 config.plugins.iptvplayer.german_proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
-
+config.plugins.iptvplayer.russian_proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
 
 # Update
 config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = True)
@@ -247,6 +247,7 @@ class ConfigMenu(ConfigBaseWidget):
         list.append(getConfigListEntry(_("https - validate SSL certificates"), config.plugins.iptvplayer.httpssslcertvalidation))
         list.append(getConfigListEntry(_("Polish proxy server url"), config.plugins.iptvplayer.proxyurl))
         list.append(getConfigListEntry(_("German proxy server url"), config.plugins.iptvplayer.german_proxyurl))
+        list.append(getConfigListEntry(_("Russian proxy server url"), config.plugins.iptvplayer.russian_proxyurl))
         
         list.append(getConfigListEntry(_("Folder for cache data"), config.plugins.iptvplayer.SciezkaCache))
         list.append(getConfigListEntry(_("Folder for temporary data"), config.plugins.iptvplayer.NaszaTMP))
