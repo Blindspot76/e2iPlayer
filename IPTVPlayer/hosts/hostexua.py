@@ -62,8 +62,8 @@ class ExUA(CBaseHostClass):
     SRCH_URL = MAIN_URL +  'search?original_id={0}&s=' 
     DEFAULT_ICON_URL = 'http://cdn.keddr.com/wp-content/uploads/2011/10/ex.jpg'
     
-    MAIN_CAT_TAB = [{'category':'search',         'title': _('Search'),       'search_item':True},
-                    {'category':'search_history', 'title': _('Search history')} 
+    MAIN_CAT_TAB = [
+                    #{'category':'search_history', 'title': _('Search history')} 
                    ]
  
     def __init__(self):
@@ -148,7 +148,7 @@ class ExUA(CBaseHostClass):
         cItem['category'] = category
         self.listsTab(self.videoCatsCache, cItem)
             
-    def listItems(self, cItem, category='video', m1='class=include_0>'):
+    def listItems(self, cItem, category='', m1='class=include_0>'):
         printDBG("ExUA.listMovies")
         url = cItem['url']
         page = cItem.get('page', 0)
@@ -162,6 +162,14 @@ class ExUA(CBaseHostClass):
         sts, data = self.cm.getPage(url, self.defaultParams)
         if not sts: return
         
+        if category == '':
+            original_id = self.cm.ph.getSearchGroups(data, '''<input[^>]+?name=original_id[^>]+?value=['"]([0-9]+?)['"]>''', 1, True)[0]
+            if original_id != '':
+                category = 'video'
+                if 0 == page:
+                    params = {'category':'search', 'title': _('Search'), 'search_type':cItem['title'], 'original_id':original_id, 'search_item':True}
+                    self.addDir(params)
+        
         nextPage = False
         if 'id="browse_next"' in data:
             nextPage = True
@@ -174,7 +182,11 @@ class ExUA(CBaseHostClass):
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, '''href=["']([^"^']+?)["']''')[0]
             icon   = self.cm.ph.getSearchGroups(item, '''src=["']([^"^']+?)["']''')[0]
-            title  = self.cm.ph.getSearchGroups(item, '''alt=["']([^"^']+?)["']''')[0].split('/')
+            title  = self.cm.ph.getSearchGroups(item, '''alt=["']([^"^']+?)["']''')[0]
+            if '' == title:
+                title = self.cm.ph.getDataBeetwenMarkers(item, '<b>', '</b>', False)[1]
+            title  = self.cleanHtmlStr(title) 
+            title  = title.split('/')
             if len(title) > 1:
                 try:
                     tmp = title[0].decode('utf-8').encode('ascii')
@@ -183,8 +195,12 @@ class ExUA(CBaseHostClass):
             title  = '/'.join(title)
             if '/' in url:
                 params = dict(cItem)
-                params.update( {'title': self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( item ), 'icon':self._getFullUrl(icon)} )
-                self.addVideo(params)
+                params.update( {'title': title, 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( item )} )
+                if category == 'video':
+                    params['icon'] = self._getFullUrl(icon)
+                    self.addVideo(params)
+                else:
+                    self.addDir(params)
         
         if nextPage:
             params = dict(cItem)
@@ -195,9 +211,7 @@ class ExUA(CBaseHostClass):
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         try:
-            idx = int(self.cm.ph.getSearchGroups(searchType, '\[[0-9]+?\]\[([0-9]+?)\]', 1, True)[0])
-            url = self.getVideoCats()[idx]['url']
-            id  = int(url.split('/')[-1].split('?')[0])
+            id  = int(cItem['original_id'])
         except:
             printExc()
             return
@@ -352,7 +366,7 @@ class ExUA(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, ExUA(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        CHostBase.__init__(self, ExUA(), False, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('exualogo.png')])
@@ -405,10 +419,6 @@ class IPTVHost(CHostBase):
         if 'category' == cItem['type']:
             if cItem.get('search_item', False):
                 type = CDisplayListItem.TYPE_SEARCH
-                itId = 0
-                tmp = self.host.getVideoCats()
-                for idx in range(len(tmp)):
-                    searchTypesOptions.append((tmp[idx]['title'], '[0][%s] %s' % (idx, tmp[idx]['title'])))
                 possibleTypesOfSearch = searchTypesOptions
             else:
                 type = CDisplayListItem.TYPE_CATEGORY
