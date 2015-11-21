@@ -1625,3 +1625,7 @@ msgstr "Użyć Polskiej proxy dla http://prognoza.pogody.tv/"
 
 msgid "Subtitles not found."
 msgstr "Nie znaleziono napisów."
+
+msgid "There are no active premium account.\nUsing a limited version that may not work properly with congested links."
+msgstr "Brak aktywnego konta premium.\nKorzystasz z ograniczonej wersji która może nie działać prawidłowo przy przeciążonych łaczach."
+

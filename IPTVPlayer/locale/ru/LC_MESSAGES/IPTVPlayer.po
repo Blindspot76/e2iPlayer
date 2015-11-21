@@ -1349,9 +1349,6 @@ msgstr "Все файлы без разделения на категории"
 msgid "Next page"
 msgstr "Следующая страница"
 
-msgid "Youtubes player"
-msgstr "Ютубе Плеер"
-
 msgid "New dir"
 msgstr "Новый реж"
 
@@ -1602,7 +1599,7 @@ msgstr "Музыка"
 msgid "Teletext decoder"
 msgstr "Декодер телетекста"
 
-msgid "Turn off buffering for http://prognoza.pogody.tv/"
+msgid "Turn off the ability to cache for http://prognoza.pogody.tv/"
 msgstr "Выключите возможность кэшировать для http://prognoza.pogody.tv/"
 
 msgid "Use Polish proxy for http://prognoza.pogody.tv/"
@@ -2418,16 +2415,73 @@ msgid "Remove"
 msgstr "Удалить"
 
 msgid "Cut"
-msgstr "Путь"
+msgstr "Переместить"
 
 msgid "Copy"
-msgstr "Копия"
+msgstr "Копировать"
 
 msgid "Paste \"%s\""
 msgstr "Вставить \"%s\""
 
+msgid "Youtubes player"
+msgstr "Ютубе Плеер"
+
+msgid "Youtube player"
+msgstr "Ютубе Плеер"
+
 msgid "Are you sure you want to remove file \"%s\"?"
 msgstr "Вы уверены, что хотите удалить файл \"%s\"?"
+
+msgid "Get item type."
+msgstr "Получить тип элемента."
+
+msgid "Get episodes list."
+msgstr "Получить список эпизодов."
+
+msgid "Subtitles downloaded successfully. [%s]"
+msgstr "Субтитры загружены успешно. [%s]"
+
+msgid "Russian proxy server url"
+msgstr "Русский прокси-сервер url"
+
+msgid "Use ru proxy server:"
+msgstr "Используйте прокси-сервер ру:"
+
+msgid "english"
+msgstr "английский"
+
+msgid "espanol"
+msgstr "испанский"
+
+msgid "deutsch"
+msgstr "немецкий"
+
+msgid "polski"
+msgstr "польский"
+
+msgid ""
+"There are no active premium account.\n"
+"Using a limited version that may not work properly with congested links."
+msgstr ""
+"Там нет активных премиум аккаунт.\n"
+"Использование ограниченную версию, что не может работать должным образом с "
+"перегруженных ссылкам."
+
+msgid ""
+"You probably have not access to this page due to geolocation restriction."
+msgstr ""
+"Вы, наверное, не имеете доступ к этой странице в связи с ограничением "
+"геолокации."
+
+msgid "You can use Russian proxy server as a workaround."
+msgstr ""
+"Вы можете использовать прокси-сервер российской качестве обходного пути."
+
+msgid "http://www.ex.ua/"
+msgstr "EX.UA"
+
+msgid "Some changes will be applied only after plugin update."
+msgstr "Некоторые изменения будут применены только после плагин обновления."
 
 msgid "\"Web\" streams player"
 msgstr "\"Сеть\" Потоки Плеер"

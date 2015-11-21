@@ -4,6 +4,7 @@
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
@@ -460,7 +461,7 @@ class CBaseHostClass:
                 if type(histItem) == type({}):
                     pattern     = histItem.get('pattern', '')
                     search_type = histItem.get('type', '')
-                    if '' != search_type: plot = desc_base + search_type
+                    if '' != search_type: plot = desc_base + _(search_type)
                 else:
                     pattern     = histItem
                     search_type = None

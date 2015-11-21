@@ -3,6 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
@@ -72,7 +73,7 @@ class PurecastNetApi:
         passwd = config.plugins.iptvplayer.purecastnet_password.value
         
         if ('' == login or '' == passwd) and not self.warned:
-            self.sessionEx.open(MessageBox, 'Brak aktywnego konta premium.\nKorzystasz z ograniczonej wersji która może nie działać prawidłowo przy przeciążonych łaczach.', type = MessageBox.TYPE_INFO, timeout = 10 )
+            self.sessionEx.open(MessageBox, _("There are no active premium account.\nUsing a limited version that may not work properly with congested links."), type = MessageBox.TYPE_INFO, timeout = 10 )
             self.warned = True
         
         channelsTab = []
