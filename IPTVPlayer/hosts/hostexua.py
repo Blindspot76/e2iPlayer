@@ -109,46 +109,19 @@ class ExUA(CBaseHostClass):
         haveAccess = False
         videoCatsUrl = ''
         for item in data:
-            if 'video' in item[0]:
+            if 'video' in item[0] or 'audio' in item[0]:
                 params = dict(cItem)
-                videoCatsUrl = self._getFullUrl(item[0])
-                params.update({'name':'category', 'category':'videos', 'title':item[1], 'url':videoCatsUrl, 'icon':self.DEFAULT_ICON_URL})
+                url = self._getFullUrl(item[0])
+                params.update({'name':'category', 'category':'list_items', 'title':item[1], 'url':url, 'icon':self.DEFAULT_ICON_URL})
                 self.addDir(params)
                 haveAccess = True
-                break
         if not haveAccess:
             msg = _("You probably have not access to this page due to geolocation restriction.")
             msg += '\n' + _("You can use Russian proxy server as a workaround.")
             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 10 )
-        else:
-            self.videoCatsCache = self._fillVideoCatsCache(videoCatsUrl)
-        printDBG(self.videoCatsCache)
         return haveAccess
-    
-    def _fillVideoCatsCache(self, url):
-        printDBG("ExUA._fillVideoCatsCache")
-        table = []
-        sts, data = self.cm.getPage(url, self.defaultParams)
-        if not sts: return []
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'class=include_0>', '</table>', False)[1]
-        data = data.split('</td>')
-        
-        for item in data:
-            tmp = item.split('<p>')
-            title = self.cleanHtmlStr( tmp[0] )
-            desc  = self.cleanHtmlStr( tmp[-1] )
-            url   = self._getFullUrl(self.cm.ph.getSearchGroups(tmp[0], '''href=['"]([^"^']+?)["']''', 1, True)[0])
-            if url.startswith('http'):
-                table.append({'title':title, 'url':url, 'desc':desc})
-        return table
-        
-    def listVideosCategories(self, cItem, category):
-        printDBG("ExUA.listVideosCategories")
-        cItem = dict(cItem)
-        cItem['category'] = category
-        self.listsTab(self.videoCatsCache, cItem)
             
-    def listItems(self, cItem, category='', m1='class=include_0>'):
+    def listItems(self, cItem, m1='class=include_0>'):
         printDBG("ExUA.listMovies")
         url = cItem['url']
         page = cItem.get('page', 0)
@@ -162,13 +135,11 @@ class ExUA(CBaseHostClass):
         sts, data = self.cm.getPage(url, self.defaultParams)
         if not sts: return
         
-        if category == '':
-            original_id = self.cm.ph.getSearchGroups(data, '''<input[^>]+?name=original_id[^>]+?value=['"]([0-9]+?)['"]>''', 1, True)[0]
-            if original_id != '':
-                category = 'video'
-                if 0 == page:
-                    params = {'category':'search', 'title': _('Search'), 'search_type':cItem['title'], 'original_id':original_id, 'search_item':True}
-                    self.addDir(params)
+        original_id = self.cm.ph.getSearchGroups(data, '''<input[^>]+?name=original_id[^>]+?value=['"]([0-9]+?)['"]>''', 1, True)[0]
+        if original_id != '':
+            if 0 == page:
+                params = {'category':'search', 'title': _('Search'), 'search_type':cItem['title'], 'original_id':original_id, 'search_item':True}
+                self.addDir(params)
         
         nextPage = False
         if 'id="browse_next"' in data:
@@ -211,10 +182,10 @@ class ExUA(CBaseHostClass):
                 params.update( {'title':_('Next page'), 'page':page+1} )
                 self.addDir(params)
         else:
-            self.listVideoItems(cItem)
+            self.listPlayItems(cItem)
             
-    def listVideoItems(self, cItem):
-        printDBG("ExUA.listVideoItems")
+    def listPlayItems(self, cItem):
+        printDBG("ExUA.listPlayItems")
         urlTab = self.getLinksForVideo(cItem)
             
         for item in urlTab:
@@ -222,8 +193,11 @@ class ExUA(CBaseHostClass):
             params.update( item )
             params['title'] = item['name']
             params['fav_url'] = cItem['url']
-            if 'pic' in item:
+            type = params.get('type', 'unknown')
+            if 'picture' == type:
                 self.addPicture(params)
+            elif 'audio' == type:
+                self.addAudio(params)
             else:
                 self.addVideo(params)
 
@@ -239,7 +213,7 @@ class ExUA(CBaseHostClass):
                 return
             cItem['url'] = self.SRCH_URL.format( id ) + urllib.quote_plus(searchPattern)
         cItem['rek'] = 1
-        self.listItems(cItem, 'video', 'class=panel>')
+        self.listItems(cItem, 'class=panel>')
         
     def getLinksForVideo(self, cItem, withPicture=True):
         printDBG("ExUA.getLinksForVideo [%s]" % cItem)
@@ -277,27 +251,36 @@ class ExUA(CBaseHostClass):
             meta['external_sub_tracks'] = subTracks
         
         # watch urls
-        watchUrls = re.compile('''['"](http[^"^']+?\.mp4)['"]''').findall(data)
-        tmpAdded = []
-        for item in watchUrls:
-            if item not in tmpAdded:
-                title = '' 
-                if len(downloadUrls) > len(tmpAdded):
-                    title = '.'.join(downloadUrls[len(tmpAdded)]['name'].split('.')[:-1]) + '.mp4'
-                tmpAdded.append(item)
-                if title == '':
-                    title = str(len(tmpAdded))
-                iMeta = dict(meta) 
-                iMeta['iptv_format'] = 'video/mp4'
-                urlTab.append({'name':_('%s [watch]') % title, 'url':self.up.decorateUrl(item, iMeta), 'need_resolve':0})
+        watchUrls   = self.cm.ph.getDataBeetwenMarkers(data, "player_list = '", "';", False)[1]
+        watchTitles = self.cm.ph.getDataBeetwenMarkers(data, 'new Array(', ');', False)[1]
+        tmpTypes = {}
+        try:
+            watchUrls   = byteify(json.loads('[%s]' % watchUrls))
+            watchTitles = re.compile('''title[^'^"]*?['"]([^'^"]+?)['"]''').findall(watchTitles)
+            printDBG(watchTitles)
+            for idx in range(len(watchUrls)):
+                type  = watchUrls[idx]['type']
+                if type not in ['audio', 'video']:
+                    type = 'unknown'
+                tmpTypes[title] = type
+                url   = watchUrls[idx]['url']
+                title = watchTitles[idx][:-3] + url[-3:]
+                urlTab.append({'name':_('%s [watch]') % title, 'url':self.up.decorateUrl(url, meta), 'need_resolve':0, 'type':type})
+        except:
+            printExc()
             
         for item in downloadUrls:
+            if item['name'].endswith('.mp3'):
+                type = 'audio'
+            else:
+                type = 'unknown'
+            item['type'] = tmpTypes.get(item['name'], type)
             item['name'] = _('%s [download]') % item['name']
             item['url'] = self.up.decorateUrl(self._getFullUrl(item['url']), meta)
             urlTab.append(item)
             
         for item in picturesTab:
-            item['pic'] = True
+            item['type'] = 'picture'
             item['need_resolve'] = 0
             urlTab.append(item)
         
@@ -362,9 +345,7 @@ class ExUA(CBaseHostClass):
             self.getMainTab({})
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
     #MOVIES
-        elif category == 'videos':
-            self.listVideosCategories(self.currItem, 'list_videos')
-        elif category == 'list_videos':
+        elif category == 'list_items':
             self.listItems(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
