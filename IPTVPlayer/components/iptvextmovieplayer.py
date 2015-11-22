@@ -1130,7 +1130,7 @@ class IPTVExtMoviePlayer(Screen):
                     self.playbackUpdateInfo({'Length':int(obj['length'])})
                 elif "PLAYBACK_CURRENT_TIME" == key and 0 == obj['sts']:
                     self.playbackUpdateInfo({'CurrentTime':int(obj['sec'])})
-                elif "J" == key:
+                elif "J" == key and obj['ms'] > 0:
                     self.playbackUpdateInfo({'CurrentTime':int(obj['ms']/1000)})
                     self.latchSubtitlesTime(obj['ms'])
                 # CURRENT VIDEO TRACK
