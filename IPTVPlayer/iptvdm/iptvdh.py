@@ -66,9 +66,10 @@ class DMHelper:
                      {'marker':'Referer=',         'name':'Referer'},
                      {'marker':'User-Agent=',      'name':'User-Agent'},
                      {'marker':'Range=',           'name':'Range'},
+                     {'marker':'Orgin=',           'name':'Orgin'},
                      {'marker':'X-Forwarded-For=', 'name':'X-Forwarded-For'}]
                      
-    HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'X-Forwarded-For']
+    HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'X-Forwarded-For']
 
     @staticmethod
     def GET_PWGET_PATH():

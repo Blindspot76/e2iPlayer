@@ -29,6 +29,7 @@ def enum(**enums):
 #   "Cookie": http header field
 #   "Accept": http header field
 #   "Range": http header field
+#   "Orgin": http header field
 #   "X-Forwarded-For": http header field
 class strwithmeta(str):
     def __new__(cls,value,meta={}):

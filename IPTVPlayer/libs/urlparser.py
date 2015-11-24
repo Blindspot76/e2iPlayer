@@ -19,6 +19,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                VIDUPME_decryptPlayerParams,    \
                                                                VIDEOWEED_unpackJSPlayerParams, \
                                                                SAWLIVETV_decryptPlayerParams,  \
+                                                               VIDEOMEGA_decryptPlayerParams, \
                                                                OPENLOADIO_decryptPlayerParams, \
                                                                captchaParser, \
                                                                getDirectM3U8Playlist, \
@@ -1372,7 +1373,7 @@ class pageParser:
     def parserVIDEOMEGA(self,baseUrl):
         video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php|cdn\.php|view\.php)?\?ref=([A-Za-z0-9]+)')[0]
         COOKIE_FILE = GetCookieDir('videomegatv.cookie')
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10' }
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'} # (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10' }
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         
         #if 'iframe' in baseUrl:
@@ -1394,13 +1395,26 @@ class pageParser:
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':False} 
         HTTP_HEADER['Referer'] = url
         sts, tmp = self.cm.getPage(adUrl, params)
-        tmp  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
-        printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        printDBG(tmp)
-        printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        if tmp.startswith('http'):
-            linkVideo = urlparser.decorateUrl(tmp, {"Range": "bytes=0-","Cookie": "__cfduid=1", 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})
-        else: linkVideo = False
+        
+        #linkVideo  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
+       
+        #data = data[data.rfind('}(')+2:-2]
+        #data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
+        
+        # get JS player script code from confirmation page
+        sts, data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>')
+        if not sts: return False
+        # unpack and decode params from JS player script code
+        data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0)
+        
+        linkVideo  = self.cm.ph.getSearchGroups(data, '"(http[^"]+?\.mp4\?[^"]+?)"')[0]
+        
+        #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+        #printDBG(data)
+        #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+        if linkVideo.startswith('http'):
+            linkVideo = urlparser.decorateUrl(linkVideo, {"Orgin": "http://videomega.tv/", 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})
+        else: linkVideo = False #"Cookie": "__cfduid=1", "Range": "bytes=0-",
         return linkVideo
 
     def parserVIDTO(self, baseUrl):

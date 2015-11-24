@@ -127,6 +127,32 @@ def MYOBFUSCATECOM_0ll(string, baseRet=''):
         ret += string[i]
         i -= 1
     return ret
+    
+def VIDEOMEGA_decryptPlayerParams(p, a, c, k, e, d):
+    def e1(c):
+        return JS_toString(c, 36)
+        return ret
+    def k1(matchobj):
+        return d[matchobj.group(0)]
+    def e2(t=None):
+        return '\\w+'
+    e = e1
+    if True:
+        while c != 0:
+            c -= 1
+            tmp1 = e(c)
+            d[tmp1] = k[c]
+            if '' == d[tmp1]: 
+                d[tmp1] = e(c)
+        c = 1
+        k = [k1]
+        e = e2
+    while c != 0:
+        c -= 1
+        if k[c]:
+            reg = '\\b' + e(c) + '\\b'
+            p = re.sub(reg, k[c], p)
+    return p
             
 def SAWLIVETV_decryptPlayerParams(p, a, c, k, e, d):
     def e1(c):
