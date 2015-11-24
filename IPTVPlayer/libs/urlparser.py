@@ -1399,7 +1399,7 @@ class pageParser:
         printDBG(tmp)
         printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
         if tmp.startswith('http'):
-            linkVideo = urlparser.decorateUrl(tmp, {"Cookie": "__cfduid=1", 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})
+            linkVideo = urlparser.decorateUrl(tmp, {"Range": "bytes=0-","Cookie": "__cfduid=1", 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})
         else: linkVideo = False
         return linkVideo
 
