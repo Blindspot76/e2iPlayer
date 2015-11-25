@@ -131,7 +131,12 @@ class Watchwrestling(CBaseHostClass):
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="nag cf">', '<!-- end #content -->', False)[1]
+        if '<div class="loop-nav pag-nav">' in data:
+            m2 = '<div class="loop-nav pag-nav">'
+        else:
+            m2 = '<div id="sidebar"'
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="nag cf">', m2, False)[1]
+        
         data = data.split('<div id="post-')
         if len(data): del data[0]
         
