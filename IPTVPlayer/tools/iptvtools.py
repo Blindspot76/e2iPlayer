@@ -1019,3 +1019,13 @@ def GetE2VideoPolicy(num=''):
 def SetE2VideoPolicy(value, num=''):
     return SetE2OptionByFile('/proc/stb/video/policy'+num, value)
     
+def GetE2AudioCodecMixChoices(codec):
+    return GetE2OptionsFromFile('/proc/stb/audio/%s_choices' % codec)
+    
+def GetE2AudioCodecMixOption(codec):
+    options = GetE2OptionsFromFile('/proc/stb/audio/%s' % codec)
+    if 1 == len(options): return options[0]
+    return None
+    
+def SetE2AudioCodecMixOption(value, codec):
+    return SetE2OptionByFile('/proc/stb/audio/%s' % codec, value)

@@ -308,10 +308,13 @@ class IPTVExtMoviePlayer(Screen):
         except: printExc()
         self.hideSubSynchroControl()
         
-        # AV options
+        # VIDEO options
         self.defVideoOptions  = {'aspect':None, 'aspect_choices':[], 'policy':None, 'policy_choices':[], 'policy2':None, 'policy2_choices':[]}
         self.videoOptSetters  = {'aspect':SetE2VideoAspect, 'policy':SetE2VideoPolicy, 'policy2':SetE2VideoPolicy} 
-        self.currVideoOptions    = {'aspect':None, 'policy':None, 'policy2':None}
+        self.currVideoOptions = {'aspect':None, 'policy':None, 'policy2':None}
+        
+        # AUDIO options
+        self.defAudioOptions  = {'ac3':None, 'aac':None}
         
         # meta data
         self.metaHandler = IPTVMovieMetaDataHandler( self.hostName, self.title, self.fileSRC )
@@ -480,6 +483,13 @@ class IPTVExtMoviePlayer(Screen):
         # set auto hide options
         try: self.autoHideTime = 1000 * int(self.configObj.getInfoBarTimeout())
         except: self.autoHideTime = 1000
+        
+    def getE2AudioOptions(self):
+        defAudioOptions  = {'ac3': GetE2AudioCodecMixOption('ac3'), 
+                            'aac': GetE2AudioCodecMixOption('aac'), 
+                           }
+        printDBG(">>>>>>>>>>>>>>>>>>>>> getE2AudioOptions[%s]" % defAudioOptions)
+        return defAudioOptions
         
     def getE2VideoOptions(self):
         defVideoOptions  = {'aspect':         GetE2VideoAspect(), 
@@ -1215,7 +1225,7 @@ class IPTVExtMoviePlayer(Screen):
         self.onClose.remove(self.__onClose)
         self.messageQueue = []
         
-        # RESTORE DEFAULT AV OPTION
+        # RESTORE DEFAULT VIDEO OPTION
         printDBG(">>>>>>>>>>>>>>>>>>>>> __onClose[%s]" % self.defVideoOptions)
         printDBG(">>>>>>>>>>>>>>>>>>>>> __onClose[%s]" % self.currVideoOptions)
         videoOptionChange = False
@@ -1228,6 +1238,13 @@ class IPTVExtMoviePlayer(Screen):
                 
         if videoOptionChange:
             self.applyVideoOptions(self.defVideoOptions)
+            
+        # RESTORE DEFAULT AUDIO OPTION
+        playerDefOptions = self.getE2AudioOptions()
+        audioOptions = ['ac3', 'aac']
+        for opt in audioOptions:
+            if playerDefOptions[opt] != None and playerDefOptions[opt] != self.defAudioOptions[opt]:
+                SetE2AudioCodecMixOption(opt, self.defAudioOptions[opt])
         
         self.metaHandler.save()
         
@@ -1385,6 +1402,14 @@ class IPTVExtMoviePlayer(Screen):
         
         if videoOptionChange:
             self.applyVideoOptions(self.currVideoOptions)
+            
+        # SET Audio option
+        self.defAudioOptions = self.getE2AudioOptions()
+        playerDefOptions = self.configObj.getDefaultAudioOptions()
+        audioOptions = ['ac3', 'aac']
+        for opt in audioOptions:
+            if playerDefOptions[opt] != None and playerDefOptions[opt] != self.defAudioOptions[opt]:
+                SetE2AudioCodecMixOption(opt, playerDefOptions[opt])
         
         self.enableSubtitles()
             

@@ -9,7 +9,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetHostsList, IsHostEnabled, SaveHostsOrderList, SortHostsList, \
                                                           GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
-                                                          GetE2VideoPolicy, SetE2VideoPolicy
+                                                          GetE2VideoPolicy, SetE2VideoPolicy, GetE2AudioCodecMixChoices, GetE2AudioCodecMixOption
 from Plugins.Extensions.IPTVPlayer.components.configbase import ConfigBaseWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
@@ -28,6 +28,10 @@ COLORS_DEFINITONS = [("#000000", _("black")), ("#C0C0C0", _("silver")), ("#80808
 
 config.plugins.iptvplayer.remember_last_position = ConfigYesNo(default = False)
 config.plugins.iptvplayer.aac_software_decode = ConfigYesNo(default = False)
+config.plugins.iptvplayer.aac_software_decode = ConfigYesNo(default = False)
+config.plugins.iptvplayer.aac_mix = ConfigSelection(default = None, choices = [(None, _("from E2 settings"))])
+config.plugins.iptvplayer.ac3_mix = ConfigSelection(default = None, choices = [(None, _("from E2 settings"))])
+
 config.plugins.iptvplayer.extplayer_infobar_timeout = ConfigSelection(default = "5", choices = [
         ("1", "1 " + _("second")), ("2", "2 " + _("seconds")), ("3", "3 " + _("seconds")),
         ("4", "4 " + _("seconds")), ("5", "5 " + _("seconds")), ("6", "6 " + _("seconds")), ("7", "7 " + _("seconds")),
@@ -61,6 +65,31 @@ config.plugins.iptvplayer.extplayer_subtitle_box_height  = ConfigInteger(240, (5
 class ConfigExtMoviePlayerBase():
     
     def __init__(self):
+        
+        # fill aac_mix option
+        options = [(None, _("From E2 settings"))]
+        tmp = GetE2AudioCodecMixChoices('aac')
+        for item in tmp:
+            options.append((item,_(item)))
+        if config.plugins.iptvplayer.aac_mix.value not in tmp:
+            config.plugins.iptvplayer.aac_mix.value = None
+        if len(tmp):
+            self.aac_mix_avaliable = True
+        else: self.aac_mix_avaliable = False
+        config.plugins.iptvplayer.aac_mix = ConfigSelection(default = None, choices = options)
+        
+        # fill ac3_mix option
+        options = [(None, _("From E2 settings"))]
+        tmp = GetE2AudioCodecMixChoices('ac3')
+        for item in tmp:
+            options.append((item,_(item)))
+        if config.plugins.iptvplayer.ac3_mix.value not in tmp:
+            config.plugins.iptvplayer.ac3_mix.value = None
+        if len(tmp):
+            self.ac3_mix_avaliable = True
+        else: self.ac3_mix_avaliable = False
+        config.plugins.iptvplayer.ac3_mix = ConfigSelection(default = None, choices = options)
+        
         # fill aspect option
         options = [(None, _("From E2 settings"))]
         tmp = GetE2VideoAspectChoices()
@@ -155,6 +184,13 @@ class ConfigExtMoviePlayerBase():
         printDBG(">>>>>>>>>>>>>>>>>>>>> getE2VideoOptions[%s]" % defVideoOptions)
         return defVideoOptions
         
+    def getDefaultAudioOptions(self):
+        defAudioOptions  = {'aac':  config.plugins.iptvplayer.aac_mix.value, 
+                            'ac3':  config.plugins.iptvplayer.ac3_mix.value, 
+                           }
+        printDBG(">>>>>>>>>>>>>>>>>>>>> getDefaultAudioOptions[%s]" % defAudioOptions)
+        return defAudioOptions
+        
     def getInfoBarTimeout(self):
         return config.plugins.iptvplayer.extplayer_infobar_timeout.value
         
@@ -192,6 +228,11 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         list.append(getConfigListEntry(_("Remember last watched position"), config.plugins.iptvplayer.remember_last_position))
         if not self.operatingPlayer:
             list.append(getConfigListEntry(_("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
+            if self.ac3_mix_avaliable:
+                list.append(getConfigListEntry(_("AC3 mix mode"), config.plugins.iptvplayer.ac3_mix))
+            if self.aac_mix_avaliable:
+                list.append(getConfigListEntry(_("AAC mix mode"), config.plugins.iptvplayer.aac_mix))
+            
         list.append(getConfigListEntry(_("External player infobar timeout"), config.plugins.iptvplayer.extplayer_infobar_timeout))
         
         if self.aspect_avaliable:
