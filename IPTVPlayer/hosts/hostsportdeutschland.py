@@ -212,7 +212,9 @@ class SportDeutschland(CBaseHostClass):
                 if sts:
                     #printDBG("+++++++++++++++++++++++++++++++++\n%s\n+++++++++++++++++++++++++++++++++" % data)
                     videoUrl = self.cm.ph.getSearchGroups(data, 'meta base="(rtmp[^"]+?)"')[0]
-                    videoUrl += '/' + self.cm.ph.getSearchGroups(data, 'video src="([^"]+?)"')[0]
+                    if '' != videoUrl and not videoUrl.startswith('/'):
+                        videoUrl += '/'
+                    videoUrl += self.cm.ph.getSearchGroups(data, 'video src="([^"]+?)"')[0]
                     if videoUrl.startswith('rtmp'):
                         videoUrls.append({'name':'SportDeutschland rtmp', 'url':videoUrl.replace('&amp;', '&')})
             else:
