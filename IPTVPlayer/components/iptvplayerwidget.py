@@ -537,9 +537,26 @@ class IPTVPlayerWidget(Screen):
     def blue_pressed_next(self, ret):
         TextMSG = ''
         if ret:
-            if ret[1] == "info": #informacje o wtyczce
-                TextMSG = _("Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291")
-                self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO, timeout = 10 )
+            if ret[1] == "info": #information about plugin
+                TextMSG  = _("Main developer, architect, coordinator: ") + "\n\t- samsamsam\n"
+                TextMSG += _("Developers: ") 
+                developersTab = [{'nick':'zdzislaw22', 'mail':''},
+                                 {'nick':'mamrot',     'mail':''},
+                                 {'nick':'MarcinO',    'mail':''},
+                                 {'nick':'skalita',    'mail':''},
+                                 {'nick':'huball',     'mail':''},
+                                 {'nick':'matzg',      'mail':''},
+                                 {'nick':'tomashj291', 'mail':''},
+                                 {'nick':'a4tech',     'mail':''},
+                                ]
+                # present alphabetically, the order does not mean validity
+                sortedList = sorted(developersTab, key=lambda k: k['nick'].upper())
+                for item in sortedList:
+                    TextMSG += "\n\t- {0}, ".format(item['nick'])
+                TextMSG += "\n"
+                TextMSG += _("Testers: ") + "\n\t- ??\n"
+                TextMSG += _("Webpage: ") + "\n\t- http://iptvplayer.vline.pl/, \n\t- http://iptvplayer.pl/\n"
+                self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO )
             elif ret[1] == "IPTVDM":
                 self.runIPTVDM()
             elif ret[1] == "HostConfig":
