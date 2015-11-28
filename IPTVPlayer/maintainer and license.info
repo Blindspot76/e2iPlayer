@@ -1,12 +1,32 @@
-Based on SHOUTcast plugin and sd-xbmc.org project 
-@samsamsam, @j00zek, @mamrot, @MarcinO, @atilaks, @huball, @matzg
+Modelled on SHOUTcast plugin and sd-xbmc.org project 
+
+Main developer, architect, coordinator: 
+    - @samsamsam
+Developers: 
+    - @j00zek, 
+    - @mamrot, 
+    - @MarcinO, 
+    - @skalita, 
+    - @atilaks, 
+    - @huball, 
+    - @matzg
+    - @tomashj291
+    - @a4tech
+Testers:
+    - ??
+Webpages:
+    - http://iptvplayer.vline.pl/
+    - http://iptvplayer.pl/
 
 Plugin IPTVPlayer może być modyfikowany przez każdego.
 Autor każdej modyfikacji zobowiązany jest do wysłania, z potwierdzeniem odbioru, szczegółowego opsiu modyfikacji w raz z jej kodem źródłowym na adres e-mail: samsamsam@o2.pl.
 
 Każdy ma prawo do dekomilacji kodu pluginu IPTVPlayer w przypadku, gdy został on opublikowany bez źródeł.
 
-Zabrania się użwania puginu IPTVPlayer w ramach dystrybucji Graterlia OS.
+W przypadku dystrybucji Enigmy2 zawierających preinstalowany plugin IPTVPlayer, bądź umożliwiających jego instalację lub aktualizację, kod komponentów IPTVPlayer 
+w ramach dostarczanej wersji musi być identyczny z kodem z gównego repozytorium dostepnego pod adresem https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2.
+Zabrania się dostarczania niekompletnego kodu pluginu IPTVPlayer bez uzyskania wcześniejszej zgody głównego dewelopera.
+Jednocześnie zezwala się na rozpowszechnianie kodu pluginu w postaci prekompilowanych plików pyo.
 
 Twórcy pluginu IPTVPlayer nie ponoszą odpowiedzialności za szkody wynikłe z użytkowania pluginu IPTVPlayer niezależnie od tego, w jaki sposób te szkody powstały i czego dotyczą.
 Twórcy pluginu IPTVPlayer nie ponoszą odpowiedzialności za niewłaściwe lub niezgodne z prawem danego kraju użycie pluginu IPTVPlayer w tym za nielegalne pobierania materiałów wideo z wykorzystaniem pluginu IPTVPlayer. 
@@ -14,7 +34,7 @@ Twórcy pluginu IPTVPlayer nie ponoszą odpowiedzialności za niewłaściwe lub 
 Plugin IPTVPlayer należy traktować jako przeglądarkę treści dostępnych w sieci Internet dlatego Twórcy pluginu IPTVPlayer nie mogą i nie ponoszą odpowiedzialności za treści do których użytkownik uzyskuje dostęp z wykorzystaniem 
 pluginu IPTVPlayer.
 
-Plugin IPTVPlayer udostępnia możlwiość logowania się do niektórych serwisów wymagających kont premium.
+Plugin IPTVPlayer obsługuje funckję logowania się do niektórych serwisów wymagających kont premium.
 Jednakże Twórcy pluginu nie zajmują się sprzedażą takich kont.
 
 

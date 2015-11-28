@@ -544,6 +544,7 @@ class IPTVPlayerWidget(Screen):
                                  {'nick':'mamrot',     'mail':''},
                                  {'nick':'MarcinO',    'mail':''},
                                  {'nick':'skalita',    'mail':''},
+                                 {'nick':'atilaks',    'mail':''},
                                  {'nick':'huball',     'mail':''},
                                  {'nick':'matzg',      'mail':''},
                                  {'nick':'tomashj291', 'mail':''},
@@ -555,7 +556,7 @@ class IPTVPlayerWidget(Screen):
                     TextMSG += "\n\t- {0}, ".format(item['nick'])
                 TextMSG += "\n"
                 TextMSG += _("Testers: ") + "\n\t- ??\n"
-                TextMSG += _("Webpage: ") + "\n\t- http://iptvplayer.vline.pl/, \n\t- http://iptvplayer.pl/\n"
+                TextMSG += _("Webpages: ") + "\n\t- http://iptvplayer.vline.pl/, \n\t- http://iptvplayer.pl/\n"
                 self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO )
             elif ret[1] == "IPTVDM":
                 self.runIPTVDM()
@@ -995,16 +996,17 @@ class IPTVPlayerWidget(Screen):
         return
     
     def selectHostCallback(self, ret):
-        try:
-            if os_path.isfile('/etc/init.d/graterlia_init'):
-                message = "Ostrzężenie (faza 1/3)\n"
-                message += "Używając IPTVPlayer na tej dystrybucji systemu E2 łamiesz licencje.\n\n"
-                message += "WARNING (phase 1/3)\n"
-                message += "You are breaking license using IPTVPlayer on your E2 distribution.\n\n"
-                #self.session.openWithCallback(self.close, MessageBox, text=message, type=MessageBox.TYPE_ERROR)
-                self.session.open(MessageBox, text=message, type=MessageBox.TYPE_ERROR)
-        except:
-            printExc()
+        if 0:
+            try:
+                if os_path.isfile('/etc/init.d/graterlia_init'):
+                    message = "Ostrzężenie (faza 1/3)\n"
+                    message += "Używając IPTVPlayer na tej dystrybucji systemu E2 łamiesz licencje.\n\n"
+                    message += "WARNING (phase 1/3)\n"
+                    message += "You are breaking license using IPTVPlayer on your E2 distribution.\n\n"
+                    #self.session.openWithCallback(self.close, MessageBox, text=message, type=MessageBox.TYPE_ERROR)
+                    self.session.open(MessageBox, text=message, type=MessageBox.TYPE_ERROR)
+            except:
+                printExc()
         checkUpdate = True
         try: 
             if 0 < len(ret) and ret[1] == "update": checkUpdate = False
