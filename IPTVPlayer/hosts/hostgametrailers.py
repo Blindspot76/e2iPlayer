@@ -79,7 +79,7 @@ class GameTrailers(CBaseHostClass):
     
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'GameTrailers', 'cookie':'gametrailers.cookie'})
+        CBaseHostClass.__init__(self, {'history':'GameTrailers', 'cookie':'gametrailers.cookie', 'cookie_type':'MozillaCookieJar'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
     def _getFullUrl(self, url):
