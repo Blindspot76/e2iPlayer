@@ -1387,6 +1387,11 @@ class pageParser:
         sts, data = self.cm.getPage(url, params)
         if not sts: 
             return False
+        if 'dmca ' in data:
+            DMCA = True
+            SetIPTVPlayerLastHostError("'Digital Millennium Copyright Act' detected.")
+            return False
+        else: DMCA = False
         
         adUrl =self.cm.ph.getSearchGroups(data, '"([^"]+?/ad\.php[^"]+?)"')[0]
         if adUrl.startswith("/"): 
@@ -1409,6 +1414,8 @@ class pageParser:
         
         linkVideo  = self.cm.ph.getSearchGroups(data, '"(http[^"]+?\.mp4\?[^"]+?)"')[0]
         
+        #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+        #printDBG("DMCA [%r]" % DMCA)
         #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
         #printDBG(data)
         #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -2012,6 +2019,9 @@ class pageParser:
         HTTP_HEADER = {"User-Agent":"Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10"}
         sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER})
         if sts:
+            errMarker = 'File was deleted'
+            if errMarker in data:
+                SetIPTVPlayerLastHostError(errMarker)
             vidTab = getPageUrl(data)
             if 0 == len(vidTab):
                 cookies_data = ''

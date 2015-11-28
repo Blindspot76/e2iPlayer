@@ -354,7 +354,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, SerialeNet(), True)
     
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('tvpvodlogo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('serialnetlogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
         listLen = len(self.host.currList)

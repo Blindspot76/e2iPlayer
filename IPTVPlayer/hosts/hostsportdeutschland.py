@@ -152,7 +152,9 @@ class SportDeutschland(CBaseHostClass):
             sectionPermalink = self._getJItemStr(item.get('section', {}), 'permalink')
             permalink   = self._getJItemStr(item, 'permalink')
             if '' != sectionPermalink and '' != permalink:
-                params['url'] = SportDeutschland.MAIN_API_URL + 'permalinks/%s/%s' % (sectionPermalink, permalink)
+                #https://github.com/rg3/youtube-dl/commit/c00c7c0af0fdcb380aef0ea9e072a61979d17816#diff-dfd8f21b497fa4e74594244026aed662
+                params['url'] = 'http://proxy.vidibusdynamic.net/sportdeutschland.tv/api/permalinks/%s/%s?access_token=true' % (sectionPermalink, permalink)
+                #SportDeutschland.MAIN_API_URL + 
             else:
                 params['url'] = ''
                 

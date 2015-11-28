@@ -314,7 +314,7 @@ class Spryciarze():
     # end getVideoList
     
     def getVideoLinks(self, url):
-        printDBG('Spryciarze.getVideoLink: ' + url)
+        printDBG('Spryciarze.getVideoLinks: ' + url)
         
         linkstTab = []
         if None == url or 0 == len(url):
@@ -338,18 +338,30 @@ class Spryciarze():
                 continue
             
             player = self.cm.ph.getSearchGroups(data, 'src="(http://player.spryciarze.pl[^"]+?)"')[0]
-            sts, player = self.cm.getPage(player, {'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE})
-            if not sts: break
-            player = self.cm.ph.getSearchGroups(player, 'var data[^=]*?=[^\{]*?(\{[^;]+?);')[0]
-            try:
-                printDBG(player)
-                player = byteify(json.loads(player))
-                player = player['mediaFiles']
-                for item in player:
-                    if 'mp4' in item['type']:
-                        linkstTab.append({'name':'Native player', 'url':item['src']})
-            except:
-                printExc()
+            if '' != player:
+                sts, player = self.cm.getPage(player, {'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE})
+                if not sts: break
+                player = self.cm.ph.getSearchGroups(player, 'var data[^=]*?=[^\{]*?(\{[^;]+?);')[0]
+                try:
+                    printDBG(player)
+                    player = byteify(json.loads(player))
+                    player = player['mediaFiles']
+                    for item in player:
+                        if 'mp4' in item['type']:
+                            linkstTab.append({'name':'Native player', 'url':item['src']})
+                except:
+                    printExc()
+            else:
+                player  = self.cm.ph.getSearchGroups(data, '"(http://www.spryciarze.pl/player/[^"]+?\.swf?[^"]+?)"')[0]
+                videoID = self.cm.ph.getSearchGroups(player + '|', 'VideoID=([0-9]+?)[^0-9]')[0]
+                sts, data = self.cm.getPage('http://www.spryciarze.pl/player/player/xml_connect.php?code=%s&ra=2' % videoID, {'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE})
+                if not sts: break
+                data = re.compile('<urlMOV([^>]+?)>([^<]+?)<').findall(data)
+                tmp = []
+                for item in data:
+                    if item[1] not in tmp:
+                        tmp.append(item[1])
+                        linkstTab.append({'name':'Native player %s' % item[0], 'url':item[1]})
             if len(linkstTab):
                 break
         return linkstTab

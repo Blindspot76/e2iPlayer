@@ -50,21 +50,30 @@ class GameTrailers(CBaseHostClass):
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
     MAIN_URL = "http://www.gametrailers.com/"
-    SEARCH_URL = MAIN_URL + "search"
-    GAMES_OF_MONTH_URL = MAIN_URL + 'games/dk31tx/gt-release-calendar/videos-trailers'
+    SEARCH_URL = MAIN_URL + "/tag/view/{0}?from_search=1"
     
     MAIN_ICON = "http://images.eurogamer.net/2012/articles//a/1/4/9/4/8/9/0/GT_Logo_Front.jpg/EG11/thumbnail/360x200/"
     
     MAIN_CAT_TAB = [{'category':'filters',         'mode':'',        'title': 'Videos',               'url':MAIN_URL + 'videos-trailers', 'icon':MAIN_ICON},
-                    {'category':'shows',           'mode':'shows',   'title': 'Shows',                'url':MAIN_URL + 'shows',           'icon':MAIN_ICON},
+                    {'category':'shows_big_tab',   'mode':'',        'title': 'Shows',                'url':MAIN_URL + 'shows',           'icon':MAIN_ICON},
                     {'category':'filters',         'mode':'',        'title': 'Reviews',              'url':MAIN_URL + 'reviews',         'icon':MAIN_ICON},
-                    {'category':'filters',         'mode':'',        'title': 'Games of the month',   'url':GAMES_OF_MONTH_URL,           'icon':MAIN_ICON},
                     {'category':'platforms',       'mode':'',        'title': 'Platforms',            'url':MAIN_URL,                     'icon':MAIN_ICON},
                     {'category':'search',          'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',  'title': _('Search history')} ]
+                    {'category':'search_history',  'title': _('Search history')}
+                   ]
+    #shows_main_tab
+    SHOW_MAIN_TAB = [{'category':'shows_big_tab',  'mode':'',        'title': 'THE BIG ONES',         'url':MAIN_URL + 'shows',           'icon':MAIN_ICON},
+                     {'category':'shows',          'mode':'shows',   'title': 'ORGINALS IN SEASONS',  'url':MAIN_URL + 'shows/archive',   'icon':MAIN_ICON},
+                    ]
+    
+    SHOWS_BIG_TAB = [{'category':'list_sort_by',  'mode':'shows', 'title': 'POP FICTION',      'base_url':MAIN_URL + 'shows/pop-fiction?utm_source=panel&utm_medium=big_ones&utm_campaign=all',      'icon':'http://cdn.themis-media.com/media/global/images/library/deriv/1005/1005087.jpg'},
+                     {'category':'list_sort_by',  'mode':'shows', 'title': 'TIMELINE',         'base_url':MAIN_URL + 'shows/timeline?utm_source=panel&utm_medium=big_ones&utm_campaign=all',         'icon':'http://cdn.themis-media.com/media/global/images/library/deriv/1005/1005119.jpg'},
+                     {'category':'list_sort_by',  'mode':'shows', 'title': 'GT RETROSPECTIVES','base_url':MAIN_URL + 'shows/gt-retrospectives?utm_source=panel&utm_medium=big_ones&utm_campaign=all','icon':'http://cdn.themis-media.com/media/global/images/library/deriv/1005/1005125.jpg'},
+                    ]
                     
-    SORT_BY_TAB = [{'title':'Most Viewed', 'sort_by':'most_viewed'},
-                   {'title':'Most Recent', 'sort_by':'most_recent'}]
+    SORT_BY_TAB = [{'title':'Most Viewed', 'sort_by':'views'},
+                   {'title':'Most Recent', 'sort_by':'latest'}
+                  ]
     
     IMAGE_QUALITY = 'width=160&height=90&crop=true&quality=.91'
     
@@ -73,13 +82,16 @@ class GameTrailers(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'GameTrailers', 'cookie':'gametrailers.cookie'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-    def _getFullUrl(self, url, mode):
+    def _getFullUrl(self, url):
         if url.startswith('//'):
             url = 'http:' + url
-        elif 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URLS[mode] + url
         
-        if self.MAIN_URLS[mode].startswith('https://'):
+        elif 0 < len(url) and not url.startswith('http'):
+            if url.startswith('/'):
+                url = url[1:]
+            url =  self.MAIN_URL + url
+        
+        if self.MAIN_URL.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
         
@@ -87,7 +99,7 @@ class GameTrailers(CBaseHostClass):
         return self.cm.ph.getSearchGroups(item, '<meta itemprop="%s" content="([^"]+?)"' % name)[0]
         
     def addIconQuality(self, iconUrl):
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % iconUrl)
+        #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % iconUrl)
         if iconUrl.startswith('http') and iconUrl.endswith('?'):
             return iconUrl + self.IMAGE_QUALITY
         return ''
@@ -111,66 +123,49 @@ class GameTrailers(CBaseHostClass):
         printDBG("GameTrailers.listPlatforms")
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="platform_nav">', '</ul>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="platforms">', '</ul>', False)[1]
         data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>(.+?)</a>').findall(data)
         for item in data:
             if 'mobile-apps' in item[0]: continue
             params = dict(cItem)
-            params.update({'title':self.cleanHtmlStr( item[1] ), 'category':nextCategory, 'url':item[0]})
+            params.update({'title':self.cleanHtmlStr( item[1] ), 'category':nextCategory, 'url':self._getFullUrl(item[0])})
             self.addDir(params)
     
     def getFilters(self, cItem, nextCategory):
         printDBG("GameTrailers.getFilters")
         
-        if 'filters' in cItem:
-            for item in cItem['filters']:
-                params = dict(cItem)
-                params.update({'title':item['title'], 'category':nextCategory, 'sub_items':item['sub_items']})
-                self.addDir(params)
-            return
-        
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
-        baseUrl = self.cm.ph.getDataBeetwenMarkers(data, 'line_listing_results.init("', '"', False)[1]
         cItem = dict(cItem)
-        cItem['base_url'] = baseUrl
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % baseUrl)
+        cItem['base_url'] = cItem['url']
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'class="filter_main_type">', '</div>', False)[1]
-        data = data.split('class="filter_main_type">')
+        data = self.cm.ph.getDataBeetwenMarkers(data, "<div class='category'>", '<div class="streamContent">', False)[1]
+        data = data.split("<div class='category'>")
         mainFiltersTab = []
         for mainFilter in data:
-            mainTitle = self.cm.ph.getDataBeetwenMarkers(mainFilter, '<h5>', '</h5>', False)[1]
-            if '<ul class="sub_filter_group">' in mainFilter:
-                subFilterData = mainFilter.split('<li class="facet_wrapper">')
-                if len(subFilterData) > 0:
-                    del subFilterData[0]
-            else:
-                subFilterData = [mainFilter]
+            mainTitle = self.cleanHtmlStr( mainFilter.split('</div>')[0] ).upper()
+            subFilterData = re.compile('''<a[^>]+?data-stream-nav='([^']+?)'[^>]*?>([^<]+?)</a>''').findall(mainFilter)
             subFiltersTab = []
             for subFilter in subFilterData:
                 #printDBG("====================================================")
                 #printDBG(subFilter)
                 #printDBG("====================================================")
-                subTitle = self.cm.ph.getDataBeetwenMarkers(subFilter, '<h6>', '</h6>', False)[1]
-                subItems = re.compile('<span class="[^"]+?" name="([^"]+?)" value="([^"]+?)">([^<]+?)<span>').findall(subFilter)
-                subItemsTab = []
-                for item in subItems:
-                    subItemsTab.append({"_name":item[0], "_value":item[1], "title":item[2]})
-                if len(subItemsTab):
-                    subFiltersTab.append({'title':subTitle, 'sub_items':subItemsTab})
-            if len(subFiltersTab) == 1:
+                subTitle = self.cleanHtmlStr(subFilter[1]).upper()
+                try:
+                    subNav =  byteify( json.loads(subFilter[0]) )
+                except:
+                    printExc()
+                    continue
+                subFiltersTab.append({'title':subTitle, 'sub_nav':subNav})
+            
+            if len(subFiltersTab) > 0:
                 params = dict(cItem)
-                params.update({'title':mainTitle, 'category':nextCategory, 'sub_items':subItemsTab})
-                self.addDir(params)
-            elif len(subFiltersTab) > 0:
-                params = dict(cItem)
-                params.update({'title':mainTitle, 'filters':subFiltersTab})
+                params.update({'category':nextCategory, 'title':mainTitle, 'sub_items':subFiltersTab})
                 self.addDir(params)
                 
     def listShows(self, cItem, nextCategory):
-        printDBG("GameTrailers.listPlatforms")
+        printDBG("GameTrailers.listShows")
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
@@ -188,13 +183,6 @@ class GameTrailers(CBaseHostClass):
 
     def listShowItems(self, cItem):
         printDBG("GameTrailers.listShowItems")
-        if 'base_url' not in cItem:
-            sts, data = self.cm.getPage(cItem['url'])
-            if not sts: return
-            baseUrl = self.cm.ph.getDataBeetwenMarkers(data, 'data-url="', '"', False)[1]
-            cItem = dict(cItem)
-            cItem['base_url'] = baseUrl
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % baseUrl)
         self.listItems(cItem)
 
     def listItems(self, cItem, nextCategory=None):
@@ -203,12 +191,15 @@ class GameTrailers(CBaseHostClass):
         url  = cItem['base_url']
         if '&' in url: url += '&'
         else: url += '?'
-        if 1 == page:
-            url += 'sortBy={0}'.format(cItem.get('sort_by', 'undefined'))
-            if '_name' in cItem: url += '&{0}={1}'.format(cItem['_name'], cItem['_value'])
-            elif '_name_value' in cItem: url += '&{0}'.format(cItem['_name_value'])
-        else:
-            url += 'currentPage={0}'.format(page)
+        if page > 1:
+            url += 'page={0}&'.format(page)
+        
+        if 'sort_by' in cItem:
+            url += 'streamType={0}&'.format(cItem['sort_by']) 
+            
+        if 'sub_nav' in cItem:
+            url += '{0}&'.format( urllib.urlencode(cItem['sub_nav']))
+        
         cItem = dict(cItem)
         cItem['Referer'] = url
             
@@ -221,19 +212,9 @@ class GameTrailers(CBaseHostClass):
         
         sts, data = self.cm.getPage(url, httpParams, post_data)
         if not sts: return
-        p1 = '<li class="pagination_holder">'
-        p2 = '<div class="pagination">'
-        if p1 in data:
-            data = data.split(p1)
-        else:
-            data = data.split(p2)
         
         nextPage = False
-        if len(data) > 1:
-            if 'href="?currentPage={0}"'.format(page + 1) in data[1]:
-                nextPage = True
-        
-        data = data[0]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="streamContent">', '<script type="text/javascript">', False)[1]
         if 'search' == cItem.get('mode', ''):
             if 'user_movies' == cItem['search_tab']:
                 m1 = '<div class="content"'
@@ -241,7 +222,9 @@ class GameTrailers(CBaseHostClass):
                 m1 = '<div class="holder"'
             self.listSearchVideoItems(cItem, data, m1)
         else:
-            self.listVideoItems(cItem, data)
+            added = self.listVideoItems(cItem, data)
+            if added:
+                nextPage = True
         
         if nextPage:
             params = dict(cItem)
@@ -258,23 +241,23 @@ class GameTrailers(CBaseHostClass):
             self.addVideo(params)
     
     def listVideoItems(self, cItem, data):
-        data = data.split('</li>')
+        added = False
+        data = data.split('</a>')
         if len(data): del data[-1]
         
         for item in data:
             params = self._mapItemBase(item)
             if '' == params['url']: continue
             self.addVideo(params)
+            added = True
+        return added
     
     def _mapItemBase(self, item):
         params = {}
-        url   = self.cm.ph.getSearchGroups(item, '<a href="([^"]+?)" class="thumbnail">')[0]
-        if '' == url: url   = self.cm.ph.getSearchGroups(item, '<a class="watch[^"]*?" href="([^"]+?)"')[0]
-        params['url'] = url
-        
-        params['title'] = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3>', '</h3>', False)[1] + ' ' + self.cm.ph.getDataBeetwenMarkers(item, '<h4>', '</h4>', False)[1])
-        if '' == params['title']:
-            params['title'] = self._getValue(item, "name")
+        url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+        params['url'] = self._getFullUrl( url )
+        params['title'] = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<div class="contentTitle">', '</div>', False)[1])
+
         icon = self.addIconQuality(self._getValue(item, "thumbnailUrl"))
         if '' == icon: icon = self.cm.ph.getSearchGroups(item, '<img class="thumbnail" src="([^"]+?)"')[0]
         if '' == icon: icon = self.addIconQuality(self._getValue(item, "image"))
@@ -287,45 +270,65 @@ class GameTrailers(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("GameTrailers.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        url = self.SEARCH_URL + '?keywords=' + urllib.quote_plus(searchPattern)
-        post_data = cItem.get('post_data', None)
-        httpParams = dict(self.defaultParams)
-        ContentType =  cItem.get('Content-Type', None)
-        Referer = cItem.get('Referer', None)
-        if None != Referer: httpParams['header'] =  {'Referer':Referer, 'User-Agent':self.cm.HOST}
-        else: {'User-Agent':self.cm.HOST}
+        url = self.SEARCH_URL.format( urllib.quote(searchPattern) )
+        cItem = {'url':url}
+        self.getFilters(cItem, 'list_filters')
+        return
         
-        sts, data = self.cm.getPage(url, httpParams, post_data)
-        if not sts: return
-        
-        promotionId = self.cm.ph.getSearchGroups(data, 'promotionId=([^/]+?)/')[0].replace('"', '').replace("'", "") + '/'
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="module_tabs">', '</ul>', False)[1]
-        data = data.split('</a>')
-        for item in data:
-            sts, tab = self.cm.ph.getDataBeetwenMarkers(item, 'class="tab_', '"', False)
-            if not sts: continue
-            if tab not in ['videos', 'reviews', 'user_movies']: continue
-            title = self.cleanHtmlStr( item )
-            baseUrl = self.MAIN_URL  + 'feeds/search/child/{0}/?keywords={1}&tabName={2}'.format(promotionId, urllib.quote_plus(searchPattern), tab)
-            params = {'name':'category', 'base_url':baseUrl, 'title':title, 'mode':'search', 'search_tab':tab}
-            params['category'] = 'list_sort_by'
-            self.addDir(params)
+        if 0: # Site search is currently unavailable, so we use tag as search
+            post_data = cItem.get('post_data', None)
+            httpParams = dict(self.defaultParams)
+            ContentType =  cItem.get('Content-Type', None)
+            Referer = cItem.get('Referer', None)
+            if None != Referer: httpParams['header'] =  {'Referer':Referer, 'User-Agent':self.cm.HOST}
+            else: {'User-Agent':self.cm.HOST}
             
+            sts, data = self.cm.getPage(url, httpParams, post_data)
+            if not sts: return
+            
+            promotionId = self.cm.ph.getSearchGroups(data, 'promotionId=([^/]+?)/')[0].replace('"', '').replace("'", "") + '/'
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="module_tabs">', '</ul>', False)[1]
+            data = data.split('</a>')
+            for item in data:
+                sts, tab = self.cm.ph.getDataBeetwenMarkers(item, 'class="tab_', '"', False)
+                if not sts: continue
+                if tab not in ['videos', 'reviews', 'user_movies']: continue
+                title = self.cleanHtmlStr( item )
+                baseUrl = self.MAIN_URL  + 'feeds/search/child/{0}/?keywords={1}&tabName={2}'.format(promotionId, urllib.quote_plus(searchPattern), tab)
+                params = {'name':'category', 'base_url':baseUrl, 'title':title, 'mode':'search', 'search_tab':tab}
+                params['category'] = 'list_sort_by'
+                self.addDir(params)    
     
     def getLinksForVideo(self, cItem):
         printDBG("GameTrailers.getLinksForVideo [%s]" % cItem)
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return []
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, "video_player", '</div>', False)[1]
+        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["']([^"^']+?)["']''')[0]
+        
+        sts, data = self.cm.getPage(self._getFullUrl(url))
+        if not sts: return []
+        
+        printDBG(data)
+        
+        data = '{' + self.cm.ph.getDataBeetwenMarkers(data, "{", '</script>', False)[1].strip()
         urlTab = []
-        videoUrl = cItem['url']
-        urlTab = self.up.getVideoLinkExt(videoUrl)
-        for idx in range(len(urlTab)):
-            urlTab[idx]['need_resolve'] = 0
+        try:
+            data = byteify( json.loads(data) )
+            for item in data['media']:
+                if 'play' != item['mediaPurpose']: continue
+                urlTab.append({'name':'{0}x{1} [{2}]'.format(item['width'], item['height'], item['bitRate']), 'url':item['uri'], 'need_resolve':0})
+        except:
+            printExc()
         return urlTab
         
     def getFavouriteData(self, cItem):
-        return json.dumps(cItem['url'])
+        return cItem['url']
         
     def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo(fav_data)
+        return self.getLinksForVideo({'url':fav_data})
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -363,6 +366,10 @@ class GameTrailers(CBaseHostClass):
             self.listsTab(self.SORT_BY_TAB, cItem)
         elif category == 'list_videos':
             self.listItems(self.currItem)
+        elif category == 'shows_main_tab':
+            self.listsTab(self.SHOW_MAIN_TAB, cItem)
+        elif category == 'shows_big_tab':
+            self.listsTab(self.SHOWS_BIG_TAB, cItem)
         elif category == 'shows':
             self.listShows(self.currItem, 'list_sort_by')
         elif category == 'list_show_items':
