@@ -100,7 +100,10 @@ class Filmy3dEU(CBaseHostClass):
         
         page = cItem.get('page', 1)
         url = cItem['url']
-        if page > 1 and '?' not in url: url += '/page/%s' % page
+        if page > 1 and '?' not in url: 
+            if url.endswith('/'):
+                url = url[:-1]
+            url += '/page/%s/' % page
         
         post_data = cItem.get('post_data', {})
         if {} == post_data:
