@@ -23,6 +23,7 @@ from Plugins.Extensions.IPTVPlayer.libs.nettvpw    import NettvPw
 from Plugins.Extensions.IPTVPlayer.libs.typertv    import TyperTV
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld import WagasWorldApi
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow    import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet import TelewizjadaNetApi
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
@@ -127,8 +128,9 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://static.weeb.tv/images/weebtv-santahat1.png'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://videostar.pl/assets/images/logo-40-cropped.jpg'}, \
                         {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly',                                           'icon': 'http://goldvod.tv/img/logo.png'}, \
+                        {'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
                         {'alias_id':'pure-cast.net',           'name': 'pure-cast.net',       'title': 'Pure-Cast.net',                     'url': '',                                                                   'icon': 'http://blog-social-stream.dit.upm.es/wp-content/uploads/2013/05/logo.png'}, \
-                        #{'alias_id':'web-live.tv',            'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
+                       #{'alias_id':'web-live.tv',            'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
                         {'alias_id':'looknij.tv',              'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
                         #{'alias_id':'tvisport.cba.pl',        'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
                         #{'alias_id':'telewizjoner.pl',        'name': 'telewizjoner.pl',     'title': 'Telewizjoner.pl',                   'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
@@ -177,6 +179,7 @@ class HasBahCa(CBaseHostClass):
         self.wagasWorldApi= None
         self.ustvnowApi   = None
         self.purecastNetApi = None
+        self.telewizjadaNetApi = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -470,24 +473,31 @@ class HasBahCa(CBaseHostClass):
                     self.playVideo(params)
                     title = ''
 
-    def getGoldvodList(self, url):
-        printDBG('getGoldvodList entry url[%s]' % url)
-        sts, data = self.cm.getPage(url)
+    def getGoldvodList(self, chUrl):
+        printDBG('getGoldvodList entry url[%s]' % chUrl)
+        sts, data = self.cm.getPage(chUrl)
         if not sts: return
         sts, data = CParsingHelper.getDataBeetwenMarkers(data, 'id="liveTV-channels">', '</nav>', False)
         
+        def getFullUrl(url):
+            if url.startswith('http'):
+                return url
+            elif url.startswith('/'):
+                return "http://goldvod.tv" + url
+            return url
+                
         data = data.split('<li>')
         for item in data:
             printDBG("item [%r]" % item)
-            try:
-                params = {}
-                params['url']   = "http://goldvod.tv" + re.search('href="([^"]+?)"', item).group(1) 
-                params['icon']  = re.search('src="([^"]+?)"', item).group(1) 
-                params['title'] = re.search('title="([^"]+?)"', item).group(1)
-                params['desc']  = url
+            params = {}
+            url  = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            if '' != url:
+                params['url']   = getFullUrl(url)
+                params['icon']  = getFullUrl(icon)
+                params['title'] = self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0]
+                params['desc']  = chUrl
                 self.playVideo( params )
-            except:
-                printExc()
         
     def getGoldvodLink(self, videoUrl):
         urlItems = self.up.getVideoLinkExt(videoUrl)
@@ -891,6 +901,19 @@ class HasBahCa(CBaseHostClass):
         printDBG("getPurecastNetLink start")
         urlsTab = self.purecastNetApi.getVideoLink(cItem)
         return urlsTab
+    
+    def getTelewizjadaNetList(self, cItem):
+        printDBG("getTelewizjadaNetList start")
+        if None == self.telewizjadaNetApi:
+            self.telewizjadaNetApi = TelewizjadaNetApi()
+        tmpList = self.telewizjadaNetApi.getChannelsList(cItem)
+        for item in tmpList:
+            self.playVideo(item) 
+        
+    def getTelewizjadaNetLink(self, cItem):
+        printDBG("getTelewizjadaNetLink start")
+        urlsTab = self.telewizjadaNetApi.getVideoLink(cItem)
+        return urlsTab
         
     def prognozaPogodyList(self, url):
         printDBG("prognozaPogodyList start")
@@ -975,6 +998,9 @@ class HasBahCa(CBaseHostClass):
     #pure-cast.net items
         elif name == 'pure-cast.net':
             self.getPurecastNetList(self.currItem)
+    #telewizjada.net items
+        elif name == 'telewizjada.net':
+            self.getTelewizjadaNetList(self.currItem)
     #sat-live.tv items
         elif name == "web-live.tv":
             self.getSatLiveList(url)
@@ -1078,6 +1104,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getUstvnowLink(cItem)
         elif name == 'pure-cast.net':
             urlList = self.host.getPurecastNetLink(cItem)
+        elif name == 'telewizjada.net':
+            urlList = self.host.getTelewizjadaNetLink(cItem)
         elif name == "webcamera.pl":
             urlList = self.host.getWebCameraLink(url)
         elif name == "prognoza.pogody.tv":
