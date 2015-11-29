@@ -54,7 +54,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://www.ex.ua/'
+    return _("http://www.ex.ua/")
 
 class ExUA(CBaseHostClass):
     MAIN_URL = 'http://www.ex.ua/'

@@ -1599,14 +1599,8 @@ msgstr "Музыка"
 msgid "Teletext decoder"
 msgstr "Декодер телетекста"
 
-msgid "Turn off the ability to cache for http://prognoza.pogody.tv/"
-msgstr "Выключите возможность кэшировать для http://prognoza.pogody.tv/"
-
-msgid "Use Polish proxy for http://prognoza.pogody.tv/"
-msgstr "Используйте прокси-сервер для Польского http://prognoza.pogody.tv/"
-
-msgid "----------Other----------"
-msgstr "----------Другое----------"
+msgid "Login"
+msgstr "Авторизоваться"
 
 msgid "Username:"
 msgstr "Имя пользователя:"
@@ -1617,26 +1611,17 @@ msgstr "Авторизоваться:"
 msgid "Preferred video quality:"
 msgstr "Выбор качество видео:"
 
-msgid "Premium user"
-msgstr "Премиум пользователь"
-
 msgid "High (or HD)"
 msgstr "Высокий (или HD)"
 
 msgid "Preferred quality"
 msgstr "Предпочтительные качества"
 
-msgid "Login"
-msgstr "Авторизоваться"
-
 msgid "Use a proxy gateway"
 msgstr "Использовать прокси-шлюз"
 
 msgid "Preferred streaming protocol' + ': "
 msgstr "Предпочтительный протокол потоковой передачи' + ': "
-
-msgid "Preferred streaming protocol"
-msgstr "Предпочтительный протокол потоковой передачи"
 
 msgid "medium"
 msgstr "средний"
@@ -1675,15 +1660,6 @@ msgstr "Сортировать по результату поиска"
 
 msgid "The user Last.fm"
 msgstr "Пользователь Last.fm"
-
-msgid "web-live.tv premium user?"
-msgstr "web-live.tv Премиум пользователь?"
-
-msgid "web-live.tv login:"
-msgstr "web-live.tv Войти:"
-
-msgid "web-live.tv password:"
-msgstr "web-live.tv Пароль:"
 
 msgid "Save changes?"
 msgstr "Сохранить изменения?"
@@ -2459,6 +2435,30 @@ msgstr "немецкий"
 msgid "polski"
 msgstr "польский"
 
+msgid "----------Other----------"
+msgstr "----------Другое----------"
+
+msgid "Use Polish proxy for http://prognoza.pogody.tv/"
+msgstr "Используйте прокси-сервер для Польского http://prognoza.pogody.tv/"
+
+msgid "Turn off buffering for http://prognoza.pogody.tv/"
+msgstr "Выключите буферизации для http://prognoza.pogody.tv/"
+
+msgid "web-live.tv premium user?"
+msgstr "web-live.tv Премиум пользователь?"
+
+msgid "web-live.tv login:"
+msgstr "web-live.tv Войти:"
+
+msgid "web-live.tv password:"
+msgstr "web-live.tv Пароль:"
+
+msgid "Preferred streaming protocol"
+msgstr "Предпочтительный протокол потоковой передачи"
+
+msgid "Premium user"
+msgstr "Премиум пользователь"
+
 msgid ""
 "There are no active premium account.\n"
 "Using a limited version that may not work properly with congested links."
@@ -2482,6 +2482,29 @@ msgstr "EX.UA"
 
 msgid "Some changes will be applied only after plugin update."
 msgstr "Некоторые изменения будут применены только после плагин обновления."
+
+msgid ""
+"Last error: \"People who live where you live aren't allowed to watch this "
+"video.. Not because we don't luv ya, but because the owners have some "
+"restrictions. The good news, is there are tens of thousands of other videos "
+"to choose from.\""
+msgstr ""
+"Последняя ошибка: \"Люди, которые живут, где вы проживаете не могут "
+"посмотреть это видео.. Не потому, что мы не Любовь к тебе, а потому, что "
+"владельцы имеют некоторые ограничения. Хорошая новость, есть десятки тысяч "
+"других видео на выбор.\""
+
+msgid "Last error: \"Silverlight stream not supported.\""
+msgstr "Последняя ошибка: \"Поток Silverlight не поддерживается.\""
+
+msgid "AC3 mix mode"
+msgstr "Режим смешивания AC3"
+
+msgid "downmix"
+msgstr "микширования"
+
+msgid "passthrough"
+msgstr "пройти через"
 
 msgid "\"Web\" streams player"
 msgstr "\"Сеть\" Потоки Плеер"

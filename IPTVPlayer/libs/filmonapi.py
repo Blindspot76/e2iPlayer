@@ -36,11 +36,11 @@ config.plugins.iptvplayer.filmontvcom_password       = ConfigText(default = "", 
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry( "FimOn.com " + _("preferowany protokół strumieniowania" + ": "), config.plugins.iptvplayer.filmontvcom_streamprotocol))
-    optionList.append(getConfigListEntry( "FimOn.com " + _("użytkownik premium") + ": ", config.plugins.iptvplayer.filmontvcom_premium))
+    optionList.append(getConfigListEntry( "FimOn.com " + _("Preferred streaming protocol") + ": ", config.plugins.iptvplayer.filmontvcom_streamprotocol))
+    optionList.append(getConfigListEntry( "FimOn.com " + _("Premium user") + ": ", config.plugins.iptvplayer.filmontvcom_premium))
     if config.plugins.iptvplayer.filmontvcom_premium.value:
         optionList.append(getConfigListEntry("  " + _("login") + ": ", config.plugins.iptvplayer.filmontvcom_login))
-        optionList.append(getConfigListEntry("  " + _("hasło") + ": ", config.plugins.iptvplayer.filmontvcom_password))
+        optionList.append(getConfigListEntry("  " + _("password") + ": ", config.plugins.iptvplayer.filmontvcom_password))
     return optionList
 ###################################################
 

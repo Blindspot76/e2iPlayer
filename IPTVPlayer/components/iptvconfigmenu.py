@@ -210,7 +210,7 @@ class ConfigMenu(ConfigBaseWidget):
 
     def layoutFinished(self):
         ConfigBaseWidget.layoutFinished(self)
-        self.setTitle("IPTV Player - ustawienia")
+        self.setTitle(_("IPTV Player - settings"))
         
     @staticmethod
     def fillConfigList(list, hiddenOptions=False):

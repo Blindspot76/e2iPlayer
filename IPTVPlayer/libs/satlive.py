@@ -38,10 +38,10 @@ config.plugins.iptvplayer.satlivetv_password               = ConfigText(default 
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry("web-live.tv użytkownik premium?", config.plugins.iptvplayer.satlivetv_premium))
+    optionList.append(getConfigListEntry('web-live.tv ' + _("premium user?"), config.plugins.iptvplayer.satlivetv_premium))
     if config.plugins.iptvplayer.satlivetv_premium.value:
-        optionList.append(getConfigListEntry("web-live.tv login:", config.plugins.iptvplayer.satlivetv_login))
-        optionList.append(getConfigListEntry("web-live.tv hasło:", config.plugins.iptvplayer.satlivetv_password))
+        optionList.append(getConfigListEntry('web-live.tv ' + _("login") + ':', config.plugins.iptvplayer.satlivetv_login))
+        optionList.append(getConfigListEntry('web-live.tv ' + _("password") + ':', config.plugins.iptvplayer.satlivetv_password))
     return optionList
 ###################################################
 

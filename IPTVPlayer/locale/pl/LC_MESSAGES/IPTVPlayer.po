@@ -1629,3 +1629,31 @@ msgstr "Nie znaleziono napisów."
 msgid "There are no active premium account.\nUsing a limited version that may not work properly with congested links."
 msgstr "Brak aktywnego konta premium.\nKorzystasz z ograniczonej wersji która może nie działać prawidłowo przy przeciążonych łaczach."
 
+msgid "Downloading can not be started.\n The address ('%r') is incorrect."
+msgstr "Pobieranie nie może zostać rozpoczęte.\n Podany adres ('%r') jest niepoprawny."
+
+msgid "Downloading can not be started.\n Downloader %s does not work properly.\nStatus[%s]"
+msgstr "Pobieranie nie może zostać rozpoczęte.\n Downloader %s nie działa prawidłowo.\nStatus[%s]"
+
+msgid "Error occurs during download."
+msgstr "Nastąpił błąd pobierania."
+
+msgid "Stop playing?"
+msgstr "Zakończyć odtwarzanie?"
+
+msgid "Error occurs during download. \nStatus[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]"
+msgstr "Nastąpił błąd pobierania. \nStatus[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]"
+
+msgid "IPTV Player - settings"
+msgstr "IPTV Player - ustawienia"
+
+msgid "Preferred streaming protocol"
+msgstr "Preferowany protokół strumieniowania"
+
+msgid "Premium user"
+msgstr "Użytkownik premium"
+
+msgid "premium user?"
+msgstr "użytkownik premium?"
+
+

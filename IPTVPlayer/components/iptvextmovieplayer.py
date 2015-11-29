@@ -525,7 +525,7 @@ class IPTVExtMoviePlayer(Screen):
             options.append(IPTVChoiceBoxItem(option['title'], "", option["name"]))
         
         if len(options):
-            self.openChild(boundFunction(self.childClosed, self.selectVideoOptionsCallback), IPTVChoiceBoxWidget, {'width':400, 'current_idx':currIdx, 'title':_("Select video option"), 'options':options})
+            self.openChild(boundFunction(self.childClosed, self.selectVideoOptionsCallback), IPTVChoiceBoxWidget, {'width':500, 'current_idx':currIdx, 'title':_("Select video option"), 'options':options})
         
     def selectVideoOptionsCallback(self, ret=None):
         printDBG("selectVideoOptionsCallback ret[%r]" % [ret])
@@ -544,7 +544,7 @@ class IPTVExtMoviePlayer(Screen):
             if item == currValue:
                 currIdx = len(options)
             options.append(IPTVChoiceBoxItem(_(item), "", item))
-        self.openChild(boundFunction(self.childClosed, self.selectVideoOptionCallback), IPTVChoiceBoxWidget, {'selection_changed':self.videoOptionSelectionChanged, 'width':300, 'current_idx':currIdx, 'title':_("Select %s") % ret.name, 'options':options})
+        self.openChild(boundFunction(self.childClosed, self.selectVideoOptionCallback), IPTVChoiceBoxWidget, {'selection_changed':self.videoOptionSelectionChanged, 'width':500, 'current_idx':currIdx, 'title':_("Select %s") % ret.name, 'options':options})
 
     def videoOptionSelectionChanged(self, ret=None):
         printDBG("videoOptionSelectionChanged ret[%s]" % [ret])
@@ -580,7 +580,7 @@ class IPTVExtMoviePlayer(Screen):
                 else:
                     item.type = IPTVChoiceBoxItem.TYPE_OFF
                 options.append( item )
-            self.openChild(boundFunction(self.childClosed, self.selectAudioTrackCallback), IPTVChoiceBoxWidget, {'width':400, 'height':240, 'current_idx':currIdx, 'title':_("Select audio track"), 'options':options})
+            self.openChild(boundFunction(self.childClosed, self.selectAudioTrackCallback), IPTVChoiceBoxWidget, {'width':500, 'height':240, 'current_idx':currIdx, 'title':_("Select audio track"), 'options':options})
         else:
             self.showMessage(_("Information about audio tracks not available."), MessageBox.TYPE_INFO, None)
             
