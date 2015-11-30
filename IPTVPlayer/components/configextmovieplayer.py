@@ -28,7 +28,8 @@ COLORS_DEFINITONS = [("#000000", _("black")), ("#C0C0C0", _("silver")), ("#80808
 
 config.plugins.iptvplayer.remember_last_position = ConfigYesNo(default = False)
 config.plugins.iptvplayer.aac_software_decode = ConfigYesNo(default = False)
-config.plugins.iptvplayer.aac_software_decode = ConfigYesNo(default = False)
+config.plugins.iptvplayer.dts_software_decode = ConfigYesNo(default = False)
+config.plugins.iptvplayer.stereo_software_decode = ConfigYesNo(default = False)
 config.plugins.iptvplayer.aac_mix = ConfigSelection(default = None, choices = [(None, _("from E2 settings"))])
 config.plugins.iptvplayer.ac3_mix = ConfigSelection(default = None, choices = [(None, _("from E2 settings"))])
 
@@ -228,6 +229,8 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         list.append(getConfigListEntry(_("Remember last watched position"), config.plugins.iptvplayer.remember_last_position))
         if not self.operatingPlayer:
             list.append(getConfigListEntry(_("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
+            list.append(getConfigListEntry(_("External player use software decoder for the DTS"), config.plugins.iptvplayer.dts_software_decode))
+            list.append(getConfigListEntry(_("Stereo downmix mode for software decoder"), config.plugins.iptvplayer.stereo_software_decode))
             if self.ac3_mix_avaliable:
                 list.append(getConfigListEntry(_("AC3 mix mode"), config.plugins.iptvplayer.ac3_mix))
             if self.aac_mix_avaliable:

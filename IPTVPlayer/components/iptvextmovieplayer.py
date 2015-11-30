@@ -1360,6 +1360,13 @@ class IPTVExtMoviePlayer(Screen):
                     headers += ('%s: %s\r\n' % (key, httpParams[key]) )
                 if len(headers):
                     cmd += ' -h "%s"' % headers
+                    
+            if config.plugins.iptvplayer.stereo_software_decode.value:
+                cmd += ' -s '
+            
+            if config.plugins.iptvplayer.dts_software_decode.value:
+                cmd += ' -d '
+                
             if config.plugins.iptvplayer.aac_software_decode.value:
                 cmd += ' -a -p 10'
             elif config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7'):
