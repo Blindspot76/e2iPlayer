@@ -59,10 +59,10 @@ def gettytul():
 class ExUA(CBaseHostClass):
     MAIN_URL = 'http://www.ex.ua/'
     LANG_URL = MAIN_URL + 'language?lang='
-    SRCH_URL = MAIN_URL +  'search?original_id={0}&s=' 
     DEFAULT_ICON_URL = 'http://cdn.keddr.com/wp-content/uploads/2011/10/ex.jpg'
     
     MAIN_CAT_TAB = [
+                    {'category':'search', 'title': _('Search'), 'search_type':_("Global"), 'original_id':'global', 'search_item':True}
                     #{'category':'search_history', 'title': _('Search history')} 
                    ]
  
@@ -206,12 +206,16 @@ class ExUA(CBaseHostClass):
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         if 0 == cItem.get('rek', 0):
-            try:
-                id  = int(cItem['original_id'])
-            except:
-                printExc()
-                return
-            cItem['url'] = self.SRCH_URL.format( id ) + urllib.quote_plus(searchPattern)
+            if 'global' != cItem.get('original_id', ''):
+                try:
+                    id  = int(cItem['original_id'])
+                except:
+                    printExc()
+                    return
+                url = self.MAIN_URL + 'search?original_id={0}&s='.format( id )
+            else:
+                url = self.MAIN_URL + 'search?s='
+            cItem['url'] = url + urllib.quote_plus(searchPattern)
         cItem['rek'] = 1
         self.listItems(cItem, 'class=panel>')
         
@@ -342,8 +346,8 @@ class ExUA(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.getMainTab({})
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.getMainTab({})
     #MOVIES
         elif category == 'list_items':
             self.listItems(self.currItem)
