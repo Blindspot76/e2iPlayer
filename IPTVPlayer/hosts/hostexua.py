@@ -215,7 +215,7 @@ class ExUA(CBaseHostClass):
                 url = self.MAIN_URL + 'search?original_id={0}&s='.format( id )
             else:
                 url = self.MAIN_URL + 'search?s='
-            cItem['url'] = url + urllib.quote_plus(searchPattern)
+            cItem['url'] = url + searchPattern
         cItem['rek'] = 1
         self.listItems(cItem, 'class=panel>')
         
