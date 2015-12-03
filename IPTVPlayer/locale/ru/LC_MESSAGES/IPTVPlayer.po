@@ -40,10 +40,10 @@ msgid "Refresh"
 msgstr "Обновление"
 
 msgid "More"
-msgstr "Больше"
+msgstr "Опции"
 
 msgid "Configure host"
-msgstr "Настройка хост"
+msgstr "Настройка хоста"
 
 msgid "Info"
 msgstr "Информация"
@@ -101,7 +101,7 @@ msgid "..............."
 msgstr "..............."
 
 msgid "Refreshing"
-msgstr "Освежающий"
+msgstr "Обновляется"
 
 msgid "Downloading"
 msgstr "Загрузка"
@@ -274,7 +274,7 @@ msgid "Records path"
 msgstr "Записи путь"
 
 msgid "Start download manager per default"
-msgstr "Начните менеджер закачек по-умолчанию"
+msgstr "Включите менеджер закачек по умолчанию"
 
 msgid "Show download manager after adding new item"
 msgstr "Показать менеджер закачек после добавления нового элемента"
@@ -289,19 +289,25 @@ msgid "password"
 msgstr "Пароль"
 
 msgid "First move player in buffering mode"
-msgstr "Первый ход игрок в режиме буферизации"
+msgstr "Первый ход плеера в режиме буферизации"
 
 msgid "Second move player in buffering mode"
-msgstr "Во-вторых шаг игроком в режиме буферизации"
+msgstr "Второй шаг плеера в режиме буферизации"
+
+msgid "First move player without buffering mode"
+msgstr "Первый ход плеера без буферизации в режиме"
+
+msgid "Second move player without buffering mode"
+msgstr "Второй шаг плеера без буферизации в режиме"
 
 msgid "Movie player without buffering mode"
-msgstr "Играть кино без режима буферизации"
+msgstr "Включить плеер без режима буферизации"
 
 msgid "Movie player"
 msgstr "Видео плеер"
 
 msgid "Block wmv files"
-msgstr "Блок WMV файлы"
+msgstr "Блокировать WMV файлы"
 
 msgid "Show IPTVPlayer in extension list"
 msgstr "Показать IPTVPlayer в списке расширений"
@@ -858,7 +864,7 @@ msgid ""
 msgstr "Обновление не удалось. Проверьте статус выбирающий и нажав кнопку ОК."
 
 msgid "Set active movie player"
-msgstr "Установите активный плеер"
+msgstr "Выбор активного видеоплеера"
 
 msgid "Select movie player"
 msgstr "Выберите плеер"
@@ -870,7 +876,7 @@ msgid "[%s] without buffering"
 msgstr "[%s] без буферизации"
 
 msgid "Change active movie player"
-msgstr "Изменить активную видеопроигрыватель"
+msgstr "Выбор активного видеоплеера"
 
 msgid "Auto selection based on the settings"
 msgstr "Автоматический выбор на основе настроек"
@@ -1086,14 +1092,8 @@ msgstr "    Размер буфера Видео [MB]"
 msgid "    Audio buffer size [KB]"
 msgstr "    Аудио размер буфера [KB]"
 
-msgid "First move player without buffering mode"
-msgstr "Первый ход игрок без буферизации режиме"
-
-msgid "Second move player without buffering mode"
-msgstr "Во-вторых шаг игрок без буферизации режиме"
-
 msgid "The number of items in the search history"
-msgstr "Элементов в истории поиска номер"
+msgstr "Количество элементов в истории поиска"
 
 msgid "https - validate SSL certificates"
 msgstr "https - проверка сертификатов SSL"
@@ -1417,10 +1417,6 @@ msgstr "Последняя ошибка: %s"
 msgid "The same item already exists in this group."
 msgstr "То же самое элемент уже существует в этой группе."
 
-msgid "Plugin can be run on one of the following platforms: sh4, mipsel, i686."
-msgstr ""
-"Плагин может работать на одной из следующих платформ: sh4, mipsel, i686."
-
 msgid "bottom"
 msgstr "дно"
 
@@ -1667,9 +1663,6 @@ msgstr "Сохранить изменения?"
 msgid "Enter a value"
 msgstr "Введите значение"
 
-msgid "Stop playing?"
-msgstr "Хватит играть?"
-
 msgid "Type: "
 msgstr "Тип: "
 
@@ -1763,9 +1756,6 @@ msgstr ""
 
 msgid "Configuring an external movie player"
 msgstr "Настройка внешнего видеопроигрывателя"
-
-msgid "Access status: "
-msgstr "Статус доступа: "
 
 msgid "Status object [%r]"
 msgstr "Статус объект [%r]"
@@ -2339,16 +2329,7 @@ msgid ""
 " The address ('%r') It is incorrect."
 msgstr ""
 "Загрузка не может быть запущенна.\n"
-" Адрес ('%r') Это неверно."
-
-msgid ""
-"Downloading can not be started.\n"
-" Downloader %s It does not work properly.\n"
-"Title[%s]"
-msgstr ""
-"Загрузка не может быть запущенна.\n"
-" Загрузчик %s Это не работает должным образом.\n"
-"Заглавие[%s]"
+" Адрес ('%r') это неверно."
 
 msgid "Disable live at plugin start"
 msgstr "Отключить перейти в начале плагина"
@@ -2497,6 +2478,38 @@ msgstr ""
 msgid "Last error: \"Silverlight stream not supported.\""
 msgstr "Последняя ошибка: \"Поток Silverlight не поддерживается.\""
 
+msgid ""
+"Plugin can be run on one of the following platforms: sh4, mipsel, i686, "
+"armv7."
+msgstr ""
+"Плагин может работать на одной из следующих платформ: sh4, mipsel, i686, "
+"armv7."
+
+msgid ""
+"Downloading can not be started.\n"
+" Downloader %s does not work properly.\n"
+"Status[%s]"
+msgstr ""
+"Загрузка не может быть запущен.\n"
+" Загрузчик %s не работает должным образом.\n"
+"Статус[%s]"
+
+msgid ""
+"Error occurs during download. \n"
+"Status[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]"
+msgstr ""
+"Ошибка возникает во время загрузки. \n"
+"Статус[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]"
+
+msgid "Error occurs during download."
+msgstr "Ошибка возникает во время загрузки."
+
+msgid "Detection of the ffmpeg version."
+msgstr "Обнаружение FFmpeg версии."
+
+msgid "Stop playing?"
+msgstr "Остановить воспроизведение?"
+
 msgid "AC3 mix mode"
 msgstr "Режим смешивания AC3"
 
@@ -2505,6 +2518,31 @@ msgstr "микширования"
 
 msgid "passthrough"
 msgstr "пройти через"
+
+msgid "Releases"
+msgstr "Релизы"
+
+msgid "Languages"
+msgstr "Языки"
+
+msgid "Countries"
+msgstr "Страны"
+
+msgid ""
+"Last error: \"The Mirror is broken.If available you can choose other source."
+"\""
+msgstr ""
+"Последняя ошибка: \"Зеркало разбивается.При наличии вы можете выбрать другой "
+"источник.\""
+
+msgid "Access status: "
+msgstr "Статус доступа: "
+
+msgid "External player use software decoder for the DTS"
+msgstr "Наружное применение программный декодер DTS"
+
+msgid "Stereo downmix mode for software decoder"
+msgstr "Стерео режим микширования для декодера программного обеспечения"
 
 msgid "\"Web\" streams player"
 msgstr "\"Сеть\" Потоки Плеер"
