@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, remove_html_markup, CSelOneLink, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, remove_html_markup, CSelOneLink, GetLogoDir, IsExecutable
 from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
 from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -30,6 +30,10 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("Video format:"), config.plugins.iptvplayer.ytformat))
     optionList.append(getConfigListEntry(_("Default video quality:"), config.plugins.iptvplayer.ytDefaultformat))
     optionList.append(getConfigListEntry(_("Use default video quality:"), config.plugins.iptvplayer.ytUseDF))
+    # temporary, the ffmpeg must be in right version to be able to merge file without transcoding
+    # checking should be moved to setup
+    if not config.plugins.iptvplayer.ytUseDF.value and IsExecutable('ffmpeg'): 
+        optionList.append(getConfigListEntry(_("Allow dash format:"), config.plugins.iptvplayer.ytShowDash))
     return optionList
 ###################################################
 ###################################################
@@ -159,11 +163,12 @@ class Youtube(CBaseHostClass):
     def getLinksForVideo(self, url):
         printDBG("Youtube.getLinksForVideo url[%s]" % url)
         ytformats = config.plugins.iptvplayer.ytformat.value
-        maxRes = int(config.plugins.iptvplayer.ytDefaultformat.value) * 1.1
+        maxRes    = int(config.plugins.iptvplayer.ytDefaultformat.value) * 1.1
+        dash      = config.plugins.iptvplayer.ytShowDash.value
 
         if not url.startswith("http://") and not url.startswith("https://") :
             url = 'http://www.youtube.com/' + url
-        tmpTab = self.ytp.getDirectLinks(url, ytformats)
+        tmpTab, dashTab = self.ytp.getDirectLinks(url, ytformats, dash, dashSepareteList = True)
         
         def __getLinkQuality( itemLink ):
             tab = itemLink['format'].split('x')
@@ -175,6 +180,8 @@ class Youtube(CBaseHostClass):
         videoUrls = []
         for item in tmpTab:
             videoUrls.append({'name': item['format'] + ' | ' + item['ext'] , 'url':item['url']})
+        for item in dashTab:
+            videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | ' + item['ext'] , 'url':item['url']})
         return videoUrls
         
     def getFavouriteData(self, cItem):

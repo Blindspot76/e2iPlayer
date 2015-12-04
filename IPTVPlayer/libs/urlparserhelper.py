@@ -427,7 +427,9 @@ def decorateUrl(url, metaParams={}):
     retUrl.meta.update(metaParams)
     urlLower = url.lower()
     if 'iptv_proto' not in retUrl.meta:
-        if urlLower.split('?')[0].endswith('.m3u8'):
+        if urlLower.startswith('merge://'):
+            retUrl.meta['iptv_proto'] = 'merge'
+        elif urlLower.split('?')[0].endswith('.m3u8'):
             retUrl.meta['iptv_proto'] = 'm3u8'
         elif urlLower.split('?')[0].endswith('.f4m'):
             retUrl.meta['iptv_proto'] = 'f4m'

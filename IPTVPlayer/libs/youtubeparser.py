@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html, unes
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl
 
 from datetime import timedelta
 ###################################################
@@ -23,10 +24,10 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.ytformat        = ConfigSelection(default = "mp4", choices = [("flv, mp4", "flv, mp4"),("flv", "flv"),("mp4", "mp4")]) 
-config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "360", choices = [("0", _("the worst")), ("144", "144p"), ("240", "240p"), ("360", "360p"),("720", "720"),("1080", "1080"), ("9999", _("the best"))])
+config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "360", choices = [("0", _("the worst")), ("144", "144p"), ("240", "240p"), ("360", "360p"),("720", "720"), ("9999", _("the best"))])
 config.plugins.iptvplayer.ytUseDF         = ConfigYesNo(default = True)
+config.plugins.iptvplayer.ytShowDash      = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ytSortBy        = ConfigSelection(default = "", choices = [("", _("Relevance")),("video_date_uploaded", _("Upload date")),("video_view_count", _("View count")),("video_avg_rating", _("Rating"))]) 
-
 
 class YouTubeParser():
     HOST = 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'
@@ -34,33 +35,73 @@ class YouTubeParser():
         self.cm = common()
         return
 
-    def getDirectLinks(self, url, formats = 'flv, mp4'):
+    def getDirectLinks(self, url, formats = 'flv, mp4', dash=True, dashSepareteList = False):
         printDBG('YouTubeParser.getDirectLinks')
+        if config.plugins.iptvplayer.ytUseDF.value: # temporary workaround, similar code should be executed after getDirectLinks
+            dash = False
         list = []
         try:
             list = YoutubeIE()._real_extract(url)
         except:
             printExc()
-            return []
+            if dashSepareteList:
+                return [], []
+            else: return []
         
         retList = []
+        # filter dash
+        dashAudioLists = []
+        dashVideoLists = []
+        if dash:
+            # separete audio and video links
+            for item in list:
+                if 'mp4a' == item['ext']:
+                    dashAudioLists.append(item)
+                elif 'mp4v' == item['ext']:
+                    dashVideoLists.append(item)
+            # sort by quality -> format
+            def _key(x):
+                if x['format'].startswith('>'):
+                     int(x['format'][1:-1])
+                else:
+                     int(x['format'][:-1])
+                    
+            dashAudioLists = sorted(dashAudioLists, key=_key, reverse=True)
+            dashVideoLists = sorted(dashVideoLists, key=_key, reverse=True)
+            
         for item in list:
-            #printDBG(">>>>>>>>>>>>>>>>>>>>>")
-            #printDBG( item )
-            #printDBG("<<<<<<<<<<<<<<<<<<<<<")
+            printDBG(">>>>>>>>>>>>>>>>>>>>>")
+            printDBG( item )
+            printDBG("<<<<<<<<<<<<<<<<<<<<<")
             if -1 < formats.find( item['ext'] ):
                 if 'yes' == item['m3u8']:
                     format = re.search('([0-9]+?)p$', item['format'])
                     if format != None:
                         item['format'] = format.group(1) + "x"
                         item['ext']  = item['ext'] + "_M3U8"
+                        item['url']  = decorateUrl(item['url'], {"iptv_proto":"m3u8"})
                         retList.append(item)
                 else:
                     format = re.search('([0-9]+?x[0-9]+?$)', item['format'])
                     if format != None:
                         item['format'] = format.group(1)
+                        item['url']  = decorateUrl(item['url'])
                         retList.append(item)
-        return retList
+        
+        dashList = []
+        if len(dashAudioLists):
+            # use best audio
+            for item in dashVideoLists:
+                item = dict(item)
+                item["url"] = decorateUrl("merge://audio_url|video_url", {'audio_url':dashAudioLists[0]['url'], 'video_url':item['url'], 'prefered_merger':'MP4box'})
+                dashList.append(item)
+                
+        if dashSepareteList:
+            return retList, dashList
+        else:
+            retList.extend(dashList)
+            return retList
+        
         
     ########################################################
     # List Base PARSER

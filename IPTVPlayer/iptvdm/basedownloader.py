@@ -140,6 +140,9 @@ class BaseDownloader:
 
     def getDownloadSpeed(self):
         return self.downloadSpeed 
+        
+    def getPlayableFileSize(self):
+        return self.getLocalFileSize()
 
     def onStart(self):
         for SubscriberFunction in self.subscribersFor_Start:

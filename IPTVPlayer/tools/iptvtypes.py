@@ -7,7 +7,7 @@ def enum(**enums):
 # Posible args and values for strwithmeta used for url:
 
 # If meta data exists the at least "iptv_proto" MUST by added to them
-#   "iptv_proto":           "m3u8" | "f4m" | "rtmp" | "https" | "http" | "rtsp"
+#   "iptv_proto":           "m3u8" | "f4m" | "rtmp" | "https" | "http" | "rtsp" | "merge"
 #   "iptv_format":          "mp4" | "ts" | "flv" | "wmv" 
 #   "iptv_urlwithlimit":    True | False
 #   "iptv_livestream":      True | False

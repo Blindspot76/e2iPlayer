@@ -54,7 +54,8 @@ class DMHelper:
                 DOWNLOADING = 'STS_DOWNLOADING',
                 DOWNLOADED  = 'STS_DOWNLOADED',
                 INTERRUPTED = 'STS_INTERRUPTED',
-                ERROR       = 'STS_ERROR' )
+                ERROR       = 'STS_ERROR',
+                POSTPROCESSING = 'STS_POSTPROCESSING')
     DOWNLOAD_TYPE = enum( INITIAL  = 'INIT_DOWNLOAD',
                           CONTINUE = 'CONTINUE_DOWNLOAD',
                           RETRY    = 'RETRY_DOWNLOAD' )

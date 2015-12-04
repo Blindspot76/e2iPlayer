@@ -17,6 +17,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.busyboxdownloader import BuxyboxWgetDo
 from Plugins.Extensions.IPTVPlayer.iptvdm.m3u8downloader    import M3U8Downloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.rtmpdownloader    import RtmpDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.f4mdownloader     import F4mDownloader
+from Plugins.Extensions.IPTVPlayer.iptvdm.mergedownloader   import MergeDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh            import DMHelper
 ###################################################
 
@@ -48,6 +49,8 @@ def DownloaderCreator(url):
         downloader = WgetDownloader()
     elif 'http' == iptv_proto:
         downloader = WgetDownloader()
+    elif 'merge' == iptv_proto:
+        downloader = MergeDownloader()
     
     return downloader
 

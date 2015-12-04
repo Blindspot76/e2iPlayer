@@ -1623,12 +1623,14 @@ class pageParser:
             try:
                 formats = config.plugins.iptvplayer.ytformat.value
                 bitrate = config.plugins.iptvplayer.ytDefaultformat.value
+                dash    = config.plugins.iptvplayer.ytShowDash.value
             except:
                 printDBG("parserYOUTUBE default ytformat or ytDefaultformat not available here")
                 formats = "mp4"
                 bitrate = "360"
+                dash    = False
             
-            tmpTab = self.getYTParser().getDirectLinks(url, formats)
+            tmpTab, dashTab = self.ytp.getDirectLinks(url, formats, dash, dashSepareteList = True)
             # move default URL to the TOP of list
             if 1 < len(tmpTab):
                 def __getLinkQuality( itemLink ):
@@ -1645,6 +1647,8 @@ class pageParser:
             movieUrls = []
             for item in tmpTab:
                 movieUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':item['url'].encode('UTF-8') })
+            for item in dashTab:
+                videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | dash', 'url':item['url']})
             return movieUrls
 
         return False

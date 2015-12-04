@@ -221,7 +221,7 @@ class IPTVPlayerBufferingWidget(Screen):
         return
 
     def ok_pressed(self):
-        if self.canRunMoviePlayer and self.downloader.getLocalFileSize() > 0:
+        if self.canRunMoviePlayer and self.downloader.getPlayableFileSize() > 0:
             self.runMovePlayer()
 
     def runMovePlayer(self):
@@ -307,19 +307,30 @@ class IPTVPlayerBufferingWidget(Screen):
             tmpStr += '\n\n'
         
         self["console"].setText(self.movieTitle + tmpStr)
-        if tmpBuffSize > self.requestedBuffSize: percentage = 100
-        else: percentage = (100 * tmpBuffSize) / self.requestedBuffSize
+        
+        percentage = 0
+        requestedBuffSize = -1
+        if self.downloader.getPlayableFileSize() > 0:
+            requestedBuffSize = self.requestedBuffSize
+            if tmpBuffSize > requestedBuffSize: percentage = 100
+            else: percentage = (100 * tmpBuffSize) / requestedBuffSize
+        elif self.downloader.getLocalFileSize() > 0 and self.downloader.getRemoteFileSize() > 0:
+            localSize  = self.downloader.getLocalFileSize()
+            remoteSize = self.downloader.getRemoteFileSize()
+            if localSize > remoteSize: percentage = 100
+            else: percentage = (100 * localSize) / remoteSize
+            
         self["percentage"].setText(str(percentage))
         self["icon"].nextFrame()
         
         # check if we start move player
-        if self.canRunMoviePlayer:
-            if tmpBuffSize >= self.requestedBuffSize or (self.downloader.getStatus() == DMHelper.STS.DOWNLOADED and 0 < self.downloader.getLocalFileSize()):
+        if self.canRunMoviePlayer and requestedBuffSize > -1:
+            if tmpBuffSize >= requestedBuffSize or (self.downloader.getStatus() == DMHelper.STS.DOWNLOADED and 0 < self.downloader.getLocalFileSize()):
                 self.runMovePlayer()
                 return
         
         # check if it is downloading 
-        if self.downloader.getStatus() not in [DMHelper.STS.DOWNLOADING, DMHelper.STS.WAITING]:
+        if self.downloader.getStatus() not in [DMHelper.STS.POSTPROCESSING, DMHelper.STS.DOWNLOADING, DMHelper.STS.WAITING]:
             self.session.openWithCallback(self.close, MessageBox, _("Error occurs during download. \nStatus[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]") % (self.downloader.getStatus(), tmpBuffSize, self.canRunMoviePlayer), type = MessageBox.TYPE_ERROR, timeout = 10 )
             self.canRunMoviePlayer = False
             # stop timer before message
