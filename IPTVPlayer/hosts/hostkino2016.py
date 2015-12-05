@@ -291,8 +291,11 @@ class Kino2016PL(CBaseHostClass):
                     url = baseUrl + url[1:]
                 sts, tmp = self.cm.getPage(url)
                 if not sts: continue
-                link = self.cm.ph.getSearchGroups(tmp, '.link=([^"]+?)"')[0]
-                if 1 == self.up.checkHostSupport(link):
+                link  = self.cm.ph.getSearchGroups(tmp, '.link=([^"]+?)"')[0]
+                link2 = self.cm.ph.getSearchGroups(tmp, 'link[^;^<]*?"(http[^"]+?)"')[0]
+                if 1 == self.up.checkHostSupport(link2):
+                    urlTab.append({'name':self.up.getHostName(link2), 'url':link2, 'need_resolve':1})
+                elif 1 == self.up.checkHostSupport(link):
                     urlTab.append({'name':self.up.getHostName(link), 'url':link, 'need_resolve':1})
                 else:
                     link = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
