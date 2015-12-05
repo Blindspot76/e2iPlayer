@@ -50,9 +50,8 @@ class MergeDownloader(BaseDownloader):
         printDBG("MergeDownloader.__del__ ----------------------------------")
         
     def _cleanUp(self):
-        pass
-        #for item in self.multi['files']:
-        #    rm(item)
+        for item in self.multi['files']:
+            rm(item)
         
     def getName(self):
         return "MergeDownloader"
