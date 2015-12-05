@@ -870,10 +870,10 @@ msgid "Select movie player"
 msgstr "Выберите плеер"
 
 msgid "[%s] with buffering"
-msgstr "[%s] с буферизацией"
+msgstr "%s с буферизацией"
 
 msgid "[%s] without buffering"
-msgstr "[%s] без буферизации"
+msgstr "%s без буферизации"
 
 msgid "Change active movie player"
 msgstr "Выбор активного видеоплеера"
@@ -2534,6 +2534,45 @@ msgid ""
 msgstr ""
 "Последняя ошибка: \"Зеркало разбивается.При наличии вы можете выбрать другой "
 "источник.\""
+
+msgid "Main developer, architect, coordinator: "
+msgstr "Главный разработчик, архитектор, координатор: "
+
+msgid "Developers: "
+msgstr "Разработчики: "
+
+msgid "Testers: "
+msgstr "Тестеры: "
+
+msgid "Webpages: "
+msgstr "Веб-страница: "
+
+msgid "Allow dash format:"
+msgstr "Разрешить формат тире:"
+
+msgid "[For download only] "
+msgstr "Только для загрузки "
+
+msgid "Browse"
+msgstr "Смотреть"
+
+msgid "Popular Artists"
+msgstr "Популярные исполнители"
+
+msgid "Shows"
+msgstr "Шоу"
+
+msgid "TV Shows"
+msgstr "ТВ Шоу"
+
+msgid "Global"
+msgstr "Общий"
+
+msgid "%s [download]"
+msgstr "%s скачать"
+
+msgid "%s [watch]"
+msgstr "%s смотреть"
 
 msgid "Access status: "
 msgstr "Статус доступа: "
