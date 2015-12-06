@@ -320,25 +320,28 @@ class MusicBox(CBaseHostClass):
         return videoUrls
 
     def getLinksForVideo(self, url):
-        printDBG("Youtube.getLinksForVideo url[%s]" % url)
+        printDBG("getLinksForVideo url[%s]" % url)
         ytformats = config.plugins.iptvplayer.ytformat.value
-        maxRes = int(config.plugins.iptvplayer.ytDefaultformat.value) * 1.1
-        if not url.startswith("http://") and not url.startswith("https://"):
-            url = url
-        tmpTab = self.ytp.getDirectLinks(url, ytformats)
+        maxRes    = int(config.plugins.iptvplayer.ytDefaultformat.value) * 1.1
+        dash      = config.plugins.iptvplayer.ytShowDash.value
 
-        def __getLinkQuality(itemLink):
+        if not url.startswith("http://") and not url.startswith("https://") :
+            url = 'http://www.youtube.com/' + url
+        tmpTab, dashTab = self.ytp.getDirectLinks(url, ytformats, dash, dashSepareteList = True)
+        
+        def __getLinkQuality( itemLink ):
             tab = itemLink['format'].split('x')
             return int(tab[0])
         tmpTab = CSelOneLink(tmpTab, __getLinkQuality, maxRes).getSortedLinks()
         if config.plugins.iptvplayer.ytUseDF.value and 0 < len(tmpTab):
             tmpTab = [tmpTab[0]]
-
+        
         videoUrls = []
         for item in tmpTab:
-            videoUrls.append({'name': item['format'] + ' | ' + item['ext'], 'url': item['url']})
+            videoUrls.append({'name': item['format'] + ' | ' + item['ext'] , 'url':item['url']})
+        for item in dashTab:
+            videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | ' + item['ext'] , 'url':item['url']})
         return videoUrls
-
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('handleService start')
         if 0 == refresh:
