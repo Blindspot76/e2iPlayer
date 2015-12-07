@@ -1681,7 +1681,7 @@ class pageParser:
                 bitrate = "360"
                 dash    = False
             
-            tmpTab, dashTab = self.ytp.getDirectLinks(url, formats, dash, dashSepareteList = True)
+            tmpTab, dashTab = self.getYTParser().getDirectLinks(url, formats, dash, dashSepareteList = True)
             # move default URL to the TOP of list
             if 1 < len(tmpTab):
                 def __getLinkQuality( itemLink ):
@@ -1695,12 +1695,12 @@ class pageParser:
                 # add default item at top
                 tmpTab.insert(0, defItem)
                     
-            movieUrls = []
+            videoUrls = []
             for item in tmpTab:
-                movieUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':item['url'].encode('UTF-8') })
+                videoUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':item['url'].encode('UTF-8') })
             for item in dashTab:
                 videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | dash', 'url':item['url']})
-            return movieUrls
+            return videoUrls
 
         return False
         
