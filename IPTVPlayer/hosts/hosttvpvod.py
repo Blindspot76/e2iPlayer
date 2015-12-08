@@ -74,12 +74,13 @@ class TvpVod(CBaseHostClass):
     REAL_FORMATS = {'m3u8':'ts', 'mp4':'mp4', 'wmv':'wmv'}
     MAIN_VOD_URL = "http://vod.tvp.pl/"
     LOGIN_URL = "https://www.tvp.pl/sess/ssologin.php"
-    AJAX_VOD_URL = MAIN_VOD_URL + "vod/%sAjax?"
-    SEARCH_VOD_URL = MAIN_VOD_URL + 'portal/SearchContent?contentName=vod&keywords=%s&X-Requested-With=XMLHttpRequest&SortField=id&SortDir=asc&'
+    #SEARCH_VOD_URL = MAIN_VOD_URL + 'portal/SearchContent?contentName=vod&keywords=%s&X-Requested-With=XMLHttpRequest&SortField=id&SortDir=asc&'
+    SEARCH_VOD_URL = MAIN_VOD_URL + 'szukaj?query=%s'
     HTTP_HEADERS = {}
-    VOD_CAT_TAB  = [{'category':'vods_list_items1',    'title':'Polecane',                  'url':MAIN_VOD_URL},
+    VOD_CAT_TAB  = [{'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
+                    {'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
                     {'category':'vods_sub_categories', 'title':'VOD',                       'marker':'VOD'},
-                    {'category':'vods_sub_categories', 'title':'Programy',                  'marker':'<li><h2>Programy</h2></li>'},
+                    {'category':'vods_sub_categories', 'title':'Programy',                  'marker':'Programy'},
                     {'category':'vods_sub_categories', 'title':'Informacje i publicystyka', 'marker':'Informacje i publicystyka'},
                     #{'category':'vods_sub_categories', 'title':'Serwisy Informacyjne',     'marker':'Serwisy Informacyjne'},
                     #{'category':'vods_sub_categories', 'title':'Publicystyka',             'marker':'<li><h2>Publicystyka</h2></li>'},
@@ -182,17 +183,23 @@ class TvpVod(CBaseHostClass):
             params.update({'category':category, 'title':item[1], 'url':item[0]})
             self.addDir(params)
             
-    def _getAjaxUrl(self, url, data):
-        ajaxUrl = ''
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'var ajaxParameters', '};', False)
-        if sts:
-            ajaxUrl = TvpVod.AJAX_VOD_URL
-            for item in ['type', 'nodeId', "recommendedId", "seriesNodeId", "sort"]:
-                if item in data:
-                    value = self.cm.ph.getSearchGroups(data, '''%s: ['"]*([^"^'^,]*?)['"]*,''' % item)[0]
-                    if item == 'type': ajaxUrl = ajaxUrl % value
-                    ajaxUrl += item+'='+value+'&'
-        return ajaxUrl
+    def _getAjaxUrl(self, parent_id, location):
+        if location == 'directory_series':
+            order  = ''
+            type   = 'website'
+            direct = '&direct=true'
+        elif location == 'website':
+            order  = ''
+            type   = 'video'
+            direct = '&filter=%7B%22playable%22%3Atrue%7D&direct=false'
+        else:
+            order  = ''
+            type   = 'video'
+            direct = '&filter=%7B%22playable%22%3Atrue%7D&direct=true'
+            
+        url = '/shared/listing.php?parent_id=' + parent_id + '&type=' + type + order + direct + '&template=directory/listing.html&count=' + str(TvpVod.PAGE_SIZE) 
+
+        return self._getFullUrl(url)
             
     def listVodsSubCategories(self, cItem, category):
         printDBG("TvpVod.listVodsSubCategories")
@@ -203,13 +210,19 @@ class TvpVod(CBaseHostClass):
             self._addNavCategories(data, cItem, category)
                 
     def listListVodCategory1(self, cItem):
-        if not cItem.get('list_items', False) and 1 == cItem['url'].count('/'):
+        if not cItem.get('list_items', False): # and 1 == cItem['url'].count('/'):
             baseItem = dict(cItem)
             baseItem.update({'list_items':True})
             self.listsMenuGroups(baseItem, cItem['category'])
             if len(self.currList):
-                baseItem['title'] = _('--Wszystkie--')
-                self.currList.insert(0, baseItem)
+                found = False
+                for item in self.currList:
+                    if baseItem['url'] == item['url']:
+                        found = True
+                        break
+                if not found:
+                    baseItem['title'] = _('--Wszystkie--')
+                    self.currList.insert(0, baseItem)
         if 0 == len(self.currList):
             self.listItems1(cItem, 'vod_episodes')
         
@@ -225,12 +238,25 @@ class TvpVod(CBaseHostClass):
         
     def listItems1(self, cItem, category):
         printDBG("TvpVod.listItems1")
-        if 'serwisy-informacyjne' in cItem['url']:
-            return self.listItems2(cItem, category)
 
-        page = cItem.get('page', 0)
+        ajaxUrl = ''
+        page = cItem.get('page', 1)
         baseUrl = self._getFullUrl(cItem['url'])
         url = baseUrl
+        
+        if '/shared/' in url:
+            url += '&page=%d' %(page)
+            ajaxUrl = url
+        
+        #if 'list_search' == category: 
+        #    url = baseUrl +'page=%d&pageSize=%d' %(page, TvpVod.PAGE_SIZE)
+
+        sts, data = self._getPage(url, self.defaultParams)
+        if not sts: return
+        
+        if '<section id="emisje">' in data:
+            return self.listItems2(cItem, category, data)
+        
         nextPage = False
         
         if 'popular' == category:
@@ -240,20 +266,14 @@ class TvpVod(CBaseHostClass):
             itemMarker = '<div class="item">'
             sectionMarker = itemMarker
         
-        if 'list_search' == category: 
-            url = baseUrl +'page=%d&pageSize=%d' %(page, TvpVod.PAGE_SIZE)
-
-        sts, data = self._getPage(url, self.defaultParams)
-        if not sts: return
-        if 'Ajax' not in baseUrl: ajaxUrl = self._getAjaxUrl(baseUrl, data)
-        else: ajaxUrl = baseUrl
+        tmp = self.cm.ph.getSearchGroups(data, "vod\.loadItems\.init\('([0-9]+?)'\,'([^']+?)'", 2)
+        if tmp[0] != '' and tmp[1] != '': 
+            ajaxUrl = self._getAjaxUrl(tmp[0], tmp[1])
         
-        if '' != ajaxUrl:
-            url = ajaxUrl +'page=%d&pageSize=%d' %(page, TvpVod.PAGE_SIZE)
-            sts, data = self._getPage(url, self.defaultParams)
-        else:
-            if 'list_search' == category and 'SortDir=asc">&gt;</a><a data-ajax' in data: nextPage = True
-            else: data = self.cm.ph.getDataBeetwenMarkers(data, sectionMarker, '</section>', True)[1]
+        if 'list_search' == category and 'SortDir=asc">&gt;</a><a data-ajax' in data: 
+            nextPage = True
+        elif '/shared/' not in url:
+            data = self.cm.ph.getDataBeetwenMarkers(data, sectionMarker, '</section>', True)[1]
         
         printDBG("TvpVod.listItems1 start parse")
         if sts:
@@ -269,31 +289,31 @@ class TvpVod(CBaseHostClass):
                 title = tmp[1]
                 if 'class="new"' in item: title += _(', nowość')
                 if 'class="pay"' in item: title += _(', materiał płatny')
+                duration = self.cm.ph.getSearchGroups(item, 'class="duration[^>]+?>([^<]+?)</li>')[0]
+                if '' != duration: title += ', ' + duration
                 params = dict(cItem)
-                params.update({'category':category, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'page':0})
-                try:
-                    params['object_id'] = int(url[url.rfind('/')+1:])
+                params.update({'category':category, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'page':1})
+                if '' ==  duration:
+                    self.addDir(params)
+                else:
                     self.addVideo(params)
-                except: self.addDir(params)
         # add next page if needed
         if len(self.currList):
             if '' != ajaxUrl:
-                url = ajaxUrl + 'page=%d&pageSize=%d' %(page+1, TvpVod.PAGE_SIZE)
+                url = ajaxUrl + '&page=%d' %(page+1)
                 sts, data = self._getPage(url, self.defaultParams)
-                if sts and itemMarker in data: nextPage = True
+                if sts and itemMarker in data: 
+                    nextPage = True
+                    baseUrl  = ajaxUrl
             if nextPage:    
                 params = dict(cItem)
                 params.update({'page':page+1, 'title':_("Następna strona"), 'url':baseUrl})
                 self.addDir(params)
                 
-    def listItems2(self, cItem, category):
+    def listItems2(self, cItem, category, data):
         printDBG("TvpVod.listItems2")
         itemMarker = '<div class="'
         sectionMarker = '<section id="emisje">'
-
-        baseUrl = self._getFullUrl(cItem['url'])
-        sts, data = self._getPage(baseUrl, self.defaultParams)
-        if not sts: return
 
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'class="siteNewscast">', '</section>', False)[1]
         icon = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
@@ -301,18 +321,14 @@ class TvpVod(CBaseHostClass):
         data = self.cm.ph.getDataBeetwenMarkers(data, sectionMarker, '</section>', True)[1]
         
         printDBG("TvpVod.listItems2 start parse")
-        if sts:
-            data = data.split(itemMarker)
-            if len(data): del data[0]
-            for item in data:
-                url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-                title = self._cleanHtmlStr('<' + item)
-                params = dict(cItem)
-                params.update({'category':category, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'page':0})
-                try:
-                    params['object_id'] = int(url[url.rfind('/')+1:])
-                    self.addVideo(params)
-                except: self.addDir(params)
+        data = data.split(itemMarker)
+        if len(data): del data[0]
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            title = self._cleanHtmlStr('<' + item)
+            params = dict(cItem)
+            params.update({'category':category, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'page':0})
+            self.addVideo(params)
     
     def listEpisodes(self, cItem):
         printDBG("TvpVod.listEpisodes")
@@ -333,6 +349,11 @@ class TvpVod(CBaseHostClass):
     
     def getLinksForVideo(self, cItem):
         asset_id = str(cItem.get('object_id', ''))
+        url = self._getFullUrl(cItem.get('url', ''))
+        if '' == asset_id:
+            sts, data = self.cm.getPage(url, self.defaultParams)
+            if not sts: return []
+            asset_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
         return self.getVideoLink(asset_id)
         
     def getVideoLink(self, asset_id):
@@ -380,13 +401,18 @@ class TvpVod(CBaseHostClass):
         return videoTab
         
     def getFavouriteData(self, cItem):
-        return str(cItem['object_id'])
+        return str(cItem['url'])
         
     def getLinksForFavourite(self, fav_data):
         if None == self.loggedIn:
             premium = config.plugins.iptvplayer.tvpvod_premium.value
             if premium: self.loggedIn, msg = self.tryTologin()
-        return self.getVideoLink(fav_data)
+            
+        try:
+            ok = int(fav_data)
+            if ok: return self.getVideoLink(fav_data)
+        except: pass
+        return getLinksForVideo(self, {'url':fav_data})
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('TvpVod.handleService start')

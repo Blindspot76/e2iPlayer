@@ -44,7 +44,7 @@ def gettytul():
 
 class AnyFiles(CBaseHostClass):
     MAIN_URL = 'http://video.anyfiles.pl'
-    SEARCH_URL = MAIN_URL + '/Search.jsp'
+    SEARCH_URL = MAIN_URL + '/search.jsp'
     
     MAIN_CAT_TAB = [{'category':'genres',             'title': _('Genres'),       'url':MAIN_URL + '/pageloading/index-categories-loader.jsp', 'icon':''},
                     {'category':'list_movies',        'title': _('Newest'),       'url':MAIN_URL + '/najnowsze/0', 'icon':''},
@@ -96,8 +96,9 @@ class AnyFiles(CBaseHostClass):
         
         page = cItem.get('page', 1)
         if 1 == page: 
-            sts, data = self.cm.getPage(self._getFullUrl('/all.jsp?reset_f=true'), self.defaultParams)
-            if not sts: return 
+            if 'priv_search' not in cItem:
+                sts, data = self.cm.getPage(self._getFullUrl('/all.jsp?reset_f=true'), self.defaultParams)
+                if not sts: return 
             url = cItem['url']
         else: url = cItem['url'] + str(page * cItem['page_size'])
             
@@ -118,7 +119,10 @@ class AnyFiles(CBaseHostClass):
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s" % tmp)
             tmpTab = []
             tmpTab.append( self.cm.ph.getSearchGroups(tmp, 'pagesTotal:[^0-9]([0-9]+?)[^0-9]', 1)[0])
-            tmpTab.append( '/all.jsp?st=')
+            if 'priv_search' in cItem:
+                tmpTab.append( '/search.jsp?st=')
+            else:
+                tmpTab.append( '/all.jsp?st=')
             tmpTab.append( self.cm.ph.getSearchGroups(tmp, 'numberObjects:[^0-9]([0-9]+?)[^0-9]', 1)[0])
             tmp = tmpTab
         
@@ -128,10 +132,15 @@ class AnyFiles(CBaseHostClass):
         except: pass
         try: cItem['page_size'] = int(tmp[2])
         except: cItem['page_size'] = 1
+        
+        if 'priv_search' in cItem:
+            pageloadUrl = '/pageloading/search-media-loader.jsp'
+        else:
+            pageloadUrl = '/pageloading/all-loader.jsp'
             
-        if '/pageloading/all-loader.jsp' in data:
+        if pageloadUrl in data:
             httpParams['header'] =  {'DNT': '1', 'Referer':url, 'User-Agent':self.cm.HOST}
-            url = self._getFullUrl('/pageloading/all-loader.jsp?ads=false')
+            url = self._getFullUrl(pageloadUrl + '?ads=false')
             sts, data = self.cm.getPage(url, httpParams, None)
             if not sts: return
             #printDBG(data)
@@ -141,6 +150,7 @@ class AnyFiles(CBaseHostClass):
         else:
             newhandle = False
         
+        #printDBG(data)
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
         data = data.split(m1)
         #if len(data): del data[0]
@@ -169,9 +179,9 @@ class AnyFiles(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AnyFiles.searchTab")
         
-        post_data = cItem.get('post_data', None)
-        if None == post_data:
-            sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
+        page = cItem.get('page', 1)
+        if 1 == page:
+            sts, data = self.cm.getPage(self._getFullUrl('/all.jsp?reset_f=true'), self.defaultParams) #self.MAIN_URL
             if not sts: return
             data = self.cm.ph.getDataBeetwenMarkers(data, 'POST', ';', False)[1]
             data = re.compile('[ ]*?se:[ ]*?"([^"]+?)"').findall(data)
@@ -180,9 +190,12 @@ class AnyFiles(CBaseHostClass):
                 post_data['se'] = item
             post_data['q'] = searchPattern
             cItem = dict(cItem)
-            cItem['post_data'] = post_data
+            #cItem['post_data'] = post_data
             cItem['url'] = self.SEARCH_URL
             cItem['Referer'] = self.SEARCH_URL
+            cItem['priv_search'] = True
+            sts, data = self.cm.getPage(self.SEARCH_URL, self.defaultParams, post_data)
+            if not sts: return 
         
         self.listMovies(cItem, m1='<div class="u-hr-div" >', reTitle='<a [^>]+?>([^<]+?)</a>')
         
