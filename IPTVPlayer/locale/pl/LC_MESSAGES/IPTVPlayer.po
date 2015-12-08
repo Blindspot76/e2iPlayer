@@ -1955,4 +1955,7 @@ msgid "Subtitle background"
 msgstr "Tło napisów"
 
 msgid "Allow mpeg dash format"
-msgstr "Uwzględnij format mpeg dash"
+msgstr "Akceptuj format mpeg dash"
+
+msgid "Stop playing?"
+msgstr "Zakończyć odtwarzanie?"

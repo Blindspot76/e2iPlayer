@@ -69,7 +69,7 @@ class ZalukajTv(CBaseHostClass):
                     
     FILMS_SUB_MENU = [{ 'category':'films_category', 'title':'Kategorie',        'url':MAINURL },
                       { 'category':'films_list',     'title':'Ostatnio oglądane', 'url':MAINURL + '/cache/lastseen.html' },
-                      { 'category':'films_list',     'title':'Ostation dodane',   'url':MAINURL + '/cache/lastadded.html'},
+                      { 'category':'films_list',     'title':'Ostatnio dodane',   'url':MAINURL + '/cache/lastadded.html'},
                       { 'category':'films_popular',  'title':'Najpopularniejsze', 'url':'' } ]
                     
     FILMS_POPULAR = [{ 'category':'films_list', 'title':'Wczoraj',        'url':MAINURL + '/cache/wyswietlenia-wczoraj.html' },
