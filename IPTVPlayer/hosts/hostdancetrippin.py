@@ -5,25 +5,44 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, byteify, CSelOneLink
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 # FOREIGN import
 ###################################################
 import re, urllib, urllib2, base64, math 
-try:
-    import simplejson
-except:
-    import json as simplejson   
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+try:    import json
+except: import simplejson as json
+###################################################
+
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Screens.MessageBox import MessageBox
+from Components.config import config, ConfigSelection, getConfigListEntry, ConfigYesNo
 ###################################################
 
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.vimeo_default_quality = ConfigSelection(default = "360", choices = [
+("0", _("the worst")),
+("270",  "270p"), 
+("360",  "360p"), 
+("720",  "720p"), 
+("1080",  "1080p"), 
+("99999999", _("the best"))
+])
+config.plugins.iptvplayer.vimeo_use_default_quality = ConfigYesNo(default = False)
+#config.plugins.iptvplayer.vimeo_allow_hls           = ConfigYesNo(default = True)
+
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Default video quality:"), config.plugins.iptvplayer.vimeo_default_quality))
+    optionList.append(getConfigListEntry(_("Use default video quality:"), config.plugins.iptvplayer.vimeo_use_default_quality))
+    #optionList.append(getConfigListEntry(_("Allow hls format"), config.plugins.iptvplayer.vimeo_allow_hls))
     return optionList
 ###################################################
 
@@ -93,21 +112,13 @@ class IPTVHost(IHost):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
         
     def getResolvedURL(self, url):
-        printDBG( "getResolvedURL begin" )
-        if url != None and url != '':        
-            ret = self.host.getResolvedURL(url)
-            if ret != None and ret != '':        
-               printDBG( "getResolvedURL ret: "+ret)
-               list = []
-               list.append(ret)
-               printDBG( "getResolvedURL end OK" )
-               return RetHost(RetHost.OK, value = list)
-            else:
-               printDBG( "getResolvedURL end" )
-               return RetHost(RetHost.NOT_IMPLEMENTED, value = [])                
-        else:
-            printDBG( "getResolvedURL end" )
-            return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+        # resolve url to get direct url to video file
+        retlist = []
+        urlList = self.host.getResolvedURL(url)
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+        return RetHost(RetHost.OK, value = retlist)
 
     def getSearchResults(self, pattern, searchType = None):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
@@ -131,7 +142,7 @@ class Host:
             return default
         elif isinstance(v, int):
             return str(v)
-        return str(v.encode('utf-8'))
+        return str(v)
         
     def setCurrList(self, list):
         printDBG( 'Host setCurrList begin' )
@@ -177,64 +188,49 @@ class Host:
               printExc( 'Host listsItems query error url[%r]' % url )
               return valTab
            #printDBG( 'Host listsItems data: '+data )
-           result = simplejson.loads(data)
+           result = byteify(json.loads(data))
            if result:
               for item in result:
-                  '''
-                  printDBG( 'Host listsItems number: '+str(item["number"]) )
-                  printDBG( 'Host listsItems title: '+str(item["title"]) )
-                  printDBG( 'Host listsItems venue: '+str(item["venue"]) )
-                  printDBG( 'Host listsItems location: '+str(item["location"]) )
-                  printDBG( 'Host listsItems party: '+str(item["party"]) )
-                  printDBG( 'Host listsItems description: '+str(item["description"]) )
-                  printDBG( 'Host listsItems dj: '+str(item["dj"]) )
-                  '''
                   if self.getStr(item["image"]) <> "":
                      phImage = 'http://www.dancetrippin.tv/media/'+self.getStr(item["image"])
                   else:
                      phImage = "http://player.dancetrippin.tv/media/static/img/system/default_video.png"
-                  #printDBG( 'Host listsItems phImage: '+phImage )
-                  phUrl = self.MAIN_URL+'/video/'+self.getStr(item["slug"])+'/'
-                  #printDBG( 'Host listsItems phUrl: '+phUrl )      
+                  phUrl = self.MAIN_URL+'/video/'+self.getStr(item["slug"])+'/'   
                   desc = '['+self.getStr(item["venue"])+']['+self.getStr(item["dj"])+']['+self.getStr(item["location"])+']['+self.getStr(item["party"])+']['+self.getStr(item["description"])
-                  desc = clean_html(desc.decode("utf-8")).encode("utf-8")
-                  valTab.append(CDisplayListItem(self.getStr(item["number"])+' '+self.getStr(item["title"]),desc,CDisplayListItem.TYPE_VIDEO, [CUrlItem('HIGH', phUrl+'?q=hd', 1),CUrlItem('MEDIUM', phUrl+'?q=sd', 1)], 0, phImage, None)) 
+                  desc = clean_html(desc)
+                  valTab.append(CDisplayListItem(self.getStr(item["number"])+' '+self.getStr(item["title"]),desc,CDisplayListItem.TYPE_VIDEO, [CUrlItem('link', phUrl, 1)], 0, phImage, None)) 
            printDBG( 'Host listsItems end' )
            return valTab
 
         return valTab
 
     def getResolvedURL(self, url):
-        printDBG( 'Host getResolvedURL begin' )
         printDBG( 'Host getResolvedURL url[%r] ' % url )
-        videoUrl = ''
-        valTab = []
-        try: data = self.cm.getURLRequestData({'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True})
+        videoUrls = []
+        sts, data = self.cm.getPage(url)
+        if not sts: return []
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"', 1, True)[0]
+        
+        sts, data = self.cm.getPage(videoUrl)
+        if not sts: return []
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'var t={', '};', False)[1]
+        printDBG(data)
+        
+        try:
+            data = byteify( json.loads('{%s}' % data) )
+            for item in data['request']['files']['progressive']:
+                videoUrls.append({'name':item['quality'], 'url':item['url'], 'height':item['height']})
         except:
-           printExc( 'Host getResolvedURL query error url[%r]' % url )
-           return ''
-        #printDBG( 'Host getResolvedURL data: '+data )   
-        parse = re.search('<div class=player>.*?href="(.*?)"', data, re.S)
-        if parse: 
-           if parse.group(1) == "#":
-              parse = re.search('<div class=player>.*?src="(.*?)"', data, re.S)
-              try: data = self.cm.getURLRequestData({'url': parse.group(1), 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True})
-              except:
-                 printDBG( 'Host getResolvedURL query error' )
-                 printDBG( 'Host getResolvedURL query error url: '+url )
-                 return ''
-              #printDBG( 'Host getResolvedURL data2: '+data )  
-              if url[-2:] == 'hd':
-                 parse = re.search('"hd".*?"url":"(.*?)"', data, re.S)
-              if url[-2:] == 'sd':
-                 parse = re.search('"sd".*?"url":"(.*?)"', data, re.S)
-              if parse:
-                 return parse.group(1)
-              else:
-                 return ''
-        if parse:
-           videoUrl = parse.group(1)
-           printDBG( 'Host getResolvedURL videoUrl: '+ videoUrl )
-           return videoUrl
-        printDBG( 'Host getResolvedURL end' )
-        return videoUrl
+            printExc()
+            
+        if 0 < len(videoUrls):
+            max_bitrate = int(config.plugins.iptvplayer.vimeo_default_quality.value)
+            def __getLinkQuality( itemLink ):
+                return int(itemLink['height'])
+            videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
+            if config.plugins.iptvplayer.vimeo_use_default_quality.value:
+                videoUrls = [videoUrls[0]]
+            
+        return videoUrls
