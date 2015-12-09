@@ -836,13 +836,18 @@ class pageParser:
         for urlItem in tmpUrls:
             if urlItem['url'].startswith('/'): inUrl = 'http://www.cda.pl/' + urlItem['url']
             else: inUrl = urlItem['url']
-            sts, data = self.cm.getPage(inUrl)
+            sts, pageData = self.cm.getPage(inUrl)
             if sts:
-                data = CParsingHelper.getDataBeetwenMarkers(data, "modes:", ']', False)[1]
+                data = CParsingHelper.getDataBeetwenMarkers(pageData, "modes:", ']', False)[1]
                 data = re.compile("""file: ['"]([^'^"]+?)['"]""").findall(data)
                 if 0 < len(data) and data[0].startswith('http'): videoUrls.append( {'name': urlItem['name'] + ' flv', 'url':_decorateUrl(data[0], 'cda.pl', urlItem['url']) } )
                 if 1 < len(data) and data[1].startswith('http'): videoUrls.append( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data[1], 'cda.pl', urlItem['url']) } )
-                
+                if 0 == len(data):
+                    data = CParsingHelper.getDataBeetwenMarkers(pageData, 'video: {', '}', False)[1]
+                    data = self.cm.ph.getSearchGroups(data, "'(http[^']+?\.mp4[^']*?)'")[0] 
+                    if '' != data:
+                        videoUrls.append( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data, 'cda.pl', urlItem['url']) } )
+        
         #if len(videoUrls):
         #    videoUrls = [videoUrls[0]]
         return videoUrls
