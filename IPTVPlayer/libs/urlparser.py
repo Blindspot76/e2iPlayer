@@ -2408,7 +2408,14 @@ class pageParser:
         
     def parserVIDFILENET(self, baseUrl):
         printDBG("parserVIDFILENET baseUrl[%s]" % baseUrl)
-        return self.parserVIDEOWOODTV(baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        params = {'header' : HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, params)
+        if sts:
+            data = self.cm.ph.getSearchGroups(data, """["']*file["']*:[ ]*["'](http[^"']+?)["']""")[0]
+            if '' != data:
+                return data
+        return False
         
     def parserMP4UPLOAD(self, baseUrl):
         printDBG("parserMP4UPLOAD baseUrl[%s]" % baseUrl)
