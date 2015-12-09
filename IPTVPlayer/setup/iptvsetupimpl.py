@@ -49,7 +49,7 @@ class IPTVSetupImpl:
                                        (_('Install into the "%s".') % "/usr/bin/wget", "/usr/bin/wget"),
                                        (_("Do not install (not recommended)"), "")]
         # rtmpdump members
-        self.rtmpdumpVersion = "Compiled by samsamsam@o2.pl 2015-01-11"
+        self.rtmpdumpVersion = {'armv7':'K-S-V patch', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"}
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
         # f4mdump member
@@ -287,7 +287,7 @@ class IPTVSetupImpl:
     def rtmpdumpStep(self, ret=None):
         printDBG("IPTVSetupImpl.rtmpdumpStep")
         def _detectValidator(code, data):
-            if self.rtmpdumpVersion in data: return True,False
+            if self.rtmpdumpVersion.get(self.platform, self.rtmpdumpVersion['default']) in data: return True,False
             else: return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
