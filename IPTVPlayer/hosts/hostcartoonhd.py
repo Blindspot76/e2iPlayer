@@ -63,10 +63,10 @@ class CartoonHD(CBaseHostClass):
                     {'category':'search',          'title': _('Search'), 'search_item':True},
                     {'category':'search_history',  'title': _('Search history')} ]
     
-    SORT_NAV_TAB = [{'sort_by':'favorites',   'title':'Popular'},
-                    {'sort_by':'imdb_rating', 'title':'IMDb rating'},
-                    {'sort_by':'yer',         'title':'Year'},
-                    {'sort_by':'abc',         'title':'ABC'}]
+    SORT_NAV_MOVE_TAB = [{'sort_by':'favorites',   'title':'Popular'},
+                         {'sort_by':'imdb_rating', 'title':'IMDb rating'},
+                         {'sort_by':'yer',         'title':'Year'},
+                         {'sort_by':'abc',         'title':'ABC'}]
                     #                    {'sort_by':'trending',    'title':'Trending'}
  
     def __init__(self):
@@ -97,6 +97,27 @@ class CartoonHD(CBaseHostClass):
             if type == 'dir':
                 self.addDir(params)
             else: self.addVideo(params)
+            
+    def fillSortNav(self, type):
+        self.cacheSortNav[type] = []
+        sts, data = self.cm.getPage(self.MAIN_URL + type, self.defaultParams)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<select name="sortnav"', '</select>', False)[1]
+        data = re.compile('<option value="http[^"]+?/([^"^/]+?)">([^<]+?)<').findall(data)
+        for item in data:
+            self.cacheSortNav[type].append({'sort_by':item[0], 'title':item[1]})
+            
+    def listSortNav(self, cItem, nextCategory):
+        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<select name="sortnav"', '</select>', False)[1]
+        data = re.compile('<option value="http[^"]+?/([^"^/]+?)">([^<]+?)<').findall(data)
+        tab = []
+        for item in data:
+            tab.append({'sort_by':item[0], 'title':item[1]})
+        cItem = dict(cItem)
+        cItem['category'] = nextCategory
+        self.listsTab(tab, cItem)
             
     def fillCategories(self):
         printDBG("CartoonHD.fillCategories")
@@ -197,12 +218,12 @@ class CartoonHD(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="tab selected" id="episodes">', '</select>', False)[1]
-        data = re.compile('<option[^>]*?value="([^"]+?)"[^>]*?>([^<]+?)</option>').findall(data)
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<b>Season(s):</b>', '</div>', False)[1]
+        data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
         for item in data:
             params = dict(cItem)
             url = self._getFullUrl(item[0])
-            params.update({'url':url, 'title':item[1], 'show_title':cItem['title'], 'category':nextCategory})
+            params.update({'url':url, 'title':_("Season") + ' ' + item[1], 'show_title':cItem['title'], 'category':nextCategory})
             self.addDir(params)
     
     def listEpisodes(self, cItem):
@@ -211,8 +232,8 @@ class CartoonHD(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<li class="episode ">', '</ul>', False)[1]
-        data = data.split('<li class="episode ">')
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="episode">', '</article>', False)[1]
+        data = data.split('<div class="episode">')
         for item in data:
             url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"#]+?)"')[0] )
             desc  = self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>', False)[1]
@@ -424,9 +445,7 @@ class CartoonHD(CBaseHostClass):
             self.listTVShowsCategory(self.currItem, 'list_sortnav')
             
         elif category == 'list_sortnav':
-            cItem = dict(self.currItem)
-            cItem['category'] = 'list_items'
-            self.listsTab(self.SORT_NAV_TAB, cItem)
+            self.listSortNav(self.currItem, 'list_items')
         elif category == 'list_items':
             if mode == 'movies':
                 self.listItems(self.currItem)
