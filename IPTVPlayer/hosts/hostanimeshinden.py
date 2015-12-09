@@ -80,6 +80,9 @@ class AnimeShinden(CBaseHostClass):
                 self.genres.append(item[1])
                 self.genresData[item[1]] = filters
             else: printExc("_fillGenres error for [%s]" % item[1])
+            
+    def cleanHtmlStr(self, data):
+        return CBaseHostClass.cleanHtmlStr(data.replace('&nbsp;', ' '))
     
     def listFilters(self, category):
         if 0 == len(self.genres): self._fillGenres()
@@ -140,7 +143,13 @@ class AnimeShinden(CBaseHostClass):
             title = self.cleanHtmlStr(item)
             if 'class="fa fa-fw fa-check"' not in item: title = title.replace('Zobacz', 'niedostępny')
             else: title = title.replace('Zobacz', 'zbobacz')
-            params.update({'title':title, 'url':url})
+            
+            try:
+                langs = re.compile('title="([^"]+?)"').findall(item)
+                langs = ', '.join(langs)
+            except:
+                langs = ''
+            params.update({'title':cItem['title'] + ': ' + title, 'url':url, 'desc':langs})
             self.addVideo(params)
         
     def getLinksForVideo(self, cItem):
@@ -149,24 +158,24 @@ class AnimeShinden(CBaseHostClass):
         
         url = self._getFullUrl( cItem['url'] )
         sts, data = self.cm.getPage(url)
-        if not sts: return urlsTab
+        if not sts: return []
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<table class=" data-view-table-big">', ' </table>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<table class=" data-view-table-big">', '</table>', False)[1]
         data = data.split('</thead>')
-        if 2 > len(data): return urlsTab
+        if 2 > len(data): return []
         headers =  re.compile('<th>(.+?)</th>').findall(data[0])
         data = data[1].split('</tr>')
         if len(data): del data[-1]
         for item in data:
-            titles = re.compile('<td[^>]*?>(.+?)</td>').findall(item)
+            titles = re.compile('<td[^>]*?>(.+?)</td>', re.DOTALL).findall(item)
             title = ''
-            if len(headers) > len(titles): num = len(titles)
-            else: num = len(headers)
+            num = len(headers) - 1
+            if num > len(titles): num = len(titles)
             for idx in range(num):
                 title += '%s %s, ' % (headers[idx], titles[idx])
             if '' != title: title = title[:-2]
             onlineId = self.cm.ph.getSearchGroups(item, '"online_id":"([0-9]+?)"')[0]
-            urlsTab.append({'name': title, 'url':onlineId, 'need_resolve':1})
+            urlsTab.append({'name':  self.cleanHtmlStr(title), 'url':onlineId, 'need_resolve':1})
         return urlsTab
         
     def getVideoLinks(self, onlineId):
