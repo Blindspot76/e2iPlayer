@@ -52,20 +52,25 @@ def gettytul():
 class AlltubeTV(CBaseHostClass):
     MAIN_URL    = 'http://alltube.tv/'
     SRCH_URL    = MAIN_URL + 'szukaj'
+    DEFAULT_ICON = 'https://scontent-waw1-1.xx.fbcdn.net/hphotos-xal1/v/l/t1.0-9/11012948_860312804054948_8203520643827603823_n.png?oh=36b6777a5723b93b1aabbdc14c0c2934&oe=57194120'
     
-    MAIN_CAT_TAB = [{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':''},
-                    {'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':''},
-                    {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':''},
-                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'5', 'icon':'', 'mtype':True},
-                    {'category':'list_rank',          'title': _('Ranking'),       'url':MAIN_URL+'ranking', 'icon':''},
+    MAIN_CAT_TAB = [{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
+                    {'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':DEFAULT_ICON},
+                    {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
+                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'5', 'icon':DEFAULT_ICON, 'mtype':True},
+                    {'category':'list_rank',          'title': _('Ranking'),       'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
                     {'category':'search',             'title': _('Search'), 'search_item':True},
                     {'category':'search_history',     'title': _('Search history')} ]
                     
-    LAST_ADDED_TAB = [{'category':'latest_added_movies',  'title': _('Movies'),        'url':MAIN_URL, 'icon':''},
-                      {'category':'latest_added_series',  'title': _('Series'),        'url':MAIN_URL, 'icon':''} ]
+    LAST_ADDED_TAB = [{'category':'latest_added_movies',  'title': _('Movies'),        'url':MAIN_URL, 'icon':DEFAULT_ICON},
+                      {'category':'latest_added_series',  'title': _('Series'),        'url':MAIN_URL, 'icon':DEFAULT_ICON} ]
                       
-    SERIES_CAT_TAB = [{'category':'list_series_abc',  'title': _('ABC'),                        'url':MAIN_URL, 'icon':''},
-                      {'category':'list_series',      'title': _('All'), 'letter':'all',        'url':MAIN_URL, 'icon':''} ]
+    SERIES_CAT_TAB = [{'category':'list_series_abc',  'title': _('ABC'),                        'url':MAIN_URL, 'icon':DEFAULT_ICON},
+                      {'category':'list_series',      'title': _('All'), 'letter':'all',        'url':MAIN_URL, 'icon':DEFAULT_ICON} ]
+                      
+    RANK_TAB = [{'category':'list_rank_movie_view',  'title': 'Filmy wg. odsłon',   'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
+                {'category':'list_rank_movie',       'title': 'Filmy wg. oceny',    'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
+                {'category':'list_rank_series_view', 'title': 'Seriale wg. odsłon', 'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'AlltubeTV', 'cookie':'alltubetv.cookie'})
@@ -116,6 +121,7 @@ class AlltubeTV(CBaseHostClass):
         #printDBG("DAAAAAAAAAAAAAA [%s]" % data)
         data = data.split(sp)
         if len(data): del data[0]
+        if len(data): data[-1] = data[-1].split('<div id="pager">')[0]
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
@@ -148,6 +154,18 @@ class AlltubeTV(CBaseHostClass):
         printDBG("AlltubeTV.listLatestAddedSeries")
         self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-6">', '<div class="item clearfix">', category)
             
+    def listRankViewMovies(self, cItem):
+        printDBG("AlltubeTV.listRankViewMovies")
+        self._listItemsTab(cItem, '<h2>Filmy wg. odsłon</h2>', '<div class="col-sm-4">', '<div class="item clearfix">', category='video')
+        
+    def listRankMovie(self, cItem):
+        printDBG("AlltubeTV.listRankMovie")
+        self._listItemsTab(cItem, '<h2>Filmy wg. oceny</h2>', '<div class="col-sm-4">', '<div class="item clearfix">', category='video')
+        
+    def listRankViewSeries(self, cItem, category):
+        printDBG("AlltubeTV.listRankViewSeries")
+        self._listItemsTab(cItem, '<h2>Seriale wg. odsłon</h2>', '<footer>', '<div class="item clearfix">', category)
+    
     def fillFilterCache(self, url):
         sts, data = self.cm.getPage(url)
         if not sts: return
@@ -173,55 +191,13 @@ class AlltubeTV(CBaseHostClass):
         cItem = dict(cItem)
         cItem['category'] = category
         self.listsTab(tab, cItem)
-        
-    def _listItemsTab2(self, cItem, category='video'):
-        printDBG("AlltubeTV._listItemsTab >>>>>>> cItem[%r]" % cItem)
-        url = cItem['url']
-        if '' != cItem.get('cat', ''):
-            url += 'kategoria[%s]+' % cItem['cat']
-        if '' != cItem.get('ver', ''):
-            url += 'wersja[%s]+' % cItem['ver']
-        if '' != cItem.get('year', ''):
-            url += 'rok[%s]+' % cItem['year']
-        page = cItem.get('page', 1)
-        if page > 1:
-            url += 'strona[%s]+' % page
-        
-        sts, data = self.cm.getPage(url)
-        if not sts: return 
-        
-        if ('strona[%s]+' % (page + 1)) in data:
-            nextPage = True
-        else: nextPage = False
-        
-        data = CParsingHelper.getDataBeetwenMarkers(data, 'name="filter-year">', '<div class="container">', False)[1]
-        data = data.split('<div class="col-sm-6">')
-        if len(data): del data[0]
-        for item in data:
-            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            
-            title  = tmp[0]
-            desc   = tmp[1]
-            
-            params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
-            if category != 'video':
-                params['category'] = category
-                self.addDir(params)
-            else: self.addVideo(params)
-        
-        if nextPage:
-            params = dict(cItem)
-            params.update( {'title':_('Next page'), 'page':page+1} )
-            self.addDir(params)
             
     def listMovies(self, cItem):
         printDBG("AlltubeTV.listMovies")
         if cItem.get('mtype', False):
             self._listItemsTab(cItem, '<div id="list-movie">', '<div class="col-sm-12">', '<div class="col-xs-3 col-md-2">', category='video')
         else:
-            self._listItemsTab(cItem, '<div class="col-sm-8">', '<div class="col-sm-12">', '<div class="border-box clearfix">', category='video')
+            self._listItemsTab(cItem, '<div class="clearfix">', '<footer>', '<div class="border-box clearfix">', category='video')
         
     def fillSeriesCache(self, url):
         printDBG("AlltubeTV.fillSeriesCache")
@@ -469,7 +445,13 @@ class AlltubeTV(CBaseHostClass):
         elif category == 'list_movies':
             self.listMovies(self.currItem)
         elif category == 'list_rank':
-            self.listRanking(self.currItem)
+            self.listsTab(self.RANK_TAB, {'name':'category'})
+        elif category == 'list_rank_movie_view':
+            self.listRankViewMovies(self.currItem)
+        elif category == 'list_rank_movie':
+            self.listRankMovie(self.currItem)
+        elif category == 'list_rank_series_view':
+            self.listRankViewSeries(self.currItem, 'list_seasons')
     #SERIES
         elif category == 'cat_series':
             self.listsTab(self.SERIES_CAT_TAB, {'name':'category'})
