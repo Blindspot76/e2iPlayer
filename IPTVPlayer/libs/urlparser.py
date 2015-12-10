@@ -3107,13 +3107,25 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return []
         
-        data = urllib.unquote( self.cm.ph.getSearchGroups(data, '"params","([^"]+?)"')[0].decode('unicode-escape').encode('UTF-8') )
-        data = byteify( json.loads(data) )
-        urlsTab = []
-        data = data['video_data'][0]
-        if 'sd_src' in data: urlsTab.append({'name':'facebook SD', 'url':data['sd_src'].replace('\\/', '/')})
-        if 'hd_src' in data: urlsTab.append({'name':'facebook HD', 'url':data['hd_src'].replace('\\/', '/')})
         
+        # FROM: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/facebook.py
+        
+        BEFORE = '{swf.addParam(param[0], param[1]);});\n'
+        AFTER = '.forEach(function(variable) {swf.addVariable(variable[0], variable[1]);});'
+        m = self.cm.ph.getDataBeetwenMarkers(data, BEFORE, AFTER, False)[1]
+        data = dict(json.loads(m))
+        params_raw = urllib.unquote(data['params'])
+        params = byteify( json.loads(params_raw) )
+
+        urlsTab = []
+        for format_id, f in params['video_data'].items():
+            if not f or not isinstance(f, list):
+                continue
+            for quality in ('sd', 'hd'):
+                for src_type in ('src', 'src_no_ratelimit'):
+                    src = f[0].get('%s_%s' % (quality, src_type))
+                    if src:
+                        urlsTab.append({'name':'facebook %s_%s_%s' % (format_id, quality, src_type), 'url':src})
         return urlsTab
         
     def parserCLOUDYVIDEOS(self, baseUrl):

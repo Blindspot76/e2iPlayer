@@ -5,6 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
+from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, GetLogoDir, CSelOneLink
 from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 ###################################################
@@ -31,6 +32,7 @@ class FightTube:
 
     def __init__(self):
         self.cm = common()
+        self.up = urlparser()
         self.history = CSearchHistoryHelper('fighttube')
         self.ytp = YouTubeParser()
         self.ytformats = config.plugins.iptvplayer.ytformat.value
@@ -57,21 +59,15 @@ class FightTube:
         
     def getVideoUrl(self, url):
         FightTube.printDBG("getVideoUrl url[%s]" % url)
-
-        query_data = {'url': url, 'return_data': True}
-        try:
-            data = self.cm.getURLRequestData(query_data)
-        except:
-            FightTube.printDBG('getVideoUrl exception')
-            return []
-            
-        match = re.search('<embed src="([^"]+?)" type="application/x-shockwave-flash"', data)
-        if match:
-            return self.getYTVideoUrl(match.group(1))
-        else:
-            FightTube.printDBG('getVideoUrl YT embed not found!')
         
-        return []
+        sts, data = self.cm.getPage(url)
+        if not sts: return []
+        
+        #data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', "<ul")[1]
+        vidUrl = self.cm.ph.getSearchGroups(data, '<embed src="([^"]+?)" type="application/x-shockwave-flash"')[0]
+        if '' == vidUrl: vidUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?/video/embed[^"]+?)"')[0]
+
+        return self.up.getVideoLinkExt(vidUrl)
 
     def getYTVideoUrl(self, url):
         FightTube.printDBG("getYTVideoUrl url[%s]" % url)
