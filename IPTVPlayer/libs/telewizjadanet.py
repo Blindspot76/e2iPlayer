@@ -61,34 +61,36 @@ class TelewizjadaNetApi:
         
     def cleanHtmlStr(self, str):
         return CBaseHostClass.cleanHtmlStr(str)
-    
+        
     def getChannelsList(self, cItem):
         printDBG("TelewizjadaNetApi.getChannelsList")
         
-        url = self.MAIN_URL + 'live.php'
+        url = self.MAIN_URL + 'get_channels.php'
         http_params = dict(self.http_params)
         http_params['load_cookie'] = False
         sts, data = self.cm.getPage(url, http_params)
         if not sts: return []
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="channelListMain">', '</ul>', False)[1]
-        data = re.compile('fillchannel\(([^\)]+?)\)').findall(data)
-        
         channelsTab = []
-        for item in data:
-            item  = item.split(',')
-            icon  = self.getFullUrl(item[1].replace('"', '').replace('_thumb.png', '.png'))
-            title = icon.split('/')[-1].replace('.png', '').title()
-            cid  = item[0]
-            params = dict(cItem)
-            params.update({'title':title, 'cid':cid, 'type':'video', 'icon':icon})
-            channelsTab.append(params)
+        try:
+            data = byteify(json.loads(data))
+            for item in data['channels']:
+                if 0 == item['online']: continue
+                url   = self.getFullUrl(item['url'])
+                icon  = self.getFullUrl(item['thumb'])
+                title = item['displayName']
+                cid   = item['id']
+                desc  = item['description']
+                params = dict(cItem)
+                params.update({'title':title, 'desc':desc, 'vid_url':url, 'cid':cid, 'type':'video', 'icon':icon})
+                channelsTab.append(params)
+        except:
+            printExc()
         return channelsTab
-
+        
     def getVideoLink(self, cItem):
         printDBG("TelewizjadaNetApi.getVideoLink")
         
-        url = self.MAIN_URL + 'live.php?cid=' + cItem['cid']
+        url = self.MAIN_URL + 'live.php?cid=%s' % cItem['cid']
         sts, data = self.cm.getPage(url, self.http_params)
         if not sts: return []
         
@@ -97,13 +99,26 @@ class TelewizjadaNetApi:
         http_params.update({'header':HTTP_HEADER})
         http_params['header']['Referer'] = url
         
+        url = self.MAIN_URL + 'get_mainchannel.php'
+        sts, data = self.cm.getPage(url, http_params, {'cid':cItem['cid']})
+        if not sts: return []
+        try:
+            data = byteify(json.loads(data))
+            vid_url = data['url']
+        except:
+            printExc()
+            return []
+        
+        url = self.MAIN_URL + 'set_cookie.php'
+        sts, data = self.cm.getPage(url, http_params, {'url':vid_url})
+        if not sts: return []
+        
         url = self.MAIN_URL + 'channel_url.php'
         sts, data = self.cm.getPage(url, http_params, {'cid':cItem['cid']})
         if not sts: return []
         
         urlsTab = []
         data = data.strip()
-        printDBG("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK [%s]" % data)
         if data.startswith('http://') and 'm3u8' in data:
             sessid = self.cm.getCookieItem(self.COOKIE_FILE, 'sessid')
             msec   = self.cm.getCookieItem(self.COOKIE_FILE, 'msec')
