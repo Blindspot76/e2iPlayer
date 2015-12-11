@@ -187,7 +187,7 @@ class TvpVod(CBaseHostClass):
         if location == 'directory_series':
             order  = ''
             type   = 'website'
-            direct = '&direct=true'
+            direct = '&direct=false'
         elif location == 'website':
             order  = ''
             type   = 'video'
