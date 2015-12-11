@@ -343,17 +343,59 @@ class TvpVod(CBaseHostClass):
         printDBG("TvpVod.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         searchPattern = urllib.quote_plus(searchPattern)
         url = TvpVod.SEARCH_VOD_URL % urllib.quote(searchPattern)
-        cItem = dict(cItem)
-        cItem.update({'category':'list_search', 'url':url})
-        self.listItems1(cItem, cItem['category'])
-    
+        page = cItem.get('page', 1)
+        if page > 1:
+            url += '&order=desc&page=%s' % page
+        
+        sts, data = self._getPage(url, self.defaultParams)
+        if not sts: return
+        
+        if ('&page=%s"' % (page+1)) in data:
+            nextPage = True
+        else:
+            nextPage = False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="content search_content">', '</section>', False)[1]
+        data = data.split('<div class="item">')
+        if len(data): del data[0]
+        for item in data:
+            url  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
+            icon = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
+            desc = self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</div>', False)[1]
+            title  = self.cm.ph.getDataBeetwenMarkers(item, '<strong class="fullTitle">', '</strong>', False)[1]
+            if '' == title: title = self.cm.ph.getDataBeetwenMarkers(tmp, '<strong class="shortTitle">', '</strong>', False)[1]
+            title = self._cleanHtmlStr(title)
+            if 'class="new"' in item: title += _(', nowość')
+            if 'class="pay"' in item: title += _(', materiał płatny')
+            duration = self.cm.ph.getSearchGroups(item, 'class="duration[^>]+?>([^<]+?)</li>')[0]
+            if '' != duration: title += ', ' + duration
+            
+            object_id = self.getObjectID(url)
+            params = dict(cItem)
+            if '' == object_id:
+                params.update({'category':'vod_episodes', 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'page':1})
+                self.addDir(params)
+            else:
+                params.update({'title':title, 'url': url, 'icon':icon, 'desc':desc})
+                self.addVideo(params)
+        
+        if nextPage:    
+            params = dict(cItem)
+            params.update({'page':page+1, 'title':_("Następna strona")})
+            self.addDir(params)
+            
+    def getObjectID(self, url):
+        sts, data = self.cm.getPage(url, self.defaultParams)
+        if not sts: return ''
+        asset_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
+        return asset_id
+                
     def getLinksForVideo(self, cItem):
         asset_id = str(cItem.get('object_id', ''))
         url = self._getFullUrl(cItem.get('url', ''))
         if '' == asset_id:
-            sts, data = self.cm.getPage(url, self.defaultParams)
-            if not sts: return []
-            asset_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
+            asset_id = self.getObjectID(url)
+
         return self.getVideoLink(asset_id)
         
     def getVideoLink(self, asset_id):
@@ -446,7 +488,12 @@ class TvpVod(CBaseHostClass):
     #WYSZUKAJ
         elif category == "search":
             cItem = dict(self.currItem)
-            cItem.update({'search_item':False, 'name':'category', 'category':'search_next_page'}) 
+            cItem.update({'category':'search_next_page', 'search_pattern':searchPattern, 'search_type':searchType})            
+            self.listSearchResult(cItem, searchPattern, searchType)
+        elif category == "search_next_page":
+            cItem = dict(self.currItem)
+            searchPattern = cItem.get('search_pattern', '')
+            searchType    = cItem.get('search_type', '')
             self.listSearchResult(cItem, searchPattern, searchType)
         elif category == "list_search":
             self.listItems1(self.currItem, 'list_search')
