@@ -188,10 +188,10 @@ class iPtak:
         else:
             nextPageParams = None
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="wyszukiwanie">', '<div id="top100">')
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="wyszukiwanie">', '<div id="top100">', True)
         if not sts: return
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="item"', '<script', True)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="item"', '<div id="top100">', True)
         if False == sts: return
 
         data = data.split('<div id="item"')
