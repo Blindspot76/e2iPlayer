@@ -68,24 +68,24 @@ def gettytul():
     return 'vod.tvp.pl'
 
 class TvpVod(CBaseHostClass):
-    DEFAULT_ICON = ''
+    DEFAULT_ICON = 'http://sd-xbmc.org/repository/xbmc-addons/tvpvod.png'
     PAGE_SIZE = 12
     ALL_FORMATS = [{"video/mp4":"mp4"}, {"application/x-mpegurl":"m3u8"}, {"video/x-ms-wmv":"wmv"}] 
     REAL_FORMATS = {'m3u8':'ts', 'mp4':'mp4', 'wmv':'wmv'}
     MAIN_VOD_URL = "http://vod.tvp.pl/"
     LOGIN_URL = "https://www.tvp.pl/sess/ssologin.php"
-    #SEARCH_VOD_URL = MAIN_VOD_URL + 'portal/SearchContent?contentName=vod&keywords=%s&X-Requested-With=XMLHttpRequest&SortField=id&SortDir=asc&'
     SEARCH_VOD_URL = MAIN_VOD_URL + 'szukaj?query=%s'
     HTTP_HEADERS = {}
-    VOD_CAT_TAB  = [{'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
-                    {'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
-                    {'category':'vods_sub_categories', 'title':'VOD',                       'marker':'VOD'},
-                    {'category':'vods_sub_categories', 'title':'Programy',                  'marker':'Programy'},
-                    {'category':'vods_sub_categories', 'title':'Informacje i publicystyka', 'marker':'Informacje i publicystyka'},
-                    #{'category':'vods_sub_categories', 'title':'Serwisy Informacyjne',     'marker':'Serwisy Informacyjne'},
-                    #{'category':'vods_sub_categories', 'title':'Publicystyka',             'marker':'<li><h2>Publicystyka</h2></li>'},
-                    {'category':'search',          'title':_('Search'), 'search_item':True},
-                    {'category':'search_history',  'title':_('Search history')} ]
+    
+    VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
+                    {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
+                    {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'VOD',                       'marker':'VOD'},
+                    {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Programy',                  'marker':'Programy'},
+                    {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Informacje i publicystyka', 'marker':'Informacje i publicystyka'},
+                    #{'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Serwisy Informacyjne',     'marker':'Serwisy Informacyjne'},
+                    #{'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Publicystyka',             'marker':'<li><h2>Publicystyka</h2></li>'},
+                    {'icon':DEFAULT_ICON, 'category':'search',          'title':_('Search'), 'search_item':True},
+                    {'icon':DEFAULT_ICON, 'category':'search_history',  'title':_('Search history')} ]
     
     def __init__(self):
         printDBG("TvpVod.__init__")
@@ -370,9 +370,11 @@ class TvpVod(CBaseHostClass):
             duration = self.cm.ph.getSearchGroups(item, 'class="duration[^>]+?>([^<]+?)</li>')[0]
             if '' != duration: title += ', ' + duration
             
-            object_id = self.getObjectID(url)
+            object_id = self.cm.ph.getSearchGroups(url, '/([0-9]+?)/')[0]
+            #object_id = self.getObjectID(url)
             params = dict(cItem)
-            if '' == object_id:
+            #if '' == object_id:
+            if '' == object_id or not self.isVideoData(object_id):
                 params.update({'category':'vod_episodes', 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'page':1})
                 self.addDir(params)
             else:
@@ -397,6 +399,10 @@ class TvpVod(CBaseHostClass):
             asset_id = self.getObjectID(url)
 
         return self.getVideoLink(asset_id)
+        
+    def isVideoData(self, asset_id):
+        sts, data = self.cm.getPage( 'http://www.tvp.pl/shared/cdn/tokenizer_v2.php?mime_type=video%2Fmp4&object_id=' + asset_id, self.defaultParams)
+        return not 'NOT_FOUND' in data
         
     def getVideoLink(self, asset_id):
         printDBG("getVideoLink asset_id [%s]" % asset_id)
@@ -488,15 +494,13 @@ class TvpVod(CBaseHostClass):
     #WYSZUKAJ
         elif category == "search":
             cItem = dict(self.currItem)
-            cItem.update({'category':'list_search_next_page', 'searchPattern':searchPattern, 'searchType':searchType, 'search_item':False})            
+            cItem.update({'category':'list_search', 'searchPattern':searchPattern, 'searchType':searchType, 'search_item':False})            
             self.listSearchResult(cItem, searchPattern, searchType)
-        elif category == "search_next_page":
+        elif category == "list_search":
             cItem = dict(self.currItem)
             searchPattern = cItem.get('searchPattern', '')
             searchType    = cItem.get('searchType', '')
             self.listSearchResult(cItem, searchPattern, searchType)
-        elif category == "list_search":
-            self.listItems1(self.currItem, 'list_search')
     #HISTORIA WYSZUKIWANIA
         elif category == "search_history":
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
