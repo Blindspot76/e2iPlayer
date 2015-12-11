@@ -287,6 +287,7 @@ class urlparser:
                        'filepup.net':          self.pp.parserFILEPUPNET    ,
                        'superfilm.pl':         self.pp.parserSUPERFILMPL   ,
                        'sendvid.com':          self.pp.parserSENDVIDCOM    ,
+                       'filehoot.com':         self.pp.parserFILEHOOT      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3173,6 +3174,9 @@ class pageParser:
         sts, pageData = self.cm.getPage(url)
         if not sts: return False
         
+        videoLinks = self._findLinks(pageData, 'thevideo.me', r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,} ]''')
+        if len(videoLinks): return videoLinks
+        
         # get JS player script code from confirmation page
         sts, data = CParsingHelper.getDataBeetwenMarkers(pageData, ">eval(", '</script>', False)
         if sts:
@@ -4019,6 +4023,21 @@ class pageParser:
         linkUrl = self.cm.ph.getSearchGroups(data, '<source[^>]+?src="([^"]+?)"')[0]
         if linkUrl.startswith('//'): linkUrl = 'http:' + linkUrl
         return linkUrl
+        
+    def parserFILEHOOT(self, baseUrl):
+        printDBG("parserFILEHOOT baseUrl[%r]" % baseUrl)
+        
+        if 'embed-' not in baseUrl:
+            baseUrl = 'http://filehoot.com/embed-%s-1046x562.html' % baseUrl.split('/')[-1].replace('.html', '')
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        data = re.search('file:[ ]*?"([^"]+?)"', data)
+        if data:
+            linkVideo = data.group(1)
+            printDBG('parserFILEHOOT direct link: ' + linkVideo)
+            return linkVideo
+        return False
         
     def parserCLOUDYEC(self, baseUrl):
         printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)

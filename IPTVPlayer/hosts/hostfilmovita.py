@@ -69,6 +69,8 @@ class Filmovita(CBaseHostClass):
         self.seriesCache = {}
         
     def _getFullUrl(self, url, series=False):
+        if url.startswith('//'):
+            return 'http:' + url
         if not series:
             mainUrl = self.MAIN_URL
         else:
@@ -197,9 +199,13 @@ class Filmovita(CBaseHostClass):
         sts, mainData = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
-        marker1 = '<div class="entry-content">'
-        marker2 = '<div class="content">'
-        tmp = self.cm.ph.getDataBeetwenMarkers(mainData, marker1, marker2, False)[1]
+        m1 = '<div class="entry-content">'
+        m2 = '<div class="content">'
+        if m1 not in mainData: 
+            m1 = 'class="entry-content'
+            m2 = '<footer '
+            
+        tmp = self.cm.ph.getDataBeetwenMarkers(mainData, m1, m2, False)[1]
         
         linksUrlTab = []
         tab = re.compile(' src="([^"]+?)"', re.IGNORECASE).findall(tmp)
@@ -242,9 +248,9 @@ class Filmovita(CBaseHostClass):
             except:
                 printExc()
         else:
-            linksUrl = self.cm.ph.getSearchGroups(mainData, 'src="(http[^"]+?\/links\/[^"]+?)"')[0] 
+            linksUrl = self.cm.ph.getSearchGroups(mainData, '''["']([^'^"]+?/links/[^'^"]+?)["']''')[0] 
             if linksUrl != '':
-                sts, data = self.cm.getPage(linksUrl)
+                sts, data = self.cm.getPage(self._getFullUrl(linksUrl))
                 if not sts: return urlTab
                 data = self.cm.ph.getDataBeetwenMarkers(data, '<body>', '</body>', False)[1]
                 data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(data)
@@ -259,18 +265,82 @@ class Filmovita(CBaseHostClass):
     def getVideoLinks(self, baseUrl):
         printDBG("Filmovita.getVideoLinks [%s]" % baseUrl)
         urlTab = []
-        
+
+        def _getKode(kode):
+            kode = self.cm.ph.getSearchGroups(kode, 'kode="(.+[^\\\])";')[0]
+            kode = kode.replace('\\"', '"')
+            kode = kode.replace("\\'", "'")
+            kode = kode.replace('\\\\', '\\')
+            printDBG("=======================================")
+            printDBG(kode)
+            printDBG("---------------------------------------")
+            return kode
         if 'filmovita.com' in baseUrl or 'serijex.com' in baseUrl:
             sts, data = self.cm.getPage(baseUrl)
             if not sts: return []
-            enigmav = self.cm.ph.getSearchGroups(data, '''data-enigmav=['"]([^'^"]+?)['"]''')[0]
-            enigmav = enigmav.replace('-', '\\u00').replace('=', '\\u')
-            try:
-                data = byteify( json.loads('{"data":"%s"}' % enigmav) )['data']
-                baseUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"', 1, True)[0] 
-            except:
-                printExc()
-                return []
+            baseUrl = ''
+            kode = self.cm.ph.getSearchGroups(data, 'var kode="(.+?)";var')[0]
+            kode = kode.replace('\\"', '"')
+            kode = kode.replace('\\\\', '\\')
+            while True:
+                marker = kode.split('";')[-1]
+                printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+                printDBG(kode)
+                printDBG("+++++++++++++++++++++++++++++++++++++++")
+                printDBG(".......................................")
+                printDBG(marker)
+                printDBG("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                if 'kode[i]-3' in marker:
+                    kode = _getKode(kode)
+                    kode = kode[:-1].split(' ')
+                    try:
+                        for item in kode:
+                            baseUrl += chr(int(item)-3)
+                    except:
+                        printExc()
+                        break
+                elif "x+='@'" in marker:
+                    kode = _getKode(kode)
+                    i = 0
+                    while i < len(kode):
+                        if kode[i] == '|' and kode[i+1] == '|':
+                            baseUrl += '@'
+                        else:
+                            baseUrl += kode[i]
+                        i += 2
+                elif 'reverse()' in marker:
+                    kode = _getKode(kode)
+                    baseUrl = kode[::-1]
+                elif 'kode.length?kode.charAt' in marker:
+                    kode = _getKode(kode)
+                    i = 0
+                    try:
+                        while i < (len(kode) - 1):
+                            baseUrl += kode[i+1] + kode[i]
+                            i += 2
+                        if i < len(kode):
+                            baseUrl += kode[-1]
+                    except:
+                        printExc()
+                        break
+                if 'kode=' in baseUrl:
+                    kode = baseUrl
+                    baseUrl = ''
+                    continue
+                else:
+                    baseUrl = baseUrl.replace('\\"', '"')
+                    baseUrl = self.cm.ph.getSearchGroups(baseUrl, 'src="(http[^"]+?)"', 1, True)[0]
+                    break
+                
+            if '' == baseUrl:
+                enigmav = self.cm.ph.getSearchGroups(data, '''data-enigmav=['"]([^'^"]+?)['"]''')[0]
+                enigmav = enigmav.replace('-', '\\u00').replace('=', '\\u')
+                try:
+                    data = byteify( json.loads('{"data":"%s"}' % enigmav) )['data']
+                    baseUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"', 1, True)[0] 
+                except:
+                    printExc()
+                    return []
             
         urlTab = self.up.getVideoLinkExt(baseUrl)
         return urlTab
