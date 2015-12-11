@@ -488,12 +488,12 @@ class TvpVod(CBaseHostClass):
     #WYSZUKAJ
         elif category == "search":
             cItem = dict(self.currItem)
-            cItem.update({'category':'search_next_page', 'search_pattern':searchPattern, 'search_type':searchType})            
+            cItem.update({'category':'list_search_next_page', 'searchPattern':searchPattern, 'searchType':searchType, 'search_item':False})            
             self.listSearchResult(cItem, searchPattern, searchType)
         elif category == "search_next_page":
             cItem = dict(self.currItem)
-            searchPattern = cItem.get('search_pattern', '')
-            searchType    = cItem.get('search_type', '')
+            searchPattern = cItem.get('searchPattern', '')
+            searchType    = cItem.get('searchType', '')
             self.listSearchResult(cItem, searchPattern, searchType)
         elif category == "list_search":
             self.listItems1(self.currItem, 'list_search')
