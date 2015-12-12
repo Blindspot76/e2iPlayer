@@ -126,11 +126,12 @@ class IPTVPlayerWidget(Screen):
         printDBG("IPTVPlayerWidget.__init__ desktop IPTV_VERSION[%s]\n" % (IPTVPlayerWidget.IPTV_VERSION) )
         self.session = session
         path = GetSkinsDir(config.plugins.iptvplayer.skin.value) + "/playlist.xml" 
-        try:    
-            with open(path, "r") as f:
-               self.skin = f.read()
-               f.close()
-        except: printExc("Skin read error: " + path)
+        if os_path.exists(path):
+            try:    
+                with open(path, "r") as f:
+                    self.skin = f.read()
+                    f.close()
+            except: printExc("Skin read error: " + path)
                 
         Screen.__init__(self, session)
         self.recorderMode = False #j00zek
