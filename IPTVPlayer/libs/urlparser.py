@@ -62,7 +62,6 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.mtv import Gametrai
 try:    from urlparse import urlsplit, urlunsplit
 except: printExc()
 ###################################################
-
 class urlparser:
     def __init__(self):
         self.cm = common()
@@ -211,6 +210,7 @@ class urlparser:
                        'ustream.tv':           self.pp.parserUSTREAMTV     ,
                        'privatestream.tv':     self.pp.parserPRIVATESTREAM ,
                        'abcast.biz':           self.pp.parserABCASTBIZ     ,
+                       'abcast.net':           self.pp.parserABCASTBIZ     ,
                        'goodcast.co':          self.pp.parserGOODCASTCO    ,
                        'myvi.ru':              self.pp.parserMYVIRU        ,
                        'myvi.tv':              self.pp.parserMYVIRU        ,
@@ -291,6 +291,12 @@ class urlparser:
                        'filehoot.com':         self.pp.parserFILEHOOT      ,
                        'ssh101.com':           self.pp.parserSSH101COM     ,
                        'twitch.tv':            self.pp.parserTWITCHTV      ,
+                       'sostart.org':          self.pp.parserSOSTARTORG    ,
+                       'theactionlive.com':    self.pp.parserTHEACTIONLIVE ,
+                       'biggestplayer.me':     self.pp.parserBIGGESTPLAYER ,
+                       'goodrtmp.com':         self.pp.parserGOODRTMP      ,
+                       'life-rtmp.com':        self.pp.parserLIFERTMP      ,
+                       'openlive.org':         self.pp.parserOPENLIVEORG   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -395,6 +401,29 @@ class urlparser:
                 videoUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]*?twitch.tv[^'^"]+?)['"]""")[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
+            elif 'goodrtmp.com' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]*?goodrtmp.com[^'^"]+?)['"]""")[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'life-rtmp.com' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]*?life-rtmp.com[^'^"]+?)['"]""")[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'sostart.org' in data:
+                id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
+                videoUrl = 'http://sostart.org/streamk.php?id={0}&width=640&height=390'.format(id)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'theactionlive.com' in data:
+                id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
+                videoUrl = 'http://theactionlive.com/livegamecr2.php?id={0}&width=640&height=460&stretching='.format(id)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'biggestplayer.me' in data:
+                id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
+                videoUrl = 'http://biggestplayer.me/streamcrjeje.php?id={0}&width=640&height=460'.format(id)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
             elif 'yocast.tv' in data:
                 fid = self.cm.ph.getSearchGroups(data, """fid=['"]([^'"]+?)['"]""")[0]
                 videoUrl = 'http://www.yocast.tv/embed.php?live={0}&vw=620&vh=490'.format(fid)
@@ -415,7 +444,7 @@ class urlparser:
                 return self.getVideoLinkExt(videoUrl)
             elif 'putlive.in' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, '="([^"]*?putlive.in/[^"]+?)"')[0]
-                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif 'streamlive.to' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, '="([^"]*?streamlive.to/[^"]+?)"')[0]
@@ -501,12 +530,21 @@ class urlparser:
                 swfUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?swf)['"]""")[0]
                 r += ' swfUrl=%s pageUrl=%s' % (swfUrl, url)
                 return [{'name':'team-cast', 'url':r}]
-            elif 'abcast.biz' in data:
+            elif 'abcast.biz' in data or 'abcast.net' in data :
                 file = self.cm.ph.getSearchGroups(data, "file='([^']+?)'")[0]
                 if '' != file:
-                    videoUrl = 'http://abcast.biz/embed.php?file='+file+'&width=640&height=480'
+                    if 'abcast.net' in data:
+                        videoUrl = 'http://abcast.net/embed.php?file='
+                    else:
+                        videoUrl = 'http://abcast.biz/embed.php?file='
+                    videoUrl += file+'&width=640&height=480'
                     videoUrl = strwithmeta(videoUrl, {'Referer':url})
                     return self.getVideoLinkExt(videoUrl)
+            elif 'openlive.org' in data:
+                file = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
+                videoUrl = 'http://openlive.org/embed.php?file={0}&width=710&height=460'.format(file)
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
             elif 'shidurlive.com' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, """src=['"](http[^'^"]+?shidurlive.com[^'^"]+?)['"]""")[0]
                 if '' != videoUrl:
@@ -515,7 +553,7 @@ class urlparser:
             elif 'sawlive.tv' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, """src=['"](http[^'^"]+?sawlive.tv[^'^"]+?)['"]""")[0]
                 if '' != videoUrl:
-                    videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                    videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                     return self.getVideoLinkExt(videoUrl)
             elif "castalba.tv" in data:
                 id = self.cm.ph.getSearchGroups(data, """id=['"]([0-9]+?)['"];""")[0]
@@ -2593,16 +2631,43 @@ class pageParser:
         return False
         
     def parserABCASTBIZ(self, linkUrl):
-        printDBG("parserPRIVATESTREAM linkUrl[%s]" % linkUrl)
+        printDBG("parserABCASTBIZ linkUrl[%s]" % linkUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         videoUrl = strwithmeta(linkUrl)
         if 'Referer' in videoUrl.meta:
             HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        sts, data = self.cm.getPage(linkUrl, {'header': HTTP_HEADER})
+        if not sts: return False
             
-        file = self.cm.ph.getSearchGroups(linkUrl, 'file=([^&]+?)&')[0]
+        file     = self.cm.ph.getSearchGroups(data, 'file=([^&]+?)&')[0]
+        if file.endswith(".flv"): file = file[0:-4]
+        streamer = self.cm.ph.getSearchGroups(data, 'streamer=([^&]+?)&')[0]
         if '' != file:
-            url = "rtmpe://live.abcast.biz/redirect"
-            url += ' playpath=%s swfUrl=http://abcast.biz/ab.swf pageUrl=%s' % (file, linkUrl)
+            url    = "rtmpe://live.abcast.biz/redirect"
+            player = "http://abcast.biz/ab.swf"
+            url = streamer
+            player = "http://abcast.net/player.swf"
+            url += ' playpath=%s swfUrl=%s pageUrl=%s' % (file, player, linkUrl)
+            printDBG(url)
+            return url
+        return False
+        
+    def parserOPENLIVEORG(self, linkUrl):
+        printDBG("parserOPENLIVEORG linkUrl[%s]" % linkUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        videoUrl = strwithmeta(linkUrl)
+        if 'Referer' in videoUrl.meta:
+            HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        sts, data = self.cm.getPage(linkUrl, {'header': HTTP_HEADER})
+        if not sts: return False
+            
+        file     = self.cm.ph.getSearchGroups(data, 'file=([^&]+?)&')[0]
+        if file.endswith(".flv"): file = file[0:-4]
+        streamer = self.cm.ph.getSearchGroups(data, 'streamer=([^&]+?)&')[0]
+        if '' != file:
+            url = streamer
+            player = "http://openlive.org/player.swf"
+            url += ' playpath=%s swfUrl=%s pageUrl=%s' % (file, player, linkUrl)
             printDBG(url)
             return url
         return False
@@ -2748,23 +2813,28 @@ class pageParser:
         COOKIE_FILE = GetCookieDir('sawlive.tv')
         params = {'header' : HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
         
+        stdWay = False
         if 1:
             sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
             if not sts: return False
-            data  = data.strip()
-            data = data[data.rfind('}(')+2:-2]
             
-            data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
-            printDBG(">>>>>>>>>>>>>>>>>>>" + data)
-            
-            def jal(a):
-                b = ''
-                for c in a:
-                    b += JS_toString(ord(c), 16)
-                return b
-            
-            linkUrl = self.cm.ph.getSearchGroups(data, '''src="([^"']+?)["']''')[0] + '/' + jal(urlparser().getHostName(Referer))
-        else:
+            if 'eval' in data:
+                data  = data.strip()
+                data = data[data.rfind('}(')+2:-2]
+                
+                data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
+                printDBG(">>>>>>>>>>>>>>>>>>>" + data)
+                
+                def jal(a):
+                    b = ''
+                    for c in a:
+                        b += JS_toString(ord(c), 16)
+                    return b
+                
+                linkUrl = self.cm.ph.getSearchGroups(data, '''src="([^"']+?)["']''')[0] + '/' + jal(urlparser().getHostName(Referer))
+            else:
+                stdWay = True
+        if stdWay:
             params['header']['Referer'] = Referer
             sts, data = self.cm.getPage(baseUrl, params)
             if not sts: return False
@@ -2839,9 +2909,19 @@ class pageParser:
             #self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
         def _getParamVal(value, name):
             return value
-        swfUrl = unpackJS(_getParam('flashplayer'), _getParamVal)
-        url    = unpackJS(_getParam('streamer'), _getParamVal)
-        file   = unpackJS(_getParam('file'), _getParamVal)
+            
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<script type="text/javascript">', '</script>', False)[1]
+        vars = dict( re.compile('''var ([^=]+?)=[^']*?'([^']+?)['];''').findall(data) )
+        printDBG("===================================")
+        printDBG(vars)
+        printDBG("===================================")
+        addCode = ''
+        for item in vars:
+            addCode += '%s="%s"\n' % (item, vars[item])
+            
+        swfUrl = unpackJS(_getParam('flashplayer'), _getParamVal, addCode)
+        url    = unpackJS(_getParam('streamer'), _getParamVal, addCode)
+        file   = unpackJS(_getParam('file'), _getParamVal, addCode)
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
             printDBG(url)
@@ -3300,6 +3380,10 @@ class pageParser:
         
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
+        
+        links = urlparser().getAutoDetectedStreamLink(Referer, data)
+        printDBG(data)
+        return links
         
         
         channelId = self.cm.ph.getSearchGroups(data, "id='([0-9]+?)'")[0]
@@ -4000,6 +4084,53 @@ class pageParser:
             return url
         return False
         
+    def parserSOSTARTORG(self, baseUrl):
+        printDBG("parserSOSTARTORG baseUrl[%r]" % baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        swfUrl = 'http://sostart.org/jw/jwplayer.flash.swf'
+        url    = ''
+        file   = self.cm.ph.getSearchGroups(data, '''file[^'^"]*?['"]([^'^"]+?)['"]''')[0]
+        url += file
+        if '' != file and '' != url:
+            url += ' swfVfy=%s pageUrl=%s ' % (swfUrl, baseUrl)
+            printDBG(url)
+            return url
+        return False
+        
+    def parserGOODRTMP(self, baseUrl):
+        printDBG("parserGOODRTMP baseUrl[%r]" % baseUrl)
+        SetIPTVPlayerLastHostError('Links from "goodrtmp.com" not supported.')
+        return False
+        
+    def parserLIFERTMP(self, baseUrl):
+        printDBG("parserGOODRTMP baseUrl[%r]" % baseUrl)
+        SetIPTVPlayerLastHostError('Links from "life-rtmp.com" not supported.')
+        return False
+    
+    def parserTHEACTIONLIVE(self, baseUrl):
+        printDBG("parserTHEACTIONLIVE baseUrl[%r]" % baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        baseUrl = strwithmeta(baseUrl, {'Referer':baseUrl})
+        return urlparser().getAutoDetectedStreamLink(baseUrl, data)
+        
+    def parserBIGGESTPLAYER(self, baseUrl):
+        printDBG("parserBIGGESTPLAYER baseUrl[%r]" % baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', '}', False)[1]
+        url  = self.cm.ph.getSearchGroups(data, '''file[^'^"]*?['"]([^'^"]+?)['"]''')[0]
+        return getDirectM3U8Playlist(url)
+        
     def parserLIVEONLINE247(self, baseUrl):
         printDBG("parserLIVEONLINE247 baseUrl[%r]" % baseUrl)
         Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
@@ -4007,9 +4138,6 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
-        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        printDBG(data)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         swfUrl = self.cm.ph.getSearchGroups(data, '''["'](http[^'^"]+?swf)['"]''')[0]
         if swfUrl == '':
             swfUrl = 'http://p.jwpcdn.com/6/12/jwplayer.flash.swf'

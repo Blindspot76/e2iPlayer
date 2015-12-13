@@ -269,9 +269,9 @@ def unpackJSPlayerParams(code, decryptionFun, type=1, r1=False, r2=False):
     code = getParamsTouple(code, type, r1, r2)
     return unpackJS(code, decryptionFun)
     
-def unpackJS(data, decryptionFun):
-    
-    paramsCode = 'paramsTouple = (' + data + ')'
+def unpackJS(data, decryptionFun, addCode=''):
+    paramsCode = addCode
+    paramsCode += 'paramsTouple = (' + data + ')'
     try:
         paramsAlgoObj = compile(paramsCode, '', 'exec')
     except:
