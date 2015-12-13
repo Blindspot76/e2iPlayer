@@ -16,6 +16,7 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML, clean_html, _unquote
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, \
                                                                getParamsTouple, JS_FromCharCode, \
+                                                               JS_toString, \
                                                                VIDUPME_decryptPlayerParams,    \
                                                                VIDEOWEED_unpackJSPlayerParams, \
                                                                SAWLIVETV_decryptPlayerParams,  \
@@ -288,6 +289,8 @@ class urlparser:
                        'superfilm.pl':         self.pp.parserSUPERFILMPL   ,
                        'sendvid.com':          self.pp.parserSENDVIDCOM    ,
                        'filehoot.com':         self.pp.parserFILEHOOT      ,
+                       'ssh101.com':           self.pp.parserSSH101COM     ,
+                       'twitch.tv':            self.pp.parserTWITCHTV      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -382,6 +385,14 @@ class urlparser:
                 continue
             elif 'liveonlinetv247' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, """['"](http://[^'^"]*?liveonlinetv247[^'^"]+?)['"]""")[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'ssh101.com/secure/' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]*?ssh101.com/secure/[^'^"]+?)['"]""")[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'twitch.tv' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]*?twitch.tv[^'^"]+?)['"]""")[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'yocast.tv' in data:
@@ -2556,7 +2567,13 @@ class pageParser:
         if videoUrl.split('?')[0].endswith('.js'):
             sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
             if not sts: return False
-            videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/player?[^"]+?)"')[0]
+            printDBG(data)
+            tr = 0
+            while tr < 3:
+                tr += 1
+                videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/player?[^"]+?)"')[0]
+                if "" != videoUrl: break
+                time.sleep(1)
         sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
         printDBG(data)
         if sts:
@@ -2723,22 +2740,54 @@ class pageParser:
         
     def parserSAWLIVETV(self, baseUrl):
         printDBG("parserSAWLIVETV linkUrl[%s]" % baseUrl)
-        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', baseUrl)
-        HTTP_HEADER['Referer'] = Referer
+        #HTTP_HEADER['Referer'] = Referer
         
-        sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
+        COOKIE_FILE = GetCookieDir('sawlive.tv')
+        params = {'header' : HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
+        
+        if 1:
+            sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
+            if not sts: return False
+            data  = data.strip()
+            data = data[data.rfind('}(')+2:-2]
+            
+            data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
+            printDBG(">>>>>>>>>>>>>>>>>>>" + data)
+            
+            def jal(a):
+                b = ''
+                for c in a:
+                    b += JS_toString(ord(c), 16)
+                return b
+            
+            linkUrl = self.cm.ph.getSearchGroups(data, '''src="([^"']+?)["']''')[0] + '/' + jal(urlparser().getHostName(Referer))
+        else:
+            params['header']['Referer'] = Referer
+            sts, data = self.cm.getPage(baseUrl, params)
+            if not sts: return False
+            
+            vars = dict( re.compile("var ([^=]+?)='([^']+?)';").findall(data) )
+            data = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+            
+            def fakeJSExec(dat):
+                dat = dat.group(1)
+                if dat.startswith('unescape'):
+                    dat = self.cm.ph.getSearchGroups(dat, '\(([^)]+?)\)')[0]
+                    if "'" == dat[0]:
+                        dat = dat[1:-1]
+                    else:
+                        dat = vars[dat]
+                    printDBG('dat: ' + dat)
+                    return dat.replace('%', '\\u00').decode('unicode-escape').encode("utf-8")
+                else:
+                    return vars[dat]
+            linkUrl = re.sub("'\+([^+]+?)\+'", fakeJSExec, data)
+        
+        sts, data = self.cm.getPage(linkUrl, params)
         if not sts: return False
-        data  = data.strip()
-        data = data[data.rfind('}(')+2:-2]
-        data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
-        data = self.cm.ph.getSearchGroups(data, "'([^']+?)'")[0]
-        data = data.replace('%', '\\u00').decode('unicode-escape').encode("utf-8")
-        linkUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?)"')[0]
-        sts, data = self.cm.getPage(linkUrl, {'header': HTTP_HEADER})
-        if not sts: return False
-        #printDBG(data)
         swfUrl = self.cm.ph.getSearchGroups(data, "'(http[^']+?swf)'")[0]
         url    = self.cm.ph.getSearchGroups(data, "streamer'[^']+?'(rtmp[^']+?)'")[0]
         file   = self.cm.ph.getSearchGroups(data, "file'[^']+?'([^']+?)'")[0]
@@ -4037,6 +4086,44 @@ class pageParser:
             linkVideo = data.group(1)
             printDBG('parserFILEHOOT direct link: ' + linkVideo)
             return linkVideo
+        return False
+        
+    def parserSSH101COM(self, baseUrl):
+        printDBG("parserFILEHOOT baseUrl[%r]" % baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        data = re.search('file:[ ]*?"([^"]+?)"', data).group(1)
+        if data.split('?')[0].endswith('.m3u8'):
+            return getDirectM3U8Playlist(data)
+        return False
+        
+    def parserTWITCHTV(self, baseUrl):
+        printDBG("parserFILEHOOT baseUrl[%r]" % baseUrl)
+        if 'channel'  in baseUrl:
+            data = baseUrl + '&'
+        else:
+            sts, data = self.cm.getPage(baseUrl)
+        
+        channel = self.cm.ph.getSearchGroups(data, '''channel=([^&^'^"]+?)[&'"]''')[0]
+        MAIN_URLS = 'https://api.twitch.tv/'
+        CHANNEL_TOKEN_URL = MAIN_URLS + 'api/channels/%s/access_token'
+        LIVE_URL = 'http://usher.justin.tv/api/channel/hls/%s.m3u8?token=%s&sig=%s&allow_source=true'
+        if '' != channel:
+            url = CHANNEL_TOKEN_URL % channel
+            sts, data = self.cm.getPage(url)
+            urlTab = []
+            if sts:
+                try:
+                    data = byteify( json.loads(data) )
+                    url = LIVE_URL % (channel, urllib.quote(data['token']), data['sig'])
+                    data = getDirectM3U8Playlist(url, checkExt=False)
+                    for item in data:
+                        item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True}) 
+                        urlTab.append(item)
+                except: printExc()
+            return urlTab
         return False
         
     def parserCLOUDYEC(self, baseUrl):
