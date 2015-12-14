@@ -68,6 +68,9 @@ class VevoIE(InfoExtractor):
         self._oauth_token = self.authData.get('access_token')
 
     def _formats_from_json(self, video_info):
+        if not video_info:
+            return []
+        
         last_version = {'version': -1}
         for version in video_info['videoVersions']:
             # These are the HTTP downloads, other types are for different manifests
@@ -132,7 +135,7 @@ class VevoIE(InfoExtractor):
                 'No oauth token available, skipping API HLS download')
             return []
 
-        api_url = 'https://apiv2.vevo.com/video/%s/streams/hls?token=%s' % (
+        api_url = 'http://apiv2.vevo.com/video/%s/streams/hls?token=%s' % (
             video_id, self._oauth_token)
         api_data = self._download_json(
             api_url, video_id,
@@ -154,13 +157,18 @@ class VevoIE(InfoExtractor):
 
         json_url = 'http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % video_id
         response = self._download_json(json_url, video_id)
-        video_info = response['video']
-
-        if not video_info:
+        video_info = response['video'] or {}
+        
+        if not video_info and response.get('statusCode') != 909:
             if 'statusMessage' in response:
                 SetIPTVPlayerLastHostError(response['statusMessage'])
                 raise ExtractorError('%s said: %s' % (self.IE_NAME, response['statusMessage']), expected=True)
             raise ExtractorError('Unable to extract videos')
+            
+        if not video_info:
+            if url.startswith('vevo:'):
+                raise ExtractorError('Please specify full Vevo URL for downloading', expected=True)
+            webpage = self._download_webpage(url, video_id)
 
         formats = self._formats_from_json(video_info)
 
@@ -179,7 +187,7 @@ class VevoIE(InfoExtractor):
         # Download SMIL
         if smil or 0 == len(formats):
             smil_blocks = sorted((
-                f for f in video_info['videoVersions']
+                f for f in video_info.get('videoVersions', [])
                 if f['sourceType'] == 13),
                 key=lambda f: f['version'])
             smil_url = '%s/Video/V2/VFILE/%s/%sr.smil' % (
@@ -198,10 +206,10 @@ class VevoIE(InfoExtractor):
 
         return {
             'id': video_id,
-            'title': video_info['title'],
+            'title': '',
             'formats': formats,
-            'thumbnail': video_info['imageUrl'],
-            'uploader': video_info['mainArtists'][0]['artistName'],
-            'duration': video_info['duration'],
+            'thumbnail': '',
+            'uploader': '',
+            'duration': video_info.get('duration', 0),
             'age_limit': age_limit,
         }
