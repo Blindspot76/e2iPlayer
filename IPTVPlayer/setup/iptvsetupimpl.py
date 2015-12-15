@@ -53,7 +53,7 @@ class IPTVSetupImpl:
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
         # f4mdump member
-        self.f4mdumpVersion = "F4MDump v0.40"
+        self.f4mdumpVersion = "F4MDump v0.50"
         self.f4mdumppaths = ["/usr/bin/f4mdump", GetBinDir("f4mdump", "")]
         self._f4mdumpInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/f4mdump (%s)" % _("recommended")), "/usr/bin/f4mdump"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/f4mdump", GetBinDir("f4mdump", "")),

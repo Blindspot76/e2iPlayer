@@ -55,7 +55,8 @@ class CartoonHD(CBaseHostClass):
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
     MAIN_URL = 'http://www.cartoonhd.mobi/'
-    SEARCH_URL = MAIN_URL + 'ajax/search.php'
+    #SEARCH_URL = MAIN_URL + 'ajax/search.php'
+    SEARCH_URL = MAIN_URL + 'api/v1/cautare'
     
     MAIN_CAT_TAB = [{'category':'new',            'mode':'',            'title': 'New',       'url':'search.php',    'icon':''},
                     {'category':'movies',         'mode':'movies',      'title': 'Movies',    'url':'search.php',    'icon':''},
@@ -75,6 +76,10 @@ class CartoonHD(CBaseHostClass):
         self.cacheFilters = {}
         self.cacheLinks = {}
         self.loggedIn = None
+        
+    def _getToken(self, data):
+        torName = self.cm.ph.getSearchGroups(data, "var token=([^;]+?);")[0]
+        return self.cm.ph.getSearchGroups(data, "{0}='([^']+?)'".format(torName))[0]
         
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
@@ -249,7 +254,7 @@ class CartoonHD(CBaseHostClass):
         sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return
         
-        tor = self.cm.ph.getSearchGroups(data, "tor='([^']+?)'")[0]
+        tor = self._getToken(data)
         
         q = searchPattern
         post_data = {'q':q, 'limit':100, 'timestamp':str(time.time()).split('.')[0], 'verifiedCheck':tor}
@@ -262,9 +267,9 @@ class CartoonHD(CBaseHostClass):
             data = byteify(json.loads(data))
             for item in data:
                 desc = item['meta']
-                if 'Movie' in desc:
+                if 'movie' in desc.lower():
                     category = 'video'
-                elif 'TV show' in desc:
+                elif 'tv show' in desc.lower():
                     category = 'list_seasons'
                 else:
                     category = None
@@ -319,7 +324,7 @@ class CartoonHD(CBaseHostClass):
                 fill = '===' 
                 enc  = enc[0:r-3] + fill[r:]
             return enc
-            
+        
         def getCookieItem(name):
             value = ''
             try:
@@ -335,10 +340,10 @@ class CartoonHD(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return []
         
-        torName = self.cm.ph.getSearchGroups(data, "var token=([^;]+?);")[0]
-        tor  = self.cm.ph.getSearchGroups(data, "{0}='([^']+?)'".format(torName))[0]
-        elid = self.cm.ph.getSearchGroups(data, 'data-movie="([^"]+?)"')[0]
+        tor  = self._getToken(data)
+        elid = self.cm.ph.getSearchGroups(data, 'data-id="([^"]+?)"')[0]
         if '' == elid: elid = self.cm.ph.getSearchGroups(data, 'elid="([^"]+?)"')[0]
+        if '' == elid: elid = self.cm.ph.getSearchGroups(data, 'data-movie="([^"]+?)"')[0]
         if '' == elid: return []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<select', '</select>', False)[1]
         hostings = []
@@ -418,7 +423,6 @@ class CartoonHD(CBaseHostClass):
         printDBG('tryTologin failed')
         return False
         
-    
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         

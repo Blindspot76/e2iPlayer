@@ -113,7 +113,7 @@ class TelewizjadaNetApi:
         sts, data = self.cm.getPage(url, http_params, {'url':vid_url})
         if not sts: return []
         
-        url = self.MAIN_URL + 'channel_url.php'
+        url = self.MAIN_URL + 'get_channel_url.php'
         sts, data = self.cm.getPage(url, http_params, {'cid':cItem['cid']})
         if not sts: return []
         

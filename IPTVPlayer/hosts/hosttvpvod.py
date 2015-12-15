@@ -241,23 +241,17 @@ class TvpVod(CBaseHostClass):
 
         ajaxUrl = ''
         page = cItem.get('page', 1)
-        baseUrl = self._getFullUrl(cItem['url'])
-        url = baseUrl
+        url = self._getFullUrl(cItem['url'])
         
         if '/shared/' in url:
             url += '&page=%d' %(page)
             ajaxUrl = url
         
-        #if 'list_search' == category: 
-        #    url = baseUrl +'page=%d&pageSize=%d' %(page, TvpVod.PAGE_SIZE)
-
         sts, data = self._getPage(url, self.defaultParams)
         if not sts: return
         
         if '<section id="emisje">' in data:
             return self.listItems2(cItem, category, data)
-        
-        nextPage = False
         
         if 'popular' == category:
             itemMarker = '<li class="series">'
@@ -266,13 +260,12 @@ class TvpVod(CBaseHostClass):
             itemMarker = '<div class="item">'
             sectionMarker = itemMarker
         
-        tmp = self.cm.ph.getSearchGroups(data, "vod\.loadItems\.init\('([0-9]+?)'\,'([^']+?)'", 2)
-        if tmp[0] != '' and tmp[1] != '': 
-            ajaxUrl = self._getAjaxUrl(tmp[0], tmp[1])
+        if '' == ajaxUrl:
+            tmp = self.cm.ph.getSearchGroups(data, "vod\.loadItems\.init\('([0-9]+?)'\,'([^']+?)'", 2)
+            if tmp[0] != '' and tmp[1] != '': 
+                ajaxUrl = self._getAjaxUrl(tmp[0], tmp[1])
         
-        if 'list_search' == category and 'SortDir=asc">&gt;</a><a data-ajax' in data: 
-            nextPage = True
-        elif '/shared/' not in url:
+        if '/shared/' not in url:
             data = self.cm.ph.getDataBeetwenMarkers(data, sectionMarker, '</section>', True)[1]
         
         printDBG("TvpVod.listItems1 start parse")
@@ -303,12 +296,9 @@ class TvpVod(CBaseHostClass):
                 url = ajaxUrl + '&page=%d' %(page+1)
                 sts, data = self._getPage(url, self.defaultParams)
                 if sts and itemMarker in data: 
-                    nextPage = True
-                    baseUrl  = ajaxUrl
-            if nextPage:    
-                params = dict(cItem)
-                params.update({'page':page+1, 'title':_("Następna strona"), 'url':baseUrl})
-                self.addDir(params)
+                    params = dict(cItem)
+                    params.update({'page':page+1, 'title':_("Następna strona"), 'url':ajaxUrl})
+                    self.addDir(params)
                 
     def listItems2(self, cItem, category, data):
         printDBG("TvpVod.listItems2")
