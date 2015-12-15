@@ -46,7 +46,8 @@ config.plugins.iptvplayer.tvpVodDefaultformat = ConfigSelection(default = "59000
                                                                                                ("5420000", "1280x720"),
                                                                                                ("6500000", "1600x900"),
                                                                                                ("9100000", "1920x1080") ])
-config.plugins.iptvplayer.tvpVodUseDF = ConfigYesNo(default = True)
+config.plugins.iptvplayer.tvpVodUseDF    = ConfigYesNo(default = True)
+config.plugins.iptvplayer.tvpVodNextPage = ConfigYesNo(default = True)
 
 ###################################################
 # Config options for HOST
@@ -61,6 +62,7 @@ def GetConfigList():
     optionList.append(getConfigListEntry("Domyślny format video",           config.plugins.iptvplayer.tvpVodDefaultformat))
     optionList.append(getConfigListEntry("Używaj domyślnego format video:", config.plugins.iptvplayer.tvpVodUseDF))
     optionList.append(getConfigListEntry("Korzystaj z proxy?",              config.plugins.iptvplayer.tvpVodProxyEnable))
+    optionList.append(getConfigListEntry("Więcej jako następna strona",     config.plugins.iptvplayer.tvpVodNextPage))
     return optionList
 ###################################################
 
@@ -297,8 +299,13 @@ class TvpVod(CBaseHostClass):
                 sts, data = self._getPage(url, self.defaultParams)
                 if sts and itemMarker in data: 
                     params = dict(cItem)
-                    params.update({'page':page+1, 'title':_("Następna strona"), 'url':ajaxUrl})
-                    self.addDir(params)
+                    params.update({'page':page+1, 'url':ajaxUrl})
+                    if config.plugins.iptvplayer.tvpVodNextPage.value:
+                        params['title'] = _("Następna strona")
+                        self.addDir(params)
+                    else:
+                        params['title'] = _('More')
+                        self.addMore(params)
                 
     def listItems2(self, cItem, category, data):
         printDBG("TvpVod.listItems2")
@@ -373,8 +380,13 @@ class TvpVod(CBaseHostClass):
         
         if nextPage:    
             params = dict(cItem)
-            params.update({'page':page+1, 'title':_("Następna strona")})
-            self.addDir(params)
+            params.update({'page':page+1})
+            if config.plugins.iptvplayer.tvpVodNextPage.value:
+                params['title'] = _("Następna strona")
+                self.addDir(params)
+            else:
+                params['title'] = _('More')
+                self.addMore(params)
             
     def getObjectID(self, url):
         sts, data = self.cm.getPage(url, self.defaultParams)

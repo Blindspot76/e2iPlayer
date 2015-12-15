@@ -169,6 +169,7 @@ config.plugins.iptvplayer.hiddenAllVersionInUpdate = ConfigYesNo(default = False
 config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio = ConfigSelection(default = "-1", choices = [("-1", _("default")), ("0", _("4:3 Letterbox")), ("1", _("4:3 PanScan")), ("2", _("16:9")), ("3", _("16:9 always")), ("4", _("16:10 Letterbox")), ("5", _("16:10 PanScan")), ("6", _("16:9 Letterbox"))] )
         
 config.plugins.iptvplayer.search_history_size  = ConfigInteger(50, (0, 1000000))
+config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (1, 1000000))
 
 ###################################################
 
@@ -333,6 +334,7 @@ class ConfigMenu(ConfigBaseWidget):
         if 'exteplayer' in playersValues or 'extgstplayer' in playersValues or 'auto' in playersValues:
             list.append(getConfigListEntry(_("External movie player config"), config.plugins.iptvplayer.fakExtMoviePlayerList))
         
+        list.append(getConfigListEntry(_("Autoplay start delay"), config.plugins.iptvplayer.autoplay_start_delay))
         list.append(getConfigListEntry(_("The number of items in the search history"), config.plugins.iptvplayer.search_history_size))
         list.append(getConfigListEntry(_("Block wmv files"), config.plugins.iptvplayer.ZablokujWMV))
         list.append(getConfigListEntry(_("Show IPTVPlayer in extension list"), config.plugins.iptvplayer.showinextensions))
