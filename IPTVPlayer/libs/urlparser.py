@@ -277,6 +277,8 @@ class urlparser:
                        'rapidvideo.ws':        self.pp.parserRAPIDVIDEOWS  ,
                        'hdvid.tv':             self.pp.parserHDVIDTV       ,
                        'exashare.com':         self.pp.parserEXASHARECOM   ,
+                       'openload.info':        self.pp.parserEXASHARECOM   ,
+                       'allvid.ch':            self.pp.parserALLVIDCH      ,
                        'posiedze.pl':          self.pp.parserPOSIEDZEPL    ,
                        'neodrive.co':          self.pp.parserNEODRIVECO    ,
                        'cloudy.ec':            self.pp.parserCLOUDYEC      ,
@@ -2295,9 +2297,17 @@ class pageParser:
     def parserEXASHARECOM(self, url):
         printDBG("parserVODLOCKER url[%r]" % url)
         # example video: http://www.exashare.com/s4o73bc1kd8a
+        url =  url.replace('exashare.com', 'openload.info')
         def _findLinks(data):
             return self._findLinks(data, 'exashare.com', m1='setup(', m2=')')
         return self.__parseJWPLAYER_A(url, 'exashare.com', _findLinks)
+        
+    def parserALLVIDCH(self, url):
+        printDBG("parserALLVIDCH url[%r]" % url)
+        # example video: http://allvid.ch/embed-fhpd7sk5ac2o-830x500.html
+        def _findLinks(data):
+            return self._findLinks(data, 'allvid.ch', m1='setup(', m2='image:')
+        return self.__parseJWPLAYER_A(url, 'allvid.ch', _findLinks)
         
     def parserVODLOCKER(self, url):
         printDBG("parserVODLOCKER url[%r]" % url)

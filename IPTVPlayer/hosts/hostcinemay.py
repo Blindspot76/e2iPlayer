@@ -43,25 +43,27 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://streamcomplet.com/'
+    return 'http://www.cinemay.com/'
 
-class StreamComplet(CBaseHostClass):
-    MAIN_URL    = 'http://www.streamcomplet.com/'
+class Cinemay(CBaseHostClass):
+    MAIN_URL    = 'http://www.cinemay.com/'
     SRCH_URL    = MAIN_URL + '?s='
-    DEFAULT_ICON_URL = 'http://streamcomplet.com/wp-content/themes/streaming/logo/logo.png'
+    DEFAULT_ICON_URL = 'http://www.cinemay.com/wp-content/themes/cinema/images/logo.png'
     
-    MAIN_CAT_TAB = [{'category':'categories',     'title': _('Categories'),     'icon':DEFAULT_ICON_URL, 'filters':{}},
+    MAIN_CAT_TAB = [{'category':'movies', 'title': _('Movies'), 'url':MAIN_URL+'films/', 'icon':DEFAULT_ICON_URL },
+                    {'category':'series', 'title': _('Series'), 'url':MAIN_URL+'serie/', 'icon':DEFAULT_ICON_URL },
                     {'category':'search',         'title': _('Search'),         'icon':DEFAULT_ICON_URL, 'search_item':True},
                     {'category':'search_history', 'title': _('Search history'), 'icon':DEFAULT_ICON_URL } 
                    ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'StreamComplet', 'cookie':'StreamComplet.cookie'})
-        self.cacheFilters = {}
+        CBaseHostClass.__init__(self, {'history':'Cinemay', 'cookie':'Cinemay.cookie'})
+        self.catCache = {'movies':[], 'series':[]}
         self.USER_AGENT = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        
+        self.seriesCache = {}
+    
     def _getFullUrl(self, url):
         mainUrl = self.MAIN_URL
         if 0 < len(url) and not url.startswith('http'):
@@ -71,7 +73,7 @@ class StreamComplet(CBaseHostClass):
         return url
         
     def listsTab(self, tab, cItem, type='dir'):
-        printDBG("StreamComplet.listsTab")
+        printDBG("Cinemay.listsTab")
         for item in tab:
             params = dict(cItem)
             params.update(item)
@@ -79,22 +81,81 @@ class StreamComplet(CBaseHostClass):
             if type == 'dir':
                 self.addDir(params)
             else: self.addVideo(params)
+            
+    def fillCatCache(self, url, key):
+        self.catCache[key] = []
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="tlw-list">', '</ul>', False)[1]
+        data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
+        for item in data:
+            self.catCache[key].append({'title':item[1], 'url':item[0]})
 
     def listCategories(self, cItem, category):
-        printDBG("StreamComplet.listCategories")
-        sts, data = self.cm.getPage(self.MAIN_URL)
-        if not sts: return
+        printDBG("Cinemay.listCategories")
+        tab = self.catCache.get(cItem['category'], [])
+        if 0 == len(tab):
+            self.fillCatCache(cItem['url'], cItem['category'])
+            tab = self.catCache.get(cItem['category'], [])
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="menu-menu" class="menu">', '</ul>', False)[1]
-        
-        data = re.compile('<a href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
-        for item in data:
+        if len(tab):
             params = dict(cItem)
-            params.update({'category':category, 'title':item[1].strip(), 'url':self._getFullUrl(item[0])})
+            params.update({'category':category, 'title':_('--All--')})
+            self.addDir(params)
+            
+        for item in tab:
+            params = dict(cItem)
+            params.update(item)
+            params['category'] = category
             self.addDir(params)
     
-    def listItems(self, cItem):
-        printDBG("StreamComplet.listItems")
+    def listSeasons(self, cItem, category):
+        printDBG("Cinemay.listSeasons")
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        seasons = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="css-tabs_series skin3">', '<div style="clear:both;">', True)[1]
+        seasonsData = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="css-tabs_series skin3">', '</ul>', True)[1]
+        seasonsData = re.compile('<a [^>]*?>([^<]+?)<').findall(seasonsData)
+        idx = 0
+        for item in seasonsData:
+            title = item.strip()
+            num   = self.cm.ph.getSearchGroups('/%s/' % item, '[^0-9]([0-9]+?)[^0-9]')[0]
+            seasons.append({'title':title, 'num':num, 'idx':idx})
+            idx += 1
+            
+        seasonsData = self.cm.ph.getAllItemsBeetwenMarkers(data.split('<div class="css-panes_series skin3">')[1], '<div>', '</div>', False)
+        seasonIdx = 0
+        for season in seasonsData:
+            season = season.split('</li>')
+            if len(season): del season[-1]
+            episodes = []
+            self.seriesCache[seasonIdx] = []
+            for item in season:
+                title = self.cleanHtmlStr( item ).strip()
+                if title.startswith('E-'): title = title[2:]
+                title = 's{0}e{1}'.format(seasons[seasonIdx]['num'], title)
+                url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                self.seriesCache[seasonIdx].append({'episode':True, 'title':'{0}: {1}'.format(cItem['title'], title), 'url':self._getFullUrl(url)})
+            seasonIdx += 1
+        
+        for item in seasons:
+            params = dict(cItem)
+            params.update(item)
+            params['category'] = category
+            self.addDir(params)
+            
+    def listEpisodes(self, cItem):
+        printDBG("Cinemay.listEpisodes")
+        season = self.seriesCache.get(cItem['idx'], [])
+        
+        for item in season:
+            params = dict(cItem)
+            params.update(item)
+            self.addVideo(params)
+    
+    def listItems(self, cItem, category=None):
+        printDBG("Cinemay.listItems")
         
         tmp = cItem['url'].split('?')
         url = tmp[0]
@@ -114,20 +175,33 @@ class StreamComplet(CBaseHostClass):
         nextPage = False
         if ('/page/%s/' % (page+1)) in data:
             nextPage = True
-        m1 = '<div class="moviefilm">'
-        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div class="filmborder">', False)[1]
+        m1 = '<div class="unfilm">'
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div id="sidebar">', False)[1]
         data = data.split(m1)
+        
+        if len(data): data[-1] = data[-1].split('<div class="navigation">')[0]
         for item in data:
-            params = dict(cItem)
+            cat = category
             params = dict(cItem)
             url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
             title = self.cleanHtmlStr( title )
             if title == '': continue
             icon  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            desc  = self.cleanHtmlStr( item )
+            desc  = self.cleanHtmlStr( item.split('<div class="infob">')[-1] )
             params.update({'title':title, 'icon':self._getFullUrl(icon), 'desc':desc, 'url':self._getFullUrl(url)})
-            self.addVideo(params)
+            if cat == None:
+                if '/serie/' in url: 
+                    itemType = 'serie'
+                    cat = 'list_seasons'
+                else: itemType = 'video'
+            else:
+                itemType = 'serie'
+            if itemType == 'video':
+                self.addVideo(params)
+            else:
+                params['category'] = cat
+                self.addDir(params)
         
         if nextPage:
             params = dict(cItem)
@@ -141,60 +215,37 @@ class StreamComplet(CBaseHostClass):
         self.listItems(cItem)
         
     def getLinksForVideo(self, cItem):
-        printDBG("StreamComplet.getLinksForVideo [%s]" % cItem)
+        printDBG("Cinemay.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        params = dict(self.defaultParams)
-        header = dict(self.HEADER)
-        header['Referer'] = cItem['url']
-        params['header'] = header
-        
-        sts, data = self.cm.getPage(cItem['url'], params)
+        sts, data = self.cm.getPage(cItem['url'])
         if not sts: return []
         
-        if 0:
-            adminData = self.cm.ph.getDataBeetwenMarkers(data, 'jQuery.ajax({', '});', False)[1]
-            adminUrl  = self.cm.ph.getSearchGroups(adminData, "url:'([^']+?)'")[0] 
-            adminUrl += '?' + self.cm.ph.getSearchGroups(adminData, "data:'([^']+?)'")[0] 
-            
-            header = dict(self.HEADER)
-            header['X-Requested-With'] = 'XMLHttpRequest'
-            header['Referer'] = cItem['url']
-            paramsAdmin = dict(self.defaultParams)
-            paramsAdmin['header'] = header
-            sts, adminData = self.cm.getPage(adminUrl, paramsAdmin)
-            printDBG('>>>>>>>>>>>>>> adminData[%s]' % adminData)
-            
-            projekktor_controlbar={"muted":false,"volume":0.5};
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+        data = data.split('</tr>')
+        if len(data): del data[-1]
+        for item in data:
+            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            if '/voir/' in url or '/ser/' in url:
+                title = self.cm.ph.getSearchGroups(item, 'src="[^"]+?/([^/]+?)\.png"')[0]
+                title = '[{0}] {1}'.format(title, self.cleanHtmlStr( item ))
+                urlTab.append({'name':title, 'url':self._getFullUrl(url), 'need_resolve':1})
+        if 0 == len(urlTab):
+            urlTab.append({'name':'Main url', 'url':cItem['url'], 'need_resolve':1})
+        return urlTab
         
-        playerUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?player[^"]+?)"')[0]
-        #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> playerUrl[%s]" % playerUrl)
+    def getVideoLinks(self, videoUrl):
+        printDBG("Cinemay.getVideoLinks [%s]" % videoUrl)
+        urlTab = []
         
-        movieId = self.cm.ph.getSearchGroups(playerUrl+'/', 'f=([0-9]+?)/')[0]
-        if movieId != '':
-            playerUrl = 'http://m.ok.ru/video/' + movieId
-            sts, data = self.cm.getPage(playerUrl, params)
+        if 'cinemay.com' in videoUrl:
+            sts, data = self.cm.getPage(videoUrl)
             if not sts: return []
-            videoUrl = self.cm.ph.getSearchGroups(data, 'href="(http[^"]+?moviePlaybackRedirect[^"]+?)"')[0].replace('&amp;', '&')
-            videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-            return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="wbox2 video dark">', '</iframe>', False)[1]
+            videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"', 1, True)[0]
         
-        playerUrl = playerUrl.replace('&#038;', '&')
-        sts, data = self.cm.getPage(playerUrl, params)
-        if not sts: return []
-        
-        videoUrl = self.cm.ph.getSearchGroups(data, """src:[^'^"]+?['"]([^'^"]+?)['"]""")[0]
-        if videoUrl == '' or videoUrl == 'vimplevideo.mp4': return []
-        
-        videoUrl = 'http://media.vimple.me/playeryw.swf/' + videoUrl
-        videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-        return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
-        
-        
-        tmp = self.up.getVideoLinkExt(cItem['url'])
-        for item in tmp:
-            item['need_resolve'] = 0
-            urlTab.append(item)
+        if videoUrl.startswith('http'):
+            urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
     def getFavouriteData(self, cItem):
@@ -216,11 +267,20 @@ class StreamComplet(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
-        elif category == 'categories':
-            self.listCategories(self.currItem, 'items')
-    #ITEMS
-        elif category == 'items':
+    #MOVIES
+        elif category == 'movies':
+            self.listCategories(self.currItem, 'video_items')
+        elif category == 'video_items':
             self.listItems(self.currItem)
+    #SERIES
+        elif category == 'series':
+            self.listCategories(self.currItem, 'list_series')
+        elif category == 'list_series':
+            self.listItems(self.currItem, 'list_seasons')
+        elif category == 'list_seasons':
+            self.listSeasons(self.currItem, 'list_episodes')
+        elif category == 'list_episodes':
+            self.listEpisodes(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -236,10 +296,10 @@ class StreamComplet(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, StreamComplet(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        CHostBase.__init__(self, Cinemay(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('streamcompletlogo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('cinemaylogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -252,6 +312,16 @@ class IPTVHost(CHostBase):
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
+    
+    def getResolvedURL(self, url):
+        # resolve url to get direct url to video file
+        retlist = []
+        urlList = self.host.getVideoLinks(url)
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+
+        return RetHost(RetHost.OK, value = retlist)
     
     def converItem(self, cItem):
         hostList = []
