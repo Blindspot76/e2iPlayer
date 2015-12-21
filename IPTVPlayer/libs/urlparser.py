@@ -22,6 +22,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                SAWLIVETV_decryptPlayerParams,  \
                                                                VIDEOMEGA_decryptPlayerParams, \
                                                                OPENLOADIO_decryptPlayerParams, \
+                                                               TEAMCASTPL_decryptPlayerParams, \
                                                                captchaParser, \
                                                                getDirectM3U8Playlist, \
                                                                decorateUrl, \
@@ -2446,12 +2447,23 @@ class pageParser:
             url = 'http://videowood.tv/embed/{0}'.format(video_id)
         else:
             url = baseUrl 
+        
         params = {'header' : HTTP_HEADER}
         sts, data = self.cm.getPage(url, params)
-        if sts:
-            data = self.cm.ph.getSearchGroups(data, """["']*file["']*:[ ]*["'](http[^"']+?)["']""")[0]
-            if '' != data:
-                return data
+        if not sts: return False
+        while True:
+            vidUrl = self.cm.ph.getSearchGroups(data, """["']*file["']*:[ ]*["'](http[^"']+?(?:\.mp4|\.flv)[^"']*?)["']""")[0]
+            if '' != vidUrl:
+                return vidUrl.replace('\\/', '/')
+            
+            sts, data = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>')
+            if sts:
+                # unpack and decode params from JS player script code
+                data = unpackJSPlayerParams(data, TEAMCASTPL_decryptPlayerParams)
+                #data = self.cm.ph.getDataBeetwenMarkers(data, 'config=', ';',
+                printDBG(data)
+                continue
+            break
         return False
         
     def parserMOVRELLCOM(self, baseUrl):
