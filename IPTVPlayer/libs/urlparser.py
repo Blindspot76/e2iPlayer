@@ -3861,11 +3861,6 @@ class pageParser:
             return getDirectM3U8Playlist(hlsUrl)
         return False
         
-        sts, data = self.cm.getPage('http://www.mobileonline.tv/channel.php', {'n':channel})
-        printDBG("==========================================================")
-        printDBG(data)
-        printDBG("==========================================================")
-        
         linkUrl = "http://www.streamlive.to/embedplayer_new.php?width=640&height=480&channel={0}&autoplay=true".format(channel)
         sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
         if not sts: return False 
