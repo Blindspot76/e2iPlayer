@@ -152,7 +152,8 @@ class AlltubeTV(CBaseHostClass):
         
     def listLatestAddedSeries(self, cItem, category):
         printDBG("AlltubeTV.listLatestAddedSeries")
-        self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-6">', '<div class="item clearfix">', category)
+        #self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-6">', '<div class="item clearfix">', category)
+        self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-12 clearfix">', '<div class="item clearfix">', category)
             
     def listRankViewMovies(self, cItem):
         printDBG("AlltubeTV.listRankViewMovies")
@@ -244,7 +245,7 @@ class AlltubeTV(CBaseHostClass):
             cItem['category'] = category
             self.listsTab(tab, cItem)
         
-    def listAllSeries(self):
+    def listAllSeries(self, category):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return 
 

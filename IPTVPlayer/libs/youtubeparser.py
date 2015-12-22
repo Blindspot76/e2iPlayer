@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html, unescapeHTML
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, byteify
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl
@@ -16,7 +16,8 @@ from datetime import timedelta
 # FOREIGN import
 ###################################################
 import re
-from xml.etree import cElementTree
+try: import json
+except: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -306,79 +307,26 @@ class YouTubeParser():
     ########################################################
     def getVideosApiPlayList(self, url, category, page, cItem):
         printDBG('YouTubeParser.getVideosApiPlayList url[%s]' % url)
-        xmlns       ='{http://www.w3.org/2005/Atom}' 
-        xmlns_media ='{http://search.yahoo.com/mrss/}'
-        xmlns_yt    ='{http://gdata.youtube.com/schemas/2007}'
+        playlistID = self.cm.ph.getSearchGroups(url + '&', 'list=([^&]+?)&')[0]
+        baseUrl = 'https://www.youtube.com/list_ajax?style=json&action_get_list=1&list=%s' % playlistID
         
-        def getText(item):
-            if item.text != None:
-                return item.text.encode('utf-8')
-            return ''
-            
-        def getTextAttrib(item, v):
-                return item.get(v,'').encode('utf-8')
-      
+
         currList = []
-        if page == '1':
-            playlistID = re.search('list=([^&]+?)&', url + '&')
-            if playlistID: 
-                baseUrl = "http://gdata.youtube.com/feeds/api/playlists/%s?v=2" % playlistID.group(1)
-        else:
-            baseUrl = url
-            
         if baseUrl != '':
-            sts,data =  self.cm.getPage(baseUrl, {'host': self.HOST})
+            sts, data =  self.cm.getPage(baseUrl, {'host': self.HOST})
             try:
-                data = cElementTree.fromstring(data)
-                '''
-                for node in data.iter():
-                    print node.tag, node.attrib
-                '''
-                
-                # get next page
-                nextPage = ''
-                items = data.findall(xmlns + 'link')
-                for item in items:
-                    if getTextAttrib(item.attrib, 'rel') == 'next':
-                        nextPage = getTextAttrib(item.attrib, 'href')
-                        
-                # get entries
-                items = data.findall(xmlns + 'entry')
-                for entry in items:
-                    item = entry.find(xmlns_media+"group")
-                    url = item.find(xmlns_yt + "videoid")
-                    if cElementTree.iselement(url) and getText(url) != '':
-                        url   = 'http://www.youtube.com/watch?v=' + getText(url)
-                        title = getText(entry.find(xmlns+"title"))
-                        
-                        img = ''
-                        images = item.findall(xmlns_media+"thumbnail")
-                        for imgItem in images:
-                            if getTextAttrib(imgItem.attrib, xmlns_yt+'name') == 'default':
-                                img  = getTextAttrib(imgItem.attrib, 'url')
-                                break
-                        time  = getTextAttrib(item.find(xmlns_yt+"duration").attrib, 'seconds')
-                        if '' != time: time = str( timedelta( seconds = int(time) ) )
-                        if time.startswith("0:"): time = time[2:]
-                        desc  = getText(item.find(xmlns_media+"description"))
-                        params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': time, 'desc': desc}
-                        currList.append(params)
-                if nextPage != '':
-                    match = re.search('start-index=([0-9]+?)[^0-9]', nextPage)
-                    try:
-                        if int(match.group(1)) < 100:
-                            item = dict(cItem)
-                            item.update({'title': _("Next page"), 'page': str(int(page) + 1), 'url': nextPage})
-                            currList.append(params)
-                    except:
-                        pass
+                data = byteify( json.loads(data) )['video']
+                for item in data:
+                    url   = 'http://www.youtube.com/watch?v=' + item['encrypted_id']
+                    title = item['title']
+                    img   = item['thumbnail']
+                    time  = item['length_seconds']
+                    if '' != time: time = str( timedelta( seconds = int(time) ) )
+                    if time.startswith("0:"): time = time[2:]
+                    desc  = item['description']
+                    params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': time, 'desc': desc}
+                    currList.append(params)
             except:
                 printExc()
         return currList    
-        
-'''
-                xmlDoc.findall(method + "/" + groupName + "/row")
-        countItemNode = xmlDoc.find(method + "/count_items")
-        showNextPage = False
-'''
 

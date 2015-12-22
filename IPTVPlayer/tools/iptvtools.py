@@ -211,6 +211,22 @@ def GetAvailableIconSize(checkAll=True):
 #############################################################
 def GetLogoDir(file = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/logos/') + file
+    
+def GetPyScriptCmd(name):
+    cmd = ''
+    baseName = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/scripts/') + name
+    if fileExists(baseName + '.py'):
+        baseName += '.py'
+    elif fileExists(baseName + '.pyo'):
+        baseName += '.pyo'
+    if baseName != '':
+        for item in ['python', 'python2.7', 'python2.6']:
+            pyPath = Which(item)
+            if '' != pyPath:
+                cmd = '%s %s' % (pyPath, baseName)
+                break
+    return cmd
+    
 def GetCookieDir(file = ''):
     cookieDir = '/tmp/'
     tmpDir = config.plugins.iptvplayer.SciezkaCache.value + '/cookies/'

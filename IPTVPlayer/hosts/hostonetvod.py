@@ -7,7 +7,8 @@
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem
 import Plugins.Extensions.IPTVPlayer.libs.crypto
 import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetLogoDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 # FOREIGN import
 ###################################################
@@ -277,7 +278,7 @@ class API:
     useProxy = config.plugins.iptvplayer.proxyOnet.value
     self.cm = pCommon.common(porxyUrl, useProxy)
 
-  def getVideoTab(self, ckmId):
+  def getVideoTab(self, ckmId, withSubTracks=False):
     #MD5('gastlich') = d2dd64302895d26784c706717a1996b0
     #contentUrl = 'http://vod.pl/' + ckmId + ',d2dd64302895d26784c706717a1996b0.html?dv=aplikacja_androidVOD%2Ffilmy&back=onetvod%3A%2F%2Fback'     
     tm = str(int(time.time() * 1000))
@@ -285,11 +286,20 @@ class API:
     authKey = '22D4B3BC014A3C200BCA14CDFF3AC018'
     contentUrl = 'http://qi.ckm.onetapi.pl/?callback=jQuery183040'+ jQ + '_' + tm + '&body%5Bid%5D=' + authKey + '&body%5Bjsonrpc%5D=2.0&body%5Bmethod%5D=get_asset_detail&body%5Bparams%5D%5BID_Publikacji%5D=' + ckmId + '&body%5Bparams%5D%5BService%5D=vod.onet.pl&content-type=application%2Fjsonp&x-onet-app=player.front.onetapi.pl&_=' + tm
     valTab = []
+    sub_tracks = []
     query_data = {'url': contentUrl, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
     try: 
         data = self.cm.getURLRequestData(query_data)
         #extract json
         result = json.loads(data[data.find("(")+1:-2])
+        try:
+            if 'subtitles' in result['result']['0']['meta']:
+                subTab = byteify( result['result']['0']['meta']['subtitles'] )
+                for sub in subTab:
+                    if sub['url'].split('?')[0].endswith('.srt'):
+                        sub_tracks.append({'title':sub['name'], 'url':sub['url'], 'lang':sub['id'], 'format':'srt'})
+        except:
+            printExc()
         strTab = []
         for items in result['result']['0']['formats']['wideo']:
             for i in range(len(result['result']['0']['formats']['wideo'][items])):
@@ -303,6 +313,8 @@ class API:
                 strTab = []
     except: 
         printExc()
+    if withSubTracks:
+        return sub_tracks, valTab
     return valTab
     
   def getPoster(self, h):
@@ -413,7 +425,7 @@ class IPTVHost(IHost):
         retlist = []
         videoID = self.onet.currList[Index].category
         
-        tab = self.onet.api.getVideoTab(self.onet.currList[Index].category)
+        subTrackTab, tab = self.onet.api.getVideoTab(self.onet.currList[Index].category, True)
         if config.plugins.iptvplayer.onetvodUseDF.value:
             maxRes = int(config.plugins.iptvplayer.onetvodDefaultformat.value) * 1.1
             tab = CSelOneLink( tab, _getLinkQuality, maxRes ).getOneLink()
@@ -421,22 +433,12 @@ class IPTVHost(IHost):
         for item in tab:
             if item[0] == vodonet.FORMAT:
                 nameLink = "type: %s \t bitrate: %s" % (item[0], item[2])
-                url = item[1]
-                retlist.append(CUrlItem(nameLink.encode('utf-8'), url.encode('utf-8'), 0))
+                url = item[1].encode('utf-8')
+                url = strwithmeta(url, {'external_sub_tracks':subTrackTab})
+                retlist.append(CUrlItem(nameLink.encode('utf-8'), url, 0))
             
         return RetHost(RetHost.OK, value = retlist)
-        
-    # return resolved url
-    # for given url
-    def getResolvedURL(self, url):
-        if url != None and url != '':
-            ret = self.onet.resolveUrl(url)
-            list = []
-            list.append(ret)
-            return RetHost(RetHost.OK, value = list)
-        else:
-            return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
-            
+    
     # return full path to player logo
     def getLogoPath(self):  
         return RetHost(RetHost.OK, value = [GetLogoDir('onetvodlogo.png')])

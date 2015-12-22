@@ -516,7 +516,7 @@ class IPTVPlayerWidget(Screen):
         self.stopAutoPlaySequencer()
     
     def sequencerPressOK(self):
-        self.autoPlaySeqTimerValue = 3
+        self.autoPlaySeqTimerValue = config.plugins.iptvplayer.autoplay_start_delay.value
         self["sequencer"].setText(str(self.autoPlaySeqTimerValue))
         self.autoPlaySeqTimer.start(1000)
             

@@ -15,7 +15,7 @@ from Screens.MessageBox  import MessageBox
 from Components.config   import config, configfile
 from Tools.BoundFunction import boundFunction
 from Tools.Directories   import resolveFilename, SCOPE_PLUGINS
-from os                  import path as os_path, chmod as os_chmod, remove as os_remove, listdir as os_listdir
+from os                  import path as os_path, chmod as os_chmod, remove as os_remove, listdir as os_listdir, getpid as os_getpid
 import re
 ###################################################
 
@@ -204,12 +204,17 @@ class IPTVSetupImpl:
     # STEP: GSTREAMER VERSION
     ###################################################
     def getGstreamerVer(self):
-        printDBG("IPTVSetupImpl.getGstreamerVer")
+        printDBG("IPTVSetupImpl.getGstreamerVer >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % os_getpid())
         self.setInfo(_("Detection of the gstreamer version."), None)
         def _verValidator(code, data):
-            if 'GStreamer Core Library version ' in data: return True,False
-            else: return False,True
+            if 'libgstbase-' in data: 
+                return True,False
+            elif 'GStreamer Core Library version ' in data: 
+                return True,False
+            else: 
+                return False,True
         verCmdTab = []
+        verCmdTab.append('cat /proc/%s/maps | grep libgst' % os_getpid())
         if 'sh4' != self.platform:
             verCmdTab.append('gst-launch-1.0 --gst-version')
         verCmdTab.append('gst-launch --gst-version')
@@ -218,8 +223,12 @@ class IPTVSetupImpl:
         
     def getGstreamerVerFinished(self, stsTab, dataTab):
         printDBG("IPTVSetupImpl.getGstreamerVerFinished")
-        if len(stsTab) > 0 and True == stsTab[-1]: 
-            if ' version 1.' in dataTab[-1]:
+        if len(stsTab) > 0 and True == stsTab[-1]:
+            if 'libgstbase-1.0.so' in dataTab[-1]:
+                self.gstreamerVersion = "1.0"
+            elif 'libgstbase-0.10.so' in dataTab[-1]:
+                self.gstreamerVersion = "0.10"
+            elif ' version 1.' in dataTab[-1]:
                 self.gstreamerVersion = "1.0"
             elif ' version 0.' in dataTab[-1]:
                 self.gstreamerVersion = "0.10"
@@ -454,7 +463,9 @@ class IPTVSetupImpl:
             if '{"GSTPLAYER_EXTENDED":{"version":' in data: 
                 try: ver = int(re.search('"version":([0-9]+?)[^0-9]', data).group(1))
                 except: ver = 0
-                if ver >= self.gstplayerVersion.get(self.gstreamerVersion, 0): return True,False
+                if '0.10' != self.gstreamerVersion or ver < 10000:
+                    if ver >= self.gstplayerVersion.get(self.gstreamerVersion, 0): 
+                        return True,False
             return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
