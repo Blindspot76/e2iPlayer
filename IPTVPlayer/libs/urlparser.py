@@ -1532,12 +1532,13 @@ class pageParser:
             HTTP_HEADER['Referer'] = url
             sts, tmp = self.cm.getPage(adUrl, params)
             
-            subTracks = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track ', '>', False, False)
-            for track in subTracks:
+            subTracksData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track ', '>', False, False)
+            subTracks = []
+            for track in subTracksData:
                 if 'kind="captions"' not in track: continue
-                subUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?)"')[0]
-                subLang = self.cm.ph.getSearchGroups(data, 'srclang="([^"]+?)"')[0]
-                subLabel = self.cm.ph.getSearchGroups(data, 'label="([^"]+?)"')[0]
+                subUrl = self.cm.ph.getSearchGroups(track, 'src="(http[^"]+?)"')[0]
+                subLang = self.cm.ph.getSearchGroups(track, 'srclang="([^"]+?)"')[0]
+                subLabel = self.cm.ph.getSearchGroups(track, 'label="([^"]+?)"')[0]
                 subTracks.append({'title':subLabel + '_' + subLang, 'url':subUrl, 'lang':subLang, 'format':'srt'})
             
             linksTab = []
