@@ -33,7 +33,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
     screenwidth = getDesktop(0).size().width()
     if screenwidth and screenwidth == 1920:
         skin = """
-            <screen name="IPTVConfigBaseWidget" position="center,center" size="920,860" title="" >
+            <screen position="center,center" size="920,860" title="" >
                 <widget name="config"    position="10,70" size="900,780" zPosition="1" transparent="1" scrollbarMode="showOnDemand" />
                 <widget name="key_red"   position="10,10" zPosition="2" size="600,35" valign="center" halign="left"   font="Regular;28" transparent="1" foregroundColor="red" />
                 <widget name="key_ok"    position="10,10" zPosition="2" size="600,35" valign="center" halign="center" font="Regular;28" transparent="1" foregroundColor="white" />
@@ -43,7 +43,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
             </screen>"""
     else:
         skin = """
-            <screen name="IPTVConfigBaseWidget" position="center,center" size="620,440" title="" >
+            <screen position="center,center" size="620,440" title="" >
                 <widget name="config"    position="10,50" size="600,370" zPosition="1" transparent="1" scrollbarMode="showOnDemand" />
                 <widget name="key_red"   position="10,10" zPosition="2" size="600,35" valign="center" halign="left"   font="Regular;22" transparent="1" foregroundColor="red" />
                 <widget name="key_ok"    position="10,10" zPosition="2" size="600,35" valign="center" halign="center" font="Regular;22" transparent="1" foregroundColor="white" />
