@@ -303,6 +303,9 @@ class urlparser:
                        'moonwalk.cc':          self.pp.parserMOONWALKCC    ,
                        'serpens.nl':           self.pp.parserMOONWALKCC    ,
                        '37.220.36.15':         self.pp.parserMOONWALKCC    ,
+                       'easyvid.org':          self.pp.parserEASYVIDORG    ,
+                       'playvid.org':          self.pp.parserEASYVIDORG    ,
+                       'mystream.la':          self.pp.parserMYSTREAMLA    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -639,14 +642,14 @@ class pageParser:
             item += '},'
             link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
-            if '' != link:
+            if '://' in link and not link.endswith('.smil'):
                 linksTab.append({'name': '%s %s' % (serverName, label), 'url':link})
                 printDBG('_findLinks A')
         
         if 0 == len(linksTab):
             printDBG('_findLinks B')
             link = self.cm.ph.getSearchGroups(data, linkMarker)[0].replace('\/', '/')
-            if '' != link:
+            if '://' in link and not link.endswith('.smil'):
                 linksTab.append({'name':serverName, 'url':link})
         return linksTab
         
@@ -2339,10 +2342,13 @@ class pageParser:
     def parserEXASHARECOM(self, url):
         printDBG("parserVODLOCKER url[%r]" % url)
         # example video: http://www.exashare.com/s4o73bc1kd8a
-        url =  url.replace('exashare.com', 'openload.info')
+        if 'exashare.com' in url:
+            sts, data = self.cm.getPage(url)
+            if not sts: return
+            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?)["']''', 1, True)[0]
         def _findLinks(data):
-            return self._findLinks(data, 'exashare.com', m1='setup(', m2=')')
-        return self.__parseJWPLAYER_A(url, 'exashare.com', _findLinks)
+            return self._findLinks(data, 'openload.info', m1='setup(', m2=')')
+        return self.__parseJWPLAYER_A(url, 'openload.info', _findLinks)
         
     def parserALLVIDCH(self, url):
         printDBG("parserALLVIDCH url[%r]" % url)
@@ -4366,6 +4372,18 @@ class pageParser:
         printDBG(getF4MLinksWithMeta(data["manifest_f4m"]))
         
         return getDirectM3U8Playlist(data["manifest_m3u8"])
+        
+    def parserEASYVIDORG(self, baseUrl):
+        printDBG("parserEASYVIDORG baseUrl[%r]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks(data, 'easyvid.org')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://easyvid.org/embed-{0}-640x360.html', _findLinks)
+    
+    def parserMYSTREAMLA(self, baseUrl):
+        printDBG("parserMYSTREAMLA baseUrl[%r]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks(data, 'mystream.la')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://mystream.la/external/{0}', _findLinks)
     
     def parserCLOUDYEC(self, baseUrl):
         printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)

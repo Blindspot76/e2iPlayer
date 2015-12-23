@@ -7,4 +7,4 @@
 #zmiana YY powoduje wyzerowanie ZZ
 #zmiana XX powoduje wyzerowanie YY i ZZ
 #usunięcie/zablokowanie hosta nie powoduje zmiany QQ
-IPTV_VERSION="94.00.05.01"
+IPTV_VERSION="95.00.00.00"
