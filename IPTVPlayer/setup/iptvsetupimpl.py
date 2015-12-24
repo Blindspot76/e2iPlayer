@@ -356,7 +356,7 @@ class IPTVSetupImpl:
             return cmd
             
         self.stepHelper = CBinaryStepHelper("uchardet", self.platform, self.openSSLVersion, config.plugins.iptvplayer.uchardetpath)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to determine the encoding of the text.' % ('uchardet')), 1)
+        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to determine the encoding of the text.') % 'uchardet', 1)
         self.stepHelper.setInstallChoiseList( self._uchardetInstallChoiseList )
         self.stepHelper.setPaths( self.uchardetpaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " --version 2>&1 " )
