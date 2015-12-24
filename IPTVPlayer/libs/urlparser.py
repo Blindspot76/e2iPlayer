@@ -2453,23 +2453,27 @@ class pageParser:
     def parserPLAYEREPLAY(self, baseUrl):
         printDBG("parserPLAYEREPLAY baseUrl[%s]" % baseUrl)
         videoIDmarker = "((?:[0-9]){5}\.(?:[A-Za-z0-9]){28})"
-        data = self.cm.ph.getSearchGroups(baseUrl, videoIDmarker)[0]
-        if '' == data: 
-            sts, data = self.cm.getPage(baseUrl)
-            if sts:
-                data = self.cm.ph.getSearchGroups(data, videoIDmarker)[0]
-            else:
-                data = ''
+        HTTP_HEADER = {'User-Agent': "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"}
+
+        COOKIE_FILE = GetCookieDir('playreplaynet.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        sts, data = self.cm.getPage(baseUrl, params)
+        if sts:
+            data = self.cm.ph.getSearchGroups(data, videoIDmarker)[0]
+        if data == '':
+            data = self.cm.ph.getSearchGroups(baseUrl, videoIDmarker)[0]
         if '' != data: 
-            HTTP_HEADER = dict(self.HTTP_HEADER) 
             HTTP_HEADER['Referer'] = baseUrl
-            post_data = {'r':'["tVL0gjqo5",["preview/flv_image",{"uid":"%s"}],["preview/flv_link",{"uid":"%s"}]]' % (data, data)}
-            params = {'header' : HTTP_HEADER}
-            sts, data = self.cm.getPage('http://api.letitbit.net', params, post_data)
+            post_data = {'r':'[["file/flv_link2",{"uid":"%s","link":true}],["file/flv_image",{"uid":"%s","link":true}]]' % (data, data)}
+            #
+            params['header'] = HTTP_HEADER
+            params['load_cookie'] = True
+            sts, data = self.cm.getPage('http://playreplay.net/data', params, post_data)
+            printDBG(data)
             if sts:
-                data = self.cm.ph.getSearchGroups(data, '"link":[ ]*"(http[^"]+?)"')[0].replace('\/', '/')
-                if '' != data:
-                    return strwithmeta(data, {'Range':'0', 'iptv_buffering':'required'})
+                data = byteify(json.loads(data))['data'][0]
+                if 'flv' in data[0]:
+                    return strwithmeta(data[0], {'Range':'0', 'iptv_buffering':'required'})
         return False
         
     def parserVIDEOWOODTV(self, baseUrl):
