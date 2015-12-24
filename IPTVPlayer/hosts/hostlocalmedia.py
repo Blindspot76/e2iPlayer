@@ -59,7 +59,7 @@ def gettytul():
 
 class LocalMedia(CBaseHostClass):
     FILE_SYSTEMS = ['ext2', 'ext3', 'ext4', 'vfat', 'msdos', 'iso9660', 'nfs', 'jffs2', 'autofs', 'cifs', 'ntfs']
-    VIDEO_FILE_EXTENSIONS    = ['avi', 'flv', 'mp4', 'ts', 'mov', 'wmv', 'mpeg', 'mpg', 'mkv', 'vob', 'divx']
+    VIDEO_FILE_EXTENSIONS    = ['avi', 'flv', 'mp4', 'ts', 'mov', 'wmv', 'mpeg', 'mpg', 'mkv', 'vob', 'divx', 'm2ts']
     AUDIO_FILES_EXTENSIONS   = ['mp3', 'm4a', 'ogg', 'wma', 'fla', 'wav']
     PICTURE_FILES_EXTENSIONS = ['jpg', 'jpeg', 'png']
     M3U_FILES_EXTENSIONS     = ['m3u']
