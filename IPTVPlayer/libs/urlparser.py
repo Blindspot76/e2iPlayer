@@ -303,6 +303,9 @@ class urlparser:
                        'moonwalk.cc':          self.pp.parserMOONWALKCC    ,
                        'serpens.nl':           self.pp.parserMOONWALKCC    ,
                        '37.220.36.15':         self.pp.parserMOONWALKCC    ,
+                       'easyvid.org':          self.pp.parserEASYVIDORG    ,
+                       'playvid.org':          self.pp.parserEASYVIDORG    ,
+                       'mystream.la':          self.pp.parserMYSTREAMLA    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -639,14 +642,14 @@ class pageParser:
             item += '},'
             link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
-            if '' != link:
+            if '://' in link and not link.endswith('.smil'):
                 linksTab.append({'name': '%s %s' % (serverName, label), 'url':link})
                 printDBG('_findLinks A')
         
         if 0 == len(linksTab):
             printDBG('_findLinks B')
             link = self.cm.ph.getSearchGroups(data, linkMarker)[0].replace('\/', '/')
-            if '' != link:
+            if '://' in link and not link.endswith('.smil'):
                 linksTab.append({'name':serverName, 'url':link})
         return linksTab
         
@@ -1493,8 +1496,9 @@ class pageParser:
             return False
     '''
             
-    def parserVIDEOMEGA(self,baseUrl):
+    def parserVIDEOMEGA(self, baseUrl):
         video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php|cdn\.php|view\.php)?\?ref=([A-Za-z0-9]+)')[0]
+        if video_id == '': video_id = self.cm.ph.getSearchGroups(baseUrl + '&', 'ref=([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
         COOKIE_FILE = GetCookieDir('videomegatv.cookie')
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'} # (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10' }
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
@@ -1503,49 +1507,75 @@ class pageParser:
         #    iframe_url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
         #    url = 'http://videomega.tv/iframe.php?ref=%s' % (video_id)
         #else:
-        if True:
-            iframe_url = 'http://videomega.tv/?ref=%s' % (video_id)
-            url = 'http://videomega.tv/cdn.php?ref=%s' % (video_id)
-        HTTP_HEADER['Referer'] = iframe_url
-        sts, data = self.cm.getPage(url, params)
-        if not sts: 
-            return False
-        if 'dmca ' in data:
-            DMCA = True
-            SetIPTVPlayerLastHostError("'Digital Millennium Copyright Act' detected.")
-            return False
-        else: DMCA = False
+            
+        for i in range(2):
         
-        adUrl =self.cm.ph.getSearchGroups(data, '"([^"]+?/ad\.php[^"]+?)"')[0]
-        if adUrl.startswith("/"): 
-            adUrl = 'http://videomega.tv' + adUrl
-        
-        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':False} 
-        HTTP_HEADER['Referer'] = url
-        sts, tmp = self.cm.getPage(adUrl, params)
-        
-        #linkVideo  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
-       
-        #data = data[data.rfind('}(')+2:-2]
-        #data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
-        
-        # get JS player script code from confirmation page
-        sts, data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>')
-        if not sts: return False
-        # unpack and decode params from JS player script code
-        data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0)
-        
-        linkVideo  = self.cm.ph.getSearchGroups(data, '"(http[^"]+?\.mp4\?[^"]+?)"')[0]
-        
-        #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        #printDBG("DMCA [%r]" % DMCA)
-        #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        #printDBG(data)
-        #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-        if linkVideo.startswith('http'):
-            linkVideo = urlparser.decorateUrl(linkVideo, {"Orgin": "http://videomega.tv/", 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})
-        else: linkVideo = False #"Cookie": "__cfduid=1", "Range": "bytes=0-",
-        return linkVideo
+            if i == 0:
+                iframe_url = 'http://videomega.tv/?ref=%s' % (video_id)
+                url = 'http://videomega.tv/cdn.php?ref=%s' % (video_id)
+            else:
+                url = 'http://videomega.tv/view.php?ref=%s&width=730&height=440&val=1' % (video_id)
+                iframe_url = url
+            
+            HTTP_HEADER['Referer'] = iframe_url
+            sts, data = self.cm.getPage(url, params)
+            if not sts: 
+                return False
+            if 'dmca ' in data:
+                DMCA = True
+                SetIPTVPlayerLastHostError("'Digital Millennium Copyright Act' detected.")
+                return False
+            else: DMCA = False
+            
+            adUrl =self.cm.ph.getSearchGroups(data, '"([^"]+?/ad\.php[^"]+?)"')[0]
+            if adUrl.startswith("/"): 
+                adUrl = 'http://videomega.tv' + adUrl
+            
+            params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True} 
+            HTTP_HEADER['Referer'] = url
+            sts, tmp = self.cm.getPage(adUrl, params)
+            
+            subTracksData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track ', '>', False, False)
+            subTracks = []
+            for track in subTracksData:
+                if 'kind="captions"' not in track: continue
+                subUrl = self.cm.ph.getSearchGroups(track, 'src="(http[^"]+?)"')[0]
+                subLang = self.cm.ph.getSearchGroups(track, 'srclang="([^"]+?)"')[0]
+                subLabel = self.cm.ph.getSearchGroups(track, 'label="([^"]+?)"')[0]
+                subTracks.append({'title':subLabel + '_' + subLang, 'url':subUrl, 'lang':subLang, 'format':'srt'})
+            
+            linksTab = []
+            fakeLinkVideo  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
+            #if linkVideo.startswith('http'):
+            #    linksTab.append({'name': 'videomega_1', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks, "Orgin": "http://videomega.tv/", 'Range':'bytes=', 'Referer': referer, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})})
+                
+            #data = data[data.rfind('}(')+2:-2]
+            #data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
+            
+            # get JS player script code from confirmation page
+            sts, data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>')
+            if not sts: return False
+            # unpack and decode params from JS player script code
+            data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0)
+            
+            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            printDBG(data)
+            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            
+            linkVideo  = self.cm.ph.getSearchGroups(data, '"(http[^"]+?\.mp4\?[^"]+?)"')[0]
+            
+            if fakeLinkVideo == linkVideo:
+                SetIPTVPlayerLastHostError(_("Videomega has blocked your IP for some time.\nPlease retry this link after some time."))
+                if i == 0: time.sleep(3)
+                continue
+            
+            #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            #printDBG("DMCA [%r]" % DMCA)
+
+            if linkVideo.startswith('http'):
+                linksTab.append({'name': 'videomega_2', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks, "Orgin": "http://videomega.tv/", 'Range':'bytes=', 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})})
+            #"Cookie": "__cfduid=1", "Range": "bytes=0-",
+        return linksTab
 
     def parserVIDTO(self, baseUrl):
         printDBG('parserVIDTO baseUrl[%s]' % baseUrl)
@@ -2312,10 +2342,13 @@ class pageParser:
     def parserEXASHARECOM(self, url):
         printDBG("parserVODLOCKER url[%r]" % url)
         # example video: http://www.exashare.com/s4o73bc1kd8a
-        url =  url.replace('exashare.com', 'openload.info')
+        if 'exashare.com' in url:
+            sts, data = self.cm.getPage(url)
+            if not sts: return
+            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?)["']''', 1, True)[0]
         def _findLinks(data):
-            return self._findLinks(data, 'exashare.com', m1='setup(', m2=')')
-        return self.__parseJWPLAYER_A(url, 'exashare.com', _findLinks)
+            return self._findLinks(data, 'openload.info', m1='setup(', m2=')')
+        return self.__parseJWPLAYER_A(url, 'openload.info', _findLinks)
         
     def parserALLVIDCH(self, url):
         printDBG("parserALLVIDCH url[%r]" % url)
@@ -2420,23 +2453,27 @@ class pageParser:
     def parserPLAYEREPLAY(self, baseUrl):
         printDBG("parserPLAYEREPLAY baseUrl[%s]" % baseUrl)
         videoIDmarker = "((?:[0-9]){5}\.(?:[A-Za-z0-9]){28})"
-        data = self.cm.ph.getSearchGroups(baseUrl, videoIDmarker)[0]
-        if '' == data: 
-            sts, data = self.cm.getPage(baseUrl)
-            if sts:
-                data = self.cm.ph.getSearchGroups(data, videoIDmarker)[0]
-            else:
-                data = ''
+        HTTP_HEADER = {'User-Agent': "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"}
+
+        COOKIE_FILE = GetCookieDir('playreplaynet.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        sts, data = self.cm.getPage(baseUrl, params)
+        if sts:
+            data = self.cm.ph.getSearchGroups(data, videoIDmarker)[0]
+        if data == '':
+            data = self.cm.ph.getSearchGroups(baseUrl, videoIDmarker)[0]
         if '' != data: 
-            HTTP_HEADER = dict(self.HTTP_HEADER) 
             HTTP_HEADER['Referer'] = baseUrl
-            post_data = {'r':'["tVL0gjqo5",["preview/flv_image",{"uid":"%s"}],["preview/flv_link",{"uid":"%s"}]]' % (data, data)}
-            params = {'header' : HTTP_HEADER}
-            sts, data = self.cm.getPage('http://api.letitbit.net', params, post_data)
+            post_data = {'r':'[["file/flv_link2",{"uid":"%s","link":true}],["file/flv_image",{"uid":"%s","link":true}]]' % (data, data)}
+            #
+            params['header'] = HTTP_HEADER
+            params['load_cookie'] = True
+            sts, data = self.cm.getPage('http://playreplay.net/data', params, post_data)
+            printDBG(data)
             if sts:
-                data = self.cm.ph.getSearchGroups(data, '"link":[ ]*"(http[^"]+?)"')[0].replace('\/', '/')
-                if '' != data:
-                    return strwithmeta(data, {'Range':'0', 'iptv_buffering':'required'})
+                data = byteify(json.loads(data))['data'][0]
+                if 'flv' in data[0]:
+                    return strwithmeta(data[0], {'Range':'0', 'iptv_buffering':'required'})
         return False
         
     def parserVIDEOWOODTV(self, baseUrl):
@@ -4339,6 +4376,18 @@ class pageParser:
         printDBG(getF4MLinksWithMeta(data["manifest_f4m"]))
         
         return getDirectM3U8Playlist(data["manifest_m3u8"])
+        
+    def parserEASYVIDORG(self, baseUrl):
+        printDBG("parserEASYVIDORG baseUrl[%r]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks(data, 'easyvid.org')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://easyvid.org/embed-{0}-640x360.html', _findLinks)
+    
+    def parserMYSTREAMLA(self, baseUrl):
+        printDBG("parserMYSTREAMLA baseUrl[%r]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks(data, 'mystream.la')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://mystream.la/external/{0}', _findLinks)
     
     def parserCLOUDYEC(self, baseUrl):
         printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)

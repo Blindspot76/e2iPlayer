@@ -225,10 +225,14 @@ class IPTVSubSimpleDownloaderWidget(Screen):
         self["title"].show()
         
         tmpList = self.params.get('sub_list', [])
-        for item in tmpList:
-            dItem = CDisplayListItem(name = item['title'], type=CDisplayListItem.TYPE_ARTICLE)
-            dItem.privateData = item
-            list.append( (dItem,) )
+        try:
+            for item in tmpList:
+                printDBG(item)
+                dItem = CDisplayListItem(name = item['title'], type=CDisplayListItem.TYPE_ARTICLE)
+                dItem.privateData = item
+                list.append( (dItem,) )
+        except: 
+            printExc()
         self["list"].setList(list)
         self["list"].show()
         self.setListMode(True)

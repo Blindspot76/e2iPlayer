@@ -44,7 +44,7 @@ class IPTVUpdateWindow(Screen):
     skin = """
     <screen name="IPTVUpdateMainWindow" position="center,center" size="620,440" title="" >
             <widget name="sub_title"    position="10,10" zPosition="2" size="600,35"  valign="center" halign="left"   font="Regular;22" transparent="1" foregroundColor="white" />
-            <widget name="list"         position="10,50" zPosition="1" size="600,380" transparent="1" scrollbarMode="showOnDemand" />
+            <widget name="list"         position="10,50" zPosition="1" size="600,380" enableWrapAround="1" transparent="1" scrollbarMode="showOnDemand" />
             <widget name="console"      position="40,200"   zPosition="2" size="540,80" valign="center" halign="center"   font="Regular;34" transparent="0" foregroundColor="white" backgroundColor="black"/>
     </screen>"""
 
