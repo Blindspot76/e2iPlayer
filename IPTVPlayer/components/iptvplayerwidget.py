@@ -1078,6 +1078,8 @@ class IPTVPlayerWidget(Screen):
 
     def loadHost(self):
         self.hostFavTypes = []
+        if os_path.exists(GetPluginDir('scripts/start-' + self.hostName)): # let's run start script for host, if available
+            iptv_system(GetPluginDir('scripts/start-' + self.hostName))
         if not config.plugins.iptvplayer.devHelper.value:
             try:
                 _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['IPTVHost'], -1)
