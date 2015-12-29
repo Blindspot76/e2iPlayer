@@ -215,8 +215,7 @@ class IPTVSetupImpl:
                 return False,True
         verCmdTab = []
         verCmdTab.append('cat /proc/%s/maps | grep libgst' % os_getpid())
-        if 'sh4' != self.platform:
-            verCmdTab.append('gst-launch-1.0 --gst-version')
+        verCmdTab.append('gst-launch-1.0 --gst-version')
         verCmdTab.append('gst-launch --gst-version')
         self.workingObj = CCmdValidator(self.getGstreamerVerFinished, _verValidator, verCmdTab)
         self.workingObj.start()
@@ -492,10 +491,8 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.gstplayerStepFinished sts[%r]" % sts)
         if sts and '0.10' == self.gstreamerVersion:
             self.flumpegdemuxStep()
-        elif 'sh4' != self.platform: 
+        else: 
             self.gstifdsrcStep()
-        else:
-            self.finish()
         
     ###################################################
     # STEP: FLUENDO MPEGDEMUX
