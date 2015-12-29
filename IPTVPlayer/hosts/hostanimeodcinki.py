@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 
@@ -17,8 +17,13 @@ import re
 import urllib
 import time
 import random
-try:    import simplejson as json
-except: import json
+#import base64
+try:    import json
+except: import simplejson as json
+from binascii import hexlify, unhexlify, a2b_hex, a2b_base64
+from hashlib import md5
+
+from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.evp import EVP_BytesToKey
 
 
 ###################################################
@@ -200,6 +205,34 @@ class AnimeOdcinki(CBaseHostClass):
                     params['category'] = 'episodes_list'
                     self.addDir(params)
                 else: self.addVideo(params)
+                
+    def _encryptPlayerUrl(self, data):
+        printDBG("_encryptPlayerUrl data[%s]" % data)
+        decrypted = ''
+        try:
+            from Crypto.Cipher import AES
+            
+            data = byteify( json.loads(data) )
+            salt = a2b_hex(data["v"])
+            key, iv = EVP_BytesToKey(md5, "s05z9Gpd=syG^7{", salt, 32, 16, 1)
+            
+            if iv != a2b_hex(data.get('b', '')):
+                prinDBG("_encryptPlayerUrl IV mismatched")
+                
+            aes = AES.new(key, AES.MODE_CBC, iv, segment_size=128)
+            decrypted = aes.decrypt(a2b_base64(data["a"]))
+            decrypted = decrypted[0:-ord(decrypted[-1])]
+            decrypted = "%s" % json.loads( decrypted ).encode('utf-8')
+            
+            if 0:
+                knownCipherText = a2b_hex(data['a'])
+                kSize = len(bkey)
+                alg = AES(bkey, keySize=kSize, padding=noPadding())
+                decrypted = alg.decrypt(knownCipherText).split('\x00')[0]
+        except:
+            printExc()
+            decrypted = ''
+        return decrypted
     
     def getLinksForVideo(self, cItem):
         printDBG("AnimeOdcinki.getLinksForVideo [%s]" % cItem['url'])
@@ -211,10 +244,9 @@ class AnimeOdcinki(CBaseHostClass):
             sts, data = self.cm.getPage(url)
             if sts:
                 data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', "<ul")[1]
-                printDBG(data)
-                players = re.compile(""">(http[^<]+?)<""").findall(data)
+                players = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="field-items">', '</div>', False)
                 for player in players:
-                    playerUrl = self.cleanHtmlStr( player )
+                    playerUrl = self._encryptPlayerUrl( self.cleanHtmlStr( player ) )
                     if '' != playerUrl:
                         tmpTab = self.up.getVideoLinkExt(playerUrl)
                         urlTab.extend(tmpTab)
