@@ -322,8 +322,9 @@ class urlparser:
         return hostName
         
         
-    def getParser(self, url):
-        host = self.getHostName(url)
+    def getParser(self, url, host=None):
+        if None == host:
+            host = self.getHostName(url)
         parser = self.hostMap.get(host, None)
         if None == parser:
             host2 = host[host.find('.')+1:]
@@ -335,8 +336,14 @@ class urlparser:
         # -1 - not supported
         #  0 - unknown
         #  1 - supported
+        host  = self.getHostName(url)
+        
+        # quick fix
+        if host == 'facebook.com' and 'likebox.php' in url:
+            return 0
+        
         ret = 0
-        parser = self.getParser(url)
+        parser = self.getParser(url, host)
         if None != parser:
             return 1
         return ret
