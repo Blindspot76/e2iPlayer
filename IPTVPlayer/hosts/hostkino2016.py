@@ -291,6 +291,7 @@ class Kino2016PL(CBaseHostClass):
                     url = baseUrl + url[1:]
                 sts, tmp = self.cm.getPage(url)
                 if not sts: continue
+                tmp = re.sub("<!--[\s\S]*?-->", "", tmp)
                 link  = self.cm.ph.getSearchGroups(tmp, '.link=([^"]+?)"')[0]
                 link2 = self.cm.ph.getSearchGroups(tmp, 'link[^;^<]*?"(http[^"]+?)"')[0]
                 if 1 == self.up.checkHostSupport(link2):
