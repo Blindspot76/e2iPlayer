@@ -22,7 +22,7 @@ try:    import json
 except: import simplejson as json
 from binascii import hexlify, unhexlify, a2b_hex, a2b_base64
 from hashlib import md5
-
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc  import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.evp import EVP_BytesToKey
 
 
@@ -210,25 +210,24 @@ class AnimeOdcinki(CBaseHostClass):
         printDBG("_encryptPlayerUrl data[%s]" % data)
         decrypted = ''
         try:
-            from Crypto.Cipher import AES
-            
             data = byteify( json.loads(data) )
             salt = a2b_hex(data["v"])
             key, iv = EVP_BytesToKey(md5, "s05z9Gpd=syG^7{", salt, 32, 16, 1)
             
             if iv != a2b_hex(data.get('b', '')):
                 prinDBG("_encryptPlayerUrl IV mismatched")
-                
-            aes = AES.new(key, AES.MODE_CBC, iv, segment_size=128)
-            decrypted = aes.decrypt(a2b_base64(data["a"]))
-            decrypted = decrypted[0:-ord(decrypted[-1])]
-            decrypted = "%s" % json.loads( decrypted ).encode('utf-8')
             
             if 0:
-                knownCipherText = a2b_hex(data['a'])
-                kSize = len(bkey)
-                alg = AES(bkey, keySize=kSize, padding=noPadding())
-                decrypted = alg.decrypt(knownCipherText).split('\x00')[0]
+                from Crypto.Cipher import AES
+                aes = AES.new(key, AES.MODE_CBC, iv, segment_size=128)
+                decrypted = aes.decrypt(a2b_base64(data["a"]))
+                decrypted = decrypted[0:-ord(decrypted[-1])]
+            else:
+                kSize = len(key)
+                alg = AES_CBC(key, keySize=kSize)
+                decrypted = alg.decrypt(a2b_base64(data["a"]), iv=iv)
+                decrypted = decrypted.split('\x00')[0]
+            decrypted = "%s" % json.loads( decrypted ).encode('utf-8')
         except:
             printExc()
             decrypted = ''
