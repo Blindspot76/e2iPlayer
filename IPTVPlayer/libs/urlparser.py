@@ -2718,17 +2718,22 @@ class pageParser:
             HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
         sts, data = self.cm.getPage(linkUrl, {'header': HTTP_HEADER})
         if not sts: return False
-            
-        file     = self.cm.ph.getSearchGroups(data, 'file=([^&]+?)&')[0]
+        
+        swfUrl = "http://abcast.net/player.swf"
+        file = self.cm.ph.getSearchGroups(data, 'file=([^&]+?)&')[0]
         if file.endswith(".flv"): file = file[0:-4]
         streamer = self.cm.ph.getSearchGroups(data, 'streamer=([^&]+?)&')[0]
         if '' != file:
             url    = "rtmpe://live.abcast.biz/redirect"
-            player = "http://abcast.biz/ab.swf"
             url = streamer
-            player = "http://abcast.net/player.swf"
-            url += ' playpath=%s swfUrl=%s pageUrl=%s' % (file, player, linkUrl)
+            url += ' playpath=%s swfUrl=%s pageUrl=%s' % (file, swfUrl, linkUrl)
             printDBG(url)
+            return url
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'setup({', '});', True)[1]
+        url    = self.cm.ph.getSearchGroups(data, 'streamer[^"]+?"(rtmp[^"]+?)"')[0]
+        file   = self.cm.ph.getSearchGroups(data, 'file[^"]+?"([^"]+?)"')[0]
+        if '' != file and '' != url:
+            url += ' playpath=%s swfUrl=%s pageUrl=%s ' % (file, swfUrl, linkUrl)
             return url
         return False
         
