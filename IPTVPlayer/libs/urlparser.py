@@ -2749,11 +2749,17 @@ class pageParser:
         file     = self.cm.ph.getSearchGroups(data, 'file=([^&]+?)&')[0]
         if file.endswith(".flv"): file = file[0:-4]
         streamer = self.cm.ph.getSearchGroups(data, 'streamer=([^&]+?)&')[0]
+        swfUrl = "http://openlive.org/player.swf"
         if '' != file:
             url = streamer
-            player = "http://openlive.org/player.swf"
-            url += ' playpath=%s swfUrl=%s pageUrl=%s' % (file, player, linkUrl)
+            url += ' playpath=%s swfUrl=%s pageUrl=%s' % (file, swfUrl, linkUrl)
             printDBG(url)
+            return url
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'setup({', '});', True)[1]
+        url    = self.cm.ph.getSearchGroups(data, 'streamer[^"]+?"(rtmp[^"]+?)"')[0]
+        file   = self.cm.ph.getSearchGroups(data, 'file[^"]+?"([^"]+?)"')[0]
+        if '' != file and '' != url:
+            url += ' playpath=%s swfUrl=%s pageUrl=%s ' % (file, swfUrl, linkUrl)
             return url
         return False
         
@@ -3466,8 +3472,8 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
-        links = urlparser().getAutoDetectedStreamLink(Referer, data)
-        printDBG(data)
+        baseUrl.meta['Referer'] = baseUrl
+        links = urlparser().getAutoDetectedStreamLink(baseUrl, data)
         return links
         
         
