@@ -1367,6 +1367,9 @@ class IPTVExtMoviePlayer(Screen):
             if config.plugins.iptvplayer.dts_software_decode.value:
                 cmd += ' -d '
                 
+            if 'lpcm' == config.plugins.iptvplayer.software_decode_as.value: 
+                cmd += ' -l '
+            
             if config.plugins.iptvplayer.aac_software_decode.value:
                 cmd += ' -a -p 10'
             elif config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7'):
