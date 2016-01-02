@@ -74,6 +74,7 @@ class IPTVSubtitlesHandler:
                     except:
                         if '' == st[0]: i = 1
                         else: i = 0
+                    if len(st)<(i+2): continue
                     split = st[i].split(' --> ')
                     subAtoms.append( { 'start':self._srtTc2ms(split[0].strip()), 'end':self._srtTc2ms(split[1].strip()), 'text':self._srtClearText('\n'.join(j for j in st[i+1:len(st)])) } )
                 except:
