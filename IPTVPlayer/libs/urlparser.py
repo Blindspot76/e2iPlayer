@@ -306,6 +306,7 @@ class urlparser:
                        'easyvid.org':          self.pp.parserEASYVIDORG    ,
                        'playvid.org':          self.pp.parserEASYVIDORG    ,
                        'mystream.la':          self.pp.parserMYSTREAMLA    ,
+                       'ok.ru':                self.pp.parserOKRU          ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4406,7 +4407,27 @@ class pageParser:
         def _findLinks(data):
             return self._findLinks(data, 'mystream.la')
         return self._parserUNIVERSAL_A(baseUrl, 'http://mystream.la/external/{0}', _findLinks)
-    
+        
+    def parserOKRU(self, baseUrl):
+        printDBG("parserOKRU baseUrl[%r]" % baseUrl)
+        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([0-9]+)/')[0]
+        if video_id == '': return False
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0',
+                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                       'Referer':baseUrl,
+                       'Cookie':'_flashVersion=18',
+                       'X-Requested-With':'XMLHttpRequest'}
+        url = 'http://ok.ru/dk?cmd=videoPlayerMetadata&mid=%s' % video_id
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts: return False
+        data = byteify(json.loads(data))
+        urlsTab = []
+        for item in data['videos']:
+            url = item['url'].replace('&ct=4&', '&ct=0&') + '&bytes'#=0-7078'
+            url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            urlsTab.append({'name':item['name'], 'url':url})
+        return urlsTab[::-1]
+        
     def parserCLOUDYEC(self, baseUrl):
         printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)
         #based on https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/cloudy.py

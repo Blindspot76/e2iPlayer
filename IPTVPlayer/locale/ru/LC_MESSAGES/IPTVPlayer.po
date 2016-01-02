@@ -751,10 +751,10 @@ msgid "Filmy"
 msgstr "Фильмы"
 
 msgid "First move player in buffering mode"
-msgstr "Выбрать первый шаг плеера в режиме (буферизации)"
+msgstr "Выбор плеера в режиме (буферизации)"
 
 msgid "First move player without buffering mode"
-msgstr "Выбрать первый шаг плеера"
+msgstr "Выбор плеера"
 
 msgid "Fluendo mpegdemux for GSTREAMER 0.10"
 msgstr "Сделать текучий mpegdemux для GSTREAMER 0.10"
@@ -1557,10 +1557,10 @@ msgid "Search youtube materials "
 msgstr "Поиск материалов в YouTube"
 
 msgid "Second move player in buffering mode"
-msgstr "Выбрать второй шаг плеера в режиме (буферизации)"
+msgstr "Выбор плеера в режиме (буферизации)"
 
 msgid "Second move player without buffering mode"
-msgstr "Выбрать второй шаг плеера"
+msgstr "Выбор плеера"
 
 msgid "Select"
 msgstr "Выбрать"
@@ -1736,7 +1736,7 @@ msgid "Step [%s] cannot be aborted. Please wait."
 msgstr "Активация [%s] не может быть прервана. Пожалуйста, подождите."
 
 msgid "Stereo downmix mode for software decoder"
-msgstr "Стерео микширование для декодера п/о"
+msgstr "Стерео микширование для декодера П/О"
 
 msgid "Stop"
 msgstr "Стоп"
@@ -2252,7 +2252,7 @@ msgid "after three days"
 msgstr "после трех дней"
 
 msgid "all types"
-msgstr "все типы"
+msgstr "Все типы"
 
 msgid "alltube.tv"
 msgstr "все tube.тв"
@@ -2474,7 +2474,7 @@ msgid "polski"
 msgstr "польский"
 
 msgid "precompiled"
-msgstr "перекомпилированные"
+msgstr "Перекомпилированные"
 
 msgid "purple"
 msgstr "пурпурный"
@@ -2564,7 +2564,7 @@ msgid "white"
 msgstr "белый"
 
 msgid "with source code"
-msgstr "с исходным кодом"
+msgstr "С исходным кодом"
 
 msgid "worst"
 msgstr "наихудший"
@@ -2583,6 +2583,24 @@ msgstr "Успешно."
 
 msgid "Autoplay start delay"
 msgstr "Автозапуск задержки пуска"
+
+msgid "Movie categories"
+msgstr "Категории фильмов"
+
+msgid "http://hdkinomir.com/"
+msgstr "HDКиномир"
+
+msgid "---UPDATE---"
+msgstr "---ОБНОВИТЬ---"
+
+msgid "UPDATE MENU"
+msgstr "МЕНЮ ОБНОВЛЕНИЕ"
+
+msgid "----------------- External exteplayer3 options -----------------"
+msgstr "----------------- Внешние опции exteplayer3 -----------------"
+
+msgid "Software decoding as"
+msgstr "П/O как декодирование"
 
 msgid "youtube.com"
 msgstr "ютубе.com"
