@@ -69,7 +69,7 @@ class IPTVSubtitlesHandler:
             if len(st)>=2:
                 try:
                     try:
-                        tmp = int(st[0])
+                        tmp = int(st[0].strip())
                         i = 1
                     except:
                         if '' == st[0]: i = 1
