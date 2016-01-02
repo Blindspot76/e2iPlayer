@@ -63,10 +63,19 @@ class IPTVSubtitlesHandler:
         for idx in range(len(srtText)):
             line += 1
             st = srtText[idx].split('\n')
-            if len(st)>=3:
+            #printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            #printDBG(st)
+            #printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            if len(st)>=2:
                 try:
-                    split = st[1].split(' --> ')
-                    subAtoms.append( { 'start':self._srtTc2ms(split[0].strip()), 'end':self._srtTc2ms(split[1].strip()), 'text':self._srtClearText('\n'.join(j for j in st[2:len(st)])) } )
+                    try:
+                        tmp = int(st[0])
+                        i = 1
+                    except:
+                        if '' == st[0]: i = 1
+                        else: i = 0
+                    split = st[i].split(' --> ')
+                    subAtoms.append( { 'start':self._srtTc2ms(split[0].strip()), 'end':self._srtTc2ms(split[1].strip()), 'text':self._srtClearText('\n'.join(j for j in st[i+1:len(st)])) } )
                 except:
                     printExc("Line number [%d]" % line)
         return subAtoms

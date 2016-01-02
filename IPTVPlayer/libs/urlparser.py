@@ -4007,6 +4007,18 @@ class pageParser:
             if not data['sts'] or 0 != data['code']: return False
             data = data['data']
         
+        subTracksData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track ', '>', False, False)
+        subTracks = []
+        for track in subTracksData:
+            if 'kind="captions"' not in track: continue
+            subUrl = self.cm.ph.getSearchGroups(track, 'src="([^"]+?)"')[0]
+            if subUrl.startswith('/'):
+                subUrl = 'http://openload.co' + subUrl
+            if subUrl.startswith('http'):
+                subLang = self.cm.ph.getSearchGroups(track, 'srclang="([^"]+?)"')[0]
+                subLabel = self.cm.ph.getSearchGroups(track, 'label="([^"]+?)"')[0]
+                subTracks.append({'title':subLabel + '_' + subLang, 'url':subUrl, 'lang':subLang, 'format':'srt'})
+                
         # start https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         def decodeOpenLoad(html):
 
@@ -4056,7 +4068,9 @@ class pageParser:
             printExc()
             SetIPTVPlayerLastHostError( self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead">', '</p>', False)[1] )
             return False
-        if videoUrl.startswith('http'): return videoUrl.replace('https://', 'http://').replace('\\/', '/')
+        if videoUrl.startswith('http'): 
+            videoUrl = videoUrl.replace('https://', 'http://').replace('\\/', '/')
+            return urlparser.decorateUrl(videoUrl, {'external_sub_tracks':subTracks})
         return False
         
     def parserGAMETRAILERS(self, baseUrl):
