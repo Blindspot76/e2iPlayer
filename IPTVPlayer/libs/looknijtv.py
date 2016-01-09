@@ -27,10 +27,10 @@ class LooknijTvApi:
         printDBG("LooknijTvApi.getCategoriesList")
         #  FILM     
         catsList = [{'title':'ALL', 'url':'all'},
-                    {'title':'DLA DZIECI', 'url':'dla-dzieci'},
+                    {'title':'DLA DZIECI', 'url':'dzieci'},
                     {'title':'DLA KOBIET', 'url':'dla-kobiet'},
                     {'title':'FILM',       'url':'film'},
-                    {'title':'INFORMACJE', 'url':'informacje'},
+                    {'title':'INFORMACJE', 'url':'info'},
                     {'title':'ROZRYWKA',   'url':'rozrywka'},
                     {'title':'SERIALE',    'url':'seriale'},
                     {'title':'SPORT',      'url':'sport'}]
@@ -61,5 +61,7 @@ class LooknijTvApi:
             r = self.cm.ph.getSearchGroups(tmp, '(rtmp://[^"]+?)"')[0]
             path = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
             if r.startswith('rtmp'):
+                if '' != path and not r.endswith('/') and not path.startswith('/'):
+                    path = '/' + path
                 return r + path + ' live=1' #swfUrl=%s
         return ''
