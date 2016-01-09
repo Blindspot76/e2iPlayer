@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
 ###################################################
 
 ###################################################
@@ -87,7 +88,7 @@ class StreamLiveTo(CBaseHostClass):
     def fillCategories(self):
         printDBG("StreamLiveTo.fillCategories")
         self.cacheFilters = {}
-        sts, data = self.cm.getPage(self._getFullUrl('channels/'))
+        sts, data = self.cm.getPage(self._getFullUrl('channels/'), self.defaultParams)
         if not sts: return
         
         catTab = []
@@ -150,7 +151,7 @@ class StreamLiveTo(CBaseHostClass):
         url = 'channels/{0}?p={1}&q={2}&lang={3}&sort={4}'.format(cat, page, q, lang, sort)
         url = self._getFullUrl(url)
 
-        sts, data = self.cm.getPage(url)
+        sts, data = self.cm.getPage(url, self.defaultParams)
         if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'class="pages"', '</p>', False)[1]
@@ -197,7 +198,45 @@ class StreamLiveTo(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})
-
+        
+    def checkBotProtection(self):
+        printDBG("StreamLiveTo.checkBotProtection")
+        captchaMarker = 'name="captcha"'
+        url = self.MAIN_URL
+        sts, data = self.cm.getPage(url, self.defaultParams)
+        if not sts: return False
+        if captchaMarker not in data: return False
+        data     = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form [^>]+?>'), re.compile('</form>'), True)[1]    
+        title    = self.cm.ph.getDataBeetwenMarkers(data, '<h1>', '</h1>')[1]
+        question = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('</h1>'), re.compile('</form>'), True)[1]
+        
+        title = self.cleanHtmlStr(title)
+        question = self.cleanHtmlStr(question)
+        
+        from copy import deepcopy
+        params = deepcopy(IPTVMultipleInputBox.DEF_PARAMS)
+        params['accep_label'] = _('Send')
+        params['title'] = title
+        params['list'] = []
+        item = deepcopy(IPTVMultipleInputBox.DEF_INPUT_PARAMS)
+        item['label_size'] = (550,50 + 25 * question.count('\n'))
+        item['title'] = question
+        item['input']['text'] = ''
+        params['list'].append(item)
+        
+        retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleInputBox, params)
+        printDBG(retArg)
+        if retArg and 1 == len(retArg) and retArg[0] and 1 == len(retArg[0]):
+            answer = '%s' % retArg[0][0]
+            sts, data = self.cm.getPage(url, self.defaultParams, {'captcha':answer})
+            if not sts: return False
+            resultMarker = 'Your answer is wrong.'
+            if  resultMarker in data:
+                self.sessionEx.open(MessageBox, resultMarker, type = MessageBox.TYPE_ERROR, timeout = 10 )
+            else:
+                return True
+        return False
+        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -212,7 +251,8 @@ class StreamLiveTo(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            if self.checkBotProtection():
+                self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category == 'category':
             self.listCategory(self.currItem, 'language')
         elif category == 'language':
