@@ -182,7 +182,7 @@ class NocnySeansPL(CBaseHostClass):
             nextPage = True
         else: nextPage = False
         
-        data = CParsingHelper.getDataBeetwenMarkers(data, 'name="filter-year">', '<div class="col-xs-12">', False)[1]
+        data = CParsingHelper.getDataBeetwenMarkers(data, '"filter-year">', '<div class="col-xs-12">', False)[1]
         data = data.split('<div class="normal radius">')
         if len(data): del data[0]
         for item in data:
