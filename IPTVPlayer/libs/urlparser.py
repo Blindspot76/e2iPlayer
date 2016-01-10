@@ -3920,16 +3920,16 @@ class pageParser:
         channel = _url_re.match(baseUrl).group("channel")
         
         # get link for mobile
-        tmpUrl ='http://www.streamlive.to/view/%s' % channel
-        userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
-        sts, data = self.cm.getPage(tmpUrl, {'header':{'User-Agent':userAgent}})
-        if sts:
-            hlsUrl = self.cm.ph.getSearchGroups(data, '<video[^>]+?src="([^"]+?)"')[0]
-            hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
-            return getDirectM3U8Playlist(hlsUrl)
-        return False
+        linkUrl ='http://www.streamlive.to/view/%s' % channel
+        if 0:
+            userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
+            sts, data = self.cm.getPage(linkUrl, {'header':{'User-Agent':userAgent}})
+            if sts:
+                hlsUrl = self.cm.ph.getSearchGroups(data, '<video[^>]+?src="([^"]+?)"')[0]
+                hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
+                return getDirectM3U8Playlist(hlsUrl)
+            return False
         
-        linkUrl = "http://www.streamlive.to/embedplayer_new.php?width=640&height=480&channel={0}&autoplay=true".format(channel)
         sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
         if not sts: return False 
         
@@ -3948,7 +3948,7 @@ class pageParser:
         def _getParam(name):
             return self.cm.ph.getSearchGroups(data, """['"]*%s['"]*[^'^"]+?['"]([^'^"]+?)['"]""" % name)[0].replace('\\/', '/')
         
-        swfUrl  = "http://www.streamlive.to/ads/embed/player_ilive_embed.swf"
+        swfUrl  = "http://www.streamlive.to/player/ilive-plugin.swf"
         streamer = _getParam('streamer')
         file     = _getParam('file').replace('.flv', '')
         app      = 'edge/' + streamer.split('/edge/')[-1]
