@@ -205,7 +205,7 @@ class StreamLiveTo(CBaseHostClass):
         url = self.MAIN_URL
         sts, data = self.cm.getPage(url, self.defaultParams)
         if not sts: return False
-        if captchaMarker not in data: return False
+        if captchaMarker not in data: return True
         data     = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form [^>]+?>'), re.compile('</form>'), True)[1]    
         title    = self.cm.ph.getDataBeetwenMarkers(data, '<h1>', '</h1>')[1]
         question = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('</h1>'), re.compile('</form>'), True)[1]
