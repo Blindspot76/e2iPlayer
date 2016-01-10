@@ -135,6 +135,10 @@ class TvpVod(CBaseHostClass):
     def _getFullUrl(self, url, baseUrl=None):
         if None == baseUrl: baseUrl = TvpVod.MAIN_VOD_URL
         if 0 < len(url) and not url.startswith('http'):
+            if not baseUrl.endswith('/'):
+                baseUrl += '/'
+            if url.startswith('/'):
+                url = url[1:]
             url =  baseUrl + url
         return url
         
