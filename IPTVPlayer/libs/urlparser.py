@@ -3002,7 +3002,6 @@ class pageParser:
             #self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
         def _getParamVal(value, name):
             return value
-            
         data = self.cm.ph.getDataBeetwenMarkers(data, '<script type="text/javascript">', '</script>', False)[1]
         vars = dict( re.compile('''var ([^=]+?)=[^']*?'([^']+?)['];''').findall(data) )
         printDBG("===================================")
@@ -3011,6 +3010,26 @@ class pageParser:
         addCode = ''
         for item in vars:
             addCode += '%s="%s"\n' % (item, vars[item])
+            
+        funData = re.compile('function ([^\(]*?\([^\)]*?\))[^\{]*?\{([^\{]*?)\}').findall(data)
+        pyCode = addCode
+        for item in funData:
+            funHeader = item[0]
+            
+            funBody = item[1]
+            funIns = funBody.split(';')
+            funBody = ''
+            for ins in funIns:
+                ins = ins.replace('var', ' ').strip()
+                funBody += '\t%s\n' % ins
+            if '' == funBody.replace('\t', '').replace('\n', '').strip():
+                continue
+            pyCode += 'def %s:' % funHeader.strip() + '\n' + funBody
+            
+        addCode = pyCode
+        printDBG("===================================")
+        printDBG(pyCode)
+        printDBG("===================================")
             
         swfUrl = unpackJS(_getParam('flashplayer'), _getParamVal, addCode)
         url    = unpackJS(_getParam('streamer'), _getParamVal, addCode)
@@ -3566,7 +3585,9 @@ class pageParser:
         swfUrl = "http://pxstream.tv/player510.swf"
         url    = _getParam('streamer')
         file   = _getParam('file')
-        if '' != file and '' != url:
+        if file.split('?')[0].endswith('.m3u8'):
+            return getDirectM3U8Playlist(file)
+        elif '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
             printDBG(url)
             return url
