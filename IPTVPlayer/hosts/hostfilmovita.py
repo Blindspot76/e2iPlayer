@@ -80,6 +80,15 @@ class Filmovita(CBaseHostClass):
         if not mainUrl.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
+        
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
+        params.update({'header':HTTP_HEADER})        
+        printDBG(url)
+        proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote_plus(url))
+        params['header']['Referer'] = proxy
+        url = proxy
+        return self.cm.getPage(url, params, post_data)
 
     def listsTab(self, tab, cItem, type='dir'):
         printDBG("Filmovita.listsTab")
@@ -228,9 +237,13 @@ class Filmovita(CBaseHostClass):
                     continue
                 if '' != linksUrl:
                     urlTab.append({'name':self.up.getHostName(linksUrl), 'url':linksUrl, 'need_resolve':1})
-            elif 'serijex.com' in linksUrl:
+            elif 'serijex.com' in linksUrl or 'filmovita.com' in linksUrl:
                 name = item[1].replace('Gledaj na video servisu', '').strip()
-                urlTab.append({'name':name, 'url':linksUrl, 'need_resolve':1})
+                fakeUrl = name
+                if '://' not in fakeUrl:
+                    fakeUrl = 'http://' + fakeUrl + '/fake'
+                if 'serijex.com' in linksUrl or 1 == self.up.checkHostSupport(fakeUrl): 
+                    urlTab.append({'name':name, 'url':linksUrl, 'need_resolve':1})
         
         if 'serijex.com' in cItem['url']:
             enigmav = self.cm.ph.getSearchGroups(mainData, '''data-enigmav=['"]([^'^"]+?)['"]''')[0]
@@ -276,7 +289,7 @@ class Filmovita(CBaseHostClass):
             printDBG("---------------------------------------")
             return kode
         if 'filmovita.com' in baseUrl or 'serijex.com' in baseUrl:
-            sts, data = self.cm.getPage(baseUrl)
+            sts, data = self.getPage(baseUrl)
             if not sts: return []
             baseUrl = ''
             kode = self.cm.ph.getSearchGroups(data, 'var kode="(.+?)";var')[0]

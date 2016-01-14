@@ -319,6 +319,7 @@ class urlparser:
             if (nameOnly):
                 n = hostName.split('.')
                 hostName = n[-2]
+        hostName = hostName.lower()
         printDBG("_________________getHostName: [%s] -> [%s]" % (url, hostName))
         return hostName
         
