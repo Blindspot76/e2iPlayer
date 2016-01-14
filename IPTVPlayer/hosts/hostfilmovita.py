@@ -69,6 +69,8 @@ class Filmovita(CBaseHostClass):
         self.seriesCache = {}
         
     def _getFullUrl(self, url, series=False):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote(url.split('?q=')[1])
         if url.startswith('//'):
             return 'http:' + url
         if not series:
@@ -205,7 +207,7 @@ class Filmovita(CBaseHostClass):
         printDBG("Filmovita.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        sts, mainData = self.cm.getPage(cItem['url'])
+        sts, mainData = self.getPage(cItem['url'])
         if not sts: return urlTab
         
         m1 = '<div class="entry-content">'
@@ -222,7 +224,7 @@ class Filmovita(CBaseHostClass):
         tab = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<', re.IGNORECASE).findall(tmp)
         if len(tab): linksUrlTab.extend(tab)
         for item in linksUrlTab:
-            linksUrl = item[0]
+            linksUrl = self._getFullUrl( item[0] )
             if 1 == self.up.checkHostSupport(linksUrl): 
                 if 'videomega.tv/validatehash.php?' in linksUrl:
                     sts, data = self.cm.getPage(linksUrl, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
@@ -263,7 +265,7 @@ class Filmovita(CBaseHostClass):
         else:
             linksUrl = self.cm.ph.getSearchGroups(mainData, '''["']([^'^"]+?/links/[^'^"]+?)["']''')[0] 
             if linksUrl != '':
-                sts, data = self.cm.getPage(self._getFullUrl(linksUrl))
+                sts, data = self.getPage(self._getFullUrl(linksUrl))
                 if not sts: return urlTab
                 data = self.cm.ph.getDataBeetwenMarkers(data, '<body>', '</body>', False)[1]
                 data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(data)
