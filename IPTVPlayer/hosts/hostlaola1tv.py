@@ -15,6 +15,9 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 ###################################################
 # FOREIGN import
 ###################################################
+import datetime
+import random
+import time
 import re
 import urllib
 import base64
@@ -69,13 +72,17 @@ class Laola1TV(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'Laola1TV', 'cookie':'Laola1TV.cookie'})
         self.mainCache = {}
         
-    def _getFullUrl(self, url):
+    def _getFullUrl(self, url, baseUrl=None):
+        if baseUrl == None:
+            baseUrl = self.MAIN_URL
         if url.startswith('//'):
             url = 'http:' + url
         elif 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
+            if url.startswith('/'):
+                url = url[1:]
+            url =  baseUrl + url
         
-        if self.MAIN_URL.startswith('https://'):
+        if baseUrl.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
 
@@ -97,159 +104,152 @@ class Laola1TV(CBaseHostClass):
                 self.addVideo(params)
             else: 
                 self.addDir(params)
+                
+    def listFromCache(self, cItem, key=None):
+        if 'cache_key' in cItem:
+            key = cItem['cache_key']
+        printDBG('Laola1TV.listFromCache key[%s]' % key)
+        
+        tab = self.mainCache.get(key, [])
+        for item in tab:
+            params = dict(cItem)
+            params.update(item)
+            self.addDir(params)
             
-    def listMainMenu(self):
-        sts, data = self.getPage( self.getMainUrl() + 'home/0.html' )
+    def listMainMenu(self, cItem):
+        printDBG('Laola1TV.listMainMenu')
+        sts, data = self.getPage( self.getMainUrl() + 'home/' )
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul>', '<li class="heading">More</li>', False)[1]
-        data = data.split('<li class="heading">')
+        
+        # live
+        liveUrl = self.cm.ph.getSearchGroups(data, '<a href="([^"]+?)" class="live">')[0]
+        liveTitle = self.cm.ph.getDataBeetwenMarkers(data, 'class="live">', '</a>', False)[1]
+        params = dict(cItem)
+        params.update({'category':'calendar', 'title':self.cleanHtmlStr(liveTitle), 'url':self._getFullUrl( liveUrl )})
+        self.addDir(params)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="level1">', '</div>', False)[1]
+        data = data.split('<li class="active">')
         if len(data): del data[0]
         
-        # remove first one because it is user sub
-        if len(data): del data[0]
+        def _getLastItems(data, baseItem):
+            retTab = []
+            data = data.split('</a>')
+            if len(data): del data[-1]
+            for item in data:
+                params = dict(baseItem)
+                url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                title = self.cleanHtmlStr(item)
+                params.update({'url':self._getFullUrl( url ), 'title':title})
+                retTab.append(params)
+            return retTab
+                
         self.mainCache = {}
-        
-        for cat in data:
-            m1 = '</li>'
-            idx = cat.find(m1)
-            if idx < 0: continue
-            catTitle = self.cleanHtmlStr( cat[:idx] )
-            
-            tmpTab = []
-            if '<li class=" has_sub">' not in cat:
-                cat = cat[idx+len(m1):]
-                cat = cat.split('</li>')
-                if len(cat): del cat[-1]
-                for item in cat:
-                    url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-                    icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-                    title  = self.cleanHtmlStr(item)
-                    category = ''
-                    if '/ehftv/' in url: continue
-                    if '/video/' in url:
-                        category = 'video'
-                    elif '/home/' in url:
-                        category = 'videos_list'
-                    elif '/calendar/' in url:
-                        category = 'calendar'
-                    elif '"noparent"' in item:
-                        category = 'videos_list'
+        self.mainCache['level_1'] = []
+        for itemL1 in data:
+            dataL2 = itemL1.split('<ul class="level2">')
+            if 1 == len(dataL2):
+                subItems = _getLastItems(itemL1, {'category':'explore_page', 'level':'1'})
+                self.mainCache['level_1'].extend( subItems )
+            elif 1 < len(dataL2):
+                titleL2 = self.cleanHtmlStr(dataL2[0])
+                cacheKey2 = 'level_2_%s' % titleL2
+                self.mainCache[cacheKey2] = []
+                            
+                del dataL2[0]
+                for itemL2 in dataL2:
+                    if '<ul class="level3">' in itemL2:
+                        dataL3 = itemL2.split('<span class="level2point">') #'<ul class="level3">')
                     else:
-                        category = 'sub_category'
-                    if '' != title and '' != url:
-                        tmpTab.append({'title':title, 'icon':icon, 'url':self._getFullUrl(url), 'category':category})
-            else:
-                subCat = cat.split('<li class=" has_sub">')
-                if len(subCat): del subCat[0]
-                for sub in subCat:
-                    m1 = '</a>'
-                    idx = sub.find(m1)
-                    if idx < 0: continue
-                    subCatTitle = self.cleanHtmlStr( sub[:idx] )
-                    subCatIcon  = self.cm.ph.getSearchGroups(sub[:idx], 'src="([^"]+?)"')[0] 
-                    subItems = sub[idx+len(m1):]
-                    subItems = sub.split('</li>')
-                    if len(subItems): del subItems[-1]
-                    printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> subCatTitle[%s]' % subCatTitle)
-                    tmpTab2 = []
-                    for item in subItems:
-                        url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-                        icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-                        title  = self.cleanHtmlStr(item)
-                        if '' != title and '' != url:
-                            tmpTab2.append({'title':title, 'icon':icon, 'url':self._getFullUrl(url), 'category':'videos_list'})
-                    if len(tmpTab2):
-                        self.mainCache[catTitle + '_' + subCatTitle] = tmpTab2
-                        tmpTab.append({'title':subCatTitle, 'cat_id':catTitle + '_' + subCatTitle, 'url':'', 'category':'main'}) #, 'icon':subCatIcon
-            if len(tmpTab):
-                self.mainCache[catTitle] = tmpTab
-                self.addDir({'title':catTitle, 'cat_id':catTitle, 'category':'main'})
-
-            printDBG(catTitle)
-            
-    def listFromCache(self, cItem):
-        printDBG("Laola1TV.listFromCache")
-        data = self.mainCache.get(cItem['cat_id'], [])
-        mainItem = dict(cItem)
-        self.listsTab(data, cItem)
+                        dataL3 = [itemL2]
+                    if 1 == len(dataL3):
+                        subItems = _getLastItems(itemL2, {'category':'explore_page', 'level':'2'})
+                        self.mainCache[cacheKey2].extend( subItems )
+                        self.mainCache['level_1'].append({'title':titleL2, 'category':'list_cache_cat', 'cache_key':cacheKey2, 'level':'2'})
+                    elif 1 < len(dataL3):
+                        for itemL3 in dataL3:
+                            tmp = itemL3.split('<ul class="level3">')
+                            if 2 != len(tmp): continue
+                            titleL3 = self.cleanHtmlStr(tmp[0])
+                            cacheKey3 = 'level_3_%s_%s' % (titleL2, titleL3)
+                            subItems = _getLastItems(tmp[1], {'category':'explore_page', 'level':'3'})
+                            self.mainCache[cacheKey2].append({'title':titleL3, 'category':'list_cache_cat', 'cache_key':cacheKey3, 'level':'3'})
+                            self.mainCache[cacheKey3] = subItems
+                        self.mainCache['level_1'].append({'title':titleL2, 'category':'list_cache_cat', 'cache_key':cacheKey2, 'level':'2'})
+        
+        self.listFromCache(cItem, 'level_1')
+        
+    def explorePage(self, cItem):
+        printDBG("Laola1TV.explorePage")
+        sts, data = self.getPage( cItem['url'] )
+        if not sts: return
+        
+        m1 = '<div class="teaser-title'
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '</section>', False)[1]
+        data = data.split(m1)
+        
+        for item in data:
+            tmp = item.split('<div class="teaser-list"')
+            if 2 != len(tmp): continue
+            url   = self.cm.ph.getSearchGroups(tmp[0], 'href="([^"]+?)"')[0]
+            icon  = self.cm.ph.getSearchGroups(tmp[0], 'src="([^"]+?)"')[0]
+            title = self.cm.ph.getDataBeetwenMarkers(tmp[0], '<h2>', '</h2>', False)[1]
+            desc  = self.cm.ph.getDataBeetwenMarkers(tmp[0], '<p>', '</p>', False)[1]
+            if url != '':
+                params = dict(cItem)
+                params.update({'category':'videos_list', 'url':self._getFullUrl( url ), 'title':self.cleanHtmlStr( title ), 'icon':self._getFullUrl( icon ), 'desc':self.cleanHtmlStr( desc )})
+                self.addDir( params )
         
     def listCalendary(self, cItem):
         printDBG("Laola1TV.listCalendary")
         sts, data = self.getPage(cItem['url'])
         if not sts: return 
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="liveprogramm_full"', '<div class="crane_footer has_rightbar inline_footer">', False)[1]
         
-        data = data.split('<div class="stream ')
-        if len(data): del data[0]
-        nextPage = False
+        data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<ul class="list list-day day-[^"]+?" style="display:none;">'), re.compile('<ul class="list list-day day-[^"]+?" style="display:none;">'))[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="item list-sport', '</li>')
         for item in data:
-            idx   = item.find('>')
-            if idx < 0: continue 
-            item  = item[idx+1:]
-            tmp   = item.split('<div class="streamdesc ')
+            tmp   = item.split('<div class="badge">')
             title = self.cleanHtmlStr( tmp[0] )
             icon  = self._getFullUrl( self.cm.ph.getSearchGroups(tmp[0], 'src="([^"]+?)"')[0] )
             url   = self._getFullUrl( self.cm.ph.getSearchGroups(tmp[0], 'href="([^"]+?)"')[0] )
-            
-            desc = ''
-            if len(tmp) > 1:
-                idx   = tmp[1].find('>')
-                if idx > -1:
-                    desc = self.cleanHtmlStr( tmp[1][idx+1:] )
+            desc  = self.cleanHtmlStr( tmp[1] )
             params = dict(cItem)
-            params.update({'title':title, 'url':url, 'desc':desc, 'icon':icon})
-            nextPage = True
+            params.update({'title':title, 'url':url, 'desc': desc, 'icon':icon})
             self.addVideo(params)
 
     def listVideos(self, cItem):
         printDBG("Laola1TV.listVideos")
-        paramsKeys = ['stageid', 'call', 'page', 'filterpage', 'startvids', 'htag']
-        vidParams = {}
-        if 'page' not in cItem:
-            sts, data = self.getPage(cItem['url'])
-            if not sts: return 
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="stage_frame active"', '>', False)[1]
-            try:
-                for key in paramsKeys:
-                    vidParams[key] = self.cm.ph.getSearchGroups(data, 'data-%s[ ]*?=[ ]*?"([^"]+?)"' % key)[0]
-                vidParams['page'] = int(vidParams['page'])
-            except:
-                printExc()
-                return
-            cItem = dict( cItem )
-            cItem.update( vidParams )
-        else:
-            try:
-                for key in paramsKeys:
-                    vidParams[key] = cItem[key]
-            except:
-                printExc()
-                return
+        page = cItem.get('page', 1)
+        url  = cItem['url']
+        if url.startswith('/'):
+            url = url[1:]
+        if page > 1:
+            url += '/%s' % page
         
-        url = 'http://www.laola1.tv/nourish.php?stageid={0}&newpage={1}&filterpage={2}&startvids={3}&anzahlblock=12&filter1=0&filter2=0&filter3=0&customdata=&lang={4}&geo={5}'.format(vidParams['stageid'], vidParams['page'], vidParams['filterpage'], vidParams['startvids'], config.plugins.iptvplayer.laola1tv_language.value, config.plugins.iptvplayer.laola1tv_portal.value) 
         sts, data = self.getPage(url)
         if not sts: return 
         
-        data = data.split('<div class="teaser">')
-        if len(data): del data[0]
-        nextPage = False
-        for item in data:
-            cat   = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<span class="category">', '<', False)[1] )
-            url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
-            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2>', '</h2>', False)[1] )
-            icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
-            date = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<span class="date">', '<', False)[1] )
-            mediatype = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<span class="mediatype">', '<', False)[1] )
-            
-            desc = ', '.join([cat, date, mediatype])
-            params = dict(cItem)
-            params.update({'title':title, 'url':url, 'desc':desc, 'icon':icon})
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'class="paging"', '<p>', False)[1]
+        if ('/%s"' % (page +1)) in nextPage:
             nextPage = True
-            self.addVideo(params)
+        else: nextPage = False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="teaser-list">', '</section>', False)[1]
+        data = data.split('</a>')
+        if len(data): del data[-1]
+        for item in data:
+            if '"ico-play"' not in item: continue
+            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title = self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>', False)[1]
+            desc  = item.split('</p>')[-1]
+            if url != '':
+                params = {'category':'videos_list', 'url':self._getFullUrl( url ), 'title':self.cleanHtmlStr( title ), 'icon':self._getFullUrl( icon ), 'desc':self.cleanHtmlStr( desc )}
+                self.addVideo( params )
         
         if nextPage:
             params = dict(cItem)
-            params.update({'title':_("Next page"), 'page':vidParams['page']+1})
+            params.update({'title':_("Next page"), 'page':page+1})
             self.addDir(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -265,42 +265,119 @@ class Laola1TV(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("Laola1TV.getLinksForVideo [%s]" % cItem)
         urlTab = []
+        baseUrl = cItem['url']
+        try:
+            sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+            baseUrl = response.geturl()
+            data = response.read().strip()
+            response.close()
+        except:
+            printExc()
+            return []
         
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return urlTab
-        error = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="notready">', '<div', False)[1] )
-        if '' != error: SetIPTVPlayerLastHostError(error)
+        vidUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
         
-        data = self.cm.ph.getSearchGroups(data, 'class="main_tv_player"[^>]+?src="([^"]+?)"')[0]
-        vidUrl = self._getFullUrl( data )
+        if '' == vidUrl:
+            error = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="videoplayer-overlay">', '</p>', False)[1] )
+            if '' != error: SetIPTVPlayerLastHostError(error)
+            return []
+        
+        baseUrl = baseUrl[baseUrl.find('://')+3:]
+        baseUrl = 'http://' + baseUrl[0:baseUrl.find('/')] + '/'
+        
+        
+        vidUrl = self._getFullUrl( vidUrl, baseUrl )
         
         sts, data = self.getPage(vidUrl)
-        if not sts: return urlTab
+        if not sts: return []
         
-        label        = self.cm.ph.getSearchGroups(data, 'var label = "([^"]+?)";')[0]
-        vidUrl       = self.cm.ph.getSearchGroups(data, 'url: "([^"]+?)" \+ label \+ "([^"]+?)"', 2)
-        vidUrl       = self._getFullUrl( vidUrl[0] + label + vidUrl[1] )
-        playeSource  = self.cm.ph.getSearchGroups(data, "playeSource =[^;]*?'([^']+?)'[^;]*?;")[0]
-        
-        for myip in ['', config.plugins.iptvplayer.laola1tv_myip1.value, config.plugins.iptvplayer.laola1tv_myip2.value]:
-            if '' != myip: header = {'X-Forwarded-For':myip}
-            else: header = {}
-
-            sts, data = self.getPage(vidUrl, {'header':header})
-            if not sts: return urlTab
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<data>', '</data>', False)[1]
-            printDBG(data)
-            comment = self.cm.ph.getSearchGroups(data, 'comment="([^"]+?)"')[0]
-            auth = self.cm.ph.getSearchGroups(data, 'auth="([^"]+?)"')[0]
-            if auth == 'restricted': continue
-            url  = self.cm.ph.getSearchGroups(data, 'url="([^"]+?)"')[0]
-            url = url + playeSource + auth
+        mainAuth = self.cm.ph.getSearchGroups(data, '[ .]auth = "([^"]+?)"')[0]
+        mainTimestamp = self.cm.ph.getSearchGroups(data, '[ .]timestamp = "([^"]+?)"')[0]
+        vs_target = self.cm.ph.getSearchGroups(data, 'var vs_target = ([0-9]+?);')[0]
+        data = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, 'var flashvars', '};', False)[1] )
+        def _getParamValue(paramName, data):
+            return self.cm.ph.getSearchGroups(data, '%s: "([^"]+?)"' % paramName)[0]
             
-            tmp = getDirectM3U8Playlist(url, checkExt=False)
-            for item in tmp:
-                item['need_resolve'] = 0
-                urlTab.append(item)
-            break
+        streamid  = _getParamValue('streamid', data)
+        partnerid = _getParamValue('partnerid', data)
+        portalid  = _getParamValue('portalid', data)
+        sprache   = _getParamValue('sprache', data)
+        vidUrl = "http://www.laola1.tv/server/hd_video.php?play=%s&partner=%s&portal=%s&v5ident&lang=%s&v=1" % (streamid, partnerid, portalid, sprache)
+        
+        sts, data = self.getPage(vidUrl)
+        if not sts: return []
+        
+        vidUrl = self.cm.ph.getDataBeetwenMarkers(data, '<url>', '</url>', False)[1].replace('&amp;', '&')
+        fallbackVidUrl = self.cm.ph.getDataBeetwenMarkers(data, '<fallbackurl>', '</fallbackurl>', False)[1].replace('&amp;', '&')
+        id      = self.cm.ph.getDataBeetwenMarkers(data, '<id>', '</id>', False)[1]
+        area    = self.cm.ph.getDataBeetwenMarkers(data, '<area>', '</area>', False)[1]
+        label   = self.cm.ph.getDataBeetwenMarkers(data, '<label>', '</label>', False)[1]
+        req_abo = self.cm.ph.getDataBeetwenMarkers(data, '<req_liga_abos>', '</req_liga_abos>', False)[1].split(',')
+        live    = self.cm.ph.getDataBeetwenMarkers(data, '<live>', '</live>', False)[1]
+        if live == 'false': isLive = False
+        else: isLive = True
+
+        ######################################################
+        streamaccessTab = []
+        url = 'https://club.laola1.tv/sp/laola1/api/v3/user/session/premium/player/stream-access?videoId=' + id + '&target=' + vs_target + '&label=' + label + '&area=' + area + '&format=iphone'
+        post_data = {}
+        for idx in range(len(req_abo)):
+            post_data[idx] = req_abo[idx]
+        sts, data = self.getPage(url, {}, post_data)
+        try:
+            data = byteify(json.loads(data))
+            for item in data['data']['stream-access']:
+                streamaccessTab.append(item)
+        except:
+            printExc()
+        
+        if 0 == len(streamaccessTab):
+            def addZ(n):
+                if n < 10: return '0%d' % n
+                return str(n)
+            
+            def getTimestamp():
+                date = datetime.datetime.now()
+                year  = date.year
+                month = date.month
+                datum = date.day
+                hour  = date.hour
+                min   = date.minute
+                sec   = date.second
+                timestamp = addZ(year) + addZ(month) + addZ(datum) + addZ(hour) + addZ(min) + addZ(sec)
+                return timestamp
+
+            randomNumber = str(random.randint(10000000, 99999999))
+            htmlTimestamp = str(time.time()).split('.')[0]
+            ident = randomNumber + htmlTimestamp
+            timestamp = mainTimestamp
+            if '' == timestamp:
+                timestamp = getTimestamp()
+            
+            for baseUrl in [vidUrl, fallbackVidUrl]:
+                streamaccessTab.append(baseUrl + '&ident=' + ident + '&klub=0&unikey=0&timestamp=' + timestamp + '&auth=' + mainAuth + '&format=iphone');
+        
+        for streamaccess in streamaccessTab:
+            for myip in ['', config.plugins.iptvplayer.laola1tv_myip1.value, config.plugins.iptvplayer.laola1tv_myip2.value]:
+                if '' != myip: header = {'X-Forwarded-For':myip}
+                else: header = {}
+                sts, data = self.getPage(streamaccess, {'header':header})
+                if not sts: return urlTab
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<data>', '</data>', False)[1]
+                printDBG(data)
+                comment = self.cm.ph.getSearchGroups(data, 'comment="([^"]+?)"')[0]
+                auth = self.cm.ph.getSearchGroups(data, 'auth="([^"]+?)"')[0]
+                if auth in ['restricted', 'blocked']: continue
+                url  = self.cm.ph.getSearchGroups(data, 'url="([^"]+?)"')[0]
+                url = url + '?hdnea=' + auth
+                
+                tmp = getDirectM3U8Playlist(url, checkExt=False)
+                for item in tmp:
+                    item['need_resolve'] = 0
+                    urlTab.append(item)
+                break
+            if 0 < len(urlTab):
+                break
             
         if 0 < len(urlTab):
             max_bitrate = int(config.plugins.iptvplayer.laola1tv_defquality.value)
@@ -345,10 +422,12 @@ class Laola1TV(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listMainMenu()
+            self.listMainMenu({'name':'category'})
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'}, 'dir')
-        elif category == 'main':
+        elif category == 'list_cache_cat':
             self.listFromCache(self.currItem)
+        elif category == 'explore_page':
+            self.explorePage(self.currItem)
         elif category == 'videos_list':
             self.listVideos(self.currItem)
         elif category == 'calendar':    
