@@ -64,9 +64,8 @@ class Laola1TV(CBaseHostClass):
     MAIN_URL    = 'http://laola1.tv/'
     
     #'http://www.laola1.tv/img/laola1_logo.png'
-    #MAIN_CAT_TAB = [{'category':'search',             'title': _('Search'), 'search_item':True},
-    #                {'category':'search_history',     'title': _('Search history')} ]
-    MAIN_CAT_TAB = []
+    MAIN_CAT_TAB = [{'category':'search',             'title': _('Search'), 'search_item':True},
+                    {'category':'search_history',     'title': _('Search history')} ]
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'Laola1TV', 'cookie':'Laola1TV.cookie'})
@@ -255,12 +254,50 @@ class Laola1TV(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("Laola1TV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
+        # this looks strange but live attrib is returned for not live stream 
+        # for me this is server bug
+        searchLive = '1'
         if searchType == 'live':
-            pass
-        else:
-            params = dict(cItem)
-            params['url'] = self.SRCH_MOVIES_URL + urllib.quote_plus(searchPattern)
-            self.listMovies(params)
+            searchLive = ''
+        
+        page = cItem.get('page', 1)
+        url = 'http://search-api.laola1.at/?callback=ret&q=%s&p=%d&i=laola1tv-2015-int&include=[]&_=%s' % (urllib.quote_plus(searchPattern), page, str(time.time()))
+        sts, data = self.getPage(url)
+        if not sts: return
+        try:
+            data = data.strip()[4:-2]
+            data = byteify(json.loads(data))['result']
+            
+            pagesize = int(self.cm.ph.getSearchGroups(data, 'pagesize="([0-9]+?)"')[0])
+            total = int(self.cm.ph.getSearchGroups(data, 'total="([0-9]+?)"')[0])
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<result id=', '</result>')
+            
+            def _getText(data, name):
+                return self.cm.ph.getDataBeetwenMarkers(data, '<%s>' % name, '</%s>' % name, False)[1]
+            
+            for item in data:
+                def _getText(name):
+                    return self.cm.ph.getDataBeetwenMarkers(item, '<%s>' % name, '</%s>' % name, False)[1]
+                live     = _getText('live')
+                if searchLive != live: continue
+                title    = self.cleanHtmlStr( _getText('title') )
+                icon     = self._getFullUrl( _getText('pic') )
+                url      = self._getFullUrl( _getText('url') )
+                text     = self.cleanHtmlStr( _getText('text') )
+                rubric   = self.cleanHtmlStr( _getText('rubric') )
+                datetime = self.cleanHtmlStr( _getText('datetime') )
+                
+                desc  = ' \n'.join( [datetime, rubric, text] )
+                params = dict(cItem)
+                params.update({'title':title, 'url':url, 'desc': desc, 'icon':icon})
+                self.addVideo(params)
+            
+            if (page * pagesize) < total:
+                params = dict(cItem)
+                params.update({'title':_("Next page"), 'page':page+1})
+                self.addDir(params) 
+        except:
+            printExc()
         
     def getLinksForVideo(self, cItem):
         printDBG("Laola1TV.getLinksForVideo [%s]" % cItem)
