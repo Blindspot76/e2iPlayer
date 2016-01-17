@@ -39,16 +39,29 @@ class IPTVFileHost:
                     line = line.strip()
                     if type(line) == type(u''): line = line.encode('utf-8', 'replace')
                     if 0 == len(line) or '#' == line[0]: continue
-                    idx = line.find(';')
-                    if -1 < idx:
-                        fullTitle = line[0:idx].strip()
-                        url       = line[idx+1:].strip()
+                    idx1 = line.find(';')
+                    if -1 < idx1:
+                        fullTitle = line[0:idx1].strip()
+                        desc = ''
+                        icon = ''
+                        idx2 = line.find(';;', idx1+1)
+                        if -1 < idx2:
+                            url  = line[idx1+1:idx2].strip()
+                            idx1 = idx2 + 2
+                            idx2 = line.find(';;;', idx1)
+                            if -1 < idx2:
+                                icon = line[idx1:idx2].strip()
+                                desc = line[idx2+3:].strip()
+                            else:
+                                icon = line[idx:].strip()
+                        else:
+                            url = line[idx1+1:].strip()
                         if '' != fullTitle and url != '': 
                             # get group
                             groupTitle, titleInGroup = self._getGroup(fullTitle)
                             if groupTitle not in self.groups:
                                 self.groups.append(groupTitle)
-                            params = {'full_title':fullTitle, 'url':url, 'group':groupTitle, 'title_in_group':titleInGroup}
+                            params = {'full_title':fullTitle, 'url':url, 'icon':icon, 'desc':desc, 'group':groupTitle, 'title_in_group':titleInGroup}
                             params.update(addItemParams)
                             self.items.append(params)
                             continue
