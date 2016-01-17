@@ -15,6 +15,8 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 # FOREIGN import
 ###################################################
 import re
+import urllib
+import string
 ############################################
 
 
@@ -39,6 +41,46 @@ class VidTvApi:
             if not url.startswith('http'):
                 channelList.append({'title':title, 'url':VidTvApi.MAINURL[:-1] + url, 'icon': VidTvApi.MAINURL + icon})
         return channelList
+        
+    def unpackJS(self, data, name):
+        try:
+            paramsAlgoObj = compile(data, '', 'exec')
+        except:
+            printExc('unpackJS compile algo code EXCEPTION')
+            return ''
+        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote}
+        vLocals = { name: None }
+
+        try:
+            exec( data, vGlobals, vLocals )
+        except:
+            printExc('unpackJS exec code EXCEPTION')
+            return ''
+        try:
+            return vLocals[name]
+        except:
+            printExc('decryptPlayerParams EXCEPTION')
+        return ''
+        
+    def _clearData(self, data):
+        # get all vars
+        pyCode = ''
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, 'var ', ';', False)
+        for item in tmp:
+            pyCode = item.strip() + '\n'
+            
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG(pyCode)
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        
+        def evalSimple(data):
+            code = pyCode
+            code += 'retVal = unescape(%s)' % data.group(1)
+            dat = self.unpackJS(code, 'retVal')
+            if 'unescape' in dat:
+                return self._clearData(dat)
+            return dat
+        return re.sub('''document\.write\([ ]*?unescape\(([^)]+?)\)''', evalSimple, data)
     
     def getVideoLink(self, baseUrl):
         printDBG("NettvPw.getVideoLink url[%s]" % baseUrl)
@@ -46,7 +88,10 @@ class VidTvApi:
         sts,data = self.cm.getPage(baseUrl)
         if not sts: return urlsTab
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'Oglądasz', '<div class="title-medium">', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Oglądasz', 'Lista ', False)[1]
+        data = self._clearData(data)
+       
+        printDBG(data)
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'value="src=', '"', False)[1]
         if 'plugin_hls=http' in tmp:
             urlsTab = getDirectM3U8Playlist(tmp.split('&amp;')[0], checkExt=False)
@@ -55,6 +100,11 @@ class VidTvApi:
             tmp = self.cm.ph.getSearchGroups(data, "file[^']*?:[^']*?'([^']+?'")[0]
             if '.m3u8' in tmp:
                 urlsTab.extend(getDirectM3U8Playlist(tmp, checkExt=False))
+                
+        if 'play.php?f=http' in data:
+            tmp = self.cm.ph.getSearchGroups(data, '''play\.php\?f=(http[^'^"]+?)["']''')[0]
+            if '.m3u8' in tmp:
+                urlsTab.extend(getDirectM3U8Playlist(tmp.split('&amp;')[0], checkExt=False))
                 
         if 'type=rtmp' in data:
             video = self.cm.ph.getDataBeetwenMarkers(data, 'video=', '&#038;', False)[1]
