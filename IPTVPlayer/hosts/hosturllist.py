@@ -18,6 +18,8 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 ###################################################
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigDirectory, getConfigListEntry
 import re
+import codecs
+import time
 ###################################################
 
 
@@ -33,10 +35,12 @@ import re
 config.plugins.iptvplayer.Sciezkaurllist = ConfigDirectory(default = "/hdd/")
 config.plugins.iptvplayer.grupujurllist  = ConfigYesNo(default = True)
 config.plugins.iptvplayer.sortuj         = ConfigYesNo(default = True)
+config.plugins.iptvplayer.urllist_showrafalcool1 = ConfigYesNo(default = True)
 
 def GetConfigList():
-    optionList = []    
-    optionList.append(getConfigListEntry(_('Text files ytlist and urllist are in:'), config.plugins.iptvplayer.Sciezkaurllist))
+    optionList = [] 
+    optionList.append(getConfigListEntry(_('Text files ytlist and urllist are in:'), config.plugins.iptvplayer.Sciezkaurllist))    
+    optionList.append(getConfigListEntry(_('Show recommended by Rafalcool1:'), config.plugins.iptvplayer.urllist_showrafalcool1))
     optionList.append(getConfigListEntry(_('Sort the list:'), config.plugins.iptvplayer.sortuj))
     optionList.append(getConfigListEntry(_('Group links into categories: '), config.plugins.iptvplayer.grupujurllist))
     return optionList
@@ -46,16 +50,20 @@ def gettytul():
     return (_('Urllists player'))
 
 class Urllist(CBaseHostClass):
-    URLLIST_FILE    = 'urllist.txt'
-    URRLIST_STREAMS = 'urllist.stream'
-    URRLIST_USER    = 'urllist.user'
-    MAIN_GROUPED_TAB = [{'category': 'all',           'title': (_("All in one")),        'desc': (_("Links are videos and messages, without division into categories"))}, \
-                        {'category': URLLIST_FILE,    'title': (_("Videos")),            'desc': (_("Links to the video files from the file urllist.txt"))}, \
-                        {'category': URRLIST_STREAMS, 'title': (_("live transfers")),    'desc': (_("Live broadcasts from the file urllist.stream"))}, \
-                        {'category': URRLIST_USER,    'title': (_("User files")),        'desc': (_("Favorite addresses are stored under the file urllist.user"))}]
+    RAFALCOOL1_FILE  = 'urllist.rafalcool1'
+    URLLIST_FILE     = 'urllist.txt'
+    URRLIST_STREAMS  = 'urllist.stream'
+    URRLIST_USER     = 'urllist.user'
     
     def __init__(self):
         printDBG("Urllist.__init__")
+        
+        self.MAIN_GROUPED_TAB = [{'category': 'all', 'title': (_("All in one")), 'desc': (_("Links are videos and messages, without division into categories"))}]
+        if config.plugins.iptvplayer.urllist_showrafalcool1.value:
+            self.MAIN_GROUPED_TAB.append({'category': Urllist.RAFALCOOL1_FILE, 'title': (_("Recommended by Rafalcool1")), 'desc': (_("List of movies prepared by Rafalcool1"))})        
+        self.MAIN_GROUPED_TAB.extend( [{'category': Urllist.URLLIST_FILE,       'title': (_("Videos")),                    'desc': (_("Links to the video files from the file urllist.txt"))}, \
+                                       {'category': Urllist.URRLIST_STREAMS,    'title': (_("live transfers")),            'desc': (_("Live broadcasts from the file urllist.stream"))}, \
+                                       {'category': Urllist.URRLIST_USER,       'title': (_("User files")),                'desc': (_("Favorite addresses are stored under the file urllist.user"))}])
         CBaseHostClass.__init__(self)               
         self.currFileHost = None 
     
@@ -76,14 +84,59 @@ class Urllist(CBaseHostClass):
             return True
         return False
         
+    def updateRafalcoolFile(self, filePath, encoding):
+        printDBG("Urllist.updateRafalcoolFile filePath[%s]" % filePath)
+        remoteVersion = -1
+        localVersion = -1
+        # get version from file
+        try:
+            with codecs.open(filePath, 'r', encoding, 'replace') as fp:
+                # version should be in first line
+                line = fp.readline()
+                localVersion = int(self.cm.ph.getSearchGroups(line + '|', '#file_version=([0-9]+?)[^0-9]')[0])
+        except:
+            printExc()
+        
+        # generate timestamp to add to url to skip possible cacheing
+        timestamp = str(time.time())
+        
+        # if we have loacal version get remote version for comparison
+        if localVersion != '':
+            sts, data = self.cm.getPage("http://hybrid.xunil.pl/IPTVPlayer_resources/UsersFiles/urllist.txt.version")
+            if sts:
+                try:
+                    remoteVersion = int(data.strip())
+                except:
+                    printExc()
+        # uaktualnij versje
+        printDBG('Urllist.updateRafalcoolFile localVersion[%d] remoteVersion[%d]' % (localVersion, remoteVersion))
+        if remoteVersion > -1 and localVersion < remoteVersion:
+            sts, data = self.cm.getPage("http://hybrid.xunil.pl/IPTVPlayer_resources/UsersFiles/urllist.txt?t=" + timestamp)
+            if sts:
+                # confirm version
+                line = data[0:data.find('\n')]
+                try:
+                    newVersion = int(self.cm.ph.getSearchGroups(line + '|', '#file_version=([0-9]+?)[^0-9]')[0])
+                    if newVersion != remoteVersion:
+                        printDBG("Version mismatches localVersion[%d], remoteVersion[%d], newVersion[%d]" % (localVersion, remoteVersion, newVersion) )
+                    file = open(filePath, 'wb')
+                    file.write(data)
+                    file.close()
+                except:
+                    printExc()
+        
     def listCategory(self, cItem, searchMode=False):
         printDBG("Urllist.listCategory cItem[%s]" % cItem)
         
         sortList = config.plugins.iptvplayer.sortuj.value
         filespath = config.plugins.iptvplayer.Sciezkaurllist.value
         groupList = config.plugins.iptvplayer.grupujurllist.value
-        if cItem['category'] in ['all', Urllist.URLLIST_FILE, Urllist.URRLIST_STREAMS, Urllist.URRLIST_USER]:
+        if cItem['category'] in ['all', Urllist.URLLIST_FILE, Urllist.URRLIST_STREAMS, Urllist.URRLIST_USER, Urllist.RAFALCOOL1_FILE]:
             self.currFileHost = IPTVFileHost()
+            if cItem['category'] in ['all', Urllist.RAFALCOOL1_FILE] and config.plugins.iptvplayer.urllist_showrafalcool1.value:
+                self.updateRafalcoolFile(filespath + Urllist.RAFALCOOL1_FILE, encoding='utf-8')
+                self.currFileHost.addFile(filespath + Urllist.RAFALCOOL1_FILE, encoding='utf-8')
+            
             if cItem['category'] in ['all', Urllist.URLLIST_FILE]: 
                 self.currFileHost.addFile(filespath + Urllist.URLLIST_FILE, encoding='utf-8')
             if cItem['category'] in ['all', Urllist.URRLIST_STREAMS]: 
@@ -144,7 +197,7 @@ class Urllist(CBaseHostClass):
         self.currList = []
         
         if None == name:
-            self.listsTab(Urllist.MAIN_GROUPED_TAB, self.currItem)
+            self.listsTab(self.MAIN_GROUPED_TAB, self.currItem)
         else:
             self.listCategory(self.currItem)
         
