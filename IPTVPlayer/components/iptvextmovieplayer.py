@@ -178,6 +178,7 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="currTimeLabel"      noWrap="1" position="94,62"         size="120,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
                 <widget name="lengthTimeLabel"    noWrap="1" position="307,62"        size="120,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
                 <widget name="remainedLabel"      noWrap="1" position="518,62"        size="120,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+                <widget name="videoInfo"          noWrap="1" position="0,0"           size="650,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
                 
                 <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                 <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
@@ -287,6 +288,7 @@ class IPTVExtMoviePlayer(Screen):
         self['currTimeLabel']     = Label("0:00:00")
         self['remainedLabel']     = Label("-0:00:00")
         self['lengthTimeLabel']   = Label("0:00:00")
+        self['videoInfo']         = Label(" ")
         
         # for subtitles
         for idx in range(self.subLinesNum):
@@ -354,7 +356,7 @@ class IPTVExtMoviePlayer(Screen):
         # show hide info bar functionality
         self.goToSeekRepeatCount = 0
         self.goToSeekStep = 0
-        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'statusIcon', 'logoIcon'] }
+        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'videoInfo', 'statusIcon', 'logoIcon'] }
         self.playbackInfoBar['timer'] = eTimer()
         self.playbackInfoBar['timer_conn'] = eConnectCallback(self.playbackInfoBar['timer'].timeout, self.hidePlaybackInfoBar)
         
@@ -907,6 +909,10 @@ class IPTVExtMoviePlayer(Screen):
                         self.showPlaybackInfoBar(blocked=True)
                     self.playback['Status'] = val[0]
                     self['statusIcon'].setPixmap( self.playback['statusIcons'].get(val[0], None) )
+            elif 'VideoTrack' == key:
+                self.playback[key] = val
+                codec = val['encode'].split('/')[-1]
+                self['videoInfo'].setText( "%s %sx%s" % (codec, val['width'], val['height']) )
             else:
                 self.playback[key] = val
                 printDBG(">>> playback[%s] = %s" % (key, val))
