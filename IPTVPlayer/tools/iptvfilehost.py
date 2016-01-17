@@ -53,7 +53,7 @@ class IPTVFileHost:
                                 icon = line[idx1:idx2].strip()
                                 desc = line[idx2+3:].strip()
                             else:
-                                icon = line[idx:].strip()
+                                icon = line[idx1:].strip()
                         else:
                             url = line[idx1+1:].strip()
                         if '' != fullTitle and url != '': 
