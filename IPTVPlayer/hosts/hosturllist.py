@@ -154,7 +154,10 @@ class Urllist(CBaseHostClass):
             else:
                 tmpList = self.currFileHost.getAllItems(sortList)
                 for item in tmpList:
-                    params = {'title':item['full_title'], 'url':item['url'], 'desc': (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])}
+                    desc = (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])
+                    if item['desc'] != '':
+                        desc += '<br/>' + item['desc']
+                    params = {'title':item['full_title'], 'url':item['url'], 'desc':desc, 'icon':item['icon']}
                     self.addVideo(params)
         elif 'group' in cItem:
             tmpList = self.currFileHost.getItemsInGroup(cItem['group'], sortList)
@@ -163,7 +166,10 @@ class Urllist(CBaseHostClass):
                     title = item['full_title']
                 else:
                     title = item['title_in_group']
-                params = {'title':title, 'url':item['url'], 'desc': (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])}
+                desc = (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])
+                if item.get('desc', '') != '':
+                    desc += '<br/>' + item['desc']
+                params = {'title':title, 'url':item['url'], 'desc': desc, 'icon':item.get('icon', '')}
                 self.addVideo(params)
                 
     def getLinksForVideo(self, cItem):
