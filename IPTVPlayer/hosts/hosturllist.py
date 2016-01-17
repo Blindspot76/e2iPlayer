@@ -156,7 +156,7 @@ class Urllist(CBaseHostClass):
                 for item in tmpList:
                     desc = (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])
                     if item['desc'] != '':
-                        desc += '<br/>' + item['desc']
+                        desc = item['desc']
                     params = {'title':item['full_title'], 'url':item['url'], 'desc':desc, 'icon':item['icon']}
                     self.addVideo(params)
         elif 'group' in cItem:
@@ -168,7 +168,7 @@ class Urllist(CBaseHostClass):
                     title = item['title_in_group']
                 desc = (_("Hosting: %s, %s")) % (self._getHostingName(item['url']), item['url'])
                 if item.get('desc', '') != '':
-                    desc += '<br/>' + item['desc']
+                    desc = item['desc']
                 params = {'title':title, 'url':item['url'], 'desc': desc, 'icon':item.get('icon', '')}
                 self.addVideo(params)
                 
