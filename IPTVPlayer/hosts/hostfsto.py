@@ -25,6 +25,7 @@ import time
 try:    import json
 except: import simplejson as json
 from datetime import datetime
+from urlparse import urlparse
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -52,18 +53,15 @@ def gettytul():
     return 'http://fs.to/'
 
 class FsTo(CBaseHostClass):
-    MAIN_URL   = 'http://fs.to/'
-    SRCH_URL = MAIN_URL + '{0}/search.aspx?search='
     DEFAULT_ICON_URL = 'http://inext.ua/wp-content/uploads/2014/04/fsto_Icon-570x380.jpg'
-    
+    MAIN_URL = 'http://fs.to/'
     MAIN_CAT_TAB = [
-                    {'category':'list_cats',  'title': _('Video'),  'url':MAIN_URL+'video/', 'icon':DEFAULT_ICON_URL },
-                    {'category':'list_cats',  'title': _('Audio'), 'url':MAIN_URL+'audio/', 'icon':DEFAULT_ICON_URL },
                     {'category':'search',                   'title':_('Search'), 'search_item':True},
                     {'category':'search_history',           'title':_('Search history')} ]
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'FsTo', 'cookie':'FsTo.cookie'})
+        self.searchTypesOptions = []
         self.filtesCache = []
         self.sortKeyCache = []
         self.searchCache = {}
@@ -90,10 +88,44 @@ class FsTo(CBaseHostClass):
             if type == 'dir':
                 self.addDir(params)
             else: self.addVideo(params)
+            
+    def getSearchTypesOptions(self):
+        return self.searchTypesOptions
     
     def listMainMenu(self):
         printDBG("FsTo.listMainMenu")
-        self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        
+        # get main url
+        params = {'return_data':False}
+        try:
+            sts, response = self.cm.getPage(self.MAIN_URL, params)
+            url = response.geturl()
+            response.close()
+            parsed_uri = urlparse( url )
+            self.MAIN_URL = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+        except:
+            printExc()
+            return []
+        
+        printDBG("MAIN_URL[%s]" % self.MAIN_URL)
+        
+        self.searchTypesOptions = []
+        categoryTab = []
+        sts, data = self.cm.getPage(self.MAIN_URL)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="b-header__menu">', '</td>', False)[1]
+        data = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?__menu-section-link[^<]*?>([^<]+?)</a>').findall(data)
+        for item in data:
+            url   = self._getFullUrl(item[0])
+            title = self.cleanHtmlStr(item[1])
+            if len(item[0]) > 3:
+                self.searchTypesOptions.append((title, item[0][1:-1]))
+                params = {'category':'list_cats', 'title': title, 'url':url, 'icon':self.DEFAULT_ICON_URL }
+                categoryTab.append( params )
+        if len(categoryTab):
+            categoryTab.extend(self.MAIN_CAT_TAB)
+        
+        self.listsTab(categoryTab, {'name':'category'})
         
     def listCategories(self, cItem, category):
         printDBG("FsTo.listCategories")
@@ -319,8 +351,8 @@ class FsTo(CBaseHostClass):
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FsTo.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        
-        url = self.SRCH_URL.format(searchType) + urllib.quote_plus(searchPattern)
+        SRCH_URL = self.MAIN_URL + '{0}/search.aspx?search='
+        url = SRCH_URL.format(searchType) + urllib.quote_plus(searchPattern)
         
         sts, data = self.cm.getPage(url)
         if not sts: return
@@ -420,9 +452,9 @@ class IPTVHost(CHostBase):
     
     def converItem(self, cItem):
         hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie  
-        searchTypesOptions.append((_("Video"), "video"))
-        searchTypesOptions.append((_("Audio"), "audio"))
+        searchTypesOptions = self.host.getSearchTypesOptions()
+        #searchTypesOptions.append((_("Video"), "video"))
+        #searchTypesOptions.append((_("Audio"), "audio"))
         
         hostLinks = []
         type = CDisplayListItem.TYPE_UNKNOWN
