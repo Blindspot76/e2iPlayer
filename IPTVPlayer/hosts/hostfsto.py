@@ -113,6 +113,11 @@ class FsTo(CBaseHostClass):
         categoryTab = []
         sts, data = self.cm.getPage(self.MAIN_URL)
         if not sts: return
+        
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
+        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="b-header__menu">', '</td>', False)[1]
         data = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?__menu-section-link[^<]*?>([^<]+?)</a>').findall(data)
         for item in data:
@@ -131,6 +136,11 @@ class FsTo(CBaseHostClass):
         printDBG("FsTo.listCategories")
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
+        
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
+        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="b-subsection-menu__items">', '</div>', False)[1]
         data = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?>([^<]+?)</a>').findall(data)
         for item in data:
@@ -145,6 +155,10 @@ class FsTo(CBaseHostClass):
     
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
+        
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
         
         fData = self.cm.ph.getDataBeetwenMarkers(data, '<table>', '</table>', False)[1]
         fData = self.cm.ph.getAllItemsBeetwenMarkers(fData, '<td>', '</td>', False)
@@ -204,6 +218,11 @@ class FsTo(CBaseHostClass):
             printDBG(total_count)
             url = self.MAIN_URL + 'ajax.aspx?f=more_custom&' + params + '&count={0}'.format(count)
             sts, data = self.cm.getPage(url)
+            
+            printDBG("--------------------------------------------------")
+            printDBG(data)
+            printDBG("==================================================")
+        
             if not sts: return
             try:
                 data = byteify(json.loads(data))
@@ -252,6 +271,10 @@ class FsTo(CBaseHostClass):
         sts, data = self.cm.getPage(url)
         if not sts: return
         
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
+        
         nextPage = False
         if ('page=%d"' % (page+1)) in data:
             nextPage = True
@@ -279,11 +302,19 @@ class FsTo(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
+        
         materialId = self.cm.ph.getSearchGroups(data, "materialId: '([^']+?)'")[0]
         url = self.MAIN_URL + 'jsitem/i%s/status.js?hr=%s&rf=' % (materialId, urllib.quote(cItem['url']))
         
         sts, data = self.cm.getPage(url)
         if not sts: return
+        
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
         
         randomNumber = str(random.randint(10000000, 99999999))
         timestamp = str(time.time()).split('.')[0]
@@ -304,6 +335,10 @@ class FsTo(CBaseHostClass):
         url = cItem['url'].format(cItem.get('folder_id', '0'))
         sts, data = self.cm.getPage(url, params)
         if not sts: return
+        
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
         
         m1 = '<li class='
         items = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</li>')
@@ -356,6 +391,10 @@ class FsTo(CBaseHostClass):
         
         sts, data = self.cm.getPage(url)
         if not sts: return
+        
+        printDBG("--------------------------------------------------")
+        printDBG(data)
+        printDBG("==================================================")
         
         # get serach sections 
         self.searchCache = {}

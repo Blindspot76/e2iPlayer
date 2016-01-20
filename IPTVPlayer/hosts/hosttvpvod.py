@@ -191,20 +191,33 @@ class TvpVod(CBaseHostClass):
             
     def _getAjaxUrl(self, parent_id, location):
         if location == 'directory_series':
-            order  = ''
-            type   = 'website'
-            direct = '&direct=false'
+            order='';
+            type='website'
+            template ='listing_series.html'
+            direct='&direct=false'
+        elif location == 'directory_stats':
+            order=''
+            type='video'
+            template ='listing_stats.html'
+            direct='&filter=%7B%22playable%22%3Atrue%7D&direct=false'
+        elif location == 'directory_video':
+            order='&order=release_date_long,-1'
+            type='video'
+            template ='listing.html'
+            direct='&filter=%7B%22playable%22%3Atrue%7D&direct=false'
         elif location == 'website':
-            order  = ''
-            type   = 'video'
-            direct = '&filter=%7B%22playable%22%3Atrue%7D&direct=false'
+            order='&order=release_date_long,-1'
+            type='video'
+            template ='listing.html'
+            direct='&filter=%7B%22playable%22%3Atrue%7D&direct=false'
         else:
-            order  = ''
-            type   = 'video'
-            direct = '&filter=%7B%22playable%22%3Atrue%7D&direct=true'
+            order='&order=release_date_long,-1'
+            type='video'
+            template ='listing.html'
+            direct='&filter=%7B%22playable%22%3Atrue%7D&direct=true'
             
-        url = '/shared/listing.php?parent_id=' + parent_id + '&type=' + type + order + direct + '&template=directory/listing.html&count=' + str(TvpVod.PAGE_SIZE) 
-
+        url = '/shared/listing.php?parent_id=' + parent_id + '&type=' + type + order + direct + '&template=directory/' + template + '&count=' + str(TvpVod.PAGE_SIZE) 
+                    
         return self._getFullUrl(url)
             
     def listVodsSubCategories(self, cItem, category):
