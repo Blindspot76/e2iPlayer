@@ -60,7 +60,7 @@ class Urllist(CBaseHostClass):
         
         self.MAIN_GROUPED_TAB = [{'category': 'all', 'title': (_("All in one")), 'desc': (_("Links are videos and messages, without division into categories"))}]
         if config.plugins.iptvplayer.urllist_showrafalcool1.value:
-            self.MAIN_GROUPED_TAB.append({'category': Urllist.RAFALCOOL1_FILE, 'title': (_("Recommended by Rafalcool1")), 'desc': (_("List of movies prepared by Rafalcool1"))})        
+            self.MAIN_GROUPED_TAB.append({'category': Urllist.RAFALCOOL1_FILE, 'title': (_("Recommended by Rafalcool1")), 'desc': (_("List of movies prepared by Rafalcool1")), 'icon':'http://s1.bild.me/bilder/030315/3925071iconFilm.jpg'})        
         self.MAIN_GROUPED_TAB.extend( [{'category': Urllist.URLLIST_FILE,       'title': (_("Videos")),                    'desc': (_("Links to the video files from the file urllist.txt"))}, \
                                        {'category': Urllist.URRLIST_STREAMS,    'title': (_("live transfers")),            'desc': (_("Live broadcasts from the file urllist.stream"))}, \
                                        {'category': Urllist.URRLIST_USER,       'title': (_("User files")),                'desc': (_("Favorite addresses are stored under the file urllist.user"))}])
