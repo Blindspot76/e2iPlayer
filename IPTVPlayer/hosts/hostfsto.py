@@ -60,7 +60,7 @@ class FsTo(CBaseHostClass):
                     {'category':'search_history',           'title':_('Search history')} ]
     
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'FsTo', 'cookie':'FsTo.cookie'})
+        CBaseHostClass.__init__(self, {'history':'FsTo', 'cookie':'FsTo.cookie', 'proxyURL': 'http://85.143.164.100:81', 'useProxy': True})
         self.searchTypesOptions = []
         self.filtesCache = []
         self.sortKeyCache = []
@@ -141,12 +141,16 @@ class FsTo(CBaseHostClass):
         printDBG(data)
         printDBG("==================================================")
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="b-subsection-menu__items">', '</div>', False)[1]
-        data = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?>([^<]+?)</a>').findall(data)
-        for item in data:
-            params = dict(cItem)
-            params.update({'title':item[1], 'url':self._getFullUrl(item[0]), 'category':category})
-            self.addDir(params)
+        m1 = '<div class="b-subsection-menu__items">'
+        if m1 not in data:
+            self.listFilters(cItem, 'list_filter')
+        else:
+            data = self.cm.ph.getDataBeetwenMarkers(data, m1, '</div>', False)[1]
+            data = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?>([^<]+?)</a>').findall(data)
+            for item in data:
+                params = dict(cItem)
+                params.update({'title':item[1], 'url':self._getFullUrl(item[0]), 'category':category})
+                self.addDir(params)
             
     def listFilters(self, cItem, category):
         printDBG("FsTo.listFilters")
@@ -156,14 +160,10 @@ class FsTo(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
-        printDBG("--------------------------------------------------")
-        printDBG(data)
-        printDBG("==================================================")
-        
         fData = self.cm.ph.getDataBeetwenMarkers(data, '<table>', '</table>', False)[1]
         fData = self.cm.ph.getAllItemsBeetwenMarkers(fData, '<td>', '</td>', False)
         for fItem in fData:
-            gFilterTitle = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(fItem, '<li>', '</li>', False)[1] )
+            gFilterTitle = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(fItem, '<li', '</li>', True)[1] )
             self.filtesCache.append({'title':gFilterTitle, 'items':[]})
 
             fIdx = len(self.filtesCache) - 1
