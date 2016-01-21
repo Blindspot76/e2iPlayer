@@ -60,7 +60,7 @@ class FsTo(CBaseHostClass):
                     {'category':'search_history',           'title':_('Search history')} ]
     
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'FsTo', 'cookie':'FsTo.cookie', 'proxyURL': 'http://85.143.164.100:81', 'useProxy': True})
+        CBaseHostClass.__init__(self, {'history':'FsTo', 'cookie':'FsTo.cookie'})#, 'proxyURL': 'http://85.143.164.100:81', 'useProxy': True})
         self.searchTypesOptions = []
         self.filtesCache = []
         self.sortKeyCache = []
@@ -374,13 +374,15 @@ class FsTo(CBaseHostClass):
         url = cItem['url']
         if config.plugins.iptvplayer.fsto_proxy_enable.value:
             params = {'http_proxy': config.plugins.iptvplayer.russian_proxyurl.value, 'return_data':False}
-            try:
-                sts, response = self.cm.getPage(url, params)
-                url = response.geturl()
-                response.close()
-            except:
-                printExc()
-                return []
+        else:
+            params = {'return_data':False}
+        try:
+            sts, response = self.cm.getPage(url, params)
+            url = response.geturl()
+            response.close()
+        except:
+            printExc()
+            return []
             
         return [{'name':self.up.getHostName(url), 'url':url, 'need_resolve':0}]
         
