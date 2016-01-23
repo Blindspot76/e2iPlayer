@@ -88,6 +88,9 @@ class ExtPlayerCommandsDispatcher():
         
     def setDownloadFileTimeout(self, timeout):
         self.extPlayerSendCommand('PLAYBACK_SET_DOWNLOAD_FILE_TIMEOUT', timeout, False)
+        
+    def setLoopMode(self, value):
+        self.extPlayerSendCommand('PLAYBACK_SET_LOOP_MODE', value, False)
     
     def doSeek(self, diff):       
         self.extPlayerSendCommand('PLAYBACK_SEEK_RELATIVE', '%d' %diff)
@@ -171,6 +174,7 @@ class IPTVExtMoviePlayer(Screen):
                 <widget name="progressBar"        position="94,54"         size="544,7"   zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
                 <widget name="bufferingBar"       position="94,54"         size="544,7"   zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
                 <widget name="statusIcon"         position="20,45"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
+                <widget name="loopIcon"           position="43,30"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
                 
                 <widget name="goToSeekPointer"    position="94,0"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
                 <widget name="goToSeekLabel"      noWrap="1" position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
@@ -260,6 +264,7 @@ class IPTVExtMoviePlayer(Screen):
                 'audio'        : self.key_audio,
                 'videooptions' : self.key_videooption,
                 'menu'         : self.key_menu,
+                'loop'         : self.key_loop,
             }, -1)
         
         self.onClose.append(self.__onClose)
@@ -280,6 +285,7 @@ class IPTVExtMoviePlayer(Screen):
         self['logoIcon']          = Cover3()
         self['playbackInfoBaner'] = Cover3()
         self['statusIcon']        = Cover3()
+        self['loopIcon']          = Cover3()
         self['progressBar']       = ProgressBar()
         self['bufferingBar']      = ProgressBar()
         self['goToSeekPointer']   = Cover3() 
@@ -334,13 +340,14 @@ class IPTVExtMoviePlayer(Screen):
                                'StartGoToSeekTime': 0,
                                'GoToSeeking':    False,
                                'IsLive':         False,
+                               'IsLoop':         False,
                                'Status':         None,
                                'VideoTrack':     {},
                                'AudioTrack':     {},
                                'AudioTracks':   [],
                               } )
         # load pixmaps for statusIcon
-        self.playback['logoIcon'] = None
+        self.playback['loopIcons'] = {'On':None, 'Off':None}
         self.playback['statusIcons'] = {'Play':None, 'Pause':None, 'FastForward':None, 'SlowMotion':None}
         try:
             self.playback['statusIcons']['Play']        = LoadPixmap( GetIPTVDMImgDir("playback_a_play.png") )
@@ -350,13 +357,15 @@ class IPTVExtMoviePlayer(Screen):
             if 'gstplayer' == self.player: 
                 self.playback['logoIcon']               = LoadPixmap( GetIPTVDMImgDir("playback_gstreamer_logo.png") )
             else: self.playback['logoIcon']             = LoadPixmap( GetIPTVDMImgDir("playback_ffmpeg_logo.png") )
+            self.playback['loopIcons']['On']  = LoadPixmap( GetIPTVDMImgDir("playback_loop_on.png") )
+            self.playback['loopIcons']['Off'] = LoadPixmap( GetIPTVDMImgDir("playback_loop_off.png") )
         except:
             printExc()
         
         # show hide info bar functionality
         self.goToSeekRepeatCount = 0
         self.goToSeekStep = 0
-        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'videoInfo', 'statusIcon', 'logoIcon'] }
+        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'videoInfo', 'statusIcon', 'loopIcon', 'logoIcon'] }
         self.playbackInfoBar['timer'] = eTimer()
         self.playbackInfoBar['timer_conn'] = eConnectCallback(self.playbackInfoBar['timer'].timeout, self.hidePlaybackInfoBar)
         
@@ -909,6 +918,13 @@ class IPTVExtMoviePlayer(Screen):
                         self.showPlaybackInfoBar(blocked=True)
                     self.playback['Status'] = val[0]
                     self['statusIcon'].setPixmap( self.playback['statusIcons'].get(val[0], None) )
+            elif 'IsLoop' == key:
+                if self.playback['IsLoop'] != val:
+                    self.playback['IsLoop'] = val
+                    icon = 'Off'
+                    if val: icon = 'On'
+                    self['loopIcon'].setPixmap( self.playback['loopIcons'].get(icon, None) )
+                
             elif 'VideoTrack' == key:
                 self.playback[key] = val
                 codec = val['encode'].split('/')[-1]
@@ -970,7 +986,7 @@ class IPTVExtMoviePlayer(Screen):
         self.extPlayerCmddDispatcher.stop()
         self.saveLastPlaybackTime()
     def key_play(self):         self.extPlayerCmddDispatcher.play()
-    def key_pause(self):        self.extPlayerCmddDispatcher.pause()
+    def key_pause(self):        self.extPlayerCmddDispatcher.pause()  
     def key_exit(self):         self.doExit()
     def key_info(self):         self.doInfo()
     def key_seek1(self):        self.extPlayerCmddDispatcher.doSeek(config.seek.selfdefined_13.value * -1)
@@ -993,6 +1009,12 @@ class IPTVExtMoviePlayer(Screen):
     def key_ok(self):
         if 'Pause' == self.playback['Status']: self.extPlayerCmddDispatcher.play()
         else: self.extPlayerCmddDispatcher.pause()
+        
+    def key_loop(self):
+        if self.playback['IsLoop']:
+            self.extPlayerCmddDispatcher.setLoopMode(0)
+        else:
+            self.extPlayerCmddDispatcher.setLoopMode(1)
     
     def key_subtitles(self):
         self.selectSubtitle()
@@ -1160,6 +1182,10 @@ class IPTVExtMoviePlayer(Screen):
                     for item in obj:
                         tracks.append( _mapTrack(item) )
                     self.playbackUpdateInfo({'AudioTracks':tracks})
+                elif "N" == key:
+                    if obj['isLoop']:
+                        self.playbackUpdateInfo({'IsLoop': obj['isLoop']})
+                    
                 elif "PLAYBACK_INFO" == key:
                     if obj['isPaused']:
                         self.playbackUpdateInfo({'Status': ['Pause', '0']})
@@ -1394,6 +1420,7 @@ class IPTVExtMoviePlayer(Screen):
         printDBG("->||||||| onStart cmd[%s]" % cmd)
         self.console.execute( E2PrioFix( cmd ) )
         self['statusIcon'].setPixmap( self.playback['statusIcons']['Play'] ) # sulge for test
+        self['loopIcon'].setPixmap( self.playback['loopIcons']['Off'] )
         self['logoIcon'].setPixmap( self.playback['logoIcon'] )
         self['subSynchroIcon'].setPixmap( self.subHandler['synchro']['icon'] )
         
@@ -1523,8 +1550,11 @@ class IPTVExtMoviePlayer(Screen):
         if None == self.console: 
             printExc("IPTVExtMoviePlayer.extPlayerSendCommand console not available")
             return
+        
         if 'ADD_TRIGGERS' == command:
             self.consoleWrite( "t{0}\n".format(arg1) )
+        elif 'PLAYBACK_SET_LOOP_MODE'  == command:
+            self.consoleWrite( "n%s\n" % arg1 )
         elif   'PLAYBACK_LENGTH'       == command: 
             self.consoleWrite( "l\n" )
         elif 'PLAYBACK_CURRENT_TIME' == command: 
