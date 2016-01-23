@@ -53,7 +53,7 @@ class Chomikuj(CBaseHostClass):
     MAINURL = 'http://mobile.chomikuj.pl/'
     LIST_FOLDER_URL  = 'api/v3/folders?parent=%s&page=%s'
     FILE_REQUEST_URL = 'api/v3/files/download?fileId='
-    SEARCH_URL       = 'api/v3/files/search/%s?Query=%s&PageNumber=%s&SizeMin=0'
+    SEARCH_URL       = 'api/v3/files/search?Query=%s&PageNumber=%s&SizeMin=0&MediaType=%s'
     HTTP_JSON_HEADER  = {'User-Agent'  : "android/2.1.01 (a675e974-0def-4cbc-a955-ac6c6f99707b; unknown androVM for VirtualBox ('Tablet' version with phone caps))", 
                          'Content-Type': "application/json; charset=utf-8",
                          'Accept-Encoding':  'gzip'
@@ -155,7 +155,10 @@ class Chomikuj(CBaseHostClass):
     def handleSearch(self, cItem, searchPattern, searchType):
         printDBG("Chomikuj.handleSearch cItem[%s], searchPattern[%s], searchType[%s]" % (cItem, searchPattern, searchType))
         page   = cItem.get('page', 1)
-        self.handleDataRequest(cItem, Chomikuj.SEARCH_URL % (searchType, urllib.quote_plus(searchPattern), page))
+        
+        map = {"images":"Image", "video":"Video", "music":"Music"}
+
+        self.handleDataRequest(cItem, Chomikuj.SEARCH_URL % (urllib.quote_plus(searchPattern), page, map[searchType]))
 
     def handleProfile(self, cItem):
         printDBG("Chomikuj.handleProfile cItem[%s]" % cItem)
