@@ -50,12 +50,13 @@ def gettytul():
 
 class Chomikuj(CBaseHostClass):
     SERVICE = 'Chomikuj'
-    MAINURL = 'http://mobile.Chomikuj.pl/'
-    LIST_FOLDER_URL  = 'api/v1/folders?parent=%s&page=%s'
-    FILE_REQUEST_URL = 'api/v1/files/download?fileId='
-    SEARCH_URL       = 'api/v1/files/search/%s?Query=%s&PageNumber=%s&SizeMin=0'
-    HTTP_JSON_HEADER  = {'User-Agent'  : "android/1.5.2 (41d54583826bcd6c; unknown androVM for VirtualBox ('Tablet' version with phone caps))", 
+    MAINURL = 'http://mobile.chomikuj.pl/'
+    LIST_FOLDER_URL  = 'api/v3/folders?parent=%s&page=%s'
+    FILE_REQUEST_URL = 'api/v3/files/download?fileId='
+    SEARCH_URL       = 'api/v3/files/search/%s?Query=%s&PageNumber=%s&SizeMin=0'
+    HTTP_JSON_HEADER  = {'User-Agent'  : "android/2.1.01 (a675e974-0def-4cbc-a955-ac6c6f99707b; unknown androVM for VirtualBox ('Tablet' version with phone caps))", 
                          'Content-Type': "application/json; charset=utf-8",
+                         'Accept-Encoding':  'gzip'
                         }
     
     def __init__(self):
@@ -98,8 +99,8 @@ class Chomikuj(CBaseHostClass):
             token    = "wzrwYua$.DSe8suk!`'2"
             token    = md5(url + data + token).hexdigest()
             addParams['header']['Token'] = token
-        if 'SessionKey' in self.loginData: 
-            addParams['header']['Authorization'] = self.loginData['SessionKey']            
+        if 'ApiKey' in self.loginData: 
+            addParams['header']['Api-Key'] = self.loginData['ApiKey']            
         
         sts, data = self.cm.getPage(Chomikuj.MAINURL + url, addParams, postData)
         #printDBG("=================================================")
@@ -126,7 +127,7 @@ class Chomikuj(CBaseHostClass):
         self.addDir({'name':'category', 'title':'Historia wyszukiwania',     'category':'Historia wyszukiwania'})
         
     def requestLoginData(self):
-        url      = "api/v1/account/login"
+        url      = "api/v3/account/login"
         login    = config.plugins.iptvplayer.Chomikuj_login.value
         password = config.plugins.iptvplayer.Chomikuj_password.value
         loginData='{"AccountName":"%s","RefreshToken":"","Password":"%s"}' % (login, password)
