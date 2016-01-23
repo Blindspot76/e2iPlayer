@@ -924,6 +924,7 @@ class IPTVExtMoviePlayer(Screen):
                     icon = 'Off'
                     if val: icon = 'On'
                     self['loopIcon'].setPixmap( self.playback['loopIcons'].get(icon, None) )
+                    self.showPlaybackInfoBar()
                 
             elif 'VideoTrack' == key:
                 self.playback[key] = val
@@ -1183,9 +1184,7 @@ class IPTVExtMoviePlayer(Screen):
                         tracks.append( _mapTrack(item) )
                     self.playbackUpdateInfo({'AudioTracks':tracks})
                 elif "N" == key:
-                    if obj['isLoop']:
-                        self.playbackUpdateInfo({'IsLoop': obj['isLoop']})
-                    
+                    self.playbackUpdateInfo({'IsLoop': obj['isLoop']})
                 elif "PLAYBACK_INFO" == key:
                     if obj['isPaused']:
                         self.playbackUpdateInfo({'Status': ['Pause', '0']})
