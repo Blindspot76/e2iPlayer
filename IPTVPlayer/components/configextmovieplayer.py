@@ -30,6 +30,7 @@ config.plugins.iptvplayer.remember_last_position = ConfigYesNo(default = False)
 config.plugins.iptvplayer.fakeExtePlayer3 = ConfigSelection(default = "fake", choices = [("fake", " ")])
 config.plugins.iptvplayer.aac_software_decode = ConfigYesNo(default = False)
 config.plugins.iptvplayer.dts_software_decode = ConfigYesNo(default = False)
+config.plugins.iptvplayer.wma_software_decode = ConfigYesNo(default = True)
 config.plugins.iptvplayer.stereo_software_decode = ConfigYesNo(default = False)
 config.plugins.iptvplayer.software_decode_as = ConfigSelection(default = "pcm", choices = [("pcm", _("PCM")), ("lpcm", _("LPCM"))])
 config.plugins.iptvplayer.aac_mix = ConfigSelection(default = None, choices = [(None, _("from E2 settings"))])
@@ -246,6 +247,7 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         valTab = []
         valTab.append(config.plugins.iptvplayer.aac_software_decode.value)
         valTab.append(config.plugins.iptvplayer.dts_software_decode.value)
+        valTab.append(config.plugins.iptvplayer.wma_software_decode.value)
         valTab.append(config.plugins.iptvplayer.software_decode_as.value)
         valTab.append(config.plugins.iptvplayer.stereo_software_decode.value)
         valTab.append(config.plugins.iptvplayer.ac3_mix.value)
@@ -262,6 +264,7 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
             list.append(getConfigListEntry("    " + _("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
             if config.plugins.iptvplayer.plarform.value in ['mipsel', 'armv7', 'i686']:
                 list.append(getConfigListEntry("    " + _("External player use software decoder for the DTS"), config.plugins.iptvplayer.dts_software_decode))
+                list.append(getConfigListEntry("    " + _("External player use software decoder for the WMA"), config.plugins.iptvplayer.wma_software_decode))
                 list.append(getConfigListEntry("    " + _("Software decoding as"), config.plugins.iptvplayer.software_decode_as))
                 list.append(getConfigListEntry("    " + _("Stereo downmix mode for software decoder"), config.plugins.iptvplayer.stereo_software_decode))
         if self.ac3_mix_avaliable:

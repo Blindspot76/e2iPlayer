@@ -1398,6 +1398,9 @@ class IPTVExtMoviePlayer(Screen):
             if config.plugins.iptvplayer.dts_software_decode.value:
                 cmd += ' -d '
                 
+            if config.plugins.iptvplayer.wma_software_decode.value:
+                cmd += ' -w '
+                
             if 'lpcm' == config.plugins.iptvplayer.software_decode_as.value: 
                 cmd += ' -l '
             
