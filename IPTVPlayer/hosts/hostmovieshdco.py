@@ -302,26 +302,33 @@ class MoviesHDCO(CBaseHostClass):
         
         #printDBG(data)
         
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="video-embed">', '</div>', False)[1]
-        oneLink = CParsingHelper.getDataBeetwenMarkers(data, 'data-rocketsrc="', '"', False)[1]
-        if oneLink == '': oneLink =  self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
-        if oneLink == '': oneLink =  self.cm.ph.getSearchGroups(data, '<script[^>]+?src="([^"]+?)"')[0]
-        
-        if oneLink.startswith('//'):
-            oneLink = 'http:' + oneLink
+        #data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="video-embed">', '</table>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, "<span class='postTabs_titles'>", '</div>', True, False)
+        for item in data:
+            title  = self.cleanHtmlStr( item )
+            vidUrl = self.cm.ph.getSearchGroups(item, '''<source[^>]*?src="([^"]+?)"[^>]*?video/mp4[^>]*?''', 1, True)[0]
+            need_resolve = 1
+            if vidUrl != '':
+                need_resolve = 0
             
-        oneLink = self._getFullUrl(oneLink)
-        
-        if 'videomega.tv/validatehash.php?' in oneLink:
-            sts, data = self.cm.getPage(oneLink, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
-            if not sts: return urlTab
-            data = self.cm.ph.getSearchGroups(data, 'ref="([^"]+?)"')[0]
-            if '' == data: return urlTab
-            oneLink = 'http://videomega.tv/view.php?ref={0}&width=700&height=460&val=1'.format(data)
+            if vidUrl == '': vidUrl = self.cm.ph.getSearchGroups(item, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+            if vidUrl == '': vidUrl = self.cm.ph.getSearchGroups(item, '<script[^>]+?src="([^"]+?)"', 1, True)[0]
+            if vidUrl == '': vidUrl = self.cm.ph.getDataBeetwenMarkers(item, 'data-rocketsrc="', '"', False)[1]
+
+            if vidUrl.startswith('//'):
+                vidUrl = 'http:' + vidUrl
             
-        if '' == oneLink: return urlTab
-        name = self.up.getHostName(oneLink)
-        urlTab.append({'name':name, 'url':oneLink, 'need_resolve':1})
+            vidUrl = self._getFullUrl(vidUrl)
+            if 'videomega.tv/validatehash.php?' in vidUrl:
+                sts, dat = self.cm.getPage(vidUrl, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
+                if not sts: return urlTab
+                dat = self.cm.ph.getSearchGroups(dat, 'ref="([^"]+?)"')[0]
+                if '' == dat: return urlTab
+                vidUrl = 'http://videomega.tv/view.php?ref={0}&width=700&height=460&val=1'.format(dat)
+            
+            if '' != vidUrl:
+                if title == '': title = self.up.getHostName(oneLink)
+                urlTab.append({'name':title, 'url':vidUrl, 'need_resolve':need_resolve})
         return urlTab
         
     def getVideoLinks(self, baseUrl):
@@ -394,8 +401,7 @@ class IPTVHost(CHostBase):
         
         urlList = self.host.getLinksForVideo(self.host.currList[Index])
         for item in urlList:
-            need_resolve = 1
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo

@@ -307,6 +307,7 @@ class urlparser:
                        'playvid.org':          self.pp.parserEASYVIDORG    ,
                        'mystream.la':          self.pp.parserMYSTREAMLA    ,
                        'ok.ru':                self.pp.parserOKRU          ,
+                       'putstream.com':        self.pp.parserPUTSTREAM     ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3728,6 +3729,12 @@ class pageParser:
         videoUrl = CParsingHelper.getDataBeetwenMarkers(data, '<file>', '</file>', False)[1]
         if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
         return False
+        
+    def parserPUTSTREAM(self, baseUrl):
+        printDBG("parserPUTSTREAM baseUrl[%s]" % baseUrl)
+        def _findLinks(data):
+            return self._findLinks(data, 'putstream.com')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://putstream.com/embed-{0}-640x400.html', _findLinks)
         
     def parserLETWATCHUS(self, baseUrl):
         printDBG("parserLETWATCHUS baseUrl[%s]" % baseUrl)
