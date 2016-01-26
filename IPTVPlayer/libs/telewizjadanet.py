@@ -117,12 +117,18 @@ class TelewizjadaNetApi:
         sts, data = self.cm.getPage(url, http_params, {'cid':cItem['cid']})
         if not sts: return []
         
+        try:
+            vid_url = byteify(json.loads(data))
+            vid_url = vid_url['url']
+        except:
+            vid_url = data
+        
         urlsTab = []
-        data = data.strip()
-        if data.startswith('http://') and 'm3u8' in data:
+        vid_url = vid_url.strip()
+        if vid_url.startswith('http://') and 'm3u8' in vid_url:
             sessid = self.cm.getCookieItem(self.COOKIE_FILE, 'sessid')
             msec   = self.cm.getCookieItem(self.COOKIE_FILE, 'msec')
             statid = self.cm.getCookieItem(self.COOKIE_FILE, 'statid')
-            url = strwithmeta(data, {'Cookie':'sessid=%s; msec=%s; statid=%s;' % (sessid, msec, statid)})
+            url = strwithmeta(vid_url, {'Cookie':'sessid=%s; msec=%s; statid=%s;' % (sessid, msec, statid)})
             urlsTab = getDirectM3U8Playlist(url)
         return urlsTab
