@@ -411,9 +411,9 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.f4mdumpStepFinished sts[%r]" % sts)
         if self.platform in ['sh4'] and self.ffmpegVersion in ['1.0', '1.1.1', '1.2', '1.2.1', '2.0.3', '2.0.2', '2.2.1', '2.5', '2.6.2', '2.7.1', '2.8.1', '2.8.2', '2.8.5']: 
             self.exteplayer3Step()
-        elif self.platform in ['mipsel'] and self.ffmpegVersion in ['2.8', '2.8.1', '2.8.3', '2.8.5']: # no exteplayer3 binaries for 'armv7' at now
+        elif self.platform in ['mipsel'] and self.ffmpegVersion in ['2.8', '2.8.1', '2.8.3', '2.8.5']:
             self.exteplayer3Step()
-        elif self.platform in ['mipsel'] and self.ffmpegVersion in ['2.8.5']:
+        elif self.platform in ['armv7'] and self.ffmpegVersion in ['2.8.5']:
             self.exteplayer3Step()
         elif "" != self.gstreamerVersion: self.gstplayerStep()
         else: self.finish()
