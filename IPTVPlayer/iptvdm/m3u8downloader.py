@@ -161,7 +161,7 @@ class M3U8Downloader(BaseDownloader):
         if None != data and 0 < len(data):
             self.M3U8ListData += data; 
         
-    def mergeFragmentsListWithChecking(self, newFragments):
+    def mergeFragmentsListWithChecking_OLD(self, newFragments):
         #newFragments = self.fixFragmentsList(newFragments) 
         try: 
             idx = newFragments.index(self.fragmentList[-1])
@@ -181,6 +181,31 @@ class M3U8Downloader(BaseDownloader):
                 self.fragmentList = self.fragmentList[idx:]
                 self.currentFragment = 20
             self.fragmentList.extend(tmpList)
+            
+    def mergeFragmentsListWithChecking(self, newFragments):
+        #newFragments = self.fixFragmentsList(newFragments) 
+        try: 
+            tmpCurrFragmentList = [seg.split('/')[-1] for seg in self.fragmentList]
+            tmpNewFragments = [seg.split('/')[-1] for seg in newFragments]
+            
+            idx = tmpNewFragments.index(tmpCurrFragmentList[-1])
+            newFragments = newFragments[idx+1:]
+        except: printDBG('m3u8 update thread - last fragment from last list not available in new list!')
+        
+        tmpList = []
+        for item in reversed(newFragments):
+            if item in self.fragmentList:
+                break
+            tmpList.insert(0,item)
+        
+        if 0 < len(tmpList):
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DODANO[%d]" % len(tmpList))
+            if 21 < self.currentFragment: 
+                idx = self.currentFragment - 20
+                self.fragmentList = self.fragmentList[idx:]
+                self.currentFragment = 20
+            self.fragmentList.extend(tmpList)
+    
     '''
     def fixFragmentsList(self, newFragments):
         retList = []
