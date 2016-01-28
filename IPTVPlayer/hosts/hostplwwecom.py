@@ -158,7 +158,7 @@ class PLWWECOM(CBaseHostClass):
         printDBG("PLWWECOM.getLinksForVideo [%s]" % cItem)
         urlTab = []
         sts, data = self.cm.getPage(cItem['url'])
-        if not sts: urlTab
+        if not sts: return urlTab
         
         if '' == self.countryCode:
             self.countryCode = self.cm.getCountryCode()
@@ -179,7 +179,7 @@ class PLWWECOM(CBaseHostClass):
             params =  {}
             
         sts, data = self.cm.getPage(url, params)
-        if not sts: urlTab
+        if not sts: return urlTab
         data = self.cm.ph.getDataBeetwenMarkers(data, 'var experienceJSON = {', '};', False)[1]
         data = '{%s}' % data
         try:
