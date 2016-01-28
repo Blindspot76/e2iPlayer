@@ -251,7 +251,7 @@ class Vumoo(CBaseHostClass):
                 urlTab.append({'name':'episode', 'url':eUrl, 'need_resolve':0})
         else:
             sts, data = self.cm.getPage(url)
-            if not sts: return
+            if not sts: return []
             
             data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="video">', '</div>', False)[1]
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>', False)
@@ -274,41 +274,7 @@ class Vumoo(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})
-
-    def getArticleContent(self, cItem):
-        printDBG("MoviesHDCO.getArticleContent [%s]" % cItem)
-        retTab = []
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return retTab
-        
-        title = self.cm.ph.getDataBeetwenMarkers(data, '"og:title" content="', '"', False)[1].split('|')[0]
-        desc  = self.cm.ph.getDataBeetwenMarkers(data, '"og:description" content="', '"', False)[1]
-        icon  = self.cm.ph.getDataBeetwenMarkers(data, '"og:image" content="', '"', False)[1]
-        
-        descData = self.cm.ph.getDataBeetwenMarkers(data, '<strong>', '<div id="extras">', False)[1].split('<strong>')
-        printDBG(descData)
-        descTabMap = {"Oryginalny tytuł": "alternate_title",
-                      "Kraj": "country",
-                      "Rok produkcji": "year",
-                      "Reżyseria": "director",
-                      "Scenariusz": "writer",
-                      "Aktorzy": "actors",}
-        otherInfo = {}
-        for item in descData:
-            item = item.split('</strong>')
-            if len(item) < 2: continue
-            key = self.cleanHtmlStr( item[0] ).replace(':', '').strip()
-            val = self.cleanHtmlStr( item[1] )
-            if key in descTabMap:
-                otherInfo[descTabMap[key]] = val
-        
-        cats = self.cm.ph.getAllItemsBeetwenMarkers(data, 'rel="category tag">', '</a>', False)
-        if len(cats):
-            otherInfo['genre'] = ', '.join(cats)
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
-        
+    
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -379,20 +345,6 @@ class IPTVHost(CHostBase):
             retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
-        
-    #def getArticleContent(self, Index = 0):
-    #    retCode = RetHost.ERROR
-    #    retlist = []
-    #    if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-    #
-    #    hList = self.host.getArticleContent(self.host.currList[Index])
-    #    for item in hList:
-    #        title      = item.get('title', '')
-    #        text       = item.get('text', '')
-    #        images     = item.get("images", [])
-    #        othersInfo = item.get('other_info', '')
-    #        retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-    #    return RetHost(RetHost.OK, value = retlist)
     
     def converItem(self, cItem):
         hostList = []

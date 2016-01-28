@@ -4479,7 +4479,7 @@ class pageParser:
         
     def parserLIVESTRAMTV(self, baseUrl):
         printDBG("parserLIVESTRAMTV baseUrl[%r]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
+        sts, data = self.cm.getPage(baseUrl, {'Referer':baseUrl})
         if not sts: return
         vidUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
         if vidUrl.split('?')[0].endswith('.m3u8'):

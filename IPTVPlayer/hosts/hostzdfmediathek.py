@@ -305,6 +305,7 @@ class ZDFmediathek(CBaseHostClass):
         tmpUrlTab = []
         url = ZDFmediathek.VIDEO_WEB_URL + cItem['id']
         sts, data = self.cm.getPage(url)
+        if not sts: return urlTab
         live = False
         if "<type>livevideo</type>" in data: 
             live = True

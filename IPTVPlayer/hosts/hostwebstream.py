@@ -1050,7 +1050,7 @@ class IPTVHost(CHostBase):
 
     def getLinksForVideo(self, Index = 0, selItem = None):
         listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
+        if listLen <= Index or Index < 0:
             printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
             return RetHost(RetHost.ERROR, value = [])
         

@@ -330,8 +330,9 @@ class MusicBox(CBaseHostClass):
         tmpTab, dashTab = self.ytp.getDirectLinks(url, ytformats, dash, dashSepareteList = True)
         
         def __getLinkQuality( itemLink ):
-            tab = itemLink['format'].split('x')
-            return int(tab[0])
+            val = self.cm.ph.getSearchGroups('|%s|' %itemLink['format'], '[^0-9]([0-9]+?)[^0-9]')[0]
+            if '' == val: return 0
+            return int(val)
         tmpTab = CSelOneLink(tmpTab, __getLinkQuality, maxRes).getSortedLinks()
         if config.plugins.iptvplayer.ytUseDF.value and 0 < len(tmpTab):
             tmpTab = [tmpTab[0]]

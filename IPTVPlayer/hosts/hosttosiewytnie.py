@@ -176,7 +176,7 @@ class Host:
             return valTab
         if clip:
             printDBG('Host listsItems clip')
-            for item in result['clips']:
+            for item in result.get('clips', []):
                 minimalAge = 0
                 minimalAge = item['minimalAge']
                 printDBG('Host listsItems clip Age')
