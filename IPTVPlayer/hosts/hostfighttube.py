@@ -267,12 +267,6 @@ class IPTVHost(IHost):
             return RetHost(RetHost.ERROR, value = [])
         
         urlsTab = self.host.getVideoUrl(self.host.currList[Index]["page"])
-        if config.plugins.iptvplayer.ytUseDF.value:
-            maxRes = int(config.plugins.iptvplayer.ytDefaultformat.value) * 1.1
-            def __getLinkQuality( itemLink ):
-                val = self.host.cm.ph.getSearchGroups('|' + itemLink['name']+'|', '[^0-9]([0-9]+?)[^0-9]')[0]
-                return int(val)
-            urlsTab = CSelOneLink(urlsTab, __getLinkQuality, maxRes).getOneLink()
         retlist = []
         for urlItem in urlsTab:
             retlist.append(CUrlItem(urlItem['name'], urlItem['url'], 0))

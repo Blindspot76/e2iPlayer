@@ -1,20 +1,41 @@
-# -*- coding: utf-8 -*-
-
+﻿# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem
-import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetLogoDir
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
+import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+###################################################
+
 ###################################################
 # FOREIGN import
 ###################################################
-import re, urllib
-try:
-    import simplejson as json
-except:
-    import json
+import time
+import re
+import urllib
+import base64
+try:    import json
+except: import simplejson as json
+from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+###################################################
+
+
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Screens.MessageBox import MessageBox
+###################################################
+
+###################################################
+# Config options for HOST
+###################################################
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -23,426 +44,309 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 ###################################################
 config.plugins.iptvplayer.wpDefaultformat = ConfigSelection(default = "2", choices = [("1", "Niska"), ("2", "Wysoka")])
 config.plugins.iptvplayer.wpUseDF = ConfigYesNo(default = False)
-config.plugins.iptvplayer.wpSortBy = ConfigSelection(default = "2", choices = [("1", "Najczęściej oglądane"), ("2", "Najnowsze"), ("3", "Najwyżej oceniane"), ("4", "Najczęściej komentowane")])
+#config.plugins.iptvplayer.wpSortBy = ConfigSelection(default = "2", choices = [("1", "Najczęściej oglądane"), ("2", "Najnowsze"), ("3", "Najwyżej oceniane"), ("4", "Najczęściej komentowane")])
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("Sort by:"), config.plugins.iptvplayer.wpSortBy))
+    #optionList.append(getConfigListEntry(_("Sort by:"), config.plugins.iptvplayer.wpSortBy))
     optionList.append( getConfigListEntry( "Domyślny jakość video:", config.plugins.iptvplayer.wpDefaultformat ) )
     optionList.append( getConfigListEntry( "Używaj domyślnej jakości video:", config.plugins.iptvplayer.wpUseDF ) )
     return optionList
 ###################################################
 
+
 def gettytul():
-    return 'WP.TV'
+    return 'WpTV'
 
-class WP():
-    HOST = 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'
-    def __init__(self):
-        self.cm = pCommon.common()
-        self.currList = []
-        
-    def getCurrList(self):
-        return self.currList
-
-    def setCurrList(self, list):
-        self.currList = list
-        return 
+class WpTV(CBaseHostClass):
+    HTTP_HEADER = {'User-Agent': "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30", 'Accept': 'text/html'}
     
-    def getMainMenu(self):
-        printDBG('getMainMenu start')
-        list = []
-        url = 'http://wp.tv/mindex.html'        
-        sts, data = self.cm.getPage(url, {'host': self.HOST})
-        if sts:
-            # extract menu html
-            idx = data.find('Strona główna')
-            if idx <= 0: return list
-            idx2 = data.find('Inne serwisy WP.PL', idx)
-            if idx2 <= 0: return list
-            data = data[idx:idx2]
-            
-            match = re.compile('<header class="grayBar round "><a class="a" href="([^"]+?mkategoria.html)">([^<]+?)</a>').findall(data)
-            if len(match) <= 0: return list
-            
-            printDBG("---------------------------------------------")
-            for i in range(len(match)):
-                list.append({'name':match[i][1], 'url':match[i][0], 'type':'main_item'})
-                printDBG("cat: " + match[i][1] + "\t: " + match[i][0])
-            printDBG("---------------------------------------------")
+    MAIN_URL = 'http://wp.tv/'
+    DEFAULT_ICON = 'http://i.wp.pl/a/i/wptv2/2010/logo_fb.png'
+    MAIN_CAT_TAB_S = [{'category':'recommended',     'title': 'Polecane', 'url':MAIN_URL + 'app/recommended', 'icon':DEFAULT_ICON},
+                      {'category':'list_items',      'title': 'Główna',   'url':MAIN_URL,                     'icon':DEFAULT_ICON}]
+                    
+    MAIN_CAT_TAB_E = [{'category':'search',          'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
+                      {'category':'search_history',  'title': _('Search history'),             'icon':DEFAULT_ICON} ]
+ 
+    def __init__(self):
+        CBaseHostClass.__init__(self, {'history':'WpTV.com', 'cookie':'wp.cookie'})
+        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.cache = {}
         
-        return list
+    def _getFullUrl(self, url):
+        if 0 < len(url):
+            if url.startswith('//'):
+                url = 'http:' + url
+            elif not url.startswith('http'):
+                url =  self.MAIN_URL + url
+        if not self.MAIN_URL.startswith('https://'):
+            url = url.replace('https://', 'http://')
+        return url
         
-    def getSubMenu(self, url):
-        printDBG('getSubMenu start')
-        list = []
-        match = re.compile('http://wp.tv/type,([^,]+?),.+?.html').findall(url)
-        if len(match) <= 0: return list
-        jtype = match[0]
-        
-        sts, data = self.cm.getPage(url, {'host': self.HOST})
-        if sts:
-            match = re.compile('<option value="([0-9]+?)" >([^<]+?)</option>').findall(data)
-            if len(match) <= 0: return list
-            
-            printDBG("---------------------------------------------")
-            for i in range(len(match)):
-                list.append({'name':match[i][1], 'id':match[i][0], 'type':'sub_item', 'jtype' : jtype})
-                printDBG("\tcat: " + match[i][1] + '\t' + jtype + "\t: " + match[i][0])
-            printDBG("---------------------------------------------")
-        
-        return list
-        
-    def getJsonList(self, type, jtype, id):
-        printDBG('getJsonList start')
-        list = []
-        
-        url = 'http://wp.tv/mlista.json'
-        params = {'host': self.HOST }
-        postdata = { 'type': jtype, 'filter': config.plugins.iptvplayer.wpSortBy.value, "cid": id, "wrapperName" :"wptv2_lib_wrapper_CategoryListSourceWrapper" }
+    def cleanHtmlStr(self, data):
+        data = data.replace('&nbsp;', ' ')
+        data = data.replace('&nbsp', ' ')
+        return CBaseHostClass.cleanHtmlStr(data)
 
-        sts, data = self.cm.getPage(url, params, postdata)
-        if not sts: return list
-        #printDBG("+++++++++++++++++++++++++")
-        #printDBG(data)
-        #printDBG("+++++++++++++++++++++++++")
-        try:
-            result = json.loads(data)
-            if None != result['subMenu'] and type == 'sub_item':
-                printDBG( 'getJsonList get sub menu' )
-                sel_id = str(result['subMenu']['menuListSelected']['cid'])
-                printDBG( sel_id )
-                dataChecked = False
-                for item in result['subMenu']['menuList']:
-                    cid = str(result['subMenu']['menuList'][item]['cid'])
-                    name = result['subMenu']['menuList'][item]['name']
-                    if cid == sel_id:
-                        dataChecked = True
-                    else:
-                        printDBG("\t\t\t" + cid + "\t" + name)
-                        list.append({'name':name.encode('utf-8'), 'id':cid, 'type':'sub_jitem', 'jtype' : jtype})
-                if 0 < len(list) or not dataChecked:
-                    return list
+    def listsTab(self, tab, cItem, type='dir'):
+        printDBG("WpTV.listsTab")
+        for item in tab:
+            params = dict(cItem)
+            params.update(item)
+            params['name']  = 'category'
+            if type == 'dir':
+                self.addDir(params)
+            else: self.addVideo(params)
+            
+    def getMainMenu(self, cItem, category):
+        printDBG("WpTV.getMainMenu")
+        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="submenu">', '</nav>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<ul>', '</ul>', False)
+        self.cache = {'cats':[]}
+        
+        for item in data:
+            catTitle = self.cm.ph.getDataBeetwenMarkers(item, '<li class="header">', '</li>', False)[1]
+            catTitle = self.cleanHtmlStr( catTitle )
+            catsData = re.compile('<a href="([^"]+?)">([^<]+?)</a>').findall(item)
+            catsTab = []
+            for cat in catsData:
+                url   = self._getFullUrl(cat[0])
+                title = self.cleanHtmlStr(cat[1])
+                cid   = self.cm.ph.getSearchGroups(cat[0], 'cid\,([0-9]+?)\,')[0]
+                if cid != '':
+                    catsTab.append({'title':title, 'url':url, 'cid':cid})
+            if len(catsTab):
+                self.cache['cats'].append(catsTab)
+                params = dict(cItem)
+                params.update({'category':category, 'title':catTitle, 'cats_id': len(self.cache['cats'])-1})
+                self.addDir(params)
+        
+    def listCategory(self, cItem, category):
+        catsId = cItem.get('cats_id', -1)
+        printDBG("WpTV.listCategory catsId [%s]" % catsId)
+        if catsId < 0 or catsId > len(self.cache['cats']): return
+        
+        for item in self.cache['cats'][catsId]:
+            params = dict(cItem)
+            params.update(item)
+            params['category'] = category
+            self.addDir(params)
+            
+    def listRecommended(self, cItem):
+        printDBG("WpTV.listRecommended")
+        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
+        if not sts: return
+        
+        try:    
+            data = byteify(json.loads(data))
+            for item in data['clips']:
+                url    = item['mobileUrl']
+                if 'klip' not in url: continue
+                icon   = item['image']
+                title  = item['title']
+                desc  = item['date'] + ' '
+                desc   += self.cleanHtmlStr(item['description'])
+                
+                params = dict(cItem)
+                params.update({'title':self.cleanHtmlStr(title), 'desc':desc, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)})
+                self.addVideo(params)
         except:
             printExc()
-            return list
-        #data = result["jsPagination"]
-        #return self.getJsonPagesList(id, data)
-        return self.setDirMenu(self.getItems("http://wp.tv/app/cliplist?catid=" + id))
+    
+    def listItems(self, cItem):
+        printDBG("WpTV.listItems")
+        
+        search = cItem.get('search', None)
+        if search != None:
+            post_data = {'szukaj':search}
+        else: post_data = None
+        sts, data = self.cm.getPage(cItem['url'], self.defaultParams, post_data)
+        if not sts: return
+        
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'teaser"', '</footer>', False)[1]
+        nextPage = self.cm.ph.getSearchGroups(data, 'a href="([^"]+?)"[^>]*?class="paging__next"')[0]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>', True)
+        
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            if 'klip' not in url: continue
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title  = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
+            desc   = self.cleanHtmlStr(item)
             
-    def getJsonPagesList(self, id, data):
-        printDBG( 'getJsonPagesList id=%s  data=%s' % (id,data) )
-        list = []
+            params = dict(cItem)
+            params.update({'title':title, 'desc':desc, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)})
+            self.addVideo(params)
+        
+        if nextPage != '':
+            params = dict(cItem)
+            params.update({'title':_("Next page"), 'url':self._getFullUrl(nextPage)})
+            self.addDir(params)
+    
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("WpTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        cItem = dict(cItem)
+        #cItem['search'] = urllib.quote(searchPattern)
+        cItem['url'] = self.MAIN_URL + 'query,%s,szukaj.html?' % urllib.quote(searchPattern)
+        self.listItems(cItem)
+    
+    def getLinksForVideo(self, cItem):
+        printDBG("WpTV.getLinksForVideo [%s]" % cItem)
+        urlTab = []
+        
+        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
+        if not sts: return []
+        
+        vidId = self.cm.ph.getSearchGroups(data, 'data-mid="([^"]+?)"')[0]
+        vidUrl = self.MAIN_URL + "player/mid,%s,embed.json" % vidId
         try:
-            match = re.compile('data-allresults="([0-9]+?)" data-onpage="([0-9]+?)"').findall(data)
-            if len(match) > 0: 
-                itemNum = int(match[0][0])
-                numPerPage = int(match[0][1])
-                pageNum = itemNum / numPerPage
-                if itemNum % numPerPage > 0:
-                    pageNum += 1
-                
-                for i in range(pageNum):
-                    tmpItem = {'name': 'Strona %d' % (i+1), 'id':id, 'page': str(i+1), 'type':'page'}
-                    list.append(tmpItem)
-                    printDBG( tmpItem['name'] )
+            sts, data = self.cm.getPage(vidUrl, self.defaultParams)
+            if not sts: return []
             
-            if len(list) < 2:
-                return self.getJsonVideoList('1', id)
-            else:
-                return list
-        except: printExc()
-        return list
-        
-    def getJsonVideoList(self, page, id):
-        printDBG( 'getJsonVideoList page=%s  id=%s' % (page, id) )
-        list = []
-        url ="http://wp.tv/mlista.html?page=%s&filter=%s&cid=%s&subcid=%s&wrapperName=wptv2_lib_wrapper_CategoryListSourceWrapper" % (page, config.plugins.iptvplayer.wpSortBy.value, id, id)
-        sts, data = self.cm.getPage(url, {'host': self.HOST})
-        if sts:
-            try:
-                match = re.compile('<a href="([^"]+?)"><img src="([^"]+?)" alt=""><div class="matBox">([^<]+?)</div>').findall(data)
-                if len(match) <= 0: return list
+            tmpTab = []
+            qMap = {"HQ":'2', "LQ":'1'}
+            data = byteify(json.loads(data))
+            for item in data['clip']['url']:
+                if 'mp4' not in item['type']: continue
+                urlTab.append({'name':item['quality'] + ' ' + item['type'], 'url':self._getFullUrl(item['url']), 'quality':qMap.get(item['quality'], '3'), 'need_resolve':0})
                 
-                for i in range(len(match)):
-                    item = {'name':match[i][2], 'url':match[i][0], 'ico':match[i][1], 'type':'video'}
-                    list.append(item)
-                    printDBG( "name: " + item['name'].encode('utf-8') + " url: " + item["url"].encode('utf-8') + " ico: " + item['ico'].encode('utf-8'))
-            except: printExc()
-        return list
-            
-    def getVideoLinks(self, url, data = None):
-        if data != None: url = data
-        printDBG( 'getVideoLinks url=%s ' % url )
-        list = []
+            if 0 < len(urlTab):
+                max_bitrate = int(config.plugins.iptvplayer.wpDefaultformat.value)
+                def __getLinkQuality( itemLink ):
+                    if 'mobile' in itemLink['name']: return 0
+                    return int(itemLink['quality'])
+                urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getSortedLinks()
+                if config.plugins.iptvplayer.wpUseDF.value:
+                    urlTab = [urlTab[0]]
+        except:
+            printExc()
+        return urlTab
         
-        if data == None:
-            url ="http://wp.tv/" + url
-            sts, data = self.cm.getPage(url, {'host': self.HOST})
-            if not sts: return list
+    def getFavouriteData(self, cItem):
+        return cItem['url']
         
-        match = re.compile('(http://get\.wp\.tv/\?f=[0-9]+?\.[0-9]+?\.)').search(data)
-        if None == match: return list
+    def getLinksForFavourite(self, fav_data):
+        return self.getLinksForVideo({'url':fav_data})
         
-        list.append({'name':'Wysoka jakosc', 'url': match.group(0) + 'h.mp4'})
-        list.append({'name':'Niska jakosc', 'url': match.group(0) + 'l.mp4'})
-        #list.append({'name':'Domyslna jakosc', 'url': match.group(0) + 'm3.mp4'})
+    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
+        printDBG('handleService start')
         
-        return list
-        
-    # code based on (root)/trunk/xbmc-addons/src/plugin.video.polishtv.live/hosts/ @ 635 - Wersja 669 
-    def getItems(self, url, clip = True):
-        strTab = []
-        valTab = []
-        sts, data = self.cm.getPage(url, {'host': self.HOST})
-        if sts:
-            try:
-                result = json.loads(data)
-                if clip:
-                    for item in result['clips']:
-                        strTab.append(item['clipUrl'])
-                        strTab.append(item['thumbnail'])            
-                        strTab.append(item['title'])
-                        strTab.append(item['description'])
-                        valTab.append(strTab)
-                        strTab = []
-                    if result['page'] != result['pageCount']:
-                        valTab.append([url + "&page=" + str(result['page']+1), '', 'Nastepna strona', 'nextpage'])
-                else:
-                    for item in result:
-                        #skip {"catId":4050,"name":"Najnowsze","description":"","logo":null,"priority":0}
-                        if item['name'] != 'Najnowsze':
-                            strTab.append(item['catId'])
-                            strTab.append(item['logo'])            
-                            strTab.append(item['name'])
-                            strTab.append(item['description'])
-                            valTab.append(strTab)
-                            strTab = []
-            except:
-                printExc()
-        return valTab
-        
-    def setDirMenu(self, table):
-        resList = []
-        for i in range(len(table)):
-            if self.cm.isNumeric(table[i][0]):
-                #self.addDir(SERVICE,"sub-menu",str(table[i][0]),self.cm.html_entity_decode(table[i][2].encode('UTF-8')),table[i][3].encode('UTF-8'),"",table[i][1])
-                printDBG("APP SUB MENU:")
-                printDBG("\t: " + str(table[i][0]))
-                printDBG("\t: " + self.cm.html_entity_decode(table[i][2].encode('UTF-8')))
-                printDBG("\t: " + table[i][3].encode('UTF-8'))
-                printDBG("\t: " + table[i][1])
-            else:
-                if table[i][3] == 'nextpage':
-                    item = {'name':self.cm.html_entity_decode(table[i][2].encode('UTF-8')), 'url':table[i][0], 'type':'app_cat'}
-                    resList.append(item)              
-                else:
-                    item = {'name':self.cm.html_entity_decode(table[i][2].encode('UTF-8')), 'url':table[i][0].encode('UTF-8'), 'ico':table[i][1], 'desc':table[i][3].encode('UTF-8'), 'type':'app_video'}
-                    resList.append(item)
-        return resList
-    
-    def handleService(self, index, refresh = 0, searchPattern = ''):
-    
-        if 0 == refresh:
-            if len(self.currList) <= index:
-                printDBG( "WP.handleService wrong index: %s, len(self.currList): %d" % (index, len(self.currList)) )
-                return
-        
-            if -1 == index:
-                self.type = None
-                printDBG( "WP.handleService for first self.category" )
-            else:
-                item = self.currList[index]
-                self.type = item['type']
-                self.index = index
-                self.url = ''
-                if 'url' in self.currList[index]:
-                    self.url = self.currList[index]['url']
-                self.jtype = ''
-                if 'jtype' in self.currList[index]:
-                    self.jtype = self.currList[index]['jtype']
-                self.id = ''
-                if 'id' in self.currList[index]:
-                    self.id = self.currList[index]['id']
-                self.page = ''
-                if 'page' in self.currList[index]:
-                    self.page = self.currList[index]['page']
-                    
-                self.prevList = self.currList
+        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
-                printDBG( "WP: |||||||||||||||||||||||||||||||||||| %s " % item['type'] )
-
+        name     = self.currItem.get("name", '')
+        category = self.currItem.get("category", '')
+        mode     = self.currItem.get("mode", '')
+        
+        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        self.currList = []
+        
     #MAIN MENU
-        if self.type == None:
-            self.currList = self.getMainMenu()
-            self.currList.append({'name':"Polecane", 'url': "http://wp.tv/app/recommended?", 'type':'app_cat'})
-            self.currList.append({'name':"TOP100 Tygodnia", 'url': "http://wp.tv/app/toprated?type=week", 'type':'app_cat'})
-            self.currList.append({'name':"TOP100 Miesiąca", 'url': "http://wp.tv/app/toprated?type=month", 'type':'app_cat'})
-            self.currList.append({'name':"Wyszukaj", 'url': "http://wp.tv/app/search?queryType=2&query=", 'type':'app_search'})
-    #APP CATEGORY
-        elif self.type == 'app_cat':
-            self.currList = self.setDirMenu(self.getItems(self.url)) 
-    #SUB CATEGORY
-        elif self.type == 'main_item':
-            self.currList = self.getSubMenu('http://wp.tv/' + self.url)
-    #SUB_SUB_CATEGORY
-        elif self.type == 'sub_item' or self.type == 'sub_jitem':
-            self.currList = self.getJsonList(self.type, self.jtype, self.id)
-    #VIDEOS per page
-        elif self.type == 'page':
-            self.currList = self.getJsonVideoList(self.page, self.id)
+        if name == None:
+            self.listsTab(self.MAIN_CAT_TAB_S, {'name':'category'})
+            self.getMainMenu({'name':'category', 'url':self.MAIN_URL, 'icon':self.DEFAULT_ICON}, 'category')
+            self.listsTab(self.MAIN_CAT_TAB_E, {'name':'category'})
+        elif category == 'category':
+            self.listCategory(self.currItem, 'list_items')
+        elif category == 'recommended':
+            self.listRecommended(self.currItem)
+        elif category == 'list_items':
+            self.listItems(self.currItem)
     #SEARCH
-        elif self.type == 'app_search':
-            self.currList = self.setDirMenu(self.getItems(self.url+ urllib.quote(searchPattern))) 
-    # end handleService
-
-#list = getVideoLinks( list[0]['url'] )
-
-def _getLinkQuality( itemLink ):
-    if itemLink['name'].find('Niska') > -1:
-        return 1
-    return 2
-
-class IPTVHost(IHost):
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+        else:
+            printExc()
+        
+        CBaseHostClass.endHandleService(self, index, refresh)
+class IPTVHost(CHostBase):
 
     def __init__(self):
-        self.host = None
-        self.currIndex = -1
-        self.listOfprevList = [] 
-        
-        self.searchPattern = ''
+        CHostBase.__init__(self, WpTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+
+    def getLogoPath(self):
+        return RetHost(RetHost.OK, value = [GetLogoDir('wptvlogo.png')])
     
-    # return firs available list of item category or video or link
-    def getInitList(self):
-        self.host = WP()
-        self.currIndex = -1
-        self.listOfprevList = [] 
-        
-        self.host.handleService(self.currIndex)
-        
-        convList = self.convertList(self.host.getCurrList())
-        
-        return RetHost(RetHost.OK, value = convList)
-    
-    # return List of item from current List
-    # for given Index
-    # 1 == refresh - force to read data from 
-    #                server if possible 
-    # server instead of cache 
-    def getListForItem(self, Index = 0, refresh = 0, selItem = None):
-        self.listOfprevList.append(self.host.getCurrList())
-        
-        self.currIndex = Index
-        self.host.handleService(Index, refresh, self.searchPattern)
-        convList = self.convertList(self.host.getCurrList())
-        
-        return RetHost(RetHost.OK, value = convList)
-        
-    # return prev requested List of item 
-    # for given Index
-    # 1 == refresh - force to read data from 
-    #                server if possible
-    def getPrevList(self, refresh = 0):
-        if(len(self.listOfprevList) > 0):
-            hostList = self.listOfprevList.pop()
-            self.host.setCurrList(hostList)
-            convList = self.convertList(hostList)
-            return RetHost(RetHost.OK, value = convList)
-        else:
-            return RetHost(RetHost.ERROR, value = [])
-        
-    # return current List
-    # for given Index
-    # 1 == refresh - force to read data from 
-    #                server if possible
-    def getCurrentList(self, refresh = 0):      
-        if refresh == 1:
-            if len(self.listOfprevList) > 0:
-                hostList = self.listOfprevList.pop()
-                self.host.setCurrList(hostList)
-                return self.getListForItem(self.currIndex)
-            else:
-                return self.getInitList()           
-                
-        convList = self.convertList(self.host.getCurrList())
-        return RetHost(RetHost.OK, value = convList)
-    
-    # return list of links for VIDEO with given Index
-    # for given Index
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            print "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index)
-            return RetHost(RetHost.ERROR, value = [])
-        
-        selItem = self.host.currList[Index]
-        if selItem['type'] != 'video':
-            print "ERROR getLinksForVideo - current item has wrong type"
-            return RetHost(RetHost.ERROR, value = [])
-            
+        retCode = RetHost.ERROR
         retlist = []
+        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
         
-        if None != selItem and 'url' in selItem and 1 < len(selItem['url']):
-            tmpList = self.host.getVideoLinks( selItem['url'] )
-            if config.plugins.iptvplayer.wpUseDF.value:
-                maxRes = int(config.plugins.iptvplayer.wpDefaultformat.value)
-                tmpList = CSelOneLink( tmpList, _getLinkQuality, maxRes ).getOneLink()
-            
-            for idx in range(len(tmpList)):
-                retlist.append(CUrlItem(tmpList[idx]['name'], tmpList[idx]['url'], 0))
-            
+        urlList = self.host.getLinksForVideo(self.host.currList[Index])
+        for item in urlList:
+            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
+
         return RetHost(RetHost.OK, value = retlist)
-            
-    def getSearchResults(self, searchpattern, searchType = None):
-        self.isSearch = True
-        retList = []
-        self.searchPattern = searchpattern.replace(' ',  '%20')
-        
-        return self.getListForItem( len(self.host.getCurrList()) -1 )
-            
-    # return full path to player logo
-    def getLogoPath(self):  
-        return RetHost(RetHost.OK, value = [ GetLogoDir('wptvlogo.png') ])
-
-
-    def convertList(self, cList):
+    # end getLinksForVideo
+    
+    def converItem(self, cItem):
         hostList = []
-        possibleTypesOfSearch = []
+        searchTypesOptions = [] # ustawione alfabetycznie
         
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            
-            url = ''
-            desc = ''
-            sepReq = 0
-            if cItem['type'] in ['main_item', 'sub_item',  'sub_item', 'sub_jitem', 'page', 'app_cat']:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] in ['video', 'app_video']:
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem['url']
-                hostLinks.append(CUrlItem('', url, 0))
-            elif cItem['type']  == 'app_search':
-                type = CDisplayListItem.TYPE_SEARCH
-                
-            name = ''
-            if 'name' in cItem:
-                name = cItem['name']
-            ico = ''
-            if 'ico' in cItem:
-                ico = cItem['ico']
-            desc = ' '
-            if 'desc' in cItem:
-                desc = cItem['desc']
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
 
-            hostItem = CDisplayListItem(name = name,
-                                        description = desc,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = ico,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-        # end for
+        if 'category' == cItem['type']:
+            if cItem.get('search_item', False):
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+        elif 'more' == cItem['type']:
+            type = CDisplayListItem.TYPE_MORE
+        elif 'audio' == cItem['type']:
+            type = CDisplayListItem.TYPE_AUDIO
             
-        return hostList
+        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
+            url = cItem.get('url', '')
+            if '' != url:
+                hostLinks.append(CUrlItem("Link", url, 1))
+            
+        title       =  cItem.get('title', '')
+        description =  cItem.get('desc', '')
+        icon        =  cItem.get('icon', '')
+        
+        return CDisplayListItem(name = title,
+                                    description = description,
+                                    type = type,
+                                    urlItems = hostLinks,
+                                    urlSeparateRequest = 1,
+                                    iconimage = icon,
+                                    possibleTypesOfSearch = possibleTypesOfSearch)
+    # end converItem
+
+    def getSearchItemInx(self):
+        try:
+            list = self.host.getCurrList()
+            for i in range( len(list) ):
+                if list[i]['category'] == 'search':
+                    return i
+        except:
+            printDBG('getSearchItemInx EXCEPTION')
+            return -1
+
+    def setSearchPattern(self):
+        try:
+            list = self.host.getCurrList()
+            if 'history' == list[self.currIndex]['name']:
+                pattern = list[self.currIndex]['title']
+                search_type = list[self.currIndex]['search_type']
+                self.host.history.addHistoryItem( pattern, search_type)
+                self.searchPattern = pattern
+                self.searchType = search_type
+        except:
+            printDBG('setSearchPattern EXCEPTION')
+            self.searchPattern = ''
+            self.searchType = ''
+        return
