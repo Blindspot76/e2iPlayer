@@ -47,9 +47,10 @@ def GetConfigList():
 ###################################################
 
 class PurecastNetApi:
-    MAIN_URL   = 'http://pure-cast.net/'
-    MOVIE_URL  = MAIN_URL + 'kodi-filmy'
-    LIVE_URL   = MAIN_URL + 'kodi-kanaly'
+    MAIN_URL   = 'http://api.pure-cast.net/'
+    MOVIE_URL  = MAIN_URL + 'filmy'
+    LIVE_URL   = MAIN_URL + 'kanaly'
+    VER_URL    = MAIN_URL + 'wersja'
     AUTH       = '?email={0}&pass={1}'
     HTTP_HEADER  = { 'User-Agent': 'XBMC', 'ContentType': 'application/x-www-form-urlencoded' }
 
