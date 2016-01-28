@@ -183,12 +183,12 @@ class Host:
         if 'episodes' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'http://player.dancetrippin.tv' 
-           try: data = self.cm.getURLRequestData({ 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True })
+           try:
+                data = self.cm.getURLRequestData({ 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True })
+                result = byteify(json.loads(data))
            except:
               printExc( 'Host listsItems query error url[%r]' % url )
               return valTab
-           #printDBG( 'Host listsItems data: '+data )
-           result = byteify(json.loads(data))
            if result:
               for item in result:
                   if self.getStr(item["image"]) <> "":
