@@ -222,8 +222,7 @@ class LibreStream(CBaseHostClass):
             self.addDir(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
-        #searchPattern = 'Человек'
-        searchPattern = searchPattern.decode('utf-8').encode('cp1251')
+        searchPattern = searchPattern
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         cItem['url'] = self.SEARCH_URL + searchPattern + '&search_start=%s' % cItem.get('page', 1)

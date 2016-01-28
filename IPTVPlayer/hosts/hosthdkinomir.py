@@ -253,7 +253,11 @@ class HDKinoMir(CBaseHostClass):
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         #searchPattern = 'Человек'
-        searchPattern = searchPattern.decode('utf-8').encode('cp1251')
+        try:
+            searchPattern = searchPattern.decode('utf-8').encode('cp1251', 'ignore')
+        except:
+            printExc()
+            return
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         cItem['url'] = self.MAIN_URL

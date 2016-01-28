@@ -263,6 +263,8 @@ class MoviesHDCO(CBaseHostClass):
         printDBG("MoviesHDCO.getArticleContent [%s]" % cItem)
         retTab = []
         
+        if 'url' not in cItem: return []
+        
         sts, data = self.getPage(cItem['url'])
         if not sts: return retTab
         

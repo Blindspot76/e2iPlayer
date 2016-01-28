@@ -188,7 +188,7 @@ class AnimeShinden(CBaseHostClass):
         except: printExc()
         url = AnimeShinden.MAINURL+'xhr/%s/player_show' % onlineId
         sts, data = self.cm.getPage(url, {'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'load_cookie':True})
-        if not sts: return linksTab
+        if not sts: return urlsTab
         printDBG(data)
         if '<embed src="http://player.shinden.pl' in data:
             data = re.compile('<embed [^>]+?>').findall(data)

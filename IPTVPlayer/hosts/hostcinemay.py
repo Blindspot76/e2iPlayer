@@ -123,8 +123,10 @@ class Cinemay(CBaseHostClass):
             num   = self.cm.ph.getSearchGroups('/%s/' % item, '[^0-9]([0-9]+?)[^0-9]')[0]
             seasons.append({'title':title, 'num':num, 'idx':idx})
             idx += 1
-            
-        seasonsData = self.cm.ph.getAllItemsBeetwenMarkers(data.split('<div class="css-panes_series skin3">')[1], '<div>', '</div>', False)
+        
+        tmp = data.split('<div class="css-panes_series skin3">')
+        if len(tmp) < 2: return
+        seasonsData = self.cm.ph.getAllItemsBeetwenMarkers(tmp[1], '<div>', '</div>', False)
         seasonIdx = 0
         for season in seasonsData:
             season = season.split('</li>')
@@ -249,7 +251,7 @@ class Cinemay(CBaseHostClass):
         return urlTab
         
     def getFavouriteData(self, cItem):
-        return cItem['url']
+        return cItem.get('url', '')
         
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})

@@ -124,6 +124,7 @@ class FilmOnComApi:
         currChannelsList = [] 
         for channel_it in self.jsonData['channels']:
             #printDBG("========================================================================[%r]" % channel_it['group_id'])
+            if 'group_id' not in channel_it: continue
             if group_id == channel_it['group_id']:
                 currChannelsList.append(channel_it)
         return currChannelsList

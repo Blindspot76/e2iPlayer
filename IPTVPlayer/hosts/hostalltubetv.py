@@ -307,7 +307,7 @@ class AlltubeTV(CBaseHostClass):
         
     def listEpisodes(self, cItem):
         printDBG("AlltubeTV.listEpisodes")
-        seasonIdx = cItem['season_idx']
+        seasonIdx = cItem.get('season_idx', -1)
         
         if seasonIdx >= 0 and seasonIdx < len(self.episodesCache):
             episodesList = self.episodesCache[seasonIdx]

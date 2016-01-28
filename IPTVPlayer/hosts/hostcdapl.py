@@ -132,6 +132,7 @@ class cda(CBaseHostClass):
                 self.addDir(nextPage)
         
     def getLinksForVideo(self, cItem):
+        if 'url' not in cItem: return []
         printDBG("cda.getLinksForVideo [%s]" % cItem['url'])
         return self.up.getVideoLinkExt(cItem['url'])
         

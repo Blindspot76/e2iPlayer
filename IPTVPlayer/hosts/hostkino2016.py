@@ -273,7 +273,7 @@ class Kino2016PL(CBaseHostClass):
         url = cItem['url']
         
         sts, data = self.cm.getPage(url)
-        if not sts: return
+        if not sts: return []
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>', False)
         for baseUrl in [self.MAIN_URL, 'http://kinofan.tv/']:
