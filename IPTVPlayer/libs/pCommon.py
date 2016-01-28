@@ -281,6 +281,10 @@ class common:
             printExc()
             response = None
             status = False
+        
+        if addParams['return_data'] and status and not isinstance(response, basestring):
+            status = False
+            
         return (status, response)
         
     def saveWebFile(self, file_path, url, addParams = {}, post_data = None):
@@ -484,7 +488,8 @@ class common:
         try:
             float(s)
             return True
-        except ValueError:
+        #except ValueError:
+        except:
             return False
         
     def setLinkTable(self, url, host):

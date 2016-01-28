@@ -85,15 +85,15 @@ class Movie4kTO(CBaseHostClass):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Cookie':'lang=%s;' % lang }
         params.update({'header':HTTP_HEADER})
         
-        if 'movie4k.to' in url:
+        if False and 'movie4k.to' in url:
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url))
             params['header']['Referer'] = proxy
             params['header']['Cookie'] = 'flags=2e5; COOKIE%253Blang%253B%252F%253Bwww.movie4k.to={0}%3B'.format(lang)
             url = proxy
-        #sts, data = self.cm.getPage(url, params, post_data)
-        #printDBG(data)
-        return self.cm.getPage(url, params, post_data)
-            
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and None == data:
+            sts = False
+        return sts, data
         
     def _getFullUrl(self, url):
         if 'proxy-german.de' in url:

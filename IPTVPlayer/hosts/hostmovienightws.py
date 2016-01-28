@@ -75,7 +75,7 @@ class MoviesNight(CBaseHostClass):
         printDBG("MoviesNight._fillFilters")
         table = []
         sts, data = self.cm.getPage(url)
-        if not sts: return
+        if not sts: return []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="menu_container">', '</ul>', False)[1]
         data = data.split('</li>')
         

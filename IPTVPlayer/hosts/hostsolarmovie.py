@@ -94,7 +94,7 @@ class SolarMovie(CBaseHostClass):
         printDBG("SolarMovie._fillFilters")
         table = []
         sts, data = self.cm.getPage(url)
-        if not sts: return
+        if not sts: return []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="sliderWrapper">', '</ul>', False)[1]
         data = data.split('</li>')
         for item in data:

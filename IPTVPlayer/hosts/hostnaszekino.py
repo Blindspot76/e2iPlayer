@@ -238,7 +238,7 @@ class NaszeKino(CBaseHostClass):
         printDBG("MoviesHDCO.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(cItem.get('url', ''))
         if not sts: return retTab
         sts, data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="movie_big relative">', '<div class="report">', False)
         if not sts: return retTab

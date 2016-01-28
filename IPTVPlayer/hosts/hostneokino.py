@@ -173,7 +173,7 @@ class NeoKinoNet(CBaseHostClass):
         url = cItem['url']
         
         sts, data = self.cm.getPage(url)
-        if not sts: return
+        if not sts: return []
         sourcesData = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
         tracksData  = self.cm.ph.getDataBeetwenMarkers(data, 'tracks:', ']', False)[1]
         tracksData = re.compile('"(http[^"]+?\.srt)"').findall(tracksData)

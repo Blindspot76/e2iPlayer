@@ -130,6 +130,7 @@ class urlparser:
                        'video.anyfiles.pl':    self.pp.parserANYFILES      ,
                        'videoweed.es':         self.pp.parserVIDEOWEED     ,
                        'videoweed.com':        self.pp.parserVIDEOWEED     ,
+                       'bitvid.sx':            self.pp.parserVIDEOWEED     ,
                        'novamov.com':          self.pp.parserNOVAMOV       ,
                        'nowvideo.eu':          self.pp.parserNOWVIDEO      ,
                        'nowvideo.sx':          self.pp.parserNOWVIDEO      ,
@@ -308,6 +309,7 @@ class urlparser:
                        'mystream.la':          self.pp.parserMYSTREAMLA    ,
                        'ok.ru':                self.pp.parserOKRU          ,
                        'putstream.com':        self.pp.parserPUTSTREAM     ,
+                       'live-stream.tv':       self.pp.parserLIVESTRAMTV   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -698,6 +700,10 @@ class pageParser:
     def _parserUNIVERSAL_B(self, url):
         printDBG("_parserUNIVERSAL_B url[%s]" % url)
         
+        sts, response = self.cm.getPage(url, {'return_data':False})
+        url = response.geturl()
+        response.close()
+            
         post_data = None
         
         if '/embed' not in url: 
@@ -4470,6 +4476,20 @@ class pageParser:
             url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
             urlsTab.append({'name':item['name'], 'url':url})
         return urlsTab[::-1]
+        
+    def parserLIVESTRAMTV(self, baseUrl):
+        printDBG("parserLIVESTRAMTV baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return
+        vidUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
+        if vidUrl.split('?')[0].endswith('.m3u8'):
+            tab = getDirectM3U8Playlist(vidUrl)
+            urlsTab = []
+            for item in tab:
+                item['url'] = strwithmeta(item['url'], {'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':common.HOST})
+                urlsTab.append(item)
+            return urlsTab
+        return False
         
     def parserCLOUDYEC(self, baseUrl):
         printDBG("parserCLOUDYEC baseUrl[%r]" % baseUrl)
