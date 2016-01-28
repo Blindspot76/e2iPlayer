@@ -1398,7 +1398,7 @@ class IPTVExtMoviePlayer(Screen):
                     if key == 'User-Agent':
                         cmd += ' -u "%s"' %  httpParams[key]
                     else:
-                        headers += ('%s=%s\r\n' % (key, httpParams[key]) )
+                        headers += ('%s: %s\r\n' % (key, httpParams[key]) )
                 if len(headers):
                     cmd += ' -h "%s"' % headers
                     
