@@ -7,7 +7,7 @@
 from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.gledajfilmDecrypter import gledajfilmDecrypter
@@ -4479,14 +4479,36 @@ class pageParser:
         
     def parserLIVESTRAMTV(self, baseUrl):
         printDBG("parserLIVESTRAMTV baseUrl[%r]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl, {'Referer':baseUrl})
+        url = 'http://www.live-stream.tv/'
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0',
+                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                       'Referer':baseUrl}
+                       
+        COOKIEFILE = self.COOKIE_PATH + "live-stream.tv.cookie"
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIEFILE}
+        
+        def updateStreamStatistics(channel, quality, statserver):
+            upBaseUrl = 'http://'+statserver+'.ucount.in/stats/update/custom/lstv/'+channel+'/'+quality
+            tm = str(int(time.time() * 1000))
+            upUrl = upBaseUrl + "&_="+tm+"&callback=?"
+            std, data = self.cm.getPage(upUrl, params)
+            return upBaseUrl
+        
+        sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return
+        
+        upData = self.cm.ph.getDataBeetwenMarkers(data, 'updateStreamStatistics', ';', False)[1]
+        upData = re.compile('''['"]([^'^"]+?)['"]''').findall(upData)
+        upBaseUrl = updateStreamStatistics(upData[0], upData[1], upData[2])
+        
+        pyCmd = GetPyScriptCmd('livestreamtv') + ' "%s" "%s" ' % (upBaseUrl, baseUrl)
+        
         vidUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
         if vidUrl.split('?')[0].endswith('.m3u8'):
             tab = getDirectM3U8Playlist(vidUrl)
             urlsTab = []
             for item in tab:
-                item['url'] = strwithmeta(item['url'], {'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':common.HOST})
+                item['url'] = strwithmeta(item['url'], {'iptv_refresh_cmd':pyCmd, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
                 urlsTab.append(item)
             return urlsTab
         return False

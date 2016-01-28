@@ -139,7 +139,7 @@ class iptv_system:
     please use iptv_system instead, this should be used as follow:
     self.handle = iptv_system("cmd", callBackFun)
     there is need to have reference to the obj created by iptv_system, 
-    other ways behaviours undefined
+    other ways behaviour is undefined
     
     iptv_system must be used only inside MainThread context, please see 
     iptv_execute class from asynccall module which is dedicated to be

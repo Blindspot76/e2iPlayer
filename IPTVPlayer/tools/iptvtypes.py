@@ -17,6 +17,7 @@ def enum(**enums):
 #   "iptv_audio_url"        "http... link"
 #   "iptv_m3u8_custom_base_link" "http... link"
 #   "iptv_proxy_gateway"    "http... link"
+#   "iptv_refresh_cmd"      "refresh cmd line needed for some streams to keep playing"
 
 # Force buffering settings, generally this field should 
 # be used only to materials that we know that they do 

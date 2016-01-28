@@ -228,6 +228,8 @@ class IPTVExtMoviePlayer(Screen):
             self.lastPosition = 0 
         self.downloader = additionalParams.get('downloader', None)
         self.externalSubTracks = additionalParams.get('external_sub_tracks', []) #[{'title':'', 'lang':'', 'url':''}, ...]
+        self.refreshCmd = additionalParams.get('iptv_refresh_cmd', '')
+        self.refreshCmdConsole = None
         
         printDBG('IPTVExtMoviePlayer.__init__ lastPosition[%r]' % self.lastPosition)
         
@@ -1235,6 +1237,9 @@ class IPTVExtMoviePlayer(Screen):
         if None != self.workconsole:
             self.workconsole.kill()
         self.workconsole = None
+        if None != self.refreshCmdConsole:
+            self.refreshCmdConsole.kill()
+        self.refreshCmdConsole = None
         if None != self.console:
             self.console_appClosed_conn   = None
             self.console_stderrAvail_conn = None
@@ -1336,6 +1341,10 @@ class IPTVExtMoviePlayer(Screen):
     def onStart(self):
         self.onShow.remove(self.onStart)
         #self.onLayoutFinish.remove(self.onStart)
+        
+        if '' != self.refreshCmd:
+            self.refreshCmdConsole = iptv_system( self.refreshCmd )
+        
         self['progressBar'].value = 0
         self['bufferingBar'].range = (0, 100000)
         self['bufferingBar'].value = 0
