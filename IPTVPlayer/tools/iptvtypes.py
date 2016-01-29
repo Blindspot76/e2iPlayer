@@ -16,6 +16,7 @@ def enum(**enums):
 #   "iptv_block_exteplayer" True | False - default False 
 #   "iptv_audio_url"        "http... link"
 #   "iptv_m3u8_custom_base_link" "http... link"
+#   "iptv_m3u8_skip_seg"    0, 2, 3 - defaul 0 (sip first num of seg from first list)
 #   "iptv_proxy_gateway"    "http... link"
 #   "iptv_refresh_cmd"      "refresh cmd line needed for some streams to keep playing"
 

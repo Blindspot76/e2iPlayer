@@ -9,7 +9,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, eConnectCallback, E2PrioFix
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import enum
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import enum, strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs import m3u8
 from Plugins.Extensions.IPTVPlayer.iptvdm.basedownloader import BaseDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
@@ -66,6 +66,9 @@ class M3U8Downloader(BaseDownloader):
         # -1 means, starts from beginning
         self.startLiveDuration = M3U8Downloader.LIVE_START_OFFSET 
         
+        # 0 means, starts from beginning
+        self.skipFirstSegFromList = 0
+        
         self.addStampToUrl = False
         
     def __del__(self):
@@ -103,6 +106,7 @@ class M3U8Downloader(BaseDownloader):
         self.lastMediaSequence = -1
         self.currentFragment = -1
         self.liveStream   = False
+        self.skipFirstSegFromList = strwithmeta(url).meta.get('iptv_m3u8_skip_seg', 0)
         self._startM3U8(url)
         
         self.onStart()
@@ -399,7 +403,11 @@ class M3U8Downloader(BaseDownloader):
                                         self.fragmentList.append(self._segUri(seg.absolute_uri))
                                         if currentDuration >= self.startLiveDuration:
                                             break
+                                    
                                     self.fragmentList.reverse()
+                                    if len(m3u8Obj.segments) == len(self.fragmentList) and len(self.fragmentList) > self.skipFirstSegFromList:
+                                        self.fragmentList = self.fragmentList[self.skipFirstSegFromList:]
+                                    
                                     self.lastMediaSequence = m3u8Obj.media_sequence
                                 # start update fragment list loop
                                 #self.fragmentList = self.fixFragmentsList(self.fragmentList)

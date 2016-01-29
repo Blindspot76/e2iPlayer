@@ -4508,7 +4508,7 @@ class pageParser:
             tab = getDirectM3U8Playlist(vidUrl)
             urlsTab = []
             for item in tab:
-                item['url'] = strwithmeta(item['url'], {'iptv_refresh_cmd':pyCmd, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
+                item['url'] = strwithmeta(item['url'], {'iptv_m3u8_skip_seg':2, 'iptv_refresh_cmd':pyCmd, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
                 urlsTab.append(item)
             return urlsTab
         return False
