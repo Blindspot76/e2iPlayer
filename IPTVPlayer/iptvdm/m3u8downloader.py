@@ -193,8 +193,6 @@ class M3U8Downloader(BaseDownloader):
                 tmpList = newFragments[-toAdd:]
                 self.lastMediaSequence = media_sequence
         else:
-            return
-            #newFragments = self.fixFragmentsList(newFragments) 
             try: 
                 tmpCurrFragmentList = [seg[seg.rfind('/')+1:] for seg in self.fragmentList]
                 tmpNewFragments = [seg[seg.rfind('/')+1:] for seg in newFragments]
