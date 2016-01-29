@@ -24,8 +24,8 @@ from Plugins.Extensions.IPTVPlayer.libs.typertv    import TyperTV
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld import WagasWorldApi
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow    import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet import TelewizjadaNetApi
-
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.livestreamtv   import LiveStreamTvApi 
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes     import strwithmeta
 ###################################################
 
 ###################################################
@@ -152,6 +152,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'greek_iptv',              'name': 'm3u',                 'title': 'Greek-IPTV',                        'url': 'https://raw.githubusercontent.com/free-greek-iptv/greek-iptv/master/greek.m3u', 'icon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Coat_of_arms_of_Greece.svg/538px-Coat_of_arms_of_Greece.svg.png'}, \
                         {'alias_id':'hellenic_tv',             'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
                         {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
+                        {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'Live-Stream.tv',                    'url': 'http://www.live-stream.tv/',                                          'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
                         #{'alias_id':'others',                 'name': 'others',              'title': 'Others',                            'url': '',                                                                    'icon': ''}, \
                         {'alias_id':'freetuxtv_programmes_en', 'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
@@ -180,6 +181,7 @@ class HasBahCa(CBaseHostClass):
         self.ustvnowApi   = None
         self.purecastNetApi = None
         self.telewizjadaNetApi = None
+        self.liveStreamTvApi = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -915,6 +917,19 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.telewizjadaNetApi.getVideoLink(cItem)
         return urlsTab
         
+    def getLiveStreamTvList(self, cItem):
+        printDBG("getLiveStreamTvList start")
+        if None == self.liveStreamTvApi:
+            self.liveStreamTvApi = LiveStreamTvApi()
+        tmpList = self.liveStreamTvApi.getChannelsList(cItem)
+        for item in tmpList:
+            self.playVideo(item) 
+        
+    def getLiveStreamTvLink(self, cItem):
+        printDBG("getLiveStreamTvLink start")
+        urlsTab = self.liveStreamTvApi.getVideoLink(cItem)
+        return urlsTab
+        
     def prognozaPogodyList(self, url):
         printDBG("prognozaPogodyList start")
         if config.plugins.iptvplayer.weather_useproxy.value: params = {'http_proxy':config.plugins.iptvplayer.proxyurl.value}
@@ -1001,6 +1016,9 @@ class HasBahCa(CBaseHostClass):
     #telewizjada.net items
         elif name == 'telewizjada.net':
             self.getTelewizjadaNetList(self.currItem)
+    #live-stream.tv items
+        elif name == 'live-stream.tv':
+            self.getLiveStreamTvList(self.currItem)
     #sat-live.tv items
         elif name == "web-live.tv":
             self.getSatLiveList(url)
@@ -1106,6 +1124,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getPurecastNetLink(cItem)
         elif name == 'telewizjada.net':
             urlList = self.host.getTelewizjadaNetLink(cItem)
+        elif name == 'live-stream.tv':
+            urlList = self.host.getLiveStreamTvLink(cItem)
         elif name == "webcamera.pl":
             urlList = self.host.getWebCameraLink(url)
         elif name == "prognoza.pogody.tv":
