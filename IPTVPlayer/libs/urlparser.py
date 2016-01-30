@@ -896,6 +896,7 @@ class pageParser:
             
         vidMarker = '/video/'
         videoUrls = []
+        uniqUrls  = []
         tmpUrls = []
         if vidMarker not in inUrl:
             sts, data = self.cm.getPage(inUrl)
@@ -906,8 +907,7 @@ class pageParser:
                 if match.startswith('http'): inUrl = match
         if vidMarker in inUrl: 
             vid = inUrl.split('/video/')[1]
-            inUrl = 'http://www.cda.pl/video/' + vid
-        else: tmpUrls.append(inUrl)
+            inUrl = 'http://ebd.cda.pl/620x368/' + vid
         
         # extract qualities
         sts, data = self.cm.getPage(inUrl)
@@ -917,23 +917,42 @@ class pageParser:
                 data = re.findall('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>', data)
                 for urlItem in data:
                     tmpUrls.append({'name':'cda.pl ' + urlItem[1], 'url':urlItem[0]})
+        
         if 0 == len(tmpUrls):
             tmpUrls.append({'name':'cda.pl', 'url':inUrl})
+            
+        def __appendVideoUrl(params):
+            if params['url'] not in uniqUrls:
+                videoUrls.append(params)
+                uniqUrls.append(params['url'])
+        
         for urlItem in tmpUrls:
             if urlItem['url'].startswith('/'): inUrl = 'http://www.cda.pl/' + urlItem['url']
             else: inUrl = urlItem['url']
             sts, pageData = self.cm.getPage(inUrl)
-            if sts:
-                data = CParsingHelper.getDataBeetwenMarkers(pageData, "modes:", ']', False)[1]
-                data = re.compile("""file: ['"]([^'^"]+?)['"]""").findall(data)
-                if 0 < len(data) and data[0].startswith('http'): videoUrls.append( {'name': urlItem['name'] + ' flv', 'url':_decorateUrl(data[0], 'cda.pl', urlItem['url']) } )
-                if 1 < len(data) and data[1].startswith('http'): videoUrls.append( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data[1], 'cda.pl', urlItem['url']) } )
-                if 0 == len(data):
-                    data = CParsingHelper.getDataBeetwenMarkers(pageData, 'video: {', '}', False)[1]
-                    data = self.cm.ph.getSearchGroups(data, "'(http[^']+?\.mp4[^']*?)'")[0] 
-                    if '' != data:
-                        videoUrls.append( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data, 'cda.pl', urlItem['url']) } )
-        
+            if not sts: continue
+            
+            #with open('/home/sulge/movie/test.txt', 'r') as cfile:
+            #    pageData = cfile.read()
+            
+            tmpData = self.cm.ph.getDataBeetwenMarkers(pageData, "eval(", '</script>', False)[1]
+            if tmpData != '':
+                tmpData = unpackJSPlayerParams(tmpData, TEAMCASTPL_decryptPlayerParams, 0)
+            tmpData += pageData
+                
+            data = CParsingHelper.getDataBeetwenMarkers(tmpData, "modes:", ']', False)[1]
+            data = re.compile("""file: ['"]([^'^"]+?)['"]""").findall(data)
+            if 0 < len(data) and data[0].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' flv', 'url':_decorateUrl(data[0], 'cda.pl', urlItem['url']) } )
+            if 1 < len(data) and data[1].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data[1], 'cda.pl', urlItem['url']) } )
+            if 0 == len(data):
+                data = CParsingHelper.getDataBeetwenReMarkers(tmpData, re.compile('video:[\s]*{'), re.compile('}'), False)[1]
+                data = self.cm.ph.getSearchGroups(data, "'(http[^']+?(:?\.mp4|\.flv)[^']*?)'")[0]
+                if '' != data:
+                    type = ' flv '
+                    if '.mp4' in data:
+                        type = ' mp4 '
+                    __appendVideoUrl( {'name': urlItem['name'] + type, 'url':_decorateUrl(data, 'cda.pl', urlItem['url']) } )
+    
         #if len(videoUrls):
         #    videoUrls = [videoUrls[0]]
         return videoUrls

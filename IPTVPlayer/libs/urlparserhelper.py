@@ -248,12 +248,16 @@ def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
 #
 #       
 def getParamsTouple(code, type=1, r1=False, r2=False ):
-    mark1 = "}("
+    mark1Tab = ["}(", "}\r\n(", "}\n(", "}\r("]
     mark2 = "))"
-    if r1:
-        idx1 = code.rfind(mark1)
-    else:
-        idx1 = code.find(mark1)
+    
+    for mark1 in mark1Tab:
+        if r1:
+            idx1 = code.rfind(mark1)
+        else:
+            idx1 = code.find(mark1)
+        if idx1 > -1: break
+    
     if -1 == idx1: return ''
     idx1 += len(mark1)
     if r2:
