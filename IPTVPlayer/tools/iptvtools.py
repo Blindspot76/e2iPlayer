@@ -244,6 +244,17 @@ def GetTmpDir(file = ''):
     except: printExc()
     return path + '/' + file
     
+def CreateTmpFile(filename, data=''):
+    sts = False
+    filePath = GetTmpDir(filename)
+    try:
+        with open(filePath, 'w') as f:
+            f.write(data)
+            sts = True
+    except:
+        printExc()
+    return sts, filePath
+    
 def GetCacheSubDir(dir, file = ''):
     path = config.plugins.iptvplayer.SciezkaCache.value + "/" + dir
     path = path.replace('//', '/')

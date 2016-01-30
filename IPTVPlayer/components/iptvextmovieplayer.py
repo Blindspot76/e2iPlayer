@@ -15,7 +15,7 @@ from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, GetSubtitlesDir, eConnectCallback, \
                                                           GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
                                                           GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang, GetPolishSubEncoding, E2PrioFix, iptv_system, \
-                                                          GetE2AudioCodecMixOption, SetE2AudioCodecMixOption
+                                                          GetE2AudioCodecMixOption, SetE2AudioCodecMixOption, CreateTmpFile, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -1352,6 +1352,10 @@ class IPTVExtMoviePlayer(Screen):
         self.metaHandler.load()
         self.loadLastPlaybackTime()
         if 'gstplayer' == self.player:
+            if self.fileSRC.startswith('merge://'):
+                msg = _("Link is not supported by the gstplayer. Please use the extelayer3 if available.")
+                self.showMessage(msg, MessageBox.TYPE_ERROR)
+            
             if None != self.downloader:
                 self.downloader.subscribeFor_Finish(self.onDownloadFinished)
             
@@ -1390,8 +1394,22 @@ class IPTVExtMoviePlayer(Screen):
         else:
             exteplayer3path = config.plugins.iptvplayer.exteplayer3path.value
             cmd = exteplayer3path
+            tmpUri = strwithmeta(self.fileSRC)
+            
+            audioUri = ''
+            videoUri = self.fileSRC
+            if self.fileSRC.startswith('merge://') and 'audio_url' in tmpUri.meta and 'video_url' in tmpUri.meta:
+                audioUri = tmpUri.meta['audio_url']
+                videoUri = tmpUri.meta['video_url']
+                sts, audioUri = CreateTmpFile('.iptv_audio_uri', audioUri)
+                sts, videoUri = CreateTmpFile('.iptv_video_uri', videoUri)
+                audioUri = 'iptv://' + audioUri 
+                videoUri = 'iptv://' + videoUri 
+                if not sts: 
+                    msg = _("An error occurred while writing into: %s") % GetTmpDir()
+                    self.showMessage(msg, MessageBox.TYPE_ERROR)
             if "://" in self.fileSRC: 
-                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta( strwithmeta(self.fileSRC) )
+                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta( tmpUri )
                 #cmd += ' ""' # cookies for now will be send in headers
                 headers = ''
                 for key in httpParams:
@@ -1423,7 +1441,11 @@ class IPTVExtMoviePlayer(Screen):
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)
             if audioTrackIdx >= 0:
                 cmd += ' -t %d ' % audioTrackIdx
-            cmd += (' "%s"' % self.fileSRC) + " > /dev/null"
+                
+            if audioUri != '':
+                cmd += ' -x "%s" ' % audioUri
+            
+            cmd += (' "%s"' % videoUri) + " > /dev/null"
         
         self.console = eConsoleAppContainer()
         self.console_appClosed_conn = eConnectCallback(self.console.appClosed, self.eplayer3Finished)
