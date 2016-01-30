@@ -1413,7 +1413,9 @@ class IPTVExtMoviePlayer(Screen):
                 #cmd += ' ""' # cookies for now will be send in headers
                 headers = ''
                 for key in httpParams:
-                    if key == 'User-Agent':
+                    if key == 'Range': #Range is always used by ffmpeg
+                        continue
+                    elif key == 'User-Agent':
                         cmd += ' -u "%s"' %  httpParams[key]
                     else:
                         headers += ('%s: %s\r\n' % (key, httpParams[key]) )
