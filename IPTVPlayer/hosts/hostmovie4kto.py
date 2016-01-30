@@ -134,7 +134,7 @@ class Movie4kTO(CBaseHostClass):
                 url = self.cm.ph.getSearchGroups(tmpData, 'href="([^"]+?)"')[0]
                 if '' == url: continue
                 sts, data = self.getPage( self._getFullUrl(url) )
-                if not sts: continue
+                if not sts: data = ''
             else:
                 found = True
                 break
