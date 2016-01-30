@@ -181,7 +181,7 @@ class Youtube(CBaseHostClass):
         for item in tmpTab:
             videoUrls.append({'name': item['format'] + ' | ' + item['ext'] , 'url':item['url']})
         for item in dashTab:
-            videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | ' + item['ext'] , 'url':item['url']})
+            videoUrls.append({'name': _("[dash] ") + item['format'] + ' | ' + item['ext'] , 'url':item['url']})
         return videoUrls
         
     def getFavouriteData(self, cItem):
