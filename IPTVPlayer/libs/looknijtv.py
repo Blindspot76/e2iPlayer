@@ -41,14 +41,15 @@ class LooknijTvApi:
         printDBG("LooknijTvApi.getChannelsList url[%s]" % url )
         channelsList = []
         post_data = {'html_template':'Grid columns', 'now_open_works':'0', 'action':'get_portfolio_works','works_per_load':'40', 'category':url}
-        sts,data = self.cm.getPage(LooknijTvApi.MAINURL + 'wp-admin/admin-ajax.php', {}, post_data)
+        sts, data = self.cm.getPage(LooknijTvApi.MAINURL + 'wp-admin/admin-ajax.php', {}, post_data)
+        
         if sts:
             data = data.split('<div data-category=')
             if len(data): del data[0]
             for item in data:
-                item = '<div data-category=' + item
+                item = '<div ' + item
                 title = self.cm.ph.getDataBeetwenMarkers(item, '<h5>', '</h5>', False)[1]
-                url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?port[^"]+?)"')[0]
                 icon  = self.cm.ph.getSearchGroups(item, 'src=(http[^"]+?)"')[0]
                 channelsList.append({'title':title, 'url':url, 'icon':icon})
         return channelsList
