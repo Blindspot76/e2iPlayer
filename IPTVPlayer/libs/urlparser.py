@@ -310,6 +310,7 @@ class urlparser:
                        'ok.ru':                self.pp.parserOKRU          ,
                        'putstream.com':        self.pp.parserPUTSTREAM     ,
                        'live-stream.tv':       self.pp.parserLIVESTRAMTV   ,
+                       'zerocast.tv':          self.pp.parserZEROCASTTV    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4530,6 +4531,37 @@ class pageParser:
                 item['url'] = strwithmeta(item['url'], {'iptv_m3u8_skip_seg':2, 'iptv_refresh_cmd':pyCmd, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
                 urlsTab.append(item)
             return urlsTab
+        return False
+        
+    def parserZEROCASTTV(self, baseUrl):
+        printDBG("parserZEROCASTTV baseUrl[%r]" % baseUrl)
+        if 'embed.php' in baseUrl:
+            url = baseUrl
+        elif 'chan.php?' in baseUrl:
+            sts, data = self.cm.getPage(baseUrl)
+            if not sts: return False
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<body ', '</body>', False)[1]
+            url = self.cm.ph.getSearchGroups(data, r'''src=['"](http[^"^']+)['"]''')[0]
+            
+        if 'embed.php' not in url:
+            sts, data = self.cm.getPage(url)
+            if not sts: return False
+            url = self.cm.ph.getSearchGroups(data, r'''var [^=]+?=[^'^"]*?['"](http[^'^"]+?)['"];''')[0]
+            
+        if url == '': return False
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        
+        channelData = self.cm.ph.getSearchGroups(data, r'''unescape\(['"]([^'^"]+?)['"]\)''')[0]
+        channelData = urllib.unquote(channelData)
+        
+        if channelData == '':
+            data = self.cm.ph.getSearchGroups(data, '<h1[^>]*?>([^<]+?)<')[0]
+            SetIPTVPlayerLastHostError(data)
+        
+        if channelData.startswith('rtmp'):
+            channelData += ' live=1 '
+            return channelData
         return False
         
     def parserCLOUDYEC(self, baseUrl):
