@@ -87,7 +87,7 @@ class NeoKinoNet(CBaseHostClass):
         printDBG("NeoKinoNet.fillFilters")
         sts, data = self.cm.getPage(url)
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="categorias">', '<div id="footer">', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="categorias">', '<div id="footer"', False)[1]
         data = data.split('<div class="filtro_y">')
         self.filterCache = {0:[], 1:[], 2:[]} 
         idx = 0
@@ -143,18 +143,20 @@ class NeoKinoNet(CBaseHostClass):
             nextPage = True
         else: nextPage = False
         
-        m1 = '<div class="item">'
-        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div class="nav-previous alignleft">', False)[1]
-        data = data.split(m1)
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'items">', '<div class="lateral">', False)[1]
+        data = re.split('<div[^>]+?class="item">', data)
         
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             title  = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
-            desc   = self.cm.ph.getDataBeetwenMarkers(item, '<b class="icon-star">', '</span>', False)[1]
-            params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
-            self.addVideo(params)
+            desc   = item.split('<div id="paginador">')[0]
+            title  = self.cleanHtmlStr( title )
+            url    = self._getFullUrl(url)
+            if title != '' and url.startswith('http'):
+                params = dict(cItem)
+                params.update( {'title': title, 'url':url, 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
+                self.addVideo(params)
         
         if nextPage:
             params = dict(cItem)
