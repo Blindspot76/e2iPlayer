@@ -57,7 +57,7 @@ class StreamLiveTo(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'StreamLiveTo.tv', 'cookie':'streamliveto.cookie'})
-        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheFilters = {}
         
     def _getFullUrl(self, url):
@@ -69,6 +69,9 @@ class StreamLiveTo(CBaseHostClass):
         if not self.MAIN_URL.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
+        
+    def getPage(self, url, params={}):
+        return self.checkBotProtection(url, params)
         
     def cleanHtmlStr(self, data):
         data = data.replace('&nbsp;', ' ')
@@ -88,7 +91,7 @@ class StreamLiveTo(CBaseHostClass):
     def fillCategories(self):
         printDBG("StreamLiveTo.fillCategories")
         self.cacheFilters = {}
-        sts, data = self.cm.getPage(self._getFullUrl('channels/'), self.defaultParams)
+        sts, data = self.getPage(self._getFullUrl('channels/'), self.defaultParams)
         if not sts: return
         
         catTab = []
@@ -151,7 +154,7 @@ class StreamLiveTo(CBaseHostClass):
         url = 'channels/{0}?p={1}&q={2}&lang={3}&sort={4}'.format(cat, page, q, lang, sort)
         url = self._getFullUrl(url)
 
-        sts, data = self.cm.getPage(url, self.defaultParams)
+        sts, data = self.getPage(url, self.defaultParams)
         if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'class="pages"', '</p>', False)[1]
@@ -188,6 +191,9 @@ class StreamLiveTo(CBaseHostClass):
         urlTab = []
         videoUrl = cItem['url']
         if videoUrl.startswith('http'):
+            sts, data = self.getPage(videoUrl, self.defaultParams)
+            if not sts: []
+        
             urlTab = self.up.getVideoLinkExt(videoUrl)
             for idx in range(len(urlTab)):
                 urlTab[idx]['need_resolve'] = 0
@@ -199,13 +205,12 @@ class StreamLiveTo(CBaseHostClass):
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})
         
-    def checkBotProtection(self):
+    def checkBotProtection(self, url, httpParams):
         printDBG("StreamLiveTo.checkBotProtection")
         captchaMarker = 'name="captcha"'
-        url = self.MAIN_URL
-        sts, data = self.cm.getPage(url, self.defaultParams)
-        if not sts: return False
-        if captchaMarker not in data: return True
+        sts, data = self.cm.getPage(url, httpParams)
+        if not sts: return False, None
+        if captchaMarker not in data: return True, data
         data     = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form [^>]+?>'), re.compile('</form>'), True)[1]    
         title    = self.cm.ph.getDataBeetwenMarkers(data, '<h1>', '</h1>')[1]
         question = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('</h1>'), re.compile('</form>'), True)[1]
@@ -228,14 +233,20 @@ class StreamLiveTo(CBaseHostClass):
         printDBG(retArg)
         if retArg and 1 == len(retArg) and retArg[0] and 1 == len(retArg[0]):
             answer = '%s' % retArg[0][0]
-            sts, data = self.cm.getPage(url, self.defaultParams, {'captcha':answer})
-            if not sts: return False
+            
+            newHttpParams = dict(httpParams)
+            newHeader = dict(self.HEADER)
+            newHeader['Referer'] = url
+            newHttpParams['header'] = newHttpParams
+            
+            sts, data = self.cm.getPage(url, newHttpParams, {'captcha':answer})
+            if not sts: return False, None
             resultMarker = 'Your answer is wrong.'
             if  resultMarker in data:
                 self.sessionEx.open(MessageBox, resultMarker, type = MessageBox.TYPE_ERROR, timeout = 10 )
             else:
-                return True
-        return False
+                return True, data
+        return False, None
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -251,8 +262,7 @@ class StreamLiveTo(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            if self.checkBotProtection():
-                self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category == 'category':
             self.listCategory(self.currItem, 'language')
         elif category == 'language':

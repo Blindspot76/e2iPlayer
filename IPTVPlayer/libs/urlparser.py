@@ -3971,6 +3971,7 @@ class pageParser:
     def paserSTREAMLIVETO(self, baseUrl):
         printDBG("paserSTREAMLIVETO baseUrl[%r]" % baseUrl )
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl.meta.get('Referer', baseUrl) }
+        defaultParams = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('streamliveto.cookie')}
         
         _url_re = re.compile("http(s)?://(\w+\.)?(ilive.to|streamlive.to)/.*/(?P<channel>\d+)")
         channel = _url_re.match(baseUrl).group("channel")
@@ -3978,22 +3979,29 @@ class pageParser:
         # get link for mobile
         linkUrl ='http://www.streamlive.to/view/%s' % channel
         if 0:
-            userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
-            sts, data = self.cm.getPage(linkUrl, {'header':{'User-Agent':userAgent}})
+            userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'            
+            params = dict(defaultParams)
+            params.update({'header':{'User-Agent':userAgent}})
+            sts, data = self.cm.getPage(linkUrl, params)
             if sts:
                 hlsUrl = self.cm.ph.getSearchGroups(data, '<video[^>]+?src="([^"]+?)"')[0]
                 hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
                 return getDirectM3U8Playlist(hlsUrl)
             return False
         
-        sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
+        params = dict(defaultParams)
+        params.update({'header':{'header':HTTP_HEADER}})
+        sts, data = self.cm.getPage(linkUrl, params)
         if not sts: return False 
         
         # get token
         token = CParsingHelper.getDataBeetwenMarkers(data, 'var token="";', '});', False)[1]
         token = self.cm.ph.getSearchGroups(token, '"([^"]+?/server.php[^"]+?)"')[0]
         if token.startswith('//'): token = 'http:' + token
-        sts, token = self.cm.getPage(token, {'header':HTTP_HEADER})
+        
+        params = dict(defaultParams)
+        params.update({'header':{'header':HTTP_HEADER}})
+        sts, token = self.cm.getPage(token, params)
         if not sts: return False 
         token = byteify(json.loads(token))['token']
         if token != "": token = ' token=%s ' % token
