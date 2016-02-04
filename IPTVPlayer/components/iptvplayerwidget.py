@@ -505,7 +505,7 @@ class IPTVPlayerWidget(Screen):
             # find next playable item
             if goToNext:  idx += 1
             while idx < len(self.currList):
-                if self.currList[idx].type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_MORE]:
+                if self.currList[idx].type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE, CDisplayListItem.TYPE_MORE]:
                     break
                 else:
                     idx += 1
@@ -1272,7 +1272,7 @@ class IPTVPlayerWidget(Screen):
         self["list"].show()
         
         if url != '' and CDisplayListItem.TYPE_PICTURE == self.currItem.type:
-            self.session.open(IPTVPicturePlayerWidget, url, config.plugins.iptvplayer.bufferingPath.value, self.currItem.name)
+            self.session.openWithCallback(self.leavePicturePlayer, IPTVPicturePlayerWidget, url, config.plugins.iptvplayer.bufferingPath.value, self.currItem.name, {'seq_mode':self.autoPlaySeqStarted})
         elif url != '' and self.currItem.type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]:
             printDBG( "playVideo url[%s]" % url)
             url = urlparser.decorateUrl(url)
@@ -1358,7 +1358,10 @@ class IPTVPlayerWidget(Screen):
         if not config.plugins.iptvplayer.disable_live.value:
             self.session.nav.playService(self.currentService)
         self.checkAutoPlaySequencer()
-    
+
+    def leavePicturePlayer(self, answer = None, lastPosition = None, *args, **kwargs):
+        self.checkAutoPlaySequencer()
+        
     def requestListFromHost(self, type, currSelIndex = -1, privateData = ''):
         
         if not self.isInWorkThread():
