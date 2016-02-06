@@ -292,6 +292,8 @@ class common:
         downDataSize = 0
         dictRet = {}
         try:
+            outParams, postData = self.getParamsFromUrlWithMeta(url)
+            addParams.update(outParams)
             if 'header' not in addParams and 'host' not in addParams:
                 host = 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.18) Gecko/20110621 Mandriva Linux/1.9.2.18-0.1mdv2010.2 (2010.2) Firefox/3.6.18'
                 header = {'User-Agent': host, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
