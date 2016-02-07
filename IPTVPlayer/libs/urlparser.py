@@ -312,6 +312,7 @@ class urlparser:
                        'putstream.com':        self.pp.parserPUTSTREAM     ,
                        'live-stream.tv':       self.pp.parserLIVESTRAMTV   ,
                        'zerocast.tv':          self.pp.parserZEROCASTTV    ,
+                       'vid.ag':               self.pp.parserVIDAG         ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -674,8 +675,9 @@ class pageParser:
         if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
         return False
         
-    def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None):
-        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+    def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None, httpHeader={}):
+        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        HTTP_HEADER.update(httpHeader)
         if 'embed' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
             url = embedUrl.format(video_id)
@@ -2395,6 +2397,19 @@ class pageParser:
             return self._findLinks(data, 'allvid.ch', m1='setup(', m2='image:')
         return self._parserUNIVERSAL_A(baseUrl, 'http://allvid.ch/embed-{0}-830x500.html', _findLinks)
         #return self.__parseJWPLAYER_A(baseUrl, 'allvid.ch', _findLinks)
+        
+    def parserVIDAG(self, baseUrl):
+        printDBG("parserVIDAG baseUrl[%r]" % baseUrl)
+        # example video: http://vid.ag/embed-24w6kstkr3zt-540x360.html
+        def _findLinks(data):
+            tab = []
+            tmp = self._findLinks(data, 'vid.ag', m1='setup(', m2='image:')
+            for item in tmp:
+                if not item['url'].split('?')[0].endswith('.m3u8'):
+                    tab.append(item)
+            return tab
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':'http://www.streaming-series.xyz/', 'Cookie':'__test' }
+        return self._parserUNIVERSAL_A(baseUrl, 'http://vid.ag/embed-{0}-540x360.html', _findLinks, None, HTTP_HEADER)
         
     def parserVODLOCKER(self, url):
         printDBG("parserVODLOCKER url[%r]" % url)
