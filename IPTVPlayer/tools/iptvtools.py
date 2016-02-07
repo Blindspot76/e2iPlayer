@@ -994,7 +994,7 @@ def GetShortPythonVersion():
     
 def GetVersionNum(ver):
     try:
-        if None == re.match("[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]", ver): raise Exception("Wrong version!")
+        if None == re.match("[0-9]+\.[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]", ver): raise Exception("Wrong version!")
         return int(ver.replace('.', ''))
     except:
         printExc('Version[%r]' % ver)
