@@ -292,19 +292,26 @@ class Kino2016PL(CBaseHostClass):
                 sts, tmp = self.cm.getPage(url)
                 if not sts: continue
                 tmp = re.sub("<!--[\s\S]*?-->", "", tmp)
-                link  = self.cm.ph.getSearchGroups(tmp, '.link=([^"]+?)"')[0]
-                link2 = self.cm.ph.getSearchGroups(tmp, 'link[^;^<]*?"(http[^"]+?)"')[0]
-                if 1 == self.up.checkHostSupport(link2):
-                    urlTab.append({'name':self.up.getHostName(link2), 'url':link2, 'need_resolve':1})
-                elif 1 == self.up.checkHostSupport(link):
-                    urlTab.append({'name':self.up.getHostName(link), 'url':link, 'need_resolve':1})
-                else:
-                    link = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
-                    if 1 == self.up.checkHostSupport(link):
-                        urlTab.append({'name':self.up.getHostName(link), 'url':link, 'need_resolve':1})
-                if 'stream.kino2016.pl' in link:    
-                    urlTab.append({'name':'tream.kino2016.pl', 'url':link, 'need_resolve':1})
-                    
+                
+                
+                linksTab = []
+                tmpLinksTab = re.compile('.link=([^"]+?)"').findall(tmp)
+                for litem in tmpLinksTab:
+                    linksTab.append(litem)
+                tmpLinksTab = re.compile('link[^;^<]*?"(http[^"]+?)"').findall(tmp)
+                for litem in tmpLinksTab:
+                    linksTab.append(litem)
+                tmpLinksTab = re.compile('src="([^"]+?)"').findall(tmp)
+                for litem in tmpLinksTab:
+                    linksTab.append(litem)
+                linksTab = set(linksTab)
+                for litem in linksTab:
+                    if 'facebook' in litem:
+                        continue
+                    elif 1 == self.up.checkHostSupport(litem):
+                        urlTab.append({'name':self.up.getHostName(litem), 'url':litem, 'need_resolve':1})
+                    elif 'stream.kino2016.pl' in litem:    
+                        urlTab.append({'name':'tream.kino2016.pl', 'url':litem, 'need_resolve':1})
         return urlTab
         
     def getVideoLinks(self, baseUrl):
