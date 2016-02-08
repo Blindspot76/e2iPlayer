@@ -54,7 +54,7 @@ class HDProfili(CBaseHostClass):
     
     MAIN_CAT_TAB = [
                     {'category':'movie_cats',  'title': _('Movie'),                 'url':MAIN_URL+'filma-me-titra-shqip',                   'icon':DEFAULT_ICON_URL },
-                    {'category':'list_items2', 'title': _('Animation [dubbing]'),   'url':MAIN_URL+'filma-te-dubluar-ne-shqip.html',         'icon':DEFAULT_ICON_URL },
+                    {'category':'list_items1', 'title': _('Animation [dubbing]'),   'url':MAIN_URL+'filma-te-dubluar-ne-shqip.html',         'icon':DEFAULT_ICON_URL },
                     {'category':'list_items3', 'title': _('Series [dubbing]'),      'url':MAIN_URL+'seriale-dubluar-ne-shqip.html',          'icon':DEFAULT_ICON_URL },
                     {'category':'list_items2', 'title': _('Animation [subtitles]'), 'url':MAIN_URL+'filma-te-animuar-me-titra-shqip.html',   'icon':DEFAULT_ICON_URL },
                     {'category':'list_items3', 'title': _('Series [subtitles]'),    'url':MAIN_URL+'seriale-te-animuar-me-titra-shqip.html', 'icon':DEFAULT_ICON_URL },
@@ -166,8 +166,11 @@ class HDProfili(CBaseHostClass):
         if 'hdprofili.weebly.com' in cItem['url']:
             sts, data = self.cm.getPage(cItem['url'])
             if not sts: return []
-            playerUrlTab = re.compile('''<iframe[^>]+?src=["'](http[^"^']+?)["']''', re.IGNORECASE).findall(data)
+            playerUrlTab = re.compile('''<iframe[^>]+?src=["']([^"^']+?)["']''', re.IGNORECASE).findall(data)
             for url in playerUrlTab:
+                if url.startswith('//'):
+                    url = 'http:' + url
+                if not url.startswith('http'): continue
                 if 1 != self.up.checkHostSupport(url): continue
                 urlTab.append({'name':self.up.getHostName(url), 'url':url, 'need_resolve':1})
         else:

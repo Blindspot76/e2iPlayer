@@ -313,6 +313,7 @@ class urlparser:
                        'live-stream.tv':       self.pp.parserLIVESTRAMTV   ,
                        'zerocast.tv':          self.pp.parserZEROCASTTV    ,
                        'vid.ag':               self.pp.parserVIDAG         ,
+                       'albfilm.com':          self.pp.parserALBFILMCOM    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -692,12 +693,18 @@ class pageParser:
         #printDBG(data)
         
         # get JS player script code from confirmation page
-        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+        m1 = ">eval("
+        if m1 not in data:
+            m1 = "eval("
+        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, m1, '</script>', False)
         if sts:
             data = tmpData
             tmpData = None
             # unpack and decode params from JS player script code
-            data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
+            tmpData = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
+            if tmpData == '':
+                tmpData = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0)
+            data = tmpData
             printDBG(data)
         return _findLinks(data)
         
@@ -2402,6 +2409,16 @@ class pageParser:
             return self._findLinks(data, 'allvid.ch', m1='setup(', m2='image:')
         return self._parserUNIVERSAL_A(baseUrl, 'http://allvid.ch/embed-{0}-830x500.html', _findLinks)
         #return self.__parseJWPLAYER_A(baseUrl, 'allvid.ch', _findLinks)
+        
+    def parserALBFILMCOM(self, baseUrl):
+        printDBG("parserALBFILMCOM baseUrl[%r]" % baseUrl)
+        # www.albfilm.com/video/?m=endless_love_2014
+        def _findLinks(data):
+            videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=["'](http[^"^']+?)["']''', 1, True)[0]
+            if videoUrl == '': return []
+            return [{'name':'albfilm.com', 'url':videoUrl}]
+        url = baseUrl
+        return self._parserUNIVERSAL_A(baseUrl, url, _findLinks)
         
     def parserVIDAG(self, baseUrl):
         printDBG("parserVIDAG baseUrl[%r]" % baseUrl)
