@@ -1560,7 +1560,7 @@ class pageParser:
             HTTP_HEADER['Referer'] = 'http://nocnyseans.pl/film/chemia-2015/15471'
             sts, data = self.cm.getPage(url, params)
             if not sts: 
-                return False
+                continue
             if 'dmca ' in data:
                 DMCA = True
                 SetIPTVPlayerLastHostError("'Digital Millennium Copyright Act' detected.")
@@ -1586,21 +1586,26 @@ class pageParser:
             
             linksTab = []
             fakeLinkVideo  = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]+?type="video')[0]
-            #if linkVideo.startswith('http'):
-            #    linksTab.append({'name': 'videomega_1', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks, "Orgin": "http://videomega.tv/", 'Range':'bytes=', 'Referer': referer, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})})
-                
-            #data = data[data.rfind('}(')+2:-2]
-            #data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
             
             # get JS player script code from confirmation page
             sts, data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>')
-            if not sts: return False
-            # unpack and decode params from JS player script code
-            data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0)
+            if not sts: continue
             
-            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-            printDBG(data)
-            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            #printDBG(data)
+            #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            
+            # unpack and decode params from JS player script code
+            decrypted = False
+            for decryptor in [SAWLIVETV_decryptPlayerParams, VIDUPME_decryptPlayerParams]:
+                try:
+                    data = unpackJSPlayerParams(data, decryptor, 0)
+                    if len(data):
+                        decrypted = True
+                    break
+                except:
+                    continue
+            if not decrypted: continue
             
             linkVideo  = self.cm.ph.getSearchGroups(data, '"(http[^"]+?\.mp4\?[^"]+?)"')[0]
             
