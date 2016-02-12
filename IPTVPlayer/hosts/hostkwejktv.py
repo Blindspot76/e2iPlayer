@@ -34,33 +34,27 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.alltubetv_premium  = ConfigYesNo(default = False)
-#config.plugins.iptvplayer.alltubetv_login    = ConfigText(default = "", fixed_size = False)
-#config.plugins.iptvplayer.alltubetv_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    #if config.plugins.iptvplayer.alltubetv_premium.value:
-    #    optionList.append(getConfigListEntry("  alltubetv login:", config.plugins.iptvplayer.alltubetv_login))
-    #    optionList.append(getConfigListEntry("  alltubetv hasło:", config.plugins.iptvplayer.alltubetv_password))
     return optionList
 ###################################################
 
 
 def gettytul():
-    return 'http://kino2016.pl/'
+    return 'http://kwejk.tv/'
 
-class Kino2016PL(CBaseHostClass):
-    MAIN_URL    = 'http://kino2016.pl/'
+class KwejkTV(CBaseHostClass):
+    MAIN_URL    = 'http://kwejk.tv/'
     SRCH_URL    = MAIN_URL + '?s='
-    DEFAULT_ICON_URL = 'http://kino2016.pl/wp-content/uploads/2015/11/logo.png'
+    DEFAULT_ICON_URL = 'http://kwejk.tv/wp-content/uploads/2016/02/kwejk.png'
     
     MAIN_CAT_TAB = [{'category':'movies_cats',    'title': 'Kategorie',       'url':MAIN_URL,     'icon':DEFAULT_ICON_URL},
                     {'category':'movies_top100',  'title': 'Top 100',         'url':MAIN_URL,     'icon':DEFAULT_ICON_URL},
                     {'category':'movies_year',    'title': 'Rok',             'url':MAIN_URL,     'icon':DEFAULT_ICON_URL},
                     {'category':'list_series',    'title': 'Seriale',         'url':MAIN_URL+'lista-seriali', 'icon':DEFAULT_ICON_URL},
-                    {'category':'search',         'title': _('Search'),       'search_item':True},
-                    {'category':'search_history', 'title': _('Search history')} 
+                    {'category':'search',         'title': _('Search'),       'search_item':True, 'icon':DEFAULT_ICON_URL},
+                    {'category':'search_history', 'title': _('Search history'), 'icon':DEFAULT_ICON_URL} 
                    ]
     
     TOP100_TAB = [{'category':'list_top100', 'title':'24 godz',   'url':MAIN_URL + '24-godz/'},
@@ -71,7 +65,7 @@ class Kino2016PL(CBaseHostClass):
                  ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'Kino2016PL', 'cookie':'Kino2016PL.cookie'})
+        CBaseHostClass.__init__(self, {'history':'KwejkTV', 'cookie':'KwejkTV.cookie'})
         self.catsCache = []
         self.seriesCache = []
         self.episodesCache = []
@@ -88,11 +82,11 @@ class Kino2016PL(CBaseHostClass):
         return url
         
     def fillFilters(self, url):
-        printDBG("Kino2016PL.fillFilters")
+        printDBG("KwejkTV.fillFilters")
         self.catsCache = []
         sts, data = self.cm.getPage(url)
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="categories-2"', '</ul>', True)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="categories', '</ul>', True)[1]
         data = self.cm.ph.getDataBeetwenMarkers(data, '<ul>', '</ul>', False)[1]
         data = data.split('</li>')
         for item in data:
@@ -102,7 +96,7 @@ class Kino2016PL(CBaseHostClass):
                 self.catsCache.append({'title':title, 'url':url})
         
     def listsTab(self, tab, cItem, type='dir'):
-        printDBG("Kino2016PL.listsTab")
+        printDBG("KwejkTV.listsTab")
         for item in tab:
             params = dict(cItem)
             params.update(item)
@@ -112,7 +106,7 @@ class Kino2016PL(CBaseHostClass):
             else: self.addVideo(params)
             
     def listYears(self, cItem, category):
-        printDBG("Kino2016PL.listYears")
+        printDBG("KwejkTV.listYears")
         year = datetime.now().year
         tab = []
         while year >= 1978:
@@ -124,7 +118,7 @@ class Kino2016PL(CBaseHostClass):
         self.listsTab(tab, cItem)
         
     def listMoviesCategories(self, cItem, category):
-        printDBG("Kino2016PL.listMoviesCategories")
+        printDBG("KwejkTV.listMoviesCategories")
         if 0 == len(self.catsCache):
             self.fillFilters(cItem['url'])
         
@@ -133,7 +127,7 @@ class Kino2016PL(CBaseHostClass):
         self.listsTab(self.catsCache, cItem)
             
     def listTop100(self, cItem):
-        printDBG("Kino2016PL.listTop100")
+        printDBG("KwejkTV.listTop100")
         url = cItem['url']
         
         sts, data = self.cm.getPage(url)
@@ -152,7 +146,7 @@ class Kino2016PL(CBaseHostClass):
             self.addVideo(params)
             
     def listMoviesCategories(self, cItem, category):
-        printDBG("Kino2016PL.listMoviesCategories")
+        printDBG("KwejkTV.listMoviesCategories")
         if 0 == len(self.catsCache):
             self.fillFilters(cItem['url'])
         
@@ -161,7 +155,7 @@ class Kino2016PL(CBaseHostClass):
         self.listsTab(self.catsCache, cItem)
             
     def listMovies(self, cItem):
-        printDBG("Kino2016PL.listMovies")
+        printDBG("KwejkTV.listMovies")
         url = cItem['url']
         if '?' in url:
             post = url.split('?')
@@ -200,7 +194,7 @@ class Kino2016PL(CBaseHostClass):
             self.addDir(params)
             
     def listAllSeries(self, cItem, category):
-        printDBG("Kino2016PL.listAllSeries")
+        printDBG("KwejkTV.listAllSeries")
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return 
 
@@ -209,14 +203,13 @@ class Kino2016PL(CBaseHostClass):
         if len(data): del data[-1]
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            icon   = ''
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
+            params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url)} )
             params['category'] = category
             self.addDir(params)
             
     def listSeasons(self, cItem, category):
-        printDBG("Kino2016PL.listSeasons")
+        printDBG("KwejkTV.listSeasons")
         self.episodesCache = []
         
         sts, data = self.cm.getPage(cItem['url'])
@@ -254,7 +247,7 @@ class Kino2016PL(CBaseHostClass):
                 self.episodesCache.append(episodesList)
         
     def listEpisodes(self, cItem):
-        printDBG("Kino2016PL.listEpisodes")
+        printDBG("KwejkTV.listEpisodes")
         seasonIdx = cItem['season_idx']
         
         if seasonIdx >= 0 and seasonIdx < len(self.episodesCache):
@@ -268,7 +261,7 @@ class Kino2016PL(CBaseHostClass):
         self.listMovies(cItem)
         
     def getLinksForVideo(self, cItem):
-        printDBG("Kino2016PL.getLinksForVideo [%s]" % cItem)
+        printDBG("KwejkTV.getLinksForVideo [%s]" % cItem)
         urlTab = []
         url = cItem['url']
         
@@ -310,16 +303,16 @@ class Kino2016PL(CBaseHostClass):
                         continue
                     elif 1 == self.up.checkHostSupport(litem):
                         urlTab.append({'name':self.up.getHostName(litem), 'url':litem, 'need_resolve':1})
-                    elif 'stream.kino2016.pl' in litem:    
-                        urlTab.append({'name':'tream.kino2016.pl', 'url':litem, 'need_resolve':1})
+                    elif 'stream.kwejk.tv' in litem:    
+                        urlTab.append({'name':'tream.kwejk.tv', 'url':litem, 'need_resolve':1})
         return urlTab
         
     def getVideoLinks(self, baseUrl):
-        printDBG("Kino2016PL.getVideoLinks [%s]" % baseUrl)
+        printDBG("KwejkTV.getVideoLinks [%s]" % baseUrl)
         urlTab = []
         
         videoUrl = baseUrl
-        if 'kino2016.pl' in baseUrl:
+        if 'kwejk.tv' in baseUrl:
             sts, data = self.cm.getPage(baseUrl)
             if sts:
                 videoUrl = self.cm.ph.getSearchGroups(data, 'link[^;^<]*?"(http[^"]+?)"')[0]
@@ -411,15 +404,15 @@ class Kino2016PL(CBaseHostClass):
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
-        
         CBaseHostClass.endHandleService(self, index, refresh)
+
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, Kino2016PL(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        CHostBase.__init__(self, KwejkTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('kino2016logo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('kwejktvlogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
