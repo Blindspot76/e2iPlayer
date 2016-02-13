@@ -295,10 +295,10 @@ msgstr "Login"
 msgid "password"
 msgstr "Passwort"
 
-msgid "First move player in buffering mode"
+msgid "First movie player in buffering mode"
 msgstr "Primärer Player im Puffermodus"
 
-msgid "Second move player in buffering mode"
+msgid "Second movie player in buffering mode"
 msgstr "Alternativer Player im Puffermodus"
 
 msgid "Movie player without buffering mode"

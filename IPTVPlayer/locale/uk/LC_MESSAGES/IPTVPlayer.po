@@ -750,10 +750,10 @@ msgstr "Файл не можливо завантажити. Протокол [%
 msgid "Filmy"
 msgstr "Фильми"
 
-msgid "First move player in buffering mode"
+msgid "First movie player in buffering mode"
 msgstr "Вибрати перший крок плеєра в режимі (буферизації)"
 
-msgid "First move player without buffering mode"
+msgid "First movie player without buffering mode"
 msgstr "Вибрати перший крок плеєра"
 
 msgid "Fluendo mpegdemux for GSTREAMER 0.10"
@@ -1556,10 +1556,10 @@ msgstr "Тип пошуку"
 msgid "Search youtube materials "
 msgstr "Пошук матеріалів в YouTube"
 
-msgid "Second move player in buffering mode"
+msgid "Second movie player in buffering mode"
 msgstr "Вибрати другий крок плеєра в режимі (буферизації)"
 
-msgid "Second move player without buffering mode"
+msgid "Second movie player without buffering mode"
 msgstr "Вибрати другий крок плеєра"
 
 msgid "Select"

@@ -403,10 +403,10 @@ msgstr "login"
 msgid "password"
 msgstr "hasło"
 
-msgid "First move player in buffering mode"
+msgid "First movie player in buffering mode"
 msgstr "Pierwszy odtwarzacz z trybem buforowania"
 
-msgid "Second move player in buffering mode"
+msgid "Second movie player in buffering mode"
 msgstr "Drugi odtwarzacz z trybem buforowania"
 
 msgid "Movie player without buffering mode"
@@ -1423,10 +1423,10 @@ msgstr "Https-sprawdzania poprawności certyfikatów SSL"
 msgid "Folder for temporary data"
 msgstr "Folder tymczasowych danych"
 
-msgid "First move player without buffering mode"
+msgid "First movie player without buffering mode"
 msgstr "Pierwszy odtwarzacz bez trybu buforowania"
 
-msgid "Second move player without buffering mode"
+msgid "Second movie player without buffering mode"
 msgstr "Drugi odtwarzacz bez trybu buforowania"
 
 msgid "External player use software decoder for the AAC"

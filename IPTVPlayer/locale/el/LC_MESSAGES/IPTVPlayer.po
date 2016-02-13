@@ -346,10 +346,10 @@ msgstr "είσοδος"
 msgid "password"
 msgstr "κωδικός"
 
-msgid "First move player in buffering mode"
+msgid "First movie player in buffering mode"
 msgstr "Πρώτη μεταφορά του player σε λειτουργία προφόρτωσης"
 
-msgid "Second move player in buffering mode"
+msgid "Second movie player in buffering mode"
 msgstr "Δεύτερη μεταφορά του player σε λειτουργία προφόρτωσης"
 
 msgid "Movie player without buffering mode"
@@ -1260,10 +1260,10 @@ msgstr "https - επικύρωση πιστοποιητικών SSL"
 msgid "Folder for temporary data"
 msgstr "Φάκελος προσωρινών αρχείων"
 
-msgid "First move player without buffering mode"
+msgid "First movie player without buffering mode"
 msgstr "Πρώτη μεταφορά αναπαραγωγού χωρίς προφόρτωση"
 
-msgid "Second move player without buffering mode"
+msgid "Second movie player without buffering mode"
 msgstr "Δεύτερη μεταφορά αναπαραγωγού χωρίς προφόρτωση"
 
 msgid "External player use software decoder for the AAC"
