@@ -72,7 +72,7 @@ class IPTVPlayerWidget(Screen):
     screenwidth = getDesktop(0).size().width()
     if screenwidth and screenwidth == 1920:
         skin =  """
-                    <screen name="IPTVPlayerWidget" position="center,center" size="1590,825" title="IPTV Player HD wersja %s">
+                    <screen name="IPTVPlayerWidget" position="center,center" size="1590,825" title="IPTV Player HD v%s">
                             <ePixmap position="5,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="180,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="385,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
@@ -97,7 +97,7 @@ class IPTVPlayerWidget(Screen):
                 """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('yellow.png'), GetIconDir('green.png'), GetIconDir('blue.png'))
     else:
         skin =  """
-                    <screen name="IPTVPlayerWidget" position="center,center" size="1090,525" title="IPTV Player wersja %s">
+                    <screen name="IPTVPlayerWidget" position="center,center" size="1090,525" title="IPTV Player v%s">
                             <ePixmap position="30,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="287,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="554,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
