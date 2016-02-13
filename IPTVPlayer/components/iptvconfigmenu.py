@@ -284,47 +284,47 @@ class ConfigMenu(ConfigBaseWidget):
         players = []
         bufferingMode = config.plugins.iptvplayer.buforowanie.value or config.plugins.iptvplayer.buforowanie_m3u8.value or config.plugins.iptvplayer.buforowanie_rtmp.value
         if 'sh4' == config.plugins.iptvplayer.plarform.value:
-            list.append(getConfigListEntry(_("First move player without buffering mode"), config.plugins.iptvplayer.defaultSH4MoviePlayer0))
+            list.append(getConfigListEntry(_("First movie player without buffering mode"), config.plugins.iptvplayer.defaultSH4MoviePlayer0))
             players.append(config.plugins.iptvplayer.defaultSH4MoviePlayer0)
-            list.append(getConfigListEntry(_("Second move player without buffering mode"), config.plugins.iptvplayer.alternativeSH4MoviePlayer0))
+            list.append(getConfigListEntry(_("Second movie player without buffering mode"), config.plugins.iptvplayer.alternativeSH4MoviePlayer0))
             players.append(config.plugins.iptvplayer.alternativeSH4MoviePlayer0)
         
-            list.append(getConfigListEntry(_("First move player in buffering mode"), config.plugins.iptvplayer.defaultSH4MoviePlayer))
+            list.append(getConfigListEntry(_("First movie player in buffering mode"), config.plugins.iptvplayer.defaultSH4MoviePlayer))
             players.append(config.plugins.iptvplayer.defaultSH4MoviePlayer)
-            list.append(getConfigListEntry(_("Second move player in buffering mode"), config.plugins.iptvplayer.alternativeSH4MoviePlayer))
+            list.append(getConfigListEntry(_("Second movie player in buffering mode"), config.plugins.iptvplayer.alternativeSH4MoviePlayer))
             players.append(config.plugins.iptvplayer.alternativeSH4MoviePlayer)
             
         elif 'mipsel' == config.plugins.iptvplayer.plarform.value:
-            list.append(getConfigListEntry(_("First move player without buffering mode"), config.plugins.iptvplayer.defaultMIPSELMoviePlayer0))
+            list.append(getConfigListEntry(_("First movie player without buffering mode"), config.plugins.iptvplayer.defaultMIPSELMoviePlayer0))
             players.append(config.plugins.iptvplayer.defaultMIPSELMoviePlayer0)
-            list.append(getConfigListEntry(_("Second move player without buffering mode"), config.plugins.iptvplayer.alternativeMIPSELMoviePlayer0))
+            list.append(getConfigListEntry(_("Second movie player without buffering mode"), config.plugins.iptvplayer.alternativeMIPSELMoviePlayer0))
             players.append(config.plugins.iptvplayer.alternativeMIPSELMoviePlayer0)
             
-            list.append(getConfigListEntry(_("First move player in buffering mode"), config.plugins.iptvplayer.defaultMIPSELMoviePlayer))
+            list.append(getConfigListEntry(_("First movie player in buffering mode"), config.plugins.iptvplayer.defaultMIPSELMoviePlayer))
             players.append(config.plugins.iptvplayer.defaultMIPSELMoviePlayer)
-            list.append(getConfigListEntry(_("Second move player in buffering mode"), config.plugins.iptvplayer.alternativeMIPSELMoviePlayer))
+            list.append(getConfigListEntry(_("Second movie player in buffering mode"), config.plugins.iptvplayer.alternativeMIPSELMoviePlayer))
             players.append(config.plugins.iptvplayer.alternativeMIPSELMoviePlayer)
             
         elif 'i686' == config.plugins.iptvplayer.plarform.value:
-            list.append(getConfigListEntry(_("First move player without buffering mode"), config.plugins.iptvplayer.defaultI686MoviePlayer0))
+            list.append(getConfigListEntry(_("First movie player without buffering mode"), config.plugins.iptvplayer.defaultI686MoviePlayer0))
             players.append(config.plugins.iptvplayer.defaultI686MoviePlayer0)
-            list.append(getConfigListEntry(_("Second move player without buffering mode"), config.plugins.iptvplayer.alternativeI686MoviePlayer0))
+            list.append(getConfigListEntry(_("Second movie player without buffering mode"), config.plugins.iptvplayer.alternativeI686MoviePlayer0))
             players.append(config.plugins.iptvplayer.alternativeI686MoviePlayer0)
             
-            list.append(getConfigListEntry(_("First move player in buffering mode"), config.plugins.iptvplayer.defaultI686MoviePlayer))
+            list.append(getConfigListEntry(_("First movie player in buffering mode"), config.plugins.iptvplayer.defaultI686MoviePlayer))
             players.append(config.plugins.iptvplayer.defaultI686MoviePlayer)
-            list.append(getConfigListEntry(_("Second move player in buffering mode"), config.plugins.iptvplayer.alternativeI686MoviePlayer))
+            list.append(getConfigListEntry(_("Second movie player in buffering mode"), config.plugins.iptvplayer.alternativeI686MoviePlayer))
             players.append(config.plugins.iptvplayer.alternativeI686MoviePlayer)
 
         elif 'armv7' == config.plugins.iptvplayer.plarform.value:
-            list.append(getConfigListEntry(_("First move player without buffering mode"), config.plugins.iptvplayer.defaultARMV7MoviePlayer0))
+            list.append(getConfigListEntry(_("First movie player without buffering mode"), config.plugins.iptvplayer.defaultARMV7MoviePlayer0))
             players.append(config.plugins.iptvplayer.defaultARMV7MoviePlayer0)
-            list.append(getConfigListEntry(_("Second move player without buffering mode"), config.plugins.iptvplayer.alternativeARMV7MoviePlayer0))
+            list.append(getConfigListEntry(_("Second movie player without buffering mode"), config.plugins.iptvplayer.alternativeARMV7MoviePlayer0))
             players.append(config.plugins.iptvplayer.alternativeARMV7MoviePlayer0)
             
-            list.append(getConfigListEntry(_("First move player in buffering mode"), config.plugins.iptvplayer.defaultARMV7MoviePlayer))
+            list.append(getConfigListEntry(_("First movie player in buffering mode"), config.plugins.iptvplayer.defaultARMV7MoviePlayer))
             players.append(config.plugins.iptvplayer.defaultARMV7MoviePlayer)
-            list.append(getConfigListEntry(_("Second move player in buffering mode"), config.plugins.iptvplayer.alternativeARMV7MoviePlayer))
+            list.append(getConfigListEntry(_("Second movie player in buffering mode"), config.plugins.iptvplayer.alternativeARMV7MoviePlayer))
             players.append(config.plugins.iptvplayer.alternativeARMV7MoviePlayer)
             
         else: 

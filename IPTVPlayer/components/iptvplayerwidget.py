@@ -9,6 +9,7 @@
 from time import sleep as time_sleep
 from os import remove as os_remove, path as os_path
 from urllib import quote as urllib_quote
+from random import shuffle as random_shuffle
 
 ####################################################
 #                   E2 components
@@ -285,6 +286,7 @@ class IPTVPlayerWidget(Screen):
         #################################################################
         
         self.activePlayer = None
+        self.canRandomizeList = False
     #end def __init__(self, session):
         
     def __del__(self):
@@ -323,7 +325,13 @@ class IPTVPlayerWidget(Screen):
         except:
             printExc()
         self.activePlayer = None
-            
+        
+    def isPlayableType(self, type):
+        if type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_ARTICLE, CDisplayListItem.TYPE_PICTURE]:
+            return True
+        else:
+            return False
+    
     def loadSpinner(self):
         try:
             if "spinner" in self:
@@ -467,6 +475,10 @@ class IPTVPlayerWidget(Screen):
         if None != self.activePlayer.get('player', None): title = _('Change active movie player')
         else: title = _('Set active movie player')
         options.append((title, "SetActiveMoviePlayer"))
+        
+        if self.canRandomizeList and self.visible and len(self.currList) and not self.isInWorkThread():
+            options.append((_('Randomize a playlist'), "RandomizePlayableItems"))
+        
         try:
             host = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['GetConfigList'], -1)
             if( len( host.GetConfigList() ) > 0 ):
@@ -594,6 +606,8 @@ class IPTVPlayerWidget(Screen):
                 self.requestListFromHost('ForFavItem', currSelIndex, '')
             elif ret[1] == 'EDIT_FAV':
                 self.session.openWithCallback(self.editFavouritesCallback, IPTVFavouritesMainWidget)
+            elif ret[1] == 'RandomizePlayableItems':
+                self.randomizePlayableItems()
     
     def editFavouritesCallback(self, ret=False):
         if ret and 'favourites' == self.hostName: # we must reload host
@@ -1384,6 +1398,8 @@ class IPTVPlayerWidget(Screen):
             selItem = None
             if currSelIndex > -1 and len(self.currList) > currSelIndex:
                 selItem = self.currList[currSelIndex]
+                if self.isPlayableType(selItem.type) and selItem.itemIdx > -1 and len(self.currList) > selItem.itemIdx:
+                    currSelIndex = selItem.itemIdx
             
             dots = ""#_("...............")
             IDS_DOWNLOADING = _("Downloading") + dots
@@ -1460,6 +1476,29 @@ class IPTVPlayerWidget(Screen):
             self.session.openWithCallback(self.selectHost, IPTVSetupMainWidget, True)
         else:
             self.askUpdateAvailable(self.selectHost)
+            
+    def randomizePlayableItems(self):
+        printDBG("randomizePlayableItems")
+        self.stopAutoPlaySequencer()
+        if self.visible and len(self.currList) and not self.isInWorkThread():
+            listIdxs = []
+            replaceIdx = 0
+            for idx in range(len(self.currList)):
+                if isinstance(self.currList[idx], CDisplayListItem) and self.isPlayableType(self.currList[idx].type):
+                    listIdxs.append((idx, replaceIdx))
+                    replaceIdx += 1
+                    printDBG("randomizePlayableItems idx[%d] replaceIdx[%d]" % (idx, replaceIdx))
+            random_shuffle(listIdxs)
+            reloadList = False
+            for item in listIdxs:
+                idxA = listIdxs[item[1]][0]
+                idxB = item[0]
+                printDBG("idxA[%d] <-> idxB[%d]" % (idxA, idxB))
+                if idxA != idxB:
+                    self.currList[idxB], self.currList[idxA] = self.currList[idxA], self.currList[idxB]
+                    reloadList = True
+            if reloadList:
+                self["list"].setList([ (x,) for x in self.currList])
 
     def reloadList(self, params):
         printDBG( "reloadList" )
@@ -1473,6 +1512,17 @@ class IPTVPlayerWidget(Screen):
         if ret.status != RetHost.OK:
             printDBG( "++++++++++++++++++++++ reloadList ret.status = %s" % ret.status )
             self.stopAutoPlaySequencer()
+        
+        self.canRandomizeList = False
+        numPlayableItems = 0
+        for idx in range(len(ret.value)):
+            if isinstance(ret.value[idx], CDisplayListItem):
+                ret.value[idx].itemIdx = idx
+                if self.isPlayableType(ret.value[idx].type):
+                    numPlayableItems += 1
+        
+        if numPlayableItems > 1:
+            self.canRandomizeList = True
 
         self.currList = ret.value
         self["list"].setList([ (x,) for x in self.currList])

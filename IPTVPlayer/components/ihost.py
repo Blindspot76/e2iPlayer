@@ -49,6 +49,7 @@ class CDisplayListItem:
         # used only for TYPE_SEARCH item
         self.possibleTypesOfSearch = possibleTypesOfSearch
         self.privateData = None
+        self.itemIdx = -1
 
 class ArticleContent:
     VISUALIZER_DEFAULT = 'DEFAULT'
