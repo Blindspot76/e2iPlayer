@@ -1480,23 +1480,25 @@ class IPTVPlayerWidget(Screen):
     def randomizePlayableItems(self):
         printDBG("randomizePlayableItems")
         self.stopAutoPlaySequencer()
-        if self.visible and len(self.currList) and not self.isInWorkThread():
-            listIdxs = []
-            replaceIdx = 0
-            for idx in range(len(self.currList)):
-                if isinstance(self.currList[idx], CDisplayListItem) and self.isPlayableType(self.currList[idx].type):
-                    listIdxs.append((idx, replaceIdx))
-                    replaceIdx += 1
-                    printDBG("randomizePlayableItems idx[%d] replaceIdx[%d]" % (idx, replaceIdx))
-            random_shuffle(listIdxs)
+        if self.visible and len(self.currList) > 1 and not self.isInWorkThread():
+            randList = []
+            for item in self.currList:
+                if isinstance(item, CDisplayListItem) and self.isPlayableType(item.type):
+                    randList.append(item)
+            random_shuffle(randList)
             reloadList = False
-            for item in listIdxs:
-                idxA = listIdxs[item[1]][0]
-                idxB = item[0]
-                printDBG("idxA[%d] <-> idxB[%d]" % (idxA, idxB))
-                if idxA != idxB:
-                    self.currList[idxB], self.currList[idxA] = self.currList[idxA], self.currList[idxB]
-                    reloadList = True
+            if len(self.currList) == len(randList):
+                self.currList = randList
+                reloadList = True
+            elif len(randList) > 1:
+                newList = []
+                for item in self.currList:
+                    if isinstance(item, CDisplayListItem) and self.isPlayableType(item.type):
+                        newList.append(randList.pop())
+                    else:
+                        newList.append(item)
+                reloadList = True
+                self.currList = newList
             if reloadList:
                 self["list"].setList([ (x,) for x in self.currList])
 
