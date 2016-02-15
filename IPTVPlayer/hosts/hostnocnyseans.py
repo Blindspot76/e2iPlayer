@@ -33,15 +33,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.nocnyseans_premium  = ConfigYesNo(default = False)
-#config.plugins.iptvplayer.nocnyseans_login    = ConfigText(default = "", fixed_size = False)
-#config.plugins.iptvplayer.nocnyseans_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    #if config.plugins.iptvplayer.nocnyseans_premium.value:
-    #    optionList.append(getConfigListEntry("  nocnyseans login:", config.plugins.iptvplayer.nocnyseans_login))
-    #    optionList.append(getConfigListEntry("  nocnyseans hasło:", config.plugins.iptvplayer.nocnyseans_password))
     return optionList
 ###################################################
 
@@ -333,6 +327,7 @@ class NocnySeansPL(CBaseHostClass):
         if len(data): del data[-1]
         for item in data:
             url  = self.cm.ph.getSearchGroups(item, 'data-iframe="([^"]+?)"')[0]
+            if '' == url: continue
             name = self.cleanHtmlStr(item)
             urlTab.append({'name':name, 'url':url, 'need_resolve':1})
         

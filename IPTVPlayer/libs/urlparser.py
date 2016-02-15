@@ -23,6 +23,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                VIDEOMEGA_decryptPlayerParams, \
                                                                OPENLOADIO_decryptPlayerParams, \
                                                                TEAMCASTPL_decryptPlayerParams, \
+                                                               VIDEOWEED_decryptPlayerParams, \
                                                                captchaParser, \
                                                                getDirectM3U8Playlist, \
                                                                decorateUrl, \
@@ -4574,13 +4575,30 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return
         
-        upData = self.cm.ph.getDataBeetwenMarkers(data, 'updateStreamStatistics', ';', False)[1]
-        upData = re.compile('''['"]([^'^"]+?)['"]''').findall(upData)
+        tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
+        printDBG(tmpData)
+        upData = None
+        vidUrl = None
+        while 'eval' in tmpData and (upData == None or vidUrl == None):
+            tmp = tmpData.split('eval(')
+            if len(tmp): del tmp[0]
+            tmpData = ''
+            for item in tmp:
+                for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
+                    tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
+                    if '' != tmpData: break
+                printDBG(tmpData)
+                if 'updateStreamStatistics' in tmpData:
+                    upData = self.cm.ph.getDataBeetwenMarkers(tmpData, 'updateStreamStatistics', ';', False)[1]
+                    upData = re.compile('''['"]([^'^"]+?)['"]''').findall(upData)
+                    if 0 == len(upData): upData = None
+                if 'html5' in tmpData:
+                    vidUrl = self.cm.ph.getSearchGroups(tmpData, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
+                    if '' == vidUrl: vidUrl = None
+        
+        params['timeout'] = 5
         upBaseUrl = updateStreamStatistics(upData[0], upData[1], upData[2])
-        
         pyCmd = GetPyScriptCmd('livestreamtv') + ' "%s" "%s" ' % (upBaseUrl, baseUrl)
-        
-        vidUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
         if vidUrl.split('?')[0].endswith('.m3u8'):
             tab = getDirectM3U8Playlist(vidUrl)
             urlsTab = []

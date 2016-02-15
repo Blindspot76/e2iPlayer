@@ -338,12 +338,18 @@ class common:
     
     def getURLRequestData(self, params = {}, post_data = None):
         
-        def urlOpen(req, customOpeners):
+        def urlOpen(req, customOpeners, timeout):
             if len(customOpeners) > 0:
                 opener = urllib2.build_opener( *customOpeners )
-                response = opener.open(req)
+                if timeout != None:
+                    response = opener.open(req, timeout=timeout)
+                else:
+                    response = opener.open(req)
             else:
-                response = urllib2.urlopen(req)
+                if timeout != None:
+                    response = urllib2.urlopen(req, timeout=timeout)
+                else:
+                    response = urllib2.urlopen(req)
             return response
         
         if not self.useMozillaCookieJar:
@@ -354,6 +360,8 @@ class common:
         req      = None
         out_data = None
         opener   = None
+        
+        timeout = params.get('timeout', None)
         
         if 'host' in params:
             host = params['host']
@@ -431,11 +439,11 @@ class common:
             req = urllib2.Request(pageUrl, None, headers)
 
         if not params.get('return_data', False):
-            out_data = urlOpen(req, customOpeners)
+            out_data = urlOpen(req, customOpeners, timeout)
         else:
             gzip_encoding = False
             try:
-                response = urlOpen(req, customOpeners)
+                response = urlOpen(req, customOpeners, timeout)
                 if response.info().get('Content-Encoding') == 'gzip':
                     gzip_encoding = True
                 data = response.read()
