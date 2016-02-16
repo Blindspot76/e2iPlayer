@@ -208,7 +208,8 @@ class StreamComplet(CBaseHostClass):
             return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
             
         for item in [cItem['url'], playerUrl]:
-            tmp = self.up.getVideoLinkExt(item)
+            url = self.up.decorateUrl(item, {'Referer':cItem['url']})
+            tmp = self.up.getVideoLinkExt(url)
             for item in tmp:
                 item['need_resolve'] = 0
                 urlTab.append(item)
