@@ -151,45 +151,6 @@ msgstr "%s зрителей, %s каналы"
 msgid "%s will be used by IPTVPlayer."
 msgstr "%s будет использоваться в IPTVПлеере."
 
-msgid "--- Best Videos ---"
-msgstr "--- Лучшие Видео ---"
-
-msgid "--- Channels ---"
-msgstr "--- Каналы ---"
-
-msgid "--- Featured videos ---"
-msgstr "--- Избранные видео ---"
-
-msgid "--- Hits ---."
-msgstr "--- Хиты ---"
-
-msgid "--- Hot ---"
-msgstr "--- Горячие ---"
-
-msgid "--- Most Discussed ---"
-msgstr "--- Самые обсуждаемые ---"
-
-msgid "--- Most Favorited ---"
-msgstr "--- Большинство избранного ---"
-
-msgid "--- Most Viewedo ---"
-msgstr "--- Наиболее просматриваемые ---"
-
-msgid "--- New ---"
-msgstr "--- Новый ---"
-
-msgid "--- New Videos ---"
-msgstr "--- Новые Видео ---"
-
-msgid "--- Pornstars ---"
-msgstr "--- Порно звезды ---"
-
-msgid "--- Tags alfabetical ---"
-msgstr "--- Слова алфавита ---"
-
-msgid "--- Top Rated ---"
-msgstr "--- Самые популярные ---"
-
 msgid "----------Other----------"
 msgstr "----------Другое----------"
 
@@ -2168,9 +2129,6 @@ msgid ""
 " downloaded version [%s] is different from the requested [%s]."
 msgstr "Неверная версия. Загруженная версия [%s] отличается от требуемой [%s]."
 
-msgid "XXX"
-msgstr "Видео Порно"
-
 msgid "You can use Russian proxy server as a workaround."
 msgstr ""
 "Вы можете использовать российской прокси-сервер в качестве обходного пути."
@@ -2586,14 +2544,182 @@ msgstr "Категории фильмов"
 msgid "http://hdkinomir.com/"
 msgstr "HDКиномир"
 
+msgid "----------------- External exteplayer3 options -----------------"
+msgstr "----------------- Внешние опции exteplayer3 -----------------"
+
+msgid "XXX"
+msgstr "Видео Порно"
+
+msgid "--- Featured videos ---"
+msgstr "--- Избранные видео ---"
+
+msgid "--- Hits ---"
+msgstr "--- Хиты ---"
+
+msgid "--- Hot ---"
+msgstr "--- Горячий ---"
+
+msgid "--- Best Videos ---"
+msgstr "--- Лучшие Видео ---"
+
+msgid "--- New Videos ---"
+msgstr "--- Новые Видео ---"
+
+msgid "--- Tags alfabetical ---"
+msgstr "--- Слова алфавита ---"
+
+msgid "--- Pornstars ---"
+msgstr "--- Порно звезды ---"
+
+msgid "--- New ---"
+msgstr "--- Новый ---"
+
+msgid "--- Top Rated ---"
+msgstr "--- Самые популярные ---"
+
+msgid "--- Most Viewedo ---"
+msgstr "--- Наиболее просматриваемые ---"
+
+msgid "--- Most Favorited ---"
+msgstr "--- Большинство избранном ---"
+
+msgid "--- Most Discussed ---"
+msgstr "--- Самые обсуждаемые ---"
+
+msgid "--- Newest ---"
+msgstr "--- Новейший ---"
+
+msgid "--- Most Viewed ---"
+msgstr "--- Наиболее просматриваемые ---"
+
+msgid "--- Most Favored ---"
+msgstr "--- Наибольшего благоприятствования ---"
+
+msgid "--- Popular ---"
+msgstr "--- Популярный ---"
+
+msgid "--- On Air ---"
+msgstr "--- В эфире ---"
+
+msgid "--- Most Recent ---"
+msgstr "--- Самое новое ---"
+
+msgid "--- Longest ---"
+msgstr "--- Самый длинный ---"
+
+msgid "--- Most viewed ---"
+msgstr "--- Наиболее просматриваемые ---"
+
+msgid "--- Lastest ---"
+msgstr "--- Последнее ---"
+
+msgid "--- Highest Rated ---"
+msgstr "--- Наивысший рейтинг ---"
+
+msgid "--- Most Popular ---"
+msgstr "--- Самый популярный ---"
+
+msgid " - Local version"
+msgstr " - Локальная версия"
+
+msgid "--- Channels ---"
+msgstr "--- Каналы ---"
+
+msgid "ERROR - Error downloading: "
+msgstr "ОШИБКА - ошибка загрузки: "
+
+msgid "ERROR"
+msgstr "ОШИБКА"
+
+msgid "ERROR - Error unpacking /tmp/iptv-host-xxx.tar.gz"
+msgstr "ОШИБКА - ошибка распаковки /tmp/iptv-host-xxx.tar.gz"
+
+msgid "ERROR - Invalid file format /tmp/iptv-host-xxx.tar.gz"
+msgstr "ОШИБКА - неверный формат файла /tmp/iptv-host-xxx.tar.gz"
+
+msgid "ERROR - copy error"
+msgstr "ОШИБКА - ошибка копирования"
+
+msgid "Update End. Please manual restart enigma2"
+msgstr "Обновление Конец. Пожалуйста ручной перезапуск Enigma2"
+
 msgid "---UPDATE---"
 msgstr "---ОБНОВИТЬ---"
 
 msgid "UPDATE MENU"
 msgstr "МЕНЮ ОБНОВЛЕНИЕ"
 
-msgid "----------------- External exteplayer3 options -----------------"
-msgstr "----------------- Внешние опции exteplayer3 -----------------"
+msgid " - Remote version"
+msgstr " - Удаленная версия"
+
+msgid "UPDATE"
+msgstr "ОБНОВИТЬ"
+
+msgid "UPDATE-CHANGES"
+msgstr "ОБНОВИТЬ-ИЗМЕНЕНИЯ"
+
+msgid "UPDATE-NOW"
+msgstr "ОБНОВИТЬ-СЕЙЧАС"
+
+msgid "CHANGES IN VERSION"
+msgstr "Изминения в версии"
+
+msgid "Update Now"
+msgstr "Обновить сейчас"
+
+msgid "Remote XXXversion"
+msgstr "Удаленный XXXверсия"
+
+msgid "Local  XXXversion"
+msgstr "Локальный  XXXверсия"
+
+msgid "Most Favorited"
+msgstr "Большинство избранном"
+
+msgid "On Air"
+msgstr "В эфире"
+
+msgid "Longest"
+msgstr "Самый длинный"
+
+msgid "Highest Rated"
+msgstr "Наивысший рейтинг"
+
+msgid "Pornstars"
+msgstr "Порно звезды"
+
+msgid "Last"
+msgstr "Последний"
+
+msgid "Most Favored"
+msgstr "Наибольшего благоприятствования"
+
+msgid "Newest"
+msgstr "Новейший"
+
+msgid "Featured videos"
+msgstr "Избранные видео"
+
+msgid "New Videos"
+msgstr "Новые Видео"
+
+msgid "Hits"
+msgstr "Хиты"
+
+msgid "Hot"
+msgstr "Горячий"
+
+msgid "LAST"
+msgstr "ПОСЛЕДНИЙ"
+
+msgid "Next"
+msgstr "Следующий"
+
+msgid "Page: "
+msgstr "Страница: "
+
+msgid "Last Page"
+msgstr "Последняя страница"
 
 msgid "Software decoding as"
 msgstr "Декодировать"
@@ -3303,11 +3429,61 @@ msgstr ""
 "времени. Пожалуйста, повторите попытку открыть эту ссылку после некоторого "
 "времени.\""
 
+msgid "Newest added"
+msgstr "Последним добавил"
+
+msgid "Oldest added"
+msgstr "Старые добавил"
+
+msgid "Newest year"
+msgstr "Новый год"
+
+msgid "Oldest year"
+msgstr "Старые год"
+
+msgid "Best rating"
+msgstr "СМС голосование"
+
+msgid "Worse rating"
+msgstr "Хуже рейтинг"
+
+msgid "Most viewed"
+msgstr "Наиболее просматриваемые"
+
+msgid "Less viewed"
+msgstr "Меньше просматриваемые"
+
+msgid "Login failed."
+msgstr "Ошибка входа."
+
+msgid ""
+"This host requires registration. \n"
+"Please fill your login and password in the host configuration. Available "
+"under blue button."
+msgstr ""
+"Этот узел требует регистрации. \n"
+"Заполните свой логин и пароль в конфигурации хост. Доступен под синюю кнопку."
+
 msgid "panscan"
 msgstr "Панорама"
 
 msgid "letterbox"
 msgstr "Режим ящика"
+
+msgid "Default video quality"
+msgstr "По умолчанию качество видео"
+
+msgid "Use default video quality"
+msgstr "Использование качество видео по умолчанию"
+
+msgid "Icon type"
+msgstr "Тип иконка"
+
+msgid "The problem with user logon \"%s\".\n"
+msgstr "Проблема с входом пользователя \"%s\".\n"
+
+msgid "Randomize a playlist"
+msgstr "Функция случайного воспроизведения"
 
 msgid "youtube.com"
 msgstr "ютубе.com"
