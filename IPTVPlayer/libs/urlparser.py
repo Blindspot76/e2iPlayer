@@ -4823,7 +4823,7 @@ class pageParser:
         vid = match.group(1)
         playerUrl = "http://hqq.tv/player/embed_player.php?vid=%s&autoplay=no" % vid
         
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
         #HTTP_HEADER['Referer'] = url
         sts, data = self.cm.getPage(playerUrl, {'header' : HTTP_HEADER})
@@ -4844,8 +4844,9 @@ class pageParser:
         secPlayerUrl = "http://hqq.tv/sec/player/embed_player.php?vid=%s&at=%s&autoplayed=%s&referer=on&http_referer=%s&pass=" % (vid, post_data.get('at', ''),  post_data.get('autoplayed', ''), urllib.quote(playerUrl))
         HTTP_HEADER['Referer'] = playerUrl
         sts, data = self.cm.getPage(secPlayerUrl, {'header' : HTTP_HEADER}, post_data)
+        
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
-        #CParsingHelper.writeToFile('/home/sulge/test.html', data)
+        CParsingHelper.writeToFile('/mnt/new2/test.html', data)
         def getUtf8Str(st):
             idx = 0
             st2 = ''
@@ -4863,6 +4864,26 @@ class pageParser:
                 match = re.search('''["']([^"]*?)["']''', file_var)
                 if match: file_url += match.group(1)
                 else: file_url += re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % file_var, data).group(1)
+        if file_url == '':
+            playerData = self.cm.ph.getDataBeetwenMarkers(data, 'get_md5.php', '})')[1]
+            playerData = self.cm.ph.getDataBeetwenMarkers(playerData, '{', '}', False)[1]
+            playerData = playerData.split(',')
+            getParams = {}
+            for p in playerData:
+                tmp = p.split(':')
+                printDBG(tmp)
+                key = tmp[0].replace('"', '').strip()
+                val = tmp[1].strip()
+                if '"' not in val:
+                    v = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % val, data).group(1)
+                    if '' != val: val = v
+                getParams[key] = val
+            playerUrl = 'http://hqq.tv/player/get_md5.php?' + urllib.urlencode(getParams)
+            sts, data = self.cm.getPage(playerUrl)
+            if not sts: return False
+            data = byteify( json.loads(data) )
+            file_url = data['html5_file']
+        
         if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
         #printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % file_url)
         if file_url.startswith('http'): return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})

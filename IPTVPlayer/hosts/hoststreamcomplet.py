@@ -59,6 +59,7 @@ class StreamComplet(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'StreamComplet', 'cookie':'StreamComplet.cookie'})
         self.cacheFilters = {}
         self.USER_AGENT = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
+        self.USER_AGENT2 = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20150101 Firefox/44.0 (Chrome)"
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
@@ -172,29 +173,45 @@ class StreamComplet(CBaseHostClass):
         
         movieId = self.cm.ph.getSearchGroups(playerUrl+'/', 'f=([0-9]+?)/')[0]
         if movieId != '':
+            playerUrl = 'http://ok.ru/video/' + movieId
+            params['header']['User-Agent'] = self.USER_AGENT2
+            sts, data = self.cm.getPage(playerUrl, params)
+            if not sts: return []
+            try:
+                tmp = clean_html(re.search(r'data-options=(?P<quote>["\'])(?P<player>{.+?%s.+?})(?P=quote)' % movieId, data).group('player'))
+                tmp = byteify( json.loads( tmp ) )
+                tmp = byteify( json.loads( tmp['flashvars']['metadata'] ) )
+                for item in tmp['videos']:
+                    videoUrl = self.up.decorateUrl(item['url'], {'User-Agent':self.USER_AGENT2})
+                    urlTab.append({'name':item['name'], 'url':videoUrl, 'need_resolve':0})
+            except:
+                printExc()
             playerUrl = 'http://m.ok.ru/video/' + movieId
+            params['header']['User-Agent'] = self.USER_AGENT
             sts, data = self.cm.getPage(playerUrl, params)
             if not sts: return []
             videoUrl = self.cm.ph.getSearchGroups(data, 'href="(http[^"]+?moviePlaybackRedirect[^"]+?)"')[0].replace('&amp;', '&')
             videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-            return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
+            urlTab.insert(0, {'name':'default', 'url':videoUrl, 'need_resolve':0})
+            return urlTab
         
         playerUrl = playerUrl.replace('&#038;', '&')
         sts, data = self.cm.getPage(playerUrl, params)
         if not sts: return []
         
+        printDBG(data)
+        
         videoUrl = self.cm.ph.getSearchGroups(data, """src:[^'^"]+?['"]([^'^"]+?)['"]""")[0]
-        if videoUrl == '' or videoUrl == 'vimplevideo.mp4': return []
-        
-        videoUrl = 'http://media.vimple.me/playeryw.swf/' + videoUrl
-        videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-        return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
-        
-        
-        tmp = self.up.getVideoLinkExt(cItem['url'])
-        for item in tmp:
-            item['need_resolve'] = 0
-            urlTab.append(item)
+        if videoUrl != '' and videoUrl != 'vimplevideo.mp4':        
+            videoUrl = 'http://media.vimple.me/playeryw.swf/' + videoUrl
+            videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
+            return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
+            
+        for item in [cItem['url'], playerUrl]:
+            tmp = self.up.getVideoLinkExt(item)
+            for item in tmp:
+                item['need_resolve'] = 0
+                urlTab.append(item)
         return urlTab
         
     def getFavouriteData(self, cItem):
