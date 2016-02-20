@@ -37,7 +37,7 @@ class LooknijTvApi:
 
         return catsList
 
-    def getChannelsList(self, url):
+    def getChannelsList(self, url='all'):
         printDBG("LooknijTvApi.getChannelsList url[%s]" % url )
         channelsList = []
         post_data = {'html_template':'Grid columns', 'now_open_works':'0', 'action':'get_portfolio_works','works_per_load':'40', 'category':url}

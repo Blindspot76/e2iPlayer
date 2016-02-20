@@ -23,7 +23,7 @@ from Plugins.Extensions.IPTVPlayer.libs.nettvpw    import NettvPw
 from Plugins.Extensions.IPTVPlayer.libs.typertv    import TyperTV
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld import WagasWorldApi
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow    import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet import TelewizjadaNetApi
+from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet import TelewizjadaNetApi, GetConfigList as TelewizjadaNetApi_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livestreamtv   import LiveStreamTvApi 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes     import strwithmeta
 ###################################################
@@ -83,6 +83,10 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry("----------ustvnow.com----------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( Ustvnow_GetConfigList() )
+    except: printExc()
+    
+    optionList.append(getConfigListEntry("----------telewizjada.net----------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( TelewizjadaNetApi_GetConfigList() )
     except: printExc()
     
     #optionList.append(getConfigListEntry("----------Telewizja-Online.pl----------", config.plugins.iptvplayer.fake_separator))
@@ -541,13 +545,15 @@ class HasBahCa(CBaseHostClass):
         printDBG('getLooknijTvList start')
         if None == self.looknijTvApi:
             self.looknijTvApi = LooknijTvApi()
-        if '' == url:
-            tmpList = self.looknijTvApi.getCategoriesList()
-            for item in tmpList:
-                params = dict(item)
-                params.update({'name':'looknij.tv'})
-                self.addDir(params)
-        else:
+        #if '' == url:
+        #    tmpList = self.looknijTvApi.getCategoriesList()
+        #    for item in tmpList:
+        #        params = dict(item)
+        #        params.update({'name':'looknij.tv'})
+        #        self.addDir(params)
+        #else:
+        if True:
+            url = 'all'
             tmpList = self.looknijTvApi.getChannelsList(url)
             for item in tmpList: self.playVideo(item)
             
@@ -910,7 +916,10 @@ class HasBahCa(CBaseHostClass):
             self.telewizjadaNetApi = TelewizjadaNetApi()
         tmpList = self.telewizjadaNetApi.getChannelsList(cItem)
         for item in tmpList:
-            self.playVideo(item) 
+            if 'video' == item['type']:
+                self.playVideo(item) 
+            else:
+                self.addDir(item)
         
     def getTelewizjadaNetLink(self, cItem):
         printDBG("getTelewizjadaNetLink start")
@@ -1202,6 +1211,8 @@ class IPTVHost(CHostBase):
                                         urlSeparateRequest = 1,
                                         iconimage = icon,
                                         possibleTypesOfSearch = [])
+            hostItem.pinLocked = cItem.get('pin_locked', False)
+            
             hostList.append(hostItem)
 
         return hostList

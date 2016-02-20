@@ -37,7 +37,7 @@ class VidTvApi:
         for item in data:
             url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            title = self.cm.ph.getDataBeetwenMarkers(icon, '/', '.png', False)[1]
+            title = self.cm.ph.getDataBeetwenMarkers(icon, '/', '.png', False)[1].replace('img/', '').title()
             if not url.startswith('http'):
                 channelList.append({'title':title, 'url':VidTvApi.MAINURL[:-1] + url, 'icon': VidTvApi.MAINURL + icon})
         return channelList

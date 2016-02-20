@@ -40,7 +40,8 @@ class CDisplayListItem:
         self.name = name
         self.description = description
         self.type = type
-        self.iconimage = iconimage 
+        self.iconimage = iconimage
+        self.pinLocked = False
         
         # used only for TYPE_VIDEO item
         self.urlItems = urlItems # url to VIDEO
