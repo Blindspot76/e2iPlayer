@@ -19,6 +19,10 @@ def enum(**enums):
 #   "iptv_m3u8_skip_seg"    0, 2, 3 - defaul 0 (sip first num of seg from first list)
 #   "iptv_proxy_gateway"    "http... link"
 #   "iptv_refresh_cmd"      "refresh cmd line needed for some streams to keep playing"
+#   "iptv_wget_continue"    True | False - default False 
+#   "iptv_wget_timeout"     in second, default 30s when iptv_wget_continue == True
+#   "iptv_wget_waitretry"   in second, default 1s when iptv_wget_continue == True
+
 
 # Force buffering settings, generally this field should 
 # be used only to materials that we know that they do 

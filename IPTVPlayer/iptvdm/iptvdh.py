@@ -71,7 +71,8 @@ class DMHelper:
                      {'marker':'X-Forwarded-For=', 'name':'X-Forwarded-For'}]
                      
     HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'X-Forwarded-For']
-
+    IPTV_DOWNLOADER_PARAMS = {'iptv_wget_continue', 'iptv_wget_timeout', 'iptv_wget_waitretry'}
+    
     @staticmethod
     def GET_PWGET_PATH():
         return GetPluginDir('iptvdm/pwget.py')
@@ -198,6 +199,9 @@ class DMHelper:
                 downloaderParams[key] = url.meta[key]
             elif key == 'http_proxy':
                 downloaderParams[key] = url.meta[key]
+        for key in DMHelper.IPTV_DOWNLOADER_PARAMS:
+            if key in url.meta:
+                downloaderParams[key] = url.meta[key]
         return url, downloaderParams
     
     @staticmethod
@@ -236,8 +240,11 @@ class DMHelper:
                     if key == 'User-Agent': defaultHeader = ''
                 elif key == 'http_proxy':
                     proxyOptions += ' -e use_proxy=yes -e http_proxy="%s" -e https_proxy="%s" ' % (value, value)
-                
         
-        cmd = DMHelper.GET_WGET_PATH() + defaultHeader + ' --no-check-certificate ' + headerOptions + proxyOptions
+        wgetContinue = ''
+        if downloaderParams.get('iptv_wget_continue', False):
+            wgetContinue = ' -c --timeout=%s --waitretry=%s ' % (downloaderParams.get('iptv_wget_timeout', 30), downloaderParams.get('iptv_wget_waitretry', 1))
+            
+        cmd = DMHelper.GET_WGET_PATH() + wgetContinue + defaultHeader + ' --no-check-certificate ' + headerOptions + proxyOptions
         printDBG("getBaseWgetCmd return cmd[%s]" % cmd)
         return cmd

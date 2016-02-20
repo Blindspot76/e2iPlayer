@@ -1626,7 +1626,7 @@ class pageParser:
             #printDBG("DMCA [%r]" % DMCA)
 
             if linkVideo.startswith('http'):
-                linksTab.append({'name': 'videomega_2', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks, "Orgin": "http://videomega.tv/", 'Range':'bytes=', 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})})
+                linksTab.append({'name': 'videomega_2', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks, "iptv_wget_continue":True, "iptv_wget_timeout":10, "Orgin": "http://videomega.tv/", 'Range':'bytes=', 'Referer': url, 'User-Agent':HTTP_HEADER['User-Agent'], 'iptv_buffering':'required'})})
             #"Cookie": "__cfduid=1", "Range": "bytes=0-",
         return linksTab
 
