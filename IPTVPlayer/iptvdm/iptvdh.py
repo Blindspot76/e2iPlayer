@@ -71,7 +71,7 @@ class DMHelper:
                      {'marker':'X-Forwarded-For=', 'name':'X-Forwarded-For'}]
                      
     HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'X-Forwarded-For']
-    IPTV_DOWNLOADER_PARAMS = {'iptv_wget_continue', 'iptv_wget_timeout', 'iptv_wget_waitretry'}
+    IPTV_DOWNLOADER_PARAMS = ['iptv_wget_continue', 'iptv_wget_timeout', 'iptv_wget_waitretry']
     
     @staticmethod
     def GET_PWGET_PATH():
