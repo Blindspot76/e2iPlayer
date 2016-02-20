@@ -930,9 +930,11 @@ class YoutubeIE(InfoExtractor):
             video_duration = ''
         else:
             video_duration = video_info['length_seconds']
-            
-        video_info['url_encoded_fmt_stream_map'] = [_unquote(video_info['url_encoded_fmt_stream_map'])]
-        video_info['adaptive_fmts'] = [_unquote(video_info['adaptive_fmts'])]
+        
+        if 'url_encoded_fmt_stream_map' in video_info:
+            video_info['url_encoded_fmt_stream_map'] = [_unquote(video_info['url_encoded_fmt_stream_map'])]
+        if 'adaptive_fmts' in video_info:
+            video_info['adaptive_fmts'] = [_unquote(video_info['adaptive_fmts'])]
         
         # Decide which formats to download
         try:
@@ -950,7 +952,7 @@ class YoutubeIE(InfoExtractor):
             if m_s is not None:
                 self.to_screen(u'%s: Encrypted signatures detected.' % video_id)
                 video_info['url_encoded_fmt_stream_map'] = [args['url_encoded_fmt_stream_map']]
-            m_s = re_signature.search(args.get('adaptive_fmts', u''))
+            m_s = re_signature.search(args.get('adaptive_fmts', ''))
         except ValueError:
             pass
 
@@ -959,12 +961,13 @@ class YoutubeIE(InfoExtractor):
         
         is_m3u8 = 'no'
         
+        url_map = {}
         if len(video_info.get('url_encoded_fmt_stream_map', [])) >= 1 or len(video_info.get('adaptive_fmts', [])) >= 1:
             encoded_url_map = video_info.get('url_encoded_fmt_stream_map', [''])[0] + ',' + video_info.get('adaptive_fmts',[''])[0]
             if 'rtmpe%3Dyes' in encoded_url_map:
                 printDBG('rtmpe downloads are not supported, see https://github.com/rg3/youtube-dl/issues/343 for more information.')
                 raise
-            url_map = {}
+            
             for url_data_str in encoded_url_map.split(','):
                 add = True
                 if 'itag=' in url_data_str and 'url=' in url_data_str:
@@ -1017,22 +1020,16 @@ class YoutubeIE(InfoExtractor):
                         url += '&ratebypass=yes'
                     if add:
                         url_map[url_data['itag']] = url
-               
             video_url_list = self._get_video_url_list(url_map)
-            if not video_url_list:
-                return []
    
-        elif video_info.get('hlsvp'):
+        if video_info.get('hlsvp') and not video_url_list:
             is_m3u8 = 'yes'
             manifest_url = _unquote(video_info['hlsvp'])
             url_map = self._extract_from_m3u8(manifest_url, video_id)
             video_url_list = self._get_video_url_list(url_map)
-            if not video_url_list:
-                return []
-
-        else:
-            printDBG('no conn, hlsvp or url_encoded_fmt_stream_map information found in video info')
-            raise
+        
+        if not video_url_list:
+            return []
         
         sub_tracks = self._get_subtitles(video_id)
         results = []
