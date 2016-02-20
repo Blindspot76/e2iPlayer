@@ -23,7 +23,8 @@ from Plugins.Extensions.IPTVPlayer.libs.nettvpw    import NettvPw
 from Plugins.Extensions.IPTVPlayer.libs.typertv    import TyperTV
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld import WagasWorldApi
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow    import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet import TelewizjadaNetApi, GetConfigList as TelewizjadaNetApi_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.edemtv import EdemTvApi, GetConfigList as EdemTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livestreamtv   import LiveStreamTvApi 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes     import strwithmeta
 ###################################################
@@ -86,7 +87,11 @@ def GetConfigList():
     except: printExc()
     
     optionList.append(getConfigListEntry("----------telewizjada.net----------", config.plugins.iptvplayer.fake_separator))
-    try:    optionList.extend( TelewizjadaNetApi_GetConfigList() )
+    try:    optionList.extend( TelewizjadaNet_GetConfigList() )
+    except: printExc()
+   
+    optionList.append(getConfigListEntry("----------edem.tv----------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( EdemTv_GetConfigList() )
     except: printExc()
     
     #optionList.append(getConfigListEntry("----------Telewizja-Online.pl----------", config.plugins.iptvplayer.fake_separator))
@@ -156,6 +161,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'hellenic_tv',             'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
                         {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'Live-Stream.tv',                    'url': 'http://www.live-stream.tv/',                                          'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
+                        {'alias_id':'edem_tv',                 'name': 'edem.tv',             'title': 'Edem TV',                           'url': 'https://edem.tv/',                                                    'icon': 'https://edem.tv/public/images/logo_edem.png'}, \
                         #{'alias_id':'others',                 'name': 'others',              'title': 'Others',                            'url': '',                                                                    'icon': ''}, \
                         {'alias_id':'freetuxtv_programmes_en', 'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
@@ -186,6 +192,7 @@ class HasBahCa(CBaseHostClass):
         self.purecastNetApi = None
         self.telewizjadaNetApi = None
         self.liveStreamTvApi = None
+        self.edemTvApi = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -926,6 +933,22 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.telewizjadaNetApi.getVideoLink(cItem)
         return urlsTab
         
+    def getEdemTvList(self, cItem):
+        printDBG("getEdemTvList start")
+        if None == self.edemTvApi:
+            self.edemTvApi = EdemTvApi()
+        tmpList = self.edemTvApi.getChannelsList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']:
+                self.playVideo(item) 
+            else:
+                self.addDir(item)
+        
+    def getEdemTvLink(self, cItem):
+        printDBG("getEdemTvLink start")
+        urlsTab = self.edemTvApi.getVideoLink(cItem)
+        return urlsTab
+        
     def getLiveStreamTvList(self, cItem):
         printDBG("getLiveStreamTvList start")
         if None == self.liveStreamTvApi:
@@ -1025,6 +1048,9 @@ class HasBahCa(CBaseHostClass):
     #telewizjada.net items
         elif name == 'telewizjada.net':
             self.getTelewizjadaNetList(self.currItem)
+    #edem.tv items
+        elif name == 'edem.tv':
+            self.getEdemTvList(self.currItem)
     #live-stream.tv items
         elif name == 'live-stream.tv':
             self.getLiveStreamTvList(self.currItem)
@@ -1133,6 +1159,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getPurecastNetLink(cItem)
         elif name == 'telewizjada.net':
             urlList = self.host.getTelewizjadaNetLink(cItem)
+        elif name == 'edem.tv':
+            urlList = self.host.getEdemTvLink(cItem)
         elif name == 'live-stream.tv':
             urlList = self.host.getLiveStreamTvLink(cItem)
         elif name == "webcamera.pl":

@@ -179,7 +179,7 @@ class WpTV(CBaseHostClass):
             desc   = self.cleanHtmlStr(item)
             
             params = dict(cItem)
-            params.update({'title':title, 'desc':desc, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)})
+            params.update({'title':self.cleanHtmlStr(title), 'desc':desc, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)})
             self.addVideo(params)
         
         if nextPage != '':
