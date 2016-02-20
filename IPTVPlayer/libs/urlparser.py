@@ -2871,12 +2871,25 @@ class pageParser:
         HTTP_HEADER = {}
         videoUrl = strwithmeta(linkUrl)
         HTTP_HEADER['Referer'] = videoUrl.meta.get('Referer', videoUrl)
-        HTTP_HEADER['User-Agent'] = "Mozilla/5.0"
-        sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
+        HTTP_HEADER['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0"
+        COOKIE_FILE = GetCookieDir('p2pcasttv.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        
+        sts, data = self.cm.getPage(videoUrl, params)
         if not sts: return False
         url = self.cm.ph.getSearchGroups(data, 'curl[^"]*?=[^"]*?"([^"]+?)"')[0]
+        if '' == url: url = self.cm.ph.getSearchGroups(data, 'murl[^"]*?=[^"]*?"([^"]+?)"')[0]
         url = base64.b64decode(url)
-        return urlparser.decorateUrl(url, {'Referer':'http://cdn.p2pcast.tv/jwplayer.flash.swf', "User-Agent": HTTP_HEADER['User-Agent']})
+        
+        if url.endswith('token='):
+            params['header']['Referer'] = linkUrl
+            params['header']['X-Requested-With'] = 'XMLHttpRequest'
+            params['load_cookie'] = True
+            sts, data = self.cm.getPage('http://p2pcast.tech/getTok.php', params)
+            if not sts: return False
+            data = byteify(json.loads(data))
+            url += data['token']
+        return urlparser.decorateUrl(url, {'Referer':'http://cdn.webplayer.pw/jwplayer.flash.swf', "User-Agent": HTTP_HEADER['User-Agent']})
     
     def parserGOOGLE(self, linkUrl):
         printDBG("parserGOOGLE linkUrl[%s]" % linkUrl)
