@@ -317,6 +317,7 @@ class urlparser:
                        'albfilm.com':          self.pp.parserALBFILMCOM    ,
                        'hdfilmstreaming.com':  self.pp.parserHDFILMSTREAMING,
                        'allocine.fr':          self.pp.parserALLOCINEFR    ,
+                       'video.meta.ua':        self.pp.parseMETAUA         ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4889,9 +4890,34 @@ class pageParser:
         printDBG("------------------------------------------------------------------------------------")
         printDBG(data)
         printDBG("------------------------------------------------------------------------------------")
+
+    def parseMETAUA(self, baseUrl):
+        printDBG("parseMETAUA baseUrl[%s]" % baseUrl)
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
+                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+        sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER})
+        if not sts: return False
+        file_url = self.cm.ph.getSearchGroups(data, '''st_html5=['"]([^'^"]+?)['"]''')[0]
+        
+        def getUtf8Str(st):
+            idx = 0
+            st2 = ''
+            while idx < len(st):
+                st2 += '\\u0' + st[idx:idx + 3]
+                idx += 3
+            return st2.decode('unicode-escape').encode('UTF-8')
+        
+        if file_url.startswith('#') and 3 < len(file_url):
+            file_url = getUtf8Str(file_url[1:])
+            file_url = byteify(json.loads(file_url))['file']
+        
+        if file_url.startswith('http'): 
+            return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
+        
+        return False   
         
     def parseNETUTV(self, url):
-        printDBG("parserDIVEXPRESS url[%s]" % url)
+        printDBG("parseNETUTV url[%s]" % url)
         # example video: http://netu.tv/watch_video.php?v=WO4OAYA4K758
     
         printDBG("parseNETUTV url[%s]\n" % url)

@@ -851,11 +851,11 @@ class IPTVExtMoviePlayer(Screen):
                     self['bufferingBar'].value = (downloadDuration * 100000) / totalDuration
                 return
         
-        remoteFileSize = self.downloader.getRemoteFileSize()
-        if 0 < remoteFileSize:
-            localFileSize = self.downloader.getLocalFileSize(True) 
-            if 0 < localFileSize:
-                self['bufferingBar'].value = (localFileSize * 100000) / remoteFileSize
+            remoteFileSize = self.downloader.getRemoteFileSize()
+            if 0 < remoteFileSize:
+                localFileSize = self.downloader.getLocalFileSize(True) 
+                if 0 < localFileSize:
+                    self['bufferingBar'].value = (localFileSize * 100000) / remoteFileSize
                     
     def showMessage(self, message, type, callback=None):
         printDBG("IPTVExtMoviePlayer.showMessage")
