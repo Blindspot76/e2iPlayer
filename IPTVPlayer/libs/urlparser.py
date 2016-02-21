@@ -315,6 +315,7 @@ class urlparser:
                        'zerocast.tv':          self.pp.parserZEROCASTTV    ,
                        'vid.ag':               self.pp.parserVIDAG         ,
                        'albfilm.com':          self.pp.parserALBFILMCOM    ,
+                       'hdfilmstreaming.com':  self.pp.parserHDFILMSTREAMING,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4428,6 +4429,26 @@ class pageParser:
                 linksTab.append({'name':item, 'url': strwithmeta(url, {'external_sub_tracks':sub_tracks})})
         return linksTab
         
+    def parserHDFILMSTREAMING(self, baseUrl):
+        printDBG("parserHDFILMSTREAMING baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        sub_tracks = []
+        subData = self.cm.ph.getDataBeetwenMarkers(data, 'tracks:', ']', False)[1].split('}')
+        for item in subData:
+            if '"captions"' in item:
+                label   = self.cm.ph.getSearchGroups(item, 'label:[ ]*?"([^"]+?)"')[0]
+                src     = self.cm.ph.getSearchGroups(item, 'file:[ ]*?"([^"]+?)"')[0]
+                if not src.startswith('http'): continue
+                sub_tracks.append({'title':label, 'url':src, 'lang':'unk', 'format':'srt'})
+        
+        linksTab = self._findLinks(data, serverName='hdfilmstreaming.com')
+        for idx in range(len(linksTab)):
+            linksTab[idx]['url'] = urlparser.decorateUrl(linksTab[idx]['url'], {'external_sub_tracks':sub_tracks})
+        
+        return linksTab
+                    
     def parserSUPERFILMPL(self, baseUrl):
         printDBG("parserSUPERFILMPL baseUrl[%r]" % baseUrl)
         sts, data = self.cm.getPage(baseUrl)
@@ -4552,14 +4573,18 @@ class pageParser:
         
     def parserOKRU(self, baseUrl):
         printDBG("parserOKRU baseUrl[%r]" % baseUrl)
-        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([0-9]+)/')[0]
-        if video_id == '': return False
+        if 'videoPlayerMetadata' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([0-9]+)/')[0]
+            if video_id == '': return False
+            url = 'http://ok.ru/dk?cmd=videoPlayerMetadata&mid=%s' % video_id
+        else:
+            url = baseUrl
+        
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0',
                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                        'Referer':baseUrl,
                        'Cookie':'_flashVersion=18',
                        'X-Requested-With':'XMLHttpRequest'}
-        url = 'http://ok.ru/dk?cmd=videoPlayerMetadata&mid=%s' % video_id
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
         if not sts: return False
         data = byteify(json.loads(data))
