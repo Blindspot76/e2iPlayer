@@ -45,10 +45,10 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'movieshd.eu'
+    return 'movieshd.tv'
 
 class MoviesHDCO(CBaseHostClass):
-    MAIN_URL    = 'http://movieshd.eu/'
+    MAIN_URL    = 'http://movieshd.tv/'
     #SRCH_SERIES_URL    = MAIN_URL + 'seriale/search'
     SRCH_MOVIES_URL    = MAIN_URL + 'page/{page}?s='
     
@@ -304,9 +304,13 @@ class MoviesHDCO(CBaseHostClass):
         
         #printDBG(data)
         
-        #data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="video-embed">', '</table>', False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, "<span class='postTabs_titles'>", '</div>', True, False)
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="video-embed">', '</div>', False)[1]
+        data = data.split('</')
+        idx = 0
         for item in data:
+            if idx > 0:
+                item = '</' + item 
+            idx += 1
             title  = self.cleanHtmlStr( item )
             vidUrl = self.cm.ph.getSearchGroups(item, '''<source[^>]*?src="([^"]+?)"[^>]*?video/mp4[^>]*?''', 1, True)[0]
             need_resolve = 1
