@@ -209,7 +209,9 @@ class IPTVSubDownloaderWidget(Screen):
             self.stackList.append({'type':'movie', 'list':data})
             self.displayList()
         else:
-            self["console"].setText(_('Movie "%s" has not been found.') % self.movieTitle)
+            message = _('Movie "%s" has not been found.') % self.movieTitle
+            message += '\n' + _('Simplify the title and try again.')
+            self["console"].setText(message)
             
     def doGetItemType(self, item):
         self.setListMode(False)

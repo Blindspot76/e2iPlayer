@@ -1573,7 +1573,7 @@ msgid "Login user \"%s\" into %s"
 msgstr "Logowanie użytkownika \"%s\" do %s"
 
 msgid "Request token from %s"
-msgstr "żądanie symbolu z %s"
+msgstr "Pobieranie tokenu z %s"
 
 msgid ""
 "Error occurs.\n"
@@ -1588,9 +1588,6 @@ msgstr "wiadomość"
 msgid "Confirm title of the movie"
 msgstr "Potwierdź tytuł filmu"
 
-msgid "Search for movie \"%s\""
-msgstr "Szukam filmu \"%s\""
-
 msgid "Movie \"%s\" has not been found."
 msgstr "Film \"%s\" nie został odnaleziony."
 
@@ -1598,10 +1595,10 @@ msgid "Get supported languages list."
 msgstr "Pobierz listę obsługiwanych języków."
 
 msgid "Get item type."
-msgstr "Pobierz typ pozycji."
+msgstr "Sprawdzanie typu elementu."
 
 msgid "Get episodes list."
-msgstr "Pobierz wykaz odcinków."
+msgstr "Pobieranie listy odcinków."
 
 msgid "An unknown error has occurred."
 msgstr "Wystąpił nieznany błąd."
@@ -1897,7 +1894,7 @@ msgid "Subtitles not found."
 msgstr "Nie znaleziono napisów."
 
 msgid "Download subtitle \"%s\""
-msgstr "Pobierz napisy \"%s\""
+msgstr "Pobieranie napisów \"%s\""
 
 msgid "Previous"
 msgstr "Poprzedni"
@@ -1959,3 +1956,17 @@ msgstr "Akceptuj format mpeg dash"
 
 msgid "Stop playing?"
 msgstr "Zakończyć odtwarzanie?"
+
+msgid "Simplify the title and try again."
+msgstr "Uprość tytuł i spróbuj ponownie."
+
+msgid "Error occurs.\n[%s]."
+msgstr "Wystąpił problem.\n[%s]."
+
+msgid "Login user \"%s\" into %s."
+msgstr "Logowanie użytkownika \"%s\" do %s."
+
+msgid "Search for movie \"%s\""
+msgstr "Wyszukiwanie filmu \"%s\""
+
+

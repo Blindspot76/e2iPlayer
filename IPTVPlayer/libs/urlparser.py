@@ -316,6 +316,7 @@ class urlparser:
                        'vid.ag':               self.pp.parserVIDAG         ,
                        'albfilm.com':          self.pp.parserALBFILMCOM    ,
                        'hdfilmstreaming.com':  self.pp.parserHDFILMSTREAMING,
+                       'allocine.fr':          self.pp.parserALLOCINEFR    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4594,6 +4595,42 @@ class pageParser:
             url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
             urlsTab.append({'name':item['name'], 'url':url})
         return urlsTab[::-1]
+        
+    def parserALLOCINEFR(self, baseUrl):
+        printDBG("parserOKRU baseUrl[%r]" % baseUrl)
+        # based on https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/allocine.py
+        _VALID_URL = r'https?://(?:www\.)?allocine\.fr/_?(?P<typ>article|video|film|video|film)/(iblogvision.aspx\?cmedia=|fichearticle_gen_carticle=|player_gen_cmedia=|fichefilm_gen_cfilm=|video-)(?P<id>[0-9]+)(?:\.html)?'
+        mobj = re.match(_VALID_URL, baseUrl)
+        typ = mobj.group('typ')
+        display_id = mobj.group('id')
+
+        sts, webpage = self.cm.getPage(baseUrl)
+        if not sts: return False
+
+        if 'film' == type:
+            video_id = self.cm.ph.getSearchGroups(webpage, r'href="/video/player_gen_cmedia=([0-9]+).+"')[0]
+        else:
+            player = self.cm.ph.getSearchGroups(webpage, r'data-player=\'([^\']+)\'>')[0]
+            if player != '':
+                player_data = byteify(json.loads(player))
+                video_id = player_data['refMedia']
+            else:
+                model = self.cm.ph.getSearchGroups(webpage, r'data-model="([^"]+)">')[0] 
+                model_data = byteify(json.loads(unescapeHTML(model)))
+                video_id = model_data['id']
+
+        sts, data = self.cm.getPage('http://www.allocine.fr/ws/AcVisiondataV5.ashx?media=%s' % video_id)
+        if not sts: return False
+        
+        data = byteify(json.loads(data))
+        quality = ['hd', 'md', 'ld']
+        urlsTab = []
+        for item in quality:
+            url = data['video'].get(item + 'Path', '')
+            if not url.startswith('http'):
+                continue
+            urlsTab.append({'name':item, 'url':url})
+        return urlsTab
         
     def parserLIVESTRAMTV(self, baseUrl):
         printDBG("parserLIVESTRAMTV baseUrl[%r]" % baseUrl)

@@ -6,11 +6,12 @@ import urllib2
 import sys
 import traceback
 import re
-try:    import simplejson as json
-except: import json
+try:    import json
+except: import simplejson as json
 
+IPTV_DEBUG=False
 def printDBG(strDat):
-    if 0:
+    if IPTV_DEBUG:
         print("%s" % strDat)
 
 def printExc(msg=''):
@@ -175,9 +176,11 @@ if __name__ == "__main__":
     try:
         sts = False
         handler = sys.argv[1]
-        if handler == 'episodes':
+        if '_dbg' in handler:
+            IPTV_DEBUG = True
+        if 'episodes' in handler:
             sts, data = getEpisodes(sys.argv[2], sys.argv[3], sys.argv[4])
-        elif handler == 'find_title':
+        elif 'find_title' in handler:
             sts, data = findByTitle(sys.argv[2])
         if sts: code = 0
     except:
