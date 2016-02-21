@@ -248,7 +248,7 @@ class FilmstreamvkCom(CBaseHostClass):
         urlTab = []
         
         videoUrl = ''
-        if 'filmstreamvk.com':
+        if 'filmstreamvk.com' in url:
             sts, data = self.cm.getPage(url)
             if not sts: return []
             tmoUrlTab = self._getBaseVideoLink(data)
