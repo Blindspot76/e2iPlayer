@@ -31,6 +31,7 @@ from Components.Label import Label
 #from Components.Sources.StaticText import StaticText
 from Tools.Directories import fileExists, resolveFilename, SCOPE_PLUGINS
 from os import remove as os_remove
+from datetime import timedelta
 ###################################################
 
 class IPTVPlayerBufferingWidget(Screen):
@@ -281,14 +282,28 @@ class IPTVPlayerBufferingWidget(Screen):
 
         self.downloader.updateStatistic()
         tmpBuffSize = self.downloader.getLocalFileSize() - self.lastSize + 1 # simple when getLocalFileSize() returns -1
-        # remote size
-        rFileSize = self.downloader.getRemoteFileSize()       
-        if -1 == rFileSize: rFileSize = '??'
-        else: rFileSize = formatBytes(float(rFileSize))
-        # local size
-        lFileSize = self.downloader.getLocalFileSize()
-        if -1 == lFileSize: lFileSize = '??'
-        else: lFileSize = formatBytes(float(lFileSize))
+        
+        if None != self.downloader and self.downloader.getName() == "wget m3u8" \
+           and self.downloader.getTotalFileDuration() > 0:
+            totalDuration = self.downloader.getTotalFileDuration()
+            downloadDuration = self.downloader.getDownloadedFileDuration()
+            rFileSize = str(timedelta(seconds=totalDuration))
+            lFileSize = str(timedelta(seconds=downloadDuration))
+            if rFileSize.startswith('0:'):
+                rFileSize = rFileSize[2:]
+            if lFileSize.startswith('0:'):
+                lFileSize = lFileSize[2:]
+        else:
+            # remote size
+            rFileSize = self.downloader.getRemoteFileSize()       
+            if -1 == rFileSize: rFileSize = '??'
+            else: rFileSize = formatBytes(float(rFileSize))
+            # local size
+            lFileSize = self.downloader.getLocalFileSize()
+            if -1 == lFileSize: lFileSize = '??'
+            else: lFileSize = formatBytes(float(lFileSize))
+        
+        
         # download speed
         dSpeed = self.downloader.getDownloadSpeed()
         if -1 == dSpeed: dSpeed = ''
@@ -296,8 +311,8 @@ class IPTVPlayerBufferingWidget(Screen):
 
         speed     = self.downloader.getDownloadSpeed()
         tmpStr    = ''
-        if 0 < self.downloader.getLocalFileSize():
-            if 0 <= self.downloader.getRemoteFileSize():
+        if '??' != lFileSize:
+            if '??' != rFileSize:
                 tmpStr = "\n%s/%s" % (lFileSize, rFileSize)
             else:
                 tmpStr = "\n%s" % (lFileSize)

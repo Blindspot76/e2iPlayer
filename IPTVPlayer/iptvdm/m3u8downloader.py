@@ -70,6 +70,9 @@ class M3U8Downloader(BaseDownloader):
         self.skipFirstSegFromList = 0
         
         self.addStampToUrl = False
+        self.totalDuration = -1
+        self.downloadDuration = 0
+        self.fragmentDurationList = []
         
     def __del__(self):
         printDBG("M3U8Downloader.__del__ ----------------------------------")
@@ -414,6 +417,16 @@ class M3U8Downloader(BaseDownloader):
                                 self._updateM3U8Finished(-1)
                             else:
                                 self.fragmentList = [self._segUri(seg.absolute_uri) for seg in m3u8Obj.segments]
+                                try:
+                                    self.totalDuration = 0
+                                    self.fragmentDurationList = []
+                                    for seg in m3u8Obj.segments:
+                                        self.totalDuration += seg.duration
+                                        self.fragmentDurationList.append(seg.duration)
+                                except:
+                                    printExc()
+                                    self.totalDuration = -1
+                                    self.fragmentDurationList = []
                             localStatus = self._startFragment()
                 except:
                     pass
@@ -430,7 +443,10 @@ class M3U8Downloader(BaseDownloader):
                     localStatus = self._startFragment()
             #elif not self.liveStream and self.remoteFragmentSize > 0 and self.remoteFragmentSize > (self.localFileSize - self.m3u8_prevLocalFileSize):
             #    localStatus = DMHelper.STS.INTERRUPTED
-            elif  0 < (self.localFileSize - self.m3u8_prevLocalFileSize):
+            elif 0 < (self.localFileSize - self.m3u8_prevLocalFileSize):
+                if  self.totalDuration > 0:
+                    try: self.downloadDuration += self.fragmentDurationList[self.currentFragment]
+                    except: printExc()
                 localStatus = self._startFragment()
             elif  0 == (self.localFileSize - self.m3u8_prevLocalFileSize):
                 localStatus = self._startFragment(True) # retry
@@ -464,5 +480,10 @@ class M3U8Downloader(BaseDownloader):
         
         if not terminated:
             self.onFinish()
-        
+    
+    def getTotalFileDuration(self):
+        return int(self.totalDuration)
+
+    def getDownloadedFileDuration(self):
+        return int(self.downloadDuration)
         
