@@ -131,10 +131,11 @@ class HdfilmstreamingCom(CBaseHostClass):
         for item in data:
             url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
             icon  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            title = self.cleanHtmlStr(item)
+            title = self.cm.ph.getSearchGroups(item, '<a[^<]+?>([^<]+?)</a>')[0]
+            desc  = self.cleanHtmlStr(item.replace(title, '').replace('</div>', '[/br]'))
             
             params = dict(cItem)
-            params.update({'category':category, 'url':url, 'title':title, 'icon':icon})
+            params.update({'category':category, 'url':url, 'title':self.cleanHtmlStr(title), 'icon':icon, 'desc':desc})
             if 'saison-' in url:
                 season = self.cm.ph.getSearchGroups(url, 'saison-([0-9]+?)-' )[0]
                 params['season'] = season
@@ -177,10 +178,9 @@ class HdfilmstreamingCom(CBaseHostClass):
     def _getBaseVideoLink(self, data):
         videoUrlParams = []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="filmicerik">', '<div id="alt">')[1]
-        data = data.split('</iframe>')
-        if len(data): del data[-1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '</iframe>', withMarkers=True, caseSensitive=False)
         for item in data:
-            url  = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''')[0]
+            url  = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''',  grupsNum=1, ignoreCase=True)[0]
             if url.startswith('http'):
                 videoUrlParams.append({'name': self.up.getHostName(url), 'url':url, 'need_resolve':1})
         return videoUrlParams
@@ -222,7 +222,13 @@ class HdfilmstreamingCom(CBaseHostClass):
                 videoUrl = _unquote(videoUrl)
         else:
             videoUrl = url
-        
+            
+        if 'pisux/url/' in videoUrl:
+            sts, data = self.cm.getPage(videoUrl)
+            if not sts: return []
+            videoUrl = self.cm.ph.getDataBeetwenMarkers(data, 'metadataUrl=', '"', False)[1]
+            videoUrl = _unquote(videoUrl)
+                
         if videoUrl.startswith('http'):
             return self.up.getVideoLinkExt(videoUrl)
         return []
