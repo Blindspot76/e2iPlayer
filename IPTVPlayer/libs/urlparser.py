@@ -318,6 +318,7 @@ class urlparser:
                        'hdfilmstreaming.com':  self.pp.parserHDFILMSTREAMING,
                        'allocine.fr':          self.pp.parserALLOCINEFR    ,
                        'video.meta.ua':        self.pp.parseMETAUA         ,
+                       'xvidstage.com':        self.pp.parseXVIDSTAGECOM   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3872,6 +3873,53 @@ class pageParser:
             return self._findLinks2(data, baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://hdvid.tv/embed-{0}-950x480.html', _findLinks)
         
+    def parseXVIDSTAGECOM(self, baseUrl):
+        printDBG("parseXVIDSTAGECOM baseUrl[%s]" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        def _first_of_each(*sequences):
+            return (next((x for x in sequence if x), '') for sequence in sequences)
+        
+        def _url_path_join(*parts):
+            """Normalize url parts and join them with a slash."""
+            schemes, netlocs, paths, queries, fragments = zip(*(urlsplit(part) for part in parts))
+            scheme, netloc, query, fragment = _first_of_each(schemes, netlocs, queries, fragments)
+            path = '/'.join(x.strip('/') for x in paths if x)
+            return urlunsplit((scheme, netloc, path, query, fragment))
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data.split('site_logo')[-1], '<Form method="POST"', '</Form>', True)
+        action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'")[0]
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        
+        try:
+            sleep_time = int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]) 
+            time.sleep(sleep_time)
+        except:
+            printExc()
+        if {} == post_data:
+            post_data = None
+        if action.startswith('/'):
+            url = _url_path_join(url[:url.rfind('/')+1], action[1:])
+        else: url = action
+        if url == '':
+            url = baseUrl
+        sts, data = self.cm.getPage(url, {}, post_data)
+        if not sts: return False
+        
+        try:
+            tmp = CParsingHelper.getDataBeetwenMarkers(data.split('player_code')[-1], ">eval(", '</script>')[1]
+            tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
+            data = tmp + data
+        except:
+            pass
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '<[^>]+?type="video[^>]+?src="([^"]+?)"')[0]
+        if videoUrl.startswith('http'):
+            return videoUrl
+        return False
+        
     def parserSTREAMPLAYCC(self, baseUrl):
         printDBG("parserSTREAMPLAYCC baseUrl[%s]" % baseUrl)
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
@@ -4914,7 +4962,118 @@ class pageParser:
         if file_url.startswith('http'): 
             return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
         
-        return False   
+        return False
+        
+    def parseNETUTV2(self, url):
+        def OIO(data, _0x84de):
+            _0lllOI = _0x84de[0];
+            enc = _0x84de[1];
+            i = 0;
+            while i < len(data):
+                h1 = _0lllOI.find(data[i]);
+                h2 = _0lllOI.find(data[i+1]);
+                h3 = _0lllOI.find(data[i+2]);
+                h4 = _0lllOI.find(data[i+3]);
+                i += 4;
+                bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
+                o1 = bits >> 16 & 0xff;
+                o2 = bits >> 8 & 0xff;
+                o3 = bits & 0xff;
+                if h3 == 64:
+                    enc += chr(o1);
+                else:
+                    if h4 == 64:
+                        enc += chr(o1) + chr(o2);
+                    else:
+                        enc += chr(o1) + chr(o2) + chr(o3);
+            return enc
+        
+        def _0ll(string, _0x84de):
+            ret = _0x84de[1]
+            
+            i = len(string) - 1
+            while i >= 0:
+                ret += string[i]
+                i -= 1
+            return ret
+        
+        def K12K(a, typ='b'):
+            tmp = "G.L.M.N.Z.o.I.t.V.y.x.p.R.m.z.u.D.7.W.v.Q.n.e.0.b.=//2.6.i.k.8.X.J.B.a.s.d.H.w.f.T.3.l.c.5.Y.g.1.4.9.U.A"
+            tmp = tmp.split("//")
+            codec_a = tmp[0].split('.')
+            codec_b = tmp[1].split('.')
+            if 'd' == typ:
+                tmp = codec_a
+                codec_a = codec_b
+                codec_b = tmp
+            idx = 0
+            while idx < len(codec_a):
+                a = a.replace(codec_a[idx], "___");
+                a = a.replace(codec_b[idx], codec_a[idx]);
+                a = a.replace("___", codec_b[idx]);
+                idx += 1
+            return a
+            
+        def _xc13(_arg1):
+            _lg27 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+            _local2 = ""
+            _local3 = [0, 0, 0, 0]
+            _local4 = [0, 0, 0]
+            _local5 = 0
+            while _local5 < len(_arg1):
+                _local6 = 0;
+                while _local6 < 4 and (_local5 + _local6) < len(_arg1):
+                    _local3[_local6] = ( _lg27.find( _arg1[_local5 + _local6] ) )
+                    _local6 += 1
+                _local4[0] = ((_local3[0] << 2) + ((_local3[1] & 48) >> 4))
+                _local4[1] = (((_local3[1] & 15) << 4) + ((_local3[2] & 60) >> 2))
+                _local4[2] = (((_local3[2] & 3) << 6) + _local3[3])
+                
+                _local7 = 0
+                while _local7 < len(_local4):
+                    if _local3[_local7 + 1] == 64:
+                        break
+                    _local2 += chr(_local4[_local7])
+                    _local7 += 1
+                _local5 += 4
+            return _local2
+    
+        printDBG("parseNETUTV url[%s]\n" % url)
+        #http://netu.tv/watch_video.php?v=ODM4R872W3S9
+        match = re.search("=([0-9A-Z]+?)[^0-9^A-Z]", url + '|' )
+        playerUrl = "http://netu.tv/player/embed_player.php?vid=%s&autoplay=no" % match.group(1)
+        
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
+                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+        #HTTP_HEADER['Referer'] = url
+        sts, data = self.cm.getPage(playerUrl, {'header' : HTTP_HEADER})
+        data = base64.b64decode(re.search('base64\,([^"]+?)"', data).group(1))
+        #printDBG(data)
+        l01 = re.search("='([^']+?)'", data).group(1)
+        _0x84de = re.search("var _0x84de=\[([^]]+?)\]", data).group(1)
+        _0x84de = re.compile('"([^"]*?)"').findall(_0x84de)
+        
+        data = OIO( _0ll(l01, _0x84de), _0x84de )
+        data = re.search("='([^']+?)'", data).group(1).replace('%', '\\').decode('unicode-escape').encode('UTF-8')
+        
+        data = re.compile('<input name="([^"]+?)" [^>]+? value="([^"]+?)">').findall(data)
+        post_data = {}
+        for idx in range(len(data)):
+            post_data[ data[idx][0] ] = data[idx][1]
+        
+        sts, data = self.cm.getPage(playerUrl, {'header' : HTTP_HEADER}, post_data)
+        #CParsingHelper.writeToFile('/home/sulge/test.html', data)
+        file_vars = re.search("file='\+([^']+?)\+'", data).group(1)
+        file_vars = file_vars.split('+')
+        file_url = ''
+        for file_var in file_vars:
+            file_url += re.search('var %s = "([^"]*?)"' % file_var, data).group(1)
+        file_url = _xc13(K12K(file_url, 'd'))
+        
+        if "http" in file_url:
+            return file_url
+
+        return False  
         
     def parseNETUTV(self, url):
         printDBG("parseNETUTV url[%s]" % url)
@@ -4927,6 +5086,8 @@ class pageParser:
         
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+        #HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36',
+        #               'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
         
         #http://hqq.tv/player/hash.php?hash=229221213221211228239245206208212229194271217271255
         if 'hash.php?hash' in url:
@@ -4959,7 +5120,7 @@ class pageParser:
         sts, data = self.cm.getPage(secPlayerUrl, {'header' : HTTP_HEADER}, post_data)
         
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
-        #CParsingHelper.writeToFile('/mnt/new2/test.html', data)
+        CParsingHelper.writeToFile('/mnt/new2/test.html', data)
         def getUtf8Str(st):
             idx = 0
             st2 = ''
@@ -4997,6 +5158,8 @@ class pageParser:
             data = byteify( json.loads(data) )
             file_url = data['html5_file']
         
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(data['file'])
         if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
         #printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % file_url)
         if file_url.startswith('http'): return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})

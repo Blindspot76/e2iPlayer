@@ -34,13 +34,13 @@ from Components.Language import language
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.movie4kto_language = ConfigSelection(default = "", choices = [("", _("Auto")), ("en", _("English")), ("de", _("German")), ("fr", _("French")), ("es", _("Spanish")), ("it", _("Italian")), ("jp", _("Japanese")), ("tr", _("Turkish")), ("ru", _("Russian")) ])
-#config.plugins.iptvplayer.movie4kto_use_proxy_gateway  = ConfigYesNo(default = True)
+config.plugins.iptvplayer.movie4kto_use_proxy_gateway  = ConfigYesNo(default = False)
 #config.plugins.iptvplayer.movie4kto_proxy_gateway_url  = ConfigText(default = "http://www.proxy-german.de/index.php?q={0}&hl=2e5", fixed_size = False)
 
 def GetConfigList():
     optionList = []
     optionList.append( getConfigListEntry( _("Language:"), config.plugins.iptvplayer.movie4kto_language) )
-    #optionList.append(getConfigListEntry(_("Use proxy gateway"), config.plugins.iptvplayer.movie4kto_use_proxy_gateway))
+    optionList.append(getConfigListEntry(_("Use proxy gateway"), config.plugins.iptvplayer.movie4kto_use_proxy_gateway))
     #if config.plugins.iptvplayer.movie4kto_use_proxy_gateway.value:
     #    optionList.append(getConfigListEntry("    " + _("Url:"), config.plugins.iptvplayer.movie4kto_proxy_gateway_url))
     return optionList
@@ -85,7 +85,7 @@ class Movie4kTO(CBaseHostClass):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Cookie':'lang=%s;' % lang }
         params.update({'header':HTTP_HEADER})
         
-        if False and 'movie4k.to' in url:
+        if config.plugins.iptvplayer.movie4kto_use_proxy_gateway.value and 'movie4k.to' in url:
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url))
             params['header']['Referer'] = proxy
             params['header']['Cookie'] = 'flags=2e5; COOKIE%253Blang%253B%252F%253Bwww.movie4k.to={0}%3B'.format(lang)
