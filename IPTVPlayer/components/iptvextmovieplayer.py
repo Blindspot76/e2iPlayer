@@ -15,7 +15,7 @@ from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVDMImgDir, GetBinDir, GetSubtitlesDir, eConnectCallback, \
                                                           GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
                                                           GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang, GetPolishSubEncoding, E2PrioFix, iptv_system, \
-                                                          GetE2AudioCodecMixOption, SetE2AudioCodecMixOption, CreateTmpFile, GetTmpDir
+                                                          GetE2AudioCodecMixOption, SetE2AudioCodecMixOption, CreateTmpFile, GetTmpDir, IsExecutable
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -230,6 +230,12 @@ class IPTVExtMoviePlayer(Screen):
         self.externalSubTracks = additionalParams.get('external_sub_tracks', []) #[{'title':'', 'lang':'', 'url':''}, ...]
         self.refreshCmd = additionalParams.get('iptv_refresh_cmd', '')
         self.refreshCmdConsole = None
+        
+        self.iframeParams = {}
+        self.iframeParams['console'] = None
+        self.iframeParams['show_iframe'] = additionalParams.get('show_iframe', False)
+        self.iframeParams['iframe_file_start'] = additionalParams.get('iframe_file_start', '')
+        self.iframeParams['iframe_file_end'] = additionalParams.get('iframe_file_end', '')
         
         printDBG('IPTVExtMoviePlayer.__init__ lastPosition[%r]' % self.lastPosition)
         
@@ -667,7 +673,7 @@ class IPTVExtMoviePlayer(Screen):
         if fileExists(fileSRC) and not fileSRC.endswith('/.iptv_buffering.flv'):
             try: currDir, tail = os_path.split(fileSRC)
             except: printExc()
-        fileMatch = re.compile("^.*?(:?\.mlp|\.srt)$")
+        fileMatch = re.compile("^.*?(:?\.mlp|\.srt)$",  re.IGNORECASE)
         self.openChild(boundFunction(self.childClosed, self.openSubtitlesFromFileCallback), IPTVFileSelectorWidget, currDir, _("Select subtitles file"), fileMatch)
         
     def openSubtitlesFromFileCallback(self, filePath=None):
@@ -1247,9 +1253,15 @@ class IPTVExtMoviePlayer(Screen):
         if None != self.workconsole:
             self.workconsole.kill()
         self.workconsole = None
+        
         if None != self.refreshCmdConsole:
             self.refreshCmdConsole.kill()
         self.refreshCmdConsole = None
+        
+        if None != self.iframeParams['console']:
+            self.iframeParams['console'].kill()
+        self.iframeParams['console'] = None
+        
         if None != self.console:
             self.console_appClosed_conn   = None
             self.console_stderrAvail_conn = None
@@ -1320,10 +1332,20 @@ class IPTVExtMoviePlayer(Screen):
 
     def extmovieplayerClose(self, sts, currentTime):
         if self.childWindowsCount > 0:
-            self.delayedClosure = boundFunction(self.close, sts, currentTime)
+            self.delayedClosure = boundFunction(self.closeWithIframeClear, sts, currentTime)
         else:
-            self.close(sts, currentTime)
+            self.closeWithIframeClear(sts, currentTime)
             
+    def closeWithIframeClear(self, sts, currentTime):
+        if self.iframeParams['show_iframe'] and IsExecutable('showiframe')\
+           and fileExists(self.iframeParams['iframe_file_end']):
+            self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_end']), boundFunction(self.iptvDoClose, sts, currentTime))        
+        else:
+            self.iptvDoClose(sts, currentTime)
+    
+    def iptvDoClose(self, sts, currentTime, code=None, data=None):
+        self.close(sts, currentTime)
+        
     def openChild(self, *args):
         self.childWindowsCount += 1
         self.session.openWithCallback(*args)
@@ -1354,7 +1376,14 @@ class IPTVExtMoviePlayer(Screen):
         
         if '' != self.refreshCmd:
             self.refreshCmdConsole = iptv_system( self.refreshCmd )
+            
+        if self.iframeParams['show_iframe'] and IsExecutable('showiframe')\
+           and fileExists(self.iframeParams['iframe_file_start']):
+            self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_start']), self.iptvDoStart)
+        else:
+            self.iptvDoStart()
         
+    def iptvDoStart(self, code=None, data=None):
         self['progressBar'].value = 0
         self['bufferingBar'].range = (0, 100000)
         self['bufferingBar'].value = 0

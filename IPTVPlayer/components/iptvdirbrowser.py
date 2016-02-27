@@ -92,6 +92,16 @@ class IPTVDirectorySelectorWidget(Screen):
         self.underClosing     = False
         self.deferredAction   = None
         
+        try:
+            while not os_path.isdir( currDir ):
+                tmp = os_path.dirname(currDir)
+                if tmp == currDir:
+                    break
+                currDir = tmp
+        except:
+            currDir = ''
+            printExc()
+        
         self.currDir   = currDir
         self.currList  = []
         
@@ -302,7 +312,7 @@ class IPTVFileSelectorWidget(IPTVDirectorySelectorWidget):
             #printDBG(params)
             if 4 == len(params):
                 if 'd' == params[1]: type = 'dir'
-                elif 'r': 
+                else:
                     type = 'file'
                     try:
                         if None != self.fileMatch and None == self.fileMatch.match(params[0]):
@@ -310,7 +320,6 @@ class IPTVFileSelectorWidget(IPTVDirectorySelectorWidget):
                     except:
                         printExc()
                         continue
-                else: continue
                 self.tmpList.append( CListItem(name=params[0], fullDir=params[3], type=type) )
                 
     def ok(self):
