@@ -385,15 +385,16 @@ class YifyTV(CBaseHostClass):
         header['Referer'] = baseUrl.meta['Referer']
         
         souTab = [baseUrl.meta.get('sou', '')]
-        #if souTab[0] == 'pic':
-        #    souTab.append('adr')
+        if souTab[0] == 'pic':
+            souTab.append('adr')
         for sou in souTab:
-            post_data = {'fv':'18', 'url':baseUrl, 'sou':baseUrl.meta.get('sou', '')}
+            post_data = {'fv':'18', 'url':baseUrl, 'sou':sou}
             url = 'http://yify.tv/player/pk/pk/plugins/player_p2.php'
             sts, data = self.cm.getPage(url, {'header':header}, post_data)
             if not sts: return []
             #printDBG('>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<' % data)
             try:
+                printDBG(data)
                 if 'jscode' in data:
                     data = self._evalJscode(data)
                 data = byteify(json.loads(data))
