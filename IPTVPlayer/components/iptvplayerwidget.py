@@ -1347,6 +1347,10 @@ class IPTVPlayerWidget(Screen):
                     gstAdditionalParams['show_iframe'] = config.plugins.iptvplayer.show_iframe.value
                     gstAdditionalParams['iframe_file_start'] = config.plugins.iptvplayer.iframe_file.value
                     gstAdditionalParams['iframe_file_end'] = config.plugins.iptvplayer.clear_iframe_file.value
+                    if 'sh4' == config.plugins.iptvplayer.plarform.value:
+                        gstAdditionalParams['iframe_continue'] = True
+                    else:
+                        gstAdditionalParams['iframe_continue'] = False
                 
                 self.writeCurrentTitleToFile(titleOfMovie)
                 if isBufferingMode:

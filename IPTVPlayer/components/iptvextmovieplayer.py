@@ -236,6 +236,7 @@ class IPTVExtMoviePlayer(Screen):
         self.iframeParams['show_iframe'] = additionalParams.get('show_iframe', False)
         self.iframeParams['iframe_file_start'] = additionalParams.get('iframe_file_start', '')
         self.iframeParams['iframe_file_end'] = additionalParams.get('iframe_file_end', '')
+        self.iframeParams['iframe_continue'] = additionalParams.get('iframe_continue', False)
         
         printDBG('IPTVExtMoviePlayer.__init__ lastPosition[%r]' % self.lastPosition)
         
@@ -1339,9 +1340,12 @@ class IPTVExtMoviePlayer(Screen):
     def closeWithIframeClear(self, sts, currentTime):
         if self.iframeParams['show_iframe'] and IsExecutable('showiframe')\
            and fileExists(self.iframeParams['iframe_file_end']):
-            self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_end']), boundFunction(self.iptvDoClose, sts, currentTime))        
-        else:
-            self.iptvDoClose(sts, currentTime)
+            if self.iframeParams['iframe_continue']:
+                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_end']))
+            else:
+                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_end']), boundFunction(self.iptvDoClose, sts, currentTime))
+                return
+        self.iptvDoClose(sts, currentTime)
     
     def iptvDoClose(self, sts, currentTime, code=None, data=None):
         self.close(sts, currentTime)
@@ -1379,9 +1383,12 @@ class IPTVExtMoviePlayer(Screen):
             
         if self.iframeParams['show_iframe'] and IsExecutable('showiframe')\
            and fileExists(self.iframeParams['iframe_file_start']):
-            self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_start']), self.iptvDoStart)
-        else:
-            self.iptvDoStart()
+            if self.iframeParams['iframe_continue']:
+                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_start']))
+            else:
+                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_start']), self.iptvDoStart)
+                return
+        self.iptvDoStart()
         
     def iptvDoStart(self, code=None, data=None):
         self['progressBar'].value = 0
