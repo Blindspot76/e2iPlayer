@@ -3491,5 +3491,17 @@ msgstr "Новые релизы"
 msgid "Categorization:"
 msgstr "Категоризации:"
 
+msgid "Use proxy gateway"
+msgstr "Использовать прокси-шлюз"
+
+msgid "show iframe for audio item"
+msgstr "Включить заставку в режиме ауди"
+
+msgid "Iframe file"
+msgstr "Расположение заставки"
+
+msgid "Clear iframe file"
+msgstr "Расположение очистить заставки"
+
 msgid "Recently Added"
 msgstr "Недавно добавленный"
