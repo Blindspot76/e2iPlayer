@@ -319,6 +319,7 @@ class urlparser:
                        'allocine.fr':          self.pp.parserALLOCINEFR    ,
                        'video.meta.ua':        self.pp.parseMETAUA         ,
                        'xvidstage.com':        self.pp.parseXVIDSTAGECOM   ,
+                       'speedvideo.net':       self.pp.parseSPEEDVICEONET  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3872,6 +3873,38 @@ class pageParser:
         def _findLinks(data):
             return self._findLinks2(data, baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://hdvid.tv/embed-{0}-950x480.html', _findLinks)
+        
+    def parseSPEEDVICEONET(self, baseUrl):
+        printDBG("parseSPEEDVICEONET baseUrl[%s]" % baseUrl)
+        
+        if 'embed' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
+            url = 'http://speedvideo.net/embed-{0}-600x360.html'.format(video_id)
+        else:
+            url = baseUrl
+        
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        
+        urlTab = []
+        tmp = []
+        for item in [('linkfile', 'normal'), ('linkfileBackup', 'backup'), ('linkfileBackupLq', 'low')]:
+            try:
+                a = re.compile('var\s+linkfile *= *"(.+?)"').findall(data)[0]
+                b = re.compile('var\s+linkfile *= *base64_decode\(.+?\s+(.+?)\)').findall(data)[0]
+                c = re.compile('var\s+%s *= *(\d*)' % b).findall(data)[0]
+                vidUrl = a[:int(c)] + a[(int(c) + 10):]
+                vidUrl = base64.b64decode(vidUrl)
+                if vidUrl not in tmp:
+                    tmp.append(vidUrl)
+                    if vidUrl.split('?')[0].endswith('.m3u8'):
+                        tab = getDirectM3U8Playlist(vidUrl)
+                        urlTab.extend(tab)
+                    else:
+                        urlTab.append({'name':item[1], 'url':vidUrl})
+            except:
+                continue
+        return urlTab
         
     def parseXVIDSTAGECOM(self, baseUrl):
         printDBG("parseXVIDSTAGECOM baseUrl[%s]" % baseUrl)
