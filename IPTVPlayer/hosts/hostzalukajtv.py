@@ -58,7 +58,7 @@ class ZalukajTv(CBaseHostClass):
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Connection': 'keep-alive', 'Pragma': 'no-cache', 'Cache-Control': 'no-cache'} )
     
-    MAINURL   = 'http://zalukaj.tv'
+    MAINURL   = 'http://zalukaj.com'
     FILMS_URL = MAINURL + '/gatunek,%d/%s,%s,strona-%d'
     SEARCH_URL= MAINURL + '/szukaj'
     LOGIN_URL = MAINURL + '/account.php'
