@@ -68,7 +68,7 @@ class Wrzuta(CBaseHostClass):
             params['name']  = 'category'
             if type == 'dir':
                 self.addDir(params)
-            else: self.addVideo(params)
+            else: self.addAudio(params)
         
     def listMusicCategories(self, cItem, category):
         printDBG("Wrzuta.listMusicCategories [%s]" % cItem)
@@ -107,7 +107,7 @@ class Wrzuta(CBaseHostClass):
             desc   = self.cleanHtmlStr( item )
             params = dict(cItem)
             params.update( {'title':title, 'url':url, 'icon':icon, 'desc':desc} )
-            self.addVideo(params)
+            self.addAudio(params)
         if nextPage:
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )

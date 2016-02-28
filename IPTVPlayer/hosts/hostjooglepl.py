@@ -285,7 +285,7 @@ class JooglePL(CBaseHostClass):
             if 'proxy.link' in data:
                 proxyUrl = self.cm.ph.getSearchGroups(data, 'proxy.link=(http[^"]+?)"')[0]
             else:
-                proxyUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+                proxyUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=['"]([^"^']+?)['"]''', 1, True)[0]
             if proxyUrl != '': urlTab.extend(self.up.getVideoLinkExt(proxyUrl))
             else: SetIPTVPlayerLastHostError(self.cleanHtmlStr(data))
             
