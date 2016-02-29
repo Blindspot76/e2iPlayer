@@ -1248,24 +1248,34 @@ class IPTVPlayerWidget(Screen):
         elif 'm3u8' == protocol:
             return config.plugins.iptvplayer.buforowanie_m3u8.value
         
-    def isUrlBlocked(self, url):
+    def isUrlBlocked(self, url, type):
         protocol = url.meta.get('iptv_proto', '')
-        if ".wmv" == self.getFileExt(url) and config.plugins.iptvplayer.ZablokujWMV.value :
+        if ".wmv" == self.getFileExt(url, type) and config.plugins.iptvplayer.ZablokujWMV.value :
             return True, _("Format 'wmv' blocked in configuration.")
         elif '' == protocol:
             return True, _("Unknown protocol [%s]") % url
         return False, ''
         
-    def getFileExt(self, url):
+    def getFileExt(self, url, type):
         format = url.meta.get('iptv_format', '')
         if '' != format: return '.' + format
         protocol = url.meta.get('iptv_proto', '')
-        if url.endswith(".wmv"): fileExtension   = '.wmv'
-        elif url.endswith(".mp4"): fileExtension = '.mp4'
-        elif url.endswith(".flv"): fileExtension = '.flv'
-        elif protocol in ['mms', 'mmsh', 'rtsp']: fileExtension = '.wmv'
-        elif protocol in ['f4m', 'uds', 'rtmp']: fileExtension = '.flv'
-        else: fileExtension = '.mp4' # default fileExtension
+        
+        fileExtension = ''
+        tmp = url.lower().split('?')[0]
+        for item in ['avi', 'flv', 'mp4', 'ts', 'mov', 'wmv', 'mpeg', 'mpg', 'mkv', 'vob', 'divx', 'm2ts', 'mp3', 'm4a', 'ogg', 'wma', 'fla', 'wav', 'flac']:
+            if tmp.endswith('.'+item):
+                fileExtension = '.'+item
+                break
+        
+        if '' == fileExtension:
+            if protocol in ['mms', 'mmsh', 'rtsp']: fileExtension = '.wmv'
+            elif protocol in ['f4m', 'uds', 'rtmp']: fileExtension = '.flv'
+            else: 
+                if type == CDisplayListItem.TYPE_VIDEO:
+                    fileExtension = '.mp4' # default video extension
+                else:
+                    fileExtension = '.mp3' # default audio extension
         return fileExtension
         
     def getMoviePlayer(self, buffering=False, useAlternativePlayer=False):
@@ -1302,9 +1312,9 @@ class IPTVPlayerWidget(Screen):
             printDBG( "playVideo url[%s]" % url)
             url = urlparser.decorateUrl(url)
             titleOfMovie = self.currItem.name.replace('/','-').replace(':','-').replace('*','-').replace('?','-').replace('"','-').replace('<','-').replace('>','-').replace('|','-')
-            fileExtension = self.getFileExt(url)            
+            fileExtension = self.getFileExt(url, self.currItem.type)            
                         
-            blocked, reaseon = self.isUrlBlocked(url)
+            blocked, reaseon = self.isUrlBlocked(url, self.currItem.type)
             if blocked:
                 self.session.open(MessageBox, reaseon, type = MessageBox.TYPE_INFO, timeout = 10)
                 return

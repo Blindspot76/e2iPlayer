@@ -308,10 +308,21 @@ class IPTVDMWidget(Screen):
                 player = ret[2]
                 if "mini" == player:
                     self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, item.fileName, title)
-                elif "exteplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'eplayer')
-                elif "extgstplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'gstplayer')
+                elif player in ["exteplayer", "extgstplayer"]:
+                    if item.fileName.split('.')[-1] in ['mp3', 'm4a', 'ogg', 'wma', 'fla', 'wav', 'flac']:
+                        additionalParams = {}
+                        additionalParams['show_iframe'] = config.plugins.iptvplayer.show_iframe.value
+                        additionalParams['iframe_file_start'] = config.plugins.iptvplayer.iframe_file.value
+                        additionalParams['iframe_file_end'] = config.plugins.iptvplayer.clear_iframe_file.value
+                        if 'sh4' == config.plugins.iptvplayer.plarform.value:
+                            additionalParams['iframe_continue'] = True
+                        else:
+                            additionalParams['iframe_continue'] = False
+                        
+                    if "exteplayer" == player:
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'eplayer', additionalParams)
+                    else:
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'gstplayer', additionalParams)
                 else:
                     self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, item.fileName, title)
             elif self.localMode:
