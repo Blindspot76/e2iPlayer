@@ -157,6 +157,10 @@ class StreamLiveTo(CBaseHostClass):
         sts, data = self.getPage(url, self.defaultParams)
         if not sts: return
         
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(data)
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'class="pages"', '</p>', False)[1]
         if 'p={0}&'.format(page+1) in nextPage:
             nextPage = True
