@@ -86,10 +86,13 @@ class Cinemay(CBaseHostClass):
         self.catCache[key] = []
         sts, data = self.cm.getPage(url)
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="tlw-list">', '</ul>', False)[1]
-        data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul ', '</ul>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
         for item in data:
-            self.catCache[key].append({'title':item[1], 'url':item[0]})
+            title = self.cleanHtmlStr( item ).strip()
+            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            if url != '':
+                self.catCache[key].append({'title':title, 'url':url})
 
     def listCategories(self, cItem, category):
         printDBG("Cinemay.listCategories")
@@ -223,15 +226,21 @@ class Cinemay(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return []
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
-        data = data.split('</tr>')
-        if len(data): del data[-1]
-        for item in data:
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+        tmp = tmp.split('</tr>')
+        if len(tmp): del tmp[-1]
+        for item in tmp:
             url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            if '/voir/' in url or '/ser/' in url:
+            if '/voir/' in url or '/voire/' in url or '/ser/' in url:
                 title = self.cm.ph.getSearchGroups(item, 'src="[^"]+?/([^/]+?)\.png"')[0]
                 title = '[{0}] {1}'.format(title, self.cleanHtmlStr( item ))
                 urlTab.append({'name':title, 'url':self._getFullUrl(url), 'need_resolve':1})
+                
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="wbox2 video dark">', '</iframe>')
+        for item in data:
+            videoUrl = self.cm.ph.getSearchGroups(item, '<iframe[^>]+?src="(http[^"]+?)"', 1, True)[0]
+            urlTab.append({'name':self.up.getHostName(videoUrl), 'url':self._getFullUrl(videoUrl), 'need_resolve':1})
+        
         if 0 == len(urlTab):
             urlTab.append({'name':'Main url', 'url':cItem['url'], 'need_resolve':1})
         return urlTab

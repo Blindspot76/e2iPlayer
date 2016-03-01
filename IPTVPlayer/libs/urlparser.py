@@ -1493,8 +1493,47 @@ class pageParser:
             else:
                 params['header']['Referer'] = url
                 url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="(http[^"]+?)"', 1, True)[0].replace('\n', '')
-        #printDBG(data)
-        return self._findLinks(data)
+        try:       
+            linksTab = self._findLinks(data)
+            if len(linksTab):
+                return linksTab
+        except:
+            pass
+        
+        def rc4(e, code):
+            d = base64.b64decode(base64.b64decode(base64.b64decode(code)))
+            b = []
+            for a in range(256):
+                b.append(a)
+            c = 0
+            for a in range(256):
+                c = (c + b[a] + ord(d[a % len(d)])) % 256
+                f = b[a]
+                b[a] = b[c]
+                b[c] = f
+            a = 0
+            c = 0
+            d = 0
+            g = ""
+            for d in range(len(e)): 
+                a = (a + 1) % 256
+                c = (c + b[a]) % 256
+                f = b[a]
+                b[a] = b[c]
+                b[c] = f
+                g += chr(ord(e[d]) ^ b[(b[a] + b[c]) % 256])
+            return g
+        
+        def link(e, code):
+            e = base64.b64decode(base64.b64decode(e))
+            return rc4(e, code)
+        
+        url = self.cm.ph.getSearchGroups(data, '"(http[^"]+?==\.js)"', 1, True)[0]
+        sts, data = self.cm.getPage(url, params)
+        printDBG(data)
+        code = self.cm.ph.getSearchGroups(data, 'code[ ]*?\=[ ]*?"([^"]+?)"')[0]
+        direct_link = self.cm.ph.getSearchGroups(data, 'direct_link[ ]*?\=[^"]*?"([^"]+?)"')[0]    
+        return link(direct_link, code)
 
     def parserPLAYEDTO(self, baseUrl):
         if 'embed' in baseUrl:
