@@ -156,7 +156,7 @@ class XrysoiSE(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
-        desc  = self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:description"[^>]*?content="([^"]+?)"')[0]
+        desc  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:description"[^>]*?content="([^"]+?)"')[0] )
         title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:title"[^>]*?content="([^"]+?)"')[0] )
         if '' == title: title = cItem['title']
         
