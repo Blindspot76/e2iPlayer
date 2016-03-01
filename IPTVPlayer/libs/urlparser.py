@@ -5153,7 +5153,7 @@ class pageParser:
         sts, data = self.cm.getPage(secPlayerUrl, {'header' : HTTP_HEADER}, post_data)
         
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
-        CParsingHelper.writeToFile('/mnt/new2/test.html', data)
+        #CParsingHelper.writeToFile('/mnt/new2/test.html', data)
         def getUtf8Str(st):
             idx = 0
             st2 = ''
