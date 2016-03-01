@@ -4179,6 +4179,8 @@ class pageParser:
         sts, data = self.cm.getPage(linkUrl, params)
         if not sts: return False 
         
+        if '<div id="loginbox">' in data:
+            SetIPTVPlayerLastHostError(_("Only logged in user have access.\nPlease set login data in the host configuration under blue button."))
         # get token
         token = CParsingHelper.getDataBeetwenMarkers(data, 'var token="";', '});', False)[1]
         token = self.cm.ph.getSearchGroups(token, '"([^"]+?/server.php[^"]+?)"')[0]

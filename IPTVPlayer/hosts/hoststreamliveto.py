@@ -35,19 +35,21 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.streamliveto_login    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.streamliveto_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry( _("Login") + ": ", config.plugins.iptvplayer.streamliveto_login))
+    optionList.append(getConfigListEntry( _("Password") + ": ", config.plugins.iptvplayer.streamliveto_password))
     return optionList
-###################################################
 
 
 def gettytul():
     return 'StreamLiveTo.tv'
 
 class StreamLiveTo(CBaseHostClass):
-    HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
-    
+    HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     MAIN_URL = 'http://www.streamlive.to/'
     
     MAIN_CAT_TAB = [{'category':'category',        'title': 'Live Channels', 'icon':''},
@@ -57,7 +59,7 @@ class StreamLiveTo(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'StreamLiveTo.tv', 'cookie':'streamliveto.cookie'})
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheFilters = {}
         
     def _getFullUrl(self, url):
@@ -91,7 +93,8 @@ class StreamLiveTo(CBaseHostClass):
     def fillCategories(self):
         printDBG("StreamLiveTo.fillCategories")
         self.cacheFilters = {}
-        sts, data = self.getPage(self._getFullUrl('channels/'), self.defaultParams)
+        #sts, data = self.getPage(self._getFullUrl('channels/'), self.defaultParams)
+        sts, data = self.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return
         
         catTab = []
@@ -151,7 +154,8 @@ class StreamLiveTo(CBaseHostClass):
         lang = cItem.get('lang', '')
         sort = cItem.get('sort', '')
         
-        url = 'channels/{0}?p={1}&q={2}&lang={3}&sort={4}'.format(cat, page, q, lang, sort)
+        #url = 'channels/{0}?p={1}&q={2}&lang={3}&sort={4}'.format(cat, page, q, lang, sort)
+        url = '{0}?p={1}&q={2}&lang={3}&sort={4}'.format(cat, page, q, lang, sort)
         url = self._getFullUrl(url)
 
         sts, data = self.getPage(url, self.defaultParams)
@@ -239,7 +243,7 @@ class StreamLiveTo(CBaseHostClass):
             answer = '%s' % retArg[0][0]
             
             newHttpParams = dict(httpParams)
-            newHeader = dict(self.HEADER)
+            newHeader = dict(self.HTTP_HEADER)
             newHeader['Referer'] = url
             newHttpParams['header'] = newHttpParams
             
@@ -251,6 +255,19 @@ class StreamLiveTo(CBaseHostClass):
             else:
                 return True, data
         return False, None
+        
+    def doLogin(self, login, password):
+        logged = False
+        HTTP_HEADER= dict(self.HTTP_HEADER)
+        HTTP_HEADER.update( {'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With' : 'XMLHttpRequest'} )
+
+        post_data = {'username':login, 'password':password, 'accessed_by':'web', 'submit':'Login', 'x':0, 'y':0}
+        params    = {'header' : HTTP_HEADER, 'cookiefile' : self.COOKIE_FILE, 'save_cookie' : True}
+        loginUrl  = self.MAIN_URL + 'login.php'
+        sts, data = self.cm.getPage( loginUrl, params, post_data)
+        if sts and '/logout"' in data:
+            logged = True
+        return logged
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -266,6 +283,11 @@ class StreamLiveTo(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
+            login  = config.plugins.iptvplayer.streamliveto_login.value
+            passwd = config.plugins.iptvplayer.streamliveto_password .value
+            if '' != login.strip() and '' != passwd.strip():
+                if not self.doLogin(login, passwd):
+                    self.sessionEx.open(MessageBox, _('Login failed.'), type = MessageBox.TYPE_INFO, timeout = 10 )
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category == 'category':
             self.listCategory(self.currItem, 'language')
