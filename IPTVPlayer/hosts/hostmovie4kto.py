@@ -34,7 +34,7 @@ from Components.Language import language
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.movie4kto_language = ConfigSelection(default = "", choices = [("", _("Auto")), ("en", _("English")), ("de", _("German")), ("fr", _("French")), ("es", _("Spanish")), ("it", _("Italian")), ("jp", _("Japanese")), ("tr", _("Turkish")), ("ru", _("Russian")) ])
-config.plugins.iptvplayer.movie4kto_use_proxy_gateway  = ConfigYesNo(default = False)
+config.plugins.iptvplayer.movie4kto_use_proxy_gateway  = ConfigYesNo(default = True)
 #config.plugins.iptvplayer.movie4kto_proxy_gateway_url  = ConfigText(default = "http://www.proxy-german.de/index.php?q={0}&hl=2e5", fixed_size = False)
 
 def GetConfigList():
