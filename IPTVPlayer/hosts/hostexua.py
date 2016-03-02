@@ -59,7 +59,7 @@ def gettytul():
 class ExUA(CBaseHostClass):
     MAIN_URL = 'http://www.ex.ua/'
     LANG_URL = MAIN_URL + 'language?lang='
-    DEFAULT_ICON_URL = 'http://cdn.keddr.com/wp-content/uploads/2011/10/ex.jpg'
+    DEFAULT_ICON_URL = 'http://i.obozrevatel.ua/8/1290031/934016.jpg'
     
     MAIN_CAT_TAB = [
                     {'category':'search', 'title': _('Search'), 'search_type':_("Global"), 'original_id':'global', 'search_item':True}

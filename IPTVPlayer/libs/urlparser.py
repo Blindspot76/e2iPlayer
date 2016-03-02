@@ -1496,6 +1496,8 @@ class pageParser:
         try:       
             linksTab = self._findLinks(data)
             if len(linksTab):
+                for idx in range(len(linksTab)):
+                    linksTab[idx]['url'] = urlparser.decorateUrl(linksTab[idx]['url'], {'User-Agent':HTTP_HEADER['User-Agent'],'Referer': url})
                 return linksTab
         except:
             pass
@@ -1528,12 +1530,15 @@ class pageParser:
             e = base64.b64decode(base64.b64decode(e))
             return rc4(e, code)
         
-        url = self.cm.ph.getSearchGroups(data, '"(http[^"]+?==\.js)"', 1, True)[0]
-        sts, data = self.cm.getPage(url, params)
+        jsUrl = self.cm.ph.getSearchGroups(data, '"(http[^"]+?==\.js)"', 1, True)[0]
+        sts, data = self.cm.getPage(jsUrl, params)
         printDBG(data)
         code = self.cm.ph.getSearchGroups(data, 'code[ ]*?\=[ ]*?"([^"]+?)"')[0]
         direct_link = self.cm.ph.getSearchGroups(data, 'direct_link[ ]*?\=[^"]*?"([^"]+?)"')[0]    
-        return link(direct_link, code)
+        videoUrl = link(direct_link, code)
+        if not videoUrl.strtswith("http"): return False
+        videoUrl = urlparser.decorateUrl(videoUrl, {'User-Agent':HTTP_HEADER['User-Agent'],'Referer': url})
+        return videoUrl
 
     def parserPLAYEDTO(self, baseUrl):
         if 'embed' in baseUrl:
