@@ -309,8 +309,8 @@ class IPTVDMWidget(Screen):
                 if "mini" == player:
                     self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, item.fileName, title)
                 elif player in ["exteplayer", "extgstplayer"]:
+                    additionalParams = {}
                     if item.fileName.split('.')[-1] in ['mp3', 'm4a', 'ogg', 'wma', 'fla', 'wav', 'flac']:
-                        additionalParams = {}
                         additionalParams['show_iframe'] = config.plugins.iptvplayer.show_iframe.value
                         additionalParams['iframe_file_start'] = config.plugins.iptvplayer.iframe_file.value
                         additionalParams['iframe_file_end'] = config.plugins.iptvplayer.clear_iframe_file.value
