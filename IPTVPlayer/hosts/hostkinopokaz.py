@@ -141,7 +141,7 @@ class Kinopokaz(CBaseHostClass):
                     self.addDir(param)
                 return
             else:
-                url = re.compile('src="(htt.*)" ').findall(seriesData)[0]
+                url = re.compile('src="htt.*(//.*?)"').findall(seriesData)[0]
                 if url.startswith('//'):
                     url = 'http:' + url
 
@@ -299,7 +299,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, Kinopokaz(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('Kinopokazlogo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('kinopokazlogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
