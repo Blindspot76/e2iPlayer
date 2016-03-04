@@ -53,7 +53,7 @@ class TelewizjadaNetApi:
         self.up = urlparser()
         self.http_params = {}
         self.http_params.update({'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
-        self.cacheList = []
+        self.cacheList = {}
         
     def getFullUrl(self, url):
         if url.startswith('http'):
@@ -70,71 +70,65 @@ class TelewizjadaNetApi:
         channelsTab = []
         getList = cItem.get('get_list', True)
         if getList:
-            self.cacheList = []
+            self.cacheList = {}
             channelUrl = self.MAIN_URL + 'get_channels.php'
             http_params = dict(self.http_params)
             http_params['load_cookie'] = False
             
             sts, data = self.cm.getPage(channelUrl, http_params)
             if not sts: return []
-            addAdultCat = False
             try:
-                data = byteify(json.loads(data))
-                for item in data['channels']:
-                    if 0 == item['online']: continue
-                    url   = self.getFullUrl(item['url'])
-                    icon  = self.getFullUrl(item['thumb'])
-                    title = item['displayName']
-                    cid   = item['id']
-                    desc  = item['description']
-                    cat_id = item['categoryID']
-                    if int(item['isAdult']) == 1:
-                        addAdultCat = True
-                    params = {'type':'video', 'cat_id':cat_id, 'title':title, 'desc':desc, 'vid_url':url, 'cid':cid, 'type':'video', 'icon':icon, 'adult':int(item['isAdult'])}
-                    self.cacheList.append(params)
+                self.cacheList = byteify(json.loads(data))
             except:
                 printExc()
                 
-            if False == config.plugins.iptvplayer.telwizjadanet_categorization.value:
-                for item in self.cacheList:
-                    if 1 != item['adult']:
-                        params = dict(cItem)
-                        params.update(item)
-                        channelsTab.append(params)
-            else:
-                http_params['header'] = {'Cookie':'cookieView=category'}
-                sts, data = self.cm.getPage(channelUrl, http_params)
-                if not sts: return []
-                try:
-                    data = byteify(json.loads(data))
-                    for cat in data['categories']:
-                        catParams = {'cat_ids':set(), 'title':cat['Categoryname'], 'desc':cat['Categorydescription'], 'get_list':False}
+        def __addChannel(item):
+            icon  = self.getFullUrl(item['thumb'])
+            title = item['displayName']
+            cid   = item['id']
+            desc  = item.get('description', '')
+            params = dict(cItem)
+            params.update({'type':'video', 'title':title, 'desc':desc, 'cid':cid, 'type':'video', 'icon':icon})
+            channelsTab.append(params)
+        
+        addAdultCat = False
+        if False == config.plugins.iptvplayer.telwizjadanet_categorization.value:
+            try:
+                for item in self.cacheList['channels']:
+                    if 0 == item['online']: continue
+                    
+                    if int(item['isAdult']) == 1 and not cItem.get('adult_cat', False):
+                        addAdultCat = True
+                        continue
+                    elif int(item['isAdult']) != 1 and cItem.get('adult_cat', False):
+                        continue
+                    __addChannel(item)
+            
+                if addAdultCat:
+                    params = dict(cItem)
+                    params.update({'title':_('Dla dorosłych'), 'adult_cat':True, 'get_list':False, 'pin_locked':True})
+                    channelsTab.append(params)
+            except:
+                printExc()
+        else:
+            try:
+                if getList:
+                    for idx in range(len(self.cacheList['categories'])):
+                        cat = self.cacheList['categories'][idx]
                         adult = False
                         for item in cat['Categorychannels']:
-                            catParams['cat_ids'].add(item['categoryID'])
                             if int(item['isAdult']) == 1:
                                 adult = True
-                        if not adult:
-                            params = dict(cItem)
-                            params.update(catParams)
-                            channelsTab.append(params)
-                        else:
-                            addAdultCat = True
-                except:
-                    printExc()
-            
-            if addAdultCat:
-                params = dict(cItem)
-                params.update({'title':_('Dla dorosłych'), 'cat_ids':['adult'], 'get_list':False, 'pin_locked':True})
-                channelsTab.append(params)
-        else:
-            catIds = cItem.get('cat_ids', [])
-            for item in self.cacheList:
-                if ('adult' in catIds and 1 == item['adult']) \
-                    or (item['cat_id'] in catIds):
-                    params = dict(cItem)
-                    params.update(item)
-                    channelsTab.append(params)
+                                break
+                        params = dict(cItem)
+                        params.update({'cat_id':idx, 'title':cat['Categoryname'], 'desc':cat['Categorydescription'], 'get_list':False, 'pin_locked':adult})
+                        channelsTab.append(params)
+                else:
+                    idx = cItem.get('cat_id', -1)
+                    for item in self.cacheList['categories'][idx]['Categorychannels']:
+                        __addChannel(item)
+            except:
+                printExc()
         return channelsTab
         
     def getVideoLink(self, cItem):
