@@ -129,6 +129,29 @@ class CParsingHelper:
         return itemsTab
         
     @staticmethod
+    def rgetAllItemsBeetwenMarkers(data, marker1, marker2, withMarkers=True, caseSensitive=True):
+        itemsTab = []
+        if caseSensitive:
+            sData = data
+        else:
+            sData = data.lower()
+            marker1 = marker1.lower()
+            marker2 = marker2.lower()
+        idx1 = len(data)
+        while True:
+            idx1 = sData.rfind(marker1, 0, idx1)
+            if -1 == idx1: return itemsTab
+            idx2 = sData.rfind(marker2, 0, idx1)
+            if -1 == idx2: return itemsTab
+            
+            if withMarkers:
+                itemsTab.insert(0, data[idx2:idx1+len(marker1)])
+            else:
+                itemsTab.insert(0, data[idx2+len(marker2):idx1])
+            idx1 = idx2
+        return itemsTab
+        
+    @staticmethod
     def rgetDataBeetwenMarkers(data, marker1, marker2, withMarkers = True):
         idx1 = data.rfind(marker1)
         if -1 == idx1: return False, ''
