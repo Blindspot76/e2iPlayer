@@ -812,9 +812,16 @@ class HasBahCa(CBaseHostClass):
             wc_cat = cItem.get('wc_cat', None)
             if wc_cat == None:
                 params = dict(cItem)
+                params.update({'title':'TV', 'url':'https://www.youtube.com/embed/oG5v9EBTJug'})
+                self.playVideo(params)
+                params = dict(cItem)
                 params.update({'title':'Polecane kamery', 'wc_cat':'list_videos'})
                 self.addDir(params)
-                data = self.cm.ph.getDataBeetwenMarkers(data, 'kategorie kamer', '</nav>', False)[1]
+                params = dict(cItem)
+                params.update({'title':'Ostatnio dodane', 'wc_cat':'list_videos', 'url':'http://www.webcamera.pl/ostatniododane'})
+                self.addDir(params)
+                
+                data = self.cm.ph.getDataBeetwenMarkers(data, '>kategorie', '</nav>', False)[1]
                 data = data.split('<li class="has-children"')
                 if len(data): del data[0]
                 for cat in data:
