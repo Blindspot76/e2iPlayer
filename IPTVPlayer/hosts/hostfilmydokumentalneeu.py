@@ -128,7 +128,7 @@ class FilmyDokumentalneEU(CBaseHostClass):
         printDBG("FilmyDokumentalneEU.listItems")
         
         page = cItem.get('page', 1)
-        url = cItem['url'] + '?json=1&page=1'
+        url = cItem['url'] + '?json=1&page=%d' % page
         sts, data = self.cm.getPage(url)
         if not sts: return
         
