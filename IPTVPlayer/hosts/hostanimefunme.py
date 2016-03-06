@@ -15,6 +15,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 # FOREIGN import
 ###################################################
 from datetime import timedelta
+import time
 import re
 import urllib
 import urlparse
@@ -23,7 +24,6 @@ import string
 import base64
 try:    import json
 except: import simplejson as json
-from time import sleep
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -86,7 +86,9 @@ class AnimeFunME(CBaseHostClass):
     def _getFullUrl(self, url):
         if url.startswith('//'):
             url = 'http:' + url
-        else:
+        elif url.startswith('/'):
+            url = url[1:]
+        if '://' not in url:
             if 0 < len(url) and not url.startswith('http'):
                 url =  self.MAIN_URL + url
             if not self.MAIN_URL.startswith('https://'):
@@ -122,6 +124,7 @@ class AnimeFunME(CBaseHostClass):
         current = 0
         while current < 3:
             if not sts and None != data:
+                start_time = time.time()
                 #if current == 0:
                 #    url = 'http://animefun.me/'
                 #    params['header']['Referer'] = url
@@ -131,6 +134,9 @@ class AnimeFunME(CBaseHostClass):
                 doRefresh = False
                 try:
                     verData = data.fp.read()
+                    printDBG("===============================================================")
+                    printDBG(verData)
+                    printDBG("===============================================================")
                     dat = self.cm.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
                     tmp = self.cm.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
                     varName = tmp[0]
@@ -166,7 +172,8 @@ class AnimeFunME(CBaseHostClass):
                     params2['load_cookie'] = True
                     params2['save_cookie'] = True
                     params2['header'] = {'Referer':url, 'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
-                    sleep(4)
+                    printDBG("Time spent: [%s]" % (time.time() - start_time))
+                    time.sleep(4-(time.time() - start_time))
                     sts, data = self.cm.getPage(verUrl, params2, post_data)
                 except:
                     printExc()
