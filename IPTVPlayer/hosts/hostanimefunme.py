@@ -51,7 +51,7 @@ def gettytul():
     return 'http://animefun.me/'
 
 class AnimeFunME(CBaseHostClass):
-    USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0'
+    USER_AGENT = 'curl/7'
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'animefun.me', 'cookie':'animefunme.cookie'})
@@ -116,7 +116,7 @@ class AnimeFunME(CBaseHostClass):
         
     def getPage(self, baseUrl, params={}, post_data=None):
         url = baseUrl
-        header = {'Referer':url, 'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
+        header = {'Referer':url, 'User-Agent':self.USER_AGENT, 'Accept-Encoding':'text'}
         header.update(params.get('header', {}))
         params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':header})
         sts, data = self.cm.getPage(url, params, post_data)
@@ -171,9 +171,10 @@ class AnimeFunME(CBaseHostClass):
                     params2 = dict(params)
                     params2['load_cookie'] = True
                     params2['save_cookie'] = True
-                    params2['header'] = {'Referer':url, 'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
+                    params2['header'] = {'Referer':url, 'User-Agent':self.USER_AGENT, 'Accept-Encoding':'text'}
                     printDBG("Time spent: [%s]" % (time.time() - start_time))
-                    time.sleep(4-(time.time() - start_time))
+                    time.sleep(5-(time.time() - start_time))
+                    printDBG("Time spent: [%s]" % (time.time() - start_time))
                     sts, data = self.cm.getPage(verUrl, params2, post_data)
                 except:
                     printExc()
