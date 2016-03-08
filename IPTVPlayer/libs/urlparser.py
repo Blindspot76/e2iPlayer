@@ -2940,18 +2940,45 @@ class pageParser:
             url += data['token']
         return urlparser.decorateUrl(url, {'Referer':'http://cdn.webplayer.pw/jwplayer.flash.swf', "User-Agent": HTTP_HEADER['User-Agent']})
     
-    def parserGOOGLE(self, linkUrl):
-        printDBG("parserGOOGLE linkUrl[%s]" % linkUrl)
+    def parserGOOGLE(self, baseUrl):
+        printDBG("parserGOOGLE baseUrl[%s]" % baseUrl)
         
         videoTab = []
+        _VALID_URL = r'https?://(?:(?:docs|drive)\.google\.com/(?:uc\?.*?id=|file/d/)|video\.google\.com/get_player\?.*?docid=)(?P<id>[a-zA-Z0-9_-]{28})'
+        mobj = re.match(_VALID_URL, baseUrl)
+        try:
+            video_id = mobj.group('id')
+            linkUrl = 'http://docs.google.com/file/d/' + video_id
+        except:
+            linkUrl = baseUrl
+            
+        _FORMATS_EXT = {
+            '5': 'flv', '6': 'flv',
+            '13': '3gp', '17': '3gp',
+            '18': 'mp4', '22': 'mp4',
+            '34': 'flv', '35': 'flv',
+            '36': '3gp', '37': 'mp4',
+            '38': 'mp4', '43': 'webm',
+            '44': 'webm', '45': 'webm',
+            '46': 'webm', '59': 'mp4',
+        }
+        
         sts, data = self.cm.getPage(linkUrl)
-        if sts: 
-            data = self.cm.ph.getSearchGroups(data, '"fmt_stream_map"[:,]"([^"]+?)"')[0]
-            data = data.split(',')
-            for item in data:
-                item = item.split('|')
-                if item[0] in YoutubeIE._video_formats_map['mp4']:
-                    videoTab.append({'name':'google.com: %s' % YoutubeIE._video_dimensions[item[0]].split('x')[0] + 'p', 'url':unicode_escape(item[1])})
+        if not sts: return False 
+        fmtDict = {} 
+        fmtList = self.cm.ph.getSearchGroups(data, '"fmt_list"[:,]"([^"]+?)"')[0]
+        fmtList = fmtList.split(',')
+        for item in fmtList:
+            item = self.cm.ph.getSearchGroups(item, '([0-9]+?)/([0-9]+?x[0-9]+?)/', 2)
+            if item[0] != '' and item[1] != '':
+                fmtDict[item[0]] = item[1]
+        data = self.cm.ph.getSearchGroups(data, '"fmt_stream_map"[:,]"([^"]+?)"')[0]
+        data = data.split(',')
+        for item in data:
+            item = item.split('|')
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> type[%s]" % item[0])
+            if 'mp4' in _FORMATS_EXT.get(item[0], ''):
+                videoTab.append({'name':'google.com: %s' % fmtDict.get(item[0], '').split('x')[1] + 'p', 'url':unicode_escape(item[1])})
         return videoTab[::-1]
         
     def parserPICASAWEB(self, baseUrl):

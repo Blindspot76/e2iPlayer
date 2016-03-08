@@ -255,7 +255,8 @@ class AnimeFunME(CBaseHostClass):
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="updatesli">', '</li>')
         else:
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr style="background-', '</tr>')
-            
+        
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         for item in data:
             url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
             icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0] )
@@ -263,7 +264,7 @@ class AnimeFunME(CBaseHostClass):
             if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>', True)[1] )
             desc  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, 'animedetail="', '"', False)[1] )
             if url.startswith('http'):
-                icon = strwithmeta(icon, {'Cookie':self.cm.getCookieHeader(self.COOKIE_FILE), 'User-Agent':self.USER_AGENT})
+                icon = strwithmeta(icon, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
                 params = dict(cItem)
                 params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
                 if nextCategory == 'video':
@@ -319,10 +320,17 @@ class AnimeFunME(CBaseHostClass):
         sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'anime_download', '<script ', False)[1]
-        data = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(data)
-        for item in data:
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'anime_download', '<script ', False)[1]
+        tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
+        for item in tmp:
             urlTab.append({'name':item[1], 'url':item[0], 'need_resolve':1})
+        if 0 == len(urlTab):
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player', '</script>', False)[1]
+            if 'docid=' in tmp:
+                docid = self.cm.ph.getSearchGroups(tmp, '''['"]([a-zA-Z0-9_-]{28})['"]''')[0]
+                if docid != '':
+                    url = 'https://video.google.com/get_player?docid=%s&authuser=&eurl=%s' % (docid, urllib.quote(cItem['url']))
+                    urlTab.append({'name':'video.google.com', 'url':url, 'need_resolve':1})
         return urlTab
         
     def getVideoLinks(self, videoUrl):
@@ -345,10 +353,49 @@ class AnimeFunME(CBaseHostClass):
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AnimeFunME.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        cItem = dict(cItem)
-        cItem['url'] = self.SEARCH_URL + urllib.quote(searchPattern)
-        self.listItems(cItem)
-
+        cx = cItem.get('cx', '')
+        if cx == '':
+            cItem = dict(cItem)
+            cItem['url'] = self.SEARCH_URL + urllib.quote(searchPattern)
+            self.listItems(cItem)
+            if 0 != len(self.currList): return
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return
+            cx = self.cm.ph.getSearchGroups(data, '''var cx = ['"]([^"^']+?)['"]''')[0]
+        
+        if cx != '':
+            NUM = 10
+            page = cItem.get('page', 1)
+            lang = config.plugins.iptvplayer.animefunme_language.value
+            url = 'https://www.googleapis.com/customsearch/v1element?key=AIzaSyCVAXiUzRYsML1Pv6RwSG1gunmMikTzQqY&rsz=filtered_cse&num={0}&hl={1}&prettyPrint=false&source=gcsc&gss=.me&sig=&start={2}&cx={3}&q={4}&sort='.format(NUM, lang, page*NUM, cx, urllib.quote(searchPattern))
+            sts, data = self.getPage(url)
+            if not sts: return
+            try:
+                data = byteify(json.loads(data))
+                pages = len(data['cursor'].get('pages', []))
+                cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+                for item in data['results']:
+                    url   = self._getFullUrl( item['url'] )
+                    icon  = self._getFullUrl( item['richSnippet'].get('cseImage', {}).get('src', '') )
+                    title = self.cleanHtmlStr( item['title'] )
+                    desc  = self.cleanHtmlStr( item.get('content', '') )
+                    if url.startswith('http'):
+                        icon = strwithmeta(icon, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+                        params = dict(cItem)
+                        params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
+                        if 'videoobject' in item['richSnippet']:
+                            self.addVideo(params)
+                        elif '/anime/' in url:
+                            params['category'] = 'explore_item'
+                            self.addDir(params)
+                
+                if page < pages:
+                    params = dict(cItem)
+                    params.update({'title':_('Next page'), 'page':page+1, 'cx':cx})
+                    self.addDir(params)
+            except:
+                printExc()
+        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
