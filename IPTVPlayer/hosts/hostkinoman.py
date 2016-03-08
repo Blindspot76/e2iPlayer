@@ -51,7 +51,8 @@ class Kinoman(CBaseHostClass):
     HOST = 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.18) Gecko/20110621 Mandriva Linux/1.9.2.18-0.1mdv2010.2 (2010.2) Firefox/3.6.18'
     HEADER = {'User-Agent': HOST, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
     SERVICE = 'kinoman'
-    MAINURL = 'http://www.kinoman.tv'
+    MAINURL = 'http://kinoman.tv'
+    PREMIUM_MAINURL = 'http://premium.kinoman.tv'
     SEARCH_URL = MAINURL + '/szukaj?query='
     LIST_URL = MAINURL + '/filmy?'
     SERIAL_URL = MAINURL + '/seriale'
@@ -223,6 +224,12 @@ class Kinoman(CBaseHostClass):
                 self.addVideo(params)
 
     def getHostTable(self, url, vip=False):
+        printDBG("getHostTable VIP[%s]" % vip)
+        if vip and 'premium' not in url:
+            url = url.replace('kinoman.tv', 'premium.kinoman.tv')
+            MAINURL = self.PREMIUM_MAINURL
+        else:
+            MAINURL = self.MAINURL
         videoTab = []
         http_params = {'header': self.HEADER, }
         if vip: 
@@ -230,13 +237,14 @@ class Kinoman(CBaseHostClass):
             
         sts, data = self.cm.getPage( url, http_params )
         if not sts: return videoTab
-            
+        
         playersData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="single-player">', '</a>')
+        #printDBG(playersData)
         for playerData in playersData:
             playerTitle = self.cleanHtmlStr(playerData)
-            playerId = self.cm.ph.getSearchGroups(playerData, 'class="player-wrapper" id="player_([0-9]+?)"')[0]
+            playerId = self.cm.ph.getSearchGroups(playerData, 'class="player-wrapper"[^>]+?id="player_([0-9]+?)"')[0]
             if '' != playerId:
-                sts, data = self.cm.getPage( self.MAINURL+'/players/init/' + playerId, http_params )
+                sts, data = self.cm.getPage( MAINURL+'/players/init/' + playerId, http_params )
                 if not sts: 
                     continue
                 data = data.replace('\\', '')
@@ -247,9 +255,10 @@ class Kinoman(CBaseHostClass):
                     if vip: 
                         post_data['type'] = 'vip'
                         
-                    sts, data = self.cm.getPage(self.MAINURL+'/players/get', http_params, post_data)
+                    sts, data = self.cm.getPage(MAINURL+'/players/get', http_params, post_data)
                     if not sts:
                         continue
+                    printDBG(data)
                     
                     url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
                     printDBG("Kinoman getHostTable[%s]" % url)
@@ -272,7 +281,7 @@ class Kinoman(CBaseHostClass):
         
         post_data = {'username':self.LOGIN, 'password':self.PASSWORD, 'submit_login':'login', 'submit':''} #'auto_login':'1'
         params = {'header':self.HEADER, 'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
-        sts, data = self.cm.getPage( protocol + "://www.kinoman.tv/auth/login", params, post_data)
+        sts, data = self.cm.getPage( protocol + "://kinoman.tv/auth/login", params, post_data)
         if not sts:
             printDBG('tryTologin problem with login')
             return False
