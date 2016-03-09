@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, ReadTextFile, GetBinDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, ReadTextFile, GetBinDir, formatBytes
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, MYOBFUSCATECOM_OIO, MYOBFUSCATECOM_0ll, \
                                                                unpackJS, TEAMCASTPL_decryptPlayerParams, SAWLIVETV_decryptPlayerParams
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
@@ -41,12 +41,14 @@ from Tools.Directories import fileExists
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.local_showfilesize = ConfigYesNo(default = True)
 config.plugins.iptvplayer.local_showhiddensdir = ConfigYesNo(default = False)
 config.plugins.iptvplayer.local_showhiddensfiles = ConfigYesNo(default = False)
 config.plugins.iptvplayer.local_maxitems    = ConfigInteger(1000, (10, 1000000))
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Show file size"), config.plugins.iptvplayer.local_showfilesize ))
     optionList.append(getConfigListEntry(_("Show hiddens files"), config.plugins.iptvplayer.local_showhiddensfiles ))
     optionList.append(getConfigListEntry(_("Show hiddens catalogs"), config.plugins.iptvplayer.local_showhiddensdir ))
     optionList.append(getConfigListEntry(_("Max items per page"), config.plugins.iptvplayer.local_maxitems ))
@@ -102,6 +104,8 @@ class LocalMedia(CBaseHostClass):
             wilcard += '.' + insensitiveExt
             fWildcards.append(wilcard)
         cmd = '%s "%s" rdl rd %d %d "%s" "%s"' % (lsdirPath, path, start, end, '|'.join(fWildcards), dWildcards)
+        if config.plugins.iptvplayer.local_showfilesize.value:
+            cmd += " 1 ";
         return cmd
         
     def listsMainMenu(self, cItem):
@@ -170,19 +174,32 @@ class LocalMedia(CBaseHostClass):
                 start += 1
                 if start > end: break 
                 item = item.split('//')
-                if 4 != len(item): continue
+                if config.plugins.iptvplayer.local_showfilesize.value:
+                    if 5 != len(item):
+                        continue
+                elif 4 != len(item): 
+                    continue
+                
+                fileSize = -1
+                if 5 == len(item):
+                    try: fileSize = int(item[3])
+                    except:
+                        printExc()
+                        continue
+                params = {'title':item[0]}
                 if 'd' == item[1]:
-                    dirTab.append(item[0])
-                elif 'r':
+                    dirTab.append(params)
+                elif 'r' == item[1]:
+                    params['size'] = fileSize
                     ext = self.getExtension(item[0])
                     if ext in self.M3U_FILES_EXTENSIONS:
-                        m3uTab.append(item[0])
+                        m3uTab.append(params)
                     elif ext in self.VIDEO_FILE_EXTENSIONS:
-                        vidTab.append(item[0])
+                        vidTab.append(params)
                     elif ext in self.AUDIO_FILES_EXTENSIONS:
-                        audTab.append(item[0])
+                        audTab.append(params)
                     elif ext in self.PICTURE_FILES_EXTENSIONS:
-                        picTab.append(item[0])
+                        picTab.append(params)
             self.addFromTab(cItem, dirTab, path, 'dir')
             self.addFromTab(cItem, m3uTab, path, 'm3u', 1)
             self.addFromTab(cItem, vidTab, path, 'video')
@@ -198,16 +215,20 @@ class LocalMedia(CBaseHostClass):
         tab.sort()
         for item in tab:
             params = dict(params)
-            params.update( {'title':item, 'category':category} )
+            params.update( {'title':item['title'], 'category':category} )
             if category in ['m3u', 'dir']:
-                fullPath = os_path.join(path, item)
+                fullPath = os_path.join(path, item['title'])
                 params['path']  = fullPath
                 self.addDir(params)
             else:
-                fullPath = 'file://' + os_path.join(path, item)
+                fullPath = 'file://' + os_path.join(path, item['title'])
                 params['url']  = fullPath
                 params['type'] = category
+                if 'picture' == category:
+                    params['icon'] = fullPath
                 params['need_resolve'] = need_resolve
+                if item.get('size', -1) >= 0:
+                    params['desc'] = _("Total size: ") + formatBytes(item['size'])
                 self.currList.append(params)
     
     def getArticleContent(self, cItem):
