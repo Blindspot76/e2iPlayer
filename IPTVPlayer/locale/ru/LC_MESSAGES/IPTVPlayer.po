@@ -3491,6 +3491,27 @@ msgstr "Новые релизы"
 msgid "Categorization:"
 msgstr "Категоризации:"
 
+msgid "http://online-kinopokaz.ru/"
+msgstr "Кинопоказ"
+
+msgid "Labels"
+msgstr "Этикетки"
+
+msgid "Latest Update"
+msgstr "Последнее обновление"
+
+msgid "Anime List"
+msgstr "Аниме Список"
+
+msgid "Create Date"
+msgstr "Дата создания"
+
+msgid "Top Movies"
+msgstr "Лучшие фильмы"
+
+msgid "New HD Videos"
+msgstr "Новые HD Видео"
+
 msgid "Use proxy gateway"
 msgstr "Использовать прокси-шлюз"
 
@@ -3502,6 +3523,12 @@ msgstr "Расположение заставки"
 
 msgid "Clear iframe file"
 msgstr "Расположение очистить заставки"
+
+msgid "Total size: "
+msgstr "Размер файла: "
+
+msgid "Show file size"
+msgstr "Показать размер файла"
 
 msgid "Recently Added"
 msgstr "Недавно добавленный"
