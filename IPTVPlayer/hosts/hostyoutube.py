@@ -216,6 +216,7 @@ class Youtube(CBaseHostClass):
 class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, Youtube(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        self.DEFAULT_ICON = 'http://www.mm229.com/images/youtube-button-psd-450203.png'
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('youtubelogo.png')])
@@ -256,7 +257,8 @@ class IPTVHost(CHostBase):
         description =  cItem.get('plot', '')
         if '' == description:
             description =  cItem.get('time', '') + ' | ' + cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
+        icon =  cItem.get('icon', '')
+        if icon == '': icon = self.DEFAULT_ICON
         
         return CDisplayListItem(name = title,
                                 description = description,

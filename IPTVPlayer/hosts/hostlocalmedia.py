@@ -306,6 +306,7 @@ class IPTVHost(CHostBase):
         self.cFilePath = ''
         self.cType = ''
         self.needRefresh = ''
+        self.DEFAULT_ICON='http://www.ngonb.ru/files/res_media.png'
 
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('localmedialogo.png')])
@@ -497,6 +498,7 @@ class IPTVHost(CHostBase):
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
         icon        =  cItem.get('icon', '')
+        if icon == '': icon = self.DEFAULT_ICON
         
         return CDisplayListItem(name = title,
                                     description = description,

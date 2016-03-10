@@ -58,12 +58,12 @@ class Urllist(CBaseHostClass):
     def __init__(self):
         printDBG("Urllist.__init__")
         
-        self.MAIN_GROUPED_TAB = [{'category': 'all', 'title': (_("All in one")), 'desc': (_("Links are videos and messages, without division into categories"))}]
+        self.MAIN_GROUPED_TAB = [{'category': 'all', 'title': (_("All in one")), 'desc': (_("Links are videos and messages, without division into categories")), 'icon':'http://osvita.mediasapiens.ua/content/news/001000-002000/shyfrovanie_dannyh_1415.jpg'}]
         if config.plugins.iptvplayer.urllist_showrafalcool1.value:
-            self.MAIN_GROUPED_TAB.append({'category': Urllist.RAFALCOOL1_FILE, 'title': (_("Recommended by Rafalcool1")), 'desc': (_("List of movies prepared by Rafalcool1")), 'icon':'http://s1.bild.me/bilder/030315/3925071iconFilm.jpg'})        
-        self.MAIN_GROUPED_TAB.extend( [{'category': Urllist.URLLIST_FILE,       'title': (_("Videos")),                    'desc': (_("Links to the video files from the file urllist.txt"))}, \
-                                       {'category': Urllist.URRLIST_STREAMS,    'title': (_("live transfers")),            'desc': (_("Live broadcasts from the file urllist.stream"))}, \
-                                       {'category': Urllist.URRLIST_USER,       'title': (_("User files")),                'desc': (_("Favorite addresses are stored under the file urllist.user"))}])
+            self.MAIN_GROUPED_TAB.append({'category': Urllist.RAFALCOOL1_FILE,  'title': (_("Recommended by Rafalcool1")), 'desc': (_("List of movies prepared by Rafalcool1")),                     'icon':'http://s1.bild.me/bilder/030315/3925071iconFilm.jpg'})        
+        self.MAIN_GROUPED_TAB.extend( [{'category': Urllist.URLLIST_FILE,       'title': (_("Videos")),                    'desc': (_("Links to the video files from the file urllist.txt")),        'icon':'http://mohov.h15.ru/logotip_kino.jpg'}, \
+                                       {'category': Urllist.URRLIST_STREAMS,    'title': (_("live transfers")),            'desc': (_("Live broadcasts from the file urllist.stream")),              'icon':'http://asiamh.ru.images.1c-bitrix-cdn.ru/images/media_logo.jpg?136879146733721'}, \
+                                       {'category': Urllist.URRLIST_USER,       'title': (_("User files")),                'desc': (_("Favorite addresses are stored under the file urllist.user")), 'icon':'http://kinovesti.ru/uploads/posts/2014-12/1419918660_1404722920_02.jpg'}])
         CBaseHostClass.__init__(self)               
         self.currFileHost = None 
     
