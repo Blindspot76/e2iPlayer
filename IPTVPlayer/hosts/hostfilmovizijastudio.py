@@ -275,30 +275,60 @@ class FilmovizijaStudio(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url']) 
         if not sts: return
         
-        pageFormat = self.cm.ph.getDataBeetwenMarkers(data, 'id^="page"', 'show()', False)[1]
-        pageFormat = self.cm.ph.getSearchGroups(pageFormat, "src='(http[^']+?)'")[0]
+        tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile(';[^;]*?id\^\="page"'), re.compile('show\(\)'))[1].split('</script>')[0]
+        printDBG("==========================================")
+        printDBG(tmp)
+        printDBG("==========================================")
+        tmp = tmp.replace('\r', '\n').split('\n')
+        tmp2 = []
+        for item in tmp:
+            if item.strip().startswith('//'): continue
+            tmp2.append(item)
+        tmp = '\n'.join(tmp2)
+        printDBG(tmp)
+        pageFormat = self.cm.ph.getSearchGroups(tmp, "src='(http[^']+?)'")[0]
+        tmp2 = re.compile('"\+([^+]+?)\+"').findall(pageFormat)
+        pageAttribs = []
+        for item in tmp2:
+            name = item.strip()
+            attrib = self.cm.ph.getSearchGroups(tmp, '''var %s =[^;]+?attr\(['"]([^'^"]+?)['"]''' % name)[0]
+            printDBG(">>>>>>>>>>>>>>>>>>>>> name[%s] attrib[%s]" % (name, attrib))
+            pageAttribs.append({'name':name, 'attrib':attrib})
         
         # main links
         mainData = self.cm.ph.getDataBeetwenMarkers(data, '</table>', '<div id="contents">', False)[1]
         mainData = self.cm.ph.getAllItemsBeetwenMarkers(mainData, '<li>', '</li>')
         for item in mainData:
-            tmp = self.cm.ph.getSearchGroups(item, '''<a id=['"]([^"^']+?)['"]' class=['"]([^"^']+?)['"] href=['"]([^"^']+?)['"][^>]*?>([^<]+?)<''', 4)
-            urlId    = self.cm.ph.getSearchGroups(item, '''id=['"]([^"^']+?)['"]''')[0]
-            urlClass = self.cm.ph.getSearchGroups(item, '''class=['"]([^"^']+?)['"]''')[0]
-            urlHref  = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0]
-            urlName  = self.cleanHtmlStr( item )
-            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + item)
-            if urlClass == 'direct':
-                if not urlId.startswith('http'): continue
-                urlTab.append({'name':urlName, 'url':urlId, 'need_resolve':1})
-            elif urlId.startswith('page') and pageFormat != '':
-                url = pageFormat.replace('"+p+"', urlId).replace('"+s+"', urlClass)
-                urlTab.append({'name':urlName, 'url':url, 'need_resolve':1})
-            elif urlId.startswith('tab'):
-                url = self.cm.ph.getDataBeetwenMarkers(data, '$("#%s")' % urlId, '}', False)[1]
-                url = self.cm.ph.getSearchGroups(url, '''['"](http[^'^"]+?)['"]''')[0]
-                if not url.startswith('http'): continue
-                urlTab.append({'name':urlName, 'url':url, 'need_resolve':1})
+            try:
+                tmp = self.cm.ph.getDataBeetwenMarkers(item, '<a ', '>')[1]
+                #tmp = re.compile('''\s(\w)=['"]([^'^"]+?)['"]''').findall(tmp)
+                tmp = re.compile('''[^a-zA-Z0-9_]([a-zA-Z0-9_]+?)=['"]([^'^"]+?)['"]''').findall(tmp)
+                
+                attribs = {}
+                for a in tmp:
+                    attribs[a[0]] = a[1]
+                
+                urlId    = attribs['id']
+                urlClass = attribs['class']
+                urlHref  = attribs['href']
+                
+                urlName  = self.cleanHtmlStr( item )
+                printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + item)
+                if urlClass == 'direct':
+                    if not urlId.startswith('http'): continue
+                    urlTab.append({'name':urlName, 'url':urlId, 'need_resolve':1})
+                elif urlId.startswith('page') and pageFormat != '':
+                    url = pageFormat
+                    for a in pageAttribs:
+                        url = url.replace('"+%s+"' % a['name'], attribs[a['attrib']])
+                    urlTab.append({'name':urlName, 'url':url, 'need_resolve':1})
+                elif urlId.startswith('tab'):
+                    url = self.cm.ph.getDataBeetwenMarkers(data, '$("#%s").click' % urlId, '}', False)[1]
+                    url = self.cm.ph.getSearchGroups(url, '''['"](http[^'^"]+?)['"]''')[0]
+                    if not url.startswith('http'): continue
+                    urlTab.append({'name':urlName, 'url':url, 'need_resolve':1})
+            except:
+                printExc()
         
         return urlTab
         
@@ -310,27 +340,26 @@ class FilmovizijaStudio(CBaseHostClass):
             if not sts: return []
             printDBG(data)
             
-            if videoUrl == 'p=page':
-                sub_tracks = []
-                subData = self.cm.ph.getDataBeetwenMarkers(data, 'tracks:', ']', False)[1].split('}')
-                for item in subData:
-                    if 'captions' in item:
-                        label   = self.cm.ph.getSearchGroups(item, '''label:[ ]*?["']([^"^']+?)["']''')[0]
-                        src     = self.cm.ph.getSearchGroups(item, '''file:[ ]*?["']([^"^']+?)["']''')[0]
-                        if not src.startswith('http'): continue
-                        sub_tracks.append({'title':label, 'url':src, 'lang':label, 'format':'srt'})
-                
-                linksTab = self.up.pp._findLinks(data, serverName='')
-                for idx in range(len(linksTab)):
-                    name = linksTab[idx]['url']
-                    url  = urlparser.decorateUrl(linksTab[idx]['url'], {'external_sub_tracks':sub_tracks})
-                    urlTab.append({'name':name, 'url':url, 'need_resolve':0})
-                return
-            else:
+            sub_tracks = []
+            subData = self.cm.ph.getDataBeetwenMarkers(data, 'tracks:', ']', False)[1].split('}')
+            for item in subData:
+                if 'captions' in item:
+                    label   = self.cm.ph.getSearchGroups(item, '''label:[ ]*?["']([^"^']+?)["']''')[0]
+                    src     = self.cm.ph.getSearchGroups(item, '''file:[ ]*?["']([^"^']+?)["']''')[0]
+                    if not src.startswith('http'): continue
+                    sub_tracks.append({'title':label, 'url':src, 'lang':label, 'format':'srt'})
+            
+            linksTab = self.up.pp._findLinks(data, serverName='')
+            for idx in range(len(linksTab)):
+                name = linksTab[idx]['url']
+                url  = urlparser.decorateUrl(linksTab[idx]['url'], {'external_sub_tracks':sub_tracks})
+                urlTab.append({'name':name, 'url':url, 'need_resolve':0})
+            
+            if 0 == len(urlTab):
                 videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
-                
+            
         if videoUrl.startswith('http'):
-            urlTab = self.up.getVideoLinkExt(videoUrl)
+            urlTab.extend(self.up.getVideoLinkExt(videoUrl))
         return urlTab
         
     def listSearchResult(self, cItem, searchPattern, searchType):
