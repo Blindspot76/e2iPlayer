@@ -3789,12 +3789,25 @@ class pageParser:
         params_s  = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         params_l  = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True} 
         
-        sts, data = self.cm.getPage(baseUrl, params_s)
+        params_s['return_data'] =  False
+        sts, response = self.cm.getPage(baseUrl, params_s)
+        redirectUrl = response.geturl() 
+        data = response.read()
         if not sts: return False
         
         if 'method_free' in data:
             sts, data = self.cm.getPage(baseUrl, params_l, {'method_free':'Free'})
             if not sts: return False
+            
+        if 'id="go-next"' in data:
+            url = self.cm.ph.getSearchGroups(data, '<a[^>]+?id="go-next"[^>]+?href="([^"]+?)"')[0]
+            baseUrl = self.cm.ph.getSearchGroups(redirectUrl, '(https?://[^/]+?)/')[0]
+            if url.startswith('/'): url = baseUrl + url
+            sts, data = self.cm.getPage(url, params_l)
+            if not sts: return False
+            
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'jwplayer', 'play(')[1]
+        printDBG(data)
             
         videoMarker = self.cm.ph.getSearchGroups(data, r"""['"]?file['"]?[ ]*?:[ ]*?([^ ^,]+?),""")[0]
         videoUrl    = self.cm.ph.getSearchGroups(data, r"""['"]?%s['"]?[ ]*?\=[ ]*?['"](http[^'^"]+?)["']""" % videoMarker)[0]

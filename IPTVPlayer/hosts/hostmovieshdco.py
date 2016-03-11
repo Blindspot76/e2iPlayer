@@ -305,6 +305,16 @@ class MoviesHDCO(CBaseHostClass):
         #printDBG(data)
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="video-embed">', '</div>', False)[1]
+        tmp  = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>')[1]
+        tmp  = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<tr>', '</tr>')
+        
+        for item in tmp:
+            title  = self.cleanHtmlStr( item )
+            vidUrl = self.cm.ph.getSearchGroups(item, '''<a[^>]*?href="([^"]+?)"''', 1, True)[0]
+            if not vidUrl.startswith('http'): continue
+            urlTab.append({'name':title, 'url':vidUrl, 'need_resolve':1})
+        if len(urlTab):
+            return urlTab
         data = data.split('</')
         idx = 0
         for item in data:
