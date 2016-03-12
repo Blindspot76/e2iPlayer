@@ -320,6 +320,7 @@ class urlparser:
                        'video.meta.ua':        self.pp.parseMETAUA         ,
                        'xvidstage.com':        self.pp.parseXVIDSTAGECOM   ,
                        'speedvideo.net':       self.pp.parseSPEEDVICEONET  ,
+                       'vid.me':               self.pp.parseVIDME          ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3957,6 +3958,22 @@ class pageParser:
         def _findLinks(data):
             return self._findLinks2(data, baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://hdvid.tv/embed-{0}-950x480.html', _findLinks)
+        
+    def parseVIDME(self, baseUrl):
+        printDBG("parseVIDME baseUrl[%s]" % baseUrl)
+        # from: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/vidme.py
+        _VALID_URL = r'https?://vid\.me/(?:e/)?(?P<id>[\da-zA-Z]{,5})(?:[^\da-zA-Z]|$)'
+        mobj = re.match(_VALID_URL, baseUrl)
+        id = mobj.group('id')
+        sts, data = self.cm.getPage('https://api.vid.me/videoByUrl/' + id)
+        if not sts: return False
+        data = byteify( json.loads(data) )['video']['formats']
+        urlTab = []
+        for item in data:
+            if '-clip' in item['type']: continue
+            try: urlTab.append({'name':item['type'], 'url':item['uri']})
+            except: pass
+        return urlTab
         
     def parseSPEEDVICEONET(self, baseUrl):
         printDBG("parseSPEEDVICEONET baseUrl[%s]" % baseUrl)
