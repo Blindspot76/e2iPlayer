@@ -8,25 +8,27 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, re
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, MYOBFUSCATECOM_OIO, MYOBFUSCATECOM_0ll, \
                                                                unpackJS, TEAMCASTPL_decryptPlayerParams, SAWLIVETV_decryptPlayerParams
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html, compat_parse_qs
-from Plugins.Extensions.IPTVPlayer.libs.teledunet import  TeledunetParser
-from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.libs.filmonapi import FilmOnComApi, GetConfigList as FilmOn_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.videostar import VideoStarApi, GetConfigList as VideoStar_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.satlive   import SatLiveApi, GetConfigList as SatLiver_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.weebtv    import WeebTvApi, GetConfigList as WeebTv_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.purecastnet import PurecastNetApi, GetConfigList as PurecastNet_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.vidtvpl   import VidTvApi
-from Plugins.Extensions.IPTVPlayer.libs.looknijtv import LooknijTvApi
-from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl import TvSportCdaApi
-from Plugins.Extensions.IPTVPlayer.libs.nettvpw    import NettvPw
-from Plugins.Extensions.IPTVPlayer.libs.typertv    import TyperTV
-from Plugins.Extensions.IPTVPlayer.libs.wagasworld import WagasWorldApi
-from Plugins.Extensions.IPTVPlayer.libs.ustvnow    import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.edemtv import EdemTvApi, GetConfigList as EdemTv_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.livestreamtv   import LiveStreamTvApi 
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes     import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils  import clean_html, compat_parse_qs
+from Plugins.Extensions.IPTVPlayer.libs.teledunet         import  TeledunetParser
+from Plugins.Extensions.IPTVPlayer.libs.urlparser         import urlparser
+from Plugins.Extensions.IPTVPlayer.libs.filmonapi         import FilmOnComApi, GetConfigList as FilmOn_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.videostar         import VideoStarApi, GetConfigList as VideoStar_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.satlive           import SatLiveApi, GetConfigList as SatLiver_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.weebtv            import WeebTvApi, GetConfigList as WeebTv_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.purecastnet       import PurecastNetApi, GetConfigList as PurecastNet_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.vidtvpl           import VidTvApi
+from Plugins.Extensions.IPTVPlayer.libs.looknijtv         import LooknijTvApi
+from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl     import TvSportCdaApi
+from Plugins.Extensions.IPTVPlayer.libs.nettvpw           import NettvPw
+from Plugins.Extensions.IPTVPlayer.libs.typertv           import TyperTV
+from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi
+from Plugins.Extensions.IPTVPlayer.libs.ustvnow           import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet    import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.edemtv            import EdemTvApi, GetConfigList as EdemTv_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.livestreamtv      import LiveStreamTvApi 
+from Plugins.Extensions.IPTVPlayer.libs.skylinewebcamscom import WkylinewebcamsComApi, GetConfigList as WkylinewebcamsCom_GetConfigList
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
+
 ###################################################
 
 ###################################################
@@ -62,36 +64,40 @@ config.plugins.iptvplayer.fake_separator = ConfigSelection(default = " ", choice
 def GetConfigList():
     optionList = []
     
-    optionList.append(getConfigListEntry("----------VideoStar-----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("-----------------VideoStar------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( VideoStar_GetConfigList() )
     except: printExc()
     
-    optionList.append(getConfigListEntry("----------WeebTV----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("-------------------WeebTV-------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WeebTv_GetConfigList() )
     except: printExc()
     
-    optionList.append(getConfigListEntry("----------Pure-Cast.net----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("---------------Pure-Cast.net----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( PurecastNet_GetConfigList() )
     except: printExc()
     
-    optionList.append(getConfigListEntry("----------FilmOn TV----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("-----------------FilmOn TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( FilmOn_GetConfigList() )
     except: printExc()
     
-    optionList.append(getConfigListEntry("----------Web-Live TV----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("----------------Web-Live TV-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( SatLiver_GetConfigList() )
     except: printExc()
     
-    optionList.append(getConfigListEntry("----------ustvnow.com----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("----------------ustvnow.com-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( Ustvnow_GetConfigList() )
     except: printExc()
     
-    optionList.append(getConfigListEntry("----------telewizjada.net----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("--------------telewizjada.net---------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( TelewizjadaNet_GetConfigList() )
     except: printExc()
    
-    optionList.append(getConfigListEntry("----------edem.tv----------", config.plugins.iptvplayer.fake_separator))
+    optionList.append(getConfigListEntry("-------------------edem.tv------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( EdemTv_GetConfigList() )
+    except: printExc()
+    
+    optionList.append(getConfigListEntry("-------------SkyLineWebCams.com-------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( WkylinewebcamsCom_GetConfigList() )
     except: printExc()
     
     #optionList.append(getConfigListEntry("----------Telewizja-Online.pl----------", config.plugins.iptvplayer.fake_separator))
@@ -146,17 +152,18 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'vidtv.pl',                'name': 'vidtv.pl',            'title': 'VidTV.pl',                          'url': '',                                                                   'icon': 'http://vidtv.pl/img/logotype4.png'}, \
                         {'alias_id':'iptv_matzgpl',            'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'alias_id':'gienektv',                'name': 'm3u',                 'title': 'Kanały @gienektv',                  'url': 'https://www.dropbox.com/s/bk9tksbotr0e4dq/tunek.m3u?dl=1',           'icon': 'https://www.dropbox.com/s/eb6edvyh40b4dw3/gtv.jpg?dl=1'}, \
-                        {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',                'url': 'http://prognoza.pogody.tv',                                            'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
+                        {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',                'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
                         {'alias_id':'matzg2',                  'name': 'm3u',                 'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg2.prv.pl/Pogoda_METEOROGRAMY.m3u',                       'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
                         {'alias_id':'webcamera.pl',            'name': 'webcamera.pl',        'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
+                        {'alias_id':'skylinewebcams.com',      'name': 'skylinewebcams.com',  'title': 'SkyLineWebCams.com',                'url': 'https://www.skylinewebcams.com/',                                    'icon': 'https://cdn.skylinewebcams.com/skylinewebcams.png'}, \
                         {'alias_id':'inne_matzg',              'name': 'm3u',                 'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
                         {'alias_id':'filmon.com',              'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://ftp.vectranet.pl/xbmc/addons/helix/plugin.video.ustvnow/icon.png'}, \
                         {'alias_id':'freetuxtv_webcam_pl',     'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
-                        {'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=IPTV/',                         'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
+                        {'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=IPTV/',           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'alias_id':'xbmcmxtv.com',            'name': 'm3u',                 'title': 'xbmcmxtv',                          'url': 'http://file.xbmcmxtv.com/2legit.m3u',                                'icon': 'http://emby.media/community/uploads/inline/76/555e814b284d6_kodisplash.jpg'}, \
-                        {'alias_id':'wownet.ro',               'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://wownet.ro/iptv/',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
-                        {'alias_id':'iptv.ink',                'name': 'm3u',                 'title': 'Free Iptv Project',                 'url': 'http://tv.iptv.ink/iptv.ink',                             'icon': 'http://community.iptv.ink/styles/uix/uix/logo_new_001.png'}, \
+                        {'alias_id':'wownet.ro',               'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://wownet.ro/iptv/',                                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
+                        {'alias_id':'iptv.ink',                'name': 'm3u',                 'title': 'Free Iptv Project',                 'url': 'http://tv.iptv.ink/iptv.ink',                                        'icon': 'http://community.iptv.ink/styles/uix/uix/logo_new_001.png'}, \
                         {'alias_id':'greek_iptv',              'name': 'm3u',                 'title': 'Greek-IPTV',                        'url': 'https://raw.githubusercontent.com/free-greek-iptv/greek-iptv/master/greek.m3u', 'icon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Coat_of_arms_of_Greece.svg/538px-Coat_of_arms_of_Greece.svg.png'}, \
                         {'alias_id':'hellenic_tv',             'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
                         {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
@@ -193,6 +200,7 @@ class HasBahCa(CBaseHostClass):
         self.telewizjadaNetApi = None
         self.liveStreamTvApi = None
         self.edemTvApi = None
+        self.wkylinewebcamsComApi = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -956,6 +964,22 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.edemTvApi.getVideoLink(cItem)
         return urlsTab
         
+    def getWkylinewebcamsComList(self, cItem):
+        printDBG("getEdemTvList start")
+        if None == self.wkylinewebcamsComApi:
+            self.wkylinewebcamsComApi = WkylinewebcamsComApi()
+        tmpList = self.wkylinewebcamsComApi.getChannelsList(cItem)
+        for item in tmpList:
+            if 'video' == item.get('type', ''):
+                self.playVideo(item) 
+            else:
+                self.addDir(item)
+        
+    def getWkylinewebcamsComLink(self, cItem):
+        printDBG("getEdemTvLink start")
+        urlsTab = self.wkylinewebcamsComApi.getVideoLink(cItem)
+        return urlsTab
+        
     def getLiveStreamTvList(self, cItem):
         printDBG("getLiveStreamTvList start")
         if None == self.liveStreamTvApi:
@@ -1058,6 +1082,9 @@ class HasBahCa(CBaseHostClass):
     #edem.tv items
         elif name == 'edem.tv':
             self.getEdemTvList(self.currItem)
+    #skylinewebcams.com items
+        elif name == 'skylinewebcams.com':
+            self.getWkylinewebcamsComList(self.currItem)
     #live-stream.tv items
         elif name == 'live-stream.tv':
             self.getLiveStreamTvList(self.currItem)
@@ -1168,6 +1195,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getTelewizjadaNetLink(cItem)
         elif name == 'edem.tv':
             urlList = self.host.getEdemTvLink(cItem)
+        elif name == 'skylinewebcams.com':
+            urlList = self.host.getWkylinewebcamsComLink(cItem)
         elif name == 'live-stream.tv':
             urlList = self.host.getLiveStreamTvLink(cItem)
         elif name == "webcamera.pl":
