@@ -52,14 +52,14 @@ def gettytul():
 class NeoKinoNet(CBaseHostClass):
     MAIN_URL    = 'http://neokino.net/'
     SRCH_URL    = MAIN_URL + 'index.php?s='
-    DEFAULT_ICON_URL = ''
+    DEFAULT_ICON_URL = 'https://b.thumbs.redditmedia.com/KipKPDYiM2_jtUczTpyJKUYUpXqOhw3RxKuZPDDMmws.jpg'
     
     MAIN_CAT_TAB = [{'category':'list_movies',    'title': _('Main'),       'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'm1':'Categories</h3>'},
                     {'category':'filter',         'title': _('Genres'),     'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':0},
                     {'category':'filter',         'title': _('Year'),       'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':1},
                     {'category':'filter',         'title': _('Resolution'), 'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':2},
-                    {'category':'search',         'title': _('Search'),       'search_item':True},
-                    {'category':'search_history', 'title': _('Search history')} 
+                    {'category':'search',         'title': _('Search'),     'search_item':True, 'icon':DEFAULT_ICON_URL},
+                    {'category':'search_history', 'title': _('Search history'),                 'icon':DEFAULT_ICON_URL} 
                    ]
     
     CAT_TAB = [{'sort':'date',      'title':_('DATE')},
@@ -189,12 +189,24 @@ class NeoKinoNet(CBaseHostClass):
         for item in sourcesData:
             url = strwithmeta(item[0], {'external_sub_tracks':sub_tracks})
             urlTab.append({'name':item[1], 'url':url, 'type':item[2], 'need_resolve':0})
+            
+        url = self.cm.ph.getSearchGroups(data, '''<embed[^>]+?src=['"](http[^"^']+?)['"]''')[0]
+        if url.startswith('http'):
+            url = strwithmeta(url, {'external_sub_tracks':sub_tracks})
+            urlTab.append({'name':'google.com', 'url':url, 'need_resolve':1})
         
         return urlTab
         
     def getVideoLinks(self, baseUrl):
         printDBG("NeoKinoNet.getVideoLinks [%s]" % baseUrl)
         urlTab = []
+        videoUrl = strwithmeta(baseUrl)
+        sub_tracks = videoUrl.meta['external_sub_tracks']
+        if videoUrl.startswith('http'):
+            urlTab = self.up.getVideoLinkExt(videoUrl)
+            if len(sub_tracks):
+                for idx in range(len(urlTab)):
+                    urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'external_sub_tracks':sub_tracks})
         return urlTab
         
     def getFavouriteData(self, cItem):
