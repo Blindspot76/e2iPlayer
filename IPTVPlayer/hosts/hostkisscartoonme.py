@@ -205,7 +205,7 @@ class KissCartoonMe(CBaseHostClass):
                 self.addDir(params)
             else: self.addVideo(params)
             
-    def _getItems(self, data, sp='', icon=''):
+    def _getItems(self, data, sp='', forceIcon=''):
         printDBG("listHome._getItems")
         if '' == sp: 
             sp = "<div style='position:relative'"
@@ -217,7 +217,8 @@ class KissCartoonMe(CBaseHostClass):
             if '' == url: continue
             title = self.cm.ph.getDataBeetwenMarkers(item, '<span class="title">', '</span>', False)[1]
             if '' == title: title = self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>')[1]
-            if icon == '': icon  = self.cm.ph.getSearchGroups(item, '''src=["']([^"^']+?)["']''')[0]
+            if forceIcon == '': icon  = self.cm.ph.getSearchGroups(item, '''src=["']([^"^']+?)["']''')[0]
+            else: icon = forceIcon
             desc  = self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>', False)[1]
             if '' == desc: desc = '<'+item
             tab.append({'title':self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'icon':self._urlWithCookie(icon), 'desc':self.cleanHtmlStr(desc)})
@@ -226,6 +227,9 @@ class KissCartoonMe(CBaseHostClass):
     def listHome(self, cItem, category):
         printDBG("listHome.listHome [%s]" % cItem)
         
+        #http://kisscartoon.me/Home/GetNextUpdatedCartoon
+        #POSTDATA {id:50, page:10}
+
         self.cacheHome = {}
         self.sortTab = []
         sts, data = self.getPage(cItem['url'])
