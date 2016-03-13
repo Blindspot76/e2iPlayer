@@ -27,6 +27,7 @@ from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet    import TelewizjadaNetA
 from Plugins.Extensions.IPTVPlayer.libs.edemtv            import EdemTvApi, GetConfigList as EdemTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livestreamtv      import LiveStreamTvApi 
 from Plugins.Extensions.IPTVPlayer.libs.skylinewebcamscom import WkylinewebcamsComApi, GetConfigList as WkylinewebcamsCom_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.livespottingtv    import LivespottingTvApi
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
 
 ###################################################
@@ -156,6 +157,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'matzg2',                  'name': 'm3u',                 'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg2.prv.pl/Pogoda_METEOROGRAMY.m3u',                       'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
                         {'alias_id':'webcamera.pl',            'name': 'webcamera.pl',        'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
                         {'alias_id':'skylinewebcams.com',      'name': 'skylinewebcams.com',  'title': 'SkyLineWebCams.com',                'url': 'https://www.skylinewebcams.com/',                                    'icon': 'https://cdn.skylinewebcams.com/skylinewebcams.png'}, \
+                        {'alias_id':'livespotting.tv',         'name': 'livespotting.tv',     'title': 'Livespotting.tv',                   'url': 'http://livespotting.tv/',                                            'icon': 'http://livespotting.tv/img/ls_logo.png'}, \
                         {'alias_id':'inne_matzg',              'name': 'm3u',                 'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
                         {'alias_id':'filmon.com',              'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://ftp.vectranet.pl/xbmc/addons/helix/plugin.video.ustvnow/icon.png'}, \
@@ -201,6 +203,7 @@ class HasBahCa(CBaseHostClass):
         self.liveStreamTvApi = None
         self.edemTvApi = None
         self.wkylinewebcamsComApi = None
+        self.livespottingTvApi = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -965,7 +968,7 @@ class HasBahCa(CBaseHostClass):
         return urlsTab
         
     def getWkylinewebcamsComList(self, cItem):
-        printDBG("getEdemTvList start")
+        printDBG("getWkylinewebcamsComList start")
         if None == self.wkylinewebcamsComApi:
             self.wkylinewebcamsComApi = WkylinewebcamsComApi()
         tmpList = self.wkylinewebcamsComApi.getChannelsList(cItem)
@@ -976,9 +979,17 @@ class HasBahCa(CBaseHostClass):
                 self.addDir(item)
         
     def getWkylinewebcamsComLink(self, cItem):
-        printDBG("getEdemTvLink start")
+        printDBG("getWkylinewebcamsComLink start")
         urlsTab = self.wkylinewebcamsComApi.getVideoLink(cItem)
         return urlsTab
+        
+    def getLivespottingTvList(self, cItem):
+        printDBG("getLivespottingTvList start")
+        if None == self.livespottingTvApi:
+            self.livespottingTvApi = LivespottingTvApi()
+        tmpList = self.livespottingTvApi.getChannelsList(cItem)
+        for item in tmpList:
+            self.playVideo(item) 
         
     def getLiveStreamTvList(self, cItem):
         printDBG("getLiveStreamTvList start")
@@ -1085,6 +1096,9 @@ class HasBahCa(CBaseHostClass):
     #skylinewebcams.com items
         elif name == 'skylinewebcams.com':
             self.getWkylinewebcamsComList(self.currItem)
+    #livespotting.tv items
+        elif name == 'livespotting.tv':
+            self.getLivespottingTvList(self.currItem)
     #live-stream.tv items
         elif name == 'live-stream.tv':
             self.getLiveStreamTvList(self.currItem)

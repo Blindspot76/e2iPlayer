@@ -366,11 +366,10 @@ class OurmatchNet(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        # for now we must disable favourites due to problem with links extraction for types other than movie
         CHostBase.__init__(self, OurmatchNet(), True, favouriteTypes=[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('filmovizijastudiologo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('oumatchnetlogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
