@@ -3967,13 +3967,17 @@ class pageParser:
         id = mobj.group('id')
         sts, data = self.cm.getPage('https://api.vid.me/videoByUrl/' + id)
         if not sts: return False
-        data = byteify( json.loads(data) )['video']['formats']
-        urlTab = []
-        for item in data:
-            if '-clip' in item['type']: continue
-            try: urlTab.append({'name':item['type'], 'url':item['uri']})
-            except: pass
-        return urlTab
+        data = byteify( json.loads(data) )['video']
+        if 'formats' in data:
+            urlTab = []
+            for item in data['formats']:
+                if '-clip' in item['type']: continue
+                try: urlTab.append({'name':item['type'], 'url':item['uri']})
+                except: pass
+            return urlTab
+        else:
+            return urlparser().getVideoLinkExt(data['source'])
+        return False
         
     def parseSPEEDVICEONET(self, baseUrl):
         printDBG("parseSPEEDVICEONET baseUrl[%s]" % baseUrl)
