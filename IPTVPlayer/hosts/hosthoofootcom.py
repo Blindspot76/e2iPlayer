@@ -320,7 +320,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, HoofootCom(), True, favouriteTypes=[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('oumatchnetlogo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('hoofootcomlogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
