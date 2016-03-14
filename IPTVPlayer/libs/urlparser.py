@@ -3233,8 +3233,11 @@ class pageParser:
         HTTP_HEADER = dict(self.HTTP_HEADER) 
         HTTP_HEADER['Referer'] = baseUrl
         SWF_URL = 'http://static.flashx.tv/player6/jwplayer.flash.swf'
-        sts, data = self.cm.getPage(baseUrl)
-        if not sts: return False
+        
+        sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+        redirectUrl = response.geturl() 
+        data = response.read()
+        HTTP_HEADER['Referer'] = redirectUrl
         
         def _first_of_each(*sequences):
             return (next((x for x in sequence if x), '') for sequence in sequences)
@@ -3246,7 +3249,7 @@ class pageParser:
             path = '/'.join(x.strip('/') for x in paths if x)
             return urlunsplit((scheme, netloc, path, query, fragment))
         
-        url = baseUrl
+        url = redirectUrl
         post_data = None
         if 'Proceed to video' in data:
             sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<Form method="POST"', '</Form>', True)
@@ -3274,9 +3277,10 @@ class pageParser:
         try:
             tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
             tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
+            printDBG(tmp)
             data = tmp + data
         except:
-            pass
+            printExc()
         
         data = self.cm.ph.getSearchGroups(data, """["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""")[0]
         if data.startswith('http'):
@@ -3289,7 +3293,7 @@ class pageParser:
                     #if ':' in src:
                     #    src = src.split(':')[1]   
                     if base.startswith('rtmp'):
-                        return base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, baseUrl)
+                        return base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, redirectUrl)
             else:
                 return data
         return False

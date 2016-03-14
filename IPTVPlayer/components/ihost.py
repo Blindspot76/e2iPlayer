@@ -55,19 +55,22 @@ class CDisplayListItem:
 class ArticleContent:
     VISUALIZER_DEFAULT = 'DEFAULT'
     # Posible args and values for richDescParams:
-    RICH_DESC_PARAMS        = ["alternate_title", "country", "quality", "subtitles", "year", "released", "rating", "rated", "duration", "genre", "director", "writer", "actors", "stars", "awards" ]
+    RICH_DESC_PARAMS        = ["alternate_title", "status", "country", "language", "quality", "subtitles", "year", "released", "rating", "rated", "duration", "genre", "production", "director", "writer", "actors", "stars", "awards" ]
     # labels here must be in english language 
     # translation should be done before presentation using "locals" mechanism
     RICH_DESC_LABELS = {"alternate_title":   "Alternate Title:",
+                        "status":            "Status",
                         "quality":           "Quality:",
                         "subtitles":         "Subtitles:",
                         "country":           "Country:", 
+                        "language":          "Language",
                         "year":              "Year:", 
                         "released":          "Released:",
                         "rating":            "Rating:", 
                         "rated":             "Rated:",
                         "duration":          "Duration:", 
                         "genre":             "Genre:", 
+                        "production":        "Production",
                         "director":          "Director:",
                         "writer":            "Writer",
                         "actors":            "Actors:", 

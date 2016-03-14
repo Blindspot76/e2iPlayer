@@ -521,9 +521,8 @@ class common:
         return out_data 
 
 
-    def makeABCList(self):
-        strTab = []
-        strTab.append('0 - 9');
+    def makeABCList(self, tab = ['0 - 9']):
+        strTab = list(tab)
         for i in range(65,91):
             strTab.append(str(unichr(i)))    
         return strTab
