@@ -624,7 +624,7 @@ class pageParser:
         self.vevoIE = None
         
         #config
-        self.COOKIE_PATH = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/cache/')
+        self.COOKIE_PATH = GetCookieDir('')
         #self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
     
@@ -846,27 +846,6 @@ class pageParser:
                 return False
         else:
             return False
-
-    #def parserHD3D(self,url):
-    #    if not 'html' in url:
-    #        url = url + '.html?i'
-    #    else:
-    #        url = url
-    #    username = self.hd3d_login
-    #    password = self.hd3d_password
-    #    urlL = 'http://hd3d.cc/login.html'
-    #    self.COOKIEFILE = self.COOKIE_PATH + "hd3d.cookie"
-    #    query_dataL = { 'url': urlL, 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
-    #    postdata = {'user_login': username, 'user_password': password}
-    #    data = self.cm.getURLRequestData(query_dataL, postdata)
-    #    query_data = { 'url': url, 'use_host': False, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
-    #    link = self.cm.getURLRequestData(query_data)
-    #    match = re.compile("""url: ["'](.+?)["'],.+?provider:""").findall(link)
-    #    if len(match) > 0:
-    #        ret = match[0]
-    #    else:
-    #     ret = False
-    #    return ret
 
     def parserSPROCKED(self,url):
         url = url.replace('embed', 'show')
@@ -4873,6 +4852,14 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return
         
+        def _getUpData(dat):
+            upData = self.cm.ph.getDataBeetwenMarkers(dat, 'updateStreamStatistics', ';', False)[1]
+            upData = re.compile('''['"]([^'^"]+?)['"]''').findall(upData)
+            return upData
+            
+        def _getVidUrl(dat):
+            return self.cm.ph.getSearchGroups(dat, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
+        
         tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
         printDBG(tmpData)
         upData = None
@@ -4887,13 +4874,18 @@ class pageParser:
                     if '' != tmpData: break
                 printDBG(tmpData)
                 if 'updateStreamStatistics' in tmpData:
-                    upData = self.cm.ph.getDataBeetwenMarkers(tmpData, 'updateStreamStatistics', ';', False)[1]
-                    upData = re.compile('''['"]([^'^"]+?)['"]''').findall(upData)
+                    upData = _getUpData(tmpData)
                     if 0 == len(upData): upData = None
                 if 'html5' in tmpData:
-                    vidUrl = self.cm.ph.getSearchGroups(tmpData, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
+                    vidUrl = _getVidUrl(tmpData)
                     if '' == vidUrl: vidUrl = None
         
+        if None == upData:
+            upData = _getUpData(data)
+            
+        if None == vidUrl:
+            vidUrl = _getVidUrl(data)
+            
         params['timeout'] = 5
         upBaseUrl = updateStreamStatistics(upData[0], upData[1], upData[2])
         pyCmd = GetPyScriptCmd('livestreamtv') + ' "%s" "%s" ' % (upBaseUrl, baseUrl)
