@@ -260,7 +260,7 @@ class SeriesEnStreamingCom(CBaseHostClass):
             desc  = self.cleanHtmlStr(item)
         
             params = dict(cItem)
-            params.update({'category':category, 'title':title, 'url':self._getFullUrl(url), 'icon':icon, 'desc':desc})
+            params.update({'category':category, 'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon), 'desc':desc})
             if cItem.get('cat', '') == 'movies' or '/films-' in url:
                 self.addVideo(params)
             else:
