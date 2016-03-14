@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, remove_html_markup, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, remove_html_markup, GetLogoDir, GetCookieDir, byteify, CSelOneLink
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getF4MLinksWithMeta, getDirectM3U8Playlist
@@ -38,12 +38,13 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.kisscartoon_defaultformat = ConfigSelection(default = "999999", choices = [("0", _("the worst")), ("360", "360p"), ("480", "480p"), ("720", "720p"),  ("1080", "1080p"), ("999999", "the best")])
 
 def GetConfigList():
     optionList = []
+    optionList.append( getConfigListEntry( _("Default video quality:"), config.plugins.iptvplayer.kisscartoon_defaultformat ) )
     return optionList
 ###################################################
-
 
 def gettytul():
     return 'http://kisscartoon.me/'
@@ -371,7 +372,7 @@ class KissCartoonMe(CBaseHostClass):
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'Day Added', '</table>')[1]
         data = self._getItems(data, '<tr', cItem.get('icon', ''))
-        
+        data.reverse()
         params = dict(cItem)
         params['category'] = 'video'
         self.listsTab(data, params, 'video')
@@ -416,6 +417,14 @@ class KissCartoonMe(CBaseHostClass):
             if '://' not in url: continue
             name = self.cleanHtmlStr(item)
             urlTab.append({'name':name, 'url':url, 'need_resolve':0})
+            
+        if 0 < len(urlTab):
+            max_bitrate = int(config.plugins.iptvplayer.kisscartoon_defaultformat.value)
+            def __getLinkQuality( itemLink ):
+                try:
+                    return int(self.cm.ph.getSearchGroups('|'+itemLink['name']+'|', '[^0-9]([0-9]+?)[^0-9]')[0])
+                except: return 0
+            urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getBestSortedList()         
             
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '>', withMarkers=True, caseSensitive=False)
         for item in data:

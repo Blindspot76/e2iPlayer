@@ -323,9 +323,28 @@ class CSelOneLink():
     def _cmpLinks(self, item1, item2):
         val1 = self.getQualiyFun(item1)
         val2 = self.getQualiyFun(item2)
-        if val1 < val2:   return -1
-        elif val1 > val2: return 1
-        else:             return 0
+        if val1 < val2:   ret = -1
+        elif val1 > val2: ret = 1
+        else:             ret = 0
+        return ret
+        
+    def _cmpLinksBest(self, item1, item2):
+        return -1 * self._cmpLinks(item1, item2)
+        
+    def getBestSortedList(self):
+        printDBG('getBestSortedList')
+        sortList = self.listOfLinks[::-1]
+        sortList.sort( self._cmpLinksBest )
+        retList = []
+        tmpList = []
+        for item in sortList:
+            linkRes = self.getQualiyFun( item )
+            if linkRes <= self.maxRes:
+                retList.append(item)
+            else:
+                tmpList.insert(0, item)
+        retList.extend(tmpList)
+        return retList
         
     def getSortedLinks(self, defaultFirst=True):
         printDBG('getSortedLinks defaultFirst[%r]' % defaultFirst)
