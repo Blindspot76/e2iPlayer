@@ -41,7 +41,7 @@ from Screens.MessageBox import MessageBox
 ###################################################
 config.plugins.iptvplayer.TVNDefaultformat = ConfigSelection(default = "4", choices = [("0", "Najgorsza"), ("1", "Bardzo niska"), ("2", "Niska"),  ("3", "Średnia"), ("4", "Standard"), ("5", "Wysoka"), ("6", "Bardzo wysoka"), ("7", "HD"), ("9999", "Najlepsza")])
 config.plugins.iptvplayer.TVNUseDF = ConfigYesNo(default = False)
-config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "Samsung TV", choices = [("Mobile (Android)", "Mobile (Android)"),("Samsung TV", "Samsung TV")])
+config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "Mobile (Android)", choices = [("Mobile (Android)", "Mobile (Android)"),("Samsung TV", "Samsung TV")])
 config.plugins.iptvplayer.proxyenable = ConfigYesNo(default = False)
    
 def GetConfigList():
@@ -49,7 +49,7 @@ def GetConfigList():
 
     optionList.append(getConfigListEntry("Domyślna jakość video:", config.plugins.iptvplayer.TVNDefaultformat))
     optionList.append(getConfigListEntry("Używaj domyślnej jakości video:", config.plugins.iptvplayer.TVNUseDF))
-    optionList.append(getConfigListEntry("TVN-Przedstaw się jako:", config.plugins.iptvplayer.TVNdevice))
+    #optionList.append(getConfigListEntry("TVN-Przedstaw się jako:", config.plugins.iptvplayer.TVNdevice))
     optionList.append(getConfigListEntry("TVN-korzystaj z proxy?", config.plugins.iptvplayer.proxyenable))
 
     return optionList
@@ -83,11 +83,9 @@ class TvnVod(CBaseHostClass):
         printDBG("TvnVod.__init__")
         CBaseHostClass.__init__(self, {'history':'TvnVod', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
         
-        if config.plugins.iptvplayer.TVNdevice.value == 'Samsung TV':
-            self.baseUrl = 'https://api.tvnplayer.pl/api?platform=ConnectedTV&terminal=Samsung&format=json&v=3.0&authKey=ba786b315508f0920eca1c34d65534cd'
+        if self.getDevice() == 'Samsung TV':
             userAgent = TvnVod.HOST
         else:
-            self.baseUrl = 'https://api.tvnplayer.pl/api?platform=Mobile&terminal=Android&format=json&v=3.1&authKey=4dc7b4f711fb9f3d53919ef94c23890c' #b4bc971840de63d105b3166403aa1bea
             userAgent = TvnVod.HOST_ANDROID
         
         self.cm.HEADER = {'User-Agent': userAgent, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -95,9 +93,22 @@ class TvnVod(CBaseHostClass):
         self.loggedIn = None
         self.ACCOUNT  = False
         
+    def getDevice(self):
+        return "Mobile (Android)"
+        
+    def getBaseUrl(self, v='3.0'):
+        if self.getDevice() == 'Samsung TV':
+            baseUrl = 'https://api.tvnplayer.pl/api?platform=ConnectedTV&terminal=Samsung&format=json&v={0}&authKey=ba786b315508f0920eca1c34d65534cd'.format(v)
+        else:
+            baseUrl = 'https://api.tvnplayer.pl/api?platform=Mobile&terminal=Android&format=json&v=3.1&authKey=4dc7b4f711fb9f3d53919ef94c23890c' #b4bc971840de63d105b3166403aa1bea
+        return baseUrl
+    
     def _getJItemStr(self, item, key, default=''):
-        v = item.get(key, None)
-        if None == v:
+        try:
+            v = item.get(key, None)
+            if None == v:
+                return default
+        except:
             return default
         return clean_html(u'%s' % v).encode('utf-8')
         
@@ -171,7 +182,7 @@ class TvnVod(CBaseHostClass):
             urlQuery = '&m=mainInfo'
         
         try:
-            url = self.baseUrl + urlQuery
+            url = self.getBaseUrl() + urlQuery
             sts, data = self.cm.getPage(url)
             data = json.loads(data)
             
@@ -299,9 +310,9 @@ class TvnVod(CBaseHostClass):
         printDBG("TvnVod.resolveLink url[%s]" % url)
         videoUrl = ''
         if len(url) > 0:
-            if config.plugins.iptvplayer.TVNdevice.value == 'Mobile (Android)':
+            if self.getDevice() == 'Mobile (Android)':
                 videoUrl = self._generateToken(url).encode('utf-8')
-            elif config.plugins.iptvplayer.TVNdevice.value == 'Samsung TV':
+            elif self.getDevice() == 'Samsung TV':
                 sts, data  = self.cm.getPage(url)
                 if sts and data.startswith('http'):
                     videoUrl =  data.encode('utf-8')
@@ -310,13 +321,14 @@ class TvnVod(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         return self.getLinks(cItem['id'])
     
-    def getLinks(self, id):
+    def getLinks(self, id, v='3.0'):
         printDBG("TvnVod.getLinks cItem.id[%r]" % id )
         videoUrls = []
         
-        url = self.baseUrl + '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
-        sts, data = self.cm.getPage(url)
-        if sts:
+        for v in ['3.0', '2.0']:
+            url = self.getBaseUrl(v) + '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
+            sts, data = self.cm.getPage(url)
+            if not sts: continue
             try:
                 data = json.loads(data)
                 if 'success' == data['status']:
@@ -349,6 +361,8 @@ class TvnVod(CBaseHostClass):
                         if config.plugins.iptvplayer.TVNUseDF.value:
                             videoUrls = [videoUrls[0]]
             except: printExc()
+            if len(videoUrls):
+                break
         return videoUrls
         
     def getFavouriteData(self, cItem):
