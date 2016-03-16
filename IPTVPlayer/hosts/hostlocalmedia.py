@@ -305,12 +305,22 @@ class LocalMedia(CBaseHostClass):
         tab.sort()
         for item in tab:
             params = dict(params)
-            params.update( {'title':item['title'], 'category':category} )
+            params.update( {'title':item['title'], 'category':category, 'desc':''} )
             if category in ['m3u', 'dir', 'iso']:
                 fullPath = os_path.join(path, item['title'])
                 params['path']  = fullPath
-                if len(table):
-                    params['iso_mount_path']  = self.getMountPoint(fullPath, table)
+                if category != 'dir':
+                    descTab = []
+                    if item.get('size', -1) >= 0:
+                        descTab.append( _("Total size: ") + formatBytes(item['size']) )
+                        
+                    #if len(table):
+                    #    params['iso_mount_path']  = self.getMountPoint(fullPath, table)
+                    #    if params['iso_mount_path']:
+                    #        descTab.append( _('Mounted on %s') % params['iso_mount_path'] )
+                    
+                    if len(descTab):
+                        params['desc'] = '[/br]'.join(descTab)
                 self.addDir(params)
             else:
                 fullPath = 'file://' + os_path.join(path, item['title'])
