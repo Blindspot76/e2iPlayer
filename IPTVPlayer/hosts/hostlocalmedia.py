@@ -63,7 +63,7 @@ def gettytul():
 
 class LocalMedia(CBaseHostClass):
     ISO_MOUNT_POINT_NAME = '.iptvplayer_iso'
-    FILE_SYSTEMS = ['ext2', 'ext3', 'ext4', 'vfat', 'msdos', 'iso9660', 'nfs', 'jffs2', 'autofs', 'cifs', 'ntfs']
+    FILE_SYSTEMS = ['ext2', 'ext3', 'ext4', 'vfat', 'msdos', 'iso9660', 'nfs', 'jffs2', 'autofs', 'fuseblk', 'udf', 'cifs', 'ntfs']
     VIDEO_FILE_EXTENSIONS    = ['avi', 'flv', 'mp4', 'ts', 'mov', 'wmv', 'mpeg', 'mpg', 'mkv', 'vob', 'divx', 'm2ts', 'evo']
     AUDIO_FILES_EXTENSIONS   = ['mp3', 'm4a', 'ogg', 'wma', 'fla', 'wav', 'flac']
     PICTURE_FILES_EXTENSIONS = ['jpg', 'jpeg', 'png']
