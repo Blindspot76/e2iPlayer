@@ -394,13 +394,12 @@ class ConfigMenu(ConfigBaseWidget):
         if afterSave and config.plugins.iptvplayer.ListaGraficzna.value and 0 == GetAvailableIconSize(False):
             needPluginUpdate = True
         else:
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DUPA\n")
             enabledHostsList = GetEnabledHostsList()
             hostsFromFolder  = GetHostsList(fromList=False, fromHostFolder=True)
             if self.remove_diabled_hostsOld != config.plugins.iptvplayer.remove_diabled_hosts.value:
                 if config.plugins.iptvplayer.remove_diabled_hosts.value:
                     for folderItem in hostsFromFolder:
-                        if hostsFromFolder in enabledHostsList:
+                        if folderItem in enabledHostsList:
                             continue
                         else:
                             # there is host file which is not enabled, 
