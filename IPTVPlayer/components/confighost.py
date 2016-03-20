@@ -19,6 +19,7 @@ from enigma import gRGB
 from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 from Components.config import config, getConfigListEntry
+from Tools.BoundFunction import boundFunction
 ###################################################
 
 class ConfigHostMenu(ConfigBaseWidget):
@@ -55,6 +56,7 @@ class ConfigHostsMenu(ConfigBaseWidget):
     def __init__(self, session, listOfHostsNames):
         printDBG("ConfigHostsMenu.__init__ -------------------------------")
         self.list = []
+        self.privacePoliceWorningList = []
         self.hostsConfigsAvailableList = []
         self.listOfHostsNames = []
         self.orgListOfHostsNames = SortHostsList(listOfHostsNames)
@@ -191,6 +193,16 @@ class ConfigHostsMenu(ConfigBaseWidget):
         if not self.reorderingEnabled:
             ConfigBaseWidget.keyRight(self)
             
+    def changedEntry(self):
+        if self["config"].getCurrent()[1] in self.privacePoliceWorningList and self["config"].getCurrent()[1].value:
+            message = _('Using this host in your country can be illegal.\nDo you want to continue at your own risk?')
+            self.session.openWithCallback(boundFunction(self.privatePoliceWorningCallback, self["config"].getCurrent()[1]), MessageBox, text = message, type = MessageBox.TYPE_YESNO)
+            
+    def privatePoliceWorningCallback(self, configEntry=None, arg=None):
+        if not arg:
+            if configEntry != None:
+                configEntry.value = False
+        
     def __preparHostsConfigs(self, listOfHostsNames):
         '''
         prepar config entries for hosts Enabling/Disabling
@@ -201,7 +213,11 @@ class ConfigHostsMenu(ConfigBaseWidget):
         sortedList = list(listOfHostsNames)
         for hostName in sortedList:
             try:    
-                exec( 'self.list.append(getConfigListEntry("Player ' + hostName + '", config.plugins.iptvplayer.host' + hostName + '))' )
+                optionEntry = None
+                exec( 'optionEntry = config.plugins.iptvplayer.host' + hostName )
+                self.list.append(getConfigListEntry("Player %s" % hostName, optionEntry))
+                if hostName in ['ipla']:
+                    self.privacePoliceWorningList.append( optionEntry )
                 self.hostsConfigsAvailableList.append(True)
                 self.listOfHostsNames.append(hostName)
             except:

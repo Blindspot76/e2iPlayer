@@ -7,7 +7,8 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSkinsList, GetHostsList, IsHostEnabled, IsExecutable, CFakeMoviePlayerOption, GetAvailableIconSize
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSkinsList, GetHostsList, GetEnabledHostsList, \
+                                                          IsHostEnabled, IsExecutable, CFakeMoviePlayerOption, GetAvailableIconSize
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
 from Plugins.Extensions.IPTVPlayer.components.configbase import ConfigBaseWidget
@@ -68,8 +69,7 @@ config.plugins.iptvplayer.IPTVDMMaxDownloadItem = ConfigSelection(default = "1",
 
 config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = True)
 config.plugins.iptvplayer.sortuj = ConfigYesNo(default = True)
-config.plugins.iptvplayer.devHelper = ConfigYesNo(default = False)
-
+config.plugins.iptvplayer.remove_diabled_hosts = ConfigYesNo(default = False)
 
 def GetMoviePlayerName(player):
     map = {"auto":_("auto"), "mini": _("internal"), "standard":_("standard"), 'exteplayer': _("external eplayer3"), 'extgstplayer': _("external gstplayer")}
@@ -183,9 +183,12 @@ class ConfigIPTVHostOnOff(ConfigOnOff):
 gListOfHostsNames = GetHostsList()
 for hostName in gListOfHostsNames:
     try:
-        printDBG("Set default options for host '%s'" % hostName)
         # as default all hosts are enabled
-        exec('config.plugins.iptvplayer.host' + hostName + ' = ConfigIPTVHostOnOff(default = True)')
+        if hostName in ['ipla']:
+            enabledByDefault = 'False'
+        else:
+            enabledByDefault = 'True'
+        exec('config.plugins.iptvplayer.host' + hostName + ' = ConfigIPTVHostOnOff(default = ' + enabledByDefault + ')')
     except:
         printExc(hostName)
 
@@ -201,6 +204,8 @@ class ConfigMenu(ConfigBaseWidget):
         self.showcoverOld = config.plugins.iptvplayer.showcover.value
         self.SciezkaCacheOld = config.plugins.iptvplayer.SciezkaCache.value
         self.platformOld = config.plugins.iptvplayer.plarform.value
+        self.remove_diabled_hostsOld = config.plugins.iptvplayer.remove_diabled_hosts.value
+        self.enabledHostsListOld = GetEnabledHostsList()
 
     def __del__(self):
         printDBG("ConfigMenu.__del__ -------------------------------")
@@ -218,7 +223,6 @@ class ConfigMenu(ConfigBaseWidget):
         if hiddenOptions:
             list.append( getConfigListEntry(_("Last checked version"), config.plugins.iptvplayer.updateLastCheckedVersion) )
             list.append( getConfigListEntry(_("Show all version in the update menu"), config.plugins.iptvplayer.hiddenAllVersionInUpdate) )
-            list.append(getConfigListEntry(_("Disable host protection (error == GS)"), config.plugins.iptvplayer.devHelper))
             list.append(getConfigListEntry(_("VFD set current title:"), config.plugins.iptvplayer.set_curr_title))
             list.append(getConfigListEntry(_("Write current title to file:"), config.plugins.iptvplayer.curr_title_file))
             list.append(getConfigListEntry(_("External movie player default aspect ratio:"), config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio))
@@ -234,6 +238,7 @@ class ConfigMenu(ConfigBaseWidget):
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
         list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
         list.append( getConfigListEntry(_("Services configuration"), config.plugins.iptvplayer.fakeHostsList) )
+        list.append( getConfigListEntry(_("Remove disabled services"), config.plugins.iptvplayer.remove_diabled_hosts) )
         list.append( getConfigListEntry(_("Disable live at plugin start"), config.plugins.iptvplayer.disable_live))
         list.append( getConfigListEntry(_("Pin protection for plugin"), config.plugins.iptvplayer.pluginProtectedByPin))
         list.append( getConfigListEntry(_("Pin protection for configuration"), config.plugins.iptvplayer.configProtectedByPin) )
@@ -365,11 +370,16 @@ class ConfigMenu(ConfigBaseWidget):
         else:
             self.doUpdate()
 
-    def doUpdate(self):
+    def doUpdate(self, forced=False):
         printDBG("ConfigMenu.doUpdate")
-        self.session.open(IPTVUpdateWindow, UpdateMainAppImpl(self.session))
+        if not forced:
+            self.session.open(IPTVUpdateWindow, UpdateMainAppImpl(self.session))
+        else:
+            self.session.openWithCallback(self.closeAfterUpdate, IPTVUpdateWindow, UpdateMainAppImpl(self.session, allowTheSameVersion=True))
         
-
+    def closeAfterUpdate(self, arg1=None, arg2=None):
+        self.close()
+    
     def save(self):
         ConfigBaseWidget.save(self)
         if self.showcoverOld != config.plugins.iptvplayer.showcover.value or \
@@ -379,11 +389,65 @@ class ConfigMenu(ConfigBaseWidget):
         if self.platformOld != config.plugins.iptvplayer.plarform.value:
             IPTVPlayerNeedInit(True)
             
-    def getMessageAfterSave(self):
-        if config.plugins.iptvplayer.ListaGraficzna.value and 0 == GetAvailableIconSize(False):
-            return _('Some changes will be applied only after plugin update.')
+    def getMessageBeforeClose(self, afterSave):
+        needPluginUpdate = False
+        if afterSave and config.plugins.iptvplayer.ListaGraficzna.value and 0 == GetAvailableIconSize(False):
+            needPluginUpdate = True
+        else:
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DUPA\n")
+            enabledHostsList = GetEnabledHostsList()
+            hostsFromFolder  = GetHostsList(fromList=False, fromHostFolder=True)
+            if self.remove_diabled_hostsOld != config.plugins.iptvplayer.remove_diabled_hosts.value:
+                if config.plugins.iptvplayer.remove_diabled_hosts.value:
+                    for folderItem in hostsFromFolder:
+                        if hostsFromFolder in enabledHostsList:
+                            continue
+                        else:
+                            # there is host file which is not enabled, 
+                            # so we need perform update to remove it
+                            needPluginUpdate = True
+                            break
+                else:
+                    hostsFromList = GetHostsList(fromList=True, fromHostFolder=False)
+                    if not set(hostsFromList).issubset(set(hostsFromFolder)):
+                        # there is missing hosts files, we need updated does not matter 
+                        # if these hosts are enabled or disabled
+                        needPluginUpdate = True
+                
+            elif config.plugins.iptvplayer.remove_diabled_hosts.value and enabledHostsList != self.enabledHostsListOld:
+                hostsFromList = GetHostsList(fromList=True, fromHostFolder=False)
+                diffDisabledHostsList = set(self.enabledHostsListOld).difference(set(enabledHostsList))
+                diffList = set(enabledHostsList).symmetric_difference(set(self.enabledHostsListOld))
+                for hostItem in diffList:
+                    if hostItem in hostsFromList:
+                        if hostItem in diffDisabledHostsList:
+                            if hostItem in hostsFromFolder:
+                                # standard host has been disabled but it is still in folder
+                                needPluginUpdate = True
+                                break
+                        else:
+                            if hostItem not in hostsFromFolder:
+                                # standard host has been enabled but it is not in folder
+                                needPluginUpdate = True
+                                break
+            
+        if needPluginUpdate:
+            return _('Some changes will be applied only after plugin update.\nDo you want to perform update now?')
         else:
             return ''
+            
+    def performCloseWithMessage(self, afterSave=True):
+        message = self.getMessageBeforeClose(afterSave)
+        if message == '':
+            self.close()
+        else:
+            self.session.openWithCallback(self.closeAfterMessage, MessageBox, text = message, type = MessageBox.TYPE_YESNO)
+            
+    def closeAfterMessage(self, arg=None):
+        if arg:
+            self.doUpdate(True)
+        else:
+            self.close()
 
     def keyOK(self):
         curIndex = self["config"].getCurrentIndex()

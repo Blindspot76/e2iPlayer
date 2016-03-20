@@ -697,6 +697,11 @@ class pageParser:
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
         if not sts: return False
         
+        errMarkers = ['File was deleted', 'File Removed', 'File Deleted.', 'File Not Found']
+        for errMarker in errMarkers:
+            if errMarker in data:
+                SetIPTVPlayerLastHostError(errMarker)
+        
         if _preProcessing != None:
             data = _preProcessing(data)
         #printDBG(data)

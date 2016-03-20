@@ -7,7 +7,9 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, \
+                                                                   GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir, \
+                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes          import enum
 from Plugins.Extensions.IPTVPlayer.iptvupdate.iptvlist      import IPTVUpdateList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import UpdateDownloaderCreator
@@ -235,12 +237,13 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     SERVERS_LIST_URLS = ["http://iptvplayer.pl/download/update/serwerslist.json", "http://iptvplayer.vline.pl/download/update/serwerslist.json"]
     VERSION_PATTERN   = 'IPTV_VERSION="([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"'
     
-    def __init__(self, session):
+    def __init__(self, session, allowTheSameVersion=False):
         printDBG("UpdateMainAppImpl.__init__ -------------------------------")
         self.session = session
         IUpdateObjectInterface.__init__(self, session)
         self.cm = common()
 
+        self.allowTheSameVersion = allowTheSameVersion
         self.setup_title = _("IPTVPlayer - update")
         self.tmpDir = GetTmpDir('iptv_update')
         self.ExtensionPath = resolveFilename(SCOPE_PLUGINS, 'Extensions/')
@@ -383,16 +386,40 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         
     def stepRemoveUnnecessaryFiles(self):
         printDBG("stepRemoveUnnecessaryFiles")
-        path = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/PlayerSelector/')
+        playerSelectorPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/PlayerSelector/')
+        logosPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/logos/')
+        hostsPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/hosts/')
         cmds = []
         iconSize = int(config.plugins.iptvplayer.IconsSize.value)
         if not config.plugins.iptvplayer.ListaGraficzna.value:
             iconSize = 0
         for size in [135, 120, 100]:
             if size != iconSize:
-                cmds.append('rm -f %s' % (path + '*{0}.png'.format(size)) )
-                cmds.append('rm -f %s' % (path + 'marker{0}.png'.format(size + 45)) )
-        cmd = ' && '.join(cmds)
+                cmds.append('rm -f %s' % (playerSelectorPath + '*{0}.png'.format(size)) )
+                cmds.append('rm -f %s' % (playerSelectorPath + 'marker{0}.png'.format(size + 45)) )
+        
+        # removing not needed hosts
+        if config.plugins.iptvplayer.remove_diabled_hosts.value:
+            enabledHostsList = GetEnabledHostsList()
+            hostsFromList    = GetHostsList(fromList=True, fromHostFolder=False)
+            hostsFromFolder  = GetHostsList(fromList=False, fromHostFolder=True)
+            hostsToRemove = []
+            for hostItem in hostsFromList:
+                if hostItem not in enabledHostsList and hostItem in hostsFromFolder:
+                    cmds.append('rm -f %s' % (playerSelectorPath + '{0}*.png'.format(hostItem)) )
+                    cmds.append('rm -f %s' % (logosPath + '{0}logo.png'.format(hostItem)) )
+                    cmds.append('rm -f %s' % (hostsPath + 'host{0}.py*'.format(hostItem)) )
+                
+            # we need to prepare temporary file with removing cmds because cmd can be to long
+            cmdFilePath = GetTmpDir('.iptv_remove_cmds.sh')
+            cmds.insert(0, '#!/bin/sh')
+            cmds.append('exit 0\n')
+            text = '\n'.join(cmds)
+            WriteTextFile(cmdFilePath, text, 'ascii')
+            cmd = '/bin/sh "{0}" '.format(cmdFilePath)
+            #cmd = '/bin/sh "{0}" && rm -rf "{1}" '.format(cmdFilePath, cmdFilePath)
+        else:
+            cmd = ' && '.join(cmds)
         printDBG("stepRemoveUnnecessaryFiles cmdp[%s]" % cmd)
         self.cmd = iptv_system( cmd, self.__removeUnnecessaryFilesCmdFinished )
         
@@ -538,7 +565,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                         #printDBG("newVerNum[%s], currVerNum[%s]" % (newVerNum, currVerNum))
                         if newVerNum < currVerNum and not config.plugins.iptvplayer.downgradePossible.value:
                             continue
-                        if newVerNum == currVerNum:
+                        if newVerNum == currVerNum and not self.allowTheSameVersion:
                             continue
                         if 'X.X' != server['pyver'] and pythonVer != server['pyver']:
                             continue

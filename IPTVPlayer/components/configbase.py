@@ -170,6 +170,9 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
     
     def getMessageAfterSave(self):
         return ''
+        
+    def getMessageBeforeClose(self):
+        return ''
     
     def askForSave(self, callbackYesFun, callBackNoFun):
         self.session.openWithCallback(boundFunction(self.saveOrCancelChanges, callbackYesFun, callBackNoFun), MessageBox, text=_('Save changes?'), type = MessageBox.TYPE_YESNO)
@@ -204,7 +207,12 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         
     def saveAndClose(self):
         self.save()
-        message = self.getMessageAfterSave()
+        self.performCloseWithMessage(True)
+        
+    def performCloseWithMessage(self, afterSave=True):
+        if afterSave:
+            message = self.getMessageAfterSave()
+        else: message = self.getMessageBeforeClose()
         if message == '':
             self.close()
         else:
@@ -215,7 +223,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         
     def cancelAndClose(self):
         self.cancel()
-        self.close()
+        self.performCloseWithMessage()
       
     def keyOK(self):
         if not self.isOkEnabled: 
@@ -258,7 +266,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         if self.isChanged():
             self.askForSave(self.saveAndClose, self.cancelAndClose)
         else:
-            self.close()
+            self.performCloseWithMessage()
         
     def keyCancel(self):
         self.cancelAndClose()

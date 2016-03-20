@@ -42,7 +42,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools_FreeSpace, \
                                                           mkdirs as iptvtools_mkdirs, GetIPTVPlayerVerstion, GetVersionNum, \
-                                                          printDBG, printExc, iptv_system, GetHostsList, \
+                                                          printDBG, printExc, iptv_system, GetHostsList, IsHostEnabled, \
                                                           eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir,\
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
                                                           CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize
@@ -967,26 +967,17 @@ class IPTVPlayerWidget(Screen):
         self.currItem = CDisplayListItem()
 
         self.displayHostsList = [] 
-        sortedList = SortHostsList( GetHostsList() )
+        sortedList = SortHostsList( GetHostsList(fromList=False, fromHostFolder=True) )
         brokenHostList = []
         for hostName in sortedList:
-            hostEnabled  = False
-            try:
-                exec('if config.plugins.iptvplayer.host' + hostName + '.value: hostEnabled = True')
-            except:
-                hostEnabled = False
-            if True == hostEnabled:
-                if not config.plugins.iptvplayer.devHelper.value:
-                    try:
-                        _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + hostName, globals(), locals(), ['gettytul'], -1)
-                        title = _temp.gettytul()
-                    except:
-                        printExc('get host name exception for host "%s"' % hostName)
-                        brokenHostList.append('host'+hostName)
-                        continue # do not use default name if import name will failed
-                else:
+            if IsHostEnabled(hostName):
+                try:
                     _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + hostName, globals(), locals(), ['gettytul'], -1)
                     title = _temp.gettytul()
+                except:
+                    printExc('get host name exception for host "%s"' % hostName)
+                    brokenHostList.append('host'+hostName)
+                    continue # do not use default name if import name will failed
                 self.displayHostsList.append((title, hostName))
         # if there is no order hosts list use old behavior
         if 0 == len(GetHostsOrderList()):
@@ -1103,21 +1094,17 @@ class IPTVPlayerWidget(Screen):
 
     def loadHost(self):
         self.hostFavTypes = []
-        if not config.plugins.iptvplayer.devHelper.value:
-            try:
-                _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['IPTVHost'], -1)
-                self.host = _temp.IPTVHost()
-                if not isinstance(self.host, IHost):
-                    printDBG("Host [%r] does not inherit from IHost" % self.hostName)
-                    self.close()
-                    return
-            except:
-                printExc( 'Cannot import class IPTVHost for host [%r]' %  self.hostName)
-                self.close()
-                return
-        else:
+        try:
             _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['IPTVHost'], -1)
             self.host = _temp.IPTVHost()
+            if not isinstance(self.host, IHost):
+                printDBG("Host [%r] does not inherit from IHost" % self.hostName)
+                self.close()
+                return
+        except:
+            printExc( 'Cannot import class IPTVHost for host [%r]' %  self.hostName)
+            self.close()
+            return
             
         try: protectedByPin = self.host.isProtectedByPinCode()
         except: protected = False # should never happen
