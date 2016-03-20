@@ -272,7 +272,7 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         if 1:#IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
             list.append(getConfigListEntry(_("----------------- External exteplayer3 options -----------------"), config.plugins.iptvplayer.fakeExtePlayer3))
             list.append(getConfigListEntry("    " + _("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
-            if config.plugins.iptvplayer.plarform.value in ['mipsel', 'armv7', 'i686']:
+            if config.plugins.iptvplayer.plarform.value in ['mipsel', 'armv7', 'armv5t', 'i686']:
                 list.append(getConfigListEntry("    " + _("External player use software decoder for the DTS"), config.plugins.iptvplayer.dts_software_decode))
                 list.append(getConfigListEntry("    " + _("External player use software decoder for the WMA"), config.plugins.iptvplayer.wma_software_decode))
                 list.append(getConfigListEntry("    " + _("Software decoding as"), config.plugins.iptvplayer.software_decode_as))

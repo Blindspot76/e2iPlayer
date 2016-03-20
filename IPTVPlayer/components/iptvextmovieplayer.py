@@ -1480,7 +1480,7 @@ class IPTVExtMoviePlayer(Screen):
             if config.plugins.iptvplayer.dts_software_decode.value:
                 cmd += ' -d '
                 
-            if config.plugins.iptvplayer.plarform.value == 'mipsel':
+            if config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
                 if config.plugins.iptvplayer.wma_software_decode.value:
                     cmd += ' -w '
                 
@@ -1489,7 +1489,7 @@ class IPTVExtMoviePlayer(Screen):
             
             if config.plugins.iptvplayer.aac_software_decode.value:
                 cmd += ' -a -p 10'
-            elif config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7'):
+            elif config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
                 cmd += ' -p 2'
             audioTrackIdx = self.metaHandler.getAudioTrackIdx()
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)

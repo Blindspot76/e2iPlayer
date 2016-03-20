@@ -38,7 +38,7 @@ class IPTVSetupImpl:
         self.ffmpegVersion = ""
         self.gstreamerVersion = ""
         self.openSSLVersion = ""
-        self.supportedPlatforms = ["sh4", "mipsel", "i686", "armv7"]
+        self.supportedPlatforms = ["sh4", "mipsel", "i686", "armv7", "armv5t"]
         self.platform = "unknown"
         
         # wget members
@@ -49,7 +49,7 @@ class IPTVSetupImpl:
                                        (_('Install into the "%s".') % "/usr/bin/wget", "/usr/bin/wget"),
                                        (_("Do not install (not recommended)"), "")]
         # rtmpdump members
-        self.rtmpdumpVersion = {'armv7':'K-S-V patch', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"}
+        self.rtmpdumpVersion = {'armv5t':'K-S-V patch', 'armv7':'K-S-V patch', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"}
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
         # f4mdump member
@@ -78,7 +78,7 @@ class IPTVSetupImpl:
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),
                                           (_("Do not install (not recommended)"), "")]
         # exteplayer3
-        self.exteplayer3Version = {'sh4': 9, 'mipsel': 22, 'armv7': 21}
+        self.exteplayer3Version = {'sh4': 9, 'mipsel': 22, 'armv7': 21, 'armv5t':22}
         self.exteplayer3paths = ["/usr/bin/exteplayer3", GetBinDir("exteplayer3", "")]
         self._exteplayer3InstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/exteplayer3 (%s)" % _("recommended")), "/usr/bin/exteplayer3"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/exteplayer3", GetBinDir("exteplayer3", "")),
@@ -136,7 +136,7 @@ class IPTVSetupImpl:
     ###################################################
     def platformDetect(self):
         printDBG("IPTVSetupImpl.platformDetect")
-        self.setInfo(_("Detection of the platform."), _("Plugin can be run on one of the following platforms: sh4, mipsel, i686, armv7."))
+        self.setInfo(_("Detection of the platform."), _("Plugin can be run on one of the following platforms: sh4, mipsel, i686, armv7, armv5t."))
         cmdTabs = []
         for platform in self.supportedPlatforms:
             platformtesterPath = resolveFilename(SCOPE_PLUGINS, "Extensions/IPTVPlayer/bin/%s/platformtester" % platform)
@@ -414,6 +414,8 @@ class IPTVSetupImpl:
         elif self.platform in ['mipsel'] and self.ffmpegVersion in ['2.8', '2.8.1', '2.8.3', '2.8.5', '3.0']:
             self.exteplayer3Step()
         elif self.platform in ['armv7'] and self.ffmpegVersion in ['2.8.5']:
+            self.exteplayer3Step()
+        elif self.platform in ['armv5t'] and self.ffmpegVersion in ['2.8.5', '3.0']:
             self.exteplayer3Step()
         elif "" != self.gstreamerVersion: self.gstplayerStep()
         else: self.finish()
