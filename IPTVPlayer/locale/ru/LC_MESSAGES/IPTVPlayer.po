@@ -3530,5 +3530,48 @@ msgstr "Размер файла: "
 msgid "Show file size"
 msgstr "Показать размер файла"
 
+msgid "All Leagues"
+msgstr "Все Лиги"
+
+msgid "Previous Seasons"
+msgstr "Предыдущие сезоны"
+
+msgid "Goal Of The Month"
+msgstr "Игры месяца"
+
+msgid "Promoted"
+msgstr "Повышен"
+
+msgid "Catrtoon list"
+msgstr "Список мультфильмов"
+
+msgid "New cartoon"
+msgstr "Новый мультфильм"
+
+msgid "Sort by alphabet"
+msgstr "Сортировка по алфавиту"
+
+msgid "Sort by popularity"
+msgstr "Сортировать по популярности"
+
+msgid "Latest update"
+msgstr "Последнее обновление"
+
+msgid "Remove disabled services"
+msgstr "Удалить сервисы которые не работают"
+
+msgid ""
+"Some changes will be applied only after plugin update.\n"
+"Do you want to perform update now?"
+msgstr ""
+"Некоторые изменения будут применены только после обновления плагина.\n"
+"Вы хотите, чтобы выполнить обновление?"
+
+msgid "Mangas"
+msgstr "Мангас"
+
+msgid "By Year"
+msgstr "По годам"
+
 msgid "Recently Added"
 msgstr "Недавно добавленный"
