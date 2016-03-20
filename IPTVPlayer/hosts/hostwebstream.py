@@ -143,7 +143,7 @@ class HasBahCa(CBaseHostClass):
     MAIN_GROUPED_TAB = [#{'alias_id':'team-cast.pl',           'name': 'team-cast.pl',        'title': 'Team Cast',                         'url': '',                                                                   'icon': 'http://wrzucaj.net/images/2014/09/12/logo.png'}, \
                         {'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://weebtv.yolasite.com/resources/425149_345424975498308_1363873965_n.jpg'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://static-videostar1.4vod.tv/assets/images/logo.png'}, \
-                        {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly',                                           'icon': 'http://goldvod.tv/img/logo.png'}, \
+                        {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly.html',                                      'icon': 'http://goldvod.tv/img/logo.png'}, \
                         {'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
                        #{'alias_id':'web-live.tv',            'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
                         {'alias_id':'looknij.tv',              'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
@@ -501,33 +501,32 @@ class HasBahCa(CBaseHostClass):
         printDBG('getGoldvodList entry url[%s]' % chUrl)
         sts, data = self.cm.getPage(chUrl)
         if not sts: return
-        sts, data = CParsingHelper.getDataBeetwenMarkers(data, 'id="liveTV-channels">', '</nav>', False)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, "<div id='content'>", "<div id='footer'>", False)
         
         def getFullUrl(url):
             if url.startswith('http'):
                 return url
-            elif url.startswith('/'):
-                return "http://goldvod.tv" + url
-            return url
+            elif not url.startswith('/'):
+                url = '/' + url
+            return "http://goldvod.tv" + url
                 
-        data = data.split('<li>')
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>')
         for item in data:
             printDBG("item [%r]" % item)
             params = {}
-            url  = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            icon = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            url  = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0]
+            icon = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
             if '' != url:
                 params['url']   = getFullUrl(url)
                 params['icon']  = getFullUrl(icon)
-                params['title'] = self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0]
+                params['title'] = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]
+                if '' == params['title']: params['title'] = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''')[0]
+                if '' == params['title']: params['title'] = url.replace('.html', '').replace(',', ' ').title()
                 params['desc']  = chUrl
                 self.playVideo( params )
         
     def getGoldvodLink(self, videoUrl):
-        urlItems = self.up.getVideoLinkExt(videoUrl)
-        if 0 < len(urlItems):
-            return urlItems[0]['url']
-        return ''
+        return self.up.getVideoLinkExt(videoUrl)
         
     def getSatLiveList(self, url):
         printDBG('getSatLiveList start')
@@ -1171,7 +1170,7 @@ class IPTVHost(CHostBase):
             new_url = TeledunetParser().get_rtmp_params(url)
             if 0 < len(url): retlist.append(CUrlItem("Własny link", new_url))
         elif url.startswith('http://goldvod.tv/'):
-            url = self.host.getGoldvodLink(url)
+            urlList = self.host.getGoldvodLink(url)
         elif 'web-live.tv' in url:
             url = self.host.getSatLiveLink(url)
         elif 'vidtv.pl' in url:

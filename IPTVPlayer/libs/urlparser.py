@@ -2135,13 +2135,44 @@ class pageParser:
             if sts: movieUrls.append({'name': 'wrzuta.pl: ' + str(item['bitrate']) + 'p', 'url':url.strip() + '/0'})
         return movieUrls
         
-    def parserGOLDVODTV(self, url):
+    def parserGOLDVODTV(self, baseUrl):
         COOKIE_FILE = GetCookieDir('goldvodtv.cookie')
         HTTP_HEADER = { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
         SWF_URL = 'http://p.jwpcdn.com/6/9/jwplayer.flash.swf'
         
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
-        sts, data = self.cm.getPage( url, params)
+        sts, data = self.cm.getPage( baseUrl, params)
+        
+        urlTab = []
+        qualities = []
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, "box_quality", "</div>", False)[1]
+        tmp = re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>([^<]+?)</a>''').findall(tmp)
+        for item in tmp:
+            qualities.append({'title':item[1], 'url':baseUrl+item[0]})
+        
+        if len(qualities):
+            data2 = None
+        else:
+            data2 = data
+            qualities.append({'title':'default', 'url':baseUrl})
+        
+        for item in qualities:
+            if data2 == None:
+                sts, data2 = self.cm.getPage( item['url'], params)
+                if not sts:
+                    data2 = None
+                    continue
+            data2 = self.cm.ph.getDataBeetwenMarkers(data2, '.setup(', '}', False)[1]
+            #printDBG(data2)
+            rtmpUrl = self.cm.ph.getSearchGroups(data2, '''["'](rtmp[^"^']+?)["']''')[0]
+            if len(rtmpUrl):
+                rtmpUrl = rtmpUrl + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, baseUrl)
+                urlTab.append({'name':item['title'], 'url':rtmpUrl})
+            data2 = None
+        
+        if len(urlTab):
+            printDBG(urlTab)
+            return urlTab
         
         # get connector link
         data = self.cm.ph.getSearchGroups(data, "'(http://goldvod.tv/tv-connector/[^']+?\.smil[^']*?)'")[0]
@@ -2157,7 +2188,7 @@ class pageParser:
                 src = src.split(':')[1]
                 
             if base.startswith('rtmp'):
-                return base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, url)
+                return base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, baseUrl)
         return False
         
     def parserVIDZER(self, baseUrl):
