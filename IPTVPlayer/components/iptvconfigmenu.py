@@ -566,7 +566,7 @@ def GetMoviePlayer(buffering=False, useAlternativePlayer=False):
     # select movie player
     
     availablePlayers = []
-    if config.plugins.iptvplayer.plarform.value in ['sh4', 'mipsel'] and IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
+    if config.plugins.iptvplayer.plarform.value in ['sh4', 'mipsel', 'armv7', 'armv5t'] and IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
         availablePlayers.append('exteplayer')
     if IsExecutable(config.plugins.iptvplayer.gstplayerpath.value): #config.plugins.iptvplayer.plarform.value in ['sh4', 'mipsel', 'i686'] and 
         availablePlayers.append('extgstplayer')
