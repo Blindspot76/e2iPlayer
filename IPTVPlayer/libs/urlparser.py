@@ -4684,11 +4684,11 @@ class pageParser:
         linksTab = []
         data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
         defaultUrl = self.cm.ph.getSearchGroups(data, '"(http[^"]+?)"')[0]
-        linksTab.append({'name':defaultQuality, 'url': strwithmeta(defaultUrl, {'external_sub_tracks':sub_tracks})})
+        linksTab.append({'name':defaultQuality, 'url': strwithmeta(defaultUrl, {'Referer':'baseUrl', 'external_sub_tracks':sub_tracks})})
         for item in qualities:
             if '.mp4' in defaultUrl:
                 url = defaultUrl.replace('.mp4', '-%s.mp4' % item)
-                linksTab.append({'name':item, 'url': strwithmeta(url, {'external_sub_tracks':sub_tracks})})
+                linksTab.append({'name':item, 'url': strwithmeta(url, {'Referer':'baseUrl', 'external_sub_tracks':sub_tracks})})
         return linksTab
         
     def parserHDFILMSTREAMING(self, baseUrl):
