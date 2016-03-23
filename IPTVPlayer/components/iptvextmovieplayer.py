@@ -307,7 +307,6 @@ class IPTVExtMoviePlayer(Screen):
         
         # for subtitles
         self.infoBanerOffsetY = -1
-        self.infoBanerHeight = -1
         for idx in range(self.subLinesNum):
             #printf('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' % ('subLabel%d'%(idx+1)))
             self['subLabel%d'%(idx+1)] = Label(" ")
@@ -1560,8 +1559,10 @@ class IPTVExtMoviePlayer(Screen):
         if offset_x < 0: offset_x = 0
         if offset_y < 0: offset_y = 0
         
-        self.infoBanerOffsetY = offset_y
-        self.infoBanerHeight = self['playbackInfoBaner'].instance.size().height()
+        self.infoBanerOffsetY = offset_y + self['playbackInfoBaner'].position[1]
+        tmp = offset_y + self['logoIcon'].position[1]
+        if tmp < self.infoBanerOffsetY:
+            self.infoBanerOffsetY = tmp
 
         for elem in self.playbackInfoBar['guiElemNames']:
             self[elem].setPosition(self[elem].position[0]+offset_x, self[elem].position[1]+offset_y)
