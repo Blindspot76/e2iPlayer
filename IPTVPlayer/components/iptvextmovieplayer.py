@@ -137,7 +137,7 @@ class ExtPlayerCommandsDispatcher():
 
 
 class IPTVExtMoviePlayer(Screen):
-    
+    Y_CROPPING_GUARD = 50
     def __prepareSkin(self):
         
         self.subConfig = self.configObj.getSubtitleFontSettings()
@@ -306,6 +306,8 @@ class IPTVExtMoviePlayer(Screen):
         self['videoInfo']         = Label(" ")
         
         # for subtitles
+        self.infoBanerOffsetY = -1
+        self.infoBanerHeight = -1
         for idx in range(self.subLinesNum):
             #printf('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' % ('subLabel%d'%(idx+1)))
             self['subLabel%d'%(idx+1)] = Label(" ")
@@ -320,6 +322,7 @@ class IPTVExtMoviePlayer(Screen):
         self.subHandler['last_time']   = -1
         self.subHandler['marker']      = None
         self.subHandler['synchro']     = {'visible':False, 'guiElemNames':['subSynchroLabel', 'subSynchroIcon'], 'icon':None}
+        self.subHandler['pos_y_offset'] = 0
         self['subSynchroLabel']        = Label("0.0s")
         self['subSynchroIcon']         = Cover3() 
         try: self.subHandler['synchro']['icon'] = LoadPixmap( GetIPTVDMImgDir("sub_synchro.png") )
@@ -473,6 +476,7 @@ class IPTVExtMoviePlayer(Screen):
                 except:
                     printExc()
             self.setSubtitlesText(" ", False)
+        self.setSubOffsetFromInfoBar()
         if -1 != self.subHandler['current_sub_time_ms']:
             self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
         sub = None
@@ -820,7 +824,7 @@ class IPTVExtMoviePlayer(Screen):
                 text = text.split('\n')
                 text.reverse()
                 lineHeight = self.subConfig['line_height']
-            y = self.subConfig['pos']
+            y = self.subConfig['pos'] + self.subHandler['pos_y_offset']
             for lnIdx in range(self.subLinesNum):
                 subLabel = 'subLabel%d' % (lnIdx+1)
                 if lnIdx < len(text):
@@ -1211,7 +1215,9 @@ class IPTVExtMoviePlayer(Screen):
                         self.subHandler['timer'].stop()
                     else:
                         #if 'gstplayer' == self.player: self.updateInfoTimer.start(1000)
-                        if self.subHandler['enabled']: self.subHandler['timer'].start(100)
+                        if self.subHandler['enabled']:
+                            self.latchSubtitlesTime(self.subHandler['current_sub_time_ms'])
+                            self.subHandler['timer'].start(100)
                         if obj['isForwarding']:
                             self.playbackUpdateInfo({'Status': ['FastForward', str(obj['Speed'])]})
                         elif 0 < obj['SlowMotion']:
@@ -1550,9 +1556,12 @@ class IPTVExtMoviePlayer(Screen):
         # info bar gui elements
         # calculate offset
         offset_x = (getDesktop(0).size().width() - self['playbackInfoBaner'].instance.size().width()) / 2
-        offset_y = (getDesktop(0).size().height() - self['playbackInfoBaner'].instance.size().height()) - 50 # 10px - cropping guard
+        offset_y = (getDesktop(0).size().height() - self['playbackInfoBaner'].instance.size().height()) - self.Y_CROPPING_GUARD # 10px - cropping guard
         if offset_x < 0: offset_x = 0
         if offset_y < 0: offset_y = 0
+        
+        self.infoBanerOffsetY = offset_y
+        self.infoBanerHeight = self['playbackInfoBaner'].instance.size().height()
 
         for elem in self.playbackInfoBar['guiElemNames']:
             self[elem].setPosition(self[elem].position[0]+offset_x, self[elem].position[1]+offset_y)
@@ -1581,6 +1590,9 @@ class IPTVExtMoviePlayer(Screen):
 
         if not blocked:
             self.playbackInfoBar['timer'].start(self.autoHideTime, True) # singleshot
+        self.setSubOffsetFromInfoBar()
+        if -1 != self.subHandler['current_sub_time_ms']:
+            self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
 
     def hidePlaybackInfoBar(self, excludeElems=[], force=False):
         self.playbackInfoBar['timer'].stop()
@@ -1593,6 +1605,9 @@ class IPTVExtMoviePlayer(Screen):
                 self[elem].hide()
             
         self.playbackInfoBar['visible'] = False
+        self.setSubOffsetFromInfoBar()
+        if -1 != self.subHandler['current_sub_time_ms']:
+            self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
         
     def _showHideSubSynchroControl(self, show=True):
         for elem in self.subHandler['synchro']['guiElemNames']:
@@ -1601,6 +1616,20 @@ class IPTVExtMoviePlayer(Screen):
             else:
                 self[elem].hide()
         self.subHandler['synchro']['visible'] = show
+        
+    def setSubOffsetFromInfoBar(self):
+        if self.playbackInfoBar['visible']:
+            desktopH = getDesktop(0).size().height()
+            if self.subLinesNum > 1:
+                # calc sub pos
+                subY = desktopH - self.subConfig['pos'] - self.subConfig['line_height']
+                subH = self.subConfig['line_height']
+                
+                yOffset = subY + subH - self.infoBanerOffsetY
+                if yOffset > 0:
+                    self.subHandler['pos_y_offset'] = yOffset
+                    return
+        self.subHandler['pos_y_offset'] = 0
         
     def showSubSynchroControl(self):
         self._showHideSubSynchroControl(True)
