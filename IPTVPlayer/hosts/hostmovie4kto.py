@@ -50,7 +50,7 @@ def gettytul():
     return 'movie4k.to'
 
 class Movie4kTO(CBaseHostClass):
-    MAIN_URL    = 'http://www.movie4k.to/'
+    MAIN_URL    = 'http://movie4k.to/'
     SRCH_URL    = MAIN_URL + 'searchAutoCompleteNew.php?search='
     MOVIE_GENRES_URL  = MAIN_URL + 'movies-genre-%s-{0}.html'
     TV_SHOWS_GENRES_URL  = MAIN_URL + 'tvshows-genre-%s-{0}.html'
@@ -86,7 +86,7 @@ class Movie4kTO(CBaseHostClass):
         params.update({'header':HTTP_HEADER})
         
         if config.plugins.iptvplayer.movie4kto_use_proxy_gateway.value and 'movie4k.to' in url:
-            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url))
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
             params['header']['Referer'] = proxy
             params['header']['Cookie'] = 'flags=2e5; COOKIE%253Blang%253B%252F%253Bwww.movie4k.to={0}%3B'.format(lang)
             url = proxy

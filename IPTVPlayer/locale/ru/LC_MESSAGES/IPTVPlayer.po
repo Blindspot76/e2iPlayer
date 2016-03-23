@@ -2625,6 +2625,129 @@ msgstr " - Локальная версия"
 msgid "--- Channels ---"
 msgstr "--- Каналы ---"
 
+msgid "---Search History"
+msgstr "---История поиска"
+
+msgid "Search History"
+msgstr "История поиска"
+
+msgid "---Search"
+msgstr "---Поиск"
+
+msgid "Search movies"
+msgstr "Поиск фильмов"
+
+msgid "Search "
+msgstr "Поиск "
+
+msgid "--- Cams ---"
+msgstr "--- Веб-кам ---"
+
+msgid "Cams"
+msgstr "Веб-кам"
+
+msgid "Update Now & Restart Enigma2"
+msgstr "Обновить сейчас & Перезагрузить Enigma2"
+
+msgid "ERROR - Error unpacking %s' % source"
+msgstr "Ошибка - ошибка распаковки %s' % источник"
+
+msgid "Require pin:"
+msgstr "Запрашивать PIN-код:"
+
+msgid "File Location xxxlist.txt :"
+msgstr "Расположение файла xxxlist.txt :"
+
+msgid "Sort xxxlist :"
+msgstr "Сортировка xxxlist :"
+
+msgid "--- boy ---"
+msgstr "--- Мальчик ---"
+
+msgid "--- gay ---"
+msgstr "--- Гей ---"
+
+msgid "--- Transgender ---"
+msgstr "--- Трансгендер ---"
+
+msgid "--- Couple ---"
+msgstr "--- Пара ---"
+
+msgid "--- Mature ---"
+msgstr "--- Зрелый ---"
+
+msgid "--- Fetish ---"
+msgstr "--- Фетиш ---"
+
+msgid "--- Lesbian ---"
+msgstr "--- Лесбиянка ---"
+
+msgid "--- Soul_mate ---"
+msgstr "--- Родственная душа ---"
+
+msgid "--- Hot_flirt ---"
+msgstr "--- Горячий Флирт ---"
+
+msgid "--- Girl ---"
+msgstr "--- Девушка ---"
+
+msgid "boy"
+msgstr "Мальчик"
+
+msgid "gay"
+msgstr "Гей"
+
+msgid "Transgender"
+msgstr "Трансгендер"
+
+msgid "Couple"
+msgstr "Пара"
+
+msgid "Mature"
+msgstr "Зрелый"
+
+msgid "Fetish"
+msgstr "Фетиш"
+
+msgid "Lesbian"
+msgstr "Лесбиянка"
+
+msgid "Soul_mate"
+msgstr "Родственная душа"
+
+msgid "Hot_flirt"
+msgstr "Горячий Флирт"
+
+msgid "Girl"
+msgstr "Девушка"
+
+msgid "--- Couples ---"
+msgstr "--- Пары ---"
+
+msgid "--- Male ---"
+msgstr "--- Мужчина ---"
+
+msgid "--- Transsexual ---"
+msgstr "--- Транссексуал ---"
+
+msgid "--- Female ---"
+msgstr "--- Женский ---"
+
+msgid "vapor"
+msgstr "Пар"
+
+msgid "Men"
+msgstr "Но"
+
+msgid "Shemale"
+msgstr "Транссексуал"
+
+msgid "Women"
+msgstr "Женщины"
+
+msgid "new"
+msgstr "Новый"
+
 msgid "ERROR - Error downloading: "
 msgstr "ОШИБКА - ошибка загрузки: "
 
@@ -2675,6 +2798,12 @@ msgstr "Локальный  XXXверсия"
 
 msgid "Most Favorited"
 msgstr "Большинство избранном"
+
+msgid "xxxlist.txt"
+msgstr "Файл-xxx.txt"
+
+msgid "+++ XXXLIST +++"
+msgstr "+++ ФАЙЛ-XXX +++"
 
 msgid "On Air"
 msgstr "В эфире"
@@ -3566,6 +3695,39 @@ msgid ""
 msgstr ""
 "Некоторые изменения будут применены только после обновления плагина.\n"
 "Вы хотите, чтобы выполнить обновление?"
+
+msgid "Make directory [%s]"
+msgstr "Создать каталог [%s]"
+
+msgid ""
+"Can not get mount points - cmd mount failed.\n"
+"Return code[%s].\n"
+"Return data[%s]."
+msgstr ""
+"Невозможно получить точки монтирования - cmd монтирования неудачная.\n"
+"Код возврата[%s].\n"
+"Возврат данных[%s]."
+
+msgid ""
+"Mount ISO file [%s] on [%s] failed.\n"
+"Return code[%s].\n"
+"Return data[%s]."
+msgstr ""
+"Монтировать ISO файл [%s] на [%s] не смогли.\n"
+"Код возврата[%s].\n"
+"Возврат данных[%s]."
+
+msgid "Mounted on %s"
+msgstr "Прикреплено к %s"
+
+msgid "Umount iso file"
+msgstr "Размонтирование файл iso"
+
+msgid "Set file name"
+msgstr "Установить имя файла"
+
+msgid "File \"%s\" already exists!"
+msgstr "Файл \"%s\" уже существует!"
 
 msgid "Mangas"
 msgstr "Мангас"
