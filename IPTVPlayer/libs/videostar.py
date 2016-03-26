@@ -99,7 +99,7 @@ class VideoStarApi:
         my_ip = ''
         if sts:
             try:
-                my_ip = self.cm.ph.getSearchGroups(data, 'name="check_ip"[^>]+?value="([^"]+?)"')[0]
+                my_ip = self.cm.ph.getSearchGroups(data, 'name="checkip"[^>]+?value="([^"]+?)"')[0]
                 printDBG('getProxyGatewayIP my_ip[%s]' % my_ip)
             except:
                 printExc()

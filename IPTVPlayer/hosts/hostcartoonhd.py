@@ -320,8 +320,9 @@ class CartoonHD(CBaseHostClass):
                     break
             enc = ''.join(tmp_arr)
             r   = len(data) % 3
+            printDBG("EEEEEEEEEEEEEEEEEEEEEEEEEE: %s" % enc)
             if r > 0:
-                fill = '===' 
+                fill = '==='
                 enc  = enc[0:r-3] + fill[r:]
             return enc
         
@@ -341,8 +342,8 @@ class CartoonHD(CBaseHostClass):
         if not sts: return []
         
         tor  = self._getToken(data)
-        elid = self.cm.ph.getSearchGroups(data, 'data-id="([^"]+?)"')[0]
-        if '' == elid: elid = self.cm.ph.getSearchGroups(data, 'elid="([^"]+?)"')[0]
+        elid = self.cm.ph.getSearchGroups(data, 'elid="([^"]+?)"')[0]
+        if '' == elid: elid = self.cm.ph.getSearchGroups(data, 'data-id="([^"]+?)"')[0]
         if '' == elid: elid = self.cm.ph.getSearchGroups(data, 'data-movie="([^"]+?)"')[0]
         if '' == elid: return []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<select', '</select>', False)[1]
