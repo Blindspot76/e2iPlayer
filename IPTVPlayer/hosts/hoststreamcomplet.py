@@ -168,14 +168,16 @@ class StreamComplet(CBaseHostClass):
             
             projekktor_controlbar={"muted":false,"volume":0.5};
         
-        playerUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?player[^"]+?)"')[0]
+        mainPlayerUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?player[^"]+?)"')[0]
         #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> playerUrl[%s]" % playerUrl)
         
-        movieId = self.cm.ph.getSearchGroups(playerUrl+'/', 'f=([0-9]+?)/')[0]
+        movieId = self.cm.ph.getSearchGroups(mainPlayerUrl+'/', 'f=([0-9]+?)/')[0]
+        
         if movieId != '':
             playerUrl = 'http://ok.ru/video/' + movieId
-            params['header']['User-Agent'] = self.USER_AGENT2
-            sts, data = self.cm.getPage(playerUrl, params)
+            tmpParams = copy.deepcopy(params) 
+            tmpParams['header']['User-Agent'] = self.USER_AGENT2
+            sts, data = self.cm.getPage(playerUrl, tmpParams)
             if not sts: return []
             try:
                 tmp = clean_html(re.search(r'data-options=(?P<quote>["\'])(?P<player>{.+?%s.+?})(?P=quote)' % movieId, data).group('player'))
@@ -187,15 +189,16 @@ class StreamComplet(CBaseHostClass):
             except:
                 printExc()
             playerUrl = 'http://m.ok.ru/video/' + movieId
-            params['header']['User-Agent'] = self.USER_AGENT
-            sts, data = self.cm.getPage(playerUrl, params)
+            tmpParams['header']['User-Agent'] = self.USER_AGENT
+            sts, data = self.cm.getPage(playerUrl, tmpParams)
             if not sts: return []
             videoUrl = self.cm.ph.getSearchGroups(data, 'href="(http[^"]+?moviePlaybackRedirect[^"]+?)"')[0].replace('&amp;', '&')
-            videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-            urlTab.insert(0, {'name':'default', 'url':videoUrl, 'need_resolve':0})
-            return urlTab
+            if videoUrl.startswith('http'):
+                videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
+                urlTab.insert(0, {'name':'default', 'url':videoUrl, 'need_resolve':0})
+                return urlTab
         
-        playerUrl = playerUrl.replace('&#038;', '&')
+        playerUrl = mainPlayerUrl.replace('&#038;', '&')
         sts, data = self.cm.getPage(playerUrl, params)
         if not sts: return []
         
@@ -206,8 +209,13 @@ class StreamComplet(CBaseHostClass):
             videoUrl = 'http://media.vimple.me/playeryw.swf/' + videoUrl
             videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
             return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
+        
+        newPlayerUrl = self.cm.ph.getSearchGroups(data, '''["'](http[^"^']+?embed_player.php[^"^']+?)["']''')[0]
+        if 'http%3A%2F%2F' in newPlayerUrl:
+            newPlayerUrl = urllib.unquote(newPlayerUrl)
+        
             
-        for item in [cItem['url'], playerUrl]:
+        for item in [cItem['url'], playerUrl, newPlayerUrl]:
             url = self.up.decorateUrl(item, {'Referer':cItem['url']})
             tmp = self.up.getVideoLinkExt(url)
             for item in tmp:
