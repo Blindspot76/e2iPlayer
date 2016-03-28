@@ -3877,7 +3877,7 @@ class pageParser:
         params_l  = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True} 
         
         if 'embed.' not in baseUrl:
-            baseUrl = 'http://embed.cloudtime.to/embed.php?v=' + self.cm.ph.getSearchGroups(baseUrl + '/', '/video/([^/]+?)/')[0]
+            baseUrl = 'http://www.cloudtime.to/embed.php?v=' + self.cm.ph.getSearchGroups(baseUrl + '/', '/video/([^/]+?)/')[0]
         
         sts, data = self.cm.getPage(baseUrl, params_s)
         if not sts: return False
@@ -3910,8 +3910,10 @@ class pageParser:
                  '(?:embed/|\?v=)(?P<id>[A-Za-z0-9]{12})/?'
         _PLAYLIST_URL = 'http://nosvideo.com/xml/{0}.xml'
         mobj = re.match(_VALID_URL, baseUrl)
-        video_id = mobj.group('id')
-        
+        try:
+            video_id = mobj.group('id')
+        except:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]+)[/-]')[0] 
         post_data = {
             'id': video_id,
             'op': 'download1',
@@ -4155,16 +4157,22 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return False
         
+        mainData = data
+        
         data = self.cm.ph.getSearchGroups(data, "drdX_fx\('([^']+?)'\)")[0]
         data = drdX_fx( data )
         data = self.cm.ph.getSearchGroups(data, 'proxy.link=linkcdn%2A([^"]+?)"')[0]
         printDBG(data)
-        x = gledajfilmDecrypter(198,128)
-        Key = "VERTR05uak80NEpDajY1ejJjSjY="
-        data = x.decrypt(data, Key.decode('base64', 'strict'), "ECB")
-        if '' != data:
-            return urlparser().getVideoLinkExt(data)
-        return False
+        if data != '':
+            x = gledajfilmDecrypter(198,128)
+            Key = "VERTR05uak80NEpDajY1ejJjSjY="
+            data = x.decrypt(data, Key.decode('base64', 'strict'), "ECB")
+            if '' != data:
+                return urlparser().getVideoLinkExt(data)
+            
+        data = unpackJSPlayerParams(mainData, SAWLIVETV_decryptPlayerParams, 0)
+        printDBG(">>>>>>>>>>>>>>>>>>>" + data)
+        return self._findLinks(data)
         
     def parserONETTV(self, baseUrl):
         printDBG("parserONETTV baseUrl[%r]" % baseUrl )
@@ -5306,7 +5314,7 @@ class pageParser:
     
         printDBG("parseNETUTV url[%s]\n" % url)
         #http://netu.tv/watch_video.php?v=ODM4R872W3S9
-        match = re.search("=([0-9A-Z]+?)[^0-9^A-Z]", url + '|' )
+        match = re.search("=([0-9a-zA-Z]+?)[^0-9^a-z^A-Z]", url + '|' )
         vid = match.group(1)
         
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',

@@ -15,6 +15,8 @@ import urllib2
 try: import ssl
 except: pass
 import re
+import string
+import time
 import htmlentitydefs
 import cookielib
 import unicodedata
@@ -249,7 +251,6 @@ class common:
         self.geolocation = {}
         self.useMozillaCookieJar = useMozillaCookieJar
         
-        
     def getCountryCode(self, lower=True):
         if 'countryCode' not in self.geolocation:
             sts, data = self.getPage('http://ip-api.com/json')
@@ -320,6 +321,91 @@ class common:
             status = False
             
         return (status, response)
+        
+    def calcAnswer(self, data):
+        sourceCode = data
+        try:
+            code = compile(sourceCode, '', 'exec')
+        except:
+            printExc()
+            return 0
+        vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
+        vLocals = { 'paramsTouple': None }
+        try:
+            exec( code, vGlobals, vLocals )
+        except:
+            printExc()
+            return 0
+        return vLocals['a']
+        
+    def getPageCFProtection(self, baseUrl, params={}, post_data=None):
+        cfParams = params.get('cloudflare_params', {})
+        
+        def _getFullUrlEmpty(url):
+            return ''
+        _getFullUrl = cfParams.get('full_url_handle', _getFullUrlEmpty)
+        
+        url = baseUrl
+        header = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
+        header.update(params.get('header', {}))
+        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
+        sts, data = self.getPage(url, params, post_data)
+        
+        current = 0
+        while current < 3:
+            if not sts and None != data:
+                start_time = time.time()
+                current += 1
+                doRefresh = False
+                try:
+                    verData = data.fp.read()
+                    printDBG("===============================================================")
+                    printDBG(verData)
+                    printDBG("===============================================================")
+                    dat = self.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
+                    tmp = self.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
+                    varName = tmp[0]
+                    expresion= ['a=%s' % tmp[1]]
+                    e = re.compile('%s([-+*])=([^;]+?);' % varName).findall(dat)
+                    for item in e:
+                        expresion.append('a%s=%s' % (item[0], item[1]) )
+                    
+                    for idx in range(len(expresion)):
+                        e = expresion[idx]
+                        e = e.replace('!+[]', '1')
+                        e = e.replace('!![]', '1')
+                        e = e.replace('=+(', '=int(')
+                        if '+[]' in e:
+                            e = e.replace(')+(', ')+str(')
+                            e = e.replace('int((', 'int(str(')
+                            e = e.replace('(+[])', '(0)')
+                            e = e.replace('+[]', '')
+                        expresion[idx] = e
+                    
+                    answer = self.calcAnswer('\n'.join(expresion)) + len('kisscartoon.me')
+                    refreshData = data.fp.info().get('Refresh', '')
+                    
+                    verData = self.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
+                    verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
+                    get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
+                    get_data['jschl_answer'] = answer
+                    verUrl += '?'
+                    for key in get_data:
+                        verUrl += '%s=%s&' % (key, get_data[key])
+                    verUrl = _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
+                    params2 = dict(params)
+                    params2['load_cookie'] = True
+                    params2['save_cookie'] = True
+                    params2['header'] = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
+                    printDBG("Time spent: [%s]" % (time.time() - start_time))
+                    time.sleep(5-(time.time() - start_time))
+                    printDBG("Time spent: [%s]" % (time.time() - start_time))
+                    sts, data = self.getPage(verUrl, params2, post_data)
+                except:
+                    printExc()
+            else:
+                break
+        return sts, data
         
     def saveWebFile(self, file_path, url, addParams = {}, post_data = None):
         bRet = False

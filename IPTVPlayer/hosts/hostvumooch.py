@@ -48,10 +48,10 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://vumoo.ch/'
+    return 'http://vumoo.at/'
 
 class Vumoo(CBaseHostClass):
-    MAIN_URL    = 'http://vumoo.ch/'
+    MAIN_URL    = 'http://vumoo.at/'
     SRCH_URL    = MAIN_URL + 'videos/search/?search='
     DEFAULT_ICON_URL = 'http://pbs.twimg.com/profile_images/559558208411287552/fFKLeLBS.png'
     

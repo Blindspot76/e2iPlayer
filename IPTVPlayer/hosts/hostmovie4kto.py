@@ -452,7 +452,13 @@ class Movie4kTO(CBaseHostClass):
         for idx in range(len(urlTab)):
             urlTab[idx]['name'] = urlTab[idx]['name'].split('Quality:')[0]
             
-        urlTab.sort(key=lambda item:item['name'], reverse=True)
+        doSort=True
+        for item in urlTab:
+            if '' == self.cm.ph.getSearchGroups(item['name'], '''([0-9]{2}/[0-9]{2}/[0-9]{4})''')[0]:
+                doSort = False
+                break
+        if doSort:
+            urlTab.sort(key=lambda item:item['name'], reverse=True)
         return urlTab
         
     def getVideoLinks(self, url):
