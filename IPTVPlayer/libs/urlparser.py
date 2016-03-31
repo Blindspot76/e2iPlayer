@@ -323,6 +323,7 @@ class urlparser:
                        'speedvideo.net':       self.pp.parseSPEEDVICEONET  ,
                        'vid.me':               self.pp.parseVIDME          ,
                        'veehd.com':            self.pp.parseVEEHDCOM       ,
+                       'sharerepo.com':        self.pp.parseSHAREREPOCOM   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3909,28 +3910,42 @@ class pageParser:
         _VALID_URL = r'https?://(?:www\.)?nosvideo\.com/' + \
                  '(?:embed/|\?v=)(?P<id>[A-Za-z0-9]{12})/?'
         _PLAYLIST_URL = 'http://nosvideo.com/xml/{0}.xml'
-        mobj = re.match(_VALID_URL, baseUrl)
         try:
+            mobj = re.match(_VALID_URL, baseUrl)
             video_id = mobj.group('id')
+            post_data = {
+                'id': video_id,
+                'op': 'download1',
+                'method_free': 'Continue to Video',
+            }
+            sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER}, post_data)
+            if not sts: return False
+            
+            id = self.cm.ph.getSearchGroups(data, 'php\|([^\|]+)\|')[0]
+            url = _PLAYLIST_URL.format(id)
+            
+            sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+            if not sts: return False
+            
+            videoUrl = CParsingHelper.getDataBeetwenMarkers(data, '<file>', '</file>', False)[1]
         except:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]+)[/-]')[0] 
-        post_data = {
-            'id': video_id,
-            'op': 'download1',
-            'method_free': 'Continue to Video',
-        }
-        
-        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER}, post_data)
-        if not sts: return False
-        
-        id = self.cm.ph.getSearchGroups(data, 'php\|([^\|]+)\|')[0]
-        url = _PLAYLIST_URL.format(id)
-        
-        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts: return False
-        
-        videoUrl = CParsingHelper.getDataBeetwenMarkers(data, '<file>', '</file>', False)[1]
-        if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
+            videoUrl = ''
+            pass
+        if '' == videoUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[^A-Z^a-f^0-9]([A-Za-f0-9]{16})[^A-Z^a-f^0-9]')[0]
+            if '' == videoUrl:
+                url = baseUrl
+            else:
+                url = 'http://nosvideo.com/vj/video.php?u=%s&w=640&h=380' % video_id
+            
+            sts, data = self.cm.getPage(url)
+            if not sts: return False
+            
+            printDBG(data)
+            videoUrl = self.cm.ph.getSearchGroups(data, '''tracker:[^'^"]*?['"]([^'^"]+?)['"]''')[0]
+            videoUrl = base64.b64decode(videoUrl)
+            if videoUrl.startswith('http'): 
+                return urlparser.decorateUrl(videoUrl)
         return False
         
     def parserPUTSTREAM(self, baseUrl):
@@ -4024,6 +4039,17 @@ class pageParser:
         if vidUrl.startswith('http'):
             return vidUrl
         return False
+        
+    def parseSHAREREPOCOM(self, baseUrl):
+        printDBG("parseSHAREREPOCOM baseUrl[%s]" % baseUrl)
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'}
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        tab = []
+        tmp = self._findLinks(data, m1='setup', m2='</script>')
+        for item in tmp:
+            item['url'] = urlparser.decorateUrl(item['url'], {'Referer':baseUrl, 'User-Agent':'Mozilla/5.0'})
+            tab.append(item)
+        return tab
         
     def parseSPEEDVICEONET(self, baseUrl):
         printDBG("parseSPEEDVICEONET baseUrl[%s]" % baseUrl)

@@ -337,7 +337,7 @@ class AnimeFunME(CBaseHostClass):
         printDBG("AnimeFunME.getVideoLinks [%s]" % videoUrl)
         urlTab = []
         
-        if '/vload/' in videoUrl:
+        if '/vload/' in videoUrl or 'redirector.googlevideo.com' in videoUrl:
             header = {'Referer':videoUrl, 'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
             params= {'return_data':False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':header}
             try:
