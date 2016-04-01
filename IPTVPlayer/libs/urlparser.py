@@ -686,7 +686,7 @@ class pageParser:
         if '' != videoUrl: return strwithmeta(videoUrl, {'Referer':baseUrl})
         return False
         
-    def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None, httpHeader={}):
+    def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None, httpHeader={}, params={}):
         HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         HTTP_HEADER.update(httpHeader)
         if 'embed' not in baseUrl:
@@ -694,8 +694,10 @@ class pageParser:
             url = embedUrl.format(video_id)
         else:
             url = baseUrl
+        params = dict(params)
+        params.update({'header':HTTP_HEADER})
         post_data = None
-        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER}, post_data)
+        sts, data = self.cm.getPage(url, params, post_data)
         if not sts: return False
         
         errMarkers = ['File was deleted', 'File Removed', 'File Deleted.', 'File Not Found']
@@ -2450,9 +2452,22 @@ class pageParser:
     def parserALLVIDCH(self, baseUrl):
         printDBG("parserALLVIDCH baseUrl[%r]" % baseUrl)
         # example video: http://allvid.ch/embed-fhpd7sk5ac2o-830x500.html
+        
+        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        params = {'header' : HTTP_HEADER, 'cookiefile':GetCookieDir('allvidch.cookie'), 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
+        
         def _findLinks(data):
             return self._findLinks(data, 'allvid.ch', m1='setup(', m2='image:')
-        return self._parserUNIVERSAL_A(baseUrl, 'http://allvid.ch/embed-{0}-830x500.html', _findLinks)
+        
+        def _preProcessing(data):
+            url2 = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=["'](http[^"^']+?)["']''', 1, True)[0]
+            if url2.startswith('http'):
+                sts, data2 = self.cm.getPage(url2, params)
+                if sts:
+                    return data2
+            return data
+        
+        return self._parserUNIVERSAL_A(baseUrl, 'http://allvid.ch/embed-{0}-830x500.html', _findLinks, _preProcessing,  HTTP_HEADER, params)
         #return self.__parseJWPLAYER_A(baseUrl, 'allvid.ch', _findLinks)
         
     def parserALBFILMCOM(self, baseUrl):
@@ -2556,13 +2571,12 @@ class pageParser:
         printDBG("parserPROMPTFILE baseUrl[%s]" % baseUrl)
         sts, data = self.cm.getPage(baseUrl)
         if sts:
-            COOKIE_FILE = GetCookieDir('promptfile.cookie')
             HTTP_HEADER = dict(self.HTTP_HEADER) 
             HTTP_HEADER['Referer'] = baseUrl
             if 'Continue to File' in data:
                 sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<form method="post" action="">', '</form>', False, False)
                 post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
-                params = {'header' : HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':False}
+                params = {'header' : HTTP_HEADER, 'cookiefile':GetCookieDir('promptfile.cookie'), 'use_cookie': True, 'save_cookie':True, 'load_cookie':False}
                 sts, data = self.cm.getPage(baseUrl, params, post_data)
                 if not sts:
                     return False
