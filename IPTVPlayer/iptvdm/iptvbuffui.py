@@ -306,9 +306,11 @@ class IPTVPlayerBufferingWidget(Screen):
         
         # download speed
         dSpeed = self.downloader.getDownloadSpeed()
-        if -1 == dSpeed: dSpeed = ''
-        else: dSpeed = formatBytes(float(dSpeed))
-
+        if dSpeed > -1 and self.downloader.getLocalFileSize() > 0:
+            dSpeed = formatBytes(float(dSpeed))
+        else:
+            dSpeed = ''
+        
         speed     = self.downloader.getDownloadSpeed()
         tmpStr    = ''
         if '??' != lFileSize:
@@ -316,7 +318,7 @@ class IPTVPlayerBufferingWidget(Screen):
                 tmpStr = "\n%s/%s" % (lFileSize, rFileSize)
             else:
                 tmpStr = "\n%s" % (lFileSize)
-            if 0 <= dSpeed:
+            if '' != dSpeed:
                tmpStr += "\n%s/s" % (dSpeed)
         else:
             tmpStr += '\n\n'
