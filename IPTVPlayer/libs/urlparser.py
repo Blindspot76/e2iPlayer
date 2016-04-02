@@ -328,6 +328,7 @@ class urlparser:
                        'playbb.me':            self.pp.parseEASYVIDEOME    ,
                        'uptostream.com':       self.pp.parseUPTOSTREAMCOM  ,
                        'vimeo.com':            self.pp.parseVIMEOCOM       ,
+                       'jacvideo.com':         self.pp.parseJACVIDEOCOM    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4134,6 +4135,33 @@ class pageParser:
         urlTab.extend(tab)
         
         return urlTab
+        
+    def parseJACVIDEOCOM(self, baseUrl):
+        printDBG("parseJACVIDEOCOM baseUrl[%s]" % baseUrl)
+        
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('jacvideocom.cookie')}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'jacvideosys(', ');', False)[1]
+        data = data.split(',')[-1]
+        link = self.cm.ph.getSearchGroups(data, '''link['"]?:['"]([^"^']+?)['"]''')[0]
+        post_data = {'link':link}
+        sts, data = self.cm.getPage('http://www.jacvideo.com/embed/plugins/jacvideosys.php', params, post_data)
+        if not sts: return False
+        data = byteify(json.loads(data))
+        if 'error' in data:
+            SetIPTVPlayerLastHostError(data['error'])
+        linksTab = []
+        for item in data['link']:
+            if item['type'] != 'mp4': continue
+            url  = item['link']
+            name = item['label']
+            url = urlparser.decorateUrl(url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
+            linksTab.append({'name':name, 'url':url})
+        return linksTab
         
     def parseSPEEDVICEONET(self, baseUrl):
         printDBG("parseSPEEDVICEONET baseUrl[%s]" % baseUrl)
