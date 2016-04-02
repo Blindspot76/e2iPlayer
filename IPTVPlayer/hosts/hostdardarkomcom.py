@@ -58,6 +58,7 @@ class DardarkomCom(CBaseHostClass):
     MAIN_CAT_TAB = [{'category':'categories', 'title': _('Categories'),     'url':MAIN_URL+'aflamonline/',  'icon':DEFAULT_ICON, 'filter':'main'},
                     {'category':'categories', 'title': _('Foreign films'),  'url':MAIN_URL+'aflamonline/',  'icon':DEFAULT_ICON, 'filter':'movies'},
                     {'category':'categories', 'title': _('Major rankings'), 'url':MAIN_URL+'aflamonline/',  'icon':DEFAULT_ICON, 'filter':'rankings'},
+                    {'category':'categories', 'title': _('By year'),        'url':MAIN_URL+'aflamonline/',  'icon':DEFAULT_ICON, 'filter':'years'},
                     {'category':'search',          'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
                     {'category':'search_history',  'title': _('Search history'),             'icon':DEFAULT_ICON} ]
  
@@ -155,7 +156,12 @@ class DardarkomCom(CBaseHostClass):
         
         pagnationMarker = '<div class="pagination"'
         nextPageUrl = self.cm.ph.getDataBeetwenMarkers(data, pagnationMarker, '</div>', False)[1]
-        nextPageUrl = self.cm.ph.getSearchGroups(nextPageUrl, '<a href="([^"]+?)"><span>التالي</span></a>')[0]
+        nextPageUrl = self.cm.ph.getSearchGroups(nextPageUrl, '<a[^>]+?href="([^"]+?)"><span>التالي</span></a>')[0]
+        if '#' == nextPageUrl:
+            if '&' in url and post_data == None:
+                nextPageUrl = url.split('&search_start')[0] + '&search_start=%s' % (page+1)
+            elif post_data != None:
+                nextPageUrl = url
         
         m1 = '<div class="movies-single">'
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div class="archives-menu">', False)[1]
@@ -329,6 +335,8 @@ class DardarkomCom(CBaseHostClass):
         cItem = dict(cItem)
         cItem['url'] = self.SEARCH_URL
         cItem['post_data'] = {'do':'search', 'subaction':'search', 'story':searchPattern}
+        if cItem.get('page', 1) > 1:
+            cItem['post_data']['search_start'] = cItem['page']
         self.listItems(cItem)
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
