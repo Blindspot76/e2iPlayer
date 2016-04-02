@@ -324,6 +324,9 @@ class urlparser:
                        'vid.me':               self.pp.parseVIDME          ,
                        'veehd.com':            self.pp.parseVEEHDCOM       ,
                        'sharerepo.com':        self.pp.parseSHAREREPOCOM   ,
+                       'easyvideo.me':         self.pp.parseEASYVIDEOME    ,
+                       'playbb.me':            self.pp.parseEASYVIDEOME    ,
+                       'uptostream.com':       self.pp.parseUPTOSTREAMCOM  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4064,6 +4067,43 @@ class pageParser:
             item['url'] = urlparser.decorateUrl(item['url'], {'Referer':baseUrl, 'User-Agent':'Mozilla/5.0'})
             tab.append(item)
         return tab
+        
+    def parseEASYVIDEOME(self, baseUrl):
+        printDBG("parseEASYVIDEOME baseUrl[%s]" % baseUrl)
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'}
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="flowplayer">', '</script>', False)[1]
+        tab = self._findLinks(data, serverName='playlist', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='playlist', m2=']')
+        video_url = self.cm.ph.getSearchGroups(data, '_url = "(http[^"]+?)"')[0]
+        if '' != video_url: 
+            video_url = urllib.unquote(video_url)
+            tab.insert(0, {'name':'main', 'url':video_url})
+        return tab
+        
+    def parseUPTOSTREAMCOM(self, baseUrl):
+        printDBG("parseUPTOSTREAMCOM baseUrl[%s]" % baseUrl)
+        
+        if 'iframe' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
+            url = 'https://uptostream.com/iframe/' + video_id
+        else:
+            url = baseUrl
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        #'<font color="red">', '</font>'
+        urlTab = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+        for item in data:
+            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+            res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+            lang = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
+            url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            if url.startswith('//'):
+                url = 'http:' + url
+            if url.startswith('http'):
+                urlTab.append({'name':'uptostream {0}: {1}'.format(lang, res), 'url':url})
+        return urlTab
         
     def parseSPEEDVICEONET(self, baseUrl):
         printDBG("parseSPEEDVICEONET baseUrl[%s]" % baseUrl)

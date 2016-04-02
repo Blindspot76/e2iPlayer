@@ -227,7 +227,7 @@ class SemBilheteTV(CBaseHostClass):
             self.requestLoginData()
         
         if 'imdb_id' in cItem:
-            url = 'content/%s/?api_key=%s&username=%s' % (cItem['imdb_id'], self.loginData['api_key'], self.loginData['username'])
+            url = 'content/request/%s/?api_key=%s&username=%s' % (cItem['imdb_id'], self.loginData['api_key'], self.loginData['username'])
             url = self._getFullUrl(url)
             sts, data = self.cm.getPage(url)
             if not sts: return []
@@ -243,10 +243,19 @@ class SemBilheteTV(CBaseHostClass):
                     subUrl = self._getFullUrl(track['url'], False)
                     subLang = track['language']
                     subTracks.append({'title':subLang, 'url':subUrl, 'lang':subLang, 'format':'srt'})
-                urlTab.append({'name': 'main', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks}), 'need_resolve':0})
+                
+                urlTab.append({'name': 'main', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks}), 'need_resolve':1})
             except:
                 printExc()
         
+        return urlTab
+        
+    def getVideoLinks(self, baseUrl):
+        printDBG("SemBilheteTV.getVideoLinks [%s]" % baseUrl)
+        urlTab = []
+        url = baseUrl
+        if url.startswith('http'): 
+            urlTab = self.up.getVideoLinkExt(url)
         return urlTab
         
     def getFavouriteData(self, cItem):
@@ -256,7 +265,7 @@ class SemBilheteTV(CBaseHostClass):
         return self.getLinksForVideo({'imdb_id':fav_data})
         
     def getArticleContent(self, cItem):
-        printDBG("MoviesNight.getArticleContent [%s]" % cItem)
+        printDBG("SemBilheteTV.getArticleContent [%s]" % cItem)
         retTab = []
         
         if 'resource_uri' not in cItem:
@@ -374,6 +383,15 @@ class IPTVHost(CHostBase):
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
+    
+    def getResolvedURL(self, url):
+        # resolve url to get direct url to video file
+        retlist = []
+        urlList = self.host.getVideoLinks(url)
+        for item in urlList:
+            need_resolve = 0
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+        return RetHost(RetHost.OK, value = retlist)
     
     def getArticleContent(self, Index = 0):
         retCode = RetHost.ERROR
