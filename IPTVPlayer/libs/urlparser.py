@@ -327,6 +327,7 @@ class urlparser:
                        'easyvideo.me':         self.pp.parseEASYVIDEOME    ,
                        'playbb.me':            self.pp.parseEASYVIDEOME    ,
                        'uptostream.com':       self.pp.parseUPTOSTREAMCOM  ,
+                       'vimeo.com':            self.pp.parseVIMEOCOM       ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -716,16 +717,16 @@ class pageParser:
         m1 = ">eval("
         if m1 not in data:
             m1 = "eval("
-        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, m1, '</script>', False)
-        if sts:
-            data = tmpData
+        tmpDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</script>', False)
+        for tmpData in tmpDataTab:
+            data2 = tmpData
             tmpData = None
             # unpack and decode params from JS player script code
-            tmpData = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
+            tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams)
             if tmpData == '':
-                tmpData = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0)
-            data = tmpData
-            printDBG(data)
+                tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams, 0)
+            data = data + tmpData
+        printDBG(data)
         return _findLinks(data)
         
     def _parserUNIVERSAL_B(self, url):
@@ -4103,6 +4104,35 @@ class pageParser:
                 url = 'http:' + url
             if url.startswith('http'):
                 urlTab.append({'name':'uptostream {0}: {1}'.format(lang, res), 'url':url})
+        return urlTab
+        
+    def parseVIMEOCOM(self, baseUrl):
+        printDBG("parseVIMEOCOM baseUrl[%s]" % baseUrl)
+        
+        if 'player' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([0-9]+?)[/.]')[0]
+            url = 'https://player.vimeo.com/video/' + video_id
+        else:
+            url = baseUrl
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+
+        urlTab = []
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'progressive', ']', False)[1]
+        tmp = tmp.split('}')
+        printDBG(tmp)
+        for item in tmp:
+            if 'video/mp4' not in item: continue
+            quality = self.cm.ph.getSearchGroups(item, '''quality['"]?:['"]([^"^']+?)['"]''')[0]
+            url  = self.cm.ph.getSearchGroups(item, '''url['"]?:['"]([^"^']+?)['"]''')[0]
+            if url.startswith('http'):
+                urlTab.append({'name':'vimeo.com {0}'.format(quality), 'url':url})
+                
+        hlsUrl = self.cm.ph.getSearchGroups(data, '"hls"[^}]+?"url"\:"([^"]+?)"')[0]
+        tab = getDirectM3U8Playlist(hlsUrl)
+        urlTab.extend(tab)
+        
         return urlTab
         
     def parseSPEEDVICEONET(self, baseUrl):

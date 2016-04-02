@@ -253,9 +253,16 @@ class SemBilheteTV(CBaseHostClass):
     def getVideoLinks(self, baseUrl):
         printDBG("SemBilheteTV.getVideoLinks [%s]" % baseUrl)
         urlTab = []
-        url = baseUrl
+        url = strwithmeta(baseUrl)
         if url.startswith('http'): 
-            urlTab = self.up.getVideoLinkExt(url)
+            subTracks = url.meta.get('external_sub_tracks', [])
+            tmp = self.up.getVideoLinkExt(url)
+            if len(subTracks):
+                for item in tmp:
+                    item['url'] = urlparser.decorateUrl(item['url'], {'external_sub_tracks':subTracks})
+                    urlTab.append(item)
+            else:
+                urlTab = tmp
         return urlTab
         
     def getFavouriteData(self, cItem):
