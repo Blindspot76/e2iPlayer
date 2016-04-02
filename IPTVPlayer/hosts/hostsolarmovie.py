@@ -76,6 +76,7 @@ class SolarMovie(CBaseHostClass):
         self.tvshowGenresCache = []
         self.seriesCache = []
         self.episodesCache = []
+        self.linksCache = {}
         
     def _getFullUrl(self, url, series=False):
         if not series:
@@ -260,6 +261,9 @@ class SolarMovie(CBaseHostClass):
         urlTab = []
         url = cItem['url']
         
+        if url in self.linksCache:
+            return self.linksCache[url] 
+        
         sts, data = self.cm.getPage(url)
         if not sts: return urlTab
         
@@ -271,6 +275,9 @@ class SolarMovie(CBaseHostClass):
             title = tmp[1].strip()
             title += ' ' + self.cleanHtmlStr( item.split('</a>')[-1] )
             urlTab.append({'name':title, 'url':self._getFullUrl(tmp[0]), 'need_resolve':1})
+            
+        if len(urlTab):
+            self.linksCache = {url:urlTab}
         return urlTab
         
     def getVideoLinks(self, baseUrl):
@@ -281,11 +288,15 @@ class SolarMovie(CBaseHostClass):
         if '/link/' in baseUrl:
             sts, data = self.cm.getPage(baseUrl)
             if not sts: return []
+            
             data = self.cm.ph.getDataBeetwenMarkers(data, 'fullyGreenButton', '</a>', False)[1]
             url = self.cm.ph.getSearchGroups(data, 'href="([^"]*?/link/play/[^"]+?)"')[0]
             sts, data = self.cm.getPage(self._getFullUrl(url))
             if not sts: return []
             videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"', 1, True)[0]
+            if videoUrl == '':
+                data = self.cm.ph.getDataBeetwenMarkers(data, 'thirdPartyEmbContainer', '</a>', False)[1]
+                videoUrl = self.cm.ph.getSearchGroups(data, 'href="(http[^"]+?)"')[0]
         
         if '' != videoUrl:
             urlTab = self.up.getVideoLinkExt(videoUrl)
@@ -344,6 +355,7 @@ class SolarMovie(CBaseHostClass):
         category = self.currItem.get("category", '')
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
+        self.linksCache = {}
         
     #MAIN MENU
         if name == None:

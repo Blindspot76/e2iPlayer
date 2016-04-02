@@ -3924,7 +3924,7 @@ class pageParser:
     def parserNOSVIDEO(self, baseUrl):
         printDBG("parserNOSVIDEO baseUrl[%s]" % baseUrl)
         # code from https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/nosvideo.py
-        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10", 'Referer':baseUrl }
         _VALID_URL = r'https?://(?:www\.)?nosvideo\.com/' + \
                  '(?:embed/|\?v=)(?P<id>[A-Za-z0-9]{12})/?'
         _PLAYLIST_URL = 'http://nosvideo.com/xml/{0}.xml'
@@ -3950,8 +3950,9 @@ class pageParser:
             videoUrl = ''
             pass
         if '' == videoUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[^A-Z^a-f^0-9]([A-Za-f0-9]{16})[^A-Z^a-f^0-9]')[0]
-            if '' == videoUrl:
+            printDBG(">>>> [%s]" % baseUrl)
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[^A-F^a-f^0-9]([A-Fa-f0-9]{16})[^A-F^a-f^0-9]')[0]
+            if '' == video_id:
                 url = baseUrl
             else:
                 url = 'http://nosvideo.com/vj/video.php?u=%s&w=640&h=380' % video_id
@@ -3959,7 +3960,6 @@ class pageParser:
             sts, data = self.cm.getPage(url)
             if not sts: return False
             
-            printDBG(data)
             videoUrl = self.cm.ph.getSearchGroups(data, '''tracker:[^'^"]*?['"]([^'^"]+?)['"]''')[0]
             videoUrl = base64.b64decode(videoUrl)
             if videoUrl.startswith('http'): 
