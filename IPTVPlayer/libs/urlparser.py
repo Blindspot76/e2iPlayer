@@ -666,11 +666,12 @@ class pageParser:
                 self.moonwalkParser = None
         return self.moonwalkParser
         
-    def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']'):
+    def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']', contain=''):
         linksTab = []
         srcData = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1].split('},')
         for item in srcData:
             item += '},'
+            if contain != '' and contain not in item: continue
             link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
             if '://' in link and not link.endswith('.smil'):
@@ -4145,23 +4146,28 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'jacvideosys(', ');', False)[1]
-        data = data.split(',')[-1]
-        link = self.cm.ph.getSearchGroups(data, '''link['"]?:['"]([^"^']+?)['"]''')[0]
-        post_data = {'link':link}
-        sts, data = self.cm.getPage('http://www.jacvideo.com/embed/plugins/jacvideosys.php', params, post_data)
-        if not sts: return False
-        data = byteify(json.loads(data))
-        if 'error' in data:
-            SetIPTVPlayerLastHostError(data['error'])
-        linksTab = []
-        for item in data['link']:
-            if item['type'] != 'mp4': continue
-            url  = item['link']
-            name = item['label']
-            url = urlparser.decorateUrl(url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
-            linksTab.append({'name':name, 'url':url})
-        return linksTab
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'jacvideosys(', ');', False)[1]
+        tmp = data.split(',')[-1]
+        link = self.cm.ph.getSearchGroups(tmp, '''link['"]?:['"]([^"^']+?)['"]''')[0]
+        if link != '':
+            post_data = {'link':link}
+            sts, data = self.cm.getPage('http://www.jacvideo.com/embed/plugins/jacvideosys.php', params, post_data)
+            if not sts: return False
+            try:
+                data = byteify(json.loads(data))
+                if 'error' in data:
+                    SetIPTVPlayerLastHostError(data['error'])
+                linksTab = []
+                for item in data['link']:
+                    if item['type'] != 'mp4': continue
+                    url  = item['link']
+                    name = item['label']
+                    url = urlparser.decorateUrl(url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
+                    linksTab.append({'name':name, 'url':url})
+                return linksTab
+            except:
+                printExc()
+        return self._findLinks(data, contain='mp4')
         
     def parseSPEEDVICEONET(self, baseUrl):
         printDBG("parseSPEEDVICEONET baseUrl[%s]" % baseUrl)
