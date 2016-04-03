@@ -38,6 +38,7 @@ class IPTVSetupImpl:
         self.ffmpegVersion = ""
         self.gstreamerVersion = ""
         self.openSSLVersion = ""
+        self.libSSLPath = ""
         self.supportedPlatforms = ["sh4", "mipsel", "i686", "armv7", "armv5t"]
         self.platform = "unknown"
         
@@ -176,34 +177,66 @@ class IPTVSetupImpl:
         self.setInfo(_("Detection of the OpenSSL version."), _("OpenSSL lib is needed by wget and rtmpdump utilities."))
         for ver in ['.0.9.8', '.1.0.0']:
             libsslExist = False
-            libryptoExist = False
+            libcryptoExist = False
+            libSSLPath = ''
             for path in ['/usr/lib/', '/lib/', '/usr/local/lib/', '/local/lib/', '/lib/i386-linux-gnu/']:
                 try:
                     filePath = path + 'libssl.so' + ver
                     if os_path.isfile(filePath) and not os_path.islink(filePath):
                         libsslExist = True
+                        libSSLPath = filePath
                     filePath = path + 'libcrypto.so' + ver
                     if os_path.isfile(filePath) and not os_path.islink(filePath):
-                        libryptoExist = True
-                    if libsslExist and libryptoExist:
+                        libcryptoExist = True
+                    if libsslExist and libcryptoExist:
                         break
                 except:
                     printExc()
                     continue
-            if libsslExist and libryptoExist:
+            if libsslExist and libcryptoExist:
                 break
-        if libsslExist and libryptoExist:
+        if libsslExist and libcryptoExist:
             self.openSSLVersion = ver
-            #self.showMessage(_("Your OpenSSL version is [%s]") % self.openSSLVersion, MessageBox.TYPE_INFO, self.wgetDetect)
-            self.getGstreamerVer()
+            self.libSSLPath = libSSLPath
+            if '.1.0.0' != ver:
+                #self.showMessage(_("Your OpenSSL version is [%s]") % self.openSSLVersion, MessageBox.TYPE_INFO, self.wgetDetect)
+                self.getGstreamerVer()
+            else:
+                self.getOpenssl1Ver()
         else:
             self.openSSLVersion = ""
             self.showMessage(_("Fatal Error!\nOpenssl could not be found. Please install it and retry."), MessageBox.TYPE_ERROR, boundFunction(self.finish, False) )
             
     ###################################################
+    # STEP: CHECK OPENSSL 1.0.0 VERSION
+    ###################################################
+    def getOpenssl1Ver(self):
+        printDBG("IPTVSetupImpl.getOpenssl1Ver")
+        self.setInfo(_("Detection of the OpenSSL 1.0.0 version."), None)
+        
+        def _verValidator(code, data):
+            if '1.0.0' in data: 
+                return True,False
+            else: 
+                return False,True
+        verCmdTab = []
+        verCmdTab.append('grep OPENSSL_1.0.0 "%s"' % self.libSSLPath)
+        self.workingObj = CCmdValidator(self.getOpenssl1Finished, _verValidator, verCmdTab)
+        self.workingObj.start()
+        
+    def getOpenssl1Finished(self, stsTab, dataTab):
+        printDBG("IPTVSetupImpl.getOpenssl1Finished")
+        if len(stsTab) == 0 or False == stsTab[-1]:
+            self.openSSLVersion = '.1.0.2'
+            self.libSSLPath = ""
+            self.showMessage(_("Fatal Error!\nYour Openssl is not supported."), MessageBox.TYPE_ERROR, self.getGstreamerVer )
+        else:
+            self.getGstreamerVer()
+        
+    ###################################################
     # STEP: GSTREAMER VERSION
     ###################################################
-    def getGstreamerVer(self):
+    def getGstreamerVer(self, arg=None):
         printDBG("IPTVSetupImpl.getGstreamerVer >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % os_getpid())
         self.setInfo(_("Detection of the gstreamer version."), None)
         def _verValidator(code, data):
