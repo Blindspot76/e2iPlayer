@@ -329,6 +329,7 @@ class urlparser:
                        'uptostream.com':       self.pp.parseUPTOSTREAMCOM  ,
                        'vimeo.com':            self.pp.parseVIMEOCOM       ,
                        'jacvideo.com':         self.pp.parseJACVIDEOCOM    ,
+                       'caston.tv':            self.pp.parseCASTONTV       ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -429,6 +430,12 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'caston.tv/player.php' in data:
+                id = self.cm.ph.getSearchGroups(data, """var\sid\s?=[^0-9]([0-9]+?)[^0-9]""")[0]
+                if id == '': id = self.cm.ph.getSearchGroups(data, """id\s?=[^0-9]([0-9]+?)[^0-9]""")[0]
+                videoUrl = 'http://www.caston.tv/player.php?width=1920&height=419&id={0}'.format(id)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
             elif 'liveonlinetv247' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, """['"](http://[^'^"]*?liveonlinetv247[^'^"]+?)['"]""")[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
@@ -2152,6 +2159,10 @@ class pageParser:
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         sts, data = self.cm.getPage( baseUrl, params)
         
+        msg = 'Dostęp wyłącznie dla użytkowników z kontem premium.' 
+        if msg in data:
+            SetIPTVPlayerLastHostError(msg)
+        
         urlTab = []
         qualities = []
         tmp = self.cm.ph.getDataBeetwenMarkers(data, "box_quality", "</div>", False)[1]
@@ -3652,6 +3663,70 @@ class pageParser:
         url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
         return urlparser().getVideoLinkExt(url)
         
+        
+    def parseCASTONTV(self, baseUrl):
+        printDBG("parseCASTONTV baseUrl[%s]" % baseUrl)
+
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict({'User-Agent':'Mozilla/5.0'}) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        COOKIE_FILE = GetCookieDir('castontv.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        
+        id = self.cm.ph.getSearchGroups(baseUrl + '|', 'id=([0-9]+?)[^0-9]')[0]
+        linkUrl = 'http://www.caston.tv/player.php?width=1920&height=419&id={0}'.format(id)
+        
+        sts, data = self.cm.getPage(linkUrl, params)
+        if not sts: return False
+        
+        data = re.sub('''unescape\(["']([^"^']+?)['"]\)''', lambda m: urllib.unquote(m.group(1)), data)
+        #printDBG(data)
+        
+        tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
+        printDBG(tmpData)
+        while 'eval' in tmpData:
+            tmp = tmpData.split('eval(')
+            if len(tmp): del tmp[0]
+            tmpData = ''
+            for item in tmp:
+                for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
+                    tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
+                    if '' != tmpData:   
+                        break
+                printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                printDBG(tmpData)
+                printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                if 'token' in tmpData and 'm3u8' in tmpData:
+                    break
+        token = self.cm.ph.getSearchGroups(tmpData, r"""['"]?token['"]?[\s]*?\:[\s]*?['"]([^"^']+?)['"]""")[0]
+        url   = self.cm.ph.getSearchGroups(tmpData, r"""['"]?url['"]?[\s]*?\:[\s]*?['"]([^"^']+?)['"]""")[0]
+        file  = self.cm.ph.getSearchGroups(tmpData, r"""['"]?file['"]?[\s]*?\:[\s]*?['"]([^}]+?)\}""")[0] 
+        
+        printDBG("token[%s]" % token)
+        printDBG("url[%s]" % url)
+        printDBG("file[%s]" % file)
+        
+        if url != '' and '://' not in url:
+            if url.startswith('//'): url = 'http:' + url
+            else: url = 'http://www.caston.tv/' + url
+
+        params['load_cookie'] = True
+        params['header'].update({'Referer':linkUrl, 'Accept':'application/json, text/javascript, */*', 'Content-Type':'application/x-www-form-urlencoded', 'X-Requested-With':'XMLHttpRequest' })
+        sts, data = self.cm.getPage(url, params, {'token':token, 'is_ajax':1})
+        if not sts: return False
+        
+        data = byteify(json.loads(data))
+        printDBG(data)
+        def _replace(item):
+            idx = int(item.group(1))
+            return str(data[idx])
+            
+        file = re.sub('"\+[^"]+?\[([0-9]+?)\]\+"', _replace, file+'+"')
+        hlsUrl = urlparser.decorateUrl(file, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':'http://p.jwpcdn.com/6/12/jwplayer.flash.swf', 'User-Agent':'Mozilla/5.0'})
+        return getDirectM3U8Playlist(hlsUrl)
+
     def parserCASTAMPCOM(self, baseUrl):
         printDBG("parserCASTAMPCOM baseUrl[%s]" % baseUrl)
         channel = self.cm.ph.getSearchGroups(baseUrl + '&', 'c=([^&]+?)&')[0]
