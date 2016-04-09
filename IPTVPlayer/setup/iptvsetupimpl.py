@@ -229,7 +229,7 @@ class IPTVSetupImpl:
         if len(stsTab) == 0 or False == stsTab[-1]:
             self.openSSLVersion = '.1.0.2'
             self.libSSLPath = ""
-            self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.MessageBox.TYPE_WARNING, self.getGstreamerVer )
+            self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.TYPE_WARNING, self.getGstreamerVer )
         else:
             self.getGstreamerVer()
         
