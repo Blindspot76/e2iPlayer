@@ -164,6 +164,7 @@ class urlparser:
                        'youwatch.org':         self.pp.parserYOUWATCH      ,
                        'played.to':            self.pp.parserPLAYEDTO      ,
                        'videomega.tv':         self.pp.parserVIDEOMEGA     ,
+                       'up2stream.com':        self.pp.parserVIDEOMEGA     ,
                        'vidto.me':             self.pp.parserVIDTO         ,
                        'vidstream.in':         self.pp.parserVIDSTREAM     ,
                        'faststream.in':        self.pp.parserVIDSTREAM     ,
