@@ -28,7 +28,11 @@ from Plugins.Extensions.IPTVPlayer.libs.edemtv            import EdemTvApi, GetC
 from Plugins.Extensions.IPTVPlayer.libs.livestreamtv      import LiveStreamTvApi 
 from Plugins.Extensions.IPTVPlayer.libs.skylinewebcamscom import WkylinewebcamsComApi, GetConfigList as WkylinewebcamsCom_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livespottingtv    import LivespottingTvApi
+from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, GetConfigList as PierwszaTV_GetConfigList
+
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
+
+
 
 ###################################################
 
@@ -73,6 +77,10 @@ def GetConfigList():
     try:    optionList.extend( WeebTv_GetConfigList() )
     except: printExc()
     
+    optionList.append(getConfigListEntry("----------------Pierwsza.TV-----------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( PierwszaTV_GetConfigList() )
+    except: printExc()
+    
     optionList.append(getConfigListEntry("---------------Pure-Cast.net----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( PurecastNet_GetConfigList() )
     except: printExc()
@@ -114,27 +122,6 @@ def GetConfigList():
 # "HasBahCa"
 def gettytul():
     return (_('"Web" streams player'))
-    
-###################################################
-# ToDo: move this code to the lib dir
-from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
-from hashlib import md5
-import binascii
-
-def CryptoJS_AES_decrypt(encrypted, password, key_length=32):
-    def derive_key_and_iv(password, salt, key_length, iv_length):
-        d = d_i = ''
-        while len(d) < key_length + iv_length:
-            d_i = md5(d_i + password + salt).digest()
-            d += d_i
-        return d[:key_length], d[key_length:key_length+iv_length]
-
-    bs = 16
-    salt = encrypted[len('Salted__'):bs]
-    key, iv = derive_key_and_iv(password, salt, key_length, bs)
-    cipher = AES_CBC(key=key, keySize=32)
-    return cipher.decrypt(encrypted[bs:], iv)
-###################################################
 
 class HasBahCa(CBaseHostClass):
     HTTP_HEADER= { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
@@ -144,6 +131,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://weebtv.yolasite.com/resources/425149_345424975498308_1363873965_n.jpg'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://static-videostar1.4vod.tv/assets/images/logo.png'}, \
                         {'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
+                        {'alias_id':'pierwsza.tv',             'name': 'pierwsza.tv',         'title': 'Pierwsza.TV',                       'url': '',                                                                   'icon': 'http://pierwsza.tv/img/logo.png'}, \
                         #{'alias_id':'web-live.tv',            'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
                         {'alias_id':'looknij.tv',              'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
                         #{'alias_id':'tvisport.cba.pl',        'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
@@ -198,12 +186,13 @@ class HasBahCa(CBaseHostClass):
         self.typerTvApi   = None
         self.wagasWorldApi= None
         self.ustvnowApi   = None
-        self.purecastNetApi = None
+        self.purecastNetApi    = None
         self.telewizjadaNetApi = None
-        self.liveStreamTvApi = None
-        self.edemTvApi = None
+        self.liveStreamTvApi   = None
+        self.pierwszaTvApi     = None
+        self.edemTvApi            = None
         self.wkylinewebcamsComApi = None
-        self.livespottingTvApi = None
+        self.livespottingTvApi    = None
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
@@ -1022,6 +1011,19 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.liveStreamTvApi.getVideoLink(cItem)
         return urlsTab
         
+    def getPierwszaTvList(self, cItem):
+        printDBG("getPierwszaTvList start")
+        if None == self.pierwszaTvApi:
+            self.pierwszaTvApi = PierwszaTVApi()
+        tmpList = self.pierwszaTvApi.getChannelsList(cItem)
+        for item in tmpList:
+            self.playVideo(item) 
+        
+    def getPierwszaTvLink(self, cItem):
+        printDBG("getPierwszaTvLink start")
+        urlsTab = self.pierwszaTvApi.getVideoLink(cItem)
+        return urlsTab
+        
     def prognozaPogodyList(self, url):
         printDBG("prognozaPogodyList start")
         if config.plugins.iptvplayer.weather_useproxy.value: params = {'http_proxy':config.plugins.iptvplayer.proxyurl.value}
@@ -1117,6 +1119,9 @@ class HasBahCa(CBaseHostClass):
     #livespotting.tv items
         elif name == 'livespotting.tv':
             self.getLivespottingTvList(self.currItem)
+    #pierwsza.tv items
+        elif name == 'pierwsza.tv':
+            self.getPierwszaTvList(self.currItem)
     #live-stream.tv items
         elif name == 'live-stream.tv':
             self.getLiveStreamTvList(self.currItem)
@@ -1231,6 +1236,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getWkylinewebcamsComLink(cItem)
         elif name == 'live-stream.tv':
             urlList = self.host.getLiveStreamTvLink(cItem)
+        elif name == 'pierwsza.tv':
+            urlList = self.host.getPierwszaTvLink(cItem)
         elif name == "webcamera.pl":
             urlList = self.host.getWebCameraLink(url)
         elif name == "prognoza.pogody.tv":
