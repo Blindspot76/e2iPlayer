@@ -155,7 +155,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'filmon.com',              'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://ftp.vectranet.pl/xbmc/addons/helix/plugin.video.ustvnow/icon.png'}, \
                         #{'alias_id':'freetuxtv_webcam_pl',     'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
-                        {'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=IPTV/',           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
+                        {'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=',           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'alias_id':'xbmcmxtv.com',            'name': 'm3u',                 'title': 'xbmcmxtv',                          'url': 'http://file.xbmcmxtv.com/2legit.m3u',                                'icon': 'http://emby.media/community/uploads/inline/76/555e814b284d6_kodisplash.jpg'}, \
                         {'alias_id':'wownet.ro',               'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://wownet.ro/iptv/',                                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'alias_id':'iptv.ink',                'name': 'm3u',                 'title': 'Free Iptv Project',                 'url': 'http://tv.iptv.ink/iptv.ink',                                        'icon': 'http://community.iptv.ink/styles/uix/uix/logo_new_001.png'}, \
@@ -203,12 +203,13 @@ class HasBahCa(CBaseHostClass):
         
         self.weebTvApi    = None
         self.teamCastTab  = {}
+        self.hasbahcaiptv = {}
         
     def getPage(self, url, params={}, post_data=None):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
         params.update({'header':HTTP_HEADER})
         
-        if 'hasbahcaiptv.com' in url:
+        if False and 'hasbahcaiptv.com' in url:
             printDBG(url)
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e5'.format(urllib.quote_plus(url))
             params['header']['Referer'] = proxy
@@ -343,7 +344,16 @@ class HasBahCa(CBaseHostClass):
         def _first_of_each(*sequences):
             return (next((x for x in sequence if x), '') for sequence in sequences)
         
-        sts, data = self.getPage( url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('hasbahcaiptv')}, {'username':'member', 'password':'hasbahcaiptv'} )
+        login    = self.hasbahcaiptv.get('login', '')
+        password = self.hasbahcaiptv.get('password', '')
+        
+        if login == '' and password == '':
+            sts, data = self.getPage('http://hasbahcaiptv.com/page.php?seite=Passwort.html')
+            if sts:
+                self.hasbahcaiptv['login']    = self.cm.ph.getSearchGroups(data, 'Downloads Login[^=]*?=([^<]+?)<')[0].strip() 
+                self.hasbahcaiptv['password'] = self.cm.ph.getSearchGroups(data, 'Downloads Pass[^=]*?=([^<]+?)<')[0].strip()
+            
+        sts, data = self.getPage( url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('hasbahcaiptv')}, {'username':self.hasbahcaiptv.get('login', 'downloader'), 'password':self.hasbahcaiptv.get('password', 'hasbahcaiptv.com')} )
         if not sts: return
         
         data = CParsingHelper.getDataBeetwenMarkers(data, '<table class="autoindex_table">', '</table>', False)[1]    
