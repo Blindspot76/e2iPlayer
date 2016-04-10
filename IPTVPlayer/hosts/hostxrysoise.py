@@ -133,12 +133,12 @@ class XrysoiSE(CBaseHostClass):
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="moviefilm">', '<div class="filmborder">', False)[1]
-        data = data.split('<div class="moviefilm">')
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class=', "class='wp-pagenavi'>", False)[1]
+        data = data.split('class="moviefilm">')
         for item in data:
             url  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             icon = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
-            title  = self.cleanHtmlStr( item )
+            title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0])
             if 'search' == cItem.get('mode'):
                 if '-collection' in url: continue
             if url.startswith('http'):
