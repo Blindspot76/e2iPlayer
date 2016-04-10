@@ -2157,7 +2157,11 @@ class pageParser:
         HTTP_HEADER = { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
         SWF_URL = 'http://p.jwpcdn.com/6/9/jwplayer.flash.swf'
         
+        url = strwithmeta(baseUrl)
+        baseParams = url.meta.get('params', {})
+        
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        params.update(baseParams)
         sts, data = self.cm.getPage( baseUrl, params)
         
         msg = 'Dostęp wyłącznie dla użytkowników z kontem premium.' 

@@ -29,6 +29,7 @@ from Plugins.Extensions.IPTVPlayer.libs.livestreamtv      import LiveStreamTvApi
 from Plugins.Extensions.IPTVPlayer.libs.skylinewebcamscom import WkylinewebcamsComApi, GetConfigList as WkylinewebcamsCom_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livespottingtv    import LivespottingTvApi
 from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, GetConfigList as PierwszaTV_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.goldvodtv        import GoldVodTVApi, GetConfigList as GoldVodTV_GetConfigList
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
 
@@ -81,10 +82,6 @@ def GetConfigList():
     try:    optionList.extend( PierwszaTV_GetConfigList() )
     except: printExc()
     
-    optionList.append(getConfigListEntry("---------------Pure-Cast.net----------------", config.plugins.iptvplayer.fake_separator))
-    try:    optionList.extend( PurecastNet_GetConfigList() )
-    except: printExc()
-    
     optionList.append(getConfigListEntry("-----------------FilmOn TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( FilmOn_GetConfigList() )
     except: printExc()
@@ -116,6 +113,15 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("----------Other----------"), config.plugins.iptvplayer.fake_separator))
     optionList.append(getConfigListEntry(_("Turn off buffering for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
     optionList.append(getConfigListEntry(_("Use Polish proxy for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weather_useproxy))
+    
+    optionList.append(getConfigListEntry("---------------Pure-Cast.net----------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( PurecastNet_GetConfigList() )
+    except: printExc()
+    
+    optionList.append(getConfigListEntry("----------------GoldVod.TV------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( GoldVodTV_GetConfigList() )
+    except: printExc()
+    
     return optionList
 
 ###################################################
@@ -161,7 +167,7 @@ class HasBahCa(CBaseHostClass):
                         #{'alias_id':'others',                 'name': 'others',              'title': 'Others',                            'url': '',                                                                    'icon': ''}, \
                         {'alias_id':'freetuxtv_programmes_en', 'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
-                        {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': 'http://goldvod.tv/kanaly.html',                                      'icon': 'http://goldvod.tv/img/logo.png'}, \
+                        {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': '',                                                                   'icon': 'http://goldvod.tv/img/logo.png'}, \
                         {'alias_id':'pure-cast.net',           'name': 'pure-cast.net',       'title': 'Pure-Cast.net',                     'url': '',                                                                   'icon': 'http://blog-social-stream.dit.upm.es/wp-content/uploads/2013/05/logo.png'}, \
                        ] 
     #http://play.tvip.ga/iptvde.m3u
@@ -190,6 +196,7 @@ class HasBahCa(CBaseHostClass):
         self.telewizjadaNetApi = None
         self.liveStreamTvApi   = None
         self.pierwszaTvApi     = None
+        self.goldvodTvApi     = None
         self.edemTvApi            = None
         self.wkylinewebcamsComApi = None
         self.livespottingTvApi    = None
@@ -485,57 +492,7 @@ class HasBahCa(CBaseHostClass):
                     
                     self.playVideo(params)
                     title = ''
-
-    def getGoldvodList(self, chUrl):
-        printDBG('getGoldvodList entry url[%s]' % chUrl)
-        
-        nameMap = {'3':'Eleven','2':'TVP 1 HD','4':'Polsat HD','5':'Polsat 2 HD','6':'Canal+ Sport HD','7':'Eleven Sports',
-        '8':'Canal+ Sport 2 HD','9':'Canal+ HD','10':'TVN Meteo Active','11':'Eurosport 2 HD','12':'nSport HD',
-        '13':'Erosport HD','14':'Nickelodeon','15':'Comedy Central','16':'National Geographic Channel HD','17':'MTV',
-        '18':'Polsat Sport News','19':'TTV','20':'TVN 7 HD','21':'MiniMini+','22':'Discavery Channel HD','23':'BBC Earth',
-        '24':'Nat Geo Wild HD','25':'AXN HD','26':'TVP Seriale','27':'TVP Info','28':'Fokus TV','29':'TV Puls',
-        '30':'TVP 2 HD','31':'TVN HD','32':'HBO HD','33':'TLC HD','34':'TVP HD','35':'TVP Sport HD','36':'Canal+ Film HD',
-        '37':'Canal+ Family HD','38':'Canal+ Seriale','39':'Eska Rock','40':'Polo TV','41':'Eska go','42':'Eska TV',
-        '43':'6','44':'Stopklatka TV','45':'Animal Planet HD','46':'TVN Style HD','47':'TVN Trurbo HD','48':'TVN 24',
-        '49':'KinoPolska PL','50':'HBO 2 HD','51':'HBO Comedy HD','52':'Travel Channel','53':'Polsat Sport HD',
-        '54':'Fox HD','55':'TVP Historia','56':'TVN 24 Biznes i Świat','57':'AXN White','58':'AXN Black','59':'Polsat News',
-        '60':'Cinemax 2 HD','61':'Discovery ID HD','62':'History HD','63':'Explorer','64':'Filmbox','65':'TVP Kultura',
-        '66':'Comedy Central Family','67':'NickJR.','68':'Music VOX TV','69':'Eska Best Music TV','70':'Planete+',
-        '71':'Tuba TV','72':'Music VOX TV','73':'TVK','74':'Czwórka Polskie Radio','75':'Disney XD','76':'Filmbox Family',
-        '77':'TVP Pololnia','78':'Da Vinci Learning','79':'Polsat Film','80':'Disney Channel','81':'Kuchnia+','82':'History',
-        '83':'4 Fun.TV','84':'SportKlub','85':'Domo+','86':'AXN Spin HD','87':'Discovery Historia','88':'4 Fun.TV','89':'Disney Junior'}
-
-        sts, data = self.cm.getPage(chUrl)
-        if not sts: return
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, "<div id='content'>", "<div id='footer'>", False)
-        
-        def getFullUrl(url):
-            if url.startswith('http'):
-                return url
-            elif not url.startswith('/'):
-                url = '/' + url
-            return "http://goldvod.tv" + url
-                
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>')
-        for item in data:
-            printDBG("item [%r]" % item)
-            params = {}
-            url  = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0]
-            icon = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
-            id   = self.cm.ph.getSearchGroups(url, '''[^0-9]([0-9]+?)[^0-9]''')[0]
-            if '' != url:
-                params['url']   = getFullUrl(url)
-                params['icon']  = getFullUrl(icon)
-                params['title'] = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]
-                if '' == params['title']: params['title'] = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''')[0]
-                if '' == params['title']: params['title'] = url.replace('.html', '').replace(',', ' ').title()
-                params['title'] = nameMap.get(id, params['title'])
-                params['desc']  = chUrl
-                self.playVideo( params )
-        
-    def getGoldvodLink(self, videoUrl):
-        return self.up.getVideoLinkExt(videoUrl)
-        
+    
     def getSatLiveList(self, url):
         printDBG('getSatLiveList start')
         if None == self.satLiveApi:
@@ -1024,6 +981,19 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.pierwszaTvApi.getVideoLink(cItem)
         return urlsTab
         
+    def getGoldVodTvList(self, cItem):
+        printDBG("getGoldVodTvList start")
+        if None == self.goldvodTvApi:
+            self.goldvodTvApi = GoldVodTVApi()
+        tmpList = self.goldvodTvApi.getChannelsList(cItem)
+        for item in tmpList:
+            self.playVideo(item) 
+        
+    def getGoldVodTvLink(self, cItem):
+        printDBG("getGoldVodTvLink start")
+        urlsTab = self.goldvodTvApi.getVideoLink(cItem)
+        return urlsTab
+        
     def prognozaPogodyList(self, url):
         printDBG("prognozaPogodyList start")
         if config.plugins.iptvplayer.weather_useproxy.value: params = {'http_proxy':config.plugins.iptvplayer.proxyurl.value}
@@ -1097,7 +1067,7 @@ class HasBahCa(CBaseHostClass):
             self.prognozaPogodyList(url)
     #goldvod.tv items
         elif name == "goldvod.tv":
-            self.getGoldvodList(url)
+            self.getGoldVodTvList(url)
     #videostar.pl items
         elif name == "videostar.pl":
             self.getVideostarList()
@@ -1194,7 +1164,7 @@ class IPTVHost(CHostBase):
             new_url = TeledunetParser().get_rtmp_params(url)
             if 0 < len(url): retlist.append(CUrlItem("Własny link", new_url))
         elif url.startswith('http://goldvod.tv/'):
-            urlList = self.host.getGoldvodLink(url)
+            urlList = self.host.getGoldVodTvLink(cItem)
         elif 'web-live.tv' in url:
             url = self.host.getSatLiveLink(url)
         elif 'vidtv.pl' in url:
