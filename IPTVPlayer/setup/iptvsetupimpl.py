@@ -287,6 +287,8 @@ class IPTVSetupImpl:
             try: 
                 self.ffmpegVersion = re.search("ffmpeg version ([0-9.]+?)[^0-9^.]", dataTab[-1]).group(1)
                 if '.' == self.ffmpegVersion[-1]: self.ffmpegVersion = self.ffmpegVersion[:-1]
+                if self.ffmpegVersion.startswith('3.0'):
+                    self.ffmpegVersion = '3.0'
             except: self.ffmpegVersion = ""
         else: self.ffmpegVersion = ""
         self.wgetStep()
