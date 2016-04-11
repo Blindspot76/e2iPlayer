@@ -141,7 +141,7 @@ class Kinopokaz(CBaseHostClass):
                     self.addDir(param)
                 return
             else:
-                url = re.compile('src="htt.*(//.*?)"').findall(seriesData)[0]
+                url = self.cm.ph.getSearchGroups(seriesData, 'src="htt.*(//.*?)"')[0]
                 if url.startswith('//'):
                     url = 'http:' + url
 

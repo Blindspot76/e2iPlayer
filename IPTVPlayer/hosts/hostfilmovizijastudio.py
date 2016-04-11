@@ -47,11 +47,12 @@ def gettytul():
     return 'http://filmovizija.studio/'
 
 class FilmovizijaStudio(CBaseHostClass):
-    HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+    USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
+    HEADER = {'User-Agent': USER_AGENT, 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL       = 'http://filmovizija.studio/'
+    MAIN_URL       = 'http://www.filmovizija.studio/'
     MOV_SEARCH_URL = MAIN_URL + 'search1.php?ser=506&subs=&lks=1&rfrom=0&rto=0&gfrom=0&gto=0&gns=&btn=&keywords='
     SER_SEARCH_URL = MAIN_URL + 'search1.php?ser=528&subs=&lks=1&rfrom=0&rto=0&gfrom=0&gto=0&gns=&btn=&keywords='
     
@@ -75,6 +76,10 @@ class FilmovizijaStudio(CBaseHostClass):
         self.cacheFilters = {'movies':[], 'top_movies':[], 'series':[], 'new_videos':[], 'new_hd_videos':[]}
         self.cacheSeasons = []
         
+    def getPage(self, baseUrl, params={}, post_data=None):
+        params['cloudflare_params'] = {'domain':'www.filmovizija.studio', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
+        
     def _getFullUrl(self, url):
         if url.startswith('//'):
             url = 'http:' + url
@@ -88,6 +93,12 @@ class FilmovizijaStudio(CBaseHostClass):
         url = self.replacewhitespace(url)
 
         return url
+        
+    def _urlWithCookie(self, url):
+        url = self._getFullUrl(url)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
     def cleanHtmlStr(self, data):
         data = data.replace('&nbsp;', ' ')
@@ -111,7 +122,7 @@ class FilmovizijaStudio(CBaseHostClass):
     def fillCategories(self):
         printDBG("FilmovizijaStudio.fillCategories")
         self.cacheFilters = {'movies':[], 'top_movies':[], 'series':[], 'new_videos':[], 'new_hd_videos':[]}
-        sts, data = self.cm.getPage(self.MAIN_URL)
+        sts, data = self.getPage(self.MAIN_URL)
         if not sts: return
                      #('movies',        '>Movies</a>',        '</ul>'), \
         for cat in  [('top_movies',    '>Top Movies</a>',    '</ul>'), \
@@ -140,7 +151,7 @@ class FilmovizijaStudio(CBaseHostClass):
         
     def listYears(self, cItem, nextCategory):
         printDBG("FilmovizijaStudio.listYears")
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         tab = []
         data = self.cm.ph.getDataBeetwenMarkers(data, 'godine', '<script', False)[1]
@@ -156,7 +167,7 @@ class FilmovizijaStudio(CBaseHostClass):
         
     def listMovieCats(self, cItem, nextCategory):
         printDBG("FilmovizijaStudio.listMovieCats")
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         tab = []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="wrapper">', '</ul', False)[1]
@@ -167,7 +178,7 @@ class FilmovizijaStudio(CBaseHostClass):
             icon = self.cm.ph.getSearchGroups(item, '''src=['"]*(http[^'^"^>]+?)[>'"]''')[0]
             title = self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0] 
             title += ' ' + self.cleanHtmlStr(item)
-            tab.append({'title':title, 'url':url, 'icon':icon})
+            tab.append({'title':title, 'url':url, 'icon':self._urlWithCookie(icon)})
         
         cItem = dict(cItem)
         cItem['category'] = nextCategory
@@ -176,7 +187,7 @@ class FilmovizijaStudio(CBaseHostClass):
     def listItems(self, cItem, nextCategory='list_seasons'):
         printDBG("FilmovizijaStudio.listItems")
         
-        sts, data = self.cm.getPage(cItem['url']) 
+        sts, data = self.getPage(cItem['url']) 
         if not sts: return
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '"pagination"', '</ul>', False)[1]
@@ -201,7 +212,7 @@ class FilmovizijaStudio(CBaseHostClass):
             title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0] )
             if title == '':
                 title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>')[1] )
-            icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''<img[^>]+?data-original=['"]([^"^']+?)['"]''')[0] )
+            icon  = self._urlWithCookie( self.cm.ph.getSearchGroups(item, '''<img[^>]+?data-original=['"]([^"^']+?)['"]''')[0] )
             if icon == '': icon = cItem.get('icon', '') 
             dUrl  = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''data-url=['"]([^"^']+?)['"]''')[0] )
             desc  = self.cleanHtmlStr(item)
@@ -210,7 +221,7 @@ class FilmovizijaStudio(CBaseHostClass):
                 self.addDir({'title':'Error please report'})
                 continue
             params = dict(cItem)
-            params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc, 'data_url':dUrl})
+            params.update({'title':title, 'url':url, 'icon':self._urlWithCookie(icon), 'desc':desc, 'data_url':dUrl})
             if 'tvshow' in url:
                 params['category'] = nextCategory
                 self.addDir(params)
@@ -227,15 +238,15 @@ class FilmovizijaStudio(CBaseHostClass):
         
         url = cItem['url']
         if '--tvshow' in url and 'data_url' in cItem:
-            sts, data = self.cm.getPage(cItem['data_url'])
+            sts, data = self.getPage(cItem['data_url'])
             if sts:
                 url = self._getFullUrl( self.cm.ph.getSearchGroups(data, '''['"]([^"^']*?watch-[^"^']+?)['"]''')[0] )
             
-        sts, data = self.cm.getPage(url) 
+        sts, data = self.getPage(url) 
         if not sts: return
         
         desc = self.cm.ph.getDataBeetwenMarkers(data, '<div id="epload">', '<script>', False)[1]
-        icon = self._getFullUrl( self.cm.ph.getSearchGroups(desc, '''src=['"]*(http[^'^"^>]+?)[>'"]''')[0] )
+        icon = self._urlWithCookie( self.cm.ph.getSearchGroups(desc, '''src=['"]*(http[^'^"^>]+?)[>'"]''')[0] )
         desc = self.cleanHtmlStr(desc)
         
         m1 = "<li class='dropdown epilid caret-bootstrap caret-right' style='font-size:13px;'>"
@@ -272,7 +283,7 @@ class FilmovizijaStudio(CBaseHostClass):
         printDBG("FilmovizijaStudio.getLinksForVideo [%s]" % cItem)
         urlTab = [] #{'name':'', 'url':cItem['url'], 'need_resolve':1}]
         
-        sts, data = self.cm.getPage(cItem['url']) 
+        sts, data = self.getPage(cItem['url']) 
         if not sts: return []
         
         tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile(';[^;]*?id\^\="page"'), re.compile('show\(\)'))[1].split('</script>')[0]
@@ -336,7 +347,7 @@ class FilmovizijaStudio(CBaseHostClass):
         printDBG("FilmovizijaStudio.getVideoLinks [%s]" % videoUrl)
         urlTab = []
         if 'filmovizija.studi' in videoUrl:
-            sts, data = self.cm.getPage(videoUrl)
+            sts, data = self.getPage(videoUrl)
             if not sts: return []
             printDBG(data)
             
@@ -380,7 +391,7 @@ class FilmovizijaStudio(CBaseHostClass):
         
         if '' == cItem.get('data_url', ''): return []
         
-        sts, data = self.cm.getPage(cItem['data_url'])
+        sts, data = self.getPage(cItem['data_url'])
         if not sts: return retTab
         
         printDBG(data)
@@ -401,7 +412,7 @@ class FilmovizijaStudio(CBaseHostClass):
             val = self.cleanHtmlStr(val.replace('Actors:', ''))
             if '' != val: otherInfo[item['key']] =  val
         
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._urlWithCookie(icon)}], 'other_info':otherInfo}]
         
     def getFavouriteData(self, cItem):
         return cItem['url']

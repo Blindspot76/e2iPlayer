@@ -311,14 +311,14 @@ class AnimeFunME(CBaseHostClass):
             return [{'name':'', 'url':cItem['url'], 'need_resolve':1}]
         
         sts, data = self.getPage(cItem['url'])
-        if not sts: return
+        if not sts: return []
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '#player_load', 'success', False)[1]
         url       = self.cm.ph.getSearchGroups(data, '''url: ['"]([^'^"]+?)['"]''')[0]
         post_data = self.cm.ph.getSearchGroups(data, '''data: ['"]([^"^']+?)['"]''')[0]
         
         sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
-        if not sts: return
+        if not sts: return []
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'anime_download', '<script ', False)[1]
         tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)

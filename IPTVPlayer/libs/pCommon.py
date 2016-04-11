@@ -382,7 +382,7 @@ class common:
                             e = e.replace('+[]', '')
                         expresion[idx] = e
                     
-                    answer = self.calcAnswer('\n'.join(expresion)) + len('kisscartoon.me')
+                    answer = self.calcAnswer('\n'.join(expresion)) + len(cfParams['domain'])
                     refreshData = data.fp.info().get('Refresh', '')
                     
                     verData = self.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
