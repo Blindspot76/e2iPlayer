@@ -133,7 +133,7 @@ class XrysoiSE(CBaseHostClass):
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class=', "class='wp-pagenavi'>", False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class=', 'class="filmborder"><div', False)[1]
         data = data.split('class="moviefilm">')
         for item in data:
             url  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
