@@ -194,6 +194,11 @@ class NeoKinoNet(CBaseHostClass):
         if url.startswith('http'):
             url = strwithmeta(url, {'external_sub_tracks':sub_tracks})
             urlTab.append({'name':'google.com', 'url':url, 'need_resolve':1})
+            
+        data = re.compile('''\('display'\)\.src=['"]([^'^"]+?)['"]''').findall(data)
+        for url in data:
+            url = strwithmeta(url, {'external_sub_tracks':sub_tracks})
+            urlTab.append({'name':self.up.getHostName(url), 'url':url, 'need_resolve':1})
         
         return urlTab
         
