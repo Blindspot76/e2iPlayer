@@ -577,6 +577,8 @@ class HasBahCa(CBaseHostClass):
         for item in tmpList: self.playVideo(item)
             
     def getNettvpwLink(self, url):
+        if None == self.nettvpwApi:
+            return []
         return self.nettvpwApi.getVideoLink(url)
         
     def getTyperTvList(self, url):

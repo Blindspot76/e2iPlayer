@@ -273,7 +273,7 @@ class FilmovizijaStudio(CBaseHostClass):
         urlTab = [] #{'name':'', 'url':cItem['url'], 'need_resolve':1}]
         
         sts, data = self.cm.getPage(cItem['url']) 
-        if not sts: return
+        if not sts: return []
         
         tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile(';[^;]*?id\^\="page"'), re.compile('show\(\)'))[1].split('</script>')[0]
         printDBG("==========================================")

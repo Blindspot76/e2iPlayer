@@ -343,7 +343,7 @@ class MoviesHDCO(CBaseHostClass):
                 vidUrl = 'http://videomega.tv/view.php?ref={0}&width=700&height=460&val=1'.format(dat)
             
             if '' != vidUrl:
-                if title == '': title = self.up.getHostName(oneLink)
+                if title == '': title = self.up.getHostName(vidUrl)
                 urlTab.append({'name':title, 'url':vidUrl, 'need_resolve':need_resolve})
         return urlTab
         

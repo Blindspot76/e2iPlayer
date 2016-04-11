@@ -79,7 +79,7 @@ class IPTVSetupImpl:
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/gstplayer", GetBinDir("gstplayer", "")),
                                           (_("Do not install (not recommended)"), "")]
         # exteplayer3
-        self.exteplayer3Version = {'sh4': 9, 'mipsel': 22, 'armv7': 22, 'armv5t':22}
+        self.exteplayer3Version = {'sh4': 9, 'mipsel': 23, 'armv7': 23, 'armv5t':23}
         self.exteplayer3paths = ["/usr/bin/exteplayer3", GetBinDir("exteplayer3", "")]
         self._exteplayer3InstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/exteplayer3 (%s)" % _("recommended")), "/usr/bin/exteplayer3"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/exteplayer3", GetBinDir("exteplayer3", "")),
@@ -287,8 +287,6 @@ class IPTVSetupImpl:
             try: 
                 self.ffmpegVersion = re.search("ffmpeg version ([0-9.]+?)[^0-9^.]", dataTab[-1]).group(1)
                 if '.' == self.ffmpegVersion[-1]: self.ffmpegVersion = self.ffmpegVersion[:-1]
-                if self.ffmpegVersion.startswith('3.0'):
-                    self.ffmpegVersion = '3.0'
             except: self.ffmpegVersion = ""
         else: self.ffmpegVersion = ""
         self.wgetStep()
@@ -444,13 +442,20 @@ class IPTVSetupImpl:
 
     def f4mdumpStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.f4mdumpStepFinished sts[%r]" % sts)
+        shortFFmpegVersion = self.ffmpegVersion
+        if len(self.ffmpegVersion) >= 5:
+            shortFFmpegVersion = self.ffmpegVersion[:-2]
+            
         if self.platform in ['sh4'] and self.ffmpegVersion in ['1.0', '1.1.1', '1.2', '1.2.1', '2.0.3', '2.0.2', '2.2.1', '2.5', '2.6.2', '2.7.1', '2.8.1', '2.8.2', '2.8.5']: 
             self.exteplayer3Step()
-        elif self.platform in ['mipsel'] and self.ffmpegVersion in ['2.8', '2.8.1', '2.8.3', '2.8.5', '3.0']:
+        elif self.platform in ['mipsel'] and shortFFmpegVersion in ['2.8', '3.0']:
+            self.ffmpegVersion = shortFFmpegVersion
             self.exteplayer3Step()
-        elif self.platform in ['armv7'] and self.ffmpegVersion in ['2.8.5']:
+        elif self.platform in ['armv7'] and shortFFmpegVersion in ['2.8', '3.0']:
+            self.ffmpegVersion = shortFFmpegVersion
             self.exteplayer3Step()
-        elif self.platform in ['armv5t'] and self.ffmpegVersion in ['2.8.5', '3.0']:
+        elif self.platform in ['armv5t'] and shortFFmpegVersion in ['2.8', '3.0']:
+            self.ffmpegVersion = shortFFmpegVersion
             self.exteplayer3Step()
         elif "" != self.gstreamerVersion: self.gstplayerStep()
         else: self.finish()
