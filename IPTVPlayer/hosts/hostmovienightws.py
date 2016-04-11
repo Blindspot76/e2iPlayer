@@ -48,7 +48,8 @@ class MoviesNight(CBaseHostClass):
     SRCH_URL    = MAIN_URL + '?s='
     DEFAULT_ICON_URL = 'http://movienight.ws/wp-content/uploads/2015/09/movineight-logo-160.png'
     
-    MAIN_CAT_TAB = [{'category':'movies_genres',         'title': _('Movies'),       'url':MAIN_URL + 'movies/',  'icon':DEFAULT_ICON_URL},
+    MAIN_CAT_TAB = [{'category':'movies_genres',  'title': _('Movies'),   'filter':'genres',     'url':MAIN_URL,  'icon':DEFAULT_ICON_URL},
+                    {'category':'movies_genres',  'title': _('By year'),  'filter':'years',      'url':MAIN_URL,  'icon':DEFAULT_ICON_URL},
                     {'category':'search',         'title': _('Search'),       'search_item':True},
                     {'category':'search_history', 'title': _('Search history')} 
                    ]
@@ -56,7 +57,7 @@ class MoviesNight(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesNight', 'cookie':'MoviesNight.cookie'})
-        self.movieGenresCache = []
+        self.movieFiltersCache = {'genres':[], 'years':[]}
         
     def _getFullUrl(self, url, series=False):
         if not series:
@@ -73,22 +74,30 @@ class MoviesNight(CBaseHostClass):
         
     def _fillFilters(self, url):
         printDBG("MoviesNight._fillFilters")
-        table = []
+        cache = {'genres':[], 'years':[]}
         sts, data = self.cm.getPage(url)
         if not sts: return []
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="menu_container">', '</ul>', False)[1]
-        data = data.split('</li>')
         
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="scrolling years">', '</ul>', False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a ', '</a>')
+        for item in tmp:
+            title = self.cleanHtmlStr( item )
+            url   = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+            if url.startswith('http'):
+                cache['years'].append({'title':title, 'url':url})
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Genre', '</ul>', False)[1]
+        data = data.split('</li>')
         for item in data:
             title = self.cleanHtmlStr( item )
             url   = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
             if url.startswith('http'):
-                table.append({'title':title, 'url':url})
-        return table
+                cache['genres'].append({'title':title, 'url':url})
+        return cache
         
     def fillMovieFilters(self, url):
         printDBG("MoviesNight.fillMovieFilters")
-        self.movieGenresCache = self._fillFilters(url)
+        self.movieFiltersCache = self._fillFilters(url)
         return
         
     def listsTab(self, tab, cItem, type='dir'):
@@ -103,12 +112,16 @@ class MoviesNight(CBaseHostClass):
         
     def listMoviesGenres(self, cItem, category):
         printDBG("MoviesNight.listMoviesGenres")
-        if 0 == len(self.movieGenresCache):
+        filter = cItem.get('filter', '')
+        if 0 == len(self.movieFiltersCache.get(filter, [])):
             self.fillMovieFilters(cItem['url'])
         
         cItem = dict(cItem)
         cItem['category'] = category
-        self.listsTab(self.movieGenresCache, cItem)
+        params = dict(cItem) 
+        params.update({'title':_('All')})
+        self.addDir(params)
+        self.listsTab(self.movieFiltersCache.get(filter, []), cItem)
             
     def listItems(self, cItem, category='video'):
         printDBG("MoviesNight.listMovies")
@@ -132,27 +145,21 @@ class MoviesNight(CBaseHostClass):
         if ('/page/%d/' % (page + 1)) in data:
             nextPage = True
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="content">', '<div id="footer">', False)[1]
-        data = data.split('<div class="home_post_cont post_box">')
-        if len(data): del data[0]
+        m1 = '<div class="movie">'
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div class="footer', False)[1]
+        data = data.split(m1)
+        if len(data): 
+            data[-1] = data[-1].split('<div id="paginador">')[0]
         
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            if url == '': continue
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            
-            tmp = self.cm.ph.getDataBeetwenMarkers(item, 'title="', '"', False)[1]
-            try:
-                tmp = unescapeHTML( tmp.decode('utf-8') ).encode('utf-8')
-            except:
-                printExc()
-                tmp = ''
-            #printDBG("----------------------------------")
-            #printDBG(tmp)
-            tmp = tmp.split('<p>')
-            desc = self.cleanHtmlStr( tmp[-1].replace('\n', '|') )
+            title = self.cm.ph.getDataBeetwenMarkers(item, '<h2>', '</h2>', False)[1]
+            desc = self.cleanHtmlStr( item )
             
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( tmp[0] ), 'url':self._getFullUrl(url), 'desc': desc, 'icon':self._getFullUrl(icon)} )
+            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': desc, 'icon':self._getFullUrl(icon)} )
             self.addVideo(params)
         
         if nextPage:
