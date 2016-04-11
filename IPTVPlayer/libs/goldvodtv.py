@@ -60,6 +60,7 @@ class GoldVodTVApi:
         self.http_params = {}
         self.http_params.update({'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
         self.cacheList = {}
+        self.loggedIn = False
         
     def getFullUrl(self, url):
         if url.startswith('http'):
@@ -84,6 +85,7 @@ class GoldVodTVApi:
                 self.http_params.update({'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
             else:
                 self.sessionEx.open(MessageBox, _('Problem z zalogowanie użytkownika "%s. Sprawdź dane do logowania w konfiguracji hosta."') % login, type = MessageBox.TYPE_INFO, timeout = 10 )
+                self.loggedIn = False
         
         channelsTab = []
         
