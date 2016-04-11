@@ -288,6 +288,7 @@ class TvpVod(CBaseHostClass):
             data = self.cm.ph.getDataBeetwenMarkers(data, sectionMarker, '</section>', True)[1]
         
         printDBG("TvpVod.listItems1 start parse")
+        addedItem = False
         if sts:
             data = data.split(itemMarker)
             if len(data): del data[0]
@@ -306,9 +307,18 @@ class TvpVod(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'category':category, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'page':1})
                 if '' ==  duration:
+                    addedItem = True
                     self.addDir(params)
                 else:
+                    addedItem = True
                     self.addVideo(params)
+                    
+        if not addedItem:
+            object_id = self.getObjectID(self._getFullUrl(cItem['url']))
+            if '' != object_id and self.isVideoData(object_id):
+                params = dict(cItem)
+                self.addVideo(params)
+            
         # add next page if needed
         if len(self.currList):
             if '' != ajaxUrl:
@@ -376,8 +386,9 @@ class TvpVod(CBaseHostClass):
             url  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             icon = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
             desc = self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</div>', False)[1]
-            title  = self.cm.ph.getDataBeetwenMarkers(item, '<strong class="fullTitle">', '</strong>', False)[1]
-            if '' == title: title = self.cm.ph.getDataBeetwenMarkers(tmp, '<strong class="shortTitle">', '</strong>', False)[1]
+            title = self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0]
+            if '' == title: title = self.cm.ph.getDataBeetwenMarkers(item, '<strong class="fullTitle">', '</a>')[1]
+            if '' == title: title = self.cm.ph.getDataBeetwenMarkers(item, '<strong class="shortTitle">', '</a>')[1]
             title = self._cleanHtmlStr(title)
             if 'class="new"' in item: title += _(', nowość')
             if 'class="pay"' in item: title += _(', materiał płatny')
@@ -421,6 +432,8 @@ class TvpVod(CBaseHostClass):
         
     def isVideoData(self, asset_id):
         sts, data = self.cm.getPage( 'http://www.tvp.pl/shared/cdn/tokenizer_v2.php?mime_type=video%2Fmp4&object_id=' + asset_id, self.defaultParams)
+        if not sts:
+            return False
         return not 'NOT_FOUND' in data
         
     def getVideoLink(self, asset_id):

@@ -170,9 +170,12 @@ class TelewizjadaNetApi:
         urlsTab = []
         vid_url = vid_url.strip()
         if vid_url.startswith('http://') and 'm3u8' in vid_url:
-            sessid = self.cm.getCookieItem(self.COOKIE_FILE, 'sessid')
-            msec   = self.cm.getCookieItem(self.COOKIE_FILE, 'msec')
-            statid = self.cm.getCookieItem(self.COOKIE_FILE, 'statid')
-            url = strwithmeta(vid_url, {'Cookie':'sessid=%s; msec=%s; statid=%s;' % (sessid, msec, statid)})
-            urlsTab = getDirectM3U8Playlist(url)
+            try:
+                sessid = self.cm.getCookieItem(self.COOKIE_FILE, 'sessid')
+                msec   = self.cm.getCookieItem(self.COOKIE_FILE, 'msec')
+                statid = self.cm.getCookieItem(self.COOKIE_FILE, 'statid')
+                url = strwithmeta(vid_url, {'Cookie':'sessid=%s; msec=%s; statid=%s;' % (sessid, msec, statid)})
+                urlsTab = getDirectM3U8Playlist(url)
+            except:
+                SetIPTVPlayerLastHostError("Problem z dostępem do pliku \"%\".\nSprawdź, czy masz wolne miejsce na pliki cookies." % self.COOKIE_FILE)
         return urlsTab
