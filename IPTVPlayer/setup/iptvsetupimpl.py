@@ -199,9 +199,11 @@ class IPTVSetupImpl:
             self.openSSLVersion = ver
             self.libSSLPath = libSSLPath
             if '.1.0.0' != ver:
-                #self.showMessage(_("Your OpenSSL version is [%s]") % self.openSSLVersion, MessageBox.TYPE_INFO, self.wgetDetect)
+                # old ssl version 0.9.8
                 self.getGstreamerVer()
             else:
+                # we need check if 1.0.0 it is real 1.0.0 version with OPENSSL_1.0.0 symbol
+                # or new version without this symbol
                 self.getOpenssl1Ver()
         else:
             self.openSSLVersion = ""
@@ -227,11 +229,14 @@ class IPTVSetupImpl:
     def getOpenssl1Finished(self, stsTab, dataTab):
         printDBG("IPTVSetupImpl.getOpenssl1Finished")
         if len(stsTab) == 0 or False == stsTab[-1]:
+            # we detect new version OpenSSL without symbol OPENSSL_1.0.0
             self.openSSLVersion = '.1.0.2'
             self.libSSLPath = ""
-            self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.TYPE_WARNING, self.getGstreamerVer )
-        else:
-            self.getGstreamerVer()
+            # we already have packages for OpenSSL 1.0.2 for mipsel
+            if self.platform != 'mipsel':
+                self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.TYPE_WARNING, self.getGstreamerVer )
+                return
+        self.getGstreamerVer()
         
     ###################################################
     # STEP: GSTREAMER VERSION
