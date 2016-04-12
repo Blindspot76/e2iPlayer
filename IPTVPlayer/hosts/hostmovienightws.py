@@ -48,8 +48,10 @@ class MoviesNight(CBaseHostClass):
     SRCH_URL    = MAIN_URL + '?s='
     DEFAULT_ICON_URL = 'http://movienight.ws/wp-content/uploads/2015/09/movineight-logo-160.png'
     
-    MAIN_CAT_TAB = [{'category':'movies_genres',  'title': _('Movies'),   'filter':'genres',     'url':MAIN_URL,  'icon':DEFAULT_ICON_URL},
-                    {'category':'movies_genres',  'title': _('By year'),  'filter':'years',      'url':MAIN_URL,  'icon':DEFAULT_ICON_URL},
+    MAIN_CAT_TAB = [{'category':'list_items',     'title': _('Latest movies'),                          'url':MAIN_URL,             'icon':DEFAULT_ICON_URL},
+                    {'category':'movies_genres',  'title': _('Movies genres'),   'filter':'genres',     'url':MAIN_URL,             'icon':DEFAULT_ICON_URL},
+                    {'category':'movies_genres',  'title': _('Movies by year'),  'filter':'years',      'url':MAIN_URL,             'icon':DEFAULT_ICON_URL},
+                    {'category':'list_items',     'title': _('TV Series'),                              'url':MAIN_URL+'tvshows/',  'icon':DEFAULT_ICON_URL},
                     {'category':'search',         'title': _('Search'),       'search_item':True},
                     {'category':'search_history', 'title': _('Search history')} 
                    ]
@@ -58,6 +60,7 @@ class MoviesNight(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesNight', 'cookie':'MoviesNight.cookie'})
         self.movieFiltersCache = {'genres':[], 'years':[]}
+        self.episodesCache = {}
         
     def _getFullUrl(self, url, series=False):
         if not series:
@@ -118,12 +121,12 @@ class MoviesNight(CBaseHostClass):
         
         cItem = dict(cItem)
         cItem['category'] = category
-        params = dict(cItem) 
-        params.update({'title':_('All')})
-        self.addDir(params)
+        #params = dict(cItem) 
+        #params.update({'title':_('All')})
+        #self.addDir(params)
         self.listsTab(self.movieFiltersCache.get(filter, []), cItem)
             
-    def listItems(self, cItem, category='video'):
+    def listItems(self, cItem, category='list_seasons'):
         printDBG("MoviesNight.listMovies")
         url = cItem['url']
         if '?' in url:
@@ -158,14 +161,59 @@ class MoviesNight(CBaseHostClass):
             title = self.cm.ph.getDataBeetwenMarkers(item, '<h2>', '</h2>', False)[1]
             desc = self.cleanHtmlStr( item )
             
+            
             params = dict(cItem)
             params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': desc, 'icon':self._getFullUrl(icon)} )
-            self.addVideo(params)
+            if '/tvshows/' in url:
+                params['category'] = category
+                self.addDir(params)
+            else:
+                self.addVideo(params)
         
         if nextPage:
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
+            
+    def listSeasons(self, cItem, category):
+        printDBG("MoviesNight.listSeasons [%s]" % cItem)
+        self.episodesCache = {}
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, "<div id='cssmenu'>", '</div>', False)[1]
+        data = data.split("<li class='has-sub'>")
+        if len(data): 
+            del data[0]
+        
+        for item in data:
+            if 'No episodes' in item: continue
+            seasonTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>')[1])
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>> " + seasonTitle)
+            
+            episodesTab = []
+            episodesData = self.cm.ph.getAllItemsBeetwenMarkers(item, '<li', '</li>')
+            for eItem in episodesData:
+                eTmp = eItem.split('<span class="datix">')
+                title = self.cleanHtmlStr( eTmp[0] )
+                desc  = self.cleanHtmlStr( eTmp[-1] )
+                url   = self._getFullUrl(self.cm.ph.getSearchGroups(eItem, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+                if url.startswith('http'):
+                    episodesTab.append({'title':'{0} - {1}: {2}'.format( cItem['title'], seasonTitle, title),  'url':url, 'desc':desc})
+            
+            if len(episodesTab):
+                self.episodesCache[seasonTitle] = episodesTab
+                params = dict(cItem)
+                params.update( {'category':category, 'title': seasonTitle, 'season_key':seasonTitle} )
+                self.addDir(params)
+        
+    def listEpisodes(self, cItem):
+        printDBG("MoviesNight.listEpisodes [%s]" % cItem)
+        seasonKey = cItem.get('season_key', '')
+        if '' == seasonKey: return
+        cItem = dict(cItem)
+        self.listsTab(self.episodesCache.get(seasonKey, []), cItem, 'video')
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         searchPattern = urllib.quote_plus(searchPattern)
@@ -239,9 +287,14 @@ class MoviesNight(CBaseHostClass):
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
     #MOVIES
         elif category == 'movies_genres':
-            self.listMoviesGenres(self.currItem, 'list_movies')
-        elif category == 'list_movies':
+            self.listMoviesGenres(self.currItem, 'list_items')
+        elif category == 'list_items':
             self.listItems(self.currItem)
+    #TVSERIES
+        elif category == 'list_seasons':
+            self.listSeasons(self.currItem, 'list_episodes')
+        elif category == 'list_episodes':
+            self.listEpisodes(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
