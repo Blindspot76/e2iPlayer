@@ -8,8 +8,11 @@ hostcartoonhd
 hostcdapl
 hostchomikuj
 hostcinemay
+hostcrtankocom
 hostdailymotion
 hostdancetrippin
+hostdardarkomcom
+hostdarshowcom
 hostdrdk
 hostekinotv
 hostekstraklasatv
