@@ -50,7 +50,7 @@ class IPTVSetupImpl:
                                        (_('Install into the "%s".') % "/usr/bin/wget", "/usr/bin/wget"),
                                        (_("Do not install (not recommended)"), "")]
         # rtmpdump members
-        self.rtmpdumpVersion = {'mipsel':'2015', 'armv5t':'2009-2015', 'armv7':'K-S-V patch', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"}
+        self.rtmpdumpVersion = {'sh4':'2015', 'mipsel':'2015', 'armv5t':'2009-2015', 'armv7':'K-S-V patch', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"}
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
         # f4mdump member
@@ -232,10 +232,10 @@ class IPTVSetupImpl:
             # we detect new version OpenSSL without symbol OPENSSL_1.0.0
             self.openSSLVersion = '.1.0.2'
             self.libSSLPath = ""
-            # we already have packages for OpenSSL 1.0.2 for mipsel
-            if self.platform != 'mipsel':
-                self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.TYPE_WARNING, self.getGstreamerVer )
-                return
+            # we already we have packages for OpenSSL 1.0.2 for all supported platforms
+            #if self.platform != 'mipsel':
+            #    self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.TYPE_WARNING, self.getGstreamerVer )
+            #    return
         self.getGstreamerVer()
         
     ###################################################
