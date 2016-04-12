@@ -50,7 +50,7 @@ class IPTVSetupImpl:
                                        (_('Install into the "%s".') % "/usr/bin/wget", "/usr/bin/wget"),
                                        (_("Do not install (not recommended)"), "")]
         # rtmpdump members
-        self.rtmpdumpVersion = {'armv5t':'2009-2015', 'armv7':'K-S-V patch', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"}
+        self.rtmpdumpVersion = {'mipsel':'2015', 'armv5t':'2009-2015', 'armv7':'K-S-V patch', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"}
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
         # f4mdump member
