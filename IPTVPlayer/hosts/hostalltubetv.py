@@ -51,7 +51,7 @@ def gettytul():
 
 class AlltubeTV(CBaseHostClass):
     MAIN_URL    = 'http://alltube.tv/'
-    SRCH_URL    = MAIN_URL + 'szukaj'
+    SRCH_URL    = MAIN_URL + '?url=search/index'
     DEFAULT_ICON = 'https://scontent-waw1-1.xx.fbcdn.net/hphotos-xal1/v/l/t1.0-9/11012948_860312804054948_8203520643827603823_n.png?oh=36b6777a5723b93b1aabbdc14c0c2934&oe=57194120'
     
     MAIN_CAT_TAB = [{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
@@ -59,8 +59,8 @@ class AlltubeTV(CBaseHostClass):
                     {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
                     {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'5', 'icon':DEFAULT_ICON, 'mtype':True},
                     {'category':'list_rank',          'title': _('Ranking'),       'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
-                    {'category':'search',             'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',     'title': _('Search history')} ]
+                    {'category':'search',             'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
+                    {'category':'search_history',     'title': _('Search history'), 'icon':DEFAULT_ICON} ]
                     
     LAST_ADDED_TAB = [{'category':'latest_added_movies',  'title': _('Movies'),        'url':MAIN_URL, 'icon':DEFAULT_ICON},
                       {'category':'latest_added_series',  'title': _('Series'),        'url':MAIN_URL, 'icon':DEFAULT_ICON} ]
@@ -109,8 +109,10 @@ class AlltubeTV(CBaseHostClass):
         page = cItem.get('page', 1)
         if page > 1:
             url += 'strona[%s]+' % page
+            
+        post_data = cItem.get('post_data', None)
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.cm.getPage(url, {}, post_data)
         if not sts: return 
         
         if ('strona[%s]+' % (page + 1)) in data:
@@ -338,46 +340,14 @@ class AlltubeTV(CBaseHostClass):
         printDBG("AlltubeTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
         post_data = {'search':searchPattern}
-        sts, data = self.cm.getPage(self.SRCH_URL, {}, post_data)
-        if not sts: return
+        cItem['post_data'] = post_data
+        cItem['url'] = self.SRCH_URL
         
         if searchType == 'movies':
-            key = 'film'
+            self._listItemsTab(cItem, '>Filmy</h2>', '<div class="col-sm-12">', '<div class="border-box clearfix">', category='video')
         elif searchType == 'series':
-            key = 'serial'
-            
-        data = re.compile('<a[^>]*?href="([^"]*?/%s/[^"]*?)"[^>]*?>([^<]+?)<' % key).findall(data)
-        for item in data:
-            if item[0] == '': continue
-            params = dict(cItem)
-            params.update( {'title':self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0])} )
-            if searchType == 'movies':
-                self.addVideo(params)
-            elif searchType == 'series':
-                params['category'] =  'list_seasons'
-                self.addDir(params)
-        return
-        
-        data = data.split('</a>')
-        if len(data): del data[-1]
-        for item in data:
-            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]*?/%s/[^"]*?)"' % key)[0]
-            if '' == url: continue
-            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            
-            title  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<b>', '</b>', False)[1] )
-            if '' == title: title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0] )
-            if '' == title: title = self.cm.ph.getSearchGroups(url, '/%s/([^"/]*?)[/"]' % key)[0].replace('-', ' ').capitalize()
-            desc  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '</b>', '</p>', False)[1] )
-
-            params = dict(cItem)
-            params.update( {'title':title, 'url':self._getFullUrl(url), 'desc':desc, 'icon':self._getFullUrl(icon)} )
-            if searchType == 'movies':
-                self.addVideo(params)
-            elif searchType == 'series':
-                params['category'] =  'list_seasons'
-                self.addDir(params)
-        
+            self._listItemsTab(cItem, '>Seriale</h2>', '<div class="col-sm-12">', '<div class="border-box clearfix">', category='list_seasons')
+              
     def getLinksForVideo(self, cItem):
         printDBG("AlltubeTV.getLinksForVideo [%s]" % cItem)
         urlTab = []
