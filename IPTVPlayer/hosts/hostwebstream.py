@@ -30,6 +30,7 @@ from Plugins.Extensions.IPTVPlayer.libs.skylinewebcamscom import WkylinewebcamsC
 from Plugins.Extensions.IPTVPlayer.libs.livespottingtv    import LivespottingTvApi
 from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, GetConfigList as PierwszaTV_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.goldvodtv        import GoldVodTVApi, GetConfigList as GoldVodTV_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.showsporttvcom   import ShowsportTVApi
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
 
@@ -155,7 +156,8 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'filmon.com',              'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://ftp.vectranet.pl/xbmc/addons/helix/plugin.video.ustvnow/icon.png'}, \
                         #{'alias_id':'freetuxtv_webcam_pl',     'name': 'm3u',                 'title': 'Polskie Kamerki internetowe',       'url': 'http://database.freetuxtv.net/playlists/playlist_webcam_pl.m3u'}, \
-                        {'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=',           'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
+                        {'alias_id':'showsport-tv.com',        'name': 'showsport-tv.com',    'title': 'showsport-tv.com',                  'url': 'http://showsport-tv.com/',                                           'icon': 'http://showsport-tv.com/images/logo.png'}, \
+                        {'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=',                'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'alias_id':'xbmcmxtv.com',            'name': 'm3u',                 'title': 'xbmcmxtv',                          'url': 'http://file.xbmcmxtv.com/2legit.m3u',                                'icon': 'http://emby.media/community/uploads/inline/76/555e814b284d6_kodisplash.jpg'}, \
                         {'alias_id':'wownet.ro',               'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://wownet.ro/iptv/',                                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'alias_id':'iptv.ink',                'name': 'm3u',                 'title': 'Free Iptv Project',                 'url': 'http://tv.iptv.ink/iptv.ink',                                        'icon': 'http://community.iptv.ink/styles/uix/uix/logo_new_001.png'}, \
@@ -196,7 +198,8 @@ class HasBahCa(CBaseHostClass):
         self.telewizjadaNetApi = None
         self.liveStreamTvApi   = None
         self.pierwszaTvApi     = None
-        self.goldvodTvApi     = None
+        self.goldvodTvApi      = None
+        self.showsportTvApi    = None
         self.edemTvApi            = None
         self.wkylinewebcamsComApi = None
         self.livespottingTvApi    = None
@@ -1006,6 +1009,19 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.goldvodTvApi.getVideoLink(cItem)
         return urlsTab
         
+    def getShowsportTvList(self, cItem):
+        printDBG("getShowsportTvList start")
+        if None == self.showsportTvApi:
+            self.showsportTvApi = ShowsportTVApi()
+        tmpList = self.showsportTvApi.getChannelsList(cItem)
+        for item in tmpList:
+            self.playVideo(item) 
+        
+    def getShowsportTvLink(self, cItem):
+        printDBG("getShowsportTvLink start")
+        urlsTab = self.showsportTvApi.getVideoLink(cItem)
+        return urlsTab
+        
     def prognozaPogodyList(self, url):
         printDBG("prognozaPogodyList start")
         if config.plugins.iptvplayer.weather_useproxy.value: params = {'http_proxy':config.plugins.iptvplayer.proxyurl.value}
@@ -1080,6 +1096,8 @@ class HasBahCa(CBaseHostClass):
     #goldvod.tv items
         elif name == "goldvod.tv":
             self.getGoldVodTvList(url)
+        elif name == "showsport-tv.com":
+            self.getShowsportTvList(self.currItem)
     #videostar.pl items
         elif name == "videostar.pl":
             self.getVideostarList()
@@ -1177,6 +1195,8 @@ class IPTVHost(CHostBase):
             if 0 < len(url): retlist.append(CUrlItem("Własny link", new_url))
         elif url.startswith('http://goldvod.tv/'):
             urlList = self.host.getGoldVodTvLink(cItem)
+        elif "showsport-tv.com" == name:
+            urlList = self.host.getShowsportTvLink(cItem)
         elif 'web-live.tv' in url:
             url = self.host.getSatLiveLink(url)
         elif 'vidtv.pl' in url:

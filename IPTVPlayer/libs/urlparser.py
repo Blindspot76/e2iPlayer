@@ -300,6 +300,7 @@ class urlparser:
                        'ssh101.com':           self.pp.parserSSH101COM     ,
                        'twitch.tv':            self.pp.parserTWITCHTV      ,
                        'sostart.org':          self.pp.parserSOSTARTORG    ,
+                       'sostart.pw':           self.pp.parserSOSTARTPW     ,
                        'theactionlive.com':    self.pp.parserTHEACTIONLIVE ,
                        'biggestplayer.me':     self.pp.parserBIGGESTPLAYER ,
                        'goodrtmp.com':         self.pp.parserGOODRTMP      ,
@@ -331,6 +332,8 @@ class urlparser:
                        'vimeo.com':            self.pp.parseVIMEOCOM       ,
                        'jacvideo.com':         self.pp.parseJACVIDEOCOM    ,
                        'caston.tv':            self.pp.parseCASTONTV       ,
+                       'static.bro.adca.st':   self.pp.parseBROADCAST      ,
+                       'bro.adcast.tech':      self.pp.parseBROADCAST      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -461,6 +464,16 @@ class urlparser:
                 id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
                 videoUrl = 'http://sostart.org/streamk.php?id={0}&width=640&height=390'.format(id)
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'bro.adca.' in data:
+                id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
+                videoUrl = 'http://bro.adcast.tech/stream.php?id={0}&width=600&height=400'.format(id)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'sostart.pw' in data:
+                fid = self.cm.ph.getSearchGroups(data, """fid=['"]([0-9]+?)['"]""")[0]
+                videoUrl = 'http://www.sostart.pw/jwplayer6.php?channel={0}&vw=710&vh=460'.format(fid)
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'theactionlive.com' in data:
                 id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
@@ -4840,6 +4853,63 @@ class pageParser:
             return url
         return False
         
+    def parserSOSTARTPW(self, baseUrl):
+        printDBG("parserSOSTARTPW baseUrl[%r]" % baseUrl)
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        jsonUrl = self.cm.ph.getSearchGroups(data, '''getJSON\([^"^']*?['"]([^"^']+?)['"]''')[0]
+        if not jsonUrl.startswith('http'): return False
+        
+        if 'chunklist.m3u8' in data:
+            hlsStream = True
+        sts, data = self.cm.getPage(jsonUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        printDBG(data)
+        data = byteify(json.loads(data))
+        if hlsStream:
+            Referer = 'http://api.peer5.com/jwplayer6/assets/jwplayer.flash.swf'
+            hlsUrl = data['rtmp']+"/"+data['streamname']+"/chunklist.m3u8"
+            hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':Referer})
+            return getDirectM3U8Playlist(hlsUrl)
+        return False
+        
+    def parseBROADCAST(self, baseUrl):
+        printDBG("parseBROADCAST baseUrl[%r]" % baseUrl)
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('broadcast.cookie')}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        curl = self.cm.ph.getSearchGroups(data, '''curl[^"^']*?=[^"^']*?['"]([^"^']+?)['"]''')[0]
+        curl = base64.b64decode(curl)
+        if not curl.startswith('http'): return False
+        
+        params['header']['Referer'] = baseUrl
+        sts, data = self.cm.getPage('http://bro.adcast.tech/getToken.php', params)
+        if not sts: return False
+        printDBG(data)
+        data = byteify(json.loads(data))
+        Referer = 'http://cdn.bro.adcast.site/jwplayer.flash.swf'
+        hlsUrl = curl + data['token']
+        hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':Referer})
+        return getDirectM3U8Playlist(hlsUrl)
+    
     def parserGOODRTMP(self, baseUrl):
         printDBG("parserGOODRTMP baseUrl[%r]" % baseUrl)
         SetIPTVPlayerLastHostError('Links from "goodrtmp.com" not supported.')
