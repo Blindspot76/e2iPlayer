@@ -40,6 +40,7 @@ class VevoIE(InfoExtractor):
         (?:https?://www\.vevo\.com/watch/(?:[^/]+/(?:[^/]+/)?)?|
            https?://cache\.vevo\.com/m/html/embed\.html\?video=|
            https?://videoplayer\.vevo\.com/embed/embedded\?videoId=|
+           https?://api\.vevo\.com/embed/embedded\?videoId=|
            vevo:)
         (?P<id>[^&?#]+)'''
     _SMIL_BASE_URL = 'http://smil.lvl3.vevo.com/'
@@ -155,7 +156,7 @@ class VevoIE(InfoExtractor):
         
         if hls == None: hls = config.plugins.iptvplayer.vevo_allow_hls.value
 
-        json_url = 'http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % video_id
+        json_url = 'http://api.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % video_id
         response = self._download_json(json_url, video_id)
         video_info = response['video'] or {}
         
