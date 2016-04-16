@@ -334,6 +334,7 @@ class urlparser:
                        'caston.tv':            self.pp.parseCASTONTV       ,
                        'static.bro.adca.st':   self.pp.parseBROADCAST      ,
                        'bro.adcast.tech':      self.pp.parseBROADCAST      ,
+                       'moshahda.net':         self.pp.parseMOSHAHDANET    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -1987,6 +1988,11 @@ class pageParser:
         def _findLinks(data):
             return self._findLinks(data, 'beta.vidup.me', m1='setup(', m2='image:')
         return self._parserUNIVERSAL_A(baseUrl, 'http://beta.vidup.me/embed-{0}-640x360.html', _findLinks)
+        
+    def parseMOSHAHDANET(self, baseUrl):
+        printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        return self._findLinks(data, 'moshahda.net')
         
     def parserTRILULILU(self, baseUrl):
         def getTrack(userid, hash):
