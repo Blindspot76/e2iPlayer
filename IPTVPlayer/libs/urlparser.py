@@ -4912,6 +4912,7 @@ class pageParser:
         if not curl.startswith('http'): return False
         
         params['header']['Referer'] = baseUrl
+        params['header']['X-Requested-With'] = 'XMLHttpRequest'
         sts, data = self.cm.getPage('http://bro.adcast.tech/getToken.php', params)
         if not sts: return False
         printDBG(data)
