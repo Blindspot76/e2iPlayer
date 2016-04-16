@@ -43,6 +43,7 @@ from Tools.Directories import fileExists
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.local_alphasort = ConfigSelection(default = "alphabetically", choices = [("alphabetically", _("Alphabetically")), ("none", _("None"))])
 config.plugins.iptvplayer.local_showfilesize = ConfigYesNo(default = True)
 config.plugins.iptvplayer.local_showhiddensdir = ConfigYesNo(default = False)
 config.plugins.iptvplayer.local_showhiddensfiles = ConfigYesNo(default = False)
@@ -50,6 +51,7 @@ config.plugins.iptvplayer.local_maxitems    = ConfigInteger(1000, (10, 1000000))
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Sort alphabetically"), config.plugins.iptvplayer.local_alphasort ))
     optionList.append(getConfigListEntry(_("Show file size"), config.plugins.iptvplayer.local_showfilesize ))
     optionList.append(getConfigListEntry(_("Show hiddens files"), config.plugins.iptvplayer.local_showhiddensfiles ))
     optionList.append(getConfigListEntry(_("Show hiddens catalogs"), config.plugins.iptvplayer.local_showhiddensdir ))
@@ -285,6 +287,7 @@ class LocalMedia(CBaseHostClass):
                         audTab.append(params)
                     elif ext in self.PICTURE_FILES_EXTENSIONS:
                         picTab.append(params)
+                
             self.addFromTab(cItem, dirTab, path, 'dir')
             self.addFromTab(cItem, isoTab, path, 'iso')
             self.addFromTab(cItem, m3uTab, path, 'm3u', 1)
@@ -302,7 +305,11 @@ class LocalMedia(CBaseHostClass):
         if category == 'iso':
             table = self.getMountsTable(True)
             
-        tab.sort()
+        if config.plugins.iptvplayer.local_alphasort.value == 'alphabetically':
+            try:
+                tab.sort(key=lambda item: item['title'])
+            except:
+                printExc()
         for item in tab:
             params = dict(params)
             params.update( {'title':item['title'], 'category':category, 'desc':''} )
