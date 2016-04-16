@@ -315,7 +315,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, TheWatchseriesTo(), True, favouriteTypes=[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
     def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('movizlandcomlogo.png')])
+        return RetHost(RetHost.OK, value = [GetLogoDir('thewatchseriestologo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -338,20 +338,6 @@ class IPTVHost(CHostBase):
             retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
-        
-    #def getArticleContent(self, Index = 0):
-    #    retCode = RetHost.ERROR
-    #    retlist = []
-    #    if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-    #
-    #    hList = self.host.getArticleContent(self.host.currList[Index])
-    #    for item in hList:
-    #        title      = item.get('title', '')
-    #        text       = item.get('text', '')
-    #        images     = item.get("images", [])
-    #        othersInfo = item.get('other_info', '')
-    #        retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-    #    return RetHost(RetHost.OK, value = retlist)
     
     def converItem(self, cItem):
         hostList = []
