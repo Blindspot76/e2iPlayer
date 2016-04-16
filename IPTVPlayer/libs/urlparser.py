@@ -284,6 +284,7 @@ class urlparser:
                        'hdvid.tv':             self.pp.parserHDVIDTV       ,
                        'exashare.com':         self.pp.parserEXASHARECOM   ,
                        'openload.info':        self.pp.parserEXASHARECOM   ,
+                       'chefti.info':          self.pp.parserEXASHARECOM   ,
                        'allvid.ch':            self.pp.parserALLVIDCH      ,
                        'posiedze.pl':          self.pp.parserPOSIEDZEPL    ,
                        'neodrive.co':          self.pp.parserNEODRIVECO    ,
@@ -803,11 +804,11 @@ class pageParser:
             printExc()
         return videoUrl
         
-    def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None):
+    def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None, folowIframe=False):
         printDBG("pageParser.__parseJWPLAYER_A serverName[%s], baseUrl[%r]" % (serverName, baseUrl))
         
         linkList = []
-        tries = 2
+        tries = 3
         while tries > 0:
             tries -= 1
             HTTP_HEADER = dict(self.HTTP_HEADER) 
@@ -817,9 +818,11 @@ class pageParser:
             if sts:
                 HTTP_HEADER = dict(self.HTTP_HEADER) 
                 HTTP_HEADER['Referer'] = baseUrl
-                url = self.cm.ph.getSearchGroups(data, 'iframe[ ]+src="(http://embed.[^"]+?)"')[0]
-                if serverName in url: sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}) 
-                else: url = baseUrl
+                url = self.cm.ph.getSearchGroups(data, 'iframe[ ]+src="(https?://[^"]*?embed[^"]+?)"')[0]
+                if serverName in url or folowIframe: 
+                    sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}) 
+                else:
+                    url = baseUrl
             
             if sts and '' != data:
                 try:
@@ -2480,15 +2483,17 @@ class pageParser:
         return linkList
         
     def parserEXASHARECOM(self, url):
-        printDBG("parserVODLOCKER url[%r]" % url)
+        printDBG("parserEXASHARECOM url[%r]" % url)
         # example video: http://www.exashare.com/s4o73bc1kd8a
+        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':url }
         if 'exashare.com' in url:
-            sts, data = self.cm.getPage(url)
+            sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
             if not sts: return
             url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?)["']''', 1, True)[0].replace('\n', '').replace('\r', '')
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]\n" % url)
         def _findLinks(data):
             return self._findLinks(data, 'exashare.com', m1='setup(', m2=')')
-        return self.__parseJWPLAYER_A(url, 'exashare.com', _findLinks)
+        return self.__parseJWPLAYER_A(url, 'exashare.com', _findLinks, folowIframe=True)
         
     def parserALLVIDCH(self, baseUrl):
         printDBG("parserALLVIDCH baseUrl[%r]" % baseUrl)
