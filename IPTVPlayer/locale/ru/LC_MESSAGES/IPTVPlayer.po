@@ -744,9 +744,6 @@ msgstr "Формат 'wmv' заблокирован в конфигурации.
 msgid "French"
 msgstr "Франция"
 
-msgid "From E2 settings"
-msgstr "Настройки E2"
-
 msgid "GST-IFDSRC for GSTREAMER 1.X"
 msgstr "GST-IFDSRC для GSTREAMER 1.X"
 
@@ -2229,9 +2226,6 @@ msgstr "Назад к предыдущему индексу %s"
 msgid "based on IP"
 msgstr "На основе IP"
 
-msgid "bestfit"
-msgstr "Оптимальное"
-
 msgid "blue"
 msgstr "Синий"
 
@@ -2399,9 +2393,6 @@ msgstr "Нет"
 
 msgid "nocnyseans.pl"
 msgstr "Ночной Сеанс.pl"
-
-msgid "nonlinear"
-msgstr "Без чёрных полос"
 
 msgid "number of views"
 msgstr "Количество просмотров"
@@ -3593,12 +3584,6 @@ msgstr ""
 "Этот узел требует регистрации. \n"
 "Заполните свой логин и пароль в конфигурации хост. Доступен под синюю кнопку."
 
-msgid "panscan"
-msgstr "Панорама"
-
-msgid "letterbox"
-msgstr "Режим ящика"
-
 msgid "Default video quality"
 msgstr "По умолчанию качество видео"
 
@@ -3737,3 +3722,106 @@ msgstr "По годам"
 
 msgid "Recently Added"
 msgstr "Недавно добавленный"
+
+msgid "New"
+msgstr "Новый"
+
+msgid "Home"
+msgstr "Главная"
+
+msgid "Season"
+msgstr "Время года"
+
+msgid ""
+"Plugin can be run on one of the following platforms: sh4, mipsel, i686, "
+"armv7, armv5t."
+msgstr ""
+"Плагин может работать на одной из следующих платформ: sh4, mipsel, i686, "
+"armv7, armv5t."
+
+msgid "SovDub"
+msgstr "Совесткий дубляж"
+
+msgid "Foreign films"
+msgstr "Зарубежные фильмы"
+
+msgid "Major rankings"
+msgstr "Основные рейтинги"
+
+msgid "By year"
+msgstr "По годам"
+
+msgid "Watch Trailer"
+msgstr "Смотреть трейлер"
+
+msgid "[Trailer]"
+msgstr "[Трейлер]"
+
+msgid "Detection of the OpenSSL 1.0.0 version."
+msgstr "Обнаружение версии OpenSSL 1.0.0."
+
+msgid ""
+"Fatal Error!\n"
+"Openssl could not be found. Please install it and retry."
+msgstr ""
+"Фатальная ошибка!\n"
+"Openssl не может быть найден. Пожалуйста, установите его и повторите."
+
+msgid ""
+"Fatal Error!\n"
+"Your Openssl is not supported."
+msgstr ""
+"Фатальная ошибка!\n"
+"Ваш Openssl не поддерживается."
+
+msgid ""
+"OpenSSL in your image is not supported.\n"
+"Some functions may not work correctly."
+msgstr ""
+"OpenSSL в изображении не поддерживается.\n"
+"Некоторые функции могут работать некорректно."
+
+msgid "Install into the \"%s\"."
+msgstr "Установить в \"%s\"."
+
+msgid "Decode file [%s] problem."
+msgstr "Раскодировать файл [%s] проблема."
+
+msgid "Latest movies"
+msgstr "Последние фильмы"
+
+msgid "Movies genres"
+msgstr "Фильмы жанры"
+
+msgid "Movies by year"
+msgstr "Фильмы по годам"
+
+msgid "TV Series"
+msgstr "Телесериал"
+
+msgid "Series list"
+msgstr "Список серии"
+
+msgid "Popular Episodes"
+msgstr "Популярные эпизоды"
+
+msgid "Newest Episodes"
+msgstr "Новые эпизоды"
+
+msgid "All A-Z"
+msgstr "Все A-Z"
+
+msgid "From E2 settings"
+msgstr "Настройки E2"
+
+msgid "bestfit"
+msgstr "Оптимальное"
+
+msgid "panscan"
+msgstr "Панорама"
+
+msgid "letterbox"
+msgstr "Режим ящика"
+
+msgid "nonlinear"
+msgstr "Без чёрных полос"
