@@ -3450,7 +3450,7 @@ class pageParser:
         printDBG("parserVIDZITV baseUrl[%s]" % baseUrl)
         videoTab = []
         if 'embed' not in baseUrl:
-            vid = CParsingHelper.getDataBeetwenMarkers(baseUrl, '.tv/', '.html', False)[1]
+            vid = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
             baseUrl = 'http://vidzi.tv/embed-%s-682x500.html' % vid
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return False
@@ -3637,11 +3637,16 @@ class pageParser:
     def parserFASTVIDEOIN(self, baseUrl):
         printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
         #http://fastvideo.in/nr4kzevlbuws
-        hostName = urlparser().getHostName(baseUrl)
-        return self.__parseJWPLAYER_A(baseUrl, hostName) #'fastvideo.in')
+        host = self.cm.ph.getDataBeetwenMarkers(baseUrl, "://", '/', False)[1]
+        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
+        
+        url = 'http://%s/embed-%s-960x480.html' % (host, video_id)
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        return self._findLinks(data, host,  m1='setup(', m2=')')
         
     def parserTHEVIDEOME(self, baseUrl):
-        printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
+        printDBG("parserTHEVIDEOME baseUrl[%s]" % baseUrl)
         #http://thevideo.me/embed-l03p7if0va9a-682x500.html
         if 'embed' in baseUrl: url = baseUrl
         else: url = baseUrl.replace('.me/', '.me/embed-') + '-640x360.html'
