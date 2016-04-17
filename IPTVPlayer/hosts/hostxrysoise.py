@@ -92,7 +92,9 @@ class XrysoiSE(CBaseHostClass):
         sts, data = self.cm.getPage(self.MAIN_URL)
         if not sts: return
 
-        moviesTab = [{'title':'Όλα', 'url':self._getFullUrl('category/new-good/')}]
+        moviesTab = [{'title':'2016', 'url':self._getFullUrl('category/2016/')},
+                     {'title':'2013-2015', 'url':self._getFullUrl('category/new-good/')},
+                     {'title':'Ελληνικές Ταινίες', 'url':self._getFullUrl('category/ελλ-ταινίες/')}]
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '>Ταινιες<', '</ul>', False)[1]
         tmp = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(tmp)
         for item in tmp:
