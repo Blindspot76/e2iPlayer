@@ -55,7 +55,7 @@ class CDisplayListItem:
 class ArticleContent:
     VISUALIZER_DEFAULT = 'DEFAULT'
     # Posible args and values for richDescParams:
-    RICH_DESC_PARAMS        = ["alternate_title", "status", "country", "language", "quality", "subtitles", "year", "released", "rating", "rated", "duration", "genre", "production", "director", "writer", "actors", "stars", "awards" ]
+    RICH_DESC_PARAMS        = ["alternate_title", "views", "status", "country", "language", "quality", "subtitles", "year", "released", "rating", "rated", "duration", "genre", "production", "director", "writer", "actors", "stars", "awards" ]
     # labels here must be in english language 
     # translation should be done before presentation using "locals" mechanism
     RICH_DESC_LABELS = {"alternate_title":   "Alternate Title:",
@@ -75,7 +75,8 @@ class ArticleContent:
                         "writer":            "Writer",
                         "actors":            "Actors:", 
                         "stars":             "Stars:",
-                        "awards":            "Awards:",}
+                        "awards":            "Awards:",
+                        "views":             "Views",}
     def __init__(self, title = '', text = '', images = [], trailers = [], richDescParams = {}, visualizer=None):
         self.title    = title
         self.text     = text
