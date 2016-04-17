@@ -36,9 +36,11 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.hdfilmetv_use_proxy_gateway  = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Use proxy gateway"), config.plugins.iptvplayer.hdfilmetv_use_proxy_gateway))
     return optionList
 ###################################################
 
@@ -68,7 +70,23 @@ class HDFilmeTV(CBaseHostClass):
         self.seasonCache = {}
         self.cacheLinks = {}
         
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
+        
+        if config.plugins.iptvplayer.hdfilmetv_use_proxy_gateway.value and 'hdfilme.tv' in url:
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            params['header']['Referer'] = proxy
+            params['header']['Cookie'] = 'flags=2e5;'
+            url = proxy
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and None == data:
+            sts = False
+        return sts, data
+        
     def _getFullUrl(self, url):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
         if url.startswith('//'):
             url = 'http:' + url
         elif url.startswith('/'):
@@ -107,7 +125,7 @@ class HDFilmeTV(CBaseHostClass):
         printDBG("HDFilmeTV.fillFiltersCache")
         self.filtersCache = {'genre':[], 'country':[], 'sort':[]}
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         for filter in [{'m':'name="cat"', 'key':'genre'}, {'m':'name="country"', 'key':'country'}, {'m':'name="order_f"', 'key':'sort'}]:
@@ -145,7 +163,7 @@ class HDFilmeTV(CBaseHostClass):
         else:
             url += '?cat=%s&country=%s&order_f=%s&per_page=%s&order_d=desc' % (cItem['genre'], cItem['country'], cItem['sort'], (page-1)*itemsPerPage)
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', '</ul>', False)[1]
@@ -171,7 +189,7 @@ class HDFilmeTV(CBaseHostClass):
             desc = self.cleanHtmlStr(item)
             
             params = dict(cItem)
-            params.update({'category':nextCategory, 'title':title, 'url':self._getFullUrl(url), 'icon':icon, 'desc':desc})
+            params.update({'category':nextCategory, 'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon), 'desc':desc})
             self.addDir(params)
         
         if nextPage:
@@ -182,7 +200,7 @@ class HDFilmeTV(CBaseHostClass):
     def exploreItem(self, cItem):
         printDBG("HDFilmeTV.listItems")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         trailerUrl = self._getFullUrl(self.cm.ph.getSearchGroups(data, '''<a[^>]*?class="btn btn-xemnow pull-right"[^>]*?href=['"]([^'^"]+?)['"][^>]*?>Trailer<''')[0])
@@ -226,7 +244,7 @@ class HDFilmeTV(CBaseHostClass):
         printDBG("HDFilmeTV.getVideoLinks [%s]" % videoUrl)
         urlTab = []
         
-        sts, data = self.cm.getPage(videoUrl)
+        sts, data = self.getPage(videoUrl)
         if not sts: return []
         
         googleUrls = self.cm.ph.getSearchGroups(data, '''var hdfilme[^=]*?=[^[]*?(\[[^;]+?);''')[0].strip()
@@ -236,7 +254,7 @@ class HDFilmeTV(CBaseHostClass):
                 for item in googleUrls:
                     if item['type'] != 'mp4':
                         continue
-                    urlTab.append({'name':item['label'], 'url':item['file']})
+                    urlTab.append({'name':item['label'], 'url':self._getFullUrl(item['file'])})
             except:
                 printExc()
         if len(urlTab):
@@ -244,7 +262,7 @@ class HDFilmeTV(CBaseHostClass):
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>', caseSensitive=False)
         for item in data:
-            vidUrl = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"', ignoreCase=True)[0]
+            vidUrl = self._getFullUrl(self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"', ignoreCase=True)[0])
             if 1 != self.up.checkHostSupport(vidUrl): continue 
             urlTab.extend( self.up.getVideoLinkExt(vidUrl) )
         
@@ -261,7 +279,7 @@ class HDFilmeTV(CBaseHostClass):
         printDBG("HDFilmeTV.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return retTab
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="main">', '<div class="row">')[1]
