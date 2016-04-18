@@ -1230,19 +1230,20 @@ class pageParser:
         '''
 
     def parserVK(self, url):
+        printDBG("parserVK url[%s]" % url)
         sts, data = self.cm.getPage(url)
         if not sts: return False
         movieUrls = []
-        item = self.cm.ph.getSearchGroups(data, 'cache([0-9]+?)=(http[^"]+?\.mp4[^;]*)', 2)
+        item = self.cm.ph.getSearchGroups(data, '''['"]?cache([0-9]+?)['"]?[=:]['"]?(http[^"]+?\.mp4[^;^"^']*)[;"']''', 2)
         if '' != item[1]:
-            cacheItem = { 'name': 'vk.com: ' + item[0] + 'p (cache)', 'url':item[1].encode('UTF-8') }
+            cacheItem = { 'name': 'vk.com: ' + item[0] + 'p (cache)', 'url':item[1].replace('\\/', '/').encode('UTF-8') }
         else: cacheItem = None
         
-        tmpTab = re.findall('url([0-9]+?)=(http[^"]+?\.mp4[^;]*)', data)
+        tmpTab = re.findall('''['"]?url([0-9]+?)['"]?[=:]['"]?(http[^"]+?\.mp4[^;^"^']*)[;"']''', data)
         ##prepare urls list without duplicates
         for item in tmpTab:
             item = list(item)
-            if item[1].endswith('&amp'): item[1] = item[1][:-4]
+            if item[1].endswith('&amp'): item[1] = item[1][:-4].replace('\\/', '/')
             found = False
             for urlItem in movieUrls:
                 if item[1] == urlItem['url']:
