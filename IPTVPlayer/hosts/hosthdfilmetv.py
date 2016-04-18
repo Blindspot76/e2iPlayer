@@ -36,11 +36,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.hdfilmetv_use_proxy_gateway  = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("Use proxy gateway"), config.plugins.iptvplayer.hdfilmetv_use_proxy_gateway))
     return optionList
 ###################################################
 
@@ -55,7 +53,7 @@ class HDFilmeTV(CBaseHostClass):
     
     MAIN_URL      = 'http://hdfilme.tv/'
     SEARCH_URL    = MAIN_URL + 'movie/search'
-    DEFAULT_ICON  = "http://hdfilme.tv/public/site/images/logo.png"
+    DEFAULT_ICON  = "https://raw.githubusercontent.com/StoneOffStones/plugin.video.xstream/c88b2a6953febf6e46cf77f891d550a3c2ee5eea/resources/art/sites/hdfilme.png" #"http://hdfilme.tv/public/site/images/logo.png"
 
     MAIN_CAT_TAB = [{'icon':DEFAULT_ICON, 'category':'list_filters',    'filter':'genre',    'title': _('Movies'),  'url':MAIN_URL+'movie-movies'},
                     {'icon':DEFAULT_ICON, 'category':'list_filters',    'filter':'genre',    'title': _('Series'),  'url':MAIN_URL+'movie-series'},
@@ -69,12 +67,19 @@ class HDFilmeTV(CBaseHostClass):
         self.filtersCache = {'genre':[], 'country':[], 'sort':[]}
         self.seasonCache = {}
         self.cacheLinks = {}
+        self.needProxy = None
         
+    def isNeedProxy(self):
+        if self.needProxy == None:
+            sts, data = self.cm.getPage(self.MAIN_URL)
+            self.needProxy = not sts
+        return self.needProxy
+    
     def getPage(self, url, params={}, post_data=None):
         HTTP_HEADER= dict(self.HEADER)
         params.update({'header':HTTP_HEADER})
         
-        if config.plugins.iptvplayer.hdfilmetv_use_proxy_gateway.value and 'hdfilme.tv' in url:
+        if self.isNeedProxy() and 'hdfilme.tv' in url:
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
             params['header']['Referer'] = proxy
             params['header']['Cookie'] = 'flags=2e5;'
@@ -83,6 +88,17 @@ class HDFilmeTV(CBaseHostClass):
         if sts and None == data:
             sts = False
         return sts, data
+        
+    def _getIconUrl(self, url):
+        url = self._getFullUrl(url)
+        if 'hdfilme.tv' in url and self.isNeedProxy():
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            params = {}
+            params['User-Agent'] = self.HEADER['User-Agent'],
+            params['Referer'] = proxy
+            params['Cookie'] = 'flags=2e5;'
+            url = strwithmeta(proxy, params) 
+        return url
         
     def _getFullUrl(self, url):
         if 'proxy-german.de' in url:
@@ -94,8 +110,8 @@ class HDFilmeTV(CBaseHostClass):
         elif 0 < len(url) and not url.startswith('http'):
             url =  self.MAIN_URL + url
         
-        if not self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
+        #if not self.MAIN_URL.startswith('https://'):
+        #    url = url.replace('https://', 'http://')
                 
         url = self.cleanHtmlStr(url)
         url = self.replacewhitespace(url)
@@ -189,7 +205,7 @@ class HDFilmeTV(CBaseHostClass):
             desc = self.cleanHtmlStr(item)
             
             params = dict(cItem)
-            params.update({'category':nextCategory, 'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon), 'desc':desc})
+            params.update({'category':nextCategory, 'title':title, 'url':self._getFullUrl(url), 'icon':self._getIconUrl(icon), 'desc':desc})
             self.addDir(params)
         
         if nextPage:
@@ -318,11 +334,10 @@ class HDFilmeTV(CBaseHostClass):
                     break
                 
         views = self.cm.ph.getSearchGroups(data, '''Aufrufe[^>]*?([0-9]+?)[^0-9]''')[0]
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % views)
         if views != '':
             otherInfo['views'] = views
         
-        return [{'title':self.cleanHtmlStr( title ), 'text': desc, 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
+        return [{'title':self.cleanHtmlStr( title ), 'text': desc, 'images':[{'title':'', 'url':self._getIconUrl(icon)}], 'other_info':otherInfo}]
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
