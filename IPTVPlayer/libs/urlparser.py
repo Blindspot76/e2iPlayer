@@ -1243,7 +1243,8 @@ class pageParser:
         ##prepare urls list without duplicates
         for item in tmpTab:
             item = list(item)
-            if item[1].endswith('&amp'): item[1] = item[1][:-4].replace('\\/', '/')
+            if item[1].endswith('&amp'): item[1] = item[1][:-4]
+            item[1] = item[1].replace('\\/', '/')
             found = False
             for urlItem in movieUrls:
                 if item[1] == urlItem['url']:
