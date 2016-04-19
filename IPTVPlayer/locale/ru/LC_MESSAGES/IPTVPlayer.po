@@ -3825,3 +3825,34 @@ msgstr "Режим ящика"
 
 msgid "nonlinear"
 msgstr "Без чёрных полос"
+
+msgid "Cartoons"
+msgstr "Мультсериалы"
+
+msgid "Genre selection"
+msgstr "Выбор жанра"
+
+msgid "By country"
+msgstr "По странам"
+
+msgid "Translations"
+msgstr "Переводы"
+
+msgid "Collections"
+msgstr "Подборки"
+
+msgid ""
+"Link is not supported by the gstplayer. Please use the extelayer3 if "
+"available."
+msgstr ""
+"Ссылка не поддерживается проигрывателем gstplayer. Пожалуйста, используйте "
+"extelayer3 если таковая имеется."
+
+msgid "Fatal error: consoleWrite failed!"
+msgstr "Фатальная ошибка: Консоль записи произошел сбой!"
+
+msgid "Most Viewed"
+msgstr "Наиболее просматриваемые"
+
+msgid "Trailers"
+msgstr "Трейлеры"

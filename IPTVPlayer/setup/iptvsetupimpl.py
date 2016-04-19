@@ -508,41 +508,48 @@ class IPTVSetupImpl:
     ###################################################
     def gstplayerStep(self, ret=None):
         printDBG("IPTVSetupImpl.gstplayerStep")
-        def _detectValidator(code, data):
-            if '{"GSTPLAYER_EXTENDED":{"version":' in data: 
-                try: ver = int(re.search('"version":([0-9]+?)[^0-9]', data).group(1))
-                except: ver = 0
-                if '0.10' != self.gstreamerVersion or ver < 10000:
-                    if ver >= self.gstplayerVersion.get(self.gstreamerVersion, 0): 
-                        return True,False
-            return False,True
-        def _deprecatedHandler(paths, stsTab, dataTab):
-            sts, retPath = False, ""
-            for idx in range(len(dataTab)):
-                if '{"GSTPLAYER_EXTENDED":{"version":' in dataTab[idx]: sts, retPath = True, paths[idx]
-            return sts, retPath
-        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
-            url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + self.gstreamerVersion
-            tmpFile = tmpPath + binName
-            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
-            return cmd
-        self.stepHelper = CBinaryStepHelper("gstplayer", self.platform, self.openSSLVersion, config.plugins.iptvplayer.gstplayerpath)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer as external movie player.') % ('gstplayer'), 1)
-        self.stepHelper.setInstallChoiseList( self._gstplayerInstallChoiseList )
-        self.stepHelper.setPaths( self.gstplayerpaths )
-        self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
-        self.stepHelper.setDetectValidator( _detectValidator )
-        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
-        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
-        self.stepHelper.setFinishHandler( self.gstplayerStepFinished )
-        self.binaryDetect()
+        if self.gstreamerVersion == "0.10" and self.platform in ['armv7', 'armv5t']:
+            printDBG('Skip gstplayer 0.10 step installation - no binary for armv7 and armv5t platforms')
+            self.gstplayerStepFinished(False)
+        else:
+            def _detectValidator(code, data):
+                if '{"GSTPLAYER_EXTENDED":{"version":' in data: 
+                    try: ver = int(re.search('"version":([0-9]+?)[^0-9]', data).group(1))
+                    except: ver = 0
+                    if '0.10' != self.gstreamerVersion or ver < 10000:
+                        if ver >= self.gstplayerVersion.get(self.gstreamerVersion, 0): 
+                            return True,False
+                return False,True
+            def _deprecatedHandler(paths, stsTab, dataTab):
+                sts, retPath = False, ""
+                for idx in range(len(dataTab)):
+                    if '{"GSTPLAYER_EXTENDED":{"version":' in dataTab[idx]: sts, retPath = True, paths[idx]
+                return sts, retPath
+            def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+                url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + self.gstreamerVersion
+                tmpFile = tmpPath + binName
+                cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+                return cmd
+            self.stepHelper = CBinaryStepHelper("gstplayer", self.platform, self.openSSLVersion, config.plugins.iptvplayer.gstplayerpath)
+            self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer as external movie player.') % ('gstplayer'), 1)
+            self.stepHelper.setInstallChoiseList( self._gstplayerInstallChoiseList )
+            self.stepHelper.setPaths( self.gstplayerpaths )
+            self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
+            self.stepHelper.setDetectValidator( _detectValidator )
+            self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+            self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+            self.stepHelper.setFinishHandler( self.gstplayerStepFinished )
+            self.binaryDetect()
 
     def gstplayerStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.gstplayerStepFinished sts[%r]" % sts)
-        if sts and '0.10' == self.gstreamerVersion:
-            self.flumpegdemuxStep()
-        else: 
-            self.gstifdsrcStep()
+        if sts:
+            if '0.10' == self.gstreamerVersion:
+                self.flumpegdemuxStep()
+            else: 
+                self.gstifdsrcStep()
+        else:
+            self.finish()
         
     ###################################################
     # STEP: FLUENDO MPEGDEMUX
