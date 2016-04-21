@@ -269,7 +269,7 @@ class KwejkTV(CBaseHostClass):
         if not sts: return []
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>', False)
-        for baseUrl in [self.MAIN_URL, 'http://kinofan.tv/']:
+        for baseUrl in [self.MAIN_URL]: #, 'http://kinofan.tv/']:
             for item in data:
                 url = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
                 if url == '': continue
