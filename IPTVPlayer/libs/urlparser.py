@@ -336,6 +336,7 @@ class urlparser:
                        'static.bro.adca.st':   self.pp.parseBROADCAST      ,
                        'bro.adcast.tech':      self.pp.parseBROADCAST      ,
                        'moshahda.net':         self.pp.parseMOSHAHDANET    ,
+                       'stream.moe':           self.pp.parseSTREAMMOE      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -696,6 +697,8 @@ class pageParser:
             item += '},'
             if contain != '' and contain not in item: continue
             link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
+            if '%3A%2F%2F' in link and '://' not in link:
+                link = urllib.unquote(link)
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
             if '://' in link and not link.endswith('.smil'):
                 linksTab.append({'name': '%s %s' % (serverName, label), 'url':link})
@@ -1998,6 +2001,20 @@ class pageParser:
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
         sts, data = self.cm.getPage(baseUrl)
         return self._findLinks(data, 'moshahda.net')
+        
+    def parseSTREAMMOE(self, baseUrl):
+        printDBG("parseSTREAMMOE baseUrl[%r]" % baseUrl)
+        
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        url = baseUrl
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts:
+            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
+            data = iptv_execute()( cmd )
+            #printDBG(data)
+            if not data['sts'] or 0 != data['code']: return False
+            data = data['data']
+        return self._findLinks(data, 'stream.moe', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+(?:\.mp4|\.flv)[^"^']*)['"][,}]''', m1='clip:')
         
     def parserTRILULILU(self, baseUrl):
         def getTrack(userid, hash):

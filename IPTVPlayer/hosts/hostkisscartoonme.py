@@ -24,6 +24,10 @@ import string
 import base64
 try:    import json
 except: import simplejson as json
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.pbkdf2 import pbkdf2
+from binascii import a2b_hex
+
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -310,6 +314,30 @@ class KissCartoonMe(CBaseHostClass):
         sts, data = self.getPage(cItem['url']) 
         if not sts: return urlTab
         
+        # get server list
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'id="selectServer"', '</select>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<option', '</option>')
+        for item in data:
+            serverTitle = self.cleanHtmlStr(item)
+            serverUrl   = self.cm.ph.getSearchGroups(item, '''value="(http[^"]+?)"''')[0]
+            if serverUrl.startswith('http'):
+                urlTab.append({'name':serverTitle, 'url':serverUrl, 'need_resolve':1})
+        
+        if 0 == len(urlTab):
+            urlTab.append({'name':'default', 'url':cItem['url'], 'need_resolve':1})
+        return urlTab
+        
+    def getVideoLinks(self, videoUrl):
+        printDBG("KissCartoonMe.getVideoLinks [%s]" % videoUrl)
+        urlTab = []
+        
+        if 'kisscartoon' not in videoUrl:
+            return self.up.getVideoLinkExt(videoUrl)
+            
+            
+        sts, data = self.getPage(videoUrl) 
+        if not sts: return urlTab
+        
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'asp.wrap(', ')', False)
         for tmp in tmpTab:
             tmp = tmp.strip()
@@ -329,15 +357,29 @@ class KissCartoonMe(CBaseHostClass):
             except:
                 printExc()
                 continue
+                
+        def _decUrl(data):
+            password = base64.b64decode('X1dyeExsM3JuQTQ4aWFmZ0N5Xw==')[1:-1]
+            salt = base64.b64decode('X0NhcnRLUyQyMTQxI18=')[1:-1]
+            iv = a2b_hex(base64.b64decode('X2E1ZThkMmU5YzE3MjFhZTBlODRhZDY2MGM0NzJjMWYzXw==')[1:-1])
+            encrypted = base64.b64decode(data)
+            iterations = 1000
+            keySize = 16
+            key = pbkdf2(password, salt, iterations, keySize)
+            cipher = AES_CBC(key=key, keySize=16)
+            return cipher.decrypt(encrypted, iv)
         
-        tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="selectQuality">', '</select>', False)
-        tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, '<option', '</option>')
+        tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="selectQuality">', '</select>', False)[1]
+        tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
         for item in tmpTab:
             url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
             if '' == url: continue
             try:
-                url = base64.b64decode(url)
+                #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
+                url = _decUrl(url)
+                #printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
             except:
+                #printExc()
                 continue
             if '://' not in url: continue
             name = self.cleanHtmlStr(item)
@@ -356,16 +398,7 @@ class KissCartoonMe(CBaseHostClass):
             url  = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''',  grupsNum=1, ignoreCase=True)[0]
             url = self._getFullUrl(url)
             if url.startswith('http') and 'facebook.com' not in url and 1 == self.up.checkHostSupport(url):
-                urlTab.append({'name': self.up.getHostName(url), 'url':url, 'need_resolve':1})
-                
-        return urlTab
-        
-    def getVideoLinks(self, videoUrl):
-        printDBG("KissCartoonMe.getVideoLinks [%s]" % videoUrl)
-        urlTab = []
-        
-        if videoUrl.startswith('http'):
-            urlTab.extend(self.up.getVideoLinkExt(videoUrl))
+                urlTab.extend(self.up.getVideoLinkExt(url))
         return urlTab
         
     def listSearchResult(self, cItem, searchPattern, searchType):
