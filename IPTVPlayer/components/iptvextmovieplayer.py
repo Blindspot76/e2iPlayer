@@ -89,6 +89,9 @@ class ExtPlayerCommandsDispatcher():
     def setDownloadFileTimeout(self, timeout):
         self.extPlayerSendCommand('PLAYBACK_SET_DOWNLOAD_FILE_TIMEOUT', timeout, False)
         
+    def setProgressiveDownload(self, flag):
+        self.extPlayerSendCommand('PLAYBACK_SET_PROGRESSIVE_DOWNLOAD', flag, False)
+        
     def setLoopMode(self, value):
         self.extPlayerSendCommand('PLAYBACK_SET_LOOP_MODE', value, False)
     
@@ -1252,7 +1255,10 @@ class IPTVExtMoviePlayer(Screen):
     def onDownloadFinished(self, sts):
         printDBG("IPTVExtMoviePlayer.onDownloadFinished sts[%s]" % sts)
         if None != self.extPlayerCmddDispatcher:
-            self.extPlayerCmddDispatcher.setDownloadFileTimeout(0)
+            if 'gstplayer' == self.player:
+                self.extPlayerCmddDispatcher.setDownloadFileTimeout(0)
+            else:
+                self.extPlayerCmddDispatcher.setProgressiveDownload(0)
 
     def __onClose(self):
         self.isClosing = True
@@ -1408,13 +1414,14 @@ class IPTVExtMoviePlayer(Screen):
         self.initGuiComponentsPos()
         self.metaHandler.load()
         self.loadLastPlaybackTime()
+        
+        if None != self.downloader:
+            self.downloader.subscribeFor_Finish(self.onDownloadFinished)
+        
         if 'gstplayer' == self.player:
             if self.fileSRC.startswith('merge://'):
                 msg = _("Link is not supported by the gstplayer. Please use the extelayer3 if available.")
                 self.showMessage(msg, MessageBox.TYPE_ERROR)
-            
-            if None != self.downloader:
-                self.downloader.subscribeFor_Finish(self.onDownloadFinished)
             
             gstplayerPath = config.plugins.iptvplayer.gstplayerpath.value
             #'export GST_DEBUG="*:6" &&' + 
@@ -1496,6 +1503,9 @@ class IPTVExtMoviePlayer(Screen):
                 cmd += ' -a -p 10'
             elif config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
                 cmd += ' -p 2'
+            if None != self.downloader:
+                cmd += ' -o 1 '
+            
             audioTrackIdx = self.metaHandler.getAudioTrackIdx()
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)
             if audioTrackIdx >= 0:
@@ -1685,6 +1695,8 @@ class IPTVExtMoviePlayer(Screen):
             self.consoleWrite( "ac\n")
         elif 'PLAYBACK_SET_DOWNLOAD_FILE_TIMEOUT' == command:
             self.consoleWrite( "t%s\n" % arg1)
+        elif 'PLAYBACK_SET_PROGRESSIVE_DOWNLOAD' == command:
+            self.consoleWrite( "o%s\n" % arg1)
         else:
             # All below commands require that 'PLAY ' status, 
             # so we first send command to resume playback
