@@ -1503,8 +1503,8 @@ class IPTVExtMoviePlayer(Screen):
                 cmd += ' -a -p 10'
             elif config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
                 cmd += ' -p 2'
-            if None != self.downloader:
-                cmd += ' -o 1 '
+                if None != self.downloader:
+                    cmd += ' -o 1 '
             
             audioTrackIdx = self.metaHandler.getAudioTrackIdx()
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>> audioTrackIdx[%d]" % audioTrackIdx)
