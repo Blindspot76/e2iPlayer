@@ -3322,7 +3322,11 @@ class pageParser:
             path = '/'.join(x.strip('/') for x in paths if x)
             return urlunsplit((scheme, netloc, path, query, fragment))
         
-        url = redirectUrl
+        vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
+        url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + 'playthis-{0}.html'.format(vid)
+        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+        if not sts:
+            return False
         post_data = None
         if 'Proceed to video' in data:
             sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<Form method="POST"', '</Form>', True)
@@ -3348,6 +3352,7 @@ class pageParser:
             if not sts: return False
         
         try:
+            printDBG(data)
             tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
             tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
             printDBG(tmp)

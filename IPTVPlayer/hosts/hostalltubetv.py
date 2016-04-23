@@ -52,10 +52,9 @@ def gettytul():
 class AlltubeTV(CBaseHostClass):
     MAIN_URL    = 'http://alltube.tv/'
     SRCH_URL    = MAIN_URL + '?url=search/index'
-    DEFAULT_ICON = 'https://scontent-waw1-1.xx.fbcdn.net/hphotos-xal1/v/l/t1.0-9/11012948_860312804054948_8203520643827603823_n.png?oh=36b6777a5723b93b1aabbdc14c0c2934&oe=57194120'
-    
-    MAIN_CAT_TAB = [{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
-                    {'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':DEFAULT_ICON},
+    DEFAULT_ICON = 'http://alltube.tv//static/img/logony.png'
+    #{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
+    MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':DEFAULT_ICON},
                     {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
                     {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'5', 'icon':DEFAULT_ICON, 'mtype':True},
                     {'category':'list_rank',          'title': _('Ranking'),       'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
