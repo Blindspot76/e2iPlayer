@@ -92,27 +92,10 @@ if __name__ == "__main__":
         vidUrl = baseUrl + '/' + result[1]['url'] + '?token=' + stoken
         print('\n%s\n' % vidUrl, file=sys.stderr)
         
-        if 0:
-            ws1.send('2')
-            ws2.send('2')
-            result = ws1.recv()
-            result = ws2.recv()
-        
         start_time = time.time()
         result = ['', '']
         while True:
             printDBG("Refreshing....")
-            
-            if 0:
-                #ws1.send('2')
-                #result[0] = ws1.recv()
-                print(result[0])
-                ws1.send('42["subscribe","%s"]' % streamId)
-                result[0] = ws1.recv()
-                print(result[0])
-                result[0] = json.loads(result[0][result[0].find('42')+2:])
-                vidUrl = baseUrl + '/' + result[0][1]['url'] + '?token=' + stoken
-                print('\n%s\n' % vidUrl, file=sys.stderr)
             
             dt = time.time() - start_time
             if dt >= 0 and dt < 20:

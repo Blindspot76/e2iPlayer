@@ -11,7 +11,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.libs import websocket
 ###################################################
 
 ###################################################
@@ -272,84 +271,16 @@ class PierwszaTVApi:
                 wsUrl2 = baseUrl2.replace(":8000",":8004").replace('http://', 'ws://') + '/socket.io/?EIO=3&transport=websocket&sid={0}'.format(baseParams2['sid'])
                 wsUrl1 = baseUrl1.replace('http://', 'ws://') + '/socket.io/?EIO=3&transport=websocket&sid={0}'.format(baseParams1['sid'])
                 
-                
-                #websocket.enableTrace(True)
-                
-                if 0:
-                    ws = websocket.create_connection(wsUrl)
-                    ws.send('2probe')
-                    result = ws.recv()
-                    printDBG("Received '%s'" % result)
-                    ws.send('5')
-                    ws.send('42["subscribe","%s"]' % streamId)
-                    result = ws.recv()
-                    result = byteify( json.loads(result[result.find('42')+2:]) ) 
-                    
-                    vidUrl = baseUrl2 + '/' + result[1]['url'] + '?token=' + stoken
-                    printDBG("Received '%s'" % result)
-                    
-                    ws.send('2')
-                    result = ws.recv()
-                    printDBG("Received '%s'" % result)
-                    ws.close()
-                
-                    vidUrl = strwithmeta(vidUrl, {'Referer':cItem['url'], 'User-Agent':self.http_params['header']['User-Agent']})
-                    tmpUrlsTab = getDirectM3U8Playlist(vidUrl)
-                
                 libsPath = GetPluginDir('libs/')
                 
                 pyCmd = GetPyScriptCmd('pierwszatv') + ' "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" ' % (self.http_params['header']['User-Agent'], baseUrl2, wsUrl2, wsUrl1, stoken, streamId, libsPath, baseParams2['sid'])
-                vidUrl = strwithmeta("fake://fake", {'iptv_buffering': 'required', 'iptv_refresh_cmd':pyCmd, 'Referer':cItem['url'], 'User-Agent':self.http_params['header']['User-Agent']})
-                vidUrl.meta['iptv_proto'] = 'em3u8'
+                vidUrl = strwithmeta("fake://fake", {'iptv_proto':'em3u8', 'iptv_buffering': 'required', 'iptv_refresh_cmd':pyCmd, 'Referer':cItem['url'], 'User-Agent':self.http_params['header']['User-Agent']})
                 
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 printDBG(pyCmd)
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 
-                #return xyz
                 return [{'name':'pierwsza_hls', 'url':vidUrl}]
-                
-                t2 = self.getTimestamp(time()*1000)
-                url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t2, baseParams2['sid'])
-                sts, data = self.cm.getPage(url, self.http_params3)
-                printDBG(data)
-            else:
-                baseUrl = tmp
-                streamId = window['streamId']
-                streamToken = window['streamToken']
-                url = baseUrl + "/stream/get?id=" + streamId + "&token=" + streamToken
-            
-            sts, data = self.cm.getPage(url, params)
-            data = byteify(json.loads(data))
-            if data['error'] != None:
-                SetIPTVPlayerLastHostError(str(data['error']))
-            url = baseUrl + "/" + data['url'] + "?token=" + streamToken
-            url = strwithmeta(url, {'Referer':cItem['url'], 'User-Agent':HTTP_HEADER['User-Agent']})
-            url.meta['iptv_proto'] = 'em3u8' 
-            tmpUrlsTab = getDirectM3U8Playlist(url)
-            return tmpUrlsTab
-            
-            refreshUrl1 = baseUrl + "/stream/bump?id=" + streamId + "&token=" + streamToken
-            refreshUrl2 = window['urls']['bumpToken'] + "?pid=" + serverId + "&token=" + streamToken
-            reportOkUrl = window['urls']['reportOk']
-            
-            HTTP_HEADER= dict(PierwszaTVApi.HTTP_HEADER)
-            HTTP_HEADER.update( {'Referer':cItem['url']} )
-            
-            params    = {'header' : HTTP_HEADER, 'cookiefile' : self.COOKIE_FILE, 'save_cookie' : True, 'load_cookie' : True}
-            self.cm.getPage(reportOkUrl, params)
-            
-            pyCmd = GetPyScriptCmd('pierwszatv') + ' "%s" "%s" "%s" "%s" ' % (HTTP_HEADER['User-Agent'], cItem['url'], refreshUrl1, refreshUrl2)
-            for item in tmpUrlsTab:
-                item['url'] = strwithmeta(item['url'], {'iptv_refresh_cmd':pyCmd, 'Referer':cItem['url'], 'User-Agent':HTTP_HEADER['User-Agent']})
-                urlsTab.append(item)
-                
-            self.cm.getPage(refreshUrl1, params)
-            self.cm.getPage(refreshUrl2, params)
-            
-            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            printDBG(pyCmd)
-            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             
         except:
             printExc()
