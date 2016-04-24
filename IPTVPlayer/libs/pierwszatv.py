@@ -119,7 +119,7 @@ class PierwszaTVApi:
         for item in data:
             url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0] )
             icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src="([^"]+?)"''', 1, True)[0] )
-            icon = ''
+            #icon = ''
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="name">', '</div>', False)[1] )
             desc  = self.cleanHtmlStr( item.split('<div class="author">')[-1] )
             if not url.startswith('http'): continue
