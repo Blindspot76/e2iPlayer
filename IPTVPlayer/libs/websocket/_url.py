@@ -20,7 +20,7 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
 """
 
-from six.moves.urllib.parse import urlparse
+from urlparse import urlparse
 import os
 
 __all__ = ["parse_url", "get_proxy_info"]

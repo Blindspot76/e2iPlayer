@@ -19,7 +19,6 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
     Boston, MA  02110-1335  USA
 
 """
-import six
 import array
 import struct
 import os
@@ -39,10 +38,7 @@ except ImportError:
         for i in range(len(_d)):
             _d[i] ^= _m[i % 4]
 
-        if six.PY3:
-            return _d.tobytes()
-        else:
-            return _d.tostring()
+        return _d.tostring()
 
 # closing frame status codes.
 STATUS_NORMAL = 1000
@@ -144,7 +140,7 @@ class ABNF(object):
             if l > 2 and not skip_utf8_validation and not validate_utf8(self.data[2:]):
                 raise WebSocketProtocolException("Invalid close frame.")
 
-            code = 256*six.byte2int(self.data[0:1]) + six.byte2int(self.data[1:2])
+            code = 256*ord(self.data[0:1][0]) + ord(self.data[1:2][0]) #ord(bs[0])
             if not self._is_valid_close_status(code):
                 raise WebSocketProtocolException("Invalid close opcode.")
 
@@ -169,7 +165,7 @@ class ABNF(object):
 
         fin: fin flag. if set to 0, create continue fragmentation.
         """
-        if opcode == ABNF.OPCODE_TEXT and isinstance(data, six.text_type):
+        if opcode == ABNF.OPCODE_TEXT and isinstance(data, unicode):
             data = data.encode("utf-8")
         # mask must be set if send data from client
         return ABNF(fin, 0, 0, 0, opcode, 1, data)
@@ -191,14 +187,14 @@ class ABNF(object):
                            | self.opcode)
         if length < ABNF.LENGTH_7:
             frame_header += chr(self.mask << 7 | length)
-            frame_header = six.b(frame_header)
+            frame_header = b"%s" % frame_header
         elif length < ABNF.LENGTH_16:
             frame_header += chr(self.mask << 7 | 0x7e)
-            frame_header = six.b(frame_header)
+            frame_header = b"%s" % frame_header
             frame_header += struct.pack("!H", length)
         else:
             frame_header += chr(self.mask << 7 | 0x7f)
-            frame_header = six.b(frame_header)
+            frame_header = b"%s" % frame_header
             frame_header += struct.pack("!Q", length)
 
         if not self.mask:
@@ -210,7 +206,7 @@ class ABNF(object):
     def _get_masked(self, mask_key):
         s = ABNF.mask(mask_key, self.data)
 
-        if isinstance(mask_key, six.text_type):
+        if isinstance(mask_key, unicode):
             mask_key = mask_key.encode('utf-8')
 
         return mask_key + s
@@ -227,11 +223,11 @@ class ABNF(object):
         if data == None:
             data = ""
 
-        if isinstance(mask_key, six.text_type):
-            mask_key = six.b(mask_key)
+        if isinstance(mask_key, unicode):
+            mask_key = b"%s" % mask_key
 
-        if isinstance(data, six.text_type):
-            data = six.b(data)
+        if isinstance(data, unicode):
+            data = b"%s" % data
 
         _m = array.array("B", mask_key)
         _d = array.array("B", data)
@@ -261,8 +257,7 @@ class frame_buffer(object):
         header = self.recv_strict(2)
         b1 = header[0]
 
-        if six.PY2:
-            b1 = ord(b1)
+        b1 = ord(b1)
 
         fin = b1 >> 7 & 1
         rsv1 = b1 >> 6 & 1
@@ -271,8 +266,7 @@ class frame_buffer(object):
         opcode = b1 & 0xf
         b2 = header[1]
 
-        if six.PY2:
-            b2 = ord(b2)
+        b2 = ord(b2)
 
         has_mask = b2 >> 7 & 1
         length_bits = b2 & 0x7f
@@ -347,7 +341,7 @@ class frame_buffer(object):
             self.recv_buffer.append(bytes)
             shortage -= len(bytes)
 
-        unified = six.b("").join(self.recv_buffer)
+        unified = b"".join(self.recv_buffer)
 
         if shortage == 0:
             self.recv_buffer = []

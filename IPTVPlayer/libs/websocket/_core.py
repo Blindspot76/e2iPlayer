@@ -21,14 +21,9 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 """
 from __future__ import print_function
 
-
-import six
 import socket
 
-if six.PY3:
-    from base64 import encodebytes as base64encode
-else:
-    from base64 import encodestring as base64encode
+from base64 import encodestring as base64encode
 
 import struct
 import threading
@@ -275,7 +270,7 @@ class WebSocket(object):
 
         payload: data payload to send server.
         """
-        if isinstance(payload, six.text_type):
+        if isinstance(payload, unicode):
             payload = payload.encode("utf-8")
         self.send(payload, ABNF.OPCODE_PING)
 
@@ -285,7 +280,7 @@ class WebSocket(object):
 
         payload: data payload to send server.
         """
-        if isinstance(payload, six.text_type):
+        if isinstance(payload, unicode):
             payload = payload.encode("utf-8")
         self.send(payload, ABNF.OPCODE_PONG)
 
@@ -296,9 +291,7 @@ class WebSocket(object):
         return value: string(byte array) value.
         """
         opcode, data = self.recv_data()
-        if six.PY3 and opcode == ABNF.OPCODE_TEXT:
-            return data.decode("utf-8")
-        elif opcode == ABNF.OPCODE_TEXT or opcode == ABNF.OPCODE_BINARY:
+        if opcode == ABNF.OPCODE_TEXT or opcode == ABNF.OPCODE_BINARY:
             return data
         else:
             return ''
@@ -359,7 +352,7 @@ class WebSocket(object):
         """
         return self.frame_buffer.recv_frame()
 
-    def send_close(self, status=STATUS_NORMAL, reason=six.b("")):
+    def send_close(self, status=STATUS_NORMAL, reason=b""):
         """
         send close data to the server.
 
@@ -372,7 +365,7 @@ class WebSocket(object):
         self.connected = False
         self.send(struct.pack('!H', status) + reason, ABNF.OPCODE_CLOSE)
 
-    def close(self, status=STATUS_NORMAL, reason=six.b(""), timeout=3):
+    def close(self, status=STATUS_NORMAL, reason=b"", timeout=3):
         """
         Close Websocket object
 

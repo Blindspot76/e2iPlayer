@@ -28,7 +28,6 @@ import time
 import traceback
 import sys
 import select
-import six
 
 from ._core import WebSocket, getdefaulttimeout
 from ._exceptions import *
@@ -207,8 +206,6 @@ class WebSocketApp(object):
                         self._callback(self.on_cont_message, frame.data, frame.fin)
                     else:
                         data = frame.data
-                        if six.PY3 and frame.opcode == ABNF.OPCODE_TEXT:
-                            data = data.decode("utf-8")
                         self._callback(self.on_data, data, frame.opcode, True)
                         self._callback(self.on_message, data)
 
@@ -244,7 +241,7 @@ class WebSocketApp(object):
                 return []
 
         if data and len(data) >= 2:
-            code = 256*six.byte2int(data[0:1]) + six.byte2int(data[1:2])
+            code = 256*ord(data[0:1][0]) + ord(data[1:2][0])
             reason = data[2:].decode('utf-8')
             return [code, reason]
 

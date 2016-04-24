@@ -20,8 +20,6 @@ Copyright (C) 2010 Hiroki Ohtani(liris)
 
 """
 
-import six
-
 __all__ = ["NoLock", "validate_utf8", "extract_err_message"]
 
 class NoLock(object):
@@ -78,8 +76,7 @@ except ImportError:
         state = _UTF8_ACCEPT
         codep = 0
         for i in utfbytes:
-            if six.PY2:
-                i = ord(i)
+            i = ord(i)
             state, codep = _decode(state, codep, i)
             if state == _UTF8_REJECT:
                 return False
