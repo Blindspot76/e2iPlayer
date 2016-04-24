@@ -110,7 +110,8 @@ class M3U8Downloader(BaseDownloader):
         self.currentFragment = -1
         self.liveStream   = False
         self.skipFirstSegFromList = strwithmeta(url).meta.get('iptv_m3u8_skip_seg', 0)
-        self._startM3U8(url)
+        self.m3u8Url = url
+        self._startM3U8()
         
         self.onStart()
         return BaseDownloader.CODE_OK
@@ -251,8 +252,7 @@ class M3U8Downloader(BaseDownloader):
         #printDBG("===========================================================")
     '''
     
-    def _startM3U8(self, m3u8Url):
-        self.m3u8Url = m3u8Url
+    def _startM3U8(self):
         self.outData = ''
         ##############################################################################
         # frist download m3u8 conntent
@@ -382,7 +382,8 @@ class M3U8Downloader(BaseDownloader):
                     # however if this was not done the firs one will be selected
                     if m3u8Obj.is_variant:
                         if 0 < len(m3u8Obj.playlists):
-                            self._startM3U8(self._segUri(m3u8Obj.playlists[-1].absolute_uri))
+                            self.m3u8Url = self._segUri(m3u8Obj.playlists[-1].absolute_uri)
+                            self._startM3U8()
                             localStatus = DMHelper.STS.DOWNLOADING
                     else:
                         if 0 < len(m3u8Obj.segments):

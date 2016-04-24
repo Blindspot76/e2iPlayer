@@ -4,13 +4,14 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir, byteify, GetPyScriptCmd
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir, byteify, GetPyScriptCmd, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.libs import websocket
 ###################################################
 
 ###################################################
@@ -24,10 +25,10 @@ import string
 import base64
 try:    import json
 except: import simplejson as json
-
+from time import time
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from binascii import hexlify, unhexlify, a2b_hex
-from hashlib import md5
+from hashlib import md5, sha256
 from os import path as os_path
 ############################################
 
@@ -54,15 +55,18 @@ def GetConfigList():
 
 class PierwszaTVApi:
     MAIN_URL   = 'http://pierwsza.tv/'
-    HTTP_HEADER  = { 'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:12.0) Gecko/20100101 Firefox/12.0', 'Referer': MAIN_URL }
+    HTTP_HEADER  = { 'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36', 'Referer': MAIN_URL }
     
     def __init__(self):
         self.COOKIE_FILE = GetCookieDir('pierwszatv.cookie')
+        self.COOKIE_FILE2 = GetCookieDir('pierwszatv2.cookie')
+        self.COOKIE_FILE3 = GetCookieDir('pierwszatv3.cookie')
         self.sessionEx = MainSessionWrapper()
         self.cm = common()
         self.up = urlparser()
-        self.http_params = {}
-        self.http_params.update({'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
+        self.http_params = {'header': dict(self.HTTP_HEADER), 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.http_params2 = {'header': dict(self.HTTP_HEADER), 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE2}
+        self.http_params3 = {'header': dict(self.HTTP_HEADER), 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE3}
         self.cacheList = {}
         
     def cryptoJS_AES_decrypt(self, encrypted, password, salt):
@@ -76,6 +80,15 @@ class PierwszaTVApi:
         key, iv = derive_key_and_iv(password, salt, 32, 16)
         cipher = AES_CBC(key=key, keySize=32)
         return cipher.decrypt(encrypted, iv)
+        
+    def getTimestamp(self, t, s=64):
+        a = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_"
+        e = ""
+        t = int(t)
+        while t > 0:
+            e = a[t % s] + e
+            t = int(t / s)
+        return e
         
     def getFullUrl(self, url):
         if url.startswith('http'):
@@ -106,7 +119,7 @@ class PierwszaTVApi:
         for item in data:
             url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0] )
             icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src="([^"]+?)"''', 1, True)[0] )
-            #icon = ''
+            icon = ''
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="name">', '</div>', False)[1] )
             desc  = self.cleanHtmlStr( item.split('<div class="author">')[-1] )
             if not url.startswith('http'): continue
@@ -122,10 +135,11 @@ class PierwszaTVApi:
         if not sts: return []
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'connectToLive(', ')', False)[1]
-        tmp = self.cm.ph.getSearchGroups(tmp, '''['"]([^'^"]+?)['"][^'^"]+?['"]([^'^"]+?)['"]''', 2, True)[0]
+        tmp = self.cm.ph.getSearchGroups(tmp, '''['"]([^'^"]+?)['"][^'^"]+?['"]([^'^"]+?)['"]''', 2, True)
+        mainCon = {'url':tmp[0], 'token':tmp[1]}
         
-        varData = self.cm.ph.getDataBeetwenMarkers(data, 'window.', 'var items')[1]
-        window = {'streamUrl':'', 'sourceType':'', 'sourcePlayer':'', 'streamId':'', 'streamToken':'', 'serverId':''} 
+        varData = data #self.cm.ph.getDataBeetwenMarkers(data, 'window.', 'var items')[1]
+        window = {'streamUrl':'', 'endpoints':'', 'sourceId':'', 'sourceType':'', 'sourcePlayer':'', 'streamId':'', 'streamToken':'', 'serverId':''} 
         for key in window:
             val = self.cm.ph.getSearchGroups(varData, '''window\.%s[^'^"]*?=([^;]+?);''' % key, 1, True)[0].strip()
             if val.startswith("'") and val.endswith("'"):
@@ -133,32 +147,190 @@ class PierwszaTVApi:
             if val.startswith('"') and val.endswith('"'):
                 val = val[1:-1]
             window[key] = val
-            
+        
         window['urls'] = {}
         for keyUrl in ['playRecord', 'player', 'sync', 'multiLogin', 'reportError', 'reportOk', 'bumpToken']:
             window['urls'][keyUrl] = self.cm.ph.getSearchGroups(varData, '''window\.urls\['[^']+?\@%s'\][\s]*?=[\s]*?['"]([^'^"]+?)['"]''' % keyUrl, 1, True)[0].strip()
         
+        for keyUrl in ['requestStream']:
+            window['urls'][keyUrl] = self.cm.ph.getSearchGroups(varData, '''window\.routes\['[^']+?\@%s'\][\s]*?=[\s]*?['"]([^'^"]+?)['"]''' % keyUrl, 1, True)[0].strip()
+        
         urlsTab = []
         try:
             printDBG(window)
-            streamUrl = byteify(json.loads(window['streamUrl']))
+            if '' != window['streamUrl']:
+                tmp = window['streamUrl'].replace('\\"', '"')
+            else:
+                tmp = window['endpoints'].replace('\\"', '"')
+            streamUrl = byteify(json.loads(tmp))
             ciphertext = base64.b64decode(streamUrl['ct'])
             iv         = a2b_hex(streamUrl['iv'])
             salt       = a2b_hex(streamUrl['s'])
             
-            url = self.cryptoJS_AES_decrypt(ciphertext, 'number-one', salt)
-            baseUrl = byteify(json.loads(url))
-            url = baseUrl + "/stream/get?id=" + window['streamId'] + "&token=" + window['streamToken']
+            tmp = self.cryptoJS_AES_decrypt(ciphertext, 'number-one', salt)
+            tmp = byteify(json.loads(tmp))
+            tmp = byteify(json.loads(tmp))
+            
+            if isinstance(tmp, list):
+                tmp = tmp[0]
+            
+            if isinstance(tmp, dict):
+                baseUrl1     = mainCon['url']
+                streamToken1 = mainCon['token']
+                baseUrl2     = tmp['server']
+                streamToken2 = tmp['token']
+                
+                serverId = tmp['id']
+                
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG(tmp)
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                
+                t1 = self.getTimestamp(time()*1000)
+                url = baseUrl1 + '/socket.io/?EIO=3&transport=polling&t=' + t1
+                sts, data = self.cm.getPage(url, self.http_params2)
+                baseParams1 = data[data.find('{'):]
+                baseParams1 = byteify(json.loads(baseParams1))
+                printDBG("=========================================================")
+                printDBG([data])
+                printDBG(baseParams1)
+                printDBG("=========================================================")
+                
+                t2 = self.getTimestamp(time()*1000)
+                url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t=' + t2
+                sts, data = self.cm.getPage(url, self.http_params3)
+                baseParams2 = data[data.find('{'):]
+                baseParams2 = byteify(json.loads(baseParams2))
+                printDBG("=========================================================")
+                printDBG([data])
+                printDBG(baseParams2)
+                printDBG("=========================================================")
+                
+                #=====================
+                t1 = self.getTimestamp(time()*1000)
+                url = baseUrl1 + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t1, baseParams1['sid'])
+                sts, data = self.cm.getPage(url, self.http_params2)
+                printDBG("=========================================================")
+                printDBG(data.split('\x00\x02\xff'))
+                printDBG("=========================================================")
+                
+                t2 = self.getTimestamp(time()*1000)
+                url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t2, baseParams2['sid'])
+                sts, data = self.cm.getPage(url, self.http_params3)
+                printDBG("=========================================================")
+                printDBG(data.split('\x00\x02\xff'))
+                printDBG("=========================================================")
+                
+                #=====================
+                #raw_post_data
+                t1 = self.getTimestamp(time()*1000)
+                url = baseUrl1 + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t1, baseParams1['sid'])
+                self.http_params2['raw_post_data'] = True
+                sts, data = self.cm.getPage(url, self.http_params2, '92:42["authorize",{"token":"%s"}]' % streamToken1)
+                printDBG("=========================================================")
+                printDBG([data])
+                printDBG("=========================================================")
+                    
+                if 0:
+                    t1 = self.getTimestamp(time()*1000)
+                    url = baseUrl1 + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t1, baseParams1['sid'])
+                    sts, data = self.cm.getPage(url, self.http_params2)
+                    printDBG("=========================================================")
+                    printDBG([data])
+                    printDBG("=========================================================")
+                
+                #+++++
+                t2 = self.getTimestamp(time()*1000)
+                url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t2, baseParams2['sid'])
+                self.http_params3['raw_post_data'] = True
+                sts, data = self.cm.getPage(url, self.http_params3, '102:42["authorize","%s"]' % streamToken2)
+                printDBG("=========================================================")
+                printDBG([data])
+                printDBG("=========================================================")
+                
+                t2 = self.getTimestamp(time()*1000)
+                url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t2, baseParams2['sid'])
+                sts, data = self.cm.getPage(url, self.http_params3)
+                data = byteify( json.loads(data[data.find('42')+2:]) ) 
+                stoken = data[1]['stoken']
+                printDBG("=========================================================")
+                printDBG([data])
+                printDBG("=========================================================")
+                
+                n = sha256(serverId + window['sourceId'] + stoken).hexdigest()
+                url = window['urls']["requestStream"] + "?token=" + streamToken2 + "&server=" + serverId + "&source=" + window['sourceId'] + "&cs=" + n
+                sts, data = self.cm.getPage(url, self.http_params)
+                data = byteify( json.loads(data) ) 
+                streamId = data['id']
+                
+                if 0:
+                    t2 = self.getTimestamp(time()*1000)
+                    url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t2, baseParams2['sid'])
+                    self.http_params3['raw_post_data'] = True
+                    sts, data = self.cm.getPage(url, self.http_params3, '84:42["subscribe","%s"]' % streamId)
+                
+                wsUrl2 = baseUrl2.replace(":8000",":8004").replace('http://', 'ws://') + '/socket.io/?EIO=3&transport=websocket&sid={0}'.format(baseParams2['sid'])
+                wsUrl1 = baseUrl1.replace('http://', 'ws://') + '/socket.io/?EIO=3&transport=websocket&sid={0}'.format(baseParams1['sid'])
+                
+                
+                #websocket.enableTrace(True)
+                
+                if 0:
+                    ws = websocket.create_connection(wsUrl)
+                    ws.send('2probe')
+                    result = ws.recv()
+                    printDBG("Received '%s'" % result)
+                    ws.send('5')
+                    ws.send('42["subscribe","%s"]' % streamId)
+                    result = ws.recv()
+                    result = byteify( json.loads(result[result.find('42')+2:]) ) 
+                    
+                    vidUrl = baseUrl2 + '/' + result[1]['url'] + '?token=' + stoken
+                    printDBG("Received '%s'" % result)
+                    
+                    ws.send('2')
+                    result = ws.recv()
+                    printDBG("Received '%s'" % result)
+                    ws.close()
+                
+                    vidUrl = strwithmeta(vidUrl, {'Referer':cItem['url'], 'User-Agent':self.http_params['header']['User-Agent']})
+                    tmpUrlsTab = getDirectM3U8Playlist(vidUrl)
+                
+                libsPath = GetPluginDir('libs/')
+                
+                pyCmd = GetPyScriptCmd('pierwszatv') + ' "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" ' % (self.http_params['header']['User-Agent'], baseUrl2, wsUrl2, wsUrl1, stoken, streamId, libsPath, baseParams2['sid'])
+                vidUrl = strwithmeta("fake://fake", {'iptv_buffering': 'required', 'iptv_refresh_cmd':pyCmd, 'Referer':cItem['url'], 'User-Agent':self.http_params['header']['User-Agent']})
+                vidUrl.meta['iptv_proto'] = 'em3u8'
+                
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG(pyCmd)
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                
+                #return xyz
+                return [{'name':'pierwsza_hls', 'url':vidUrl}]
+                
+                t2 = self.getTimestamp(time()*1000)
+                url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t2, baseParams2['sid'])
+                sts, data = self.cm.getPage(url, self.http_params3)
+                printDBG(data)
+            else:
+                baseUrl = tmp
+                streamId = window['streamId']
+                streamToken = window['streamToken']
+                url = baseUrl + "/stream/get?id=" + streamId + "&token=" + streamToken
             
             sts, data = self.cm.getPage(url, params)
             data = byteify(json.loads(data))
             if data['error'] != None:
                 SetIPTVPlayerLastHostError(str(data['error']))
-            url = baseUrl + "/" + data['url'] + "?token=" + window['streamToken']
+            url = baseUrl + "/" + data['url'] + "?token=" + streamToken
+            url = strwithmeta(url, {'Referer':cItem['url'], 'User-Agent':HTTP_HEADER['User-Agent']})
+            url.meta['iptv_proto'] = 'em3u8' 
             tmpUrlsTab = getDirectM3U8Playlist(url)
+            return tmpUrlsTab
             
-            refreshUrl1 = baseUrl + "/stream/bump?id=" + window['streamId'] + "&token=" + window['streamToken']
-            refreshUrl2 = window['urls']['bumpToken'] + "?pid=" + window['serverId'] + "&token=" + window['streamToken']
+            refreshUrl1 = baseUrl + "/stream/bump?id=" + streamId + "&token=" + streamToken
+            refreshUrl2 = window['urls']['bumpToken'] + "?pid=" + serverId + "&token=" + streamToken
             reportOkUrl = window['urls']['reportOk']
             
             HTTP_HEADER= dict(PierwszaTVApi.HTTP_HEADER)

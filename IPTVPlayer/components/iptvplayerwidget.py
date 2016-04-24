@@ -1232,7 +1232,7 @@ class IPTVPlayerWidget(Screen):
             return config.plugins.iptvplayer.buforowanie.value
         elif 'rtmp' == protocol:
             return config.plugins.iptvplayer.buforowanie_rtmp.value
-        elif 'm3u8' == protocol:
+        elif protocol in ['m3u8', 'em3u8']:
             return config.plugins.iptvplayer.buforowanie_m3u8.value
         
     def isUrlBlocked(self, url, type):
