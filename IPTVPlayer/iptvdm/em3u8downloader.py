@@ -49,6 +49,8 @@ class EM3U8Downloader(M3U8Downloader):
         self.em3u8_filePath = ''
         self.em3i8_params = {}
         
+        self.maxTriesAtStart = 12
+        
     def __del__(self):
         printDBG("EM3U8Downloader.__del__ ----------------------------------")
     

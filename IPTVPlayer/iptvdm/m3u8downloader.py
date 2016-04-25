@@ -74,6 +74,8 @@ class M3U8Downloader(BaseDownloader):
         self.downloadDuration = 0
         self.fragmentDurationList = []
         
+        self.maxTriesAtStart = 0
+        
     def __del__(self):
         printDBG("M3U8Downloader.__del__ ----------------------------------")
     
@@ -108,6 +110,7 @@ class M3U8Downloader(BaseDownloader):
         self.fragmentList = []
         self.lastMediaSequence = -1
         self.currentFragment = -1
+        self.tries = 0
         self.liveStream   = False
         self.skipFirstSegFromList = strwithmeta(url).meta.get('iptv_m3u8_skip_seg', 0)
         self.m3u8Url = url
@@ -252,7 +255,7 @@ class M3U8Downloader(BaseDownloader):
         #printDBG("===========================================================")
     '''
     
-    def _startM3U8(self):
+    def _startM3U8(self, wait=0):
         self.outData = ''
         ##############################################################################
         # frist download m3u8 conntent
@@ -260,6 +263,8 @@ class M3U8Downloader(BaseDownloader):
         self.downloadType = self.DOWNLOAD_TYPE.M3U8
         m3u8Url = self._addTimeStampToUrl( self.m3u8Url )
         cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' --tries=0 --timeout=%d ' % self._getTimeout()) + '"' + m3u8Url + '" -O - 2> /dev/null'
+        if wait > 0:
+            cmd = (' sleep %s && ' % wait) + cmd
         printDBG("Download cmd[%s]" % cmd)
         self.console_appClosed_conn = eConnectCallback(self.console.appClosed,  self._cmdFinished )
         self.console_stdoutAvail_conn = eConnectCallback(self.console.stdoutAvail, self._dataAvail )
@@ -431,6 +436,16 @@ class M3U8Downloader(BaseDownloader):
                             localStatus = self._startFragment()
                 except:
                     pass
+            printDBG(">>>>>>>>>>>>>>>>>> localStatus [%s] tries[%d]" % (localStatus, self.tries))
+            if localStatus == DMHelper.STS.ERROR and self.tries < self.maxTriesAtStart:
+                self.console_appClosed_conn = None
+                self.console_stdoutAvail_conn = None
+                self.tries += 1
+                self._startM3U8(self.MIN_REFRESH_DELAY)
+                return
+            else:
+                self.tries = 0
+                
         elif self.liveStream and self.DOWNLOAD_TYPE.WAITTING == self.downloadType:
             printDBG("m3u8 liveStream waitting finished--------------------------------")
             localStatus = self._startFragment()
