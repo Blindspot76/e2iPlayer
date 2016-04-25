@@ -89,14 +89,21 @@ class ShowsportTVApi:
         
     def getVideoLink(self, cItem):
         printDBG("ShowsportTVApi.getVideoLink")
+        urlsTab = []
         params    = {'header' : self.HTTP_HEADER, 'cookiefile' : self.COOKIE_FILE, 'save_cookie' : True}
         sts, data = self.cm.getPage(cItem['url'], params)
         if not sts: return []
-        
-        data = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]*?/embedplayer\.php[^'^"]+?)['"]''', 1, True)[0]
-        playerUrl = self.getFullUrl(data)
-        if playerUrl.startswith('http'):
-            sts,data = self.cm.getPage(playerUrl)
-            if not sts: return []
-            return self.up.getAutoDetectedStreamLink(playerUrl, data)
+        #data = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]*?/embedplayer\.php[^'^"]+?)['"]''', 1, True)[0]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, 'setURL(', '<')
+        for item in tmp:
+            serverName = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '>', '<', False)[1] )
+            playerUrl  = self.cm.ph.getSearchGroups(item, '''['"]([^'^"]*?/embedplayer\.php[^'^"]+?)['"]''', 1, True)[0]
+            playerUrl = self.getFullUrl(playerUrl)
+            if playerUrl.startswith('http'):
+                sts,item = self.cm.getPage(playerUrl)
+                if not sts: continue
+                links = self.up.getAutoDetectedStreamLink(playerUrl, item)
+                for link in links:
+                    link['name'] = '%s %s' % (serverName, link['name'])
+                    urlsTab.append( link )
         return urlsTab
