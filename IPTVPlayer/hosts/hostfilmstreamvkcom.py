@@ -213,12 +213,20 @@ class FilmstreamvkCom(CBaseHostClass):
         cItem['url'] = self.MAIN_URL + '?s=' + urllib.quote(searchPattern)
         self.listItems(cItem, 'episodes')
         
-    def _getBaseVideoLink(self, data):
+    def _getBaseVideoLink(self, wholeData):
         videoUrlParams = []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '</iframe>', withMarkers=True, caseSensitive=False)
+        tmpUrls = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(wholeData, '<iframe ', '</iframe>', withMarkers=True, caseSensitive=False)
         for item in data:
-            url  = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''',  grupsNum=1, ignoreCase=True)[0]
+            url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''',  grupsNum=1, ignoreCase=True)[0]
+            if url in tmpUrls: continue
             if url.startswith('http') and 'facebook.com' not in url and 1 == self.up.checkHostSupport(url):
+                videoUrlParams.append({'name': self.up.getHostName(url), 'url':url, 'need_resolve':1})
+                
+        data = re.compile('''onclick=[^>]*?['"](http[^'^"]+?)['"]''').findall(wholeData)
+        for url in data:
+            if url in tmpUrls: continue
+            if 'facebook.com' not in url and 1 == self.up.checkHostSupport(url):
                 videoUrlParams.append({'name': self.up.getHostName(url), 'url':url, 'need_resolve':1})
         return videoUrlParams
     
