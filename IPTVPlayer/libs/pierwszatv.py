@@ -279,6 +279,7 @@ class PierwszaTVApi:
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 printDBG(pyCmd)
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                #return []
                 
                 return [{'name':'pierwsza_hls', 'url':vidUrl}]
             

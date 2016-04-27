@@ -89,7 +89,7 @@ if __name__ == "__main__":
         result = ws1.recv()
         print(result)
         result = json.loads(result[result.find('42')+2:])
-        vidUrl = baseUrl + '/' + result[1]['url'] + '?token=' + stoken
+        vidUrl = baseUrl.replace(":8000",":%s" % result[1].get('port', '8000')) + '/' + result[1]['url'] + '?token=' + stoken
         print('\n%s\n' % vidUrl, file=sys.stderr)
         
         start_time = time.time()
