@@ -139,8 +139,8 @@ class YouTubeParser():
             
             if '' != title: title = CParsingHelper.removeDoubles(remove_html_markup(title, ' '), ' ')
                 
-            img   = self.getAttributes('data-thumb="([^"]+?\.jpg)"', data[i])
-            if '' == img:  img = self.getAttributes('src="([^"]+?\.jpg)"', data[i])
+            img   = self.getAttributes('data-thumb="([^"]+?\.jpg[^"]*?)"', data[i])
+            if '' == img:  img = self.getAttributes('src="([^"]+?\.jpg[^"]*?)"', data[i])
             time  = self.getAttributes('data-context-item-time="([^"]+?)"', data[i])
             if '' == time: time  = self.getAttributes('class="video-time">([^<]+?)</span>', data[i])
             if '' == time: sts, time = CParsingHelper.getDataBeetwenReMarkers(data[i], re.compile('pl-video-time"[^>]*?>'), re.compile('<'), False)
@@ -154,12 +154,12 @@ class YouTubeParser():
             urlTmp = url.split(';')
             if len(urlTmp) > 0: url = urlTmp[0]
             if type == 'video': url = url.split('&')[0] 
-                
-            # printDBG('url   [%s] ' % url)
-            # printDBG('title [%s] ' % title)
-            # printDBG('img   [%s] ' % img)
-            # printDBG('time  [%s] ' % time)
-            # printDBG('desc  [%s] ' % desc)
+            #printDBG("#####################################") 
+            #printDBG('url   [%s] ' % url)
+            #printDBG('title [%s] ' % title)
+            #printDBG('img   [%s] ' % img)
+            #printDBG('time  [%s] ' % time)
+            #printDBG('desc  [%s] ' % desc)
             if title != '' and url != '' and img != '':
                 correctUrlTab = [url, img]
                 for i in range(len(correctUrlTab)):
@@ -290,6 +290,7 @@ class YouTubeParser():
                 
                 data = data.split('<li><div class="yt-lockup')
                 #del data[0]
+                
                 currList = self.parseListBase(data, searchType)
         
                 if nextPage:
