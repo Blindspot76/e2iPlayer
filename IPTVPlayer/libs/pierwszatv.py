@@ -179,7 +179,7 @@ class PierwszaTVApi:
                 baseUrl2     = tmp['server']
                 streamToken2 = tmp['token']
                 
-                serverId = tmp['id']
+                serverId = str(tmp['id'])
                 
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 printDBG(tmp)
@@ -260,7 +260,7 @@ class PierwszaTVApi:
                 url = window['urls']["requestStream"] + "?token=" + streamToken2 + "&server=" + serverId + "&source=" + window['sourceId'] + "&cs=" + n
                 sts, data = self.cm.getPage(url, self.http_params)
                 data = byteify( json.loads(data) ) 
-                streamId = data['id']
+                streamId = str(data['id'])
                 
                 if 0:
                     t2 = self.getTimestamp(time()*1000)
