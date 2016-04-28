@@ -256,7 +256,7 @@ class PierwszaTVApi:
                 printDBG([data])
                 printDBG("=========================================================")
                 
-                n = sha256(serverId + window['sourceId'] + stoken).hexdigest()
+                n = sha256(serverId + '_' + window['sourceId'] + '_' + stoken).hexdigest()
                 url = window['urls']["requestStream"] + "?token=" + streamToken2 + "&server=" + serverId + "&source=" + window['sourceId'] + "&cs=" + n
                 sts, data = self.cm.getPage(url, self.http_params)
                 data = byteify( json.loads(data) ) 
