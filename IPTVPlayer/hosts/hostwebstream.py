@@ -353,8 +353,10 @@ class HasBahCa(CBaseHostClass):
         if login == '' and password == '':
             sts, data = self.getPage('http://hasbahcaiptv.com/page.php?seite=Passwort.html')
             if sts:
-                self.hasbahcaiptv['login']    = self.cm.ph.getSearchGroups(data, 'Downloads Login[^=]*?=([^<]+?)<')[0].strip() 
-                self.hasbahcaiptv['password'] = self.cm.ph.getSearchGroups(data, 'Downloads Pass[^=]*?=([^<]+?)<')[0].strip()
+                login    = self._cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'Downloads Login', '</h3>', False)[1])
+                password = self._cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'Downloads Pass', '</h3>', False)[1])
+                self.hasbahcaiptv['login']    = login.replace('&nbsp;','').replace('\xc2\xa0','').strip() 
+                self.hasbahcaiptv['password'] = password.replace('&nbsp;','').replace('\xc2\xa0', '').strip()
             
         sts, data = self.getPage( url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('hasbahcaiptv')}, {'username':self.hasbahcaiptv.get('login', 'downloader'), 'password':self.hasbahcaiptv.get('password', 'hasbahcaiptv.com')} )
         if not sts: return
