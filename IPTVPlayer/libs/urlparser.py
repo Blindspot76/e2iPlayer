@@ -2000,6 +2000,17 @@ class pageParser:
     def parseMOSHAHDANET(self, baseUrl):
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
         sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False)[1]
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        try:
+            sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
+            time.sleep(sleep_time)
+        except:
+            printExc()
+            
+        sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER}, post_data)
         return self._findLinks(data, 'moshahda.net')
         
     def parseSTREAMMOE(self, baseUrl):
