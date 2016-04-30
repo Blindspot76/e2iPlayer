@@ -2230,10 +2230,12 @@ class pageParser:
                     continue
             data2 = self.cm.ph.getDataBeetwenMarkers(data2, '.setup(', '}', False)[1]
             #printDBG(data2)
-            rtmpUrl = self.cm.ph.getSearchGroups(data2, '''["'](rtmp[^"^']+?)["']''')[0]
-            if len(rtmpUrl):
-                rtmpUrl = rtmpUrl + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, baseUrl)
-                urlTab.append({'name':item['title'], 'url':rtmpUrl})
+            rtmpUrls = re.compile('''(rtmp[^"^']+?)["'&]''').findall(data2)
+            for idx in range(len(rtmpUrls)):
+                rtmpUrl = urllib.unquote(rtmpUrls[idx])
+                if len(rtmpUrl):
+                    rtmpUrl = rtmpUrl + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, baseUrl)
+                    urlTab.append({'name':'{0}. '.format(idx+1) + item['title'], 'url':rtmpUrl})
             data2 = None
         
         if len(urlTab):

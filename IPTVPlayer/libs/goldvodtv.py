@@ -104,11 +104,12 @@ class GoldVodTVApi:
         '71':'Tuba TV','72':'Music VOX TV','73':'TVK','74':'Czwórka Polskie Radio','75':'Disney XD','76':'Filmbox Family',
         '77':'TVP Pololnia','78':'Da Vinci Learning','79':'Polsat Film','80':'Disney Channel','81':'Kuchnia+','82':'History',
         '83':'4 Fun.TV','84':'SportKlub','85':'Domo+','86':'AXN Spin HD','87':'Discovery Historia','88':'4 Fun.TV','89':'Disney Junior',
-        '94':'Kino Polska Muzyka', '102':'Boomerang', '97':'Polo Party TV', '96':'Fight Klube', '100':'Canal+ HD', '101':'Canal+ Sport HD'}
+        '94':'Kino Polska Muzyka', '102':'Boomerang', '97':'Polo Party TV', '96':'Fight Klube', '100':'Canal+ HD', '101':'Canal+ Sport HD',
+        '117':'nSport', '116':'Extreme Sport', '117':'Discavery Turbo', '118':'MGM', '109':'AXN Black', '106':'nSport'}
 
-        sts, data = self.cm.getPage(self.MAIN_URL + 'kanaly.html')
+        sts, data = self.cm.getPage(self.MAIN_URL + 'kanaly.html?show=on')
         if not sts: return []
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, "<div id='content'>", "<div id='footer'>", False)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, "<div class='box-channel'>", "<div id='footer'>")
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>')
         for item in data:
