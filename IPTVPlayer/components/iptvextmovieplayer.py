@@ -1445,7 +1445,7 @@ class IPTVExtMoviePlayer(Screen):
             if "://" in self.fileSRC: 
                 cmd += ' "%s" "%s"  "%s"  "%s" ' % (self.gstAdditionalParams['download-buffer-path'], self.gstAdditionalParams['ring-buffer-max-size'], self.gstAdditionalParams['buffer-duration'], self.gstAdditionalParams['buffer-size'])
                 tmp = strwithmeta(self.fileSRC)
-                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta(tmp)
+                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta(tmp, True)
                 for key in httpParams: cmd += (' "%s=%s" ' % (key, httpParams[key]) )
                 if 'http_proxy' in tmp.meta:
                     tmp = tmp.meta['http_proxy']
@@ -1473,7 +1473,7 @@ class IPTVExtMoviePlayer(Screen):
                     msg = _("An error occurred while writing into: %s") % GetTmpDir()
                     self.showMessage(msg, MessageBox.TYPE_ERROR)
             if "://" in self.fileSRC: 
-                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta( tmpUri )
+                url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta(tmpUri, True)
                 #cmd += ' ""' # cookies for now will be send in headers
                 headers = ''
                 for key in httpParams:

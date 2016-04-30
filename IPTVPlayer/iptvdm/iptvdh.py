@@ -191,7 +191,7 @@ class DMHelper:
             return {}
             
     @staticmethod
-    def getDownloaderParamFromUrlWithMeta(url):
+    def getDownloaderParamFromUrlWithMeta(url, httpHeadersOnly=False):
         printDBG("DMHelper.getDownloaderParamFromUrlWithMeta url[%s], url.meta[%r]" % (url, url.meta))
         downloaderParams = {}
         for key in url.meta:
@@ -199,9 +199,10 @@ class DMHelper:
                 downloaderParams[key] = url.meta[key]
             elif key == 'http_proxy':
                 downloaderParams[key] = url.meta[key]
-        for key in DMHelper.IPTV_DOWNLOADER_PARAMS:
-            if key in url.meta:
-                downloaderParams[key] = url.meta[key]
+        if not httpHeadersOnly:
+            for key in DMHelper.IPTV_DOWNLOADER_PARAMS:
+                if key in url.meta:
+                    downloaderParams[key] = url.meta[key]
         return url, downloaderParams
     
     @staticmethod

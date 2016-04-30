@@ -116,7 +116,7 @@ class CartoonHD(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         data = self.cm.ph.getDataBeetwenMarkers(data, '<select name="sortnav"', '</select>', False)[1]
-        data = re.compile('<option value="http[^"]+?/([^"^/]+?)">([^<]+?)<').findall(data)
+        data = re.compile('<option value="http[^"]+?/([^"^/]+?)"[^>]*?>([^<]+?)<').findall(data)
         tab = []
         for item in data:
             tab.append({'sort_by':item[0], 'title':item[1]})
@@ -372,17 +372,18 @@ class CartoonHD(CBaseHostClass):
         printDBG(hostings)
         try:
             data = byteify(json.loads(data))
-            for item in hostings:
-                if item['id'] in data:
-                    url = data[item['id']]['embed'].replace('\\/', '/')
-                    url = self.cm.ph.getDataBeetwenMarkers(url, 'src="', '"', False, False)[1]
-                    if 'googlevideo.com' in url or 'googleusercontent.com' in url:
-                        need_resolve = 0
-                    elif 1 == self.up.checkHostSupport(url):
-                        need_resolve = 1
-                    else: 
-                        need_resolve = 0
-                    urlTab.append({'name':item['name'], 'url':url, 'need_resolve':need_resolve})
+            for item in data:
+                url  = data[item]['embed'].replace('\\/', '/')
+                url  = self.cm.ph.getSearchGroups(url, '''src=['"]([^"^']+?)['"]''', 1, ignoreCase=True)[0]
+                name = data[item]['type'] 
+                if 'googlevideo.com' in url or 'googleusercontent.com' in url:
+                    need_resolve = 0
+                elif 1 == self.up.checkHostSupport(url):
+                    need_resolve = 1
+                else: 
+                    need_resolve = 0
+                if url.startswith('http'):
+                    urlTab.append({'name':name, 'url':url, 'need_resolve':need_resolve})
         except:
             printExc()
         self.cacheLinks[cItem['url']] = urlTab
