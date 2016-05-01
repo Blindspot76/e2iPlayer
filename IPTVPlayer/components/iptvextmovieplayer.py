@@ -233,6 +233,12 @@ class IPTVExtMoviePlayer(Screen):
         self.externalSubTracks = additionalParams.get('external_sub_tracks', []) #[{'title':'', 'lang':'', 'url':''}, ...]
         self.refreshCmd = additionalParams.get('iptv_refresh_cmd', '')
         self.refreshCmdConsole = None
+        self.extLinkProv = {}
+        self.extLinkProv['console'] = None
+        self.extLinkProv['close_conn'] = None
+        self.extLinkProv['data_conn'] = None
+        self.extLinkProv['data'] = ''
+        self.extLinkProv['started'] = False
         
         self.iframeParams = {}
         self.iframeParams['console'] = None
@@ -1270,6 +1276,12 @@ class IPTVExtMoviePlayer(Screen):
             self.refreshCmdConsole.kill()
         self.refreshCmdConsole = None
         
+        if None != self.extLinkProv['console']:
+            self.extLinkProv['close_conn'] = None
+            self.extLinkProv['data_conn']  = None
+            self.extLinkProv['console'].sendCtrlC()
+            self.extLinkProv['console'] = None
+        
         if None != self.iframeParams['console']:
             self.iframeParams['console'].kill()
         self.iframeParams['console'] = None
@@ -1357,6 +1369,9 @@ class IPTVExtMoviePlayer(Screen):
         self.iptvDoClose(sts, currentTime)
     
     def iptvDoClose(self, sts, currentTime, code=None, data=None):
+        if None != self.extLinkProv['console']:
+            self.extLinkProv['console'].sendCtrlC()
+    
         if None != self.refreshCmdConsole:
             self.refreshCmdConsole.kill()
         self.refreshCmdConsole = None
@@ -1395,7 +1410,7 @@ class IPTVExtMoviePlayer(Screen):
         self.onShow.remove(self.onStart)
         #self.onLayoutFinish.remove(self.onStart)
         
-        if '' != self.refreshCmd:
+        if '' != self.refreshCmd and (self.downloader != None or not self.fileSRC.startswith('ext://')):
             self.refreshCmdConsole = iptv_system( self.refreshCmd )
             
         if self.iframeParams['show_iframe'] and IsExecutable('showiframe')\
@@ -1403,11 +1418,42 @@ class IPTVExtMoviePlayer(Screen):
             if self.iframeParams['iframe_continue']:
                 self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_start']))
             else:
-                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_start']), self.iptvDoStart)
+                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_start']), self.iptvGetUrlStart)
                 return
-        self.iptvDoStart()
+        self.iptvGetUrlStart()
         
-    def iptvDoStart(self, code=None, data=None):
+    def iptvGetUrlStart(self, code=None, data=None):
+        if self.downloader == None and self.refreshCmd != '' and self.fileSRC.startswith('ext://'):
+            self.extLinkProv['console']    = eConsoleAppContainer()
+            self.extLinkProv['close_conn'] = eConnectCallback(self.extLinkProv['console'].appClosed, self._updateGetUrlFinished)
+            self.extLinkProv['data_conn']  = eConnectCallback(self.extLinkProv['console'].stderrAvail, self._updateGetUrlDataAvail)
+            self.extLinkProv['console'].execute( self.refreshCmd )
+        else:
+            self.iptvDoStart()
+            
+    def _updateGetUrlFinished(self, code=0):
+        printDBG('_updateGetUrlFinished update code[%d]--- ' % (code))
+        if not self.extLinkProv['started']:
+            self.onLeavePlayer()
+        
+    def _updateGetUrlDataAvail(self, data):
+        if self.isClosing: return
+        if None != data and 0 < len(data):
+            self.extLinkProv['data'] += data
+            if self.extLinkProv['data'].endswith('\n'):
+                data = self.extLinkProv['data'].split('\n')
+                url = ''
+                for item in data:
+                    if item.startswith('http'):
+                        url = item.strip()
+                if url.startswith('http'):
+                    if not self.extLinkProv['started']:
+                        self.fileSRC = strwithmeta(url, self.fileSRC.meta)
+                        self.extLinkProv['started'] = True
+                        self.iptvDoStart()
+                self.extLinkProv['data'] = ''
+            
+    def iptvDoStart(self):
         self['progressBar'].value = 0
         self['bufferingBar'].range = (0, 100000)
         self['bufferingBar'].value = 0

@@ -24,7 +24,7 @@ import string
 import base64
 try:    import json
 except: import simplejson as json
-from time import time
+from time import time, sleep
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from binascii import hexlify, unhexlify, a2b_hex
 from hashlib import md5, sha256
@@ -274,13 +274,12 @@ class PierwszaTVApi:
                 libsPath = GetPluginDir('libs/')
                 
                 pyCmd = GetPyScriptCmd('pierwszatv') + ' "%s" "%s" "%s" "%s" "%s" "%s" "%s" "%s" ' % (self.http_params['header']['User-Agent'], baseUrl2, wsUrl2, wsUrl1, stoken, streamId, libsPath, baseParams2['sid'])
-                vidUrl = strwithmeta("fake://fake", {'iptv_proto':'em3u8', 'iptv_buffering': 'required', 'iptv_refresh_cmd':pyCmd, 'Referer':cItem['url'], 'User-Agent':self.http_params['header']['User-Agent']})
+                vidUrl = strwithmeta("ext://url/" + cItem['url'], {'iptv_proto':'em3u8', 'iptv_refresh_cmd':pyCmd, 'Referer':cItem['url'], 'User-Agent':self.http_params['header']['User-Agent']})
                 
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 printDBG(pyCmd)
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 #return []
-                
                 return [{'name':'pierwsza_hls', 'url':vidUrl}]
             
         except:

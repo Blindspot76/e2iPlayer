@@ -9,6 +9,8 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import iptv_system, printDBG
 ###################################################
 import threading
 import traceback
+try: import ctypes
+except: pass
 ###################################################
 
 gMainFunctionsQueue = None
@@ -38,6 +40,32 @@ class AsyncCall(object):
     
     def isAlive(self):
         return None != self.Thread and self.Thread.isAlive()
+        
+    def _kill(self):
+        if None != self.Thread:
+            try:
+                thread_id = None
+                # do we have it cached?
+                if hasattr(self.Thread, "_thread_id"):
+                    thread_id = self.Thread._thread_id
+                
+                # no, look for it in the _active dict
+                for tid, tobj in threading._active.items():
+                    if tobj is self.Thread:
+                        thread_id = tid
+                if None != thread_id:
+                    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), ctypes.py_object(SystemExit))
+                    if res == 0:
+                        printDBG("AsyncCall._kill ********************************* invalid thread id")
+                    elif res != 1:
+                        # "if it returns a number greater than one, you're in trouble,
+                        # and you should call it again with exc=NULL to revert the effect"
+                        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), None)
+                        printDBG("AsyncCall._kill ********************************* PyThreadState_SetAsyncExc failed")
+                    else:
+                        printDBG("AsyncCall._kill ********************************* KILL OK")
+            except:
+                printDBG("AsyncCall._kill ********************************* exception")
 
     def kill(self):
         bRet = False
@@ -46,6 +74,7 @@ class AsyncCall(object):
         self.Callback = None
         if self.finished == False:
             if self.Thread.isAlive():
+                self._kill()
                 self.Thread._Thread__stop()
             bRet = True
 
