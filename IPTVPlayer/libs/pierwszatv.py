@@ -24,7 +24,7 @@ import string
 import base64
 try:    import json
 except: import simplejson as json
-from time import time, sleep
+from time import time
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from binascii import hexlify, unhexlify, a2b_hex
 from hashlib import md5, sha256

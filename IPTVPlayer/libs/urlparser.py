@@ -5269,13 +5269,17 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return
         
+        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?)["']''', 1, True)[0]
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return
+        
         def _getUpData(dat):
             upData = self.cm.ph.getDataBeetwenMarkers(dat, 'updateStreamStatistics', ';', False)[1]
             upData = re.compile('''['"]([^'^"]+?)['"]''').findall(upData)
             return upData
             
         def _getVidUrl(dat):
-            return self.cm.ph.getSearchGroups(dat, r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"]''')[0]
+            return self.cm.ph.getSearchGroups(dat, r'''movie=['"](http[^'^"]+?hls[^'^"]+?)['"]''')[0]
         
         tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
         printDBG(tmpData)
@@ -5293,7 +5297,7 @@ class pageParser:
                 if 'updateStreamStatistics' in tmpData:
                     upData = _getUpData(tmpData)
                     if 0 == len(upData): upData = None
-                if 'html5' in tmpData:
+                if 'movie' in tmpData and 'hls' in tmpData:
                     vidUrl = _getVidUrl(tmpData)
                     if '' == vidUrl: vidUrl = None
         
@@ -5303,14 +5307,26 @@ class pageParser:
         if None == vidUrl:
             vidUrl = _getVidUrl(data)
             
-        params['timeout'] = 5
-        upBaseUrl = updateStreamStatistics(upData[0], upData[1], upData[2])
-        pyCmd = GetPyScriptCmd('livestreamtv') + ' "%s" "%s" ' % (upBaseUrl, baseUrl)
-        if vidUrl.split('?')[0].endswith('.m3u8'):
-            tab = getDirectM3U8Playlist(vidUrl)
+        #params['timeout'] = 5
+        #upBaseUrl = updateStreamStatistics(upData[0], upData[1], upData[2])
+        #pyCmd = GetPyScriptCmd('livestreamtv') + ' "%s" "%s" ' % (upBaseUrl, baseUrl)
+        #, 'iptv_refresh_cmd':pyCmd
+        
+        marker = '.m3u8'
+        if marker in vidUrl:
+            vidUrl = strwithmeta(vidUrl, {'iptv_proto':'m3u8', 'iptv_m3u8_skip_seg':2, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
+            return getDirectM3U8Playlist(vidUrl, False)
+            tmpVid = vidUrl[:vidUrl.find(marker)+len(marker)]
+            tmpVid = strwithmeta(tmpVid, vidUrl.meta)
+            
+            tab = getDirectM3U8Playlist(tmpVid, False)
+            if len(tab): return tab
+            else: return getDirectM3U8Playlist(vidUrl, False)
+            
             urlsTab = []
             for item in tab:
-                item['url'] = strwithmeta(item['url'], {'iptv_m3u8_skip_seg':2, 'iptv_refresh_cmd':pyCmd, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
+                item['url'] = strwithmeta(item['url'], {'iptv_m3u8_skip_seg':2, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
+                
                 urlsTab.append(item)
             return urlsTab
         return False
