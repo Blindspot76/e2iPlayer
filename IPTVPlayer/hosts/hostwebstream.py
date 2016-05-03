@@ -797,6 +797,13 @@ class HasBahCa(CBaseHostClass):
         
     def getWebCamera(self, cItem):
         printDBG("getWebCamera start")
+        def __wcFullUrl(url):
+            if url.startswith('//'):
+                return 'http:' + url
+            return url
+            if url.startswith('/'):
+                return 'http://www.webcamera.pl' + url
+            return url
         sts = True
         if 'sub_cats' not in cItem:
             sts, data = self.cm.getPage(cItem['url'])
@@ -833,16 +840,14 @@ class HasBahCa(CBaseHostClass):
                 for item in cItem['sub_cats']:
                     self.addDir(item)
             elif wc_cat == 'list_videos':
-                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="inlinecam', '<div id="footerbar">', False)[1]
-                data = data.split('<div class="inlinecam')
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="inlinecam', '</div>')
                 for item in data:
-                    item = self.cm.ph.getDataBeetwenMarkers(item, '<a', '</div>', True)[1]
-                    url = self.cm.ph.getSearchGroups(item, """href=['"](http[^'^"]+?)['"]""")[0]
+                    url = self.cm.ph.getSearchGroups(item, """href=['"]([^'^"]+?)['"]""")[0]
                     if '' != url:
-                        title = self.cm.ph.getSearchGroups(item, """<[^>]*?class="bar"[^>]*?>([^<]+?)<""")[0]
-                        icon  = self.cm.ph.getSearchGroups(item, """src=['"](http[^'^"]+?)['"]""")[0]
+                        title = self._cleanHtmlStr(item)
+                        icon  = self.cm.ph.getSearchGroups(item, """src=['"]([^'^"]+?\.jpg[^'^"]*?)['"]""")[0]
                         params = dict(cItem)
-                        params.update({'title':title, 'url':url, 'icon':icon})
+                        params.update({'title':title, 'url':__wcFullUrl(url), 'icon':__wcFullUrl(icon)})
                         self.playVideo(params)
                        
     def getWebCameraLink(self, videoUrl):
