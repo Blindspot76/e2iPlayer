@@ -2827,7 +2827,7 @@ class pageParser:
                 sts, data = self.cm.getPage(linkUrl)
                 if not sts: break
                 channelID = self.cm.ph.getSearchGroups(data, 'data-content-id="([0-9]+?)"')[0]
-                if '' == channelID: channelID = self.cm.ph.getSearchGroups(data, 'ustream.vars.cId=([0-9]+?)[^0-9]')[0]
+                if '' == channelID: channelID = self.cm.ph.getSearchGroups(data, 'ustream.vars.contentId=([0-9]+?)[^0-9]')[0]
 
             if '' == channelID: break
             #in linkUrl and 'ustream.vars.isLive=true' not in data and '/live/' not in linkUrl
