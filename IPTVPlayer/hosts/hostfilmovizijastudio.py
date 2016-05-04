@@ -75,30 +75,66 @@ class FilmovizijaStudio(CBaseHostClass):
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheFilters = {'movies':[], 'top_movies':[], 'series':[], 'new_videos':[], 'new_hd_videos':[]}
         self.cacheSeasons = []
+        self.needProxy = None
         
-    def getPage(self, baseUrl, params={}, post_data=None):
-        params['cloudflare_params'] = {'domain':'www.filmovizija.studio', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
-        return self.cm.getPageCFProtection(baseUrl, params, post_data)
+    def isNeedProxy(self):
+        if self.needProxy == None:
+            sts, data = self.cm.getPage(self.MAIN_URL)
+            self.needProxy = not sts
+        return self.needProxy
+    
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
+        
+        if self.isNeedProxy() and 'filmovizija.studio' in url:
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e1'.format(urllib.quote(url, ''))
+            params['header']['Referer'] = proxy
+            params['header']['Cookie'] = 'flags=2e1;'
+            url = proxy
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and None == data:
+            sts = False
+        return sts, data
+        
+    def _getIconUrl(self, url):
+        url = self._getFullUrl(url)
+        if 'filmovizija.studio' in url and self.isNeedProxy():
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e1'.format(urllib.quote(url, ''))
+            params = {}
+            params['User-Agent'] = self.HEADER['User-Agent'],
+            params['Referer'] = proxy
+            params['Cookie'] = 'flags=2e1;'
+            url = strwithmeta(proxy, params) 
+        return url
         
     def _getFullUrl(self, url):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
         if url.startswith('//'):
             url = 'http:' + url
-        else:
-            if 0 < len(url) and not url.startswith('http'):
-                url =  self.MAIN_URL + url
-            if not self.MAIN_URL.startswith('https://'):
-                url = url.replace('https://', 'http://')
+        elif url.startswith('/'):
+            url = self.MAIN_URL + url[1:]
+        elif 0 < len(url) and not url.startswith('http'):
+            url =  self.MAIN_URL + url
                 
         url = self.cleanHtmlStr(url)
         url = self.replacewhitespace(url)
 
         return url
         
+    def getPage2(self, baseUrl, params={}, post_data=None):
+        params['cloudflare_params'] = {'domain':'www.filmovizija.studio', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
+        
     def _urlWithCookie(self, url):
-        url = self._getFullUrl(url)
-        if url == '': return ''
-        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
-        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+        if self.isNeedProxy():
+            return self._getIconUrl(url)
+        else:
+            url = self._getFullUrl(url)
+            if url == '': return ''
+            cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+            return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
     def cleanHtmlStr(self, data):
         data = data.replace('&nbsp;', ' ')
@@ -135,7 +171,7 @@ class FilmovizijaStudio(CBaseHostClass):
             for item in tmp:
                 url = self.cm.ph.getSearchGroups(item, '''href=['"](http[^'^"^>]+?)[>'"]''')[0]
                 if '' == url: continue
-                self.cacheFilters[cat[0]].append({'title':self.cleanHtmlStr(item.split('</i>')[-1]), 'url':url})
+                self.cacheFilters[cat[0]].append({'title':self.cleanHtmlStr(item.split('</i>')[-1]), 'url':self._getFullUrl(url)})
         
     def listCategories(self, cItem, nextCategory):
         printDBG("FilmovizijaStudio.listCategories")
@@ -178,7 +214,7 @@ class FilmovizijaStudio(CBaseHostClass):
             icon = self.cm.ph.getSearchGroups(item, '''src=['"]*(http[^'^"^>]+?)[>'"]''')[0]
             title = self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0] 
             title += ' ' + self.cleanHtmlStr(item)
-            tab.append({'title':title, 'url':url, 'icon':self._urlWithCookie(icon)})
+            tab.append({'title':title, 'url':self._getFullUrl(url), 'icon':self._urlWithCookie(icon)})
         
         cItem = dict(cItem)
         cItem['category'] = nextCategory
@@ -208,7 +244,7 @@ class FilmovizijaStudio(CBaseHostClass):
             
         for item in data:
             url = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''['"]([^"^']*?watch-[^"^']+?)['"]''')[0] )
-            if url == '': url = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''['"]([^"^']*?/movie/[^"^']+?)['"]''')[0] )
+            if url == '': url = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''['"]([^"^']*?movie[^"^']+?)['"]''')[0] )
             title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0] )
             if title == '':
                 title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>')[1] )
@@ -221,7 +257,7 @@ class FilmovizijaStudio(CBaseHostClass):
                 self.addDir({'title':'Error please report'})
                 continue
             params = dict(cItem)
-            params.update({'title':title, 'url':url, 'icon':self._urlWithCookie(icon), 'desc':desc, 'data_url':dUrl})
+            params.update({'title':title, 'url':self._getFullUrl(url), 'icon':self._urlWithCookie(icon), 'desc':desc, 'data_url':dUrl})
             if 'tvshow' in url:
                 params['category'] = nextCategory
                 self.addDir(params)
@@ -249,7 +285,9 @@ class FilmovizijaStudio(CBaseHostClass):
         icon = self._urlWithCookie( self.cm.ph.getSearchGroups(desc, '''src=['"]*(http[^'^"^>]+?)[>'"]''')[0] )
         desc = self.cleanHtmlStr(desc)
         
-        m1 = "<li class='dropdown epilid caret-bootstrap caret-right' style='font-size:13px;'>"
+        m1 = '<li class="dropdown epilid caret-bootstrap caret-right" style="font-size:13px;">'
+        if m1 not in data:
+            m1 = "<li class='dropdown epilid caret-bootstrap caret-right' style='font-size:13px;'>"
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div id="epload">', False)[1]
         data = data.split(m1)
         for seasonItem in data:
@@ -265,7 +303,7 @@ class FilmovizijaStudio(CBaseHostClass):
                 title = self.cleanHtmlStr( episodeItem )
                 dUrl  = self._getFullUrl( self.cm.ph.getSearchGroups(episodeItem, '''data-url=['"]([^"^']+?)['"]''')[0] )
                 seasonNum = self.cm.ph.getSearchGroups(seasonTitle+'|', '[^0-9]([0-9]+?)[^0-9]')[0]
-                episodesTab.append({'title':cItem['title'] + ' - s%se%s' % (seasonNum, title), 'url':url, 'data_url':dUrl})
+                episodesTab.append({'title':cItem['title'] + ' - s%se%s' % (seasonNum, title), 'url':self._getFullUrl(url), 'data_url':dUrl})
             if 0 == len(episodesTab): continue
             params = dict(cItem)
             params.update({'category':nextCategory, 'title':seasonTitle, 'desc':desc, 'icon':icon, 'season_idx':len(self.cacheSeasons)})
@@ -327,17 +365,17 @@ class FilmovizijaStudio(CBaseHostClass):
                 printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ' + item)
                 if urlClass == 'direct':
                     if not urlId.startswith('http'): continue
-                    urlTab.append({'name':urlName, 'url':urlId, 'need_resolve':1})
+                    urlTab.append({'name':urlName, 'url':self._getFullUrl(urlId), 'need_resolve':1})
                 elif urlId.startswith('page') and pageFormat != '':
                     url = pageFormat
                     for a in pageAttribs:
                         url = url.replace('"+%s+"' % a['name'], attribs[a['attrib']])
-                    urlTab.append({'name':urlName, 'url':url, 'need_resolve':1})
+                    urlTab.append({'name':urlName, 'url':self._getFullUrl(url), 'need_resolve':1})
                 elif urlId.startswith('tab'):
                     url = self.cm.ph.getDataBeetwenMarkers(data, '$("#%s").click' % urlId, '}', False)[1]
                     url = self.cm.ph.getSearchGroups(url, '''['"](http[^'^"]+?)['"]''')[0]
                     if not url.startswith('http'): continue
-                    urlTab.append({'name':urlName, 'url':url, 'need_resolve':1})
+                    urlTab.append({'name':urlName, 'url':self._getFullUrl(url), 'need_resolve':1})
             except:
                 printExc()
         
@@ -358,16 +396,17 @@ class FilmovizijaStudio(CBaseHostClass):
                     label   = self.cm.ph.getSearchGroups(item, '''label:[ ]*?["']([^"^']+?)["']''')[0]
                     src     = self.cm.ph.getSearchGroups(item, '''file:[ ]*?["']([^"^']+?)["']''')[0]
                     if not src.startswith('http'): continue
-                    sub_tracks.append({'title':label, 'url':src, 'lang':label, 'format':'srt'})
+                    sub_tracks.append({'title':label, 'url':self._getFullUrl(src), 'lang':label, 'format':'srt'})
             
             linksTab = self.up.pp._findLinks(data, serverName='')
             for idx in range(len(linksTab)):
-                name = linksTab[idx]['url']
-                url  = urlparser.decorateUrl(linksTab[idx]['url'], {'external_sub_tracks':sub_tracks})
+                url = self._getFullUrl(linksTab[idx]['url']) 
+                name = url
+                url  = urlparser.decorateUrl(url, {'external_sub_tracks':sub_tracks})
                 urlTab.append({'name':name, 'url':url, 'need_resolve':0})
             
             if 0 == len(urlTab):
-                videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+                videoUrl = self._getFullUrl(self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0])
             
         if videoUrl.startswith('http'):
             urlTab.extend(self.up.getVideoLinkExt(videoUrl))
@@ -382,7 +421,8 @@ class FilmovizijaStudio(CBaseHostClass):
         else:
             baseUrl = self.SER_SEARCH_URL
 
-        cItem['url'] = baseUrl + urllib.quote(searchPattern)
+        if 'page=' not in cItem.get('url', ''):
+            cItem['url'] = baseUrl + urllib.quote(searchPattern)
         self.listItems(cItem)
 
     def getArticleContent(self, cItem):

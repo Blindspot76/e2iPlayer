@@ -4412,7 +4412,7 @@ class pageParser:
         
     def parserYOURVIDEOHOST(self, baseUrl):
         printDBG("parserSTREAMPLAYCC baseUrl[%s]" % baseUrl)
-        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})/')[0]
+        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
         url = 'http://yourvideohost.com/{0}'.format(video_id)
         return self.__parseJWPLAYER_A(url, 'yourvideohost.com')
         
@@ -4432,7 +4432,7 @@ class pageParser:
     
     def parserWHOLECLOUD(self, baseUrl):
         printDBG("parserWHOLECLOUD baseUrl[%s]" % baseUrl)
-        url = baseUrl.replace('movshare.net', 'wholecloud.net')
+        #url = baseUrl.replace('movshare.net', 'wholecloud.net')
         try:
             mobj = re.search(r'/(?:file|video)/(?P<id>[a-z\d]{13})', url)
             video_id = mobj.group('id')
