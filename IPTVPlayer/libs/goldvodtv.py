@@ -109,7 +109,9 @@ class GoldVodTVApi:
 
         sts, data = self.cm.getPage(self.MAIN_URL + 'kanaly.html?show=on')
         if not sts: return []
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, "<div class='box-channel'>", "<div id='footer'>")
+        m1 = "<div class='box-channel'"
+        if m1 not in data: m1 = "<a class='box-channel'"
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, m1, "<div id='footer'>")
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>')
         for item in data:
