@@ -248,7 +248,10 @@ class Vumoo(CBaseHostClass):
             eUrl = cItem['episode_url']
             if eUrl.startswith('http'):
                 eUrl = strwithmeta(eUrl, {'Referer':url})
-                urlTab.append({'name':'episode', 'url':eUrl, 'need_resolve':0})
+                if 1 == self.up.checkHostSupport(eUrl):
+                    urlTab.append({'name':'episode', 'url':eUrl, 'need_resolve':1})
+                else:
+                    urlTab.append({'name':'episode', 'url':eUrl, 'need_resolve':0})
         else:
             sts, data = self.cm.getPage(url)
             if not sts: return []
