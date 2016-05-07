@@ -18,6 +18,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
 ###################################################
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
+from hashlib import md5
 import urllib
 import random
 import string
@@ -55,7 +56,7 @@ class EdemTvApi:
         self.cm = common()
         self.up = urlparser()
         self.http_params = {}
-        self.http_params.update({'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
+        self.http_params.update({'header' : self.HTTP_HEADER, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
         self.cacheChannels = {}
         self.sessionEx = MainSessionWrapper()
         
@@ -143,12 +144,52 @@ class EdemTvApi:
                 params.update(item)
                 channelsTab.append(params)
         return channelsTab
-        
+    
+    def getCookieItem(self, name):
+        value = ''
+        try:
+            value = self.cm.getCookieItem(self.COOKIE_FILE, name)
+        except:
+            printExc()
+        return value
+    
     def getVideoLink(self, cItem):
         printDBG("EdemTvApi.getVideoLink")
         
+        playlistUrl = self.getFullUrl('playlist')
+        tries = 0
+        while tries < 7:
+            tries += 1
+            sts, data = self.cm.getPage(playlistUrl, self.http_params)
+            if not sts: return []
+            
+            subdomain = self.cm.ph.getSearchGroups(data, '''<input[^>]*?name=['"]subdomain['"][^>]*?value=['"]([^'^"]+?)['"]''')[0]
+            domainTab = self.cm.ph.getSearchGroups(data, '''<option[^>]*?value="([0-9]+?)"[^>]*?selected[^>]*?>([^<]+?)</option>''', 2)
+            if subdomain == '' or '' == domainTab[0] or '' == domainTab[1]:
+                HTTP_HEADER= dict(self.HTTP_HEADER)
+                HTTP_HEADER.update( {'Referer':playlistUrl, 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With' : 'XMLHttpRequest'} )
+                
+                login = config.plugins.iptvplayer.edemtv_login.value
+                passwd = config.plugins.iptvplayer.edemtv_password.value
+                subdomain = md5(login+passwd).hexdigest()
+                post_data = {'server_id':tries, 'name':subdomain}
+                params    = dict(self.http_params)
+                params['header'] = HTTP_HEADER
+                url = self.getFullUrl('ajax/user_server')
+                sts, data = self.cm.getPage( url, params, post_data)
+                printDBG(data)
+                if 'success' in data:
+                    post_data = {'server':tries, 'subdomain':subdomain, 'type':1}
+                    sts, data = self.cm.getPage( playlistUrl, params, post_data)
+                    printDBG(data)
+            else:
+                break
+        
+        
         sts, data = self.cm.getPage(cItem['url'], self.http_params)
         if not sts: return []
+        
+        #printDBG(data)
         
         data =  self.cm.ph.getDataBeetwenMarkers(data, 'playlist:', ']', False)[1]
         
@@ -157,7 +198,9 @@ class EdemTvApi:
 
         urlsTab = []
         if hlsUrl.startswith('http://') and 'm3u8' in hlsUrl:
+            hlsUrl = 'http://{0}.{1}/iptv/'.format(subdomain, domainTab[1]) + hlsUrl.split('/iptv/')[-1]
+            hlsUrl = strwithmeta(hlsUrl, {'Cookie':'session=%s;' % self.getCookieItem('session'), 'Referer':cItem['url'], 'User-Agent':self.HTTP_HEADER['User-Agent']})
             urlsTab = getDirectM3U8Playlist(hlsUrl)
-        if rmpUrl.startswith('rtmp'):
-            urlsTab.append({'name':'rtmp', 'url':rmpUrl + ' live=1'})
+        #if rmpUrl.startswith('rtmp'):
+        #    urlsTab.append({'name':'rtmp', 'url':rmpUrl + ' live=1'})
         return urlsTab
