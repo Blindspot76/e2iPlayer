@@ -283,6 +283,7 @@ class urlparser:
                        'rapidvideo.ws':        self.pp.parserRAPIDVIDEOWS  ,
                        'hdvid.tv':             self.pp.parserHDVIDTV       ,
                        'exashare.com':         self.pp.parserEXASHARECOM   ,
+                       'bojem3a.info':         self.pp.parserEXASHARECOM   ,
                        'openload.info':        self.pp.parserEXASHARECOM   ,
                        'chefti.info':          self.pp.parserEXASHARECOM   ,
                        'allvid.ch':            self.pp.parserALLVIDCH      ,
@@ -822,7 +823,7 @@ class pageParser:
                 HTTP_HEADER = dict(self.HTTP_HEADER) 
                 HTTP_HEADER['Referer'] = baseUrl
                 url = self.cm.ph.getSearchGroups(data, 'iframe[ ]+src="(https?://[^"]*?embed[^"]+?)"')[0]
-                if serverName in url or folowIframe: 
+                if '' != url and (serverName in url or folowIframe): 
                     sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}) 
                 else:
                     url = baseUrl
