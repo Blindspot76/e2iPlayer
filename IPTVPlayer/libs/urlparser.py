@@ -338,6 +338,7 @@ class urlparser:
                        'bro.adcast.tech':      self.pp.parseBROADCAST      ,
                        'moshahda.net':         self.pp.parseMOSHAHDANET    ,
                        'stream.moe':           self.pp.parseSTREAMMOE      ,
+                       'publicvideohost.org':  self.pp.parsePUBLICVIDEOHOST,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -5072,6 +5073,13 @@ class pageParser:
         for idx in range(len(linksTab)):
             linksTab[idx]['url'] = urlparser.decorateUrl(linksTab[idx]['url'], {'external_sub_tracks':sub_tracks})
         
+        return linksTab
+        
+    def parsePUBLICVIDEOHOST(self, baseUrl):
+        printDBG("parsePUBLICVIDEOHOST baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        linksTab = self._findLinks(data, serverName='publicvideohost.org', m1='setup(', m2=')', contain='.mp4')
         return linksTab
                     
     def parserSUPERFILMPL(self, baseUrl):
