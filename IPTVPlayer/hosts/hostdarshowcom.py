@@ -265,7 +265,7 @@ class DarshowCom(CBaseHostClass):
                     url   = self._getFullUrl( server[0] )
                     title = tabName + ' ' + self.cleanHtmlStr( server[1] )
                     if url.startswith('http'):
-                        urlTab.append({'name':title, 'url':url, 'need_resolve':1})
+                        urlTab.append({'name':title, 'url':strwithmeta(url, {'Referer':cItem['url']}), 'need_resolve':1})
                 url = ''
             elif 'iframe' in item:
                 url = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
@@ -273,7 +273,7 @@ class DarshowCom(CBaseHostClass):
             
             url = self._getFullUrl( url )
             if url.startswith('http'):
-                params = {'name':title, 'url':url, 'need_resolve':1}
+                params = {'name':title, 'url':strwithmeta(url, {'Referer':cItem['url']}), 'need_resolve':1}
                 if 'الإفتراضي' in title:
                     #when default insert as first
                     urlTab.insert(0, params)
@@ -284,6 +284,9 @@ class DarshowCom(CBaseHostClass):
         
     def getVideoLinks(self, videoUrl):
         printDBG("DarshowCom.getVideoLinks [%s]" % videoUrl)
+        videoUrl = strwithmeta(videoUrl)
+        Referer = videoUrl.meta.get('Referer', '') 
+        
         m1 = '?s=http'
         if m1 in videoUrl:
             videoUrl = videoUrl[videoUrl.find(m1)+3:]
@@ -304,7 +307,7 @@ class DarshowCom(CBaseHostClass):
         
         urlTab = []
         if videoUrl.startswith('http'):
-            urlTab = self.up.getVideoLinkExt(videoUrl)
+            urlTab = self.up.getVideoLinkExt(strwithmeta(videoUrl, {'Referer':Referer}))
         return urlTab
         
     def listSearchResult(self, cItem, searchPattern, searchType):

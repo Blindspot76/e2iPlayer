@@ -267,7 +267,9 @@ class DardarkomCom(CBaseHostClass):
             tabsNames.append(self.cleanHtmlStr(item))
         
         m1 = '<div class="movies-episodes'
-        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div id="secretpopout', False)[1]
+        m2 = '<div id="secretpopout'
+        if m2 not in data: m2 = 'Vip/index.html'
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
         data = data.split(m1)
         
         if len(data) != len(tabsNames):

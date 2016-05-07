@@ -1620,6 +1620,9 @@ class pageParser:
     '''
             
     def parserVIDEOMEGA(self, baseUrl):
+        baseUrl = strwithmeta(baseUrl)
+        Referer = baseUrl.meta.get('Referer', 'http://nocnyseans.pl/film/chemia-2015/15471') 
+        
         video_id  = self.cm.ph.getSearchGroups(baseUrl, 'https?://(?:www\.)?videomega\.tv/(?:iframe\.php|cdn\.php|view\.php)?\?ref=([A-Za-z0-9]+)')[0]
         if video_id == '': video_id = self.cm.ph.getSearchGroups(baseUrl + '&', 'ref=([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
         COOKIE_FILE = GetCookieDir('videomegatv.cookie')
@@ -1641,7 +1644,7 @@ class pageParser:
                 url = 'http://videomega.tv/view.php?ref=%s&width=730&height=440&val=1' % (video_id)
                 iframe_url = url
             
-            HTTP_HEADER['Referer'] = 'http://nocnyseans.pl/film/chemia-2015/15471'
+            HTTP_HEADER['Referer'] = Referer
             sts, data = self.cm.getPage(url, params)
             if not sts: 
                 continue
@@ -1657,7 +1660,8 @@ class pageParser:
             
             params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True} 
             HTTP_HEADER['Referer'] = url
-            sts, tmp = self.cm.getPage(adUrl, params)
+            if adUrl:
+                sts, tmp = self.cm.getPage(adUrl, params)
             
             subTracksData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track ', '>', False, False)
             subTracks = []
@@ -1675,9 +1679,9 @@ class pageParser:
             sts, data = CParsingHelper.getDataBeetwenMarkers(data, "eval(", '</script>')
             if not sts: continue
             
-            #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-            #printDBG(data)
-            #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            printDBG(data)
+            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
             
             # unpack and decode params from JS player script code
             decrypted = False
