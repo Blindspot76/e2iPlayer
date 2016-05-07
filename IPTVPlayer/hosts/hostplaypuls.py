@@ -162,9 +162,9 @@ class Playpuls(CBaseHostClass):
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="section-player" ', '</script>', False)
         if not sts: return videoUrls
         
-        source1Data = self.cm.ph.getSearchGroups(data, "var source = '([^']+?)'")[0]
-        source2Data = re.compile("var source([MD][123]) = '([^']+?)'").findall(data)
-        quality     = self.cm.ph.getSearchGroups(data, "var quality = '([01])';")[0]
+        source1Data = self.cm.ph.getSearchGroups(data, "source = '([^']+?)'")[0]
+        source2Data = re.compile("source([MD][123]) = '([^']+?)'").findall(data)
+        quality     = self.cm.ph.getSearchGroups(data, "quality = '([01])';")[0]
         
         sources = []
         proto = config.plugins.iptvplayer.playpuls_defaultproto.value
