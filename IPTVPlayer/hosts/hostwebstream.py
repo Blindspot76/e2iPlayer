@@ -830,7 +830,7 @@ class HasBahCa(CBaseHostClass):
                     subCats = []
                     for item in tmp:
                         params = dict(cItem)
-                        params.update({'title':self._cleanHtmlStr(item[1]), 'url':item[0], 'wc_cat':'list_videos'})
+                        params.update({'title':self._cleanHtmlStr(item[1]), 'url':__wcFullUrl(item[0]), 'wc_cat':'list_videos'})
                         subCats.append(params)
                     if len(subCats):
                         params = dict(cItem)
