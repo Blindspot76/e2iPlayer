@@ -12,6 +12,7 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.gledajfilmDecrypter import gledajfilmDecrypter
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes  import AES
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML, clean_html, _unquote
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, \
@@ -50,7 +51,7 @@ from xml.etree import cElementTree
 from random import random, randint, randrange
 from urlparse import urlparse, parse_qs
 from binascii import hexlify, unhexlify, a2b_hex
-from hashlib import md5
+from hashlib import md5, sha256
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 from Components.config import config
 
@@ -339,6 +340,10 @@ class urlparser:
                        'moshahda.net':         self.pp.parseMOSHAHDANET    ,
                        'stream.moe':           self.pp.parseSTREAMMOE      ,
                        'publicvideohost.org':  self.pp.parsePUBLICVIDEOHOST,
+                       'castflash.pw':         self.pp.parseCASTFLASHPW    ,
+                       'flashlive.pw':         self.pp.parseCASTFLASHPW    ,
+                       'castasap.pw':          self.pp.parseCASTFLASHPW    ,
+                       'fastflash.pw':         self.pp.parseCASTFLASHPW    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2032,6 +2037,77 @@ class pageParser:
             if not data['sts'] or 0 != data['code']: return False
             data = data['data']
         return self._findLinks(data, 'stream.moe', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+(?:\.mp4|\.flv)[^"^']*)['"][,}]''', m1='clip:')
+        
+    def parseCASTFLASHPW(self, baseUrl):
+        printDBG("parseCASTFLASHPW baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        Referer = baseUrl.meta.get('Referer', baseUrl) 
+        
+        def getUtf8Str(st):
+            idx = 0
+            st2 = ''
+            while idx < len(st):
+                st2 += '\\u0' + st[idx:idx + 3]
+                idx += 3
+            return st2.decode('unicode-escape').encode('UTF-8')
+            
+        def cryptoJS_AES_decrypt(encrypted, password, salt):
+            def derive_key_and_iv(password, salt, key_length, iv_length):
+                d = d_i = ''
+                while len(d) < key_length + iv_length:
+                    d_i = md5(d_i + password + salt).digest()
+                    d += d_i
+                return d[:key_length], d[key_length:key_length+iv_length]
+            bs = 16
+            key, iv = derive_key_and_iv(password, salt, 32, 16)
+            cipher = AES_CBC(key=key, keySize=32)
+            return cipher.decrypt(encrypted, iv)
+        
+        for agent in ['Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10']: #, 'Mozilla/5.0']:
+            HTTP_HEADER= { 'User-Agent':agent, 'Referer':Referer }
+            COOKIE_FILE = GetCookieDir('castflashpw.cookie')
+            params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
+            
+            url = baseUrl
+            sts, data = self.cm.getPage(url, params)
+            if not sts: return False
+            
+            printDBG(data)
+            
+            post_data = self.cm.ph.getDataBeetwenMarkers(data, '<form ', '</form>', withMarkers=False, caseSensitive=False)[1]
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', post_data))
+            params['header']['Referer'] = url
+            params['load_cookie'] = True
+            url = self.cm.ph.getSearchGroups(data, '''attr\([^<]*?['"]action["'][^<]*?\,[^<]*?["'](http[^'^"]+?)['"]''')[0]
+            printDBG(url)
+            
+            sts, data = self.cm.getPage(url, params, post_data)
+            if not sts: return False
+            
+            marker = '__showH5'
+            if marker in data:
+                linksData = []
+                tmp = self.cm.ph.getDataBeetwenMarkers(data, marker + '(', ')', False)[1].split(',')
+                for t in tmp:
+                    linksData.append(t.replace('"', '').strip())
+                printDBG(linksData)
+                
+                linkData   = base64.b64decode(linksData[2])
+                linkData   = byteify(json.loads(linkData))
+                
+                ciphertext = base64.b64decode(linkData['ct'])
+                iv         = a2b_hex(linkData['iv'])
+                salt       = a2b_hex(linkData['s'])
+                
+                playerUrl = cryptoJS_AES_decrypt(ciphertext, "572ecb552dbf9", salt)
+                playerUrl = byteify(json.loads(playerUrl))
+                if playerUrl.startswith('#') and 3 < len(playerUrl): 
+                    playerUrl = getUtf8Str(playerUrl[1:])
+                printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % playerUrl)
+                if playerUrl.startswith('http'):
+                    playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'User-Agent':HTTP_HEADER['User-Agent']})
+                    return getDirectM3U8Playlist(playerUrl)
+        return False
         
     def parserTRILULILU(self, baseUrl):
         def getTrack(userid, hash):
