@@ -11,6 +11,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams
 ###################################################
 
 ###################################################
@@ -155,8 +156,42 @@ class Sport365LiveApi:
         
     def getVideoLink(self, cItem):
         printDBG("Sport365LiveApi.getVideoLink")
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(self.getFullUrl('en/main'), self.http_params)
         if not sts: return []
+        
+        commonUrl = self.cm.ph.getSearchGroups(data, '''src=['"](http[^"^']*?/wrapper\.js[^"^']*?)["']''')[0]
+        if commonUrl == '': return []
+        sts, tmpData = self.cm.getPage(commonUrl, self.http_params)
+        if not sts: return []
+        aes = ''
+        try:
+            while 'eval' in tmpData:
+                tmp = tmpData.split('eval(')
+                if len(tmp): del tmp[0]
+                tmpData = ''
+                for item in tmp:
+                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                    #printDBG(item)
+                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                    for decFun in [VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams]:
+                        tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
+                        if '' != tmpData:   
+                            break
+                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                    #printDBG(tmpData)
+                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                    aes = self.cm.ph.getSearchGroups(tmpData, 'aes_key="([^"]+?)"')[0]
+                    if '' == aes: aes = self.cm.ph.getSearchGroups(tmpData, 'aes\(\)\{return "([^"]+?)"')[0]
+                    if aes != '':
+                        break
+            aes = aes.encode('utf-8')
+        except:
+            printExc()
+            aes = ''
+        if aes == '': return []
+        
+        #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % aes)
+        
         urlsTab = []
         try:
             linkData   = base64.b64decode(cItem['link_data'])
@@ -166,7 +201,8 @@ class Sport365LiveApi:
             iv         = a2b_hex(linkData['iv'])
             salt       = a2b_hex(linkData['s'])
             
-            playerUrl = self.cryptoJS_AES_decrypt(ciphertext, "572ecb552dbf9", salt)
+            playerUrl = self.cryptoJS_AES_decrypt(ciphertext, aes, salt)
+            printDBG(playerUrl)
             playerUrl = byteify(json.loads(playerUrl))
             
             if not playerUrl.startswith('http'): return []
@@ -175,7 +211,7 @@ class Sport365LiveApi:
             data = self.cm.ph.getDataBeetwenMarkers(data, 'document.write(', '(')[1]
             playerUrl = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](http[^"^']+?)['"]''', 1, True)[0] )
             
-            urlsTab = self.up.getVideoLinkExt(playerUrl)
+            urlsTab = self.up.getVideoLinkExt(strwithmeta(playerUrl, {'aes_key':aes}))
             
         except:
             printExc()

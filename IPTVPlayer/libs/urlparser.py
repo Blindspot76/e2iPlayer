@@ -2042,6 +2042,7 @@ class pageParser:
         printDBG("parseCASTFLASHPW baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         Referer = baseUrl.meta.get('Referer', baseUrl) 
+        aesKey = baseUrl.meta.get('aes_key', '') 
         
         def getUtf8Str(st):
             idx = 0
@@ -2099,7 +2100,7 @@ class pageParser:
                 iv         = a2b_hex(linkData['iv'])
                 salt       = a2b_hex(linkData['s'])
                 
-                playerUrl = cryptoJS_AES_decrypt(ciphertext, "572ecb552dbf9", salt)
+                playerUrl = cryptoJS_AES_decrypt(ciphertext, aesKey, salt)
                 playerUrl = byteify(json.loads(playerUrl))
                 if playerUrl.startswith('#') and 3 < len(playerUrl): 
                     playerUrl = getUtf8Str(playerUrl[1:])

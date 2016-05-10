@@ -343,6 +343,13 @@ def VIDEOWEED_decryptPlayerParams(w, i, s, e):
         lIll += 2
     return ''.join(l1ll)
 
+def VIDEOWEED_decryptPlayerParams2(w, i, s=None, e=None):
+    s = 0
+    while s < len(w):
+        i += JS_FromCharCode(int(w[s:s+2], 36))
+        s += 2
+    return i
+
 def VIDEOWEED_unpackJSPlayerParams(code):
     sts, code = CParsingHelper.rgetDataBeetwenMarkers(code, 'eval(function', '</script>')
     if not sts: return ''
