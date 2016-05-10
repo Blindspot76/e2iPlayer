@@ -92,9 +92,11 @@ class PierwszaTVApi:
     def getFullUrl(self, url):
         if url.startswith('http'):
             return url
+        elif url.startswith('//'):
+            return 'http:' + url
         elif url.startswith('/'):
             return self.MAIN_URL + url[1:]
-        return url
+        return self.MAIN_URL + url
         
     def cleanHtmlStr(self, str):
         return CBaseHostClass.cleanHtmlStr(str)
@@ -114,17 +116,27 @@ class PierwszaTVApi:
         channelsTab = []
         sts, data = self.cm.getPage(self.MAIN_URL + 'player/watch?show=active')
         if not sts: return []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a class="source', '</a>')
-        for item in data:
-            url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0] )
-            icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src="([^"]+?)"''', 1, True)[0] )
-            #icon = ''
-            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="name">', '</div>', False)[1] )
-            desc  = self.cleanHtmlStr( item.split('<div class="author">')[-1] )
-            if not url.startswith('http'): continue
-            params = dict(cItem)
-            params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
-            channelsTab.append(params)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'window.sources =', ';', False)[1].strip()
+        #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '{', '}')
+        try:
+            data = byteify(json.loads(data))
+            for item in data:
+                printDBG(item)
+                printDBG("===============================================")
+                url   = self.getFullUrl( 'player/watch/{0}'.format(item['id']) )
+                if None != item.get('thumb_url', ''):
+                    icon  = self.getFullUrl( item.get('thumb_url', '') )
+                else:
+                    icon = ''
+                title = self.cleanHtmlStr( item['name'] )
+                desc  = self.cleanHtmlStr( item.get('author', '') + ' ' + item.get('updated_at', '') )
+                if not url.startswith('http'): continue
+                params = dict(cItem)
+                params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
+                channelsTab.append(params)
+        except:
+            printExc()
         return channelsTab
         
     def getVideoLink(self, cItem):
