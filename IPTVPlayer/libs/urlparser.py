@@ -2478,13 +2478,13 @@ class pageParser:
         if not sts: return
         
         stream   = self.cm.ph.getSearchGroups(data, '''['"](http://[^"^']+?/stream\,[^"^']+?)['"]''')[0]
-        if '' == stream: stream   = self.cm.ph.getSearchGroups(data, '''['"](http://[^"^']+?\.flv)['"]''')[0]
+        if '' == stream: stream   = byteify(json.loads('"%s"' % self.cm.ph.getSearchGroups(data, '''['"](http://[^"^']+?\.flv)['"]''')[0]))
         if '' != stream:
             vidTab.append({'name': 'http://vshare.io/stream ', 'url':stream})
             
         if 0 == len(vidTab):
             data = self.cm.ph.getDataBeetwenMarkers(data, 'clip:', '}', False)[1]
-            url = self.cm.ph.getSearchGroups(data, '''['"](http[^"^']+?)['"]''')[0]
+            url = byteify(json.loads('"%s"' % self.cm.ph.getSearchGroups(data, '''['"](http[^"^']+?)['"]''')[0]))
             vidTab.append({'name': 'http://vshare.io/ ', 'url':url})
         return vidTab
             
