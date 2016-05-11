@@ -40,9 +40,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.TVNDefaultformat = ConfigSelection(default = "4", choices = [("0", "Najgorsza"), ("1", "Bardzo niska"), ("2", "Niska"),  ("3", "Średnia"), ("4", "Standard"), ("5", "Wysoka"), ("6", "Bardzo wysoka"), ("7", "HD"), ("9999", "Najlepsza")])
+config.plugins.iptvplayer.TVNDefaultformat = ConfigSelection(default = "6", choices = [("0", "Najgorsza"), ("1", "Bardzo niska"), ("2", "Niska"),  ("3", "Średnia"), ("4", "Standard"), ("5", "Wysoka"), ("6", "Bardzo wysoka"), ("7", "HD"), ("9999", "Najlepsza")])
 config.plugins.iptvplayer.TVNUseDF = ConfigYesNo(default = False)
-config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "Mobile (Android)", choices = [("Mobile (Android)", "Mobile (Android)"),("Samsung TV", "Samsung TV")])
+config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "_mobile_", choices = [("_mobile_", "Mobile"),("_tv_", "TV")])
 config.plugins.iptvplayer.proxyenable = ConfigYesNo(default = False)
    
 def GetConfigList():
@@ -108,6 +108,8 @@ class TvnVod(CBaseHostClass):
         }
         
     def getDefaultPlatform(self):
+        if '_tv_' == config.plugins.iptvplayer.TVNdevice.value:
+            return 'Samsung'
         return "Android"
         
     def getBaseUrl(self, pl):
