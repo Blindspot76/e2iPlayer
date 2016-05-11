@@ -7,6 +7,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher import aes_cbc, base
 ###################################################
@@ -59,8 +60,6 @@ def gettytul():
     return 'TVN Player'
 
 class TvnVod(CBaseHostClass):
-    HOST         = 'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7'
-    HOST_ANDROID = 'Apache-HttpClient/UNAVAILABLE (java 1.4)'
     ICON_URL     = 'http://redir.atmcdn.pl/scale/o2/tvn/web-content/m/%s?quality=50&dstw=290&dsth=287&type=1'
     
     QUALITIES_TABLE = { 
@@ -82,27 +81,41 @@ class TvnVod(CBaseHostClass):
     def __init__(self):
         printDBG("TvnVod.__init__")
         CBaseHostClass.__init__(self, {'history':'TvnVod', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
-        
-        if self.getDevice() == 'Samsung TV':
-            userAgent = TvnVod.HOST
-        else:
-            userAgent = TvnVod.HOST_ANDROID
-        
-        self.cm.HEADER = {'User-Agent': userAgent, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         self.itemsPerPage = 30 # config.plugins.iptvplayer.tvp_itemsperpage.value
-        self.loggedIn = None
-        self.ACCOUNT  = False
         
-    def getDevice(self):
-        return "Mobile (Android)"
+        self.platforms = {
+            'Samsung': {
+                'platform' : 'ConnectedTV',
+                'terminal' : 'Samsung2',
+                'authKey' : '453198a80ccc99e8485794789292f061',
+                'host' : 'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7',
+                'api' : '3.6',
+            },
+            'Android': {
+                'platform' : 'Mobile',
+                'terminal' : 'Android',
+                'authKey' : 'b4bc971840de63d105b3166403aa1bea',
+                'host' : 'Apache-HttpClient/UNAVAILABLE (java 1.4)',
+                'api' : '3.0',
+            },
+            'Android2': {
+                'platform' : 'Mobile',
+                'terminal' : 'Android',
+                'authKey' : 'b4bc971840de63d105b3166403aa1bea',
+                'host' : 'Apache-HttpClient/UNAVAILABLE (java 1.4)',
+                'api' : '2.0',
+            }
+        }
         
-    def getBaseUrl(self, v='3.0'):
-        if self.getDevice() == 'Samsung TV':
-            baseUrl = 'https://api.tvnplayer.pl/api?platform=ConnectedTV&terminal=Samsung&format=json&v={0}&authKey=ba786b315508f0920eca1c34d65534cd'.format(v)
-        else:
-            baseUrl = 'https://api.tvnplayer.pl/api?platform=Mobile&terminal=Android&format=json&v=3.1&authKey=4dc7b4f711fb9f3d53919ef94c23890c' #b4bc971840de63d105b3166403aa1bea
-        return baseUrl
+    def getDefaultPlatform(self):
+        return "Android"
+        
+    def getBaseUrl(self, pl):
+       return 'https://api.tvnplayer.pl/api/?platform=%s&terminal=%s&format=json&authKey=%s&v=%s&' % (self.platforms[pl]['platform'], self.platforms[pl]['terminal'],  self.platforms[pl]['authKey'], self.platforms[pl]['api'] )
     
+    def getHttpHeader(self, pl):
+        return {'User-Agent': self.platforms[pl]['host']}
+        
     def _getJItemStr(self, item, key, default=''):
         try:
             v = item.get(key, None)
@@ -169,7 +182,6 @@ class TvnVod(CBaseHostClass):
         searchMode = False
         page = 1 + cItem.get('page', 0)
         if 'search' == cItem.get('category', None):
-            #https://api.tvnplayer.pl/api/?v=3.1&platform=Mobile&terminal=Android&format=json&authKey=4dc7b4f711fb9f3d53919ef94c23890c&limit=30&sort=&m=getSearchItems&isUserLogged=0&page=1&query=film
             searchMode = True
             urlQuery  = '&sort=newest&m=getSearchItems&page=%d&query=%s' % (page, cItem['pattern'])
         elif None != cItem.get('category', None) and None != cItem.get('id', None):
@@ -182,8 +194,9 @@ class TvnVod(CBaseHostClass):
             urlQuery = '&m=mainInfo'
         
         try:
-            url = self.getBaseUrl() + urlQuery
-            sts, data = self.cm.getPage(url)
+            pl = self.getDefaultPlatform()
+            url = self.getBaseUrl(pl) + urlQuery
+            sts, data = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
             data = json.loads(data)
             
             if 'success' != data['status']:
@@ -308,26 +321,92 @@ class TvnVod(CBaseHostClass):
     
     def resolveLink(self, url):
         printDBG("TvnVod.resolveLink url[%s]" % url)
+        url = strwithmeta(url)
+        pl = url.meta.get('tvn_platform', self.getDefaultPlatform())
         videoUrl = ''
         if len(url) > 0:
-            if self.getDevice() == 'Mobile (Android)':
+            if 'Android' in pl:
                 videoUrl = self._generateToken(url).encode('utf-8')
-            elif self.getDevice() == 'Samsung TV':
-                sts, data  = self.cm.getPage(url)
+            else:
+                sts, data  = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
                 if sts and data.startswith('http'):
                     videoUrl =  data.encode('utf-8')
+                    
+        videoUrl = strwithmeta(videoUrl, { 'header': self.getHttpHeader(pl) })
         return videoUrl
             
     def getLinksForVideo(self, cItem):
         return self.getLinks(cItem['id'])
+        
+    def getVideoUrl(self, args):
+        ret = ''
+        fallback = False
+        
+        if tvn_proxy == 'true':
+            useProxy = True
+        else:
+            useProxy = False
     
-    def getLinks(self, id, v='3.0'):
+        data = self.api.getAPI(args, useProxy)
+        
+        #brak video - spróbuj w innej wersji api
+        if data['item']['videos']['main']['video_content'] == None or len(data['item']['videos']['main']['video_content']) == 0 or \
+                ('video_content_license_type' in data['item']['videos']['main'] and data['item']['videos']['main']['video_content_license_type'] == 'WIDEVINE') : # DRM v3.6
+            data = self.api.getAPI(args, useProxy, 'fallback')
+            fallback = True
+        if not('item' in data) or not('videos' in data['item']) or not('main' in data['item']['videos']): # proba uzycia Api zapasowego czasami konczy sie strzalem w próżnię
+            d = xbmcgui.Dialog()
+            d.ok(SERVICE, 'Brak materiału video', '')
+            exit()
+        #znajdz jakosc z settings wtyczki      
+        if data['item']['videos']['main']['video_content'] != None and len(data['item']['videos']['main']['video_content']) != 0:
+            url = ''
+            for item in data['item']['videos']['main']['video_content']:
+                if item['profile_name'].encode('UTF-8') == tvn_quality:
+                    url = item['url'] #znalazlem wybrana jakosc
+                    break;
+            #jesli jakosc nie znaleziona (lub Maksymalna) znajdz pierwsza najwyzsza jakosc
+            if url == '':
+                for q in qualities:
+                    for item in data['item']['videos']['main']['video_content']:
+                        if item['profile_name'].encode('UTF-8') == q:
+                            url = item['url']
+                            break
+                    if url != '':
+                        break
+            if fallback: 
+                pl = platform[tvn_platform]['fallback'] 
+            else: 
+                pl = tvn_platform
+            #dodaj token tylko do Androida
+            if pl != 'Samsung':   # pl == AndroidX
+                ret = self.api.generateToken(url).encode('UTF-8')
+            else:
+                query_data = {'url': url, 'use_host': True, 'host': platform[pl]['host'], 'use_header': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
+                try:
+                    ret = self.common.getURLRequestData(query_data)
+                except Exception, exception:
+                    traceback.print_exc()
+                    self.exception.getError(str(exception))
+                    exit()
+                    
+        #02/07/2016
+        if useProxy:
+            opener = urllib2.build_opener(NoRedirectHandler())
+            urllib2.install_opener(opener)
+            response = urllib2.urlopen(urllib2.Request(ret))
+            ret = response.info().getheader('Location')
+            ret = re.sub('n-(.+?)\.dcs\.redcdn\.pl', 'n-1-25.dcs.redcdn.pl', ret)
+
+        return ret
+    
+    def getLinks(self, id):
         printDBG("TvnVod.getLinks cItem.id[%r]" % id )
         videoUrls = []
         
-        for v in ['3.0', '2.0']:
-            url = self.getBaseUrl(v) + '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
-            sts, data = self.cm.getPage(url)
+        for pl in ['Samsung', 'Android', 'Android2']:
+            url = self.getBaseUrl(pl) + '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
+            sts, data = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
             if not sts: continue
             try:
                 data = json.loads(data)
@@ -351,6 +430,7 @@ class TvnVod(CBaseHostClass):
                                 SetIPTVPlayerLastHostError("DRM protection.")
                             #    url = self._getJItemStr(video, 'src', '')
                             if '' != url:
+                                url = strwithmeta(url, {'tvn_platform':pl})
                                 qualityName = self._getJItemStr(video, 'profile_name', '')
                                 videoUrls.append({'name':qualityName, 'profile_name':qualityName, 'url':url, 'need_resolve':1})
                     if  1 < len(videoUrls):
@@ -371,36 +451,8 @@ class TvnVod(CBaseHostClass):
     def getLinksForFavourite(self, fav_data):
         return self.getLinks(fav_data)
 
-    def tryTologin(self):
-        printDBG('tryTologin start')
-        if '' == self.LOGIN.strip() or '' == self.PASSWORD.strip():
-            printDBG('tryTologin wrong login data')
-            return False
-        
-        post_data = {'email':self.LOGIN, 'password':self.PASSWORD}
-        params = {'header':self.HEADER, 'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
-        sts, data = self.cm.getPage( self.MAINURL + "logowanie.html", params, post_data)
-        if not sts:
-            printDBG('tryTologin problem with login')
-            return False
-            
-        if 'wyloguj.html' in data:
-            printDBG('tryTologin user[%s] logged with VIP accounts' % self.LOGIN)
-            return True
-     
-        printDBG('tryTologin user[%s] does not have status VIP' % self.LOGIN)
-        return False
-        
-
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('TvnVod..handleService start')
-        
-        if None == self.loggedIn and self.ACCOUNT:
-            self.loggedIn = self.tryTologin()
-            if not self.loggedIn:
-                self.sessionEx.open(MessageBox, 'Problem z zalogowaniem użytkownika "%s".' % self.LOGIN, type = MessageBox.TYPE_INFO, timeout = 10 )
-            else:
-                self.sessionEx.open(MessageBox, 'Zostałeś poprawnie \nzalogowany.', type = MessageBox.TYPE_INFO, timeout = 10 )
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
