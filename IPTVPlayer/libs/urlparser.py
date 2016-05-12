@@ -2106,8 +2106,20 @@ class pageParser:
                     playerUrl = getUtf8Str(playerUrl[1:])
                 printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % playerUrl)
                 if playerUrl.startswith('http'):
-                    playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'User-Agent':HTTP_HEADER['User-Agent']})
-                    return getDirectM3U8Playlist(playerUrl)
+                    COOKIE_FILE_M3U8 = GetCookieDir('m3u8.cookie')
+                    params = {'cookiefile':COOKIE_FILE_M3U8, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
+                    playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'Referer':'http://h5.adshell.net/flash', 'User-Agent':HTTP_HEADER['User-Agent']})
+                    urlsTab = getDirectM3U8Playlist(playerUrl, cookieParams=params)
+                    try:
+                        PHPSESSID = self.cm.getCookieItem(COOKIE_FILE_M3U8, 'PHPSESSID')
+                        newUrlsTab = []
+                        for item in urlsTab:
+                            item['url'].meta['Cookie'] = 'PHPSESSID=%s' % PHPSESSID
+                            newUrlsTab.append(item)
+                        return newUrlsTab
+                    except:
+                        printExc()
+                        return urlsTab
         return False
         
     def parserTRILULILU(self, baseUrl):
