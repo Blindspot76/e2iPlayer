@@ -749,9 +749,13 @@ class pageParser:
         #printDBG(data)
         
         # get JS player script code from confirmation page
-        m1 = ">eval("
-        if m1 not in data:
-            m1 = "eval("
+        mrk1 = ">eval("
+        mrk2 = 'eval("'
+        if mrk1  in data:
+            m1 = mrk1
+        elif mrk2 in data :
+            m1 = mrk2
+        else: m1 = "eval(" 
         tmpDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</script>', False)
         for tmpData in tmpDataTab:
             data2 = tmpData
