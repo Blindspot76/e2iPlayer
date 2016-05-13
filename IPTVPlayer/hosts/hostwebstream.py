@@ -17,7 +17,7 @@ from Plugins.Extensions.IPTVPlayer.libs.satlive           import SatLiveApi, Get
 from Plugins.Extensions.IPTVPlayer.libs.weebtv            import WeebTvApi, GetConfigList as WeebTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.purecastnet       import PurecastNetApi, GetConfigList as PurecastNet_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.vidtvpl           import VidTvApi
-from Plugins.Extensions.IPTVPlayer.libs.looknijtv         import LooknijTvApi
+#from Plugins.Extensions.IPTVPlayer.libs.looknijtv         import LooknijTvApi
 from Plugins.Extensions.IPTVPlayer.libs.tvisportcbapl     import TvSportCdaApi
 from Plugins.Extensions.IPTVPlayer.libs.nettvpw           import NettvPw
 from Plugins.Extensions.IPTVPlayer.libs.typertv           import TyperTV
@@ -140,7 +140,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
                         {'alias_id':'pierwsza.tv',             'name': 'pierwsza.tv',         'title': 'Pierwsza.TV',                       'url': '',                                                                   'icon': 'http://pierwsza.tv/img/logo.png'}, \
                         #{'alias_id':'web-live.tv',            'name': 'web-live.tv',         'title': 'Web-Live TV',                       'url': '',                                                                   'icon': 'http://web-live.tv/themes/default/img/logo.png'}, \
-                        {'alias_id':'looknij.tv',              'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
+                        #{'alias_id':'looknij.tv',              'name': 'looknij.tv',          'title': 'Looknij.tv',                        'url': '',                                                                   'icon': 'http://looknij.tv/wp-content/uploads/2015/02/logosite.png'}, \
                         #{'alias_id':'tvisport.cba.pl',        'name': 'tvisport.cba.pl',     'title': 'tvisport.cba.pl',                   'url': '',                                                                   'icon': 'http://tvisport.cba.pl/wp-content/uploads/2015/01/logonastrone.png'}, \
                         #{'alias_id':'telewizjoner.pl',        'name': 'telewizjoner.pl',     'title': 'Telewizjoner.pl',                   'url': '',                                                                   'icon': 'http://i.imgur.com/djEZKmy.png'}, \
                         #{'alias_id':'typertv.com.pl',          'name': 'typertv.com.pl',      'title': 'typertv.com.pl',                    'url': '',                                                                   'icon': 'http://www.typertv.com.pl/data/themes/Carousel/img/logo.png'}, \
