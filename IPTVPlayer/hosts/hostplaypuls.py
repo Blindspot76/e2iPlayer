@@ -5,8 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
@@ -20,7 +19,6 @@ import time
 import random
 try:    import simplejson as json
 except: import json
-
 
 ###################################################
 
@@ -52,33 +50,32 @@ def gettytul():
     return 'PlayPuls'
 
 class Playpuls(CBaseHostClass):
-    MAINURL = 'http://playpuls.pl/'
-    SEARCH_URL = MAINURL + 'search/node/'
-    
     def __init__(self):
         printDBG("Playpuls.__init__")
+        self.MAINURL = 'http://playpuls.pl/'
+        self.SEARCH_URL = self.MAINURL + 'search/node/'
+        self.DEFAULT_ICON_URL = self.MAINURL + 'sites/all/themes/play/logo.png'
         self.HOST = 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.18) Gecko/20110621 Mandriva Linux/1.9.2.18-0.1mdv2010.2 (2010.2) Firefox/3.6.18'
         self.HEADER = {'User-Agent': self.HOST, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         CBaseHostClass.__init__(self, {'history':'Playpuls', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.playpuls_proxy.value, 'cookie':'playpuls.cookie'})        
         self.cacheMenuTree = []
     
-    def _cleanHtmlStr(self, str):
-        str = str.replace('<', ' <').replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-        return self.cm.ph.removeDoubles(clean_html(str), ' ').strip()
+    def cleanHtmlStr(self, str):
+        return CBaseHostClass.cleanHtmlStr(str)
     
     def listsMainMenu(self):
         printDBG("Playpuls.listsMainMenu")
-        sts, data = self.cm.getPage(Playpuls.MAINURL)
+        sts, data = self.cm.getPage(self.MAINURL)
         if sts:
             menuData = self.cm.ph.getDataBeetwenMarkers(data, '<div id="navigation">', '</div>', False)[1]
             menuData = re.compile('<li class="menu__item menu-[0-9]+? menuparent[^"]*?"><a href="[/]*?([^"]+?)" title="([^"]+?)" class="menu__link">([^<]+?)</a>').findall(menuData)
             for item in menuData:
                 if item[1] in 'Filmy': continue
-                params = {'name':'category', 'title':item[1], 'category':'menu', 'url':Playpuls.MAINURL + item[0]}
+                params = {'name':'category', 'title':item[1], 'category':'menu', 'url':self.MAINURL + item[0], 'icon':self.DEFAULT_ICON_URL}
                 self.addDir(params)
             #
-            self.addDir({'name':'category', 'title':'Wyszukaj',              'category':'Wyszukaj'})
-            self.addDir({'name':'category', 'title':'Historia wyszukiwania', 'category':'Historia wyszukiwania'})
+            self.addDir({'name':'category', 'title':'Wyszukaj',              'category':'Wyszukaj', 'icon':self.DEFAULT_ICON_URL})
+            self.addDir({'name':'category', 'title':'Historia wyszukiwania', 'category':'Historia wyszukiwania', 'icon':self.DEFAULT_ICON_URL})
         
     def listCategory(self, cItem, searchMode=False):
         printDBG("Playpuls.listCategory cItem[%s]" % cItem)
@@ -132,20 +129,20 @@ class Playpuls(CBaseHostClass):
             if '' == icon: icon = self.cm.ph.getSearchGroups(item, 'class="screenshot" src="([^"]+?)"')[0]
             
             # parse title
-            title = self._cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<div class="video-caption">', '</div>', False)[1])
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<div class="video-caption">', '</div>', False)[1])
             if '' == title: title = self.cm.ph.getDataBeetwenMarkers(item, '<h3>', '</h3>', False)[1]
             if '' == title: title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
             
             # parse description
-            if descMarker in item: desc = self._cleanHtmlStr(item.split(descMarker)[-1])
-            else: desc  = self._cleanHtmlStr(item)#self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>', False)[1]
+            if descMarker in item: desc = self.cleanHtmlStr(item.split(descMarker)[-1])
+            else: desc  = self.cleanHtmlStr(item)#self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>', False)[1]
             
             if '/vod' in url:
                 category = 'vod'
             else:
                 category = 'menu'
             if '' != url:
-                params = {'name':'category', 'category':category, 'title':title, 'url':Playpuls.MAINURL+url, 'icon':icon, 'desc':desc}
+                params = {'name':'category', 'category':category, 'title':title, 'url':self.MAINURL+url, 'icon':icon, 'desc':desc}
                 if 'vod' == category: self.addVideo(params)
                 else: self.addDir(params)
                 
@@ -159,16 +156,19 @@ class Playpuls(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], {'use_cookie': True, 'load_cookie': True, 'save_cookie': False, 'cookiefile': self.COOKIE_FILE, 'header':header})
         if not sts: return videoUrls
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="section-player" ', '</script>', False)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="section-player" ', '</section>', False)
         if not sts: return videoUrls
+        
+        #printDBG(data)
         
         source1Data = self.cm.ph.getSearchGroups(data, "source = '([^']+?)'")[0]
         source2Data = re.compile("source([MD][123]) = '([^']+?)'").findall(data)
+        source3Data = self.cm.ph.getSearchGroups(data, "sources[ ]*=[ ]*(\{[^;]+?);")[0]
         quality     = self.cm.ph.getSearchGroups(data, "quality = '([01])';")[0]
         
         sources = []
         proto = config.plugins.iptvplayer.playpuls_defaultproto.value
-        printDBG("Playpuls.getLinksForVide proto[%s] source1Data[%r] source2Data[%r] quality[%r]" % (proto, source1Data, source2Data, quality))
+        printDBG("Playpuls.getLinksForVide proto[%s] source1Data[%r] source2Data[%r] source3Data[%r] quality[%r] " % (proto, source1Data, source2Data, quality, source3Data))
         if '' != source1Data:
             if '' != quality:
                 mobileSrc = ''
@@ -207,10 +207,17 @@ class Playpuls(CBaseHostClass):
                 sources.append({'quality':'D1', 'src': '/bucket/%s/d1.mp4' % source1Data })
                 sources.append({'quality':'D2', 'src': '/bucket/%s/d2.mp4' % source1Data })
                 sources.append({'quality':'D3', 'src': '/bucket/%s/d3.mp4' % source1Data })
-        else:
+        elif len(source2Data) > 0:
             for item in source2Data:
                 sources.append({'quality':item[0], 'src': '/play/%s' % item[1] })
-                
+        elif source3Data != '':
+            try:
+                source3Data = byteify(json.loads(source3Data))
+                for key,val in source3Data.iteritems():
+                    sources.append({'quality':key.replace('src', ''), 'src': '/play/%s' % val })
+            except:
+                printExc()
+        
         if len(sources):
             qualityMap = {'M1':'400', 'M2':'600', 'D1':'600', 'D2':'800', 'D3':'1000'}
             for item in sources:
@@ -243,7 +250,7 @@ class Playpuls(CBaseHostClass):
             self.listCategory(self.currItem)
     #WYSZUKAJ
         elif category == "Wyszukaj":
-            self.listCategory({'url':Playpuls.SEARCH_URL + searchPattern}, True)
+            self.listCategory({'url':self.SEARCH_URL + searchPattern}, True)
     #HISTORIA WYSZUKIWANIA
         elif category == "Historia wyszukiwania":
             self.listsHistory()
@@ -301,7 +308,7 @@ class IPTVHost(CHostBase):
                     hostLinks.append(CUrlItem("Link", url, 1))
                 
             title       =  cItem.get('title', '')
-            description =  clean_html(cItem.get('desc', ''))
+            description =  cItem.get('desc', '')
             icon        =  cItem.get('icon', '')
             
             hostItem = CDisplayListItem(name = title,
