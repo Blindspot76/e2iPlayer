@@ -50,7 +50,7 @@ class AnimeOdcinki(CBaseHostClass):
     MAINURL  = 'http://www.anime-odcinki.pl/'
     SEARCH_URL = MAINURL + '/search/node/'
     MAIN_CAT_TAB = [{ 'category':'list_letters',          'title':'Lista anime',           'url':MAINURL+'lista-anime'  },
-                    { 'category':'list_letters',          'title':'Lista filmów',          'url':MAINURL+'lista-filmow' },
+                    #{ 'category':'list_letters',          'title':'Lista filmów',          'url':MAINURL+'lista-filmow' },
                     { 'category':'list_emiotwane',        'title':'Anime Emitowane',       'url':MAINURL                },
                     { 'category':'list_new_episodes',     'title':'Nowe odcinki emitowane','url':MAINURL                },
                     { 'category':'list_new_added',        'title':'Ostatnio dodane odcinki z poprzednich sezonów',  'url':MAINURL },
@@ -113,7 +113,7 @@ class AnimeOdcinki(CBaseHostClass):
         
     def listEmitowane(self, cItem, category):
         printDBG('AnimeOdcinki.listEmitowane start')
-        self._listBase(cItem, category, 'Anime Emitowane', '</ul>', '</li>')
+        self._listBase(cItem, category, '>Emitowane', '</ul>', '</li>')
         
     def listNewEpisodes(self, cItem):
         printDBG('AnimeOdcinki.listNewEpisodes start')
@@ -126,11 +126,13 @@ class AnimeOdcinki(CBaseHostClass):
     def listEpisodes(self, cItem):
         printDBG('AnimeOdcinki.listEpisodes start')
         page = cItem.get('page', 0)
-        url  = self._resolveUrl(cItem['url']) + ('?page=%d' % page)
+        url  = self._resolveUrl(cItem['url'])
+        if page > 0:
+            url += ('?page=%d' % page)
         sts, data = self.cm.getPage(url)
         if not sts: return
         desc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', "</section>", False)[1]
-        icon = self._resolveUrl( self.cm.ph.getSearchGroups(desc, """<img src=['"]([^"^']+?\.jpg[^"^']*?)['"]""")[0] )
+        icon = self._resolveUrl( self.cm.ph.getSearchGroups(desc, """<img[^>]+?src=['"]([^"^']+?\.(?:jpg|png)[^"^']*?)['"]""")[0] )
         desc = self.cleanHtmlStr(desc)
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="view-content">', '</section>', False)[1]
         nextPage = False
@@ -144,7 +146,10 @@ class AnimeOdcinki(CBaseHostClass):
             params.update({'title':_('Zwiastun'), 'url':trailer, 'desc':desc, 'icon':icon})
             self.addVideo(params)
         '''
-        data = data.split('<div class="views-row views-row')
+        m1 = '<div class="views-row views-row'
+        if m1 not in data: return
+        
+        data = data.split(m1)
         for item in data:
             idx = item.find('>')
             if 0 > idx: continue
@@ -162,7 +167,9 @@ class AnimeOdcinki(CBaseHostClass):
     def listItems(self, cItem):
         printDBG('AnimeOdcinki.listItems start')     
         page     = cItem.get('page', 0)
-        url = self._resolveUrl(cItem['url']) + '?rowstart=%d' % (page * 20) 
+        url = self._resolveUrl(cItem['url']) 
+        if page > 0:
+            url += '?rowstart=%d' % (page * 20) 
         currPath = url[:url.rfind('/')] + '/'
         sts, data = self.cm.getPage(url)
         if sts:
