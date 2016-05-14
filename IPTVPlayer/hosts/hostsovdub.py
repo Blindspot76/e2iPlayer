@@ -156,16 +156,14 @@ class Sovdub(CBaseHostClass):
         if not sts: return
         desc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="full-news-content">', '</a></div>', False)[1]
         desc = self.cleanHtmlStr(desc).replace('  ', '')
-        if ('<IFRAME') in data:
-            url = re.compile("<IFRAME[^>]+?src='(.*?)'").findall(data)[0]
-        else:
-            url = re.compile('<iframe[^>]+?src="([^"]+?)"').findall(data)[0]
-            url = url.replace('amp;', '')
-        params = dict(cItem)
-        params['desc'] = desc
-        params['url'] = url
-        params.update({'desc': desc, 'url': url})
-        self.addVideo(params)
+        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["']([^"^']+?)['"]''', 1, True)[0]
+        url = url.replace('amp;', '')
+        if url.startswith('http'):
+            params = dict(cItem)
+            params['desc'] = desc
+            params['url'] = url
+            params.update({'desc': desc, 'url': url})
+            self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         try: searchPattern = searchPattern.decode('utf-8').encode('cp1251', 'ignore')
