@@ -263,24 +263,30 @@ class common:
         
     def getCookieItem(self, cookiefile, item):
         ret = ''
-        if not self.useMozillaCookieJar:
-            cj = cookielib.LWPCookieJar()
-        else:
-            cj = cookielib.MozillaCookieJar()
-        cj.load(cookiefile, ignore_discard = True)
-        for cookie in cj:
-            if cookie.name == item: ret = cookie.value
+        try:
+            if not self.useMozillaCookieJar:
+                cj = cookielib.LWPCookieJar()
+            else:
+                cj = cookielib.MozillaCookieJar()
+            cj.load(cookiefile, ignore_discard = True)
+            for cookie in cj:
+                if cookie.name == item: ret = cookie.value
+        except:
+            printExc()
         return ret
         
     def getCookieHeader(self, cookiefile):
         ret = ''
-        if not self.useMozillaCookieJar:
-            cj = cookielib.LWPCookieJar()
-        else:
-            cj = cookielib.MozillaCookieJar()
-        cj.load(cookiefile, ignore_discard = True)
-        for cookie in cj:   
-            ret += '%s=%s; ' % (cookie.name, cookie.value)
+        try:
+            if not self.useMozillaCookieJar:
+                cj = cookielib.LWPCookieJar()
+            else:
+                cj = cookielib.MozillaCookieJar()
+            cj.load(cookiefile, ignore_discard = True)
+            for cookie in cj:   
+                ret += '%s=%s; ' % (cookie.name, cookie.value)
+        except:
+            printExc()
         return ret
 
     def html_entity_decode_char(self, m):
