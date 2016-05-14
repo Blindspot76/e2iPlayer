@@ -79,7 +79,7 @@ class MoviesNight(CBaseHostClass):
         printDBG("MoviesNight._fillFilters")
         cache = {'genres':[], 'years':[]}
         sts, data = self.cm.getPage(url)
-        if not sts: return []
+        if not sts: return {}
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="scrolling years">', '</ul>', False)[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a ', '</a>')

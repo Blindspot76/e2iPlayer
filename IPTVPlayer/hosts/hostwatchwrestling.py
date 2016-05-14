@@ -211,7 +211,7 @@ class Watchwrestling(CBaseHostClass):
         printDBG("Watchwrestling.getLinksForVideo [%s]" % cItem)
         urlTab = []
         url = cItem['url']
-        Referer =  cItem['Referer']
+        Referer =  cItem.get('Referer', '')
         if 1 != self.up.checkHostSupport(url):  
             tries = 0
             while tries < 3:
