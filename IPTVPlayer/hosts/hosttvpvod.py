@@ -492,7 +492,7 @@ class TvpVod(CBaseHostClass):
             ok = int(fav_data)
             if ok: return self.getVideoLink(fav_data)
         except: pass
-        return self.getLinksForVideo(self, {'url':fav_data})
+        return self.getLinksForVideo({'url':fav_data})
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('TvpVod.handleService start')

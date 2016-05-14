@@ -267,7 +267,7 @@ class TheWatchseriesTo(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         printDBG("TheWatchseriesTo.getLinksForFavourite")
-        return self.getLinksForVideo(self, {'url':fav_data})
+        return self.getLinksForVideo({'url':fav_data})
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
