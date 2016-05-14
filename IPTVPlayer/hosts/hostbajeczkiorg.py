@@ -167,7 +167,7 @@ class BajeczkiOrg(CBaseHostClass):
         for item in data:   
             # icon
             icon  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            if icon == '': icon = cItem['icon']
+            if icon == '': icon = cItem.get('icon', '')
             # url
             url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
             if url == '': continue
