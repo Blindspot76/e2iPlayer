@@ -168,7 +168,8 @@ class Sovdub(CBaseHostClass):
         self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        searchPattern = searchPattern.decode('utf-8').encode('cp1251')
+        try: searchPattern = searchPattern.decode('utf-8').encode('cp1251', 'ignore')
+        except: searchPattern = ''
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         cItem['url'] = self.SRCH_URL + urllib.quote_plus(searchPattern)
