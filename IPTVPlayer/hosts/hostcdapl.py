@@ -102,10 +102,10 @@ class cda(CBaseHostClass):
             else:
                 nextPage = False
             if search:
-                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="thumbElem video', '<div class="clear"></div>', False)[1]
-                data = data.split('<div class="thumbElem video')
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="block-media block-media-inline"', '<div class="clear"></div>', False)[1]
+                data = data.split('<div class="block-media block-media-inline"')
             elif 'poczekalnia' in url:
-                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="videoInfo">', '<div class="bottom" id="dolny_pasek">', False)[1]
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="videoInfo">', '<span class="next-wrapper">', False)[1]
                 data = data.split('<div class="videoInfo">')                
             else:
                 data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="rowElem">', '<div class="clear"></div>', False)[1]
@@ -113,8 +113,8 @@ class cda(CBaseHostClass):
                 
             for item in data:
                 desc1   = self.cleanHtmlStr( self.cm.ph.getDataBeetwenReMarkers(item, re.compile('''<span class=["']timeElem[^>]*?>'''), re.compile('</span>'), False)[1] )
-                desc2  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<label  title="', '"', False)[1] )
-                if '' == desc2: desc2   = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<img  title="', '"', False)[1] )
+                desc2  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, '''<label[^>]title=['"]([^"^']+?)["']''', 1, True)[0] )
+                if '' == desc2: desc2   = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, '''<img[^>]title=['"]([^"^']+?)["']''', 1, True)[0] )
                 desc = desc1 + ' | ' + desc2
                 
                 title  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="text">', '</div>', False)[1] )
