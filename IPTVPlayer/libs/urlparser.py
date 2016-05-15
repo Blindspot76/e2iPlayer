@@ -1384,18 +1384,40 @@ class pageParser:
             return url.group(1)
         return False
         
-    def parserFREEDISC(self, url):
+    def parserFREEDISC(self, baseUrl):
         linksTab = []
-        baseUrl = 'http://freedisc.pl/'
-        userAgent = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
-        sts, data = self.cm.getPage(url)
+        
+        COOKIE_FILE = GetCookieDir('freedicpl.cookie')
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'}
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':False}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return linksTab
-        data = re.findall('data-duration="([^"]+?)"[ ]*?data-video-url="([^"]+?)"', data)
-        for item in data:
-            if len(item[1]):
-                if item[1].startswith('http'): url = item[1] + '?start=0'
-                else: url = baseUrl + item[1] + '?start=0'
-                linksTab.append({'name':'freedisc.pl ' + item[0], 'url': urlparser.decorateUrl(url, {'User-Agent':userAgent})})
+        
+        tmpUrls = []
+        
+        try:
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '<script type="application/ld+json">', '</script>', False)[1]
+            tmp = byteify(json.loads(tmp))
+            tmp = tmp['embedUrl'].split('?file=')
+            if tmp[1].startswith('http'):
+                linksTab.append({'name':'freedisc.pl', 'url': urlparser.decorateUrl(tmp[1], {'Referer':tmp[0], 'User-Agent':HTTP_HEADER['User-Agent']})})
+                tmpUrls.append(tmp[1])
+        except:
+            printExc()
+            
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?/embed/[^"^']+?)["']''', 1, True)[0]
+        if '' == videoUrl: return linksTab
+        params['load_cookie'] = True
+        params['header']['Referer'] = baseUrl
+        
+        sts, data = self.cm.getPage(videoUrl, params)
+        if not sts: return linksTab
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '''data-video-url=["'](http[^"^']+?)["']''', 1, True)[0]
+        if videoUrl.startswith('http') and  videoUrl not in tmpUrls:
+            linksTab.append({'name':'freedisc.pl', 'url': urlparser.decorateUrl(videoUrl, {'Referer':'http://freedisc.pl/static/player/v612/jwplayer.flash.swf', 'User-Agent':HTTP_HEADER['User-Agent']})})
+        
         return linksTab
 
     def parserGINBIG(self,url):

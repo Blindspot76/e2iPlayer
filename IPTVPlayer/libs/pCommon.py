@@ -245,7 +245,7 @@ class common:
                 outParams['proxy_gateway'] = url.meta['iptv_proxy_gateway']
         return outParams, postData
     
-    def __init__(self, proxyURL= '', useProxy = False, useMozillaCookieJar=False):
+    def __init__(self, proxyURL= '', useProxy = False, useMozillaCookieJar=True):
         self.proxyURL = proxyURL
         self.useProxy = useProxy
         self.geolocation = {}
