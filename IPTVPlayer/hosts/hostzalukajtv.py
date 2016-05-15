@@ -247,9 +247,6 @@ class ZalukajTv(CBaseHostClass):
             if not sts: continue
             
             # First check for premium link
-            data = ''' "urlResolvers":"brselect",
-                    "bitrates":[{"url":"http:\/\/s25.vshare.io\/f,110-1000-1-0\/187184\/184760\/184789\/11111111111111111111-2a91bd4393bdfdc73d554a5f8101291c,5738dc79,95892ed_360.flv","width":360,"bitrate":5816,"isDefault":true,"label":"360p"}]                },
-                   '''
             premium = False
             premiumLinks = self.cm.ph.getSearchGroups(data, '"bitrates"\t?\:\t?(\[[^]]+?\])', 1)[0]
             if premiumLinks != '':
