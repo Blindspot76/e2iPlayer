@@ -274,7 +274,8 @@ class ZalukajTv(CBaseHostClass):
                 url = self.cm.ph.getSearchGroups(data, 'iframe src="([^"]+?)" width=', 1)[0]
                 urlTab.extend(self.up.getVideoLinkExt(url))
                 # premium link should be checked at first, so if we have free link here break
-                # break
+                if len(urlTab):
+                    break
         return urlTab
         
     def tryTologin(self):
