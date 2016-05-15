@@ -157,6 +157,10 @@ class KwejkTV(CBaseHostClass):
         printDBG("KwejkTV.listMoviesCategories")
         if 0 == len(self.catsCache):
             self.fillFilters(cItem['url'])
+            
+        params = dict(cItem)
+        params.update({'category':category, 'title':'--Wszystkie--'})
+        self.addDir(params)
         
         cItem = dict(cItem)
         cItem['category'] = category
