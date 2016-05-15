@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 ###################################################
 
@@ -228,7 +228,7 @@ class ZalukajTv(CBaseHostClass):
         urlTab = []
         for loggedIn in tries:
             url = cItem['url']
-            sts, data = self._getPage(url=url)
+            sts, data = self._getPage(url, loggedIn=loggedIn)
             if not sts: continue
             url = self._getFullUrl( self.cm.ph.getSearchGroups(data, '"(/player.php[^"]+?)"', 1)[0] )
             if '' == url:
@@ -237,7 +237,7 @@ class ZalukajTv(CBaseHostClass):
                 url = self.cm.ph.getSearchGroups(data, 'href="([^"]+?)"[^>]*?target', 1)[0]
                 urlTab.extend(self.up.getVideoLinkExt(url))
                 continue 
-            sts, data = self._getPage(url)
+            sts, data = self._getPage(url, loggedIn=loggedIn)
             if not sts: continue
             url = self._getFullUrl(self.cm.ph.getSearchGroups(data, '<a href="([^"]+?)"', 1)[0])
             if '' == url:
@@ -245,17 +245,36 @@ class ZalukajTv(CBaseHostClass):
                 continue
             sts, data = self._getPage(url, loggedIn=loggedIn)
             if not sts: continue
+            
             # First check for premium link
-            url = self.cm.ph.getSearchGroups(data, "url:'([^']+?)'", 1)[0]
-            if url.startswith('http'):
-                printDBG("Premium url: [%s]" % url)
-                urlTab.append({'name':'zalukaj.tv premium', 'url':url})
-            else:
+            data = ''' "urlResolvers":"brselect",
+                    "bitrates":[{"url":"http:\/\/s25.vshare.io\/f,110-1000-1-0\/187184\/184760\/184789\/11111111111111111111-2a91bd4393bdfdc73d554a5f8101291c,5738dc79,95892ed_360.flv","width":360,"bitrate":5816,"isDefault":true,"label":"360p"}]                },
+                   '''
+            premium = False
+            premiumLinks = self.cm.ph.getSearchGroups(data, '"bitrates"\t?\:\t?(\[[^]]+?\])', 1)[0]
+            if premiumLinks != '':
+                printDBG("New premium premiumLinks: [%s]" % premiumLinks)
+                try:
+                    premiumLinks = byteify( json.loads(premiumLinks) )
+                    for pItem in premiumLinks:
+                        urlTab.append({'name':'zalukaj.tv premium ' + pItem.get('label', ''), 'url':pItem['url']})
+                        premium = True
+                except:
+                    printExc()
+            
+            if not premium:
+                url = self.cm.ph.getSearchGroups(data, "url:'([^']+?)'", 1)[0]
+                printDBG("Old premium url: [%s]" % url)
+                if url.startswith('http'):
+                    urlTab.append({'name':'zalukaj.tv premium ', 'url':url})
+                    premium = True
+                    
+            if not premium:
                 printDBG( 'No premium link data[%s]' % data)
                 url = self.cm.ph.getSearchGroups(data, 'iframe src="([^"]+?)" width=', 1)[0]
                 urlTab.extend(self.up.getVideoLinkExt(url))
                 # premium link should be checked at first, so if we have free link here break
-                break
+                # break
         return urlTab
         
     def tryTologin(self):
