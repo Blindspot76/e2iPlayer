@@ -49,12 +49,12 @@ class KwejkTV(CBaseHostClass):
     SRCH_URL    = MAIN_URL + '?s='
     DEFAULT_ICON_URL = 'http://kwejk.tv/wp-content/uploads/2016/02/kwejk.png'
     
-    MAIN_CAT_TAB = [{'category':'movies_cats',    'title': 'Kategorie',       'url':MAIN_URL,     'icon':DEFAULT_ICON_URL},
-                    {'category':'movies_top100',  'title': 'Top 100',         'url':MAIN_URL,     'icon':DEFAULT_ICON_URL},
-                    {'category':'movies_year',    'title': 'Rok',             'url':MAIN_URL,     'icon':DEFAULT_ICON_URL},
-                    {'category':'list_series',    'title': 'Seriale',         'url':MAIN_URL+'lista-seriali', 'icon':DEFAULT_ICON_URL},
-                    {'category':'search',         'title': _('Search'),       'search_item':True, 'icon':DEFAULT_ICON_URL},
-                    {'category':'search_history', 'title': _('Search history'), 'icon':DEFAULT_ICON_URL} 
+    MAIN_CAT_TAB = [{'category':'movies_cats',    'title': 'Kategorie',       'url':MAIN_URL,                 'icon':DEFAULT_ICON_URL},
+                    {'category':'movies_top100',  'title': 'Top 100',         'url':MAIN_URL,                 'icon':DEFAULT_ICON_URL},
+                    {'category':'movies_year',    'title': 'Rok',             'url':MAIN_URL,                 'icon':DEFAULT_ICON_URL},
+                    {'category':'series_cats',    'title': 'Seriale',         'url':MAIN_URL+'lista-seriali', 'icon':DEFAULT_ICON_URL},
+                    {'category':'search',         'title': _('Search'),       'search_item':True,             'icon':DEFAULT_ICON_URL},
+                    {'category':'search_history', 'title': _('Search history'),                               'icon':DEFAULT_ICON_URL} 
                    ]
     
     TOP100_TAB = [{'category':'list_top100', 'title':'24 godz',   'url':MAIN_URL + '24-godz/'},
@@ -62,6 +62,11 @@ class KwejkTV(CBaseHostClass):
                   {'category':'list_top100', 'title':'Miesiąc',   'url':MAIN_URL + 'miesiac/'},
                   {'category':'list_top100', 'title':'Kwartał',   'url':MAIN_URL + 'kwartal/'},
                   {'category':'list_top100', 'title':'Popularne', 'url':MAIN_URL + 'popularne'},
+                 ]
+                 
+    SERIES_TAB = [{'category':'list_series',        'title':'Ostatnio zaktualizowane'},
+                  {'category':'list_abc_series',    'title':'ABC'},
+                  {'category':'list_all_series',    'title':'Wszystkie seriale'},
                  ]
  
     def __init__(self):
@@ -80,6 +85,9 @@ class KwejkTV(CBaseHostClass):
         if not mainUrl.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
+        
+    def getDefaultIcon(self):
+        return self.DEFAULT_ICON_URL
         
     def fillFilters(self, url):
         printDBG("KwejkTV.fillFilters")
@@ -193,20 +201,39 @@ class KwejkTV(CBaseHostClass):
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
             
-    def listAllSeries(self, cItem, category):
-        printDBG("KwejkTV.listAllSeries")
+    def listSeriesAbc(self, cItem, category):
+        printDBG("KwejkTV.listSeriesAbc")
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return 
-
-        data = CParsingHelper.getDataBeetwenMarkers(data, ' <ul class="filter">', '</ul>', False)[1]
-        data = data.split('</li>')
-        if len(data): del data[-1]
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="listSeries">', '</ul>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</li>')
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url)} )
-            params['category'] = category
+            params.update( {'category':category, 'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( item ), 'icon':self._getFullUrl(icon)} )
             self.addDir(params)
+            
+    def listSeries(self, cItem, category, m1='<ul id="latestSeries">'):
+        printDBG("KwejkTV.listSeries")
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return 
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '</ul>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        for item in data:
+            #printDBG("==========================================")
+            #printDBG(item)
+            url    = self.cm.ph.getSearchGroups(item, 'href=([^>^\t]+?)[">\t]')[0].replace('"', '').strip()
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            params = dict(cItem)
+            params.update( {'category':category, 'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( item ), 'icon':self._getFullUrl(icon)} )
+            self.addDir(params)
+            
+    def listAllSeries(self, cItem, category):
+        printDBG("KwejkTV.listAllSeries")
+        self.listSeries(cItem, category, m1='class="filter"')
             
     def listSeasons(self, cItem, category):
         printDBG("KwejkTV.listSeasons")
@@ -273,38 +300,15 @@ class KwejkTV(CBaseHostClass):
             for item in data:
                 url = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
                 if url == '': continue
+                if 'facebook' in url: continue
+                
                 if url.startswith('..'):
-                    url = url[2:]
-                else:
-                    if 1 == self.up.checkHostSupport(url):
-                        urlTab.append({'name':self.up.getHostName(url), 'url':url, 'need_resolve':1})
-                        continue
-                
-                if url.startswith('/'):
-                    url = baseUrl + url[1:]
-                sts, tmp = self.cm.getPage(url)
-                if not sts: continue
-                tmp = re.sub("<!--[\s\S]*?-->", "", tmp)
-                
-                
-                linksTab = []
-                tmpLinksTab = re.compile('.link=([^"]+?)"').findall(tmp)
-                for litem in tmpLinksTab:
-                    linksTab.append(litem)
-                tmpLinksTab = re.compile('link[^;^<]*?"(http[^"]+?)"').findall(tmp)
-                for litem in tmpLinksTab:
-                    linksTab.append(litem)
-                tmpLinksTab = re.compile('src="([^"]+?)"').findall(tmp)
-                for litem in tmpLinksTab:
-                    linksTab.append(litem)
-                linksTab = set(linksTab)
-                for litem in linksTab:
-                    if 'facebook' in litem:
-                        continue
-                    elif 1 == self.up.checkHostSupport(litem):
-                        urlTab.append({'name':self.up.getHostName(litem), 'url':litem, 'need_resolve':1})
-                    elif 'stream.kwejk.tv' in litem:    
-                        urlTab.append({'name':'tream.kwejk.tv', 'url':litem, 'need_resolve':1})
+                    url = self._getFullUrl( url[2:] )
+                    
+                if 1 == self.up.checkHostSupport(url):
+                    urlTab.append({'name':self.up.getHostName(url), 'url':url, 'need_resolve':1})
+                elif 'kwejk.tv' in url:    
+                    urlTab.append({'name':'kwejk.tv', 'url':url, 'need_resolve':1})
         return urlTab
         
     def getVideoLinks(self, baseUrl):
@@ -313,9 +317,21 @@ class KwejkTV(CBaseHostClass):
         
         videoUrl = baseUrl
         if 'kwejk.tv' in baseUrl:
-            sts, data = self.cm.getPage(baseUrl)
-            if sts:
-                videoUrl = self.cm.ph.getSearchGroups(data, 'link[^;^<]*?"(http[^"]+?)"')[0]
+            sub = 0 
+            while sub < 5:
+                sub += 1
+                sts, data = self.cm.getPage(videoUrl)
+                if not sts: return []
+                prevVideoUrl = videoUrl
+                videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+                if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, 'link[^;^<]*?"(http[^"]+?)"')[0]
+                if '://' not in videoUrl:
+                    import urlparse
+                    videoUrl = urlparse.urljoin(prevVideoUrl, videoUrl)
+                videoUrl = self._getFullUrl( videoUrl )
+                if 1 == self.up.checkHostSupport(videoUrl):
+                    break
+        
         urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
@@ -388,7 +404,13 @@ class KwejkTV(CBaseHostClass):
         elif category == 'movies_year':
             self.listYears(self.currItem, 'list_movies')
     #SERIES
+        elif category == 'series_cats':
+            self.listsTab(self.SERIES_TAB, self.currItem)
+        elif category == 'list_abc_series':
+            self.listSeriesAbc(self.currItem, 'list_series')
         elif category == 'list_series':
+            self.listSeries(self.currItem, 'list_seasons')
+        elif category == 'list_all_series':
             self.listAllSeries(self.currItem, 'list_seasons')
         elif category == 'list_seasons':
             self.listSeasons(self.currItem, 'list_episodes')
@@ -479,6 +501,7 @@ class IPTVHost(CHostBase):
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
         icon        =  cItem.get('icon', '')
+        if icon == '': icon = self.host.getDefaultIcon()
         
         return CDisplayListItem(name = title,
                                     description = description,
