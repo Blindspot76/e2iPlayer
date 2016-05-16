@@ -55,7 +55,7 @@ class FreeDiscPL(CBaseHostClass):
     SEARCH_URL    = MAIN_URL + 'search/get'
     DEFAULT_ICON  = "http://i.imgur.com/mANjWqL.png"
 
-    MAIN_CAT_TAB = [{'icon':DEFAULT_ICON, 'category':'list_filters',  'title': 'Najnowsze publiczne pliki użytkowników',  'url':MAIN_URL+'explore/start/get_top_tabs_data/%s/'},
+    MAIN_CAT_TAB = [{'icon':DEFAULT_ICON, 'category':'list_filters',  'title': 'Najnowsze publiczne pliki użytkowników',  'url':MAIN_URL+'explore/start/get_tabs_pages_data/%s/newest/'},
                     {'icon':DEFAULT_ICON, 'category':'list_filters',  'title': 'Ostatnio przeglądane pliki',              'url':MAIN_URL+'explore/start/get_tabs_pages_data/%s/visited/'},
                     {'icon':DEFAULT_ICON, 'category':'search',        'title': _('Search'), 'search_item':True},
                     {'icon':DEFAULT_ICON, 'category':'search_history','title': _('Search history')} ]

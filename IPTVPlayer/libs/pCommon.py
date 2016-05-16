@@ -432,28 +432,48 @@ class common:
                 contentLength = int(meta.getheaders("Content-Length")[0])
             else:
                 contentLength = None
-                
+            
+            checkFromFirstBytes = addParams.get('check_first_bytes', [])
             OK = True
             if 'maintype' in addParams and addParams['maintype'] != downHandler.headers.maintype:
-                downHandler.close()
                 printDBG("common.getFile wrong maintype! requested[%r], retrieved[%r]" % (addParams['maintype'], downHandler.headers.maintype))
+                if 0 == len(checkFromFirstBytes):
+                    downHandler.close()
                 OK = False
-            if 'subtypes' in addParams:
+            
+            if OK and 'subtypes' in addParams:
                 OK = False
                 for item in addParams['subtypes']:
                     if item == downHandler.headers.subtype:
                         OK = True
                         break
-            if OK:
+            
+            if OK or len(checkFromFirstBytes):
                 blockSize = addParams.get('block_size', 8192)
-                fileHandler = file(file_path, "wb")
+                fileHandler = None
                 while True:
                     buffer = downHandler.read(blockSize)
+                    
+                    if len(checkFromFirstBytes):
+                        OK = False
+                        for item in checkFromFirstBytes:
+                            if buffer.startswith(item):
+                                OK = True
+                                break
+                        if not OK:
+                            break
+                        else:
+                            checkFromFirstBytes = []
+                    
                     if not buffer:
                         break
                     downDataSize += len(buffer)
-                    fileHandler.write(buffer)
-                fileHandler.close()
+                    if len(buffer):
+                        if fileHandler == None:
+                            fileHandler = file(file_path, "wb")
+                        fileHandler.write(buffer)
+                if fileHandler != None:
+                    fileHandler.close()
                 downHandler.close()
                 if None != contentLength and contentLength == downDataSize:
                     bRet = True
