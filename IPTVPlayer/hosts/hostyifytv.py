@@ -298,7 +298,7 @@ class YifyTV(CBaseHostClass):
             funBody = ''
             for ins in funIns:
                 ins = ins.replace('var', ' ').strip()
-                if len(ins) and ins[-1] not in [')', ']']:
+                if len(ins) and ins[-1] not in [')', ']', '"']:
                     ins += '()'
                 funBody += '\t%s\n' % ins
             if '' == funBody.replace('\t', '').replace('\n', '').strip():
@@ -313,17 +313,23 @@ class YifyTV(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
+        #printDBG(data)
+        
         #data = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^"]*?=[^"]*?"([^"]+?)"')[0]
-        dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var mouse_and_cat_playing_for_ever')[0].replace('var ', '')
+        #dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var mouse_and_cat_playing_for_ever')[0].replace('var ', '')
+        dat1 = ""
         
-        parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
+        #parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
+        parametros = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^=]*?(=[^;]+?);')[0]
         
-        globalTabCode, pyCode, args = self.getPyCode(data)
+        #dd = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
+        dd = self.cm.ph.getDataBeetwenMarkers(data, 'function fofofo(){};', '"?" +')[1]
+        
+        globalTabCode, pyCode, args = self.getPyCode(dd)
         
         pyCode = dat1.strip() + '\n' +  pyCode  + 'parametros ' + parametros.strip()
         pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n' + pyCode.replace('\n', '\n\t') + '\n\treturn parametros\n' + 'param = retA()'
-        #printDBG(pyCode)
+        printDBG(pyCode)
         data = self.unpackJS(pyCode, 'param')
         #printDBG(pyCode)
         printDBG(data)
