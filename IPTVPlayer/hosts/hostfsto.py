@@ -276,7 +276,7 @@ class FsTo(CBaseHostClass):
         printDBG("==================================================")
         
         nextPage = False
-        if ('page=%d"' % (page+1)) in data:
+        if ('page=%d"' % (page+1)) in data or ('page=%d&' % (page+1)) in data:
             nextPage = True
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '"b-section-list', '<script type="text/javascript">', False)[1]
