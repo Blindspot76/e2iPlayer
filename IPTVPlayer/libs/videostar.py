@@ -279,18 +279,13 @@ class VideoStarApi:
         sts, data = self.cm.getPage( self._getUrl('login_url'), params, post_data)
         if sts:
             # the LWP has problem to read prepared Cookie, so we will manually read them and add to header
-            try:
-                with open(cookiePath, 'r') as infile:
-                    data = infile.read()
-                    PHPSESSID = re.search('(PHPSESSID=[^;]+?;)', data).group(1)
-                    netviapisessid = re.findall('(netviapisessid[^;]+?;)', data)[-1] #HttpOnly
-                    self.cm.HEADER['Cookie'] = PHPSESSID + netviapisessid
+            PHPSESSID = self.cm.getCookieItem(cookiePath, 'PHPSESSID')
+            netviapisessid = self.cm.getCookieItem(cookiePath, 'netviapisessid')
+            self.cm.HEADER['Cookie'] = 'PHPSESSID=%s; netviapisessid=%s;' % (PHPSESSID, netviapisessid)
+            sts, data = self.cm.getPage(self.MAINURL)
+            if sts and 'Wyloguj' in data:
+                return True
 
-                sts, data = self.cm.getPage(self.MAINURL)
-                if sts and 'Wyloguj' in data:
-                    return True
-            except:
-                printExc()
         return False
         
         
@@ -301,11 +296,5 @@ class VideoStarApi:
         sts, data = self.cm.getPage(url, params, post_data)
         itemValue = ''
         if sts:
-            # the LWP has problem to read prepared Cookie, so we will manually read them and add to header
-            try:
-                with open(cookiePath, 'r') as infile:
-                    data = infile.read()
-                    itemValue = re.search(' (%s=[^;]+?;)' % key, data).group(1)
-            except:
-                printExc()
+            itemValue = '%s=%s; ' % (key, self.cm.getCookieItem(cookiePath, key))
         return itemValue
