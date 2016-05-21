@@ -3459,7 +3459,7 @@ class pageParser:
             return urlunsplit((scheme, netloc, path, query, fragment))
         
         vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
-        url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + 'playthis-{0}.html'.format(vid)
+        url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + 'playit-{0}.html'.format(vid)
         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts:
             return False
