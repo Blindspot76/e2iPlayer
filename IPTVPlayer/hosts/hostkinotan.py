@@ -201,7 +201,7 @@ class Kinotan(CBaseHostClass):
         url = self.cm.ph.getSearchGroups(d_url, 'src="([^"]*?)"')[0]
         if url.startswith('//'):
             url = 'http:' + url
-        desc = self.cm.ph.getDataBeetwenMarkers(data, '<h2 class="opisnie">', '<div style="display', False)[1]
+        desc = self.cm.ph.getDataBeetwenMarkers(data, '<h2 class="opisnie">', '</div>', True)[1]
         desc = self.cm.ph.getSearchGroups(desc, '>(.*?)</div>')[0]
         desc = self.cleanHtmlStr(desc)
         params = dict(cItem)
