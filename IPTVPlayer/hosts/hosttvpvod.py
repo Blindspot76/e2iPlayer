@@ -79,7 +79,8 @@ class TvpVod(CBaseHostClass):
     SEARCH_VOD_URL = MAIN_VOD_URL + 'szukaj?query=%s'
     HTTP_HEADERS = {}
     
-    VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
+    VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'live',                'title':'Oglądaj na żywo',           'url':'http://warszawa.tvp.pl/'},
+                    {'icon':DEFAULT_ICON, 'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
                     {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
                     {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'VOD',                       'marker':'VOD'},
                     {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Programy',                  'marker':'Programy'},
@@ -219,6 +220,20 @@ class TvpVod(CBaseHostClass):
         url = '/shared/listing.php?parent_id=' + parent_id + '&type=' + type + order + direct + '&template=directory/' + template + '&count=' + str(TvpVod.PAGE_SIZE) 
                     
         return self._getFullUrl(url)
+        
+    def listLiveChannels(self, cItem):
+        printDBG("TvpVod.listLiveChannels")
+        sts, data = self._getPage(cItem['url'], self.defaultParams)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="current">', '</ul>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>', withMarkers=True, caseSensitive=False)
+        for item in data:
+            id    = self.cm.ph.getSearchGroups(item, 'data-channel-id="([0-9]+?)"')[0]
+            title = self.cm.ph.getSearchGroups(item, 'data-name="([^"]+?)"')[0]
+            if id != '':
+                params = dict(cItem)
+                params.update({'title':title, 'url':'http://www.tvp.pl/tvplayer?channel_id=%s&autoplay=true' % id})
+                self.addVideo(params)
             
     def listVodsSubCategories(self, cItem, category):
         printDBG("TvpVod.listVodsSubCategories")
@@ -511,6 +526,9 @@ class TvpVod(CBaseHostClass):
 
         if None == name:
             self.listsTab(TvpVod.VOD_CAT_TAB, {'name':'category'})
+    # LIVE
+        elif category == 'live':
+            self.listLiveChannels(self.currItem)
     # POPULAR
         elif category == 'vods_list_items1':
             self.listItems1(self.currItem, 'popular')
