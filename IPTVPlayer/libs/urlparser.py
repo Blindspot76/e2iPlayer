@@ -242,6 +242,8 @@ class urlparser:
                        'castamp.com':          self.pp.parserCASTAMPCOM    ,
                        'crichd.tv':            self.pp.parserCRICHDTV      ,
                        'castto.me':            self.pp.parserCASTTOME      ,
+                       'cast4u.tv':            self.pp.parserCAST4UTV      ,
+                       'hdcast.info':          self.pp.parserHDCASTINFO    ,
                        'deltatv.pw':           self.pp.parserDELTATVPW     ,
                        'pxstream.tv':          self.pp.parserPXSTREAMTV    ,
                        'coolcast.eu':          self.pp.parserCOOLCASTEU    ,
@@ -534,6 +536,16 @@ class urlparser:
             elif 'castto.me' in data:
                 fid = self.cm.ph.getSearchGroups(data, """fid=['"]([0-9]+?)['"]""")[0]
                 videoUrl = 'http://static.castto.me/embed.php?channel={0}&vw=710&vh=460'.format(fid)
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'cast4u.tv' in data:
+                fid = self.cm.ph.getSearchGroups(data, """fid=['"]([^'^"]+?)['"]""")[0]
+                videoUrl = 'http://www.cast4u.tv/embed.php?live={0}&vw=700&vh=450'.format(fid)
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'hdcast.info' in data:
+                fid = self.cm.ph.getSearchGroups(data, """fid=['"]([^'^"]+?)['"]""")[0]
+                videoUrl = 'http://www.hdcast.info/embed.php?live={0}&vw=700&vh=450'.format(fid)
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'deltatv.pw' in data:
@@ -4023,6 +4035,105 @@ class pageParser:
             printDBG(url)
             return url
         return False
+        
+    def _unpackJS(self, data, name):
+        data = data.replace('Math.min', 'min').replace(' + (', ' + str(').replace('String.fromCharCode', 'chr').replace('return b[a]', 'return saveGet(b, a)')
+        def saveGet(b, a):
+            try:
+                return b[a]
+            except:
+                return 'pic'
+        def justRet(data):
+            return data
+        try:
+            paramsAlgoObj = compile(data, '', 'exec')
+        except:
+            printExc('unpackJS compile algo code EXCEPTION')
+            return ''
+        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet, 'justRet':justRet}
+        vLocals = { name: None }
+
+        try:
+            exec( data, vGlobals, vLocals )
+        except:
+            printExc('unpackJS exec code EXCEPTION')
+            return ''
+        try:
+            return vLocals[name]
+        except:
+            printExc('decryptPlayerParams EXCEPTION')
+        return ''
+        
+        parserHDCASTINFO
+        
+    def parserHDCASTINFO(self, baseUrl):
+        printDBG("parserHDCASTINFO baseUrl[%s]" % baseUrl)
+        return self.parserCAST4UTV(baseUrl, 'hdcast.info')
+        
+    def parserCAST4UTV(self, baseUrl, domain='cast4u.tv'):
+        printDBG("parserCAST4UTV baseUrl[%s]" % baseUrl)
+        
+        def _getVariables(data):
+            printDBG('_getVariables')
+            varTabs = []
+            tmp = re.compile('var([^;]+?)=[^;]*?(\[[^\]]+?\]);').findall(data)
+            for item in tmp:
+                var = item[0].strip()
+                val = item[1].strip()
+                if var == '': continue
+                if val == '': continue
+                varTabs.append('%s = %s' % (var, val))
+            varTabs = '\n'.join( varTabs )
+            return varTabs
+        
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<span style', '</script>')[1]
+        globalVars = _getVariables(data)
+        file = self.cm.ph.getDataBeetwenMarkers(data, 'file:', '}', False)[1].strip()
+        token = self.cm.ph.getSearchGroups(data, """securetoken\s*:\s*([^\s]+?)\s""")[0] 
+        
+        def _evalSimple(dat):
+            return '"%s"' % self.cm.ph.getSearchGroups(data, """<[^>]+?id=['"]?%s['"]?[^>]*?>([^<]+?)<""" % dat.group(1))[0] 
+        data = re.sub('document\.getElementById\("([^"]+?)"\)\.innerHTML', _evalSimple, data)
+        
+        def _evalJoin(dat):
+            return " ''.join(%s) " % dat.group(1)
+        
+        funData = re.compile('function ([^\(]*?\([^\)]*?\))[^\{]*?\{([^\{]*?)\}').findall(data)
+        pyCode = ''
+        for item in funData:
+            funHeader = item[0]
+            
+            funBody = re.sub('(\[[^\]]+?\])\.join\(""\)', _evalJoin, item[1])
+            funBody = re.sub(' ([^ ]+?)\.join\(""\)', _evalJoin, funBody)
+            funIns = funBody.split(';')
+            funBody = ''
+            for ins in funIns:
+                ins = ins.replace('var', ' ').strip()
+                if len(ins) and ins[-1] not in [')', ']', '"']:
+                    ins += '()'
+                funBody += '\t%s\n' % ins
+            if '' == funBody.replace('\t', '').replace('\n', '').strip():
+                continue
+            pyCode += 'def %s:' % funHeader.strip() + '\n' + funBody
+        
+        pyCode = 'def retA():\n\t' + globalVars.replace('\n', '\n\t') + '\n\t' + pyCode.replace('\n', '\n\t') + '\n\treturn {0}\n'.format(file) + 'param = retA()'
+        printDBG(pyCode)
+        file = self._unpackJS(pyCode, 'param').replace('\\/', '/')
+        
+        swfUrl = 'http://%s/jwplayer/jwplayer.flash.swf' % domain
+        token = '%XB00(nKH@#.' #http://stream-recorder.com/forum/rtmp-token-vlc-help-t20959.html?s=7c3a16e350bdc8bdf73c525163884654&amp;
+        return file + ' swfUrl=%s token=%s pageUrl=%s live=1 ' % (swfUrl, token, baseUrl)
         
     def parserDELTATVPW(self, baseUrl):
         printDBG("parserDELTATVPW baseUrl[%s]" % baseUrl)
