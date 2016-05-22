@@ -3459,7 +3459,7 @@ class pageParser:
             return urlunsplit((scheme, netloc, path, query, fragment))
         
         vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
-        url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + 'playit-{0}.html'.format(vid)
+        url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + 'playthis-{0}.html'.format(vid)
         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts:
             return False
@@ -4692,18 +4692,22 @@ class pageParser:
         _url_re = re.compile("http(s)?://(\w+\.)?(ilive.to|streamlive.to)/.*/(?P<channel>\d+)")
         channel = _url_re.match(baseUrl).group("channel")
         
+        linksTab = []
         # get link for mobile
         linkUrl ='http://www.streamlive.to/view/%s' % channel
-        if 0:
+        if 1:
             userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'            
             params = dict(defaultParams)
             params.update({'header':{'User-Agent':userAgent}})
             sts, data = self.cm.getPage(linkUrl, params)
             if sts:
-                hlsUrl = self.cm.ph.getSearchGroups(data, '<video[^>]+?src="([^"]+?)"')[0]
-                hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
-                return getDirectM3U8Playlist(hlsUrl)
-            return False
+                # hls
+                hlsUrl = self.cm.ph.getSearchGroups(data, '''['"](http[^"']+?\.m3u8[^"']*?)["']''')[0]
+                if hlsUrl != '':
+                    hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
+                    linksTab.extend( getDirectM3U8Playlist(hlsUrl) )
+            if 'You have reached the limit today.':
+                SetIPTVPlayerLastHostError(_('Not free credits.'))
         
         params = dict(defaultParams)
         params.update({'header':{'header':HTTP_HEADER}})
@@ -4712,8 +4716,14 @@ class pageParser:
         
         if '<div id="loginbox">' in data:
             SetIPTVPlayerLastHostError(_("Only logged in user have access.\nPlease set login data in the host configuration under blue button."))
+        
+        if 'get_free_credits' in data:
+            msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_container">', '</a>')[1])
+            if msg != '':
+                SetIPTVPlayerLastHostError(msg)
+        
         # get token
-        token = CParsingHelper.getDataBeetwenMarkers(data, 'var token="";', '});', False)[1]
+        token = CParsingHelper.getDataBeetwenMarkers(data, 'var token', '});', False)[1]
         token = self.cm.ph.getSearchGroups(token, '"([^"]+?/server.php[^"]+?)"')[0]
         if token.startswith('//'): token = 'http:' + token
         
@@ -4737,12 +4747,12 @@ class pageParser:
         provider = _getParam('provider')
         rtmpUrl  = provider + streamer[streamer.find(':'):]
         if rtmpUrl.startswith('video://'):
-            return rtmpUrl.replace('video://', 'http://')
+            linksTab.append({'name':'http', 'url': rtmpUrl.replace('video://', 'http://')})
         elif '' != file and '' != rtmpUrl:
             rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s app=%s live=1 ' % (file, swfUrl, token, linkUrl, app)
             printDBG(rtmpUrl)
-            return rtmpUrl
-        return False
+            linksTab.append({'name':'rtmp', 'url': rtmpUrl})
+        return linksTab
         
     def paserMEGOMTV(self, baseUrl):
         printDBG("paserMEGOMTV baseUrl[%r]" % baseUrl )
