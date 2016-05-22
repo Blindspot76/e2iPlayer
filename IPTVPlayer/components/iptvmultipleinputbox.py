@@ -10,7 +10,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIconDir
-from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
+from Plugins.Extensions.IPTVPlayer.components.cover import Cover3, Cover2
 ###################################################
 
 ###################################################
@@ -39,15 +39,25 @@ class IPTVMultipleInputBox(Screen):
         pY = 60
         dY = 10
         skinItems = ''
+        self.icons = []
         self.list = params['list']
         for idx in range(len(self.list)):
             item = self.list[idx]
-            self["text_%d"%idx] = Label(item.get('title', ''))
+            if 'icon_path' in item:
+                self["cover_%d"%idx] = Cover2()
+                self.icons.append({'name':"cover_%d"%idx, 'path':item['icon_path']})
+            else:
+                self["text_%d"%idx] = Label(item.get('title', ''))
             self["input_%d"%idx] = Input(**item['input'])
             self["border_%d"%idx] = Label("")
             if item.get('useable_chars', None) is not None:
                 self["input_%d"%idx].setUseableChars(item['useable_chars'])
-            skinItems +=  '<widget name="text_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="2" />' % (idx, 10, pY, item['label_size'][0], item['label_size'][1], item['label_font'])
+            
+            if 'icon_path' in item:
+                skinItems +=  '<widget name="cover_%d" position="%s,%d" size="%d,%d" zPosition="2" transparent="1" alphatest="on" />' % (idx, 'center', pY, item['label_size'][0], item['label_size'][1])
+            else:
+                skinItems +=  '<widget name="text_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="2" />' % (idx, 10, pY, item['label_size'][0], item['label_size'][1], item['label_font'])
+            
             pY += dY + item['label_size'][1]
             if item['label_size'][0] > maxWidth: maxWidth = item['label_size'][0]
             skinItems +=  '<widget name="input_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="2" />' % (idx, pX, pY, item['input_size'][0], item['input_size'][1], item['input_font'])
@@ -118,7 +128,15 @@ class IPTVMultipleInputBox(Screen):
         self.onShown.remove(self.onStart)
         self.loadMarkers()
         self.setMarker()
+        self.setIcons()
         self.started = True
+        
+    def setIcons(self):
+        for item in self.icons:
+            try:
+                self[item['name']].updateIcon( item['path'] )
+            except:
+                printExc()
         
     def loadMarkers(self):
         try:
@@ -158,7 +176,6 @@ class IPTVMultipleInputBox(Screen):
                     self["border_%d"%idx].hide()
             self["border_%d"%self.idx].show()
         except: printExc()
-
         
     def setKeyboardMode(self):
         rcinput = eRCInput.getInstance()
@@ -202,7 +219,9 @@ class IPTVMultipleInputBox(Screen):
     def keyOK(self):
         def VirtualKeyBoardCallBack(newTxt):
             if isinstance(newTxt, basestring): self[self.activeInput].setText( newTxt )
-        self.session.openWithCallback(VirtualKeyBoardCallBack, VirtualKeyBoard, title=self["text_%d"%self.idx].getText(), text=self[self.activeInput].getText())
+        try: title = self.list[self.idx]['title']
+        except: title = ''
+        self.session.openWithCallback(VirtualKeyBoardCallBack, VirtualKeyBoard, title=title, text=self[self.activeInput].getText())
 
     def keyCancel(self):
         rcinput = eRCInput.getInstance()

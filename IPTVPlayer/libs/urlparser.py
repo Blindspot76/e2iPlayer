@@ -4706,8 +4706,8 @@ class pageParser:
                 if hlsUrl != '':
                     hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
                     linksTab.extend( getDirectM3U8Playlist(hlsUrl) )
-            if 'You have reached the limit today.':
-                SetIPTVPlayerLastHostError(_('Not free credits.'))
+            if 'You have reached the limit today.' in data:
+                SetIPTVPlayerLastHostError(_('No free credits.'))
         
         params = dict(defaultParams)
         params.update({'header':{'header':HTTP_HEADER}})

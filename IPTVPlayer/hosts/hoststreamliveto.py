@@ -2,14 +2,15 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
+from Plugins.Extensions.IPTVPlayer.components.iptvinputbox import IPTVInputBoxWidget
 ###################################################
 
 ###################################################
@@ -49,7 +50,7 @@ def gettytul():
     return 'StreamLiveTo.tv'
 
 class StreamLiveTo(CBaseHostClass):
-    HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+    HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0', 'Accept': 'text/html'}
     MAIN_URL = 'http://www.streamlive.to/'
     
     MAIN_CAT_TAB = [{'category':'category',        'title': 'Live Channels', 'icon':''},
@@ -199,12 +200,30 @@ class StreamLiveTo(CBaseHostClass):
         urlTab = []
         videoUrl = cItem['url']
         if videoUrl.startswith('http'):
+            '''
+            httpParams = dict(self.defaultParams)
+            httpParams['header'] = dict(self.HTTP_HEADER)
+            httpParams['header']['Referer'] = videoUrl
+            
+            _url_re = re.compile("http(s)?://(\w+\.)?(ilive.to|streamlive.to)/.*/(?P<channel>\d+)")
+            channel = _url_re.match(videoUrl).group("channel")
+            
+            sts, data = self.getPage('http://www.streamlive.to/view/%s' % channel, httpParams)
+            
             sts, data = self.getPage(videoUrl, self.defaultParams)
             if not sts: []
-        
-            urlTab = self.up.getVideoLinkExt(videoUrl)
-            for idx in range(len(urlTab)):
-                urlTab[idx]['need_resolve'] = 0
+            '''
+            while True:
+                urlTab = self.up.getVideoLinkExt(videoUrl)
+                for idx in range(len(urlTab)):
+                    urlTab[idx]['need_resolve'] = 0
+                if 0 == len(urlTab) and 'get more FREE credits' in GetIPTVPlayerLastHostError(False):
+                    ret = -1
+                    while ret == -1:
+                        ret = self.listGetFreeCredits()
+                    if ret == 1:
+                        continue
+                break
         return urlTab
         
     def getFavouriteData(self, cItem):
@@ -212,6 +231,90 @@ class StreamLiveTo(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})
+        
+    def listGetFreeCredits(self):
+        printDBG("StreamLiveTo.listGetFreeCredits")
+        baseUrl = self._getFullUrl('get_free_credits')
+        httpParams = dict(self.defaultParams)
+        httpParams['header'] = dict(self.HTTP_HEADER)
+        httpParams['header']['Referer'] = baseUrl
+        
+        sts, data = self.getPage(baseUrl, httpParams)
+        if not sts: 
+            SetIPTVPlayerLastHostError(_('Fail to get "%s".') % baseUrl)
+            return 0
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<form method="post">', '</form>')
+        m1 = 'recaptcha_challenge_field'
+        m2 = 'recaptcha_response_field'
+        errMsg1 = _('Fail to get captcha data.')
+        if sts:
+            captchaUrl = self.cm.ph.getSearchGroups(data, '''['"](http[^"']+?recaptcha/api[^"']*?)["']''')[0]
+        if not sts or '' == captchaUrl or m1 not in data or m2 not in data: 
+            SetIPTVPlayerLastHostError( errMsg1 )
+            return 0
+        sts, data = self.getPage(captchaUrl, httpParams)
+        if not sts: 
+            SetIPTVPlayerLastHostError(_('Fail to get "%s".') % captchaUrl)
+            return 0
+        challenge = self.cm.ph.getSearchGroups(data, '''challenge\s*:\s*['"]([^'^"]+?)['"]''')[0]
+        lang      = self.cm.ph.getSearchGroups(data, '''lang\s*:\s*['"]([^'^"]+?)['"]''')[0]
+        server    = self.cm.ph.getSearchGroups(data, '''server\s*:\s*['"]([^'^"]+?)['"]''')[0]
+        site      = self.cm.ph.getSearchGroups(data, '''site\s*:\s*['"]([^'^"]+?)['"]''')[0]
+        if '' == challenge or '' == lang or '' == server or '' == site: 
+            SetIPTVPlayerLastHostError( errMsg1 )
+            return 0
+            
+        captchaUrl = server + 'reload?c=%s&k=%s&reason=i&type=image&lang=%s&th=' % (challenge, site, lang)
+        sts, data = self.getPage(captchaUrl, httpParams)
+        if not sts: 
+            SetIPTVPlayerLastHostError(_('Fail to get "%s".') % captchaUrl)
+            return 0
+           
+        sts, challenge = self.cm.ph.getDataBeetwenMarkers(data, "finish_reload('", "'", False)
+        if not sts:
+            SetIPTVPlayerLastHostError( errMsg1 )
+            return 0
+        
+        imgUrl = 'http://www.google.com/recaptcha/api/image?c=' + challenge
+        #return
+        params = {'maintype': 'image', 'subtypes':['jpeg'], 'check_first_bytes':['\xFF\xD8','\xFF\xD9']}
+        filePath = GetTmpDir('.iptvplayer_captcha.jpg')
+        ret = self.cm.saveWebFile(filePath, imgUrl, params)
+        if not ret.get('sts'):
+            SetIPTVPlayerLastHostError(_('Fail to get "%s".') % imgUrl)
+            return 0
+        
+        from copy import deepcopy
+        params = deepcopy(IPTVMultipleInputBox.DEF_PARAMS)
+        params['accep_label'] = _('Send')
+        params['title'] = _('Answer')
+        params['list'] = []
+        item = deepcopy(IPTVMultipleInputBox.DEF_INPUT_PARAMS)
+        item['label_size'] = (300,57)
+        item['input_size'] = (300,25)
+        item['icon_path'] = filePath
+        item['input']['text'] = ''
+        params['list'].append(item)
+        
+        ret = 0
+        retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleInputBox, params)
+        printDBG(retArg)
+        if retArg and len(retArg) and retArg[0]:
+            printDBG(retArg[0])
+            sts, data = self.cm.getPage(baseUrl, httpParams, {'recaptcha_challenge_field':challenge, 'recaptcha_response_field':retArg[0], 'submit':'Get Free 10 Credits'})
+            printDBG(data)
+            if 'got free' in data:
+                ret = 1
+            elif 'incorrect' in data:
+                ret = -1
+            if sts:
+                msg = self.cm.ph.getDataBeetwenMarkers(data, '<div style="color:', '</div>')[1]
+                SetIPTVPlayerLastHostError( self.cleanHtmlStr(msg) )
+            else:
+                SetIPTVPlayerLastHostError(_('Fail to get "%s".') % baseUrl)
+        else:
+            SetIPTVPlayerLastHostError(_('Wrong answer.'))
+        return ret
         
     def checkBotProtection(self, url, httpParams):
         printDBG("StreamLiveTo.checkBotProtection")
@@ -285,10 +388,16 @@ class StreamLiveTo(CBaseHostClass):
         if name == None:
             login  = config.plugins.iptvplayer.streamliveto_login.value
             passwd = config.plugins.iptvplayer.streamliveto_password .value
+            logged = False
             if '' != login.strip() and '' != passwd.strip():
-                if not self.doLogin(login, passwd):
+                logged = self.doLogin(login, passwd)
+                if not logged:
                     self.sessionEx.open(MessageBox, _('Login failed.'), type = MessageBox.TYPE_INFO, timeout = 10 )
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            if logged:  
+                self.addDir({'name':'category', 'title':_('Get free credits'), 'category':'get_free_credits'})
+        elif category == 'get_free_credits':
+            self.listGetFreeCredits()
         elif category == 'category':
             self.listCategory(self.currItem, 'language')
         elif category == 'language':
