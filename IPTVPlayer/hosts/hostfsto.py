@@ -65,10 +65,15 @@ class FsTo(CBaseHostClass):
         self.filtesCache = []
         self.sortKeyCache = []
         self.searchCache = {}
+        self.PROXY_GATE = 'http://proxy2974.my-addr.org/myaddrproxy.php'
+        self.needProxyGate = None
     
     def _getFullUrl(self, url, baseUrl=None):
         if baseUrl == None:
             baseUrl = self.MAIN_URL
+        if 'myaddrproxy.php/' in url:
+            return url.split('myaddrproxy.php/')[1].replace('http/', 'http://')
+        
         if url.startswith('//'):
             url = 'http:' + url
         elif 0 < len(url) and not url.startswith('http'):
@@ -78,6 +83,26 @@ class FsTo(CBaseHostClass):
         if baseUrl.startswith('https://'):
             url = url.replace('https://', 'http://')
         return url
+        
+    def proxyGate(self, url):
+        if self.needProxyGate:
+            if url == '': return ''
+            if self.PROXY_GATE in url: return url
+            return self.PROXY_GATE + '/' + url.replace('://', '/')
+        else:
+            return url
+        
+    def _chekIfProxyGateWayNeeded(self):
+        if self.needProxyGate != None:
+            return
+        
+        sts, data = self.cm.getPage('http://www.show-my-ip.de/ipadresse.html')
+        if not sts:
+            return
+        if 'UKR' in data:
+            self.needProxyGate = False
+        else:
+            self.needProxyGate = True
         
     def listsTab(self, tab, cItem, type='dir'):
         printDBG("FsTo.listsTab")
@@ -328,11 +353,13 @@ class FsTo(CBaseHostClass):
     def listFolder(self, cItem):
         printDBG('listFolder')
         
+        url = cItem['url'].format(cItem.get('folder_id', '0'))
         params = {}
         if config.plugins.iptvplayer.fsto_proxy_enable.value:
             params = {'http_proxy': config.plugins.iptvplayer.russian_proxyurl.value}
-            
-        url = cItem['url'].format(cItem.get('folder_id', '0'))
+        else:
+            url = self.proxyGate(url)
+        
         sts, data = self.cm.getPage(url, params)
         if not sts: return
         
@@ -347,7 +374,7 @@ class FsTo(CBaseHostClass):
                 item = m1 + item.split(m1)[-1]
             parentId = self.cm.ph.getSearchGroups(item, "parent_id:[^0-9]+?([0-9]+?)[^0-9]")[0]
             url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            if parentId != '' and parentId != cItem.get('folder_id', '0') and url == '#':
+            if parentId != '' and parentId != cItem.get('folder_id', '0') and url.endswith('#'):
                 tmp = item.split('</a>')
                 params = dict(cItem)
                 params.update({'folder_id':parentId, 'title':self.cleanHtmlStr(tmp[0]), 'desc':self.cleanHtmlStr(tmp[1])})
@@ -356,10 +383,10 @@ class FsTo(CBaseHostClass):
                 viewUrl = '' #self.cm.ph.getSearchGroups(item, 'href="([^"]*?/view/[^"]*?)"')[0]
                 dlUrl = self.cm.ph.getSearchGroups(item, 'href="([^"]*?/get/dl/[^"]*?)"')[0]
                 if viewUrl != '':
-                    params = {'title':self.cleanHtmlStr(item) + '[%s]' % _('view'), 'url':self._getFullUrl(viewUrl)}
+                    params = {'icon':cItem.get('icon', ''), 'title':self.cleanHtmlStr(item) + '[%s]' % _('view'), 'url':self._getFullUrl(viewUrl)}
                     self.addVideo(params)
                 if dlUrl != '':
-                    params = {'title':self.cleanHtmlStr(item), 'url':self._getFullUrl(dlUrl)}
+                    params = {'icon':cItem.get('icon', ''), 'title':self.cleanHtmlStr(item), 'url':self._getFullUrl(dlUrl)}
                     self.addVideo(params)
             else:
                 printDBG("-----------------Wrong item-----------------")
@@ -372,10 +399,12 @@ class FsTo(CBaseHostClass):
         urlTab = []
         
         url = cItem['url']
+        params = {}
         if config.plugins.iptvplayer.fsto_proxy_enable.value:
-            params = {'http_proxy': config.plugins.iptvplayer.russian_proxyurl.value, 'return_data':False}
+            params = {'http_proxy': config.plugins.iptvplayer.russian_proxyurl.value}
         else:
-            params = {'return_data':False}
+            url = self.proxyGate(url)
+        params['return_data'] = False
         try:
             sts, response = self.cm.getPage(url, params)
             url = response.geturl()
@@ -384,7 +413,7 @@ class FsTo(CBaseHostClass):
             printExc()
             return []
             
-        return [{'name':self.up.getHostName(url), 'url':url, 'need_resolve':0}]
+        return [{'name':self.up.getHostName(url), 'url':self._getFullUrl(url), 'need_resolve':0}]
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FsTo.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -434,6 +463,9 @@ class FsTo(CBaseHostClass):
         printDBG('handleService start')
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        
+        if not config.plugins.iptvplayer.fsto_proxy_enable.value:
+            self._chekIfProxyGateWayNeeded()
 
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
