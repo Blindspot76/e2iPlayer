@@ -99,18 +99,18 @@ class Kinopokaz(CBaseHostClass):
 
         if 0 == len(self.catCache):
             catData = self.cm.ph.getDataBeetwenMarkers(data, 'class="catsTable">', '</table>', False)[1]
-            catData = re.compile('href="([^"]+?)"[^>]*?>([^<]+?)<').findall(catData)
+            catData = re.compile('href="(/[^"]+?)"[^>]*?>([^<]+?)<').findall(catData)
             for item in catData:
-                if item[0] in ['http://online-kinopokaz.ru/load/serialy/12','http://online-kinopokaz.ru/load/multiplikacionnye/13', 'http://online-kinopokaz.ru/load/anime/24','http://online-kinopokaz.ru/load/tv_onlajn/23']:
+                if item[0] in ['/load/serialy/12','/load/multiplikacionnye/13','/load/anime/24','/load/tv_onlajn/23','/load/trillery/10']:
                     continue
                 params = dict(cItem)
-                params.update({'category':category, 'title':item[1], 'url':item[0]})
+                params.update({'category':category, 'title':item[1], 'url':self._getFullUrl(item[0])})
                 self.catCache.append(params)
 
         mainMenuData = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="uMenuRoot">', '</ul>', False)[1]
         mainMenuData = re.compile('href="/([^"]+?)"><span>([^<]+?)</span>').findall(mainMenuData)
         for item in mainMenuData:
-            if item[0] in ['load/tv_onlajn/tv_onlajn_prjamoj_ehfir/23-1-0-4951','index/pomoshh/0-2', 'index/stol_zakazov/0-5','index/ne_rabotaet_film/0-6']: 
+            if item[0] in ['/load/tv_onlajn/tv_onlajn_prjamoj_ehfir/23-1-0-4951','index/pomoshh/0-2', 'index/stol_zakazov/0-5','index/ne_rabotaet_film/0-6']: 
                 continue
             params = dict(cItem)
             params.update({'category':category, 'title':item[1], 'url':self._getFullUrl(item[0])})
