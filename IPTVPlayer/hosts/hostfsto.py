@@ -44,7 +44,7 @@ config.plugins.iptvplayer.fsto_proxy_enable = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_('Use ru proxy server to get file lists'), config.plugins.iptvplayer.fsto_proxy_enable))
+    optionList.append(getConfigListEntry(_('Use UA proxy server to get file lists'), config.plugins.iptvplayer.fsto_proxy_enable))
     return optionList
 ###################################################
 
@@ -356,7 +356,7 @@ class FsTo(CBaseHostClass):
         url = cItem['url'].format(cItem.get('folder_id', '0'))
         params = {}
         if config.plugins.iptvplayer.fsto_proxy_enable.value:
-            params = {'http_proxy': config.plugins.iptvplayer.russian_proxyurl.value}
+            params = {'http_proxy': config.plugins.iptvplayer.ukrainian_proxyurl.value}
         else:
             url = self.proxyGate(url)
         
@@ -401,7 +401,7 @@ class FsTo(CBaseHostClass):
         url = cItem['url']
         params = {}
         if config.plugins.iptvplayer.fsto_proxy_enable.value:
-            params = {'http_proxy': config.plugins.iptvplayer.russian_proxyurl.value}
+            params = {'http_proxy': config.plugins.iptvplayer.ukrainian_proxyurl.value}
         else:
             url = self.proxyGate(url)
         params['return_data'] = False

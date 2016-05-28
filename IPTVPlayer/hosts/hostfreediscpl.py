@@ -44,7 +44,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://hdfilme.tv/'
+    return 'http://freedisc.pl/'
 
 class FreeDiscPL(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
