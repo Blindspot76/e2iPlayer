@@ -863,6 +863,13 @@ class pageParser:
                                 printExc()
                         HTTP_HEADER['Referer'] = url
                         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
+                        if sts:
+                            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, ">eval(", '</script>')
+                            for tmpItem in tmp:
+                                try:
+                                    tmpItem = unpackJSPlayerParams(tmpItem, VIDUPME_decryptPlayerParams)
+                                    data = tmpItem + data
+                                except: printExc()
                     if None != customLinksFinder: linkList = customLinksFinder(data)
                     if 0 == len(linkList): linkList = self._findLinks(data, serverName)
                 except:
