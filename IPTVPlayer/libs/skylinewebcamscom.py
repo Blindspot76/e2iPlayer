@@ -88,15 +88,16 @@ class WkylinewebcamsComApi:
             if idx >= len(data): continue
             catData = data[idx]
             catData = catData.split('<ul ')
-            if 2 != len(catData): continue
+            if len(catData) < 2: continue
             catTitle = self.cleanHtmlStr(catData[0])
             catUrl   = self.cm.ph.getSearchGroups(catData[0], '''<a[^>]*?href="([^"]+?)"''', 1, True)[0]
-            catData  = self.cm.ph.getAllItemsBeetwenMarkers(catData[1], '<a ', '</a>')
+            catData  = self.cm.ph.getAllItemsBeetwenMarkers(catData[-1], '<a ', '</a>')
             tab = []
             for item in catData:
                 url   = self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0]
                 title = self.cleanHtmlStr(item)
-                tab.append({'url':self.getFullUrl(url), 'title':title, 'cat':'list_cams'}) #explore_item
+                if url != '' and title != '':
+                    tab.append({'url':self.getFullUrl(url), 'title':title, 'cat':'list_cams'}) #explore_item
             if len(tab):
                 tab.insert(0, {'url':self.getFullUrl(catUrl), 'title':_('All'), 'cat':'list_cams'})
                 self.mainMenuCache[idx] = tab
