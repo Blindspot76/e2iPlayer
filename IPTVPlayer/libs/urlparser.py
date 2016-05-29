@@ -4694,7 +4694,7 @@ class pageParser:
         printDBG("parserWHOLECLOUD baseUrl[%s]" % baseUrl)
         #url = baseUrl.replace('movshare.net', 'wholecloud.net')
         try:
-            mobj = re.search(r'/(?:file|video)/(?P<id>[a-z\d]{13})', url)
+            mobj = re.search(r'/(?:file|video)/(?P<id>[a-z\d]{13})', baseUrl)
             video_id = mobj.group('id')
             url = 'http://www.wholecloud.net/embed/?v=' + video_id
         except:
