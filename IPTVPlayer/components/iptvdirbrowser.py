@@ -166,6 +166,7 @@ class IPTVDirectorySelectorWidget(Screen):
     
     def refreshFinished(self, code):
         printDBG("IPTVDirectorySelectorWidget.refreshFinished")
+        self.underRefreshing = False
         if None != self.deferredAction:
             deferredAction = self.deferredAction
             self.deferredAction = None
@@ -180,7 +181,6 @@ class IPTVDirectorySelectorWidget(Screen):
             self["list"].setList([ (x,) for x in self.currList])
             self.tmpList = []
             self.tmpData = ''
-            self.underRefreshing = False
         
     def refreshNewData(self, data):
         self.tmpData += data
@@ -208,8 +208,12 @@ class IPTVDirectorySelectorWidget(Screen):
         
     def requestCancel(self):
         printDBG(">>>REQUEST CANCEL<<<")
-        if self.underClosing: return
-        self.doAction( boundFunction(self._iptvDoClose, None) )
+        try: running = self.console.running()
+        except: running = True
+        if not self.console or not running:
+            self._iptvDoClose(None)
+        else:
+            self.doAction( boundFunction(self._iptvDoClose, None) )
         
     def requestRefresh(self):
         if self.underClosing: return
