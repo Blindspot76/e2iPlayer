@@ -15,7 +15,7 @@ http://www.opensubtitles.org/upload
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars, rm, GetDefaultLang, GetPolishSubEncoding, GetPyScriptCmd, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, RemoveDisallowedFilenameChars, rm, GetDefaultLang, GetPolishSubEncoding, GetPyScriptCmd, byteify, MapUcharEncoding 
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -507,7 +507,7 @@ class OpenSubOrgProvider:
             self.outerCallback(False, self.tmpData.get('tmpFileZip', ''))
             
     def _doGetEncodingSubtitle24Callback(self, code, data):
-        encoding = data
+        encoding = MapUcharEncoding(data)
         if 0 != code or 'unknown' in encoding:
             encoding = ''
         else:

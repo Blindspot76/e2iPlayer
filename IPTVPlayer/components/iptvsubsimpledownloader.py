@@ -4,7 +4,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetTmpDir, GetSubtitlesDir, GetIconDir, RemoveDisallowedFilenameChars, iptv_system
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetTmpDir, GetSubtitlesDir, GetIconDir, RemoveDisallowedFilenameChars, iptv_system, MapUcharEncoding
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem
 from Plugins.Extensions.IPTVPlayer.components.iptvlist import IPTVMainNavigatorList
@@ -147,6 +147,7 @@ class IPTVSubSimpleDownloaderWidget(Screen):
             self.workconsole = iptv_system(cmd, self.convertSubtitles)
     
     def convertSubtitles(self, code=127, encoding=""):
+        encoding = MapUcharEncoding(encoding)
         if 0 != code or 'unknown' in encoding:
             encoding = 'utf-8'
         else:
