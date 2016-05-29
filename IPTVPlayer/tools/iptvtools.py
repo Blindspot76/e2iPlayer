@@ -94,8 +94,10 @@ def GetPolishSubEncoding(filePath):
     
 def MapUcharEncoding(encoding):
     ENCODING_MAP = {'X-MAC-CYRILLIC':"MAC-CYRILLIC"}
-    try: encoding = ENCODING_MAP.get(encoding.upper(), encoding)
+    printDBG("MapUcharEncoding in encoding[%s]" % encoding)
+    try: encoding = ENCODING_MAP.get(encoding.strip().upper(), encoding.strip())
     except: printExc()
+    printDBG("MapUcharEncoding out encoding[%s]" % encoding)
     return encoding
 
 class eConnectCallbackObj:
