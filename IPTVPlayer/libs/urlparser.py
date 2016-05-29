@@ -4090,7 +4090,6 @@ class pageParser:
             printExc('decryptPlayerParams EXCEPTION')
         return ''
         
-        parserHDCASTINFO
         
     def parserHDCASTINFO(self, baseUrl):
         printDBG("parserHDCASTINFO baseUrl[%s]" % baseUrl)

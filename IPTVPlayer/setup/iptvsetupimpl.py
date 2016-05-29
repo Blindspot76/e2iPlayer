@@ -64,7 +64,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # uchardet member
-        self.uchardetVersion = "Version 0.0.2"
+        self.uchardetVersion = "Version 0.0.5"
         self.uchardetpaths = ["/usr/bin/uchardet", GetBinDir("uchardet", "")]
         self._uchardetInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/uchardet (%s)" % _("recommended")), "/usr/bin/uchardet"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/uchardet", GetBinDir("uchardet", "")),
