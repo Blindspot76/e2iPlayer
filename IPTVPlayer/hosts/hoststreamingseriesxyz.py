@@ -201,8 +201,12 @@ class StreamingSeriesXYZ(CBaseHostClass):
         
         sts, data = self.cm.getPage('http://www.protect-stream.com/secur2.php', params, {'k':k})
         if not sts: return []
-        
+        printDBG('==========================================')
+        printDBG(data)
+        printDBG('==========================================')
         videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''')[0]
+        if not videoUrl.startswith('http'):
+            videoUrl = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"]([^'^"]+?)['"]''')[0]
         return self.up.getVideoLinkExt(videoUrl)
         
     def getArticleContent(self, cItem):

@@ -3451,14 +3451,26 @@ class pageParser:
         
     def parserFLASHXTV(self, baseUrl):
         printDBG("parserFLASHXTV baseUrl[%s]" % baseUrl)
-        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0',
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
+                        'Accept-Encoding':'gzip, deflate',
+                        'DNT':1,
+                        'Connection':'keep-alive',
+                      }
         HTTP_HEADER['Referer'] = baseUrl
         SWF_URL = 'http://static.flashx.tv/player6/jwplayer.flash.swf'
         
-        sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+        COOKIE_FILE = GetCookieDir('flashxtv.cookie')
+        
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':False}
+        
+        sts, response = self.cm.getPage(baseUrl, params)
         redirectUrl = response.geturl() 
         data = response.read()
-        HTTP_HEADER['Referer'] = redirectUrl
+        params['header']['Referer'] = redirectUrl
+        params['return_data'] = True
+        params['load_cookie'] = True
         
         def _first_of_each(*sequences):
             return (next((x for x in sequence if x), '') for sequence in sequences)
@@ -3471,8 +3483,14 @@ class pageParser:
             return urlunsplit((scheme, netloc, path, query, fragment))
         
         vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
-        url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + 'playthis-{0}.html'.format(vid)
-        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+        
+        if 'playthis-' in data:
+            play = 'playthis-'
+        else:
+            play = 'playit-'
+            
+        url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + play + '{0}.html'.format(vid)
+        sts, data = self.cm.getPage(url, params)
         if not sts:
             return False
         post_data = None
@@ -3491,7 +3509,7 @@ class pageParser:
             if action.startswith('/'):
                 url = _url_path_join(url[:url.rfind('/')+1], action[1:])
             else: url = action
-            sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
+            sts, data = self.cm.getPage(url, params, post_data)
             if not sts: return False
             
         if 'fxplay' not in url and 'fxplay' in data:
@@ -3502,6 +3520,7 @@ class pageParser:
         try:
             printDBG(data)
             tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
+            
             tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
             printDBG(tmp)
             data = tmp + data
