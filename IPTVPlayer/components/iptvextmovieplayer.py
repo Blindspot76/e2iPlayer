@@ -30,7 +30,7 @@ from Plugins.Extensions.IPTVPlayer.libs.pCommon import CParsingHelper
 ###################################################
 # FOREIGN import
 ###################################################
-from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel, gFont, ePoint, eSize
+from enigma import eServiceReference, eConsoleAppContainer, getDesktop, eTimer, eLabel, gFont, ePoint, eSize, gRGB
 from Screens.Screen import Screen
 from Screens.ChoiceBox import ChoiceBox
 from Components.AVSwitch import AVSwitch
@@ -143,8 +143,6 @@ class IPTVExtMoviePlayer(Screen):
     Y_CROPPING_GUARD = 50
     def __prepareSkin(self):
         
-        self.subConfig = self.configObj.getSubtitleFontSettings()
-        
         if self.subConfig['wrapping_enabled']:
             self.subLinesNum = 1
         else:
@@ -205,6 +203,7 @@ class IPTVExtMoviePlayer(Screen):
     def __init__(self, session, filesrcLocation, FileName, lastPosition=None, player='eplayer', additionalParams={}):
         # 'gstplayer'
         self.configObj = ConfigExtMoviePlayerBase()
+        self.subConfig = self.configObj.getSubtitleFontSettings()
         self.skin = self.__prepareSkin()
         Screen.__init__(self, session)
         self.skinName = "IPTVExtMoviePlayer"
@@ -413,6 +412,10 @@ class IPTVExtMoviePlayer(Screen):
         self.childWindowsCount = 0
         
         self.workconsole = None
+        # we will set movie player config at first use of subtitles
+        # to fix problems with small subtitles at first run with custom 
+        # exteplayer skin
+        self.setMoviePlayerConfig = True
         
     def showMenuOptions(self):
         printDBG("showMenuOptions")
@@ -444,6 +447,7 @@ class IPTVExtMoviePlayer(Screen):
         if not confgiChanged: return
         
         # change subtitles settings
+        prevSub = self.subConfig
         self.subConfig = self.configObj.getSubtitleFontSettings()
         sub = self.subConfig
         
@@ -466,9 +470,9 @@ class IPTVExtMoviePlayer(Screen):
             if 'shadow' in sub:
                 self[subLabel].instance.setShadowColor( parseColor(sub['shadow']['color']) )
                 self[subLabel].instance.setShadowOffset( ePoint(sub['shadow']['xoffset'], sub['shadow']['yoffset']) )
-            else:
+            elif 'shadow' in prevSub:
                 self[subLabel].instance.setShadowOffset( ePoint(0, 0) )
-                self[subLabel].instance.setShadowColor( parseColor("#ff111111") )
+                self[subLabel].instance.setShadowColor( gRGB() ) # parseColor("#ff111111") )
             
             if self.subLinesNum > 1 or 'transparent' != self.subConfig['background']:
                 self[subLabel].instance.setVAlign(1)
@@ -770,9 +774,13 @@ class IPTVExtMoviePlayer(Screen):
             msg = _("An error occurred while loading a subtitle from [%s].") % path
             self.showMessage(msg, MessageBox.TYPE_ERROR)
             return
+        
         self.subHandler['marker']  = None
         self.subHandler['enabled'] = True
         self.updateSubSynchroControl()
+        if self.setMoviePlayerConfig:
+            self.setMoviePlayerConfig = False
+            self.runConfigMoviePlayerCallback(True)
         
     def updatSubtitlesTime(self):
         if -1 != self.subHandler['last_time'] and -1 != self.subHandler['latach_time']:
