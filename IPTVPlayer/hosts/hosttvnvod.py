@@ -241,6 +241,7 @@ class TvnVod(CBaseHostClass):
                     tmp.extend(resItem.get('items', []))
                 for resItem in data.get('vodArticleItems', {}).get('program', []):
                     tmp.extend(resItem.get('items', []))
+                tmp.extend(data.get('items', []))
                 data = tmp
                 tmp = None
             else:
