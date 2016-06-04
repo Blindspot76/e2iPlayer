@@ -70,7 +70,7 @@ class InfoExtractor():
         else:
             return None
             
-    def _extract_m3u8_formats(self, m3u8_url, video_id, entry_protocol='m3u8_native', ext='mp4', preference=0):
+    def _extract_m3u8_formats(self, m3u8_url, *args, **kwargs):
         formats = []
         tmpTab = getDirectM3U8Playlist(m3u8_url, False)
         for tmp in tmpTab:

@@ -44,29 +44,47 @@ class VevoIE(InfoExtractor):
            vevo:)
         (?P<id>[^&?#]+)'''
     _SMIL_BASE_URL = 'http://smil.lvl3.vevo.com/'
-
+    IE_NAME = 'VEVO'
+    _SOURCE_TYPES = {
+        0: 'youtube',
+        1: 'brightcove',
+        2: 'http',
+        3: 'hls_ios',
+        4: 'hls',
+        5: 'smil',  # http
+        7: 'f4m_cc',
+        8: 'f4m_ak',
+        9: 'f4m_l3',
+        10: 'ism',
+        13: 'smil',  # rtmp
+        18: 'dash',
+    }
+    _VERSIONS = {
+        0: 'youtube',  # only in AuthenticateVideo videoVersions
+        1: 'level3',
+        2: 'akamai',
+        3: 'level3',
+        4: 'amazon',
+    }
     def __init__(self):
         InfoExtractor.__init__(self)
-        self._real_initialize()
+        self._api_url_template = ''
         
     def printDBG(self, data):
         printDBG("=======================================================")
         printDBG(data)
         printDBG("=======================================================")
-    
-    def _real_initialize(self):
+        
+    def _initialize_api(self, video_id):
         webpage = self._download_webpage(
-            'http://www.vevo.com/auth', None,
+            'http://www.vevo.com/auth', data=b'',
             note='Retrieving oauth token',
-            errnote='Unable to retrieve oauth token',
-            fatal=False,
-            data=b'')
-        try:
-            self.authData = byteify(json.loads(webpage))
-        except:
-            printExc()
-            self.authData = {}
-        self._oauth_token = self.authData.get('access_token')
+            errnote='Unable to retrieve oauth token')
+
+        if 'THIS PAGE IS CURRENTLY UNAVAILABLE IN YOUR REGION' in webpage:
+            SetIPTVPlayerLastHostError(_('%s said: This page is currently unavailable in your region') % self.IE_NAME)
+        auth_info = byteify(json.loads(webpage))
+        self._api_url_template = 'http://apiv2.vevo.com/%s?token=' + auth_info['access_token']
 
     def _formats_from_json(self, video_info):
         if not video_info:
@@ -150,7 +168,7 @@ class VevoIE(InfoExtractor):
             m3u8_url, video_id, entry_protocol='m3u8_native', ext='mp4',
             preference=0)
 
-    def _real_extract(self, url, hls=None, smil=True):
+    def _real_extract2(self, url, hls=None, smil=True):
         mobj = re.match(self._VALID_URL, url)
         video_id = mobj.group('id')
         
@@ -204,6 +222,173 @@ class VevoIE(InfoExtractor):
                     smil_url, video_id, 'Downloading SMIL info', fatal=False)
                 if smil_xml:
                     formats.extend(self._formats_from_smil(smil_xml))
+
+        return {
+            'id': video_id,
+            'title': '',
+            'formats': formats,
+            'thumbnail': '',
+            'uploader': '',
+            'duration': video_info.get('duration', 0),
+            'age_limit': age_limit,
+        }
+        
+    def _call_api(self, path, *args, **kwargs):
+        return self._download_json(self._api_url_template % path, *args, **kwargs)
+    
+    def _real_extract(self, url, hls=None, smil=True):
+        mobj = re.match(self._VALID_URL, url)
+        video_id = mobj.group('id')
+        
+        if hls == None: hls = config.plugins.iptvplayer.vevo_allow_hls.value
+
+        json_url = 'http://api.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % video_id
+        response = self._download_json(json_url, video_id)
+        video_info = response['video'] or {}
+        
+        
+        artist = None
+        featured_artist = None
+        uploader = None
+        formats = []
+
+        if not video_info:
+            try:
+                self._initialize_api(video_id)
+            except:
+                ytid = response.get('errorInfo', {}).get('ytid')
+                #if ytid:
+                #    self.report_warning(
+                #        'Video is geoblocked, trying with the YouTube video %s' % ytid)
+                #    return self.url_result(ytid, 'Youtube', ytid)
+                raise
+
+            video_info = self._call_api(
+                'video/%s' % video_id, video_id, 'Downloading api video info',
+                'Failed to download video info')
+
+            video_versions = self._call_api(
+                'video/%s/streams' % video_id, video_id,
+                'Downloading video versions info',
+                'Failed to download video versions info',
+                fatal=False)
+
+            # Some videos are only available via webpage (e.g.
+            # https://github.com/rg3/youtube-dl/issues/9366)
+            if not video_versions:
+                webpage = self._download_webpage(url, video_id)
+                video_versions = self._extract_json(webpage, video_id, 'streams')[video_id][0]
+            
+            artists = video_info.get('artists')
+            if artists:
+                artist = uploader = artists[0]['name']
+
+            for video_version in video_versions:
+                version = self._VERSIONS.get(video_version['version'])
+                version_url = video_version.get('url')
+                if not version_url:
+                    continue
+
+                if '.ism' in version_url:
+                    continue
+                elif '.mpd' in version_url:
+                    continue
+                    formats.extend(self._extract_mpd_formats(
+                        version_url, video_id, mpd_id='dash-%s' % version,
+                        note='Downloading %s MPD information' % version,
+                        errnote='Failed to download %s MPD information' % version,
+                        fatal=False))
+                elif '.m3u8' in version_url and hls:
+                    formats.extend(self._extract_m3u8_formats(
+                        version_url, video_id, 'mp4', 'm3u8_native',
+                        m3u8_id='hls-%s' % version,
+                        note='Downloading %s m3u8 information' % version,
+                        errnote='Failed to download %s m3u8 information' % version,
+                        fatal=False))
+                else:
+                    m = re.search(r'''(?xi)
+                        _(?P<width>[0-9]+)x(?P<height>[0-9]+)
+                        _(?P<vcodec>[a-z0-9]+)
+                        _(?P<vbr>[0-9]+)
+                        _(?P<acodec>[a-z0-9]+)
+                        _(?P<abr>[0-9]+)
+                        \.(?P<ext>[a-z0-9]+)''', version_url)
+                    if not m:
+                        continue
+                        
+                    formats.append({
+                        'url': version_url,
+                        'format_id': 'http-%s-%s' % (version, video_version['quality']),
+                        'vcodec': m.group('vcodec'),
+                        'acodec': m.group('acodec'),
+                        'bitrate': (int(m.group('vbr')) + int(m.group('abr'))) * 1000,
+                        'ext': m.group('ext'),
+                        'width': int(m.group('width')),
+                        'height': int(m.group('height')),
+                    })
+        else:
+            artists = video_info.get('mainArtists')
+            if artists:
+                artist = uploader = artists[0]['artistName']
+
+            featured_artists = video_info.get('featuredArtists')
+            if featured_artists:
+                featured_artist = featured_artists[0]['artistName']
+
+            smil_parsed = False
+            for video_version in video_info['videoVersions']:
+                version = self._VERSIONS.get(video_version['version'])
+                if version == 'youtube':
+                    continue
+                else:
+                    source_type = self._SOURCE_TYPES.get(video_version['sourceType'])
+                    renditions = compat_etree_fromstring(video_version['data'])
+                    if source_type == 'http':
+                        for rend in renditions.findall('rendition'):
+                            attr = rend.attrib
+                            formats.append({
+                                'url': attr['url'],
+                                'format_id': 'http-%s-%s' % (version, attr['name']),
+                                'height': int(attr.get('frameheight')),
+                                'width': int(attr.get('frameWidth')),
+                                'tbr': int(attr.get('totalBitrate')),
+                                'vbr': int(attr.get('videoBitrate')),
+                                'abr': int(attr.get('audioBitrate')),
+                                'vcodec': attr.get('videoCodec'),
+                                'acodec': attr.get('audioCodec'),
+                                'bitrate': (int(attr.get('videoBitrate')) + int(attr.get('audioBitrate'))) * 1000,
+                            })
+                    elif source_type == 'hls' and hls:
+                        formats.extend(self._extract_m3u8_formats(
+                            renditions.find('rendition').attrib['url'], video_id,
+                            'mp4', 'm3u8_native', m3u8_id='hls-%s' % version,
+                            note='Downloading %s m3u8 information' % version,
+                            errnote='Failed to download %s m3u8 information' % version,
+                            fatal=False))
+                    elif source_type == 'smil' and version == 'level3' and not smil_parsed:
+                        formats.extend(self._extract_smil_formats(
+                            renditions.find('rendition').attrib['url'], video_id, False))
+                        smil_parsed = True
+
+        track = video_info['title']
+        if featured_artist:
+            artist = '%s ft. %s' % (artist, featured_artist)
+        title = '%s - %s' % (artist, track) if artist else track
+
+        genres = video_info.get('genres')
+        genre = (
+            genres[0] if genres and isinstance(genres, list) and
+            isinstance(genres[0], compat_str) else None)
+
+        is_explicit = video_info.get('isExplicit')
+        if is_explicit is True:
+            age_limit = 18
+        elif is_explicit is False:
+            age_limit = 0
+        else:
+            age_limit = None
+
+        duration = video_info.get('duration')
 
         return {
             'id': video_id,

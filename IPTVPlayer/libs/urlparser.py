@@ -5050,7 +5050,6 @@ class pageParser:
         
     def parserVEVO(self, baseUrl):
         printDBG("parserVEVO baseUrl[%r]" % baseUrl )
-        self.getVevoIE()._real_initialize()
         videoUrls = self.getVevoIE()._real_extract(baseUrl)['formats']
         
         for idx in range(len(videoUrls)):
