@@ -608,7 +608,7 @@ class IPTVExtMoviePlayer(Screen):
             currentId = self.playback['AudioTrack'].get('id', -1)
             currIdx = 0
             for trackIdx in range(len(tracksTab)):
-                name = '[{0}] {1}'.format(tracksTab[trackIdx]['name'], tracksTab[trackIdx]['encode'])
+                name = '[{0}] {1}'.format(tracksTab[trackIdx]['encode'], _(tracksTab[trackIdx]['name']))
                 item = IPTVChoiceBoxItem(name, "", {'track_id':tracksTab[trackIdx]['id'], 'track_idx':trackIdx})
                 if tracksTab[trackIdx]['id'] == currentId:
                     item.type = IPTVChoiceBoxItem.TYPE_ON
