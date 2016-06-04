@@ -68,8 +68,45 @@ class TheWatchseriesTo(CBaseHostClass):
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.seasonCache = {}
         self.cacheLinks = {}
+        self.needProxy = None
+        
+    def isNeedProxy(self):
+        if self.needProxy == None:
+            sts, data = self.cm.getPage(self.MAIN_URL)
+            if sts and '/series"' in data:
+                self.needProxy = False
+            else:
+                self.needProxy = True
+        return self.needProxy
+    
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
+        
+        if self.isNeedProxy() and 'thewatchseries.to' in url:
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            params['header']['Referer'] = proxy
+            params['header']['Cookie'] = 'flags=2e5;'
+            url = proxy
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and None == data:
+            sts = False
+        return sts, data
+        
+    def getIconUrl(self, url):
+        url = self._getFullUrl(url)
+        if 'thewatchseries.to' in url and self.isNeedProxy():
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            params = {}
+            params['User-Agent'] = self.HEADER['User-Agent'],
+            params['Referer'] = proxy
+            params['Cookie'] = 'flags=2e5;'
+            url = strwithmeta(proxy, params) 
+        return url
         
     def _getFullUrl(self, url):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
         if url.startswith('//'):
             url = 'http:' + url
         elif url.startswith('/'):
@@ -77,9 +114,6 @@ class TheWatchseriesTo(CBaseHostClass):
         elif 0 < len(url) and not url.startswith('http'):
             url =  self.MAIN_URL + url
         
-        if not self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
-                
         url = self.cleanHtmlStr(url)
         url = self.replacewhitespace(url)
 
@@ -107,7 +141,7 @@ class TheWatchseriesTo(CBaseHostClass):
     def listCategories(self, cItem, nextCategory):
         printDBG("TheWatchseriesTo.listCategories")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="pagination"', '</ul>', False)[1]
@@ -135,7 +169,7 @@ class TheWatchseriesTo(CBaseHostClass):
                 url += 'page/'
             url += '%d' % page
         
-        sts, data = self.cm.getPage(url, {}, post_data)
+        sts, data = self.getPage(url, {}, post_data)
         if not sts: return
         
         nextPage = self.cm.ph.getAllItemsBeetwenMarkers(data, '<ul class="pagination"', '</ul>', False)
@@ -183,7 +217,7 @@ class TheWatchseriesTo(CBaseHostClass):
         printDBG("TheWatchseriesTo.listSeasons")
         self.seasonCache = {}
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         seasons = self.cm.ph.getAllItemsBeetwenMarkers(data, '<h2 class="lists"', '</ul>')
@@ -223,14 +257,18 @@ class TheWatchseriesTo(CBaseHostClass):
         if len(self.cacheLinks.get(cItem['url'], [])):
             return self.cacheLinks[cItem['url']]
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr class="download_link_', '</tr>')
         for item in data:
             host = self.cm.ph.getSearchGroups(item, '''"download_link_([^'^"]+?)['"]''')[0]
             #if self.up.checkHostSupport('http://'+host+'/') != 1: continue
-            url = self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?\?r=([^'^"]+?)['"][^>]*?buttonlink''')[0]
+            #printDBG(item)
+            if True == self.needProxy:
+                url = self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?%3Fr%3D([^'^"]+?)['"][^>]*?buttonlink''')[0]
+            else:
+                url = self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?\?r=([^'^"]+?)['"][^>]*?buttonlink''')[0]
             if url == '': continue
             try:
                 url = base64.b64decode(url)
@@ -369,7 +407,7 @@ class IPTVHost(CHostBase):
             
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
+        icon        =  self.host.getIconUrl( cItem.get('icon', '') )
         
         return CDisplayListItem(name = title,
                                     description = description,
