@@ -59,6 +59,9 @@ class FsTo(CBaseHostClass):
                     {'category':'search',                   'title':_('Search'), 'search_item':True},
                     {'category':'search_history',           'title':_('Search history')} ]
     
+    MAIN_LANGS_TAB = [{'title':_('Roman alphabet'), 'lang':'en'},
+                      {'title':_('Cyrillic'), 'lang':'ru'}]
+    
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'FsTo', 'cookie':'FsTo.cookie'})#, 'proxyURL': 'http://85.143.164.100:81', 'useProxy': True})
         self.searchTypesOptions = []
@@ -264,13 +267,75 @@ class FsTo(CBaseHostClass):
                 printExc()
         else:
             tab = self.filtesCache[cItem['filter_idx']]['items']
+            printDBG(tab)
             for item in tab:
                 params = dict(cItem)
                 params.update(item)
                 if item['ftype'] == 'normal':
+                    if '/group/' in item.get('url', ''):
+                        category = item['url'].split('/group/')[-1].split('/')[0].split('?')[0]
                     params['category'] = category
                 self.addDir(params)
+                
+    def listGoupsA(self, cItem, category):
+        printDBG("FsTo.listGoupsA")
+        url = cItem['url'] + '?all'
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="main">', '</table>', False)[1]
+        data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
+        for item in data:
+            params = dict(cItem)
+            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+            self.addDir(params)
             
+    def listLangs(self, cItem, category):
+        printDBG("FsTo.listLangs")
+        params = dict(cItem)
+        params.update({'category':category})
+        self.listsTab(self.MAIN_LANGS_TAB, params)
+            
+    def listLetters(self, cItem, category):
+        printDBG("FsTo.listLetters")
+        url = cItem['url'] + '?all&lang=%s' % cItem['lang']
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        
+        if 'en' == cItem['lang']: m1 = '<div class="alphabet alphabet_eng"'
+        else: m1 = '<div class="alphabet"'
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '</ul>', False)[1]
+        data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
+        for item in data:
+            params = dict(cItem)
+            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+            self.addDir(params)
+
+    def listGoupsB(self, cItem, category):
+        printDBG("FsTo.listGoupsB")
+        page = cItem.get('page', 0)
+        url = cItem['url'] + '&all=1'
+        if page > 0: url += '&page=%d' % page
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        
+        nextPage = False
+        if ('page=%d"' % (page+1)) in data or ('page=%d&' % (page+1)) in data:
+            nextPage = True
+            
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<table>', '</table>', False)[1]
+        data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
+        for item in data:
+            params = dict(cItem)
+            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+            self.addDir(params)
+            
+        if nextPage:
+            params = dict(cItem)
+            params.update({'title':_('Next page'), 'page':page+1})
+            self.addDir(params)
+        
     def listSortKeys(self, cItem, category):
         printDBG("FsTo.listSortKeys")
         for item in self.sortKeyCache:
@@ -479,8 +544,18 @@ class FsTo(CBaseHostClass):
             self.listCategories(self.currItem, 'list_filters')
         elif category == 'list_filters':
             self.listFilters(self.currItem, 'list_filter')
+        elif category in ['year', 'show_start'] or 'genre' in category:
+            self.listGoupsA(self.currItem, 'list_sort_keys')
+        elif category in ['director', 'cast']:
+            self.listLangs(self.currItem, 'list_letters')            
+        elif category in ['list_letters']:
+            self.listLetters(self.currItem, 'list_groups')  
+        elif category == 'list_groups':
+            self.listGoupsB(self.currItem, 'list_sort_keys')
+            
         elif category == 'list_filter':
             self.listFilter(self.currItem, 'list_sort_keys')
+            
         elif category == 'list_sort_keys':
             self.listSortKeys(self.currItem, 'list_items')
         elif category == 'list_items':
