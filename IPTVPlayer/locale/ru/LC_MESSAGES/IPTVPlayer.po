@@ -3854,5 +3854,41 @@ msgstr "Фатальная ошибка: Консоль записи произ�
 msgid "Most Viewed"
 msgstr "Наиболее просматриваемые"
 
+msgid "Windows Media Video 9 Screen decoder"
+msgstr "Windows Медиа Видео 9 Экран декодер"
+
+msgid "Sort alphabetically"
+msgstr "Сортировать по алфавиту"
+
+msgid "Fail to get captcha data."
+msgstr "Не удалось получить данные."
+
+msgid "Send"
+msgstr "Послать"
+
+msgid "Answer"
+msgstr "Ответ"
+
+msgid "Wrong answer."
+msgstr "Неверный ответ."
+
+msgid "Get free credits"
+msgstr "Получить кредиты бесплатно"
+
+msgid "Fail to get \"%s\""
+msgstr "Не удалось получить \"%s\""
+
+msgid "Subtitles conversion to UTF-8 failed."
+msgstr "Субтитры преобразование в UTF-8 не удалось."
+
+msgid "Simplify the title and try again."
+msgstr "Упростить название и повторите попытку."
+
+msgid "Ukrainian proxy server url"
+msgstr "Адрес украинского прокси-сервер"
+
+msgid "file://"
+msgstr "путь://"
+
 msgid "Trailers"
 msgstr "Трейлеры"
