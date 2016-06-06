@@ -226,9 +226,9 @@ class IPTVSubtitlesHandler:
 
         return sts
         
-class IPTVEmbededSubtitlesHandler:
+class IPTVEmbeddedSubtitlesHandler:
     def __init__(self):
-        printDBG("IPTVEmbededSubtitlesHandler.__init__")
+        printDBG("IPTVEmbeddedSubtitlesHandler.__init__")
         self.subAtoms = [] 
         self.pailsOfAtoms = {}
         self.CAPACITY = 10 * 1000 # 10s
