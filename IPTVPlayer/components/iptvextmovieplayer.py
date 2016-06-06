@@ -16,7 +16,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Ge
                                                           GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
                                                           GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang, GetPolishSubEncoding, E2PrioFix, iptv_system, \
                                                           GetE2AudioCodecMixOption, SetE2AudioCodecMixOption, CreateTmpFile, GetTmpDir, IsExecutable, MapUcharEncoding
-from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler, IPTVEmbededSubtitlesHandler
+from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler, IPTVEmbeddedSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
@@ -325,7 +325,7 @@ class IPTVExtMoviePlayer(Screen):
         self.subHandler = {}
         self.subHandler['current_sub_time_ms'] = -1
         self.subHandler['handler'] = IPTVSubtitlesHandler()
-        self.subHandler['embedded_handler'] = IPTVEmbededSubtitlesHandler()
+        self.subHandler['embedded_handler'] = IPTVEmbeddedSubtitlesHandler()
         self.subHandler['handler_type'] = 'embedded_handler'
         self.subHandler['enabled'] = False
         self.subHandler['timer']   = eTimer()
@@ -692,7 +692,7 @@ class IPTVExtMoviePlayer(Screen):
                     # to speed up, should be set also as output from exteplayer3
                     self.playback['SubtitleTrack']= {'id':-1}
                     self.metaHandler.setSubtitleIdx(-1)
-                    self.metaHandler.setEmbededSubtileTrackIdx(-1)
+                    self.metaHandler.setEmbeddedSubtileTrackIdx(-1)
                     self.disableSubtitles()
                 elif option == 'synchro':
                     self.showSubSynchroControl()
@@ -703,14 +703,14 @@ class IPTVExtMoviePlayer(Screen):
                 elif option == 'download_suggested':
                     self.downloadSub(True)
             elif 'track_id' in ret:
-                self.metaHandler.setEmbededSubtileTrackIdx( ret['track_idx'] )
+                self.metaHandler.setEmbeddedSubtileTrackIdx( ret['track_idx'] )
                 self.metaHandler.setSubtitleIdx(-1)
-                self.enableEmbededSubtitles(ret['track_id'])
+                self.enableEmbeddedSubtitles(ret['track_id'])
             elif 'track_idx' in ret:
                 self.metaHandler.setSubtitleIdx( ret['track_idx'] )
                 # to speed up, should be set also as output from exteplayer3
                 self.playback['SubtitleTrack'] = {'id':-1}
-                self.metaHandler.setEmbededSubtileTrackIdx( -1 )
+                self.metaHandler.setEmbeddedSubtileTrackIdx( -1 )
                 self.extPlayerCmddDispatcher.setSubtitleTrack( -1 )
                 self.subHandler['embedded_handler'].flushSubtitles()
                 self.enableSubtitles()
@@ -779,8 +779,8 @@ class IPTVExtMoviePlayer(Screen):
         self.subHandler['enabled'] = False
         self.updateSubSynchroControl()
         
-    def enableEmbededSubtitles(self, id):
-        printDBG("enableEmbededSubtitles")
+    def enableEmbeddedSubtitles(self, id):
+        printDBG("enableEmbeddedSubtitles")
         if self.playback['SubtitleTrack'].get('id', -1) != id:
             self.subHandler['embedded_handler'].flushSubtitles()
             self.extPlayerCmddDispatcher.setSubtitleTrack( id )
@@ -1293,7 +1293,7 @@ class IPTVExtMoviePlayer(Screen):
                     tmpTrack = _mapTrack(obj)
                     if tmpTrack.get('id', -1) > -1: 
                         self.playbackUpdateInfo({'SubtitleTrack':tmpTrack})
-                        self.enableEmbededSubtitles(tmpTrack['id'])
+                        self.enableEmbeddedSubtitles(tmpTrack['id'])
                 elif "s_l" == key:
                     tracks = []
                     for item in obj:
@@ -1649,7 +1649,7 @@ class IPTVExtMoviePlayer(Screen):
                 cmd += ' -t %d ' % audioTrackIdx
                 
             if config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
-                subtitleTrackIdx = self.metaHandler.getEmbededSubtileTrackIdx()
+                subtitleTrackIdx = self.metaHandler.getEmbeddedSubtileTrackIdx()
                 printDBG(">>>>>>>>>>>>>>>>>>>>>>>> subtitleTrackIdx[%d]" % subtitleTrackIdx)
                 if subtitleTrackIdx >= 0:
                     cmd += ' -9 %d ' % subtitleTrackIdx
