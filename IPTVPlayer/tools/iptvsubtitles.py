@@ -24,7 +24,7 @@ from os import remove as os_remove
 
 class IPTVSubtitlesHandler:
     def __init__(self):
-        printDBG("OpenSubOrg.__init__")
+        printDBG("IPTVSubtitlesHandler.__init__")
         self.subAtoms = [] 
         self.pailsOfAtoms = {}
         self.CAPACITY = 10 * 1000 # 10s
@@ -225,6 +225,69 @@ class IPTVSubtitlesHandler:
         #printDBG('>>>>>>>>>>loadSubtitles function took %0.3f ms' % ((time2-time1)*1000.0))
 
         return sts
+        
+class IPTVEmbededSubtitlesHandler:
+    def __init__(self):
+        printDBG("IPTVEmbededSubtitlesHandler.__init__")
+        self.subAtoms = [] 
+        self.pailsOfAtoms = {}
+        self.CAPACITY = 10 * 1000 # 10s
+        
+    def _srtClearText(self, text):
+        return re.sub('<[^>]*>', '', text)
+        #<b></b> : bold
+        #<i></i> : italic
+        #<u></u> : underline
+        #<font color=”#rrggbb”></font>
+        
+    def addSubAtom(self, inAtom):
+        try:
+            inAtom = byteify(inAtom)
+            textTab = inAtom['text'].split('\n')
+            for text in textTab:
+                text = self._srtClearText(text).strip()
+                if text != '':
+                    idx = len(self.subAtoms)
+                    self.subAtoms.append( { 'start':inAtom['start'], 'end':inAtom['end'], 'text':text} )
+                    
+                    tmp = self.subAtoms[idx]['start'] / self.CAPACITY
+                    if tmp not in self.pailsOfAtoms:
+                        self.pailsOfAtoms[tmp] = [idx]
+                    elif idx not in self.pailsOfAtoms[tmp]:
+                        self.pailsOfAtoms[tmp].append( idx )
+                    
+                    tmp = self.subAtoms[idx]['end'] / self.CAPACITY
+                    if tmp not in self.pailsOfAtoms:
+                        self.pailsOfAtoms[tmp] = [idx]
+                    elif idx not in self.pailsOfAtoms[tmp]:
+                        self.pailsOfAtoms[tmp].append( idx )
+        except:
+            pass
+            
+    def getSubtitles(self, currTimeMS, prevMarker):
+        subsText = []
+        tmp = currTimeMS / self.CAPACITY
+        tmp = self.pailsOfAtoms.get(tmp, [])
+        
+        ret = None
+        validAtomsIdexes = []
+        for idx in tmp:
+            item = self.subAtoms[idx]
+            if currTimeMS >= item['start'] and currTimeMS < item['end']:
+                validAtomsIdexes.append(idx)
+                
+        marker = validAtomsIdexes
+        #printDBG("OpenSubOrg.getSubtitles marker[%s] prevMarker[%s] %.1fs" % (marker, prevMarker, currTimeMS/1000.0))
+        if prevMarker != marker:
+            for idx in validAtomsIdexes:
+                item = self.subAtoms[idx]
+                subsText.append(item['text'])
+            ret = '\n'.join(subsText)
+        return marker, ret
+        
+    def flushSubtitles(self):
+        self.subAtoms = [] 
+        self.pailsOfAtoms = {}
         
 if __name__ == "__main__":
     obj = IPTVSubtitlesHandler()

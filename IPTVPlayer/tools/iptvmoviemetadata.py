@@ -27,10 +27,10 @@ from copy import deepcopy
 #        "subtitles":
 #        {
 #            "idx":-1,
-\
+#
 #            "tracks":[
-#                {"title":"", "id":"126", "provider":"opensubtiles.org", "lang":"pl", "delay_ms":0, "path":"/ole/sub_pl.srt"},
-#                {"title":"", "id":"123", "provider":"opensubtiles.org", "lang":"en", "delay_ms":0, "path":"/ole/sub_en.srt"},
+#                {"title":"", "id":"126", "provider":"opensubtitles.org", "lang":"pl", "delay_ms":0, "path":"/ole/sub_pl.srt"},
+#                {"title":"", "id":"123", "provider":"opensubtitles.org", "lang":"en", "delay_ms":0, "path":"/ole/sub_en.srt"},
 #            ]
 #        }
 #    },
@@ -44,7 +44,7 @@ def localPrintDBG(txt):
     pass
 
 class IPTVMovieMetaDataHandler():
-    META_DATA      = {"host":"", "title":"", "file_path":"", "aspect_ratio":-1, "last_position":-1,"tracks":{"audio":-1, "video":-1, "subtitles":{"idx":-1, "tracks":[]} } }
+    META_DATA      = {"host":"", "title":"", "file_path":"", "aspect_ratio":-1, "last_position":-1,"tracks":{"audio":-1, "video":-1, "subtitle":-1, "subtitles":{"idx":-1, "tracks":[]} } }
     SUBTITLE_TRACK = {"title":"", "id":"", "provider":"", "lang":"", "delay_ms":0, "path":""}
     EXTENSION = 'iptv'
     ENCODING  = 'utf-8'
@@ -110,6 +110,29 @@ class IPTVMovieMetaDataHandler():
         sts = False
         try:
             self.data['tracks']['audio'] = int(idx)
+            sts = True
+        except:
+            printExc()
+        if sts: self.isModified = True
+        return sts
+        
+    ##################################################
+    # SUBTITLES EMBEDED
+    ##################################################
+    def getEmbeddedSubtileTrackIdx(self):
+        localPrintDBG("IPTVMovieMetaDataHandler.getEmbeddedSubtileTrackIdx")
+        idx = -1
+        try:
+            idx = int(self.data['tracks'].get('subtitle', -1))
+        except:
+            printExc()
+        return idx
+        
+    def setEmbeddedSubtileTrackIdx(self, idx):
+        localPrintDBG("IPTVMovieMetaDataHandler.setEmbeddedSubtileTrackIdx id[%s]" % idx)
+        sts = False
+        try:
+            self.data['tracks']['subtitle'] = int(idx)
             sts = True
         except:
             printExc()
