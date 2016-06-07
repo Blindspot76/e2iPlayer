@@ -839,11 +839,12 @@ class YoutubeIE(InfoExtractor):
                 lang_translated = getArg(item, 'lang_translated')
 
                 title = (name + ' ' + lang_translated).strip()
-                params = {'lang':lang_code, 'v':video_id, 'fmt':'srt', 'name':name}
+                params = {'lang':lang_code, 'v':video_id, 'fmt':'vtt', 'name':name}
                 url = 'https://www.youtube.com/api/timedtext?' + urllib.urlencode(params)
                 sub_tracks.append({'title':title, 'url':url, 'lang':lang_code, 'format':'srt'})
         except:
             printExc()
+        printDBG(sub_tracks)
         return sub_tracks
 
     def _real_extract(self, url, ):

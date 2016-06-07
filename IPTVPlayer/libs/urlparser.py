@@ -1983,7 +1983,7 @@ class pageParser:
                     
             videoUrls = []
             for item in tmpTab:
-                videoUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':item['url'].encode('UTF-8') })
+                videoUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':item['url'] })
             for item in dashTab:
                 videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | dash', 'url':item['url']})
             return videoUrls
