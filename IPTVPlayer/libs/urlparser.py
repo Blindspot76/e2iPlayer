@@ -4918,14 +4918,16 @@ class pageParser:
     def parserOPENLOADIO(self, baseUrl):
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
-        if '/embed/' not in baseUrl:
+        if '/f/' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_-]{11})[/~]')[0]
             if 'openload.co' in baseUrl:
-                url = 'http://openload.co/embed/' + video_id
+                url = 'https://openload.co/f/' + video_id
             else:
-                url = 'http://openload.io/embed/' + video_id
+                url = 'https://openload.io/f/' + video_id
         else:
             url = baseUrl
+        refUrl = url
+        
         
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
         if not sts:
@@ -4967,9 +4969,9 @@ class pageParser:
                 new_num_string=remainder_string+new_num_string
                 current=current/n
             return new_num_string
-        def decodeOpenLoad(html):
+        def decodeOpenLoad(aastring):
             # decodeOpenLoad made by mortael, please leave this line for proper credit :)
-            aastring = re.search(r"<video(?:.|\s)*?<script\s[^>]*?>((?:.|\s)*?)</script", html, re.DOTALL | re.IGNORECASE).group(1)
+            #aastring = re.search(r"<video(?:.|\s)*?<script\s[^>]*?>((?:.|\s)*?)</script", html, re.DOTALL | re.IGNORECASE).group(1)
 
             aastring = aastring.replace("(ﾟДﾟ)[ﾟεﾟ]+(oﾟｰﾟo)+ ((c^_^o)-(c^_^o))+ (-~0)+ (ﾟДﾟ) ['c']+ (-~-~1)+","")
             aastring = aastring.replace("((ﾟｰﾟ) + (ﾟｰﾟ) + (ﾟΘﾟ))", "9")
@@ -5014,21 +5016,27 @@ class pageParser:
                     decodestring = decodestring.replace(repl,repl2)
                 decodestring = decodestring.replace("+","")
                 decodestring = decodestring.replace("\"","")
-                videourl = re.search(r"(http[^\}]+)", decodestring, re.DOTALL | re.IGNORECASE).group(1)
+                return decodestring
             else:
-                videourl = re.search(r"vr\s?=\s?\"|'([^\"']+)", decodestring, re.DOTALL | re.IGNORECASE).group(1)
+                return decodestring
             return videourl
         # end https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
-
-        try:
-            videoUrl = decodeOpenLoad(data)
-        except:
-            printExc()
-            SetIPTVPlayerLastHostError( self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead">', '</p>', False)[1] )
-            return False
+        videoUrl = ''
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script type="text/javascript">ﾟωﾟ', '</script>', withMarkers=False, caseSensitive=False)
+        for item in data:
+            try:
+                tmp = decodeOpenLoad('ﾟωﾟ' + item)
+                tmp = self.cm.ph.getSearchGroups(tmp, r"(http[^\}]+)", ignoreCase=True)[0]
+                if '/dl/' in tmp:
+                    videoUrl = tmp
+                    break
+            except:
+                printExc()
+                SetIPTVPlayerLastHostError( self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead">', '</p>', False)[1] )
+                return False
         if videoUrl.startswith('http'): 
-            videoUrl = videoUrl.replace('https://', 'http://').replace('\\/', '/')
-            return urlparser.decorateUrl(videoUrl, {'external_sub_tracks':subTracks})
+            videoUrl = videoUrl.replace('\\/', '/')
+            return urlparser.decorateUrl(videoUrl, {'Referer':refUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'external_sub_tracks':subTracks})
         return False
         
     def parserGAMETRAILERS(self, baseUrl):
