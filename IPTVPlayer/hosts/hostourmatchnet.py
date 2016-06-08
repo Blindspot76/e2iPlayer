@@ -261,7 +261,21 @@ class OurmatchNet(CBaseHostClass):
         for item in tmp:
             name = self.cleanHtmlStr(item)
             url  = self.cm.ph.getDataBeetwenMarkers(item, 'data-config=&quot;', '&quot;', False)[1]
-            urlTab.append({'name':name, 'url':self._getFullUrl(url), 'need_resolve':1})
+            if url != '':
+                urlTab.append({'name':name, 'url':self._getFullUrl(url), 'need_resolve':1})
+        
+        videoContents = self.cm.ph.getDataBeetwenMarkers(data, 'var video_contents', '</script>', False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(videoContents, '{embed:', '}')
+        for item in tmp:
+            nameTab = []
+            for key in ['lang', 'type', 'qualty', 'source']:
+                name = self.cm.ph.getSearchGroups(item, '''['"]?%s['"]?:['"]([^'^"]+?)['"]''' % key)[0]
+                if name != '': nameTab.append( name )
+            
+            url = self.cm.ph.getSearchGroups(item, '<iframe[^>]+?src="([^"]+?)"', 1, ignoreCase=True)[0]
+            url = self._getFullUrl(url)
+            if url != '':
+                urlTab.append({'name':' '.join( nameTab ), 'url':self._getFullUrl(url), 'need_resolve':1})
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="details" class="section-box">', '</div>', False)[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<p>', '</p>')
@@ -301,9 +315,14 @@ class OurmatchNet(CBaseHostClass):
                     url  = self.cm.ph.getSearchGroups(item, '''url=['"]([^'^"]+?)['"]''')[0]
                     name = self.cm.ph.getSearchGroups(item, '''height=['"]([^'^"]+?)['"]''')[0]
                     if name == '': self.cm.ph.getSearchGroups(item, '''bitrate=['"]([^'^"]+?)['"]''')[0]
-                    url = baseUrl + '/' + url
+                    if not url.startswith('http'):
+                        url = baseUrl + '/' + url
                     if url.startswith('http'):
-                        urlTab.append({'name':name, 'url':url})
+                        if 'm3u8' in url:
+                            hlsTab = getDirectM3U8Playlist(url)
+                            urlTab.extend(hlsTab)
+                        else:
+                            urlTab.append({'name':name, 'url':url})
             except:
                 printExc()
         elif videoUrl.startswith('http'):

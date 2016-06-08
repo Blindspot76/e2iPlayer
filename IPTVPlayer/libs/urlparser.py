@@ -1778,13 +1778,6 @@ class pageParser:
         # unpack and decode params from JS player script code
         data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
         return self._findLinks(data, 'vidto.me', m1='hd', m2=']')
-        # get direct link to file from params
-        data = re.search('file:"([^"]+?)"', data)
-        if data:
-            directURL = data.group(1) + "?start=0"
-            printDBG("VIDTO.ME DIRECT URL: [%s]" % directURL )
-            return directURL
-        return False
 
     def parserVIDSTREAM(self,url):
         query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
@@ -4436,7 +4429,14 @@ class pageParser:
             urlTab = []
             for item in data['formats']:
                 if '-clip' in item['type']: continue
-                try: urlTab.append({'name':item['type'], 'url':item['uri']})
+                try: 
+                    if item['type'] == 'dash': continue
+                    elif item['type'] == 'hls':
+                        continue
+                        hlsTab = getDirectM3U8Playlist(item['uri'], False)
+                        urlTab.extend(hlsTab)
+                    else:
+                        urlTab.append({'name':item['type'], 'url':item['uri']})
                 except: pass
             return urlTab
         else:
