@@ -39,11 +39,9 @@ from Components.config import config, ConfigSelection, getConfigListEntry
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.wrestling_net_sort = ConfigSelection(default = "", choices = [("", _("DEFAULT")), ("views", _("VIEWS")),("date", _("DATE"))])
-   
+ 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("SORT"), config.plugins.iptvplayer.TVN24httpType))
     return optionList
 ###################################################
 
@@ -52,26 +50,15 @@ def gettytul():
 
 class WrestlingNet(CBaseHostClass):
     MAIN_URL   = 'http://wrestlingnetwork.tv/'
-    BASE_IMAGE = MAIN_URL + 'public/images/'
     
-    MAIN_CAT_TAB = [{'category':'latest',   'url':"",                           'title': _("LATEST VIDEOS"),     'icon':''},
-                    {'category':'tag',      'url':"tag/show-replay",             'title': _("SHOW REPLAY"),       'icon':''},
-                    {'category':'category', 'url':"category/wwe-network",        'title': _("WWE NETWORK"),       'icon':''},
-                    {'category':'category', 'url':"category/wwe",                'title': _("WWE"),               'icon':''},
-                    {'category':'category', 'url':"category/wwe/wwe-raw",        'title': _("RAW"),               'icon':BASE_IMAGE+'2013/03/348-529x300.jpg'},
-                    {'category':'category', 'url':"category/wwe/wwe-smackdown",  'title': _("SMACKDOWN"),         'icon':BASE_IMAGE+'2013/03/347-529x300.jpg'},
-                    {'category':'category', 'url':"category/wwe/wwe-nxt",        'title': _("NXT"),               'icon':BASE_IMAGE+'2013/03/3953-529x300.jpg'},
-                    {'category':'category', 'url':"category/lucha-underground",  'title': _("LUCHA UNDERGROUND"), 'icon':BASE_IMAGE+'2015/01/lucha_underground-533x300.jpg'},
-                    {'category':'category', 'url':"category/njpw",               'title': _("NJPW"),              'icon':BASE_IMAGE+'2015/04/NJPW-copy-554x300.jpg'},
-                    {'category':'category', 'url':"category/tna",                'title': _("TNA"),               'icon':BASE_IMAGE+'2015/03/WN-TNA-563x300.jpg'},
-                    {'category':'search',                'title':_('Search'), 'search_item':True},
+    MAIN_CAT_TAB = [{'category':'search',                'title':_('Search'), 'search_item':True},
                     {'category':'search_history',        'title':_('Search history')} ]
     
     def __init__(self):
         printDBG("WrestlingNet.__init__")
         CBaseHostClass.__init__(self, {'history':'wrestling-network.net'})
-        self.cacheFilters = []
-        self.cacheSeries = {}
+        self.DEFAULT_ICON = 'http://static-server1.wrestling-network.net/images/layout/wnhd_5years_bug.png'
+        self.cacheSubCategory = {}
         
     def _getFullUrl(self, url):
         if 0 < len(url) and not url.startswith('http'):
@@ -85,14 +72,50 @@ class WrestlingNet(CBaseHostClass):
             params.update(item)
             params['name']  = 'category'
             self.addDir(params)
-
-    def listLatestVideos(self, cItem, category):
-        printDBG("WrestlingNet.listLatestVideos")
-        self._listVideos(cItem)
+            
+    def listsMainMenu(self, cItem, subNextCategory, nextCategory):
+        printDBG("listsMainMenu")
+        self.cacheSubCategory = {}
         
-    def listVideosByTag(self, cItem, category):
-        printDBG("WrestlingNet.listVideosByTag")
-        self._listVideos(cItem)
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        subCatsUrls = []
+        catsData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<ul class="sub-menu">', '</ul>', withMarkers=False)
+        for catItem in catsData:
+            tmp = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(catItem)
+            for item in tmp:
+                url   = self._getFullUrl(item[0])
+                title = self.cleanHtmlStr(item[1])
+                catUrl = '/'.join( url.split('/')[:-1] )
+                if catUrl not in self.cacheSubCategory: 
+                    self.cacheSubCategory[catUrl] = []
+                self.cacheSubCategory[catUrl].append({'url':url, 'title':title})
+                subCatsUrls.append(url)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="menu-main-menu', '</div>')[1]
+        data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
+        prevUrl = ''
+        categories = []
+        for item in data:
+            url   = self._getFullUrl(item[0])
+            if url in subCatsUrls: continue
+            title = self.cleanHtmlStr(item[1])
+            if url in self.cacheSubCategory:
+                category = subNextCategory
+            else:
+                category = nextCategory
+            params = dict(cItem)
+            params.update({'url':url, 'title':title})
+            params['category'] = category
+            self.addDir(params)
+        
+    def listSubCategory(self, cItem, nextCategory):
+        printDBG("listSubCategory")
+        tab =  self.cacheSubCategory.get(cItem['url'], [])
+        params = dict(cItem)
+        params['category'] = nextCategory
+        self.listsTab(tab, params)
         
     def listVideosByCategory(self, cItem, category):
         printDBG("WrestlingNet.listVideosByCategory")
@@ -101,11 +124,10 @@ class WrestlingNet(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("WrestlingNet.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         searchPattern = urllib.quote_plus(searchPattern)
-        cItem.update({'srch':'?s=' + searchPattern})
+        cItem.update({'url':self.MAIN_URL, 'srch':'?s=%s&submit=Search' % searchPattern})
         self._listVideos(cItem)
     
-    #def _listVideos(self, cItem, m1='class="item', m2='</div></div></div></div><div', sp='class="item'):
-    def _listVideos(self, cItem, m1='<div id="post-', m2='end .loop-content', sp='<div id="post-'):
+    def _listVideos(self, cItem):
         printDBG("WrestlingNet._listVideos")
         
         page = cItem.get('page', 1)
@@ -113,39 +135,28 @@ class WrestlingNet(CBaseHostClass):
         if page > 1:
             url += '/page/%s' % page
         url += cItem.get('srch', '')
-        if '?' in url: url += '&'
-        else: url += '?'
-        url += 'orderby=' + config.plugins.iptvplayer.wrestling_net_sort.value
-        url = self._getFullUrl(url)
         
         sts, data = self.cm.getPage(url)
         if not sts: return
         
-        if ('/page/%s?' % (page+1)) in data:
+        if ('/page/%s?' % (page+1)) in data or ('/page/%s/' % (page+1)) in data:
             nextPage = True
         else: nextPage = False
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, True)
-        if not sts:
-            SetIPTVPlayerLastHostError(_("WrestlingNet._listVideos - no markers [m1][m2] found!"))
-            return
-        
-        data = data.split(sp)
-        if len(data): del data[0]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="content-container">', '<!-- close .content-container -->', withMarkers=False)
         for item in data:
-            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            title  = self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0]
-            if '' == title: title  = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
-            desc   =  self.cleanHtmlStr('<' + item + '>')
+            if '/contact' in url: continue
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title  = self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1]
             if '' != url and '' != title:
                 params = dict(cItem)
-                params.update( {'title':title, 'url':self._getFullUrl(url), 'desc':desc, 'icon':self._getFullUrl(icon)} )
+                params.update( {'title':self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc':self.cleanHtmlStr( item ), 'icon':self._getFullUrl(icon)} )
                 self.addVideo(params)
         
         if nextPage:
             params = params = dict(cItem)
-            params.update({'title':_("Następna strona"), 'page':page+1})
+            params.update({'title':_("Next page"), 'page':page+1})
             self.addDir(params)
     
     def getLinksForVideo(self, cItem):
@@ -154,12 +165,12 @@ class WrestlingNet(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'entry-content', 'video-meta-info', True) #'id="more-'
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="solar-main-content">', '<!-- close .content-container -->', True)
         if not sts:
             SetIPTVPlayerLastHostError(_("Please visit '%s' from using web-browser form the PC. If links are available please report this problem.\nEmail: samsamsam@o2.pl") % cItem['url'])
             return urlTab
             
-        data = data.split('<h2>')
+        data = data.split('<h2 style="text-align: center;">')
         if len(data): del data[0]
         re_links = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>')
         for item in data:
@@ -203,15 +214,13 @@ class WrestlingNet(CBaseHostClass):
 
     #MAIN MENU
         if None == name:
-            self.listsTab(WrestlingNet.MAIN_CAT_TAB, {'name':'category'})
-    #LATEST
-        elif 'latest' == category:
-            self.listLatestVideos(self.currItem, '')
-    #TAG
-        elif 'tag' == category:
-            self.listVideosByTag(self.currItem, '')
+            cItem = {'name':'category', 'url':self.MAIN_URL, 'icon':self.DEFAULT_ICON}
+            self.listsMainMenu(cItem, 'list_subcategory', 'list_category')
+            self.listsTab(WrestlingNet.MAIN_CAT_TAB, cItem)
+        elif 'list_subcategory' == category:
+            self.listSubCategory(self.currItem, 'list_category')
     #CATEGORY
-        elif 'category' == category:
+        elif 'list_category' == category:
             self.listVideosByCategory(self.currItem, '')
     #WYSZUKAJ
         elif category in ["search", "search_next_page"]:
@@ -325,3 +334,4 @@ class IPTVHost(CHostBase):
             self.searchPattern = ''
             self.searchType = ''
         return
+
