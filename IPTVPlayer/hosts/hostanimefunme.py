@@ -38,47 +38,53 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.animefunme_language = ConfigSelection(default = "en", choices = [("en", _("English")), ("es", _("Spanish"))])
+#config.plugins.iptvplayer.animefunme_language = ConfigSelection(default = "en", choices = [("en", _("English")), ("es", _("Spanish"))])
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("Language:"), config.plugins.iptvplayer.animefunme_language))
+    #optionList.append(getConfigListEntry(_("Language:"), config.plugins.iptvplayer.animefunme_language))
     return optionList
 ###################################################
 
 
 def gettytul():
-    return 'http://animefun.me/'
+    return 'http://cartoons8.me/'
 
 class AnimeFunME(CBaseHostClass):
     USER_AGENT = 'curl/7'
 
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'animefun.me', 'cookie':'animefunme.cookie'})
+        CBaseHostClass.__init__(self, {'history':'cartoons8.me', 'cookie':'animefunme.cookie'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'http://animefun.me/'
-        new  = 'new/'
-        most = 'most_viewed/'
-        if config.plugins.iptvplayer.animefunme_language.value == 'es':
-            new  = 'nuevo/'
-            most = 'mas_visto/'
-            lang = 'es/'
-            self.SEARCH_URL = self.MAIN_URL +'es/buscar/?s='
-        else:
-            lang = ''
-            self.SEARCH_URL = self.MAIN_URL +'search/?s='
+        self.MAIN_URL = 'http://cartoons8.me/'
+        new  = 'new'
+        most = 'most-viewed'
+        #if config.plugins.iptvplayer.animefunme_language.value == 'es':
+        #    new  = 'nuevo/'
+        #    most = 'mas_visto/'
+        #    lang = 'es/'
+        #    self.SEARCH_URL = self.MAIN_URL +'es/buscar/?s='
+        #else:
+        lang = ''
+        self.SEARCH_URL = self.MAIN_URL +'search/?s='
         
         self.DEFAULT_ICON  = "http://img.youtube.com/vi/BtWo7GiDVMQ/mqdefault.jpg"
-        self.MAIN_CAT_TAB = [{'category':'list_sortby', 'title': _('Top'),            'url':self.MAIN_URL+lang+'top/',            'icon':self.DEFAULT_ICON},
-                             {'category':'list_items',  'title': _('New'),            'url':self.MAIN_URL+lang+new,               'icon':self.DEFAULT_ICON},
+        self.MAIN_CAT_TAB = [{'category':'list_req',    'title': _('Top Cartoons'),   'url':self.MAIN_URL+lang+'top',             'icon':self.DEFAULT_ICON},
+                             {'category':'list_req2',   'title': _('New'),            'url':self.MAIN_URL+lang+new,               'icon':self.DEFAULT_ICON},
                              {'category':'list_items',  'title': _('Most Viewed'),    'url':self.MAIN_URL+lang+most,              'icon':self.DEFAULT_ICON},
-                             {'category':'list_items2', 'title': _('Latest Update'),  'url':self.MAIN_URL+lang+'latest_update/',  'icon':self.DEFAULT_ICON},
-                             {'category':'list_abc',    'title': _('Anime List'),     'url':self.MAIN_URL+lang+'anime_list/',     'icon':self.DEFAULT_ICON},
+                             {'category':'list_req',    'title': _('TV Series'),      'url':self.MAIN_URL+lang+'series',          'icon':self.DEFAULT_ICON},
+                             {'category':'list_req2',   'title': _('Anime'),          'url':self.MAIN_URL+lang+'anime',           'icon':self.DEFAULT_ICON},
+                             {'category':'list_items2', 'title': _('Latest Update'),  'url':self.MAIN_URL+lang+'latestupdate',    'icon':self.DEFAULT_ICON},
+                             {'category':'list_items3', 'title': _('Cartoon List'),   'url':self.MAIN_URL+lang+'list',            'icon':self.DEFAULT_ICON},
                              {'category':'categories',  'title': _('Genres'),         'url':self.MAIN_URL+lang+new,               'icon':self.DEFAULT_ICON},
                              {'category':'search',          'title': _('Search'), 'search_item':True, 'icon':self.DEFAULT_ICON},
                              {'category':'search_history',  'title': _('Search history'),             'icon':self.DEFAULT_ICON} ]
-                        
+        
+        self.REQ_TAB = [{'title':_('All'),            'req':'all'},
+                        {'title':_('only Anime'),     'req':'anime'},
+                        {'title':_('only Cartoons'),  'req':'cartoons'}]
+                            
         self.SORT_BY_TAB = [{'title':_('Create Date'), 'sortby':'newest'},
                             {'title':_('Views'),       'sortby':'mostviewed'}]
  
@@ -126,7 +132,7 @@ class AnimeFunME(CBaseHostClass):
             if not sts and None != data:
                 start_time = time.time()
                 #if current == 0:
-                #    url = 'http://animefun.me/'
+                #    url = 'http://cartoons8.me/'
                 #    params['header']['Referer'] = url
                 #    params['load_cookie'] = False 
                 #    sts, data = self.cm.getPage(url, params, post_data)
@@ -157,7 +163,7 @@ class AnimeFunME(CBaseHostClass):
                             e = e.replace('+[]', '')
                         expresion[idx] = e
                     
-                    answer = self.calcAnswer('\n'.join(expresion)) + 11
+                    answer = self.calcAnswer('\n'.join(expresion)) + 12
                     refreshData = data.fp.info().get('Refresh', '')
                     
                     verData = self.cm.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
@@ -210,10 +216,7 @@ class AnimeFunME(CBaseHostClass):
         if not sts: return
         
         tab = []
-        if cItem.get('category', '') == 'list_abc':
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'alphabet', '<table ', False)[1]
-        else:
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="genres_list">', '</ul>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Search by genres', '</ul>', False)[1]
         data = re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>([^<]+?)<''').findall(data)
         for item in data:
             title = self.cleanHtmlStr(item[1])
@@ -233,36 +236,52 @@ class AnimeFunME(CBaseHostClass):
         if len(tmp)>1: query = tmp[1]
         else: query = ''
         
+        if not url.endswith('/'):
+            url += '/'
+        
         if page > 1:
             url += '/%d/' % page
         
-        if 'sortby' in cItem:
-            url += '?sortby=' + cItem['sortby']
+        for item in [('filter=', 'sortby'), ('req=', 'req')]:
+            if item[1] in cItem:
+                if '?' in url: url += '&'
+                else: url += '?'
+                url += item[0] + cItem[item[1]]
         
         if '?' in url: url += '&'
         else: url += '?'
+        
         url += query
         
         sts, data = self.getPage(url)
         if not sts: return
         
-        nextPage = self.cm.ph.getDataBeetwenMarkers(data, "pagination", '</ol>', False)[1]
-        if ('<span>%d</span>' % (page+1)) in nextPage:
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pageNav">', '</div>', False)[1]
+        if ('>%d<' % (page+1)) in nextPage:
             nextPage = True
         else:
             nextPage = False
         if type == '1':
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="updatesli">', '</li>')
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="list_ct">', '</li>')
         else:
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr style="background-', '</tr>')
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a style="float: left"', '</li>')
         
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         for item in data:
-            url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
+            printDBG(item)
             icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0] )
-            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h3 class="title">', '</h3>', True)[1] )
-            if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>', True)[1] )
-            desc  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, 'animedetail="', '"', False)[1] )
+            url  = ''
+            desc = ''
+            if nextCategory == 'video':
+                if '</a>' in item:
+                    url   = self._getFullUrl( self.cm.ph.getSearchGroups(item.split('</a>')[1], '''href=['"]([^'^"]+?)['"]''')[0] )
+                title = self.cleanHtmlStr( item )
+            else:
+                url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
+                title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>', True)[1] )
+                if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="info">', '</a>', True)[1] )
+                if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>', True)[1] )
+                desc  = self.cleanHtmlStr( item )
             if url.startswith('http'):
                 icon = strwithmeta(icon, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
                 params = dict(cItem)
@@ -307,7 +326,7 @@ class AnimeFunME(CBaseHostClass):
         printDBG("AnimeFunME.getLinksForVideo [%s]" % cItem)
         urlTab = [] 
         
-        if 'animefun.me' not in cItem['url']:
+        if 'cartoons8.me' not in cItem['url']:
             return [{'name':'', 'url':cItem['url'], 'need_resolve':1}]
         
         sts, data = self.getPage(cItem['url'])
@@ -320,7 +339,9 @@ class AnimeFunME(CBaseHostClass):
         sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
         if not sts: return []
         
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'anime_download', '<script ', False)[1]
+        printDBG(data)
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'Download', '<script ', False)[1]
         tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
         for item in tmp:
             urlTab.append({'name':item[1], 'url':item[0], 'need_resolve':1})
@@ -366,7 +387,7 @@ class AnimeFunME(CBaseHostClass):
         if cx != '':
             NUM = 10
             page = cItem.get('page', 1)
-            lang = config.plugins.iptvplayer.animefunme_language.value
+            lang = 'en' #config.plugins.iptvplayer.animefunme_language.value
             url = 'https://www.googleapis.com/customsearch/v1element?key=AIzaSyCVAXiUzRYsML1Pv6RwSG1gunmMikTzQqY&rsz=filtered_cse&num={0}&hl={1}&prettyPrint=false&source=gcsc&gss=.me&sig=&start={2}&cx={3}&q={4}&sort='.format(NUM, lang, page*NUM, cx, urllib.quote(searchPattern))
             sts, data = self.getPage(url)
             if not sts: return
@@ -412,9 +433,15 @@ class AnimeFunME(CBaseHostClass):
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category == 'categories':
-            self.listCategories(self.currItem, 'list_sortby')
-        elif category == 'list_abc':
-            self.listCategories(self.currItem, 'list_items3')
+            self.listCategories(self.currItem, 'list_req')
+        if category == 'list_req':
+            cItem = dict(self.currItem)
+            cItem['category'] = 'list_sortby'
+            self.listsTab(self.REQ_TAB, cItem)
+        if category == 'list_req2':
+            cItem = dict(self.currItem)
+            cItem['category'] = 'list_items'
+            self.listsTab(self.REQ_TAB, cItem)
         if category == 'list_sortby':
             cItem = dict(self.currItem)
             cItem['category'] = 'list_items'
