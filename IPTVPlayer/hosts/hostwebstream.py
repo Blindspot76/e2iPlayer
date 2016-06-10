@@ -1024,7 +1024,10 @@ class HasBahCa(CBaseHostClass):
             self.showsportTvApi = ShowsportTVApi()
         tmpList = self.showsportTvApi.getChannelsList(cItem)
         for item in tmpList:
-            self.playVideo(item) 
+            if 'video' == item.get('type', ''):
+                self.playVideo(item) 
+            else:
+                self.addDir(item)
         
     def getShowsportTvLink(self, cItem):
         printDBG("getShowsportTvLink start")

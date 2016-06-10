@@ -22,6 +22,7 @@ import urllib
 import random
 import string
 import base64
+import datetime
 try:    import json
 except: import simplejson as json
 
@@ -67,8 +68,8 @@ class ShowsportTVApi:
     def cleanHtmlStr(self, str):
         return CBaseHostClass.cleanHtmlStr(str)
         
-    def getChannelsList(self, cItem):
-        printDBG("ShowsportTVApi.getChannelsList")
+    def _getChannelsList(self, cItem):
+        printDBG("ShowsportTVApi._getChannelsList")
         channelsTab = []
         sts, data = self.cm.getPage(self.MAIN_URL)
         if not sts: return []
@@ -83,8 +84,51 @@ class ShowsportTVApi:
                 desc  = _('On Air')
             if not url.startswith('http'): continue
             params = dict(cItem)
-            params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
+            params.update({'type':'video', 'title':title, 'url':url, 'icon':icon, 'desc':desc})
             channelsTab.append(params)
+        return channelsTab
+        
+    def _getScheduleList(self, cItem):
+        printDBG("ShowsportTVApi._getScheduleList")
+        channelsTab = []
+        sts, data = self.cm.getPage(self.MAIN_URL)
+        if not sts: return []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="listmatch">', '</ul>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li ', '</li>')
+        for item in data:
+            titleTab = []
+            item = item.replace('<div class="versus column">', ' vs ')
+            if '/images/live.gif' in item:
+                titleTab.append(_('[LIVE]'))
+            timestamp = self.cm.ph.getSearchGroups(item, '''class="starttime time"[^>]+?rel="([0-9]+?)"''', 1, True)[0]
+            if timestamp == '': timestamp = self.cm.ph.getSearchGroups(item, '''class="startdate date"[^>]+?rel="([0-9]+?)"''', 1, True)[0]
+            if timestamp != '':
+                titleTab.append('[%s]' % datetime.datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %H:%M:%S') )
+            url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0] )
+            icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src="([^"]+?)"''', 1, True)[0] )
+            titleTab.append( self.cleanHtmlStr( item ) )
+            desc  = ''
+            if not url.startswith('http'): continue
+            params = dict(cItem)
+            params.update({'type':'video', 'title':' '.join(titleTab), 'url':url, 'icon':icon, 'desc':desc})
+            channelsTab.append(params)
+        return channelsTab
+        
+    def getChannelsList(self, cItem):
+        printDBG("ShowsportTVApi.getChannelsList")
+        channelsTab = []
+        
+        category = cItem.get('abc_cat', None)
+        if category == None:
+            for item in [{'title':_('Schedule'), 'abc_cat':'schedule'}, {'title':_('Channels'), 'abc_cat':'channels'}]:
+                params = dict(cItem)
+                params.update(item)
+                channelsTab.append(params)
+        elif category == 'channels':
+            channelsTab = self._getChannelsList(cItem)
+        elif category == 'schedule':
+            channelsTab = self._getScheduleList(cItem)
+
         return channelsTab
         
     def getVideoLink(self, cItem):

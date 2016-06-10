@@ -337,7 +337,7 @@ class urlparser:
                        'vimeo.com':            self.pp.parseVIMEOCOM       ,
                        'jacvideo.com':         self.pp.parseJACVIDEOCOM    ,
                        'caston.tv':            self.pp.parseCASTONTV       ,
-                       'static.bro.adca.st':   self.pp.parseBROADCAST      ,
+                       'bro.adca.st':          self.pp.parseBROADCAST      ,
                        'bro.adcast.tech':      self.pp.parseBROADCAST      ,
                        'moshahda.net':         self.pp.parseMOSHAHDANET    ,
                        'stream.moe':           self.pp.parseSTREAMMOE      ,
@@ -478,8 +478,12 @@ class urlparser:
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'bro.adca.' in data:
-                id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
-                videoUrl = 'http://bro.adcast.tech/stream.php?id={0}&width=600&height=400'.format(id)
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?bro\.adca\.[^'^"]+?stream\.php\?id=[^'^"]+?)['"]""")[0] 
+                if videoUrl == '':
+                    tmpUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?bro\.adca\.[^'^"]+?)['"]""")[0] 
+                    if '' == tmpUrl: tmpUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?bro\.adcast\.[^'^"]+?)['"]""")[0] 
+                    id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
+                    videoUrl = self.cm.getBaseUrl(tmpUrl) + 'stream.php?id={0}&width=600&height=400'.format(id)
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'sostart.pw' in data:
@@ -659,7 +663,7 @@ class urlparser:
                     vlcUrl = self.cm.ph.getSearchGroups(data, """target=['"](http[^'^"]+?)['"]""")[0]
                     if '' != vlcUrl: return [{'name':'vlc', 'url':vlcUrl}]
                 printDBG("=======================================================================")
-                printDBG(data)
+                printDBG("No link extractor for url[%s]" % url)
                 printDBG("=======================================================================")
             return []
 
@@ -5231,7 +5235,7 @@ class pageParser:
         
         params['header']['Referer'] = baseUrl
         params['header']['X-Requested-With'] = 'XMLHttpRequest'
-        sts, data = self.cm.getPage('http://bro.adcast.tech/getToken.php', params)
+        sts, data = self.cm.getPage(self.cm.getBaseUrl(baseUrl) + 'getToken.php', params)
         if not sts: return False
         printDBG(data)
         data = byteify(json.loads(data))

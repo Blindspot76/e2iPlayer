@@ -244,6 +244,13 @@ class common:
             if 'iptv_proxy_gateway' in url.meta:
                 outParams['proxy_gateway'] = url.meta['iptv_proxy_gateway']
         return outParams, postData
+        
+    @staticmethod
+    def getBaseUrl(url):
+        from urlparse import urlparse
+        parsed_uri = urlparse( url )
+        domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+        return domain
     
     def __init__(self, proxyURL= '', useProxy = False, useMozillaCookieJar=True):
         self.proxyURL = proxyURL
