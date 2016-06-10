@@ -264,6 +264,9 @@ class HDFilmeTV(CBaseHostClass):
         if not sts: return []
         
         googleUrls = self.cm.ph.getSearchGroups(data, '''var hdfilme[^=]*?=[^[]*?(\[[^;]+?);''')[0].strip()
+        if '' == googleUrls: googleUrls = self.cm.ph.getSearchGroups(data, '''sources[^=^:]*?[=:][\s]*[^[]*?(\[[^]]+?\])''')[0].strip()
+        printDBG(googleUrls)
+        
         if googleUrls != '':
             try:
                 googleUrls = byteify( json.loads(googleUrls) )
