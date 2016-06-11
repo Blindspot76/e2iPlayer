@@ -4921,7 +4921,7 @@ class pageParser:
         
     def parserOPENLOADIO(self, baseUrl):
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
-        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl}
         if '/f/' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_-]{11})[/~]')[0]
             if 'openload.co' in baseUrl:
@@ -5030,9 +5030,15 @@ class pageParser:
         for item in data:
             try:
                 tmp = decodeOpenLoad('ﾟωﾟ' + item)
+                printDBG(tmp)
                 tmp = self.cm.ph.getSearchGroups(tmp, r"(http[^\}]+)", ignoreCase=True)[0]
+
+                if '/dl/' not in tmp and tmp.startswith('http'):
+                    sts, response = self.cm.getPage(tmp, {'header':HTTP_HEADER, 'return_data':False})
+                    tmp = response.geturl()
+                    response.close()
                 if '/dl/' in tmp:
-                    videoUrl = tmp
+                    videoUrl = tmp                    
                     break
             except:
                 printExc()
