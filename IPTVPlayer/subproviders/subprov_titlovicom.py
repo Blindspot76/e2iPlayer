@@ -66,7 +66,7 @@ class TitlovicomProvider(CBaseSubProviderClass):
         
     def getMainUrl(self):
         lang = GetDefaultLang()
-        if lang in self.LANGUAGE_CACHE:
+        if lang not in self.LANGUAGE_CACHE:
             lang = 'en'
         if lang == 'rs':
             return 'http://titlovi.com/'
