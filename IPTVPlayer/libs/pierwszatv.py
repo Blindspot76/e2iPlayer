@@ -121,8 +121,9 @@ class PierwszaTVApi:
         #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '{', '}')
         try:
             data = byteify(json.loads(data))
-            for idx in range(len(data)):
-                item = data[str(idx+1)]
+            for idx in range(200):
+                try: item = data[str(idx+1)]
+                except Exception: continue
                 printDBG(item)
                 printDBG("===============================================")
                 url   = self.getFullUrl( 'player/watch/{0}'.format(item['id']) )
@@ -136,7 +137,7 @@ class PierwszaTVApi:
                 params = dict(cItem)
                 params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
                 channelsTab.append(params)
-        except:
+        except Exception:
             printExc()
         return channelsTab
         
