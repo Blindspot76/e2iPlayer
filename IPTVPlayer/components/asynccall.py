@@ -13,7 +13,7 @@ try: import ctypes
 except: pass
 ###################################################
 
-gMainFunctionsQueue = None
+gMainFunctionsQueueTab = [None, None]
 
 class AsyncCall(object):
     def __init__(self, fnc, callback=None, callbackWithThreadID=False):
@@ -164,13 +164,12 @@ class Delegate(object):
     #    printDBG("Delegate.__del__ ---------------------------------")
 
 class DelegateToMainThread(Delegate):
-    def __init__(self, fnc):
-        global gMainFunctionsQueue
-        Delegate.__init__(self, gMainFunctionsQueue, fnc)
+    def __init__(self, fnc, mainThreadIdx=0):
+        global gMainFunctionsQueueTab
+        Delegate.__init__(self, gMainFunctionsQueueTab[mainThreadIdx], fnc)
         
     #def __del__(self):
     #    printDBG("DelegateToMainThread.__del__ ---------------------------------")
-        
 
 class MainSessionWrapper(object):
     '''
@@ -178,19 +177,20 @@ class MainSessionWrapper(object):
     can be used only from other thread then MainThread.
     '''
     WAIT_RET = "WaitForFinish"
-    def __init__(self):
+    def __init__(self, mainThreadIdx=0):
         self.retVal = None
         self.event = threading.Event()
+        self.mainThreadIdx = mainThreadIdx
         
     def open(self, *args, **kwargs):
-        DelegateToMainThread(self._open)(*args, **kwargs)
+        DelegateToMainThread(self._open, self.mainThreadIdx)(*args, **kwargs)
         
     def _open(self, session, *args, **kwargs):
         session.open(*args, **kwargs)
 
     def waitForFinishOpen(self, *args, **kwargs):
         self.event.clear()
-        tmpRet = DelegateToMainThread(self._waitForFinishOpen)(*args, **kwargs)
+        tmpRet = DelegateToMainThread(self._waitForFinishOpen, self.mainThreadIdx)(*args, **kwargs)
         if tmpRet and tmpRet[0] == MainSessionWrapper.WAIT_RET: 
             self.event.wait()
             return self.retVal
@@ -217,14 +217,15 @@ class iptv_execute(object):
     used inside MainThread context
     '''
     WAIT_RET = "WaitForFinish"
-    def __init__(self):
+    def __init__(self, mainThreadIdx=0):
         self.retVal = None
         self.event = threading.Event()
+        self.mainThreadIdx = mainThreadIdx
 
     def __call__(self, cmd):
         printDBG("iptv_execute.__call__: Here we must not be in main thread context: [%s]" % threading.current_thread());
         self.event.clear()
-        tmpRet = DelegateToMainThread(self._system)(cmd)
+        tmpRet = DelegateToMainThread(self._system, self.mainThreadIdx)(cmd)
         if tmpRet and tmpRet[0] == iptv_execute.WAIT_RET: 
             self.event.wait()
             ret = self.retVal

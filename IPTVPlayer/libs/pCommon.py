@@ -13,7 +13,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Is
 import urllib
 import urllib2
 try: import ssl
-except: pass
+except Exception: pass
 import re
 import string
 import time
@@ -21,12 +21,12 @@ import htmlentitydefs
 import cookielib
 import unicodedata
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 try:
     try: from cStringIO import StringIO
-    except: from StringIO import StringIO 
+    except Exception: from StringIO import StringIO 
     import gzip
-except: pass
+except Exception: pass
 ###################################################
 
 
@@ -69,7 +69,7 @@ class CParsingHelper:
         
         for idx in range(grupsNum):
             try:    value = match.group(idx + 1)
-            except: value = ''
+            except Exception: value = ''
             tab.append(value)
         return tab
         
@@ -264,7 +264,7 @@ class common:
             if sts:
                 try:
                     self.geolocation['countryCode'] = byteify(json.loads(data))['countryCode']
-                except:
+                except Exception:
                     printExc()
         return self.geolocation.get('countryCode', '').lower()
         
@@ -278,7 +278,7 @@ class common:
             cj.load(cookiefile, ignore_discard = True)
             for cookie in cj:
                 if cookie.name == item: ret = cookie.value
-        except:
+        except Exception:
             printExc()
         return ret
         
@@ -292,7 +292,7 @@ class common:
             cj.load(cookiefile, ignore_discard = True)
             for cookie in cj:   
                 ret += '%s=%s; ' % (cookie.name, cookie.value)
-        except:
+        except Exception:
             printExc()
         return ret
 
@@ -302,7 +302,7 @@ class common:
             return unichr(int(ent[1:],16))
         try:
             return unichr(int(ent))
-        except:
+        except Exception:
             if ent in htmlentitydefs.name2codepoint:
                 return unichr(htmlentitydefs.name2codepoint[ent])
             else:
@@ -325,7 +325,7 @@ class common:
             printExc()
             response = e
             status = False
-        except:
+        except Exception:
             printExc()
             response = None
             status = False
@@ -339,14 +339,14 @@ class common:
         sourceCode = data
         try:
             code = compile(sourceCode, '', 'exec')
-        except:
+        except Exception:
             printExc()
             return 0
         vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
         vLocals = { 'paramsTouple': None }
         try:
             exec( code, vGlobals, vLocals )
-        except:
+        except Exception:
             printExc()
             return 0
         return vLocals['a']
@@ -414,7 +414,7 @@ class common:
                     time.sleep(5-(time.time() - start_time))
                     printDBG("Time spent: [%s]" % (time.time() - start_time))
                     sts, data = self.getPage(verUrl, params2, post_data)
-                except:
+                except Exception:
                     printExc()
             else:
                 break
@@ -484,7 +484,7 @@ class common:
                 downHandler.close()
                 if None != contentLength and contentLength == downDataSize:
                     bRet = True
-        except:
+        except Exception:
             printExc("common.getFile download file exception")
         dictRet.update( {'sts': True, 'fsize': downDataSize} )
         return dictRet
@@ -543,14 +543,14 @@ class common:
             if params.get('load_cookie', False):
                 try:
                     cj.load(params['cookiefile'], ignore_discard = True)
-                except:
+                except Exception:
                     printExc()
             try:
                 for cookieKey in params.get('cookie_items', {}).keys():
                     printDBG("cookie_item[%s=%s]" % (cookieKey, params['cookie_items'][cookieKey]))
                     cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=params['cookie_items'][cookieKey], port=None, port_specified=False, domain='', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
                     cj.set_cookie(cookieItem)
-            except:
+            except Exception:
                 printExc()
             customOpeners.append( urllib2.HTTPCookieProcessor(cj) )
         # debug 
@@ -558,7 +558,7 @@ class common:
         #customOpeners.append(urllib2.HTTPHandler(debuglevel=1))
         if not IsHttpsCertValidationEnabled():
             try: customOpeners.append(urllib2.HTTPSHandler(context=ssl._create_unverified_context()))
-            except: pass
+            except Exception: pass
         #proxy support
         if self.useProxy:
             http_proxy = self.proxyURL
@@ -631,7 +631,7 @@ class common:
                     out_data = f.read()
                 else:
                     out_data = data
-            except:
+            except Exception:
                 out_data = data
  
         if params.get('use_cookie', False) and params.get('save_cookie', False):
@@ -651,7 +651,7 @@ class common:
             float(s)
             return True
         #except ValueError:
-        except:
+        except Exception:
             return False
         
     def setLinkTable(self, url, host):

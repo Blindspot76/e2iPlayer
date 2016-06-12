@@ -21,14 +21,17 @@ class CUrlItem:
 # communicate display layer with host
 #
 class CDisplayListItem:
-    TYPE_CATEGORY = "CATEGORY"
-    TYPE_VIDEO    = "VIDEO"
-    TYPE_AUDIO    = "AUDIO"
-    TYPE_SEARCH   = "SEARCH"
-    TYPE_ARTICLE  = "ARTICLE"
-    TYPE_PICTURE  = "PICTURE"
-    TYPE_MORE     = "MORE"
-    TYPE_UNKNOWN  = "UNKNOWN"
+    TYPE_CATEGORY  = "CATEGORY"
+    TYPE_VIDEO     = "VIDEO"
+    TYPE_AUDIO     = "AUDIO"
+    TYPE_SEARCH    = "SEARCH"
+    TYPE_ARTICLE   = "ARTICLE"
+    TYPE_PICTURE   = "PICTURE"
+    TYPE_MORE      = "MORE"
+    TYPE_PICTURE   = "PICTURE"
+    TYPE_SUBTITLE      = "SUBTITLE"
+    TYPE_SUB_PROVIDER  = "SUB_PROVIDER"
+    TYPE_UNKNOWN       = "UNKNOWN"
     
     def __init__(self, name = "", \
                 description = "", \

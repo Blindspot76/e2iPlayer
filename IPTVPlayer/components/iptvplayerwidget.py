@@ -65,6 +65,9 @@ from Plugins.Extensions.IPTVPlayer.components.cover import Cover, Cover3
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
 
+# SULGE TEMP
+# from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
+
 ######################################################
 gDownloadManager = None
 
@@ -239,10 +242,10 @@ class IPTVPlayerWidget(Screen):
         #################################################################
        
         # register function in main Queue
-        if None == asynccall.gMainFunctionsQueue:
-            asynccall.gMainFunctionsQueue = asynccall.CFunctionProxyQueue(self.session)
-        asynccall.gMainFunctionsQueue.clearQueue()
-        asynccall.gMainFunctionsQueue.setProcFun(self.doProcessProxyQueueItem)
+        if None == asynccall.gMainFunctionsQueueTab[0]:
+            asynccall.gMainFunctionsQueueTab[0] = asynccall.CFunctionProxyQueue(self.session)
+        asynccall.gMainFunctionsQueueTab[0].clearQueue()
+        asynccall.gMainFunctionsQueueTab[0].setProcFun(self.doProcessProxyQueueItem)
 
         #main Queue
         self.mainTimer = eTimer()
@@ -319,8 +322,8 @@ class IPTVPlayerWidget(Screen):
             printExc()
 
         try:
-            asynccall.gMainFunctionsQueue.setProcFun(None)
-            asynccall.gMainFunctionsQueue.clearQueue()
+            asynccall.gMainFunctionsQueueTab[0].setProcFun(None)
+            asynccall.gMainFunctionsQueueTab[0].clearQueue()
             iptv_system('echo 1 > /proc/sys/vm/drop_caches')
         except:
             printExc()
@@ -406,7 +409,7 @@ class IPTVPlayerWidget(Screen):
 
     def processProxyQueue(self):
         if None != self.mainTimer:
-            asynccall.gMainFunctionsQueue.processQueue()
+            asynccall.gMainFunctionsQueueTab[0].processQueue()
             self.mainTimer.start(self.mainTimer_interval, True)
         return
         
@@ -420,20 +423,20 @@ class IPTVPlayerWidget(Screen):
         except: printExc()
             
     def getArticleContentCallback(self, thread, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("showArticleContent", [thread, ret])
+        asynccall.gMainFunctionsQueueTab[0].addToQueue("showArticleContent", [thread, ret])
         
     def selectHostVideoLinksCallback(self, thread, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("selectMainVideoLinks", [thread, ret])
+        asynccall.gMainFunctionsQueueTab[0].addToQueue("selectMainVideoLinks", [thread, ret])
         
     def getResolvedURLCallback(self, thread, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("selectResolvedVideoLinks", [thread, ret])
+        asynccall.gMainFunctionsQueueTab[0].addToQueue("selectResolvedVideoLinks", [thread, ret])
         
     def callbackGetList(self, addParam, thread, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("reloadList", [thread, {'add_param':addParam, 'ret':ret}])
+        asynccall.gMainFunctionsQueueTab[0].addToQueue("reloadList", [thread, {'add_param':addParam, 'ret':ret}])
         
     # method called from IconMenager when a new icon has been dowlnoaded
     def checkIconCallBack(self, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("displayIcon", [None, ret])
+        asynccall.gMainFunctionsQueueTab[0].addToQueue("displayIcon", [None, ret])
         
     def isInWorkThread(self):
         return None != self.workThread and (not self.workThread.isFinished() or self.workThread.isAlive())
@@ -463,7 +466,11 @@ class IPTVPlayerWidget(Screen):
         self.getRefreshedCurrList()
         return
      
-    def blue_pressed(self):       
+    def blue_pressed(self):
+        # SULGE TEMP
+        #self.session.open(IPTVSubDownloaderWidget, params={'movie_title':'2x3 the walking dead'})
+        #return
+        
         self.stopAutoPlaySequencer()
         options = []
         
@@ -1171,7 +1178,7 @@ class IPTVPlayerWidget(Screen):
             if not self.checkAutoPlaySequencer(): 
                 message = _("No valid links available.")
                 lastErrorMsg = GetIPTVPlayerLastHostError()
-                if '' != lastErrorMsg:  message += "\n" + _('Last error: "%s"' % lastErrorMsg)
+                if '' != lastErrorMsg:  message += "\n" + _('Last error: "%s"') % lastErrorMsg
                 self.session.open(MessageBox, message, type=MessageBox.TYPE_INFO, timeout=10 )
             return
         elif 1 == numOfLinks or self.autoPlaySeqStarted:
@@ -1647,7 +1654,7 @@ class IPTVPlayerWidget(Screen):
         return index, cItem
         
     def getFavouriteItemCallback(self, thread, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("handleFavouriteItemCallback", [thread, ret])
+        asynccall.gMainFunctionsQueueTab[0].addToQueue("handleFavouriteItemCallback", [thread, ret])
         
     def handleFavouriteItemCallback(self, ret):
         printDBG("IPTVPlayerWidget.handleFavouriteItemCallback")
@@ -1695,7 +1702,7 @@ class IPTVPlayerWidget(Screen):
             self.requestListFromHost('PerformCustomAction', -1, ret.privateData)
             
     def performCustomActionCallback(self, thread, ret):
-        asynccall.gMainFunctionsQueue.addToQueue("handlePerformCustomActionCallback", [thread, ret])
+        asynccall.gMainFunctionsQueueTab[0].addToQueue("handlePerformCustomActionCallback", [thread, ret])
             
     def handlePerformCustomActionCallback(self, ret):
         printDBG("IPTVPlayerWidget.handlePerformCustomActionCallback")
