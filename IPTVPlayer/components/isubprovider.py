@@ -174,7 +174,8 @@ class CSubProviderBase(ISubProvider):
 class CBaseSubProviderClass:
     
     def __init__(self, params={}):
-        self.TMP_FILE_NAME = '.iptv_subtitles.org'
+        self.TMP_FILE_NAME = '.iptv_subtitles.file'
+        self.TMP_DIR_NAME  = '/.iptv_subtitles.dir/'
         self.sessionEx = MainSessionWrapper(mainThreadIdx=1) 
         
         proxyURL = params.get('proxyURL', '')
@@ -247,15 +248,18 @@ class CBaseSubProviderClass:
         self.currList.append(params)
         return
         
+    def getMainUrl(self):
+        return self.MAIN_URL
+        
     def getFullUrl(self, url):
         if url.startswith('//'):
             url = 'http:' + url
         elif url.startswith('://'):
             url = 'http' + url
         elif url.startswith('/'):
-            url = self.MAIN_URL + url[1:]
+            url = self.getMainUrl() + url[1:]
         elif 0 < len(url) and '://' not in url:
-            url =  self.MAIN_URL + url
+            url =  self.getMainUrl() + url
         return url
     
     def handleService(self, index, refresh=0):
@@ -351,11 +355,24 @@ class CBaseSubProviderClass:
             item = '<a ' + item[2]
             if '(Video Game)' in item: continue
             imdbid = self.cm.ph.getSearchGroups(item, '/tt([0-9]+?)/')[0]
+            baseTtitle = ' '.join( self.cm.ph.getAllItemsBeetwenMarkers(item, '<a ', '</a>') )
             #title = title.split('<br/>')[0]
             title = self.cleanHtmlStr(item)
+            year = self.cm.ph.getSearchGroups(item, '\((20[0-9]{2})\)')[0]
+            if '' == year: year = self.cm.ph.getSearchGroups(item, '\((20[0-9]{2})\)')[0]
             if title.endswith('-'): title = title[:-1].strip()
-            list.append({'title':title, 'imdbid':imdbid})
+            list.append({'title':title, 'base_title':self.cleanHtmlStr(baseTtitle), 'year':year, 'imdbid':imdbid})
         return True, list
+        
+    def imdbGetOrginalByTitle(self, imdbid):
+        printDBG('CBaseSubProviderClass.imdbGetOrginalByTitle imdbid[%s]' % (imdbid))
+        
+        if not imdbid.startswith('tt'): imdbid = 'tt' + imdbid
+        sts, data = self.cm.getPage('http://www.imdb.com/title/' + imdbid)
+        if not sts: return False, {}
+        title = self.cm.ph.getSearchGroups(data, '''<meta property='og:title' content="([^\(^"]+?)["\(]''')[0].strip()
+        return True, {'title':title}
+        
         
     def getTypeFromThemoviedb(self, imdbid, title):
         if '(TV Series)' in title:

@@ -58,15 +58,15 @@ class IPTVSubDownloaderWidget(Screen):
                             <ePixmap position="5,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <widget render="Label" source="key_red" position="45,9" size="140,32" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;32" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget name="headertext" position="15,55" zPosition="1" size="1080,30" font="Regular;30" transparent="1" backgroundColor="#00000000" />
-                            <widget name="statustext" position="15,148" zPosition="1" size="985,90" font="Regular;30" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
+                            <widget name="statustext" position="15,148" zPosition="1" size="1080,180" font="Regular;30" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
                             <widget name="list" position="5,115" zPosition="2" size="860,690" enableWrapAround="1" scrollbarMode="showOnDemand" transparent="1" backgroundColor="#00000000" />
                             <widget name="console" position="5,310" zPosition="1" size="860,630" font="Regular;26" transparent="1" backgroundColor="#00000000" />
                             <ePixmap zPosition="4" position="5,395" size="1080,5" pixmap="%s" transparent="1" />
-                            <widget name="spinner"   zPosition="2" position="463,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_1" zPosition="1" position="463,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_2" zPosition="1" position="479,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_3" zPosition="1" position="495,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_4" zPosition="1" position="511,200" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner"   zPosition="2" position="508,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_1" zPosition="1" position="508,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_2" zPosition="1" position="524,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_3" zPosition="1" position="540,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_4" zPosition="1" position="556,240" size="16,16" transparent="1" alphatest="blend" />
                     </screen>
                 """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('line.png'))
     else:
@@ -75,15 +75,15 @@ class IPTVSubDownloaderWidget(Screen):
                             <ePixmap position="30,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <widget render="Label" source="key_red"    position="65,9"  size="210,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget name="headertext" position="5,47" zPosition="1" size="1080,23" font="Regular;20" transparent="1" backgroundColor="#00000000" />
-                            <widget name="statustext" position="5,140" zPosition="1" size="985,90" font="Regular;20" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
+                            <widget name="statustext" position="5,140" zPosition="1" size="1080,180" font="Regular;20" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
                             <widget name="list" position="5,100" zPosition="2" size="1080,280" enableWrapAround="1" scrollbarMode="showOnDemand" transparent="1" backgroundColor="#00000000" />
                             <widget name="console" position="5,430" zPosition="1" size="1080,140" font="Regular;20" transparent="1" backgroundColor="#00000000" />
                             <ePixmap zPosition="4" position="5,395" size="1080,5" pixmap="%s" transparent="1" />
-                            <widget name="spinner"   zPosition="2" position="463,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_1" zPosition="1" position="463,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_2" zPosition="1" position="479,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_3" zPosition="1" position="495,200" size="16,16" transparent="1" alphatest="blend" />
-                            <widget name="spinner_4" zPosition="1" position="511,200" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner"   zPosition="2" position="508,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_1" zPosition="1" position="508,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_2" zPosition="1" position="524,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_3" zPosition="1" position="540,240" size="16,16" transparent="1" alphatest="blend" />
+                            <widget name="spinner_4" zPosition="1" position="556,240" size="16,16" transparent="1" alphatest="blend" />
                     </screen>
                 """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('line.png'))
         
@@ -551,6 +551,7 @@ class IPTVSubDownloaderWidget(Screen):
             lastErrorMsg = GetIPTVPlayerLastHostError()
             if lastErrorMsg != '':
                 disMessage += "\n" + _('Last error: "%s"') % lastErrorMsg
+            disMessage += '\n\n' + _('Simplify the title and try again.')
             
             self["statustext"].setText(disMessage)
             self["list"].hide()
@@ -571,16 +572,25 @@ class IPTVSubDownloaderWidget(Screen):
         subProvidersList = []
         subProvidersList.append({'title':_("OpenSubtitles.org"), 'sub_provider':'opensubtitlesorg'})
         subProvidersList.append({'title':_("Napisy24.pl"),       'sub_provider':'napisy24pl'      })
+        subProvidersList.append({'title':_("Titlovi.com"),       'sub_provider':'titlovicom'      })
+        
         self.currList = []
         for item in subProvidersList:
             params = CDisplayListItem(item['title'], item.get('desc', ''), CDisplayListItem.TYPE_SUB_PROVIDER)
             params.privateData = {'sub_provider':item['sub_provider']}
             self.currList.append(params)
+            
+        idx = 0
+        selIndex = 0
+        for idx in range(len(self.currList)):
+            if self.hostName == self.currList[idx].privateData['sub_provider']:
+                selIndex = idx
+                break
         
         self["list"].setList([ (x,) for x in self.currList])
         #restor previus selection
-        if len(self.currList) > self.nextSelIndex:
-            self["list"].moveToIndex(self.nextSelIndex)
+        if len(self.currList) > selIndex:
+            self["list"].moveToIndex(selIndex)
         self.changeBottomPanel()
         self["headertext"].setText(self.getCategoryPath())
         self["statustext"].setText("")            
