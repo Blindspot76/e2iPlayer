@@ -225,11 +225,11 @@ class Kinoman(CBaseHostClass):
 
     def getHostTable(self, url, vip=False):
         printDBG("getHostTable VIP[%s]" % vip)
-        if vip and 'premium' not in url:
-            url = url.replace('kinoman.tv', 'premium.kinoman.tv')
-            MAINURL = self.PREMIUM_MAINURL
-        else:
-            MAINURL = self.MAINURL
+        #if vip and 'premium' not in url:
+        #    url = url.replace('kinoman.tv', 'premium.kinoman.tv')
+        #    MAINURL = self.PREMIUM_MAINURL
+        #else:
+        MAINURL = self.MAINURL
         videoTab = []
         http_params = {'header': self.HEADER, }
         if vip: 
@@ -258,19 +258,22 @@ class Kinoman(CBaseHostClass):
                     sts, data = self.cm.getPage(MAINURL+'/players/get', http_params, post_data)
                     if not sts:
                         continue
+                    printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
                     printDBG(data)
-                    
-                    url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
-                    printDBG("Kinoman getHostTable[%s]" % url)
-                    if '' != url:
-                        tmpTab = self.up.getVideoLinkExt( url )
-                        for item in tmpTab:
-                            item['name'] = playerTitle + ' ' + item['name']
-                        videoTab.extend(tmpTab)
-                    else:
+                    printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+                    if vip:
                         url = self.cm.ph.getSearchGroups(data, "ShowNormalPlayer.+?'(.+?)',")[0]
                         if url:
                             videoTab.append({'name': playerTitle + ' vip', 'url': self.up.decorateUrl(url, {'Referer':'http://www.kinoman.tv/assets/kinoman.tv/swf/flowplayer-3.2.7.swf'})})
+                    else:
+                        url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+                        printDBG("Kinoman getHostTable[%s]" % url)
+                        if '' != url:
+                            tmpTab = self.up.getVideoLinkExt( url )
+                            for item in tmpTab:
+                                item['name'] = playerTitle + ' ' + item['name']
+                            videoTab.extend(tmpTab)
+
         return videoTab
         
     def tryTologinTmp(self, protocol='http'):
