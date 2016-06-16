@@ -4927,24 +4927,16 @@ class pageParser:
     def parserOPENLOADIO(self, baseUrl):
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl}
-        if '/f/' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9_-]{11})[/~]')[0]
-            if 'openload.co' in baseUrl:
-                url = 'https://openload.co/f/' + video_id
-            else:
-                url = 'https://openload.io/f/' + video_id
-        else:
-            url = baseUrl
-        refUrl = url
         
-        
-        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts:
-            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
-            data = iptv_execute()( cmd )
-            printDBG(data)
-            if not data['sts'] or 0 != data['code']: return False
-            data = data['data']
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+               'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+               'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+               'Accept-Encoding': 'none',
+               'Accept-Language': 'en-US,en;q=0.8',
+               'Referer':baseUrl} #'Connection': 'keep-alive'           
+
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
         
         subTracksData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track ', '>', False, False)
         subTracks = []
@@ -5034,24 +5026,24 @@ class pageParser:
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script type="text/javascript">ﾟωﾟ', '</script>', withMarkers=False, caseSensitive=False)
         for item in data:
             try:
-                tmp = decodeOpenLoad('ﾟωﾟ' + item)
+                tmp = decodeOpenLoad(item)
                 printDBG(tmp)
                 tmp = self.cm.ph.getSearchGroups(tmp, r"(http[^\}]+)", ignoreCase=True)[0]
-
-                if '/dl/' not in tmp and tmp.startswith('http'):
-                    sts, response = self.cm.getPage(tmp, {'header':HTTP_HEADER, 'return_data':False})
-                    tmp = response.geturl()
+                if tmp.startswith('http'): 
+                    videoUrl = tmp.replace('\\/', '/')
+                    sts, response = self.cm.getPage(tmp, {'return_data':False, 'header':HTTP_HEADER})
+                    size = int(response.headers['Content-Length'])
+                    videoUrl = response.geturl()
                     response.close()
-                if '/dl/' in tmp:
-                    videoUrl = tmp                    
-                    break
-            except:
+                    
+                    if size < 40 * 1024 * 1024:
+                        SetIPTVPlayerLastHostError('The openload.co rejects to many connections one by one.\nWait some time and try again.')
+                        continue
+                    params = dict(HTTP_HEADER)
+                    params['external_sub_tracks'] = subTracks
+                    return urlparser.decorateUrl(videoUrl, params)
+            except Exception:
                 printExc()
-                SetIPTVPlayerLastHostError( self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead">', '</p>', False)[1] )
-                return False
-        if videoUrl.startswith('http'): 
-            videoUrl = videoUrl.replace('\\/', '/')
-            return urlparser.decorateUrl(videoUrl, {'Referer':refUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'external_sub_tracks':subTracks})
         return False
         
     def parserGAMETRAILERS(self, baseUrl):
