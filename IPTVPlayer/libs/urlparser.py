@@ -1012,11 +1012,16 @@ class pageParser:
             
             tmpData = self.cm.ph.getDataBeetwenMarkers(pageData, "eval(", '</script>', False)[1]
             if tmpData != '':
-                tmpData = unpackJSPlayerParams(tmpData, TEAMCASTPL_decryptPlayerParams, 0)
+                m1 = '$.get' 
+                if m1 in tmpData:
+                    tmpData = tmpData[:tmpData.find(m1)].strip() + '</script>'
+                try: tmpData = unpackJSPlayerParams(tmpData, TEAMCASTPL_decryptPlayerParams, 0, True, True)
+                except Exception: pass
+                #printDBG(tmpData)
             tmpData += pageData
                 
-            data = CParsingHelper.getDataBeetwenMarkers(tmpData, "modes:", ']', False)[1]
-            data = re.compile("""file: ['"]([^'^"]+?)['"]""").findall(data)
+            data = CParsingHelper.getDataBeetwenReMarkers(tmpData, re.compile('''modes['"]?[\s]*:'''), re.compile(']'), False)[1]
+            data = re.compile("""file:[\s]*['"]([^'^"]+?)['"]""").findall(data)
             if 0 < len(data) and data[0].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' flv', 'url':_decorateUrl(data[0], 'cda.pl', urlItem['url']) } )
             if 1 < len(data) and data[1].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data[1], 'cda.pl', urlItem['url']) } )
             if 0 == len(data):
