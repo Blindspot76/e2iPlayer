@@ -92,7 +92,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
                     endTag    = False
                     codingTag = False
                 else: 
-                    raise BaseException("Not expected < stage[%s] idx[%d]\n========================%s\n" % (stage, idx, data[idx:]))
+                    raise Exception("Not expected < stage[%s] idx[%d]\n========================%s\n" % (stage, idx, data[idx:]))
             elif 'tag' == stage:
                 if True not in [startTag, endTag, codingTag]:
                     if '/' == it:
@@ -106,7 +106,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
                     if '>' == it:
                         if startTag:
                             if 0 == len(tagName): 
-                                raise BaseException("Empty tag name detected")
+                                raise Exception("Empty tag name detected")
                             tagsStack.append(tagName)
                             text = ''
                             if  '/' != tagName[-1]:
@@ -116,7 +116,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
                                 endTag = True
                         if endTag:
                             if tagName != tagsStack[-1]: 
-                                raise BaseException("End not existing start tag [%s][%s]" % (tagName, tagsStack[-1]))
+                                raise Exception("End not existing start tag [%s][%s]" % (tagName, tagsStack[-1]))
                             del tagsStack[-1]
                             if tagName == 'name':
                                 name  = text
@@ -140,7 +140,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
                 text += it
                 
         if 0 != len(tagsStack): 
-            raise BaseException("Some tags have not been ended")
+            raise Exception("Some tags have not been ended")
         return retJson
         
     def _rpcMethodCall(self, method, paramsList=[]):
