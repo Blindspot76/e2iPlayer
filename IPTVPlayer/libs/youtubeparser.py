@@ -283,8 +283,11 @@ class YouTubeParser():
             url = 'http://www.youtube.com/results?search_query=%s&filters=%s&search_sort=%s&page=%s' % (pattern, searchType, sortBy, page) 
             sts,data =  self.cm.getPage(url, {'host': self.HOST})
             if sts:
-                if data.find('data-page="%d"' % (int(page) + 1)) > -1: nextPage = True
-                else: nextPage = False
+                nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'page-box', '</div>', False)[1]
+                if nextPage.find('>%d<' % (int(page) + 1)) > -1: 
+                    nextPage = True
+                else: 
+                    nextPage = False
         
                 sts,data = CParsingHelper.getDataBeetwenMarkers(data, '<li><div class="yt-lockup', '</ol>', False)
                 
@@ -293,7 +296,7 @@ class YouTubeParser():
                 
                 currList = self.parseListBase(data, searchType)
         
-                if nextPage:
+                if len(currList) and nextPage:
                     item = {'name': 'history', 'type': 'category', 'category': nextPageCategory, 'pattern':pattern, 'search_type':searchType, 'title': _("Next page"), 'page': str(int(page) + 1)}
                     currList.append(item)
         except:
