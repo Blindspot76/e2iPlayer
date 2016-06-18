@@ -189,80 +189,14 @@ class TitlovicomProvider(CBaseSubProviderClass):
         imdbid = self.cm.ph.getSearchGroups(data, '/title/(tt[0-9]+?)[^0-9]')[0]
         subId  = self.cm.ph.getSearchGroups(data, 'mediaid=([0-9]+?)[^0-9]')[0]
         url    = self.cm.ph.getSearchGroups(data, 'href="([^"]+?/downloads/[^"]+?mediaid=[^"]+?)"')[0]
-        ext = 'zip'
-        
+
         urlParams = dict(self.defaultParams)
-        urlParams['return_data'] = False
-        try:
-            fileSize = self.getMaxFileSize()
-            sts, response = self.cm.getPage(url, urlParams)
-            ext = response.info()['Content-Disposition'].split('.')[-1].lower()
-            data = response.read(fileSize)
-            response.close()
-        except Exception:
-            printExc()
-            return
+        tmpDIR = self.downloadAndUnpack(url, urlParams)
+        if None == tmpDIR: return
         
-        if ext not in ['zip', 'rar']:
-            SetIPTVPlayerLastHostError(_('Unknown file extension "%s".') % ext)
-            return
-            
-        tmpFile = GetTmpDir( self.TMP_FILE_NAME )
-        tmpFileZip = tmpFile + '.' + ext
-        tmpDIR = GetTmpDir(self.TMP_DIR_NAME)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        printDBG(tmpFile)
-        printDBG(tmpFileZip)
-        printDBG(tmpDIR)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        try:
-            with open(tmpFileZip, 'w') as f:
-                f.write(data)
-        except Exception:
-            printExc()
-            SetIPTVPlayerLastHostError(_('Failed to write file "%s".') % tmpFileZip)
-            return
-        
-        rmtree(tmpDIR, ignore_errors=True)
-        if not mkdirs(tmpDIR):
-            SetIPTVPlayerLastHostError(_('Failed to create directory "%s".') % tmpDIR)
-            return
-        if ext == 'zip':
-            cmd = "unzip -o '{0}' -d '{1}' 2>/dev/null".format(tmpFileZip, tmpDIR)
-            printDBG("cmd[%s]" % cmd)
-            ret = self.iptv_execute(cmd)
-            if not ret['sts'] or 0 != ret['code']:
-                #mkdirs(tmpDIR)
-                #rm(tmpFileZip)
-                message = _('Unzip error code[%s].') % ret['code']
-                if str(ret['code']) == str(127):
-                    message += '\n' + _('It seems that unzip utility is not installed.')
-                elif str(ret['code']) == str(9):
-                    message += '\n' + _('Wrong format of zip archive.')
-                SetIPTVPlayerLastHostError(message)
-                return
-        else:
-            cmd = "unrar e -o+ -y '{0}' '{1}' 2>/dev/null".format(tmpFileZip, tmpDIR)
-            printDBG("cmd[%s]" % cmd)
-            ret = self.iptv_execute(cmd)
-            if not ret['sts'] or 0 != ret['code']:
-                #mkdirs(tmpDIR)
-                #rm(tmpFileZip)
-                message = _('Unrar error code[%s].') % ret['code']
-                if str(ret['code']) == str(127):
-                    message += '\n' + _('It seems that unrar utility is not installed.')
-                elif str(ret['code']) == str(9):
-                    message += '\n' + _('Wrong format of rar archive.')
-                SetIPTVPlayerLastHostError(message)
-                return
-        
-        # list files
-        for file in os_listdir(tmpDIR):
-            if file.lower().endswith(".srt"):
-                path = os_path.join(tmpDIR, file)
-                params = dict(cItem)
-                params.update({'path':path, 'title':os_path.splitext(file)[0], 'imdbid':imdbid, 'sub_id':subId})
-                self.addSubtitle(params)
+        cItem = dict(cItem)
+        cItem.update({'category':'', 'path':tmpDIR, 'imdbid':imdbid, 'sub_id':subId})
+        self.listSupportedFilesFromPath(cItem)
             
     def _getFileName(self, title, lang, subId, imdbid):
         title = RemoveDisallowedFilenameChars(title).replace('_', '.')
@@ -274,55 +208,24 @@ class TitlovicomProvider(CBaseSubProviderClass):
         return fileName
             
     def downloadSubtitleFile(self, cItem):
-        printDBG("TitlovicomProvider.downloadSubtitleFile")
+        printDBG("SubsceneComProvider.downloadSubtitleFile")
         retData = {}
         title    = cItem['title']
         lang     = cItem['lang']
         subId    = cItem['sub_id']
         imdbid   = cItem['imdbid']
-        path     = cItem['path']
+        inFilePath = cItem['file_path']
         
-        fileName = self._getFileName(title, lang, subId, imdbid)
-        fileName = GetSubtitlesDir(fileName)
+        outFileName = self._getFileName(title, lang, subId, imdbid)
+        outFileName = GetSubtitlesDir(outFileName)
         
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        printDBG(path)
-        printDBG(fileName)
+        printDBG(inFilePath)
+        printDBG(outFileName)
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            
-        # detect encoding
-        cmd = '%s "%s"' % (config.plugins.iptvplayer.uchardetpath.value, path)
-        ret = self.iptv_execute(cmd)
-        if ret['sts'] and 0 == ret['code']:
-            encoding = MapUcharEncoding(ret['data'])
-            if 0 != ret['code'] or 'unknown' in encoding:
-                encoding = ''
-            else: encoding = encoding.strip()
         
-        if GetDefaultLang() == 'pl' and encoding == 'iso-8859-2':
-            encoding = GetPolishSubEncoding(tmpFile)
-        elif '' == encoding:
-            encoding = 'utf-8'
-            
-        # convert file to UTF-8
-        try:
-            with open(path) as f:
-                data = f.read()
-            try:
-                data = data.decode(encoding).encode('UTF-8')
-                try:
-                    with open(fileName, 'w') as f:
-                        f.write(data)
-                    retData = {'title':title, 'path':fileName, 'lang':lang, 'imdbid':imdbid, 'sub_id':subId}
-                except Exception:
-                    printExc()
-                    SetIPTVPlayerLastHostError(_('Failed to write the file "%s".') % fileName)
-            except Exception:
-                printExc()
-                SetIPTVPlayerLastHostError(_('Failed to convert the file "%s" to UTF-8.') % path)
-        except Exception:
-            printExc()
-            SetIPTVPlayerLastHostError(_('Failed to open the file "%s".') % path)
+        if self.converFileToUtf8(inFilePath, outFileName, lang):
+            retData = {'title':title, 'path':outFileName, 'lang':lang, 'imdbid':imdbid, 'sub_id':subId}
         
         return retData
     

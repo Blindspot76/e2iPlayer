@@ -4,18 +4,20 @@
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_execute
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetTmpDir, \
+                                                          MapUcharEncoding, GetPolishSubEncoding, GetUchardetPath, GetDefaultLang, \
+                                                          rm, rmtree, mkdirs
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 
 from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, RetHost
 
 import re
 import urllib
-
+from os import listdir as os_listdir, path as os_path
 
 class CSubItem:
     def __init__(self, path = "", \
@@ -211,6 +213,7 @@ class CBaseSubProviderClass:
     @staticmethod 
     def cleanHtmlStr(str):
         str = str.replace('<', ' <')
+        str = str.replace('&nbsp;', ' ')
         str = clean_html(str)
         str = str.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
         return CParsingHelper.removeDoubles(str, ' ').strip()
@@ -397,4 +400,137 @@ class CBaseSubProviderClass:
         except Exception:
             printExc()
         return itemType
+    
+    def downloadAndUnpack(self, url, params={}, post_data=None):
+        data, fileName = self.downloadFileData(url, params, post_data)
+        if data == None:
+            return None
+        ext = fileName.split('.')[-1].lower()
+        if ext not in ['zip', 'rar']:
+            SetIPTVPlayerLastHostError(_('Unknown file extension "%s".') % ext)
+            return None
+            
+        tmpFile = GetTmpDir( self.TMP_FILE_NAME )
+        tmpArchFile = tmpFile + '.' + ext
+        tmpDIR = GetTmpDir(self.TMP_DIR_NAME)
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(fileName)
+        printDBG(tmpFile)
+        printDBG(tmpArchFile)
+        printDBG(tmpDIR)
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+
+        if not self.writeFile(tmpArchFile, data):
+            return None
         
+        if not self.unpackArchive(tmpArchFile, tmpDIR):
+            rm(tmpArchFile)
+            return None
+        return tmpDIR
+    
+    def downloadFileData(self, url, params={}, post_data=None):
+        printDBG('CBaseSubProviderClass.downloadFileData url[%s]' % url)
+        urlParams = dict(params)
+        urlParams['return_data'] = False
+        try:
+            fileSize = self.getMaxFileSize()
+            sts, response = self.cm.getPage(url, urlParams, post_data)
+            fileName = response.info()['Content-Disposition']
+            data = response.read(fileSize)
+            response.close()
+            return data, fileName
+        except Exception:
+            printExc()
+        return None, ''
+        
+    def writeFile(self, filePath, data):
+        printDBG('CBaseSubProviderClass.writeFile path[%s]' % filePath)
+        try:
+            with open(filePath, 'w') as f:
+                f.write(data)
+            return True
+        except Exception:
+            printExc()
+            SetIPTVPlayerLastHostError(_('Failed to write file "%s".') % filePath)
+        return False
+        
+    def unpackArchive(self, tmpFile, tmpDIR):
+        printDBG('CBaseSubProviderClass.unpackArchive tmpFile[%s], tmpDIR[%s]' % (tmpFile, tmpDIR))
+        rmtree(tmpDIR, ignore_errors=True)
+        if not mkdirs(tmpDIR):
+            SetIPTVPlayerLastHostError(_('Failed to create directory "%s".') % tmpDIR)
+            return False
+        if tmpFile.endswith('.zip'):
+            cmd = "unzip -o '{0}' -d '{1}' 2>/dev/null".format(tmpFile, tmpDIR)
+            printDBG("cmd[%s]" % cmd)
+            ret = self.iptv_execute(cmd)
+            if not ret['sts'] or 0 != ret['code']:
+                message = _('Unzip error code[%s].') % ret['code']
+                if str(ret['code']) == str(127):
+                    message += '\n' + _('It seems that unzip utility is not installed.')
+                elif str(ret['code']) == str(9):
+                    message += '\n' + _('Wrong format of zip archive.')
+                SetIPTVPlayerLastHostError(message)
+            return True
+        elif tmpFile.endswith('.rar'):
+            cmd = "unrar e -o+ -y '{0}' '{1}' 2>/dev/null".format(tmpFile, tmpDIR)
+            printDBG("cmd[%s]" % cmd)
+            ret = self.iptv_execute(cmd)
+            if not ret['sts'] or 0 != ret['code']:
+                message = _('Unrar error code[%s].') % ret['code']
+                if str(ret['code']) == str(127):
+                    message += '\n' + _('It seems that unrar utility is not installed.')
+                elif str(ret['code']) == str(9):
+                    message += '\n' + _('Wrong format of rar archive.')
+                SetIPTVPlayerLastHostError(message)
+            return True
+        return False
+        
+    def listSupportedFilesFromPath(self, cItem):
+        printDBG('CBaseSubProviderClass.listSupportedFilesFromPath')
+        # list files
+        for file in os_listdir(cItem['path']):
+            filePath = os_path.join(cItem['path'], file)
+            params = dict(cItem)
+            params.update({'file_path':filePath, 'title':os_path.splitext(file)[0]})
+            ext = file.split('.')[-1].lower()
+            if ext == "srt":
+                self.addSubtitle(params)
+            elif ext in ['rar', 'zip']:
+                self.addDir(params)
+                
+    def converFileToUtf8(self, inFile, outFile, lang=''):
+        printDBG('CBaseSubProviderClass.converFileToUtf8 inFile[%s] outFile[%s]' % (inFile, outFile))
+        # detect encoding
+        cmd = '%s "%s"' % (GetUchardetPath(), inFile)
+        ret = self.iptv_execute(cmd)
+        if ret['sts'] and 0 == ret['code']:
+            encoding = MapUcharEncoding(ret['data'])
+            if 0 != ret['code'] or 'unknown' in encoding:
+                encoding = ''
+            else: encoding = encoding.strip()
+        
+        if lang == '':
+            lang = GetDefaultLang() 
+        
+        if lang == 'pl' and encoding == 'iso-8859-2':
+            encoding = GetPolishSubEncoding(tmpFile)
+        elif '' == encoding:
+            encoding = 'utf-8'
+            
+        # convert file to UTF-8
+        try:
+            with open(inFile) as f:
+                data = f.read()
+            try:
+                data = data.decode(encoding).encode('UTF-8')
+                if self.writeFile(outFile, data):
+                    return True
+            except Exception:
+                printExc()
+                SetIPTVPlayerLastHostError(_('Failed to convert the file "%s" to UTF-8.') % inFile)
+        except Exception:
+            printExc()
+            SetIPTVPlayerLastHostError(_('Failed to open the file "%s".') % inFile)
+        return False
+    

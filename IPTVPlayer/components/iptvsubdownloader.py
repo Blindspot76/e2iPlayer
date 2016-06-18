@@ -573,11 +573,21 @@ class IPTVSubDownloaderWidget(Screen):
     def listSubtitlesProviders(self):
         printDBG("IPTVSubDownloaderWidget.listSubtitlesProviders")
         subProvidersList = []
+        napisy24pl    = {'title':_("Napisy24.pl"),       'sub_provider':'napisy24pl'      }
+        openSubtitles = {'title':_("OpenSubtitles.org"), 'sub_provider':'opensubtitlesorg'}
+        titlovi       = {'title':_("Titlovi.com"),       'sub_provider':'titlovicom'      }
+        subscene      = {'title':_("Subscene.com"),      'sub_provider':'subscenecom'     }
+        youtube       = {'title':_("Youtube.com"),       'sub_provider':'youtubecom'      }
+        
         if 'youtube_id' in self.params['url_params'] and '' != self.params['url_params']['youtube_id']:
-            subProvidersList.append({'title':_("Youtube.com"), 'sub_provider':'youtubecom'})
-        subProvidersList.append({'title':_("OpenSubtitles.org"), 'sub_provider':'opensubtitlesorg'})
-        subProvidersList.append({'title':_("Napisy24.pl"),       'sub_provider':'napisy24pl'      })
-        subProvidersList.append({'title':_("Titlovi.com"),       'sub_provider':'titlovicom'      })
+            subProvidersList.append(youtube)
+        if 'pl' == GetDefaultLang(): 
+            subProvidersList.append(napisy24pl)
+        subProvidersList.append(openSubtitles)
+        subProvidersList.append(titlovi)
+        subProvidersList.append(subscene)
+        if 'pl' != GetDefaultLang(): 
+            subProvidersList.append(napisy24pl)
         
         self.currList = []
         for item in subProvidersList:

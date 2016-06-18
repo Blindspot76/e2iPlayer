@@ -235,6 +235,9 @@ def GetPyScriptCmd(name):
                 break
     return cmd
     
+def GetUchardetPath():
+    return config.plugins.iptvplayer.uchardetpath.value
+    
 def GetCookieDir(file = ''):
     cookieDir = '/tmp/'
     tmpDir = config.plugins.iptvplayer.SciezkaCache.value + '/cookies/'
