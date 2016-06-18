@@ -757,7 +757,7 @@ class IPTVExtMoviePlayer(Screen):
         
         printDBG("enableSubtitlesFromFile filePath[%s] encoding[%s]" % (filePath, encoding))
         if None != filePath:
-            lang = CParsingHelper.getSearchGroups(filePath, "_([a-z]{2})_[0-9]+?_[0-9]+?_[0-9]+?(:?\.)$" % '|\.'.join( IPTVSubtitlesHandler.getSupportedFormats() ))[0]
+            lang = CParsingHelper.getSearchGroups(filePath, "_([a-z]{2})_[0-9]+?_[0-9]+?_[0-9]+?(:?\.%s)$" % '|\.'.join( IPTVSubtitlesHandler.getSupportedFormats() ))[0]
             try: currDir, fileName = os_path.split(filePath)
             except: 
                 printExc()
