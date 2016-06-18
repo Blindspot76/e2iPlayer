@@ -122,7 +122,10 @@ class PierwszaTVApi:
         try:
             data = byteify(json.loads(data))
             for idx in range(200):
-                try: item = data[str(idx+1)]
+                try:
+                    if isinstance(data, list):
+                        item = data[idx]
+                    else: item = data[str(idx)] 
                 except Exception: continue
                 printDBG(item)
                 printDBG("===============================================")
