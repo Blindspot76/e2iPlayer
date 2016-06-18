@@ -677,7 +677,9 @@ class IPTVExtMoviePlayer(Screen):
         if self.subHandler['enabled'] and None != self.metaHandler.getSubtitleTrack():
             options.append( IPTVChoiceBoxItem(_('Synchronize'), "", {'other':'synchro'}) )
         if len(self.externalSubTracks):
-            options.append( IPTVChoiceBoxItem(_('Download suggested'), "", {'other':'download_suggested'}) )
+            for item in self.externalSubTracks:
+                title = '[{0}] {1} ({2})'.format(item.get('lang', ''), item['title'], _('Download suggested'))
+                options.append( IPTVChoiceBoxItem(title, "", {'other':'download_suggested', 'track':item}) )
         options.append( IPTVChoiceBoxItem(_('Load'), "", {'other':'load'}) )
         options.append( IPTVChoiceBoxItem(_('Download'), "", {'other':'download'}) )
         self.openChild(boundFunction(self.childClosed, self.selectSubtitleCallback), IPTVChoiceBoxWidget, {'width':600, 'current_idx':currIdx, 'title':_("Select subtitles track"), 'options':options})
@@ -700,8 +702,8 @@ class IPTVExtMoviePlayer(Screen):
                     self.openSubtitlesFromFile()
                 elif option == 'download':
                     self.downloadSub()
-                elif option == 'download_suggested':
-                    self.downloadSub(True)
+                elif option == 'download_suggested' and 'track' in ret:
+                    self.downloadSub([ret['track']])
             elif 'track_id' in ret:
                 self.metaHandler.setEmbeddedSubtileTrackIdx( ret['track_idx'] )
                 self.metaHandler.setSubtitleIdx(-1)
@@ -1486,15 +1488,15 @@ class IPTVExtMoviePlayer(Screen):
         if None != self.delayedClosure and self.childWindowsCount < 1:
             self.delayedClosure()
             
-    def downloadSub(self, simple=False):
+    def downloadSub(self, simpleTracksTab=[]):
         if self.downloader != None:
             url = strwithmeta(self.downloader.getUrl())
         else:
             url = strwithmeta(self.fileSRC)
-        if not simple:
+        if 0 == len(simpleTracksTab):
             self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_url':url, 'movie_title':self.title})
         else:
-            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubSimpleDownloaderWidget, {'movie_url':url, 'movie_title':self.title, 'sub_list':self.externalSubTracks})
+            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubSimpleDownloaderWidget, {'movie_url':url, 'movie_title':self.title, 'sub_list':simpleTracksTab})
         
     def downloadSubCallback(self, ret = None):
         if None != ret:
