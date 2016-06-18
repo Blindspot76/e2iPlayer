@@ -1985,9 +1985,11 @@ class pageParser:
                     
             videoUrls = []
             for item in tmpTab:
-                videoUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':item['url'] })
+                url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
+                videoUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':url})
             for item in dashTab:
-                videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | dash', 'url':item['url']})
+                url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
+                videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | dash', 'url':url})
             return videoUrls
 
         return False

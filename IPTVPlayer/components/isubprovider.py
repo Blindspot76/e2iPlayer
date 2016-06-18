@@ -193,7 +193,7 @@ class CBaseSubProviderClass:
         self.params = params
         
     def getSupportedFormats(self):
-        return ['srt', 'mpl']
+        return ['srt', 'mpl', 'vtt']
         
     def getMaxFileSize(self):
         return 1024 * 1024 * 5 # 5MB, max size of sub file to be download
@@ -233,19 +233,22 @@ class CBaseSubProviderClass:
     def setCurrItem(self, item):
         self.currItem = item
 
-    def addDir(self, params):
+    def addDir(self, params, atTheEnd=True):
         params['type'] = 'category'
-        self.currList.append(params)
+        if atTheEnd: self.currList.append(params)
+        else: self.currList.insert(0, params)
         return
         
-    def addMore(self, params):
+    def addMore(self, params, atTheEnd=True):
         params['type'] = 'more'
-        self.currList.append(params)
+        if atTheEnd: self.currList.append(params)
+        else: self.currList.insert(0, params)
         return
   
-    def addSubtitle(self, params):
+    def addSubtitle(self, params, atTheEnd=True):
         params['type'] = 'subtitle'
-        self.currList.append(params)
+        if atTheEnd: self.currList.append(params)
+        else: self.currList.insert(0, params)
         return
         
     def getMainUrl(self):

@@ -23,6 +23,12 @@ from os import remove as os_remove
 ###################################################
 
 class IPTVSubtitlesHandler:
+    SUPPORTED_FORMATS = ['srt', 'vtt', 'mpl']
+    
+    @staticmethod
+    def getSupportedFormats():
+        return SUPPORTED_FORMATS
+    
     def __init__(self):
         printDBG("IPTVSubtitlesHandler.__init__")
         self.subAtoms = [] 
@@ -194,6 +200,9 @@ class IPTVSubtitlesHandler:
                 with codecs.open(filePath, 'r', encoding, 'replace') as fp:
                     subText = fp.read().encode('utf-8')
                     if filePath.endswith('.srt'):
+                        self.subAtoms = self._srtToAtoms(subText)
+                        sts = True
+                    elif filePath.endswith('.vtt'):
                         self.subAtoms = self._srtToAtoms(subText)
                         sts = True
                     elif filePath.endswith('.mpl'):

@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import urllib, urllib2, re, time
+from urlparse import urlparse, urlunparse
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import *
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import _unquote
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 
-try:
-    import json
-except:
-    import simplejson as json
+try: import json
+except Exception: import simplejson as json
 
 SignAlgoExtractorObj = None
 
@@ -818,6 +817,81 @@ class YoutubeIE(InfoExtractor):
             raise ExtractorError('Invalid URL: %s' % url)
         video_id = mobj.group(2)
         return video_id
+
+    def _get_automatic_captions(self, video_id, webpage=None):
+        sub_tracks = []
+        if None == webpage:
+            url = 'http://www.youtube.com/watch?v=%s&hl=%s&has_verified=1' % (video_id, GetDefaultLang())
+            sts, data = self.cm.getPage(url)
+            if not sts: return sub_tracks
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, ';ytplayer.config =', '};', False)
+        if not sts: return sub_tracks
+        try:
+            player_config = byteify(json.loads(data.strip()+'}'))
+            args = player_config['args']
+            caption_url = args.get('ttsurl')
+            if caption_url:
+                timestamp = args['timestamp']
+                # We get the available subtitles
+                list_params = urllib.urlencode({
+                    'type': 'list',
+                    'tlangs': 1,
+                    'asrs': 1,
+                })
+                list_url = caption_url + '&' + list_params
+                caption_list = self.cm.getPage(list_url)
+                printDBG(caption_list)
+                return sub_lang_list
+                
+                original_lang_node = caption_list.find('track')
+                if original_lang_node is None:
+                    return []
+                original_lang = original_lang_node.attrib['lang_code']
+                caption_kind = original_lang_node.attrib.get('kind', '')
+
+                sub_lang_list = {}
+                for lang_node in caption_list.findall('target'):
+                    sub_lang = lang_node.attrib['lang_code']
+                    sub_formats = []
+                    for ext in self._SUBTITLE_FORMATS:
+                        params = urllib.urlencode({
+                            'lang': original_lang,
+                            'tlang': sub_lang,
+                            'fmt': ext,
+                            'ts': timestamp,
+                            'kind': caption_kind,
+                        })
+                        sub_formats.append({
+                            'url': caption_url + '&' + params,
+                            'ext': ext,
+                        })
+                    sub_lang_list[sub_lang] = sub_formats
+                return sub_lang_list
+            
+            # Some videos don't provide ttsurl but rather caption_tracks and
+            # caption_translation_languages (e.g. 20LmZk1hakA)
+            caption_tracks = args['caption_tracks']
+            caption_translation_languages = args['caption_translation_languages']
+            caption_url = compat_parse_qs(caption_tracks.split(',')[0])['u'][0]
+            parsed_caption_url = urlparse(caption_url)
+            caption_qs = compat_parse_qs(parsed_caption_url.query)
+
+            sub_lang_list = {}
+            for lang in caption_translation_languages.split(','):
+                lang_qs = compat_parse_qs(urllib.unquote_plus(lang))
+                sub_lang = lang_qs.get('lc', [None])[0]
+                if not sub_lang: continue
+                caption_qs.update({
+                    'tlang': [sub_lang],
+                    'fmt': ['vtt'],
+                })
+                sub_url = urlunparse(parsed_caption_url._replace(
+                    query=urllib.urlencode(caption_qs, True)))
+                sub_tracks.append({'title':lang_qs['n'][0].encode('utf-8'), 'url':sub_url, 'lang':sub_lang.encode('utf-8'), 'ytid':len(sub_tracks), 'format':'vtt'})
+        except Exception:
+            printExc()
+        return sub_tracks
         
     def _get_subtitles(self, video_id):
         sub_tracks = []
@@ -826,8 +900,11 @@ class YoutubeIE(InfoExtractor):
             sts, data = self.cm.getPage(url)
             if not sts: return sub_tracks
             
+            encoding = self.cm.ph.getDataBeetwenMarkers(data, 'encoding="', '"', False)[1]
+            
             def getArg(item, name):
-                return self.cm.ph.getDataBeetwenMarkers(item, '%s="' % name, '"', False)[1].encode('utf-8')
+                val = self.cm.ph.getDataBeetwenMarkers(item, '%s="' % name, '"', False)[1]
+                return val.decode(encoding).encode(encoding)
             
             data = data.split('/>')
             for item in data:
@@ -841,7 +918,7 @@ class YoutubeIE(InfoExtractor):
                 title = (name + ' ' + lang_translated).strip()
                 params = {'lang':lang_code, 'v':video_id, 'fmt':'vtt', 'name':name}
                 url = 'https://www.youtube.com/api/timedtext?' + urllib.urlencode(params)
-                sub_tracks.append({'title':title, 'url':url, 'lang':lang_code, 'format':'srt'})
+                sub_tracks.append({'title':title, 'url':url, 'lang':lang_code, 'ytid':id, 'format':'vtt'})
         except:
             printExc()
         printDBG(sub_tracks)

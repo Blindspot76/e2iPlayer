@@ -726,7 +726,9 @@ class IPTVExtMoviePlayer(Screen):
         if fileExists(fileSRC) and not fileSRC.endswith('/.iptv_buffering.flv'):
             try: currDir, tail = os_path.split(fileSRC)
             except: printExc()
-        fileMatch = re.compile("^.*?(:?\.mlp|\.srt)$",  re.IGNORECASE)
+            
+            
+        fileMatch = re.compile("^.*?(:?\.%s)$" % '|\.'.join( IPTVSubtitlesHandler.getSupportedFormats() ),  re.IGNORECASE)
         self.openChild(boundFunction(self.childClosed, self.openSubtitlesFromFileCallback), IPTVFileSelectorWidget, currDir, _("Select subtitles file"), fileMatch)
         
     def openSubtitlesFromFileCallback(self, filePath=None):
@@ -753,7 +755,7 @@ class IPTVExtMoviePlayer(Screen):
         
         printDBG("enableSubtitlesFromFile filePath[%s] encoding[%s]" % (filePath, encoding))
         if None != filePath:
-            lang = CParsingHelper.getSearchGroups(filePath, "_([a-z]{2})_[0-9]+?_[0-9]+?_[0-9]+?(:?\.mlp|\.srt)$")[0]
+            lang = CParsingHelper.getSearchGroups(filePath, "_([a-z]{2})_[0-9]+?_[0-9]+?_[0-9]+?(:?\.)$" % '|\.'.join( IPTVSubtitlesHandler.getSupportedFormats() ))[0]
             try: currDir, fileName = os_path.split(filePath)
             except: 
                 printExc()
@@ -806,9 +808,9 @@ class IPTVExtMoviePlayer(Screen):
                     subFile = ''
                     try:
                         name, ext = os_path.splitext(fileSRC)
-                        for ext in ['.srt', '.mlp']:
-                            if fileExists(name + ext):
-                                subFile = name + ext
+                        for ext in IPTVSubtitlesHandler.getSupportedFormats():
+                            if fileExists(name + '.' + ext):
+                                subFile = name + '.' + ext
                                 break
                     except:
                         printExc()
@@ -1485,10 +1487,14 @@ class IPTVExtMoviePlayer(Screen):
             self.delayedClosure()
             
     def downloadSub(self, simple=False):
-        if not simple:
-            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_title':self.title})
+        if self.downloader != None:
+            url = strwithmeta(self.downloader.getUrl())
         else:
-            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubSimpleDownloaderWidget, {'movie_title':self.title, 'sub_list':self.externalSubTracks})
+            url = strwithmeta(self.fileSRC)
+        if not simple:
+            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_url':url, 'movie_title':self.title})
+        else:
+            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubSimpleDownloaderWidget, {'movie_url':url, 'movie_title':self.title, 'sub_list':self.externalSubTracks})
         
     def downloadSubCallback(self, ret = None):
         if None != ret:

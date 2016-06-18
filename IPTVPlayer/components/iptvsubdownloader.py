@@ -17,6 +17,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvlist import IPTVMainNavigatorL
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Components.Language import language
 from Components.config import config
 ###################################################
@@ -137,6 +138,8 @@ class IPTVSubDownloaderWidget(Screen):
         #Defs
         self.params = dict(params)
         self.params['discover_info'] = self.discoverInfoFromTitle()
+        self.params['movie_url'] = strwithmeta(self.params.get('movie_url', ''))
+        self.params['url_params'] = self.params['movie_url'].meta
         self.movieTitle = self.params['discover_info']['movie_title']
         
         self.workThread = None
@@ -570,6 +573,8 @@ class IPTVSubDownloaderWidget(Screen):
     def listSubtitlesProviders(self):
         printDBG("IPTVSubDownloaderWidget.listSubtitlesProviders")
         subProvidersList = []
+        if 'youtube_id' in self.params['url_params'] and '' != self.params['url_params']['youtube_id']:
+            subProvidersList.append({'title':_("Youtube.com"), 'sub_provider':'youtubecom'})
         subProvidersList.append({'title':_("OpenSubtitles.org"), 'sub_provider':'opensubtitlesorg'})
         subProvidersList.append({'title':_("Napisy24.pl"),       'sub_provider':'napisy24pl'      })
         subProvidersList.append({'title':_("Titlovi.com"),       'sub_provider':'titlovicom'      })
