@@ -11,6 +11,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetTmpDir, \
                                                           MapUcharEncoding, GetPolishSubEncoding, GetUchardetPath, GetDefaultLang, \
                                                           rm, rmtree, mkdirs
+from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 
 from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, RetHost
@@ -195,7 +196,7 @@ class CBaseSubProviderClass:
         self.params = params
         
     def getSupportedFormats(self):
-        return ['srt', 'mpl', 'vtt']
+        return list(IPTVSubtitlesHandler.SUPPORTED_FORMATS)
         
     def getMaxFileSize(self):
         return 1024 * 1024 * 5 # 5MB, max size of sub file to be download

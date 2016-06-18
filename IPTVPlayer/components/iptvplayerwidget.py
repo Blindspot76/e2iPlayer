@@ -66,7 +66,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBox
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
 
 # SULGE TEMP
-# from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
+from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
 
 ######################################################
 gDownloadManager = None
@@ -468,8 +468,8 @@ class IPTVPlayerWidget(Screen):
      
     def blue_pressed(self):
         # SULGE TEMP
-        #self.session.open(IPTVSubDownloaderWidget, params={'movie_title':'2x3 the walking dead'})
-        #return
+        self.session.open(IPTVSubDownloaderWidget, params={'movie_title':'shrek'})
+        return
         
         self.stopAutoPlaySequencer()
         options = []

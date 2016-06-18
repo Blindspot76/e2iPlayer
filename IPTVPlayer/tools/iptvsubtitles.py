@@ -27,7 +27,7 @@ class IPTVSubtitlesHandler:
     
     @staticmethod
     def getSupportedFormats():
-        return SUPPORTED_FORMATS
+        return IPTVSubtitlesHandler.SUPPORTED_FORMATS
     
     def __init__(self):
         printDBG("IPTVSubtitlesHandler.__init__")

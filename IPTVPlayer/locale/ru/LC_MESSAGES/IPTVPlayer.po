@@ -3890,5 +3890,150 @@ msgstr "Адрес украинского прокси-сервер"
 msgid "file://"
 msgstr "путь://"
 
+msgid "An error occurred while writing into: %s"
+msgstr "Произошла ошибка при записи в: %s"
+
+msgid "Top Cartoons"
+msgstr "Лучшие Мультики"
+
+msgid "Anime"
+msgstr "Аниме"
+
+msgid "Cartoon List"
+msgstr "Список мультфильмов"
+
+msgid "only Anime"
+msgstr "Только аниме"
+
+msgid "only Cartoons"
+msgstr "Только мультфильм"
+
+msgid "Views"
+msgstr "Просмотры"
+
+msgid "Preview"
+msgstr "Предварительный просмотр"
+
+msgid ""
+"It seems that the subtitle's provider \"%s\" has crashed. Do you want to "
+"report this problem?"
+msgstr ""
+"Кажется, что поставщик субтитры \"%s\" разбился. Вы хотите, чтобы сообщить о "
+"проблеме?"
+
+msgid "Subtitles \"%s\" downloaded correctly."
+msgstr "Субтитры \"%s\" скачал правильно."
+
+msgid "Do you want to finish?"
+msgstr "Вы хотите, включить субтитры?"
+
+msgid "Season %s"
+msgstr "Время года %s"
+
+msgid "Failed to create directory \"%s\"."
+msgstr "Не удалось создать каталог \"%s\"."
+
+msgid "Unzip error code[%s]."
+msgstr "Распакуйте код ошибки[%s]."
+
+msgid "It seems that unzip utility is not installed."
+msgstr "Создается впечатление, что утилита разархивировать не установлена."
+
+msgid "Wrong format of zip archive."
+msgstr "Неправильный формат почтового архива."
+
+msgid "Unrar error code[%s]."
+msgstr "Unrar код ошибки[%s]."
+
+msgid "It seems that unrar utility is not installed."
+msgstr "Кажется, что unrar утилита не установлена."
+
+msgid "Wrong format of rar archive."
+msgstr "Неправильный формат rar архива."
+
+msgid "Failed to write the file \"%s\"."
+msgstr "Не удалось записать файл \"%s\"."
+
+msgid "Failed to convert the file \"%s\" to UTF-8."
+msgstr "Не удалось преобразовать файлы \"%s\" в UTF-8."
+
+msgid "Failed to open the file \"%s\"."
+msgstr "Не удалось открыть файл \"%s\"."
+
+msgid "Login failed!"
+msgstr "Ошибка входа!"
+
+msgid ""
+"Error message: \"%s\".\n"
+"Error code: \"%s\"."
+msgstr ""
+"Сообщение об ошибке: \"%s\".\n"
+"Код ошибки: \"%s\"."
+
+msgid "Get languages failed!"
+msgstr "Получить языки не удалось!"
+
+msgid "Failed to download subtitle."
+msgstr "Не удалось загрузить субтитры."
+
+msgid "Failed to gzip."
+msgstr "Не удалось gzip."
+
+msgid "Failed to decode to UTF-8."
+msgstr "Не удалось декодировать в UTF-8."
+
+msgid "Failed to write file \"%s\"."
+msgstr "Не удалось записать файл \"%s\"."
+
+msgid "json load error 2"
+msgstr "Ошибка загрузки 2 json"
+
+msgid ""
+"Download subtitles error.\n"
+"wget error code[%d]."
+msgstr ""
+"Ошибка скачать субтитры.\n"
+"wget код ошибки[%d]."
+
+msgid "unzip error - please check if utitlity unzip is available"
+msgstr ""
+"распакуйте ошибка - пожалуйста, проверьте, если утилита распакуйте доступна"
+
+msgid "write error"
+msgstr "ошибка записи"
+
+msgid "decode error"
+msgstr "ошибка декодирования"
+
+msgid "read error"
+msgstr "ошибка чтения"
+
+msgid "gzip error"
+msgstr "ошибка gzip"
+
+msgid "_checkStatus except error"
+msgstr "Проверка статуса, за исключением ошибок"
+
+msgid "Confirm the title of the movie"
+msgstr "Подтвердите название фильма"
+
+msgid "Searching subtitles for \"%s\""
+msgstr "Поиск субтитры для \"%s\""
+
+msgid "Select subtitles provider:"
+msgstr "Выбор провайдера субтитров:"
+
+msgid "OpenSubtitles.org"
+msgstr "Открытые субтитры"
+
+msgid "Napisy24.pl"
+msgstr "Субтитры24"
+
+msgid "Titlovi.com"
+msgstr "Титлы"
+
+msgid "If available you can choose other source."
+msgstr "При наличии вы можете выбрать другой источник."
+
 msgid "Trailers"
 msgstr "Трейлеры"
