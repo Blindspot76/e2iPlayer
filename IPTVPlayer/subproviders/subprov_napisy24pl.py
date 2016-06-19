@@ -85,12 +85,13 @@ class Napisy24plProvider(CBaseSubProviderClass):
                 tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<div class="tbl">', '<div class="clear">')
                 for item in tmp:
                     imdbid = self.cm.ph.getSearchGroups(item, 'data-imdb="(tt[0-9]+?)"')[0]
-                    title  = self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1]
                     url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                    title  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1] )
+                    if title == '': title = self.cleanHtmlStr( urllib.unquote_plus( url.split('/')[-1] ).title() )
                     desc   = item.split('</h2>')[-1]
                     
                     params = dict(cItem)
-                    params.update({'sub_item_type':'series', 'category':nextCategoryMovie, 'title':self.cleanHtmlStr(title), 'url': self.getFullUrl(url), 'imdbid':imdbid, 'desc':self.cleanHtmlStr(desc)})
+                    params.update({'sub_item_type':'series', 'category':nextCategoryMovie, 'title':title, 'url': self.getFullUrl(url), 'imdbid':imdbid, 'desc':self.cleanHtmlStr(desc)})
                     self.addDir(params)
         
         #subtitles items
