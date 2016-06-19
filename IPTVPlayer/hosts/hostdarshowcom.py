@@ -52,16 +52,19 @@ class DarshowCom(CBaseHostClass):
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
     MAIN_URL      = 'http://www.darshow.com/'
-    SEARCH_URL    = MAIN_URL
+    SEARCH_URL    = MAIN_URL + 'index.php?do=search'
     DEFAULT_ICON  = "http://www.darshow.com/templates/style/images/logo.png"
     
-    MAIN_CAT_TAB = [{'category':'search',          'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
+    MAIN_CAT_TAB = [
+                    {'category':'list_items',      'title': _('New series'), 'url':MAIN_URL+'newseries.html', 'icon':DEFAULT_ICON},
+                    {'category':'top',             'title': _('Top'),        'url':MAIN_URL+'topseries.html', 'icon':DEFAULT_ICON},
+                    {'category':'search',          'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
                     {'category':'search_history',  'title': _('Search history'),             'icon':DEFAULT_ICON} ]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'  DarshowCom.tv', 'cookie':'darshowcom.cookie'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        self.cacheSubCategory = []
+        self.cacheSubCategory = {}
         self.cacheLinks = {}
         
     def _getFullUrl(self, url):
@@ -96,109 +99,103 @@ class DarshowCom(CBaseHostClass):
             if type == 'dir':
                 self.addDir(params)
             else: self.addVideo(params)
-            
-    def listsMainMenu(self, cItem, category1, category2):
-        printDBG("DarshowCom.listsMainMenu")
-        self.cacheSubCategory = []
+        
+    def listTop(self, cItem, nextCategory):
+        printDBG("DarshowCom.listTop")
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<nav class="header-nav"', '</nav>')[1]
-        data = data.split('<li class="drop-xs')
-        if len(data): del data[0]
-        
-        for part in data:
-            idx1 = part.find('<ul>')
-            idx2 = part.find('</ul>')
-            if idx1 == -1 or idx2 == -1 or idx2 < idx1:
-                continue
-            tmp      = self.cm.ph.getSearchGroups(part[0:idx1], '''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>([^<]+?)<''', 2)
-            mainUrl  = tmp[0]
-            mainName = self.cleanHtmlStr( tmp[1] )
-            
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(part[idx1:idx2], '<li>', '</li>')
-            tab = []
-            for item in tmp:
-                url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
-                title = self.cleanHtmlStr( item )
-                if not url.startswith('http'):
-                    continue
-                tab.append({'title':title, 'url':url})
-            
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li dir="rtl">', '</li>')
+        for item in data:
+            url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
+            if url == '': continue
+            icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
+            desc  = self.cleanHtmlStr(item)
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<b>', '</b>')[1] )
+            if title == '': title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0] )
             params = dict(cItem)
-            if len(tab):
-                params.update({'category':category1,'title':mainName, 'sub_cat_idx':len(self.cacheSubCategory)})
+            params.update({'category':nextCategory, 'title':title, 'url':url, 'desc':desc, 'icon':icon})
+            self.addDir(params)
+        
+    def listsMainMenu(self, cItem, nextCategory):
+        printDBG("DarshowCom.listsMainMenu")
+        self.cacheSubCategory = {'maincat':{'title':_('Categories'), 'tab':[]}, 'genres':{'title':_('Genres'), 'tab':[]}}
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="menu_body">', '</ul>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li>', '</li>')
+        for item in data:
+            url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
+            title = self.cleanHtmlStr( item )
+            if not url.startswith('http'): continue
+            if 'maincat' in item:
+                key = 'maincat'
+            else: key = 'genres'
+            self.cacheSubCategory[key]['tab'].append({'title':title, 'url':url})
+
+        for key in self.cacheSubCategory:
+            if len(self.cacheSubCategory[key]['tab']):
+                params = dict(cItem)
+                params.update({'category':nextCategory, 'cat_key':key, 'title':self.cacheSubCategory[key]['title']})
                 self.addDir(params)
-                self.cacheSubCategory.append(tab)
-                
-            elif len(mainUrl) and mainUrl[0] != '#':
-                mainUrl = self._getFullUrl( mainUrl )
-                params.update({'category':category2,'title':mainName, 'url':mainUrl})
-                self.addDir(params)
-            
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(part[idx2:], '<li>', '</li>')
-            printDBG("******************************************************")
-            printDBG(tmp)
-            printDBG("******************************************************")
-            for item in tmp:
-                mainUrl  = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0]
-                mainName = self.cleanHtmlStr( item )
-                if mainUrl.startswith('#') or 'feedback' in mainUrl:
-                    continue
-                if len(mainUrl):
-                    params = dict(cItem)
-                    params.update({'category':category2, 'title':mainName, 'url':self._getFullUrl( mainUrl )})
-                    self.addDir(params)
         
     def listCategories(self, cItem, nextCategory):
         printDBG("DarshowCom.listCategories")
-        if 'sub_cat_idx' not in cItem: return
-        idx = cItem['sub_cat_idx']
-        if idx > -1 and idx < len(self.cacheSubCategory):
-            cItem = dict(cItem)
-            cItem['category'] = nextCategory
-            self.listsTab(self.cacheSubCategory[idx], cItem)
-            
+        key = cItem['cat_key']
+        tab = self.cacheSubCategory[key]['tab']
+        cItem = dict(cItem)
+        cItem['category'] = nextCategory
+        self.listsTab(tab, cItem)
+        
     def listItems(self, cItem, nextCategory='explore_item'):
         printDBG("DarshowCom.listItems")
         page      = cItem.get('page', 1)
         post_data = cItem.get('post_data', None) 
         url       = cItem['url'] 
         
+        if page > 1:
+            if post_data != None:
+                post_data['search_start'] = page
+        
         sts, data = self.cm.getPage(url, {}, post_data)
         if not sts: return
         
-        nextPageUrl = self.cm.ph.getDataBeetwenMarkers(data, '<span class="navigation">', '</div>', False)[1]
-        nextPageUrl = self.cm.ph.getSearchGroups(nextPageUrl, '<a[^>]+?href="([^"]+?)">%s</a>' % (page+1))[0]
-        if '#' == nextPageUrl:
-            if '&' in url and post_data == None:
-                nextPageUrl = url.split('&search_start')[0] + '&search_start=%s' % (page+1)
-            elif post_data != None:
-                nextPageUrl = url
+        mp = '<div class="navigation">'
+        if mp not in data: mp = 'next-page'
+        nextPageUrl = self.cm.ph.getDataBeetwenMarkers(data, mp, '</div>', False)[1]
+        printDBG('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+        printDBG(nextPageUrl)
+        printDBG('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+        if ('/{0}/'.format(page+1)) in nextPageUrl:
+            nextPageUrl = self.cm.ph.getSearchGroups(nextPageUrl, '''href=['"]([^"^']+?)['"]''')[0]
+        else: nextPageUrl = '#'
         
-        m1   = '<div class="new_movie'
-        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '</article>')[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</section>')
+        m1   = '<div class="shortmail">'
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, 'container-content')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</span></span>')
         for item in data:
-            title = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, 'class="title-shorts">', '<', False)[1] )
+            if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, 'dir="rtl">', '<', False)[1] )
+            if title == '': title = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]
+            if 'serie_title' in cItem: title = cItem['serie_title'] + ' - ' + title
+
             icon  =  self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
-            if icon.startswith('['): 
-                icon = ''
-            else:
-                icon = self._getFullUrl( icon )
+            if icon.startswith('['):  icon = ''
+            else: icon = self._getFullUrl( icon )
             url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
             if url.startswith('http'):
-                params = dict(cItem)
-                params.update({'title':self.cleanHtmlStr(title), 'url':url, 'icon':icon, 'desc':''})
+                params = {}
+                params.update({'title':self.cleanHtmlStr(title), 'url':url, 'icon':icon, 'desc':self.cleanHtmlStr(item)})
                 if nextCategory != 'video':
                     params['category'] = nextCategory
                     self.addDir(params)
                 else:
                     self.addVideo(params)
         
-        if nextPageUrl.startswith('http'):
+        if nextPageUrl != '#':
             params = dict(cItem)
-            params.update({'title':_('Next page'), 'page':cItem.get('page', 1)+1, 'url':self._getFullUrl(nextPageUrl)})
+            params.update({'title':_('Next page'), 'url':nextPageUrl, 'page':page+1})
             self.addDir(params)
             
     def exploreItem(self, cItem, category):
@@ -207,14 +204,16 @@ class DarshowCom(CBaseHostClass):
         if not sts: return
         
         params = dict(cItem)
-        params['title'] = _('Trailer')
+        params.update({'title':_('Trailer'), 'trailer':True})
         self.addVideo(params)
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="article-head">', '<div role="tabpanel">', False)[1]
+        url  = self._getFullUrl( self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://on\.[^"^']+?)['"][^>]*?btn_showmore1''')[0] )
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="leftxlbar">', '<div class="fullin', False)[1]
         icon = self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?)['"]''')[0]
-        url  = self._getFullUrl( self.cm.ph.getSearchGroups(data, '''href=['"](https?://on\.[^"^']+?)['"]''')[0] )
+        
         params = dict(cItem)
-        params.update({'title':_('Episodes'), 'url':url, 'category':category, 'icon':icon, 'desc':self.cleanHtmlStr(data)})
+        params.update({'title':_('Episodes'), 'serie_title': cItem['title'], 'url':url, 'category':category, 'icon':icon, 'desc':self.cleanHtmlStr(data)})
         self.addDir(params)
     
     def getLinksForVideo(self, cItem):
@@ -224,24 +223,27 @@ class DarshowCom(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return []
         
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="tabs-wr">', '<div class="fullin">')[1]
+        
         # get tabs names
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<li id="player-tab" ', '<li class="pull-right">')[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div class="tabs-wr">', '<div class="box visible clearfix">')[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>') 
         tabsNames = []
         for item in tmp:
             tabsNames.append(self.cleanHtmlStr(item))
         
-        idx = data.find('<div class="tab-content"')
-        if idx == -1:
-            return []
-        
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data[idx:], '<div role="tabpanel"', '</div>', False)
-        if len(data) != len(tabsNames):
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, 'clearfix">', '</div>', False)
+        if len(tmp) == 1:
+            data = [data.split('clearfix">')[-1]]
+        else:
+            data = tmp
+        if 'trailer' not in cItem and len(data) != len(tabsNames):
             printDBG('>>>>>>>>>>>>>>>>>>>ERROR<<<<<<<<<<<<<<<<<<<<')
             printDBG('>>>>>>>>>>>>>>>>>>> Something is wrong len(data)[%d] != len(tabsNames)[%d] !!!' % (len(data), len(tabsNames)) )
         
         for idx in range(len(data)):
             item = data[idx]
+            printDBG(item)
             if idx < len(tabsNames):
                 tabName = tabsNames[idx]
             else:
@@ -273,6 +275,8 @@ class DarshowCom(CBaseHostClass):
             
             url = self._getFullUrl( url )
             if url.startswith('http'):
+                if title == 'ERROR':
+                    title = self.up.getHostName(url, nameOnly=True)
                 params = {'name':title, 'url':strwithmeta(url, {'Referer':cItem['url']}), 'need_resolve':1}
                 if 'الإفتراضي' in title:
                     #when default insert as first
@@ -333,8 +337,11 @@ class DarshowCom(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listsMainMenu({'url':self.MAIN_URL, 'icon':self.DEFAULT_ICON}, 'categories', 'list_items')
+            self.listsMainMenu({'url':self.MAIN_URL, 'icon':self.DEFAULT_ICON}, 'categories')
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            
+        elif category == 'top':
+            self.listTop(self.currItem, 'explore_item')
         elif category == 'categories':
             self.listCategories(self.currItem, 'list_items')
         elif category == 'list_items':
