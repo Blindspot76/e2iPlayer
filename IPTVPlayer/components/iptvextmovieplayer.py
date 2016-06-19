@@ -1279,6 +1279,8 @@ class IPTVExtMoviePlayer(Screen):
                     self.onStartPlayer()
                     #if 'gstplayer' != self.player: 
                     self.updateInfoTimer.start(1000)
+                    if 0 == obj['sts']:
+                        self.playbackUpdateInfo({'Status': ['Play', '1']})
                 elif "PLAYBACK_STOP" == key:
                     self.onLeavePlayer()
                 elif "PLAYBACK_LENGTH" == key and 0 == obj['sts']:
