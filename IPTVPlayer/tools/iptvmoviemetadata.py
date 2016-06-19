@@ -250,10 +250,11 @@ class IPTVMovieMetaDataHandler():
     def getVideoOption(self, option):
         localPrintDBG("IPTVMovieMetaDataHandler.getVideoOption")
         ret = None
-        try:
-            return self.data['video_options'][option]
-        except:
-            printExc()
+        if 'video_options' in self.data:
+            try:
+                return self.data['video_options'][option]
+            except:
+                printExc()
         return ret
         
     def setVideoOption(self, option, value):

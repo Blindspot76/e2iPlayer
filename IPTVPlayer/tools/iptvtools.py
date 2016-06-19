@@ -1077,13 +1077,16 @@ def GetVersionNum(ver):
 def GetE2OptionsFromFile(filePath):
     options = []
     try:
-        with open(filePath, 'r') as f:
-            data = f.read().strip()
-            data = data.split(' ')
-            for item in data:
-                opt = item.strip()
-                if '' != opt:
-                    options.append(opt)
+        if fileExists(filePath):
+            with open(filePath, 'r') as f:
+                data = f.read().strip()
+                data = data.split(' ')
+                for item in data:
+                    opt = item.strip()
+                    if '' != opt:
+                        options.append(opt)
+        else:
+            printDBG('GetE2OptionsFromFile file[%s] not exists' % filePath)
     except:
         printExc()
     return options

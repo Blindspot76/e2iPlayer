@@ -329,7 +329,7 @@ class IPTVExtMoviePlayer(Screen):
         self.subHandler['handler_type'] = 'embedded_handler'
         self.subHandler['enabled'] = False
         self.subHandler['timer']   = eTimer()
-        self.subHandler['timer_conn '] =  eConnectCallback(self.subHandler['timer'].timeout, self.updatSubtitlesTime)
+        self.subHandler['timer_conn']  =  eConnectCallback(self.subHandler['timer'].timeout, self.updatSubtitlesTime)
         self.subHandler['latach_time'] = -1
         self.subHandler['last_time']   = -1
         self.subHandler['marker']      = None
@@ -842,10 +842,17 @@ class IPTVExtMoviePlayer(Screen):
             timeMS = self.subHandler['last_time'] + int((time.time() - self.subHandler['latach_time']) * 1000)
             self.subHandler['current_sub_time_ms'] = timeMS
             self.updateSubtitles(timeMS)
+            
+    def restartSubTimer(self):
+        if 'Play' != self.playback['Status']: return
+        if not self.subHandler['enabled']: return
+        self.subHandler['timer'].stop()
+        self.subHandler['timer'].start(100)
         
     def latchSubtitlesTime(self, timeMS):
         self.subHandler['latach_time'] = time.time()
         self.subHandler['last_time']   = timeMS
+        self.restartSubTimer()
         self.updateSubtitles(timeMS)
     
     def updateSubtitles(self, timeMS, force = False):
@@ -862,7 +869,7 @@ class IPTVExtMoviePlayer(Screen):
         if force: prevMarker = None
         
         handler_type = self.subHandler['handler_type']
-        if 'handler_type' == 'handler':
+        if handler_type == 'handler':
             delay_ms = self.metaHandler.getSubtitleTrackDelay()
         else:
             delay_ms = 0
@@ -1318,9 +1325,6 @@ class IPTVExtMoviePlayer(Screen):
                         self.subHandler['timer'].stop()
                     else:
                         #if 'gstplayer' == self.player: self.updateInfoTimer.start(1000)
-                        if self.subHandler['enabled']:
-                            self.latchSubtitlesTime(self.subHandler['current_sub_time_ms'])
-                            self.subHandler['timer'].start(100)
                         if obj['isForwarding']:
                             self.playbackUpdateInfo({'Status': ['FastForward', str(obj['Speed'])]})
                         elif 0 < obj['SlowMotion']:
