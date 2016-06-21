@@ -202,13 +202,19 @@ class PierwszaTVApi:
                 printDBG(tmp)
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 
+                #def _getSocketIoUrl1(baseUrl, params):
+                #    t1 = self.getTimestamp(time()*1000)
+                
                 t1 = self.getTimestamp(time()*1000)
                 url = baseUrl1 + '/socket.io/?EIO=3&transport=polling&t=' + t1
                 sts, data = self.cm.getPage(url, self.http_params2)
-                baseParams1 = data[data.find('{'):]
-                baseParams1 = byteify(json.loads(baseParams1))
-                printDBG("=========================================================")
-                printDBG([data])
+                if sts:
+                    baseParams1 = data[data.find('{'):]
+                    baseParams1 = byteify(json.loads(baseParams1))
+                    printDBG("=========================================================")
+                    printDBG([data])
+                else:
+                    baseParams1 = {'sid':''}
                 printDBG(baseParams1)
                 printDBG("=========================================================")
                 
@@ -226,9 +232,10 @@ class PierwszaTVApi:
                 t1 = self.getTimestamp(time()*1000)
                 url = baseUrl1 + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t1, baseParams1['sid'])
                 sts, data = self.cm.getPage(url, self.http_params2)
-                printDBG("=========================================================")
-                printDBG(data.split('\x00\x02\xff'))
-                printDBG("=========================================================")
+                if sts:
+                    printDBG("=========================================================")
+                    printDBG(data.split('\x00\x02\xff'))
+                    printDBG("=========================================================")
                 
                 t2 = self.getTimestamp(time()*1000)
                 url = baseUrl2.replace(":8000",":8004") + '/socket.io/?EIO=3&transport=polling&t={0}&sid={1}'.format(t2, baseParams2['sid'])

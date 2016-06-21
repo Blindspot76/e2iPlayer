@@ -118,16 +118,20 @@ if __name__ == "__main__":
         import websocket
         
         ws1 = websocket.create_connection(refreshUrl1)
-        ws2 = websocket.create_connection(refreshUrl2)
+        try: ws2 = websocket.create_connection(refreshUrl2)
+        except Exception: pass
         
         ws1.send('2probe')
-        ws2.send('2probe')
+        try: ws2.send('2probe')
+        except Exception: pass
         
         result = ws1.recv()
-        result = ws2.recv()
+        try: result = ws2.recv()
+        except Exception: pass
         
         ws1.send('5')
-        ws2.send('5')
+        try: ws2.send('5')
+        except Exception: pass
         
         if 0:
             t2 = getTimestamp(time.time()*1000)
@@ -158,9 +162,11 @@ if __name__ == "__main__":
                 time.sleep(20 - dt)
             
             ws1.send('2')
-            ws2.send('2')
+            try: ws2.send('2')
+            except Exception: pass
             result[0] = ws1.recv()
-            result[1] = ws2.recv()
+            try: result[1] = ws2.recv()
+            except Exception: pass
             print(result, file=sys.stderr)
             
             if 0:
@@ -175,7 +181,8 @@ if __name__ == "__main__":
                     
 
         ws1.close()
-        ws2.close()
+        try: ws2.close()
+        except Exception: pass
     except:
         printExc()
     sys.exit(0)

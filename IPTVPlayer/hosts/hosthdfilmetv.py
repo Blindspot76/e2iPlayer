@@ -242,12 +242,14 @@ class HDFilmeTV(CBaseHostClass):
                     episodesLinks[episodeName] = []
                 episodesLinks[episodeName].append({'name':serverName, 'url':episodeUrl, 'need_resolve':1})
         
-        season = self.cm.ph.getSearchGroups(cItem['url'], '''staffel-([0-9]+?)-''')[0]
-        episodesTab.sort()
+        season = self.cm.ph.getSearchGroups(cItem['url'], '''staf[f]+?el-([0-9]+?)-''')[0]
+        try: episodesTab.sort(key=lambda item: int(item))
+        except Exception:
+            printExc()
         for episode in episodesTab:
             title = cItem['title']
-            if season != '':
-                title += ': ' + 's%se%s'% (season.zfill(2), episode.zfill(2))
+            if season != '': title += ': ' + 's%se%s'% (season.zfill(2), episode.zfill(2))
+            else: title += ': ' + 'e%s'% (episode.zfill(2))
             params = dict(cItem)
             params.update({'title':title, 'urls':episodesLinks[episode]})
             self.addVideo(params)

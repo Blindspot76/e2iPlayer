@@ -65,6 +65,28 @@ class Napisy24plProvider(CBaseSubProviderClass):
         
         self.cacheSeasons = {}
         
+    def sortSubtitlesByDurationMatch(self):
+        # we need duration to sort
+        movieDurationSec = self.params.get('duration_sec', 0)
+        if movieDurationSec <= 0: return 
+    
+        # get only subtitles items from current list
+        hasDuration = False
+        subList = []
+        for item in self.currList:
+            if 'subtitle' == item.get('type', ''):
+                subList.append(item)
+                if 'duration_sec' in item: hasDuration = True
+
+        # if there is no subtitle with duration available 
+        # we will skip sort
+        if not hasDuration: return
+        subList.sort(key=lambda item: abs(item.get('duration_sec', 0) - movieDurationSec))
+        
+        for idx in range(len(self.currList)):
+            if 'subtitle' == self.currList[idx].get('type', ''):
+                self.currList[idx] = subList.pop(0)
+        
     def getMoviesList(self, cItem, nextCategoryMovie):
         printDBG("Napisy24plProvider.getMoviesList")
         page = cItem.get('page', 1)
@@ -204,12 +226,17 @@ class Napisy24plProvider(CBaseSubProviderClass):
                     for idx in range(len(columnsTitles)):
                         descTab.append("%s: %s" % (columnsTitles[idx], columnsValues[idx]))
                 desc = '[/br]'.join(descTab)
+                durationSecTab = self.cm.ph.getSearchGroups(desc, '[^0-9]([0-9]{2}):([0-9]{2}):([0-9]{2})[^0-9]', 3)
+                if '' not in durationSecTab:
+                    durationSec = int(durationSecTab[0]) * 3600 + int(durationSecTab[1]) * 60 + int(durationSecTab[2])
+                else: durationSec = 0
+                printDBG("DUTATION >>>>>>>>>>>>>>>>>>>>>>> [%s]s" % durationSec)
                 params = dict(cItem)
-                params.update({'title':self.cleanHtmlStr(title), 'sub_id':subId, 'lang':lang, 'desc':self.cleanHtmlStr(desc)})
+                params.update({'title':self.cleanHtmlStr(title), 'duration_sec':durationSec, 'sub_id':subId, 'lang':lang, 'desc':self.cleanHtmlStr(desc)})
                 self.addSubtitle(params)
         except Exception:
             printExc()
-        
+        self.sortSubtitlesByDurationMatch()
             
     def _getFileName(self, title, lang, subId, imdbid):
         title = RemoveDisallowedFilenameChars(title).replace('_', '.')

@@ -1500,7 +1500,7 @@ class IPTVExtMoviePlayer(Screen):
         else:
             url = strwithmeta(self.fileSRC)
         if 0 == len(simpleTracksTab):
-            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'movie_url':url, 'movie_title':self.title})
+            self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubDownloaderWidget, {'duration_sec':self.playback['Length'], 'movie_url':url, 'movie_title':self.title})
         else:
             self.openChild(boundFunction(self.childClosed, self.downloadSubCallback), IPTVSubSimpleDownloaderWidget, {'movie_url':url, 'movie_title':self.title, 'sub_list':simpleTracksTab})
         
