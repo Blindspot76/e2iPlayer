@@ -253,9 +253,6 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, SportDeutschland(), True)
 
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('SportDeutschlandlogo.png')])
-
     def getLinksForVideo(self, Index = 0, selItem = None):
         listLen = len(self.host.currList)
         if listLen < Index and listLen > 0:

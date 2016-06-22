@@ -8,7 +8,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetLogoDir
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 
 class CUrlItem:
@@ -206,7 +206,7 @@ class IHost:
         
     # return full path to player logo
     def getLogoPath(self):
-        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+        return RetHost(RetHost.OK, value = [GetLogoDir(getattr(self, '__module__').split('.')[-1][4:] + 'logo.png')])
         
     def getSearchResults(self, pattern, searchType = None):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])

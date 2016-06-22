@@ -1131,12 +1131,12 @@ class IPTVPlayerWidget(Screen):
             hRet= self.host.getLogoPath()
             if hRet.status == RetHost.OK and  len(hRet.value):
                 logoPath = hRet.value[0]
-                    
                 if logoPath != '':
                     printDBG('Logo Path: ' + logoPath)
-                    self["playerlogo"].decodeCover(logoPath, \
-                                                   self.updateCover, \
-                                                   "playerlogo")
+                    if not self["playerlogo"].checkDecodeNeeded(logoPath):
+                        self["playerlogo"].show()
+                    else:
+                        self["playerlogo"].decodeCover(logoPath, self.updateCover, "playerlogo")
         except: printExc()
         
         # get types of items which can be added as favourites

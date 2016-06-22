@@ -247,9 +247,6 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, AnimeShinden(), True)
 
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('animeodcinkilogo.png')])
-
     def getLinksForVideo(self, Index=0, selItem = None):
         retCode = RetHost.ERROR
         retlist = []
