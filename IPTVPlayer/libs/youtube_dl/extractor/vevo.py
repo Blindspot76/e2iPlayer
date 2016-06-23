@@ -31,6 +31,12 @@ config.plugins.iptvplayer.vevo_default_quality = ConfigSelection(default = "1228
 config.plugins.iptvplayer.vevo_use_default_quality = ConfigYesNo(default = True)
 config.plugins.iptvplayer.vevo_allow_hls           = ConfigYesNo(default = True)
 
+def _int(data):
+    ret = 0
+    try: ret = int(data)
+    except Exception: pass
+    return ret
+
 class VevoIE(InfoExtractor):
     """
     Accepts urls from vevo.com or in the format 'vevo:{id}'
@@ -107,10 +113,10 @@ class VevoIE(InfoExtractor):
             formats.append({
                 'url': self.xmlGetArg(attr, 'url'),
                 'format_id': self.xmlGetArg(attr, 'name'),
-                'bitrate': (int(self.xmlGetArg(attr, 'videoBitrate')) + int(self.xmlGetArg(attr, 'audioBitrate')))*1000,
+                'bitrate': (_int(self.xmlGetArg(attr, 'videoBitrate')) + _int(self.xmlGetArg(attr, 'audioBitrate')))*1000,
                 #'format_note': format_note,
-                'height': int(self.xmlGetArg(attr, 'frameheight')),
-                'width': int(self.xmlGetArg(attr, 'frameWidth')),
+                'height': _int(self.xmlGetArg(attr, 'frameheight')),
+                'width': _int(self.xmlGetArg(attr, 'frameWidth')),
             })
         return formats
 
@@ -141,10 +147,10 @@ class VevoIE(InfoExtractor):
                 'format_id': 'SMIL_' + m.group('cbr'),
                 'vcodec': m.group('vcodec'),
                 'acodec': m.group('acodec'),
-                'bitrate': (int(m.group('vbr')) + int(m.group('abr'))) * 1000,
+                'bitrate': (_int(m.group('vbr')) + _int(m.group('abr'))) * 1000,
                 'ext': m.group('ext'),
-                'width': int(m.group('width')),
-                'height': int(m.group('height')),
+                'width': _int(m.group('width')),
+                'height': _int(m.group('height')),
             })
         return formats
 
@@ -244,7 +250,14 @@ class VevoIE(InfoExtractor):
 
         json_url = 'http://api.vevo.com/VideoService/AuthenticateVideo?isrc=%s' % video_id
         response = self._download_json(json_url, video_id)
-        video_info = response['video'] or {}
+        if response == None:
+            video_info = {}
+        else:
+            video_info = response['video'] or {}
+        
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.")
+        printDBG(video_info)
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<.")
         
         
         artist = None
@@ -321,10 +334,10 @@ class VevoIE(InfoExtractor):
                         'format_id': 'http-%s-%s' % (version, video_version['quality']),
                         'vcodec': m.group('vcodec'),
                         'acodec': m.group('acodec'),
-                        'bitrate': (int(m.group('vbr')) + int(m.group('abr'))) * 1000,
+                        'bitrate': (_int(m.group('vbr')) + _int(m.group('abr'))) * 1000,
                         'ext': m.group('ext'),
-                        'width': int(m.group('width')),
-                        'height': int(m.group('height')),
+                        'width': _int(m.group('width')),
+                        'height': _int(m.group('height')),
                     })
         else:
             artists = video_info.get('mainArtists')
@@ -342,30 +355,31 @@ class VevoIE(InfoExtractor):
                     continue
                 else:
                     source_type = self._SOURCE_TYPES.get(video_version['sourceType'])
-                    renditions = compat_etree_fromstring(video_version['data'])
+                    renditions = self.xmlGetText(video_version['data'], 'renditions')
                     if source_type == 'http':
-                        for rend in renditions.findall('rendition'):
-                            attr = rend.attrib
+                        tmp = re.compile('<rendition(\s[^>]+?)>').findall(renditions)
+                        for rend in tmp:
                             formats.append({
-                                'url': attr['url'],
-                                'format_id': 'http-%s-%s' % (version, attr['name']),
-                                'height': int(attr.get('frameheight')),
-                                'width': int(attr.get('frameWidth')),
-                                'tbr': int(attr.get('totalBitrate')),
-                                'vbr': int(attr.get('videoBitrate')),
-                                'abr': int(attr.get('audioBitrate')),
-                                'vcodec': attr.get('videoCodec'),
-                                'acodec': attr.get('audioCodec'),
-                                'bitrate': (int(attr.get('videoBitrate')) + int(attr.get('audioBitrate'))) * 1000,
+                                'url': self.xmlGetArg(rend, 'url'),
+                                'format_id': 'http-%s-%s' % (version, self.xmlGetArg(rend, 'name')),
+                                'height': _int(self.xmlGetArg(rend, 'frameheight')),
+                                'width': _int(self.xmlGetArg(rend, 'frameWidth')),
+                                'vcodec': self.xmlGetArg(rend, 'videoCodec'),
+                                'acodec': self.xmlGetArg(rend, 'audioCodec'),
+                                'bitrate': (_int(self.xmlGetArg(rend, 'videoBitrate')) + _int(self.xmlGetArg(rend, 'audioBitrate'))) * 1000,
                             })
                     elif source_type == 'hls' and hls:
-                        formats.extend(self._extract_m3u8_formats(
-                            renditions.find('rendition').attrib['url'], video_id,
-                            'mp4', 'm3u8_native', m3u8_id='hls-%s' % version,
-                            note='Downloading %s m3u8 information' % version,
-                            errnote='Failed to download %s m3u8 information' % version,
-                            fatal=False))
+                        tmp = re.compile('<rendition(\s[^>]+?)>').findall(renditions)
+                        for rend in tmp:
+                            tmpUrl = self.xmlGetArg(rend, 'url'),
+                            formats.extend(self._extract_m3u8_formats(
+                                tmpUrl, video_id,
+                                'mp4', 'm3u8_native', m3u8_id='hls-%s' % version,
+                                note='Downloading %s m3u8 information' % version,
+                                errnote='Failed to download %s m3u8 information' % version,
+                                fatal=False))
                     elif source_type == 'smil' and version == 'level3' and not smil_parsed:
+                        continue
                         formats.extend(self._extract_smil_formats(
                             renditions.find('rendition').attrib['url'], video_id, False))
                         smil_parsed = True

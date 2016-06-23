@@ -37,8 +37,8 @@ class InfoExtractor():
     def xmlGetArg(self, data, name):
         return self.cm.ph.getDataBeetwenMarkers(data, '%s="' % name, '"', False)[1]
         
-    def xmlGetText(self, data, name):
-        return self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<%s[^>]*?>' % name), re.compile('</%s>' % name), False)[1]
+    def xmlGetText(self, data, name, withMarkers=False):
+        return self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<%s[^>]*?>' % name), re.compile('</%s>' % name), withMarkers)[1]
         
     def _search_regex(self, pattern, string, name, default=NO_DEFAULT, fatal=True, flags=0, group=None):
         """
@@ -77,3 +77,4 @@ class InfoExtractor():
             tmp['format_id'] = tmp['name']
             formats.append(tmp)
         return formats
+    
