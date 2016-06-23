@@ -88,13 +88,14 @@ class CVevoSignAlgoExtractor:
         # get function body
         func_m = re.search(
             r'''(?x)
-                (?:function\s+%s|[{;,]%s\s*=\s*function|var\s+%s\s*=\s*function)\s*
+                (?:function\s+%s|[{;,]\s*%s\s*=\s*function|var\s+%s\s*=\s*function)\s*
                 \((?P<args>[^)]*)\)\s*
                 \{(?P<code>[^}]+)\}''' % (
                 re.escape(funcname), re.escape(funcname), re.escape(funcname)),
             self.playerData)
         if func_m is None:
-            raise ExtractorError('Could not find JS function %r' % funcname)
+            SetIPTVPlayerLastHostError(_('Could not find JS function %r') % funcname)
+            return ''
         if func_m:
             # return jsFunBody
             return 'function %s(%s){%s}' % (funcname, func_m.group('args'), func_m.group('code').replace('\n', '').replace('\r', ''))
