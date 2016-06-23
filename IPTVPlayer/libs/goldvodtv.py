@@ -142,7 +142,7 @@ class GoldVodTVApi:
         
     def doLogin(self, login, password):
         logged = False
-        loginUrl = self.MAIN_URL
+        loginUrl = self.MAIN_URL + 'login.html'
         
         params = dict(self.http_params)
         params['load_cookie'] = False
