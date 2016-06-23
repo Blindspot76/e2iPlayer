@@ -200,14 +200,18 @@ class TvnVod(CBaseHostClass):
         encryptedTokenHEX = binascii.hexlify(encryptedToken).upper()
         return "http://redir.atmcdn.pl/http/%s?salt=%s&token=%s" % (url, salt, encryptedTokenHEX)
         
-    def listsCategories(self, cItem):
+    def listsCategories(self, cItem, searchCategories=False):
         printDBG("TvnVod.listsCategories cItem[%s]" % cItem)
+        pl = self.getDefaultPlatform()
         
         searchMode = False
         page = 1 + cItem.get('page', 0)
         if 'search' == cItem.get('category', None):
             searchMode = True
             urlQuery  = '&sort=newest&m=getSearchItems&page=%d&query=%s' % (page, cItem['pattern'])
+            if cItem.get('search_category', False):
+                pl = 'Android4'
+
         elif None != cItem.get('category', None) and None != cItem.get('id', None):
             groupName = 'items'
             urlQuery = '&type=%s&id=%s&limit=%s&page=%s&sort=newest&m=getItems' % (cItem['category'], cItem['id'], self.itemsPerPage, page)
@@ -218,7 +222,6 @@ class TvnVod(CBaseHostClass):
             urlQuery = '&m=mainInfo'
         
         try:
-            pl = self.getDefaultPlatform()
             url = self.getBaseUrl(pl) + urlQuery
             sts, data = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
             data = json.loads(data)
@@ -302,8 +305,12 @@ class TvnVod(CBaseHostClass):
                                'season'   : 0,
                              }
                     if 'episode' == category:
+                        if cItem.get('search_category', False):
+                            continue
                         self.addVideo(params)
                     else:
+                        if title in ['SPORT', 'Live', 'STREFY', 'KONTYNUUJ OGLĄDANIE', 'ULUBIONE', 'PAKIETY']:
+                            continue
                         self.addDir(params)
             else:
                 showNextPage = False
@@ -337,6 +344,9 @@ class TvnVod(CBaseHostClass):
                    'pattern'  : pattern,
                    'season'   : 0,
                  }
+        params2 = dict(params)
+        params2['search_category'] = True
+        self.listsCategories(params2)
         self.listsCategories(params)
 
     def listsMainMenu(self):
