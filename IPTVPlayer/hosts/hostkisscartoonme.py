@@ -27,7 +27,7 @@ except: import simplejson as json
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.pbkdf2 import pbkdf2
 from binascii import a2b_hex
-
+from hashlib import sha256
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -108,6 +108,24 @@ class KissCartoonMe(CBaseHostClass):
         
     def getPage(self, baseUrl, params={}, post_data=None):
         params['cloudflare_params'] = {'domain':'kisscartoon.me', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
+        
+    def getPageProxy(self, baseUrl, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
+        
+        proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=81'.format(urllib.quote(baseUrl, ''))
+        params['header']['Referer'] = proxy
+        #params['header']['Cookie'] = 'flags=2e5; COOKIE%253Blang%253B%252F%253Bwww.movie4k.to={0}%3B'.format(lang)
+        baseUrl = proxy
+        
+        def _getFullUrl(url):
+            return 'http://kisscartoon.me/cdn-cgi/l/chk_jschl'
+            
+        def _getFullUrl2(url):
+            return 'http://www.proxy-german.de/index.php?q={0}&hl=81'.format(urllib.quote(url, ''))
+        
+        params['cloudflare_params'] = {'domain':'kisscartoon.me', 'cookie_file':GetCookieDir('cf.kisscartoonme.cookie'), 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl, 'full_url_handle2':_getFullUrl2}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
     def _urlWithCookie(self, url):
@@ -333,9 +351,8 @@ class KissCartoonMe(CBaseHostClass):
         
         if 'kisscartoon' not in videoUrl:
             return self.up.getVideoLinkExt(videoUrl)
-            
-            
-        sts, data = self.getPage(videoUrl) 
+        
+        sts, data = self.getPageProxy(videoUrl) 
         if not sts: return urlTab
         
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'asp.wrap(', ')', False)
@@ -358,7 +375,14 @@ class KissCartoonMe(CBaseHostClass):
                 printExc()
                 continue
                 
-        def _decUrl(data):
+        def _decUrl(data, password):
+            key = a2b_hex( sha256(password).hexdigest() )
+            iv = a2b_hex("a5e8d2e9c1721ae0e84ad660c472c1f3")
+            encrypted = base64.b64decode(data)
+            cipher = AES_CBC(key=key, keySize=32)
+            return cipher.decrypt(encrypted, iv)
+                
+        def _decUrlOld(data):
             password = base64.b64decode('X1dyeExsM3JuQTQ4aWFmZ0N5Xw==')[1:-1]
             salt = base64.b64decode('X0NhcnRLUyQyMTQxI18=')[1:-1]
             iv = a2b_hex(base64.b64decode('X2E1ZThkMmU5YzE3MjFhZTBlODRhZDY2MGM0NzJjMWYzXw==')[1:-1])
@@ -369,17 +393,19 @@ class KissCartoonMe(CBaseHostClass):
             cipher = AES_CBC(key=key, keySize=16)
             return cipher.decrypt(encrypted, iv)
         
+        
         tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="selectQuality">', '</select>', False)[1]
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
+        password = self.getPage('http://kisscartoon.me/External/RSK', post_data={})[1]
         for item in tmpTab:
             url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
             if '' == url: continue
             try:
-                #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
-                url = _decUrl(url)
-                #printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
+                printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
+                url = _decUrl(url, password)
+                printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
             except:
-                #printExc()
+                printExc()
                 continue
             if '://' not in url: continue
             name = self.cleanHtmlStr(item)

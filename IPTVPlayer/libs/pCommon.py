@@ -355,8 +355,9 @@ class common:
         cfParams = params.get('cloudflare_params', {})
         
         def _getFullUrlEmpty(url):
-            return ''
-        _getFullUrl = cfParams.get('full_url_handle', _getFullUrlEmpty)
+            return url
+        _getFullUrl  = cfParams.get('full_url_handle', _getFullUrlEmpty)
+        _getFullUrl2 = cfParams.get('full_url_handle2', _getFullUrlEmpty)
         
         url = baseUrl
         header = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
@@ -398,7 +399,10 @@ class common:
                     answer = self.calcAnswer('\n'.join(expresion)) + len(cfParams['domain'])
                     refreshData = data.fp.info().get('Refresh', '')
                     
-                    verData = self.ph.getDataBeetwenMarkers(verData, '<form ', '</form>', False)[1]
+                    verData = self.ph.getDataBeetwenReMarkers(verData, re.compile('<form[^>]+?id="challenge-form"'), re.compile('</form>'), False)[1]
+                    printDBG("===============================================================")
+                    printDBG(verData)
+                    printDBG("===============================================================")
                     verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
                     get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
                     get_data['jschl_answer'] = answer
@@ -406,6 +410,7 @@ class common:
                     for key in get_data:
                         verUrl += '%s=%s&' % (key, get_data[key])
                     verUrl = _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
+                    verUrl = _getFullUrl2( verUrl )
                     params2 = dict(params)
                     params2['load_cookie'] = True
                     params2['save_cookie'] = True
