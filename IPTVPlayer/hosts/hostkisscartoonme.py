@@ -78,6 +78,9 @@ class KissCartoonMe(CBaseHostClass):
         self.cache = {}
     
     def _getFullUrl(self, url):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote(url.split('?q=')[1])
+        
         if url == '':
             return url
             
@@ -337,7 +340,7 @@ class KissCartoonMe(CBaseHostClass):
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<option', '</option>')
         for item in data:
             serverTitle = self.cleanHtmlStr(item)
-            serverUrl   = self.cm.ph.getSearchGroups(item, '''value="(http[^"]+?)"''')[0]
+            serverUrl   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''value="(http[^"]+?)"''')[0] )
             if serverUrl.startswith('http'):
                 urlTab.append({'name':serverTitle, 'url':serverUrl, 'need_resolve':1})
         
@@ -351,8 +354,9 @@ class KissCartoonMe(CBaseHostClass):
         
         if 'kisscartoon' not in videoUrl:
             return self.up.getVideoLinkExt(videoUrl)
-        
-        sts, data = self.getPageProxy(videoUrl) 
+        #if '&s=' in videoUrl:
+            
+        sts, data = self.getPage(videoUrl) 
         if not sts: return urlTab
         
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'asp.wrap(', ')', False)
@@ -396,7 +400,8 @@ class KissCartoonMe(CBaseHostClass):
         
         tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="selectQuality">', '</select>', False)[1]
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
-        password = self.getPage('http://kisscartoon.me/External/RSK', post_data={})[1]
+        if len(tmpTab):
+            password = self.getPage('http://kisscartoon.me/External/RSK', post_data={})[1]
         for item in tmpTab:
             url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
             if '' == url: continue
