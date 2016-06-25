@@ -2082,10 +2082,18 @@ class pageParser:
         if not sts:
             cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
             data = iptv_execute()( cmd )
-            #printDBG(data)
             if not data['sts'] or 0 != data['code']: return False
             data = data['data']
-        return self._findLinks(data, 'stream.moe', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+(?:\.mp4|\.flv)[^"^']*)['"][,}]''', m1='clip:')
+        data = re.sub('''atob\(["']([^"^']+?)['"]\)''', lambda m: base64.b64decode(m.group(1)), data)
+        printDBG(data)
+        tab = self._findLinks(data, 'stream.moe', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+(?:\.mp4|\.flv)[^"^']*)['"][,}]''', m1='clip:')
+        if len(tab) == 0:
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
+            for item in data:
+                if 'video/mp4' in item:
+                    url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                    tab.append({'name':'stream.moe', 'url':url})
+            return tab
         
     def parseCASTFLASHPW(self, baseUrl):
         printDBG("parseCASTFLASHPW baseUrl[%r]" % baseUrl)
