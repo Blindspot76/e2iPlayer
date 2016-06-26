@@ -90,7 +90,7 @@ class IPTVSetupImpl:
         self.flumpegdemuxpaths = ["/usr/lib/gstreamer-0.10/libgstflumpegdemux.so"]
         
         # gstifdsrc
-        self.gstifdsrcVersion = "1.1.0" # new version is 1.1.0 but it is not needed
+        self.gstifdsrcVersion = "1.1.1"
         self.gstifdsrcPaths = ["/usr/lib/gstreamer-1.0/libgstifdsrc.so"]
         
         self.binaryInstalledSuccessfully = False
