@@ -286,13 +286,25 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         
     def doRestart(self, *args):
         try:
-            msgtxt = _("Please remember that you use this plugin at your own risk.")
-            self.session.open(MessageBox, _("E2 GUI restart after IPTVPlayer update to version[%s].\n\n") % self.serversList[self.currServIdx]['version'] + msgtxt, type = MessageBox.TYPE_INFO, timeout = 5 )
-            from enigma import quitMainloop
-            quitMainloop(3)
-        except:
+            try:
+                from Screens.Standby import TryQuitMainloop
+                self.session.openWithCallback(self.doRestartFailed, TryQuitMainloop, retvalue=3)
+            except Exception:
+                printExc()
+                msgtxt = _("Please remember that you use this plugin at your own risk.")
+                self.session.open(MessageBox, _("E2 GUI restart after IPTVPlayer update to version[%s].\n\n") % self.serversList[self.currServIdx]['version'] + msgtxt, type = MessageBox.TYPE_INFO, timeout = 5 )
+                from enigma import quitMainloop
+                quitMainloop(3)
+        except Exception:
             printExc()
-            self.session.open(MessageBox, _("Restart GUI failed. \nPlease restart STB manually."), type = MessageBox.TYPE_INFO, timeout=5 )
+            self.doRestartFailed()
+    
+    def doRestartFailed(self, *args):
+        try:
+            self.list[currStep].update( {'info': _("Aborted"), 'icon': self.ICON.CANCELLED} )
+        except Exception:
+            printExc()
+        self.session.open(MessageBox, _("Restart GUI failed. \nPlease restart STB manually."), type = MessageBox.TYPE_INFO, timeout=5 )
 
     #########################################################
     # INREFACE IMPLEMENTATION METHODS
