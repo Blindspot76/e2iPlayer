@@ -485,6 +485,7 @@ class IPTVPlayerWidget(Screen):
         
         if self.canRandomizeList and self.visible and len(self.currList) and not self.isInWorkThread():
             options.append((_('Randomize a playlist'), "RandomizePlayableItems"))
+            options.append((_('Reverse a playlist'), "ReversePlayableItems"))
         
         try:
             host = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + self.hostName, globals(), locals(), ['GetConfigList'], -1)
@@ -615,6 +616,8 @@ class IPTVPlayerWidget(Screen):
                 self.session.openWithCallback(self.editFavouritesCallback, IPTVFavouritesMainWidget)
             elif ret[1] == 'RandomizePlayableItems':
                 self.randomizePlayableItems()
+            elif ret[1] == 'ReversePlayableItems':
+                self.reversePlayableItems()
     
     def editFavouritesCallback(self, ret=False):
         if ret and 'favourites' == self.hostName: # we must reload host
@@ -1501,7 +1504,7 @@ class IPTVPlayerWidget(Screen):
         else:
             self.askUpdateAvailable(self.selectHost)
             
-    def randomizePlayableItems(self):
+    def randomizePlayableItems(self, randomize=True):
         printDBG("randomizePlayableItems")
         self.stopAutoPlaySequencer()
         if self.visible and len(self.currList) > 1 and not self.isInWorkThread():
@@ -1509,7 +1512,8 @@ class IPTVPlayerWidget(Screen):
             for item in self.currList:
                 if isinstance(item, CDisplayListItem) and self.isPlayableType(item.type):
                     randList.append(item)
-            random_shuffle(randList)
+            if randomize:
+                random_shuffle(randList)
             reloadList = False
             if len(self.currList) == len(randList):
                 self.currList = randList
@@ -1525,7 +1529,11 @@ class IPTVPlayerWidget(Screen):
                 self.currList = newList
             if reloadList:
                 self["list"].setList([ (x,) for x in self.currList])
-
+    
+    def reversePlayableItems(self):
+        printDBG("reversePlayableItems")
+        self.randomizePlayableItems(False)
+    
     def reloadList(self, params):
         printDBG( "reloadList" )
         refresh  = params['add_param'].get('refresh', 0)
