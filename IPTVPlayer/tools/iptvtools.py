@@ -1102,7 +1102,13 @@ def SetE2OptionByFile(filePath, value):
     return sts
 
 def GetE2VideoAspectChoices():
-    return GetE2OptionsFromFile('/proc/stb/video/aspect_choices')
+    tab = GetE2OptionsFromFile('/proc/stb/video/aspect_choices')
+    # workaround for some STB
+    # reported here: https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/issues/30
+    staticTab = ["4:3", "16:9", "any"]
+    if len(tab) < 2 and GetE2VideoAspect() in staticTab:
+        tab = staticTab
+    return tab
 
 def GetE2VideoAspect():
     options = GetE2OptionsFromFile('/proc/stb/video/aspect')
