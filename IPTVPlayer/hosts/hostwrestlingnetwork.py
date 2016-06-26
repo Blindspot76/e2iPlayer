@@ -10,6 +10,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.sha1Hash import SHA1
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
@@ -56,14 +57,36 @@ class WrestlingNet(CBaseHostClass):
     
     def __init__(self):
         printDBG("WrestlingNet.__init__")
-        CBaseHostClass.__init__(self, {'history':'wrestling-network.net'})
+        CBaseHostClass.__init__(self, {'history':'wrestling-network.net', 'cookie':'wrestlingnetwork.cookie'})
         self.DEFAULT_ICON = 'http://static-server1.wrestling-network.net/images/layout/wnhd_5years_bug.png'
+        self.USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
+        self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.cacheSubCategory = {}
+        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
     def _getFullUrl(self, url):
-        if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
+        if url == '':
+            return url
+            
+        if url.startswith('.'):
+            url = url[1:]
+        
+        if url.startswith('//'):
+            url = 'http:' + url
+        else:
+            if url.startswith('/'):
+                url = url[1:]
+            if not url.startswith('http'):
+                url =  self.MAIN_URL + url
+        if not self.MAIN_URL.startswith('https://'):
+            url = url.replace('https://', 'http://')
         return url
+        
+    def _getIconUrl(self, url):
+        url = self._getFullUrl(url)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
 
     def listsTab(self, tab, cItem):
         printDBG("WrestlingNet.listsMainMenu")
@@ -73,11 +96,15 @@ class WrestlingNet(CBaseHostClass):
             params['name']  = 'category'
             self.addDir(params)
             
+    def getPage(self, baseUrl, params={}, post_data=None):
+        params['cloudflare_params'] = {'domain':'wrestlingnetwork.tv', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
+            
     def listsMainMenu(self, cItem, subNextCategory, nextCategory):
         printDBG("listsMainMenu")
         self.cacheSubCategory = {}
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
         subCatsUrls = []
@@ -136,14 +163,15 @@ class WrestlingNet(CBaseHostClass):
             url += '/page/%s' % page
         url += cItem.get('srch', '')
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url, self.defaultParams)
         if not sts: return
         
-        if ('/page/%s?' % (page+1)) in data or ('/page/%s/' % (page+1)) in data:
+        nextPage = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''class=['"]pagination['"]'''), re.compile('</div>'), True)[1]
+        if ('>%s<' % (page+1)) in nextPage:
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="content-container">', '<!-- close .content-container -->', withMarkers=False)
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="content-container">', '<div class="solar-excerpt">', withMarkers=False)
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             if '/contact' in url: continue
@@ -151,7 +179,7 @@ class WrestlingNet(CBaseHostClass):
             title  = self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1]
             if '' != url and '' != title:
                 params = dict(cItem)
-                params.update( {'title':self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc':self.cleanHtmlStr( item ), 'icon':self._getFullUrl(icon)} )
+                params.update( {'title':self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc':self.cleanHtmlStr( item ), 'icon':self._getIconUrl(icon)} )
                 self.addVideo(params)
         
         if nextPage:
@@ -162,10 +190,10 @@ class WrestlingNet(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("WrestlingNet.getLinksForVideo [%s]" % cItem)
         urlTab = []
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return urlTab
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="solar-main-content">', '<!-- close .content-container -->', True)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="solar-main-content">', '</div>', True)
         if not sts:
             SetIPTVPlayerLastHostError(_("Please visit '%s' from using web-browser form the PC. If links are available please report this problem.\nEmail: samsamsam@o2.pl") % cItem['url'])
             return urlTab
@@ -185,7 +213,7 @@ class WrestlingNet(CBaseHostClass):
     def getResolvedURL(self, url):
         printDBG("WrestlingNet.getResolvedURL [%s]" % url)
         urlTab = []
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url, self.defaultParams)
         if not sts: return urlTab
         
         videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
@@ -214,7 +242,7 @@ class WrestlingNet(CBaseHostClass):
 
     #MAIN MENU
         if None == name:
-            cItem = {'name':'category', 'url':self.MAIN_URL, 'icon':self.DEFAULT_ICON}
+            cItem = {'name':'category', 'url':self.MAIN_URL, 'icon':self._getIconUrl(self.DEFAULT_ICON)}
             self.listsMainMenu(cItem, 'list_subcategory', 'list_category')
             self.listsTab(WrestlingNet.MAIN_CAT_TAB, cItem)
         elif 'list_subcategory' == category:
@@ -238,9 +266,6 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, WrestlingNet(), True)
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('wrestlingnetworklogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -296,7 +321,7 @@ class IPTVHost(CHostBase):
                 
             title       =  self.host.cleanHtmlStr( cItem.get('title', '') )
             description =  self.host.cleanHtmlStr( cItem.get('desc', '') )
-            icon        =  self.host.cleanHtmlStr( cItem.get('icon', '') )
+            icon        =  cItem.get('icon', '')
             
             hostItem = CDisplayListItem(name = title,
                                         description = description,
