@@ -143,7 +143,7 @@ class ExtPlayerCommandsDispatcher():
 
 
 class IPTVExtMoviePlayer(Screen):
-    Y_CROPPING_GUARD = 50
+    Y_CROPPING_GUARD = 0
     def __prepareSkin(self):
         
         if self.subConfig['wrapping_enabled']:
@@ -173,20 +173,20 @@ class IPTVExtMoviePlayer(Screen):
             
         skin = """
         <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
-                <widget name="logoIcon"           position="0,0"           size="160,40"  zPosition="4"             transparent="1" alphatest="blend" />
-                <widget name="playbackInfoBaner"  position="0,30"          size="650,77"  zPosition="2" pixmap="%s" transparent="1" alphatest="blend" />
-                <widget name="progressBar"        position="94,54"         size="544,7"   zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
-                <widget name="bufferingBar"       position="94,54"         size="544,7"   zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
-                <widget name="statusIcon"         position="20,45"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
-                <widget name="loopIcon"           position="43,30"         size="40,40"   zPosition="4"             transparent="1" alphatest="blend" />
+                <widget name="logoIcon"           position="0,20"          size="160,40"    zPosition="4"             transparent="1" alphatest="blend" />
+                <widget name="playbackInfoBaner"  position="0,0"           size="1280,177"  zPosition="2" pixmap="%s" />
+                <widget name="progressBar"        position="220,86"        size="840,7"     zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
+                <widget name="bufferingBar"       position="220,86"        size="840,7"     zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
+                <widget name="statusIcon"         position="150,70"        size="40,40"     zPosition="4"             transparent="1" alphatest="blend" />
+                <widget name="loopIcon"           position="150,110"       size="40,40"     zPosition="4"             transparent="1" alphatest="blend" />
                 
-                <widget name="goToSeekPointer"    position="94,0"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
-                <widget name="goToSeekLabel"      noWrap="1" position="94,0"          size="150,40"  zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
-                <widget name="infoBarTitle"       noWrap="1" position="82,30"         size="568,23"  zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;18" halign="center" valign="center"/>
-                <widget name="currTimeLabel"      noWrap="1" position="94,62"         size="120,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"   valign="top"/>
-                <widget name="lengthTimeLabel"    noWrap="1" position="307,62"        size="120,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="top"/>
-                <widget name="remainedLabel"      noWrap="1" position="518,62"        size="120,30"  zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
-                <widget name="videoInfo"          noWrap="1" position="0,0"           size="650,30"  zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+                <widget name="goToSeekPointer"    position="94,30"          size="150,60"  zPosition="8" pixmap="%s" transparent="1" alphatest="blend" />
+                <widget name="goToSeekLabel"      noWrap="1" position="94,30"         size="150,40"   zPosition="9" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
+                <widget name="infoBarTitle"       noWrap="1" position="220,50"        size="840,30"   zPosition="3" transparent="1" foregroundColor="white"     backgroundColor="#251f1f1f" font="Regular;24" halign="center" valign="center"/>
+                <widget name="currTimeLabel"      noWrap="1" position="220,100"       size="200,40"   zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;30" halign="left"   valign="top"/>
+                <widget name="lengthTimeLabel"    noWrap="1" position="540,100"       size="200,40"   zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;30" halign="center" valign="top"/>
+                <widget name="remainedLabel"      noWrap="1" position="860,100"       size="200,40"   zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;30" halign="right"  valign="top"/>
+                <widget name="videoInfo"          noWrap="1" position="760,20"        size="300,30"    zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
                 
                 <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                 <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
@@ -1722,7 +1722,7 @@ class IPTVExtMoviePlayer(Screen):
         # info bar gui elements
         # calculate offset
         offset_x = (getDesktop(0).size().width() - self['playbackInfoBaner'].instance.size().width()) / 2
-        offset_y = (getDesktop(0).size().height() - self['playbackInfoBaner'].instance.size().height()) - self.Y_CROPPING_GUARD # 10px - cropping guard
+        offset_y = (getDesktop(0).size().height() - self['playbackInfoBaner'].instance.size().height()) - self.Y_CROPPING_GUARD
         if offset_x < 0: offset_x = 0
         if offset_y < 0: offset_y = 0
         
