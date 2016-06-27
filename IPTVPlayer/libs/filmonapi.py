@@ -3,7 +3,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html, compat_parse_qs
@@ -16,7 +16,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 from hashlib import md5
 import re
 try:    import json 
-except: import simplejson as json
+except Exception: import simplejson as json
 ############################################
 
 ###################################################
@@ -72,11 +72,11 @@ class FilmOnComApi:
             sts, data = self.cm.getPage(data)
             if sts:
                 try:
-                    data = json.loads(data)
-                    self.session_key = data['session_key'].encode('utf-8')
+                    data = byteify(json.loads(data))
+                    self.session_key = data['session_key']
                     self.comscore    = data['comscore']
-                    self.middleware  = data['middleware'].encode('utf-8')
-                except:
+                    self.middleware  = data['middleware']
+                except Exception:
                     printExc()
                 self._login()
         return (None != self.session_key)
@@ -89,19 +89,27 @@ class FilmOnComApi:
             sts, data = self.cm.getPage(url)
             if sts:
                 try:
-                    data = json.loads(data)
+                    data = byteify(json.loads(data))
+                    #printDBG(data)
                     seekable = data['seekable']
                     for stream in data['streams']:
-                        name = stream['quality'].encode('utf-8')
-                        url  = stream['url'].encode('utf-8')
+                        name = stream.get('name', '')
+                        if name == '': name = stream['quality']
+                        try:
+                            if int(stream['watch-timeout']) < 1000:
+                                name += ' ' + _('PAY')
+                            else: name += ' ' + _('FREE') 
+                        except Exception: pass
+                        
+                        url  = stream['url']
                         if url.startswith('rtmp'):
                             flashplayer = 'http://www.filmon.com/tv/modules/FilmOnTV/files/flashapp/filmon/FilmonPlayer.swf?v=55'
                             pageUrl     = 'http://www.filmon.com/tv/channel/export?channel_id=' + str(channelID)
-                            url = url + '/' + stream['name'].encode('utf-8') + ' swfUrl=' + flashplayer + ' pageUrl=' + url
+                            url = url + '/' + stream['name'] + ' swfUrl=' + flashplayer + ' pageUrl=' + url
                         url = urlparser.decorateUrl( url )
                         url.meta.update({'iptv_urlwithlimit' : False, 'iptv_livestream' : not seekable})
                         urlsList.append({'name':name, 'url':url})
-                except:
+                except Exception:
                     printExc()
                 
             return urlsList
@@ -153,7 +161,7 @@ class FilmOnComApi:
                     data = json.loads(data)
                     if not isinstance(data, list):
                         data = []
-                except:
+                except Exception:
                     printExc()
             else:
                 data = []
