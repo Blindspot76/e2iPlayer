@@ -119,7 +119,7 @@ class IPTVFavouritesAddItemWidget(Screen):
                 else: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
             else: # addn new group
                 self.session.openWithCallback( self.addNewFavouriteGroup, IPTVFavouritesAddNewGroupWidget, self.favourites)
-        self.iptvDoFinish()
+        else: self.iptvDoFinish()
                 
     def addNewFavouriteGroup(self, group):
         if None != group:
