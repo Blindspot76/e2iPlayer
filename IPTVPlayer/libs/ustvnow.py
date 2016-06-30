@@ -180,6 +180,13 @@ class UstvnowApi:
     def getVideoLink(self, cItem):
         printDBG("UstvnowApi.getVideoLink")
         
+        ########################
+        #url = 'http://lv2.ustvnow.com/iphone_ajax?tab=iphone_playingnow&token=' + self.token
+        #sts, data = self.cm.getPage(url, self.defParams)
+        #return 
+        #printDBG(data)
+        ########################
+        
         sts, data = self.cm.getPage(cItem['priv_url'], self.defParams)
         if not sts: return []
         
@@ -195,7 +202,9 @@ class UstvnowApi:
         hdntl = self.cm.getCookieItem(self.cookiePath, 'hdntl')
         
         for item in tmp:
-            item['url'] = urlparser.decorateUrl(item['url'], {'User-Agent':self.HTTP_HEADER['User-Agent'], 'Cookie':"hdntl=%s" % urllib.unquote(hdntl)})
+            vidUrl = item['url'].replace('/smil:', '/mp4:').replace('USTVNOW/', 'USTVNOW1/')
+            
+            item['url'] = urlparser.decorateUrl(vidUrl, {'User-Agent':self.HTTP_HEADER['User-Agent'], 'Cookie':"hdntl=%s" % urllib.unquote(hdntl)})
             urlsTab.append(item)
         
         return urlsTab
