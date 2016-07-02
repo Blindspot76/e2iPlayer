@@ -332,19 +332,30 @@ class CHostBase(IHost):
         convList = self.convertList(self.host.getCurrList())
         return RetHost(RetHost.OK, value = convList)
 
-    # this method must be overwritten 
-    # by the child class
-    '''
     def getSearchItemInx(self):
-        return -1
-    '''
-    
-    # this method must be overwritten 
-    # by the child class
-    '''
+        try:
+            list = self.host.getCurrList()
+            for i in range( len(list) ):
+                if list[i]['category'] == 'search':
+                    return i
+        except Exception:
+            printDBG('getSearchItemInx EXCEPTION')
+            return -1
+
     def setSearchPattern(self):
+        try:
+            list = self.host.getCurrList()
+            if 'history' == list[self.currIndex]['name']:
+                pattern = list[self.currIndex]['title']
+                search_type = list[self.currIndex]['search_type']
+                self.host.history.addHistoryItem( pattern, search_type)
+                self.searchPattern = pattern
+                self.searchType = search_type
+        except Exception:
+            printDBG('setSearchPattern EXCEPTION')
+            self.searchPattern = ''
+            self.searchType = ''
         return
-    '''
     
     def convertList(self, cList):
         hostList = []
@@ -401,18 +412,38 @@ class CBaseHostClass:
         if '' != params.get('cookie', ''):
             self.COOKIE_FILE = GetCookieDir(params['cookie'])
         self.moreMode = False
-        
-    def listsTab(self, tab, cItem):
+    
+    def listsTab(self, tab, cItem, type='dir'):
         for item in tab:
             params = dict(cItem)
             params.update(item)
             params['name']  = 'category'
-            self.addDir(params)
-        
+            if type == 'dir':
+                self.addDir(params)
+            else: self.addVideo(params)
+    
+    def getMainUrl(self):
+        return self.MAIN_URL
+    
+    def getFullUrl(self, url):
+        if url.startswith('//'):
+            url = 'http:' + url
+        elif url.startswith('://'):
+            url = 'http' + url
+        elif url.startswith('/'):
+            url = self.getMainUrl() + url[1:]
+        elif 0 < len(url) and '://' not in url:
+            url =  self.getMainUrl() + url
+        return url
+    
     @staticmethod 
     def cleanHtmlStr(str):
-        str = str.replace('<', ' <').replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-        return CParsingHelper.removeDoubles(clean_html(str), ' ').strip()
+        str = str.replace('<', ' <')
+        str = str.replace('&nbsp;', ' ')
+        str = str.replace('&nbsp', ' ')
+        str = clean_html(str)
+        str = str.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+        return CParsingHelper.removeDoubles(str, ' ').strip()
 
     @staticmethod 
     def getStr(v, default=''):
@@ -510,3 +541,4 @@ class CBaseHostClass:
             self.beforeMoreItemList = []
             self.afterMoreItemList  = []
         self.moreMode = False
+    
