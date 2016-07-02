@@ -54,7 +54,7 @@ class IPTVSetupImpl:
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
         # f4mdump member
-        self.f4mdumpVersion = "F4MDump v0.70"
+        self.f4mdumpVersion = 0.80
         self.f4mdumppaths = ["/usr/bin/f4mdump", GetBinDir("f4mdump", "")]
         self._f4mdumpInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/f4mdump (%s)" % _("recommended")), "/usr/bin/f4mdump"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/f4mdump", GetBinDir("f4mdump", "")),
@@ -417,12 +417,18 @@ class IPTVSetupImpl:
         def _detectValidator(code, data):
             if self.binaryInstalledSuccessfully: self.stepHelper.setInstallChoiseList( self._f4mdumpInstallChoiseList2 )
             else: self.stepHelper.setInstallChoiseList( self._f4mdumpInstallChoiseList )
-            if self.f4mdumpVersion in data: return True,False
-            else: return False,True
+            if 'F4MDump v' in data:
+                try:
+                    tmp = re.search("F4MDump v([0-9.]+?)[^0-9^.]", data).group(1)
+                    if float(tmp) >= self.f4mdumpVersion:
+                        return True,False
+                except Exception:
+                    printExc()
+            return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
             for idx in range(len(dataTab)):
-                if 'samsamsam@o2.pl' in dataTab[idx]: sts, retPath = True, paths[idx]
+                if 'F4MDump v' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
             if self.binaryInstalledSuccessfully:
