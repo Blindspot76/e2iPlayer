@@ -346,6 +346,8 @@ class urlparser:
                        'flashlive.pw':         self.pp.parseCASTFLASHPW    ,
                        'castasap.pw':          self.pp.parseCASTFLASHPW    ,
                        'fastflash.pw':         self.pp.parseCASTFLASHPW    ,
+                       'dotstream.tv':         self.pp.parserDOTSTREAMTV   ,
+                       'leton.tv':             self.pp.parserDOTSTREAMTV   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -446,6 +448,16 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'dotstream.tv' in data:
+                streampage = self.cm.ph.getSearchGroups(data, """streampage=([^&]+?)&""")[0]
+                videoUrl = 'http://dotstream.tv/player.php?streampage={0}&height=490&width=730'.format(streampage)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'leton.tv' in data:
+                streampage = self.cm.ph.getSearchGroups(data, """streampage=([^&]+?)&""")[0]
+                videoUrl = 'http://leton.tv/player.php?streampage={0}&height=490&width=730'.format(streampage)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
             elif 'caston.tv/player.php' in data:
                 id = self.cm.ph.getSearchGroups(data, """var\sid\s?=[^0-9]([0-9]+?)[^0-9]""")[0]
                 if id == '': id = self.cm.ph.getSearchGroups(data, """id\s?=[^0-9]([0-9]+?)[^0-9]""")[0]
@@ -539,7 +551,7 @@ class urlparser:
                 return self.getVideoLinkExt(videoUrl)
             elif 'castto.me' in data:
                 fid = self.cm.ph.getSearchGroups(data, """fid=['"]([0-9]+?)['"]""")[0]
-                videoUrl = 'http://static.castto.me/embed.php?channel={0}&vw=710&vh=460'.format(fid)
+                videoUrl = 'http://static.castto.me/embedlivepeer5.php?channel={0}&vw=710&vh=460'.format(fid)
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'cast4u.tv' in data:
@@ -2982,6 +2994,7 @@ class pageParser:
                 if not sts: break
                 channelID = self.cm.ph.getSearchGroups(data, 'data-content-id="([0-9]+?)"')[0]
                 if '' == channelID: channelID = self.cm.ph.getSearchGroups(data, 'ustream.vars.contentId=([0-9]+?)[^0-9]')[0]
+                if '' == channelID: channelID = self.cm.ph.getSearchGroups(data, 'ustream.vars.cId=([0-9]+?)[^0-9]')[0]
 
             if '' == channelID: break
             #in linkUrl and 'ustream.vars.isLive=true' not in data and '/live/' not in linkUrl
@@ -3070,6 +3083,37 @@ class pageParser:
                 printExc()
         return False
         
+    def parserDOTSTREAMTV(self, linkUrl):
+        printDBG("parserDOTSTREAMTV linkUrl[%s]" % linkUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        videoUrl = strwithmeta(linkUrl)
+        if 'Referer' in videoUrl.meta:
+            HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
+        #printDBG(data)
+        if sts:
+            try:
+                a = int(self.cm.ph.getSearchGroups(data, 'var a = ([0-9]+?);')[0])
+                b = int(self.cm.ph.getSearchGroups(data, 'var b = ([0-9]+?);')[0])
+                c = int(self.cm.ph.getSearchGroups(data, 'var c = ([0-9]+?);')[0])
+                d = int(self.cm.ph.getSearchGroups(data, 'var d = ([0-9]+?);')[0])
+                f = int(self.cm.ph.getSearchGroups(data, 'var f = ([0-9]+?);')[0])
+                v_part = self.cm.ph.getSearchGroups(data, "var v_part = '([^']+?)'")[0]
+                
+                url = ('://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) )
+                if True:
+                    url = 'rtmp' + url + v_part
+                    url += ' swfUrl=%sjwp/jwplayer.flash.swf pageUrl=%s live=1 token=‪%s ' % (self.cm.getBaseUrl(videoUrl), videoUrl, '#atd%#$ZH')
+                else:
+                    tmp = v_part.split('?')
+                    url = 'http' + url + tmp[0] + '/index.m3u8?' + tmp[1]
+                    printDBG(url)
+                    return getDirectM3U8Playlist(url)
+                return url
+            except:
+                printExc()
+        return False
+    
     def parserABCASTBIZ(self, linkUrl):
         printDBG("parserABCASTBIZ linkUrl[%s]" % linkUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -4063,8 +4107,10 @@ class pageParser:
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
         
+        #printDBG(data)
+        
         def _getParam(name):
-            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
+            return self.cm.ph.getSearchGroups(data, """['"]?%s['"]?[^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
         swfUrl = "http://www.castto.me/_.swf"
         url    = _getParam('streamer')
         file   = _getParam('file')
@@ -4072,6 +4118,8 @@ class pageParser:
             url += ' playpath=%s swfUrl=%s token=%s pageUrl=%s live=1 ' % (file, swfUrl, '#ed%h0#w@1', baseUrl)
             printDBG(url)
             return url
+        elif file.startswith('http') and file.split('?')[0].endswith('.m3u8'):
+            return getDirectM3U8Playlist(file)
         return False
         
     def _unpackJS(self, data, name):
@@ -5405,9 +5453,12 @@ class pageParser:
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
-        data = re.search('file:[ ]*?"([^"]+?)"', data).group(1)
-        if data.split('?')[0].endswith('.m3u8'):
-            return getDirectM3U8Playlist(data)
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, 'file:[ ]*?"([^"]+?)"', 1, ignoreCase=True)[0]
+        if not videoUrl.split('?')[0].endswith('.m3u8'): videoUrl = self.cm.ph.getSearchGroups(data, '<source[^>]*?src="([^"]+?)"', 1, ignoreCase=True)[0]
+        
+        if videoUrl.split('?')[0].endswith('.m3u8'):
+            return getDirectM3U8Playlist(videoUrl)
         return False
         
     def parserTWITCHTV(self, baseUrl):

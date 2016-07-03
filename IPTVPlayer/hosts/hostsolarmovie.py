@@ -72,35 +72,71 @@ class SolarMovie(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'SolarMovie', 'cookie':'SolarMovie.cookie'})
+        
+        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+
+        self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        self.AJAX_HEADER = dict(self.HEADER)
+        self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+        
         self.movieGenresCache = []
         self.tvshowGenresCache = []
         self.seriesCache = []
         self.episodesCache = []
         self.linksCache = {}
+        self.needProxy = None
         
-    def _getFullUrl(self, url, series=False):
-        if not series:
-            mainUrl = self.MAIN_URL
-        else:
-            mainUrl = self.S_MAIN_URL
-        if url.startswith('/'):
-            url = url[1:]
-        if 0 < len(url) and not url.startswith('http'):
-            url = mainUrl + url
-        if not mainUrl.startswith('https://'):
-            url = url.replace('https://', 'http://')
+    def isProxyNeeded(self, url):
+        if 'solarmovie.ph' in url:
+            if self.needProxy == None:
+                sts, data = self.cm.getPage(self.MAIN_URL + 'movies/')
+                if sts and 'popular-new-movies.html' in data:
+                    self.needProxy = False
+                else:
+                    self.needProxy = True
+            return self.needProxy
+        return False
+        
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
+        
+        if self.isProxyNeeded( url ):
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            params['header']['Referer'] = proxy
+            params['header']['Cookie'] = 'flags=2e5;'
+            url = proxy
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and None == data:
+            sts = False
+        return sts, data
+        
+    def getIconUrl(self, url):
+        url = self.getFullUrl(url)
+        if self.isProxyNeeded( url ):
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            params = {}
+            params['User-Agent'] = self.HEADER['User-Agent'],
+            params['Referer'] = proxy
+            params['Cookie'] = 'flags=2e5;'
+            url = strwithmeta(proxy, params) 
         return url
         
+    def getFullUrl(self, url, series=False):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
+        return CBaseHostClass.getFullUrl(self, url)
+    
     def _fillFilters(self, url):
         printDBG("SolarMovie._fillFilters")
         table = []
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="sliderWrapper">', '</ul>', False)[1]
         data = data.split('</li>')
         for item in data:
             title = self.cleanHtmlStr( item )
-            url   = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
             if url.startswith('http'):
                 table.append({'title':title, 'url':url})
         return table
@@ -163,20 +199,21 @@ class SolarMovie(CBaseHostClass):
         if post != '': 
             url += post
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         nextPage = False
-        if ('page=%d"' % (page + 1)) in data:
+        if 'title="Next Page"' in data:
             nextPage = True
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="coverList">', '<div id="sidebar">', False)[1]#<hr
         data = data.split('<span class="wrapper">')
         if len(data): del data[0]
+        if len(data): data[-1] = data[-1].split('<li class="active">')[0]
         
         for item in data:
             tmp    = item.split('<span class="name">')
-            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            url    = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             icon   = self.cm.ph.getSearchGroups(item, 'data-original="([^"]+?)"')[0]
             #title  = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
             title  = self.cleanHtmlStr( tmp[-1] )
@@ -187,7 +224,7 @@ class SolarMovie(CBaseHostClass):
                 title = url.split('/')[-1].replace('-', ' ').title()
                 url += '/'
             params = dict(cItem)
-            params.update( {'title': title, 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( tmp[0].replace('</li>', ' | ') ), 'icon':self._getFullUrl(icon)} )
+            params.update( {'title': title, 'url':self.getFullUrl(url), 'desc': self.cleanHtmlStr( tmp[0].replace('</li>', ' | ') ), 'icon':self.getIconUrl(icon)} )
             if category == 'video' or '/episode-' in url:
                 self.addVideo(params)
             else:
@@ -204,7 +241,7 @@ class SolarMovie(CBaseHostClass):
         self.episodesCache = []
         
         baseUrl = cItem['url']
-        sts, data = self.cm.getPage(baseUrl)
+        sts, data = self.getPage(baseUrl)
         if not sts: return 
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="js-episode">', '</div>', False)
@@ -212,7 +249,8 @@ class SolarMovie(CBaseHostClass):
         for item in data:
             eUrl   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0].strip()
             
-            tmp = self.cm.ph.getSearchGroups(eUrl, 'season-([0-9]+?)/episode-([0-9]+?)/', 2)
+            if self.needProxy: tmp = self.cm.ph.getSearchGroups(eUrl, 'season-([0-9]+?)%2Fepisode-([0-9]+?)[^0-9]', 2)
+            else: tmp = self.cm.ph.getSearchGroups(eUrl, 'season-([0-9]+?)/episode-([0-9]+?)[^0-9]', 2)
             sNum = tmp[0]
             eNum = tmp[1]
             
@@ -231,7 +269,7 @@ class SolarMovie(CBaseHostClass):
                 self.addDir(params)
             
             # add episode to season
-            params = {'title':cItem['title'] + ': s%se%s ' % (sNum.zfill(2), eNum.zfill(2)) + self.cleanHtmlStr( eTitle ), 'desc':eDesc, 'url':self._getFullUrl(eUrl)}
+            params = {'title':cItem['title'] + ': s%se%s ' % (sNum.zfill(2), eNum.zfill(2)) + self.cleanHtmlStr( eTitle ), 'desc':eDesc, 'url':self.getFullUrl(eUrl)}
             self.episodesCache[-1].append(params)
         
     def listEpisodes(self, cItem):
@@ -264,17 +302,20 @@ class SolarMovie(CBaseHostClass):
         if url in self.linksCache:
             return self.linksCache[url] 
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return urlTab
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr id="link_', '</tr>', True)
         for item in data:
-            tmp = self.cm.ph.getSearchGroups(item, '<a[^>]*?href="([^"]*?/link/[^"]+?)"[^>]*?>([^<]+?)<', 2)
+            if self.needProxy:
+                tmp = self.cm.ph.getSearchGroups(item, '<a[^>]*?href="([^"]*?%2Flink%2F[^"]+?)"[^>]*?>([^<]+?)<', 2)
+            else:
+                tmp = self.cm.ph.getSearchGroups(item, '<a[^>]*?href="([^"]*?/link/[^"]+?)"[^>]*?>([^<]+?)<', 2)
             if '' == tmp[0].strip(): 
                 continue 
             title = tmp[1].strip()
             title += ' ' + self.cleanHtmlStr( item.split('</a>')[-1] )
-            urlTab.append({'name':title, 'url':self._getFullUrl(tmp[0]), 'need_resolve':1})
+            urlTab.append({'name':title, 'url':self.getFullUrl(tmp[0]), 'need_resolve':1})
             
         if len(urlTab):
             self.linksCache = {url:urlTab}
@@ -286,12 +327,15 @@ class SolarMovie(CBaseHostClass):
         
         videoUrl = ''
         if '/link/' in baseUrl:
-            sts, data = self.cm.getPage(baseUrl)
+            sts, data = self.getPage(baseUrl)
             if not sts: return []
             
             data = self.cm.ph.getDataBeetwenMarkers(data, 'fullyGreenButton', '</a>', False)[1]
-            url = self.cm.ph.getSearchGroups(data, 'href="([^"]*?/link/play/[^"]+?)"')[0]
-            sts, data = self.cm.getPage(self._getFullUrl(url))
+            if self.needProxy:
+                url = self.cm.ph.getSearchGroups(data, 'href="([^"]*?%2Flink%2Fplay%2F[^"]+?)"')[0]
+            else:
+                url = self.cm.ph.getSearchGroups(data, 'href="([^"]*?/link/play/[^"]+?)"')[0]
+            sts, data = self.getPage(self.getFullUrl(url))
             if not sts: return []
             videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"', 1, True)[0]
             if videoUrl == '':
@@ -299,7 +343,7 @@ class SolarMovie(CBaseHostClass):
                 videoUrl = self.cm.ph.getSearchGroups(data, 'href="(http[^"]+?)"')[0]
         
         if '' != videoUrl:
-            urlTab = self.up.getVideoLinkExt(videoUrl)
+            urlTab = self.up.getVideoLinkExt( self.getFullUrl(videoUrl) )
         return urlTab
         
     def getFavouriteData(self, cItem):
@@ -312,7 +356,7 @@ class SolarMovie(CBaseHostClass):
         printDBG("SolarMovie.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return retTab
         
         title = self.cm.ph.getDataBeetwenMarkers(data, '</select>', '</div>', False)[1]
@@ -344,7 +388,7 @@ class SolarMovie(CBaseHostClass):
         otherInfo['rating'] = self.cleanHtmlStr( imdbRating )
         otherInfo['rated'] = self.cleanHtmlStr( solarRating )
         
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getIconUrl(icon)}], 'other_info':otherInfo}]
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
