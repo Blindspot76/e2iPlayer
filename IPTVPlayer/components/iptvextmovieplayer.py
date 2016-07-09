@@ -1643,7 +1643,7 @@ class IPTVExtMoviePlayer(Screen):
             if config.plugins.iptvplayer.dts_software_decode.value:
                 cmd += ' -d '
                 
-            if config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
+            if config.plugins.iptvplayer.plarform.value in ('sh4', 'mipsel', 'armv7', 'armv5t'):
                 if config.plugins.iptvplayer.wma_software_decode.value:
                     cmd += ' -w '
                 
@@ -1652,7 +1652,7 @@ class IPTVExtMoviePlayer(Screen):
             
             if config.plugins.iptvplayer.aac_software_decode.value:
                 cmd += ' -a -p 10'
-            elif config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
+            elif config.plugins.iptvplayer.plarform.value in ('sh4', 'mipsel', 'armv7', 'armv5t'):
                 cmd += ' -p 2'
                 if None != self.downloader:
                     cmd += ' -o 1 '
@@ -1662,7 +1662,7 @@ class IPTVExtMoviePlayer(Screen):
             if audioTrackIdx >= 0:
                 cmd += ' -t %d ' % audioTrackIdx
                 
-            if config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
+            if config.plugins.iptvplayer.plarform.value in ('sh4', 'mipsel', 'armv7', 'armv5t'):
                 subtitleTrackIdx = self.metaHandler.getEmbeddedSubtileTrackIdx()
                 printDBG(">>>>>>>>>>>>>>>>>>>>>>>> subtitleTrackIdx[%d]" % subtitleTrackIdx)
                 if subtitleTrackIdx >= 0:
