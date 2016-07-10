@@ -51,15 +51,15 @@ class MoonwalkParser():
         cd = self.cm.ph.getSearchGroups(data, 'var condition_detected = ([^;]+?);')[0]
         if 'true' == cd: cd = 1
         else: cd = 0
-        data = self.cm.ph.getDataBeetwenMarkers(data, '/sessions/create_session', '.success', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '/sessions/create_new', '.success', False)[1]
         partner = self.cm.ph.getSearchGroups(data, 'partner: ([^,]+?),')[0]
         if 'null' in partner: partner = ''
         d_id = self.cm.ph.getSearchGroups(data, 'd_id: ([^,]+?),')[0]
         video_token = self.cm.ph.getSearchGroups(data, "video_token: '([^,]+?)'")[0]
         content_type = self.cm.ph.getSearchGroups(data, "content_type: '([^']+?)'")[0]
         access_key = self.cm.ph.getSearchGroups(data, "access_key: '([^']+?)'")[0]
-
-        sec_header['Content-Data'] = base64.b64encode(contentData)
+        
+        sec_header['Encoding-Pool'] = base64.b64encode(contentData.replace('|', ''))
         sec_header['X-CSRF-Token'] = csrfToken
         sec_header['X-Requested-With'] = 'XMLHttpRequest'
         post_data = {'partner':partner, 'd_id':d_id, 'video_token':video_token, 'content_type':content_type, 'access_key':access_key, 'cd':cd}
@@ -79,7 +79,7 @@ class MoonwalkParser():
             sec_header, post_data = self._getSecurityData(data)
             params['header'].update(sec_header)
             
-            sts, data = self.cm.getPage( '%s/sessions/create_session' % self.baseUrl, params, post_data)
+            sts, data = self.cm.getPage( '%s/sessions/create_new' % self.baseUrl, params, post_data)
             if not sts: return []
             
             data = byteify( json.loads(data) )

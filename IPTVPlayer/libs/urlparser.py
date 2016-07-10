@@ -5492,42 +5492,6 @@ class pageParser:
         printDBG("parserMOONWALKCC baseUrl[%r]" % baseUrl)
         return self.getMoonwalkParser().getDirectLinks(baseUrl)
         
-        url = baseUrl
-        baseUrl = 'http://' + self.cm.ph.getDataBeetwenMarkers(baseUrl, '://', '/', False)[1]
-        HTTP_HEADER= {'User-Agent':'Mozilla/5.0', 'Referer':url}
-        COOKIEFILE = self.COOKIE_PATH + "moonwalkcc.cookie"
-        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': COOKIEFILE}
-        
-        sts, data = self.cm.getPage( url, params)
-        if not sts: return False
-        
-        contentData = self.cm.ph.getDataBeetwenMarkers(data, 'setRequestHeader|', '|beforeSend', False)[1]
-        csrfToken = self.cm.ph.getSearchGroups(data, '<meta name="csrf-token" content="([^"]+?)"')[0] 
-        
-        cd = self.cm.ph.getSearchGroups(data, 'var condition_detected = ([^;]+?);')[0]
-        if 'true' == cd: cd = 1
-        else: cd = 0
-        data = self.cm.ph.getDataBeetwenMarkers(data, '/sessions/create_session', '.success', False)[1]
-        partner = self.cm.ph.getSearchGroups(data, 'partner: ([^,]+?),')[0]
-        if 'null' in partner: partner = ''
-        d_id = self.cm.ph.getSearchGroups(data, 'd_id: ([^,]+?),')[0]
-        video_token = self.cm.ph.getSearchGroups(data, "video_token: '([^,]+?)'")[0]
-        content_type = self.cm.ph.getSearchGroups(data, "content_type: '([^']+?)'")[0]
-        access_key = self.cm.ph.getSearchGroups(data, "access_key: '([^']+?)'")[0]
-
-        params['header']['Content-Data'] = base64.b64encode(contentData)
-        params['header']['X-CSRF-Token'] = csrfToken
-        params['header']['X-Requested-With'] = 'XMLHttpRequest'
-        params['load_cookie'] = True
-        post_data = {'partner':partner, 'd_id':d_id, 'video_token':video_token, 'content_type':content_type, 'access_key':access_key, 'cd':cd}
-        sts, data = self.cm.getPage( '%s/sessions/create_session' % baseUrl , params, post_data)
-        if not sts: return False
-        
-        data = byteify( json.loads(data) )
-        printDBG(getF4MLinksWithMeta(data["manifest_f4m"]))
-        
-        return getDirectM3U8Playlist(data["manifest_m3u8"])
-        
     def parserEASYVIDORG(self, baseUrl):
         printDBG("parserEASYVIDORG baseUrl[%r]" % baseUrl)
         def _findLinks(data):
