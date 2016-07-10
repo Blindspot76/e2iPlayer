@@ -139,14 +139,28 @@ class LocalMedia(CBaseHostClass):
         path = cItem['path']
         sts, data = ReadTextFile(path)
         if not sts: return
+        baseUrl = ''
+        if '#EXTM3U' not in data:
+            baseUrl = data.strip()
+            if baseUrl.startswith('http') and '://' in baseUrl:
+                baseUrl = self.up.decorateParamsFromUrl(baseUrl) 
+                httpParams, postData = self.cm.getParamsFromUrlWithMeta(baseUrl)
+                sts, data = self.cm.getPage(baseUrl, httpParams, postData)
+                if not sts: return
+        
         data = ParseM3u(data)
         for item in data:
             params = dict(cItem)
             need_resolve = 1
             url = item['uri']
             if url.startswith('/'):
-                url = 'file://' + url
-                need_resolve = 0
+                if baseUrl == '':
+                    url = 'file://' + url
+                    need_resolve = 0
+                elif url.startswith('//'):
+                    url = 'http:' + url
+                else:
+                    url = self.cm.getBaseUrl(baseUrl) + url[1:]
             params.update( {'title':item['title'], 'category':'m3u_item', 'url':url, 'need_resolve':need_resolve} )
             self.addVideo(params)
             
