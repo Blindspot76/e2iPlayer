@@ -99,10 +99,11 @@ class FsTo(CBaseHostClass):
         if self.needProxyGate != None:
             return
         
-        sts, data = self.cm.getPage('http://www.show-my-ip.de/ipadresse.html')
+        sts, data = self.cm.getPage('https://whatismyipaddress.com')
         if not sts:
             return
-        if 'UKR' in data:
+        data  = self.cm.ph.getDataBeetwenMarkers(data, 'Country:', '</table>', False)[1]
+        if 'Ukraine' in data:
             self.needProxyGate = False
         else:
             self.needProxyGate = True
@@ -143,7 +144,7 @@ class FsTo(CBaseHostClass):
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        printDBG(data)
+        #printDBG(data)
         printDBG("==================================================")
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="b-header__menu">', '</td>', False)[1]
@@ -166,7 +167,7 @@ class FsTo(CBaseHostClass):
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        printDBG(data)
+        #printDBG(data)
         printDBG("==================================================")
         
         m1 = '<div class="b-subsection-menu__items">'
@@ -248,7 +249,7 @@ class FsTo(CBaseHostClass):
             sts, data = self.cm.getPage(url)
             
             printDBG("--------------------------------------------------")
-            printDBG(data)
+            #printDBG(data)
             printDBG("==================================================")
         
             if not sts: return
@@ -362,7 +363,7 @@ class FsTo(CBaseHostClass):
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        printDBG(data)
+        #printDBG(data)
         printDBG("==================================================")
         
         nextPage = False
@@ -393,7 +394,7 @@ class FsTo(CBaseHostClass):
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        printDBG(data)
+        #printDBG(data)
         printDBG("==================================================")
         
         materialId = self.cm.ph.getSearchGroups(data, "materialId: '([^']+?)'")[0]
@@ -403,7 +404,7 @@ class FsTo(CBaseHostClass):
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        printDBG(data)
+        #printDBG(data)
         printDBG("==================================================")
         
         randomNumber = str(random.randint(10000000, 99999999))
@@ -429,7 +430,7 @@ class FsTo(CBaseHostClass):
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        printDBG(data)
+        #printDBG(data)
         printDBG("==================================================")
         
         m1 = '<li class='
@@ -489,7 +490,7 @@ class FsTo(CBaseHostClass):
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        printDBG(data)
+        #printDBG(data)
         printDBG("==================================================")
         
         # get serach sections 
