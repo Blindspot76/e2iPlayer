@@ -21,7 +21,7 @@ import urllib
 import unicodedata
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -44,16 +44,16 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://thewatchseries.to/'
+    return 'http://watch-series.to/'
 
 class TheWatchseriesTo(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL      = 'http://thewatchseries.to/'
+    MAIN_URL      = 'http://watch-series.to/'
     SEARCH_URL    = MAIN_URL + 'search/'
-    DEFAULT_ICON  = "http://thewatchseries.to/templates/default/images/logo.png"
+    DEFAULT_ICON  = "http://watch-series.to/templates/default/images/apple-touch-icon.png"
     
     MAIN_CAT_TAB = [{'icon':DEFAULT_ICON, 'category':'list_series',     'title': _('Series list'),           'url':MAIN_URL+'series'},
                     {'icon':DEFAULT_ICON, 'category':'episodes',        'title': _('Popular Episodes'),      'url':MAIN_URL+'new'},
@@ -83,7 +83,7 @@ class TheWatchseriesTo(CBaseHostClass):
         HTTP_HEADER= dict(self.HEADER)
         params.update({'header':HTTP_HEADER})
         
-        if self.isNeedProxy() and 'thewatchseries.to' in url:
+        if self.isNeedProxy() and ('thewatchseries.to' in url or 'watch-series.to' in url):
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
             params['header']['Referer'] = proxy
             params['header']['Cookie'] = 'flags=2e5;'
@@ -94,7 +94,7 @@ class TheWatchseriesTo(CBaseHostClass):
         return sts, data
         
     def getIconUrl(self, url):
-        url = self._getFullUrl(url)
+        url = self.getFullUrl(url)
         if 'thewatchseries.to' in url and self.isNeedProxy():
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
             params = {}
@@ -104,20 +104,10 @@ class TheWatchseriesTo(CBaseHostClass):
             url = strwithmeta(proxy, params) 
         return url
         
-    def _getFullUrl(self, url):
+    def getFullUrl(self, url):
         if 'proxy-german.de' in url:
             url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
-        if url.startswith('//'):
-            url = 'http:' + url
-        elif url.startswith('/'):
-            url = self.MAIN_URL + url[1:]
-        elif 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        
-        url = self.cleanHtmlStr(url)
-        url = self.replacewhitespace(url)
-
-        return url
+        return CBaseHostClass.getFullUrl(self, url)
         
     def cleanHtmlStr(self, data):
         data = data.replace('&nbsp;', ' ')
@@ -149,7 +139,7 @@ class TheWatchseriesTo(CBaseHostClass):
         
         for item in data:
             url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''', 1)[0]
-            url = self._getFullUrl( url )
+            url = self.getFullUrl( url )
             if not url.startswith('http') or 'latest' in url: continue
             title = self.cleanHtmlStr(item)
             params = dict(cItem)
@@ -190,7 +180,7 @@ class TheWatchseriesTo(CBaseHostClass):
             ta = True
         for item in data:
             icon  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            icon = self._getFullUrl(icon)
+            icon = self.getFullUrl(icon)
             if icon == '': icon = cItem['icon']
             if ta: item = item.split('<div valign="top" style="padding-left: 10px;">')[-1]
             if 'category-item-ad' in item or 'Latest Episode' in item: continue
@@ -202,7 +192,7 @@ class TheWatchseriesTo(CBaseHostClass):
             if desc == '': desc = self.cleanHtmlStr(item)
             
             params = dict(cItem)
-            params.update({'category':nextCategory, 'title':self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'icon':icon, 'desc':desc})
+            params.update({'category':nextCategory, 'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon':icon, 'desc':desc})
             
             if nextCategory == 'video' or '/episode/' in url:
                 self.addVideo(params)
@@ -236,7 +226,7 @@ class TheWatchseriesTo(CBaseHostClass):
                 if '' != episodeNum and '' != seasonNum:
                     title = 's%se%s'% (seasonNum.zfill(2), episodeNum.zfill(2)) + ' - ' + title.replace('Episode %s' % episodeNum, '')
                 params = dict(cItem)
-                params.update({'title':'{0}: {1}'.format(cItem['title'], title), 'url':self._getFullUrl(url), 'desc':self.cleanHtmlStr(item)})
+                params.update({'title':'{0}: {1}'.format(cItem['title'], title), 'url':self.getFullUrl(url), 'desc':self.cleanHtmlStr(item)})
                 episodesTab.append(params)
             
             if len(episodesTab):
@@ -272,11 +262,11 @@ class TheWatchseriesTo(CBaseHostClass):
             if url == '': continue
             try:
                 url = base64.b64decode(url)
-            except:
+            except Exception:
                 printExc()
                 continue
             if self.up.checkHostSupport(url) != 1: continue
-            urlTab.append({'name':host, 'url':self._getFullUrl(url), 'need_resolve':1})
+            urlTab.append({'name':host, 'url':self.getFullUrl(url), 'need_resolve':1})
         if len(urlTab):
             self.cacheLinks[cItem['url']] = urlTab
         return urlTab
@@ -424,7 +414,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -437,7 +427,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''
