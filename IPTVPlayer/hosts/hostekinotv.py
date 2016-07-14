@@ -477,7 +477,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -490,7 +490,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

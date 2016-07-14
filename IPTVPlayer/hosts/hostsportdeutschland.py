@@ -20,7 +20,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 
 
 ###################################################
@@ -96,7 +96,7 @@ class SportDeutschland(CBaseHostClass):
                 data = data['items']
                 return data
                 
-            except:
+            except Exception:
                 printExc()
         return []
         
@@ -146,7 +146,7 @@ class SportDeutschland(CBaseHostClass):
                 if dateUTC > datetime.utcnow():
                     params['title'] += _(" (planowany %s)") % self._utc2local(dateUTC).strftime('%Y/%m/%d %H:%M:%S')
                     planowany = True
-            except:
+            except Exception:
                 printExc()
             
             sectionPermalink = self._getJItemStr(item.get('section', {}), 'permalink')
@@ -197,13 +197,13 @@ class SportDeutschland(CBaseHostClass):
                                         assets_info = json.loads(assets_info)
                                         videoUrl = self._getJItemStr(assets_info, 'video')
                                         printDBG('SportDeutschland.getLinksForVideo "video" from "assets_info" |%s|' % videoUrl)
-                                    except: printExc()
+                                    except Exception: printExc()
                         if '' == videoUrl:  
                             player = self._getJItemStr(data['asset'], 'player')
                             if '' != player:
                                 sts,data = self.cm.getPage(player, {'header' : HTTP_HEADER})
                                 if sts: videoUrl = self.cm.ph.getSearchGroups(data, '<a class="asset"[^>]+?href="([^"]+?)"')[0]
-                    except:
+                    except Exception:
                         printExc()
         
         if '.smil?' in videoUrl:
@@ -323,7 +323,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -336,7 +336,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

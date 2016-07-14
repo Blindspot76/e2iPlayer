@@ -195,7 +195,7 @@ class CVevoSignAlgoExtractor:
                     exec algoCodeObj in vGlobals, vLocals
                     algoCodeObj = vLocals['outSignature']
                     
-                except:
+                except Exception:
                     printExc('decryptSignature compile algo code EXCEPTION')
                     return '', extract_type
             else:
@@ -211,7 +211,7 @@ class CVevoSignAlgoExtractor:
         
         try:
             sig = algoCodeObj(s)
-        except:
+        except Exception:
             printExc('decryptSignature exec code EXCEPTION')
             self._cleanTmpVariables()
             return '', extract_type
@@ -920,7 +920,7 @@ class YoutubeIE(InfoExtractor):
                 params = {'lang':lang_code, 'v':video_id, 'fmt':'vtt', 'name':name}
                 url = 'https://www.youtube.com/api/timedtext?' + urllib.urlencode(params)
                 sub_tracks.append({'title':title, 'url':url, 'lang':lang_code, 'ytid':id, 'format':'vtt'})
-        except:
+        except Exception:
             printExc()
         printDBG(sub_tracks)
         return sub_tracks

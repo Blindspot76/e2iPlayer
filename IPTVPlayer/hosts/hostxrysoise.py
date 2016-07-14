@@ -18,7 +18,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -322,7 +322,7 @@ class XrysoiSE(CBaseHostClass):
         try:
             cItem = byteify(json.loads(fav_data))
             links = self.getLinksForVideo(cItem)
-        except: printExc()
+        except Exception: printExc()
         return links
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
@@ -451,7 +451,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -464,7 +464,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

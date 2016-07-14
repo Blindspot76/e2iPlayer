@@ -23,7 +23,7 @@ import unicodedata
 import string
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.pbkdf2 import pbkdf2
 from binascii import a2b_hex
@@ -375,7 +375,7 @@ class KissCartoonMe(CBaseHostClass):
                     if 'googlevideo.com' not in url: continue
                     name = self.cleanHtmlStr(item)
                     urlTab.append({'name':name, 'url':url, 'need_resolve':0})
-            except:
+            except Exception:
                 printExc()
                 continue
                 
@@ -409,7 +409,7 @@ class KissCartoonMe(CBaseHostClass):
                 printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
                 url = _decUrl(url, password)
                 printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
-            except:
+            except Exception:
                 printExc()
                 continue
             if '://' not in url: continue
@@ -421,7 +421,7 @@ class KissCartoonMe(CBaseHostClass):
             def __getLinkQuality( itemLink ):
                 try:
                     return int(self.cm.ph.getSearchGroups('|'+itemLink['name']+'|', '[^0-9]([0-9]+?)[^0-9]')[0])
-                except: return 0
+                except Exception: return 0
             urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getBestSortedList()         
             
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '>', withMarkers=True, caseSensitive=False)
@@ -569,7 +569,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -582,7 +582,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

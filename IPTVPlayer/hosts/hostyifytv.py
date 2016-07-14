@@ -21,7 +21,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -197,7 +197,7 @@ class YifyTV(CBaseHostClass):
                 item['desc']  = self.cleanHtmlStr(item['post_content'])
                 item['icon']  = self._getFullUrl(item['image'])
                 self.addVideo(item)
-        except:
+        except Exception:
             printExc()
         
         if nextPage:
@@ -212,33 +212,34 @@ class YifyTV(CBaseHostClass):
         currItem['url'] = self.SRCH_URL + urllib.quote_plus(searchPattern)
         self.listItems(currItem)
         
+    def __saveGet(self, b, a):
+        try:
+            return b[a]
+        except Exception:
+            return 'pic'
+            
     def unpackJS(self, data, name):
         data = data.replace('Math.min', 'min').replace(' + (', ' + str(').replace('String.fromCharCode', 'chr').replace('return b[a]', 'return saveGet(b, a)')
-        def saveGet(b, a):
-            try:
-                return b[a]
-            except:
-                return 'pic'
         
         def justRet(data):
             return data
         
         try:
             paramsAlgoObj = compile(data, '', 'exec')
-        except:
+        except Exception:
             printExc('unpackJS compile algo code EXCEPTION')
             return ''
-        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet, 'justRet':justRet}
-        vLocals = { name: None }
 
         try:
+            vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':self.__saveGet, 'justRet':justRet}
+            vLocals = { name: None }
             exec( data, vGlobals, vLocals )
-        except:
+        except Exception:
             printExc('unpackJS exec code EXCEPTION')
             return ''
         try:
             return vLocals[name]
-        except:
+        except Exception:
             printExc('decryptPlayerParams EXCEPTION')
         return ''
         
@@ -378,7 +379,7 @@ class YifyTV(CBaseHostClass):
             pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n\t' + pyCode.replace('\n', '\n\t') + ('\n\treturn justRet%s\n' % args) + 'param = retA()'
             #printDBG(pyCode)
             data = self.unpackJS(pyCode, 'param')
-        except:
+        except Exception:
             printExc()
         return data
         
@@ -408,7 +409,7 @@ class YifyTV(CBaseHostClass):
                     #printDBG('++++++++++++++++++++++\n%s\n++++++++++++++++++++++' % item)
                     if item.get('type', '').startswith('video/') and item.get('url', '').startswith('http'):
                         urlTab.append({'name':'{0}x{1}'.format(item.get('height', ''), item.get('width', '')), 'url':item['url'], 'need_resolve':0})
-            except:
+            except Exception:
                 SetIPTVPlayerLastHostError('The Mirror is broken.\nIf available you can choose other source.')
                 printExc()
             if len(urlTab): break;
@@ -576,7 +577,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -589,7 +590,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

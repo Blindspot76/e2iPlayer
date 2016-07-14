@@ -24,7 +24,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -118,7 +118,7 @@ class TVJWORG(CBaseHostClass):
                     else: icon = ''
                 if icon.startswith('http'):
                     break
-        except:
+        except Exception:
             printExc()
         if '' == icon:
             icon = self.DEFAULT_ICON
@@ -140,7 +140,7 @@ class TVJWORG(CBaseHostClass):
                                 self.defaultLangCode = str(item['code'])
                                 langCode = self.defaultLangCode
                                 break
-                    except:
+                    except Exception:
                         printExc()
         else:
             langCode = config.plugins.iptvplayer.tvjworg_language.value
@@ -173,7 +173,7 @@ class TVJWORG(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'category':category, 'key':key, 'title':title, 'icon':icon, 'desc':desc})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
             
     def listMedia(self, cItem):
@@ -207,7 +207,7 @@ class TVJWORG(CBaseHostClass):
                 else:
                     params['title'] += '  COS ZLE SPRAWDZ type[%s]' % type
                     self.addVideo(params)
-        except:
+        except Exception:
             printExc()
             
     def listPseudoStreaming(self, cItem):
@@ -241,7 +241,7 @@ class TVJWORG(CBaseHostClass):
                 else:
                     params['title'] += '  COS ZLE SPRAWDZ type[%s]' % type
                     self.addVideo(params)
-        except:
+        except Exception:
             printExc()
     
     
@@ -256,7 +256,7 @@ class TVJWORG(CBaseHostClass):
                     linkVideo = item['progressiveDownloadURL']
                     linkVideo = urlparser.decorateUrl(linkVideo, {'Referer': 'http://tv.jw.org/'})
                     urlTab.append({'name':item['label'], 'url': linkVideo, 'need_resolve':0})
-                except:
+                except Exception:
                     printExc()
                 
             if 1 < len(urlTab):
@@ -265,7 +265,7 @@ class TVJWORG(CBaseHostClass):
                 def __getLinkQuality( itemLink ):
                     try: 
                         return int(itemLink['name'][0:-1])
-                    except:
+                    except Exception:
                         error = True
                         return 0
                 oneLink = CSelOneLink(urlTab, __getLinkQuality, max_bitrate)
@@ -273,7 +273,7 @@ class TVJWORG(CBaseHostClass):
                     urlTab = oneLink.getOneLink()
                 else:
                     urlTab = oneLink.getSortedLinks()
-        except:
+        except Exception:
             printExc()
         
         return urlTab
@@ -368,7 +368,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -381,7 +381,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

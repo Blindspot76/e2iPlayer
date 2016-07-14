@@ -45,11 +45,11 @@ import re
 import time
 import urllib
 try:    import simplejson as json
-except: import json
+except Exception: import json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 
 try:    from urlparse import urlsplit, urlunsplit
-except: pass
+except Exception: pass
 from hashlib import md5
 ############################################
 
@@ -73,43 +73,43 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry("-----------------VideoStar------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( VideoStar_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("-------------------WeebTV-------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WeebTv_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("----------------Pierwsza.TV-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( PierwszaTV_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("-----------------FilmOn TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( FilmOn_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("----------------Web-Live TV-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( SatLiver_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("----------------ustvnow.com-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( Ustvnow_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("--------------telewizjada.net---------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( TelewizjadaNet_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
    
     optionList.append(getConfigListEntry("-------------------edem.tv------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( EdemTv_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("-------------SkyLineWebCams.com-------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WkylinewebcamsCom_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     #optionList.append(getConfigListEntry("----------Telewizja-Online.pl----------", config.plugins.iptvplayer.fake_separator))
     #try:    optionList.extend( TelewizjaOnline_GetConfigList() )
-    #except: printExc()
+    #except Exception: printExc()
     
     optionList.append(getConfigListEntry(_("----------Other----------"), config.plugins.iptvplayer.fake_separator))
     optionList.append(getConfigListEntry(_("Turn off buffering for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
@@ -117,11 +117,11 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry("---------------Pure-Cast.net----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( PurecastNet_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     optionList.append(getConfigListEntry("----------------GoldVod.TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( GoldVodTV_GetConfigList() )
-    except: printExc()
+    except Exception: printExc()
     
     return optionList
 
@@ -408,7 +408,7 @@ class HasBahCa(CBaseHostClass):
             if '' == icon: icon = item.get('logo_148x148_uri', '')
             if '' == icon: icon = item.get('logo', '')
             if '' == icon: icon = item.get('logo_uri', '')
-        except:
+        except Exception:
             printExc()
         return icon.encode('utf-8')
 
@@ -432,7 +432,7 @@ class HasBahCa(CBaseHostClass):
                            'icon'     : self.__getFilmOnIconUrl(item)
                            }
                 self.addDir(params)
-            except:
+            except Exception:
                 printExc()
 
     def getFilmOnChannels(self):        
@@ -448,7 +448,7 @@ class HasBahCa(CBaseHostClass):
                            'icon'     : self.__getFilmOnIconUrl(item)
                            }
                 self.playVideo(params)
-            except:
+            except Exception:
                 printExc()
     
     def m3uList(self, listURL):
@@ -481,7 +481,7 @@ class HasBahCa(CBaseHostClass):
                     catTitle = self.cm.ph.getDataBeetwenMarkers(item, 'group-title="', '"', False)[1]
                     icon     = self.cm.ph.getDataBeetwenMarkers(item, 'tvg-logo="', '"', False)[1]
                     title    = item.split(',')[1]
-                except: 
+                except Exception: 
                     title = item
             else:
                 if 0 < len(title):
@@ -503,7 +503,7 @@ class HasBahCa(CBaseHostClass):
                             headers = byteify(json.loads(headers))
                             itemUrl = itemUrl.split('headers=')[0].strip()
                             itemUrl = urlparser.decorateUrl(itemUrl, headers)
-                        except:
+                        except Exception:
                             printExc()
                     params = {'title': title, 'url': itemUrl, 'icon':icon, 'desc':desc}
                     
@@ -722,7 +722,7 @@ class HasBahCa(CBaseHostClass):
                     #printDBG("=======================================================================")
                     #printDBG(data)
                     #printDBG("=======================================================================")
-                except:
+                except Exception:
                     printExc()
                     data = data2
                 data2 = ''
@@ -871,7 +871,7 @@ class HasBahCa(CBaseHostClass):
                            'icon'       : item['thumbnail'],
                            }
                 self.playVideo(params)
-            except:
+            except Exception:
                 printExc()
         
     def getVideostarLink(self, channelID):
@@ -886,7 +886,7 @@ class HasBahCa(CBaseHostClass):
                     if self.videoStarApi.getDefaultQuality() == item['bitrate']:
                         return [dict(item)]
                 return [dict(tmpList[0])]
-            except:
+            except Exception:
                 printExc()
                 urlsTab = []
         return urlsTab

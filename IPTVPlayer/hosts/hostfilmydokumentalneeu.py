@@ -24,7 +24,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -147,7 +147,7 @@ class FilmyDokumentalneEU(CBaseHostClass):
                 params = dict(cItem)
                 params.update({ 'url':url, 'title':title, 'icon':icon, 'desc':desc})
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()
             
         if nextPage:
@@ -187,7 +187,7 @@ class FilmyDokumentalneEU(CBaseHostClass):
             for item in tmpTab:
                 item['need_resolve'] = 0
                 urlTab.append(item)
-        except:
+        except Exception:
             printExc()
         return urlTab
         
@@ -293,7 +293,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -306,7 +306,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

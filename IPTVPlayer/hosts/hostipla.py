@@ -39,7 +39,7 @@ import urllib
 import re
 
 try: import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ###################################################
 
 
@@ -117,12 +117,12 @@ class Ipla(CBaseHostClass):
                                 if thumbSizePrev > thumbSize:
                                     thumbSizePrev = thumbSize
                                     icon = attrib['url']
-                        except: printExc()
+                        except Exception: printExc()
                         urls = self._getVideoUrls(vod)
                         params = {'category': 'video', 'title': title, 'plot': plot, 'icon':icon, 'urls': urls, 'fav_item':{'url':url, 'vod_id':val.get('id', '')}}
                         self.addVideo(params)
-                    except: printExc()
-            except: printExc()
+                    except Exception: printExc()
+            except Exception: printExc()
     # end getVideosList
     
     def _getVideoUrls(self, vodData):
@@ -141,7 +141,7 @@ class Ipla(CBaseHostClass):
                         continue
                     name = "Jakość: %s\t format: %s\t  bitrate: %s" % (attrib['quality'], attrib['format'], attrib['bitrate'])
                     urls.append( {'name':name, 'url':attrib['url'], 'bitrate':attrib['bitrate']} )
-        except: printExc()
+        except Exception: printExc()
         if config.plugins.iptvplayer.iplaUseDF.value and 1 < len(urls):
             urls = CSelOneLink(urls, __getLinkQuality, max_bitrate).getOneLink()
         return urls
@@ -153,7 +153,7 @@ class Ipla(CBaseHostClass):
             data = str({"timestamp" : int(time()), "data":data})
             with open(self.cacheFilePath, 'w') as f:
                 f.write(str(data))            
-        except:
+        except Exception:
             printExc()
     
     def __readCategoryCache(self):
@@ -173,7 +173,7 @@ class Ipla(CBaseHostClass):
                 printDBG("__readCategoryCache data from cache valid")
             else:
                 data = None
-        except:
+        except Exception:
             printExc()
             data = None
         return data
@@ -202,7 +202,7 @@ class Ipla(CBaseHostClass):
                     bFromCache = False
                 if not bFromCache:
                     self.__writeCategoryCache(data)
-            except:
+            except Exception:
                 printExc()
                 self.categoryXMLTree = None
         return self.categoryXMLTree
@@ -246,16 +246,16 @@ class Ipla(CBaseHostClass):
                                 if linkMarker  in link:
                                     # if this is only linkt to another category, update category id
                                     catId = link.replace(linkMarker, "")
-                            except: pass
+                            except Exception: pass
                             params = {'category': 'category', 'title': title, 'plot': plot, 'icon':icon, 'catId': catId, 'pCatId': pid}
                             self.addDir(params)
                         #printDBG("||||||||||||||||: %s" %pid)
-                    except:
+                    except Exception:
                         printDBG( "getCategories except" )
                         printExc()
                 if listVideo and numOfSubCat < 2:
                     self.getVideosList(Ipla.MOV_URL + parentCatId)
-            except: printExc()
+            except Exception: printExc()
         return
         
     def listsMainMenu(self, refresh=False):
@@ -276,7 +276,7 @@ class Ipla(CBaseHostClass):
             if sts:
                 sts, data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<vod[^>]+?id="%s"[^>]*?>'% favItem['vod_id']), re.compile('</vod>' ), False)
                 if sts: links = self._getVideoUrls(data)
-        except: printExc()
+        except Exception: printExc()
         return links
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
@@ -355,7 +355,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -368,7 +368,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

@@ -23,7 +23,7 @@ import urllib
 import time
 import random
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ###################################################
 
 
@@ -96,9 +96,9 @@ class Twitch(CBaseHostClass):
         
     def _getNum(self, v, default=0):
         try: return int(v)
-        except:
+        except Exception:
             try: return float(v)
-            except: return default
+            except Exception: return default
             
     def _checkNexPage(self, url, key):
         if 'limit=' not in url: return False
@@ -107,7 +107,7 @@ class Twitch(CBaseHostClass):
             sts, data = self.cm.getPage(url)
             data = json.loads(data)
             if len(data[key]): return True
-        except:
+        except Exception:
             printExc()
         return False
        
@@ -143,7 +143,7 @@ class Twitch(CBaseHostClass):
                     params = dict(cItem)
                     params.update({'title':_('Next page'), 'url':nextPage+'&on_site=1', 'desc':''})
                     self.addDir(params)
-            except: printExc()
+            except Exception: printExc()
             
     def listSearchGames(self, cItem, category):
         printDBG("Twitch.listSearchGames")
@@ -163,7 +163,7 @@ class Twitch(CBaseHostClass):
                     params = dict(cItem)
                     params.update({'title':_('Next page'), 'url':nextPage, 'desc':''})
                     self.addDir(params)
-            except: printExc()
+            except Exception: printExc()
             
     def listLiveChannels(self, cItem):
         printDBG("Twitch.listLiveChannels")
@@ -193,7 +193,7 @@ class Twitch(CBaseHostClass):
                         params = dict(cItem)
                         params.update({'title':_('Next page'), 'url':nextPage, 'desc':''})
                         self.addDir(params)
-                except: printExc()
+                except Exception: printExc()
                 
     def listsVideos(self, cItem, category):
         printDBG("Twitch.listsVideos")
@@ -213,7 +213,7 @@ class Twitch(CBaseHostClass):
                     params = dict(cItem)
                     params.update({'title':_('Next page'), 'url':nextPage, 'desc':''})
                     self.addDir(params)
-            except: printExc()
+            except Exception: printExc()
             
     def listsVideoChunks(self, cItem):
         printDBG("Twitch.listsVideoChunks")
@@ -242,7 +242,7 @@ class Twitch(CBaseHostClass):
                         params.update({'title':self._getStr(cItem['video_title'] + (_(' (chunk %s)') % chunk)), 'url':self._getStr(item['url'])})
                         self.addVideo(params)     
                         chunk += 1
-            except: printExc()
+            except Exception: printExc()
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("Twitch.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -271,7 +271,7 @@ class Twitch(CBaseHostClass):
                     for item in data:
                         item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True}) #'iptv_block_exteplayer':True, 
                         urlTab.append(item)
-                except: printExc()
+                except Exception: printExc()
         elif '' != cItem['url']:
             urlTab.append({'name':cItem['title'], 'url':cItem['url']})
     
@@ -403,7 +403,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -416,7 +416,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

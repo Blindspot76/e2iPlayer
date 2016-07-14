@@ -147,7 +147,7 @@ class AnimeShinden(CBaseHostClass):
             try:
                 langs = re.compile('title="([^"]+?)"').findall(item)
                 langs = ', '.join(langs)
-            except:
+            except Exception:
                 langs = ''
             params.update({'title':cItem['title'] + ': ' + title, 'url':url, 'desc':langs})
             self.addVideo(params)
@@ -185,7 +185,7 @@ class AnimeShinden(CBaseHostClass):
         sts, data = self.cm.getPage(url, {'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'save_cookie':True})
         if not sts: return urlsTab
         try: sleep(int(data)+1)
-        except: printExc()
+        except Exception: printExc()
         url = AnimeShinden.MAINURL+'xhr/%s/player_show' % onlineId
         sts, data = self.cm.getPage(url, {'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'load_cookie':True})
         if not sts: return urlsTab
@@ -307,7 +307,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -320,7 +320,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

@@ -21,7 +21,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -153,7 +153,7 @@ class WpTV(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':self.cleanHtmlStr(title), 'desc':desc, 'icon':self._getFullUrl(icon), 'url':self._getFullUrl(url)})
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()
     
     def listItems(self, cItem):
@@ -222,7 +222,7 @@ class WpTV(CBaseHostClass):
                 urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getSortedLinks()
                 if config.plugins.iptvplayer.wpUseDF.value:
                     urlTab = [urlTab[0]]
-        except:
+        except Exception:
             printExc()
         return urlTab
         
@@ -332,7 +332,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -345,7 +345,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

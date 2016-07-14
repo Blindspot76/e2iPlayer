@@ -13,7 +13,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 import re, urllib, urllib2, base64, math 
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ###################################################
 
 ###################################################
@@ -186,7 +186,7 @@ class Host:
            try:
                 data = self.cm.getURLRequestData({ 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True })
                 result = byteify(json.loads(data))
-           except:
+           except Exception:
               printExc( 'Host listsItems query error url[%r]' % url )
               return valTab
            if result:
@@ -222,7 +222,7 @@ class Host:
             data = byteify( json.loads('{%s}' % data) )
             for item in data['request']['files']['progressive']:
                 videoUrls.append({'name':item['quality'], 'url':item['url'], 'height':item['height']})
-        except:
+        except Exception:
             printExc()
             
         if 0 < len(videoUrls):

@@ -13,7 +13,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 import re
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, getConfigListEntry
 ###################################################
 
@@ -56,13 +56,13 @@ class Tvn24(CBaseHostClass):
         icon = ''
         if None != item:
             try:    icon = self.getStr( item['Main_Content_Photo']['url'] )
-            except: pass
+            except Exception: pass
             if '' == icon:
                 try:    icon = self.getStr( item['Photo_Photo']['url'] )
-                except: pass
+                except Exception: pass
             if '' == icon:
                 try:    icon = self.getStr( item['Headbg_Photo']['url'] )
-                except: pass
+                except Exception: pass
         return icon
 
     def listsMainMenu(self):
@@ -95,7 +95,7 @@ class Tvn24(CBaseHostClass):
                     if len(videos) > 0:
                         params = {'name': 'category', 'title': title, 'plot':plot, 'icon':icon, 'videos':list(videos), 'category': 'end_playlist', 'url': ''}
                         self.addDir(params)
-        except:
+        except Exception:
             printExc()
             
     def listPlaylistVideos(self, videos):
@@ -110,7 +110,7 @@ class Tvn24(CBaseHostClass):
                 if url != '':
                     params = {'title': title, 'url':url, 'icon':icon, 'plot':plot, 'tar_id':'', 'id':''}
                     self.addVideo(params)
-        except:
+        except Exception:
             printExc()
             
     def listSubCategories(self, category, subCategiories):
@@ -123,7 +123,7 @@ class Tvn24(CBaseHostClass):
                     url = Tvn24.MAIN_URL + '/categories/articles/' + Tvn24.API_KEY + '/' + str(id)
                     params = {'name': 'category', 'category': 'end_cat', 'parent_cat': category, 'title': title, 'url':url, 'page':'1'}
                     self.addDir(params)
-        except:
+        except Exception:
             printExc()
             
     def listCategories(self, category, baseUrl, page):
@@ -170,7 +170,7 @@ class Tvn24(CBaseHostClass):
             if None != nextPage:
                 params = {'name': 'category', 'title': 'Następna strona', 'category': category, 'url': baseUrl, 'page':nextPage}
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
             
     def listEndItems(self, parent_cat, baseUrl, page):
@@ -223,7 +223,7 @@ class Tvn24(CBaseHostClass):
             if None != nextPage:
                 params = {'name': 'category', 'title': 'Następna strona', 'category': 'end_cat', 'parent_cat':parent_cat, 'url': baseUrl, 'page':nextPage}
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
                 
     def getHostingTable(self, idx):
@@ -258,7 +258,7 @@ class Tvn24(CBaseHostClass):
                 
                 item['images'] = [ {'title':img_title, 'author': img_author, 'url': img_url} ]
                 retList.append( item )
-            except:
+            except Exception:
                 printExc()
         
         return retList

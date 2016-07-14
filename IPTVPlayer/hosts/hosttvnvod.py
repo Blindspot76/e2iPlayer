@@ -21,7 +21,7 @@ import urllib
 import time
 import binascii
 try:    import simplejson as json
-except: import json
+except Exception: import json
 from os import urandom as os_urandom
 try:
     from hashlib import sha1
@@ -145,7 +145,7 @@ class TvnVod(CBaseHostClass):
             v = item.get(key, None)
             if None == v:
                 return default
-        except:
+        except Exception:
             return default
         return clean_html(u'%s' % v).encode('utf-8')
         
@@ -176,7 +176,7 @@ class TvnVod(CBaseHostClass):
                     if tmp.endswith('png'): pngUrl = tmp
                 if '' == iconUrl: iconUrl = pngUrl
                 if '' != iconUrl: iconUrl = TvnVod.ICON_URL % iconUrl
-        except:
+        except Exception:
             printExc()
         return iconUrl
         
@@ -288,7 +288,7 @@ class TvnVod(CBaseHostClass):
                             tmp = time.strptime(tmp, "%Y-%m-%d %H:%M")
                             if tmp > time.localtime():
                                 title += _(" (planowany)")
-                    except:
+                    except Exception:
                         printExc()
                     
                     # get description
@@ -330,7 +330,7 @@ class TvnVod(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':_('Następna strona'), 'page': page, 'icon':'', 'desc':''})
                 self.addDir(params)
-        except: 
+        except Exception: 
             printExc()
 
         
@@ -418,7 +418,7 @@ class TvnVod(CBaseHostClass):
                         videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
                         if config.plugins.iptvplayer.TVNUseDF.value:
                             videoUrls = [videoUrls[0]]
-            except: printExc()
+            except Exception: printExc()
             if len(videoUrls):
                 break
         return videoUrls
@@ -526,7 +526,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printExc()
             return -1
 
@@ -539,7 +539,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printExc()
             self.searchPattern = ''
             self.searchType = ''

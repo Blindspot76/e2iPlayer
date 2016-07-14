@@ -19,7 +19,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -87,14 +87,14 @@ class TVProart(CBaseHostClass):
                 data = byteify(json.loads(data))
                 if data['status'] != '200': return
                 self.categories = data['content']
-            except:
+            except Exception:
                 printExc()
         try:
             for item in self.categories['cats']:
                 params = dict(cItem)
                 params.update({'title':item['title'], 'id':item['id'], 'slug':item['slug'], 'icon':self._getFullUrl(item['image']), 'category':category})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
     
     def listVideos(self, cItem):
@@ -113,7 +113,7 @@ class TVProart(CBaseHostClass):
                 url = self.API_URL + 'video?id={0}&slug={1}'.format(item['id'], item['slug'])
                 params = {'title':item['title'], 'url':url, 'icon':icon, 'desc':item['date']}
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()
             
         nextPage = False
@@ -122,7 +122,7 @@ class TVProart(CBaseHostClass):
             data = byteify(json.loads(data))
             if len(data['content']) > 0:
                 nextPage = True
-        except:
+        except Exception:
             pass
         self.addNextPage(cItem, nextPage, page)
         
@@ -141,7 +141,7 @@ class TVProart(CBaseHostClass):
                 url = self.API_URL + 'video?id={0}&slug={1}'.format(tmp[-2], tmp[-1])
                 params = {'title':item['text'], 'url':url}
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()
         
     def getLinksForVideo(self, cItem):
@@ -152,7 +152,7 @@ class TVProart(CBaseHostClass):
         try:
             data = byteify(json.loads(data))
             urlTab.append({'name':'vod', 'url':data['content']['video']['movieFile'], 'need_resolve':0})
-        except:
+        except Exception:
             pass
         return urlTab
         
@@ -261,7 +261,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -274,7 +274,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

@@ -19,7 +19,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -190,7 +190,7 @@ class PLWWECOM(CBaseHostClass):
                     item['name'] = '%sx%s' % (item['frameWidth'], item['frameHeight'])
                     item['url']  = item['defaultURL']
                     urlTab.append(item)
-        except:
+        except Exception:
             printExc()
             
         return urlTab
@@ -200,7 +200,7 @@ class PLWWECOM(CBaseHostClass):
         data = {'url':cItem['url'], 'type':cItem['type']}
         try:
             data = json.dumps(data).encode('utf-8')
-        except:
+        except Exception:
             printExc()
             data = ''
         return data
@@ -211,7 +211,7 @@ class PLWWECOM(CBaseHostClass):
             cItem = byteify(json.loads(fav_data))
             if cItem['type'] == 'picture':
                 return[{'name':'url', 'url':cItem['url'], 'need_resolve':0}]
-        except:
+        except Exception:
             printExc()
             return []
         return self.getLinksForVideo(cItem)
@@ -324,7 +324,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -337,7 +337,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

@@ -25,7 +25,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from os import path as os_path, chmod as os_chmod, remove as os_remove, rename as os_rename
 from Components.config import config, ConfigSelection, ConfigInteger, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
@@ -87,13 +87,13 @@ class LocalMedia(CBaseHostClass):
         try:
             path, ext = os_path.splitext(path)
             ext = ext[1:]
-        except: pass
+        except Exception: pass
         return ext.lower()
         
     def prepareCmd(self, path, start, end):
         lsdirPath = GetBinDir("lsdir")
         try: os_chmod(lsdirPath, 0777)
-        except: printExc()
+        except Exception: printExc()
         if config.plugins.iptvplayer.local_showhiddensdir.value:
             dWildcards = '[^.]*|.[^.]*|..[^.]*'
         else: dWildcards = '[^.]*'
@@ -282,7 +282,7 @@ class LocalMedia(CBaseHostClass):
                 fileSize = -1
                 if 5 == len(item):
                     try: fileSize = int(item[3])
-                    except:
+                    except Exception:
                         printExc()
                         continue
                 params = {'title':item[0]}
@@ -322,7 +322,7 @@ class LocalMedia(CBaseHostClass):
         if config.plugins.iptvplayer.local_alphasort.value == 'alphabetically':
             try:
                 tab.sort(key=lambda item: item['title'])
-            except:
+            except Exception:
                 printExc()
         for item in tab:
             params = dict(params)
@@ -523,7 +523,7 @@ class IPTVHost(CHostBase):
                     os_remove(privateData['file_path'])
                     retlist = ['refresh']
                     retCode = RetHost.OK
-            except:
+            except Exception:
                 printExc()
         if privateData['action'] == 'rename_file':
             try:
@@ -540,7 +540,7 @@ class IPTVHost(CHostBase):
                         retCode = RetHost.OK
                     else:
                         retlist = [_('File "%s" already exists!') % newPath]
-            except:
+            except Exception:
                 printExc()
         elif privateData['action'] == 'cut_file':
             self.cFilePath = privateData['file_path']
@@ -570,7 +570,7 @@ class IPTVHost(CHostBase):
                     self.cFilePath =  ''
                     retlist = ['refresh']
                     retCode = RetHost.OK
-            except:
+            except Exception:
                 printExc()
         elif privateData['action'] == 'umount_iso_file':
             cmd = 'umount "{0}"'.format(privateData['iso_mount_path']) + ' 2>&1'
@@ -654,7 +654,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -667,7 +667,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

@@ -84,7 +84,7 @@ class FightTube:
         query_data = {'url': self.MAINURL, 'return_data': True}
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             FightTube.printDBG('listsMainMenu exception')
             return
     
@@ -107,7 +107,7 @@ class FightTube:
         query_data = { 'url': url, 'return_data': True }
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             FightTube.printDBG('getMovieTab exception')
             return            
         # get next page url
@@ -326,7 +326,7 @@ class IPTVHost(IHost):
             for i in range( len(list) ):
                 if list[i]['title'] == 'Wyszukaj':
                     return self.getListForItem( i )
-        except:
+        except Exception:
             printDBG('getSearchResults EXCEPTION')
             
         return RetHost(RetHost.ERROR, value = [])

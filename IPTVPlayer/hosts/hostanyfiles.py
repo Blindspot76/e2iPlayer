@@ -127,11 +127,11 @@ class AnyFiles(CBaseHostClass):
             tmp = tmpTab
         
         try: cItem['num_of_pages'] = int(tmp[0])
-        except: cItem['num_of_pages'] = 1
+        except Exception: cItem['num_of_pages'] = 1
         try: cItem['url'] = self._getFullUrl(tmp[1])
-        except: pass
+        except Exception: pass
         try: cItem['page_size'] = int(tmp[2])
-        except: cItem['page_size'] = 1
+        except Exception: cItem['page_size'] = 1
         
         if 'priv_search' in cItem:
             pageloadUrl = '/pageloading/search-media-loader.jsp'
@@ -161,11 +161,11 @@ class AnyFiles(CBaseHostClass):
             if newhandle:
                 title = self.cm.ph.getDataBeetwenMarkers(item, '<strong>', '</strong>', False)[1]
                 try: desc = self.cleanHtmlStr(item.split('</div>')[1])
-                except: desc = ''
+                except Exception: desc = ''
             else:
                 title = self.cm.ph.getSearchGroups(item, reTitle, 1)[0]
                 try: desc = self.cleanHtmlStr(item.split('</tr>')[1])
-                except: desc = ''
+                except Exception: desc = ''
             if title != '' and url != '':
                 params = dict(cItem)
                 params.update( {'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon), 'desc':desc} )
@@ -319,7 +319,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -332,7 +332,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

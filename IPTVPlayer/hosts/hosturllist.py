@@ -94,7 +94,7 @@ class Urllist(CBaseHostClass):
                 # version should be in first line
                 line = fp.readline()
                 localVersion = int(self.cm.ph.getSearchGroups(line + '|', '#file_version=([0-9]+?)[^0-9]')[0])
-        except:
+        except Exception:
             printExc()
         
         # generate timestamp to add to url to skip possible cacheing
@@ -106,7 +106,7 @@ class Urllist(CBaseHostClass):
             if sts:
                 try:
                     remoteVersion = int(data.strip())
-                except:
+                except Exception:
                     printExc()
         # uaktualnij versje
         printDBG('Urllist.updateRafalcoolFile localVersion[%d] remoteVersion[%d]' % (localVersion, remoteVersion))
@@ -122,7 +122,7 @@ class Urllist(CBaseHostClass):
                     file = open(filePath, 'wb')
                     file.write(data)
                     file.close()
-                except:
+                except Exception:
                     printExc()
         
     def listCategory(self, cItem, searchMode=False):
@@ -296,7 +296,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -309,7 +309,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

@@ -7,7 +7,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 import re
 
 try: import json
-except: import simplejson as json
+except Exception: import simplejson as json
 
 NO_DEFAULT = None
 compiled_regex_type = type(re.compile(''))
@@ -29,7 +29,7 @@ class InfoExtractor():
         else:
             try:
                 data = byteify(json.loads(data))
-            except:
+            except Exception:
                 printExc()
                 data = None
         return data

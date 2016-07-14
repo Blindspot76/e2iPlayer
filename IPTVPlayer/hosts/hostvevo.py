@@ -21,7 +21,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -103,7 +103,7 @@ class Vevo(CBaseHostClass):
         sts, data = self.cm.getPage('http://www.vevo.com/auth', {}, b'')
         if sts:
             try: oauth_token = byteify(json.loads(data))['access_token']
-            except: printExc()
+            except Exception: printExc()
         
         if '?' in url:
             url += '&'
@@ -137,7 +137,7 @@ class Vevo(CBaseHostClass):
                 self.language = language.split('-')
                 self.translations = data['default']['localeData'][language]['translation']
                 self.webDataCache = data
-            except:
+            except Exception:
                 printExc()
                 return
                 
@@ -154,7 +154,7 @@ class Vevo(CBaseHostClass):
             try:
                 self.translations = byteify(json.loads(translations))['translations']
                 self.browseCategoryList = byteify(json.loads(browseCategoryList))['browseCategoryList']
-            except:
+            except Exception:
                 printExc()
                 return
             
@@ -166,7 +166,7 @@ class Vevo(CBaseHostClass):
                 title = self.translations.get(item['loc'], item['loc'])
                 params.update({'title':title, 'category':category, 'genre':item['id']})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
             
     def listBrowseArtists(self, cItem):
@@ -189,7 +189,7 @@ class Vevo(CBaseHostClass):
                 data = byteify(json.loads(data))
                 if data['success']:
                    self.cacheShows = data['result']
-            except:
+            except Exception:
                 printExc()
                 return
         
@@ -260,14 +260,14 @@ class Vevo(CBaseHostClass):
     def addPlaylistItem(self, cItem, item):
         params = dict(cItem)
         try: icon = item['images'][0]['image']
-        except: icon = ''
+        except Exception: icon = ''
         params.update({'category':'playlist', 'title':item['name'], 'icon':icon, 'desc':item['description'], 'url':self.PLAYLIST_URL + item['playlistId']})
         self.addDir(params)
         
     def addArtistItem(self, cItem, item):
         params = dict(cItem)
         try: icon = item['thumbnailUrl']
-        except: icon = ''
+        except Exception: icon = ''
         params.update({'category':'artist', 'title':item['name'], 'icon':icon, 'desc':_('video count: %s') % item.get('totalVideos', ''), 'url': self.ARTIST_URL + item['urlSafeName']})
         self.addDir(params)
         
@@ -293,7 +293,7 @@ class Vevo(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':_("Next page"), 'page':page+1, 'session':data.get('session')})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
     
     def listVideosFromPage(self, cItem):
@@ -312,7 +312,7 @@ class Vevo(CBaseHostClass):
                 playlist = data['default']['artistVideos'][id]['all']['MostRecent']['isrcs']
             for item in playlist:
                 self.addVideoItem(cItem, data['default']['videos'][item])
-        except:
+        except Exception:
             printExc()
         return
         
@@ -326,7 +326,7 @@ class Vevo(CBaseHostClass):
             data = byteify(json.loads(data))
             for item in data['videos']:
                 self.addVideoItem(cItem, item)
-        except:
+        except Exception:
             printExc()
         
     def listBrowseVideos(self, cItem):
@@ -499,7 +499,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -512,7 +512,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

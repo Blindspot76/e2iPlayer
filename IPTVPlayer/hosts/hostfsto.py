@@ -23,7 +23,7 @@ import base64
 import random
 import time
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from datetime import datetime
 from urlparse import urlparse
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
@@ -132,7 +132,7 @@ class FsTo(CBaseHostClass):
             response.close()
             parsed_uri = urlparse( url )
             self.MAIN_URL = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-        except:
+        except Exception:
             printExc()
             return []
         
@@ -215,7 +215,7 @@ class FsTo(CBaseHostClass):
                     rel = rel.replace("'", '"')
                     rel = byteify(json.loads(rel))
                     self.filtesCache[fIdx]['items'].append({'ftype':'more', 'title':_("Next page"), 'rel':rel, 'count':count, 'total_count':total_count})
-                except:
+                except Exception:
                     printExc()
         
         printDBG(self.filtesCache)
@@ -264,7 +264,7 @@ class FsTo(CBaseHostClass):
                     params = dict(cItem)
                     params['count'] = data['count']
                     self.addDir(params)
-            except:
+            except Exception:
                 printExc()
         else:
             tab = self.filtesCache[cItem['filter_idx']]['items']
@@ -475,7 +475,7 @@ class FsTo(CBaseHostClass):
             sts, response = self.cm.getPage(url, params)
             url = response.geturl()
             response.close()
-        except:
+        except Exception:
             printExc()
             return []
             
@@ -646,7 +646,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -659,7 +659,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

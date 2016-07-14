@@ -19,7 +19,7 @@ import urllib
 import base64
 import string
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from time import sleep
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
@@ -72,14 +72,14 @@ class MoviesHDCO(CBaseHostClass):
         sourceCode = data
         try:
             code = compile(sourceCode, '', 'exec')
-        except:
+        except Exception:
             printExc()
             return 0
         vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
         vLocals = { 'paramsTouple': None }
         try:
             exec( code, vGlobals, vLocals )
-        except:
+        except Exception:
             printExc()
             return 0
         return vLocals['a']
@@ -141,7 +141,7 @@ class MoviesHDCO(CBaseHostClass):
                     params2['header'] = {'Referer':url, 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
                     sleep(4)
                     sts, data = self.cm.getPage(verUrl, params2, post_data)
-                except:
+                except Exception:
                     printExc()
             else:
                 break
@@ -494,7 +494,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -507,7 +507,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

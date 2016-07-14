@@ -22,7 +22,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -296,7 +296,7 @@ class Laola1TV(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':_("Next page"), 'page':page+1})
                 self.addDir(params) 
-        except:
+        except Exception:
             printExc()
         
     def getLinksForVideo(self, cItem):
@@ -308,7 +308,7 @@ class Laola1TV(CBaseHostClass):
             baseUrl = response.geturl()
             data = response.read().strip()
             response.close()
-        except:
+        except Exception:
             printExc()
             return []
         
@@ -365,7 +365,7 @@ class Laola1TV(CBaseHostClass):
             data = byteify(json.loads(data))
             for item in data['data']['stream-access']:
                 streamaccessTab.append(item)
-        except:
+        except Exception:
             printExc()
         
         if 0 == len(streamaccessTab):
@@ -422,7 +422,7 @@ class Laola1TV(CBaseHostClass):
                 try:
                     value = itemLink['bitrate']
                     return int(value)
-                except:
+                except Exception:
                     printExc()
                     return 0
             urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getSortedLinks()
@@ -558,7 +558,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -571,7 +571,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

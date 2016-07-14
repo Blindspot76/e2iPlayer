@@ -22,7 +22,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 import string
 import base64
 import binascii
@@ -91,7 +91,7 @@ class SerialeNet(CBaseHostClass):
                match = re.compile("\('(.+?)'").findall(eval(js))
                if len(match) > 0:
                   ret = base64.b64decode(binascii.unhexlify(match[0].replace("/x","")))
-        except: printExc()
+        except Exception: printExc()
         return ret
 
     def unpack(self, p, a, c, k, e=None, d=None):
@@ -302,8 +302,8 @@ class SerialeNet(CBaseHostClass):
                         data = self.cm.ph.getSearchGroups(data, "text\('([^']+?)'")[0]
                         SetIPTVPlayerLastHostError(data)
                     printDBG("SerialeNet.getLinksForVideo >>>>>>>>>>>>>>>> videoUrl[%s]" % videoUrl)
-                except: printExc()
-        except: printExc()
+                except Exception: printExc()
+        except Exception: printExc()
         return videoUrlTab 
         
     def getVideoLink(self, url):
@@ -429,7 +429,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -442,7 +442,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

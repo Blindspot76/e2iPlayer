@@ -19,7 +19,7 @@ import time
 import random
 #import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from binascii import hexlify, unhexlify, a2b_hex, a2b_base64
 from hashlib import md5
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc  import AES_CBC
@@ -174,7 +174,7 @@ class AnimeOdcinki(CBaseHostClass):
         sts, data = self.cm.getPage(url)
         if sts:
             try: pagesNum = int(self.cm.ph.getSearchGroups(data, "Strona[^;]+?;([0-9]+?):")[0])-1
-            except: pagesNum = 0 
+            except Exception: pagesNum = 0 
             data = self.cm.ph.getDataBeetwenMarkers(data, '</tr></table><table cellpadding', "class='main-footer-top", True)[1]
             data = data.split('</tr></table>')
             if len(data): del data[0]
@@ -235,7 +235,7 @@ class AnimeOdcinki(CBaseHostClass):
                 decrypted = alg.decrypt(a2b_base64(data["a"]), iv=iv)
                 decrypted = decrypted.split('\x00')[0]
             decrypted = "%s" % json.loads( decrypted ).encode('utf-8')
-        except:
+        except Exception:
             printExc()
             decrypted = ''
         return decrypted
@@ -374,7 +374,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -387,7 +387,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

@@ -18,7 +18,7 @@ import urllib
 import time
 import random
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from os import urandom as os_urandom
 
 ###################################################
@@ -140,7 +140,7 @@ class Ekstraklasa(CBaseHostClass):
                     params = dict(cItem)
                     params.update({'title':'Następna strona', 'url':url })
                     self.addDir(params)
-            except:
+            except Exception:
                 printExc()
         # list items
         
@@ -168,7 +168,7 @@ class Ekstraklasa(CBaseHostClass):
                             strTab.append(0)
                         valTab.append(strTab)
                         strTab = []
-            except:
+            except Exception:
                 printExc()
         return valTab
 

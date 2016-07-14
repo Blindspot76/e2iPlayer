@@ -18,7 +18,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 
 ###################################################
 
@@ -215,7 +215,7 @@ class Playpuls(CBaseHostClass):
                 source3Data = byteify(json.loads(source3Data))
                 for key,val in source3Data.iteritems():
                     sources.append({'quality':key.replace('src', ''), 'src': '/play/%s' % val })
-            except:
+            except Exception:
                 printExc()
         
         if len(sources):
@@ -330,7 +330,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -343,7 +343,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

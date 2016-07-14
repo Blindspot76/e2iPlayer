@@ -22,7 +22,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -123,9 +123,9 @@ class ZDFmediathek(CBaseHostClass):
         
     def _getNum(self, v, default=0):
         try: return int(v)
-        except:
+        except Exception:
             try: return float(v)
-            except: return default
+            except Exception: return default
             
     def _getIcon(self, iconsItem):
         iconssize = config.plugins.iptvplayer.zdfmediathek_iconssize.value
@@ -174,7 +174,7 @@ class ZDFmediathek(CBaseHostClass):
                         self.addVideo(params)
                     else:
                         self.addDir(params)
-        except: printExc()
+        except Exception: printExc()
         # add next page when needed
         if addPage:
             url = baseUrl + '?page=%s' % (page+1)
@@ -186,7 +186,7 @@ class ZDFmediathek(CBaseHostClass):
                     desc = item.get("beschreibung", "")
                     params.update({'page':page+1, 'title':_('Next page'), 'desc':desc})
                     self.addDir(params)
-            except: printExc()
+            except Exception: printExc()
             
     def listRubriken(self, cItem, category):
         printDBG("ZDFmediathek.listRubriken")
@@ -245,7 +245,7 @@ class ZDFmediathek(CBaseHostClass):
                         params.update(item)
                         params["desc"] = cItem.get("beschreibung", "")
                         tmpTab.append(params)
-            except: printExc()
+            except Exception: printExc()
             if 1 == len(tmpTab):
                 cItem['key'] = tmpTab[0]['key']
                 self._listBase(cItem, ["video", "livevideo"], url, cItem['key'], True)
@@ -277,7 +277,7 @@ class ZDFmediathek(CBaseHostClass):
             for item in data:
                 if 'm3u8_' in item["type"]:
                     urlTab.append({'name':item["type"], 'url':item["url"]})
-        except: printExc()
+        except Exception: printExc()
         '''
         
         # GET VIDEO URL FROM WEB API
@@ -322,7 +322,7 @@ class ZDFmediathek(CBaseHostClass):
                         qualityPref = abs(qualityVal - preferedQuality)
                         formatPref  = formatMap.get(type['name'], 10)
                         tmpUrlTab.append({'url':url, 'quality_name':quality, 'quality':qualityVal, 'quality_pref':qualityPref, 'format_name':type['name'], 'format_pref':formatPref, 'get_url':type.get('get_url', _httpGetUrl)})
-        except: printExc()
+        except Exception: printExc()
         def _cmpLinks(it1, it2):
             prefmoreimportantly = config.plugins.iptvplayer.zdfmediathek_prefmoreimportant.value
             if 'quality' == prefmoreimportantly:
@@ -494,7 +494,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -507,7 +507,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

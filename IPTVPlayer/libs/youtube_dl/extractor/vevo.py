@@ -9,7 +9,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.base import InfoExt
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 
 try: import json
-except: import simplejson as json
+except Exception: import simplejson as json
 
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 
@@ -268,7 +268,7 @@ class VevoIE(InfoExtractor):
         if not video_info:
             try:
                 self._initialize_api(video_id)
-            except:
+            except Exception:
                 ytid = response.get('errorInfo', {}).get('ytid')
                 #if ytid:
                 #    self.report_warning(

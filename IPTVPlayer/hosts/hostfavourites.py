@@ -15,7 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 ###################################################
 from Components.config import config, ConfigInteger, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -56,7 +56,7 @@ class Favourites(CBaseHostClass):
                 self.hostName = hostName
                 self.host = host
                 return True
-        except: printExc()
+        except Exception: printExc()
         return False
                 
     def listGroups(self, category):
@@ -114,7 +114,7 @@ class Favourites(CBaseHostClass):
         
     def getResolvedURL(self, url):
         try: return self.host.getResolvedURL(url)
-        except: return RetHost(RetHost.ERROR, value = [])
+        except Exception: return RetHost(RetHost.ERROR, value = [])
 
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Favourites.handleService start')

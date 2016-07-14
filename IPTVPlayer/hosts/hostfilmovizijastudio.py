@@ -21,7 +21,7 @@ import urllib
 import unicodedata
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -376,7 +376,7 @@ class FilmovizijaStudio(CBaseHostClass):
                     url = self.cm.ph.getSearchGroups(url, '''['"](http[^'^"]+?)['"]''')[0]
                     if not url.startswith('http'): continue
                     urlTab.append({'name':urlName, 'url':self._getFullUrl(url), 'need_resolve':1})
-            except:
+            except Exception:
                 printExc()
         
         return urlTab
@@ -592,7 +592,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -605,7 +605,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

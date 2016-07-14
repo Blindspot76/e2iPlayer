@@ -14,7 +14,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 import time, urllib, urllib2, re, math, random
 try:   import json
-except:import simplejson as json
+except Exception:import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -101,7 +101,7 @@ class vodonet:
         if table[i][3] != '':
           iconImage = self.api.getPoster(table[i][3])
         else: iconImage = ''
-      except:
+      except Exception:
         iconImage = ''
       
       if name == 'None':
@@ -164,7 +164,7 @@ class vodonet:
           if 'poster' in items: strTab.append(items['poster']['imageId'])
           else:
             try: strTab.append(items['leadMedia']['imageId'])
-            except: strTab.append('')
+            except Exception: strTab.append('')
           valTab.append(strTab)
     return valTab
 
@@ -214,34 +214,34 @@ class vodonet:
     if self.name == 'main-menu' and self.title == self.setTable()[1]:
       data = self.api.getAPIData('content', self.api.makeListQuery({"context":"onet/vod", "method":"guideListsByType", "sort":"DEFAULT", "type":"mobile-sg-polecane", "guidelistView":"listitem"}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'][0]['contentLeads'], ['title','ckmId','videoId']), 'movie', 'None')
-      except: printExc()      
+      except Exception: printExc()      
 
     #BAJKI
     if self.name == 'main-menu' and self.title == self.setTable()[6]:    
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/bajki", "method":"search", "sort":"DATE_DESC", "noSeriesGroup":"True"}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'], ['title','ckmId','videoId']), 'movie', 'None')
-      except: printExc()   
+      except Exception: printExc()   
     #SERIALE
     if self.name == 'main-menu' and self.title == self.setTable()[3]:  
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/vod", "method":"search", "sort":"DATE_DESC", "channel":"seriale"}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'], ['seriesTitle','season','seriesId']), self.name, self.setTable()[3]) # sometimes in returnet data seriesTitle is missing
-      except: printExc()
+      except Exception: printExc()
     #SERIALE
     if self.name == 'main-menu' and self.title == self.setTable()[4]:  
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/vod", "method":"search", "sort":"DATE_DESC", "channel":"tv"}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'], ['seriesTitle','season','seriesId']), self.name, self.setTable()[4])
-      except: printExc()   
+      except Exception: printExc()   
       
     #KATEGORIE FILMOWE
     if self.name == 'main-menu' and self.title == self.setTable()[2]:
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/vod", "method":"aggregates", "sort":"TITLE_ASC", "channel":"filmy", "names":"genres"}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'][0]['items'], ['name','','']), self.name, self.setTable()[2])
-      except: printExc()
+      except Exception: printExc()
     #DOKUMENTY (moze zwracac items jako film lub jako serial)
     if self.name == 'main-menu' and self.title == self.setTable()[5]:
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/vod", "method":"search", "sort":"POPULARITY_DESC", "channel":"dokumenty"}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'], ['seriesTitle','ckmId','seriesId'], ['title','ckmId','videoId']), 'movie', 'None')
-      except: printExc()
+      except Exception: printExc()
       
     #sub-menu
     #filmy w kategoriach
@@ -249,7 +249,7 @@ class vodonet:
       printDBG( "filmy w kategoriach" )
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/vod", "method":"search", "sort":"POPULARITY_DESC", "channel":"filmy", "genre":self.title}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'], ['title','ckmId','videoId']), 'movie', 'None')
-      except: printExc()
+      except Exception: printExc()
       
     #sezony w serialu
     if self.name == 'sub-menu' and self.cm.isNumeric(self.category):
@@ -261,14 +261,14 @@ class vodonet:
       printDBG( "sezony w serialu" )
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/vod", "method":"episodes", "sort":"DATE_DESC", "seriesId":int(self.url)}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'], ['title','ckmId','episode']), 'playSeries', 'None')     
-      except: printExc()
+      except Exception: printExc()
       
     #odcinki w sezonie
     if self.name == 'series':
       printDBG( "odcinki w sezonie" )
       data = self.api.getAPIData('video', self.api.makeListQuery({"context":"onet/vod", "method":"episodes", "sort":"DATE_DESC", "seriesId":int(self.url), "season":int(self.category)}))
       try: self.listsAddDirMenu(self.listsItems(data['result']['data'], ['title','ckmId','episode']), 'playSeries', 'None')
-      except: printExc()
+      except Exception: printExc()
         
     printDBG("vodonet.handleService NO_ENTRY")
 
@@ -298,7 +298,7 @@ class API:
                 for sub in subTab:
                     if sub['url'].split('?')[0].endswith('.srt'):
                         sub_tracks.append({'title':sub['name'], 'url':sub['url'], 'lang':sub['id'], 'format':'srt'})
-        except:
+        except Exception:
             printExc()
         strTab = []
         for items in result['result']['0']['formats']['wideo']:
@@ -311,7 +311,7 @@ class API:
                     strTab.append(0)
                 valTab.append(strTab)
                 strTab = []
-    except: 
+    except Exception: 
         printExc()
     if withSubTracks:
         return sub_tracks, valTab
@@ -330,7 +330,7 @@ class API:
         #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         #printDBG(data)
         #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-    except: printExc()
+    except Exception: printExc()
     return result
 
   def makeListQuery(self, p):

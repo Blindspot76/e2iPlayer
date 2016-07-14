@@ -22,7 +22,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -83,7 +83,7 @@ class EskaGo(CBaseHostClass):
         try:
             data = byteify( json.loads(data) )
             self.cacheChannels = data
-        except:
+        except Exception:
             printExc()
             
     def listChannels(self, cItem):
@@ -100,7 +100,7 @@ class EskaGo(CBaseHostClass):
             try:
                 data = data[item['key']]
                 meta_data = item['meta_data']
-            except:
+            except Exception:
                 printExc()
                 return
         idx = 0
@@ -258,7 +258,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -271,7 +271,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

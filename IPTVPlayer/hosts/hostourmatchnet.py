@@ -22,7 +22,7 @@ import urllib
 import unicodedata
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -323,7 +323,7 @@ class OurmatchNet(CBaseHostClass):
                             urlTab.extend(hlsTab)
                         else:
                             urlTab.append({'name':name, 'url':url})
-            except:
+            except Exception:
                 printExc()
         elif videoUrl.startswith('http'):
             urlTab.extend(self.up.getVideoLinkExt(videoUrl))
@@ -459,7 +459,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -472,7 +472,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

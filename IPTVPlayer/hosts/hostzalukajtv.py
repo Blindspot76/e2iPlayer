@@ -20,7 +20,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -135,7 +135,7 @@ class ZalukajTv(CBaseHostClass):
             sort = config.plugins.iptvplayer.zalukajtv_filmssort.value
             url  = ZalukajTv.FILMS_URL % (cat, sort, cItem['lang'], page)
             extract = True
-        except: pass
+        except Exception: pass
         sts, data = self._getPage(url, {}, cItem.get('post_data', None))
         #self.cm.ph.writeToFile("/home/sulge/zalukaj.html", data)
         if not sts: return
@@ -256,7 +256,7 @@ class ZalukajTv(CBaseHostClass):
                     for pItem in premiumLinks:
                         urlTab.append({'name':'zalukaj.tv premium ' + pItem.get('label', ''), 'url':pItem['url']})
                         premium = True
-                except:
+                except Exception:
                     printExc()
             
             if not premium:
@@ -424,7 +424,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -437,7 +437,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

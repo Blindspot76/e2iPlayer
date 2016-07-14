@@ -24,7 +24,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -165,7 +165,7 @@ class SemBilheteTV(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':_("Next page"), 'next':str(data['meta']['next'])})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
         
     def listSeasons(self, cItem, category):
@@ -186,7 +186,7 @@ class SemBilheteTV(CBaseHostClass):
                 title = _('Season') + ' %s' % item['season_number']
                 params.update({'category':category, 'serie_title':cItem['title'], 'title':title, 'season': item['season_number'], 'desc':desc, 'icon':icon, 'imdb_id':imdbID, 'resource_uri':item['resource_uri']})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
         
     def listEpisodes(self, cItem):
@@ -211,7 +211,7 @@ class SemBilheteTV(CBaseHostClass):
                 desc = '%s | %s |[/br]%s' % (item['air_date'], item['imdb_rating'], item['overview'])
                 params.update({'title':title, 'desc':desc, 'icon':icon, 'imdb_id':imdbID})
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()
     
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -245,7 +245,7 @@ class SemBilheteTV(CBaseHostClass):
                     subTracks.append({'title':subLang, 'url':subUrl, 'lang':subLang, 'format':'srt'})
                 
                 urlTab.append({'name': 'main', 'url':urlparser.decorateUrl(linkVideo, {'external_sub_tracks':subTracks}), 'need_resolve':1})
-            except:
+            except Exception:
                 printExc()
         
         return urlTab
@@ -306,7 +306,7 @@ class SemBilheteTV(CBaseHostClass):
             otherInfo['rating']= data['imdb_rating']
             otherInfo['year']  = data['year']
             otherInfo['duration'] = str(datetime.timedelta(seconds=data['runtime']))
-        except:
+        except Exception:
             printExc()
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo}]
@@ -325,7 +325,7 @@ class SemBilheteTV(CBaseHostClass):
                 data = byteify(json.loads(data))
                 self.loginData.update(data)
                 sts = True
-            except:
+            except Exception:
                 sts = False
             if not sts or 0 == len(self.loginData['api_key']) or 0 == len(self.loginData['username']):
                 sts = False
@@ -462,7 +462,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -475,7 +475,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

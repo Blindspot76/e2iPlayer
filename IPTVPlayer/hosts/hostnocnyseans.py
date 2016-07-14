@@ -252,7 +252,7 @@ class NocnySeansPL(CBaseHostClass):
                 tmp = self.cm.ph.getSearchGroups(item[0], 'odcinek-([0-9]+?)-sezon-([0-9]+?)[^0-9]', 2)
                 season  = int(tmp[1])
                 episode = int(tmp[0])
-            except:
+            except Exception:
                 printExc()
                 season  = 0
                 episode = 0
@@ -353,7 +353,7 @@ class NocnySeansPL(CBaseHostClass):
                 #printDBG(data)
                 data = byteify(json.loads(data))
                 url = data['url']
-            except:
+            except Exception:
                 printExc()
         else:
             url = baseUrl
@@ -524,7 +524,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -537,7 +537,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

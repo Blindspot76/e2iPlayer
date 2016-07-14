@@ -14,7 +14,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Ge
 import re
 import copy
 try:    import json 
-except: import simplejson as json
+except Exception: import simplejson as json
 
 ###################################################
 def gettytul():
@@ -52,7 +52,7 @@ class Spryciarze():
         
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG('Spryciarze.getMainCategory getURLRequestData except')
             return
            
@@ -108,7 +108,7 @@ class Spryciarze():
         
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG('Spryciarze.getMainCategory getURLRequestData except')
             return
             
@@ -199,7 +199,7 @@ class Spryciarze():
             if 1 == len(self.currList):
                 self.getVideoList2(item['url'])
                 
-        except:
+        except Exception:
             printDBG('Spryciarze.getItemsForCat except')
         
         return
@@ -214,7 +214,7 @@ class Spryciarze():
         query_data = {'url': SEARCH_URL, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG('getVideoList getURLRequestData except')
             return
         
@@ -255,7 +255,7 @@ class Spryciarze():
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG('getVideoList getURLRequestData except')
             return
         
@@ -349,7 +349,7 @@ class Spryciarze():
                     for item in player:
                         if 'mp4' in item['type']:
                             linkstTab.append({'name':'Native player', 'url':item['src']})
-                except:
+                except Exception:
                     printExc()
             else:
                 player  = self.cm.ph.getSearchGroups(data, '"(http://www.spryciarze.pl/player/[^"]+?\.swf?[^"]+?)"')[0]

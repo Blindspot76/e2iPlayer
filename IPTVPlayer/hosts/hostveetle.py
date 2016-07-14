@@ -21,7 +21,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -160,7 +160,7 @@ class Veetle(CBaseHostClass):
                 params.update({'title':_("Next page"), 'page':page+1})
                 self.addDir(params)
             
-        except:
+        except Exception:
             printExc()
     
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -211,9 +211,9 @@ class Veetle(CBaseHostClass):
                         else:
                             need_resolve = 1
                         urlTab.append({'name':type, 'url':data['payload'], 'need_resolve':need_resolve})
-                except:
+                except Exception:
                     printExc()
-        except:
+        except Exception:
             printExc()
         return urlTab
     
@@ -335,7 +335,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -348,7 +348,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

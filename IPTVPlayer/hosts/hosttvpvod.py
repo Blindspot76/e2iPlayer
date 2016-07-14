@@ -22,7 +22,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -109,10 +109,10 @@ class TvpVod(CBaseHostClass):
                 return inner
             prev_read = httplib.HTTPResponse.read
             httplib.HTTPResponse.read = patch_http_response_read(httplib.HTTPResponse.read)
-        except: printExc()
+        except Exception: printExc()
         sts, data = self.cm.getPage(url, addParams, post_data)
         try: httplib.HTTPResponse.read = prev_read
-        except: printExc()
+        except Exception: printExc()
         return sts, data
     
     def _cleanHtmlStr(self, str):
@@ -129,9 +129,9 @@ class TvpVod(CBaseHostClass):
         
     def _getNum(self, v, default=0):
         try: return int(v)
-        except:
+        except Exception:
             try: return float(v)
-            except: return default
+            except Exception: return default
             
     def _getFullUrl(self, url, baseUrl=None):
         if None == baseUrl: baseUrl = TvpVod.MAIN_VOD_URL
@@ -491,7 +491,7 @@ class TvpVod(CBaseHostClass):
                 videoTab = _getVideoLink(data, item )
                 if len(videoTab):
                     break
-        except:
+        except Exception:
             printExc("getVideoLink exception") 
         return videoTab
         
@@ -506,7 +506,7 @@ class TvpVod(CBaseHostClass):
         try:
             ok = int(fav_data)
             if ok: return self.getVideoLink(fav_data)
-        except: pass
+        except Exception: pass
         return self.getLinksForVideo({'url':fav_data})
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
@@ -625,7 +625,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -638,7 +638,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

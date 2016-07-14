@@ -16,7 +16,7 @@ from Components.config import config, ConfigInteger, ConfigSelection, ConfigYesN
 import re
 import urllib
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ###################################################
 
 
@@ -81,7 +81,7 @@ class Movie4kTO(CBaseHostClass):
         if '' == lang:
             try:
                 lang = language.getActiveLanguage().split('_')[0]
-            except: lang = 'en'
+            except Exception: lang = 'en'
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Cookie':'lang=%s;' % lang }
         params.update({'header':HTTP_HEADER})
         
@@ -263,7 +263,7 @@ class Movie4kTO(CBaseHostClass):
                 for t in tmp: 
                     if 'watch on' not in t: desc += ' ' + t 
                 desc = desc.replace('&nbsp;', ' ')
-            except: printExc()
+            except Exception: printExc()
             
             lang = self.cm.ph.getSearchGroups(item, 'src="/img/([^"]+?)_small.png"')[0].replace('us', '').replace('_', '').replace('flag', '')
             #if '' == lang: lang = 'eng'
@@ -630,7 +630,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -643,7 +643,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

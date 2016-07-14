@@ -76,7 +76,7 @@ class Kabarety:
         query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG("Kabarety.getCategories exception")
             return
             
@@ -95,7 +95,7 @@ class Kabarety:
         query_data = { 'url': self._getFullUrl(url)+page, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG("Kabarety.getFilmTab exception")
             return
         link = data.replace('\n', '') #MOD

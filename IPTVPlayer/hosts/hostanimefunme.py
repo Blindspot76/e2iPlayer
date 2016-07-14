@@ -23,7 +23,7 @@ import unicodedata
 import string
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -108,14 +108,14 @@ class AnimeFunME(CBaseHostClass):
         sourceCode = data
         try:
             code = compile(sourceCode, '', 'exec')
-        except:
+        except Exception:
             printExc()
             return 0
         vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
         vLocals = { 'paramsTouple': None }
         try:
             exec( code, vGlobals, vLocals )
-        except:
+        except Exception:
             printExc()
             return 0
         return vLocals['a']
@@ -182,7 +182,7 @@ class AnimeFunME(CBaseHostClass):
                     time.sleep(5-(time.time() - start_time))
                     printDBG("Time spent: [%s]" % (time.time() - start_time))
                     sts, data = self.cm.getPage(verUrl, params2, post_data)
-                except:
+                except Exception:
                     printExc()
             else:
                 break
@@ -366,7 +366,7 @@ class AnimeFunME(CBaseHostClass):
                 url = response.geturl()
                 response.close()
                 urlTab.append({'name':'', 'url':url, 'need_resolve':0})
-            except:
+            except Exception:
                 printExc()
         elif videoUrl.startswith('http'):
             urlTab = self.up.getVideoLinkExt(videoUrl)
@@ -414,7 +414,7 @@ class AnimeFunME(CBaseHostClass):
                     params = dict(cItem)
                     params.update({'title':_('Next page'), 'page':page+1, 'cx':cx})
                     self.addDir(params)
-            except:
+            except Exception:
                 printExc()
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
@@ -559,7 +559,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -572,7 +572,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

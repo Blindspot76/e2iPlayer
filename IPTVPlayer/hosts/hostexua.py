@@ -18,7 +18,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
@@ -162,7 +162,7 @@ class ExUA(CBaseHostClass):
             if len(title) > 1:
                 try:
                     tmp = title[0].decode('utf-8').encode('ascii')
-                except:
+                except Exception:
                     del data[0]
             title  = '/'.join(title)
             if '/' in url:
@@ -209,7 +209,7 @@ class ExUA(CBaseHostClass):
             if 'global' != cItem.get('original_id', ''):
                 try:
                     id  = int(cItem['original_id'])
-                except:
+                except Exception:
                     printExc()
                     return
                 url = self.MAIN_URL + 'search?original_id={0}&s='.format( id )
@@ -270,7 +270,7 @@ class ExUA(CBaseHostClass):
                 url   = watchUrls[idx]['url']
                 title = watchTitles[idx][:-3] + url[-3:]
                 urlTab.append({'name':_('%s [watch]') % title, 'url':self.up.decorateUrl(url, meta), 'need_resolve':0, 'type':type})
-        except:
+        except Exception:
             printExc()
             
         for item in downloadUrls:
@@ -456,7 +456,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -469,7 +469,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

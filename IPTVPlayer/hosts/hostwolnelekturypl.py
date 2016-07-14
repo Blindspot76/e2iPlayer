@@ -24,7 +24,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -86,7 +86,7 @@ class WolnelekturyPL(CBaseHostClass):
         if not sts: return
         try:
             self.cache = byteify(json.loads(data))
-        except:
+        except Exception:
             printExc()
     
     def listCategories(self, cItem, category):
@@ -99,7 +99,7 @@ class WolnelekturyPL(CBaseHostClass):
                 for cat in tmp:
                     categories.add(cat.strip())
             categories = sorted(list(categories))
-        except:
+        except Exception:
             printExc()
         
         for item in categories:
@@ -135,7 +135,7 @@ class WolnelekturyPL(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':_("Next page"), 'idx':idx})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
     
     def getLinksForVideo(self, cItem):
@@ -150,7 +150,7 @@ class WolnelekturyPL(CBaseHostClass):
             for item in data['media']:
                 if item['type'] not in ['mp3', 'ogg']: continue
                 urlTab.append({'name': '{0} | {1}, {2}'.format(item['type'], item['artist'], item['director']), 'url':item['url'], 'need_resolve':0})
-        except:
+        except Exception:
             printExc()
         
         return urlTab
@@ -169,7 +169,7 @@ class WolnelekturyPL(CBaseHostClass):
             if not sts: desc = ''
             otherInfo = {}
             return [{'title':self.cleanHtmlStr( data['title'] ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':data['cover']}], 'other_info':otherInfo}]
-        except:
+        except Exception:
             printExc()
         
         return []
@@ -190,7 +190,7 @@ class WolnelekturyPL(CBaseHostClass):
             otherInfo['rating']= data['imdb_rating']
             otherInfo['year']  = data['year']
             otherInfo['duration'] = str(datetime.timedelta(seconds=data['runtime']))
-        except:
+        except Exception:
             printExc()
         
     def getFavouriteData(self, cItem):
@@ -305,7 +305,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -318,7 +318,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

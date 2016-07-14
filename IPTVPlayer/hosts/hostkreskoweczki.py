@@ -62,7 +62,7 @@ class Kreskoweczki(CBaseHostClass):
         query_data = {'url': self.MAINURL, 'return_data': True}
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG('showTitles EXCEPTION')
             return
         matchAll = re.compile('<ul class="menu" id="categories_block">(.+?)</ul>', re.DOTALL).findall(data)
@@ -84,7 +84,7 @@ class Kreskoweczki(CBaseHostClass):
         query_data = {'url': url, 'return_data': True}
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             printDBG('showParts EXCEPTION')
             return
 
@@ -116,7 +116,7 @@ class Kreskoweczki(CBaseHostClass):
         postdata = {'v_id' : vid[0]}
         try:
             data = self.cm.getURLRequestData(query_data, postdata)
-        except:
+        except Exception:
             printDBG('getVideoUrl EXCEPTION')
             return videosTab
         matchAll = re.compile("Loader.skipBanners(.+?)Loader.skipBanners", re.DOTALL).findall(data)
@@ -246,7 +246,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -257,7 +257,7 @@ class IPTVHost(CHostBase):
                 pattern = list[self.currIndex]['title']
                 self.host.history.addHistoryItem( pattern )
                 self.searchPattern = pattern
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
         return
