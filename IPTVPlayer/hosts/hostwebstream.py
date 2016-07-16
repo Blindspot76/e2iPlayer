@@ -485,6 +485,8 @@ class HasBahCa(CBaseHostClass):
                     title = item
             else:
                 if 0 < len(title):
+                    if 'Lista_matzgPL' in listURL and title.startswith('TVP '):
+                        continue
                     item = item.replace('rtmp://$OPT:rtmp-raw=', '')
                     cTitle = re.sub('\[[^\]]*?\]', '', title)
                     if len(cTitle): title = cTitle
