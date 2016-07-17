@@ -9,7 +9,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, \
                                                                    GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir, \
-                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile
+                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile, IsExecutable
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes          import enum
 from Plugins.Extensions.IPTVPlayer.iptvupdate.iptvlist      import IPTVUpdateList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import UpdateDownloaderCreator
@@ -25,6 +25,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 ###################################################
 # FOREIGN import
 ###################################################
+from Tools.Directories import fileExists
 from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 from Screens.Screen import Screen
@@ -57,7 +58,7 @@ class IPTVUpdateWindow(Screen):
         printDBG("IPTVUpdateMainWindow.__init__ -------------------------------")
         Screen.__init__(self, session)
         self.autoStart = autoStart
-
+        
         self.updateObjImpl = updateObjImpl
         self.updateObjImpl.setStepFinishedCallBack(self.stepFinished)
 
@@ -345,6 +346,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         list.append( __getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
         list.append( __getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
         list.append( __getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
+        list.append( __getStepDesc(title = _("Copy post installed binaries."),   execFunction = self.stepCopyPostInatalledBinaries, breakable=True, ignoreError=True ) )
         list.append( __getStepDesc(title = _("Executing user scripts."),         execFunction = self.stepExecuteUserScripts ) )
         list.append( __getStepDesc(title = _("Checking version."),               execFunction = self.stepCheckFiles ) )
         list.append( __getStepDesc(title = _("Removing unnecessary files."),     execFunction = self.stepRemoveUnnecessaryFiles, breakable=True, ignoreError=True) )
@@ -435,6 +437,37 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         printDBG("stepRemoveUnnecessaryFiles cmdp[%s]" % cmd)
         self.cmd = iptv_system( cmd, self.__removeUnnecessaryFilesCmdFinished )
         
+    def stepCopyPostInatalledBinaries(self, init=True, code=0, msg=''):
+        # get users scripts
+        if init:
+            self.copyBinariesCmdList = []
+            if fileExists("%s/libs/iptvsubparser/subparser.so" % os_path.join(self.ExtensionPath, 'IPTVPlayer')):
+                self.copyBinariesCmdList.append( 'cp -f "%s/libs/iptvsubparser/subparser.so" "%s/libs/iptvsubparser/subparser.so"  2>&1 ' % (os_path.join(self.ExtensionPath, 'IPTVPlayer'), os_path.join(self.ExtensionTmpPath, 'IPTVPlayer')) )
+            
+            binPath = "%s/bin/" % (os_path.join(self.ExtensionPath, 'IPTVPlayer'))
+            binariesTab = [('exteplayer3', config.plugins.iptvplayer.exteplayer3path.value), \
+                           ('gstplayer', config.plugins.iptvplayer.gstplayerpath.value), \
+                           ('wget', config.plugins.iptvplayer.wgetpath.value), \
+                           ('f4mdump', config.plugins.iptvplayer.f4mdumppath.value), \
+                           ('uchardet', config.plugins.iptvplayer.uchardetpath.value)]
+            for binItem in binariesTab:
+                if binPath in binItem[1]:
+                    self.copyBinariesCmdList.append( 'cp -f "%s/%s" "%s/bin/"  2>&1 ' % (binPath, binItem[0], os_path.join(self.ExtensionTmpPath, 'IPTVPlayer')) )
+            
+            if 0 < len(self.copyBinariesCmdList):
+                self.copyBinariesMsg = ''
+            else:
+                self.copyBinariesMsg = _("Nothing to do here.")
+
+        self.copyBinariesMsg += msg
+        if 0 != code:
+            self.stepFinished(-1, _("Problem with copy binary.\n") + self.copyBinariesMsg)
+        elif 0 < len(self.copyBinariesCmdList):
+            cmd = self.copyBinariesCmdList.pop()
+            self.cmd = iptv_system( cmd, self.__copyBinariesCmdFinished )
+        else:
+            self.stepFinished(0, _("Completed.\n") + self.copyBinariesMsg)
+        
     def stepExecuteUserScripts(self, init=True, code=0, msg=''):
         # get users scripts
         if init:
@@ -446,7 +479,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
 
         self.customUserMsg += msg
         if 0 != code:
-            self.stepFinished(-1, _("Problem with user script execution [%s].") + self.customUserMsg)
+            self.stepFinished(-1, _("Problem with user script execution.\n") + self.customUserMsg)
         elif 0 < len(self.customUserCmdList):
             cmd = self.customUserCmdList.pop()
             self.cmd = iptv_system( cmd, self.__userCmdFinished )
@@ -685,6 +718,15 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             printExc()
         printDBG('UpdateMainAppImpl.__getScriptsList [%r]' % cmdList)
         return cmdList
+        
+    def __copyBinariesCmdFinished(self, status, outData):
+        self.cmd = None
+        if 0 != status:
+            code = -1
+        else:
+            code = 0
+        msg  = '------------\nstatus[%d]\n[%s]\n------------\n' % (status, outData)
+        self.stepCopyPostInatalledBinaries(init=False, code=code, msg=msg)
      
     def __userCmdFinished(self, status, outData):
         self.cmd = None

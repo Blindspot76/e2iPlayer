@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir, GetPyScriptCmd
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetuphelper     import CBinaryStepHelper, CCmdValidator, SetupDownloaderCmdCreator
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
@@ -92,6 +92,10 @@ class IPTVSetupImpl:
         # gstifdsrc
         self.gstifdsrcVersion = "1.1.1"
         self.gstifdsrcPaths = ["/usr/lib/gstreamer-1.0/libgstifdsrc.so"]
+        
+        # subparser
+        self.subparserVersion = 0.1
+        self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/subparser.so')]
         
         self.binaryInstalledSuccessfully = False
         self.tries = 0
@@ -405,8 +409,62 @@ class IPTVSetupImpl:
 
     def uchardetStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.uchardetStepFinished sts[%r]" % sts)
+        self.subparserStep()
+        
+    ###################################################
+    # STEP: subparser
+    ###################################################
+    def subparserStep(self, ret=None):
+        printDBG("IPTVSetupImpl.subparserStep")
+        
+        def _detectCmdBuilder(path):
+            cmd = GetPyScriptCmd('subparserversion') + ' "%s" ' % resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/')
+            return cmd
+            
+        def _detectValidator(code, data):
+            if 0 == code:
+                try: 
+                    if self.subparserVersion >= float(data.strip()):
+                        return True,False
+                except Exception: 
+                    pass
+            return False,True
+        
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            try: 
+                ver = float(dataTab[0].strip())
+                return True,self.subparserPaths[0]
+            except Exception: 
+                pass
+            return False,""
+        
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            url = server + 'bin/' + platform + ('/%s' % binName)
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        
+        self.stepHelper = CBinaryStepHelper("subparser.so", self.platform, self.openSSLVersion, None)
+        msg1 = _("C subtitle parser")
+        msg2 = _("\nFor more info please ask the author samsamsam@o2.pl")
+        msg3 = _('It improves subtitles parsing.\n')
+        self.stepHelper.updateMessage('detection', msg1, 0)
+        self.stepHelper.updateMessage('detection', msg2, 1)
+        self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+        self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+        
+        self.stepHelper.setInstallChoiseList( [('subparser.so', self.subparserPaths[0])] )
+        self.stepHelper.setPaths( self.subparserPaths )
+        self.stepHelper.setDetectCmdBuilder( _detectCmdBuilder )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.subparserStepFinished )
+        self.binaryDetect()
+    
+    def subparserStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.subparserStepFinished sts[%r]" % sts)
         self.f4mdumpStep()
-    # self.ffmpegVersion
         
     ###################################################
     # STEP: F4MDUMP

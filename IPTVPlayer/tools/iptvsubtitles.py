@@ -27,6 +27,13 @@ class IPTVSubtitlesHandler:
     
     @staticmethod
     def getSupportedFormats():
+        try:
+            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import subparser
+            if '' != subparser.version():
+                return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'txt']
+        except Exception:
+            printExc()
+            
         return IPTVSubtitlesHandler.SUPPORTED_FORMATS
     
     def __init__(self):
@@ -188,9 +195,56 @@ class IPTVSubtitlesHandler:
             printDBG("IPTVSubtitlesHandler._saveToCache orgFilePath[%s] --> cacheFile[%s]" % (orgFilePath, filePath))
         except: 
             printExc()
-    
-    def loadSubtitles(self, filePath, encoding='utf-8'):
+            
+    def _fillPailsOfAtoms(self):
+        self.pailsOfAtoms = {}
+        for idx in range(len(self.subAtoms)):
+            tmp = self.subAtoms[idx]['start'] / self.CAPACITY
+            if tmp not in self.pailsOfAtoms:
+                self.pailsOfAtoms[tmp] = [idx]
+            elif idx not in self.pailsOfAtoms[tmp]:
+                self.pailsOfAtoms[tmp].append( idx )
+            
+            tmp = self.subAtoms[idx]['end'] / self.CAPACITY
+            if tmp not in self.pailsOfAtoms:
+                self.pailsOfAtoms[tmp] = [idx]
+            elif idx not in self.pailsOfAtoms[tmp]:
+                self.pailsOfAtoms[tmp].append( idx )
+            
+    def loadSubtitles(self, filePath, encoding='utf-8', fps=0):
         printDBG("OpenSubOrg.loadSubtitles filePath[%s]" % filePath)
+        # try load subtitles using C-library 
+        try:
+            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import subparser
+            if '' != subparser.version():
+                with codecs.open(filePath, 'r', encoding, 'replace') as fp:
+                    subText = fp.read().encode('utf-8')
+                # if in subtitles will be line {1}{1}f_fps
+                # for example {1}{1}23.976 and we set microsecperframe = 0
+                # then microsecperframe will be calculated as follow: llroundf(1000000.f / f_fps)
+                microsecperframe = 0 #int(1000000.0 / fps)
+                
+                # calc end time if needed - optional, default True
+                setEndTime = True
+                # characters per second - optional, default 12, can not be set to 0
+                CPS = 12
+                # words per minute - optional, default 138, can not be set to 0
+                WPM = 138
+                # remove format tags, like <i> - optional, default True
+                removeTags = True
+                subsObj = subparser.parse(subText, microsecperframe, removeTags, setEndTime, CPS, WPM)
+                if 'type' in subsObj:
+                    self.subAtoms = subsObj['list']
+                    self._fillPailsOfAtoms()
+                    return True
+                else:
+                    return False
+        except Exception:
+            printExc()
+        return self._loadSubtitles(filePath, encoding)
+    
+    def _loadSubtitles(self, filePath, encoding):
+        printDBG("OpenSubOrg._loadSubtitles filePath[%s]" % filePath)
         saveCache = True
         self.subAtoms = []
         #time1 = time.time()
@@ -213,19 +267,7 @@ class IPTVSubtitlesHandler:
         else:
             saveCache = False
 
-        self.pailsOfAtoms = {}
-        for idx in range(len(self.subAtoms)):
-            tmp = self.subAtoms[idx]['start'] / self.CAPACITY
-            if tmp not in self.pailsOfAtoms:
-                self.pailsOfAtoms[tmp] = [idx]
-            elif idx not in self.pailsOfAtoms[tmp]:
-                self.pailsOfAtoms[tmp].append( idx )
-            
-            tmp = self.subAtoms[idx]['end'] / self.CAPACITY
-            if tmp not in self.pailsOfAtoms:
-                self.pailsOfAtoms[tmp] = [idx]
-            elif idx not in self.pailsOfAtoms[tmp]:
-                self.pailsOfAtoms[tmp].append( idx )
+        self._fillPailsOfAtoms()
         
         if saveCache and len(self.subAtoms):
             self._saveToCache(filePath)
