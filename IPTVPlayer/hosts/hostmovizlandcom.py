@@ -61,6 +61,8 @@ class MovizlandCom(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'  MovizlandCom.tv', 'cookie':'movizlandcom.cookie'})
+        self.USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
+        self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheLinks = {}
         
@@ -77,6 +79,16 @@ class MovizlandCom(CBaseHostClass):
         url = self.replacewhitespace(url)
 
         return url
+        
+    def _getIconUrl(self, url):
+        url = self._getFullUrl(url)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+        
+    def getPage(self, baseUrl, params={}, post_data=None):
+        params['cloudflare_params'] = {'domain':'m.movizland.com', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
     def cleanHtmlStr(self, data):
         data = data.replace('&nbsp;', ' ')
@@ -100,7 +112,7 @@ class MovizlandCom(CBaseHostClass):
     def listCategories(self, cItem, nextCategory):
         printDBG("MovizlandCom.listCategories")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="tabs-ui">', '</ul>', False)[1]
@@ -129,7 +141,7 @@ class MovizlandCom(CBaseHostClass):
             else:
                 url += '&page=%d' % page
         
-        sts, data = self.cm.getPage(url, {}, post_data)
+        sts, data = self.getPage(url, self.defaultParams, post_data)
         if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="paging">', '</ul>', False)[1]
@@ -172,7 +184,7 @@ class MovizlandCom(CBaseHostClass):
         printDBG("MovizlandCom.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return []
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'class="iframeWide"', '</div>')[1]
@@ -314,7 +326,7 @@ class IPTVHost(CHostBase):
             
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
+        icon        =  self.host._getIconUrl( cItem.get('icon', '') )
         
         return CDisplayListItem(name = title,
                                     description = description,

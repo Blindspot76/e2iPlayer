@@ -30,7 +30,7 @@ class IPTVSubtitlesHandler:
         try:
             from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import subparser
             if '' != subparser.version():
-                return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'txt']
+                return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'rt', 'txt', 'sub', 'dks', 'jss', 'psb']
         except Exception:
             printExc()
             
