@@ -189,22 +189,29 @@ class TitlovicomProvider(CBaseSubProviderClass):
         imdbid = self.cm.ph.getSearchGroups(data, '/title/(tt[0-9]+?)[^0-9]')[0]
         subId  = self.cm.ph.getSearchGroups(data, 'mediaid=([0-9]+?)[^0-9]')[0]
         url    = self.cm.ph.getSearchGroups(data, 'href="([^"]+?/downloads/[^"]+?mediaid=[^"]+?)"')[0]
+        
+        try: fps = float(self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<li class="fps">', '</li>')[1].upper().replace('FPS', '')))
+        except Exception:
+            fps = 0
+            printExc()
 
         urlParams = dict(self.defaultParams)
         tmpDIR = self.downloadAndUnpack(url, urlParams)
         if None == tmpDIR: return
         
         cItem = dict(cItem)
-        cItem.update({'category':'', 'path':tmpDIR, 'imdbid':imdbid, 'sub_id':subId})
-        self.listSupportedFilesFromPath(cItem)
+        cItem.update({'category':'', 'path':tmpDIR, 'fps':fps, 'imdbid':imdbid, 'sub_id':subId})
+        self.listSupportedFilesFromPath(cItem, self.getSupportedFormats(all=True))
             
-    def _getFileName(self, title, lang, subId, imdbid):
+    def _getFileName(self, title, lang, subId, imdbid, fps, ext):
         title = RemoveDisallowedFilenameChars(title).replace('_', '.')
         match = re.search(r'[^.]', title)
         if match: title = title[match.start():]
 
         fileName = "{0}_{1}_0_{2}_{3}".format(title, lang, subId, imdbid)
-        fileName = fileName + '.srt'
+        if fps > 0:
+            fileName += '_fps{0}'.format(fps)
+        fileName = fileName + '.' + ext
         return fileName
             
     def downloadSubtitleFile(self, cItem):
@@ -215,8 +222,10 @@ class TitlovicomProvider(CBaseSubProviderClass):
         subId    = cItem['sub_id']
         imdbid   = cItem['imdbid']
         inFilePath = cItem['file_path']
+        ext      = cItem.get('ext', 'srt')
+        fps      = cItem.get('fps', 0)
         
-        outFileName = self._getFileName(title, lang, subId, imdbid)
+        outFileName = self._getFileName(title, lang, subId, imdbid, fps, ext)
         outFileName = GetSubtitlesDir(outFileName)
         
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")

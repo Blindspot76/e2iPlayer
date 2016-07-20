@@ -195,8 +195,12 @@ class CBaseSubProviderClass:
         self.moreMode = False
         self.params = params
         
-    def getSupportedFormats(self):
-        return list(IPTVSubtitlesHandler.SUPPORTED_FORMATS)
+    def getSupportedFormats(self, all=False):
+        if all:
+            ret = list(IPTVSubtitlesHandler.getSupportedFormats())
+        else:
+            ret = list(IPTVSubtitlesHandler.SUPPORTED_FORMATS)
+        return ret
         
     def getMaxFileSize(self):
         return 1024 * 1024 * 5 # 5MB, max size of sub file to be download
@@ -487,17 +491,18 @@ class CBaseSubProviderClass:
             return True
         return False
         
-    def listSupportedFilesFromPath(self, cItem):
+    def listSupportedFilesFromPath(self, cItem, subExt=['srt'], archExt=['rar', 'zip']):
         printDBG('CBaseSubProviderClass.listSupportedFilesFromPath')
         # list files
         for file in os_listdir(cItem['path']):
             filePath = os_path.join(cItem['path'], file)
             params = dict(cItem)
-            params.update({'file_path':filePath, 'title':os_path.splitext(file)[0]})
             ext = file.split('.')[-1].lower()
-            if ext == "srt":
+            params.update({'file_path':filePath, 'title':os_path.splitext(file)[0]})
+            if ext in subExt:
+                params['ext'] = ext
                 self.addSubtitle(params)
-            elif ext in ['rar', 'zip']:
+            elif ext in archExt:
                 self.addDir(params)
                 
     def converFileToUtf8(self, inFile, outFile, lang=''):
