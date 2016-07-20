@@ -100,7 +100,7 @@ class Kinotan(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         datag = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="main-menu clearfix">', '</ul>', False)[1]
-        datag = re.compile('<a[^"]+?href="([^"]*?)".*>(.*?)</a></li>').findall(datag)
+        datag = re.compile('<a[^"]+?href="([^"]*?)">(.*?)</a></li>').findall(datag)
         for item in datag:
             params = dict(cItem)
             params.update({'category': category, 'title': item[1], 'url': self._getFullUrl(item[0])})
@@ -111,7 +111,7 @@ class Kinotan(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         datacn = self.cm.ph.getDataBeetwenMarkers(data, '<div class="navigright2">', '</div>', False)[1]
-        datacn = re.compile('href="(/xf[^"]*?)".*>(.*?)</a><br>').findall(datacn)
+        datacn = re.compile('href="(/xf[^"]*?)"[^>]+?>(.*?)</a><br>').findall(datacn)
         for item in datacn:
             params = dict(cItem)
             params.update({'category': category, 'title': item[1], 'url': self._getFullUrl(item[0][1:])})
@@ -122,7 +122,7 @@ class Kinotan(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         datatr = self.cm.ph.getDataBeetwenMarkers(data, '<div class="navigright3">', '</div>', False)[1]
-        datatr = re.compile('href="(/xf[^"]*?)".*>(.*?)</a><br>').findall(datatr)
+        datatr = re.compile('href="(/xf[^"]*?)"[^>]+?>(.*?)</a><br>').findall(datatr)
         for item in datatr:
             params = dict(cItem)
             params.update({'category': category, 'title': item[1], 'url': self._getFullUrl(item[0][1:])})
@@ -133,7 +133,7 @@ class Kinotan(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         data1 = self.cm.ph.getDataBeetwenMarkers(data, '<div class="navigright">', '</div>', False)[1]
-        datasl = re.compile('href="(/xf[^"]*?)".*>(.*?)</a><br>').findall(data1)
+        datasl = re.compile('href="(/xf[^"]*?)"[^>]+?>(.*?)</a><br>').findall(data1)
         for item in datasl:
             params = dict(cItem)
             params.update({'category': category, 'title': item[1], 'url': self._getFullUrl(item[0][1:])})
@@ -144,7 +144,7 @@ class Kinotan(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         data1 = self.cm.ph.getDataBeetwenMarkers(data, '<div class="navigright">', '</div>', False)[1]
-        datay = re.compile('href="(/t[^"]*?)".*>(.*?)</a><br>').findall(data1)
+        datay = re.compile('href="(/t[^"]*?)"[^>]+?>(.*?)</a><br>').findall(data1)
         for item in datay:
             params = dict(cItem)
             params.update({'category': category, 'title': item[1][:-2], 'url': self._getFullUrl(item[0][1:])})
