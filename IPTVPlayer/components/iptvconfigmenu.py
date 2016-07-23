@@ -132,7 +132,7 @@ config.plugins.iptvplayer.ZablokujWMV = ConfigYesNo(default = True)
 #config.plugins.iptvplayer.hd3d_login    = ConfigText(default="", fixed_size = False)
 #config.plugins.iptvplayer.hd3d_password = ConfigText(default="", fixed_size = False)
 
-config.plugins.iptvplayer.useSubtitlesParserExtension = ConfigYesNo(default = False)
+config.plugins.iptvplayer.useSubtitlesParserExtension = ConfigYesNo(default = True)
 config.plugins.iptvplayer.opensuborg_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.opensuborg_password = ConfigText(default="", fixed_size = False)
 

@@ -32,7 +32,7 @@ class IPTVSubtitlesHandler:
         try:
             if config.plugins.iptvplayer.useSubtitlesParserExtension.value:
                 printDBG("getSupportedFormats before import")
-                from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import subparser
+                from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as subparser
                 printDBG("getSupportedFormats after import")
                 if '' != subparser.version():
                     printDBG("getSupportedFormats after subparser.version")
@@ -221,7 +221,7 @@ class IPTVSubtitlesHandler:
         printDBG("OpenSubOrg.loadSubtitles filePath[%s]" % filePath)
         # try load subtitles using C-library 
         try:
-            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import subparser
+            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as subparser
             if '' != subparser.version():
                 with codecs.open(filePath, 'r', encoding, 'replace') as fp:
                     subText = fp.read().encode('utf-8')

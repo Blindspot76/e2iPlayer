@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir, GetPyScriptCmd
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir, GetPyScriptCmd, IsFPUAvailable
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetuphelper     import CBinaryStepHelper, CCmdValidator, SetupDownloaderCmdCreator
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
@@ -95,7 +95,7 @@ class IPTVSetupImpl:
         
         # subparser
         self.subparserVersion = 0.1
-        self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/subparser.so')]
+        self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/_subparser.so')]
         
         self.binaryInstalledSuccessfully = False
         self.tries = 0
@@ -440,11 +440,13 @@ class IPTVSetupImpl:
         
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
             url = server + 'bin/' + platform + ('/%s' % binName)
+            if 'mipsel' == self.platform and IsFPUAvailable():
+                url += '.fpu'
             tmpFile = tmpPath + binName
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
         
-        self.stepHelper = CBinaryStepHelper("subparser.so", self.platform, self.openSSLVersion, None)
+        self.stepHelper = CBinaryStepHelper("_subparser.so", self.platform, self.openSSLVersion, None)
         msg1 = _("C subtitle parser")
         msg2 = _("\nFor more info please ask the author samsamsam@o2.pl")
         msg3 = _('It improves subtitles parsing.\n')
@@ -453,7 +455,7 @@ class IPTVSetupImpl:
         self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
         self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
         
-        self.stepHelper.setInstallChoiseList( [('subparser.so', self.subparserPaths[0])] )
+        self.stepHelper.setInstallChoiseList( [('_subparser.so', self.subparserPaths[0])] )
         self.stepHelper.setPaths( self.subparserPaths )
         self.stepHelper.setDetectCmdBuilder( _detectCmdBuilder )
         self.stepHelper.setDetectValidator( _detectValidator )

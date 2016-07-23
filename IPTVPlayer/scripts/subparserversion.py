@@ -23,7 +23,7 @@ if __name__ == "__main__":
     try:
         libsPath = sys.argv[1]
         sys.path.insert(1, libsPath)
-        from iptvsubparser import subparser
+        from iptvsubparser import _subparser as subparser
         printDBG(subparser.version())
         sys.exit(0)
     except Exception:

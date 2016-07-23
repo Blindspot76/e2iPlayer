@@ -1076,6 +1076,20 @@ def GetVersionNum(ver):
         printExc('Version[%r]' % ver)
         return 0
         
+def IsFPUAvailable():
+    try:
+        if None == IsFPUAvailable.available:
+            with open('/proc/cpuinfo', 'r') as f:
+                data = f.read().strip().upper()
+            if ' FPU ' in data:
+                IsFPUAvailable.available = True
+            else:
+                IsFPUAvailable.available = False
+    except Exception:
+        printExc()
+    return IsFPUAvailable.available
+IsFPUAvailable.available = None
+        
 def GetE2OptionsFromFile(filePath):
     options = []
     try:
