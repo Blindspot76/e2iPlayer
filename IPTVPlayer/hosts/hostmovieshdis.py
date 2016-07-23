@@ -35,27 +35,26 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.movieshdco_sortby = ConfigSelection(default = "date", choices = [("date", _("Lastest")), ("views", _("Most viewed")), ("duree", _("Longest")), ("rate", _("Top rated")), ("random", _("Tandom"))]) 
-config.plugins.iptvplayer.cartoonhd_login    = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.cartoonhd_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.movieshdis_login    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.movieshdis_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("login")+":", config.plugins.iptvplayer.cartoonhd_login))
-    optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.cartoonhd_password))
+    optionList.append(getConfigListEntry(_("login")+":", config.plugins.iptvplayer.movieshdis_login))
+    optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.movieshdis_password))
     return optionList
 ###################################################
 
 
 def gettytul():
-    return 'http://cartoonhd.website/'
+    return 'http://movieshd.is/'
 
-class CartoonHD(CBaseHostClass):
+class MoviesHD(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL = 'http://cartoonhd.website/'
+    MAIN_URL = 'http://movieshd.is/'
     #SEARCH_URL = MAIN_URL + 'ajax/search.php'
     SEARCH_URL = MAIN_URL + 'api/v1/cautare/apr'
     
@@ -66,7 +65,7 @@ class CartoonHD(CBaseHostClass):
                     {'category':'search_history',  'title': _('Search history')} ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'CartoonHD.tv', 'cookie':'cartoonhdtv.cookie', 'cookie_type':'MozillaCookieJar'})
+        CBaseHostClass.__init__(self, {'history':'MoviesHD.tv', 'cookie':'movieshdis.cookie', 'cookie_type':'MozillaCookieJar'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheFilters = {}
         self.cacheLinks = {}
@@ -93,7 +92,7 @@ class CartoonHD(CBaseHostClass):
                 a = a - 26
             return chr(a)
         return re.sub('[a-zA-Z]', _repFun, a)
-            
+                
     def fillSortNav(self, type):
         self.cacheSortNav[type] = []
         sts, data = self.cm.getPage(self.MAIN_URL + type, self.defaultParams)
@@ -116,7 +115,7 @@ class CartoonHD(CBaseHostClass):
         self.listsTab(tab, cItem)
             
     def fillCategories(self):
-        printDBG("CartoonHD.fillCategories")
+        printDBG("MoviesHD.fillCategories")
         self.cacheFilters = {}
         sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return
@@ -142,7 +141,7 @@ class CartoonHD(CBaseHostClass):
         self.cacheFilters['tv_shows'] = tvshowsTab
         
     def listMoviesCategory(self, cItem, nextCategory):
-        printDBG("CartoonHD.listMoviesCategory")
+        printDBG("MoviesHD.listMoviesCategory")
         if {} == self.cacheFilters:
             self.fillCategories()
             
@@ -151,7 +150,7 @@ class CartoonHD(CBaseHostClass):
         self.listsTab(self.cacheFilters.get('movies', []), cItem)
         
     def listTVShowsCategory(self, cItem, nextCategory):
-        printDBG("CartoonHD.listTVShowsCategory")
+        printDBG("MoviesHD.listTVShowsCategory")
         if {} == self.cacheFilters:
             self.fillCategories()
             
@@ -160,7 +159,7 @@ class CartoonHD(CBaseHostClass):
         self.listsTab(self.cacheFilters.get('tv_shows', []), cItem)
         
     def listNewCategory(self, cItem):
-        printDBG("CartoonHD.listNewCategory")
+        printDBG("MoviesHD.listNewCategory")
         if {} == self.cacheFilters:
             self.fillCategories()
             
@@ -170,7 +169,7 @@ class CartoonHD(CBaseHostClass):
         self.listsTab(self.cacheFilters.get('new', []), cItem)
             
     def listItems(self, cItem, nextCategory=None):
-        printDBG("CartoonHD.listItems")
+        printDBG("MoviesHD.listItems")
         page = cItem.get('page', 1)
         
         url = cItem['url'] + '/' + cItem.get('sort_by', '') + '/' + str(page)
@@ -209,7 +208,7 @@ class CartoonHD(CBaseHostClass):
             self.addDir(params)
         
     def listSeasons(self, cItem, nextCategory):
-        printDBG("CartoonHD.listSeasons")
+        printDBG("MoviesHD.listSeasons")
 
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
@@ -223,7 +222,7 @@ class CartoonHD(CBaseHostClass):
             self.addDir(params)
     
     def listEpisodes(self, cItem):
-        printDBG("CartoonHD.listEpisodes")
+        printDBG("MoviesHD.listEpisodes")
 
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
@@ -242,8 +241,8 @@ class CartoonHD(CBaseHostClass):
                 self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("CartoonHD.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        
+        printDBG("MoviesHD.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+    
         sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return
         
@@ -283,7 +282,7 @@ class CartoonHD(CBaseHostClass):
             printExc()
     
     def getLinksForVideo(self, cItem):
-        printDBG("CartoonHD.getLinksForVideo [%s]" % cItem)
+        printDBG("MoviesHD.getLinksForVideo [%s]" % cItem)
         
         def gettt():
             data = str(int(time.time()))
@@ -385,7 +384,7 @@ class CartoonHD(CBaseHostClass):
         return urlTab
         
     def getVideoLinks(self, videoUrl):
-        printDBG("CartoonHD.getVideoLinks [%s]" % videoUrl)
+        printDBG("MoviesHD.getVideoLinks [%s]" % videoUrl)
         urlTab = []
         
         if videoUrl.startswith('http'):
@@ -400,8 +399,8 @@ class CartoonHD(CBaseHostClass):
 
     def tryTologin(self):
         printDBG('tryTologin start')
-        login = config.plugins.iptvplayer.cartoonhd_login.value
-        password = config.plugins.iptvplayer.cartoonhd_password.value
+        login = config.plugins.iptvplayer.movieshdis_login.value
+        password = config.plugins.iptvplayer.movieshdis_password.value
         
         if '' == login.strip() or '' == password.strip():
             printDBG('tryTologin wrong login data')
@@ -473,7 +472,7 @@ class CartoonHD(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, CartoonHD(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        CHostBase.__init__(self, MoviesHD(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
