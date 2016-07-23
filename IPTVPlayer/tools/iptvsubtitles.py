@@ -20,6 +20,7 @@ import time
 try:    import json
 except: import simplejson as json
 from os import remove as os_remove
+from Components.config import config
 ###################################################
 
 class IPTVSubtitlesHandler:
@@ -27,13 +28,18 @@ class IPTVSubtitlesHandler:
     
     @staticmethod
     def getSupportedFormats():
+        printDBG("getSupportedFormats")
         try:
-            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import subparser
-            if '' != subparser.version():
-                return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'rt', 'txt', 'sub', 'dks', 'jss', 'psb']
+            if config.plugins.iptvplayer.useSubtitlesParserExtension.value:
+                printDBG("getSupportedFormats before import")
+                from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import subparser
+                printDBG("getSupportedFormats after import")
+                if '' != subparser.version():
+                    printDBG("getSupportedFormats after subparser.version")
+                    return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'rt', 'txt', 'sub', 'dks', 'jss', 'psb']
         except Exception:
             printExc()
-            
+        printDBG("getSupportedFormats end")
         return IPTVSubtitlesHandler.SUPPORTED_FORMATS
     
     def __init__(self):
