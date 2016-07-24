@@ -33,15 +33,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.alltubetv_premium  = ConfigYesNo(default = False)
-#config.plugins.iptvplayer.alltubetv_login    = ConfigText(default = "", fixed_size = False)
-#config.plugins.iptvplayer.alltubetv_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    #if config.plugins.iptvplayer.alltubetv_premium.value:
-    #    optionList.append(getConfigListEntry("  alltubetv login:", config.plugins.iptvplayer.alltubetv_login))
-    #    optionList.append(getConfigListEntry("  alltubetv hasło:", config.plugins.iptvplayer.alltubetv_password))
     return optionList
 ###################################################
 
@@ -51,7 +45,7 @@ def gettytul():
 
 class AlltubeTV(CBaseHostClass):
     MAIN_URL    = 'http://alltube.tv/'
-    SRCH_URL    = MAIN_URL + 'index.php?url=search/autocomplete/&phrase='
+    SRCH_URL    = MAIN_URL + 'szukaj'
     DEFAULT_ICON = 'http://alltube.tv/static/main/newlogoall.png'
     #{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
     MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':DEFAULT_ICON},
@@ -70,23 +64,6 @@ class AlltubeTV(CBaseHostClass):
         self.seriesCache = {}
         self.seriesLetters = []
         self.episodesCache = []
-        
-    def _getFullUrl(self, url):
-        if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        if not self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
-        return url
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("AlltubeTV.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
             
     def _listFilters(self, cItem, data):
         printDBG("AlltubeTV._listFilters")
@@ -155,7 +132,7 @@ class AlltubeTV(CBaseHostClass):
                 desc = item.split('<p>')[-1]
             
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
+            params.update( {'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self.getFullUrl(icon)} )
             if category != 'video': #or '/serial/' in params['url']:
                 params['category'] = category
                 self.addDir(params)
@@ -215,7 +192,7 @@ class AlltubeTV(CBaseHostClass):
             if letter not in self.seriesCache:
                 self.seriesCache[letter] = []
                 self.seriesLetters.append({'title':letter,  'letter':letter})
-            self.seriesCache[letter].append({'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url)})
+            self.seriesCache[letter].append({'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url)})
         for idx in range(len(self.seriesLetters)):
             letter = self.seriesLetters[idx]['letter']
             self.seriesLetters[idx]['title'] = letter + ' [%d]' % len(self.seriesCache[letter]) 
@@ -257,7 +234,7 @@ class AlltubeTV(CBaseHostClass):
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = ''
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
+            params.update( {'title': self.cleanHtmlStr( item ), 'url':self.getFullUrl(url), 'desc': '', 'icon':self.getFullUrl(icon)} )
             params['category'] = category
             self.addDir(params)
             
@@ -273,7 +250,7 @@ class AlltubeTV(CBaseHostClass):
         desc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="custome-panel clearfix">', '</div>', False)[1]
         icon = self.cm.ph.getSearchGroups(desc, 'src="([^"]+?)"')[0]
         desc = self.cleanHtmlStr( desc )
-        icon = self._getFullUrl( icon )
+        icon = self.getFullUrl( icon )
         
         if '' == icon: icon = cItem.get('icon', '')
         if '' == desc: desc = cItem.get('desc', '')
@@ -295,7 +272,7 @@ class AlltubeTV(CBaseHostClass):
                     season  = 0
                     episode = 0
                     sort    = False
-                episodesList.append( {'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
+                episodesList.append( {'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self.getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
             if sort:
                 episodesList.sort(key=lambda item: item['season']*1000 + item['episode'])#, reverse=True)
                 #episodesList.reverse()
@@ -316,25 +293,48 @@ class AlltubeTV(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AlltubeTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        cItem['url'] = self.SRCH_URL + urllib.quote_plus(searchPattern)
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(self.SRCH_URL, {}, post_data={'search':searchPattern})
         if not sts: return
-        try:
-            data = byteify(json.loads(data))
-            for item in data['suggestions']:
-                params = dict(cItem)
-                params.update({'title':item['value'], 'url':item['data']})
+        
+        data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', '<!-- Stopka: -->')[1]
+        data = data.split('<h2 class="headline">')
+        if len(data): del data[0]
+        
+        if searchType == 'series':
+            marker = 'Seriale'
+        elif searchType == 'movies':
+            marker = 'Filmy'
+        else:
+            return
+        
+        found = False
+        for idx in range(len(data)):
+            if data[idx].startswith(marker):
+                found = True
+                break
                 
-                if 'serial' in params['url']:
-                    if searchType == 'series':
-                        params['category'] = 'list_seasons'
-                        self.addDir(params)
-                else:
-                    if searchType == 'movies':
-                        self.addVideo(params)
-        except Exception:
-            printExc()
-              
+        if not found: return
+        data = data[idx]
+        data = data.split('<div class="item-block clearfix">')
+        if len(data): del data[0]
+
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title  = self.cm.ph.getDataBeetwenMarkers(item, '<div class="title">', '</div>', False)[1]
+            if '' == title: title = self.cm.ph.getDataBeetwenMarkers(item, '<h3>', '</h3>', False)[1]
+            if '' == title:  title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
+            desc   = self.cm.ph.getDataBeetwenMarkers(item, '<div class="description">', '</div>', False)[1]
+            if '' == desc: desc = item.split('<p>')[-1]
+            
+            params = dict(cItem)
+            params.update({'title':self.cleanHtmlStr( title ), 'url':self.getFullUrl( url ), 'icon':self.getFullUrl( icon ), 'desc':self.cleanHtmlStr( desc )})
+            if searchType == 'series':
+                params['category'] = 'list_seasons'
+                self.addDir(params)
+            else:
+                self.addVideo(params)
+    
     def getLinksForVideo(self, cItem):
         printDBG("AlltubeTV.getLinksForVideo [%s]" % cItem)
         urlTab = []
@@ -431,9 +431,6 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, AlltubeTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('alltubetvlogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR

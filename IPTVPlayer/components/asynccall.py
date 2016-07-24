@@ -4,6 +4,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import iptv_system, printDBG
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 ###################################################
 # FOREIGN import
 ###################################################
@@ -31,6 +32,7 @@ class AsyncCall(object):
         printDBG("AsyncCall.__del__  --------------------------------------------")
 
     def __call__(self, *args, **kwargs):
+        SetIPTVPlayerLastHostError()
         self.Thread = threading.Thread(target = self.run, name = self.Callable.__name__, args = args, kwargs = kwargs)
         self.Thread.start()
         return self

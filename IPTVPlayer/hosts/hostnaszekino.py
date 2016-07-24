@@ -56,23 +56,6 @@ class NaszeKino(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'NaszeKino', 'cookie':'naszekino.cookie'})
         self.categories = {}
-        
-    def _getFullUrl(self, url):
-        if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        if not self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
-        return url
-    
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("NaszeKino.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
             
     def addNextPage(self, cItem, nextPage, page):
         if nextPage:
@@ -93,7 +76,7 @@ class NaszeKino(CBaseHostClass):
                 tmp = self.cm.ph.getDataBeetwenMarkers(data, item['m1'], item.get('m2', '</ul>'), False)[1]
                 tmp = re.compile('<a [^>]*?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(tmp)
                 for el in tmp:
-                    self.categories[item['filtr']].append({'url':self._getFullUrl(el[0]), 'title':el[1]})
+                    self.categories[item['filtr']].append({'url':self.getFullUrl(el[0]), 'title':el[1]})
                     
         tab = self.categories.get(cItem['filtr'], [])
         for item in tab:
@@ -106,7 +89,7 @@ class NaszeKino(CBaseHostClass):
         url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
         icon  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
         title = self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0]
-        return {'title':self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon)}
+        return {'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon':self.getFullUrl(icon)}
             
     def listRecommended(self, cItem):
         printDBG("NaszeKino.listRecommended [%s]" % cItem)
@@ -141,6 +124,8 @@ class NaszeKino(CBaseHostClass):
         data = data.split(sp)
         for item in data:
             base = self.getBase(item)
+            if '' == base['title']: continue
+            if '' == base['url']: continue
             if '</h2>' in item:
                 desc  = item.split('</h2>')[-1]
             else: desc = ''
@@ -248,7 +233,7 @@ class NaszeKino(CBaseHostClass):
         if '' == title:
             title = cItem['title']
         otherInfo = {}
-        return [{'title': title, 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
+        return [{'title': title, 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
         
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
@@ -292,9 +277,6 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, NaszeKino(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('naszekinologo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
