@@ -1089,6 +1089,16 @@ def IsFPUAvailable():
         printExc()
     return IsFPUAvailable.available
 IsFPUAvailable.available = None
+
+def IsSubtitlesParserExtensionCanBeUsed():
+    try:
+        if config.plugins.iptvplayer.useSubtitlesParserExtension.value:
+            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as subparser
+            if '' != subparser.version():
+                return True
+    except Exception:
+        printExc()
+    return False
         
 def GetE2OptionsFromFile(filePath):
     options = []

@@ -1,7 +1,8 @@
 ﻿###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSubtitlesDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSubtitlesDir, byteify, IsSubtitlesParserExtensionCanBeUsed
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import CParsingHelper
 
 # INFO about subtitles format
 # https://wiki.videolan.org/Subtitles#Subtitles_support_in_VLC
@@ -19,8 +20,7 @@ import codecs
 import time
 try:    import json
 except: import simplejson as json
-from os import remove as os_remove
-from Components.config import config
+from os import remove as os_remove, path as os_path
 ###################################################
 
 class IPTVSubtitlesHandler:
@@ -29,16 +29,9 @@ class IPTVSubtitlesHandler:
     @staticmethod
     def getSupportedFormats():
         printDBG("getSupportedFormats")
-        try:
-            if config.plugins.iptvplayer.useSubtitlesParserExtension.value:
-                printDBG("getSupportedFormats before import")
-                from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as subparser
-                printDBG("getSupportedFormats after import")
-                if '' != subparser.version():
-                    printDBG("getSupportedFormats after subparser.version")
-                    return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'rt', 'txt', 'sub', 'dks', 'jss', 'psb']
-        except Exception:
-            printExc()
+        if IsSubtitlesParserExtensionCanBeUsed():
+            printDBG("getSupportedFormats after import")
+            return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'rt', 'txt', 'sub', 'dks', 'jss', 'psb']
         printDBG("getSupportedFormats end")
         return IPTVSubtitlesHandler.SUPPORTED_FORMATS
     
@@ -221,15 +214,25 @@ class IPTVSubtitlesHandler:
         printDBG("OpenSubOrg.loadSubtitles filePath[%s]" % filePath)
         # try load subtitles using C-library 
         try:
-            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as subparser
-            if '' != subparser.version():
+            if IsSubtitlesParserExtensionCanBeUsed():
+                try:
+                    if fps <= 0:
+                        filename, file_extension = os_path.splitext(filePath)
+                        tmp = CParsingHelper.getSearchGroups(filename.upper()+'_', '_FPS([0-9.]+)_')[0]
+                        if '' != tmp: fps = float(tmp)
+                except Exception:
+                    printExc()
+                
+                from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as subparser
                 with codecs.open(filePath, 'r', encoding, 'replace') as fp:
                     subText = fp.read().encode('utf-8')
                 # if in subtitles will be line {1}{1}f_fps
                 # for example {1}{1}23.976 and we set microsecperframe = 0
                 # then microsecperframe will be calculated as follow: llroundf(1000000.f / f_fps)
-                microsecperframe = 0 #int(1000000.0 / fps)
-                
+                if fps > 0:
+                    microsecperframe = int(1000000.0 / fps)
+                else:
+                    microsecperframe = 0
                 # calc end time if needed - optional, default True
                 setEndTime = True
                 # characters per second - optional, default 12, can not be set to 0

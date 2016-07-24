@@ -7,7 +7,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, IsValidFileName, \
                                                           GetTmpDir, GetSubtitlesDir, GetIconDir, GetSkinsDir, \
                                                           GetIPTVPlayerVerstion, eConnectCallback, GetPluginDir, \
-                                                          iptv_system
+                                                          iptv_system, IsSubtitlesParserExtensionCanBeUsed
 from Plugins.Extensions.IPTVPlayer.tools.iptvfavourites import IPTVFavourites
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, RetHost
@@ -575,6 +575,7 @@ class IPTVSubDownloaderWidget(Screen):
         subProvidersList = []
         napisy24pl    = {'title':_("Napisy24.pl"),       'sub_provider':'napisy24pl'      }
         openSubtitles = {'title':_("OpenSubtitles.org"), 'sub_provider':'opensubtitlesorg'}
+        napiprojektpl = {'title':_("Napiprojekt.pl"),    'sub_provider':'napiprojektpl'   }
         titlovi       = {'title':_("Titlovi.com"),       'sub_provider':'titlovicom'      }
         subscene      = {'title':_("Subscene.com"),      'sub_provider':'subscenecom'     }
         youtube       = {'title':_("Youtube.com"),       'sub_provider':'youtubecom'      }
@@ -583,11 +584,15 @@ class IPTVSubDownloaderWidget(Screen):
             subProvidersList.append(youtube)
         if 'pl' == GetDefaultLang(): 
             subProvidersList.append(napisy24pl)
+            if IsSubtitlesParserExtensionCanBeUsed():
+                subProvidersList.append(napiprojektpl)
         subProvidersList.append(openSubtitles)
         subProvidersList.append(titlovi)
         subProvidersList.append(subscene)
         if 'pl' != GetDefaultLang(): 
             subProvidersList.append(napisy24pl)
+            if IsSubtitlesParserExtensionCanBeUsed():
+                subProvidersList.append(napiprojektpl)
         
         self.currList = []
         for item in subProvidersList:
