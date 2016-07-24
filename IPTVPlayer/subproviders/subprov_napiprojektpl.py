@@ -204,7 +204,7 @@ class NapiProjektProvider(CBaseSubProviderClass):
             else: durationSec = 0
             
             params = dict(cItem)
-            params.update({'title':title + ' ' + duration, 'duration_sec':durationSec, 'fps':fps, 'sub_id':subId, 'lang':'pl', 'desc':desc, 'size':tmp[1].strip(), 'translator':item[4].strip(), 'added':item[5], 'downloaded':item[6]})
+            params.update({'title':_('Season') + ' ' + title + ' ' + duration, 'duration_sec':durationSec, 'fps':fps, 'sub_id':subId, 'lang':'pl', 'desc':desc, 'size':tmp[1].strip(), 'translator':item[4].strip(), 'added':item[5], 'downloaded':item[6]})
             self.addSubtitle(params)
         self.sortSubtitlesByDurationMatch()
         
@@ -230,7 +230,7 @@ class NapiProjektProvider(CBaseSubProviderClass):
         for item in data:
             try: episode = int(item.strip())
             except Exception: continue
-            params = {'category':nextCategory, 'title':str(episode), 'episode':str(episode), 'url':self.getFullUrl(urlPattern.replace('+sezon+', str(cItem['season'])).replace('+odcinek+', str(episode)))}
+            params = {'category':nextCategory, 'title':_('Episode') + ' ' + str(episode), 'episode':str(episode), 'url':self.getFullUrl(urlPattern.replace('+sezon+', str(cItem['season'])).replace('+odcinek+', str(episode)))}
             if None == promItem and promEpisode == str(episode):
                 promItem = params
             else:

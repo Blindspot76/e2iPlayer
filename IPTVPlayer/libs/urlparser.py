@@ -792,7 +792,8 @@ class pageParser:
             tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams)
             if tmpData == '':
                 tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams, 0)
-            data = data + tmpData
+            if None != tmpData:
+                data = data + tmpData
         printDBG(data)
         return _findLinks(data)
         
