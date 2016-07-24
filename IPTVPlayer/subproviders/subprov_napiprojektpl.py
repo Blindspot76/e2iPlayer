@@ -66,7 +66,6 @@ class NapiProjektProvider(CBaseSubProviderClass):
         self.defaultAjaxParams = {'header':self.AJAX_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.dInfo = params['discover_info']
         
-        self.cacheSeasons = {}
         self.kaindTab = [{'title':'Film & Serial', 'kind':0},
                          {'title':'Serial',        'kind':1},
                          {'title':'Film',          'kind':2} ]
@@ -159,7 +158,7 @@ class NapiProjektProvider(CBaseSubProviderClass):
                 try: season = int(item.strip())
                 except Exception: continue
                 params = {'category':'get_episodes', 'title':str(season), 'season':str(season), 'movie_id': movieId, 'url_pattern':urlPattern}
-                if None == promItem and promSeason == season:
+                if None == promItem and promSeason == str(season):
                     promItem = params
                 else:
                     tab.append(params)
@@ -232,7 +231,7 @@ class NapiProjektProvider(CBaseSubProviderClass):
             try: episode = int(item.strip())
             except Exception: continue
             params = {'category':nextCategory, 'title':str(episode), 'episode':str(episode), 'url':self.getFullUrl(urlPattern.replace('+sezon+', str(cItem['season'])).replace('+odcinek+', str(episode)))}
-            if None == promItem and promEpisode == episode:
+            if None == promItem and promEpisode == str(episode):
                 promItem = params
             else:
                 tab.append(params)
