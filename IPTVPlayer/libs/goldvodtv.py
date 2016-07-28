@@ -89,7 +89,7 @@ class GoldVodTVApi:
         
         channelsTab = []
         
-        nameMap = {'3':'Eleven','2':'TVgP 1 HD','4':'Polsat HD','5':'Polsat 2 HD','6':'Canal+ Sport HD','7':'Eleven Sports',
+        nameMap = {'3':'Eleven','2':'TVP 1 HD','4':'Polsat HD','5':'Polsat 2 HD','6':'Canal+ Sport HD','7':'Eleven Sports',
         '8':'Canal+ Sport 2 HD','9':'Canal+ HD','10':'TVN Meteo Active','11':'Eurosport 2 HD','12':'nSport HD',
         '13':'Erosport HD','14':'Nickelodeon','15':'Comedy Central','16':'National Geographic Channel HD','17':'MTV',
         '18':'Polsat Sport News','19':'TTV','20':'TVN 7 HD','21':'MiniMini+','22':'Discavery Channel HD','23':'BBC Earth',
@@ -105,9 +105,11 @@ class GoldVodTVApi:
         '77':'TVP Pololnia','78':'Da Vinci Learning','79':'Polsat Film','80':'Disney Channel','81':'Kuchnia+','82':'History',
         '83':'4 Fun.TV','84':'SportKlub','85':'Domo+','86':'AXN Spin HD','87':'Discovery Historia','88':'4 Fun.TV','89':'Disney Junior',
         '94':'Kino Polska Muzyka', '102':'Boomerang', '97':'Polo Party TV', '96':'Fight Klube', '100':'Canal+ HD', '101':'Canal+ Sport HD',
-        '117':'nSport', '116':'Extreme Sport', '117':'Discavery Turbo', '118':'MGM', '109':'AXN Black', '106':'nSport'}
+        '117':'nSport', '116':'Extreme Sport', '117':'Discavery Turbo', '118':'MGM', '109':'AXN Black', '106':'nSport', '134':'TVP ABC', 
+        '135':'Puls 2', '113':'Polsat Sport Extra', '121':'NATGEO people HD', '119':'FilmBox HD', '139':'TV4', '146':'ATM rozrywka',
+        '147':'Polsat Cafe HD', '123':'FilmBox Premium', '141':'JimJam Polsat'}
 
-        sts, data = self.cm.getPage(self.MAIN_URL + 'kanaly.html?show=on')
+        sts, data = self.cm.getPage(self.MAIN_URL + 'kanaly.html?show=on', self.http_params)
         if not sts: return []
         m1 = "<div class='box-channel'"
         if m1 not in data: m1 = "<a class='box-channel'"
