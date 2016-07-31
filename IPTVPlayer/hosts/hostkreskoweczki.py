@@ -166,7 +166,7 @@ class KreskoweczkiPL(CBaseHostClass):
         for item in data:
             videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"', ignoreCase=True)[0])
             if 1 != self.up.checkHostSupport(videoUrl): continue 
-            urlTab.append({'name':self.up.getHostName(videoUrl), 'url':videoUrl, 'need_resolve':1})
+            urlTab.append({'name':self.up.getHostName(videoUrl), 'url':videoUrl.replace('&amp;', '&'), 'need_resolve':1})
             
         return urlTab
 
@@ -191,7 +191,7 @@ class KreskoweczkiPL(CBaseHostClass):
         else: 
             if videoUrl.startswith('//'):
                 videoUrl = 'http:' + videoUrl
-            urlTab.append({'name':self.up.getHostName(videoUrl), 'url':videoUrl, 'need_resolve':1})
+            urlTab.append({'name':self.up.getHostName(videoUrl), 'url':videoUrl.replace('&amp;', '&'), 'need_resolve':1})
         return urlTab
         
     def getVideoLinks(self, videoUrl):
@@ -318,27 +318,3 @@ class IPTVHost(CHostBase):
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
 
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
