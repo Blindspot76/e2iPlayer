@@ -5011,6 +5011,10 @@ class pageParser:
                 subLabel = self.cm.ph.getSearchGroups(track, 'label="([^"]+?)"')[0]
                 subTracks.append({'title':subLabel + '_' + subLang, 'url':subUrl, 'lang':subLang, 'format':'srt'})
         
+        # If you want to use the code for openload please at least put the info from were you take it:
+        # for example: "Code take from plugin IPTVPlayer: "https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/"
+        # It will be very nice if you send also email to me samsamsam@o2.pl and inform were this code will be used
+        
         # get image data
         from Plugins.Extensions.IPTVPlayer.libs.png import Reader as PNGReader
         imageData = self.cm.ph.getSearchGroups(data, '''<img[^>]*?id="linkimg"[^>]*?src="([^"]+?)"''', ignoreCase=True)[0]
