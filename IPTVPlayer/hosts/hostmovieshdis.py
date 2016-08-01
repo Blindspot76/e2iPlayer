@@ -57,12 +57,13 @@ class MoviesHD(CBaseHostClass):
     MAIN_URL = 'http://movieshd.is/'
     #SEARCH_URL = MAIN_URL + 'ajax/search.php'
     SEARCH_URL = MAIN_URL + 'api/v1/cautare/apr'
+    DEFAULT_ICON_URL = MAIN_URL + 'templates/FliXanity/assets/images/logochd.png'
     
-    MAIN_CAT_TAB = [{'category':'new',            'mode':'',            'title': 'New',       'url':'search.php',    'icon':''},
-                    {'category':'movies',         'mode':'movies',      'title': 'Movies',    'url':'search.php',    'icon':''},
-                    {'category':'tv_shows',       'mode':'tv_shows',    'title': 'TV shows',  'url':'search.php',    'icon':''},
-                    {'category':'search',          'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',  'title': _('Search history')} ]
+    MAIN_CAT_TAB = [{'category':'new',            'mode':'',            'title': 'New',       'url':'search.php',    'icon':DEFAULT_ICON_URL},
+                    {'category':'movies',         'mode':'movies',      'title': 'Movies',    'url':'search.php',    'icon':DEFAULT_ICON_URL},
+                    {'category':'tv_shows',       'mode':'tv_shows',    'title': 'TV shows',  'url':'search.php',    'icon':DEFAULT_ICON_URL},
+                    {'category':'search',          'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON_URL},
+                    {'category':'search_history',  'title': _('Search history'), 'icon':DEFAULT_ICON_URL} ]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesHD.tv', 'cookie':'movieshdis.cookie', 'cookie_type':'MozillaCookieJar'})
@@ -537,27 +538,3 @@ class IPTVHost(CHostBase):
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
 
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

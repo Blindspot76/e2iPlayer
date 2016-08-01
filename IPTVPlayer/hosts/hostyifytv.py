@@ -51,30 +51,24 @@ class YifyTV(CBaseHostClass):
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     MAIN_URL    = 'http://yify.tv/'
     SRCH_URL    = MAIN_URL + '?s='
+    DEFAULT_ICON= MAIN_URL + 'wp-content/themes/yifybootstrap3/img/logo3s.png'
     
-    MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Releases'),          'url':MAIN_URL+'files/releases/'                                                 },
-                    {'category':'list_items',            'title': _('Popular'),           'url':MAIN_URL+'popular/'                                                        },
-                    {'category':'list_items',            'title': _('Top +250'),          'url':MAIN_URL+'files/movies/?meta_key=imdbRating&orderby=meta_value&order=desc' },
-                    {'category':'list_genres_filter',    'title': _('Genres'),            'url':MAIN_URL+'files/movies/'                                                   },
-                    {'category':'list_languages_filter', 'title': _('Languages'),         'url':MAIN_URL+'languages/'                                                      },
-                    {'category':'list_countries_filter', 'title': _('Countries'),         'url':MAIN_URL+'countries/'                                                      },
-                    {'category':'search',                'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',        'title': _('Search history')} ]
- 
+    MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Releases'),          'icon':DEFAULT_ICON, 'url':MAIN_URL+'files/releases/'                                                 },
+                    {'category':'list_popular',          'title': _('Popular'),           'icon':DEFAULT_ICON, 'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&needcap=1'                                                        },
+                    {'category':'list_items',            'title': _('Top +250'),          'icon':DEFAULT_ICON, 'url':MAIN_URL+'files/movies/?meta_key=imdbRating&orderby=meta_value&order=desc' },
+                    {'category':'list_genres_filter',    'title': _('Genres'),            'icon':DEFAULT_ICON, 'url':MAIN_URL+'files/movies/'                                                   },
+                    {'category':'list_languages_filter', 'title': _('Languages'),         'icon':DEFAULT_ICON, 'url':MAIN_URL+'languages/'                                                      },
+                    {'category':'list_countries_filter', 'title': _('Countries'),         'icon':DEFAULT_ICON, 'url':MAIN_URL+'countries/'                                                      },
+                    {'category':'search',                'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON },
+                    {'category':'search_history',        'title': _('Search history'),             'icon':DEFAULT_ICON } ]
+                    
+    POPULAR_TAB = [{'category':'list_items2', 'title': _('All'),        'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&needcap=1'       },
+                   {'category':'list_items2', 'title': _('Comedies'),   'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&genre=comedy'    },
+                   {'category':'list_items2', 'title': _('Animations'), 'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&genre=animation' },
+                   {'category':'list_items2', 'title': _('Dramas'),     'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&genre=drama'     }]
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'YifyTV', 'cookie':'alltubetv.cookie'})
         self.filterCache = {}
-        
-    def _getFullUrl(self, url):
-        if url.startswith('//'):
-            return 'http:' + url
-        if url.startswith('/'):
-            url = url[1:]
-        if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        if not self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
-        return url
     
     def getPage(self, url, params={}, post_data=None):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
@@ -86,16 +80,6 @@ class YifyTV(CBaseHostClass):
         #sts, data = self.cm.getPage(url, params, post_data)
         #printDBG(data)
         return self.cm.getPage(url, params, post_data)
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("YifyTV.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
             
     def fillFiltersCache(self):
         printDBG("YifyTV.fillFiltersCache")
@@ -136,7 +120,7 @@ class YifyTV(CBaseHostClass):
                 languages = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(languages)
                 self.filterCache['languages'] = []
                 for item in languages:
-                    self.filterCache['languages'].append({'title': self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+                    self.filterCache['languages'].append({'title': self.cleanHtmlStr(item[1]), 'url':self.getFullUrl(item[0])})
                     
         if 0 == len(self.filterCache.get('countries', [])):
             sts, data = self.cm.getPage(self.MAIN_URL + 'countries/')
@@ -146,7 +130,7 @@ class YifyTV(CBaseHostClass):
                 countries = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(countries)
                 self.filterCache['countries'] = []
                 for item in countries:
-                    self.filterCache['countries'].append({'title': self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+                    self.filterCache['countries'].append({'title': self.cleanHtmlStr(item[1]), 'url':self.getFullUrl(item[0])})
                     
     def listFilters(self, cItem, filter, category):
         printDBG("YifyTV.listFilters")
@@ -189,18 +173,33 @@ class YifyTV(CBaseHostClass):
         else: nextPage = False
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'var posts = {', '};', False)[1]
+        data = '{' + data + '}'
+        self._listItems(cItem, data, nextPage)
+        
+    def listItems2(self, cItem):
+        printDBG("YifyTV.listItems2")
+        
+        url = cItem['url'] + '&num=%s' % cItem.get('page', 1)
+        sts, data = self.cm.getPage(url)
+        if not sts: return 
+        
+        self._listItems(cItem, data, True)
+        
+    def _listItems(self, cItem, data, nextPage):
+        printDBG("YifyTV.listItems")
         try:
-            data = byteify(json.loads('{' + data + '}'))
+            data = byteify(json.loads(data))
             for item in data['posts']:
-                item['url']   = self._getFullUrl(item['link'])
+                item['url']   = self.getFullUrl(item['link'])
                 item['title'] = self.cleanHtmlStr(item['title'])
                 item['desc']  = self.cleanHtmlStr(item['post_content'])
-                item['icon']  = self._getFullUrl(item['image'])
+                item['icon']  = self.getFullUrl(item['image'])
                 self.addVideo(item)
         except Exception:
             printExc()
         
         if nextPage:
+            page = cItem.get('page', 1)
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
@@ -442,7 +441,7 @@ class YifyTV(CBaseHostClass):
         otherInfo['genre']    = cItem['genre']
         otherInfo['director'] = cItem['director']
         otherInfo['actors']   = cItem['actors']
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -457,6 +456,8 @@ class YifyTV(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif category == 'list_popular':
+            self.listsTab(self.POPULAR_TAB, self.currItem)
     #MOVIES
         elif category == 'list_countries_filter':
             self.listFilters(self.currItem, 'countries', 'list_genres_filter')
@@ -470,6 +471,8 @@ class YifyTV(CBaseHostClass):
             self.listFilters(self.currItem, 'orderby', 'list_items')
         elif category == 'list_items':
             self.listItems(self.currItem)
+        elif category == 'list_items2':
+            self.listItems2(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -570,28 +573,3 @@ class IPTVHost(CHostBase):
                                     iconimage = icon,
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
