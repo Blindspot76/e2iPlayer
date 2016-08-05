@@ -153,6 +153,13 @@ class MovizlandCom(CBaseHostClass):
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="grid-item ">', '</li>')
         
         for item in data:
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a ', '</a>')
+            item = ''
+            for t in tmp:
+                if '<img' in t:
+                    item = t
+                    break
+            if item == '' and len(tmp): item = tmp[-1]
             url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''', 1)[0]
             if url == '': continue
             title = self.cleanHtmlStr(item)

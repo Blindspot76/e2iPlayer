@@ -155,8 +155,9 @@ class DardarkomCom(CBaseHostClass):
         if not sts: return
         
         pagnationMarker = '<div class="pagination"'
-        nextPageUrl = self.cm.ph.getDataBeetwenMarkers(data, pagnationMarker, '</div>', False)[1]
-        nextPageUrl = self.cm.ph.getSearchGroups(nextPageUrl, '<a[^>]+?href="([^"]+?)"><span>التالي</span></a>')[0]
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, pagnationMarker, '</div>', False)[1]
+        nextPageUrl = self.cm.ph.getSearchGroups(tmp, '<a[^>]+?href="([^"]+?)"[^>]*?><span[^>]*?>التالي</span></a>')[0]
+        if nextPageUrl == '': nextPageUrl = self.cm.ph.getSearchGroups(tmp, '<a[^>]+?href="([^"]+?)"[^>]*?><span[^>]*?>الصفحة التالية</span></a>')[0]
         if '#' == nextPageUrl:
             if '&' in url and post_data == None:
                 nextPageUrl = url.split('&search_start')[0] + '&search_start=%s' % (page+1)
@@ -325,7 +326,7 @@ class DardarkomCom(CBaseHostClass):
         if m1 in videoUrl:
             videoUrl = videoUrl[videoUrl.find(m1)+3:]
         
-        if 'dardarkom.com' in videoUrl:
+        if 'dardarkom.com' in videoUrl or 'darkom.me' in videoUrl:
             sts, data = self.cm.getPage(videoUrl)
             if not sts: return []
             url = ''
