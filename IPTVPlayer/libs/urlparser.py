@@ -5046,7 +5046,7 @@ class pageParser:
             imageTabs[i][j].append(imageStr[idx])
         
         # get signature data
-        sts, data = self.cm.getPage('https://openload.co/assets/js/obfuscator/numbers.js', {'header':HTTP_HEADER})
+        sts, data = self.cm.getPage('https://openload.co/assets/js/obfuscator/n.js', {'header':HTTP_HEADER})
         if not sts: return False
         signStr = self.cm.ph.getSearchGroups(data, '''['"]([^"^']+?)['"]''', ignoreCase=True)[0]
         
