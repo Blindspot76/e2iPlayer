@@ -79,7 +79,8 @@ class TvpVod(CBaseHostClass):
     SEARCH_VOD_URL = MAIN_VOD_URL + 'szukaj?query=%s'
     HTTP_HEADERS = {}
     
-    VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'rio',                 'title':'Rio206',                    'url':'http://sport.tvp.pl/shared/listing.php?portal_name=rio2016.tvp.pl&portal_id=19369963&parent_id=19369963&type=v_listing_typical_a&copy=false&direct=false&order=release_date_long%2C-1&count=200&filter=%7B%22parents%22%3A%7B%22%24ne%22%3A24091532%7D%2C%22types%22%3A%7B%22%24in%22%3A%5B%22video%22%5D%7D%7D&template=wideo%2Fitems-listing.html'},
+    VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'rio',                 'title':'Rio206 - tylko Polacy',     'url':'http://sport.tvp.pl/shared/listing.php?portal_name=rio2016.tvp.pl&portal_id=19369963&parent_id=19369963&type=v_listing_typical_a&copy=false&direct=false&order=release_date_long%2C-1&count=200&filter=%7B%22parents%22%3A%7B%22%24ne%22%3A24091532%7D%2C%22types%22%3A%7B%22%24in%22%3A%5B%22video%22%5D%7D%2C%22techTags%22%3A%22pl%22%7D&template=wideo%2Fitems-listing.html'},
+                    {'icon':DEFAULT_ICON, 'category':'rio',                 'title':'Rio206',                    'url':'http://sport.tvp.pl/shared/listing.php?portal_name=rio2016.tvp.pl&portal_id=19369963&parent_id=19369963&type=v_listing_typical_a&copy=false&direct=false&order=release_date_long%2C-1&count=200&filter=%7B%22parents%22%3A%7B%22%24ne%22%3A24091532%7D%2C%22types%22%3A%7B%22%24in%22%3A%5B%22video%22%5D%7D%7D&template=wideo%2Fitems-listing.html'},
                     {'icon':DEFAULT_ICON, 'category':'live',                'title':'Regionale na żywo',         'url':'http://warszawa.tvp.pl/'},
                     {'icon':DEFAULT_ICON, 'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
                     {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
