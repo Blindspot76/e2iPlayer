@@ -63,6 +63,7 @@ class Ekstraklasa(CBaseHostClass):
                     ]
     ETV_CATEGORY  = 'etv_category'
     ETV_FORMAT    = 'mp4'
+    MAIN_URL = ETV_MAIN_URL
     def __init__(self):
         printDBG("Ekstraklasa.__init__")
         CBaseHostClass.__init__(self, {'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.ekstraklasa_proxy.value})
@@ -76,7 +77,7 @@ class Ekstraklasa(CBaseHostClass):
                        'url'      : Ekstraklasa.ETV_MAIN_URL + item['navi'],
                        'title'    : item['name'],
                        'desc'     : 'ekstraklasa.tv',
-                       'icon'     : '',
+                       'icon'     : 'http://footballtripper.com/wp-content/themes/ft/flags/Ekstraklasa-flag.png',
                        'depth'    : 0,
                        'host'     : 'ekstraklasa.tv'
                      }  
@@ -306,7 +307,7 @@ class IPTVHost(CHostBase):
                 
             title       =  cItem.get('title', '')
             description =  clean_html(cItem.get('desc', ''))
-            icon        =  cItem.get('icon', '')
+            icon        =  self.host.getFullUrl(cItem.get('icon', ''))
             
             hostItem = CDisplayListItem(name = title,
                                         description = description,
