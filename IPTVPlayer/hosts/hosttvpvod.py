@@ -243,9 +243,10 @@ class TvpVod(CBaseHostClass):
         data = data.split('<div class="item"')
         if len(data): del data[0]
         for item in data:
+            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            
             item  = item.split('<div class="item-data">')[-1]
             desc  = self.cleanHtmlStr(item)
-            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1] )
             if url.startswith('http'):
