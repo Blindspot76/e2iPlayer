@@ -171,10 +171,11 @@ class T123MoviesTO(CBaseHostClass):
         for item in episodeKeys:
             episodeNum = self.cm.ph.getSearchGroups(item + '|', '''Episode\s+?([0-9]+?)[^0-9]''', 1, True)[0]
             if '' != episodeNum and '' != seasonNum:
-                title = 's%se%s'% (seasonNum.zfill(2), episodeNum.zfill(2)) + ' - ' + item.replace('Episode %s' % episodeNum, '')
+                title = 's%se%s'% (seasonNum.zfill(2), episodeNum.zfill(2)) + ' ' + item.replace('Episode %s' % episodeNum, '')
             else: title = item
+            baseTitle = re.sub('Season\s[0-9]+?[^0-9]', '', cItem['title'] + ' ')
             params = dict(cItem)
-            params.update({'title':cItem['title'] + ' - ' + title, 'urls':episodeLinks[item]})
+            params.update({'title':self.cleanHtmlStr(baseTitle + ' ' + title), 'urls':episodeLinks[item]})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -292,6 +293,51 @@ class T123MoviesTO(CBaseHostClass):
         
         return urlTab
         
+    def getArticleContent(self, cItem):
+        printDBG("T123MoviesTO.getArticleContent [%s]" % cItem)
+        retTab = []
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return retTab
+        
+        title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta property="og:title"[^>]+?content="([^"]+?)"')[0] )
+        desc  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta property="og:description"[^>]+?content="([^"]+?)"')[0] )
+        icon  = self.getFullUrl( self.cm.ph.getSearchGroups(data, '<meta property="og:image"[^>]+?content="([^"]+?)"')[0] )
+        
+        if title == '': title = cItem['title']
+        if desc == '':  title = cItem['desc']
+        if icon == '':  title = cItem['icon']
+        
+        descData = self.cm.ph.getDataBeetwenMarkers(data, '<div class="mvic-info">', '<div class="clearfix">', False)[1]
+        descData = self.cm.ph.getAllItemsBeetwenMarkers(descData, '<p', '</p>')
+        descTabMap = {"Director":     "director",
+                      "Actor":        "actors",
+                      "Genre":        "genre",
+                      "Country":      "country",
+                      "Release":      "released",
+                      "Duration":     "duration",
+                      "Quality":      "quality",
+                      "IMDb":         "rated"}
+        
+        otherInfo = {}
+        for item in descData:
+            item = item.split('</strong>')
+            if len(item) < 2: continue
+            key = self.cleanHtmlStr( item[0] ).replace(':', '').strip()
+            val = self.cleanHtmlStr( item[1] )
+            if key == 'IMDb': val += ' IMDb' 
+            if key in descTabMap:
+                try: otherInfo[descTabMap[key]] = val
+                except Exception: continue
+        
+        if '' != cItem.get('movie_id', ''):
+            rating = ''
+            sts, data = self.cm.getPage(self.getFullUrl('ajax/movie_rate_info/' + cItem['movie_id']))
+            if sts: rating = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div id="movie-mark"', '</label>', True)[1] )
+            if rating != '': otherInfo['rating'] = self.cleanHtmlStr( rating )
+        
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
+        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -335,6 +381,25 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, T123MoviesTO(), True, []) #[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]
+    
+    def getArticleContent(self, Index = 0):
+        retCode = RetHost.ERROR
+        retlist = []
+        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
+        cItem = self.host.currList[Index]
+        
+        if cItem['type'] != 'video' and cItem['category'] != 'list_episodes':
+            return RetHost(retCode, value=retlist)
+        hList = self.host.getArticleContent(cItem)
+        for item in hList:
+            title      = item.get('title', '')
+            text       = item.get('text', '')
+            images     = item.get("images", [])
+            othersInfo = item.get('other_info', '')
+            retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
+        if len(hList):  
+            retCode = RetHost.OK
+        return RetHost(retCode, value = retlist)
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR

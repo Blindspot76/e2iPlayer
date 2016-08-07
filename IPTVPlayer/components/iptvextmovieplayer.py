@@ -498,6 +498,9 @@ class IPTVExtMoviePlayer(Screen):
         self.setSubOffsetFromInfoBar()
         if -1 != self.subHandler['current_sub_time_ms']:
             self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
+        else:
+            self.setSubtitlesText("", False)
+            self.hideSubtitles()
         sub = None
         
         # set video options

@@ -30,7 +30,7 @@ import os
 import stat
 import codecs
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ###################################################
 def GetNice(pid=None):
     nice = 0
@@ -42,7 +42,7 @@ def GetNice(pid=None):
             data = f.read()
             data = data.split(' ')[19]
             nice = int(data)
-    except:
+    except Exception:
         printExc()
     return nice
     
@@ -55,12 +55,12 @@ def E2PrioFix(cmd):
 def GetDefaultLang(full=False):
     if full:
         try: defaultLanguage = language.getActiveLanguage()
-        except:
+        except Exception:
             printExc()
             defaultLanguage = 'en_EN' 
     else:
         try: defaultLanguage = language.getActiveLanguage().split('_')[0]
-        except:
+        except Exception:
             printExc()
             defaultLanguage = 'en'
     return defaultLanguage
@@ -88,7 +88,7 @@ def GetPolishSubEncoding(filePath):
         else:
             encoding = "iso-8859-2"
         printDBG("IPTVExtMoviePlayer _getEncoding iso[%d] win[%d ] utf[%d] -> [%s]" % (iso, win, utf, encoding))
-    except:
+    except Exception:
         printExc()
     return encoding
     
@@ -96,7 +96,7 @@ def MapUcharEncoding(encoding):
     ENCODING_MAP = {'X-MAC-CYRILLIC':"MAC-CYRILLIC"}
     printDBG("MapUcharEncoding in encoding[%s]" % encoding)
     try: encoding = ENCODING_MAP.get(encoding.strip().upper(), encoding.strip())
-    except: printExc()
+    except Exception: printExc()
     printDBG("MapUcharEncoding out encoding[%s]" % encoding)
     return encoding
 
@@ -122,7 +122,7 @@ class eConnectCallbackObj:
                     self.obj.remove(self.connectHandler)
             else:
                 del self.connectHandler
-        except:
+        except Exception:
             printExc()
         self.connectHandler = None
         self.obj = None
@@ -137,7 +137,7 @@ def eConnectCallback(obj, callbackFun, withExcept=False):
             else:
                 obj.append(callbackFun)
             return eConnectCallbackObj(obj, callbackFun)
-    except:
+    except Exception:
         printExc("eConnectCallback")
     return eConnectCallbackObj()
     
@@ -209,7 +209,7 @@ def GetAvailableIconSize(checkAll=True):
             if fileExists(file):
                 confirmedIconSize = int(size)
                 break
-        except:
+        except Exception:
             printExc()
     return confirmedIconSize
     
@@ -244,7 +244,7 @@ def GetCookieDir(file = ''):
     try:
         if os.path.isdir(tmpDir) or mkdirs(tmpDir):
             cookieDir = tmpDir
-    except:
+    except Exception:
         printExc()
     return cookieDir + file
     
@@ -252,7 +252,7 @@ def GetTmpDir(file = ''):
     path = config.plugins.iptvplayer.NaszaTMP.value
     path = path.replace('//', '/')
     try: mkdirs(path)
-    except: printExc()
+    except Exception: printExc()
     return path + '/' + file
     
 def CreateTmpFile(filename, data=''):
@@ -262,7 +262,7 @@ def CreateTmpFile(filename, data=''):
         with open(filePath, 'w') as f:
             f.write(data)
             sts = True
-    except:
+    except Exception:
         printExc()
     return sts, filePath
     
@@ -270,7 +270,7 @@ def GetCacheSubDir(dir, file = ''):
     path = config.plugins.iptvplayer.SciezkaCache.value + "/" + dir
     path = path.replace('//', '/')
     try: mkdirs(path)
-    except: printExc()
+    except Exception: printExc()
     return path + '/' + file
 
 def GetSearchHistoryDir(file = ''):
@@ -301,7 +301,7 @@ def GetConfigDir(path = ''):
 def IsExecutable(fpath):
     try:
         if '' != Which(fpath): return True
-    except: printExc()
+    except Exception: printExc()
     return False
     
 def Which(program):
@@ -318,7 +318,7 @@ def Which(program):
                 exe_file = os.path.join(path, program)
                 if is_exe(exe_file):
                     return exe_file
-    except: printExc()
+    except Exception: printExc()
     return ''
 #############################################################
 # class used to auto-select one link when video has several 
@@ -394,7 +394,7 @@ def printDBG( DBGtxt ):
     try:
         from Components.config import config
         DBG = config.plugins.iptvplayer.debugprint.value
-    except:
+    except Exception:
         #nie zainicjowany modul Config, sprawdzamy wartosc bezposredio w pliku
         DBG=''
         file = open(resolveFilename(SCOPE_CONFIG, "settings"))
@@ -412,7 +412,7 @@ def printDBG( DBGtxt ):
             f = open('/hdd/iptv.dbg', 'a')
             f.write(DBGtxt + '\n')
             f.close
-        except:
+        except Exception:
             print("======================EXC printDBG======================")
             print("printDBG(I): %s" % traceback.format_exc())
             print("========================================================")
@@ -421,7 +421,7 @@ def printDBG( DBGtxt ):
                 f = open('/tmp/iptv.dbg', 'a')
                 f.write(DBGtxt + '\n')
                 f.close
-            except:
+            except Exception:
                 print("======================EXC printDBG======================")
                 print("printDBG(II): %s" % traceback.format_exc())
                 print("========================================================")
@@ -453,7 +453,7 @@ def GetHostsList(fromList=True, fromHostFolder=True):
                         printDBG('getHostsList add host with fileName: "%s"' % fileName[4:])
             printDBG('getHostsList end')
             lhosts.sort()
-        except:
+        except Exception:
             printDBG('GetHostsList EXCEPTION')
     
     # when new option to remove not enabled host is enabled 
@@ -470,7 +470,7 @@ def GetHostsList(fromList=True, fromHostFolder=True):
                         if line[4:] not in lhosts:
                             lhosts.append( line[4:] )
                             printDBG('getHostsList add host from list.txt hostName: "%s"' % line[4:])
-        except:
+        except Exception:
             printExc()
     
     return lhosts
@@ -502,7 +502,7 @@ def SaveHostsOrderList(list, fileName="iptvplayerhostsorder"):
         for item in list:
             f.write(item + '\n')
         f.close()
-    except:
+    except Exception:
         printExc()
     
 def GetHostsOrderList(fileName="iptvplayerhostsorder"):
@@ -510,12 +510,15 @@ def GetHostsOrderList(fileName="iptvplayerhostsorder"):
     fname = GetConfigDir(fileName)
     list = []
     try:
-        with open(fname, 'r') as f:
-            content = f.readlines()
-        for item in content:
-            item = item.strip()
-            if len(item): list.append(item)
-    except:
+        if fileExists(fname):
+            with open(fname, 'r') as f:
+                content = f.readlines()
+            for item in content:
+                item = item.strip()
+                if len(item): list.append(item)
+        else:
+            printDBG('GetHostsOrderList file[%s] not exists' % fname)
+    except Exception:
         printExc()
     return list
 
@@ -534,7 +537,7 @@ def IsHostEnabled( hostName ):
     hostEnabled  = False
     try:
         exec('if config.plugins.iptvplayer.host' + hostName + '.value: hostEnabled = True')
-    except:
+    except Exception:
         hostEnabled = False
     return hostEnabled
 
@@ -550,7 +553,7 @@ def FreeSpace(katalog, requiredSpace, unitDiv=1024*1024):
         if 512 > (freeSpace / (1024 * 1024)):
             freeSpace = s.f_bavail * s.f_frsize
         freeSpace = freeSpace / unitDiv
-    except:
+    except Exception:
         printExc()
         freeSpace = -1
     printDBG("FreeSpace freeSpace[%s] requiredSpace[%s] unitDiv[%s]" % (freeSpace, requiredSpace, unitDiv))
@@ -582,7 +585,7 @@ def touch(fname, times=None):
         with open(fname, 'a'):
             os.utime(fname, times)
         return True
-    except:
+    except Exception:
         printExc()
         return False
         
@@ -595,7 +598,7 @@ def mkdir(newdir):
         os.mkdir(newdir)
         sts = True
         msg = 'Katalog "%s" został utworzony poprawnie.' % newdir
-    except:
+    except Exception:
         sts = False
         msg = 'Katalog "%s" nie może zostać utworzony.' % newdir
         printExc()
@@ -621,7 +624,7 @@ def mkdirs(newdir):
             if tail:
                 os.mkdir(newdir)
         return True
-    except:
+    except Exception:
         printExc('!!!!!!!!!! EXCEPTION mkdirs["%s"]' % newdir)
         return False
         
@@ -629,7 +632,7 @@ def rm(fullname):
     try:
         os.remove(fullname)
         return True
-    except: printExc()
+    except Exception: printExc()
     return False
 
 def rmtree(path, ignore_errors=False, onerror=None):
@@ -687,15 +690,15 @@ def DownloadFile(url, filePath):
         output.close()
         try:
             iptv_system('sync')
-        except:
+        except Exception:
             printExc('DownloadFile sync exception')
         return True
-    except:
+    except Exception:
         try:
             if os.path.exists(filePath):
                 os.remove(filePath)
             return False
-        except:
+        except Exception:
             printExc()
             return False
 
@@ -718,7 +721,7 @@ def CheckIconName(name):
         try:
             tmp = int(name[:-4], 16)
             return True
-        except:
+        except Exception:
             pass
     return False
 
@@ -732,7 +735,7 @@ def CheckIconsDirName(path):
         try:
             test = float(dirName[len(baseName):])
             return True
-        except:
+        except Exception:
             pass
     return False
     
@@ -744,7 +747,7 @@ def GetIconsDirs(basePath):
             currPath = os.path.join(basePath, item)
             if os.path.isdir(currPath) and not os.path.islink(currPath) and CheckIconsDirName(item):
                 iconsDirs.append(item)
-    except:
+    except Exception:
         printExc()
     return iconsDirs
     
@@ -757,7 +760,7 @@ def GetIconsFilesFromDir(basePath):
                 currPath = os.path.join(basePath, item)
                 if os.path.isfile(currPath) and not os.path.islink(currPath) and CheckIconName(item):
                     iconsFiles.append(item)
-        except:
+        except Exception:
             printExc()
     
     return iconsFiles
@@ -767,7 +770,7 @@ def GetCreationIconsDirTime(fullPath):
         dirName    = GetLastDirNameFromPath(fullPath)
         baseName   = GetIconDirBaseName()
         return float(dirName[len(baseName):])
-    except:
+    except Exception:
         return None
         
 def GetCreateIconsDirDeltaDateInDays(fullPath):
@@ -779,7 +782,7 @@ def GetCreateIconsDirDeltaDateInDays(fullPath):
             modTime    = datetime.fromtimestamp(createTime)
             deltaTime  = currTime - modTime
             ret = deltaTime.days
-        except:
+        except Exception:
             printExc()
     return ret
     
@@ -788,7 +791,7 @@ def RemoveIconsDirByPath(path):
     RemoveAllFilesIconsFromPath(path)
     try:
         os.rmdir(path)
-    except:
+    except Exception:
         printExc('RemoveIconsDirByPath dir[%s] is not empty' % path) 
     
 def RemoveOldDirsIcons(path, deltaInDays='7'):
@@ -800,7 +803,7 @@ def RemoveOldDirsIcons(path, deltaInDays='7'):
             delta = GetCreateIconsDirDeltaDateInDays(currDir) # we will check only directory date
             if delta >= 0 and deltaInDays >= 0 and delta >= deltaInDays:
                 RemoveIconsDirByPath(currDir)
-    except:
+    except Exception:
         printExc()
 
 def RemoveAllFilesIconsFromPath(path):
@@ -813,9 +816,9 @@ def RemoveAllFilesIconsFromPath(path):
                 printDBG( 'RemoveAllFilesIconsFromPath img: ' + filePath )
                 try:
                     os.remove(filePath)
-                except:
+                except Exception:
                     printDBG( "ERROR while removing file %s" % filePath )
-    except:
+    except Exception:
         printExc('ERROR: in RemoveAllFilesIconsFromPath')
         
 def RemoveAllDirsIconsFromPath(path, old=False):
@@ -827,7 +830,7 @@ def RemoveAllDirsIconsFromPath(path, old=False):
             for item in iconsDirs:
                 currDir = os.path.join(path, item)
                 RemoveIconsDirByPath(currDir)
-        except:
+        except Exception:
             printExc()
     
 def formatBytes(bytes, precision = 2):
@@ -867,7 +870,7 @@ class CSearchHistoryHelper():
         try:
             printDBG('CSearchHistoryHelper.__init__ name = "%s"' % name)
             self.PATH_FILE = GetSearchHistoryDir(name + ".txt")
-        except:
+        except Exception:
             printExc('CSearchHistoryHelper.__init__ EXCEPTION')
 
     def getHistoryList(self):
@@ -880,9 +883,9 @@ class CSearchHistoryHelper():
                 value = line.replace('\n', '').strip()
                 if len(value) > 0:
                     try: historyList.insert(0, value.encode('utf-8', 'ignore'))
-                    except: printExc()
+                    except Exception: printExc()
             file.close()
-        except:
+        except Exception:
             printExc()
             return []
         
@@ -927,7 +930,7 @@ class CSearchHistoryHelper():
                 file.write(value + '\n')
                 printDBG('Added pattern: "%s"' % itemValue) 
                 file.close
-        except:
+        except Exception:
             printExc('CSearchHistoryHelper.addHistoryItem EXCEPTION')
 
 
@@ -939,7 +942,7 @@ class CSearchHistoryHelper():
             for i in range( l ):
                 file.write( list[l - 1 -i] + '\n' )
             file.close
-        except:
+        except Exception:
             printExc('CSearchHistoryHelper._saveHistoryList EXCEPTION')
     
     @staticmethod
@@ -951,7 +954,7 @@ class CSearchHistoryHelper():
             file.write(pattern)
             file.close
             sts = True
-        except:
+        except Exception:
             printExc()
         return sts
         
@@ -970,7 +973,7 @@ def ReadTextFile(filePath, encode='utf-8', errors='ignore'):
         if ret.startswith(codecs.BOM_UTF8):
             ret = ret[3:]
         sts = True
-    except:
+    except Exception:
         printExc()
     return sts, ret
     
@@ -981,7 +984,7 @@ def WriteTextFile(filePath, text, encode='utf-8', errors='ignore'):
         file.write(text)
         file.close()
         sts = True
-    except:
+    except Exception:
         printExc()
     return sts
 
@@ -1016,7 +1019,7 @@ class CMoviePlayerPerHost():
                 activePlayer['player'] = CFakeMoviePlayerOption(ret['player']['value'].encode('utf-8'), ret['player']['text'].encode('utf-8'))
                 self.activePlayer  = activePlayer
                 sts = True
-        except: printExc()
+        except Exception: printExc()
         return sts, ret
         
     def save(self):
@@ -1033,7 +1036,7 @@ class CMoviePlayerPerHost():
                 file.write(data)
                 file.close
                 sts = True
-        except: printExc()
+        except Exception: printExc()
         return sts
     
     def get(self, key, defval):
@@ -1062,7 +1065,7 @@ def printExc(msg=''):
 
 def GetIPTVPlayerVerstion():
     try: from Plugins.Extensions.IPTVPlayer.version import IPTV_VERSION
-    except: IPTV_VERSION="XX.YY.ZZ"
+    except Exception: IPTV_VERSION="XX.YY.ZZ"
     return IPTV_VERSION
 
 def GetShortPythonVersion():
@@ -1072,7 +1075,7 @@ def GetVersionNum(ver):
     try:
         if None == re.match("[0-9]+\.[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]", ver): raise Exception("Wrong version!")
         return int(ver.replace('.', ''))
-    except:
+    except Exception:
         printExc('Version[%r]' % ver)
         return 0
         
@@ -1113,7 +1116,7 @@ def GetE2OptionsFromFile(filePath):
                         options.append(opt)
         else:
             printDBG('GetE2OptionsFromFile file[%s] not exists' % filePath)
-    except:
+    except Exception:
         printExc()
     return options
 
@@ -1123,7 +1126,7 @@ def SetE2OptionByFile(filePath, value):
         with open(filePath, 'w') as f:
             data = f.write(value)
             sts = True
-    except:
+    except Exception:
         printExc()
     return sts
 
