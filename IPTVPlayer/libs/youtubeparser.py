@@ -8,6 +8,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, re
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 
 from datetime import timedelta
 ###################################################
@@ -17,7 +18,7 @@ from datetime import timedelta
 ###################################################
 import re
 try: import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -43,7 +44,7 @@ class YouTubeParser():
         list = []
         try:
             list = YoutubeIE()._real_extract(url)
-        except:
+        except Exception:
             printExc()
             if dashSepareteList:
                 return [], []
@@ -96,6 +97,26 @@ class YouTubeParser():
                 item = dict(item)
                 item["url"] = decorateUrl("merge://audio_url|video_url", {'audio_url':dashAudioLists[0]['url'], 'video_url':item['url'], 'prefered_merger':'MP4box'})
                 dashList.append(item)
+        
+        # try to get hls format with alternative method 
+        if 0 == len(retList):
+            try:
+                video_id = YoutubeIE()._extract_id(url)
+                url = 'http://www.youtube.com/watch?v=%s&gl=US&hl=en&has_verified=1' % video_id
+                sts, data = self.cm.getPage(url, {'header':{'User-agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'}})
+                if sts:
+                    data = data.replace('\\"', '"').replace('\\\\\\/', '/')
+                    hlsUrl = self.cm.ph.getSearchGroups(data, '''"hlsvp"\s*:\s*"(http[^"]+?)"''')[0]
+                    if '' != hlsUrl:
+                        hlsList = getDirectM3U8Playlist(hlsUrl)
+                        if len(hlsList):
+                            dashList = []
+                            for item in hlsList:
+                                item['format'] = "%sx%s" % (item.get('heigth', 0), item.get('with', 0))
+                                item['ext']  = "m3u8"
+                                retList.append(item)
+            except Exception:
+                printExc()
                 
         if dashSepareteList:
             return retList, dashList
@@ -195,7 +216,7 @@ class YouTubeParser():
                 data = data.split('class="yt-uix-scroller-scroll-unit')
                 del data[0]
                 return self.parseListBase(data, 'tray')
-        except:
+        except Exception:
             printExc()
             return []
             
@@ -229,7 +250,7 @@ class YouTubeParser():
                     item = dict(cItem)
                     item.update({'title': 'Następna strona', 'page': str(int(page) + 1), 'url': 'http://www.youtube.com' + nextPage})
                     currList.append(item)
-        except:
+        except Exception:
             printExc()
             
         return currList
@@ -266,7 +287,7 @@ class YouTubeParser():
                     item = dict(cItem)
                     item.update({'title': _("Next page"), 'page': str(int(page) + 1), 'url': 'http://www.youtube.com' + nextPage})
                     currList.append(item)
-        except:
+        except Exception:
             printExc()
             return []
         return currList
@@ -299,7 +320,7 @@ class YouTubeParser():
                 if len(currList) and nextPage:
                     item = {'name': 'history', 'type': 'category', 'category': nextPageCategory, 'pattern':pattern, 'search_type':searchType, 'title': _("Next page"), 'page': str(int(page) + 1)}
                     currList.append(item)
-        except:
+        except Exception:
             printExc()
             return []
         return currList
@@ -330,7 +351,7 @@ class YouTubeParser():
                     desc  = item['description']
                     params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': time, 'desc': desc}
                     currList.append(params)
-            except:
+            except Exception:
                 printExc()
         return currList    
 
