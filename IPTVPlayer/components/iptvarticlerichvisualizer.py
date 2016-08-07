@@ -38,7 +38,7 @@ class IPTVArticleRichVisualizer(Screen):
         skin =  """
                     <screen name="IPTVArticleRichVisualizerWidget" position="center,center" size="1050,525" title="Info...">
                         <widget name="title" position="5,10"  zPosition="1" size="1040,40"  font="Regular;30" halign="center" valign="center"   transparent="1" backgroundColor="transparent" foregroundColor="#000E83F5" shadowColor="black" shadowOffset="-1,-1" />
-                        <widget name="cover"     zPosition="1" position="10,80"   size="240,320" transparent="1"  alphatest="blend" />
+                        <widget name="cover"     zPosition="1" position="10,80"   size="236,357" alphatest="blend" borderWidth="2" borderColor="white" backgroundColor="black" />
                         <widget name="spinner"   zPosition="3" position="98,232"  size="16,16"   transparent="1"  alphatest="blend" />
                         <widget name="spinner_1" zPosition="2" position="98,232"  size="16,16"   transparent="1"  alphatest="blend" />
                         <widget name="spinner_2" zPosition="2" position="114,232" size="16,16"   transparent="1"  alphatest="blend" />
