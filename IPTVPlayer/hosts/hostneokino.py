@@ -58,6 +58,7 @@ class NeoKinoNet(CBaseHostClass):
                     {'category':'filter',         'title': _('Genres'),     'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':0},
                     {'category':'filter',         'title': _('Year'),       'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':1},
                     {'category':'filter',         'title': _('Resolution'), 'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':2},
+                    {'category':'filter',         'title': _('Sort by'),    'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':2},
                     {'category':'search',         'title': _('Search'),     'search_item':True, 'icon':DEFAULT_ICON_URL},
                     {'category':'search_history', 'title': _('Search history'),                 'icon':DEFAULT_ICON_URL} 
                    ]
@@ -89,7 +90,7 @@ class NeoKinoNet(CBaseHostClass):
         if not sts: return
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="categorias">', '<div id="footer"', False)[1]
         data = data.split('<div class="filtro_y">')
-        self.filterCache = {0:[], 1:[], 2:[]} 
+        self.filterCache = {0:[], 1:[], 2:[], 3:[]} 
         idx = 0
         for item in data:
             item = item.split('</li>')
@@ -176,19 +177,31 @@ class NeoKinoNet(CBaseHostClass):
         
         sts, data = self.cm.getPage(url)
         if not sts: return []
+        
+        url = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http\://mp4load\.com/[^"]+?)"')[0]
+        
+        sts, data = self.cm.getPage(url)
+        if not sts: return []
+        
         sourcesData = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
         tracksData  = self.cm.ph.getDataBeetwenMarkers(data, 'tracks:', ']', False)[1]
-        tracksData = re.compile('"(http[^"]+?\.srt)"').findall(tracksData)
+        tracksData = re.compile('''['"](http[^"^']+?\.srt)['"]''').findall(tracksData)
         idx = 0
         sub_tracks = []
         for item in tracksData:
             sub_tracks.append({'title':'sub %d' % idx, 'url':item, 'lang':'defaul'})
             idx += 1
             
-        sourcesData = re.compile('file:[^;]*?"([^"]+?)"[^;]*?label:[^;]*?"([^"]+?)",[^;]*?type:[^;]*?"([^"]+?)"').findall(sourcesData)
-        for item in sourcesData:
-            url = strwithmeta(item[0], {'external_sub_tracks':sub_tracks})
-            urlTab.append({'name':item[1], 'url':url, 'type':item[2], 'need_resolve':0})
+        try:
+            for item in ['type', 'file', 'label']:
+                if '"{0}"'.format(item) not in sourcesData:
+                    sourcesData = sourcesData.replace(item, '"{0}"'.format(item))
+            sourcesData = byteify(json.loads(sourcesData.strip() + ']'))
+            for item in sourcesData:
+                url = strwithmeta(item['file'], {'external_sub_tracks':sub_tracks})
+                urlTab.append({'name':item['label'], 'url':url, 'type':item['type'], 'need_resolve':0})
+        except Exception:
+            printExc()
             
         url = self.cm.ph.getSearchGroups(data, '''<embed[^>]+?src=['"](http[^"^']+?)['"]''')[0]
         if url.startswith('http'):
