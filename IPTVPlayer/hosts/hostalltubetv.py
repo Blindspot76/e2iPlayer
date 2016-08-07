@@ -44,6 +44,7 @@ def gettytul():
     return 'alltube.tv'
 
 class AlltubeTV(CBaseHostClass):
+    USER_AGENT = 'curl/7'
     MAIN_URL    = 'http://alltube.tv/'
     SRCH_URL    = MAIN_URL + 'szukaj'
     DEFAULT_ICON = 'http://alltube.tv/static/main/newlogoall.png'
@@ -60,10 +61,23 @@ class AlltubeTV(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'AlltubeTV', 'cookie':'alltubetv.cookie'})
+        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        
         self.filterCache = {}
         self.seriesCache = {}
         self.seriesLetters = []
         self.episodesCache = []
+        
+    def getPage(self, baseUrl, params={}, post_data=None):
+        if params == {}: params = dict(self.defaultParams)
+        params['cloudflare_params'] = {'domain':'alltube.tv', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
+        
+    def getIconUrl(self, url):
+        url = self.getFullUrl(url)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
             
     def _listFilters(self, cItem, data):
         printDBG("AlltubeTV._listFilters")
@@ -102,7 +116,7 @@ class AlltubeTV(CBaseHostClass):
             
         post_data = cItem.get('post_data', None)
         
-        sts, data = self.cm.getPage(url, {}, post_data)
+        sts, data = self.getPage(url, {}, post_data)
         if not sts: return 
         
         if cItem.get('check_filter', True):
@@ -144,7 +158,7 @@ class AlltubeTV(CBaseHostClass):
             self.addDir(params)
     
     def fillFilterCache(self, url):
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         def _getFilters(m1, m2, key):
             tab = []
@@ -181,7 +195,7 @@ class AlltubeTV(CBaseHostClass):
         printDBG("AlltubeTV.fillSeriesCache")
         self.seriesCache = {}
         self.seriesLetters = []
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         data = CParsingHelper.getDataBeetwenMarkers(data, 'term-list clearfix">', '</ul>', False)[1]
         data = re.compile('<li[^>]*?data-letter="([^"]+)"[^>]*?>[^<]*?<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
@@ -223,7 +237,7 @@ class AlltubeTV(CBaseHostClass):
             self.listsTab(tab, cItem)
         
     def listAllSeries(self, category):
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return 
 
         data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="term-list">', '</ul>', False)[1]
@@ -242,7 +256,7 @@ class AlltubeTV(CBaseHostClass):
         printDBG("AlltubeTV.listSeasons")
         self.episodesCache = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return 
         seriesTitle =  self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-xs-12 col-sm-9">', '</h3>', False)[1] )
         if '' == seriesTitle: seriesTitle = cItem['title']    
@@ -293,7 +307,7 @@ class AlltubeTV(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AlltubeTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        sts, data = self.cm.getPage(self.SRCH_URL, {}, post_data={'search':searchPattern})
+        sts, data = self.getPage(self.SRCH_URL, {}, post_data={'search':searchPattern})
         if not sts: return
         
         data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', '<!-- Stopka: -->')[1]
@@ -339,7 +353,7 @@ class AlltubeTV(CBaseHostClass):
         printDBG("AlltubeTV.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return urlTab
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
@@ -361,7 +375,7 @@ class AlltubeTV(CBaseHostClass):
         urlTab = []
         url = ''
         if self.MAIN_URL in baseUrl:
-            sts, data = self.cm.getPage(baseUrl)
+            sts, data = self.getPage(baseUrl)
             if not sts: return []
             url = self.cm.ph.getDataBeetwenMarkers(data, 'src="', '"', False, False)[1]
         else:
@@ -499,7 +513,7 @@ class IPTVHost(CHostBase):
             
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
+        icon        =  self.host.getIconUrl( cItem.get('icon', '') )
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -509,28 +523,3 @@ class IPTVHost(CHostBase):
                                     iconimage = icon,
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
