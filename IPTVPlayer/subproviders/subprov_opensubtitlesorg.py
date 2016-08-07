@@ -207,7 +207,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
         lang = GetDefaultLang()
         params = [login, hex_md5(password), lang, self.USER_AGENT]
         sts, data = self._rpcMethodCall("LogIn", params)
-        if 0 == len(data): sts = False 
+        if sts and (None == data or 0 == len(data)): sts = False 
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>> data[%s]" % data)
         if not sts:
             SetIPTVPlayerLastHostError(_('Login failed!'))
