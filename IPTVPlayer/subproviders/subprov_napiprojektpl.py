@@ -384,6 +384,7 @@ class NapiProjektProvider(CBaseSubProviderClass):
             if 0 != ret['code'] or 'unknown' in encoding:
                 encoding = ''
             else: encoding = encoding.strip()
+        else: encoding = ''
         
         if GetDefaultLang() == 'pl' and encoding == 'iso-8859-2':
             encoding = GetPolishSubEncoding(tmpFile)

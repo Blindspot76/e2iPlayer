@@ -349,7 +349,7 @@ class KwejkTV(CBaseHostClass):
         printDBG("MoviesHDCO.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(cItem.get('url', ''))
         if not sts: return retTab
         
         title = self.cm.ph.getDataBeetwenMarkers(data, '"og:title" content="', '"', False)[1].split('|')[0]
@@ -436,9 +436,6 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, KwejkTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('kwejktvlogo.png')])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -474,7 +471,8 @@ class IPTVHost(CHostBase):
             images     = item.get("images", [])
             othersInfo = item.get('other_info', '')
             retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-        return RetHost(RetHost.OK, value = retlist)
+        if len(hList): retCode = RetHost.OK
+        return RetHost(retCode, value = retlist)
     
     def converItem(self, cItem):
         hostList = []
@@ -516,27 +514,3 @@ class IPTVHost(CHostBase):
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
 
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

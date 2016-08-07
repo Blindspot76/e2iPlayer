@@ -297,7 +297,7 @@ class T123MoviesTO(CBaseHostClass):
         printDBG("T123MoviesTO.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(cItem.get('url', ''))
         if not sts: return retTab
         
         title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta property="og:title"[^>]+?content="([^"]+?)"')[0] )
@@ -397,8 +397,7 @@ class IPTVHost(CHostBase):
             images     = item.get("images", [])
             othersInfo = item.get('other_info', '')
             retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-        if len(hList):  
-            retCode = RetHost.OK
+        if len(hList): retCode = RetHost.OK
         return RetHost(retCode, value = retlist)
     
     def getLinksForVideo(self, Index = 0, selItem = None):
