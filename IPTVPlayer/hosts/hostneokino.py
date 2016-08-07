@@ -58,7 +58,7 @@ class NeoKinoNet(CBaseHostClass):
                     {'category':'filter',         'title': _('Genres'),     'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':0},
                     {'category':'filter',         'title': _('Year'),       'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':1},
                     {'category':'filter',         'title': _('Resolution'), 'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':2},
-                    {'category':'filter',         'title': _('Sort by'),    'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':2},
+                    #{'category':'filter',         'title': _('Sort by'),    'url':MAIN_URL,     'icon':DEFAULT_ICON_URL, 'filter_id':3},
                     {'category':'search',         'title': _('Search'),     'search_item':True, 'icon':DEFAULT_ICON_URL},
                     {'category':'search_history', 'title': _('Search history'),                 'icon':DEFAULT_ICON_URL} 
                    ]
