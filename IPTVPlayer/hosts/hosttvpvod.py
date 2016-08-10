@@ -490,7 +490,7 @@ class TvpVod(CBaseHostClass):
                         name = self.getFormatFromBitrate( str(item['totalBitrate']) ) + '\t ' + formatType
                         url = item['url'].encode('utf-8')
                         if 'm3u8' == formatType:
-                            videoTab.extend( getDirectM3U8Playlist(url) )
+                            videoTab.extend( getDirectM3U8Playlist(url, variantCheck=False) )
                         else:
                             meta = {'iptv_format':format}
                             if config.plugins.iptvplayer.tvpVodProxyEnable.value:
