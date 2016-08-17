@@ -263,9 +263,11 @@ class T123MoviesTO(CBaseHostClass):
                 printExc()
                 return []
         else:
-            cookieName  = 'bgr63m6d1ln3rech' + episodeId + 'd7ltv9lmvytcq2zf'
             cookieValue = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
-            url = 'ajax/v3_load_episode/' + episodeId + '/' + md5(episodeId + cookieValue + "f7sg3mfrrs5qako9nhvvqlfr7wc9la63").hexdigest()
+            #cookieName  = 'bgr63m6d1ln3rech' + episodeId + 'd7ltv9lmvytcq2zf'
+            #url = 'ajax/v3_load_episode/' + episodeId + '/' + md5(episodeId + cookieValue + "f7sg3mfrrs5qako9nhvvqlfr7wc9la63").hexdigest()
+            cookieName  = 'n1sqcua67bcq9826' + episodeId + 'i6m49vd7shxkn985'
+            url = 'ajax/v4_load_episode/' + episodeId + '/' + md5(episodeId + cookieValue + "rbi6m49vd7shxkn985mhodk06twz87ww").hexdigest()
             url = self.getFullUrl( url )
 
             params = {}
