@@ -310,7 +310,7 @@ class AlltubeTV(CBaseHostClass):
         sts, data = self.getPage(self.SRCH_URL, {}, post_data={'search':searchPattern})
         if not sts: return
         
-        data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', '<!-- Stopka: -->')[1]
+        data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', 'Kontakt')[1]
         data = data.split('<h2 class="headline">')
         if len(data): del data[0]
         
