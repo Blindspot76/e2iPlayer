@@ -51,18 +51,28 @@ class MoonwalkParser():
         cd = self.cm.ph.getSearchGroups(data, 'var condition_detected = ([^;]+?);')[0]
         if 'true' == cd: cd = 1
         else: cd = 0
-        data = self.cm.ph.getDataBeetwenMarkers(data, '/sessions/create_new', '.success', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '/sessions/new_session', '.success', False)[1]
         partner = self.cm.ph.getSearchGroups(data, 'partner: ([^,]+?),')[0]
         if 'null' in partner: partner = ''
         d_id = self.cm.ph.getSearchGroups(data, 'd_id: ([^,]+?),')[0]
         video_token = self.cm.ph.getSearchGroups(data, "video_token: '([^,]+?)'")[0]
         content_type = self.cm.ph.getSearchGroups(data, "content_type: '([^']+?)'")[0]
         access_key = self.cm.ph.getSearchGroups(data, "access_key: '([^']+?)'")[0]
+        mw_pid = self.cm.ph.getSearchGroups(data, "mw_pid: ([0-9]+?)[^0-9]")[0]
+        mw_did = self.cm.ph.getSearchGroups(data, "mw_did: ([0-9]+?)[^0-9]")[0]
         
         sec_header['Encoding-Pool'] = base64.b64encode(contentData.replace('|', ''))
         sec_header['X-CSRF-Token'] = csrfToken
         sec_header['X-Requested-With'] = 'XMLHttpRequest'
-        post_data = {'partner':partner, 'd_id':d_id, 'video_token':video_token, 'content_type':content_type, 'access_key':access_key, 'cd':cd}
+        post_data = {}
+        if 'cd:' in data: post_data['cd'] = cd
+        if 'partner:' in data: post_data['partner'] = partner
+        if 'd_id:' in data: post_data['d_id'] = d_id
+        if 'video_token:' in data: post_data['video_token'] = video_token
+        if 'content_type:' in data: post_data['content_type'] = content_type
+        if 'access_key:' in data: post_data['access_key'] = access_key
+        if 'mw_pid:' in data: post_data['mw_pid'] = mw_pid
+        if 'mw_did:' in data: post_data['mw_did'] = mw_did
 
         return sec_header, post_data
 
@@ -79,10 +89,13 @@ class MoonwalkParser():
             sec_header, post_data = self._getSecurityData(data)
             params['header'].update(sec_header)
             
-            sts, data = self.cm.getPage( '%s/sessions/create_new' % self.baseUrl, params, post_data)
+            sts, data = self.cm.getPage( '%s/sessions/new_session' % self.baseUrl, params, post_data)
+            printDBG("=======================================================")
+            printDBG(data)
+            printDBG("=======================================================")
             if not sts: return []
             
-            data = byteify( json.loads(data) )
+            data = byteify( json.loads(data) )['mans']
             if 'm3u8' == config.plugins.iptvplayer.moonwalk_format.value:
                 tmpTab = getDirectM3U8Playlist(data["manifest_m3u8"])
                 def __getLinkQuality( itemLink ):
