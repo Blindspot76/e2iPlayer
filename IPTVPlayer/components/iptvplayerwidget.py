@@ -1516,6 +1516,7 @@ class IPTVPlayerWidget(Screen):
                 random_shuffle(randList)
             reloadList = False
             if len(self.currList) == len(randList):
+                randList.reverse()
                 self.currList = randList
                 reloadList = True
             elif len(randList) > 1:
