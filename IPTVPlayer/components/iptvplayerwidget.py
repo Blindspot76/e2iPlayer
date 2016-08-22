@@ -1654,9 +1654,9 @@ class IPTVPlayerWidget(Screen):
         cItem = None
         index = -1
         # we need to check if fav is available
-        if not self.isInWorkThread() and favouritesHostActive and len(self.hostFavTypes) and self.visible:
+        if not self.isInWorkThread() and favouritesHostActive and self.visible:
             cItem = self.getSelItem()
-            if None != cItem and cItem.type in self.hostFavTypes:
+            if None != cItem and (cItem.isGoodForFavourites or cItem.type in self.hostFavTypes):
                 index = self.getSelIndex()
             else:
                 cItem = None
@@ -1675,6 +1675,7 @@ class IPTVPlayerWidget(Screen):
             1 == len(ret.value) and isinstance(ret.value[0], CFavItem):
             favItem = ret.value[0]
             if CFavItem.RESOLVER_SELF == favItem.resolver: favItem.resolver = self.hostName
+            if '' == favItem.hostName: favItem.hostName = self.hostName
             self.session.open(IPTVFavouritesAddItemWidget, favItem)
         else: self.session.open(MessageBox, _("No valid links available."), type=MessageBox.TYPE_INFO, timeout=10 )
         

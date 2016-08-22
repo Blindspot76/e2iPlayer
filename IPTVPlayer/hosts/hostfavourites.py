@@ -46,6 +46,7 @@ class Favourites(CBaseHostClass):
         self.helper = IPTVFavourites(GetFavouritesDir())
         self.host = None
         self.hostName = ''
+        self.guestMode = False # main or guest
         
     def _setHost(self, hostName):
         if hostName == self.hostName: return True
@@ -58,6 +59,12 @@ class Favourites(CBaseHostClass):
                 return True
         except Exception: printExc()
         return False
+        
+    def isQuestMode(self):
+        return self.guestMode
+        
+    def clearQuestMode(self):
+        self.guestMode = False
                 
     def listGroups(self, category):
         printDBG("Favourites.listGroups")
@@ -74,12 +81,13 @@ class Favourites(CBaseHostClass):
         typesMap = {CDisplayListItem.TYPE_VIDEO: self.addVideo, 
                     CDisplayListItem.TYPE_AUDIO: self.addAudio, 
                     CDisplayListItem.TYPE_PICTURE: self.addPicture, 
-                    CDisplayListItem.TYPE_ARTICLE: self.addArticle }
+                    CDisplayListItem.TYPE_ARTICLE: self.addArticle,
+                    CDisplayListItem.TYPE_CATEGORY: self.addDir}
         
         for idx in range(len(data)):
             item = data[idx]
             addFun = typesMap.get(item.type, None)
-            params = {'title':item.name, 'icon':item.iconimage, 'desc':item.description, 'group_id':cItem['group_id'], 'item_idx':idx}
+            params = {'name':'item', 'title':item.name, 'host':item.hostName, 'icon':item.iconimage, 'desc':item.description, 'group_id':cItem['group_id'], 'item_idx':idx}
             if None != addFun: addFun(params)
         
     def getLinksForVideo(self, cItem):
@@ -124,13 +132,27 @@ class Favourites(CBaseHostClass):
         category = self.currItem.get("category", '')
         self.currList = [] 
 
+        self.guestMode = False
         if None == name:
+            self.host = None
+            self.hostName = None
             self.listGroups('list_favourites')
         elif 'list_favourites' == category:
             self.listFavourites(self.currItem)
+        elif 'host' in self.currItem:
+            sts, data = self.helper.getGroupItems(self.currItem['group_id'])
+            if sts:
+                item = data[self.currItem['item_idx']]
+                if self._setHost(self.currItem['host']):
+                    ret = self.host.setInitFavouriteItem(item)
+                    if RetHost.OK == ret.status:
+                        self.guestMode = True
         else:
             printExc()
         CBaseHostClass.endHandleService(self, index, refresh)
+        
+    def getCurrentGuestHost(self):
+        return self.host
 
 class IPTVHost(CHostBase):
 
@@ -141,19 +163,25 @@ class IPTVHost(CHostBase):
         return RetHost(RetHost.OK, value = [GetLogoDir('favouriteslogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] not in ['audio', 'video', 'picture']:
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-        return self.host.getLinksForVideo(self.host.currList[Index])
+        if self.host.isQuestMode(): 
+            return self.host.getCurrentGuestHost().getLinksForVideo(Index)
+        else:
+            listLen = len(self.host.currList)
+            if listLen < Index and listLen > 0:
+                printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
+                return RetHost(RetHost.ERROR, value = [])
+            
+            if self.host.currList[Index]["type"] not in ['audio', 'video', 'picture']:
+                printDBG( "ERROR getLinksForVideo - current item has wrong type" )
+                return RetHost(RetHost.ERROR, value = [])
+            return self.host.getLinksForVideo(self.host.currList[Index])
     # end getLinksForVideo
         
     def getResolvedURL(self, url):
-        return self.host.getResolvedURL(url)
+        if self.host.isQuestMode(): 
+            return self.host.getCurrentGuestHost().getResolvedURL(url)
+        else:
+            return self.host.getResolvedURL(url)
     
     def convertList(self, cList):
         hostList = []
@@ -193,4 +221,36 @@ class IPTVHost(CHostBase):
 
         return hostList
     # end convertList
+    
+    def getListForItem(self, Index = 0, refresh = 0, selItem = None):
+        guestIndex = Index
+        ret = RetHost(RetHost.ERROR, value = [])
+        if not self.host.isQuestMode(): 
+            ret = CHostBase.getListForItem(self, Index, refresh)
+            guestIndex = 0
+        if self.host.isQuestMode(): 
+            ret = self.host.getCurrentGuestHost().getListForItem(guestIndex, refresh)
+            for idx in range(len(ret.value)):
+                ret.value[idx].isGoodForFavourites = False
+        return ret
 
+    def getPrevList(self, refresh = 0):
+        ret = RetHost(RetHost.ERROR, value = [])
+        if not self.host.isQuestMode() or len(self.host.getCurrentGuestHost().listOfprevList) <= 1:
+            if self.host.isQuestMode(): self.host.clearQuestMode()
+            ret = CHostBase.getPrevList(self, refresh)
+        else:
+            ret = self.host.getCurrentGuestHost().getPrevList(refresh)
+            for idx in range(len(ret.value)):
+                ret.value[idx].isGoodForFavourites = False
+        return ret
+
+    def getCurrentList(self, refresh = 0):
+        ret = RetHost(RetHost.ERROR, value = [])
+        if not self.host.isQuestMode(): 
+            ret = CHostBase.getCurrentList(self, refresh)
+        if self.host.isQuestMode(): 
+            ret = self.host.getCurrentGuestHost().getCurrentList(refresh)
+            for idx in range(len(ret.value)):
+                ret.value[idx].isGoodForFavourites = False
+        return ret

@@ -138,7 +138,7 @@ class T123MoviesTO(CBaseHostClass):
             if title == '': title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0] )
             if title == '': title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0] )
             if url.startswith('http'):
-                params = {'title':title, 'url':url, 'movie_id':movieId, 'desc':desc, 'info_url':url, 'icon':icon}
+                params = {'good_for_fav': True, 'title':title, 'url':url, 'movie_id':movieId, 'desc':desc, 'info_url':url, 'icon':icon}
                 if '-season-' not in url and 'class="mli-eps"' not in item: #and '/series' not in cItem['url']
                     self.addVideo(params)
                 else:
@@ -175,7 +175,7 @@ class T123MoviesTO(CBaseHostClass):
             else: title = item
             baseTitle = re.sub('Season\s[0-9]+?[^0-9]', '', cItem['title'] + ' ')
             params = dict(cItem)
-            params.update({'title':self.cleanHtmlStr(baseTitle + ' ' + title), 'urls':episodeLinks[item]})
+            params.update({'good_for_fav':False, 'title':self.cleanHtmlStr(baseTitle + ' ' + title), 'urls':episodeLinks[item]})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -339,6 +339,30 @@ class T123MoviesTO(CBaseHostClass):
             if rating != '': otherInfo['rating'] = self.cleanHtmlStr( rating )
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
+    
+    def getFavouriteData(self, cItem):
+        printDBG('T123MoviesTO.getFavouriteData')
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'movie_id':cItem['movie_id'], 'desc':cItem['desc'], 'info_url':cItem['info_url'], 'icon':cItem['icon']}
+        return json.dumps(params) 
+        
+    def getLinksForFavourite(self, fav_data):
+        printDBG('T123MoviesTO.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('T123MoviesTO.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -455,6 +479,7 @@ class IPTVHost(CHostBase):
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
         icon        =  cItem.get('icon', '')
+        isGoodForFavourites = cItem.get('good_for_fav', False)
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -462,6 +487,7 @@ class IPTVHost(CHostBase):
                                     urlItems = hostLinks,
                                     urlSeparateRequest = 1,
                                     iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
+                                    possibleTypesOfSearch = possibleTypesOfSearch,
+                                    isGoodForFavourites = isGoodForFavourites)
     # end converItem
 

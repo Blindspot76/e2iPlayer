@@ -39,12 +39,15 @@ class CDisplayListItem:
                 urlItems = [], \
                 urlSeparateRequest = 0, \
                 iconimage = '', \
-                possibleTypesOfSearch = None):
+                possibleTypesOfSearch = None, \
+                pinLocked = False, \
+                isGoodForFavourites = False):
         self.name = name
         self.description = description
         self.type = type
         self.iconimage = iconimage
-        self.pinLocked = False
+        self.pinLocked = pinLocked
+        self.isGoodForFavourites = isGoodForFavourites
         
         # used only for TYPE_VIDEO item
         self.urlItems = urlItems # url to VIDEO
@@ -108,6 +111,7 @@ class CFavItem:
         self.iconimage   = iconimage 
         self.data        = data
         self.resolver    = resolver
+        self.hostName    = ''
         
     def fromDisplayListItem(self, dispItem):
         self.name        = dispItem.name
@@ -153,6 +157,9 @@ class IHost:
     # similar as getLinksForItem, returns links 
     # for given CFavItem
     def getLinksForFavourite(self, favItem):
+        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+    
+    def setInitFavouriteItem(self, favItem):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
 
     # return firs available list of item category or video or link
@@ -277,6 +284,18 @@ class CHostBase(IHost):
             url  = item["url"]
             retlist.append(CUrlItem(name, url, need_resolve))
         return RetHost(RetHost.OK, value = retlist)
+        
+    def setInitFavouriteItem(self, favItem):
+        self.currIndex = -1
+        self.listOfprevList = [] 
+        self.listOfprevItems = []
+        
+        self.host.setCurrList([])
+        self.host.setCurrItem({})
+        
+        if self.host.setInitListFromFavouriteItem(favItem.data):
+            return RetHost(RetHost.OK, value = None)
+        return RetHost(RetHost.ERROR, value = None)
     
     # return firs available list of item category or video or link
     def getInitList(self):
@@ -509,6 +528,9 @@ class CBaseHostClass:
                 params.update({'title': pattern, 'search_type': search_type,  desc_key: plot})
                 self.addDir(params)
             except: printExc()
+            
+    def setInitListFromFavouriteItem(self, fav_data):
+        return False
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         self.moreMode = False
