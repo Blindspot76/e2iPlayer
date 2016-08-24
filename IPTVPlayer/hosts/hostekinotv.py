@@ -142,6 +142,7 @@ class EkinoTv(CBaseHostClass):
                 title += ' [%s]' % (ids[-1])
             url    = self.cm.ph.getSearchGroups(item[0], 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item[0], 'src="([^"]+?jpg)"')[0]
+            if url == '': continue
             params = dict(cItem)
             params.update({'title':self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'icon': self._getFullUrl(icon), 'desc': self.cleanHtmlStr(item[-1])})
             if category == 'video':
@@ -224,7 +225,7 @@ class EkinoTv(CBaseHostClass):
             for eItem in eData:
                 s = self.cm.ph.getSearchGroups(eItem[0], 'season\[([0-9]+?)\]')[0]
                 e = self.cm.ph.getSearchGroups(eItem[0], 'episode\[([0-9]+?)\]')[0]
-                title = '%s s%se%s %s' % (cItem['title'], s, e, eItem[1])
+                title = '%s s%se%s %s' % (cItem['title'], s.zfill(2), e.zfill(2), eItem[1])
                 params = dict(cItem)
                 params.update({'title':title, 'url':self._getFullUrl(eItem[0])})
                 self.addVideo(params)

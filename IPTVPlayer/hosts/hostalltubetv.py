@@ -146,7 +146,7 @@ class AlltubeTV(CBaseHostClass):
                 desc = item.split('<p>')[-1]
             
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self.getFullUrl(icon)} )
+            params.update( {'good_for_fav': True, 'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self.getFullUrl(icon)} )
             if category != 'video': #or '/serial/' in params['url']:
                 params['category'] = category
                 self.addDir(params)
@@ -206,7 +206,7 @@ class AlltubeTV(CBaseHostClass):
             if letter not in self.seriesCache:
                 self.seriesCache[letter] = []
                 self.seriesLetters.append({'title':letter,  'letter':letter})
-            self.seriesCache[letter].append({'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url)})
+            self.seriesCache[letter].append({'good_for_fav':True, 'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url)})
         for idx in range(len(self.seriesLetters)):
             letter = self.seriesLetters[idx]['letter']
             self.seriesLetters[idx]['title'] = letter + ' [%d]' % len(self.seriesCache[letter]) 
@@ -286,13 +286,13 @@ class AlltubeTV(CBaseHostClass):
                     season  = 0
                     episode = 0
                     sort    = False
-                episodesList.append( {'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self.getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
+                episodesList.append( {'good_for_fav': True, 'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self.getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
             if sort:
                 episodesList.sort(key=lambda item: item['season']*1000 + item['episode'])#, reverse=True)
                 #episodesList.reverse()
             if len(episodesList):
                 params = dict(cItem)
-                params.update({'category':category, 'season_idx':len(self.episodesCache), 'title':seasonTitle, 'desc':  desc, 'icon':icon})
+                params.update({'good_for_fav': False, 'category':category, 'season_idx':len(self.episodesCache), 'title':seasonTitle, 'desc':  desc, 'icon':icon})
                 self.addDir(params)
                 self.episodesCache.append(episodesList)
         
@@ -342,7 +342,7 @@ class AlltubeTV(CBaseHostClass):
             if '' == desc: desc = item.split('<p>')[-1]
             
             params = dict(cItem)
-            params.update({'title':self.cleanHtmlStr( title ), 'url':self.getFullUrl( url ), 'icon':self.getFullUrl( icon ), 'desc':self.cleanHtmlStr( desc )})
+            params.update({'good_for_fav': True, 'title':self.cleanHtmlStr( title ), 'url':self.getFullUrl( url ), 'icon':self.getFullUrl( icon ), 'desc':self.cleanHtmlStr( desc )})
             if searchType == 'series':
                 params['category'] = 'list_seasons'
                 self.addDir(params)
@@ -371,7 +371,7 @@ class AlltubeTV(CBaseHostClass):
         return urlTab
         
     def getVideoLinks(self, baseUrl):
-        printDBG("Movie4kTO.getVideoLinks [%s]" % baseUrl)
+        printDBG("AlltubeTV.getVideoLinks [%s]" % baseUrl)
         urlTab = []
         url = ''
         if self.MAIN_URL in baseUrl:
@@ -389,10 +389,28 @@ class AlltubeTV(CBaseHostClass):
         return urlTab
         
     def getFavouriteData(self, cItem):
-        return cItem['url']
+        printDBG('AlltubeTV.getFavouriteData')
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem.get('icon', '')}
+        return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
+        printDBG('AlltubeTV.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('AlltubeTV.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -444,7 +462,7 @@ class AlltubeTV(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, AlltubeTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        CHostBase.__init__(self, AlltubeTV(), True)#, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -514,6 +532,7 @@ class IPTVHost(CHostBase):
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
         icon        =  self.host.getIconUrl( cItem.get('icon', '') )
+        isGoodForFavourites = cItem.get('good_for_fav', False)
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -521,5 +540,6 @@ class IPTVHost(CHostBase):
                                     urlItems = hostLinks,
                                     urlSeparateRequest = 1,
                                     iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
+                                    possibleTypesOfSearch = possibleTypesOfSearch,
+                                    isGoodForFavourites = isGoodForFavourites)
     # end converItem

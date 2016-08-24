@@ -350,6 +350,7 @@ class urlparser:
                        'fastflash.pw':         self.pp.parseCASTFLASHPW    ,
                        'dotstream.tv':         self.pp.parserDOTSTREAMTV   ,
                        'leton.tv':             self.pp.parserDOTSTREAMTV   ,
+                       'fileone.tv':           self.pp.parserFILEONETV     ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2646,6 +2647,15 @@ class pageParser:
         movieUrls.reverse()
         return movieUrls
         
+    def parserFILEONETV(self, url):
+        printDBG("parserFILEONETV url[%s]\n" % url)
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'setup({', '});', True)[1]
+        url  = self.cm.ph.getSearchGroups(data, '''file[^"^']+?["'](http[^"^']+?)['"]''')[0]
+        if '://' in url:
+            return url
+        return False
         
     def parseTUNEPK(self, url):
         printDBG("parseTUNEPK url[%s]\n" % url)
@@ -5015,76 +5025,86 @@ class pageParser:
         # for example: "Code take from plugin IPTVPlayer: "https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/"
         # It will be very nice if you send also email to me samsamsam@o2.pl and inform were this code will be used
         
+        # new algo
+        linkData = clean_html(self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="hiddenurl"[^>]*?>([^<]+?)<\/span>''', ignoreCase=True)[0]).strip()
+        res = ""
+        for item in linkData:
+            c = ord(item)
+            if c >= 33 and c <= 126:
+                c = ((c + 14) % 94) + 33
+            res += chr(c)
+        
         # get image data
-        from Plugins.Extensions.IPTVPlayer.libs.png import Reader as PNGReader
-        imageData = self.cm.ph.getSearchGroups(data, '''<img[^>]*?id="linkimg"[^>]*?src="([^"]+?)"''', ignoreCase=True)[0]
-        imageData = base64.b64decode(imageData.split('base64,')[-1])
-        x, y, pixel, meta = PNGReader(bytes=imageData).read()
-        imageData = None
-        imageStr = ''
-        try:
-            for item in pixel:
-                for p in item:
-                    imageStr += chr(p)
-        except Exception:
-            printExc()
-        printDBG(imageStr)
+        if False:
+            from Plugins.Extensions.IPTVPlayer.libs.png import Reader as PNGReader
+            imageData = self.cm.ph.getSearchGroups(data, '''<img[^>]*?id="linkimg"[^>]*?src="([^"]+?)"''', ignoreCase=True)[0]
+            imageData = base64.b64decode(imageData.split('base64,')[-1])
+            x, y, pixel, meta = PNGReader(bytes=imageData).read()
+            imageData = None
+            imageStr = ''
+            try:
+                for item in pixel:
+                    for p in item:
+                        imageStr += chr(p)
+            except Exception:
+                printExc()
+            printDBG(imageStr)
 
-        # split image data
-        imageTabs = []
-        i = -1
-        for idx in range(len(imageStr)):
-            if imageStr[idx] == '\0':
-                break
-            if 0 == (idx % (12 * 20)):
-                imageTabs.append([])
-                i += 1
-                j = -1
-            if 0 == (idx % (20)):
-                imageTabs[i].append([])
-                j += 1
-            imageTabs[i][j].append(imageStr[idx])
-        
-        # get signature data
-        sts, data = self.cm.getPage('https://openload.co/assets/js/obfuscator/n.js', {'header':HTTP_HEADER})
-        if not sts: return False
-        signStr = self.cm.ph.getSearchGroups(data, '''['"]([^"^']+?)['"]''', ignoreCase=True)[0]
-        
-        # split signature data
-        signTabs = []
-        i = -1
-        for idx in range(len(signStr)):
-            if signStr[idx] == '\0':
-                break
-            if 0 == (idx % (11 * 26)):
-                signTabs.append([])
-                i += 1
-                j = -1
-            if 0 == (idx % (26)):
-                signTabs[i].append([])
-                j += 1
-            signTabs[i][j].append(signStr[idx])
-        
-        # get link data
-        linkData = {}
-        for i in [2, 3, 5, 7]:
-            linkData[i] = []
-            tmp = ord('c')
-            for j in range(len(signTabs[i])):
-                for k  in range(len(signTabs[i][j])):
-                    if tmp > 122:
-                        tmp = ord('b')
-                    if signTabs[i][j][k] == chr(int(math.floor(tmp))):
-                        if len(linkData[i]) > j:
-                            continue
-                        tmp += 2.5;
-                        if k < len(imageTabs[i][j]):
-                            linkData[i].append(imageTabs[i][j][k])
-        res = []
-        for idx in linkData:
-            res.append(''.join(linkData[idx]).replace(',', ''))
+            # split image data
+            imageTabs = []
+            i = -1
+            for idx in range(len(imageStr)):
+                if imageStr[idx] == '\0':
+                    break
+                if 0 == (idx % (12 * 20)):
+                    imageTabs.append([])
+                    i += 1
+                    j = -1
+                if 0 == (idx % (20)):
+                    imageTabs[i].append([])
+                    j += 1
+                imageTabs[i][j].append(imageStr[idx])
+            
+            # get signature data
+            sts, data = self.cm.getPage('https://openload.co/assets/js/obfuscator/n.js', {'header':HTTP_HEADER})
+            if not sts: return False
+            signStr = self.cm.ph.getSearchGroups(data, '''['"]([^"^']+?)['"]''', ignoreCase=True)[0]
+            
+            # split signature data
+            signTabs = []
+            i = -1
+            for idx in range(len(signStr)):
+                if signStr[idx] == '\0':
+                    break
+                if 0 == (idx % (11 * 26)):
+                    signTabs.append([])
+                    i += 1
+                    j = -1
+                if 0 == (idx % (26)):
+                    signTabs[i].append([])
+                    j += 1
+                signTabs[i][j].append(signStr[idx])
+            
+            # get link data
+            linkData = {}
+            for i in [2, 3, 5, 7]:
+                linkData[i] = []
+                tmp = ord('c')
+                for j in range(len(signTabs[i])):
+                    for k  in range(len(signTabs[i][j])):
+                        if tmp > 122:
+                            tmp = ord('b')
+                        if signTabs[i][j][k] == chr(int(math.floor(tmp))):
+                            if len(linkData[i]) > j:
+                                continue
+                            tmp += 2.5;
+                            if k < len(imageTabs[i][j]):
+                                linkData[i].append(imageTabs[i][j][k])
+            res = []
+            for idx in linkData:
+                res.append(''.join(linkData[idx]).replace(',', ''))
 
-        res = res[3] + '~' + res[1] + '~' + res[2] + '~' + res[0]
+            res = res[3] + '~' + res[1] + '~' + res[2] + '~' + res[0]
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)
         params = dict(HTTP_HEADER)
         params['external_sub_tracks'] = subTracks

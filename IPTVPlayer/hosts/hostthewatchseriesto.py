@@ -192,7 +192,7 @@ class TheWatchseriesTo(CBaseHostClass):
             if desc == '': desc = self.cleanHtmlStr(item)
             
             params = dict(cItem)
-            params.update({'category':nextCategory, 'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon':icon, 'desc':desc})
+            params.update({'good_for_fav': True, 'category':nextCategory, 'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon':icon, 'desc':desc})
             
             if nextCategory == 'video' or '/episode/' in url:
                 self.addVideo(params)
@@ -226,13 +226,13 @@ class TheWatchseriesTo(CBaseHostClass):
                 if '' != episodeNum and '' != seasonNum:
                     title = 's%se%s'% (seasonNum.zfill(2), episodeNum.zfill(2)) + ' - ' + title.replace('Episode %s' % episodeNum, '')
                 params = dict(cItem)
-                params.update({'title':'{0}: {1}'.format(cItem['title'], title), 'url':self.getFullUrl(url), 'desc':self.cleanHtmlStr(item)})
+                params.update({'good_for_fav': True, 'title':'{0}: {1}'.format(cItem['title'], title), 'url':self.getFullUrl(url), 'desc':self.cleanHtmlStr(item)})
                 episodesTab.append(params)
             
             if len(episodesTab):
                 self.seasonCache[seasonName] = episodesTab
                 params = dict(cItem)
-                params.update({'category':nextCateogry, 'title':seasonName, 'season_key':seasonName})
+                params.update({'good_for_fav': False, 'category':nextCateogry, 'title':seasonName, 'season_key':seasonName})
                 self.addDir(params)
                 
     def listEpisodes(self, cItem):
@@ -290,12 +290,28 @@ class TheWatchseriesTo(CBaseHostClass):
         self.listItems(cItem, 'list_seasons')
         
     def getFavouriteData(self, cItem):
-        printDBG("TheWatchseriesTo.getFavouriteData")
-        return str(cItem['url'])
+        printDBG('TheWatchseriesTo.getFavouriteData')
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem['desc'], 'icon':cItem['icon']}
+        return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):
-        printDBG("TheWatchseriesTo.getLinksForFavourite")
-        return self.getLinksForVideo({'url':fav_data})
+        printDBG('TheWatchseriesTo.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('TheWatchseriesTo.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -340,10 +356,7 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         # for now we must disable favourites due to problem with links extraction for types other than movie
-        CHostBase.__init__(self, TheWatchseriesTo(), True, favouriteTypes=[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('thewatchseriestologo.png')])
+        CHostBase.__init__(self, TheWatchseriesTo(), True)#, favouriteTypes=[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -398,6 +411,7 @@ class IPTVHost(CHostBase):
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
         icon        =  self.host.getIconUrl( cItem.get('icon', '') )
+        isGoodForFavourites = cItem.get('good_for_fav', False)
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -405,30 +419,6 @@ class IPTVHost(CHostBase):
                                     urlItems = hostLinks,
                                     urlSeparateRequest = 1,
                                     iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
+                                    possibleTypesOfSearch = possibleTypesOfSearch,
+                                    isGoodForFavourites = isGoodForFavourites)
     # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
