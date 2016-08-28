@@ -266,8 +266,12 @@ class T123MoviesTO(CBaseHostClass):
             cookieValue = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(6))
             #cookieName  = 'bgr63m6d1ln3rech' + episodeId + 'd7ltv9lmvytcq2zf'
             #url = 'ajax/v3_load_episode/' + episodeId + '/' + md5(episodeId + cookieValue + "f7sg3mfrrs5qako9nhvvqlfr7wc9la63").hexdigest()
-            cookieName  = 'n1sqcua67bcq9826' + episodeId + 'i6m49vd7shxkn985'
-            url = 'ajax/v4_load_episode/' + episodeId + '/' + md5(episodeId + cookieValue + "rbi6m49vd7shxkn985mhodk06twz87ww").hexdigest()
+            #cookieName  = 'n1sqcua67bcq9826' + episodeId + 'i6m49vd7shxkn985'
+            #url = 'ajax/v4_load_episode/' + episodeId + '/' + md5(episodeId + cookieValue + "rbi6m49vd7shxkn985mhodk06twz87ww").hexdigest()
+            magic = 'n1sqcua67bcq9826avrbi6m49vd7shxkn985mhodk06twz87wwxtp3dqiicks2dfyud213k6ygiomq01s94e4tr9v0k887bkyud213k6ygiomq01s94e4tr9v0k887bkqocxzw39esdyfhvtkpzq9n4e7at4kc6k8sxom08bl4dukp16h09oplu7zov4m5f8'
+            cookieName  = '826avrbi6m49vd7shxkn985m' + episodeId + 'k06twz87wwxtp3dqiicks2df'
+            url = 'ajax/get_sources/' + episodeId + '/' + md5(episodeId + cookieValue + magic[12:36]).hexdigest()
+            
             url = self.getFullUrl( url )
 
             params = {}
@@ -277,17 +281,29 @@ class T123MoviesTO(CBaseHostClass):
             if not sts: return []
             
             subTracks = []
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<jwplayer', '>', withMarkers=True)
-            for item in tmp:
-                url  = self.cm.ph.getSearchGroups(item, 'file="(http[^"]+?)"')[0].replace('&amp;', '&')
-                name = self.cm.ph.getSearchGroups(item, 'label="([^"]+?)"')[0]
-                if 'type="mp4"' in item:
-                    urlTab.append({'name':name, 'url':url})
-                elif 'kind="captions"' in item:
-                    format = url[-3:]
-                    if format in ['srt', 'vtt']:
-                        subTracks.append({'title':name, 'url':url, 'lang':name, 'format':format})
-            
+            if False:
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<jwplayer', '>', withMarkers=True)
+                for item in tmp:
+                    url  = self.cm.ph.getSearchGroups(item, 'file="(http[^"]+?)"')[0].replace('&amp;', '&')
+                    name = self.cm.ph.getSearchGroups(item, 'label="([^"]+?)"')[0]
+                    if 'type="mp4"' in item:
+                        urlTab.append({'name':name, 'url':url})
+                    elif 'kind="captions"' in item:
+                        format = url[-3:]
+                        if format in ['srt', 'vtt']:
+                            subTracks.append({'title':name, 'url':url, 'lang':name, 'format':format})
+            else:
+                try:
+                    tmp = byteify(json.loads(data))
+                    for item in tmp['playlist'][0]['sources']:
+                        if "mp4" == item['type']:
+                            urlTab.append({'name':item['label'], 'url':item['file']})
+                    for item in tmp['playlist'][0]['tracks']:
+                        format = item['file'][-3:]
+                        if format in ['srt', 'vtt'] and "captions" == item['kind']:
+                            subTracks.append({'title':item['label'], 'url':item['file'], 'lang':item['label'], 'format':format})
+                except Exception:
+                    printExc()
             printDBG(subTracks)
             if len(subTracks):
                 for idx in range(len(urlTab)):
