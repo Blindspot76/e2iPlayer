@@ -5027,13 +5027,14 @@ class pageParser:
         
         # new algo
         linkData = clean_html(self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="hiddenurl"[^>]*?>([^<]+?)<\/span>''', ignoreCase=True)[0]).strip()
+        #linkData = "+d*#%':)A'pO`cfacdc`gfOgh]ab`]_]_O@(((\cc&"
         res = ""
         for item in linkData:
             c = ord(item)
             if c >= 33 and c <= 126:
                 c = ((c + 14) % 94) + 33
             res += chr(c)
-        
+        res = res[:-1] + chr(ord(res[-1]) + 2)
         # get image data
         if False:
             from Plugins.Extensions.IPTVPlayer.libs.png import Reader as PNGReader
