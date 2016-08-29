@@ -5026,15 +5026,17 @@ class pageParser:
         # It will be very nice if you send also email to me samsamsam@o2.pl and inform were this code will be used
         
         # new algo
-        linkData = clean_html(self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="hiddenurl"[^>]*?>([^<]+?)<\/span>''', ignoreCase=True)[0]).strip()
-        #linkData = "+d*#%':)A'pO`cfacdc`gfOgh]ab`]_]_O@(((\cc&"
+        linkData = self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="hiddenurl"[^>]*?>([^<]+?)<\/span>''', ignoreCase=True)[0].strip()
+        printDBG("=======================linkData=============================")
+        printDBG(linkData)
+        printDBG("============================================================")
+        linkData = clean_html(linkData).strip()
         res = ""
         for item in linkData:
             c = ord(item)
             if c >= 33 and c <= 126:
                 c = ((c + 14) % 94) + 33
             res += chr(c)
-        res = res[:-1] + chr(ord(res[-1]) + 2)
         # get image data
         if False:
             from Plugins.Extensions.IPTVPlayer.libs.png import Reader as PNGReader
@@ -5106,11 +5108,6 @@ class pageParser:
                 res.append(''.join(linkData[idx]).replace(',', ''))
 
             res = res[3] + '~' + res[1] + '~' + res[2] + '~' + res[0]
-        videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)
-        params = dict(HTTP_HEADER)
-        params['external_sub_tracks'] = subTracks
-        return urlparser.decorateUrl(videoUrl, params)
-        
                 
         # start https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         def decode(encoded):
@@ -5185,7 +5182,23 @@ class pageParser:
             return videourl
         # end https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         videoUrl = ''
+        tmp = ''
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script type="text/javascript">ﾟωﾟ', '</script>', withMarkers=False, caseSensitive=False)
+        for item in data:
+            try:
+                tmp += decodeOpenLoad(item)
+                printDBG(tmp)
+            except Exeption:
+                printExc()
+        
+        num = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
+
+        res = res[:-1] + chr(ord(res[-1]) + int(num))
+        videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)
+        params = dict(HTTP_HEADER)
+        params['external_sub_tracks'] = subTracks
+        return urlparser.decorateUrl(videoUrl, params)
+        
         for item in data:
             try:
                 tmp = decodeOpenLoad(item)
