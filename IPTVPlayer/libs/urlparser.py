@@ -1802,7 +1802,19 @@ class pageParser:
         if not sts: return False
         # unpack and decode params from JS player script code
         data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
-        return self._findLinks(data, 'vidto.me', m1='hd', m2=']')
+        
+        printDBG(data)
+        subData = CParsingHelper.getDataBeetwenMarkers(data, "captions", '}')[1]
+        subData = self.cm.ph.getSearchGroups(subData, '''['"](http[^'^"]+?)['"]''')[0]
+        sub_tracks = []
+        if (subData.startswith('https://') or subData.startswith('http://')) and (subData.endswith('.srt') or subData.endswith('.vtt')):
+            sub_tracks.append({'title':'attached', 'url':subData, 'lang':'unk', 'format':'srt'})
+        linksTab = []
+        links = self._findLinks(data, 'vidto.me', m1='hd', m2=']')
+        for item in links:
+            item['url'] = strwithmeta(item['url'], {'external_sub_tracks':sub_tracks})
+            linksTab.append(item)
+        return linksTab
 
     def parserVIDSTREAM(self,url):
         query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
