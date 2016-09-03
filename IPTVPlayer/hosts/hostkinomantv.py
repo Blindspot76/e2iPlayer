@@ -330,7 +330,7 @@ class KinomanTV(CBaseHostClass):
             cItem = dict(cItem)
             cItem['url'] = self.apiCacheHost+'movie'
             cItem['name_like'] = urllib.quote_plus(searchPattern)
-            self.listItems(cItem)
+            self.listMovieItems(cItem)
         else:
             cItem = dict(cItem)
             cItem['url'] = self.apiCacheHost+'series'
