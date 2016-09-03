@@ -209,8 +209,8 @@ class IPTVHost(CHostBase):
             if '' != url:
                 hostLinks.append(CUrlItem("Link", url, 1))
             
-        title       =  cItem.get('title', '')
-        description =  clean_html(cItem.get('desc', ''))
+        title       =  self.host.cleanHtmlStr(cItem.get('title', ''))
+        description =  self.host.cleanHtmlStr(cItem.get('desc', ''))
         icon        =  cItem.get('icon', '')
         
         return CDisplayListItem(name = title,
