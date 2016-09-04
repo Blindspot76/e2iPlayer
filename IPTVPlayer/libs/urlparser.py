@@ -5204,6 +5204,8 @@ class pageParser:
                 printExc()
         
         num = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
+        if '' == num:
+            num = 3
 
         res = res[:-1] + chr(ord(res[-1]) + int(num))
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)

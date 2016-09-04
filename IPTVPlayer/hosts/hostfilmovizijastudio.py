@@ -44,7 +44,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://filmovizija.studio/'
+    return 'http://filmovizija.ws/'
 
 class FilmovizijaStudio(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
@@ -52,11 +52,11 @@ class FilmovizijaStudio(CBaseHostClass):
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL       = 'http://www.filmovizija.studio/'
+    MAIN_URL       = 'http://www.filmovizija.ws/'
     MOV_SEARCH_URL = MAIN_URL + 'search1.php?ser=506&subs=&lks=1&rfrom=0&rto=0&gfrom=0&gto=0&gns=&btn=&keywords='
     SER_SEARCH_URL = MAIN_URL + 'search1.php?ser=528&subs=&lks=1&rfrom=0&rto=0&gfrom=0&gto=0&gns=&btn=&keywords='
     
-    DEFAULT_ICON  = "http://www.filmovizija.studio/cdn/images/logo6.png"
+    DEFAULT_ICON  = "http://www.filmovizija.ws/cdn/images/logo6.png"
     EPISODE_URL   = MAIN_URL + 'episode.php?vid='
     
     mc = 'browse-movies-videos-1-date.html'
@@ -71,7 +71,7 @@ class FilmovizijaStudio(CBaseHostClass):
                     {'category':'search_history',  'title': _('Search history'),                     'icon':DEFAULT_ICON} ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'  filmovizija.studio', 'cookie':'filmovizijastudio.cookie'})
+        CBaseHostClass.__init__(self, {'history':'  filmovizija.studio', 'cookie':'filmovizijastudio.cookie', 'cookie_type':'MozillaCookieJar'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheFilters = {'movies':[], 'top_movies':[], 'series':[], 'new_videos':[], 'new_hd_videos':[]}
         self.cacheSeasons = []
@@ -87,7 +87,7 @@ class FilmovizijaStudio(CBaseHostClass):
         HTTP_HEADER= dict(self.HEADER)
         params.update({'header':HTTP_HEADER})
         
-        if self.isNeedProxy() and 'filmovizija.studio' in url:
+        if self.isNeedProxy() and 'filmovizija.' in url:
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e1'.format(urllib.quote(url, ''))
             params['header']['Referer'] = proxy
             params['header']['Cookie'] = 'flags=2e1;'
@@ -99,7 +99,7 @@ class FilmovizijaStudio(CBaseHostClass):
         
     def _getIconUrl(self, url):
         url = self._getFullUrl(url)
-        if 'filmovizija.studio' in url and self.isNeedProxy():
+        if 'filmovizija.' in url and self.isNeedProxy():
             proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e1'.format(urllib.quote(url, ''))
             params = {}
             params['User-Agent'] = self.HEADER['User-Agent'],
@@ -124,7 +124,7 @@ class FilmovizijaStudio(CBaseHostClass):
         return url
         
     def getPage2(self, baseUrl, params={}, post_data=None):
-        params['cloudflare_params'] = {'domain':'www.filmovizija.studio', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
+        params['cloudflare_params'] = {'domain':'www.filmovizija.ws', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self._getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
     def _urlWithCookie(self, url):
@@ -378,13 +378,13 @@ class FilmovizijaStudio(CBaseHostClass):
                     urlTab.append({'name':urlName, 'url':self._getFullUrl(url), 'need_resolve':1})
             except Exception:
                 printExc()
-        
+        printDBG(urlTab)
         return urlTab
         
     def getVideoLinks(self, videoUrl):
         printDBG("FilmovizijaStudio.getVideoLinks [%s]" % videoUrl)
         urlTab = []
-        if 'filmovizija.studi' in videoUrl:
+        if 'filmovizija.' in videoUrl:
             sts, data = self.getPage(videoUrl)
             if not sts: return []
             printDBG(data)
