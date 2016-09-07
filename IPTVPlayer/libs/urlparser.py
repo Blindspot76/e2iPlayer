@@ -34,6 +34,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                int2base, drdX_fx, \
                                                                unicode_escape, JS_FromCharCode, pythonUnescape
 from Plugins.Extensions.IPTVPlayer.libs.aadecoder import AADecoder
+from Plugins.Extensions.IPTVPlayer.libs.jjdecode import JJDecoder
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
 ###################################################
@@ -4922,6 +4923,7 @@ class pageParser:
         
         linksTab = []
         # get link for mobile
+        mobileRTMP = ''
         linkUrl ='http://www.streamlive.to/view/%s' % channel
         if 1:
             userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'            
@@ -4929,11 +4931,17 @@ class pageParser:
             params.update({'header':{'User-Agent':userAgent}})
             sts, data = self.cm.getPage(linkUrl, params)
             if sts:
+                printDBG("============================================================================")
+                printDBG(data)
+                printDBG("============================================================================")
                 # hls
                 hlsUrl = self.cm.ph.getSearchGroups(data, '''['"](http[^"']+?\.m3u8[^"']*?)["']''')[0]
                 if hlsUrl != '':
                     hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
                     linksTab.extend( getDirectM3U8Playlist(hlsUrl) )
+                # rtmp
+                mobileRTMP = self.cm.ph.getSearchGroups(data, '''['"](rtmp\:\/\/[^"^']+?)["']''')[0]
+                
             if 'You have reached the limit today.' in data:
                 SetIPTVPlayerLastHostError(_('No free credits.'))
         
@@ -4959,8 +4967,8 @@ class pageParser:
         params.update({'header':{'header':HTTP_HEADER}})
         sts, token = self.cm.getPage(token, params)
         if not sts: return False 
-        token = byteify(json.loads(token))['token']
-        if token != "": token = ' token=%s ' % token
+        TOKEN = byteify(json.loads(token))['token']
+        if token != "": token = ' token=%s ' % TOKEN
 
         # get others params
         data = CParsingHelper.getDataBeetwenMarkers(data, '.setup(', '</script>', False)[1]
@@ -4977,9 +4985,17 @@ class pageParser:
         if rtmpUrl.startswith('video://'):
             linksTab.append({'name':'http', 'url': rtmpUrl.replace('video://', 'http://')})
         elif '' != file and '' != rtmpUrl:
-            rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s app=%s live=1 ' % (file, swfUrl, token, linkUrl, app)
-            printDBG(rtmpUrl)
-            linksTab.append({'name':'rtmp', 'url': rtmpUrl})
+            if '://#' in rtmpUrl and mobileRTMP != '':
+                ip = self.cm.ph.getSearchGroups(mobileRTMP, '''rtmp\:\/\/([^:^'^"]+?)\:''')[0]
+                if '' != ip:
+                    rtmpUrl = rtmpUrl.replace('://#', '://%s' % ip)
+            if '://#' not in rtmpUrl:
+                rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s app=%s live=1 ' % (file, swfUrl, token, linkUrl, app)
+                printDBG(rtmpUrl)
+                linksTab.append({'name':'rtmp', 'url': rtmpUrl})
+            
+        #if 0 == len(linksTab) :
+        #    linksTab.append({'name':'mobile rtmp', 'url': mobileRTMP+TOKEN})
         return linksTab
         
     def paserMEGOMTV(self, baseUrl):
@@ -5168,6 +5184,13 @@ class pageParser:
             aastring = aastring.replace("(-~1)","2")
             aastring = aastring.replace("(-~3)","4")
             aastring = aastring.replace("(0-0)","0")
+            
+            aastring = aastring.replace("(ﾟДﾟ).ﾟωﾟﾉ","10")
+            aastring = aastring.replace("ﾟДﾟ).ﾟΘﾟﾉ","11")
+            aastring = aastring.replace("(ﾟДﾟ)[\'c\']","12")
+            aastring = aastring.replace("(ﾟДﾟ).ﾟｰﾟﾉ","13")
+            aastring = aastring.replace("(ﾟДﾟ).ﾟДﾟﾉ","14")
+            aastring = aastring.replace("(ﾟДﾟ)[ﾟΘﾟ]","15")
 
             decodestring = re.search(r"\\\+([^(]+)", aastring, re.DOTALL | re.IGNORECASE).group(1)
             decodestring = "\\+"+ decodestring
@@ -5195,13 +5218,22 @@ class pageParser:
         # end https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         videoUrl = ''
         tmp = ''
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script type="text/javascript">ﾟωﾟ', '</script>', withMarkers=False, caseSensitive=False)
-        for item in data:
+        encodedData = self.cm.ph.getAllItemsBeetwenMarkers(data, 'ﾟωﾟ', '</script>', withMarkers=False, caseSensitive=False)
+        for item in encodedData:
             try:
                 tmp += decodeOpenLoad(item)
-                printDBG(tmp)
-            except Exeption:
+            except Exception:
                 printExc()
+        printDBG(tmp)
+        
+        encodedData = self.cm.ph.getAllItemsBeetwenMarkers(data, "j=~[];", "())();", withMarkers=True, caseSensitive=False)
+        for item in encodedData:
+            try:
+                if '' != item:
+                    tmp += JJDecoder(item).decode()
+            except Exception:
+                printExc()
+        printDBG(tmp)
         
         num = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
         if '' == num:
