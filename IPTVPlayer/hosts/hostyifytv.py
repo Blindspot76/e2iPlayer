@@ -7,9 +7,8 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams
 ###################################################
 
 ###################################################
@@ -219,6 +218,7 @@ class YifyTV(CBaseHostClass):
             
     def unpackJS(self, data, name):
         data = data.replace('Math.min', 'min').replace(' + (', ' + str(').replace('String.fromCharCode', 'chr').replace('return b[a]', 'return saveGet(b, a)')
+        printDBG(data)
         
         def justRet(data):
             return data
@@ -372,11 +372,17 @@ class YifyTV(CBaseHostClass):
         try:
             data = byteify(json.loads(data))
             code = data[0]['jscode']
+            tmpData = ''
+            for decFun in [VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams]:
+                tmpData = unpackJSPlayerParams(code, decFun, 0)
+                if '' != tmpData:
+                    printDBG(tmpData)
+                    return tmpData
             m1 = '(function (){'
             code = code[len(m1):]
             globalTabCode, pyCode, args = self.getPyCode(code)
             pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n\t' + pyCode.replace('\n', '\n\t') + ('\n\treturn justRet%s\n' % args) + 'param = retA()'
-            #printDBG(pyCode)
+            printDBG(pyCode)
             data = self.unpackJS(pyCode, 'param')
         except Exception:
             printExc()
@@ -393,9 +399,11 @@ class YifyTV(CBaseHostClass):
         souTab = [baseUrl.meta.get('sou', '')]
         if souTab[0] == 'pic':
             souTab.append('adr')
+        if souTab[0] == 'adr':
+            souTab.append('pic')
         for sou in souTab:
             post_data = {'fv':'18', 'url':baseUrl, 'sou':sou}
-            url = 'http://yify.tv/player/pk/pk/plugins/player_p2.php'
+            url = 'http://yify.tv/playerlite/pk/pk/plugins/player_p2.php'
             sts, data = self.cm.getPage(url, {'header':header}, post_data)
             if not sts: return []
             #printDBG('>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<' % data)
