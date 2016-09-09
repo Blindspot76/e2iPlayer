@@ -352,6 +352,7 @@ class urlparser:
                        'dotstream.tv':         self.pp.parserDOTSTREAMTV   ,
                        'leton.tv':             self.pp.parserDOTSTREAMTV   ,
                        'fileone.tv':           self.pp.parserFILEONETV     ,
+                       'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2679,6 +2680,27 @@ class pageParser:
         url  = self.cm.ph.getSearchGroups(data, '''file[^"^']+?["'](http[^"^']+?)['"]''')[0]
         if '://' in url:
             return url
+        return False
+        
+    def parserUSERSCLOUDCOM(self, url):
+        printDBG("parserUSERSCLOUDCOM url[%s]\n" % url)
+        sts, data = self.cm.getPage(url)
+        
+        errorTab = ['File Not Found', 'File was deleted']
+        for errorItem in errorTab:
+            if errorItem in data:
+                SetIPTVPlayerLastHostError(_(errorItem))
+                break
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_code"', '</div>', True)
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(tmp, ">eval(", '</script>')
+        if sts:
+            # unpack and decode params from JS player script code
+            data = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
+            printDBG(data)
+            # get direct link to file from params
+            file = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
+            if file.startswith('http'):
+                return file
         return False
         
     def parseTUNEPK(self, url):

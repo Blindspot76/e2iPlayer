@@ -9,6 +9,8 @@ from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
 ###################################################
 
 ###################################################
@@ -21,6 +23,7 @@ import urllib
 import base64
 try:    import json
 except Exception: import simplejson as json
+from binascii import hexlify, unhexlify, a2b_hex
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -278,7 +281,18 @@ class YifyTV(CBaseHostClass):
             return funName
         
         data = re.sub('\(eval\("[^"]+?"\)\)', evalSimple, data)
-        args = self.cm.ph.getDataBeetwenMarkers(data, 'parseRes2', ";})", False)[1]
+        
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'eval(', ");", False)
+        if sts:
+            funName = 'eval%d()' % self.evalNum
+            funData = 'def justRet%s:' % funName
+            self.evalNum += 1
+            funData += '\n\treturn ' + tmp.strip()
+            funData += '\n'
+            self.pyCode += funData
+            args = funName
+        else:
+            args = self.cm.ph.getDataBeetwenMarkers(data, 'parseRes2', ";})", False)[1]
         
         data2 = data.split('\n')
         data = []
@@ -384,12 +398,14 @@ class YifyTV(CBaseHostClass):
             pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n\t' + pyCode.replace('\n', '\n\t') + ('\n\treturn justRet%s\n' % args) + 'param = retA()'
             printDBG(pyCode)
             data = self.unpackJS(pyCode, 'param')
+            printDBG(data)
         except Exception:
             printExc()
         return data
         
     def getVideoLinks(self, baseUrl):
-        printDBG("Movie4kTO.getVideoLinks [%s]" % baseUrl)
+        printDBG("YifyTV.getVideoLinks [%s]" % baseUrl)
+        
         urlTab = []
         sub_tracks = strwithmeta(baseUrl).meta.get('external_sub_tracks', [])
         
@@ -411,6 +427,19 @@ class YifyTV(CBaseHostClass):
                 printDBG(data)
                 if 'jscode' in data:
                     data = self._evalJscode(data)
+                    if 'sources[sourceSelected]["paramId"]' in data:
+                        data = data.replace('"+"', '').replace(' ', '')
+                        data = self.cm.ph.getSearchGroups(data, 'sources\[sourceSelected\]\["paramId"\]="([^"]+?)"')[0]
+                        printDBG('data ------------------------- [%s]' % data)
+                        if data.startswith('enc'):
+                            encrypted = base64.b64decode(data[3:])
+                            key = unhexlify(base64.b64decode('MzAzOTM4NzMzOTM3MzU0MTMxMzIzMzczMzEzMzM1NjQ2NDY2Njc3NzQ4MzczODM0MzczNTMzMzQzNjcyNjQ3Nw=='))
+                            iv = unhexlify(base64.b64decode('NWE0MTRlMzEzNjMzNjk2NDZhNGM1MzUxMzU0YzY0MzU='))
+                            cipher = AES_CBC(key=key, padding=noPadding(), keySize=32)
+                            data = cipher.decrypt(encrypted, iv).split('\x00')[0]
+                            urlTab.extend( self.up.getVideoLinkExt("https://userscloud.com/embed-" + data + "-1280x534.html") )
+                            break
+                    
                 data = byteify(json.loads(data))
                 for item in data:
                     #printDBG('++++++++++++++++++++++\n%s\n++++++++++++++++++++++' % item)
