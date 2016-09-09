@@ -5463,7 +5463,7 @@ class pageParser:
         if not sts: return False
         printDBG(data)
         data = byteify(json.loads(data))
-        Referer = 'http://cdn.bro.adcast.site/jwplayer.flash.swf'
+        Referer = 'http://cdn.allofme.site/jw/jwplayer.flash.swf'
         hlsUrl = curl + data['token']
         hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':Referer})
         return getDirectM3U8Playlist(hlsUrl)
