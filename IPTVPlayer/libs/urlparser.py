@@ -2169,17 +2169,28 @@ class pageParser:
             printDBG(url)
             
             sts, data = self.cm.getPage(url, params, post_data)
+            printDBG(data)
             if not sts: return False
             
+            hasMrker = True
             marker = '__showH5'
-            if marker in data:
+            if marker not in data: 
+                marker = '__showP5'
+                if marker in data:
+                    hasMrker = True
+            else: hasMrker = True
+            
+            if hasMrker:
                 linksData = []
                 tmp = self.cm.ph.getDataBeetwenMarkers(data, marker + '(', ')', False)[1].split(',')
                 for t in tmp:
                     linksData.append(t.replace('"', '').strip())
                 printDBG(linksData)
                 
-                linkData   = base64.b64decode(linksData[2])
+                if marker == '__showP5':
+                    linkData   = base64.b64decode(linksData[1])
+                else:
+                    linkData   = base64.b64decode(linksData[2])
                 linkData   = byteify(json.loads(linkData))
                 
                 ciphertext = base64.b64decode(linkData['ct'])
