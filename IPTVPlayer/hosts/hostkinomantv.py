@@ -118,6 +118,7 @@ class KinomanTV(CBaseHostClass):
         self.cacheSeries = {}
         self.loggedIn = None
         self.token = ''
+        self.isPremium = None
         
     def getIconUrl(self, hash):
         # .../o.jpg - big, .../m.jpg - small
@@ -379,7 +380,8 @@ class KinomanTV(CBaseHostClass):
         params.update({'header':self.AJAX_HEADER, 'raw_post_data':True})
         
         players = []
-        if '' != self.token: players.append('vip')
+        if '' != self.token and self.isPremium:
+            players.append('vip')
         players.append('free')
         
         for player in players:
@@ -534,7 +536,12 @@ class KinomanTV(CBaseHostClass):
         try:
             data = byteify(json.loads(data))
             printDBG(data)
-            msg = 'Premium ważne do: %s\n' % data.get('premium_valid', '-')
+            msg = ''
+            if None != data.get('premium_valid', None):
+                self.isPremium = True
+                msg = 'Premium ważne do: %s\n' % data['premium_valid']
+            else:
+                self.isPremium = False
             msg += 'Punktów: %s\n' % data['points']
         except Exception:
             printExc()
@@ -593,8 +600,6 @@ class KinomanTV(CBaseHostClass):
     #HISTORIA SEARCH
         elif category == "search_history":
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
-        else:
-            printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
 class IPTVHost(CHostBase):

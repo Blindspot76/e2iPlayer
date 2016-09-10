@@ -2525,7 +2525,6 @@ class pageParser:
         if url != '':        
             sts, data = getPage(url)
             if not sts: return False
-        printDBG(data)
         data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="playerVidzer">', '</a>', False)[1]
         match = re.search('href="(http[^"]+?)"', data)
         if match:
