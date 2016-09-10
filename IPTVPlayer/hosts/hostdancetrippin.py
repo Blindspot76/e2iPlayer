@@ -220,7 +220,7 @@ class DancetrippinTV(CBaseHostClass):
         elif category == 'list_videos':
             self.listsVideos(self.currItem)
         elif category == 'artists':
-            self.listArtists(self.currItem, 'list_artists_videos')
+            self.listArtists(self.currItem, 'list_videos2')
         elif category == 'playlists':
             self.listPlaylists(self.currItem, 'list_videos2')
         elif category == 'list_videos2':
