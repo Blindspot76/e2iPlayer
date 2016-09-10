@@ -36,7 +36,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
 from Plugins.Extensions.IPTVPlayer.libs.aadecoder import AADecoder
 from Plugins.Extensions.IPTVPlayer.libs.jjdecode import JJDecoder
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
+from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, MainSessionWrapper
 ###################################################
 # FOREIGN import
 ###################################################
@@ -2467,38 +2467,87 @@ class pageParser:
         
     def parserVIDZER(self, baseUrl):
         printDBG("parserVIDZER baseUrl[%s]" % baseUrl)
-        try:
-            sts, data = self.cm.getPage(baseUrl)
-            if not sts: return False
-            url = self.cm.ph.getSearchGroups(data, '<iframe src="(http[^"]+?)"')[0]
-            if url != '':        
-                sts, data = self.cm.getPage(url)
-                if not sts: return False
-            data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="playerVidzer">', '</a>', False)[1]
-            match = re.search('href="(http[^"]+?)"', data)
-            if match:
-                url = urllib.unquote( match.group(1) )
-                return url
+        
+        baseUrl = baseUrl.split('?')[0]
+        
+        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        defaultParams = {'header' : HTTP_HEADER, 'cookiefile':GetCookieDir('vidzernet.cookie'), 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
+        
+        def getPage(url, params={}, post_data=None):
+            sts, data = False, None
+            sts, data = self.cm.getPage(url, defaultParams, post_data)
+            if sts:
+                imgUrl = self.cm.ph.getSearchGroups(data, '<img src="([^"]+?captcha-master[^"]+?)"')[0]
+                if imgUrl.startswith('/'): imgUrl = 'http://www.vidzer.net' + imgUrl
+                if imgUrl.startswith('http://') or imgUrl.startswith('https://'):
+                    sessionEx = MainSessionWrapper() 
+                    header = dict(HTTP_HEADER)
+                    header['Accept'] = 'image/png,image/*;q=0.8,*/*;q=0.5'
+                    params = dict(defaultParams)
+                    params.update( {'maintype': 'image', 'subtypes':['jpeg', 'png'], 'check_first_bytes':['\xFF\xD8','\xFF\xD9','\x89\x50\x4E\x47'], 'header':header} )
+                    filePath = GetTmpDir('.iptvplayer_captcha.jpg')
+                    #Accept=image/png,image/*;q=0.8,*/*;q=0.5
+                    ret = self.cm.saveWebFile(filePath, imgUrl.replace('&amp;', '&'), params)
+                    if not ret.get('sts'):
+                        SetIPTVPlayerLastHostError(_('Fail to get "%s".') % imgUrl)
+                        return False
+                    from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
+                    from copy import deepcopy
+                    params = deepcopy(IPTVMultipleInputBox.DEF_PARAMS)
+                    params['accep_label'] = _('Send')
+                    params['title'] = _('Answer')
+                    params['list'] = []
+                    item = deepcopy(IPTVMultipleInputBox.DEF_INPUT_PARAMS)
+                    item['label_size'] = (160,75)
+                    item['input_size'] = (300,25)
+                    item['icon_path'] = filePath
+                    item['input']['text'] = ''
+                    params['list'].append(item)
+        
+                    ret = 0
+                    retArg = sessionEx.waitForFinishOpen(IPTVMultipleInputBox, params)
+                    printDBG(retArg)
+                    if retArg and len(retArg) and retArg[0]:
+                        printDBG(retArg[0])
+                        sts, data = self.cm.getPage(url, defaultParams, {'captcha':retArg[0][0]})
+                        return sts, data
+                    else:
+                        SetIPTVPlayerLastHostError(_('Wrong answer.'))
+                    return False, None
+            return sts, data
             
-            r = re.search('value="(.+?)" name="fuck_you"', data)
-            r2 = re.search('name="confirm" type="submit" value="(.+?)"', data)
-            r3 = re.search('<a href="/file/([^"]+?)" target', data)
-            if r:
-                printDBG("r_1[%s]" % r.group(1))
-                printDBG("r_2[%s]" % r2.group(1))
-                data = 'http://www.vidzer.net/e/'+r3.group(1)+'?w=631&h=425'
-                postdata = {'confirm' : r2.group(1), 'fuck_you' : r.group(1)}
-                sts, data = self.cm.getPage(data, {}, postdata)
-                match = re.search("url: '([^']+?)'", data)
-                if match:
-                    url = match.group(1) #+ '|Referer=http://www.vidzer.net/media/flowplayer/flowplayer.commercial-3.2.18.swf'
-                    return url
-                else:
-                    return False
+        ########################################################
+                    
+
+        sts, data = getPage(baseUrl)
+        if not sts: return False
+        url = self.cm.ph.getSearchGroups(data, '<iframe src="(http[^"]+?)"')[0]
+        if url != '':        
+            sts, data = getPage(url)
+            if not sts: return False
+        printDBG(data)
+        data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="playerVidzer">', '</a>', False)[1]
+        match = re.search('href="(http[^"]+?)"', data)
+        if match:
+            url = urllib.unquote( match.group(1) )
+            return url
+        
+        r = re.search('value="(.+?)" name="fuck_you"', data)
+        r2 = re.search('name="confirm" type="submit" value="(.+?)"', data)
+        r3 = re.search('<a href="/file/([^"]+?)" target', data)
+        if r:
+            printDBG("r_1[%s]" % r.group(1))
+            printDBG("r_2[%s]" % r2.group(1))
+            data = 'http://www.vidzer.net/e/'+r3.group(1)+'?w=631&h=425'
+            postdata = {'confirm' : r2.group(1), 'fuck_you' : r.group(1)}
+            sts, data = getPage(data, {}, postdata)
+            match = re.search("url: '([^']+?)'", data)
+            if match:
+                url = match.group(1) #+ '|Referer=http://www.vidzer.net/media/flowplayer/flowplayer.commercial-3.2.18.swf'
+                return url
             else:
                 return False
-        except:
-            printExc()
+        else:
             return False
             
     def parserNOWVIDEOCH(self, url):
