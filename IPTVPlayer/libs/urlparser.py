@@ -5316,12 +5316,28 @@ class pageParser:
                 printExc()
         printDBG(tmp)
         
+        videoUrl = ''
         num = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
         if '' == num:
-            num = 3
-
-        res = res[:-1] + chr(ord(res[-1]) + int(num))
-        videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)
+            for tmpNum in [1, 2, 3]:
+                try:
+                    tmpVideoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res[:-1] + chr(ord(res[-1]) + int(tmpNum)))
+                    sts, response = self.cm.getPage(tmpVideoUrl, {'return_data':False, 'header':HTTP_HEADER})
+                    size = int(response.headers['Content-Length'])
+                    tmpVideoUrl = response.geturl()
+                    response.close()
+                    if size < 40 * 1024 * 1024:
+                        SetIPTVPlayerLastHostError(_('Please report the problem to: samsamsam@o2.pl'))
+                        continue
+                    else:
+                        videoUrl = tmpVideoUrl
+                        break
+                except Exception:
+                    printExc()
+        else:
+            res = res[:-1] + chr(ord(res[-1]) + int(num))
+            videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)
+        if '' == videoUrl: return False
         params = dict(HTTP_HEADER)
         params['external_sub_tracks'] = subTracks
         return urlparser.decorateUrl(videoUrl, params)
