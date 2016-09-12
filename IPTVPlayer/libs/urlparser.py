@@ -5297,6 +5297,29 @@ class pageParser:
                 return decodestring
             return videourl
         # end https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
+        preDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'a="0%', '{}', withMarkers=True, caseSensitive=False)
+        for item in preDataTab:
+            try:
+                dat = self.cm.ph.getSearchGroups(item, 'a\s*?=\s*?"([^"]+?)"', ignoreCase=True)[0]
+                z = self.cm.ph.getSearchGroups(item, '\}\(([0-9]+?)\)', ignoreCase=True)[0]
+                z = int(z)
+                def checkA(c):
+                    code = ord(c.group(1))
+                    if code <= ord('Z'):
+                        tmp = 90
+                    else: 
+                        tmp = 122
+                    c = code + z
+                    if tmp < c:
+                        c -= 26
+                    return chr(c)
+                    
+                dat = urllib.unquote( re.sub('([a-zA-Z])', checkA, dat) )
+                dat = OPENLOADIO_decryptPlayerParams(dat, 4, 4, ['j', '_', '__', '___'], 0, {})
+                data += dat
+            except Exception:
+                printExc()
+        
         videoUrl = ''
         tmp = ''
         encodedData = self.cm.ph.getAllItemsBeetwenMarkers(data, 'ﾟωﾟ', '</script>', withMarkers=False, caseSensitive=False)
