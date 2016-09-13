@@ -5134,18 +5134,6 @@ class pageParser:
         # for example: "Code take from plugin IPTVPlayer: "https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/"
         # It will be very nice if you send also email to me samsamsam@o2.pl and inform were this code will be used
         
-        # new algo
-        linkData = self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="hiddenurl"[^>]*?>([^<]+?)<\/span>''', ignoreCase=True)[0].strip()
-        printDBG("=======================linkData=============================")
-        printDBG(linkData)
-        printDBG("============================================================")
-        linkData = clean_html(linkData).strip()
-        res = ""
-        for item in linkData:
-            c = ord(item)
-            if c >= 33 and c <= 126:
-                c = ((c + 14) % 94) + 33
-            res += chr(c)
         # get image data
         if False:
             from Plugins.Extensions.IPTVPlayer.libs.png import Reader as PNGReader
@@ -5328,19 +5316,35 @@ class pageParser:
                 tmp += decodeOpenLoad(item)
             except Exception:
                 printExc()
-        printDBG(tmp)
         
+        tmp2 = ''
         encodedData = self.cm.ph.getAllItemsBeetwenMarkers(data, "j=~[];", "())();", withMarkers=True, caseSensitive=False)
         for item in encodedData:
             try:
                 if '' != item:
-                    tmp += JJDecoder(item).decode()
+                    tmp2 += JJDecoder(item).decode()
             except Exception:
                 printExc()
+        
         printDBG(tmp)
+        printDBG(tmp2)
+        
+        # new algo
+        hiddenUrlName = self.cm.ph.getSearchGroups(tmp2, '''"\#([^"]+?)"\)\.text\(\)''', ignoreCase=True)[0]
+        linkData = self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="%s"[^>]*?>([^<]+?)<\/span>''' % hiddenUrlName, ignoreCase=True)[0].strip()
+        printDBG("=======================linkData=============================")
+        printDBG(linkData)
+        printDBG("============================================================")
+        linkData = clean_html(linkData).strip()
+        res = ""
+        for item in linkData:
+            c = ord(item)
+            if c >= 33 and c <= 126:
+                c = ((c + 14) % 94) + 33
+            res += chr(c)
         
         videoUrl = ''
-        num = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
+        num = self.cm.ph.getSearchGroups(tmp2, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
         if '' == num:
             for tmpNum in [1, 2, 3]:
                 try:
