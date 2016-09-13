@@ -2173,51 +2173,43 @@ class pageParser:
             printDBG(data)
             if not sts: return False
             
-            hasMrker = True
-            marker = '__showH5'
-            if marker not in data: 
-                marker = '__showP5'
-                if marker in data:
-                    hasMrker = True
-            else: hasMrker = True
+            linksData = []
+            tmp = self.cm.ph.getSearchGroups(data, '''__show[^(]*?\(([^)]+?)\)''')[0].split(',')
+            for t in tmp:
+                linksData.append(t.replace('"', '').strip())
+            printDBG(linksData)
             
-            if hasMrker:
-                linksData = []
-                tmp = self.cm.ph.getDataBeetwenMarkers(data, marker + '(', ')', False)[1].split(',')
-                for t in tmp:
-                    linksData.append(t.replace('"', '').strip())
-                printDBG(linksData)
-                
-                if marker == '__showP5':
-                    linkData   = base64.b64decode(linksData[1])
-                else:
-                    linkData   = base64.b64decode(linksData[2])
-                linkData   = byteify(json.loads(linkData))
-                
-                ciphertext = base64.b64decode(linkData['ct'])
-                iv         = a2b_hex(linkData['iv'])
-                salt       = a2b_hex(linkData['s'])
-                
-                playerUrl = cryptoJS_AES_decrypt(ciphertext, aesKey, salt)
-                playerUrl = byteify(json.loads(playerUrl))
-                if playerUrl.startswith('#') and 3 < len(playerUrl): 
-                    playerUrl = getUtf8Str(playerUrl[1:])
-                printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % playerUrl)
-                if playerUrl.startswith('http'):
-                    COOKIE_FILE_M3U8 = GetCookieDir('m3u8.cookie')
-                    params = {'cookiefile':COOKIE_FILE_M3U8, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
-                    playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'Referer':'http://h5.adshell.net/flash', 'User-Agent':HTTP_HEADER['User-Agent']})
-                    urlsTab = getDirectM3U8Playlist(playerUrl, cookieParams=params)
-                    try:
-                        PHPSESSID = self.cm.getCookieItem(COOKIE_FILE_M3U8, 'PHPSESSID')
-                        newUrlsTab = []
-                        for item in urlsTab:
-                            item['url'].meta['Cookie'] = 'PHPSESSID=%s' % PHPSESSID
-                            newUrlsTab.append(item)
-                        return newUrlsTab
-                    except:
-                        printExc()
-                        return urlsTab
+            for idx in [1, 2]:
+                try:
+                    linkData = base64.b64decode(linksData[idx])
+                except Exception:
+                    pass
+            linkData   = byteify(json.loads(linkData))
+            
+            ciphertext = base64.b64decode(linkData['ct'])
+            iv         = a2b_hex(linkData['iv'])
+            salt       = a2b_hex(linkData['s'])
+            
+            playerUrl = cryptoJS_AES_decrypt(ciphertext, aesKey, salt)
+            playerUrl = byteify(json.loads(playerUrl))
+            if playerUrl.startswith('#') and 3 < len(playerUrl): 
+                playerUrl = getUtf8Str(playerUrl[1:])
+            printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % playerUrl)
+            if playerUrl.startswith('http'):
+                COOKIE_FILE_M3U8 = GetCookieDir('m3u8.cookie')
+                params = {'cookiefile':COOKIE_FILE_M3U8, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
+                playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'Referer':'http://h5.adshell.net/flash', 'User-Agent':HTTP_HEADER['User-Agent']})
+                urlsTab = getDirectM3U8Playlist(playerUrl, cookieParams=params)
+                try:
+                    PHPSESSID = self.cm.getCookieItem(COOKIE_FILE_M3U8, 'PHPSESSID')
+                    newUrlsTab = []
+                    for item in urlsTab:
+                        item['url'].meta['Cookie'] = 'PHPSESSID=%s' % PHPSESSID
+                        newUrlsTab.append(item)
+                    return newUrlsTab
+                except:
+                    printExc()
+                    return urlsTab
         return False
         
     def parserTRILULILU(self, baseUrl):
