@@ -118,7 +118,7 @@ class YifyTV(CBaseHostClass):
             sts, data = self.cm.getPage(self.MAIN_URL + 'languages/')
             if sts:
                 #languages
-                languages = self.cm.ph.getDataBeetwenMarkers(data, '<tbody><tr><td>', '</table>', False)[1]
+                languages = self.cm.ph.getDataBeetwenMarkers(data, '<!-- start content container -->', '</section>', False)[1]
                 languages = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(languages)
                 self.filterCache['languages'] = []
                 for item in languages:
@@ -128,7 +128,7 @@ class YifyTV(CBaseHostClass):
             sts, data = self.cm.getPage(self.MAIN_URL + 'countries/')
             if sts:
                 #countries
-                countries = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+                countries = self.cm.ph.getDataBeetwenMarkers(data, '<!-- start content container -->', '</section>', False)[1]
                 countries = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(countries)
                 self.filterCache['countries'] = []
                 for item in countries:
