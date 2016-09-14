@@ -269,8 +269,11 @@ class T123MoviesTO(CBaseHostClass):
             #cookieName  = 'n1sqcua67bcq9826' + episodeId + 'i6m49vd7shxkn985'
             #url = 'ajax/v4_load_episode/' + episodeId + '/' + md5(episodeId + cookieValue + "rbi6m49vd7shxkn985mhodk06twz87ww").hexdigest()
             magic = 'n1sqcua67bcq9826avrbi6m49vd7shxkn985mhodk06twz87wwxtp3dqiicks2dfyud213k6ygiomq01s94e4tr9v0k887bkyud213k6ygiomq01s94e4tr9v0k887bkqocxzw39esdyfhvtkpzq9n4e7at4kc6k8sxom08bl4dukp16h09oplu7zov4m5f8'
-            cookieName  = '826avrbi6m49vd7shxkn985m' + episodeId + 'k06twz87wwxtp3dqiicks2df'
-            url = 'ajax/get_sources/' + episodeId + '/' + md5(episodeId + cookieValue + magic[12:36]).hexdigest()
+            #cookieName  = '826avrbi6m49vd7shxkn985m' + episodeId + 'k06twz87wwxtp3dqiicks2df'
+            #url = 'ajax/get_sources/' + episodeId + '/' + md5(episodeId + cookieValue + magic[12:36]).hexdigest()
+            
+            cookieName  = 'i6m49vd7shxkn985mhodk' + episodeId + 'twz87wwxtp3dqiicks2dfyud213k6yg'
+            url = 'ajax/get_sources/' + episodeId + '/' + md5(episodeId + cookieValue + '7bcq9826avrbi6m4').hexdigest() + '/2'
             
             url = self.getFullUrl( url )
 
