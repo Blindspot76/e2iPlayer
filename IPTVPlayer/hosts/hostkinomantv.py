@@ -345,9 +345,9 @@ class KinomanTV(CBaseHostClass):
         printDBG("KinomanTV.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        
         if 'movie_id' in cItem: post_data = {"movie_id":cItem['movie_id']}
-        else: post_data = {"episode_id":cItem['episode_id']}
+        elif 'episode_id' in cItem: post_data = {"episode_id":cItem['episode_id']}
+        else: return []
         
         url = self.apiHost + 'link'
         
@@ -554,7 +554,7 @@ class KinomanTV(CBaseHostClass):
         if None == self.loggedIn and config.plugins.iptvplayer.kinoman_premium.value:
             self.loggedIn, msg = self.tryTologin(config.plugins.iptvplayer.kinoman_login.value, config.plugins.iptvplayer.kinoman_password.value)
             if not self.loggedIn:
-                self.sessionEx.open(MessageBox, 'Problem z zalogowaniem użytkownika "%s".' % self.LOGIN, type = MessageBox.TYPE_INFO, timeout = 10 )
+                self.sessionEx.open(MessageBox, 'Problem z zalogowaniem użytkownika "%s".' % config.plugins.iptvplayer.kinoman_login.value, type = MessageBox.TYPE_INFO, timeout = 10 )
             else:
                 self.sessionEx.open(MessageBox, 'Zostałeś poprawnie \nzalogowany.\n' + msg, type = MessageBox.TYPE_INFO, timeout = 10 )
                 
