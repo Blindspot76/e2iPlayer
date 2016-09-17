@@ -137,6 +137,7 @@ class urlparser:
                        'novamov.com':          self.pp.parserNOVAMOV       ,
                        'nowvideo.eu':          self.pp.parserNOWVIDEO      ,
                        'nowvideo.sx':          self.pp.parserNOWVIDEO      ,
+                       'nowvideo.to':          self.pp.parserNOWVIDEO      ,
                        'rapidvideo.com':       self.pp.parserRAPIDVIDEO    ,
                        'videoslasher.com':     self.pp.parserVIDEOSLASHER  ,
                        'dailymotion.com':      self.pp.parserDAILYMOTION   ,
