@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
@@ -122,6 +122,8 @@ class ZalukajCOM(CBaseHostClass):
         sts, data = self.cm.getPage(url, params, post_data)
         if sts and None == data:
             sts = False
+        if sts and 'Duze obciazenie!' in data:
+            SetIPTVPlayerLastHostError(self.cleanHtmlStr(data))
         return sts, data
         
     def getIconUrl(self, url):

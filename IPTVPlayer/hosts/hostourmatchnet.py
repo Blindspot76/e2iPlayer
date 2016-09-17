@@ -255,7 +255,7 @@ class OurmatchNet(CBaseHostClass):
         urlTab = [] #{'name':'', 'url':cItem['url'], 'need_resolve':1}]
         
         sts, data = self.cm.getPage(cItem['url']) 
-        if not sts: return
+        if not sts: return []
         
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li data-pos="top" ', '</li>')
         for item in tmp:

@@ -3,7 +3,7 @@
 
 import re
 import sys
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 
 
 try:
