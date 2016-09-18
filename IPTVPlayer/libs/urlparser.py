@@ -2476,7 +2476,7 @@ class pageParser:
             sts, data = False, None
             sts, data = self.cm.getPage(url, defaultParams, post_data)
             if sts:
-                imgUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?captcha-master[^"]+?)"')[0]
+                imgUrl = self.cm.ph.getSearchGroups(data, '"([^"]+?captcha-master[^"]+?)"')[0]
                 if imgUrl.startswith('/'): imgUrl = 'http://www.vidzer.net' + imgUrl
                 if imgUrl.startswith('http://') or imgUrl.startswith('https://'):
                     sessionEx = MainSessionWrapper() 
