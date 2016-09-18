@@ -454,6 +454,12 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'hdfree.tv/live' in data and 'hdfree.tv' not in url:
+                tmpUrl = url
+                url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?hdfree.tv/live[^"^']+?)["']''', 1, True)[0]
+                url = strwithmeta(url, {'Referer':tmpUrl})
+                data = None
+                continue
             elif 'dotstream.tv' in data:
                 streampage = self.cm.ph.getSearchGroups(data, """streampage=([^&]+?)&""")[0]
                 videoUrl = 'http://dotstream.tv/player.php?streampage={0}&height=490&width=730'.format(streampage)
@@ -562,7 +568,7 @@ class urlparser:
                 return self.getVideoLinkExt(videoUrl)
             elif 'cast4u.tv' in data:
                 fid = self.cm.ph.getSearchGroups(data, """fid=['"]([^'^"]+?)['"]""")[0]
-                videoUrl = 'http://www.cast4u.tv/embed.php?live={0}&vw=700&vh=450'.format(fid)
+                videoUrl = 'http://www.cast4u.tv/embed.php?v={0}&vw=700&vh=450'.format(fid)
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'hdcast.info' in data:
