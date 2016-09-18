@@ -340,6 +340,7 @@ class XrysoiSE(CBaseHostClass):
         
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
+        self.currItem.pop('good_for_fav', None)
         
     #MAIN MENU
         if name == None:
