@@ -36,21 +36,12 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################)
-#config.plugins.iptvplayer.kinoman_premium  = ConfigYesNo(default = False)
-#config.plugins.iptvplayer.kinoman_login    = ConfigText(default = "", fixed_size = False)
-#config.plugins.iptvplayer.kinoman_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-
-    #optionList.append(getConfigListEntry("Użytkownik DancetrippinTV?", config.plugins.iptvplayer.kinoman_premium))
-    #if config.plugins.iptvplayer.kinoman_premium.value:
-    #    optionList.append(getConfigListEntry("  DancetrippinTV login:", config.plugins.iptvplayer.kinoman_login))
-    #    optionList.append(getConfigListEntry("  DancetrippinTV hasło:", config.plugins.iptvplayer.kinoman_password))
-
     return optionList
 def gettytul():
-    return 'http://kinoman.tv/'
+    return 'http://dancetrippin.tv/'
 
 class DancetrippinTV(CBaseHostClass):
  
