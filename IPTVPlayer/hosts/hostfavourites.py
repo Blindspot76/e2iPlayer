@@ -254,3 +254,13 @@ class IPTVHost(CHostBase):
             for idx in range(len(ret.value)):
                 ret.value[idx].isGoodForFavourites = False
         return ret
+        
+    def getMoreForItem(self, Index = 0):
+        ret = RetHost(RetHost.ERROR, value = [])
+        if not self.host.isQuestMode(): 
+            ret = CHostBase.getMoreForItem(self, Index)
+        if self.host.isQuestMode(): 
+            ret = self.host.getCurrentGuestHost().getMoreForItem(Index)
+            for idx in range(len(ret.value)):
+                ret.value[idx].isGoodForFavourites = False
+        return ret

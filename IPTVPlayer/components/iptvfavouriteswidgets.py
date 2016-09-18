@@ -116,7 +116,7 @@ class IPTVFavouritesAddItemWidget(Screen):
                     self.result = True
                     self.iptvDoFinish()
                     return
-                else: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
+                else: self.session.openWithCallback(self.iptvDoFinish, MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
             else: # addn new group
                 self.session.openWithCallback( self.addNewFavouriteGroup, IPTVFavouritesAddNewGroupWidget, self.favourites)
         else: self.iptvDoFinish()
