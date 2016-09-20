@@ -41,7 +41,6 @@ except: import simplejson as json
 from os import path as os_path, remove as os_remove, listdir as os_listdir
 ###################################################
 
-
 class IPTVUpdateWindow(Screen):
 
     skin = """
@@ -76,6 +75,11 @@ class IPTVUpdateWindow(Screen):
         self.onLayoutFinish.append(self.layoutFinished)
         self.onClose.append(self.__onClose)
         self.status =  None
+        
+        self.messages = {}
+        self.messages['not_interrupt']   = _("During processing, please do not interrupt.")
+        self.messages['please_wait']     = _("During processing, please wait.")
+        self.messages['not_aborted']     = _("Step [%s] cannot be aborted. Please wait.")
 
     def __del__(self):
         printDBG("IPTVUpdateMainWindow.__del__ -------------------------------")
@@ -125,7 +129,7 @@ class IPTVUpdateWindow(Screen):
 
     def keyExit(self):
         if 'working' == self.status and not self.list[self.currStep].get('breakable', False):
-            self.session.open(MessageBox, _("Step [%s] cannot be aborted. Please wait."), type = MessageBox.TYPE_INFO, timeout = 5 )
+            self.session.open(MessageBox, self.messages['not_aborted'], type = MessageBox.TYPE_INFO, timeout = 5 )
         else:
             self.close()
 
@@ -138,9 +142,9 @@ class IPTVUpdateWindow(Screen):
     def stepExecute(self):
         self["list"].moveToIndex(self.currStep)
         if self.list[self.currStep].get('breakable', False):
-            self.list[self.currStep].update( {'info': _("During processing, please wait."), 'icon': self.ICON.PROCESSING} )
+            self.list[self.currStep].update( {'info': self.messages['please_wait'], 'icon': self.ICON.PROCESSING} )
         else:
-            self.list[self.currStep].update( {'info': _("During processing, please do not interrupt."), 'icon': self.ICON.PROCESSING_NOT_BREAK} )
+            self.list[self.currStep].update( {'info': self.messages['not_interrupt'], 'icon': self.ICON.PROCESSING_NOT_BREAK} )
         self.reloadList()
         if self.updateObjImpl.isReadyToExecuteStep(self.currStep):
             self.list[self.currStep]['execFunction']()
@@ -261,9 +265,14 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.destinationArchive = None
         self.serverIdx          = 0
         
+        self.messages = {}
+        self.messages['completed']       = _("Completed.")
+        self.messages['problem_removal'] = _("Problem with the removal of the previous version.\nStatus[%d], outData[%s].")
+        self.messages['problem_install'] = _("Problem with installing the new version.\nStatus[%d], outData[%s]")
+        
     def checkVersionFile(self, newVerPath):
         code = 0
-        msg  = 'Wersja poprawna.'
+        msg  = _('Correct version.')
         
         newVerFile = os_path.join(newVerPath, 'version.py')
         if os_path.isfile(newVerFile):
@@ -744,16 +753,16 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.cmd = None
         if 0 != status:
             code = -1
-            msg = _("Problem with the removal of the previous version.\nStatus[%d], outData[%s].") % (status, outData)
+            msg = self.messages['problem_removal'] % (status, outData)
         else:
             code = 0
-            msg = _("Completed.")
+            msg = self.messages['completed']
         self.stepFinished(code, msg)
         
     def __installNewVersionCmdFinished(self, status, outData):
         self.cmd = None
         if 0 != status:
-            msg = _("Problem with installing the new version.\nStatus[%d], outData[%s]") % (status, outData)
+            msg = self.messages['problem_install'] % (status, outData)
             self.stepFinished(-1, msg)
         else:
             self.cmd = iptv_system( 'rm -rf ' + self.tmpDir + " && sync" , self.__doSyncCallBack )
