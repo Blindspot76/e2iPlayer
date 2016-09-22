@@ -77,8 +77,7 @@ class TvpVod(CBaseHostClass):
     SEARCH_VOD_URL = MAIN_VOD_URL + 'szukaj?query=%s'
     HTTP_HEADERS = {}
     
-    VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'rio',                 'title':'Rio206 - tylko Polacy',     'url':'http://sport.tvp.pl/shared/listing.php?portal_name=rio2016.tvp.pl&portal_id=19369963&parent_id=19369963&type=v_listing_typical_a&copy=false&direct=false&order=release_date_long%2C-1&count=200&filter=%7B%22parents%22%3A%7B%22%24ne%22%3A24091532%7D%2C%22types%22%3A%7B%22%24in%22%3A%5B%22video%22%5D%7D%2C%22techTags%22%3A%22pl%22%7D&template=wideo%2Fitems-listing.html'},
-                    {'icon':DEFAULT_ICON, 'category':'rio',                 'title':'Rio206',                    'url':'http://sport.tvp.pl/shared/listing.php?portal_name=rio2016.tvp.pl&portal_id=19369963&parent_id=19369963&type=v_listing_typical_a&copy=false&direct=false&order=release_date_long%2C-1&count=200&filter=%7B%22parents%22%3A%7B%22%24ne%22%3A24091532%7D%2C%22types%22%3A%7B%22%24in%22%3A%5B%22video%22%5D%7D%7D&template=wideo%2Fitems-listing.html'},
+    VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'tvp_sport',           'title':'TVP Sport',                 'url':'http://sport.tvp.pl/wideo'},
                     {'icon':DEFAULT_ICON, 'category':'live',                'title':'Regionale na żywo',         'url':'http://warszawa.tvp.pl/'},
                     {'icon':DEFAULT_ICON, 'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
                     {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
@@ -228,24 +227,59 @@ class TvpVod(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':title, 'url':'http://www.tvp.pl/tvplayer?channel_id=%s&autoplay=true' % id})
                 self.addVideo(params)
-              
-    def listRioVideos(self, cItem):
-        printDBG("TvpVod.listRioVideos")
+                
+    def listTVPSportCategories(self, cItem, nextCategory):
+        printDBG("TvpVod.listTVPSportCategories")
         sts, data = self._getPage(cItem['url'], self.defaultParams)
         if not sts: return
-        data = data.split('<div class="item"')
-        if len(data): del data[0]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="vod-select">', '<div class="vod-items">', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="option" ', '</div>', withMarkers=True, caseSensitive=False)
         for item in data:
-            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            mode  = self.cm.ph.getSearchGroups(item, 'data-type="([^"]+?)"')[0]
+            id    = self.cm.ph.getSearchGroups(item, 'data-id="([0-9]+?)"')[0]
+            title = self.cleanHtmlStr(item)
+            if id != '':
+                url = 'http://sport.tvp.pl/shared/listing.php?parent_id=' + id +'&type=v_listing_typical_a&order=release_date_long,-1&filter=%7B%22playable%22%3Atrue%7D&direct=false&template=vod/items-listing.html&count=' + str(self.PAGE_SIZE)
+                params = dict(cItem)
+                params.update({'category':nextCategory, 'good_for_fav':True, 'title':title, 'url':url})
+                self.addDir(params)
+              
+    def listTVPSportVideos(self, cItem):
+        printDBG("TvpVod.listTVPSportVideos")
+        
+        page = cItem.get('page', 1)
+        url  = cItem['url']
+        url += '&page=%d' %(page)
+        
+        sts, data = self._getPage(url, self.defaultParams)
+        if not sts: return
+        data = data.split('<div class="item')
+        if len(data): del data[0]
+        videosNum = 0
+        for item in data:
+            url   = self.cm.ph.getSearchGroups(item, 'data-url="([^"]+?)"')[0]
+            if url.startswith('/'):
+                url = 'http://sport.tvp.pl/' + url
             
-            item  = item.split('<div class="item-data">')[-1]
+            item  = item.split('class="item-data">')[-1]
             desc  = self.cleanHtmlStr(item)
             icon  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1] )
             if url.startswith('http'):
+                videosNum += 1
                 params = dict(cItem)
                 params.update({'title':title, 'icon':icon, 'url':url, 'desc':desc})
                 self.addVideo(params)
+                
+        if videosNum >= self.PAGE_SIZE:
+            params = dict(cItem)
+            params.update({'page':page+1})
+            if config.plugins.iptvplayer.tvpVodNextPage.value:
+                params['title'] = _("Następna strona")
+                self.addDir(params)
+            else:
+                params['title'] = _('More')
+                self.addMore(params)
             
     def listVodsSubCategories(self, cItem, category):
         printDBG("TvpVod.listVodsSubCategories")
@@ -562,9 +596,12 @@ class TvpVod(CBaseHostClass):
     # LIVE
         elif category == 'live':
             self.listLiveChannels(self.currItem)
-    # RIO
-        elif category == 'rio':
-            self.listRioVideos(self.currItem)
+    # TVP SPORT
+        elif category == 'tvp_sport':    
+            self.listTVPSportCategories(self.currItem, 'tvp_sport_list_items')
+    # LIST TVP SPORT VIDEOS
+        elif category == 'tvp_sport_list_items':
+            self.listTVPSportVideos(self.currItem)
     # POPULAR
         elif category == 'vods_list_items1':
             self.listItems1(self.currItem, 'popular')
