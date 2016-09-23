@@ -78,7 +78,7 @@ class TvpVod(CBaseHostClass):
     HTTP_HEADERS = {}
     
     VOD_CAT_TAB  = [{'icon':DEFAULT_ICON, 'category':'tvp_sport',           'title':'TVP Sport',                 'url':'http://sport.tvp.pl/wideo'},
-                    {'icon':DEFAULT_ICON, 'category':'live',                'title':'Regionale na żywo',         'url':'http://warszawa.tvp.pl/'},
+                    {'icon':DEFAULT_ICON, 'category':'streams',             'title':'TVP na żywo',               'url':'http://tvpstream.tvp.pl/'},
                     {'icon':DEFAULT_ICON, 'category':'vods_list_items1',    'title':'Polecamy',                  'url':MAIN_VOD_URL},
                     {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'Polecane',                  'marker':'Polecane'},
                     {'icon':DEFAULT_ICON, 'category':'vods_sub_categories', 'title':'VOD',                       'marker':'VOD'},
@@ -214,18 +214,19 @@ class TvpVod(CBaseHostClass):
                     
         return self._getFullUrl(url)
         
-    def listLiveChannels(self, cItem):
-        printDBG("TvpVod.listLiveChannels")
+    def listStreams(self, cItem):
+        printDBG("TvpVod.listStreams")
         sts, data = self._getPage(cItem['url'], self.defaultParams)
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="current">', '</ul>', False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>', withMarkers=True, caseSensitive=False)
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="button', '</div>', withMarkers=True, caseSensitive=False)
         for item in data:
-            id    = self.cm.ph.getSearchGroups(item, 'data-channel-id="([0-9]+?)"')[0]
-            title = self.cm.ph.getSearchGroups(item, 'data-name="([^"]+?)"')[0]
+            id    = self.cm.ph.getSearchGroups(item, 'data-video_id="([0-9]+?)"')[0]
             if id != '':
+                desc  = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, 'titlte="([^"]+?)"')[0])
+                icon  = self.cm.ph.getSearchGroups(item, 'src="(http[^"]+?)"')[0]
+                title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0].replace('-', ' ').title()
                 params = dict(cItem)
-                params.update({'title':title, 'url':'http://www.tvp.pl/tvplayer?channel_id=%s&autoplay=true' % id})
+                params.update({'title':title, 'url':'http://tvpstream.tvp.pl/sess/tvplayer.php?object_id=%s&autoplay=true' % id, 'icon':icon, 'desc':desc})
                 self.addVideo(params)
                 
     def listTVPSportCategories(self, cItem, nextCategory):
@@ -487,6 +488,26 @@ class TvpVod(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         asset_id = str(cItem.get('object_id', ''))
         url = self._getFullUrl(cItem.get('url', ''))
+        
+        if 'tvpstream.tvp.pl' in url:
+            sts, data = self.cm.getPage(url)
+            if not sts: return []
+            
+            hlsUrl = self.cm.ph.getSearchGroups(data, '''['"](http[^'^"]*?\.m3u8[^'^"]*?)['"]''')[0]
+            if '' != hlsUrl:
+                videoTab = getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=False)
+                if 1 < len(videoTab):
+                    max_bitrate = int(config.plugins.iptvplayer.tvpVodDefaultformat.value)
+                    def __getLinkQuality( itemLink ):
+                        return int(itemLink['bitrate'])
+                    oneLink = CSelOneLink(videoTab, __getLinkQuality, max_bitrate)
+                    if config.plugins.iptvplayer.tvpVodUseDF.value:
+                        videoTab = oneLink.getOneLink()
+                    else:
+                        videoTab = oneLink.getSortedLinks()
+                if 1 <= len(videoTab):
+                    return videoTab
+            
         if '' == asset_id:
             asset_id = self.getObjectID(url)
 
@@ -593,9 +614,9 @@ class TvpVod(CBaseHostClass):
 
         if None == name:
             self.listsTab(TvpVod.VOD_CAT_TAB, {'name':'category'})
-    # LIVE
-        elif category == 'live':
-            self.listLiveChannels(self.currItem)
+    # STREAMS
+        elif category == 'streams':
+            self.listStreams(self.currItem)
     # TVP SPORT
         elif category == 'tvp_sport':    
             self.listTVPSportCategories(self.currItem, 'tvp_sport_list_items')
