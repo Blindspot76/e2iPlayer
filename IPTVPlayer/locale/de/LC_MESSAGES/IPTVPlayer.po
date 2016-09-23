@@ -3613,7 +3613,7 @@ msgstr "schwarz"
 msgid "Element"
 msgstr "Eintrag"
 
-msgid "Wersja poprawna."
+msgid "Correct version."
 msgstr "Gültige Version."
 
 msgid "Copy post installed binaries."
