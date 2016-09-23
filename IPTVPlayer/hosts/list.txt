@@ -55,7 +55,6 @@ hostliveleak
 hostlocalmedia
 hostmovie4kto
 hostmovienightws
-hostmovieshdis
 hostmovizlandcom
 hostmusicbox
 hostnaszekino
