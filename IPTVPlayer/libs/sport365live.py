@@ -105,7 +105,7 @@ class Sport365LiveApi:
                 desc  = self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0]
                 desc  = date + ' ' + self.cleanHtmlStr(desc)
                 linksData = []
-                tmp = self.cm.ph.getDataBeetwenMarkers(item, '__showLinks(', ')', False)[1].split(',')
+                tmp = self.cm.ph.getSearchGroups(item, '''onClick=[^(]*?\(([^)]+?)\)''')[0].split(',')
                 for t in tmp:
                     linksData.append(t.replace('"', '').strip())
                 printDBG(linksData)
@@ -126,20 +126,22 @@ class Sport365LiveApi:
         sts, data = self.cm.getPage(url)
         if not sts: return []
         
-        marker = '__showWindow('
         desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<table', '</table>')[1] ) + '[/br]' + cItem.get('desc', '')
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>')
         for item in data:
             sourceTitle = self.cleanHtmlStr(item.split('<span')[0])
             links = self.cm.ph.getAllItemsBeetwenMarkers(item, '<span ', '</span>')
             for link in links:
-                if marker not in link: continue
                 linkTitle = self.cleanHtmlStr(link)
-                linkData  = self.cm.ph.getDataBeetwenMarkers(link, marker, ')', False)[1].split(',')[0].replace('"', '').replace("'", '').strip()
-                printDBG(linkData)
-                params = dict(cItem)
-                params.update({'type':'video', 'link_data':linkData, 'desc':desc, 'title':sourceTitle + ' ' + linkTitle})
-                channelsTab.append(params)
+                if '{' in linkTitle: continue
+                linkData  = self.cm.ph.getSearchGroups(link, '''onClick=[^(]*?\(([^)]+?)\)''')[0].split(',')[0].replace('"', '').replace("'", '').strip()
+                #printDBG("=========================================================")
+                #printDBG(linkData)
+                #printDBG("=========================================================")
+                if linkData != '':
+                    params = dict(cItem)
+                    params.update({'type':'video', 'link_data':linkData, 'desc':desc, 'title':sourceTitle + ' ' + linkTitle})
+                    channelsTab.append(params)
         
         return channelsTab
         

@@ -2181,7 +2181,7 @@ class pageParser:
             if not sts: return False
             
             linksData = []
-            tmp = self.cm.ph.getSearchGroups(data, '''__show[^(]*?\(([^)]+?)\)''')[0].split(',')
+            tmp = self.cm.ph.getSearchGroups(data, '''\(([^)]+?)\)''')[0].split(',')
             for t in tmp:
                 linksData.append(t.replace('"', '').strip())
             printDBG(linksData)
