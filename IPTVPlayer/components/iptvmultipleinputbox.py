@@ -86,6 +86,7 @@ class IPTVMultipleInputBox(Screen):
     
         Screen.__init__(self, session)
         self.onShown.append(self.onStart)
+        self.onClose.append(self.__onClose)
         
         self["actions"] = NumberActionMap(["ColorActions", "WizardActions", "InputBoxActions", "InputAsciiActions", "KeyboardInputActions"], 
         {
@@ -119,16 +120,24 @@ class IPTVMultipleInputBox(Screen):
         
         self.idx   = 0
         self.activeInput = "input_0"
-        self.setKeyboardMode()
         self.markerPixmap = [LoadPixmap(GetIconDir('radio_button_on.png')), LoadPixmap(GetIconDir('radio_button_off.png'))]
         
         self.started = False
+        
+    def __onClose(self):
+        if self.started:
+            rcinput = eRCInput.getInstance()
+            rcinput.setKeyboardMode(self.keyboardMode)
         
     def onStart(self):
         self.onShown.remove(self.onStart)
         self.loadMarkers()
         self.setMarker()
         self.setIcons()
+        rcinput = eRCInput.getInstance()
+        self.keyboardMode = rcinput.getKeyboardMode()
+        rcinput = None
+        self.setKeyboardMode()
         self.started = True
         
     def setIcons(self):
@@ -200,9 +209,6 @@ class IPTVMultipleInputBox(Screen):
         self[self.activeInput].delete()
 
     def keySave(self):
-        rcinput = eRCInput.getInstance()
-        rcinput.setKeyboardMode(rcinput.kmNone)
-        
         retList = []
         for idx in range(len(self.list)):
             if None != self.list[idx]['validator']:
@@ -224,8 +230,6 @@ class IPTVMultipleInputBox(Screen):
         self.session.openWithCallback(VirtualKeyBoardCallBack, VirtualKeyBoard, title=title, text=self[self.activeInput].getText())
 
     def keyCancel(self):
-        rcinput = eRCInput.getInstance()
-        rcinput.setKeyboardMode(rcinput.kmNone)
         self.close(None)
 
     def keyHome(self):
