@@ -2500,6 +2500,7 @@ class pageParser:
                     item['label_size'] = (160,75)
                     item['input_size'] = (300,25)
                     item['icon_path'] = filePath
+                    item['title'] = clean_html(CParsingHelper.getDataBeetwenMarkers(data, '<h1', '</h1>')[1]).strip()
                     item['input']['text'] = ''
                     params['list'].append(item)
         

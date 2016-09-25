@@ -28,6 +28,30 @@ from Tools.LoadPixmap import LoadPixmap
 from enigma import gRGB
 ###################################################
 
+class IPTVVirtualKeyBoardWithCaptcha(VirtualKeyBoard):
+
+    def __init__(self, session, title = '', text = '', additionalParams={}):
+        
+        self.skin='''  <screen name="IPTVVirtualKeyBoardWithCaptcha" position="fill" zPosition="99" title="Virtual KeyBoard">
+                            <widget name="captcha" position="%d,%d" size="%d,%d" zPosition="2" transparent="1" alphatest="on" />
+                            <ePixmap pixmap="skin_default/vkey_text.png" position="300,245" zPosition="-4" size="542,52" alphatest="on" />
+                            <widget name="header" position="300,210" size="500,30" font="Regular;20" transparent="1" noWrap="1" />
+                            <widget name="text" position="302,250" size="536,46" font="Regular;42" transparent="1" noWrap="1" halign="right" />
+                            <widget name="list" position="300,300" size="680,240" selectionDisabled="1" transparent="1" />
+                       </screen>
+            ''' % (300, 200 -  additionalParams['captcha_size'][1], additionalParams['captcha_size'][0], additionalParams['captcha_size'][1])
+        #300 + (536 - additionalParams['captcha_size'][0])/2
+        VirtualKeyBoard.__init__(self, session, title = title, text = text)
+        self.captchaPath = additionalParams['captcha_path']
+        self['captcha'] = Cover2()
+        self.onShown.append(self.loadCaptcha)
+        printDBG(">>>>>>>>>>>>>>>>>>> IPTVVirtualKeyBoardWithCaptcha title[%s]" % title)
+        
+    def loadCaptcha(self):
+        self.onShown.remove(self.loadCaptcha)
+        try: self['captcha'].updateIcon( self.captchaPath )
+        except: printExc()
+
 class IPTVMultipleInputBox(Screen):
     DEF_INPUT_PARAMS = {'validator':None, 'title':'', 'useable_chars':None, 'label_font':'Regular;23', 'label_size':(550,25), 'input_font':'Regular;20', 'input_size':(550,25), 'input':dict(text="", maxSize = False, visible_width = False, type = Input.TEXT)}
     DEF_PARAMS = {'title':_("Input"), 'accep_label':_("Save"), 'list':[]}
@@ -225,9 +249,25 @@ class IPTVMultipleInputBox(Screen):
     def keyOK(self):
         def VirtualKeyBoardCallBack(newTxt):
             if isinstance(newTxt, basestring): self[self.activeInput].setText( newTxt )
+        
+        # title
         try: title = self.list[self.idx]['title']
         except: title = ''
-        self.session.openWithCallback(VirtualKeyBoardCallBack, VirtualKeyBoard, title=title, text=self[self.activeInput].getText())
+        
+        # virtual keyboard type
+        captchaKeyBoard = False
+        try: 
+            if 'icon_path' in self.list[self.idx] and (self.list[self.idx]['icon_path'].endswith('.jpg') or self.list[self.idx]['icon_path'].endswith('.png')):
+                captchaKeyBoard = True
+                captchaSize = self.list[self.idx]['label_size']
+                captchaPath = self.list[self.idx]['icon_path']
+                params = {'captcha_size':captchaSize, 'captcha_path':captchaPath}
+        except: printExc()
+        
+        if not captchaKeyBoard:
+            self.session.openWithCallback(VirtualKeyBoardCallBack, VirtualKeyBoard, title=title, text=self[self.activeInput].getText())
+        else:
+            self.session.openWithCallback(VirtualKeyBoardCallBack, IPTVVirtualKeyBoardWithCaptcha, title=title, text=self[self.activeInput].getText(), additionalParams=params)
 
     def keyCancel(self):
         self.close(None)
