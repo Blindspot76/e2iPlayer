@@ -161,36 +161,39 @@ class Sport365LiveApi:
         sts, data = self.cm.getPage(self.getFullUrl('en/main'), self.http_params)
         if not sts: return []
         
-        commonUrl = self.cm.ph.getSearchGroups(data, '''src=['"](http[^"^']*?/wrapper\.js[^"^']*?)["']''')[0]
-        if commonUrl == '': return []
-        sts, tmpData = self.cm.getPage(commonUrl, self.http_params)
-        if not sts: return []
-        aes = ''
-        try:
-            while 'eval' in tmpData:
-                tmp = tmpData.split('eval(')
-                if len(tmp): del tmp[0]
-                tmpData = ''
-                for item in tmp:
-                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
-                    #printDBG(item)
-                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
-                    for decFun in [VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams]:
-                        tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
-                        if '' != tmpData:   
-                            break
-                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
-                    #printDBG(tmpData)
-                    #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
-                    aes = self.cm.ph.getSearchGroups(tmpData, 'aes_key="([^"]+?)"')[0]
-                    if '' == aes: aes = self.cm.ph.getSearchGroups(tmpData, 'aes\(\)\{return "([^"]+?)"')[0]
-                    if aes != '':
-                        break
-            aes = aes.encode('utf-8')
-        except:
-            printExc()
+        aes = "57e77501e245f"
+        
+        if 0:
+            commonUrl = self.cm.ph.getSearchGroups(data, '''src=['"](http[^"^']*?/wrapper\.js[^"^']*?)["']''')[0]
+            if commonUrl == '': return []
+            sts, tmpData = self.cm.getPage(commonUrl, self.http_params)
+            if not sts: return []
             aes = ''
-        if aes == '': return []
+            try:
+                while 'eval' in tmpData:
+                    tmp = tmpData.split('eval(')
+                    if len(tmp): del tmp[0]
+                    tmpData = ''
+                    for item in tmp:
+                        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                        #printDBG(item)
+                        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                        for decFun in [VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams]:
+                            tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
+                            if '' != tmpData:   
+                                break
+                        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                        #printDBG(tmpData)
+                        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                        aes = self.cm.ph.getSearchGroups(tmpData, 'aes_key="([^"]+?)"')[0]
+                        if '' == aes: aes = self.cm.ph.getSearchGroups(tmpData, 'aes\(\)\{return "([^"]+?)"')[0]
+                        if aes != '':
+                            break
+                aes = aes.encode('utf-8')
+            except:
+                printExc()
+                aes = ''
+            if aes == '': return []
         
         #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % aes)
         
