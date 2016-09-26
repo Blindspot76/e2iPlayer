@@ -65,6 +65,14 @@ class IPTVMultipleInputBox(Screen):
         skinItems = ''
         self.icons = []
         self.list = params['list']
+        
+        # calcl maxWidth size
+        for idx in range(len(self.list)):
+            item = self.list[idx]
+            if item['label_size'][0] > maxWidth: maxWidth = item['label_size'][0]
+            if item['input_size'][0] > maxWidth: maxWidth = item['input_size'][0]
+        maxWidth += pX*2
+        
         for idx in range(len(self.list)):
             item = self.list[idx]
             if 'icon_path' in item:
@@ -78,12 +86,11 @@ class IPTVMultipleInputBox(Screen):
                 self["input_%d"%idx].setUseableChars(item['useable_chars'])
             
             if 'icon_path' in item:
-                skinItems +=  '<widget name="cover_%d" position="%s,%d" size="%d,%d" zPosition="2" transparent="1" alphatest="on" />' % (idx, 'center', pY, item['label_size'][0], item['label_size'][1])
+                skinItems +=  '<widget name="cover_%d" position="%d,%d" size="%d,%d" zPosition="8" />' % (idx, (maxWidth - item['label_size'][0]) / 2, pY, item['label_size'][0], item['label_size'][1])
             else:
                 skinItems +=  '<widget name="text_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="2" />' % (idx, 10, pY, item['label_size'][0], item['label_size'][1], item['label_font'])
             
             pY += dY + item['label_size'][1]
-            if item['label_size'][0] > maxWidth: maxWidth = item['label_size'][0]
             skinItems +=  '<widget name="input_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="2" />' % (idx, pX, pY, item['input_size'][0], item['input_size'][1], item['input_font'])
             skinItems +=  '<widget name="border_%d" position="%d,%d" size="%d,%d" font="%s" zPosition="1" transparent="0" backgroundColor="#331F93B9" />' % (idx, pX-5, pY-5, item['input_size'][0]+10, item['input_size'][1]+10, item['input_font'])
             if 0 == idx: 
@@ -92,9 +99,7 @@ class IPTVMultipleInputBox(Screen):
             skinItems +=  '<widget name="marker_%d" zPosition="1" position="10,%d" size="16,16" transparent="1" alphatest="blend" />' % (idx, pY + (item['input_size'][1]-16) / 2)
             self['marker_%d'%idx] = Cover3()
             pY += dY*2 + item['input_size'][1]
-            if item['input_size'][0] > maxWidth: maxWidth = item['input_size'][0]
-            
-        maxWidth += pX*2
+        
         self.skin = """
         <screen name="IPTVMultipleInputBox" position="center,center" size="%d,%d" title="%s">
             <widget name="key_red"   position="10,10" zPosition="2" size="%d,35" valign="center" halign="left"   font="Regular;22" transparent="1" foregroundColor="red" />
@@ -167,6 +172,7 @@ class IPTVMultipleInputBox(Screen):
     def setIcons(self):
         for item in self.icons:
             try:
+                printDBG('Update icon: [%s]' % item['path'])
                 self[item['name']].updateIcon( item['path'] )
             except:
                 printExc()
@@ -261,13 +267,14 @@ class IPTVMultipleInputBox(Screen):
         
         # virtual keyboard type
         captchaKeyBoard = False
-        try: 
-            if 'icon_path' in self.list[self.idx] and (self.list[self.idx]['icon_path'].endswith('.jpg') or self.list[self.idx]['icon_path'].endswith('.png')):
-                captchaKeyBoard = True
-                captchaSize = self.list[self.idx]['label_size']
-                captchaPath = self.list[self.idx]['icon_path']
-                params = {'captcha_size':captchaSize, 'captcha_path':captchaPath}
-        except: printExc()
+        if False: # one user report that IPTVVirtualKeyBoardWithCaptcha couse hangs up E2, I can not reproduce such problem but anyway
+            try: 
+                if 'icon_path' in self.list[self.idx] and (self.list[self.idx]['icon_path'].endswith('.jpg') or self.list[self.idx]['icon_path'].endswith('.png')):
+                    captchaKeyBoard = True
+                    captchaSize = self.list[self.idx]['label_size']
+                    captchaPath = self.list[self.idx]['icon_path']
+                    params = {'captcha_size':captchaSize, 'captcha_path':captchaPath}
+            except: printExc()
         
         if not captchaKeyBoard:
             self.session.openWithCallback(VirtualKeyBoardCallBack, VirtualKeyBoard, title=title, text=self[self.activeInput].getText())
