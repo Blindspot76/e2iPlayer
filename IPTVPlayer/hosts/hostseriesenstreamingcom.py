@@ -150,9 +150,10 @@ class SeriesEnStreamingCom(CBaseHostClass):
                     category = 'list_items'
                 self.cache[key].append({'category':category, 'title':title, 'url':self._getFullUrl(url)})
         
-        for item in [('series_genre','Séries Par Genre'), \
-                     ('movies_genre','Films Par Genre'), \
-                     ('movies_date','Films Par Date')]:
+        for item in [('series_genre','Séries par genre'), \
+                     ('series_date','Séries par Année'), \
+                     ('movies_genre','Films par genre'), \
+                     ('movies_date','Films par Année')]:
             key = item[0]
             self.cache[key] = []
             tmp = self.cm.ph.getDataBeetwenMarkers(data, item[1], '</ul>', False)[1]
