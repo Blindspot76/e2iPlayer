@@ -264,11 +264,12 @@ class SeriesEnStreamingCom(CBaseHostClass):
                 else:
                     self.addDir(params)
         else:
-            sp = '<div class="movie-series">'
+            sp = '<div class="movie-item'
             data = self.cm.ph.getDataBeetwenMarkers(data, sp, '<div class="cl', False)[1] #'<div class="clr">'
             #printDBG(data)
             data = data.split(sp)
             for item in data:
+                #item  = '<div ' + item 
                 tmp   = self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>', True)[1]
                 url   = self.cm.ph.getSearchGroups(tmp, '''href=["']([^"^']+?)["']''')[0]
                 title = self.cleanHtmlStr( tmp )
