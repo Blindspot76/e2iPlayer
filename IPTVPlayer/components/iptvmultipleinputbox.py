@@ -211,7 +211,11 @@ class IPTVMultipleInputBox(Screen):
         except: printExc()
         
     def setKeyboardMode(self):
+        
         rcinput = eRCInput.getInstance()
+        printDBG("setKeyboardMode current_mode[%r] ASCI[%r] none[%r] type_text[%r] intput_type[%r]" % (rcinput.getKeyboardMode(), rcinput.kmAscii, rcinput.kmNone, Input.TEXT, self[self.activeInput].type))
+        rcinput.setKeyboardMode(rcinput.kmNone)
+        return
         if self[self.activeInput].type == Input.TEXT:
             rcinput.setKeyboardMode(rcinput.kmAscii)
         else:
@@ -249,6 +253,7 @@ class IPTVMultipleInputBox(Screen):
     def keyOK(self):
         def VirtualKeyBoardCallBack(newTxt):
             if isinstance(newTxt, basestring): self[self.activeInput].setText( newTxt )
+            self.setKeyboardMode()
         
         # title
         try: title = self.list[self.idx]['title']
