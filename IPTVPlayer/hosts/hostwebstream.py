@@ -866,9 +866,14 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.videoStarApi.getChannelsList(True)
         for item in tmpList:
             try:
+                descTab = []
+                if item.get('geoblocked', False):
+                    descTab.append('Kanał zablokowany dla Twojego IP.')
+                    descTab.append('Spróbuj włączyć bramkę proxy w konfiguracji hosta (klawisz niebieski na pilocie) i odświeżyć.')
+                descTab.append(_('Access status: ') + _(item['access_status']))
                 params = { 'name'       : 'videostar_channels', 
-                           'title'      : item['name'].encode('utf-8'), 
-                           'desc'       : 'Access status: ' + item['access_status'].encode('utf-8'), 
+                           'title'      : item['name'], 
+                           'desc'       :  '[/br]'.join(descTab), 
                            'url'        : item['id'],
                            'icon'       : item['thumbnail'],
                            }
