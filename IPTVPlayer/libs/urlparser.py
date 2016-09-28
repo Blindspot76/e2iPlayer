@@ -354,6 +354,7 @@ class urlparser:
                        'leton.tv':             self.pp.parserDOTSTREAMTV   ,
                        'fileone.tv':           self.pp.parserFILEONETV     ,
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
+                       'hdgo.cc':              self.pp.parserHDGOCC        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2729,6 +2730,32 @@ class pageParser:
         if '://' in url:
             return url
         return False
+        
+    def parserHDGOCC(self, baseUrl):
+        printDBG("parserHDGOCC url[%s]\n" % baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Referer' : Referer}
+        
+        vidTab = []
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        url = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+        HTTP_HEADER['Referer'] = baseUrl
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts: return
+        
+        data = self.cm.ph.getSearchGroups(data, '''var url = ['"](http[^'^"]+?)['"]''', 1, True)[0]
+        urls = data.split(' or ')
+        for item in urls:
+            urlsTab = item.split(',')
+            for url in urlsTab:
+                if '://' not in url: continue
+                label = self.cm.ph.getSearchGroups(url, '''/([0-9]+?)\-''', 1, True)[0]
+                if label == '': label = '360'
+                vidTab.append({'name':label, 'url':url.strip()})
+        return vidTab
         
     def parserUSERSCLOUDCOM(self, url):
         printDBG("parserUSERSCLOUDCOM url[%s]\n" % url)
