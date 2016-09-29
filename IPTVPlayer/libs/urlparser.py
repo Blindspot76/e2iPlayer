@@ -33,7 +33,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                MYOBFUSCATECOM_0ll, \
                                                                int2base, drdX_fx, \
                                                                unicode_escape, JS_FromCharCode, pythonUnescape
-from Plugins.Extensions.IPTVPlayer.libs.aadecoder import AADecoder
 from Plugins.Extensions.IPTVPlayer.libs.jjdecode import JJDecoder
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, MainSessionWrapper
