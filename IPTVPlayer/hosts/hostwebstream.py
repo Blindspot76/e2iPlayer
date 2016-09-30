@@ -18,6 +18,7 @@ from Plugins.Extensions.IPTVPlayer.libs.purecastnet       import PurecastNetApi,
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow           import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
 #from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet    import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.iklubnet          import IKlubNetApi, GetConfigList as IKlubNet_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.edemtv            import EdemTvApi, GetConfigList as EdemTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livestreamtv      import LiveStreamTvApi 
 from Plugins.Extensions.IPTVPlayer.libs.skylinewebcamscom import WkylinewebcamsComApi, GetConfigList as WkylinewebcamsCom_GetConfigList
@@ -66,6 +67,10 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry("-----------------VideoStar------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( VideoStar_GetConfigList() )
+    except Exception: printExc()
+    
+    optionList.append(getConfigListEntry("-----------------iklub.net------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( TelewizjadaNet_GetConfigList() )
     except Exception: printExc()
     
     optionList.append(getConfigListEntry("-------------------WeebTV-------------------", config.plugins.iptvplayer.fake_separator))
@@ -117,6 +122,7 @@ class HasBahCa(CBaseHostClass):
     # New links for webstream prepared by user @matzg
     MAIN_GROUPED_TAB = [{'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://weebtv.yolasite.com/resources/425149_345424975498308_1363873965_n.jpg'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'VideoStar',                         'url': '',                                                                   'icon': 'https://static-videostar1.4vod.tv/assets/images/logo.png'}, \
+                        {'alias_id':'iklub.net',               'name': 'iklub.net',           'title': 'iKlub.net',                         'url': '',                                                                   'icon': 'http://iklub.net/wp-content/uploads/2015/11/klub2.png'}, \
                         #{'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
                         {'alias_id':'iptv_matzgpl',            'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',                'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
@@ -159,6 +165,7 @@ class HasBahCa(CBaseHostClass):
         self.ustvnowApi   = None
         self.purecastNetApi    = None
         self.telewizjadaNetApi = None
+        self.iKlubNetApi       = None
         self.liveStreamTvApi   = None
         self.goldvodTvApi      = None
         self.showsportTvApi    = None
@@ -672,6 +679,22 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.telewizjadaNetApi.getVideoLink(cItem)
         return urlsTab
         
+    def getIKlubNetList(self, cItem):
+        printDBG("getIKlubNetList start")
+        if None == self.iKlubNetApi:
+            self.iKlubNetApi = IKlubNetApi()
+        tmpList = self.iKlubNetApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']:
+                self.playVideo(item) 
+            else:
+                self.addDir(item)
+        
+    def getIKlubNetLink(self, cItem):
+        printDBG("getIKlubNetLink start")
+        urlsTab = self.iKlubNetApi.getVideoLink(cItem)
+        return urlsTab
+        
     def getEdemTvList(self, cItem):
         printDBG("getEdemTvList start")
         if None == self.edemTvApi:
@@ -857,6 +880,9 @@ class HasBahCa(CBaseHostClass):
     #telewizjada.net items
         elif name == 'telewizjada.net':
             self.getTelewizjadaNetList(self.currItem)
+    #iklub.net items
+        elif name == 'iklub.net':
+            self.getIKlubNetList(self.currItem)
     #edem.tv items
         elif name == 'edem.tv':
             self.getEdemTvList(self.currItem)
@@ -944,6 +970,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getPurecastNetLink(cItem)
         elif name == 'telewizjada.net':
             urlList = self.host.getTelewizjadaNetLink(cItem)
+        elif name == 'iklub.net':
+            urlList = self.host.getIKlubNetLink(cItem)
         elif name == 'edem.tv':
             urlList = self.host.getEdemTvLink(cItem)
         elif name == 'skylinewebcams.com':
