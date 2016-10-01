@@ -5356,7 +5356,9 @@ class pageParser:
         printDBG(tmp2)
         
         # new algo
-        hiddenUrlName = self.cm.ph.getSearchGroups(tmp2, '''"\#([^"]+?)"\)\.text\(\)''', ignoreCase=True)[0]
+        varName = self.cm.ph.getSearchGroups(tmp2, '''=\s*([^.^;^{^}]+)\s*\.charCodeAt''', ignoreCase=True)[0]
+        printDBG('varName: [%s]' % varName)
+        hiddenUrlName = self.cm.ph.getSearchGroups(tmp2, '''var\s*%s\s*=[^"^;]+?"\#([^"]+?)"\)\.text\(\)''' % varName, ignoreCase=True)[0]
         linkData = self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="%s"[^>]*?>([^<]+?)<\/span>''' % hiddenUrlName, ignoreCase=True)[0].strip()
         printDBG("=======================linkData=============================")
         printDBG(linkData)
