@@ -70,7 +70,7 @@ def GetConfigList():
     except Exception: printExc()
     
     optionList.append(getConfigListEntry("-----------------iklub.net------------------", config.plugins.iptvplayer.fake_separator))
-    try:    optionList.extend( TelewizjadaNet_GetConfigList() )
+    try:    optionList.extend( IKlubNet_GetConfigList() )
     except Exception: printExc()
     
     optionList.append(getConfigListEntry("-------------------WeebTV-------------------", config.plugins.iptvplayer.fake_separator))
