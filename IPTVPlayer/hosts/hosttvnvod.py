@@ -462,9 +462,6 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, TvnVod(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('tvnvodlogo.png')])
-
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
         retlist = []
@@ -519,28 +516,3 @@ class IPTVHost(CHostBase):
                                 possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
 
-    def getSearchItemInx(self):
-        # Find 'Wyszukaj' item
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'Wyszukaj':
-                    return i
-        except Exception:
-            printExc()
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex].get('name', ''):
-                pattern = list[self.currIndex]['title']
-                search_type = ''
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printExc()
-            self.searchPattern = ''
-            self.searchType = ''
-        return
