@@ -1573,7 +1573,7 @@ class IPTVExtMoviePlayer(Screen):
         if None != self.downloader:
             self.downloader.subscribeFor_Finish(self.onDownloadFinished)
         
-        if 'gstplayer2' == self.player:
+        if 'gstplayer' == self.player:
             if self.fileSRC.startswith('merge://'):
                 msg = _("Link is not supported by the gstplayer. Please use the extelayer3 if available.")
                 self.showMessage(msg, MessageBox.TYPE_ERROR)
