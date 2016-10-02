@@ -2204,7 +2204,7 @@ msgid "quality"
 msgstr "Qualität"
 
 msgid "recommended"
-msgstr "Empfohlen"
+msgstr "empfohlen"
 
 msgid "red"
 msgstr "rot"
@@ -3179,7 +3179,7 @@ msgstr ""
 "Manche Funktionen könnten nicht richtig funktionieren."
 
 msgid "Install into the \"%s\"."
-msgstr "Installiere in den \"%s\"."
+msgstr "Installiere in \"%s\"."
 
 msgid "Decode file [%s] problem."
 msgstr "Problem beim Dekodieren von Datei [%s]."
@@ -3445,3 +3445,15 @@ msgstr "Abfrage"
 
 msgid "(unsafe)"
 msgstr "(unsicher)"
+
+msgid "External player use software decoder for the AC3"
+msgstr "Softwaredekoder für AC3 verwenden"
+
+msgid "External player use software decoder for the EAC3"
+msgstr "Softwaredekoder für EAC3 verwenden"
+
+msgid "External player use software decoder for the MP3"
+msgstr "Softwaredekoder für MP3 verwenden"
+
+msgid "Menu"
+msgstr "Menü"
