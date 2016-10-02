@@ -354,6 +354,7 @@ class urlparser:
                        'fileone.tv':           self.pp.parserFILEONETV     ,
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
+                       'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -610,6 +611,9 @@ class urlparser:
             elif "castamp.com" in data:
                 channel = self.cm.ph.getDataBeetwenMarkers(data, 'channel="', '"', False)[1]
                 videoUrl = strwithmeta('http://www.castamp.com/embed.php?c='+channel, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'liveonlinetv247.info/embed/' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, """['"](https?://(?:www\.)?liveonlinetv247\.info/embed/[^'^"]+?)['"]""")[0]
                 return self.getVideoLinkExt(videoUrl)
             elif "crichd.tv" in data:
                 if baseUrl.startswith('http://crichd.tv'):
@@ -5590,6 +5594,24 @@ class pageParser:
             hlsUrl = data['rtmp']+"/"+data['streamname']+"/chunklist.m3u8"
             hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':Referer})
             return getDirectM3U8Playlist(hlsUrl)
+        return False
+        
+    def parserLIVEONLINETV247(self, baseUrl):
+        printDBG("parserLIVEONLINETV247 baseUrl[%r]" % baseUrl)
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        hlsUrl = self.cm.ph.getSearchGroups(data, '''<source\s+?type="application/x-mpegurl"\s+?src=["'](http[^'^"]+?)["']''')[0]
+        if hlsUrl == '': return False
+        return getDirectM3U8Playlist(hlsUrl)
         return False
         
     def parseBROADCAST(self, baseUrl):

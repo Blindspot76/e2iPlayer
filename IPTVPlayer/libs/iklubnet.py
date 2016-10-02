@@ -90,7 +90,7 @@ class IKlubNetApi(CBaseHostClass):
                     url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
                     title = self.cleanHtmlStr(item)
                     if url == '': continue
-                    if 'vlc-channel' in url: continue
+                    #if 'vlc-channel' in url: continue
                     params = dict(cItem)
                     params.update({'init_list':False, 'url':self.getFullUrl(url), 'title':title})
                     retList.append(params)
@@ -100,7 +100,20 @@ class IKlubNetApi(CBaseHostClass):
                 cItem['url'] = self.getFullUrl('all/')
                 channelsTab = self.getListOfChannels(cItem)
         else:
-            if 'tvpregionalna' in cItem['url']:
+            if 'vlc-channel' in cItem['url']:
+                sts, data = self.cm.getPage(self.getFullUrl('vlcchannel.html'))
+                if not sts: return []
+                retList = []
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<option', '</option>', withMarkers=True, caseSensitive=False)
+                for item in data:
+                    uri = self.cm.ph.getSearchGroups(item, 'value="([^"]+?)"')[0]
+                    if uri != '':
+                        title  = self.cleanHtmlStr(item)
+                        params = dict(cItem)
+                        params.update({'type':'video', 'title':title, 'vlc':True, 'url':uri})
+                        retList.append(params)
+                return retList
+            elif 'tvpregionalna' in cItem['url']:
                 sts, data = self.cm.getPage('http://tvpstream.tvp.pl/')
                 if not sts: return []
                 retList = []
@@ -127,6 +140,16 @@ class IKlubNetApi(CBaseHostClass):
     def getVideoLink(self, cItem):
         printDBG("IKlubNetApi.getVideoLink")
         urlsTab = []
+        
+        if cItem.get('vlc', False):
+            uri = cItem['url']
+            if uri.startswith('http') and uri.split('?')[-1].endswith('.m3u8'):
+                urlsTab.extend( getDirectM3U8Playlist(uri) )
+            elif uri.startswith('rtmp'):
+                urlsTab.append({'name':'[rtmp]', 'url':uri + ' live=1 '})
+            elif uri.startswith('http'):
+                urlsTab.append({'name':'[rtmp]', 'url':urlparser.decorateUrl(uri, {'iptv_livestream':True})})
+            return urlsTab
         
         url = cItem['url']
         nextTitle = 'Podstawowy '
