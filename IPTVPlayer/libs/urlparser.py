@@ -4151,6 +4151,29 @@ class pageParser:
         file = re.sub('"\+[^"]+?\[([0-9]+?)\]\+"', _replace, file+'+"')
         hlsUrl = urlparser.decorateUrl(file, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':'http://p.jwpcdn.com/6/12/jwplayer.flash.swf', 'User-Agent':'Mozilla/5.0'})
         return getDirectM3U8Playlist(hlsUrl)
+        
+    def parserCASTAMPCOMUnpackJS(self, code, name):
+        printDBG(">>>>>>>>>>>>>>>> code start")
+        printDBG(code)
+        printDBG(">>>>>>>>>>>>>>>> code end")
+        try:
+            paramsAlgoObj = compile(code, '', 'exec')
+        except Exception:
+            printExc('unpackJS compile algo code EXCEPTION')
+            return ''
+
+        try:
+            vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote}
+            vLocals = { name: None }
+            exec( code, vGlobals, vLocals )
+        except Exception:
+            printExc('unpackJS exec code EXCEPTION')
+            return ''
+        try:
+            return vLocals[name]
+        except Exception:
+            printExc('decryptPlayerParams EXCEPTION')
+        return ''
 
     def parserCASTAMPCOM(self, baseUrl):
         printDBG("parserCASTAMPCOM baseUrl[%s]" % baseUrl)
@@ -4181,11 +4204,22 @@ class pageParser:
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
         
+        printDBG(data)
+        
         def _getParam(name):
-            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"]+?['"]([^'^"]+?)['"]""" % name)[0] 
+            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"^,]+?['"]([^'^"^,]+?)['"]""" % name)[0] 
         swfUrl = _getParam('flashplayer')
-        url    = _getParam('streamer')
+        url    = self.cm.ph.getSearchGroups(data, """\|(rtmp[^'^"^\|]+?)['"\|]""")[0] 
+        printDBG(">>>>>>>>>>>>>> url[%s]" % url)
         file   = _getParam('file')
+        if file == '':
+            file = self.cm.ph.getSearchGroups(data, """['"]file['"]\s*:([^,]+?),""")[0].strip() 
+            tmp = re.compile('(%s\s*=[^;]+?);' % file).findall(data)
+            code = ''
+            for ins in tmp:
+                code += ins.strip() + '\n'
+            file = self.parserCASTAMPCOMUnpackJS(code, file)
+        
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
             printDBG(url)
