@@ -352,6 +352,8 @@ class TvnVod(CBaseHostClass):
     def listsMainMenu(self):
         for item in TvnVod.SERVICE_MENU_TABLE:
             params = {'name': 'category', 'title': item, 'category': item}
+            if item == 'Wyszukaj':
+                params['search_item'] = True
             self.addDir(params)
     
     def resolveLink(self, url):
@@ -492,7 +494,7 @@ class IPTVHost(CHostBase):
         possibleTypesOfSearch = None
 
         if cItem['type'] == 'category':
-            if cItem['title'] == 'Wyszukaj':
+            if cItem.get('search_item', False):
                 type = CDisplayListItem.TYPE_SEARCH
                 possibleTypesOfSearch = searchTypesOptions
             else:

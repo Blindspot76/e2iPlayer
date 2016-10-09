@@ -1341,7 +1341,7 @@ class IPTVExtMoviePlayer(Screen):
                             printDBG('eplayer3DataAvailable PLAYBACK_INFO not handled')
                 elif "GSTPLAYER_EXTENDED" == key: self.playerBinaryInfo['version'] = obj['version']
                 elif "EPLAYER3_EXTENDED" == key: self.playerBinaryInfo['version'] = obj['version']
-                elif "GST_ERROR" == key: self.showMessage('%s\ncode:%s' % (obj['msg'].encode('utf-8'), obj['code']), MessageBox.TYPE_ERROR, None)
+                elif "GST_ERROR" == key or "FF_ERROR" == key: self.showMessage('%s\ncode:%s' % (obj['msg'].encode('utf-8'), obj['code']), MessageBox.TYPE_ERROR, None)
                 elif "GST_MISSING_PLUGIN" == key: self.showMessage(obj['msg'].encode('utf-8'), MessageBox.TYPE_INFO, None)
 
                         
