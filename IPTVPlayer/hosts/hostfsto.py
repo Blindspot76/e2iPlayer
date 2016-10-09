@@ -53,6 +53,7 @@ def gettytul():
     return 'http://fs.to/'
 
 class FsTo(CBaseHostClass):
+    HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36', 'Accept': 'text/html'}
     DEFAULT_ICON_URL = 'http://inext.ua/wp-content/uploads/2014/04/fsto_Icon-570x380.jpg'
     MAIN_URL = 'http://fs.to/'
     MAIN_CAT_TAB = [
@@ -69,8 +70,8 @@ class FsTo(CBaseHostClass):
         self.sortKeyCache = []
         self.searchCache = {}
         #self.PROXY_GATE = 'http://proxy2974.my-addr.org/myaddrproxy.php'
-        self.PROXY_GATE = 'http://goweb.com.ua/index.php?q={0}&hl=c1'
-        #self.PROXY_GATE = 'http://proxy.yadro.in/browse.php?u={0}&b=4&f=norefer'
+        #self.PROXY_GATE = 'http://goweb.com.ua/index.php?q={0}&hl=c1'
+        self.PROXY_GATE = 'http://proxy.yadro.in/browse.php?u={0}&b=4&f=norefer'
         self.needProxyGate = None
         
     def _getDomain(self, url, withScheme=True):
@@ -91,7 +92,7 @@ class FsTo(CBaseHostClass):
         if 'goweb.com.ua' in url:
             url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
             
-        if 'proxy.yadro.in' in url:
+        if 'proxy.yadro.in' in url or '/browse.php?u=' in url:
             url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?u=(http[^&]+?)&''')[0] )
         
         if url.startswith('//'):
@@ -109,7 +110,8 @@ class FsTo(CBaseHostClass):
             if url == '': return ''
             if self.PROXY_GATE in url: return url
             #return self.PROXY_GATE + '/' + url.replace('://', '/')
-            params['Referer'] = self._getDomain(self.PROXY_GATE)
+            params['header'] = dict(self.HEADER)
+            params['header']['Referer'] = self._getDomain(self.PROXY_GATE)
             return self.PROXY_GATE.format(urllib.quote(url, ''))
         else:
             return url
@@ -436,7 +438,7 @@ class FsTo(CBaseHostClass):
         self.listFolder(cItem)
         
     def listFolder(self, cItem):
-        printDBG('listFolder url[%r]' % cItem['url'])
+        printDBG('listFolder url[%r] folder_id[%s]' % (cItem['url'], cItem.get('folder_id', '')))
         
         url = cItem['url'].format(cItem.get('folder_id', '0'))
         params = {}
@@ -459,8 +461,8 @@ class FsTo(CBaseHostClass):
             if m1 in item:
                 item = m1 + item.split(m1)[-1]
             parentId = self.cm.ph.getSearchGroups(item, "parent_id:[^0-9]+?([0-9]+?)[^0-9]")[0]
-            url = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
-            if parentId != '' and parentId != cItem.get('folder_id', '0') and url.endswith('#'):
+            url = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]*?)"')[0] )
+            if parentId != '' and parentId != cItem.get('folder_id', '0') and ('' == url or url.endswith('#')):
                 tmp = item.split('</a>')
                 params = dict(cItem)
                 params.update({'folder_id':parentId, 'title':self.cleanHtmlStr(tmp[0]), 'desc':self.cleanHtmlStr(tmp[1])})
