@@ -7,7 +7,7 @@
 from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.gledajfilmDecrypter import gledajfilmDecrypter
@@ -6363,18 +6363,30 @@ class pageParser:
         # example video: http://netu.tv/watch_video.php?v=WO4OAYA4K758
     
         printDBG("parseNETUTV url[%s]\n" % url)
+        
         #http://netu.tv/watch_video.php?v=ODM4R872W3S9
         match = re.search("=([0-9a-zA-Z]+?)[^0-9^a-z^A-Z]", url + '|' )
         vid = match.group(1)
         
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
-                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                       'Referer': 'http://hqq.tv/'
+                     }
         #HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36',
         #               'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
         
+        COOKIEFILE = self.COOKIE_PATH + "netu.tv.cookie"
+        # remove old cookie file
+        rm(COOKIEFILE)
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIEFILE}
+        sts, data = self.cm.getPage('http://hqq.tv/player/ip.php?type=json', params)
+        printDBG("=================================================================")
+        printDBG(data)
+        printDBG("=================================================================")
+        
         #http://hqq.tv/player/hash.php?hash=229221213221211228239245206208212229194271217271255
         if 'hash.php?hash' in url:
-            sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+            sts, data = self.cm.getPage(url, params)
             if not sts: return False
             data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
             vid = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % 'vid', data).group(1)
@@ -6383,7 +6395,7 @@ class pageParser:
         referer = strwithmeta(url).meta.get('Referer', playerUrl)
         
         #HTTP_HEADER['Referer'] = url
-        sts, data = self.cm.getPage(playerUrl, {'header' : HTTP_HEADER})
+        sts, data = self.cm.getPage(playerUrl, params)
         data = base64.b64decode(re.search('base64\,([^"]+?)"', data).group(1))
         #printDBG(data)
         l01 = re.search("='([^']+?)'", data).group(1)
@@ -6397,12 +6409,15 @@ class pageParser:
         post_data = {}
         for idx in range(len(data)):
             post_data[ data[idx][0] ] = data[idx][1]
-            
+        
         secPlayerUrl = "http://hqq.tv/sec/player/embed_player.php?vid=%s&at=%s&autoplayed=%s&referer=on&http_referer=%s&pass=" % (vid, post_data.get('at', ''),  post_data.get('autoplayed', ''), urllib.quote(referer))
         HTTP_HEADER['Referer'] = referer
-        sts, data = self.cm.getPage(secPlayerUrl, {'header' : HTTP_HEADER}, post_data)
+        sts, data = self.cm.getPage(secPlayerUrl, params, post_data)
         
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
+        printDBG("=================================================================")
+        printDBG(data)
+        printDBG("=================================================================")
         #CParsingHelper.writeToFile('/mnt/new2/test.html', data)
         def getUtf8Str(st):
             idx = 0
@@ -6434,9 +6449,13 @@ class pageParser:
                 if '"' not in val:
                     v = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % val, data).group(1)
                     if '' != val: val = v
-                getParams[key] = val
+                if key == 'adb':
+                    val = val.replace('1', '0')
+                getParams[key] = val.replace('"', '').strip()
             playerUrl = 'http://hqq.tv/player/get_md5.php?' + urllib.urlencode(getParams)
-            sts, data = self.cm.getPage(playerUrl)
+            params['header']['X-Requested-With'] = 'XMLHttpRequest'
+            sts, data = self.cm.getPage(playerUrl, params)
+            printDBG(data)
             if not sts: return False
             data = byteify( json.loads(data) )
             file_url = data['html5_file']
@@ -6445,9 +6464,11 @@ class pageParser:
         printDBG(data['file'])
         if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
         #printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % file_url)
-        if file_url.startswith('http'): return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
-        #'Range':'bytes=0-'
-        return False     
+        if file_url.startswith('http'): 
+            file_url = urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
+            if file_url.split('?')[0].endswith('.m3u8'):
+                return getDirectM3U8Playlist(file_url, False)
+        return file_url     
        
        
     '''
