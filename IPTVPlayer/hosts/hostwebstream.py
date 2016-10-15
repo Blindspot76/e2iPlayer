@@ -126,7 +126,7 @@ class HasBahCa(CBaseHostClass):
                         #{'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
                         {'alias_id':'iptv_matzgpl',            'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',                'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
-                        {'alias_id':'matzg2',                  'name': 'm3u',                 'title': 'Pogoda METEOROGRAMY matzg',         'url': 'http://matzg2.prv.pl/Pogoda_METEOROGRAMY.m3u',                       'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
+                        {'alias_id':'meteo.pl',                'name': 'meteo.pl',            'title': 'Pogoda PL - meteorogramy',          'url': 'http://meteo.pl/',                                                   'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
                         {'alias_id':'webcamera.pl',            'name': 'webcamera.pl',        'title': 'WebCamera PL',                      'url': 'http://www.webcamera.pl/',                                           'icon': 'http://www.webcamera.pl/img/logo80x80.png'}, \
                         {'alias_id':'skylinewebcams.com',      'name': 'skylinewebcams.com',  'title': 'SkyLineWebCams.com',                'url': 'https://www.skylinewebcams.com/',                                    'icon': 'https://cdn.skylinewebcams.com/skylinewebcams.png'}, \
                         {'alias_id':'livespotting.tv',         'name': 'livespotting.tv',     'title': 'Livespotting.tv',                   'url': 'http://livespotting.tv/',                                            'icon': 'http://livespotting.tv/img/ls_logo.png'}, \
@@ -166,6 +166,7 @@ class HasBahCa(CBaseHostClass):
         self.purecastNetApi    = None
         self.telewizjadaNetApi = None
         self.iKlubNetApi       = None
+        self.meteoPLApi        = None
         self.liveStreamTvApi   = None
         self.goldvodTvApi      = None
         self.showsportTvApi    = None
@@ -219,6 +220,25 @@ class HasBahCa(CBaseHostClass):
         
     def playVideo(self, params):
         params['type'] = 'video'
+        self.currList.append(params)
+        return
+        
+    def addVideo(self, params):
+        params['type'] = 'video'
+        self.currList.append(params)
+        return
+        
+    def addAudio(self, params):
+        params['type'] = 'audio'
+        self.currList.append(params)
+        return
+    
+    def addPicture(self, params):
+        params['type'] = 'picture'
+        self.currList.append(params)
+        return
+        
+    def addItem(self, params):
         self.currList.append(params)
         return
 
@@ -414,7 +434,7 @@ class HasBahCa(CBaseHostClass):
                            'seekable' : item['seekable'],
                            'icon'     : self.__getFilmOnIconUrl(item)
                            }
-                self.playVideo(params)
+                self.addVideo(params)
             except Exception:
                 printExc()
     
@@ -476,7 +496,7 @@ class HasBahCa(CBaseHostClass):
                             printExc()
                     params = {'title': title, 'url': itemUrl, 'icon':icon, 'desc':desc}
                     
-                    self.playVideo(params)
+                    self.addVideo(params)
                     title = ''
         
     def getWagasWorldList(self, cItem):
@@ -488,7 +508,7 @@ class HasBahCa(CBaseHostClass):
             params = dict(item)
             params.update({'name':'wagasworld.com'})
             if 'video' == item['type']:
-                self.playVideo(params)
+                self.addVideo(params)
             else:
                 self.addDir(params)
             
@@ -503,7 +523,7 @@ class HasBahCa(CBaseHostClass):
         for idx in range(len(data)):
             params = dict(cItem)
             params.update({'title':channels.get(idx, 'Unknown'), 'provider':'elevensports', 'url':data[idx].replace('~', '=')})
-            self.playVideo(params)
+            self.addVideo(params)
     
     def getOthersLinks(self, cItem):
         urlTab = []
@@ -526,7 +546,7 @@ class HasBahCa(CBaseHostClass):
             tmpList = self.weebTvApi.getChannelsList(url)
             for item in tmpList: 
                 item.update({'name':'weeb.tv'})
-                self.playVideo(item)
+                self.addVideo(item)
             
     def getWeebTvLink(self, url):
         printDBG("getWeebTvLink url[%s]" % url)
@@ -549,7 +569,7 @@ class HasBahCa(CBaseHostClass):
             if wc_cat == None:
                 params = dict(cItem)
                 params.update({'title':'TV', 'url':'https://www.youtube.com/embed/oG5v9EBTJug'})
-                self.playVideo(params)
+                self.addVideo(params)
                 params = dict(cItem)
                 params.update({'title':'Polecane kamery', 'wc_cat':'list_videos'})
                 self.addDir(params)
@@ -585,7 +605,7 @@ class HasBahCa(CBaseHostClass):
                         icon  = self.cm.ph.getSearchGroups(item, """src=['"]([^'^"]+?\.jpg[^'^"]*?)['"]""")[0]
                         params = dict(cItem)
                         params.update({'title':title, 'url':__wcFullUrl(url), 'icon':__wcFullUrl(icon)})
-                        self.playVideo(params)
+                        self.addVideo(params)
                        
     def getWebCameraLink(self, videoUrl):
         printDBG("getWebCameraLink start")
@@ -610,7 +630,7 @@ class HasBahCa(CBaseHostClass):
                            'url'        : item['id'],
                            'icon'       : item['thumbnail'],
                            }
-                self.playVideo(params)
+                self.addVideo(params)
             except Exception:
                 printExc()
         
@@ -639,7 +659,7 @@ class HasBahCa(CBaseHostClass):
             self.ustvnowApi = UstvnowApi()
         tmpList = self.ustvnowApi.getChannelsList(cItem)
         for item in tmpList:
-            self.playVideo(item)
+            self.addVideo(item)
         
     def getUstvnowLink(self, cItem):
         printDBG("getUstvnowLink start")
@@ -654,7 +674,7 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.purecastNetApi.getChannelsList(cItem)
         for item in tmpList:
             if 'video' == item['type']:
-                self.playVideo(item) 
+                self.addVideo(item) 
             else:
                 self.addDir(item)
         
@@ -670,7 +690,7 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.telewizjadaNetApi.getChannelsList(cItem)
         for item in tmpList:
             if 'video' == item['type']:
-                self.playVideo(item) 
+                self.addVideo(item) 
             else:
                 self.addDir(item)
         
@@ -686,13 +706,28 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.iKlubNetApi.getList(cItem)
         for item in tmpList:
             if 'video' == item['type']:
-                self.playVideo(item) 
+                self.addVideo(item) 
             else:
                 self.addDir(item)
         
     def getIKlubNetLink(self, cItem):
         printDBG("getIKlubNetLink start")
         urlsTab = self.iKlubNetApi.getVideoLink(cItem)
+        return urlsTab
+        
+    def getMeteoPLList(self, cItem):
+        printDBG("getMeteoPLApiList start")
+        if None == self.meteoPLApi:
+            # layzy import
+            from Plugins.Extensions.IPTVPlayer.libs.meteopl import MeteoPLApi
+            self.meteoPLApi = MeteoPLApi()
+        tmpList = self.meteoPLApi.getList(cItem)
+        for item in tmpList:
+            self.addItem(item) 
+        
+    def getMeteoPLLink(self, cItem):
+        printDBG("getMeteoPLLink start")
+        urlsTab = self.meteoPLApi.getVideoLink(cItem)
         return urlsTab
         
     def getEdemTvList(self, cItem):
@@ -702,7 +737,7 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.edemTvApi.getChannelsList(cItem)
         for item in tmpList:
             if 'video' == item['type']:
-                self.playVideo(item) 
+                self.addVideo(item) 
             else:
                 self.addDir(item)
         
@@ -718,7 +753,7 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.wkylinewebcamsComApi.getChannelsList(cItem)
         for item in tmpList:
             if 'video' == item.get('type', ''):
-                self.playVideo(item) 
+                self.addVideo(item) 
             else:
                 self.addDir(item)
         
@@ -733,7 +768,7 @@ class HasBahCa(CBaseHostClass):
             self.livespottingTvApi = LivespottingTvApi()
         tmpList = self.livespottingTvApi.getChannelsList(cItem)
         for item in tmpList:
-            self.playVideo(item) 
+            self.addVideo(item) 
         
     def getLiveStreamTvList(self, cItem):
         printDBG("getLiveStreamTvList start")
@@ -741,7 +776,7 @@ class HasBahCa(CBaseHostClass):
             self.liveStreamTvApi = LiveStreamTvApi()
         tmpList = self.liveStreamTvApi.getChannelsList(cItem)
         for item in tmpList:
-            self.playVideo(item) 
+            self.addVideo(item) 
         
     def getLiveStreamTvLink(self, cItem):
         printDBG("getLiveStreamTvLink start")
@@ -754,7 +789,7 @@ class HasBahCa(CBaseHostClass):
             self.goldvodTvApi = GoldVodTVApi()
         tmpList = self.goldvodTvApi.getChannelsList(cItem)
         for item in tmpList:
-            self.playVideo(item) 
+            self.addVideo(item) 
         
     def getGoldVodTvLink(self, cItem):
         printDBG("getGoldVodTvLink start")
@@ -768,7 +803,7 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.showsportTvApi.getChannelsList(cItem)
         for item in tmpList:
             if 'video' == item.get('type', ''):
-                self.playVideo(item) 
+                self.addVideo(item) 
             else:
                 self.addDir(item)
         
@@ -806,7 +841,7 @@ class HasBahCa(CBaseHostClass):
             params['title'] = self.cleanHtmlStr(item)
             if len(params['icon']) and not params['icon'].startswith('http'): params['icon'] = 'http://prognoza.pogody.tv/'+params['icon']
             if len(params['url']) and not params['url'].startswith('http'): params['url'] = 'http://prognoza.pogody.tv/'+params['url']
-            self.playVideo(params)
+            self.addVideo(params)
             
     def prognozaPogodyLink(self, url):
         printDBG("prognozaPogodyLink url[%r]" % url)
@@ -883,6 +918,9 @@ class HasBahCa(CBaseHostClass):
     #iklub.net items
         elif name == 'iklub.net':
             self.getIKlubNetList(self.currItem)
+    #meteo.pl items
+        elif name == 'meteo.pl':
+            self.getMeteoPLList(self.currItem)
     #edem.tv items
         elif name == 'edem.tv':
             self.getEdemTvList(self.currItem)
@@ -928,7 +966,7 @@ class IPTVHost(CHostBase):
             printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
             return RetHost(RetHost.ERROR, value = [])
         
-        if self.host.currList[Index]["type"] != 'video':
+        if self.host.currList[Index]["type"] not in ['video', 'audio', 'picture']:
             printDBG( "ERROR getLinksForVideo - current item has wrong type" )
             return RetHost(RetHost.ERROR, value = [])
 
@@ -972,6 +1010,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getTelewizjadaNetLink(cItem)
         elif name == 'iklub.net':
             urlList = self.host.getIKlubNetLink(cItem)
+        elif name == 'meteo.pl':
+            urlList = self.host.getMeteoPLLink(cItem)
         elif name == 'edem.tv':
             urlList = self.host.getEdemTvLink(cItem)
         elif name == 'skylinewebcams.com':
@@ -1042,6 +1082,10 @@ class IPTVHost(CHostBase):
                     type = CDisplayListItem.TYPE_VIDEO
                 if '' != url:
                     hostLinks.append(CUrlItem("Link", url, 1))
+            elif cItem['type'] == 'picture':
+                type = CDisplayListItem.TYPE_PICTURE
+                url = cItem.get('url', '')
+                if '' != url: hostLinks.append(CUrlItem("Link", url, 1))
                 
             title       =  self.host._cleanHtmlStr( cItem.get('title', '') )
             description =  self.host._cleanHtmlStr( cItem.get('desc', '') )
