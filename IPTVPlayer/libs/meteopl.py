@@ -35,9 +35,11 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.meteopl_locality = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry("Miejscowość:", config.plugins.iptvplayer.meteopl_locality))
     return optionList
     
 ###################################################
@@ -68,6 +70,14 @@ class MeteoPLApi(CBaseHostClass):
         channelsTab = []
         initList = cItem.get('init_list', True)
         if initList:
+            if '' != config.plugins.iptvplayer.meteopl_locality.value:
+                try:
+                    params = dict(cItem)
+                    params.update({'init_list':False, 'meteo_cat':'name', 'meteo_name':config.plugins.iptvplayer.meteopl_locality.value.decode('utf-8').encode('iso-8859-2'), 'url':self.getFullUrl('um/php/gpp/next.php'), 'title':config.plugins.iptvplayer.meteopl_locality.value})
+                    channelsTab.append(params)
+                except Exception:
+                    printExc()
+                
             sts, data = self.getPage(self.getFullUrl('um/php/gpp/search.php'))
             if not sts: return []
             data = self.cm.ph.getDataBeetwenMarkers(data, '<select name=woj', '</select>')[1]
@@ -76,12 +86,17 @@ class MeteoPLApi(CBaseHostClass):
                 cat = self.cm.ph.getSearchGroups(item, 'value=([^\s^>]+?)[\s>]')[0].replace('"', '').replace("'", "")
                 title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '>([^<]+?)<')[0]).strip()
                 params = dict(cItem)
-                params.update({'init_list':False, 'meteo_cat':'woj', 'woj':cat, 'url':self.getFullUrl('um/php/gpp/next.php'), 'title':title})
+                params.update({'init_list':False, 'meteo_cat':'woj', 'meteo_woj':cat, 'url':self.getFullUrl('um/php/gpp/next.php'), 'title':title})
                 channelsTab.append(params)
         else:
+            post_data = None
             cat = cItem.get('meteo_cat', '')
             if 'woj' == cat:
-                sts, data = self.getPage(cItem['url'], post_data={'woj':cItem['woj'], 'litera':''})
+                post_data={'woj':cItem['meteo_woj'], 'litera':''}
+            elif 'name' == cat:
+                post_data={'name':cItem['meteo_name']}
+            if post_data != None:
+                sts, data = self.getPage(cItem['url'], post_data=post_data)
                 if not sts: return []
                 data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>', withMarkers=True, caseSensitive=False)
                 for item in data:

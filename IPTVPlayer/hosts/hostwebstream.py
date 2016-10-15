@@ -19,6 +19,7 @@ from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow           import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
 #from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet    import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.iklubnet          import IKlubNetApi, GetConfigList as IKlubNet_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.meteopl           import MeteoPLApi, GetConfigList as MeteoPL_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.edemtv            import EdemTvApi, GetConfigList as EdemTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livestreamtv      import LiveStreamTvApi 
 from Plugins.Extensions.IPTVPlayer.libs.skylinewebcamscom import WkylinewebcamsComApi, GetConfigList as WkylinewebcamsCom_GetConfigList
@@ -71,6 +72,10 @@ def GetConfigList():
     
     optionList.append(getConfigListEntry("-----------------iklub.net------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( IKlubNet_GetConfigList() )
+    except Exception: printExc()
+    
+    optionList.append(getConfigListEntry("------------------meteo.pl------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( MeteoPL_GetConfigList() )
     except Exception: printExc()
     
     optionList.append(getConfigListEntry("-------------------WeebTV-------------------", config.plugins.iptvplayer.fake_separator))
@@ -718,8 +723,6 @@ class HasBahCa(CBaseHostClass):
     def getMeteoPLList(self, cItem):
         printDBG("getMeteoPLApiList start")
         if None == self.meteoPLApi:
-            # layzy import
-            from Plugins.Extensions.IPTVPlayer.libs.meteopl import MeteoPLApi
             self.meteoPLApi = MeteoPLApi()
         tmpList = self.meteoPLApi.getList(cItem)
         for item in tmpList:
