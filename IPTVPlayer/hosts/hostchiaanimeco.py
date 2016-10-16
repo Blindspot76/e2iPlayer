@@ -253,15 +253,19 @@ class ChiaanimeCO(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '#player_load', 'success', False)[1]
-        url       = self.cm.ph.getSearchGroups(data, '''url: ['"]([^'^"]+?)['"]''')[0]
-        post_data = self.cm.ph.getSearchGroups(data, '''data: ['"]([^"^']+?)['"]''')[0]
-        
-        sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
-        if not sts: return []
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '#player_load', 'success', False)[1]
+        url       = self.cm.ph.getSearchGroups(tmp, '''url: ['"]([^'^"]+?)['"]''')[0]
+        if url != '':
+            post_data = self.cm.ph.getSearchGroups(tmp, '''data: ['"]([^"^']+?)['"]''')[0]
+            
+            sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
+            if not sts: return []
+        else:
+            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
+            sts, data = self.getPage(url)
+            if not sts: return []
         
         printDBG(data)
-        
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'Download', '<script ', False)[1]
         tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
         for item in tmp:
@@ -279,7 +283,7 @@ class ChiaanimeCO(CBaseHostClass):
         printDBG("ChiaanimeCO.getVideoLinks [%s]" % videoUrl)
         urlTab = []
         
-        if '/vload/' in videoUrl or 'redirector.googlevideo.com' in videoUrl:
+        if '/vload/' in videoUrl or 'redirector.googlevideo.com' in videoUrl or 'token=' in videoUrl:
             header = {'Referer':videoUrl, 'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
             params= {'return_data':False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':header}
             try:
