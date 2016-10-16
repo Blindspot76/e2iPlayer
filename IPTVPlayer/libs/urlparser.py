@@ -1048,9 +1048,23 @@ class pageParser:
                 except Exception: pass
                 #printDBG(tmpData)
             tmpData += pageData
-                
-            data = CParsingHelper.getDataBeetwenReMarkers(tmpData, re.compile('''modes['"]?[\s]*:'''), re.compile(']'), False)[1]
-            data = re.compile("""file:[\s]*['"]([^'^"]+?)['"]""").findall(data)
+            
+            tmp = self.cm.ph.getDataBeetwenMarkers(tmpData, "player_data='", "'", False)[1].strip()
+            #printDBG("===========================================")
+            #printDBG(tmp)
+            #printDBG("===========================================")
+            try:
+                if tmp != '':
+                    tmp = byteify(json.loads(tmp))
+                    tmp = tmp['video']['file']
+            except Exception:
+                tmp = ''
+                printExc()
+            
+            if tmp == '':
+                data = CParsingHelper.getDataBeetwenReMarkers(tmpData, re.compile('''modes['"]?[\s]*:'''), re.compile(']'), False)[1]
+                data = re.compile("""file:[\s]*['"]([^'^"]+?)['"]""").findall(data)
+            else: data = [tmp]
             if 0 < len(data) and data[0].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' flv', 'url':_decorateUrl(data[0], 'cda.pl', urlItem['url']) } )
             if 1 < len(data) and data[1].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data[1], 'cda.pl', urlItem['url']) } )
             if 0 == len(data):
