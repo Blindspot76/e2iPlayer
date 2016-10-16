@@ -1239,12 +1239,24 @@ class pageParser:
             if not sts: return []
         
         vidTab = []
-        player_v5 = self.cm.ph.getSearchGroups(data, r'playerV5\s*=\s*dmp\.create\([^,]+?,\s*({.+?})\);')[0]
-        if '' != player_v5:
-            player_v5 = byteify(json.loads(player_v5))
-            printDBG(player_v5)
-            player_v5 = player_v5['metadata']['qualities']
-            for quality, media_list in player_v5.items():
+        playerConfig = None
+        
+        tmp = self.cm.ph.getSearchGroups(data, r'playerV5\s*=\s*dmp\.create\([^,]+?,\s*({.+?})\);')[0]
+        try:
+            playerConfig = byteify(json.loads(tmp))['metadata']['qualities']
+        except Exception:
+            pass
+        if playerConfig == None:
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>ALA>>>>>>>>>>>>>>>>>ALA")
+            tmp = self.cm.ph.getSearchGroups(data, r'var\s+config\s*=\s*({.+?});')[0]
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>ALA>>>>>>>>>>>>>>>>>ALA [%s]" % tmp)
+            try:
+                playerConfig = byteify(json.loads(tmp))['metadata']['qualities']
+            except Exception:
+                pass
+            
+        if None != playerConfig:
+            for quality, media_list in playerConfig.items():
                 for media in media_list:
                     media_url = media.get('url')
                     if not media_url:
