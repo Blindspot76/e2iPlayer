@@ -1247,9 +1247,7 @@ class pageParser:
         except Exception:
             pass
         if playerConfig == None:
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>ALA>>>>>>>>>>>>>>>>>ALA")
             tmp = self.cm.ph.getSearchGroups(data, r'var\s+config\s*=\s*({.+?});')[0]
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>ALA>>>>>>>>>>>>>>>>>ALA [%s]" % tmp)
             try:
                 playerConfig = byteify(json.loads(tmp))['metadata']['qualities']
             except Exception:
@@ -4006,12 +4004,16 @@ class pageParser:
         BEFORE = '{swf.addParam(param[0], param[1]);});\n'
         AFTER = '.forEach(function(variable) {swf.addVariable(variable[0], variable[1]);});'
         m = self.cm.ph.getDataBeetwenMarkers(data, BEFORE, AFTER, False)[1]
-        data = dict(json.loads(m))
-        params_raw = urllib.unquote(data['params'])
+        tmp = dict(json.loads(m))
+        params_raw = urllib.unquote(tmp['params'])
         params = byteify( json.loads(params_raw) )
 
+        
+        printDBG(params)
         urlsTab = []
         for format_id, f in params['video_data'].items():
+            if f and isinstance(f, dict):
+                f = [f]
             if not f or not isinstance(f, list):
                 continue
             for quality in ('sd', 'hd'):
