@@ -80,7 +80,7 @@ class TvnVod(CBaseHostClass):
     
     def __init__(self):
         printDBG("TvnVod.__init__")
-        CBaseHostClass.__init__(self, {'history':'TvnVod', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
+        CBaseHostClass.__init__(self, {'history':'TvnVod', 'history_store_type':True, 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
         self.itemsPerPage = 30 # config.plugins.iptvplayer.tvp_itemsperpage.value
         
         self.platforms = {
@@ -334,16 +334,17 @@ class TvnVod(CBaseHostClass):
             printExc()
 
         
-    def listSearchResults(self, pattern, searchType):
-        printDBG("TvnVod.listSearchResults pattern[%s], searchType[%s]" % (pattern, searchType))
-        params = { 'id'       : 0,
-                   'title'    : '',
-                   'desc'     : '',
-                   'icon'     : '',
-                   'category' : 'search',
-                   'pattern'  : pattern,
-                   'season'   : 0,
-                 }
+    def listSearchResult(self, cItem, pattern, searchType):
+        printDBG("TvnVod.listSearchResult pattern[%s], searchType[%s]" % (pattern, searchType))
+        params = dict(cItem)
+        params.update({ 'id'       : 0,
+                       'title'    : '',
+                       'desc'     : '',
+                       'icon'     : '',
+                       'category' : 'search',
+                       'pattern'  : pattern,
+                       'season'   : 0,
+                     })
         params2 = dict(params)
         params2['search_category'] = True
         self.listsCategories(params2)
@@ -353,7 +354,10 @@ class TvnVod(CBaseHostClass):
         for item in TvnVod.SERVICE_MENU_TABLE:
             params = {'name': 'category', 'title': item, 'category': item}
             if item == 'Wyszukaj':
+                params['category'] = 'search'
                 params['search_item'] = True
+            if item == 'Historia wyszukiwania':
+                params['category'] = 'search_history'
             self.addDir(params)
     
     def resolveLink(self, url):
@@ -446,18 +450,20 @@ class TvnVod(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listsMainMenu()           
-    #WYSZUKAJ
-        elif category == "Wyszukaj":
+            self.listsMainMenu()
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
             pattern = urllib.quote_plus(searchPattern)
-            printDBG("Wyszukaj: " + pattern)
-            self.listSearchResults(pattern, searchType)
-    #HISTORIA WYSZUKIWANIA
-        elif category == "Historia wyszukiwania":
-            self.listsHistory()
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, pattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
     #KATEGORIE
         else:
             self.listsCategories(self.currItem)
+        CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
 
