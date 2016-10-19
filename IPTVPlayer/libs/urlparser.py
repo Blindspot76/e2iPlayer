@@ -5300,9 +5300,14 @@ class pageParser:
                 
         # start https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         def decode(encoded):
-            for octc in (c for c in re.findall(r'\\(\d{2,3})', encoded)):
-                encoded = encoded.replace(r'\%s' % octc, chr(int(octc, 8)))
-            return encoded.decode('utf8')
+            tab = encoded.split('\\')
+            ret = ''
+            for item in tab:
+                try: ret += chr(int(item, 8))
+                except Exception: 
+                    ret += item
+            return ret
+        
         def base10toN(num,n):
             num_rep={10:'a', 11:'b',12:'c',13:'d',14:'e',15:'f',16:'g',17:'h',18:'i',19:'j',20:'k',21:'l',22:'m',23:'n',24:'o',25:'p',26:'q',27:'r',28:'s',29:'t',30:'u',31:'v',32:'w',33:'x',34:'y',35:'z'}
             new_num_string=''
@@ -5321,12 +5326,12 @@ class pageParser:
         def decodeOpenLoad(aastring):
             # decodeOpenLoad made by mortael, please leave this line for proper credit :)
             #aastring = re.search(r"<video(?:.|\s)*?<script\s[^>]*?>((?:.|\s)*?)</script", html, re.DOTALL | re.IGNORECASE).group(1)
-
+    
             aastring = aastring.replace("(ﾟДﾟ)[ﾟεﾟ]+(oﾟｰﾟo)+ ((c^_^o)-(c^_^o))+ (-~0)+ (ﾟДﾟ) ['c']+ (-~-~1)+","")
             aastring = aastring.replace("((ﾟｰﾟ) + (ﾟｰﾟ) + (ﾟΘﾟ))", "9")
             aastring = aastring.replace("((ﾟｰﾟ) + (ﾟｰﾟ))","8")
             aastring = aastring.replace("((ﾟｰﾟ) + (o^_^o))","7")
-            aastring = aastring.replace("((o^_^o) +(o^_^o))","6")
+            aastring = aastring.replace("((c^_^o)-(c^_^o))","0")
             aastring = aastring.replace("((ﾟｰﾟ) + (ﾟΘﾟ))","5")
             aastring = aastring.replace("(ﾟｰﾟ)","4")
             aastring = aastring.replace("((o^_^o) - (ﾟΘﾟ))","2")
@@ -5347,7 +5352,7 @@ class pageParser:
             aastring = aastring.replace("(0-0)","0")
             
             aastring = aastring.replace("(ﾟДﾟ).ﾟωﾟﾉ","10")
-            aastring = aastring.replace("ﾟДﾟ).ﾟΘﾟﾉ","11")
+            aastring = aastring.replace("(ﾟДﾟ).ﾟΘﾟﾉ","11")
             aastring = aastring.replace("(ﾟДﾟ)[\'c\']","12")
             aastring = aastring.replace("(ﾟДﾟ).ﾟｰﾟﾉ","13")
             aastring = aastring.replace("(ﾟДﾟ).ﾟДﾟﾉ","14")
@@ -5360,7 +5365,7 @@ class pageParser:
 
             decodestring = decode(decodestring)
             decodestring = decodestring.replace("\\/","/")
-
+            
             if 'toString' in decodestring:
                 base = re.compile(r"toString\(a\+(\d+)", re.DOTALL | re.IGNORECASE).findall(decodestring)[0]
                 base = int(base)
@@ -5372,11 +5377,7 @@ class pageParser:
                     decodestring = decodestring.replace(repl,repl2)
                 decodestring = decodestring.replace("+","")
                 decodestring = decodestring.replace("\"","")
-                return decodestring
-            else:
-                return decodestring
-            return videourl
-        # end https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
+            return decodestring
         preDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'a="0%', '{}', withMarkers=True, caseSensitive=False)
         for item in preDataTab:
             try:
@@ -5404,10 +5405,12 @@ class pageParser:
         tmp = ''
         encodedData = self.cm.ph.getAllItemsBeetwenMarkers(data, 'ﾟωﾟ', '</script>', withMarkers=False, caseSensitive=False)
         for item in encodedData:
-            try:
-                tmp += decodeOpenLoad(item)
-            except Exception:
-                printExc()
+            tmpEncodedData = item.split('┻━┻')
+            for tmpItem in tmpEncodedData:
+                try:
+                    tmp += decodeOpenLoad(tmpItem)
+                except Exception:
+                    printExc()
         
         tmp2 = ''
         encodedData = self.cm.ph.getAllItemsBeetwenMarkers(data, "j=~[];", "())();", withMarkers=True, caseSensitive=False)
@@ -5418,27 +5421,35 @@ class pageParser:
             except Exception:
                 printExc()
         
+        printDBG('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')
         printDBG(tmp)
+        printDBG('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
         printDBG(tmp2)
+        printDBG('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC')
         
         # new algo
-        varName = self.cm.ph.getSearchGroups(tmp2, '''=\s*([^.^;^{^}]+)\s*\.charCodeAt''', ignoreCase=True)[0]
+        varName = self.cm.ph.getSearchGroups(tmp2+tmp, '''=\s*([^.^;^{^}]+)\s*\.charCodeAt''', ignoreCase=True)[0]
         printDBG('varName: [%s]' % varName)
-        hiddenUrlName = self.cm.ph.getSearchGroups(tmp2, '''var\s*%s\s*=[^"^;]+?"\#([^"]+?)"\)\.text\(\)''' % varName, ignoreCase=True)[0]
+        hiddenUrlName = self.cm.ph.getSearchGroups(tmp2+tmp, '''var\s*%s\s*=[^"^;]+?"\#([^"]+?)"\)\.text\(\)''' % varName, ignoreCase=True)[0]
         linkData = self.cm.ph.getSearchGroups(data, '''<span[^>]+?id="%s"[^>]*?>([^<]+?)<\/span>''' % hiddenUrlName, ignoreCase=True)[0].strip()
         printDBG("=======================linkData=============================")
         printDBG(linkData)
         printDBG("============================================================")
         linkData = clean_html(linkData).strip()
         res = ""
+        magic = ord(linkData[-1])
         for item in linkData:
             c = ord(item)
+            if c == magic:
+                c -= 1
+            elif c == magic - 1:
+                c += 1
             if c >= 33 and c <= 126:
                 c = ((c + 14) % 94) + 33
             res += chr(c)
         
         videoUrl = ''
-        num = self.cm.ph.getSearchGroups(tmp2, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
+        num = self.cm.ph.getSearchGroups(tmp2+tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
         if '' == num:
             for tmpNum in [1, 2, 3]:
                 try:
