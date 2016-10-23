@@ -14,6 +14,7 @@ hostchomikuj
 hostcinemay
 hostcrtankocom
 hostdailymotion
+_hostdancetrippin
 hostdancetrippin
 hostdardarkomcom
 hostdarshowcom
@@ -37,9 +38,9 @@ hostgreekdocumentaries3
 hosthdfilmetv
 hosthdfilmstreamingcom
 hosthdkinomir
-hosthdprofili
 hosthitboxtv
 hosthoofootcom
+hostiitvpl
 hostipla
 hostiptak
 hostkabarety
