@@ -1190,16 +1190,20 @@ class pageParser:
         else:
             return False
 
-    def parserRAPIDVIDEO(self,url):
-        query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-        link = self.cm.getURLRequestData(query_data)
-        #"jw_set('http://176.9.7.56:8080/v/bc71afa327b1351b2d9abe5827aa97dc/240/130219976TEBYU50H0NN.flv','240p','176.9.7.56');"
-        match = re.compile("jw_set\('(.+?)','(.+?)','.+?'\);").findall(link)
-        if len(match) > 0:
-            return match[0][0]
-        else:
-            return False
-
+    def parserRAPIDVIDEO(self, baseUrl):
+        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|view)[/-]([A-Za-z0-9]{8})')[0]
+        sts, data = self.cm.getPage('http://www.rapidvideo.com/view/'+video_id)
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
+        data = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
+        data = byteify(json.loads(data+']'))
+        retTab = []
+        for item in data:
+            try: retTab.append({'name':'rapidvideo.com', 'url':item['file']})
+            except Exception: pass
+        return retTab
+        
     def parserVIDEOSLASHER(self, url):
         self.COOKIEFILE = self.COOKIE_PATH + "videoslasher.cookie"
         query_data = { 'url': url.replace('embed', 'video'), 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
