@@ -60,7 +60,13 @@ class MoonwalkParser():
         access_key = self.cm.ph.getSearchGroups(data, "access_key: '([^']+?)'")[0]
         mw_pid = self.cm.ph.getSearchGroups(data, "mw_pid: ([0-9]+?)[^0-9]")[0]
         mw_did = self.cm.ph.getSearchGroups(data, "mw_did: ([0-9]+?)[^0-9]")[0]
+        mw_domain_id = self.cm.ph.getSearchGroups(data, "mw_domain_id: ([0-9]+?)[^0-9]")[0]
         
+        #mw_pid: 2502,
+        #mw_domain_id: 355795,
+        printDBG("=======================================================================")
+        printDBG(data)
+        printDBG("=======================================================================")
         sec_header['Encoding-Pool'] = base64.b64encode(contentData.replace('|', ''))
         sec_header['X-CSRF-Token'] = csrfToken
         sec_header['X-Requested-With'] = 'XMLHttpRequest'
@@ -73,7 +79,8 @@ class MoonwalkParser():
         if 'access_key:' in data: post_data['access_key'] = access_key
         if 'mw_pid:' in data: post_data['mw_pid'] = mw_pid
         if 'mw_did:' in data: post_data['mw_did'] = mw_did
-
+        if 'mw_domain_id:' in data: post_data['mw_domain_id'] = mw_domain_id        
+        
         return sec_header, post_data
 
     def getDirectLinks(self, url):
