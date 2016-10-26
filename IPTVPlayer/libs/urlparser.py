@@ -70,6 +70,15 @@ class urlparser:
         self.cm = common()
         self.pp = pageParser()
         self.setHostsMap()
+        
+    @staticmethod
+    def getDomain(url, onlyDomain=True):
+        parsed_uri = urlparse( url )
+        if onlyDomain:
+            domain = '{uri.netloc}'.format(uri=parsed_uri)
+        else:
+            domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+        return domain
     
     @staticmethod
     def decorateUrl(url, metaParams={}):
@@ -166,6 +175,9 @@ class urlparser:
                        'youwatch.org':         self.pp.parserYOUWATCH      ,
                        'played.to':            self.pp.parserPLAYEDTO      ,
                        'playedto.me':          self.pp.parserPLAYEDTO      ,
+                       'watchers.to':          self.pp.parserWATCHERSTO    ,
+                       'streame.net':          self.pp.parserSTREAMENET    ,
+                       'estream.to':           self.pp.parserESTREAMTO     ,
                        'videomega.tv':         self.pp.parserVIDEOMEGA     ,
                        'up2stream.com':        self.pp.parserVIDEOMEGA     ,
                        'vidto.me':             self.pp.parserVIDTO         ,
@@ -745,6 +757,24 @@ class pageParser:
         
     def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']', contain=''):
         linksTab = []
+        
+        def _isSmil(data):
+            return data.split('?')[0].endswith('.smil')
+        
+        def _getSmilUrl(url):
+            if _isSmil(url):
+                SWF_URL=''
+                # get stream link
+                sts, data = self.cm.getPage(url)
+                if sts:
+                    base = self.cm.ph.getSearchGroups(data, 'base="([^"]+?)"')[0]
+                    src = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+                    #if ':' in src:
+                    #    src = src.split(':')[1]   
+                    if base.startswith('rtmp'):
+                        return base + '/' + src + ' swfUrl=%s pageUrl=%s' % (SWF_URL, url)
+            return ''
+        
         srcData = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1].split('},')
         for item in srcData:
             item += '},'
@@ -753,15 +783,29 @@ class pageParser:
             if '%3A%2F%2F' in link and '://' not in link:
                 link = urllib.unquote(link)
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
-            if '://' in link and not link.endswith('.smil'):
-                linksTab.append({'name': '%s %s' % (serverName, label), 'url':link})
+            if _isSmil(link):
+                link = _getSmilUrl(link)
+            if '://' in link:
+                proto = ''
+                if link.startswith('rtmp'):
+                    proto = 'rtmp'
+                if link.split('?')[0].endswith('m3u8'):
+                    tmp = getDirectM3U8Playlist(link)
+                    linksTab.extend(tmp)
+                else:
+                    linksTab.append({'name': '%s %s' % (proto + ' ' +serverName, label), 'url':link})
                 printDBG('_findLinks A')
         
         if 0 == len(linksTab):
             printDBG('_findLinks B')
             link = self.cm.ph.getSearchGroups(data, linkMarker)[0].replace('\/', '/')
-            if '://' in link and not link.endswith('.smil'):
-                linksTab.append({'name':serverName, 'url':link})
+            if _isSmil(link):
+                link = _getSmilUrl(link)
+            if '://' in link:
+                proto = ''
+                if link.startswith('rtmp'):
+                    proto = 'rtmp'
+                linksTab.append({'name':proto + ' ' +serverName, 'url':link})
         return linksTab
         
     def _findLinks2(self, data, baseUrl):
@@ -1685,22 +1729,53 @@ class pageParser:
         if not videoUrl.strtswith("http"): return False
         videoUrl = urlparser.decorateUrl(videoUrl, {'User-Agent':HTTP_HEADER['User-Agent'],'Referer': url})
         return videoUrl
+        
+    def parserSTREAMENET(self, baseUrl):
+        return self.parserWATCHERSTO(baseUrl)
+        
+    def parserESTREAMTO(self, baseUrl):
+        return self.parserWATCHERSTO(baseUrl)
+        
+    def parserWATCHERSTO(self, baseUrl):
+        if 'embed' in baseUrl:
+            url = baseUrl
+        else:
+            url = baseUrl.replace('org/', 'org/embed-').replace('to/', 'to/embed-').replace('me/', 'me/embed-').replace('.net/', '.net/embed-')
+            if not url.endswith('.html'):
+             url += '-640x360.html'
+
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        
+        # get JS player script code from confirmation page
+        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+        if sts:
+            data = tmpData
+            tmpData = None
+            # unpack and decode params from JS player script code
+            data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0, r2=True) #YOUWATCH_decryptPlayerParams == VIDUPME_decryptPlayerParams
+
+        printDBG(data)
+        # get direct link to file from params
+        return self._findLinks(data, serverName=urlparser.getDomain(baseUrl))
 
     def parserPLAYEDTO(self, baseUrl):
         if 'embed' in baseUrl:
             url = baseUrl
         else:
-            url = baseUrl.replace('org/', 'org/embed-').replace('to/', 'to/embed-').replace('me/', 'me/embed-') + '-640x360.html'
-
+            url = baseUrl.replace('org/', 'org/embed-').replace('to/', 'to/embed-').replace('me/', 'me/embed-')
+            if not url.endswith('.html'):
+             url += '-640x360.html'
+             
+        #HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'}
+        #, {'header':HTTP_HEADER}
         sts, data = self.cm.getPage(url)
         if not sts: return False
         
-        iframe = True
-        if iframe:
-            url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="(http[^"]+?)"', 1, True)[0]
-            if url != '':
-                sts, data = self.cm.getPage(url, {'header':{'Referer':url, 'User-Agent':'Mozilla/5.0'}})
-                if not sts: return False
+        url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="(http[^"]+?)"', 1, True)[0]
+        if url != '':
+            sts, data = self.cm.getPage(url, {'header':{'Referer':url, 'User-Agent':'Mozilla/5.0'}})
+            if not sts: return False
         
         # get JS player script code from confirmation page
         sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
@@ -1710,13 +1785,9 @@ class pageParser:
             # unpack and decode params from JS player script code
             data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0) #YOUWATCH_decryptPlayerParams == VIDUPME_decryptPlayerParams
 
-        # get direct link to file from params
-        data = re.search('file:[ ]*?"([^"]+?\.mp4[^"]*?)"', data)
-        if data:
-            linkVideo = data.group(1)
-            printDBG('parserPLAYEDTO direct link: ' + linkVideo)
-            return linkVideo
-        return False
+        printDBG(data)
+        return self._findLinks(data, serverName='played.to')
+        
     '''
     def parserALLMYVIDEOS(self,url):
         query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
@@ -2125,9 +2196,9 @@ class pageParser:
     def parserVIDUPME(self, baseUrl):
         printDBG("parserVIDUPME baseUrl[%r]" % baseUrl)
         # example video: http://beta.vidup.me/embed-p1ko9zqn5e4h-640x360.html
-        def _findLinks(data):
-            return self._findLinks(data, 'beta.vidup.me', m1='setup(', m2='image:')
-        return self._parserUNIVERSAL_A(baseUrl, 'http://beta.vidup.me/embed-{0}-640x360.html', _findLinks)
+        #def _findLinks(data):
+        #    return self._findLinks(data, 'vidup.me', m1='setup(', m2='image:')
+        return self._parserUNIVERSAL_A(baseUrl, 'http://vidup.me/embed-{0}-640x360.html', self._findLinks)
         
     def parseMOSHAHDANET(self, baseUrl):
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
