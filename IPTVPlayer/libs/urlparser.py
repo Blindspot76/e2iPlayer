@@ -165,6 +165,7 @@ class urlparser:
                        'scs.pl':               self.pp.parserSCS           ,
                        'youwatch.org':         self.pp.parserYOUWATCH      ,
                        'played.to':            self.pp.parserPLAYEDTO      ,
+                       'playedto.me':          self.pp.parserPLAYEDTO      ,
                        'videomega.tv':         self.pp.parserVIDEOMEGA     ,
                        'up2stream.com':        self.pp.parserVIDEOMEGA     ,
                        'vidto.me':             self.pp.parserVIDTO         ,
@@ -349,6 +350,7 @@ class urlparser:
                        'flashlive.pw':         self.pp.parseCASTFLASHPW    ,
                        'castasap.pw':          self.pp.parseCASTFLASHPW    ,
                        'fastflash.pw':         self.pp.parseCASTFLASHPW    ,
+                       'flashcast.pw':         self.pp.parseCASTFLASHPW    ,
                        'dotstream.tv':         self.pp.parserDOTSTREAMTV   ,
                        'leton.tv':             self.pp.parserDOTSTREAMTV   ,
                        'fileone.tv':           self.pp.parserFILEONETV     ,
@@ -1688,11 +1690,12 @@ class pageParser:
         if 'embed' in baseUrl:
             url = baseUrl
         else:
-            url = baseUrl.replace('org/', 'org/embed-').replace('to/', 'to/embed-') + '-640x360.html'
+            url = baseUrl.replace('org/', 'org/embed-').replace('to/', 'to/embed-').replace('me/', 'me/embed-') + '-640x360.html'
 
         sts, data = self.cm.getPage(url)
         if not sts: return False
         
+        iframe = True
         if iframe:
             url = self.cm.ph.getSearchGroups(data, '<iframe[^>]*?src="(http[^"]+?)"', 1, True)[0]
             if url != '':
@@ -1708,7 +1711,7 @@ class pageParser:
             data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0) #YOUWATCH_decryptPlayerParams == VIDUPME_decryptPlayerParams
 
         # get direct link to file from params
-        data = re.search('file:[ ]*?"([^"]+?)"', data)
+        data = re.search('file:[ ]*?"([^"]+?\.mp4[^"]*?)"', data)
         if data:
             linkVideo = data.group(1)
             printDBG('parserPLAYEDTO direct link: ' + linkVideo)
