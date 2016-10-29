@@ -365,6 +365,7 @@ class urlparser:
                        'flashcast.pw':         self.pp.parseCASTFLASHPW    ,
                        'dotstream.tv':         self.pp.parserDOTSTREAMTV   ,
                        'leton.tv':             self.pp.parserDOTSTREAMTV   ,
+                       'tvope.com':            self.pp.parserTVOPECOM      ,
                        'fileone.tv':           self.pp.parserFILEONETV     ,
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
@@ -483,6 +484,11 @@ class urlparser:
             elif 'leton.tv' in data:
                 streampage = self.cm.ph.getSearchGroups(data, """streampage=([^&]+?)&""")[0]
                 videoUrl = 'http://leton.tv/player.php?streampage={0}&height=490&width=730'.format(streampage)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'tvope.com' in data:
+                channel = self.cm.ph.getSearchGroups(data, """c=['"]([^'^"]+?)['"]""")[0]
+                videoUrl = 'http://tvope.com/emb/player.php?c={0}&w=600&h=400&d='.format(channel)
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'caston.tv/player.php' in data:
@@ -3322,6 +3328,23 @@ class pageParser:
                 printExc()
         return False
         
+    def parserTVOPECOM(self, baseUrl):
+        printDBG("parserTVOPECOM baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        videoUrl = strwithmeta(baseUrl)
+        if 'Referer' in videoUrl.meta:
+            HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
+        if not sts: return False
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'clip:', '}', False)[1]
+        playpath = self.cm.ph.getSearchGroups(tmp, '''url:\s?['"]([^'^"]+?)['"]''')[0]
+        live = self.cm.ph.getSearchGroups(tmp, '''live:\s*([^,]+?),''')[0]
+        
+        swfUrl = self.cm.ph.getSearchGroups(data, '''src:\s?['"](http[^'^"]+?\.swf[^'^"]*?)['"]''')[0]
+        rtmpUrl = self.cm.ph.getSearchGroups(data, '''['"](rtmp[^'^"]+?)['"]''')[0]
+        
+        return rtmpUrl + ' playpath=' + playpath + ' swfUrl=' + swfUrl +  ' pageUrl=' + baseUrl + ' live=1'
+        
     def parserDOTSTREAMTV(self, linkUrl):
         printDBG("parserDOTSTREAMTV linkUrl[%s]" % linkUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -5274,6 +5297,18 @@ class pageParser:
         printDBG(rtmpUrl)
         return rtmpUrl
         
+    def parserOPENLOADIOExtractJS(self, data):
+        num = ''
+        try:
+            vGlobals = {"__builtins__": None}
+            vLocals = { 'numRet': None }
+            exec( 'numRet = ' + data, vGlobals, vLocals )
+            num = str(vLocals['numRet'])
+            printDBG('parserOPENLOADIOExtractJS num[%s]' % num)
+        except Exception:
+            printExc('parserOPENLOADIOExtractJS exec code EXCEPTION')
+        return num
+        
     def parserOPENLOADIO(self, baseUrl):
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl}
@@ -5526,8 +5561,18 @@ class pageParser:
                 c = ((c + 14) % 94) + 33
             res += chr(c)
         
+        tmp = tmp2+tmp
         videoUrl = ''
-        num = self.cm.ph.getSearchGroups(tmp2+tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
+        num = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
+        if num == '':
+            tmpNum = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([A-Za-z0-9]+?)\(\)", ignoreCase=True)[0]
+            printDBG('FUN NAME [%s]' % tmpNum)
+            tmpNum = self.cm.ph.getDataBeetwenMarkers(tmp, 'function ' + tmpNum.strip(), '}', False)[1]
+            printDBG('FUN BODY [%s]' % tmpNum)
+            tmpNum = self.cm.ph.getDataBeetwenMarkers(tmpNum, 'return', ';', False)[1].strip()
+            printDBG('FUN BODY [%s]' % tmpNum)
+            num    = self.parserOPENLOADIOExtractJS(tmpNum)
+            
         if '' == num:
             for tmpNum in [1, 2, 3]:
                 try:
