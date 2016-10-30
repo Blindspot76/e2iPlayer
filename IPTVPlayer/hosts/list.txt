@@ -14,7 +14,6 @@ hostchomikuj
 hostcinemay
 hostcrtankocom
 hostdailymotion
-_hostdancetrippin
 hostdancetrippin
 hostdardarkomcom
 hostdarshowcom
@@ -34,6 +33,7 @@ hostfilmy3deu
 hostfilmydokumentalneeu
 hostfreediscpl
 hostfsto
+hostgamatocom
 hostgreekdocumentaries3
 hosthdfilmetv
 hosthdfilmstreamingcom
@@ -60,7 +60,6 @@ hostmovizlandcom
 hostmusicbox
 hostneokino
 hostninateka
-hostnocnyseans
 hostonetvod
 hostourmatchnet
 hostpinkbike
