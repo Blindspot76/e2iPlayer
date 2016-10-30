@@ -64,7 +64,7 @@ class IPTVSetupImpl:
                                           (_("Do not install (not recommended)"), "")]
                                           
         # uchardet member
-        self.uchardetVersion = "Version 0.0.5"
+        self.uchardetVersion = [0, 0, 6] #UCHARDET_VERSION_MAJOR, UCHARDET_VERSION_MINOR, UCHARDET_VERSION_REVISION
         self.uchardetpaths = ["/usr/bin/uchardet", GetBinDir("uchardet", "")]
         self._uchardetInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/uchardet (%s)" % _("recommended")), "/usr/bin/uchardet"),
                                           (_('Install into the "%s".') % "IPTVPlayer/bin/uchardet", GetBinDir("uchardet", "")),
@@ -379,8 +379,18 @@ class IPTVSetupImpl:
         def _detectValidator(code, data):
             if self.binaryInstalledSuccessfully: self.stepHelper.setInstallChoiseList( self._uchardetInstallChoiseList2 )
             else: self.stepHelper.setInstallChoiseList( self._uchardetInstallChoiseList )
-            if self.uchardetVersion in data: return True,False
-            else: return False,True
+            try: 
+                rawVer = re.search("Version\s([0-9])\.([0-9])\.([0-9])", data)
+                UCHARDET_VERSION_MAJOR     = int(rawVer.group(1))
+                UCHARDET_VERSION_MINOR     = int(rawVer.group(2))
+                UCHARDET_VERSION_REVISION  = int(rawVer.group(3))
+                if (UCHARDET_VERSION_MAJOR > self.uchardetVersion[0]) or \
+                   (UCHARDET_VERSION_MAJOR == self.uchardetVersion[0] and UCHARDET_VERSION_MINOR > self.uchardetVersion[1]) or \
+                   (UCHARDET_VERSION_MAJOR == self.uchardetVersion[0] and UCHARDET_VERSION_MINOR == self.uchardetVersion[1] and UCHARDET_VERSION_REVISION >= self.uchardetVersion[2]):
+                    return True,False
+            except Exception:
+                printExc()
+            return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
             for idx in range(len(dataTab)):
