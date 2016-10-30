@@ -229,6 +229,7 @@ class urlparser:
                        'yukons.net':           self.pp.parserYUKONS        ,
                        'ustream.tv':           self.pp.parserUSTREAMTV     ,
                        'privatestream.tv':     self.pp.parserPRIVATESTREAM ,
+                       'aliez.me':             self.pp.parserALIEZME       ,
                        'abcast.biz':           self.pp.parserABCASTBIZ     ,
                        'abcast.net':           self.pp.parserABCASTBIZ     ,
                        'goodcast.co':          self.pp.parserGOODCASTCO    ,
@@ -285,6 +286,8 @@ class urlparser:
                        'putlive.in':           self.pp.paserPUTLIVEIN      ,
                        'liveall.tv':           self.pp.paserLIVEALLTV      ,
                        'p2pcast.tv':           self.pp.paserP2PCASTTV      ,
+                       'nowlive.pw':           self.pp.paserNOWLIVEPW      ,
+                       'nowlive.xyz':          self.pp.paserNOWLIVEPW      ,
                        'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
                        'megom.tv':             self.pp.paserMEGOMTV        ,
                        'openload.io':          self.pp.parserOPENLOADIO    ,
@@ -487,8 +490,13 @@ class urlparser:
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'tvope.com' in data:
-                channel = self.cm.ph.getSearchGroups(data, """c=['"]([^'^"]+?)['"]""")[0]
-                videoUrl = 'http://tvope.com/emb/player.php?c={0}&w=600&h=400&d='.format(channel)
+                channel = self.cm.ph.getSearchGroups(data, """[^a-zA-Z0-9]c=['"]([^'^"]+?)['"]""")[0]
+                videoUrl = 'http://tvope.com/emb/player.php?c={0}&w=600&h=400&d={1}'.format(channel, urlparser.getDomain(baseUrl))
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'nowlive.' in data:
+                id = self.cm.ph.getSearchGroups(data, """[^a-zA-Z0-9]id=['"]([0-9]+?)['"]""")[0]
+                videoUrl = 'http://nowlive.pw/stream.php?id={0}&width=640&height=480&stretching=uniform&p=1'.format(id)
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'caston.tv/player.php' in data:
@@ -643,7 +651,13 @@ class urlparser:
                     videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif "privatestream.tv" in data:
-                videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/[^"]+?)"')[0]
+                videoUrl = self.cm.ph.getSearchGroups(data, '''['"](https?://w*?privatestream.tv/[^"^']+?)['"]''')[0]
+                if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''=(https?://w*?privatestream.tv/[^"^'^>^<^\s]+?)['"><\s]''')[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif "aliez.me" in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, '''['"](https?://[^'^"]*?aliez.me/[^"^']+?)['"]''')[0]
+                if '' == videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''=(https?://[^'^"]*?aliez.me/[^"^'^>^<^\s]+?)['"><\s]''')[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif "ustream.tv" in data:
@@ -652,6 +666,13 @@ class urlparser:
                     videoUrl = 'http:' + videoUrl
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
+            elif 'source=rtmp://' in data:
+                tmp = self.cm.ph.getSearchGroups(data, """source=(rtmp://[^'^"]+?)['"]""")[0]
+                tmp = tmp.split('&amp;')
+                r = tmp[0]
+                swfUrl='swf'
+                r += ' swfUrl=%s pageUrl=%s live=1' % (swfUrl, url)
+                return [{'name':'[rtmp]', 'url':r}]
             elif 'rtmp://' in data:
                 tmp = self.cm.ph.getSearchGroups(data, """(rtmp://[^'^"]+?)['"]""")[0]
                 tmp = tmp.split('&amp;')
@@ -3293,6 +3314,33 @@ class pageParser:
                 time.sleep(3)
         return linksTab
         
+    def parserALIEZME(self, baseUrl):
+        printDBG("parserALIEZME baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+
+        if baseUrl.split('?')[0].endswith('.js'):
+            sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
+            if not sts: return []
+            tr = 0
+            while tr < 3:
+                tr += 1
+                videoUrl = self.cm.ph.getSearchGroups(data, '"(http://[^/]+?/player?[^"]+?)"')[0]
+                if "" != videoUrl: break
+                time.sleep(1)
+        sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
+        if not sts: return []
+        urlsTab = []
+        videoUrl = self.cm.ph.getSearchGroups(data, """['"]*(http[^'^"]+?\.m3u8[^'^"]*?)['"]""")[0]
+        if self.cm.isValidUrl(videoUrl):
+            videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+            urlsTab.extend(getDirectM3U8Playlist(videoUrl))
+        #videoUrl = urllib.unquote(self.cm.ph.getSearchGroups(data, """['"]*(rtmp[^'^"]+?\.m3u8[^'^"]*?)['"]""")[0])
+        #if videoUrl.startswith('rtmp://'):
+            
+        return urlsTab
+        
     def parserPRIVATESTREAM(self, linkUrl):
         printDBG("parserPRIVATESTREAM linkUrl[%s]" % linkUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -3486,6 +3534,31 @@ class pageParser:
             data = byteify(json.loads(data))
             url += data['token']
         return urlparser.decorateUrl(url, {'Referer':'http://cdn.webplayer.pw/jwplayer.flash.swf', "User-Agent": HTTP_HEADER['User-Agent']})
+        
+    def paserNOWLIVEPW(self, linkUrl):
+        printDBG("paserNOWLIVEPW linkUrl[%s]" % linkUrl)
+        HTTP_HEADER = {}
+        videoUrl = strwithmeta(linkUrl)
+        HTTP_HEADER['Referer'] = videoUrl.meta.get('Referer', videoUrl)
+        HTTP_HEADER['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0"
+        COOKIE_FILE = GetCookieDir('novelivepw.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        
+        sts, data = self.cm.getPage(videoUrl, params)
+        if not sts: return False
+        url = self.cm.ph.getSearchGroups(data, 'curl[^"]*?=[^"]*?"([^"]+?)"')[0]
+        if '' == url: url = self.cm.ph.getSearchGroups(data, 'murl[^"]*?=[^"]*?"([^"]+?)"')[0]
+        url = base64.b64decode(url)
+        
+        if url.endswith('token='):
+            params['header']['Referer'] = linkUrl
+            params['header']['X-Requested-With'] = 'XMLHttpRequest'
+            params['load_cookie'] = True
+            sts, data = self.cm.getPage(urlparser.getDomain(linkUrl, False) + 'getToken.php', params)
+            if not sts: return False
+            data = byteify(json.loads(data))
+            url += data['token']
+        return urlparser.decorateUrl(url, {'Referer':linkUrl, "User-Agent": HTTP_HEADER['User-Agent']})
     
     def parserGOOGLE(self, baseUrl):
         printDBG("parserGOOGLE baseUrl[%s]" % baseUrl)
