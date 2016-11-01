@@ -56,8 +56,10 @@ class FilmyTo(CBaseHostClass):
         self.MAIN_URL = 'http://filmy.to/'
         self.DEFAULT_ICON_URL = self.MAIN_URL + 'static/frontend/img/logo.06ac9ed751db.png'
         
-        self.MAIN_CAT_TAB = [{'category':'movies',            'title': _('Movies'),                       'priv_type':'movie',  'url':self.getFullUrl('filmy/'),    'icon':self.DEFAULT_ICON_URL},
-                             {'category':'series',            'title': _('Series'),                       'priv_type':'series', 'url':self.getFullUrl('seriale/'),  'icon':self.DEFAULT_ICON_URL},
+        self.MAIN_CAT_TAB = [{'category':'list_items',        'title': _('Movies'),                       'url':self.getFullUrl('filmy/'),        'icon':self.DEFAULT_ICON_URL},
+                             {'category':'list_items',        'title': _('Series'),                       'url':self.getFullUrl('seriale/'),      'icon':self.DEFAULT_ICON_URL},
+                             {'category':'list_items',        'title': _('Dokumentalne'),                 'url':self.getFullUrl('dokumentalne/'), 'icon':self.DEFAULT_ICON_URL},
+                             {'category':'list_items',        'title': _('Dla dzieci'),                   'url':self.getFullUrl('dzieci/'),       'icon':self.DEFAULT_ICON_URL},
                              {'category':'search',            'title': _('Search'), 'search_item':True,         'icon':self.DEFAULT_ICON_URL},
                              {'category':'search_history',    'title': _('Search history'),                     'icon':self.DEFAULT_ICON_URL} 
                             ]
@@ -181,7 +183,7 @@ class FilmyTo(CBaseHostClass):
             params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
             if '/film/' in url:
                 self.addVideo(params)
-            else:
+            elif '/serial/' in url:
                 params['category'] = nextCategory
                 self.addDir(params)
         
@@ -250,7 +252,7 @@ class FilmyTo(CBaseHostClass):
             params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
             if '/film/' in url:
                 self.addVideo(params)
-            else:
+            elif '/serial/' in url:
                 params['category'] = 'list_seasons'
                 self.addDir(params)
     
@@ -331,7 +333,7 @@ class FilmyTo(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
-        elif category in ['movies', 'series']:
+        elif 'list_items' == category:
             filtersTab = ['letters', 'genres', 'production', 'year', 'min_raiting', 'sort']
             idx = self.currItem.get('f_idx', 0)
             if idx < len(filtersTab):
