@@ -1219,21 +1219,40 @@ class pageParser:
     def parserNOVAMOV(self, url):
         return self._parserUNIVERSAL_B(url)
 
-    def parserNOWVIDEO(self, url):
+    def parserNOWVIDEO(self, baseUrl):
         urlTab = []
-        if '/mobile/video.php?id' in url:
-            sts, data = self.cm.getPage(url)
-            if sts:
-                data = re.compile('<source ([^>]*?)>').findall(data)
-                for item in data:
-                    type = self.cm.ph.getSearchGroups(item, 'type="([^"]+?)"')[0]
-                    if 'video' not in type: continue 
-                    url  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-                    name = url.split('?')[0].split('.')[-1]
-                    urlTab.append({'name':type, 'url':url})
-                if len(urlTab): return urlTab
+
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0" }
         
-        tmp = self._parserUNIVERSAL_B(url)
+        COOKIE_FILE = GetCookieDir('nowvideo.sx')
+        params_s  = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        params_l  = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True} 
+        
+        if 'embed' not in baseUrl:
+            vidId = self.cm.ph.getSearchGroups(baseUrl + '/', '/video/([^/]+?)/')[0]
+            if '' == vidId: vidId = self.cm.ph.getSearchGroups(baseUrl + '&', '[\?&]v=([^&]+?)&')[0]
+            baseUrl = 'http://embed.nowvideo.sx/embed/?v=' + vidId
+        
+        sts, data = self.cm.getPage(baseUrl, params_s)
+        if not sts: return False
+            
+        tokenUrl = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?/api/toker[^'^"]+?)['"]''')[0]
+        if tokenUrl.startswith('/'):
+            tokenUrl = 'http://embed.nowvideo.sx' + tokenUrl
+        
+        HTTP_HEADER['Referer'] = baseUrl
+        sts, token = self.cm.getPage(tokenUrl, {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True} )
+        if not sts: return False
+        token = self.cm.ph.getDataBeetwenMarkers(token, '=', ';', False)[1].strip()
+         
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True})
+        if not sts: return False
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"][^>]+?video/mp4''')[0]
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
+        
+        tmp = self._parserUNIVERSAL_B(baseUrl)
         if isinstance(tmp, basestring) and 0 < len(tmp):
             tmp += '?client=FLASH'
         return tmp
@@ -3865,7 +3884,9 @@ class pageParser:
         
         sts, response = self.cm.getPage(baseUrl, params)
         redirectUrl = response.geturl() 
-        data = response.read()
+        response.close()
+        params['return_data'] = True
+        sts, data = self.cm.getPage(baseUrl, params)
         params['header']['Referer'] = redirectUrl
         params['return_data'] = True
         params['load_cookie'] = True
@@ -3881,11 +3902,11 @@ class pageParser:
             return urlunsplit((scheme, netloc, path, query, fragment))
         
         vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
-        
-        if 'playthis-' in data:
-            play = 'playthis-'
-        else:
-            play = 'playit-'
+        for item in ['playthis-', 'playit-', 'playvid-']:
+            if item in data:
+                play = item
+                break
+        printDBG("vid[%s] play[%s]" % (vid, play))
             
         url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + play + '{0}.html'.format(vid)
         sts, data = self.cm.getPage(url, params)
@@ -3917,6 +3938,8 @@ class pageParser:
         
         try:
             printDBG(data)
+            if 'Sorry, file was deleted!':
+                SetIPTVPlayerLastHostError(_('Sorry, file was deleted!'))
             tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
             
             tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
@@ -4735,30 +4758,29 @@ class pageParser:
         params_s  = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         params_l  = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True} 
         
-        if 'embed.' not in baseUrl:
-            baseUrl = 'http://www.cloudtime.to/embed.php?v=' + self.cm.ph.getSearchGroups(baseUrl + '/', '/video/([^/]+?)/')[0]
+        if 'embed' not in baseUrl:
+            vidId = self.cm.ph.getSearchGroups(baseUrl + '/', '/video/([^/]+?)/')[0]
+            if '' == vidId: vidId = self.cm.ph.getSearchGroups(baseUrl + '&', '[\?&]v=([^&]+?)&')[0]
+            baseUrl = 'http://www.cloudtime.to/embed.php?v=' + vidId
         
         sts, data = self.cm.getPage(baseUrl, params_s)
         if not sts: return False
+            
+        tokenUrl = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?/api/toker[^'^"]+?)['"]''')[0]
+        if tokenUrl.startswith('/'):
+            tokenUrl = 'http://www.cloudtime.to' + tokenUrl
         
-        params = {}
-        params['filekey'] = self.cm.ph.getSearchGroups(data, 'flashvars.filekey=([^;]+?);')[0]
-        params['file'] = self.cm.ph.getSearchGroups(data, 'flashvars.file=([^;]+?);')[0]
-        for key in params:
-            ok = False
-            for m in ['"', "'"]:
-                if params[key].startswith(m) and params[key].endswith(m):
-                    params[key] = params[key][1:-1]
-                    ok = True
-                    break
-            if not ok:
-                params[key] = self.cm.ph.getSearchGroups(data, r'''var %s=['"]([^'^"]+?)['"]''' % params[key])[0]
-        
-        videoUrl = "http://www.cloudtime.to/api/player.api.php?pass=undefined&key={0}&file={1}&user=undefined&cid3=undefined&cid=undefined&numOfErrors=0&cid2=undefined".format(urllib.quote(params['filekey']), urllib.quote(params['file'])) 
-        sts, data = self.cm.getPage(videoUrl, params_l)
+        HTTP_HEADER['Referer'] = baseUrl
+        sts, token = self.cm.getPage(tokenUrl, {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True} )
         if not sts: return False
-        videoUrl = CParsingHelper.getDataBeetwenMarkers(data, 'url=', '&', False)[1]
-        if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl+'?client=FLASH')
+        token = self.cm.ph.getDataBeetwenMarkers(token, '=', ';', False)[1].strip()
+         
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True})
+        if not sts: return False
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"][^>]+?video/mp4''')[0]
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
         return False
         
     def parserNOSVIDEO(self, baseUrl):
