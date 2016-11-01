@@ -31,6 +31,7 @@ hostfilmovizijastudio
 hostfilmstreamvkcom
 hostfilmy3deu
 hostfilmydokumentalneeu
+hostfilmyto
 hostfreediscpl
 hostfsto
 hostgamatocom
@@ -65,7 +66,6 @@ hostourmatchnet
 hostpinkbike
 hostplaypuls
 hostplwwecom
-hostsembilhetetv
 hostserialnet
 hostseriesenstreamingcom
 hostsovdub
