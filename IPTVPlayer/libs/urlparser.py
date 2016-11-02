@@ -5392,13 +5392,27 @@ class pageParser:
         printDBG(rtmpUrl)
         return rtmpUrl
         
-    def parserOPENLOADIOExtractJS(self, data):
+    def substring(self, tmp, *args):
+        if 2 == len(args):
+            return tmp[args[0]:args[1]]
+        elif 1 == len(args):
+            return tmp[args[0]:]
+        return ERROR_WRONG_SUBSTRING_PARAMS
+        
+    def slice(self, tmp, *args):
+        if 2 == len(args):
+            return ord(tmp[args[0]:args[1]][0])
+        elif 1 == len(args):
+            return ord(tmp[args[0]:][0])
+        return ERROR_WRONG_SLICE_PARAMS
+        
+    def parserOPENLOADIOExtractJS(self, fullAlgoCode, outFunNum, res):
         num = ''
         try:
-            vGlobals = {"__builtins__": None}
-            vLocals = { 'numRet': None }
-            exec( 'numRet = ' + data, vGlobals, vLocals )
-            num = str(vLocals['numRet'])
+            vGlobals = {"__builtins__": None, 'substring':self.substring, 'slice':self.slice, 'chr':chr, 'len':len}
+            vLocals = { outFunNum: None }
+            exec( fullAlgoCode, vGlobals, vLocals )
+            num = vLocals[outFunNum](res)
             printDBG('parserOPENLOADIOExtractJS num[%s]' % num)
         except Exception:
             printExc('parserOPENLOADIOExtractJS exec code EXCEPTION')
@@ -5635,6 +5649,8 @@ class pageParser:
         printDBG(tmp2)
         printDBG('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC')
         
+        from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import CVevoSignAlgoExtractor
+        
         # new algo
         varName = self.cm.ph.getSearchGroups(tmp2+tmp, '''=\s*([^.^;^{^}]+)\s*\.charCodeAt''', ignoreCase=True)[0]
         printDBG('varName: [%s]' % varName)
@@ -5648,71 +5664,49 @@ class pageParser:
         magic = ord(linkData[-1])
         for item in linkData:
             c = ord(item)
-            if c == magic:
-                c -= 1
-            elif c == magic - 1:
-                c += 1
             if c >= 33 and c <= 126:
                 c = ((c + 14) % 94) + 33
             res += chr(c)
         
         tmp = tmp2+tmp
-        videoUrl = ''
-        num = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([0-9]+?)[^0-9]", ignoreCase=True)[0]
-        if num == '':
-            tmpNum = self.cm.ph.getSearchGroups(tmp, "CodeAt\(0\)\s*\+\s*([A-Za-z0-9]+?)\(\)", ignoreCase=True)[0]
-            printDBG('FUN NAME [%s]' % tmpNum)
-            tmpNum = self.cm.ph.getDataBeetwenMarkers(tmp, 'function ' + tmpNum.strip(), '}', False)[1]
-            printDBG('FUN BODY [%s]' % tmpNum)
-            tmpNum = self.cm.ph.getDataBeetwenMarkers(tmpNum, 'return', ';', False)[1].strip()
-            printDBG('FUN BODY [%s]' % tmpNum)
-            num    = self.parserOPENLOADIOExtractJS(tmpNum)
+        
+        # get function names
+        pyCode = ''
+        functionNamesTab = re.compile('function\s+([^\(]+?)\s*\(\)').findall(tmp)
+        for item in functionNamesTab:
+            funBody = self.cm.ph.getDataBeetwenMarkers(tmp, 'function ' + item.strip(), '}', False)[1]
+            funBody = self.cm.ph.getDataBeetwenMarkers(funBody, 'return', ';', False)[1].strip()
             
-        if '' == num:
-            for tmpNum in [1, 2, 3]:
-                try:
-                    tmpVideoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res[:-1] + chr(ord(res[-1]) + int(tmpNum)))
-                    sts, response = self.cm.getPage(tmpVideoUrl, {'return_data':False, 'header':HTTP_HEADER})
-                    size = int(response.headers['Content-Length'])
-                    tmpVideoUrl = response.geturl()
-                    response.close()
-                    if size < 40 * 1024 * 1024:
-                        SetIPTVPlayerLastHostError(_('Please report the problem to: samsamsam@o2.pl'))
-                        continue
-                    else:
-                        videoUrl = tmpVideoUrl
-                        break
-                except Exception:
-                    printExc()
-        else:
-            res = res[:-1] + chr(ord(res[-1]) + int(num))
-            videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)
+            pyCode += '\ndef %s():\n' % item
+            pyCode += '\treturn ' + funBody
+        
+        num = self.cm.ph.getSearchGroups(tmp, 'var\s*str\s*=([^;]+?;)', ignoreCase=True)[0].strip()
+        num = num.replace('String.fromCharCode', 'chr')
+        num = num.replace('.charCodeAt(0)', '')
+        num = num.replace('tmp.slice(', 'slice(tmp,')
+        num = num.replace('tmp.length', 'len(tmp)')
+        num = num.replace('tmp.substring(', 'substring(tmp, ')
+        
+        algoLines = pyCode.split('\n')
+        for i in range(len(algoLines)):
+            algoLines[i] = '\t' + algoLines[i]
+        fullAlgoCode  = 'def openload_get_num(tmp):'
+        fullAlgoCode += '\n'.join(algoLines)
+        fullAlgoCode += '\n\treturn %s' % num
+        fullAlgoCode += '\noutGetNum = openload_get_num\n'
+        
+        printDBG("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+        printDBG(fullAlgoCode)
+        printDBG("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+        
+        res = self.parserOPENLOADIOExtractJS(fullAlgoCode, 'outGetNum', res)
+        if res == '': return False
+        
+        videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(res)
         if '' == videoUrl: return False
         params = dict(HTTP_HEADER)
         params['external_sub_tracks'] = subTracks
         return urlparser.decorateUrl(videoUrl, params)
-        
-        for item in data:
-            try:
-                tmp = decodeOpenLoad(item)
-                printDBG(tmp)
-                tmp = self.cm.ph.getSearchGroups(tmp, r"(http[^\}]+)", ignoreCase=True)[0]
-                if tmp.startswith('http'): 
-                    videoUrl = tmp.replace('\\/', '/')
-                    sts, response = self.cm.getPage(tmp, {'return_data':False, 'header':HTTP_HEADER})
-                    size = int(response.headers['Content-Length'])
-                    videoUrl = response.geturl()
-                    response.close()
-                    
-                    if size < 40 * 1024 * 1024:
-                        SetIPTVPlayerLastHostError('The openload.co rejects to many connections one by one.\nWait some time and try again.')
-                        continue
-                    params = dict(HTTP_HEADER)
-                    params['external_sub_tracks'] = subTracks
-                    return urlparser.decorateUrl(videoUrl, params)
-            except Exception:
-                printExc()
-        return False
         
     def parserGAMETRAILERS(self, baseUrl):
         printDBG("parserGAMETRAILERS baseUrl[%r]" % baseUrl )
