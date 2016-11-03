@@ -5,13 +5,20 @@ try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urljoin
 except:
     from urlparse import urlsplit, urlparse, parse_qs, urljoin
+
 import re
 import os
-import requests
 import time
-import json
 from base64 import b64decode
 import copy
+
+try: import requests
+except Exception: pass
+try: import json
+except Exception: import simplejson as json
+
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import byteify, printExc
 
 HTTP_HEADER = {
     "User-Agent": 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36',
@@ -46,6 +53,9 @@ class UnshortenIt(object):
 
     _this_dir, _this_filename = os.path.split(__file__)
     _timeout = 10
+    
+    def __init__(self):
+        self.cm = common()
 
     def unshorten(self, uri, type=None):
 
@@ -341,8 +351,7 @@ class UnshortenIt(object):
 
     def _unshorten_shst(self, uri):
         try:
-            r = requests.get(uri, headers=HTTP_HEADER, timeout=self._timeout)
-            html = r.text
+            sts, html = self.cm.getPage(uri, {'header':HTTP_HEADER})
 
             session_id = re.findall(r'sessionId\:(.*?)\"\,', html)
             if len(session_id) > 0:
@@ -358,21 +367,16 @@ class UnshortenIt(object):
                 time.sleep(5)
 
                 payload = {'adSessionId': session_id, 'callback': 'c'}
-                r = requests.get('http://sh.st/shortest-url/end-adsession', params=payload, headers=http_header, timeout=self._timeout)
-                response = r.content[6:-2].decode('utf-8')
+                sts, response = self.cm.getPage('http://sh.st/shortest-url/end-adsession', {'header':http_header}, payload)
 
-                if r.status_code == 200:
-                    resp_uri = json.loads(response)['destinationUrl']
-                    if resp_uri is not None:
-                        uri = resp_uri
-                    else:
-                        return uri, 'Error extracting url'
-                else:
-                    return uri, 'Error extracting url'
-
-            return uri, r.status_code
+                resp_uri = byteify(json.loads(response[6:-2]))['destinationUrl']
+                if resp_uri is not None:
+                    uri = resp_uri
+            
+            return uri, 'OK'
 
         except Exception as e:
+            printExc()
             return uri, str(e)
 
     def _unshorten_hrefli(self, uri):

@@ -3875,11 +3875,14 @@ class pageParser:
                         'DNT':1,
                         'Connection':'keep-alive',
                       }
+                      
+        if '.tv/embed-' not in baseUrl:
+            baseUrl = baseUrl.replace('.tv/', '.tv/embed-')
         HTTP_HEADER['Referer'] = baseUrl
         SWF_URL = 'http://static.flashx.tv/player6/jwplayer.flash.swf'
         
         COOKIE_FILE = GetCookieDir('flashxtv.cookie')
-        
+        rm(COOKIE_FILE)
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':False}
         
         sts, response = self.cm.getPage(baseUrl, params)
@@ -3906,30 +3909,21 @@ class pageParser:
             if item in data:
                 play = item
                 break
+        
         printDBG("vid[%s] play[%s]" % (vid, play))
-            
+        
+        tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?counter[^'^"]+?)['"]""")[0]
+        if tmpUrl.startswith('.'):
+            tmpUrl = tmpUrl[1:]
+        if tmpUrl.startswith('/'):
+            tmpUrl = 'http://www.flashx.tv' + tmpUrl
+        if tmpUrl != '':
+            sts, tmp = self.cm.getPage(tmpUrl, params)
+        
         url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + play + '{0}.html'.format(vid)
         sts, data = self.cm.getPage(url, params)
         if not sts:
             return False
-        post_data = None
-        if 'Proceed to video' in data:
-            sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<Form method="POST"', '</Form>', True)
-            action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'")[0]
-            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
-            
-            try:
-                sleep_time = int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]) 
-                time.sleep(sleep_time)
-            except:
-                printExc()
-            if {} == post_data:
-                post_data = None
-            if action.startswith('/'):
-                url = _url_path_join(url[:url.rfind('/')+1], action[1:])
-            else: url = action
-            sts, data = self.cm.getPage(url, params, post_data)
-            if not sts: return False
             
         if 'fxplay' not in url and 'fxplay' in data:
             url = self.cm.ph.getSearchGroups(data, '"(http[^"]+?fxplay[^"]+?)"')[0]
@@ -3938,7 +3932,7 @@ class pageParser:
         
         try:
             printDBG(data)
-            if 'Sorry, file was deleted!':
+            if 'Sorry, file was deleted!' in data:
                 SetIPTVPlayerLastHostError(_('Sorry, file was deleted!'))
             tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
             
