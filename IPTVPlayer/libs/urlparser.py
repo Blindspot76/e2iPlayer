@@ -4267,11 +4267,27 @@ class pageParser:
         if 'embed' in baseUrl: url = baseUrl
         else: url = baseUrl.replace('.me/', '.me/embed-') + '-640x360.html'
 
-        sts, pageData = self.cm.getPage(url)
+        HTTP_HEADER = {'User-Agent':'Mozilla/5.0'}
+        COOKIE_FILE = GetCookieDir('thvideome.cookie')
+        rm(COOKIE_FILE)
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        
+        sts, pageData = self.cm.getPage(url, params)
         if not sts: return False
         
+        authKey = self.cm.ph.getSearchGroups(pageData, r"""Key\s*=\s*['"]([^'^"]+?)['"]""")[0]
+        params['header']['Referer'] = url
+        sts, authKey = self.cm.getPage('http://thevideo.me/jwv/' + authKey, params)
+        if not sts: return False
+        authKey = self.cm.ph.getSearchGroups(authKey, r"""\|([a-z0-9]{40}[a-z0-9]+?)\|""")[0]
+        
+        def decorateUrls(urlsTab):
+            for idx in range(len(urlsTab)):
+                urlsTab[idx]['url'] = urlparser.decorateUrl(urlsTab[idx]['url'] + '?direct=false&ua=1&vt=' + authKey, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':'http://thevideo.me/player/jw/7/jwplayer.flash.swf'})
+            return urlsTab
+        
         videoLinks = self._findLinks(pageData, 'thevideo.me', r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,} ]''')
-        if len(videoLinks): return videoLinks
+        if len(videoLinks): return decorateUrls(videoLinks)
         
         # get JS player script code from confirmation page
         sts, data = CParsingHelper.getDataBeetwenMarkers(pageData, ">eval(", '</script>', False)
@@ -4282,11 +4298,11 @@ class pageParser:
             idx1 += len(mark1)
             # unpack and decode params from JS player script code
             pageData = unpackJS(data[idx1:-3], VIDUPME_decryptPlayerParams)
-            return self._findLinks(pageData, 'thevideo.me')
+            return decorateUrls(self._findLinks(pageData, 'thevideo.me'))
         else:
             pageData = CParsingHelper.getDataBeetwenMarkers(pageData, 'setup(', '</script', False)[1]
             videoUrl = self.cm.ph.getSearchGroups(pageData, r"""['"]?file['"]?[ ]*?\:[ ]*?['"]([^"^']+?)['"]""")[0]
-            if videoUrl.startswith('http'): return urlparser.decorateUrl(videoUrl)
+            if videoUrl.startswith('http'): return decorateUrls([{'name':'thevideo.me', 'url':videoUrl}])
         return False
     
     def parserMODIVXCOM(self, baseUrl):
@@ -5392,14 +5408,14 @@ class pageParser:
         printDBG(rtmpUrl)
         return rtmpUrl
         
-    def substring(self, tmp, *args):
+    def openload_substring(self, tmp, *args):
         if 2 == len(args):
             return tmp[args[0]:args[1]]
         elif 1 == len(args):
             return tmp[args[0]:]
         return ERROR_WRONG_SUBSTRING_PARAMS
         
-    def slice(self, tmp, *args):
+    def openload_slice(self, tmp, *args):
         if 2 == len(args):
             return ord(tmp[args[0]:args[1]][0])
         elif 1 == len(args):
@@ -5409,7 +5425,7 @@ class pageParser:
     def parserOPENLOADIOExtractJS(self, fullAlgoCode, outFunNum, res):
         num = ''
         try:
-            vGlobals = {"__builtins__": None, 'substring':self.substring, 'slice':self.slice, 'chr':chr, 'len':len}
+            vGlobals = {"__builtins__": None, 'substring':self.openload_substring, 'slice':self.openload_slice, 'chr':chr, 'len':len}
             vLocals = { outFunNum: None }
             exec( fullAlgoCode, vGlobals, vLocals )
             num = vLocals[outFunNum](res)
@@ -5448,78 +5464,6 @@ class pageParser:
         # for example: "Code take from plugin IPTVPlayer: "https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/"
         # It will be very nice if you send also email to me samsamsam@o2.pl and inform were this code will be used
         
-        # get image data
-        if False:
-            from Plugins.Extensions.IPTVPlayer.libs.png import Reader as PNGReader
-            imageData = self.cm.ph.getSearchGroups(data, '''<img[^>]*?id="linkimg"[^>]*?src="([^"]+?)"''', ignoreCase=True)[0]
-            imageData = base64.b64decode(imageData.split('base64,')[-1])
-            x, y, pixel, meta = PNGReader(bytes=imageData).read()
-            imageData = None
-            imageStr = ''
-            try:
-                for item in pixel:
-                    for p in item:
-                        imageStr += chr(p)
-            except Exception:
-                printExc()
-            printDBG(imageStr)
-
-            # split image data
-            imageTabs = []
-            i = -1
-            for idx in range(len(imageStr)):
-                if imageStr[idx] == '\0':
-                    break
-                if 0 == (idx % (12 * 20)):
-                    imageTabs.append([])
-                    i += 1
-                    j = -1
-                if 0 == (idx % (20)):
-                    imageTabs[i].append([])
-                    j += 1
-                imageTabs[i][j].append(imageStr[idx])
-            
-            # get signature data
-            sts, data = self.cm.getPage('https://openload.co/assets/js/obfuscator/n.js', {'header':HTTP_HEADER})
-            if not sts: return False
-            signStr = self.cm.ph.getSearchGroups(data, '''['"]([^"^']+?)['"]''', ignoreCase=True)[0]
-            
-            # split signature data
-            signTabs = []
-            i = -1
-            for idx in range(len(signStr)):
-                if signStr[idx] == '\0':
-                    break
-                if 0 == (idx % (11 * 26)):
-                    signTabs.append([])
-                    i += 1
-                    j = -1
-                if 0 == (idx % (26)):
-                    signTabs[i].append([])
-                    j += 1
-                signTabs[i][j].append(signStr[idx])
-            
-            # get link data
-            linkData = {}
-            for i in [2, 3, 5, 7]:
-                linkData[i] = []
-                tmp = ord('c')
-                for j in range(len(signTabs[i])):
-                    for k  in range(len(signTabs[i][j])):
-                        if tmp > 122:
-                            tmp = ord('b')
-                        if signTabs[i][j][k] == chr(int(math.floor(tmp))):
-                            if len(linkData[i]) > j:
-                                continue
-                            tmp += 2.5;
-                            if k < len(imageTabs[i][j]):
-                                linkData[i].append(imageTabs[i][j][k])
-            res = []
-            for idx in linkData:
-                res.append(''.join(linkData[idx]).replace(',', ''))
-
-            res = res[3] + '~' + res[1] + '~' + res[2] + '~' + res[0]
-                
         # start https://github.com/whitecream01/WhiteCream-V0.0.1/blob/master/plugin.video.uwc/plugin.video.uwc-1.0.51.zip?raw=true
         def decode(encoded):
             tab = encoded.split('\\')
@@ -5545,6 +5489,7 @@ class pageParser:
                 new_num_string=remainder_string+new_num_string
                 current=current/n
             return new_num_string
+        
         def decodeOpenLoad(aastring):
             # decodeOpenLoad made by mortael, please leave this line for proper credit :)
             #aastring = re.search(r"<video(?:.|\s)*?<script\s[^>]*?>((?:.|\s)*?)</script", html, re.DOTALL | re.IGNORECASE).group(1)
