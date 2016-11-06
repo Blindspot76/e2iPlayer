@@ -373,6 +373,7 @@ class urlparser:
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
+                       'streamable.com':       self.pp.parserSTREAMABLECOM  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -936,7 +937,7 @@ class pageParser:
             printExc()
         return videoUrl
         
-    def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None, folowIframe=False):
+    def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None, folowIframe=False, sleep_time=None):
         printDBG("pageParser.__parseJWPLAYER_A serverName[%s], baseUrl[%r]" % (serverName, baseUrl))
         
         linkList = []
@@ -966,6 +967,8 @@ class pageParser:
                                 sleep_time = self.cm.ph.getSearchGroups(data2, '>([0-9]+?)</span> seconds<')[0]
                                 if '' != sleep_time: time.sleep(int(sleep_time))
                             except:
+                                if sleep_time != None:
+                                    time.sleep(sleep_time)
                                 printExc()
                         HTTP_HEADER['Referer'] = url
                         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
@@ -3028,10 +3031,55 @@ class pageParser:
         # example video: http://vodlocker.com/txemekqfbopy
         return self.__parseJWPLAYER_A(url, 'vodlocker.com')
         
-    def parserVSHAREEU(self, url):
-        printDBG("parserVSHAREEU url[%r]" % url)
+    def parserSTREAMABLECOM(self, baseUrl):
+        printDBG("parserVSHAREEU baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"][^>]+?video/mp4''')[0]
+        if videoUrl.startswith('//'):
+            videoUrl = 'http:' + videoUrl
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
+        return False
+            
+    def parserVSHAREEU(self, baseUrl):
+        printDBG("parserVSHAREEU baseUrl[%r]" % baseUrl)
         # example video: http://vshare.eu/mvqdaea0m4z0.htm
-        return self.__parseJWPLAYER_A(url, 'vshare.eu')
+        
+        HTTP_HEADER = {'User-Agent': "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"}
+        
+        if 'embed' not in baseUrl:
+            COOKIE_FILE = GetCookieDir('vshareeu.cookie')
+            rm(COOKIE_FILE)
+            params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
+            sts, data = self.cm.getPage(baseUrl, params)
+            if not sts: return False
+            
+            sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)
+            if not sts: return False
+            
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+            params['header']['Referer'] = baseUrl
+            
+            time.sleep(5)
+            
+            sts, data = self.cm.getPage(baseUrl, params, post_data)
+            if not sts: return False
+        else:
+            sts, data = self.cm.getPage(baseUrl)
+            if not sts: return False
+        
+        linksTab = self._findLinks(data, 'vshare.eu')
+        for idx in range(len(linksTab)):
+            linksTab[idx]['url'] = strwithmeta(linksTab[idx]['url'] + '?start=0', {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+        return linksTab
+        
+        #X-Requested-With:ShockwaveFlash/23.0.0.205
+        if 'embed' not in baseUrl:
+            tmp = baseUrl.split('.')
+            baseUrl = '.'.join(tmp[:-1])
+            baseUrl = baseUrl.replace('.eu/', '.eu/embed-') + '-729x400.html'
         
     def parserVIDSPOT(self, url):
         printDBG("parserVIDSPOT url[%r]" % url)
