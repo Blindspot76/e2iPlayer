@@ -2872,8 +2872,9 @@ class pageParser:
         movieUrls.reverse()
         return movieUrls
         
-    def parserFILEONETV(self, url):
-        printDBG("parserFILEONETV url[%s]\n" % url)
+    def parserFILEONETV(self, baseUrl):
+        printDBG("parserFILEONETV baseUrl[%s]\n" % baseUrl)
+        url = baseUrl.replace('show/player', 'v')
         sts, data = self.cm.getPage(url)
         if not sts: return False
         data = self.cm.ph.getDataBeetwenMarkers(data, 'setup({', '});', True)[1]
