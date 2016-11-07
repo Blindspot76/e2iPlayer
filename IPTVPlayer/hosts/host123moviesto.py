@@ -56,8 +56,17 @@ class T123MoviesTO(CBaseHostClass):
         self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+        self.MAIN_URL = None
+        self.cacheFilters = {}
+        self.cacheLinks = {}
         
-        self.MAIN_URL = 'http://123movies.to/'
+    def selectDomain(self):
+        sts, data = self.cm.getPage('http://123movies.to/')
+        if sts and 'genre/action/' in data:
+            self.MAIN_URL = 'http://123movies.ru/'
+        else:
+            self.MAIN_URL = 'http://123movies.to/'
+        
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
         
@@ -66,9 +75,6 @@ class T123MoviesTO(CBaseHostClass):
                              {'category':'search',          'title': _('Search'), 'search_item':True,                     'icon':self.DEFAULT_ICON_URL},
                              {'category':'search_history',  'title': _('Search history'),                                 'icon':self.DEFAULT_ICON_URL} 
                             ]
-         
-        self.cacheFilters = {}
-        self.cacheLinks = {}
     
     def fillCacheFilters(self):
         self.cacheFilters = {}
@@ -403,6 +409,8 @@ class T123MoviesTO(CBaseHostClass):
         printDBG('handleService start')
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        if self.MAIN_URL == None:
+            self.selectDomain()
 
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
