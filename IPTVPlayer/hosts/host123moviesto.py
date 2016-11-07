@@ -61,11 +61,15 @@ class T123MoviesTO(CBaseHostClass):
         self.cacheLinks = {}
         
     def selectDomain(self):
-        sts, data = self.cm.getPage('http://123movies.to/')
-        if sts and 'genre/action/' in data:
-            self.MAIN_URL = 'http://123movies.ru/'
-        else:
-            self.MAIN_URL = 'http://123movies.to/'
+    
+        for domain in ['http://123movies.is/', 'http://123movies.ru/', 'http://123movies.to/']:
+            sts, data = self.cm.getPage(domain)
+            if sts and 'genre/action/' in data:
+                self.MAIN_URL = domain
+                break
+        
+        if self.MAIN_URL == None:
+            self.MAIN_URL = domain # last domain is default one
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
