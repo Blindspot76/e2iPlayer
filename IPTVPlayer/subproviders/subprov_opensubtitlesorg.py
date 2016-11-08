@@ -212,7 +212,10 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
         if not sts:
             SetIPTVPlayerLastHostError(_('Login failed!'))
         elif ('' != login and self._checkStatus(data, 0)) or '' == login: 
-            self.loginToken = data[0]['token']
+            if 'token' in data[0]:
+                self.loginToken = data[0]['token']
+            else:
+                SetIPTVPlayerLastHostError(_('Get token failed!') + '\n' + _('Error message: \"%s\".\nError code: \"%s\".') % (self.lastApiError['code'], self.lastApiError['message']) )
         else:
             SetIPTVPlayerLastHostError(_('Login failed!') + '\n' + _('Error message: \"%s\".\nError code: \"%s\".') % (self.lastApiError['code'], self.lastApiError['message']) )
         
