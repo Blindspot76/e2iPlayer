@@ -141,7 +141,7 @@ class DMHelper:
             fo = open(file, "r")
             lines = fo.readlines()
             fo.close()
-        except:
+        except Exception:
             return ret
         if 0 < len(lines):
             match = re.search("|PROGRESS|([0-9]+?)/([0-9]+?)|" , lines[1])
@@ -154,7 +154,7 @@ class DMHelper:
         try:
             st = os.stat(filename)
             ret = st.st_size
-        except:
+        except Exception:
             ret = -1
         return ret
         
@@ -172,7 +172,7 @@ class DMHelper:
             remoteContentInfo = {'Content-Length': tmpInfo.get('Content-Length', -1), 'Content-Type': tmpInfo.get('Content-Type', '')}
         if response:
             try: response.close()
-            except: pass
+            except Exception: pass
 
         printDBG("getRemoteContentInfoByUrllib: [%r]" % remoteContentInfo)
         return sts,remoteContentInfo

@@ -56,14 +56,14 @@ from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 from Components.config import config
 
 try: import json
-except: import simplejson as json
+except Exception: import simplejson as json
     
 import codecs
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.mtv import GametrailersIE
     
 try:    from urlparse import urlsplit, urlunsplit
-except: printExc()
+except Exception: printExc()
 ###################################################
 class urlparser:
     def __init__(self):
@@ -99,8 +99,8 @@ class urlparser:
                     if key not in KEYS_TAB: continue
                     if not overwrite and key in baseUrl.meta: continue
                     try: baseUrl.meta[key] = params[key][0]
-                    except: printExc()
-            except: printExc()
+                    except Exception: printExc()
+            except Exception: printExc()
         return baseUrl
 
     def preparHostForSelect(self, v, resolveLink = False):
@@ -428,7 +428,7 @@ class urlparser:
                     videoTab.append({'name': host, 'url': ret})
             elif isinstance(ret, list) or isinstance(ret, tuple):
                 return ret
-        except:
+        except Exception:
             printExc()
             
         return videoTab
@@ -450,7 +450,7 @@ class urlparser:
                     else:
                         return False
             return nUrl
-        except:
+        except Exception:
             printExc()
         return False
         
@@ -758,7 +758,7 @@ class pageParser:
             try:
                 from youtubeparser import YouTubeParser
                 self.ytParser = YouTubeParser()
-            except:
+            except Exception:
                 printExc()
                 self.ytParser = None
         return self.ytParser
@@ -768,7 +768,7 @@ class pageParser:
             try:
                 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.vevo import VevoIE
                 self.vevoIE = VevoIE()
-            except:
+            except Exception:
                 self.vevoIE = None
                 printExc()
         return self.vevoIE
@@ -778,7 +778,7 @@ class pageParser:
             try:
                 from moonwalkcc import MoonwalkParser
                 self.moonwalkParser = MoonwalkParser()
-            except:
+            except Exception:
                 printExc()
                 self.moonwalkParser = None
         return self.moonwalkParser
@@ -902,12 +902,12 @@ class pageParser:
             try:
                 tmp = self.cm.ph.getDataBeetwenMarkers(data, '<form method="post" action="">', '</form>', False, False)[1]
                 post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
-            except:
+            except Exception:
                 printExc()
             try:
                 tmp = dict(re.findall(r'<button[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
                 post_data.update(tmp)
-            except:
+            except Exception:
                 printExc()
         videoUrl = False
         params = {'header':{ 'User-Agent': 'Mozilla/5.0', 'Content-Type':'application/x-www-form-urlencoded','Referer':url} }
@@ -933,7 +933,7 @@ class pageParser:
             if '' != errUrl: url = errUrl
             if '' != url:
                 videoUrl = url
-        except:
+        except Exception:
             printExc()
         return videoUrl
         
@@ -966,7 +966,7 @@ class pageParser:
                             try:
                                 sleep_time = self.cm.ph.getSearchGroups(data2, '>([0-9]+?)</span> seconds<')[0]
                                 if '' != sleep_time: time.sleep(int(sleep_time))
-                            except:
+                            except Exception:
                                 if sleep_time != None:
                                     time.sleep(sleep_time)
                                 printExc()
@@ -978,10 +978,10 @@ class pageParser:
                                 try:
                                     tmpItem = unpackJSPlayerParams(tmpItem, VIDUPME_decryptPlayerParams)
                                     data = tmpItem + data
-                                except: printExc()
+                                except Exception: printExc()
                     if None != customLinksFinder: linkList = customLinksFinder(data)
                     if 0 == len(linkList): linkList = self._findLinks(data, serverName)
-                except:
+                except Exception:
                     printExc()
             if len(linkList) > 0:
                 break
@@ -1515,7 +1515,7 @@ class pageParser:
                 sleep_time = self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]
                 sleep_time = int(sleep_time)
                 if sleep_time < 12: time.sleep(sleep_time)
-            except:
+            except Exception:
                 printExc()
             
             sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)
@@ -1531,7 +1531,7 @@ class pageParser:
                 videoUrl = self.cm.ph.getSearchGroups(tmp, 'href="(http[^"]+?)"')[0]
                 if '' == videoUrl: continue
                 return urlparser.decorateUrl(videoUrl, {'User-Agent':USER_AGENT})
-            except:
+            except Exception:
                 printExc()
             
         return False
@@ -1583,7 +1583,7 @@ class pageParser:
             if tmp[1].startswith('http'):
                 linksTab.append({'name':'freedisc.pl', 'url': urlparser.decorateUrl(tmp[1], {'Referer':tmp[0], 'User-Agent':HTTP_HEADER['User-Agent']})})
                 tmpUrls.append(tmp[1])
-        except:
+        except Exception:
             printExc()
             
         videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?/embed/[^"^']+?)["']''', 1, True)[0]
@@ -1738,7 +1738,7 @@ class pageParser:
                 for idx in range(len(linksTab)):
                     linksTab[idx]['url'] = urlparser.decorateUrl(linksTab[idx]['url'], {'User-Agent':HTTP_HEADER['User-Agent'],'Referer': url})
                 return linksTab
-        except:
+        except Exception:
             pass
         
         def rc4(e, code):
@@ -1931,7 +1931,7 @@ class pageParser:
                     if len(data):
                         decrypted = True
                     break
-                except:
+                except Exception:
                     continue
             if not decrypted: continue
             
@@ -2076,7 +2076,7 @@ class pageParser:
                 if sts: movieUrls.append({ 'name': 'yandex.ru: ' + item['ext'] + ' bitrate: ' + str(item['bitrate']), 'url':location.replace('&amp;', '&') })
                 else: printDBG("parserYANDEX - get location problem")
             return movieUrls
-        except:
+        except Exception:
             printDBG("parserYANDEX - formats xml problem")
             printExc()
             return False
@@ -2119,7 +2119,7 @@ class pageParser:
             query_data = { 'url': vidInfoUrl, 'return_data': True }
             try:
                 videoInfo = self.cm.getURLRequestData(query_data)
-            except:
+            except Exception:
                 printDBG('parserRUTUBE problem with getting video info page')
                 return []
             printDBG('---------------------------------------------------------')
@@ -2155,7 +2155,7 @@ class pageParser:
                 formats = config.plugins.iptvplayer.ytformat.value
                 bitrate = config.plugins.iptvplayer.ytDefaultformat.value
                 dash    = config.plugins.iptvplayer.ytShowDash.value
-            except:
+            except Exception:
                 printDBG("parserYOUTUBE default ytformat or ytDefaultformat not available here")
                 formats = "mp4"
                 bitrate = "360"
@@ -2215,7 +2215,7 @@ class pageParser:
                         redirectUrl = response.geturl() 
                         response.close()
                         return redirectUrl
-                    except:
+                    except Exception:
                         printExc()
             else:
                 printDBG('parserTOPUPLOAD direct link not found in return data')
@@ -2259,7 +2259,7 @@ class pageParser:
         try:
             sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
             time.sleep(sleep_time)
-        except:
+        except Exception:
             printExc()
             
         sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER}, post_data)
@@ -2369,7 +2369,7 @@ class pageParser:
                         item['url'].meta['Cookie'] = 'PHPSESSID=%s' % PHPSESSID
                         newUrlsTab.append(item)
                     return newUrlsTab
-                except:
+                except Exception:
                     printExc()
                     return urlsTab
         return False
@@ -2450,7 +2450,7 @@ class pageParser:
                     videoUrl = strwithmeta(item['url'].encode('utf-8'), {'Cookie':"video_key=%s" % video_key, 'iptv_buffering':'required'})
                     videoName = 'mail.ru: %s' % item['key'].encode('utf-8')
                     movieUrls.append({ 'name': videoName, 'url': videoUrl}) 
-        except:
+        except Exception:
             printExc()
         # Try old code extractor
         if 0 == len(movieUrls):
@@ -2502,7 +2502,7 @@ class pageParser:
                     movieUrls.append({'name': 'wrzuta.pl: ' + str(quality.get(media['quality'], 0)) + 'p', 'url':media['url']})                
                 break;
         
-        except: 
+        except Exception: 
             printExc()
         # end algo
         
@@ -2738,7 +2738,7 @@ class pageParser:
                         swfUrl  = "http://streamin.to/player6/jwplayer.flash.swf"
                         rtmpUrl = r + ' playpath=%s' % playpath + ' swfUrl=%s' % swfUrl + ' pageUrl=%s' % baseUrl
                         vidTab.append({'name': 'rtmp://streamin.to/ ', 'url':urlparser.decorateUrl(rtmpUrl, {'iptv_livestream':False})})
-                    except:
+                    except Exception:
                         printExc()
             return vidTab
         vidTab = []
@@ -2768,7 +2768,7 @@ class pageParser:
                 try:
                     sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
                     time.sleep(sleep_time)
-                except:
+                except Exception:
                     printExc()
                     
                 sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER}, post_data)
@@ -2811,12 +2811,12 @@ class pageParser:
                 vs       = re.search('<input type="hidden" value="([^"]+?)" name="([^"]+?)">', data)
                 post = {confirm.group(1):confirm.group(2), vs.group(2):vs.group(1)}
                 sts, data = self.cm.getPage(url, {'Referer':url}, post)
-            except:
+            except Exception:
                 printExc()
             
             url = re.search("'file': '(http[^']+?)'", data).group(1)
             return url
-        except:
+        except Exception:
             printExc()
         return False
             
@@ -2870,7 +2870,7 @@ class pageParser:
                         movieUrls.extend(retTab)
                     elif 'ism' not in url:
                         movieUrls.append({'name': 'wat.tv: ' + item, 'url':url})
-            except:
+            except Exception:
                 printExc()
         movieUrls.reverse()
         return movieUrls
@@ -2951,7 +2951,7 @@ class pageParser:
         try:
             mobj = re.match(r'http://(?:www\.)?video\.tt/(?:video/|watch_video\.php\?v=|embed/)(?P<id>[\da-zA-Z]{9})', url)
             video_id = mobj.group('id')
-        except:
+        except Exception:
             printExc()
             return linkList
         url = 'http://www.video.tt/player_control/settings.php?v=%s' % video_id
@@ -2965,7 +2965,7 @@ class pageParser:
                         'name': res['l'].encode('utf-8'),
                     } for res in data['res'] if res['u']
                 ]
-            except:
+            except Exception:
                 printExc()
         return linkList
         
@@ -3105,7 +3105,7 @@ class pageParser:
             try:
                 sleep_time = int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]) 
                 time.sleep(sleep_time)
-            except:
+            except Exception:
                 printExc()
             if {} == post_data:
                 post_data = None
@@ -3358,7 +3358,7 @@ class pageParser:
                         chankUrl = (item['prov_url'] + item['chunk_name']).encode('utf-8')
                         url      = urlparser.decorateUrl(videoUrl, {'iptv_livestream': True, 'iptv_proto':'f4m', 'iptv_chank_url':chankUrl})
                         linksTab.append({'name':name, 'url':url})
-            except:
+            except Exception:
                 printExc()
             break
         return linksTab
@@ -3376,7 +3376,7 @@ class pageParser:
                             url = urlparser.decorateUrl(item['url'], {'iptv_livestream': True})
                             linksTab.append({'name':name, 'url':url})
                         break
-                except:
+                except Exception:
                     printExc()
                 attempts -= 1
                 time.sleep(3)
@@ -3440,7 +3440,7 @@ class pageParser:
                 url = ('rtmp://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) ) + v_part
                 url += ' swfUrl=http://privatestream.tv/js/jwplayer.flash.swf pageUrl=%s' % (videoUrl)
                 return url
-            except:
+            except Exception:
                 printExc()
         return False
         
@@ -3488,7 +3488,7 @@ class pageParser:
                     printDBG(url)
                     return getDirectM3U8Playlist(url)
                 return url
-            except:
+            except Exception:
                 printExc()
         return False
     
@@ -3637,7 +3637,7 @@ class pageParser:
         try:
             video_id = mobj.group('id')
             linkUrl = 'http://docs.google.com/file/d/' + video_id
-        except:
+        except Exception:
             linkUrl = baseUrl
             
         _FORMATS_EXT = {
@@ -3681,7 +3681,7 @@ class pageParser:
                 item = byteify(json.loads(item))
                 if 'video' in item.get('type', ''):
                     videoTab.append({'name':'%sx%s' % (item.get('width', ''), item.get('height', '')), 'url':item['url']})
-            except:
+            except Exception:
                 printExc()
         return videoTab
         
@@ -3721,7 +3721,7 @@ class pageParser:
                     url = item['video'][0]['url'].encode('utf-8')
                     if url.startswith('http'):
                         videoTab.append({'name': 'myvi.ru: %s' % item['duration'], 'url':strwithmeta(url, {'Cookie':'UniversalUserID=%s; vp=0.33' % universalUserID})})
-            except: 
+            except Exception: 
                 printExc()
         return videoTab
         
@@ -3737,7 +3737,7 @@ class pageParser:
                 for item in data:
                     if 'mp4' == item['type']:
                         videoTab.append({'name':'archive.org: ' + item['label'].encode('utf-8'), 'url':'https://archive.org' + item['file'].encode('utf-8')})
-            except:
+            except Exception:
                 printExc()
         return videoTab
         
@@ -3988,7 +3988,7 @@ class pageParser:
             tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
             printDBG(tmp)
             data = tmp + data
-        except:
+        except Exception:
             printExc()
         
         data = self.cm.ph.getSearchGroups(data, """["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""")[0]
@@ -4096,7 +4096,7 @@ class pageParser:
                         videoTab.append({'name':'myvideo.de: RTMP', 'url':videoUrl})
                 else:
                     videoTab.append({'name':'myvideo.de: HTTP', 'url':path+source})
-            except:
+            except Exception:
                 printExc()
                 
         return videoTab
@@ -4116,7 +4116,7 @@ class pageParser:
             try:
                 tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
                 data = tmp + data
-            except: printExc()
+            except Exception: printExc()
         
         data = CParsingHelper.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
         data = re.findall('file:[ ]*"([^"]+?)"', data)
@@ -4143,7 +4143,7 @@ class pageParser:
                 if '' != object_id:
                     from Plugins.Extensions.IPTVPlayer.hosts.hosttvpvod import TvpVod
                     vidTab = TvpVod().getVideoLink(object_id)
-        except:
+        except Exception:
             printExc()
         return vidTab
         
@@ -4276,7 +4276,7 @@ class pageParser:
         try:
             sleep_time = self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]
             if '' != sleep_time: time.sleep(int(sleep_time))
-        except:
+        except Exception:
             printExc()
         try:
             sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)
@@ -4289,7 +4289,7 @@ class pageParser:
             linkList = self._findLinks(data, serverName='cloudyvideos.com', m1='setup({', m2='</script>')
             for item in linkList:
                 item['url'] = urlparser.decorateUrl(item['url']+'?start=0', {'User-Agent':'Mozilla/5.0', 'Referer':'http://cloudyvideos.com/player510/player.swf'})
-        except:
+        except Exception:
             printExc()
         return linkList
         
@@ -4582,13 +4582,13 @@ class pageParser:
         def saveGet(b, a):
             try:
                 return b[a]
-            except:
+            except Exception:
                 return 'pic'
         def justRet(data):
             return data
         try:
             paramsAlgoObj = compile(data, '', 'exec')
-        except:
+        except Exception:
             printExc('unpackJS compile algo code EXCEPTION')
             return ''
         vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet, 'justRet':justRet}
@@ -4596,12 +4596,12 @@ class pageParser:
 
         try:
             exec( data, vGlobals, vLocals )
-        except:
+        except Exception:
             printExc('unpackJS exec code EXCEPTION')
             return ''
         try:
             return vLocals[name]
-        except:
+        except Exception:
             printExc('decryptPlayerParams EXCEPTION')
         return ''
         
@@ -4867,7 +4867,7 @@ class pageParser:
             if not sts: return False
             
             videoUrl = CParsingHelper.getDataBeetwenMarkers(data, '<file>', '</file>', False)[1]
-        except:
+        except Exception:
             videoUrl = ''
             pass
         if '' == videoUrl:
@@ -4958,7 +4958,7 @@ class pageParser:
                         urlTab.extend(hlsTab)
                     else:
                         urlTab.append({'name':item['type'], 'url':item['uri']})
-                except: pass
+                except Exception: pass
             return urlTab
         else:
             return urlparser().getVideoLinkExt(data['source'])
@@ -5091,7 +5091,7 @@ class pageParser:
                     url = urlparser.decorateUrl(url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
                     linksTab.append({'name':name, 'url':url})
                 return linksTab
-            except:
+            except Exception:
                 printExc()
         return self._findLinks(data, contain='mp4')
         
@@ -5123,7 +5123,7 @@ class pageParser:
                         urlTab.extend(tab)
                     else:
                         urlTab.append({'name':item[1], 'url':vidUrl})
-            except:
+            except Exception:
                 continue
         return urlTab
         
@@ -5150,7 +5150,7 @@ class pageParser:
         try:
             sleep_time = int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]) 
             time.sleep(sleep_time)
-        except:
+        except Exception:
             printExc()
         if {} == post_data:
             post_data = None
@@ -5166,7 +5166,7 @@ class pageParser:
             tmp = CParsingHelper.getDataBeetwenMarkers(data.split('player_code')[-1], ">eval(", '</script>')[1]
             tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
             data = tmp + data
-        except:
+        except Exception:
             pass
         
         videoUrl = self.cm.ph.getSearchGroups(data, '<[^>]+?type="video[^>]+?src="([^"]+?)"')[0]
@@ -5217,7 +5217,7 @@ class pageParser:
             mobj = re.search(r'/(?:file|video)/(?P<id>[a-z\d]{13})', baseUrl)
             video_id = mobj.group('id')
             url = 'http://www.wholecloud.net/embed/?v=' + video_id
-        except:
+        except Exception:
             printExc()
         return self._parserUNIVERSAL_B(url)
         
@@ -5278,7 +5278,7 @@ class pageParser:
                             videoUrls.append({'name':'ONET type:%s :%s' % (type, vidItem.get('video_bitrate', '0')), 'url':vidUrl})
                         elif None != vidItem.get('audio_bitrate', None):
                             videoUrls.append({'name':'ONET type:%s :%s' % (type, vidItem.get('audio_bitrate', '0')), 'url':vidUrl})
-            except:
+            except Exception:
                 printExc()
         return videoUrls
         
@@ -6094,7 +6094,7 @@ class pageParser:
                     for item in data:
                         item['url'] = urlparser.decorateUrl(item['url'], {'iptv_proto':'m3u8', 'iptv_livestream':True}) 
                         urlTab.append(item)
-                except: printExc()
+                except Exception: printExc()
             return urlTab
         return False
         
@@ -6350,7 +6350,7 @@ class pageParser:
             while i >= 0:
                 try:
                     o += x[i]
-                except:
+                except Exception:
                     pass
                 i -= 1
             return o
@@ -6362,13 +6362,13 @@ class pageParser:
                 try:
                     x += x
                     l += l
-                except:
+                except Exception:
                     pass
             i = l - 1
             while i >= 0:
                 try:
                     o += x[i]
-                except:
+                except Exception:
                     pass
                 i -= 1
             return o[:ol]
@@ -6403,7 +6403,7 @@ class pageParser:
             #return re.sub(r'\\(.)', r'\1', data)
             #try:
             #    return data.decode('unicode-escape')
-            #except:
+            #except Exception:
             #    printExc()
                 #return re.sub(r'\\(.)', r'\1', data)
             tmp = ''

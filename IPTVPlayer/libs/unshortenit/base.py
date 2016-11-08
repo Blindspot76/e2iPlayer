@@ -3,7 +3,7 @@
 
 try:
     from urllib.parse import urlsplit, urlparse, parse_qs, urljoin
-except:
+except Exception:
     from urlparse import urlsplit, urlparse, parse_qs, urljoin
 
 import re

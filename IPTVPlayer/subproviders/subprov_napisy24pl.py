@@ -23,7 +23,7 @@ import urllib
 import unicodedata
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 try:
     try: from cStringIO import StringIO
     except Exception: from StringIO import StringIO 

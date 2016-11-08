@@ -36,7 +36,7 @@ from Tools.BoundFunction import boundFunction
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 
 from os import path as os_path, remove as os_remove, listdir as os_listdir
 ###################################################
@@ -224,7 +224,7 @@ class IUpdateObjectInterface():
                 if not mkdirs(path):
                     msg = _("The problem with creating a directory [%s].") % path
                     sts = False
-        except:
+        except Exception:
             printExc()
             msg = _("Problem with the directory [%s].") % path
             sts = False
@@ -288,7 +288,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             if newVerNum != self.serversList[self.currServIdx]['version']:
                 code = -1
                 msg  = _("Wrong version. \n downloaded version [%s] is different from the requested [%s].") % (newVerNum, self.serversList[self.currServIdx]['version'])
-        except:
+        except Exception:
             printExc()
             code = -1
             msg  = _("File [%s] reading failed.") % newVerFile
@@ -529,7 +529,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     def clearTmpData(self):
         try:
             rmtree(self.tmpDir)
-        except:
+        except Exception:
             printExc()
     
     ##############################################################################
@@ -555,14 +555,14 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     def __serversListDownloadFinished(self, arg, status):
         def ServerComparator(x, y):
             try:    val1 = int(x['version'].replace('.', ''))
-            except: val1 = 0
+            except Exception: val1 = 0
             try:    val2 = int(y['version'].replace('.', ''))
-            except: val2 = 0
+            except Exception: val2 = 0
             #printDBG("ServerComparator val1[%d], val2[%d]" % (val1, val2))
             return cmp(val1, val2)
         try:
             currVerNum = int(GetIPTVPlayerVerstion().replace('.', ''))
-        except:
+        except Exception:
             printDBG('Version of the current instalation [%s]' % GetIPTVPlayerVerstion())
             currVerNum = 0
         pythonVer = GetShortPythonVersion()
@@ -600,7 +600,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                     if not serverOK: continue
                     newServer = dict(extServer)
                     serversList.append(newServer)
-            except:
+            except Exception:
                 printExc()
                 self.stepFinished(-1, _("Problem with downloading the server list."))
                 return
@@ -615,7 +615,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                     server = serversList[idx]
                     if not config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
                         try: newVerNum = int(server['version'].replace('.', ''))
-                        except: continue
+                        except Exception: continue
                         #printDBG("newVerNum[%s], currVerNum[%s]" % (newVerNum, currVerNum))
                         if newVerNum < currVerNum and not config.plugins.iptvplayer.downgradePossible.value:
                             continue
@@ -680,7 +680,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         else:
             try:
                 os_remove
-            except:
+            except Exception:
                 printExc()
             code = 0
             msg  = _("Unpacking the archive completed successfully.")
@@ -723,7 +723,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                         continue 
                     cmdList.append('%s "%s" "%s" "%s" 2>&1 ' % (interpreterBinName, filePath, os_path.join(self.ExtensionPath, 'IPTVPlayer/'), os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/')) )
             cmdList.sort()
-        except:
+        except Exception:
             printExc()
         printDBG('UpdateMainAppImpl.__getScriptsList [%r]' % cmdList)
         return cmdList

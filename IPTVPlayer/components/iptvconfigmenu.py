@@ -200,7 +200,7 @@ for hostName in gListOfHostsNames:
         else:
             enabledByDefault = 'True'
         exec('config.plugins.iptvplayer.host' + hostName + ' = ConfigIPTVHostOnOff(default = ' + enabledByDefault + ')')
-    except:
+    except Exception:
         printExc(hostName)
 
 ###################################################
@@ -625,11 +625,11 @@ def GetMoviePlayer(buffering=False, useAlternativePlayer=False):
         
     if player.value == 'auto': player = CFakeMoviePlayerOption(availablePlayers[0], GetMoviePlayerName(availablePlayers[0]))
     try: availablePlayers.remove(player.value)
-    except: printExc()
+    except Exception: printExc()
     
     if alternativePlayer.value == 'auto': alternativePlayer = CFakeMoviePlayerOption(availablePlayers[0], GetMoviePlayerName(availablePlayers[0]))
     try: availablePlayers.remove(alternativePlayer.value)
-    except: printExc()
+    except Exception: printExc()
     
     if useAlternativePlayer:
         return alternativePlayer

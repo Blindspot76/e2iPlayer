@@ -28,9 +28,9 @@ class IPTVUpdateList(IPTVListComponentBase):
         
         self.fonts = {}
         try: self.fonts[0] = skin.fonts["iptvupdatelistitem_0"]
-        except: self.fonts[0] = ("Regular", 16, 20, 0)
+        except Exception: self.fonts[0] = ("Regular", 16, 20, 0)
         try: self.fonts[1] = skin.fonts["iptvupdatelistitem_1"]
-        except: self.fonts[1] = ("Regular", 26, 50, 0)
+        except Exception: self.fonts[1] = ("Regular", 26, 50, 0)
     
         self.l.setFont(0, gFont(self.fonts[0][0], self.fonts[0][1]))
         self.l.setFont(1, gFont(self.fonts[1][0], self.fonts[1][1]))
@@ -48,7 +48,7 @@ class IPTVUpdateList(IPTVListComponentBase):
         for idx in range(len(self.iconsPaths)):
             try:
                 self.iconsPixList[idx] = LoadPixmap(cached=False, path=self.iconsPaths[idx])
-            except:
+            except Exception:
                 printExc()
         
     def onDestroy(self):

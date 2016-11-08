@@ -22,7 +22,7 @@ import urllib
 import unicodedata
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 try:
     try: from cStringIO import StringIO
     except Exception: from StringIO import StringIO 
@@ -179,7 +179,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
             if code >= 200 and code < 300: return True
             self.lastApiError = {'code':code, 'message':item['status']}
             
-        except:
+        except Exception:
             printExc()
             self.lastApiError = {'code':-999, 'message':_('_checkStatus except error')}
         return False
@@ -405,7 +405,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
             with open(fileName, 'w') as f:
                 f.write(data)
             retData = {'title':title, 'path':fileName, 'lang':lang, 'imdbid':imdbid}
-        except: 
+        except Exception: 
             SetIPTVPlayerLastHostError(_('Failed to write file "%s".') % fileName)
             printExc()
         return retData

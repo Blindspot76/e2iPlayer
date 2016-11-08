@@ -146,7 +146,7 @@ class IPTVSetupImpl:
         for platform in self.supportedPlatforms:
             platformtesterPath = resolveFilename(SCOPE_PLUGINS, "Extensions/IPTVPlayer/bin/%s/platformtester" % platform)
             try: os_chmod(platformtesterPath, 0777)
-            except: printExc()
+            except Exception: printExc()
             cmdTabs.append(platformtesterPath + "  2>&1 ")
         def _platformValidator(code, data):
             printDBG("IPTVSetupImpl._platformValidator")
@@ -194,7 +194,7 @@ class IPTVSetupImpl:
                         libcryptoExist = True
                     if libsslExist and libcryptoExist:
                         break
-                except:
+                except Exception:
                     printExc()
                     continue
             if libsslExist and libcryptoExist:
@@ -296,7 +296,7 @@ class IPTVSetupImpl:
             try: 
                 self.ffmpegVersion = re.search("ffmpeg version ([0-9.]+?)[^0-9^.]", dataTab[-1]).group(1)
                 if '.' == self.ffmpegVersion[-1]: self.ffmpegVersion = self.ffmpegVersion[:-1]
-            except: self.ffmpegVersion = ""
+            except Exception: self.ffmpegVersion = ""
         else: self.ffmpegVersion = ""
         self.wgetStep()
             
@@ -308,7 +308,7 @@ class IPTVSetupImpl:
         def _detectValidator(code, data):
             if 'BusyBox' not in data and '+https' in data: 
                 try: ver = int(re.search("GNU Wget 1\.([0-9]+?)[^0-9]", data).group(1))
-                except: ver = 0
+                except Exception: ver = 0
                 if ver >= self.wgetVersion: return True,False
             return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
@@ -550,7 +550,7 @@ class IPTVSetupImpl:
         def _detectValidator(code, data):
             if '{"EPLAYER3_EXTENDED":{"version":' in data: 
                 try: ver = int(re.search('"version":([0-9]+?)[^0-9]', data).group(1))
-                except: ver = 0
+                except Exception: ver = 0
                 if ver >= self.exteplayer3Version.get(self.platform, 0): return True,False
             return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
@@ -591,7 +591,7 @@ class IPTVSetupImpl:
             def _detectValidator(code, data):
                 if '{"GSTPLAYER_EXTENDED":{"version":' in data: 
                     try: ver = int(re.search('"version":([0-9]+?)[^0-9]', data).group(1))
-                    except: ver = 0
+                    except Exception: ver = 0
                     if '0.10' != self.gstreamerVersion or ver < 10000:
                         if ver >= self.gstplayerVersion.get(self.gstreamerVersion, 0): 
                             return True,False
@@ -639,7 +639,7 @@ class IPTVSetupImpl:
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
             try: currentSize = os_path.getsize(self.flumpegdemuxpaths[0])
-            except: currentSize = -1
+            except Exception: currentSize = -1
             if -1 < currentSize: sts, retPath = True, paths[0]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
@@ -681,7 +681,7 @@ class IPTVSetupImpl:
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
             try: currentSize = os_path.getsize(self.gstifdsrcPaths[0])
-            except: currentSize = -1
+            except Exception: currentSize = -1
             if -1 < currentSize: sts, retPath = True, paths[0]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):

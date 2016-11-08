@@ -22,7 +22,7 @@ import unicodedata
 import base64
 from os import listdir as os_listdir, path as os_path
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 try:
     try: from cStringIO import StringIO
     except Exception: from StringIO import StringIO 

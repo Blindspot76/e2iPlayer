@@ -22,7 +22,7 @@ import urllib
 import random
 import string
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ############################################
 
 ###################################################
@@ -249,7 +249,7 @@ class IKlubNetApi(CBaseHostClass):
                     urlsTab.append({'name':title + ' [mrl]', 'url':file})
                 else:
                     urlsTab.extend( self.up.getAutoDetectedStreamLink(url, data) )
-            except:
+            except Exception:
                 printExc()
                 continue
         

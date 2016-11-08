@@ -9,7 +9,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 import re
 try:    import simplejson as json
-except: import json
+except Exception: import json
 
 #from __future__ import unicode_literals
 
