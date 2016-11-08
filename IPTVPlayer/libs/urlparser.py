@@ -4577,21 +4577,21 @@ class pageParser:
             return getDirectM3U8Playlist(file)
         return False
         
+    def saveGet(self, b, a):
+        try: return b[a]
+        except Exception: return 'pic'
+        
+    def justRet(self, data):
+        return data
+        
     def _unpackJS(self, data, name):
         data = data.replace('Math.min', 'min').replace(' + (', ' + str(').replace('String.fromCharCode', 'chr').replace('return b[a]', 'return saveGet(b, a)')
-        def saveGet(b, a):
-            try:
-                return b[a]
-            except Exception:
-                return 'pic'
-        def justRet(data):
-            return data
         try:
             paramsAlgoObj = compile(data, '', 'exec')
         except Exception:
             printExc('unpackJS compile algo code EXCEPTION')
             return ''
-        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet, 'justRet':justRet}
+        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':self.saveGet, 'justRet':self.justRet}
         vLocals = { name: None }
 
         try:
