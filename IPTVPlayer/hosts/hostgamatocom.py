@@ -87,8 +87,8 @@ class GamatoMovies(CBaseHostClass):
                 self.cacheFilters[key].insert(0, {'title':titleBase + _('any')})
         
         # genres
-        tmpData = self.cm.ph.getDataBeetwenMarkers(data, '<div class="genre-box">', '<div class="form-group')[1]
-        tmpData = self.cm.ph.getAllItemsBeetwenMarkers(tmpData, '<input', '</label>', withMarkers=True)
+        tmpData = self.cm.ph.getDataBeetwenMarkers(data, '<select name="genres"', '</select')[1]
+        tmpData = self.cm.ph.getAllItemsBeetwenMarkers(tmpData, '<option', '</option>', withMarkers=True)
         addFilter(tmpData, 'genres', True, _('Genre: '))
         
         # order
@@ -126,7 +126,7 @@ class GamatoMovies(CBaseHostClass):
         printDBG("GamatoMovies.listItems")
         perPage = 18
         page = cItem.get('page', 1)
-        baseUrl = 'titles/paginate?_token=' + self.cacheFilters['token'] + '&perPage={0}'.format(perPage) + '&type={0}'.format(cItem['priv_type']) + '&availToStream=true' +  '&page={0}'.format(page)
+        baseUrl = 'titles/paginate?_token=' + self.cacheFilters['token'] + '&perPage={0}'.format(perPage) + '&type={0}'.format(cItem['priv_type']) + '&availToStream=true' + '&page={0}'.format(page)
         if 'genres' in cItem:
             baseUrl += '&genres%5B%5D={0}'.format(urllib.quote(cItem['genres']))
         if 'order' in cItem:
