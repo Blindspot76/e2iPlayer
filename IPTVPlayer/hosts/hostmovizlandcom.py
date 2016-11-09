@@ -194,7 +194,7 @@ class MovizlandCom(CBaseHostClass):
         sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return []
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'class="iframeWide"', '</div>')[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'class="iframeWide"', '<div class="footer">')[1]
         data = re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"]''').findall(data)
         for url in data:
             if 'movizland.com' in url: continue
