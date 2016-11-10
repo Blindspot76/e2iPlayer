@@ -152,9 +152,14 @@ class NaszeKinoOnline(CBaseHostClass):
         perPage = 30
         page = cItem.get('page', 1)
         
-        baseUrl = cItem['url']
+        tmp = cItem['url'].split('?')
+        baseUrl = tmp[0]
+        if len(tmp) == 2:
+            getParams = tmp[1] + '&'
+        else: getParams = ''
+            
         if page > 1: baseUrl += '/page{0}'.format(page)
-        baseUrl += '?s=&pp={0}&'.format(perPage)
+        baseUrl += '?%ss=&pp={0}&'.format(getParams, perPage)
         
         if 'daysprune' in cItem:
             baseUrl += 'daysprune={0}&'.format(cItem['daysprune'])
@@ -196,7 +201,8 @@ class NaszeKinoOnline(CBaseHostClass):
     def listThreads2(self, cItem, nextCategory):
         printDBG("NaszeKinoOnline.listThreads2")
         
-        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
+        baseUrl = cItem['url']
+        sts, data = self.cm.getPage(baseUrl, self.defaultParams)
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="blockrow"', '</div>', withMarkers=False)[1]
@@ -214,8 +220,11 @@ class NaszeKinoOnline(CBaseHostClass):
         
         page = cItem.get('page', 1)
         
-        baseUrl = cItem['url']
+        tmp = cItem['url'].split('?')
+        baseUrl = tmp[0]
         if page > 1: baseUrl += '/page{0}'.format(page)
+        if len(tmp) == 2:
+            baseUrl += '?' + tmp[1]
         
         sts, data = self.cm.getPage(baseUrl, self.defaultParams)
         if not sts: return
