@@ -265,11 +265,14 @@ class ChiaanimeCO(CBaseHostClass):
             sts, data = self.getPage(url)
             if not sts: return []
         
-        printDBG(data)
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'Download', '<script ', False)[1]
+        #printDBG(data)
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '"divDownload"', '<script ', False)[1]
+        printDBG(tmp)
         tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
+        printDBG(tmp)
         for item in tmp:
             urlTab.append({'name':item[1], 'url':item[0], 'need_resolve':1})
+        
         if 0 == len(urlTab):
             tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player', '</script>', False)[1]
             if 'docid=' in tmp:
