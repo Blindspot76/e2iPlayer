@@ -2360,7 +2360,7 @@ class pageParser:
             if playerUrl.startswith('http'):
                 COOKIE_FILE_M3U8 = GetCookieDir('m3u8.cookie')
                 params = {'cookiefile':COOKIE_FILE_M3U8, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
-                playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'Referer':'http://h5.adshell.net/flash', 'User-Agent':HTTP_HEADER['User-Agent']})
+                playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'Referer':'http://h5.adshell.net/', 'Origin':'http://h5.adshell.net', 'User-Agent':HTTP_HEADER['User-Agent']})
                 urlsTab = getDirectM3U8Playlist(playerUrl, cookieParams=params)
                 try:
                     PHPSESSID = self.cm.getCookieItem(COOKIE_FILE_M3U8, 'PHPSESSID')

@@ -68,9 +68,10 @@ class DMHelper:
                      {'marker':'User-Agent=',      'name':'User-Agent'},
                      {'marker':'Range=',           'name':'Range'},
                      {'marker':'Orgin=',           'name':'Orgin'},
+                     {'marker':'Origin=',          'name':'Origin'},
                      {'marker':'X-Forwarded-For=', 'name':'X-Forwarded-For'}]
                      
-    HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'X-Forwarded-For']
+    HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'Origin', 'X-Forwarded-For']
     IPTV_DOWNLOADER_PARAMS = ['iptv_wget_continue', 'iptv_wget_timeout', 'iptv_wget_waitretry']
     
     @staticmethod
