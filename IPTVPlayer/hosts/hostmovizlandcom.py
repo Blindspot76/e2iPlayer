@@ -198,6 +198,7 @@ class MovizlandCom(CBaseHostClass):
         data = re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"]''').findall(data)
         for url in data:
             if 'movizland.com' in url: continue
+            if 'moshahda.net' in url and ('embedM-' in url or '?download' in url): continue
             if self.up.checkHostSupport(url) == 1:
                 title = self.up.getHostName(url)
                 urlTab.append({'name':title, 'url':url, 'need_resolve':1})
