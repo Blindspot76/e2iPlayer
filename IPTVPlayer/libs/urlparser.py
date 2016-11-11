@@ -2313,7 +2313,8 @@ class pageParser:
             cipher = AES_CBC(key=key, keySize=32)
             return cipher.decrypt(encrypted, iv)
         
-        for agent in ['Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10']: #, 'Mozilla/5.0']:
+        #['Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10']
+        for agent in ['Mozilla/5.0 (iPhone; CPU iPhone OS 9_0_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13A452 Safari/601.1']: 
             HTTP_HEADER= { 'User-Agent':agent, 'Referer':Referer }
             COOKIE_FILE = GetCookieDir('castflashpw.cookie')
             params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
@@ -2360,13 +2361,19 @@ class pageParser:
             if playerUrl.startswith('http'):
                 COOKIE_FILE_M3U8 = GetCookieDir('m3u8.cookie')
                 params = {'cookiefile':COOKIE_FILE_M3U8, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
-                playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_livestream':True, 'Referer':'http://h5.adshell.net/', 'Origin':'http://h5.adshell.net', 'User-Agent':HTTP_HEADER['User-Agent']})
-                urlsTab = getDirectM3U8Playlist(playerUrl, cookieParams=params)
+                playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':'http://h5.adshell.net/peer5', 'Origin':'http://h5.adshell.net', 'User-Agent':HTTP_HEADER['User-Agent']})
+                try:
+                    import uuid
+                    playerUrl.meta['X-Playback-Session-Id'] = str(uuid.uuid1()).upper()
+                except Exception:
+                    printExc()
+                
+                urlsTab = getDirectM3U8Playlist(playerUrl, False, cookieParams=params)
                 try:
                     PHPSESSID = self.cm.getCookieItem(COOKIE_FILE_M3U8, 'PHPSESSID')
                     newUrlsTab = []
                     for item in urlsTab:
-                        item['url'].meta['Cookie'] = 'PHPSESSID=%s' % PHPSESSID
+                        if PHPSESSID != '': item['url'].meta['Cookie'] = 'PHPSESSID=%s' % PHPSESSID
                         newUrlsTab.append(item)
                     return newUrlsTab
                 except Exception:
