@@ -48,6 +48,7 @@ hostkabarety
 hostkinomantv
 hostkinopokaz
 hostkinotan
+hostkissanimeto
 hostkisscartoonme
 hostkreskoweczki
 hostkwejktv
@@ -85,7 +86,6 @@ hosttvpvod
 hosttwitchtv
 hosturllist
 hostustreamtv
-hostveetle
 hostvevo
 hostvumooch
 hostwatchwrestling
