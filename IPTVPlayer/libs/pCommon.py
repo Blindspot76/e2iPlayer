@@ -229,7 +229,8 @@ class common:
     
     @staticmethod
     def getParamsFromUrlWithMeta(url, baseHeaderOutParams=None):
-        HANDLED_HTTP_HEADER_PARAMS = ['Host', 'User-Agent', 'Referer', 'Cookie', 'Accept', 'X-Forwarded-For', 'Range']
+        from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
+        HANDLED_HTTP_HEADER_PARAMS = DMHelper.HANDLED_HTTP_HEADER_PARAMS #['Host', 'User-Agent', 'Referer', 'Cookie', 'Accept',  'Range']
         outParams = {}
         tmpParams = {}
         postData = None
