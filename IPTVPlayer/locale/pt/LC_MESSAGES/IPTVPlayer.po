@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.11\n"
+"X-Generator: Poedit 1.8.8\n"
 "X-Poedit-Basepath: .\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "X-Poedit-SourceCharset: UTF-8\n"
@@ -88,7 +88,7 @@ msgid "No valid links available."
 msgstr "Links inválidos disponíveis."
 
 msgid "Select link"
-msgstr "Selecionar link"
+msgstr "Selecionar ligação"
 
 msgid "Format 'wmv' blocked in configuration."
 msgstr "Formato 'wmv' bloqueado na configuração."
@@ -100,7 +100,7 @@ msgid "File can not be downloaded. Protocol [%s] is unsupported"
 msgstr "Ficheiro não pode ser descarregado. Protocolo (%s) não é suportado."
 
 msgid "File [%s] was added to downloading queue."
-msgstr "Ficheiro (%s) foi adicionado ao spool de descargas."
+msgstr "Ficheiro (%s) foi adicionado à fila de descargas."
 
 msgid "Search results"
 msgstr "Resultados da Procura"
@@ -171,7 +171,7 @@ msgid "unknown"
 msgstr "desconhecido"
 
 msgid "after closing"
-msgstr "depois de fechar"
+msgstr "após fechar"
 
 msgid "after day"
 msgstr "após dia"
@@ -261,7 +261,7 @@ msgid "Folder for cache data"
 msgstr "Pasta para informação cache"
 
 msgid "Folder for temp data"
-msgstr "Pasta para informação temporária"
+msgstr "Pasta para dados temporários"
 
 msgid "[HTTP] buffering"
 msgstr "[HTTP] buffering"
@@ -279,13 +279,13 @@ msgid "Buffer path"
 msgstr "Buffer percurso"
 
 msgid "Records path"
-msgstr "Percurso das Gravações"
+msgstr "Local para Gravações"
 
 msgid "Start download manager per default"
 msgstr "Iniciar o gestor de descargas por defeito"
 
 msgid "Show download manager after adding new item"
-msgstr "Exibir o gestor de descargas depois de adicionar um novo serviço"
+msgstr "Exibir o gestor de descargas após adicionar um novo serviço"
 
 msgid "Number of downloaded files simultaneously"
 msgstr "Número de ficheiros a descarregar simultaneamente"
@@ -324,7 +324,7 @@ msgid "Debug logs"
 msgstr "Depurar logs"
 
 msgid "Allow downgrade"
-msgstr "Permissão de downgrade"
+msgstr "Permitir a desatualização"
 
 msgid "Update packet type"
 msgstr "Tipo de pacote de atualização"
@@ -354,7 +354,7 @@ msgid "IPTVPlayer services configuration"
 msgstr "Configuração de serviços IPTVPlayer"
 
 msgid "Service [%s] has no additional settings."
-msgstr "Serviço (%s) não tem definições adicionais."
+msgstr "O Serviço (%s) não tem definições adicionais."
 
 msgid "PENDING"
 msgstr "PENDENTE"
@@ -452,7 +452,7 @@ msgid ""
 " downloaded version [%s] is different from the requested [%s]."
 msgstr ""
 "Versão errada.\n"
-"versão descarregada (%s) é diferente da pedida (%s)."
+"A versão descarregada (%s) é diferente da pedida (%s)."
 
 msgid "File [%s] reading failed."
 msgstr "Falhou a leitura do ficheiro (%s)."
@@ -478,14 +478,14 @@ msgid "Currently you have version [%s]."
 msgstr "Atualmente tem a versão (%s)."
 
 msgid "Update completed successfully. For the moment, the system will reboot."
-msgstr "Atualização concluída com sucesso. Agora, o sistema irá reinicia."
+msgstr "Atualização concluída com sucesso. Agora, o sistema irá reiniciar."
 
 msgid ""
 "Update failed.\n"
 "Check the status by selecting interesting and pressing OK."
 msgstr ""
 "Atualização falhou.\n"
-"Verifique o estado selecionando o que interessa e prima OK."
+"Verifique o estado, selecionando o que interessa e prima OK."
 
 msgid "Obtaining server list."
 msgstr "A obter lista dos servidos."
@@ -512,7 +512,7 @@ msgid "Installing new version."
 msgstr "A instalar a nova versão."
 
 msgid "Pending"
-msgstr "Pendentes"
+msgstr "Pendente"
 
 msgid "No user scripts."
 msgstr "Sem scripts do utilizador."
@@ -575,7 +575,7 @@ msgstr ""
 "%s."
 
 msgid "Unpacking the archive completed successfully."
-msgstr "Descompatamento do arquivo concluído com sucesso."
+msgstr "Arquivo desempacotado com sucesso."
 
 msgid "Completed."
 msgstr "Concluído."
@@ -634,7 +634,7 @@ msgid "Sort by:"
 msgstr "Ordenar por:"
 
 msgid "Path to ytlist.txt, urllist.txt"
-msgstr "Percurso para ytlist.txt, urllist.txt"
+msgstr "Local para ytlist.txt, urllist.txt"
 
 msgid "Video format:"
 msgstr "Formato de Vídeo:"
@@ -649,7 +649,7 @@ msgid "the worst"
 msgstr "Os piores"
 
 msgid "the best"
-msgstr "os melhores"
+msgstr "Os melhores"
 
 msgid "Relevance"
 msgstr "Relevância"
@@ -694,7 +694,7 @@ msgid " Username or Email"
 msgstr "Nome de utilizador ou E-mail"
 
 msgid " Password"
-msgstr "Palavra-Passe"
+msgstr " Palavra-Passe"
 
 msgid "User [%s] logon failure."
 msgstr "Falha de logon [%s] do utilizador"
@@ -766,7 +766,7 @@ msgid "based on IP"
 msgstr "baseado no IP"
 
 msgid "Number of songs fetched at once for the station"
-msgstr "Número de músicas obtidas simultaneamente para a estação"
+msgstr "Número de músicas procuradas em simultâneo para a estação"
 
 msgid "Device ID"
 msgstr "ID do Dispositivo"
@@ -1053,7 +1053,7 @@ msgid "    Allowed formats of thumbnails"
 msgstr "    Formatos de miniaturas permitidos"
 
 msgid "From E2 settings"
-msgstr "Das definições de E2"
+msgstr "definições enigma2"
 
 msgid "bottom"
 msgstr "fundo"
@@ -1119,10 +1119,10 @@ msgid "Default video aspect ratio"
 msgstr "A relação de aspecto padrão"
 
 msgid "Default video policy"
-msgstr "Diretiva de vídeo padrão"
+msgstr "Política de vídeo padrão"
 
 msgid "Default second video policy"
-msgstr "Segunda diretiva de vídeo padrão"
+msgstr "Segunda política de vídeo padrão"
 
 msgid "Load automatically the subtitle from file with the same name"
 msgstr "Carregar automáticamente as legendas do ficheiro com o mesmo nome"
