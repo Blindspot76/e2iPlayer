@@ -54,10 +54,12 @@ def gettytul():
 
 class FsTo(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36', 'Accept': 'text/html'}
+    AJAX_HEADER = dict(HEADER)
+    AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+    
     DEFAULT_ICON_URL = 'http://inext.ua/wp-content/uploads/2014/04/fsto_Icon-570x380.jpg'
     MAIN_URL = 'http://fs.to/'
-    MAIN_CAT_TAB = [
-                    {'category':'search',                   'title':_('Search'), 'search_item':True},
+    MAIN_CAT_TAB = [{'category':'search',                   'title':_('Search'), 'search_item':True},
                     {'category':'search_history',           'title':_('Search history')} ]
     
     MAIN_LANGS_TAB = [{'title':_('Roman alphabet'), 'lang':'en'},
@@ -74,53 +76,53 @@ class FsTo(CBaseHostClass):
         self.PROXY_GATE = 'http://proxy.yadro.in/browse.php?u={0}&b=4&f=norefer'
         self.needProxyGate = None
         
-    def _getDomain(self, url, withScheme=True):
-        from urlparse import urlparse
-        parsed_uri = urlparse( url )
-        if withScheme:
-            domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-        else:
-            domain = '{uri.netloc}'.format(uri=parsed_uri)
-        return domain
+    def isNeedProxy(self):
+        if self.needProxyGate == None:
+            sts, data = self.cm.getPage(self.MAIN_URL)
+            if sts and '/albums"' in data:
+                self.needProxyGate = False
+            else:
+                self.needProxyGate = True
+        return self.needProxyGate
     
-    def _getFullUrl(self, url, baseUrl=None):
-        if baseUrl == None:
-            baseUrl = self.MAIN_URL
-        if 'myaddrproxy.php/' in url:
-            return url.split('myaddrproxy.php/')[1].replace('http/', 'http://')
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
         
-        if 'goweb.com.ua' in url:
-            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
-            
-        if 'proxy.yadro.in' in url or '/browse.php?u=' in url:
-            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?u=(http[^&]+?)&''')[0] )
+        if self.up.getDomain(self.MAIN_URL, True) in url:
+            if config.plugins.iptvplayer.fsto_proxy_enable.value:
+                params = {'http_proxy': config.plugins.iptvplayer.ukrainian_proxyurl.value}
+            elif self.isNeedProxy():
+                proxy = self.PROXY_GATE.format(urllib.quote(url, ''))
+                params['header']['Referer'] = self.up.getDomain(self.PROXY_GATE, False)
+                #params['header']['Cookie'] = 'flags=2e5;'
+                url = proxy
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and None == data:
+            sts = False
+        return sts, data
         
-        if url.startswith('//'):
-            url = 'http:' + url
-        elif 0 < len(url) and not url.startswith('http'):
-            if url.startswith('/'):
-                url = url[1:]
-            url =  baseUrl + url
-        if baseUrl.startswith('https://'):
-            url = url.replace('https://', 'http://')
+    def getIconUrl(self, url):
+        url = self.getFullUrl(url)
+        if self.up.getDomain(self.MAIN_URL, True) in url and self.isNeedProxy():
+            proxy = self.PROXY_GATE.format(urllib.quote(url, ''))
+            params = {}
+            params['User-Agent'] = self.HEADER['User-Agent'],
+            params['Referer'] = proxy
+            #params['Cookie'] = 'flags=2e5;'
+            url = strwithmeta(proxy, params) 
         return url
         
-    def proxyGate(self, url, params):
-        if self.needProxyGate:
-            if url == '': return ''
-            if self.PROXY_GATE in url: return url
-            #return self.PROXY_GATE + '/' + url.replace('://', '/')
-            params['header'] = dict(self.HEADER)
-            params['header']['Referer'] = self._getDomain(self.PROXY_GATE)
-            return self.PROXY_GATE.format(urllib.quote(url, ''))
-        else:
-            return url
+    def getFullUrl(self, url):
+        if self.up.getDomain(self.PROXY_GATE, True) in url or 'http%3A%2F%2F' in url:
+            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?u=(http[^&]+?)&''')[0] )
+        return CBaseHostClass.getFullUrl(self, url)
         
     def _chekIfProxyGateWayNeeded(self):
         if self.needProxyGate != None:
             return
         
-        sts, data = self.cm.getPage('https://whatismyipaddress.com')
+        sts, data = self.getPage('https://whatismyipaddress.com')
         if not sts:
             return
         data  = self.cm.ph.getDataBeetwenMarkers(data, 'Country:', '</table>', False)[1]
@@ -144,34 +146,21 @@ class FsTo(CBaseHostClass):
     
     def listMainMenu(self):
         printDBG("FsTo.listMainMenu")
-        
-        # get main url
-        params = {'return_data':False}
-        try:
-            sts, response = self.cm.getPage(self.MAIN_URL, params)
-            url = response.geturl()
-            response.close()
-            parsed_uri = urlparse( url )
-            self.MAIN_URL = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-        except Exception:
-            printExc()
-            return []
-        
-        printDBG("MAIN_URL[%s]" % self.MAIN_URL)
-        
         self.searchTypesOptions = []
         categoryTab = []
-        sts, data = self.cm.getPage(self.MAIN_URL)
+        sts, data = self.getPage(self.MAIN_URL)
         if not sts: return
         
         printDBG("--------------------------------------------------")
-        #printDBG(data)
+        printDBG(data)
         printDBG("==================================================")
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="b-header__menu">', '</td>', False)[1]
+        printDBG(data)
         data = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?__menu-section-link[^<]*?>([^<]+?)</a>').findall(data)
+        printDBG(data)
         for item in data:
-            url   = self._getFullUrl(item[0])
+            url   = self.getFullUrl(item[0])
             title = self.cleanHtmlStr(item[1])
             if len(item[0]) > 3:
                 self.searchTypesOptions.append((title, item[0][1:-1]))
@@ -184,7 +173,7 @@ class FsTo(CBaseHostClass):
         
     def listCategories(self, cItem, category):
         printDBG("FsTo.listCategories")
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         printDBG("--------------------------------------------------")
@@ -199,7 +188,7 @@ class FsTo(CBaseHostClass):
             data = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?>([^<]+?)</a>').findall(data)
             for item in data:
                 params = dict(cItem)
-                params.update({'title':item[1], 'url':self._getFullUrl(item[0]), 'category':category})
+                params.update({'title':item[1], 'url':self.getFullUrl(item[0]), 'category':category})
                 self.addDir(params)
             
     def listFilters(self, cItem, category):
@@ -207,7 +196,7 @@ class FsTo(CBaseHostClass):
         self.filtesCache = []
         self.sortKeyCache = []
     
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         fData = self.cm.ph.getDataBeetwenMarkers(data, '<table>', '</table>', False)[1]
@@ -221,7 +210,7 @@ class FsTo(CBaseHostClass):
             vData = re.compile('<a[^<]+?href="([^"]+?)"[^<]*?>(.+?)</a>').findall(fItem)
             for vItem in vData:
                 if len(vItem[0]) > 1:
-                    self.filtesCache[fIdx]['items'].append({'ftype':'normal', 'title':self.cleanHtmlStr(vItem[1]), 'url':self._getFullUrl(vItem[0])})
+                    self.filtesCache[fIdx]['items'].append({'ftype':'normal', 'title':self.cleanHtmlStr(vItem[1]), 'url':self.getFullUrl(vItem[0])})
                 
             # add more item
             mData = self.cm.ph.getDataBeetwenMarkers(fItem, 'class="more-custom"', '>', False)[1]
@@ -267,7 +256,7 @@ class FsTo(CBaseHostClass):
                 params += "%s=%s&" %(key,val)
             printDBG(total_count)
             url = self.MAIN_URL + 'ajax.aspx?f=more_custom&' + params + '&count={0}'.format(count)
-            sts, data = self.cm.getPage(url)
+            sts, data = self.getPage(url)
             
             printDBG("--------------------------------------------------")
             #printDBG(data)
@@ -278,7 +267,7 @@ class FsTo(CBaseHostClass):
                 data = byteify(json.loads(data))
                 for item in data['items']:
                     params = dict(cItem)
-                    params.update({'title':self.cleanHtmlStr(item['title']), 'url':self._getFullUrl(item['link'])})
+                    params.update({'title':self.cleanHtmlStr(item['title']), 'url':self.getFullUrl(item['link'])})
                     params['category'] = category
                     self.addDir(params)
                 if  data['count'] < total_count:
@@ -302,14 +291,14 @@ class FsTo(CBaseHostClass):
     def listGoupsA(self, cItem, category):
         printDBG("FsTo.listGoupsA")
         url = cItem['url'] + '?all'
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="main">', '</table>', False)[1]
         data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
         for item in data:
             params = dict(cItem)
-            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self.getFullUrl(item[0])})
             self.addDir(params)
             
     def listLangs(self, cItem, category):
@@ -321,7 +310,7 @@ class FsTo(CBaseHostClass):
     def listLetters(self, cItem, category):
         printDBG("FsTo.listLetters")
         url = cItem['url'] + '?all&lang=%s' % cItem['lang']
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         if 'en' == cItem['lang']: m1 = '<div class="alphabet alphabet_eng"'
@@ -331,7 +320,7 @@ class FsTo(CBaseHostClass):
         data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
         for item in data:
             params = dict(cItem)
-            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self.getFullUrl(item[0])})
             self.addDir(params)
 
     def listGoupsB(self, cItem, category):
@@ -339,7 +328,7 @@ class FsTo(CBaseHostClass):
         page = cItem.get('page', 0)
         url = cItem['url'] + '&all=1'
         if page > 0: url += '&page=%d' % page
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         nextPage = False
@@ -350,7 +339,7 @@ class FsTo(CBaseHostClass):
         data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
         for item in data:
             params = dict(cItem)
-            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+            params.update({'category':category, 'title':self.cleanHtmlStr(item[1]), 'url':self.getFullUrl(item[0])})
             self.addDir(params)
             
         if nextPage:
@@ -380,7 +369,7 @@ class FsTo(CBaseHostClass):
         else: url += '&'
         url += params + 'view=detailed'
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         printDBG("--------------------------------------------------")
@@ -401,7 +390,7 @@ class FsTo(CBaseHostClass):
             if title == '': title = self.cm.ph.getSearchGroups(item, '__title"[^>]*?>([^<]+?)<')[0]
             if title == '': title = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''')[0]
             desc  = item.split('-info-items">')[-1]
-            params = {'category':category, 'title':self.cleanHtmlStr(title), 'icon':self._getFullUrl(icon), 'desc':self.cleanHtmlStr(desc), 'url':self._getFullUrl(url)}
+            params = {'category':category, 'title':self.cleanHtmlStr(title), 'icon':self.getFullUrl(icon), 'desc':self.cleanHtmlStr(desc), 'url':self.getFullUrl(url)}
             self.addDir(params)
             
         if nextPage:
@@ -411,7 +400,7 @@ class FsTo(CBaseHostClass):
             
     def listFiles(self, cItem, category):
         printDBG("listFiles url[%r]" % cItem['url'])
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         printDBG("--------------------------------------------------")
@@ -421,7 +410,7 @@ class FsTo(CBaseHostClass):
         materialId = self.cm.ph.getSearchGroups(data, "materialId: '([^']+?)'")[0]
         url = self.MAIN_URL + 'jsitem/i%s/status.js?hr=%s&rf=' % (materialId, urllib.quote(cItem['url']))
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         printDBG("--------------------------------------------------")
@@ -444,10 +433,8 @@ class FsTo(CBaseHostClass):
         params = {}
         if config.plugins.iptvplayer.fsto_proxy_enable.value:
             params = {'http_proxy': config.plugins.iptvplayer.ukrainian_proxyurl.value}
-        else:
-            url = self.proxyGate(url, params)
         
-        sts, data = self.cm.getPage(url, params)
+        sts, data = self.getPage(url, params)
         if not sts: return
         
         printDBG("--------------------------------------------------")
@@ -461,7 +448,7 @@ class FsTo(CBaseHostClass):
             if m1 in item:
                 item = m1 + item.split(m1)[-1]
             parentId = self.cm.ph.getSearchGroups(item, "parent_id:[^0-9]+?([0-9]+?)[^0-9]")[0]
-            url = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]*?)"')[0] )
+            url = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]*?)"')[0] )
             if parentId != '' and parentId != cItem.get('folder_id', '0') and ('' == url or url.endswith('#')):
                 tmp = item.split('</a>')
                 params = dict(cItem)
@@ -480,10 +467,10 @@ class FsTo(CBaseHostClass):
                 viewUrl = '' #self.cm.ph.getSearchGroups(item, 'href="([^"]*?/view/[^"]*?)"')[0]
                 dlUrl = self.cm.ph.getSearchGroups(item, 'href="([^"]*?%s[^"]*?)"' % getDLMarker)[0]
                 if viewUrl != '':
-                    params = {'icon':cItem.get('icon', ''), 'title':self.cleanHtmlStr(item) + '[%s]' % _('view'), 'url':self._getFullUrl(viewUrl)}
+                    params = {'icon':cItem.get('icon', ''), 'title':self.cleanHtmlStr(item) + '[%s]' % _('view'), 'url':self.getFullUrl(viewUrl)}
                     self.addVideo(params)
                 if dlUrl != '':
-                    params = {'icon':cItem.get('icon', ''), 'title':self.cleanHtmlStr(item), 'url':self._getFullUrl(dlUrl)}
+                    params = {'icon':cItem.get('icon', ''), 'title':self.cleanHtmlStr(item), 'url':self.getFullUrl(dlUrl)}
                     self.addVideo(params)
         
     def getLinksForVideo(self, cItem):
@@ -492,27 +479,23 @@ class FsTo(CBaseHostClass):
         
         url = cItem['url']
         params = {}
-        if config.plugins.iptvplayer.fsto_proxy_enable.value:
-            params = {'http_proxy': config.plugins.iptvplayer.ukrainian_proxyurl.value}
-        else:
-            url = self.proxyGate(url, params)
         params['return_data'] = False
         try:
-            sts, response = self.cm.getPage(url, params)
+            sts, response = self.getPage(url, params)
             url = response.geturl()
             response.close()
         except Exception:
             printExc()
             return []
             
-        return [{'name':self.up.getHostName(url), 'url':self._getFullUrl(url), 'need_resolve':0}]
+        return [{'name':self.up.getHostName(url), 'url':self.getFullUrl(url), 'need_resolve':0}]
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FsTo.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         SRCH_URL = self.MAIN_URL + '{0}/search.aspx?search='
         url = SRCH_URL.format(searchType) + urllib.quote_plus(searchPattern)
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         printDBG("--------------------------------------------------")
@@ -538,7 +521,7 @@ class FsTo(CBaseHostClass):
                 title = self.cm.ph.getSearchGroups(item, '__title"[^>]*?>([^<]+?)<')[0]
                 if title == '': title = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]
                 desc  = item.split('-item-tags">')[-1]
-                params = {'title':self.cleanHtmlStr(title), 'icon':self._getFullUrl(icon), 'desc':self.cleanHtmlStr(desc), 'url':self._getFullUrl(url)}
+                params = {'title':self.cleanHtmlStr(title), 'icon':self.getFullUrl(icon), 'desc':self.cleanHtmlStr(desc), 'url':self.getFullUrl(url)}
                 self.searchCache[subsection].append(params)
             else:
                 printDBG('WRONG SECTIO DETECTED IN RESULTS subsection[%s] !!!!' % subsection)
@@ -656,6 +639,8 @@ class IPTVHost(CHostBase):
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
         icon        =  cItem.get('icon', '')
+        if icon == '': icon = self.host.DEFAULT_ICON_URL
+        icon        =  self.host.getIconUrl(icon)
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -665,28 +650,3 @@ class IPTVHost(CHostBase):
                                     iconimage = icon,
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
