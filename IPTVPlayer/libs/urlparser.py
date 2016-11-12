@@ -378,6 +378,7 @@ class urlparser:
                        'auroravid.to':         self.pp.parserAURORAVIDTO    ,
                        'playpanda.net':        self.pp.parserPLAYPANDANET   ,
                        'easyvideo.me':         self.pp.parserEASYVIDEOME    ,
+                       'vidlox.tv':            self.pp.parserVIDLOXTV       ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2258,6 +2259,11 @@ class pageParser:
         #def _findLinks(data):
         #    return self._findLinks(data, 'vidup.me', m1='setup(', m2='image:')
         return self._parserUNIVERSAL_A(baseUrl, 'http://vidup.me/embed-{0}-640x360.html', self._findLinks)
+        
+    def parserVIDLOXTV(self, baseUrl):
+        printDBG("parserVIDLOXTV baseUrl[%r]" % baseUrl)
+        # example video: http://vidlox.tv/embed-e9r0y7i65i1v.html
+        return self._parserUNIVERSAL_A(baseUrl, 'http://vidlox.tv/embed-{0}.html', self._findLinks)
         
     def parseMOSHAHDANET(self, baseUrl):
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
