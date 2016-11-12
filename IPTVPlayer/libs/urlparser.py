@@ -146,6 +146,7 @@ class urlparser:
                        'nowvideo.eu':          self.pp.parserNOWVIDEO      ,
                        'nowvideo.sx':          self.pp.parserNOWVIDEO      ,
                        'nowvideo.to':          self.pp.parserNOWVIDEO      ,
+                       'nowvideo.co':          self.pp.parserNOWVIDEO      ,
                        'rapidvideo.com':       self.pp.parserRAPIDVIDEO    ,
                        'videoslasher.com':     self.pp.parserVIDEOSLASHER  ,
                        'dailymotion.com':      self.pp.parserDAILYMOTION   ,
@@ -374,10 +375,13 @@ class urlparser:
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
                        'streamable.com':       self.pp.parserSTREAMABLECOM  ,
+                       'auroravid.to':         self.pp.parserAURORAVIDTO    ,
+                       'playpanda.net':        self.pp.parserPLAYPANDANET   ,
+                       'easyvideo.me':         self.pp.parserEASYVIDEOME    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
-        
+    
     def getHostName(self, url, nameOnly = False):
         hostName = ''
         match = re.search('https?://(?:www.)?(.+?)/', url)
@@ -1218,6 +1222,9 @@ class pageParser:
 
     def parserVIDEOWEED(self, url):
         return self._parserUNIVERSAL_B(url)
+        
+    def parserAURORAVIDTO(self, url):
+        return self._parserUNIVERSAL_B(url)
 
     def parserNOVAMOV(self, url):
         return self._parserUNIVERSAL_B(url)
@@ -1325,7 +1332,7 @@ class pageParser:
     def parserDAILYMOTION(self, baseUrl):
         # https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/dailymotion.py
         COOKIEFILE = self.COOKIE_PATH + "dailymotion.cookie"
-        _VALID_URL = r'(?i)(?:https?://)?(?:(www|touch)\.)?dailymotion\.[a-z]{2,3}/(?:(embed|#)/)?video/(?P<id>[^/?_]+)'
+        _VALID_URL = r'(?i)(?:https?://)?(?:(www|touch)\.)?dailymotion\.[a-z]{2,3}/(?:(embed|swf|#)/)?video/(?P<id>[^/?_]+)'
         mobj = re.match(_VALID_URL, baseUrl)
         video_id = mobj.group('id')
         
@@ -3049,6 +3056,22 @@ class pageParser:
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         return False
+        
+    def parserPLAYPANDANET(self, baseUrl):
+        printDBG("parserPLAYPANDANET baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl.replace('&amp;', '&'))
+        if not sts: return False
+        videoUrl = self.cm.ph.getSearchGroups(data, '''_url\s*=\s*['"]([^'^"]+?)['"]''')[0]
+        if videoUrl.startswith('//'):
+            videoUrl = 'http:' + videoUrl
+        videoUrl = urllib.unquote(videoUrl)
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl        
+        return False
+
+    def parserEASYVIDEOME(self, baseUrl):
+        printDBG("parserEASYVIDEOME baseUrl[%r]" % baseUrl)
+        return self.parserPLAYPANDANET(baseUrl)
             
     def parserVSHAREEU(self, baseUrl):
         printDBG("parserVSHAREEU baseUrl[%r]" % baseUrl)
@@ -4818,6 +4841,12 @@ class pageParser:
         
     def parserCLOUDTIME(self, baseUrl):
         printDBG("parserCLOUDTIME baseUrl[%s]" % baseUrl)
+        try:
+            url = self._parserUNIVERSAL_B(baseUrl)
+            if len(url): return url
+        except Exception:
+            printExc()
+        
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0" }
         
         COOKIE_FILE = GetCookieDir('cloudtime.to')
@@ -6715,136 +6744,3 @@ class pageParser:
             if file_url.split('?')[0].endswith('.m3u8'):
                 return getDirectM3U8Playlist(file_url, False)
         return file_url     
-       
-       
-    '''
-    ###############################################
-    # start - other methods from netu.tv player.swf
-    ###############################################
-    def encodeByteArray(tab):
-        ret = ""
-        _lg27 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-        idx = 0;
-        _local4 = [64,64,64,64]
-        while idx < len(tab):
-            tmpTab = []
-            while len(tmpTab) < 4 and idx < len(tab):
-                tmpTab.append(ord(tab[idx]))
-                idx += 1
-                
-            _local4[0] = ((tmpTab[0] & 252) >> 2);
-            _local4[1] = (((tmpTab[0] & 3) << 4) | (tmpTab[1] >> 4));
-            _local4[2] = (((tmpTab[1] & 15) << 2) | (tmpTab[2] >> 6));
-            _local4[3] = (tmpTab[2] & 63);
-            
-            for item in _local4:
-                ret += _lg27[item]
-        return ret
-        
-        
-    def tr(_arg1, _arg2=114, _arg3=65):
-        if ord(_arg1[len(_arg1) - 2]) == _arg2 and ord(_arg1[2]) == _arg3:
-            _local5 = "";
-            _local4 = len(_arg1) - 1;
-            while _local4 >= 0:
-                _local5 = _local5 + _arg1[_local4];
-                _local4-= 1;
-        
-            _arg1 = _local5;
-            _local6 = _arg1[-2:];
-            _arg1 = _arg1[2:];
-            _arg1 = _arg1[0, -3];
-            _local6 = (_local6 / 2);
-            if _local6 < len(_arg1):
-                _local4 = _local6;
-                while _local4 < _arg1.length:
-                    _arg1 = _arg1[0:_local4] + _arg1[_local4 + 1:];
-                    _local4 = _local4 + _local6;
-            _arg1 = _arg1 + "!";
-        return _arg1
-    ###############################################
-    # end - other methods from netu.tv player.swf
-    ###############################################
-    '''
-
-    '''
-    def parserNEXTVIDEO(self,url):
-        sts, data = self.getPage(url)
-        if False == sts:
-            return False
-        match = re.search('file:[^"]+?"([^"]+?)"', data)
-        if match: 
-            return match.group(1)
-        else:
-            return False
-    '''
-        
-    '''
-    def parserDIVXSTAGE(self, url):
-        sts, data = self.getPage(url)
-        if False == sts:
-            return False
-        
-        match = re.search('flashvars.file="([^"]+?)";', data)
-        if match: 
-            file = match.group(1)
-        else:
-            return False
-        match = re.search('flashvars.filekey="([^"]+?)";', data)
-        if match: 
-            filekey = match.group(1).replace('.', '%2E')
-        else:
-            return False
-        match = re.search('flashvars.cid="([^"]+?)";', data)
-        if match: 
-            cid = match.group(1)
-        else:
-            return False
-        
-        urlApi = 'http://www.divxstage.eu/api/player.api.php?user=undefined&cid3=undefined&file=%s&cid=%s&key=%s&numOfErrors=0&pass=undefined&cid2=undefined' %s (file, cid, filekey)
-        
-        sts, data = self.getPage(url)
-        if False == sts:
-            return False
-            
-        match = re.search('url=([^&]+?)&', data)
-        if match: 
-            return match.group(1)
-        else:
-            return False
-            
-            
-<input type="hidden" name="op" value="download1">
-<input type="hidden" name="usr_login" value="">
-<input type="hidden" name="id" value="7wtoiieyqsmv">
-<input type="hidden" name="fname" value="The.Secret.Life.of.Walter.Mitty.2013.PLSUBBED.DVDscr.XViD.AC3-OzW.avi">
-<input type="hidden" name="referer" value="http://vidto.me/embed-7wtoiieyqsmv-647x500.html">
-<input type="hidden" name="hash" value="4upjo7kqazfuwg4ex75zwmruewqrrxbq">
-
-{
-    "auto_hd": false,
-    "autoplay_reason": "unknown",
-    "default_hd": false,
-    "disable_native_controls": false,
-    "inline_player": false,
-    "pixel_ratio": 1,
-    "preload": false,
-    "start_muted": false,
-    "video_data": [{
-        "hd_src": "https:\\/\\/fbcdn-video-a-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t43.1792-2\\/1346786_597358996980898_38093_n.mp4?rl=1924&vabr=1283&oh=39547a46c1706d6985a63f451d9804ee&oe=54FB5F56&__gda__=1425759704_938e66c3e93914a0af0978780c5a3a81",
-        "is_hds": false,
-        "is_hls": false,
-        "rotation": 0,
-        "sd_src": "https:\\/\\/fbcdn-video-p-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t42.1790-2\\/1188227_592870284096436_64686_n.mp4?rl=563&vabr=313&oh=e891677083036d0b291ed601f85953d8&oe=54FB5B46&__gda__=1425762824_3c005c8845ab035ba6aceae1cc5f63d5",
-        "video_id": "201191406597661",
-        "sd_tag": "legacy_sd",
-        "hd_tag": "legacy_hd",
-        "sd_src_no_ratelimit": "https:\\/\\/fbcdn-video-p-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t42.1790-2\\/1188227_592870284096436_64686_n.mp4?oh=e891677083036d0b291ed601f85953d8&oe=54FB5B46&__gda__=1425762824_fe9007c59a8243300d34f90a3f025c71",
-        "hd_src_no_ratelimit": "https:\\/\\/fbcdn-video-a-a.akamaihd.net\\/hvideo-ak-xpa1\\/v\\/t43.1792-2\\/1346786_597358996980898_38093_n.mp4?oh=39547a46c1706d6985a63f451d9804ee&oe=54FB5F56&__gda__=1425759704_4d32e5007b137533f795db5c816d6ef2",
-        "subtitles_src": null
-    }],
-    "show_captions_default": false,
-    "persistent_volume": true,
-    "buffer_length": 0.1
-}
-    '''
