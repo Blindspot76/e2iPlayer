@@ -190,7 +190,7 @@ class KreskowkaZonePL(CBaseHostClass):
             return self.cacheLinks[cItem['url']]
         
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
-        if not sts: return
+        if not sts: return []
         
         varName = self.cm.ph.getSearchGroups(data, '''var\s*__gaq\s*=\s*['"]([^'^"]+?)['"]''')[0]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr class="wiersz">', '</tr>', withMarkers=True)
