@@ -5397,41 +5397,24 @@ class pageParser:
         channel = _url_re.match(baseUrl).group("channel")
         
         linksTab = []
-        # get link for mobile
-        mobileRTMP = ''
         linkUrl ='http://www.streamlive.to/view/%s' % channel
-        if 1:
-            userAgent = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'            
+        
+        for idx in [0, 1]:
             params = dict(defaultParams)
-            params.update({'header':{'User-Agent':userAgent}})
+            params.update({'header':{'header':HTTP_HEADER}})
             sts, data = self.cm.getPage(linkUrl, params)
-            if sts:
-                printDBG("============================================================================")
-                printDBG(data)
-                printDBG("============================================================================")
-                # hls
-                hlsUrl = self.cm.ph.getSearchGroups(data, '''['"](http[^"']+?\.m3u8[^"']*?)["']''')[0]
-                if hlsUrl != '':
-                    hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':userAgent})
-                    linksTab.extend( getDirectM3U8Playlist(hlsUrl) )
-                # rtmp
-                mobileRTMP = self.cm.ph.getSearchGroups(data, '''['"](rtmp\:\/\/[^"^']+?)["']''')[0]
+            if not sts: return False 
+            
+            if '<div id="loginbox">' in data:
+                SetIPTVPlayerLastHostError(_("Only logged in user have access.\nPlease set login data in the host configuration under blue button."))
+            
+            if 'get_free_credits' in data:
+                msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_container">', '</a>')[1])
+                if msg != '':
+                    SetIPTVPlayerLastHostError(msg)
                 
-            if 'You have reached the limit today.' in data:
-                SetIPTVPlayerLastHostError(_('No free credits.'))
-        
-        params = dict(defaultParams)
-        params.update({'header':{'header':HTTP_HEADER}})
-        sts, data = self.cm.getPage(linkUrl, params)
-        if not sts: return False 
-        
-        if '<div id="loginbox">' in data:
-            SetIPTVPlayerLastHostError(_("Only logged in user have access.\nPlease set login data in the host configuration under blue button."))
-        
-        if 'get_free_credits' in data:
-            msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_container">', '</a>')[1])
-            if msg != '':
-                SetIPTVPlayerLastHostError(msg)
+            if 0 == idx:
+                linkUrl = self.cm.ph.getSearchGroups(data, 'popup\s*=\s*window\.open\(\s*"([^"]+?)"')[0]
         
         # get token
         token = CParsingHelper.getDataBeetwenMarkers(data, 'var token', '});', False)[1]
@@ -5439,6 +5422,8 @@ class pageParser:
         if token.startswith('//'): token = 'http:' + token
         
         params = dict(defaultParams)
+        HTTP_HEADER = dict(HTTP_HEADER)
+        HTTP_HEADER['Referer'] = linkUrl
         params.update({'header':{'header':HTTP_HEADER}})
         sts, token = self.cm.getPage(token, params)
         if not sts: return False 
@@ -5449,28 +5434,23 @@ class pageParser:
         data = CParsingHelper.getDataBeetwenMarkers(data, '.setup(', '</script>', False)[1]
         
         def _getParam(name):
-            return self.cm.ph.getSearchGroups(data, """['"]*%s['"]*[^'^"]+?['"]([^'^"]+?)['"]""" % name)[0].replace('\\/', '/')
+            return self.cm.ph.getSearchGroups(data, """['"]?%s['"]?[^'^"]+?['"]([^'^"]+?)['"]""" % name)[0].replace('\\/', '/')
         
-        swfUrl  = "http://www.streamlive.to/player/ilive-plugin.swf"
+        swfUrl  = "http://www.streamlive.to/player/Player.swf"
         streamer = _getParam('streamer')
         file     = _getParam('file').replace('.flv', '')
-        app      = 'edge/' + streamer.split('/edge/')[-1]
         provider = _getParam('provider')
         rtmpUrl  = provider + streamer[streamer.find(':'):]
         if rtmpUrl.startswith('video://'):
             linksTab.append({'name':'http', 'url': rtmpUrl.replace('video://', 'http://')})
         elif '' != file and '' != rtmpUrl:
-            if '://#' in rtmpUrl and mobileRTMP != '':
-                ip = self.cm.ph.getSearchGroups(mobileRTMP, '''rtmp\:\/\/([^:^'^"]+?)\:''')[0]
-                if '' != ip:
-                    rtmpUrl = rtmpUrl.replace('://#', '://%s' % ip)
-            if '://#' not in rtmpUrl:
-                rtmpUrl += ' playpath=%s swfUrl=%s %s pageUrl=%s app=%s live=1 ' % (file, swfUrl, token, linkUrl, app)
-                printDBG(rtmpUrl)
-                linksTab.append({'name':'rtmp', 'url': rtmpUrl})
-            
-        #if 0 == len(linksTab) :
-        #    linksTab.append({'name':'mobile rtmp', 'url': mobileRTMP+TOKEN})
+            token = base64.b64decode('RTM2NTljYmM4MGFlMmIwNmJmODVjZjJiMWFmZWUxOWI=')
+            parsed_uri = urlparse( rtmpUrl )
+            rtmpUrl    = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+            app        = '{uri.path}'.format(uri=parsed_uri)[1:]
+            rtmpUrl += ' playpath=%s swfUrl=%s token=%s live=1 pageUrl=%s app=%s tcUrl=%s conn=S:OK' % (file, swfUrl, token, linkUrl, app, streamer)
+            printDBG(rtmpUrl)
+            linksTab.append({'name':'rtmp', 'url': rtmpUrl})
         return linksTab
         
     def paserMEGOMTV(self, baseUrl):
