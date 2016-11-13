@@ -1066,17 +1066,19 @@ class pageParser:
         return url
         
     def parserCDA(self, inUrl):
-    
+        COOKIE_FILE = GetCookieDir('cdapl.cookie')
+        HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        defaultParams = {'header': HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+        
         def _decorateUrl(inUrl, host, referer):
             # prepare extended link
             retUrl = strwithmeta( inUrl )
             retUrl.meta['Host']              = host
             retUrl.meta['Referer']           = referer
-            retUrl.meta['Cookie']            = "PHPSESSID=1"
+            retUrl.meta['Cookie']            = self.cm.getCookieHeader(COOKIE_FILE) #"PHPSESSID=1"
             retUrl.meta['iptv_proto']        = 'http'
             retUrl.meta['iptv_urlwithlimit'] = False
             retUrl.meta['iptv_livestream']   = False
-            retUrl.meta['iptv_buffering']    = "required" #"required" # required to handle Cookie
             return retUrl
             
         vidMarker = '/video/'
@@ -1084,9 +1086,9 @@ class pageParser:
         uniqUrls  = []
         tmpUrls = []
         if vidMarker not in inUrl:
-            sts, data = self.cm.getPage(inUrl)
+            sts, data = self.cm.getPage(inUrl, defaultParams)
             if sts:
-                sts,match = CParsingHelper.getDataBeetwenMarkers(data, "Link do tego video:", '</a>', False)
+                sts,match = self.cm.ph.getDataBeetwenMarkers(data, "Link do tego video:", '</a>', False)
                 if sts: match = self.cm.ph.getSearchGroups(match, 'href="([^"]+?)"')[0] 
                 else: match = self.cm.ph.getSearchGroups(data, "link[ ]*?:[ ]*?'([^']+?/video/[^']+?)'")[0]
                 if match.startswith('http'): inUrl = match
@@ -1095,9 +1097,9 @@ class pageParser:
             inUrl = 'http://ebd.cda.pl/620x368/' + vid
         
         # extract qualities
-        sts, data = self.cm.getPage(inUrl)
+        sts, data = self.cm.getPage(inUrl, defaultParams)
         if sts:
-            sts, data = CParsingHelper.getDataBeetwenMarkers(data, 'Jakość:', '</div>', False)
+            sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'Jakość:', '</div>', False)
             if sts:
                 data = re.findall('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>', data)
                 for urlItem in data:
@@ -1114,7 +1116,7 @@ class pageParser:
         for urlItem in tmpUrls:
             if urlItem['url'].startswith('/'): inUrl = 'http://www.cda.pl/' + urlItem['url']
             else: inUrl = urlItem['url']
-            sts, pageData = self.cm.getPage(inUrl)
+            sts, pageData = self.cm.getPage(inUrl, defaultParams)
             if not sts: continue
             
             #with open('/home/sulge/movie/test.txt', 'r') as cfile:
@@ -1143,13 +1145,13 @@ class pageParser:
                 printExc()
             
             if tmp == '':
-                data = CParsingHelper.getDataBeetwenReMarkers(tmpData, re.compile('''modes['"]?[\s]*:'''), re.compile(']'), False)[1]
+                data = self.cm.ph.getDataBeetwenReMarkers(tmpData, re.compile('''modes['"]?[\s]*:'''), re.compile(']'), False)[1]
                 data = re.compile("""file:[\s]*['"]([^'^"]+?)['"]""").findall(data)
             else: data = [tmp]
             if 0 < len(data) and data[0].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' flv', 'url':_decorateUrl(data[0], 'cda.pl', urlItem['url']) } )
             if 1 < len(data) and data[1].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data[1], 'cda.pl', urlItem['url']) } )
             if 0 == len(data):
-                data = CParsingHelper.getDataBeetwenReMarkers(tmpData, re.compile('video:[\s]*{'), re.compile('}'), False)[1]
+                data = self.cm.ph.getDataBeetwenReMarkers(tmpData, re.compile('video:[\s]*{'), re.compile('}'), False)[1]
                 data = self.cm.ph.getSearchGroups(data, "'(http[^']+?(:?\.mp4|\.flv)[^']*?)'")[0]
                 if '' != data:
                     type = ' flv '
