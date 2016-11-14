@@ -84,6 +84,14 @@ class TvnVod(CBaseHostClass):
         self.itemsPerPage = 30 # config.plugins.iptvplayer.tvp_itemsperpage.value
         
         self.platforms = {
+            'Panasonic': {
+                'platform' : 'ConnectedTV',
+                'terminal' : 'Panasonic',
+                'authKey' : '064fda5ab26dc1dd936f5c6e84b7d3c2',
+                'base_url' : 'http://api.tvnplayer.pl/api2',
+                'header' : {'User-Agent':'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7', 'X-Api-Version':'3.1', 'Accept-Encoding':'gzip'},
+                'api' : '3.1',
+            },
             'Samsung': {
                 'platform' : 'ConnectedTV',
                 'terminal' : 'Samsung2',
@@ -128,7 +136,7 @@ class TvnVod(CBaseHostClass):
         
     def getDefaultPlatform(self):
         if '_tv_' == config.plugins.iptvplayer.TVNdevice.value:
-            return 'Samsung'
+            return 'Panasonic'
         return "Android4"
         
     def getBaseUrl(self, pl):
@@ -368,6 +376,8 @@ class TvnVod(CBaseHostClass):
         if len(url) > 0:
             if 'Android' in pl:
                 videoUrl = self._generateToken(url).encode('utf-8')
+            elif 'Panasonic' in pl:
+                videoUrl = url
             else:
                 sts, data  = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
                 if sts and data.startswith('http'):
@@ -383,7 +393,7 @@ class TvnVod(CBaseHostClass):
         printDBG("TvnVod.getLinks cItem.id[%r]" % id )
         videoUrls = []
         
-        for pl in ['Samsung', 'Android2']:#, 'Android4']: #'Android', ''Samsung', 
+        for pl in ['Panasonic', 'Samsung', 'Android2']:#, 'Android4']: #'Android', ''Samsung', 
             if pl in ['Android', 'Android2']:
                 url = '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
             else:
