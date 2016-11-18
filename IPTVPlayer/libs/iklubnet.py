@@ -171,8 +171,9 @@ class IKlubNetApi(CBaseHostClass):
             
             printDBG(data)
             
-            urlNext = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
-            if urlNext.startswith('http://') or urlNext.startswith('https://'):
+            urlNext = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?iklub[^"]+?)"', 1, True)[0]
+            if '' == urlNext: urlNext = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+            if self.cm.isValidUrl(urlNext):
                 sts, data = self.cm.getPage(urlNext)
                 if not sts: continue
             
@@ -248,6 +249,9 @@ class IKlubNetApi(CBaseHostClass):
                 elif 'mrl=' in data:
                     file = self.cm.ph.getSearchGroups(data, '''mrl=['"](http[^'^"]+?)['"]''')[0]
                     urlsTab.append({'name':title + ' [mrl]', 'url':file})
+                elif '<source ' in data:
+                    file = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"](http[^'^"]+?)['"]''')[0]
+                    urlsTab.append({'name':title + ' [src]', 'url':file})
                 else:
                     urlsTab.extend( self.up.getAutoDetectedStreamLink(url, data) )
             except Exception:
