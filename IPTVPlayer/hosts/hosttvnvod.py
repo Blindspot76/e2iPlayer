@@ -141,7 +141,7 @@ class TvnVod(CBaseHostClass):
         
     def getBaseUrl(self, pl):
         url = self.platforms[pl]['base_url'] + '/?platform=%s&terminal=%s&format=json&authKey=%s&v=%s&' % (self.platforms[pl]['platform'], self.platforms[pl]['terminal'],  self.platforms[pl]['authKey'], self.platforms[pl]['api'] )
-        if pl not in ['Android', 'Android2']:
+        if pl not in ['Android', 'Android2', 'Panasonic']:
             url += 'showContentContractor=free%2Csamsung%2Cstandard&'
         return url 
         
@@ -394,7 +394,7 @@ class TvnVod(CBaseHostClass):
         videoUrls = []
         
         for pl in ['Panasonic', 'Samsung', 'Android2']:#, 'Android4']: #'Android', ''Samsung', 
-            if pl in ['Android', 'Android2']:
+            if pl in ['Android', 'Android2', 'Panasonic']:
                 url = '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
             else:
                 url = 'm=getItem&id=%s&android23video=1&deviceType=Tablet&os=4.1.1&playlistType=&connectionType=WIFI&deviceScreenWidth=1920&deviceScreenHeight=1080&appVersion=3.3.4&manufacturer=unknown&model=androVMTablet' % id
