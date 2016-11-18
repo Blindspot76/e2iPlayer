@@ -4024,11 +4024,22 @@ class pageParser:
             printDBG(data)
             if 'Sorry, file was deleted!' in data:
                 SetIPTVPlayerLastHostError(_('Sorry, file was deleted!'))
-            tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
             
-            tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
-            printDBG(tmp)
-            data = tmp + data
+            tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, ">eval(", '</script>', False, False)
+            for tmp in tmpTab:
+                tmp2 = ''
+                for type in [0, 1]:
+                    for fun in [SAWLIVETV_decryptPlayerParams, VIDUPME_decryptPlayerParams]:
+                        tmp2 = unpackJSPlayerParams(tmp, fun, type=type)
+                        printDBG(tmp2)
+                        data = tmp2 + data
+                        if tmp2 != '': 
+                            printDBG("+++++++++++++++++++++++++++++++++++++++")
+                            printDBG(tmp2)
+                            printDBG("+++++++++++++++++++++++++++++++++++++++")
+                            break
+                    if tmp2 != '': break
+                        
         except Exception:
             printExc()
         

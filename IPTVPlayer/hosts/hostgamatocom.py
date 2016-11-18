@@ -306,7 +306,8 @@ class GamatoMovies(CBaseHostClass):
                     break
         
         shortUri = videoUrl
-        if 'sh.st' in videoUrl:
+        domain = self.up.getDomain(videoUrl)
+        if 'sh.st' in domain or 'viid.me' in domain:
             from Plugins.Extensions.IPTVPlayer.libs.unshortenit import unshorten
             uri, sts = unshorten(videoUrl)
             videoUrl = str(uri)
@@ -364,7 +365,7 @@ class GamatoMovies(CBaseHostClass):
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category in ['movies', 'series']:
-            if category == 'movies': filtersTab = ['genres', 'order', 'year', 'min_rating']
+            if category == 'movies': filtersTab = ['genres', 'order', 'year'] #min_rating
             else: filtersTab = ['genres', 'order']
             idx = self.currItem.get('f_idx', 0)
             if idx < len(filtersTab):
