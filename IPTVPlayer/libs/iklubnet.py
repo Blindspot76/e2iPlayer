@@ -221,7 +221,21 @@ class IKlubNetApi(CBaseHostClass):
                     file = self.cm.ph.getSearchGroups(data, r'''['"](http[^"^']+?\.m3u8[^"^']*?)['"]''')[0]
                     if file == '': file = self.cm.ph.getDataBeetwenMarkers(data, 'src=', '&amp;', False)[1]
                     urlsTab.extend( getDirectM3U8Playlist(file) )
-                elif 'content.jwplatform.com' in data:
+                elif 'tvp.info' in data:
+                    vidUrl = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''['"](http[^'^"]+?tvp.info[^'^"]+?)['"]''')[0] )
+                    sts, data = self.cm.getPage(vidUrl)
+                    if not sts: return []
+                    urlsTab.extend( self.getTvpStreamLink(data) )
+                elif 'mrl=' in data:
+                    file = self.cm.ph.getSearchGroups(data, '''mrl=['"](http[^'^"]+?)['"]''')[0]
+                    urlsTab.append({'name':title + ' [mrl]', 'url':file})
+                elif '<source ' in data:
+                    file = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"](http[^'^"]+?)['"]''')[0]
+                    urlsTab.append({'name':title + ' [src]', 'url':file})
+                else:
+                    urlsTab.extend( self.up.getAutoDetectedStreamLink(url, data) )
+                    
+                if 'content.jwplatform.com' in data:
                     vidUrl = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''['"]([^'^"]+?content.jwplatform.com[^'^"]+?)['"]''')[0] )
                     
                     sts, data = self.cm.getPage(vidUrl)
@@ -241,19 +255,6 @@ class IKlubNetApi(CBaseHostClass):
                         urlsTab.extend( getDirectM3U8Playlist(file) )
                     elif file.startswith('rtmp'):
                         urlsTab.append({'name':title + ' [rtmp]', 'url':file + ' live=1 '})
-                elif 'tvp.info' in data:
-                    vidUrl = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''['"](http[^'^"]+?tvp.info[^'^"]+?)['"]''')[0] )
-                    sts, data = self.cm.getPage(vidUrl)
-                    if not sts: return []
-                    urlsTab.extend( self.getTvpStreamLink(data) )
-                elif 'mrl=' in data:
-                    file = self.cm.ph.getSearchGroups(data, '''mrl=['"](http[^'^"]+?)['"]''')[0]
-                    urlsTab.append({'name':title + ' [mrl]', 'url':file})
-                elif '<source ' in data:
-                    file = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"](http[^'^"]+?)['"]''')[0]
-                    urlsTab.append({'name':title + ' [src]', 'url':file})
-                else:
-                    urlsTab.extend( self.up.getAutoDetectedStreamLink(url, data) )
             except Exception:
                 printExc()
                 continue

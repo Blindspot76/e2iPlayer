@@ -379,6 +379,7 @@ class urlparser:
                        'playpanda.net':        self.pp.parserPLAYPANDANET   ,
                        'easyvideo.me':         self.pp.parserEASYVIDEOME    ,
                        'vidlox.tv':            self.pp.parserVIDLOXTV       ,
+                       'embeducaster.com':     self.pp.parserUCASTERCOM     ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -488,6 +489,14 @@ class urlparser:
             elif 'dotstream.tv' in data:
                 streampage = self.cm.ph.getSearchGroups(data, """streampage=([^&]+?)&""")[0]
                 videoUrl = 'http://dotstream.tv/player.php?streampage={0}&height=490&width=730'.format(streampage)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'ucaster.js' in data:
+                channel = self.cm.ph.getSearchGroups(data, """channel=['"]([^'^"]+?)['"]""")[0]
+                g = self.cm.ph.getSearchGroups(data, """g=['"]([^'^"]+?)['"]""")[0]
+                width = self.cm.ph.getSearchGroups(data, """width=([0-9]+?)[^0-9]""")[0]
+                height = self.cm.ph.getSearchGroups(data, """height=([0-9]+?)[^0-9]""")[0]
+                videoUrl = 'http://www.embeducaster.com/membedplayer/{0}/{1}/{2}/{3}'.format(channel, g, width, height)
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'leton.tv' in data:
@@ -3501,6 +3510,44 @@ class pageParser:
         rtmpUrl = self.cm.ph.getSearchGroups(data, '''['"](rtmp[^'^"]+?)['"]''')[0]
         
         return rtmpUrl + ' playpath=' + playpath + ' swfUrl=' + swfUrl +  ' pageUrl=' + baseUrl + ' live=1'
+        
+    def parserUCASTERCOM(self, baseUrl):
+        printDBG("parserUCASTERCOM baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        videoUrl = strwithmeta(baseUrl)
+        if 'Referer' in videoUrl.meta: HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        
+        # get IP
+        sts, data = self.cm.getPage('http://www.pubucaster.com:1935/loadbalancer', {'header': HTTP_HEADER})
+        if not sts: return False
+        ip = data.split('=')[-1].strip()
+        
+        streamsTab = []
+        # m3u8 link
+        url = videoUrl.replace('/embedplayer/', '/membedplayer/')
+        sts, data = self.cm.getPage(url, {'header': HTTP_HEADER})
+        if sts:
+            streamUrl = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]+?\.m3u8[^'^"]+?)['"]''')[0]
+            if streamUrl != '':
+                streamUrl = 'http://' + ip + streamUrl
+                streamsTab.extend(getDirectM3U8Playlist(streamUrl))
+        
+        # rtmp does not work at now
+        return streamsTab
+        url = videoUrl.replace('/membedplayer/', '/embedplayer/')
+        sts, data = self.cm.getPage(url, {'header': HTTP_HEADER})
+        if not sts: return streamsTab
+        try: 
+            tmp = self.cm.ph.getSearchGroups(data, '''['"]FlashVars['"]\s*,\s*['"]([^'^"]+?)['"]''')[0]
+            tmp = parse_qs(tmp)
+            playpath = '{0}?id={1}&pk={2}'.format(tmp['s'][0], tmp['id'][0], tmp['pk'][0])
+            rtmpUrl  = 'rtmp://{0}/live'.format(ip)
+            swfUrl   = 'http://www.embeducaster.com/static/scripts/fplayer.swf'
+            streamUrl = rtmpUrl + ' playpath=' + playpath +  ' tcUrl=' + rtmpUrl + ' swfUrl=' + swfUrl + ' pageUrl=' + baseUrl + ' app=live live=1 conn=S:OK'
+            streamsTab.append({'name':'[rtmp] ucaster', 'url':streamUrl})
+        except:
+            printExc()
+        return streamsTab
         
     def parserDOTSTREAMTV(self, linkUrl):
         printDBG("parserDOTSTREAMTV linkUrl[%s]" % linkUrl)
