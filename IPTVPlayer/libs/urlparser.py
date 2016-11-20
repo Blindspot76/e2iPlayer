@@ -5457,7 +5457,7 @@ class pageParser:
         linksTab = []
         linkUrl ='http://www.streamlive.to/view/%s' % channel
         
-        for idx in [0, 1]:
+        for idx in [0]:
             params = dict(defaultParams)
             params.update({'header':{'header':HTTP_HEADER}})
             sts, data = self.cm.getPage(linkUrl, params)
