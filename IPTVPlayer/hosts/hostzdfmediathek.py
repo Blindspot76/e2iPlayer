@@ -67,7 +67,7 @@ class ZDFmediathek(CBaseHostClass):
     MAIN_API_URL = 'https://zdf-cdn.live.cellular.de/'
     ZDF_API_URL  = 'https://api.zdf.de/'
     DOCUMENT_API_URL            = MAIN_API_URL + 'mediathekV2/document/%s'
-    BROADSCAST_MISSED_API_URL   = MAIN_API_URL + 'mediathekV2/broadscast-missed/%s'
+    BROADSCAST_MISSED_API_URL   = MAIN_API_URL + 'mediathekV2/broadcast-missed/%s'
     LIVE_TV_API_URL             = MAIN_API_URL + 'mediathekV2/live-tv/%s"'
     BRANDS_ALPHABETICAL_API_URL = MAIN_API_URL + 'mediathekV2/brands-alphabetical'
     TYPEAHEAD_API_URL           = MAIN_API_URL + 'mediathekV2/search/typeahead?q=%s&context=%s'
@@ -89,33 +89,13 @@ class ZDFmediathek(CBaseHostClass):
     AUTH_TOKEN_API_URL          = MAIN_API_URL + 'mediathekV2/token'
     AKAMAI_TOKEN_API_URL        = 'https://tg2cl15.zdf.de/generate'
     
-    MAIN_CAT_TAB = [{'category':'list_start',     'title':_('Home page'), 'url': START_PAGE_API_URL},
-                    #{'category':'list_missed',    'title':_('Missed the show?')},
+    MAIN_CAT_TAB = [{'category':'list_start',      'title':_('Home page'), 'url': START_PAGE_API_URL},
+                    {'category':'missed_date',     'title':_('Missed the show?')},
                     {'category':'list_cluster',    'title':_('Program A-Z'), 'simplify':False, 'url': BRANDS_ALPHABETICAL_API_URL},
-                    {'category':'list_cluster',   'title':_('Categories'), 'url': CATEGORIES_PAGE_API_URL},
+                    {'category':'list_cluster',    'title':_('Categories'), 'url': CATEGORIES_PAGE_API_URL},
                     #{'category':'themen',         'title':_('Topics'), 'url': NEWS_API_URL},
-                    {'category':'search',         'title':_('Search'), 'search_item':True},
-                    {'category':'search_history', 'title':_('Search history')} ]
-
-    START_CAT_TAB =   [{'key':'live',         'title':_('All programs in the Live Stream')}, 
-                       {'key':'themen',       'title':_("Topics")}, 
-                       {'key':'tipps',        'title':_('Featured')}, 
-                       {'key':'aktuell',      'title':_('Recent')},
-                       {'key':'meistGesehen', 'title':_('Most Popular')}]
-        
-    SENDUNG_CAT_TAB = [{'key':'tipps',        'title':_('Featured')}, 
-                       {'key':'aktuell',      'title':_('Recent')},
-                       {'key':'meistGesehen', 'title':_('Most Popular')}]
-                       
-    A_Z_CAT_TAB     = [{'id':'A/C',        'title':_('ABC')},
-                       {'id':'D/E',        'title':_('DFE')},
-                       {'id':'G/I',        'title':_('GHI')},
-                       {'id':'J/K',        'title':_('JKL')},
-                       {'id':'M/O',        'title':_('MNO')},
-                       {'id':'P/S',        'title':_('PQRS')},
-                       {'id':'T/V',        'title':_('TUV')},
-                       {'id':'W/Z',        'title':_('WXYZ')},
-                       {'id':'0-9/0-9',    'title':_('0-9')}, ]
+                    {'category':'search',          'title':_('Search'), 'search_item':True},
+                    {'category':'search_history',  'title':_('Search history')} ]
                        
     QUALITY_MAP = {'hd':4, 'veryhigh':3, 'high':2, 'med':1, 'low':0 }
     
@@ -201,6 +181,16 @@ class ZDFmediathek(CBaseHostClass):
         except Exception:
             printExc()
         
+    def listSendungverpasst(self, cItem):
+        printDBG('listSendungverpasst')
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        try:
+            data = byteify(json.loads(data)['broadcastCluster'])
+            self._listCluster(cItem, data)
+        except Exception:
+            printExc()
+        
     def listCluster(self, cItem):
         printDBG('listCluster')
         sts, data = self.getPage(cItem['url'])
@@ -257,14 +247,14 @@ class ZDFmediathek(CBaseHostClass):
         except Exception:
             printExc()
     
-    def listMissed(self, cItem):
-        printDBG("listMissed")
+    def listMissedDate(self, cItem):
+        printDBG("listMissedDate")
         # convert to timestamp
         now = int(time.time())
         for item in range(7):
             date =  datetime.fromtimestamp(now - item * 24 * 3600).strftime('%Y-%m-%d')
             params = dict(cItem)
-            params.update({'category':'list_cluster', 'title':date, 'url':self.BROADSCAST_MISSED_API_URL % date})
+            params.update({'category':'list_missed', 'title':date, 'url':self.BROADSCAST_MISSED_API_URL % date})
             self.addDir(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -410,6 +400,10 @@ class ZDFmediathek(CBaseHostClass):
             self.listsTab(ZDFmediathek.MAIN_CAT_TAB, {'name':'category'})
         elif 'list_start' == category:
             self.listStart(self.currItem)
+        elif 'missed_date' == category:
+            self.listMissedDate(self.currItem)
+        elif 'list_missed' == category:
+            self.listSendungverpasst(self.currItem)
         elif 'list_cluster' == category:
             self.listCluster(self.currItem)
         elif 'list_content' == category:
