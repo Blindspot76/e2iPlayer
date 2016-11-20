@@ -2343,8 +2343,9 @@ class pageParser:
         #['Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10']
         for agent in ['Mozilla/5.0 (iPhone; CPU iPhone OS 9_0_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13A452 Safari/601.1']: 
             HTTP_HEADER= { 'User-Agent':agent, 'Referer':Referer }
-            COOKIE_FILE = GetCookieDir('castflashpw.cookie')
-            params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
+            COOKIE_FILE = GetCookieDir('sport365live.cookie') #('castflashpw.cookie')
+            baseParams = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
+            params = dict(baseParams)
             
             url = baseUrl
             sts, data = self.cm.getPage(url, params)
@@ -2386,7 +2387,7 @@ class pageParser:
                 playerUrl = getUtf8Str(playerUrl[1:])
             printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % playerUrl)
             if playerUrl.startswith('http'):
-                COOKIE_FILE_M3U8 = GetCookieDir('m3u8.cookie')
+                COOKIE_FILE_M3U8 = GetCookieDir('sport365live.cookie')
                 params = {'cookiefile':COOKIE_FILE_M3U8, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True} 
                 playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':'http://h5.adshell.net/peer5', 'Origin':'http://h5.adshell.net', 'User-Agent':HTTP_HEADER['User-Agent']})
                 try:
@@ -2406,6 +2407,12 @@ class pageParser:
                 except Exception:
                     printExc()
                     return urlsTab
+                    
+                params = dict(baseParams)
+                params['header']['Referer'] = 'http://www.sport365.live/en/main'
+                sts, data = self.cm.getPage("http://www.sport365.live/en/sidebar", params)
+                if not sts: return False
+                
         return False
         
     def parserTRILULILU(self, baseUrl):
@@ -3389,6 +3396,32 @@ class pageParser:
                 videoUrl = 'https://www.ustream.tv/embed/' + channelID
                 live = True
             
+            # get mobile streams
+            if live:
+                playlist_url = "http://iphone-streaming.ustream.tv/uhls/%s/streams/live/iphone/playlist.m3u8" % channelID
+                try:
+                    retTab = getDirectM3U8Playlist(playlist_url)
+                    if len(retTab):
+                        for item in retTab:
+                            name = ('ustream.tv %s' % item.get('heigth', 0)) + '_mobile'
+                            url = urlparser.decorateUrl(item['url'], {'iptv_livestream': True})
+                            linksTab.append({'name':name, 'url':url})
+                        break
+                except Exception:
+                    printExc()
+                return linksTab
+            else:
+                sts, data = self.cm.getPage(videoUrl)
+                if not sts: return
+                data = self.cm.ph.getDataBeetwenMarkers(data, '"media_urls":{', '}', False)[1]
+                data = byteify(json.loads('{%s}' % data))
+                printDBG("++++++++++++++++++++++++++++++++++++++++++")
+                printDBG(data)
+                if self.cm.isValidUrl(data['flv']) and '/{0}?'.format(channelID) in data['flv']:
+                    return urllib.unquote(data['flv'].replace('&amp;', '&'))
+                return False
+                
+            
             baseWgetCmd = DMHelper.getBaseWgetCmd({})
             cmd = DMHelper.GET_F4M_PATH() + (" '%s'" % baseWgetCmd) + (' "%s"' % videoUrl) + ' 2>&1 > /dev/null'
             
@@ -3411,25 +3444,6 @@ class pageParser:
             except Exception:
                 printExc()
             break
-        return linksTab
-        # get mobile streams
-        if live:
-            playlist_url = "http://iphone-streaming.ustream.tv/uhls/%s/streams/live/iphone/playlist.m3u8" % channelID
-            if 0 == len(linksTab): attempts = 5
-            else:  attempts = 1                
-            while attempts:
-                try:
-                    retTab = getDirectM3U8Playlist(playlist_url)
-                    if len(retTab):
-                        for item in retTab:
-                            name = ('ustream.tv %s' % item.get('heigth', 0)) + '_mobile'
-                            url = urlparser.decorateUrl(item['url'], {'iptv_livestream': True})
-                            linksTab.append({'name':name, 'url':url})
-                        break
-                except Exception:
-                    printExc()
-                attempts -= 1
-                time.sleep(3)
         return linksTab
         
     def parserALIEZME(self, baseUrl):
