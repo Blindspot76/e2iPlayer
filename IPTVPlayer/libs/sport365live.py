@@ -88,6 +88,15 @@ class Sport365LiveApi:
         url = self.getFullUrl('home')
         sts, data = self.cm.getPage(url, self.http_params)
         if not sts: return
+        printDBG(data)
+        
+        data = re.compile('''src=['"](http[^"^']*?advert[^"^']*?\.js[^'^"]*?)["']''').findall(data)
+        params = dict(self.http_params)
+        params['header'] = dict(params['header'])
+        params['header']['Referer'] = self.getFullUrl('home')
+        for url in data:
+            sts, data = self.cm.getPage(url, params)
+        return
         
         millis = str(int(time()*1000))
         rand = str(int(random.random() * 100000000))
@@ -288,6 +297,8 @@ class Sport365LiveApi:
                 playerUrl = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](http[^"^']+?)['"]''', 1, True)[0] )
                 
                 urlsTab = self.up.getVideoLinkExt(strwithmeta(playerUrl, {'aes_key':aes}))
+                if len(urlsTab):
+                    break
                 
             except Exception:
                 printExc()
