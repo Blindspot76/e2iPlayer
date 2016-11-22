@@ -2760,13 +2760,24 @@ class pageParser:
             #printDBG(data)
             #printDBG("=======================================")
             vidTab = []
+            sub_tracks = []
+            subData = self.cm.ph.getDataBeetwenMarkers(data, 'tracks:', ']', False)[1].split('}')
+            for item in subData:
+                if '"captions"' in item:
+                    label   = self.cm.ph.getSearchGroups(item, 'label:\s*?"([^"]+?)"')[0]
+                    srclang = self.cm.ph.getSearchGroups(item, 'srclang:\s*?"([^"]+?)"')[0]
+                    src     = self.cm.ph.getSearchGroups(item, 'file:\s*?"([^"]+?)"')[0]
+                    if not src.startswith('http'): continue
+                    sub_tracks.append({'title':label, 'url':src, 'lang':label, 'format':'srt'})
+            data = re.sub("tracks:[^\]]+?\]", "", data)
+            
             streamer = self.cm.ph.getSearchGroups(data, 'streamer: "(rtmp[^"]+?)"')[0]
             printDBG(streamer)
             data     = re.compile('file:[ ]*?"([^"]+?)"').findall(data)
             
             for item in data:
                 if item.startswith('http://'):
-                    vidTab.insert(0, {'name': 'http://streamin.to/ ', 'url':item})
+                    vidTab.insert(0, {'name': 'http://streamin.to/ ', 'url':strwithmeta(item, {'external_sub_tracks':sub_tracks})})
                 elif item.startswith('rtmp://') or '' != streamer:
                     try:
                         if item.startswith('rtmp://'):
@@ -2778,7 +2789,7 @@ class pageParser:
                             playpath = item 
                         swfUrl  = "http://streamin.to/player6/jwplayer.flash.swf"
                         rtmpUrl = r + ' playpath=%s' % playpath + ' swfUrl=%s' % swfUrl + ' pageUrl=%s' % baseUrl
-                        vidTab.append({'name': 'rtmp://streamin.to/ ', 'url':urlparser.decorateUrl(rtmpUrl, {'iptv_livestream':False})})
+                        vidTab.append({'name': 'rtmp://streamin.to/ ', 'url':urlparser.decorateUrl(rtmpUrl, {'external_sub_tracks':sub_tracks, 'iptv_livestream':False})})
                     except Exception:
                         printExc()
             return vidTab
@@ -2788,6 +2799,7 @@ class pageParser:
         
         HTTP_HEADER = {"User-Agent":"Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10"}
         sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER})
+        printDBG(data)
         if sts:
             errMarkers = ['File was deleted', 'File Removed', 'File Deleted.']
             for errMarker in errMarkers:
