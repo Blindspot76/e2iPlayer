@@ -380,6 +380,7 @@ class urlparser:
                        'easyvideo.me':         self.pp.parserEASYVIDEOME    ,
                        'vidlox.tv':            self.pp.parserVIDLOXTV       ,
                        'embeducaster.com':     self.pp.parserUCASTERCOM     ,
+                       'darkomplayer.com':     self.pp.parserDARKOMPLAYER   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -5194,6 +5195,30 @@ class pageParser:
         
         return urlTab
         
+    def parserDARKOMPLAYER(self, baseUrl):
+        printDBG("parserDARKOMPLAYER baseUrl[%s]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>')[1]
+        tmp = unpackJSPlayerParams(tmp, TEAMCASTPL_decryptPlayerParams, type=0)
+        data += tmp
+        
+        urlTab = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+        for item in data:
+            type  = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+            res   = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+            label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
+            url   = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            if 'mp4' not in type: continue
+            if url.startswith('//'):
+                url = 'http:' + url
+            if self.cm.isValidUrl(url):
+                url = urlparser.decorateUrl(url, {'Referer':baseUrl, 'User-Agent':'Mozilla/5.0'})
+                urlTab.append({'name':'darkomplayer {0}: {1}'.format(label, res), 'url':url})
+        return urlTab
+        
     def parseJACVIDEOCOM(self, baseUrl):
         printDBG("parseJACVIDEOCOM baseUrl[%s]" % baseUrl)
         
@@ -5224,6 +5249,13 @@ class pageParser:
                 return linksTab
             except Exception:
                 printExc()
+        
+        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=["'](http[^"^']+?)["']''', 1, True)[0]
+        try:
+            linksTab = urlparser().getVideoLinkExt(url)
+            if len(linksTab): return linksTab
+        except Exception:
+            printExc()
         return self._findLinks(data, contain='mp4')
         
     def parseSPEEDVICEONET(self, baseUrl):
