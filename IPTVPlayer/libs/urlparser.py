@@ -2291,7 +2291,21 @@ class pageParser:
             printExc()
             
         sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER}, post_data)
-        return self._findLinks(data, 'moshahda.net')
+        if not sts: return False
+        
+        linksTab = []
+        srcData = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', '],', False)[1].strip()
+        srcData = byteify(json.loads(srcData+']')) 
+        for link in srcData:
+            if not self.cm.isValidUrl(link): continue
+            if link.split('?')[0].endswith('m3u8'):
+                tmp = getDirectM3U8Playlist(link)
+                linksTab.extend(tmp)
+            else:
+                linksTab.append({'name': 'mp4', 'url':link})
+        return linksTab
+                
+        #return self._findLinks(data, 'moshahda.net', linkMarker=r'''['"](http[^"^']+)['"]''')
         
     def parseSTREAMMOE(self, baseUrl):
         printDBG("parseSTREAMMOE baseUrl[%r]" % baseUrl)
