@@ -71,7 +71,7 @@ class SerienStreamTo(CBaseHostClass):
                              {'category':'list_genres',       'title': _('Genres'),                       'url':self.MAIN_URL                       },
                              {'category':'list_items',        'title': _('New'),                          'url':self.getFullUrl('/neu')             },
                              {'category':'list_items',        'title': _('Popular'),                      'url':self.getFullUrl('/beliebte-serien') },
-                             {'category':'search',            'title': _('Search'), 'search_item':True,                                             },
+                             {'category':'search',            'title': _('Search'),                       'search_item':True,                       },
                              {'category':'search_history',    'title': _('Search history'),                                                         } 
                             ]
         
@@ -171,7 +171,7 @@ class SerienStreamTo(CBaseHostClass):
             except Exception:
                 seasonNum = ''
             params = dict(cItem)
-            params.update({'category':nextCategory, 'good_for_fav':True, 'season_num':seasonNum, 'series_title':cItem['title'], 'title':title, 'url':url, 'icon':icon, 'desc':desc})
+            params.update({'category':nextCategory, 'good_for_fav':True, 'season_num':seasonNum, 'series_title':cItem['title'], 'title':cItem['title'] + ': ' + title, 'url':url, 'icon':icon, 'desc':desc})
             self.addDir(params)
             
     def listEpisodes(self, cItem):
@@ -286,13 +286,6 @@ class SerienStreamTo(CBaseHostClass):
         
     def getFavouriteData(self, cItem):
         printDBG('SerienStreamTo.getFavouriteData')
-        
-        # if this is season item then add series title 
-        cItem = dict(cItem)
-        seriesTitle = cItem.get('series_title', '')
-        if '' != seriesTitle:
-            cItem['title'] = seriesTitle + ' ' + cItem['title']
-        
         return json.dumps(cItem)
         
     def getLinksForFavourite(self, fav_data):

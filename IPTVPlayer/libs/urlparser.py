@@ -4120,8 +4120,12 @@ class pageParser:
         printDBG("vid[%s] play[%s]" % (vid, play))
         
         tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?counter[^'^"]+?)['"]""")[0]
+        if tmpUrl == '': tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?jquery2[^'^"]+?)['"]""")[0]
+        
         if tmpUrl.startswith('.'):
             tmpUrl = tmpUrl[1:]
+        if tmpUrl.startswith('//'):
+            tmpUrl = 'http:' + tmpUrl
         if tmpUrl.startswith('/'):
             tmpUrl = 'http://www.flashx.tv' + tmpUrl
         if tmpUrl != '':
@@ -4129,8 +4133,8 @@ class pageParser:
         
         url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + play + '-{0}.html?{1}'.format(vid, play)
         sts, data = self.cm.getPage(url, params)
-        if not sts:
-            return False
+        if not sts: return False
+        printDBG(data)
             
         if 'fxplay' not in url and 'fxplay' in data:
             url = self.cm.ph.getSearchGroups(data, '"(http[^"]+?fxplay[^"]+?)"')[0]
