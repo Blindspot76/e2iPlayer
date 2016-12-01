@@ -338,6 +338,7 @@ class ARDmediathek(CBaseHostClass):
             tmpUrlTab = []
             data = byteify(json.loads(data))
             live = data['_isLive']
+            subtitleUrl = data.get('_subtitleUrl', '')
             itemType = data['_type']
             try:
                 data = data['_mediaArray']
@@ -409,8 +410,11 @@ class ARDmediathek(CBaseHostClass):
             for item in tmpUrlTab:
                 url = item['url']
                 name = item['quality_name'] + ' ' + item['format_name']
-                if '' != url:
-                    urlTab.append({'need_resolve':0, 'name':name, 'url':self.up.decorateUrl(url, {'iptv_livestream':live})})
+                if self.cm.isValidUrl(url):
+                    decorateParams = {'iptv_livestream':live}
+                    if self.cm.isValidUrl(subtitleUrl):
+                        decorateParams['external_sub_tracks'] = [{'title':_('German'), 'url':subtitleUrl, 'lang':_('de'), 'format':'ttml'}]
+                    urlTab.append({'need_resolve':0, 'name':name, 'url':self.up.decorateUrl(url, decorateParams)})
                     if onelinkmode: break
             printDBG(tmpUrlTab)
         except Exception:
