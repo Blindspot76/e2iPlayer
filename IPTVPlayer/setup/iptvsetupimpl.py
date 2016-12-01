@@ -434,7 +434,7 @@ class IPTVSetupImpl:
         def _detectValidator(code, data):
             if 0 == code:
                 try: 
-                    if self.subparserVersion >= float(data.strip()):
+                    if float(data.strip()) >= self.subparserVersion:
                         return True,False
                 except Exception: 
                     pass
