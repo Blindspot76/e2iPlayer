@@ -45,6 +45,16 @@ class MoonwalkParser():
         printDBG('MoonwalkParser._getSecurityData')
         sec_header = {}
         post_data = {}
+        
+        #printDBG(data)
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, 'headers:', '}')
+        for item in tmp:
+            printDBG("---------------------------------------------")
+            printDBG(item)
+            printDBG("---------------------------------------------")
+            item = re.compile("'([^']+?)'\s*:\s*'([^']+?)'").findall(item)
+            for header in item:
+                sec_header[header[0]] = header[1]
 
         contentData = self.cm.ph.getDataBeetwenMarkers(data, 'setRequestHeader|', '|beforeSend', False)[1]
         csrfToken = self.cm.ph.getSearchGroups(data, '<meta name="csrf-token" content="([^"]+?)"')[0] 
@@ -69,6 +79,7 @@ class MoonwalkParser():
         printDBG("=======================================================================")
         printDBG(data)
         printDBG("=======================================================================")
+        
         sec_header['Encoding-Pool'] = base64.b64encode(contentData.replace('|', ''))
         sec_header['X-Data-Pool'] = xDataPool
         sec_header['X-CSRF-Token'] = csrfToken
