@@ -7,9 +7,10 @@
 from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
+from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
 from Plugins.Extensions.IPTVPlayer.libs.gledajfilmDecrypter import gledajfilmDecrypter
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes  import AES
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
@@ -383,6 +384,10 @@ class urlparser:
                        'darkomplayer.com':     self.pp.parserDARKOMPLAYER   ,
                        'vivo.sx':              self.pp.parserVIVOSX         ,
                        'zstream.to':           self.pp.parserZSTREAMTO      ,
+                       'uploadz.co':           self.pp.parserUPLOAD         ,
+                       'upload.af':            self.pp.parserUPLOAD         ,
+                       'uploadx.org':          self.pp.parserUPLOAD         ,
+                       'clicknupload.link':    self.pp.parserUPLOAD         ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3578,6 +3583,78 @@ class pageParser:
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         return self._findLinks(data, 'zstream')
+        
+    def parserUPLOAD(self, baseUrl):
+        printDBG("parserUPLOAD baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
+        
+        if baseUrl.startswith('http://'):
+            baseUrl = 'https' + baseUrl[4:]
+        
+        def _getPage(url, params={}, post_data=None):
+            cmd = DMHelper.getBaseWgetCmd(params.get('header', {})) + url
+            if post_data != None:
+                if params.get('raw_post_data', False):
+                    post_data_str = post_data
+                else:
+                    post_data_str = urllib.urlencode(post_data)
+                cmd += " --post-data '{0}' ".format(post_data_str)
+            cmd += ' -O - 2> /dev/null'
+            
+            printDBG('getPage request: ' + cmd)
+            data = iptv_execute()( cmd )
+            if not data['sts'] or 0 != data['code']: 
+                return False, None
+            else:
+                return True, data['data']
+
+        sts, data = _getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</form>', caseSensitive=False)
+        if not sts: return False
+        
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        HTTP_HEADER['Referer'] = baseUrl
+        
+        sts, data = _getPage(baseUrl, {'header':HTTP_HEADER}, post_data )
+        if not sts: return False
+        
+        sitekey = self.cm.ph.getSearchGroups(data, 'data-sitekey="([^"]+?)"')[0]
+        if sitekey != '': 
+            token = UnCaptchaReCaptcha(lang=GetDefaultLang()).processCaptcha(sitekey)
+            if token == '': return False
+        else: token = ''
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</form>', caseSensitive=False)
+        if not sts: return False
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        if '' != token: post_data['g-recaptcha-response'] = token
+        
+        HTTP_HEADER['Referer'] = baseUrl
+        sts, data = _getPage(baseUrl, {'header':HTTP_HEADER}, post_data )
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        videoData = self.cm.ph.rgetDataBeetwenMarkers2(data, '>download<', '<a ', caseSensitive=False)[1]
+        printDBG('videoData[%s]' % videoData)
+        videoUrl = self.cm.ph.getSearchGroups(videoData, 'href="([^"]+?)"')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?class="downloadbtn"[^>]+?['"](http[s]?://[^'^"]+?['"])''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl   
+        
+        return False
+        
+        #printDBG(data)
+        #videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?'class="downloadbtn"[^>]+?['"](http[s]?://[^'^"]+?(?:\.avi|.mkv)['"])''')[0]
+        videoUrl = self.cm.ph.getSearchGroups(data, '<a\s+class="btn"\s+href="([^"]+?)"')[0]
+        if not self.cm.isValidUrl(videoUrl): videoUrl = self.cm.ph.getSearchGroups(data, '<a[^>]+?href="([^"]+?)"[^>]+?class="btn"')[0]
+        if not self.cm.isValidUrl(videoUrl): videoUrl = self.cm.ph.getSearchGroups(data, '<a[^>]+?class="[^"]*?btn[^"]*?"[^>]+?href="([^"]+?)"[^>]')[0]
+        if not self.cm.isValidUrl(videoUrl): videoUrl = self.cm.ph.getSearchGroups(data, '<a[^>]+?href="([^"]+?)"[^>]+?class="[^"]*?btn[^"]*?"')[0]
+        return videoUrl
         
     def parserUCASTERCOM(self, baseUrl):
         printDBG("parserUCASTERCOM baseUrl[%s]" % baseUrl)
