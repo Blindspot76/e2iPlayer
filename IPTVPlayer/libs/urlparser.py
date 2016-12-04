@@ -390,6 +390,7 @@ class urlparser:
                        'uploadx.org':          self.pp.parserUPLOAD         ,
                        'clicknupload.link':    self.pp.parserUPLOAD         ,
                        'kingfiles.net':        self.pp.parserKINGFILESNET   ,
+                       'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3585,6 +3586,26 @@ class pageParser:
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         return self._findLinks(data, 'zstream')
+        
+    def parserTHEVIDEOBEETO(self, baseUrl):
+        printDBG("parserTHEVIDEOBEETO baseUrl[%r]" % baseUrl)
+        
+        if 'embed-' not in baseUrl: url = 'https://thevideobee.to/embed-%s.html' % baseUrl.split('/')[-1].replace('.html', '')
+        else: url = baseUrl
+        
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts:
+            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
+            data = iptv_execute()( cmd )
+            if not data['sts'] or 0 != data['code']: return False
+            data = data['data']
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, 'type="video[^>]*?src="([^"]+?)"')[0]
+        if not self.cm.isValidUrl(videoUrl): videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]*?type="video')[0]
+        if self.cm.isValidUrl(videoUrl): 
+            return videoUrl
+        return False
         
     def parserKINGFILESNET(self, baseUrl):
         printDBG("parserKINGFILESNET baseUrl[%s]" % baseUrl)
