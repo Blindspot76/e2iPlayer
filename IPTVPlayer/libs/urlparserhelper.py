@@ -213,6 +213,17 @@ def OPENLOADIO_decryptPlayerParams(p, a, c, k, e, d):
             reg = '\\b' + e(c) + '\\b'
             p = re.sub(reg, k[c], p)
     return p
+    
+def KINGFILESNET_decryptPlayerParams(p, a, c, k, e=None, d=None):
+    def e1(c, a):
+        return JS_toString(c, a)
+    e = e1
+    while c != 0:
+        c -= 1
+        if k[c]:
+            reg = '\\b' + e(c, a) + '\\b'
+            p = re.sub(reg, k[c], p)
+    return p
 
 def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
     def e1(c):

@@ -26,6 +26,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                OPENLOADIO_decryptPlayerParams, \
                                                                TEAMCASTPL_decryptPlayerParams, \
                                                                VIDEOWEED_decryptPlayerParams, \
+                                                               KINGFILESNET_decryptPlayerParams, \
                                                                captchaParser, \
                                                                getDirectM3U8Playlist, \
                                                                decorateUrl, \
@@ -388,6 +389,7 @@ class urlparser:
                        'upload.af':            self.pp.parserUPLOAD         ,
                        'uploadx.org':          self.pp.parserUPLOAD         ,
                        'clicknupload.link':    self.pp.parserUPLOAD         ,
+                       'kingfiles.net':        self.pp.parserKINGFILESNET   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3583,6 +3585,60 @@ class pageParser:
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         return self._findLinks(data, 'zstream')
+        
+    def parserKINGFILESNET(self, baseUrl):
+        printDBG("parserKINGFILESNET baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
+        COOKIE_FILE = GetCookieDir('kingfilesnet.cookie')
+        rm(COOKIE_FILE)
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</form>', caseSensitive=False)
+        if not sts: return False
+        
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        post_data.pop('method_premium', None)
+        params['header']['Referer'] = baseUrl
+        
+        sts, data = self.cm.getPage(baseUrl, params, post_data)
+        if not sts: return False
+        
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>')
+        if sts:
+            tmp = unpackJSPlayerParams(tmp, KINGFILESNET_decryptPlayerParams)
+            printDBG(tmp)
+            videoUrl = self.cm.ph.getSearchGroups(tmp, 'type="video/divx"[^>]*?src="([^"]+?)"')[0]
+            if self.cm.isValidUrl(videoUrl): return videoUrl
+            try:
+                videoLinks = self._findLinks(tmp, 'kingfiles.net', m1='config:', m2=';')
+                printDBG(videoLinks)
+                if len(videoLinks): return videoLinks
+            except Exception:
+                printExc()
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</form>', caseSensitive=False)
+        if not sts: return False
+        
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        post_data.pop('method_premium', None)
+        params['return_data'] = False
+        
+        try:
+            sleep_time = self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]
+            if '' != sleep_time: time.sleep(int(sleep_time))
+        except Exception:
+            printExc()
+        
+        sts, response = self.cm.getPage(baseUrl, params, post_data)
+        videoUrl = response.geturl()
+        response.close()
+        printDBG(videoUrl)
+        if videoUrl != baseUrl:
+            return videoUrl
+        return False
         
     def parserUPLOAD(self, baseUrl):
         printDBG("parserUPLOAD baseUrl[%s]" % baseUrl)
