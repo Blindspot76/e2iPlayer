@@ -112,7 +112,10 @@ class IceFilms(CBaseHostClass):
                     if self.cm.isValidUrl(url):
                         params = dict(cItem)
                         params.update({'title':title, 'url':url})
-                        if numOfTabs - 1 > cItem['f_idx']:
+                        if 'rand.php' in url:
+                            params.pop('f_idx', None)
+                            params['category'] = 'list_random'
+                        elif numOfTabs - 1 > cItem['f_idx']:
                             params['f_idx'] += 1
                         else:
                             params.pop('f_idx', None)
@@ -124,6 +127,33 @@ class IceFilms(CBaseHostClass):
         tab = self.cacheFilters.get(cacheKey, {}).get('tab', [])
         for params in tab:
             self.currList.append(params)
+            
+    def listRandom(self, cItem, nextCategory):
+        printDBG("IceFilms.listRandom")
+        try:
+            sts, response = self.cm.getPage(cItem['url'], {'return_data':False})
+            url = response.geturl()
+            response.close()
+        except Exception:
+            printExc()
+            
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        
+        tmp  = self.cm.ph.getDataBeetwenMarkers(data, '<title>', '</span>', False)[1]
+        mainDesc = self.cleanHtmlStr(tmp)
+        title  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<span', '</span>')[1])
+        
+        tmp  = self.cm.ph.getDataBeetwenMarkers(data, 'imdb', '>', False)[1]
+        id   = self._getAttrVal(tmp, 'id')
+        
+        params = {'good_for_fav': True, 'title':title, 'url':url, 'desc':mainDesc}
+        if id != '': params.update({'imdb_id':id, 'icon':'http://www.imdb.com/title/tt%s/?fake=need_resolve.jpeg' % id})
+        if '/tv/' not in url:
+            self.addVideo(params)
+        else:
+            params['category'] = nextCategory
+            self.addDir(params)
         
     def listItems(self, cItem, nextCategory):
         printDBG("IceFilms.listItems")
@@ -140,7 +170,8 @@ class IceFilms(CBaseHostClass):
                 url = self._getAttrVal(tmpItem, 'href')
                 id  = self._getAttrVal(tmpItem, 'id')
                 title  = self.cleanHtmlStr(tmpItem)
-                params = {'good_for_fav': True, 'imdb_id':id, 'title':title, 'url':self.getFullUrl(url), 'icon':'http://www.imdb.com/title/tt%s/?fake=need_resolve.jpeg' % id, 'desc':desc}
+                params = {'good_for_fav': True, 'title':title, 'url':self.getFullUrl(url), 'desc':desc}
+                if id != '': params.update({'imdb_id':id, 'icon':'http://www.imdb.com/title/tt%s/?fake=need_resolve.jpeg' % id})
                 if '/tv/' not in url:
                     self.addVideo(params)
                 else:
@@ -153,8 +184,10 @@ class IceFilms(CBaseHostClass):
         if not sts: return
         
         tmp  = self.cm.ph.getDataBeetwenMarkers(data, '<title>', '<div', False)[1]
-        id   = self._getAttrVal(tmp, 'id')
         mainDesc = self.cleanHtmlStr(tmp)
+        
+        tmp  = self.cm.ph.getDataBeetwenMarkers(data, 'imdb', '>', False)[1]
+        id   = self._getAttrVal(tmp, 'id')
         
         data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<span class="?list"?'), re.compile('</span>'), withMarkers=False)[1]
         data = data.split('</h3>')
@@ -164,7 +197,8 @@ class IceFilms(CBaseHostClass):
             for tmpItem in tmpTab:
                 url = self._getAttrVal(tmpItem, 'href')
                 title  = self.cleanHtmlStr(tmpItem)
-                params = {'good_for_fav': True, 'title':'{0}: {1}'.format(cItem['title'], title), 'url':self.getFullUrl(url), 'icon':'http://www.imdb.com/title/tt%s/?fake=need_resolve.jpeg' % id, 'desc':desc}
+                params = {'good_for_fav': True, 'title':'{0}: {1}'.format(cItem['title'], title), 'url':self.getFullUrl(url), 'desc':desc}
+                if id != '': params.update({'icon':'http://www.imdb.com/title/tt%s/?fake=need_resolve.jpeg' % id})
                 self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -332,6 +366,8 @@ class IceFilms(CBaseHostClass):
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif 'list_filters' == category:
             self.listFilters(self.currItem, 'list_items')
+        elif 'list_random' == category:
+            self.listRandom(self.currItem, 'list_episodes')
         elif 'list_items' == category:
             self.listItems(self.currItem, 'list_episodes')
         elif category == 'list_episodes':

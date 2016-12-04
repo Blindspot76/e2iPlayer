@@ -5907,7 +5907,30 @@ class pageParser:
         printDBG(tmp2)
         printDBG('CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC')
         
-        from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import CVevoSignAlgoExtractor
+        ##########################################################
+        # new algo 2016-12-04 ;)
+        ##########################################################
+        varName = self.cm.ph.getSearchGroups(tmp, '''window.r=['"]([^'^"]+?)''', ignoreCase=True)[0]
+        encTab = re.compile('''<span[^>]+?id="%s[^"]*?"[^>]*?>([^<]+?)<\/span>''' % varName).findall(data)
+        for enc in encTab:
+            dec = ''
+            try:
+                a = int(enc[0:2])
+                idx = 2
+                while idx < len(enc):
+                    dec += chr(int(enc[idx:idx+3]) - a * int(enc[idx+3:idx+3+2]))
+                    idx += 5
+            except Exception:
+                printExc()
+                continue
+                
+            videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
+            params = dict(HTTP_HEADER)
+            params['external_sub_tracks'] = subTracks
+            return urlparser.decorateUrl(videoUrl, params)
+        ##########################################################
+        # new algo 2016-12-04 end ;)
+        ##########################################################
         
         # new algo
         varName = self.cm.ph.getSearchGroups(tmp2+tmp, '''=\s*([^.^;^{^}]+)\s*\.charCodeAt''', ignoreCase=True)[0]
