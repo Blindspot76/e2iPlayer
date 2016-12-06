@@ -5761,7 +5761,7 @@ class pageParser:
         if rtmpUrl.startswith('video://'):
             linksTab.append({'name':'http', 'url': rtmpUrl.replace('video://', 'http://')})
         elif '' != file and '' != rtmpUrl:
-            token = base64.b64decode('ejEyYWQwYjg5NzczNGM3MzBhNDMyMzVkMDc4YzhmMDA=')
+            token = base64.b64decode('ajAyMTFlNGQ3ZDQyOGNiMWM5MTkwZjQ3YmVkODYwOWI=')
             printDBG("streamer[%s]" % streamer)
             parsed_uri = urlparse( streamer )
             printDBG("parsed_uri[%r]" % [parsed_uri])
