@@ -4278,14 +4278,8 @@ class pageParser:
         
         tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?counter[^'^"]+?)['"]""")[0]
         if tmpUrl == '': tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?jquery2[^'^"]+?)['"]""")[0]
-        
-        if tmpUrl.startswith('.'):
-            tmpUrl = tmpUrl[1:]
-        if tmpUrl.startswith('//'):
-            tmpUrl = 'http:' + tmpUrl
-        if tmpUrl.startswith('/'):
-            tmpUrl = 'http://www.flashx.tv' + tmpUrl
-        if tmpUrl != '':
+        tmpUrls = re.compile("""['"]([^'^"]+?fastcontentdelivery[^'^"]+?\.js[^'^"]+?)['"]""").findall(data)
+        for tmpUrl in tmpUrls:
             sts, tmp = self.cm.getPage(tmpUrl, params)
         
         url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + play + '-{0}.html?{1}'.format(vid, play)

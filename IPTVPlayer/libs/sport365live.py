@@ -85,6 +85,13 @@ class Sport365LiveApi:
         return cipher.decrypt(encrypted, iv)
         
     def refreshAdvert(self):
+        sts, data = self.cm.getPage('http://www.sport365.live/en/main', self.http_params)
+        if not sts: return
+        data = re.findall('src="(http[^"]*?\.js[^"]*?)"', data)
+        for url in data:
+            sts, data = self.cm.getPage(url, self.http_params)
+        return
+        
         url = self.getFullUrl('home')
         sts, data = self.cm.getPage(url, self.http_params)
         if not sts: return
