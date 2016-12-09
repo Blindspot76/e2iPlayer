@@ -22,7 +22,6 @@ hostdrdk
 hostekinotv
 hostekstraklasatv
 hosteskago
-hostexua
 hostfavourites
 hostfighttube
 hostfilma24hdcom
@@ -44,7 +43,6 @@ hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
 hostipla
-hostiptak
 hostkabarety
 hostkinomantv
 hostkinopokaz
