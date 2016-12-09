@@ -3688,6 +3688,9 @@ class pageParser:
         sts, data = _getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
+        for marker in ['File Not Found', 'The file you were looking for could not be found, sorry for any inconvenience.']:
+            if marker in data: SetIPTVPlayerLastHostError(_(marker))
+        
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</form>', caseSensitive=False)
         if not sts: return False
         

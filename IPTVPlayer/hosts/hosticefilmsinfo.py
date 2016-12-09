@@ -69,9 +69,6 @@ class IceFilms(CBaseHostClass):
         self.cacheLinks = {}
         self.cacheSeries = {}
         
-    def getDefaulIcon(self):
-        return self.DEFAULT_ICON_URL
-        
     def _getAttrVal(self, data, attr):
         val = self.cm.ph.getSearchGroups(data, '[<\s][^>]*' + attr + '=([^\s^>]+?)[\s>]')[0].strip()
         if len(val) > 2:
@@ -144,7 +141,7 @@ class IceFilms(CBaseHostClass):
         mainDesc = self.cleanHtmlStr(tmp)
         title  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<span', '</span>')[1])
         
-        tmp  = self.cm.ph.getDataBeetwenMarkers(data, 'imdb', '>', False)[1]
+        tmp  = self.cm.ph.getDataBeetwenMarkers(data, 'imdb', '>')[1]
         id   = self._getAttrVal(tmp, 'id')
         
         params = {'good_for_fav': True, 'title':title, 'url':url, 'desc':mainDesc}
@@ -163,8 +160,9 @@ class IceFilms(CBaseHostClass):
         
         data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<span class="?list"?'), re.compile('</span>'), withMarkers=False)[1]
         data = data.split('</h3>')
+        if len(data) and '<h3' in data[0]: desc = self.cleanHtmlStr(data[0])
+        else: desc = ''
         for item in data:
-            desc   = self.cleanHtmlStr(item[:item.find('<')-1])
             tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(item, "<a", '<br>', withMarkers=True)
             for tmpItem in tmpTab:
                 url = self._getAttrVal(tmpItem, 'href')
@@ -177,6 +175,10 @@ class IceFilms(CBaseHostClass):
                 else:
                     params['category'] = nextCategory
                     self.addDir(params)
+            desc = item.rfind('<h3')
+            if desc >= 0:
+                desc = self.cleanHtmlStr(item[desc:])
+            else: desc = ''
         
     def listEpisodes(self, cItem):
         printDBG("IceFilms.listEpisodes")
@@ -186,8 +188,11 @@ class IceFilms(CBaseHostClass):
         tmp  = self.cm.ph.getDataBeetwenMarkers(data, '<title>', '<div', False)[1]
         mainDesc = self.cleanHtmlStr(tmp)
         
-        tmp  = self.cm.ph.getDataBeetwenMarkers(data, 'imdb', '>', False)[1]
+        tmp  = self.cm.ph.getDataBeetwenMarkers(data, 'imdb', '>')[1]
         id   = self._getAttrVal(tmp, 'id')
+        printDBG('series old imdb_id[%s]' % cItem.get('imdb_id', ''))
+        printDBG('series new imdb_id[%s]' % id)
+        if id == '': id = cItem.get('imdb_id', '')
         
         data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<span class="?list"?'), re.compile('</span>'), withMarkers=False)[1]
         data = data.split('</h3>')
@@ -198,7 +203,7 @@ class IceFilms(CBaseHostClass):
                 url = self._getAttrVal(tmpItem, 'href')
                 title  = self.cleanHtmlStr(tmpItem)
                 params = {'good_for_fav': True, 'title':'{0}: {1}'.format(cItem['title'], title), 'url':self.getFullUrl(url), 'desc':desc}
-                if id != '': params.update({'icon':'http://www.imdb.com/title/tt%s/?fake=need_resolve.jpeg' % id})
+                if id != '': params.update({'imdb_id':id, 'icon':'http://www.imdb.com/title/tt%s/?fake=need_resolve.jpeg' % id})
                 self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -241,7 +246,6 @@ class IceFilms(CBaseHostClass):
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'id="srclist"', 'These links brought')[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'ripdiv', '</div>')
-        printDBG(data)
         for item in data:
             mainTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<b', '</b>')[1])
             
@@ -326,6 +330,51 @@ class IceFilms(CBaseHostClass):
             return self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
+    def getArticleContent(self, cItem):
+        printDBG("IceFilms.getArticleContent [%s]" % cItem)
+        retTab = []
+        
+        if 'imdb_id' not in cItem: return retTab
+        
+        url = 'http://www.imdb.com/title/tt{0}/'.format(cItem['imdb_id'])
+        sts, data = self.cm.getPage(url)
+        if not sts: return retTab
+        title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '''<meta property=['"]?og\:title['"]?[^>]+?content=['"]([^"^']+?)['"]''')[0] )
+        desc  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="summary_text"' , '</div>')[1] )
+        if desc == '': desc  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '''<meta property=['"]?og\:description['"]?[^>]+?content=['"]([^"^']+?)['"]''')[0] )
+        icon  = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''<meta property=['"]?og\:image['"]?[^>]+?content=['"]([^"^']+?)['"]''')[0] )
+        
+        if title == '': title = cItem['title']
+        if desc == '':  title = cItem['desc']
+        
+        descData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<h4 class="inline"', '</div>')
+        descKeyMap = {"also known as": "alternate_title",
+                      "production co": "production",
+                      "director":      "director",
+                      "directors":     "directors",
+                      "creators":      "creators",
+                      "creator":      "creator",
+                      "Stars":         "stars",
+                      "genres":        "genres",
+                      "country":       "country",
+                      "language":      "language",
+                      "release date":  "released",
+                      "runtime":       "duration"}
+        
+        otherInfo = {}
+        for item in descData:
+            item = item.split('</h4>')
+            printDBG(item)
+            if len(item) < 2: continue
+            key = self.cleanHtmlStr( item[0] ).replace(':', '').strip().lower()
+            if key not in descKeyMap: continue
+            val = self.cleanHtmlStr( item[1] ).split('See more')[0]
+            otherInfo[descKeyMap[key]] = val
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="ratingValue">', '</div>')[1]
+        otherInfo['imdb_rating'] = self.cm.ph.getSearchGroups(data, '''title=['"]([^"^']+?)['"]''')[0]
+        
+        return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo}]
+        
     def getFavouriteData(self, cItem):
         printDBG('IceFilms.getFavouriteData')
         return json.dumps(cItem)
@@ -384,74 +433,14 @@ class IceFilms(CBaseHostClass):
             printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
+
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, IceFilms(), True, []) #[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
+        CHostBase.__init__(self, IceFilms(), True, [])
         
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item.get('need_resolve', False)))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
+    def withArticleContent(self, cItem):
+        if cItem['type'] != 'video' and cItem['category'] != 'list_episodes':
+            return False
+        return True
     
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append((_("Movies"),   "movie"))
-        #searchTypesOptions.append((_("TV Shows"), "series"))
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        if icon == '': icon = self.host.getDefaulIcon()
-        isGoodForFavourites = cItem.get('good_for_fav', False)
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch,
-                                    isGoodForFavourites = isGoodForFavourites)
-    # end converItem
-
