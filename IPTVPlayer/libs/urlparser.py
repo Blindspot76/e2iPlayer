@@ -244,6 +244,7 @@ class urlparser:
                        'castalba.tv':          self.pp.parserCASTALBATV    ,
                        'fxstream.biz':         self.pp.parserFXSTREAMBIZ   ,
                        'webcamera.pl':         self.pp.parserWEBCAMERAPL   ,
+                       'webcamera.mobi':       self.pp.parserWEBCAMERAPL   ,
                        'flashx.tv':            self.pp.parserFLASHXTV      ,
                        'flashx.pw':            self.pp.parserFLASHXTV      , 
                        'myvideo.de':           self.pp.parserMYVIDEODE     ,
@@ -4214,19 +4215,34 @@ class pageParser:
         
     def parserWEBCAMERAPL(self, baseUrl):
         printDBG("parserWEBCAMERAPL baseUrl[%s]" % baseUrl)
+        urlsTab = []
+        
         sts, data = self.cm.getPage(baseUrl)
-        if sts:
-            data = self.cm.ph.getSearchGroups(data, """<meta itemprop="embedURL" content=['"]([^'^"]+?)['"]""")[0]
-            data = data.split('&')
-            if 2 < len(data) and data[0].startswith('http') and data[1].startswith('streamer=') and data[2].startswith('file='):
-                swfUrl = data[0]
-                url    = urllib.unquote(data[1][len('streamer='):])
-                file   = urllib.unquote(data[2][len('file='):])
-                if '' != file and '' != url:
-                    url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
-                    return url
-        else:
-            return False
+        if not sts: return urlsTab
+        
+        playerUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?player\.webcamera\.[^'^"]+?)['"]""")[0]
+        if playerUrl.startswith('//'):
+            playerUrl = 'http:' + playerUrl
+        if self.cm.isValidUrl(playerUrl):
+            sts, tmp = self.cm.getPage(playerUrl)
+            tmp = re.compile("""['"]([^'^"]+?\.m3u8[^'^"]*?)['"]""").findall(tmp)
+            
+            for playerUrl in tmp:
+                if playerUrl.startswith('//'):
+                    playerUrl = 'http:' + playerUrl
+                if self.cm.isValidUrl(playerUrl):
+                    urlsTab.extend(getDirectM3U8Playlist(playerUrl))
+        
+        data = self.cm.ph.getSearchGroups(data, """<meta itemprop="embedURL" content=['"]([^'^"]+?)['"]""")[0]
+        data = data.split('&')
+        if 2 < len(data) and data[0].startswith('http') and data[1].startswith('streamer=') and data[2].startswith('file='):
+            swfUrl = data[0]
+            url    = urllib.unquote(data[1][len('streamer='):])
+            file   = urllib.unquote(data[2][len('file='):])
+            if '' != file and '' != url:
+                url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
+                urlsTab.append({'name':'rtmp', 'url':url})
+        return urlsTab
         
     def parserFLASHXTV(self, baseUrl):
         printDBG("parserFLASHXTV baseUrl[%s]" % baseUrl)
