@@ -56,9 +56,11 @@ class Sport365LiveApi:
     
     def __init__(self):
         self.COOKIE_FILE = GetCookieDir('sport365live.cookie')
+        self.sessionEx = MainSessionWrapper()
         self.cm = common()
         self.up = urlparser()
         self.http_params = {'header': dict(self.HTTP_HEADER), 'use_cookie':True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.needRefreshAdvert = True
         
     def getFullUrl(self, url):
         if url.startswith('http'):
@@ -85,6 +87,11 @@ class Sport365LiveApi:
         return cipher.decrypt(encrypted, iv)
         
     def refreshAdvert(self):
+        if self.needRefreshAdvert:
+            self.sessionEx.open(MessageBox, _('Please remember to visit http://www.sport365.live/ and watch a few advertisements.\nThis will fix problem, if your playback is constantly interrupted.'), type=MessageBox.TYPE_INFO, timeout=10)
+            self.needRefreshAdvert = False
+        return 
+        
         sts, data = self.cm.getPage('http://www.sport365.live/en/main', self.http_params)
         if not sts: return
         data = re.findall('src="(http[^"]*?\.js[^"]*?)"', data)
@@ -229,9 +236,6 @@ class Sport365LiveApi:
                     if len(tmp): del tmp[0]
                     tmpData = ''
                     for item in tmp:
-                        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
-                        #printDBG(item)
-                        #printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
                         for decFun in [VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams]:
                             tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
                             if '' != tmpData:   
@@ -248,8 +252,7 @@ class Sport365LiveApi:
                 aes = ''
             if aes != '':
                 break;
-                
-                
+        
         if aes == '':
             funname = self.cm.ph.getSearchGroups(deObfuscatedData, 'CryptoJS\.AES\.decrypt\([^\,]+?\,([^\,]+?)\,')[0].strip()
             printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
