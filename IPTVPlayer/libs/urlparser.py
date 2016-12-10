@@ -4278,9 +4278,31 @@ class pageParser:
         
         tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?counter[^'^"]+?)['"]""")[0]
         if tmpUrl == '': tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?jquery2[^'^"]+?)['"]""")[0]
-        tmpUrls = re.compile("""['"]([^'^"]+?fastcontentdelivery[^'^"]+?\.js[^'^"]+?)['"]""").findall(data)
-        for tmpUrl in tmpUrls:
+        #tmpUrls = re.compile("""['"]([^'^"]+?fastcontentdelivery[^'^"]+?\.js[^'^"]+?)['"]""").findall(data)
+        #for tmpUrl in tmpUrls:
+        if tmpUrl.startswith('.'):
+            tmpUrl = tmpUrl[1:]
+        if tmpUrl.startswith('//'):
+            tmpUrl = 'http:' + tmpUrl
+        if tmpUrl.startswith('/'):
+            tmpUrl = 'http://www.flashx.tv' + tmpUrl
+        if tmpUrl != '':
             sts, tmp = self.cm.getPage(tmpUrl, params)
+        sts, tmp = self.cm.getPage(tmpUrl, params)
+        
+        sts, tmp = self.cm.getPage('https://www.flashx.tv/js/code.js', params)
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, 'function', ';');
+        for tmpItem in tmp:
+            tmpItem = tmpItem.replace(' ', '')
+            if '!=null' in tmpItem:
+                tmpItem   = self.cm.ph.getDataBeetwenMarkers(tmpItem, 'get(', ')')[1]
+                tmpUrl    = self.cm.ph.getSearchGroups(tmpItem, """['"](https?://[^'^"]+?)['"]""")[0]
+                if not self.cm.isValidUrl(tmpUrl): continue
+                getParams = self.cm.ph.getDataBeetwenMarkers(tmpItem, '{', '}', False)[1]
+                getParams = getParams.replace(':', '=').replace(',', '&').replace('"', '').replace("'", '')
+                tmpUrl += '?' + getParams
+                sts, tmp = self.cm.getPage(tmpUrl, params)
+                break
         
         url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + play + '-{0}.html?{1}'.format(vid, play)
         sts, data = self.cm.getPage(url, params)
