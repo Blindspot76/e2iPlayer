@@ -4215,6 +4215,12 @@ class pageParser:
         
     def parserWEBCAMERAPL(self, baseUrl):
         printDBG("parserWEBCAMERAPL baseUrl[%s]" % baseUrl)
+        
+        def _getFullUrl(url):
+            if url.startswith('//'):
+                url = 'http:' + url
+            return url
+        
         urlsTab = []
         
         sts, data = self.cm.getPage(baseUrl)
@@ -4226,12 +4232,16 @@ class pageParser:
         if self.cm.isValidUrl(playerUrl):
             sts, tmp = self.cm.getPage(playerUrl)
             tmp = re.compile("""['"]([^'^"]+?\.m3u8[^'^"]*?)['"]""").findall(tmp)
-            
-            for playerUrl in tmp:
-                if playerUrl.startswith('//'):
-                    playerUrl = 'http:' + playerUrl
-                if self.cm.isValidUrl(playerUrl):
-                    urlsTab.extend(getDirectM3U8Playlist(playerUrl))
+            if len(tmp) == 2:
+                tmpList = getDirectM3U8Playlist(_getFullUrl(tmp[0]), checkContent=True)
+                if len(tmpList):
+                    urlsTab.extend(tmpList)
+                else:
+                    return getDirectM3U8Playlist(_getFullUrl(tmp[1]), checkContent=True)
+            else:
+                for playerUrl in tmp:
+                    if self.cm.isValidUrl(_getFullUrl(playerUrl)):
+                        urlsTab.extend(getDirectM3U8Playlist(playerUrl), checkContent=True)
         
         data = self.cm.ph.getSearchGroups(data, """<meta itemprop="embedURL" content=['"]([^'^"]+?)['"]""")[0]
         data = data.split('&')
