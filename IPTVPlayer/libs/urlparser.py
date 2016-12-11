@@ -404,7 +404,8 @@ class urlparser:
             hostName = match.group(1)
             if (nameOnly):
                 n = hostName.split('.')
-                hostName = n[-2]
+                try: hostName = n[-2]
+                except Exception: printExc()
         hostName = hostName.lower()
         printDBG("_________________getHostName: [%s] -> [%s]" % (url, hostName))
         return hostName

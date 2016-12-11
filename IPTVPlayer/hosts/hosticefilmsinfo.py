@@ -133,6 +133,7 @@ class IceFilms(CBaseHostClass):
             response.close()
         except Exception:
             printExc()
+            return
             
         sts, data = self.cm.getPage(url)
         if not sts: return
