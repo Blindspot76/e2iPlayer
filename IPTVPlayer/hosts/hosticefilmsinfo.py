@@ -292,7 +292,7 @@ class IceFilms(CBaseHostClass):
             secret = ''.join(match.groups(''))
         except Exception: 
             printExc()
-            return False
+            return []
         
         captcha = self.cm.ph.getSearchGroups(data, '<input[^>]+?name="captcha"[^>]+?value="([^"]+?)"')[0]
         iqs = self.cm.ph.getSearchGroups(data, '<input[^>]+?name="iqs"[^>]+?value="([^"]+?)"')[0]
@@ -300,17 +300,17 @@ class IceFilms(CBaseHostClass):
         try: t = self.cm.ph.getSearchGroups(data, '"&t=([^"]+)')[0]
         except Exception: 
             printExc()
-            return False
+            return []
         
         try: baseS = int(self.cm.ph.getSearchGroups(data, '(?:\s+|,)s\s*=(\d+)')[0])
         except Exception: 
             printExc()
-            return False
+            return []
         
         try: baseM = int(self.cm.ph.getSearchGroups(data, '(?:\s+|,)m\s*=(\d+)')[0])
         except Exception: 
             printExc()
-            return False
+            return []
         
         s = baseS + random.randint(3, 1000)
         m = baseM + random.randint(21, 1000)
