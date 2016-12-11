@@ -392,6 +392,7 @@ class urlparser:
                        'clicknupload.link':    self.pp.parserUPLOAD         ,
                        'kingfiles.net':        self.pp.parserKINGFILESNET   ,
                        'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
+                       'vidabc.com':           self.pp.parserVIDABCCOM      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -840,7 +841,7 @@ class pageParser:
             if _isSmil(link):
                 link = _getSmilUrl(link)
             if '://' in link:
-                proto = ''
+                proto = 'mp4'
                 if link.startswith('rtmp'):
                     proto = 'rtmp'
                 if link.split('?')[0].endswith('m3u8'):
@@ -856,7 +857,7 @@ class pageParser:
             if _isSmil(link):
                 link = _getSmilUrl(link)
             if '://' in link:
-                proto = ''
+                proto = 'mp4'
                 if link.startswith('rtmp'):
                     proto = 'rtmp'
                 linksTab.append({'name':proto + ' ' +serverName, 'url':link})
@@ -2298,6 +2299,10 @@ class pageParser:
             urlTab.append(item)
         if 0 == len(urlTab): urlTab = tmpTab
         return urlTab
+        
+    def parserVIDABCCOM(self, baseUrl):
+        printDBG("parserVIDABCCOM baseUrl[%r]" % baseUrl)
+        return self._parserUNIVERSAL_A(baseUrl, 'http://vidabc.com/embed-{0}.html', self._findLinks)
         
     def parseMOSHAHDANET(self, baseUrl):
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
