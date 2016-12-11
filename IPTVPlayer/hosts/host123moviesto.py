@@ -62,7 +62,7 @@ class T123MoviesTO(CBaseHostClass):
         
     def selectDomain(self):
     
-        for domain in ['http://123movies.is/', 'http://123movies.ru/', 'http://123movies.to/']:
+        for domain in ['http://123movies.to/', 'http://123movies.ru/', 'http://123movies.is/']:
             sts, data = self.cm.getPage(domain)
             if sts and 'genre/action/' in data:
                 self.MAIN_URL = domain
