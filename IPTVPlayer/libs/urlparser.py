@@ -880,8 +880,13 @@ class pageParser:
         params = dict(params)
         params.update({'header':HTTP_HEADER})
         post_data = None
+        
         sts, data = self.cm.getPage(url, params, post_data)
-        if not sts: return False
+        if not sts:
+            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
+            data = iptv_execute()( cmd )
+            if not data['sts'] or 0 != data['code']: return False
+            data = data['data']
         
         errMarkers = ['File was deleted', 'File Removed', 'File Deleted.', 'File Not Found']
         for errMarker in errMarkers:
@@ -2286,7 +2291,13 @@ class pageParser:
     def parserVIDLOXTV(self, baseUrl):
         printDBG("parserVIDLOXTV baseUrl[%r]" % baseUrl)
         # example video: http://vidlox.tv/embed-e9r0y7i65i1v.html
-        return self._parserUNIVERSAL_A(baseUrl, 'http://vidlox.tv/embed-{0}.html', self._findLinks)
+        urlTab = []
+        tmpTab = self._parserUNIVERSAL_A(baseUrl, 'http://vidlox.tv/embed-{0}.html', self._findLinks)
+        for item in tmpTab:
+            if item['url'].endswith('.mp4'): continue
+            urlTab.append(item)
+        if 0 == len(urlTab): urlTab = tmpTab
+        return urlTab
         
     def parseMOSHAHDANET(self, baseUrl):
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)

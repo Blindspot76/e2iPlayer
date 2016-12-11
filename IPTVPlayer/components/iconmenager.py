@@ -12,6 +12,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import mkdirs, \
                       printDBG, printExc, RemoveOldDirsIcons, RemoveAllFilesIconsFromPath, \
                       RemoveAllDirsIconsFromPath, GetIconsFilesFromDir, GetNewIconsDirName, \
                       GetIconsDirs, RemoveIconsDirByPath
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
@@ -262,5 +263,16 @@ class IconMenager:
                 img_url = self.cm.ph.getDataBeetwenMarkers(data, 'class="slate"', '</div>')[1]
                 img_url = self.cm.ph.getSearchGroups(img_url, 'src="([^"]+?)"')[0]
                 if not self.cm.isValidUrl(img_url): return False
+        else:
+            img_url = strwithmeta(img_url)
+            if img_url.meta.get('icon_resolver', None) is not None:
+                try:
+                    img_url = img_url.meta['icon_resolver'](self.cm, img_url)
+                except Exception:
+                    printExc()
+                    return False
+        
+        if not self.cm.isValidUrl(img_url): return False
+        
         return self.cm.saveWebFile(file_path, img_url, params)['sts']
     

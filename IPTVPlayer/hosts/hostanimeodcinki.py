@@ -1,394 +1,388 @@
-﻿# -*- coding: utf-8 -*-
-
+# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
 import urllib
-import time
-import random
-#import base64
+import string
+import base64
 try:    import json
 except Exception: import simplejson as json
-from binascii import hexlify, unhexlify, a2b_hex, a2b_base64
-from hashlib import md5
-from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc  import AES_CBC
-from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.evp import EVP_BytesToKey
-
-
+from datetime import datetime
+from copy import deepcopy
+from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Screens.MessageBox import MessageBox
 ###################################################
 
 ###################################################
 # Config options for HOST
 ###################################################
+
 def GetConfigList():
     optionList = []
     return optionList
 ###################################################
 
-def gettytul():
-    return 'Anime-Odcinki.pl'
 
-class AnimeOdcinki(CBaseHostClass):
-    MAINURL  = 'http://www.anime-odcinki.pl/'
-    SEARCH_URL = MAINURL + '/search/node/'
-    MAIN_CAT_TAB = [{ 'category':'list_letters',          'title':'Lista anime',           'url':MAINURL+'lista-anime'  },
-                    #{ 'category':'list_letters',          'title':'Lista filmów',          'url':MAINURL+'lista-filmow' },
-                    { 'category':'list_emiotwane',        'title':'Anime Emitowane',       'url':MAINURL                },
-                    { 'category':'list_new_episodes',     'title':'Nowe odcinki emitowane','url':MAINURL                },
-                    { 'category':'list_new_added',        'title':'Ostatnio dodane odcinki z poprzednich sezonów',  'url':MAINURL },
-                    { 'category':'Wyszukaj',              'title':'Wyszukaj'             },
-                    { 'category':'Historia wyszukiwania', 'title':'Historia wyszukiwania'} ]
-                    
-    
+def gettytul():
+    return 'http://anime-odcinki.pl/'
+
+class AnimeOdcinkiPL(CBaseHostClass):
+ 
     def __init__(self):
-        printDBG("AnimeOdcinki.__init__")
-        CBaseHostClass.__init__(self, {'history':'AnimeOdcinki.com'})
+        CBaseHostClass.__init__(self, {'history':'AnimeOdcinki.pl', 'cookie':'animeodcinkipl.cookie'})
+        
+        self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        self.AJAX_HEADER = dict(self.HEADER)
+        self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        
+        self.MAIN_URL = 'http://anime-odcinki.pl/'
+        self.DEFAULT_ICON_URL = 'http://www.vanger.net/u_c.jpg'
+        
+        self.MAIN_CAT_TAB = [{'category':'new',               'title': _('New'),                          'url':self.MAIN_URL                    },
+                             {'category':'list_emitowane',    'title': 'Emitowane',                       'url':self.MAIN_URL                    },
+                             {'category':'list_abc',          'title': _('Anime list'),                   'url':self.getFullUrl('anime')         },
+                             {'category':'list_abc',          'title': _('Movies list'),                  'url':self.getFullUrl('filmy')         },
+                             {'category':'list_filters',      'title': _('Genres'),                       'url':self.getFullUrl('gatunki')       },
+                             {'category':'search',            'title': _('Search'), 'search_item':True,                                          },
+                             {'category':'search_history',    'title': _('Search history'),                                                      } 
+                            ]
+        
+        self.NEW_CAT_TAB = [{'category':'list_new', 'title': 'Nowe odcinki emitowane',                        'm1':'>Nowe'    },
+                            {'category':'list_new', 'title': 'Ostatnio dodane odcinki z poprzednich sezonów', 'm1':'>Ostatnio'}]
+                            
+        self.filtersTab = []
+        self.cacheFilters = {}
+        
+        self.cacheItems = {}
+        
+        self.cacheLinks = {}
+    
+    @staticmethod
+    def resolveIconUrl(cm, url):
+        sts, data = cm.getPage(url)
+        if not sts: return ''
+        data = cm.ph.getDataBeetwenMarkers(data, 'okladka', '</div>')[1]
+        return cm.ph.getSearchGroups(data, '''src=['"]([^'^"]+?)['"]''')[0]
+        
+    def getStr(self, item, key):
+        if key not in item: return ''
+        if item[key] == None: return ''
+        return str(item[key])
+        
+    def fillFilters(self, cItem):
+        self.filtersTab   = []
+        self.cacheFilters = {}
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="search-category-checkbox checkbox">', '</div>')
+        for item in data:
+            title = self.cleanHtmlStr(item)
+            key   = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+            value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+            if key not in self.cacheFilters:
+                self.cacheFilters[key] = [{'title':_('All')}]
+                self.filtersTab.append(key)
+            self.cacheFilters[key].append({'title':title, 'f_'+key:value})
+        
+    def listFilter(self, cItem, filters):
+        params = dict(cItem)
+        idx = params.get('f_idx', 0)
+        params['f_idx'] = idx + 1
+        
+        tab = self.cacheFilters.get(filters[idx], [])
+        self.listsTab(tab, params)
+        
+    def fillItemsCache(self, cItem):
+        baseUrl = cItem['url']
+        
+        self.cacheItems[baseUrl] = {'items':[], 'letters':[]}
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="letter-index"', '</td>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</span>')
+        for item in tmp:
+            letter = self.cm.ph.getSearchGroups(item, '''data-index=['"]([^'^"]+?)['"]''')[0]
+            title  = self.cleanHtmlStr(item.replace('|', ''))
+            self.cacheItems[baseUrl]['letters'].append({'title':title, 'letter':letter})
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr class="list-item" data-fl=', '</td>')
+        for item in data:
+            url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            title  = self.cleanHtmlStr(item)
+            letter = self.cm.ph.getSearchGroups(item, '''data-fl=['"]([^'^"]+?)['"]''')[0]
+            self.cacheItems[baseUrl]['items'].append({'title':title, 'url':url, 'letter':letter})
+   
+    def listABC(self, cItem, nextCategory):
+        printDBG("AnimeOdcinkiPL.listABC")
+        baseUrl = cItem['url']
+        
+        cacheItem = self.cacheItems.get(baseUrl, {})
+        itemsTab = cacheItem.get('letters', [])
+        if 0 == len(itemsTab):
+            self.fillItemsCache(cItem)
             
-    def _checkNexPage(self, data):
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="pagenav">', '</ul>', False)[1]
-        if 'Go to next page' in data and '<a href=' in data:
-            return True
-        else:
-            return False
-            
-    def _resolveUrl(self, url, currPath=''):
-        if not url.startswith('http') and '' != url:
-            if '' == currPath:
-                return AnimeOdcinki.MAINURL + url
-            else:
-                return currPath + url
-        else:
-            return url
-            
-    def listsTab(self, tab, cItem):
-        printDBG("AnimeOdcinki.listsMainMenu")
-        for item in tab:
+        for item in self.cacheItems[baseUrl]['letters']:
+            letter = item['letter'] 
+            title  = item['title']
             params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
+            params.update({'category':nextCategory, 'title':title, 'f_abc':letter})
             self.addDir(params)
             
-    def _listBase(self, cItem, category, m1, m2, sp):
-        url = self._resolveUrl(cItem['url'])
-        sts, data = self.cm.getPage(url)
-        if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
-        data = data.split(sp)
-        if len(data): del data[-1]
-        for item in data:
-            params = dict(cItem)
-            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"', 1)[0]
-            title = self.cleanHtmlStr(item)
-            icon  = self._resolveUrl( self.cm.ph.getSearchGroups(item, """<img src=['"]([^"^']+?\.jpg[^"^']*?)['"]""")[0] )
-            if len(title) and '|' == title[0]: title = title[1:]
-            params.update({'title':title, 'url':url, 'category':category, 'icon':icon})
-            if '/film/' in url or category == 'video': self.addVideo(params)
-            else: self.addDir(params)
-                
-    def listsLetters(self, cItem, category):
-        printDBG('AnimeOdcinki.listsLetters start')
-        self._listBase(cItem, category, '<div class="view-content">', '</div>', '</span>')
+    def listItems(self, cItem, nextCategory):
+        printDBG("AnimeOdcinkiPL.listItems")
+        letter  = cItem.get('f_abc', '')
+        baseUrl = cItem['url']
+        
+        cacheItem = self.cacheItems.get(baseUrl, {})
+        itemsTab = cacheItem.get('items', [])
+        if 0 == len(itemsTab):
+            self.fillItemsCache(cItem)
             
-    def listsAnimes(self, cItem, category):
-        printDBG('AnimeOdcinki.listsAnimes start')
-        self._listBase(cItem, category, '<tbody>', '</tbody>', '</tr>')
+        for item in self.cacheItems[baseUrl]['items']:
+            if letter != '' and letter != item['letter']: continue
+            url   = item['url'] 
+            title = item['title']
+            icon = strwithmeta(url, {'icon_resolver':AnimeOdcinkiPL.resolveIconUrl})
+            params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon}
+            params['category'] = nextCategory
+            self.addDir(params)
         
-    def listEmitowane(self, cItem, category):
-        printDBG('AnimeOdcinki.listEmitowane start')
-        self._listBase(cItem, category, '>Emitowane', '</ul>', '</li>')
+    def listBase(self, cItem, nextCategory, m1, m2, sp1, sp2):
+        printDBG("AnimeOdcinkiPL.listEmitowane")
         
-    def listNewEpisodes(self, cItem):
-        printDBG('AnimeOdcinki.listNewEpisodes start')
-        self._listBase(cItem, 'video', '<ul class="jcarousel jcarousel-view--new-emitowane--block jcarousel-dom-1 jcarousel-skin-default">', '</ul>', '</div>')
-
-    def listNewAdded(self, cItem):
-        printDBG('AnimeOdcinki.listNewAdded start')
-        self._listBase(cItem, 'video', '<ul class="jcarousel jcarousel-view--nowe-odcinki--block jcarousel-dom-2 jcarousel-skin-default">', '</ul>', '</div>')            
-                
-    def listEpisodes(self, cItem):
-        printDBG('AnimeOdcinki.listEpisodes start')
-        page = cItem.get('page', 0)
-        url  = self._resolveUrl(cItem['url'])
-        if page > 0:
-            url += ('?page=%d' % page)
-        sts, data = self.cm.getPage(url)
+        sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
-        desc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', "</section>", False)[1]
-        icon = self._resolveUrl( self.cm.ph.getSearchGroups(desc, """<img[^>]+?src=['"]([^"^']+?\.(?:jpg|png)[^"^']*?)['"]""")[0] )
-        desc = self.cleanHtmlStr(desc)
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="view-content">', '</section>', False)[1]
-        nextPage = False
-        if '<ul class="pagination">' in data:
-            if '"Przejdź do następnej strony"' in data: nextPage = True
-            data = data[:data.find('<ul class="pagination">')] 
-        '''
-        trailer = self.cm.ph.getSearchGroups(data, """href=['"](http[^"^']+?youtu[^"^']+?)['"]""")[0]
-        if '' != trailer:
-            params = dict(cItem)
-            params.update({'title':_('Zwiastun'), 'url':trailer, 'desc':desc, 'icon':icon})
-            self.addVideo(params)
-        '''
-        m1 = '<div class="views-row views-row'
-        if m1 not in data: return
         
-        data = data.split(m1)
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, sp1, sp2)
         for item in data:
-            idx = item.find('>')
-            if 0 > idx: continue
-            item = item[idx+1:]
-            title = self.cleanHtmlStr(item)
-            url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"', 1)[0]
-            params= {'title':title, 'url':url, 'desc':desc, 'icon':icon}
-            self.addVideo(params)
+            title  = self.cleanHtmlStr(item)
+            url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            if not self.cm.isValidUrl(url): continue
+            #icon   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+            #if icon == '': icon   = strwithmeta(url, {'icon_resolver':AnimeOdcinkiPL.resolveIconUrl})
+            params = {'good_for_fav': True, 'title':title, 'url':url}
+            if nextCategory != 'video':
+                icon   = strwithmeta(url, {'icon_resolver':AnimeOdcinkiPL.resolveIconUrl})
+                params.update({'category':nextCategory, 'icon':icon})
+                self.addDir(params)
+            else:
+                icon   = strwithmeta(url[:url.rfind('/')], {'icon_resolver':AnimeOdcinkiPL.resolveIconUrl})
+                params.update({'category':nextCategory, 'icon':icon})
+                self.addVideo(params)
+        
+    def listSearchItems(self, cItem, nextCategory):
+        printDBG("AnimeOdcinkiPL.listSearchItems")
+        page = cItem.get('page', 1)
+        
+        getParams = []
+        for key in self.filtersTab:
+            iKey = 'f_' + key
+            if iKey in cItem:
+                getParams.append('%s=%s' % (urllib.quote(key), urllib.quote(cItem[iKey])))
+                
+        if 'f_search' in cItem:
+            getParams.append('s=%s' % (urllib.quote_plus(cItem['f_search'])))
+        
+        baseUrl = cItem['url']
+        if page > 1: baseUrl += '/strona/%s' % page
+        baseUrl += '?' + '&'.join(getParams)
+
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return
+        
+        if '>»<' in data:
+            nextPage = True
+        else: nextPage = False
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="search-result">', '</li>')
+        for item in data:
+            url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            title  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1])
+            icon   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+            desc   = self.cleanHtmlStr(item.split('</h3>')[-1])
+            if icon == '': icon = strwithmeta(url, {'icon_resolver':AnimeOdcinkiPL.resolveIconUrl})
+            params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
+            try:
+                episodeNum = int(url.split('/')[-1])
+                self.addVideo(params)
+            except:
+                params['category'] = nextCategory
+                self.addDir(params)
         
         if nextPage:
             params = dict(cItem)
-            params.update({'title':'Następna strona', 'page':page+1})
+            params.pop('good_for_fav', None)
+            params.update({'title':_('Next page'), 'page':page + 1})
             self.addDir(params)
-                    
-    def listItems(self, cItem):
-        printDBG('AnimeOdcinki.listItems start')     
-        page     = cItem.get('page', 0)
-        url = self._resolveUrl(cItem['url']) 
-        if page > 0:
-            url += '?rowstart=%d' % (page * 20) 
-        currPath = url[:url.rfind('/')] + '/'
-        sts, data = self.cm.getPage(url)
-        if sts:
-            try: pagesNum = int(self.cm.ph.getSearchGroups(data, "Strona[^;]+?;([0-9]+?):")[0])-1
-            except Exception: pagesNum = 0 
-            data = self.cm.ph.getDataBeetwenMarkers(data, '</tr></table><table cellpadding', "class='main-footer-top", True)[1]
-            data = data.split('</tr></table>')
-            if len(data): del data[0]
-            if len(data): del data[-1]
-            for item in data:
-                params = dict(cItem)
-                tmp = self.cm.ph.getSearchGroups(item, """<a href=["']([^'^"]+?)["']>([^<]+?)</a>""", 2)
-                if '' != tmp[0] and '' != tmp[1]:                
-                    icon =  self._resolveUrl(self.cm.ph.getSearchGroups(item, """src=['"]([^"^']+?)['"]""")[0], currPath)
-                    desc = self.cleanHtmlStr(item)
-                    params.update({'title':tmp[1], 'url':self._resolveUrl(tmp[0], currPath), 'icon':icon, 'desc':desc})
-                    self.addVideo(params)
-            if pagesNum > page:
-                params = dict(cItem)
-                params.update({'title':'Następna strona', 'page':page+1})
-                self.addDir(params)
-    
-    def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("AnimeOdcinki.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        url = AnimeOdcinki.SEARCH_URL + urllib.quote_plus(searchPattern)
-        sts, data = self.cm.getPage(url)
+        
+    def listEpisodes(self, cItem):
+        printDBG("AnimeOdcinkiPL.listEpisodes")
+        
+        sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ol class="search-results node-results">', '</ol>')[1]
-        data = data.split("</li>")
-        if len(data): del data[-1]
+        
+        desc = self.cm.ph.getDataBeetwenMarkers(data, 'summary', '</div>')[1]
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(desc, '<div', '</div>')[1])
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li class="lista_odc', '</li>')
         for item in data:
-            tmp   = self.cm.ph.getSearchGroups(item, '<a href="([^"]+?)"[^>]*?>([^<]+?)<', 2)
-            url   = tmp[0]
-            title = self.cleanHtmlStr(tmp[1])
-            if '' != url and '' != title:
-                desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div class="search-snippet-info">', '</div>')[1] )
-                icon = ''
-                params = {'name':'category', 'title':title, 'url':self._resolveUrl(url), 'icon':icon, 'desc':desc}
-                if re.search('/anime/[^/]+?$', url):
-                    params['category'] = 'episodes_list'
-                    self.addDir(params)
-                else: self.addVideo(params)
-                
-    def _encryptPlayerUrl(self, data):
-        printDBG("_encryptPlayerUrl data[%s]" % data)
-        decrypted = ''
-        try:
-            data = byteify( json.loads(data) )
-            salt = a2b_hex(data["v"])
-            key, iv = EVP_BytesToKey(md5, "s05z9Gpd=syG^7{", salt, 32, 16, 1)
-            
-            if iv != a2b_hex(data.get('b', '')):
-                prinDBG("_encryptPlayerUrl IV mismatched")
-            
-            if 0:
-                from Crypto.Cipher import AES
-                aes = AES.new(key, AES.MODE_CBC, iv, segment_size=128)
-                decrypted = aes.decrypt(a2b_base64(data["a"]))
-                decrypted = decrypted[0:-ord(decrypted[-1])]
-            else:
-                kSize = len(key)
-                alg = AES_CBC(key, keySize=kSize)
-                decrypted = alg.decrypt(a2b_base64(data["a"]), iv=iv)
-                decrypted = decrypted.split('\x00')[0]
-            decrypted = "%s" % json.loads( decrypted ).encode('utf-8')
-        except Exception:
-            printExc()
-            decrypted = ''
-        return decrypted
+            url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            title  = self.cleanHtmlStr(item)
+            params = dict(cItem)
+            params.update({'good_for_fav': True, 'title':title, 'url':url, 'desc':desc})
+            self.addVideo(params)
+
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("AnimeOdcinkiPL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        cItem = dict(cItem)
+        cItem['url'] = self.MAIN_URL
+        cItem['f_search'] = searchPattern
+        self.listSearchItems(cItem, 'list_episodes')
     
     def getLinksForVideo(self, cItem):
-        printDBG("AnimeOdcinki.getLinksForVideo [%s]" % cItem['url'])
-        if len(cItem.get('url_cache', [])):
-            return cItem['url_cache']
+        printDBG("AnimeOdcinkiPL.getLinksForVideo [%s]" % cItem)
         urlTab = []
-        url = self._resolveUrl(cItem['url'])
-        if 'anime-odcinki.pl' in url:       
-            sts, data = self.cm.getPage(url)
-            if sts:
-                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', "<ul")[1]
-                players = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="field-items">', '</div>', False)
-                for player in players:
-                    playerUrl = self._encryptPlayerUrl( self.cleanHtmlStr( player ) )
-                    if '' != playerUrl:
-                        tmpTab = self.up.getVideoLinkExt(playerUrl)
-                        urlTab.extend(tmpTab)
-        else: urlTab = self.up.getVideoLinkExt(url)
-        if len(urlTab): cItem['url_cache'] = urlTab
+        
+        urlTab = self.cacheLinks.get(cItem['url'], [])
+        if len(urlTab): return urlTab
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return []
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="video-player-mode"', '</div>')
+        for item in data:
+            url  = self.cm.ph.getSearchGroups(item, '''data-hash="([^"]+?)"''')[0]
+            if not self.cm.isValidUrl(url): continue
+            name = self.cleanHtmlStr(item)
+            urlTab.append({'name':name, 'url':url, 'need_resolve':1})
+        
+        self.cacheLinks[cItem['url']] = urlTab
         return urlTab
-    
-    def handleService(self, index, refresh=0, searchPattern='', searchType=''):
-        printDBG('AnimeOdcinki.handleService start')
+        
+    def getVideoLinks(self, videoUrl):
+        printDBG("AnimeOdcinkiPL.getVideoLinks [%s]" % videoUrl)
+        urlTab = []
+        
+        # mark requested link as used one
+        if len(self.cacheLinks.keys()):
+            key = self.cacheLinks.keys()[0]
+            for idx in range(len(self.cacheLinks[key])):
+                if videoUrl in self.cacheLinks[key][idx]['url']:
+                    if not self.cacheLinks[key][idx]['name'].startswith('*'):
+                        self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
+                    break
+        
+        if self.cm.isValidUrl(videoUrl):
+            return self.up.getVideoLinkExt(videoUrl)
+        
+        return urlTab
+        
+    def getFavouriteData(self, cItem):
+        printDBG('AnimeOdcinkiPL.getFavouriteData')
+        return json.dumps(cItem)
+        
+    def getLinksForFavourite(self, fav_data):
+        printDBG('AnimeOdcinkiPL.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('AnimeOdcinkiPL.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
+        
+    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
+        printDBG('handleService start')
+        
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
-        name     = self.currItem.get("name", None)
+
+        name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
-        printDBG( "AnimeOdcinki.handleService: ---------> name[%s], category[%s] " % (name, category) )
-        searchPattern = self.currItem.get("search_pattern", searchPattern)
+        mode     = self.currItem.get("mode", '')
+        
+        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
         
-        if None == name:
-            self.listsTab(AnimeOdcinki.MAIN_CAT_TAB, {'name':'category'})
-    #LIST LETTERS
-        elif 'list_letters' == category:
-            self.listsLetters(self.currItem, 'anime_list')
-    #FILMS LETTERS
-        elif 'anime_list' == category:
-            self.listsAnimes(self.currItem, 'episodes_list')
-    #LIST EPISODES
-        elif 'episodes_list' == category:
-            self.listEpisodes(self.currItem)
-    #LIST ITEMS
+    #MAIN MENU
+        if name == None:
+            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif category == 'new':
+            self.listsTab(self.NEW_CAT_TAB, self.currItem)
+        elif 'list_new' == category:
+            cItem = dict(self.currItem)
+            cItem.pop('m1', None)
+            self.listBase(cItem, 'video', self.currItem['m1'], '<div id="issued-ep-nav">', '<div class="owl', '</div>')
+        elif 'list_emitowane' == category:
+            self.listBase(self.currItem, 'list_episodes', '>Emitowane</h2>', '</ul>', '<li', '</li>')
+        elif 'list_abc' == category:
+            self.listABC(self.currItem, 'list_items')
         elif 'list_items' == category:
-            self.listItems(self.currItem)
-    #LIST EMITOWANE
-        elif 'list_emiotwane' == category:
-            self.listEmitowane(self.currItem, 'episodes_list')
-    #LIST NEW EPISODES
-        elif 'list_new_episodes' == category:
-            self.listNewEpisodes(self.currItem)
-    #LIST NEW ADDED 
-        elif 'list_new_added' == category:
-            self.listNewAdded(self.currItem)
-    #WYSZUKAJ
-        elif category in ["Wyszukaj", "search_next_page"]:
-            self.listSearchResult(self.currItem, searchPattern, searchType)
-    #HISTORIA WYSZUKIWANIA
-        elif category == "Historia wyszukiwania":
-            self.listsHistory()
+            self.listItems(self.currItem, 'list_episodes')
+        elif 'list_filters' == category:
+            idx = self.currItem.get('f_idx', 0)
+            if idx == 0: self.fillFilters(self.currItem)
+            if idx < len(self.filtersTab):
+                self.listFilter(self.currItem, self.filtersTab)
+            else:
+                hasFilter = False
+                for filter in self.filtersTab:
+                    filter = 'f_' + filter
+                    if filter in self.currItem:
+                        hasFilter = True
+                        break
+                if hasFilter: 
+                    self.listSearchItems(self.currItem, 'list_episodes')
+                else: 
+                    cItem = dict(self.currItem)
+                    cItem['url'] = self.getFullUrl('anime')
+                    self.listItems(cItem, 'list_episodes')
+                
+        elif category == 'list_episodes':
+            self.listEpisodes(self.currItem)
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
-
+        
+        CBaseHostClass.endHandleService(self, index, refresh)
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, AnimeOdcinki(), True)
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('animeodcinkilogo.png')])
-
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
-        retlist = []
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-
-    def convertList(self, cList):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append(("Items", "items"))
-        #searchTypesOptions.append(("Channel", "channel"))
+        CHostBase.__init__(self, AnimeOdcinkiPL(), True, [])
     
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
-
-            if cItem['type'] == 'category':
-                if cItem['title'] == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  cItem.get('title', '')
-            description =  clean_html(cItem.get('desc', '')) + clean_html(cItem.get('plot', ''))
-            icon        =  cItem.get('icon', '')
-            
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
-
-    def getSearchItemInx(self):
-        # Find 'Wyszukaj' item
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'Wyszukaj':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
