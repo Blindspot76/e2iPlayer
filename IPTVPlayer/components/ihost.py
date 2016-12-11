@@ -289,7 +289,7 @@ class CHostBase(IHost):
         return RetHost(retCode, value = retlist)
     # end getArticleContent
     
-    def getLinksForVideo(self, Index = 0, selItem = None):
+    def getLinksForItem(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
         retlist = []
         if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
