@@ -178,8 +178,9 @@ class IPTVFavouritesMainWidget(Screen):
         self["list"] = IPTVMainNavigatorList()
         self["list"].connectSelChanged(self.onSelectionChanged)
         
-        self["actions"] = ActionMap(["ColorActions", "SetupActions", "WizardActions", "ListboxActions"],
+        self["actions"] = ActionMap(["ColorActions", "WizardActions", "ListboxActions"],
             {
+                "back"  : self.keyExit,
                 "cancel": self.keyExit,
                 "ok"    : self.keyOK,
                 "red"   : self.keyRed,
