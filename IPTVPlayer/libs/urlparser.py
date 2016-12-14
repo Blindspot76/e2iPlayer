@@ -393,6 +393,8 @@ class urlparser:
                        'kingfiles.net':        self.pp.parserKINGFILESNET   ,
                        'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
                        'vidabc.com':           self.pp.parserVIDABCCOM      ,
+                       'uptostream.com':       self.pp.parserUPTOSTREAMCOM  ,
+                       'uptobox.com':          self.pp.parserUPTOSTREAMCOM  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2305,6 +2307,33 @@ class pageParser:
         printDBG("parserVIDABCCOM baseUrl[%r]" % baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://vidabc.com/embed-{0}.html', self._findLinks)
         
+    def parserUPTOSTREAMCOM(self, baseUrl):
+        printDBG("parserUPTOSTREAMCOM baseUrl[%r]" % baseUrl)
+        
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        url = baseUrl
+        if '/iframe/' not in url:
+            url = 'https://uptostream.com/iframe/' + url.split('/')[-1]
+            baseUrl = url
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts:
+            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
+            data = iptv_execute()( cmd )
+            if not data['sts'] or 0 != data['code']: return False
+            data = data['data']
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
+        tab = []
+        for item in data:
+            if 'video/mp4' in item:
+                res = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+                url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                if url.startswith('//'): url = 'http:' + url
+                if not self.cm.isValidUrl(url): continue
+                tab.append({'name':res, 'url':strwithmeta(url, {'Referer':baseUrl})})
+        tab.reverse()
+        return tab
+            
     def parseMOSHAHDANET(self, baseUrl):
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
         sts, data = self.cm.getPage(baseUrl)
