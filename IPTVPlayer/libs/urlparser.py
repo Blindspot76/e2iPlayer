@@ -2321,6 +2321,9 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER}, post_data)
         if not sts: return False
         
+        printDBG(data)
+        return self._findLinks(data, 'moshahda.net')
+        
         linksTab = []
         srcData = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', '],', False)[1].strip()
         srcData = byteify(json.loads(srcData+']')) 
