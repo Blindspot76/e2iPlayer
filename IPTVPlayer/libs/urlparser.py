@@ -2805,6 +2805,12 @@ class pageParser:
             #printDBG("=======================================")
             #printDBG(data)
             #printDBG("=======================================")
+            
+            tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, ">eval(", '</script>')
+            for tmp in tmpTab:
+                tmp2 = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams, 0, r2=True)
+                data += tmp2
+            
             vidTab = []
             sub_tracks = []
             subData = self.cm.ph.getDataBeetwenMarkers(data, 'tracks:', ']', False)[1].split('}')
@@ -2845,7 +2851,7 @@ class pageParser:
         
         HTTP_HEADER = {"User-Agent":"Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10"}
         sts, data = self.cm.getPage(baseUrl, {'header' : HTTP_HEADER})
-        printDBG(data)
+        #printDBG(data)
         if sts:
             errMarkers = ['File was deleted', 'File Removed', 'File Deleted.']
             for errMarker in errMarkers:
@@ -2865,7 +2871,7 @@ class pageParser:
                 if len(cookies_data):
                     HTTP_HEADER['Cookie'] = cookies_data[:-1]
                 try:
-                    sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
+                    sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9]+?)</span>')[0])
                     time.sleep(sleep_time)
                 except Exception:
                     printExc()
