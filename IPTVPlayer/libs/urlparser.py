@@ -298,6 +298,7 @@ class urlparser:
                        'openload.co':          self.pp.parserOPENLOADIO    ,
                        'oload.io':             self.pp.parserOPENLOADIO    ,
                        'oload.co':             self.pp.parserOPENLOADIO    ,
+                       'oload.tv':             self.pp.parserOPENLOADIO    ,
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        'vevo.com':             self.pp.parserVEVO          ,
                        'shared.sx':            self.pp.parserSHAREDSX      ,

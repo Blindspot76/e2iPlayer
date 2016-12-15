@@ -22,6 +22,7 @@ try:    import json
 except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, VIDEOMEGA_decryptPlayerParams
 ###################################################
 
 
@@ -153,75 +154,37 @@ class StreamComplet(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], params)
         if not sts: return []
         
-        if 0:
-            adminData = self.cm.ph.getDataBeetwenMarkers(data, 'jQuery.ajax({', '});', False)[1]
-            adminUrl  = self.cm.ph.getSearchGroups(adminData, "url:'([^']+?)'")[0] 
-            adminUrl += '?' + self.cm.ph.getSearchGroups(adminData, "data:'([^']+?)'")[0] 
-            
-            header = dict(self.HEADER)
-            header['X-Requested-With'] = 'XMLHttpRequest'
-            header['Referer'] = cItem['url']
-            paramsAdmin = dict(self.defaultParams)
-            paramsAdmin['header'] = header
-            sts, adminData = self.cm.getPage(adminUrl, paramsAdmin)
-            printDBG('>>>>>>>>>>>>>> adminData[%s]' % adminData)
-            
-            projekktor_controlbar={"muted":false,"volume":0.5};
-        
-        mainPlayerUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?player[^"]+?)"')[0]
-        #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> playerUrl[%s]" % playerUrl)
-        
-        movieId = self.cm.ph.getSearchGroups(mainPlayerUrl+'/', 'f=([0-9]+?)/')[0]
-        
-        if movieId != '':
-            playerUrl = 'http://ok.ru/video/' + movieId
-            tmpParams = copy.deepcopy(params) 
-            tmpParams['header']['User-Agent'] = self.USER_AGENT2
-            sts, data = self.cm.getPage(playerUrl, tmpParams)
-            if not sts: return []
-            try:
-                tmp = clean_html(re.search(r'data-options=(?P<quote>["\'])(?P<player>{.+?%s.+?})(?P=quote)' % movieId, data).group('player'))
-                tmp = byteify( json.loads( tmp ) )
-                tmp = byteify( json.loads( tmp['flashvars']['metadata'] ) )
-                for item in tmp['videos']:
-                    videoUrl = self.up.decorateUrl(item['url'], {'User-Agent':self.USER_AGENT2})
-                    urlTab.append({'name':item['name'], 'url':videoUrl, 'need_resolve':0})
-            except Exception:
-                printExc()
-            playerUrl = 'http://m.ok.ru/video/' + movieId
-            tmpParams['header']['User-Agent'] = self.USER_AGENT
-            sts, data = self.cm.getPage(playerUrl, tmpParams)
-            if not sts: return []
-            videoUrl = self.cm.ph.getSearchGroups(data, 'href="(http[^"]+?moviePlaybackRedirect[^"]+?)"')[0].replace('&amp;', '&')
-            if videoUrl.startswith('http'):
-                videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-                urlTab.insert(0, {'name':'default', 'url':videoUrl, 'need_resolve':0})
-                return urlTab
-        
-        playerUrl = mainPlayerUrl.replace('&#038;', '&')
-        sts, data = self.cm.getPage(playerUrl, params)
+        firstPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?player[^"]+?)"')[0].replace('&#038;', '&')
+        sts, data = self.cm.getPage(firstPlayerUrl, params)
         if not sts: return []
         
-        printDBG(data)
+        #printDBG("============================")
+        #printDBG(data)
+        #printDBG("============================")
         
-        videoUrl = self.cm.ph.getSearchGroups(data, """src:[^'^"]+?['"]([^'^"]+?)['"]""")[0]
-        if videoUrl != '' and videoUrl != 'vimplevideo.mp4':        
-            videoUrl = 'http://media.vimple.me/playeryw.swf/' + videoUrl
-            videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-            return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
+        secondPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]*?player[^"]+?)"')[0].replace('&#038;', '&')
+        if not self.cm.isValidUrl(secondPlayerUrl):
+            secondPlayerUrl = self.up.getDomain(firstPlayerUrl, False) + secondPlayerUrl.replace('../', '')
+        sts, data = self.cm.getPage(secondPlayerUrl, params)
+        if not sts: return []
         
-        newPlayerUrl = self.cm.ph.getSearchGroups(data, '''["'](http[^"^']+?embed_player.php[^"^']+?)["']''')[0]
-        if 'http%3A%2F%2F' in newPlayerUrl:
-            newPlayerUrl = urllib.unquote(newPlayerUrl)
+        #printDBG("============================")
+        #printDBG(data)
+        #printDBG("============================")
         
-            
-        for item in [cItem['url'], playerUrl, newPlayerUrl]:
-            url = self.up.decorateUrl(item, {'Referer':cItem['url']})
-            tmp = self.up.getVideoLinkExt(url)
-            for item in tmp:
-                item['need_resolve'] = 0
-                urlTab.append(item)
-        return urlTab
+        tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>')
+        for tmp in tmpTab:
+            tmp2 = unpackJSPlayerParams(tmp, VIDEOMEGA_decryptPlayerParams, 0, r2=True)
+            data += tmp2
+        data = data.replace('\\"', '"').replace('\\/', '/')
+        
+        #printDBG("============================")
+        #printDBG(data)
+        #printDBG("============================")
+        
+        thirdPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"')[0]
+        
+        return self.up.getVideoLinkExt(thirdPlayerUrl)
         
     def getFavouriteData(self, cItem):
         return cItem['url']
@@ -263,82 +226,3 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, StreamComplet(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('streamcompletlogo.png')])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie  
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

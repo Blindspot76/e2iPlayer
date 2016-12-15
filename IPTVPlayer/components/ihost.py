@@ -296,7 +296,8 @@ class CHostBase(IHost):
         
         urlList = self.host.getLinksForVideo(self.host.currList[Index])
         for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
+            need_resolve = item.get("need_resolve", 0)
+            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
