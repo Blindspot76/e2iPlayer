@@ -113,8 +113,18 @@ class PapyStreamingUS(CBaseHostClass):
             url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"', ignoreCase=True)[0]
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>', caseSensitive=False)[1] )
             if title == '': title = url.split('/')[-1].replace('-', ' ').title()
-            icon  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"', ignoreCase=True)[0]
-            params = {'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullUrl(icon), 'desc':self.cleanHtmlStr( item )}
+            icon = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"', ignoreCase=True)[0]
+            rank = self.cm.ph.getSearchGroups(item, 'width:\s*([0-9]+?)%', ignoreCase=True)[0]
+            tmp = item.split('</span>')
+            desc = []
+            for d in tmp:
+                d = self.cleanHtmlStr(d)
+                if d == '': continue
+                elif 'Vus' in d:
+                    d = '{0}.{1}/10 | '.format(int(rank)/10, int(rank)%10) + d
+                desc.append(d)
+            if len(desc): del desc[0]
+            params = {'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullUrl(icon), 'desc':' | '.join(desc)}
             self.addVideo(params)
         
         if nextPage:
