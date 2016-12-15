@@ -62,6 +62,7 @@ hostnaszekinoonline
 hostninateka
 hostonetvod
 hostourmatchnet
+hostpapystreamingus
 hostpinkbike
 hostplaypuls
 hostplwwecom
