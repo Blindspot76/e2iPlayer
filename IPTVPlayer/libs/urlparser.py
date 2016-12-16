@@ -4006,7 +4006,7 @@ class pageParser:
         mobj = re.match(_VALID_URL, baseUrl)
         try:
             video_id = mobj.group('id')
-            linkUrl = 'http://docs.google.com/file/d/' + video_id
+            linkUrl = 'http://docs.google.com/file/d/' + video_id 
         except Exception:
             linkUrl = baseUrl
             
@@ -4021,8 +4021,17 @@ class pageParser:
             '46': 'webm', '59': 'mp4',
         }
         
-        sts, data = self.cm.getPage(linkUrl)
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36"
+        HTTP_HEADER['Referer'] = linkUrl
+        
+        COOKIE_FILE = GetCookieDir('google.cookie')
+        defaultParams = {'header': HTTP_HEADER, 'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        sts, data = self.cm.getPage(linkUrl, defaultParams)
         if not sts: return False 
+        
+        cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
         fmtDict = {} 
         fmtList = self.cm.ph.getSearchGroups(data, '"fmt_list"[:,]"([^"]+?)"')[0]
         fmtList = fmtList.split(',')
@@ -4036,7 +4045,7 @@ class pageParser:
             item = item.split('|')
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> type[%s]" % item[0])
             if 'mp4' in _FORMATS_EXT.get(item[0], ''):
-                videoTab.append({'name':'google.com: %s' % fmtDict.get(item[0], '').split('x')[1] + 'p', 'url':unicode_escape(item[1])})
+                videoTab.append({'name':'google.com: %s' % fmtDict.get(item[0], '').split('x')[1] + 'p', 'url':strwithmeta(unicode_escape(item[1]), {'Cookie':cookieHeader, 'Referer':'https://youtube.googleapis.com/', 'User-Agent':HTTP_HEADER['User-Agent']})})
         return videoTab[::-1]
         
     def parserPICASAWEB(self, baseUrl):
