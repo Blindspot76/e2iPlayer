@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
@@ -124,7 +124,7 @@ class PapyStreamingUS(CBaseHostClass):
                     d = '{0}.{1}/10 | '.format(int(rank)/10, int(rank)%10) + d
                 desc.append(d)
             if len(desc): del desc[0]
-            params = {'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullUrl(icon), 'desc':' | '.join(desc)}
+            params = {'good_for_fav': True, 'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullUrl(icon), 'desc':' | '.join(desc)}
             self.addVideo(params)
         
         if nextPage:
@@ -143,18 +143,29 @@ class PapyStreamingUS(CBaseHostClass):
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return []
-
-        playerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"')[0]
         
-        if self.up.getDomain(cItem['url']) == self.up.getDomain(playerUrl):
+        playersTab = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '>')
+        for item in playersTab:
+            playerUrl = self.cm.ph.getSearchGroups(item, 'src="(http[^"]+?)"')[0]
+            playerUrl = strwithmeta(playerUrl, {'Referer':cItem['url']})
+            name = self.up.getHostName(playerUrl, True)
+            urlTab.append({'name':name, 'url':playerUrl, 'need_resolve':1})
+        return urlTab
+        
+    def getVideoLinks(self, videoUrl):
+        printDBG("IceFilms.PapyStreamingUS [%s]" % videoUrl)
+        urlTab = []
+        
+        referer = videoUrl.meta['Referer']
+        if self.up.getDomain(referer) == self.up.getDomain(videoUrl):
             AJAX_HEADER = dict(self.AJAX_HEADER)
-            AJAX_HEADER['Referer'] = cItem['url']
+            AJAX_HEADER['Referer'] = referer
             params = dict(self.defaultParams)
             params['header'] = AJAX_HEADER
-            sts, data = self.cm.getPage(playerUrl, params)
+            sts, data = self.cm.getPage(videoUrl, params)
             if not sts: return []
             url = self.getFullUrl('/e/Htplugins/Loader.php')
-            params['header']['Referer'] = playerUrl
+            params['header']['Referer'] = videoUrl
             data = self.cm.ph.getDataBeetwenMarkers(data, 'oad(', ')', False)[1]
             data = self.cm.ph.getSearchGroups(data, '"([^"]+?)"')[0]
             sts, data = self.cm.getPage(url, params, {'data':data})
@@ -167,8 +178,7 @@ class PapyStreamingUS(CBaseHostClass):
             except Exception:
                 printExc()
         else:
-            urlTab = self.up.getVideoLinkExt(playerUrl)
-        
+            urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
     def getFavouriteData(self, cItem):
@@ -176,6 +186,48 @@ class PapyStreamingUS(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})
+        
+    def getArticleContent(self, cItem):
+        printDBG("PapyStreamingUS.getArticleContent [%s]" % cItem)
+        retTab = []
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return retTab
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div class="info">', '</div>')[1] 
+        
+        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="contenido"', '</div>')[1] )
+        icon = self.getFullUrl( self.cm.ph.getSearchGroups(tmp, '''src=['"]([^"^']+?\.jpg)['"]''')[0] )
+        if not self.cm.isValidUrl(icon): icon = cItem.get('icon', '')
+        title = cItem['title']
+        
+        descData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="dato"', '</div>')
+        descKeyMap = {"titre original":  "alternate_title",
+                      "imdb note":       "imdb_rating",
+                      "durer":           "duration",
+                      "année":           "year",
+                      "date de sortie":  "released",
+                      "production co":   "production",
+                      "origine":         "country",
+                      "langue":          "language",
+                      "réalisateur":     "director",
+                      "catégorie":       "genres",
+                      "acteurs":         "actors",
+                      "prix":            "awards",
+                      "écrivain":        "writer"}
+        
+        otherInfo = {}
+        for item in descData:
+            item = item.split('</i>')
+            printDBG(item)
+            if len(item) < 2: continue
+            key = self.cleanHtmlStr( item[0] ).replace(':', '').strip().lower()
+            printDBG(">>>>>>>>>>>>> " + key)
+            if key not in descKeyMap: continue
+            val = self.cleanHtmlStr( item[1] )
+            otherInfo[descKeyMap[key]] = val
+        
+        return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo}]
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -210,4 +262,9 @@ class PapyStreamingUS(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, PapyStreamingUS(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        CHostBase.__init__(self, PapyStreamingUS(), True, [])
+        
+    def withArticleContent(self, cItem):
+        if cItem.get('type', '') != 'video':
+            return False
+        return True

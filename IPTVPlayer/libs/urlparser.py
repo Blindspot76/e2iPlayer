@@ -4666,29 +4666,13 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return []
         
-        
-        # FROM: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/facebook.py
-        
-        BEFORE = '{swf.addParam(param[0], param[1]);});\n'
-        AFTER = '.forEach(function(variable) {swf.addVariable(variable[0], variable[1]);});'
-        m = self.cm.ph.getDataBeetwenMarkers(data, BEFORE, AFTER, False)[1]
-        tmp = dict(json.loads(m))
-        params_raw = urllib.unquote(tmp['params'])
-        params = byteify( json.loads(params_raw) )
-
-        
-        printDBG(params)
         urlsTab = []
-        for format_id, f in params['video_data'].items():
-            if f and isinstance(f, dict):
-                f = [f]
-            if not f or not isinstance(f, list):
-                continue
-            for quality in ('sd', 'hd'):
-                for src_type in ('src', 'src_no_ratelimit'):
-                    src = f[0].get('%s_%s' % (quality, src_type))
-                    if src:
-                        urlsTab.append({'name':'facebook %s_%s_%s' % (format_id, quality, src_type), 'url':src})
+        for item in ['hd_src_no_ratelimit', 'hd_src', 'sd_src_no_ratelimit', 'sd_src']:
+            url = self.cm.ph.getSearchGroups(data, '''"%s"\s*?:\s*?"(http[^"]+?\.mp4[^"]*?)"''' % item)[0]
+            url = url.replace('\\/', '/')
+            if self.cm.isValidUrl(url):
+                urlsTab.append({'name':'facebook %s' % item, 'url':url})
+                
         return urlsTab
         
     def parserCLOUDYVIDEOS(self, baseUrl):
