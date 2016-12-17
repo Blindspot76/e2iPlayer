@@ -94,7 +94,7 @@ class PapyStreamingUS(CBaseHostClass):
         
         page = cItem.get('page', 1)
         if page > 1:
-            url += 'page/%s' % page
+            url += '/page/%s' % page
         if '' != arg:
             url += '?' + arg
         
