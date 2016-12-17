@@ -4046,7 +4046,7 @@ class pageParser:
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> type[%s]" % item[0])
             if 'mp4' in _FORMATS_EXT.get(item[0], ''):
                 videoTab.append({'name':'google.com: %s' % fmtDict.get(item[0], '').split('x')[1] + 'p', 'url':strwithmeta(unicode_escape(item[1]), {'Cookie':cookieHeader, 'Referer':'https://youtube.googleapis.com/', 'User-Agent':HTTP_HEADER['User-Agent']})})
-        return videoTab[::-1]
+        return videoTab
         
     def parserPICASAWEB(self, baseUrl):
         printDBG("parserPICASAWEB baseUrl[%s]" % baseUrl)
