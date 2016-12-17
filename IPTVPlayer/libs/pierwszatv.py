@@ -183,8 +183,8 @@ class PierwszaTVApi:
                 #printDBG("===============================================")
                 url = strwithmeta(self.getFullUrl('player/watch/{0}'.format(item['id'])), {'id':item['id']})
                 icon = ''
-                #icon = item.get('thumbUrl', '')
-                #if icon == None: icon = ''
+                icon = item.get('thumbUrl', '')
+                if icon == None: icon = ''
                 
                 title = self.cleanHtmlStr( item['name'] )
                 desc  = []
