@@ -904,14 +904,21 @@ class IPTVExtMoviePlayer(Screen):
             self['subLabel1'].setText(text)
             self['subLabel1'].show()
         else:
+            if text.startswith('{\\an8}'):
+                text = text[6:]
+                subOnTopHack = True
+            else:
+                subOnTopHack = False
+                
             if self.subLinesNum == 1:
                 lineHeight = self.subConfig['line_height'] * text.count('\n')
                 text = [text]
             else:
                 text = text.split('\n')
-                text.reverse()
+                if not subOnTopHack: text.reverse()
                 lineHeight = self.subConfig['line_height']
-            y = self.subConfig['pos'] + self.subHandler['pos_y_offset']
+            y = self.subConfig['pos'] 
+            if not subOnTopHack: y += self.subHandler['pos_y_offset']
             for lnIdx in range(self.subLinesNum):
                 subLabel = 'subLabel%d' % (lnIdx+1)
                 if lnIdx < len(text):
@@ -933,7 +940,8 @@ class IPTVExtMoviePlayer(Screen):
                     lW = textSize[0] + self.subConfig['font_size'] / 2
                     lH = lineHeight #textSize[1] + self.subConfig['font_size'] / 2
                     self[subLabel].instance.resize(eSize(lW, lH))
-                    self[subLabel].instance.move( ePoint((desktopW-lW) / 2, desktopH - y - lH) )
+                    if not subOnTopHack: self[subLabel].instance.move( ePoint((desktopW-lW) / 2, desktopH - y - lH) )
+                    else: self[subLabel].instance.move( ePoint((desktopW-lW) / 2, y) )
                     y += lH + self.subConfig['line_spacing']
                     self[subLabel].show()
                 except Exception:
