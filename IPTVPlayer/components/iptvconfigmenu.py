@@ -160,6 +160,8 @@ config.plugins.iptvplayer.proxyurl = ConfigText(default = "http://PROXY_IP:PORT"
 config.plugins.iptvplayer.german_proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
 config.plugins.iptvplayer.russian_proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
 config.plugins.iptvplayer.ukrainian_proxyurl = ConfigText(default = "http://PROXY_IP:PORT", fixed_size = False)
+config.plugins.iptvplayer.alternative_proxy1 = ConfigText(default = "http://username:password@proxy_url:port", fixed_size = False)
+config.plugins.iptvplayer.alternative_proxy2 = ConfigText(default = "http://username:password@proxy_url:port", fixed_size = False)
 
 # Update
 config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = True)
@@ -269,6 +271,8 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry(_("    Number of columns"), config.plugins.iptvplayer.numOfCol))
         
         list.append(getConfigListEntry(_("https - validate SSL certificates"), config.plugins.iptvplayer.httpssslcertvalidation))
+        list.append(getConfigListEntry(_("Alternative proxy server (1)"), config.plugins.iptvplayer.alternative_proxy1))
+        list.append(getConfigListEntry(_("Alternative proxy server (2)"), config.plugins.iptvplayer.alternative_proxy2))
         list.append(getConfigListEntry(_("Polish proxy server url"), config.plugins.iptvplayer.proxyurl))
         list.append(getConfigListEntry(_("German proxy server url"), config.plugins.iptvplayer.german_proxyurl))
         list.append(getConfigListEntry(_("Russian proxy server url"), config.plugins.iptvplayer.russian_proxyurl))
