@@ -175,7 +175,7 @@ class IPTVExtMoviePlayer(Screen):
             
         skin = """
         <screen name="IPTVExtMoviePlayer"    position="center,center" size="%d,%d" flags="wfNoBorder" backgroundColor="#FFFFFFFF" >
-                <widget name="pleaseWait"         noWrap="1" position="20,20"        size="500,30"    zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="left"  valign="top"/>
+                <widget name="pleaseWait"         noWrap="1" position="30,30"        size="500,30"    zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="transparent" font="Regular;24" halign="left"  valign="top"/>
                 
                 <widget name="logoIcon"           position="140,30"        size="160,40"    zPosition="4"             transparent="1" alphatest="blend" />
                 <widget name="playbackInfoBaner"  position="0,0"           size="1280,177"  zPosition="2" pixmap="%s" />
@@ -1289,7 +1289,7 @@ class IPTVExtMoviePlayer(Screen):
                     for item in [(16,9,'16_9'), (4,3,'4_3'), (16,10,'16_10'), (3,2,'3_2'), (5,4,'5_4'), (1.85,1,'1.85'), (2.35,1,'2.35')]:
                         diff = fabs(float(item[0])/item[1] - DAR)
                         aTab.append((diff, item[2]))
-                    aTab.sort(key=lambda item: item[1])
+                    aTab.sort(key=lambda item: item[0])
                     params['aspect_ratio'] = aTab[0][1]
                 except Exception: 
                     params['aspect_ratio'] = 'unknown'
