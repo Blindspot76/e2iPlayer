@@ -1274,7 +1274,7 @@ class IPTVExtMoviePlayer(Screen):
             params['encode']     = str(obj['e'][2:])
             params['name']       = str(obj['n'])
             if video:
-                params['frame_rate'] = float(obj['f']/1000)
+                params['frame_rate'] = float(obj['f'])/1000.0
                 params['width']      = int(obj['w'])
                 params['height']     = int(obj['h'])
                 params['progressive']= False
