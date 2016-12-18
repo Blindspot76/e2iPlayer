@@ -154,13 +154,17 @@ class StreamComplet(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], params)
         if not sts: return []
         
+        printDBG("============================ 00 ============================")
+        printDBG(data)
+        printDBG("============================ 00 ============================")
+        
         firstPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?player[^"]+?)"')[0].replace('&#038;', '&')
         sts, data = self.cm.getPage(firstPlayerUrl, params)
         if not sts: return []
         
-        #printDBG("============================")
-        #printDBG(data)
-        #printDBG("============================")
+        printDBG("============================ 01 ============================")
+        printDBG(data)
+        printDBG("============================ 11 ============================")
         
         secondPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]*?player[^"]+?)"')[0].replace('&#038;', '&')
         if not self.cm.isValidUrl(secondPlayerUrl):
@@ -168,9 +172,9 @@ class StreamComplet(CBaseHostClass):
         sts, data = self.cm.getPage(secondPlayerUrl, params)
         if not sts: return []
         
-        #printDBG("============================")
-        #printDBG(data)
-        #printDBG("============================")
+        printDBG("============================ 02 ============================")
+        printDBG(data)
+        printDBG("============================ 12 ============================")
         
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>')
         for tmp in tmpTab:
@@ -178,9 +182,9 @@ class StreamComplet(CBaseHostClass):
             data += tmp2
         data = data.replace('\\"', '"').replace('\\/', '/')
         
-        #printDBG("============================")
-        #printDBG(data)
-        #printDBG("============================")
+        printDBG("============================ 03 ============================")
+        printDBG(data)
+        printDBG("============================ 13 ============================")
         
         thirdPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"')[0]
         
