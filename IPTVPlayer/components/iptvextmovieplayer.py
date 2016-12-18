@@ -1284,7 +1284,7 @@ class IPTVExtMoviePlayer(Screen):
                 except Exception: 
                     printExc()
                 try:
-                    DAR = float(obj.get('an', params['width'])) / float(obj.get('ad', params['height']))
+                    DAR = float(obj.get('an', 1) * params['width']) / float(obj.get('ad', 1) * params['height'])
                     aTab = []
                     for item in [(16,9,'16_9'), (4,3,'4_3'), (16,10,'16_10'), (3,2,'3_2'), (5,4,'5_4'), (1.85,1,'1.85'), (2.35,1,'2.35')]:
                         diff = fabs(float(item[0])/item[1] - DAR)
