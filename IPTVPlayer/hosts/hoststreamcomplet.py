@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -22,7 +22,7 @@ try:    import json
 except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, VIDEOMEGA_decryptPlayerParams
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, VIDEOMEGA_decryptPlayerParams, VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams
 ###################################################
 
 
@@ -142,53 +142,82 @@ class StreamComplet(CBaseHostClass):
         cItem['url'] = self.SRCH_URL + searchPattern
         self.listItems(cItem)
         
+    def _decodeData(self, baseData):
+        data = baseData
+        fullDecData = ''
+        decData = ''
+        for idx in range(3):
+            if 'eval(' not in data:
+                break
+            tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>')
+            for tmpData in tmpTab:
+                tmp = tmpData.split('eval(')
+                if len(tmp): del tmp[0]
+                for tmpItem in tmp:
+                    tmpDec = ''
+                    for decFun in [VIDEOMEGA_decryptPlayerParams]:
+                        tmpDec = unpackJSPlayerParams('eval('+tmpItem, decFun, 0)
+                        if '' != tmpDec:   
+                            break
+                    decData += tmpDec
+            fullDecData += decData
+            data = decData
+        
+        subTab = re.compile('''(['"]\s*\+[^\+]+?\+\s*['"])''').findall(fullDecData)
+        for item in subTab:
+            var  = self.cm.ph.getSearchGroups(item, '''\+([^\+]+?)\+''')[0].strip()
+            val  = self.cm.ph.getSearchGroups(fullDecData, '''var\s*%s\s*=\s*['"]([^'^"]+?)['"]''' % var)[0] 
+            fullDecData = fullDecData.replace(item, val)
+        fullData = baseData + fullDecData
+        fullData = fullData.replace('\\"', '"').replace('\\/', '/')
+        return fullData
+        
     def getLinksForVideo(self, cItem):
         printDBG("StreamComplet.getLinksForVideo [%s]" % cItem)
         urlTab = []
+        
+        rm(self.COOKIE_FILE)
         
         params = dict(self.defaultParams)
         header = dict(self.HEADER)
         header['Referer'] = cItem['url']
         params['header'] = header
         
-        sts, data = self.cm.getPage(cItem['url'], params)
-        if not sts: return []
+        frameUrlsTab = [cItem['url']]
+
+        for idx in range(3):
+            newFrameUrlsTab = []
+            for frameUrl in frameUrlsTab:
+                sts, data = self.cm.getPage(frameUrl, params)
+                printDBG("============================ start ============================")
+                printDBG(data)
+                printDBG("============================ end ============================")
+                if not sts: continue
+                data = self._decodeData(data)
+                data = re.compile('<iframe[^>]+?src="([^"]+?)"').findall(data)
+                for item in data:
+                    if '' == item.strip(): continue
+                    if 'facebook' in item: continue
+                    if not self.cm.isValidUrl(item):
+                        if item.startswith('../'):
+                            item = self.up.getDomain(frameUrl, False) + item.replace('../', '')
+                        elif item.startswith('//'):
+                            item = 'http://' + item
+                        elif item.startswith('/'):
+                            item = self.up.getDomain(frameUrl, False) + item[1:]
+                        else:
+                            item = self.up.getDomain(frameUrl, False) + item[1:]
+                    if 1 == self.up.checkHostSupport(item):
+                        urlTab.append({'name':self.up.getHostName(item), 'url':item, 'need_resolve':1})
+                    else:
+                        newFrameUrlsTab.append(item)
+            frameUrlsTab = newFrameUrlsTab
         
-        printDBG("============================ 00 ============================")
-        printDBG(data)
-        printDBG("============================ 00 ============================")
+        return urlTab
         
-        firstPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?player[^"]+?)"')[0].replace('&#038;', '&')
-        sts, data = self.cm.getPage(firstPlayerUrl, params)
-        if not sts: return []
-        
-        printDBG("============================ 01 ============================")
-        printDBG(data)
-        printDBG("============================ 11 ============================")
-        
-        secondPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]*?player[^"]+?)"')[0].replace('&#038;', '&')
-        if not self.cm.isValidUrl(secondPlayerUrl):
-            secondPlayerUrl = self.up.getDomain(firstPlayerUrl, False) + secondPlayerUrl.replace('../', '')
-        sts, data = self.cm.getPage(secondPlayerUrl, params)
-        if not sts: return []
-        
-        printDBG("============================ 02 ============================")
-        printDBG(data)
-        printDBG("============================ 12 ============================")
-        
-        tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>')
-        for tmp in tmpTab:
-            tmp2 = unpackJSPlayerParams(tmp, VIDEOMEGA_decryptPlayerParams, 0, r2=True)
-            data += tmp2
-        data = data.replace('\\"', '"').replace('\\/', '/')
-        
-        printDBG("============================ 03 ============================")
-        printDBG(data)
-        printDBG("============================ 13 ============================")
-        
-        thirdPlayerUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?)"')[0]
-        
-        return self.up.getVideoLinkExt(thirdPlayerUrl)
+    def getVideoLinks(self, videoUrl):
+        printDBG("StreamComplet.getVideoLinks [%s]" % videoUrl)
+        return self.up.getVideoLinkExt(videoUrl)
         
     def getFavouriteData(self, cItem):
         return cItem['url']
