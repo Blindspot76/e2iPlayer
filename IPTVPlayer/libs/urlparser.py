@@ -3036,15 +3036,26 @@ class pageParser:
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
         if not sts: return
         
-        data = self.cm.ph.getSearchGroups(data, '''var url = ['"](http[^'^"]+?)['"]''', 1, True)[0]
-        urls = data.split(' or ')
+        unique = []
+        tmp = self.cm.ph.getSearchGroups(data, '''var\s*url\s*=\s*['"]([,]*?http[^'^"]+?)['"]''', 1, True)[0]
+        urls = tmp.split(' or ')
+        tmp = self.cm.ph.getSearchGroups(data, '''file\s*:\s*['"]([,]*?http[^'^"]+?)['"]''', 1, True)[0]
+        urls = tmp.split(' or ')
+        
         for item in urls:
             urlsTab = item.split(',')
             for url in urlsTab:
-                if '://' not in url: continue
+                url = url.strip()
+                if not self.cm.isValidUrl(url): continue
+                if url in unique: continue
                 label = self.cm.ph.getSearchGroups(url, '''/([0-9]+?)\-''', 1, True)[0]
                 if label == '': label = '360'
-                vidTab.append({'name':label, 'url':url.strip()})
+                if url.split('?')[0].endswith('.m3u8'):
+                    tmpTab = getDirectM3U8Playlist(url, checkContent=True)
+                    tmpTab.extend(vidTab)
+                    vidTab = tmpTab
+                else:
+                    vidTab.append({'name':label, 'url':url})
         return vidTab
         
     def parserUSERSCLOUDCOM(self, url):
