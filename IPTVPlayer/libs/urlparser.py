@@ -3024,7 +3024,7 @@ class pageParser:
     def parserHDGOCC(self, baseUrl):
         printDBG("parserHDGOCC url[%s]\n" % baseUrl)
         Referer = baseUrl.meta.get('Referer', '')
-        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Referer' : Referer}
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', 'Referer' : Referer}
         
         vidTab = []
         
@@ -3036,11 +3036,16 @@ class pageParser:
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
         if not sts: return
         
+        printDBG(data)
+        
         unique = []
-        tmp = self.cm.ph.getSearchGroups(data, '''var\s*url\s*=\s*['"]([,]*?http[^'^"]+?)['"]''', 1, True)[0]
-        urls = tmp.split(' or ')
+        urls = []
+        
+        tmpTab = re.compile('''var\s*url\s*=\s*['"]([,]*?http[^'^"]+?)['"]''').findall(data)
+        for tmp in tmpTab:
+            urls.extend(tmp.split(' or '))
         tmp = self.cm.ph.getSearchGroups(data, '''file\s*:\s*['"]([,]*?http[^'^"]+?)['"]''', 1, True)[0]
-        urls = tmp.split(' or ')
+        urls.extend(tmp.split(' or '))
         
         for item in urls:
             urlsTab = item.split(',')
@@ -3051,7 +3056,13 @@ class pageParser:
                 label = self.cm.ph.getSearchGroups(url, '''/([0-9]+?)\-''', 1, True)[0]
                 if label == '': label = '360'
                 if url.split('?')[0].endswith('.m3u8'):
+                    url = urlparser.decorateUrl(url, HTTP_HEADER)
                     tmpTab = getDirectM3U8Playlist(url, checkContent=True)
+                    tmpTab.extend(vidTab)
+                    vidTab = tmpTab
+                elif url.split('?')[0].endswith('.f4m'):
+                    url = urlparser.decorateUrl(url, HTTP_HEADER)
+                    tmpTab = getF4MLinksWithMeta(url)
                     tmpTab.extend(vidTab)
                     vidTab = tmpTab
                 else:
