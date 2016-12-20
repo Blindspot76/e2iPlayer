@@ -51,7 +51,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'http://kissanime.to/'
+    return 'http://kissanime.ru/'
 
 class KissAnimeTo(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
@@ -59,7 +59,7 @@ class KissAnimeTo(CBaseHostClass):
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL = 'http://kissanime.to/'
+    MAIN_URL = 'http://kissanime.ru/'
     DEFAULT_ICON_URL = "http://copernium.com/Copernicus/addons/plugin.video.kissanime/art/warning.png"
     
     MAIN_CAT_TAB = [{'category':'home',            'title': _('Home'),              'url':MAIN_URL,                     'icon':DEFAULT_ICON_URL},
