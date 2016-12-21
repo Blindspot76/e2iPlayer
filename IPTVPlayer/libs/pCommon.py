@@ -317,7 +317,7 @@ class common:
                 cj = cookielib.MozillaCookieJar()
             cj.load(cookiefile, ignore_discard = True)
             for cookie in cj:   
-                ret += '%s=%s; ' % (cookie.name, cookie.value)
+                ret += '%s=%s; ' % (cookie.name, urllib.unquote(cookie.value))
         except Exception:
             printExc()
         return ret
