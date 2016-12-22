@@ -67,6 +67,7 @@ class UstvnowApi:
         self.sessionEx = MainSessionWrapper()
         self.cookiePath = GetCookieDir('ustvnow.cookie')
         self.token = ''
+        self.passkey = ''
         
         HTTP_HEADER= dict(self.HTTP_HEADER)
         HTTP_HEADER.update( {'Content-Type':'application/x-www-form-urlencoded'} )
@@ -108,6 +109,8 @@ class UstvnowApi:
                 params['af']            = item['af']
                 channelList.append(params)
                 
+            printDBG(channelList)
+                
         except Exception:
             printExc()
         return channelList
@@ -120,7 +123,8 @@ class UstvnowApi:
 
         if '' != login.strip() and '' != passwd.strip():
             self.token = self.doLogin(login, passwd)
-            if self.token == '':
+            self.passkey = self.getPasskey()
+            if self.token == '' or self.passkey == '':
                 self.sessionEx.open(MessageBox, _('An error occurred when try to sign in the user "%s.\nPlease check your login credentials and try again later..."') % login, type = MessageBox.TYPE_INFO, timeout = 10 )
                 return []
         else:
@@ -149,8 +153,9 @@ class UstvnowApi:
                 if nameItem['img'] in icon:
                     if config.plugins.iptvplayer.ustvnow_only_available.value and 0 == nameItem['t']:
                         break
-                    params['title'] = nameItem['sname'] + ' [%s]' % nameItem['t']
+                    params['title']    = nameItem['sname'] + ' [%s]' % nameItem['t']
                     params['prgsvcid'] = nameItem['prgsvcid']
+                    params['scode']    = nameItem['scode']
                     prgsvcidMap[params['prgsvcid']] = len(channelsTab)
                     channelsTab.append(params)
                     break
@@ -185,6 +190,18 @@ class UstvnowApi:
             token = self.cm.getCookieItem(self.cookiePath, 'token')
         return token
         
+    def getPasskey(self):
+
+        url = 'http://m.ustvnow.com/gtv/1/live/viewdvrlist?%s' % urllib.urlencode({'token': self.token})
+        sts, data = self.cm.getPage(url)
+        if not sts: return ''
+        
+        try:
+            data = byteify(json.loads(data))
+            return data['globalparams']['passkey']
+        except Exception:
+            return ''
+        
     def getVideoLink(self, cItem):
         printDBG("UstvnowApi.getVideoLink %s" % cItem)
         
@@ -198,6 +215,27 @@ class UstvnowApi:
         #printDBG(data)
         #return []
         
+        urlsTab = []
+        cookieParams = {'cookiefile': self.cookiePath, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True}
+        
+        sts, data = self.cm.getPage('http://m-api.ustvnow.com/stream/1/live/view?scode=%s&token=%s&key=%s' % (cItem.get('scode', ''), self.token, self.passkey), self.defParams)
+        if sts:
+            try:
+                data = byteify(json.loads(data))
+                
+                tmp = getDirectM3U8Playlist(strwithmeta(data['stream'], {'User-Agent':self.HTTP_HEADER['User-Agent']}), cookieParams=cookieParams, checkContent=True)
+                cookieValue = self.cm.getCookieHeader(self.cookiePath)
+                
+                for item in tmp:
+                    vidUrl = item['url']#.replace('/smil:', '/mp4:').replace('USTVNOW/', 'USTVNOW1/')
+                    
+                    item['url'] = urlparser.decorateUrl(vidUrl, {'User-Agent':self.HTTP_HEADER['User-Agent'], 'Cookie':cookieValue})
+                    urlsTab.append(item)
+                if len(urlsTab):
+                    return urlsTab
+            except Exception:
+                printExc()
+        
         #sts, data = self.cm.getPage(cItem['priv_url'], self.defParams)
         sts, data = self.cm.getPage(self.LIVE_URL, self.defParams)
         if not sts: return []
@@ -209,8 +247,7 @@ class UstvnowApi:
         if not sts: return []
         
         url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
-        urlsTab = []
-        tmp = getDirectM3U8Playlist(strwithmeta(url, {'User-Agent':self.HTTP_HEADER['User-Agent']}), cookieParams = {'cookiefile': self.cookiePath, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True})
+        tmp = getDirectM3U8Playlist(strwithmeta(url, {'User-Agent':self.HTTP_HEADER['User-Agent']}), cookieParams=cookieParams, checkContent=True)
         cookieValue = self.cm.getCookieHeader(self.cookiePath)
         
         for item in tmp:
