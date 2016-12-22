@@ -4362,9 +4362,18 @@ class pageParser:
         rm(COOKIE_FILE)
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':False}
         
+        id = self.cm.ph.getSearchGroups(baseUrl+'/', 'c=([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
+        if id == '': id = self.cm.ph.getSearchGroups(baseUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
+        baseUrl = 'http://www.flashx.tv/embed.php?c=' + id
+        
         sts, response = self.cm.getPage(baseUrl, params)
         redirectUrl = response.geturl() 
         response.close()
+        
+        id = self.cm.ph.getSearchGroups(redirectUrl+'/', 'c=([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
+        if id == '': id = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0] 
+        baseUrl = 'http://www.flashx.tv/embed.php?c=' + id
+        
         params['return_data'] = True
         sts, data = self.cm.getPage(baseUrl, params)
         params['header']['Referer'] = redirectUrl
