@@ -300,9 +300,15 @@ class TreeTv(CBaseHostClass):
         sts, data = self.cm.getPage(sourceUrl, params)
         if not sts: return []
         
+        printDBG('url[%s]' % url)
+        printDBG('sourceUrl[%s]' % sourceUrl)
         printDBG('filmId[%s]' % filmId)
         printDBG('fileId[%s]' % fileId)
         printDBG('source[%s]' % source)
+        
+        uri = self.up.getDomain(sourceUrl, False) + 'm3u8/{0}.m3u8'.format(fileId)
+        return getDirectM3U8Playlist(uri, checkContent=True)
+        
         # sometimes return string is not valid json
         try:
             data = re.compile('''"src"\s*:\s*"([^"]+?)"''').findall(data)
