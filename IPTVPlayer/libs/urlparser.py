@@ -38,6 +38,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
 from Plugins.Extensions.IPTVPlayer.libs.jjdecode import JJDecoder
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, MainSessionWrapper
+from Screens.MessageBox import MessageBox
 ###################################################
 # FOREIGN import
 ###################################################
@@ -1464,10 +1465,70 @@ class pageParser:
             return False
         '''
 
-    def parserVK(self, url):
-        printDBG("parserVK url[%s]" % url)
-        sts, data = self.cm.getPage(url)
+    def parserVK(self, baseUrl):
+        printDBG("parserVK url[%s]" % baseUrl)
+        
+        COOKIE_FILE = GetCookieDir('vkcom.cookie')
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'}
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
+        
+        def _doLogin(login, password):
+             
+            loginSts = False
+            rm(COOKIE_FILE)
+            loginUrl = 'https://vk.com/login'
+            sts, data = self.cm.getPage(loginUrl, params)
+            if not sts: return False
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<form method="post"', '</form>', False, False)[1]
+            action = self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0]
+            printDBG(data)
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+            post_data.update({'email':login, 'pass':password})
+            if not self.cm.isValidUrl(action):
+                return False
+            params['header']['Referr'] = loginUrl
+            sts, data =  self.cm.getPage(action, params, post_data)
+            if not sts: return False
+            sts, data =  self.cm.getPage('https://vk.com/', params)
+            if not sts: return False            
+            if 'logout_link' not in data: return False
+            return True
+        
+        sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
+        
+        login    = config.plugins.iptvplayer.vkcom_login.value
+        password = config.plugins.iptvplayer.vkcom_password.value
+        try:
+            vkcom_login = self.vkcom_login
+            vkcom_pass  = self.vkcom_pass
+        except:
+            rm(COOKIE_FILE)
+            vkcom_login = ''
+            vkcom_pass  = ''
+            self.vkcom_login = ''
+            self.vkcom_pass  = ''
+            
+            printExc()
+        if '<div id="video_ext_msg">' in data or vkcom_login != login or vkcom_pass != password:
+            rm(COOKIE_FILE)
+            self.vkcom_login = login
+            self.vkcom_pass  = password
+            
+            if login.strip() == '' or password.strip() == '':
+                sessionEx = MainSessionWrapper() 
+                sessionEx.waitForFinishOpen(MessageBox, _('To watch videos from http://vk.com/ you need to login.\nPlease fill your login and password in the IPTVPlayer configuration.'), type = MessageBox.TYPE_INFO, timeout = 10 )
+                return False
+            elif not _doLogin(login, password):
+                sessionEx = MainSessionWrapper() 
+                sessionEx.waitForFinishOpen(MessageBox, _('Login user "%s" to http://vk.com/ failed!\nPlease check your login data in the IPTVPlayer configuration.' % login), type = MessageBox.TYPE_INFO, timeout = 10 )
+                return False
+            else:
+                sts, data = self.cm.getPage(baseUrl, params)
+                if not sts: return False
+        
+        #data = self.cm.ph.getDataBeetwenMarkers(data, 'var playerParams =', '};', False, False)[1]
+        
         movieUrls = []
         item = self.cm.ph.getSearchGroups(data, '''['"]?cache([0-9]+?)['"]?[=:]['"]?(http[^"]+?\.mp4[^;^"^']*)[;"']''', 2)
         if '' != item[1]:
@@ -1489,13 +1550,14 @@ class pageParser:
                 movieUrls.append({ 'name': 'vk.com: ' + item[0] + 'p', 'url':item[1].encode('UTF-8') })
         ##move default format to first position in urls list
         ##default format should be a configurable
-        DEFAULT_FORMAT = 'vk.com: 360p'
+        DEFAULT_FORMAT = 'vk.com: 720p'
         defaultItem = None
         for idx in range(len(movieUrls)):
             if DEFAULT_FORMAT == movieUrls[idx]['name']:
                 defaultItem = movieUrls[idx]
                 del movieUrls[idx]
                 break
+        movieUrls = movieUrls[::-1]
         if None != defaultItem:
             movieUrls.insert(0, defaultItem)
         if None != cacheItem:

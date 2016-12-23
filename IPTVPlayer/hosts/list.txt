@@ -69,6 +69,7 @@ hostplwwecom
 hostserialnet
 hostserienstreamto
 hostseriesenstreamingcom
+hostsovdub
 hostsportdeutschland
 hostspryciarze
 hoststreamcomplet
