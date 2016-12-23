@@ -305,7 +305,7 @@ class IPTVArticleRichVisualizer(Screen):
             self["dsc_text_{0}".format(idx+1)].setText(text)
             
     def newPage(self, page):
-        if page != self.richDesc['page']:
+        if page != self.richDesc['page'] and 'page_item_start_x' in self.richDesc and 'page_item_start_y' in self.richDesc:
             self.richDesc['page'] = page
             self.setRichDesc()
             

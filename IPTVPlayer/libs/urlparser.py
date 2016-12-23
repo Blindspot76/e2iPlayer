@@ -397,6 +397,8 @@ class urlparser:
                        'vidabc.com':           self.pp.parserVIDABCCOM      ,
                        'uptostream.com':       self.pp.parserUPTOSTREAMCOM  ,
                        'uptobox.com':          self.pp.parserUPTOSTREAMCOM  ,
+                       'fastplay.cc':          self.pp.parserFASTPLAYCC     ,
+                       'spruto.tv':            self.pp.parserSPRUTOTV       ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -876,7 +878,8 @@ class pageParser:
         return False
         
     def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None, httpHeader={}, params={}):
-        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
+        refUrl = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':refUrl }
         HTTP_HEADER.update(httpHeader)
         if 'embed' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
@@ -901,7 +904,7 @@ class pageParser:
         
         if _preProcessing != None:
             data = _preProcessing(data)
-        #printDBG(data)
+        printDBG("Data: " + data)
         
         # get JS player script code from confirmation page
         mrk1 = ">eval("
@@ -921,7 +924,7 @@ class pageParser:
                 tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams, 0)
             if None != tmpData:
                 data = data + tmpData
-        printDBG(data)
+        printDBG("Data: " + data)
         return _findLinks(data)
         
     def _parserUNIVERSAL_B(self, url):
@@ -2369,6 +2372,16 @@ class pageParser:
     def parserVIDABCCOM(self, baseUrl):
         printDBG("parserVIDABCCOM baseUrl[%r]" % baseUrl)
         return self._parserUNIVERSAL_A(baseUrl, 'http://vidabc.com/embed-{0}.html', self._findLinks)
+        
+    def parserFASTPLAYCC(self, baseUrl):
+        printDBG("parserFASTPLAYCC baseUrl[%r]" % baseUrl)
+        return self._parserUNIVERSAL_A(strwithmeta(baseUrl, {'Referer':''}), 'http://fastplay.cc/embed-{0}.html', self._findLinks)
+    
+    def parserSPRUTOTV(self, baseUrl):
+        printDBG("parserSPRUTOTV baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        return self._findLinks(data, serverName='spruto.tv', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='Uppod(', m2=')', contain='.mp4')
         
     def parserUPTOSTREAMCOM(self, baseUrl):
         printDBG("parserUPTOSTREAMCOM baseUrl[%r]" % baseUrl)
