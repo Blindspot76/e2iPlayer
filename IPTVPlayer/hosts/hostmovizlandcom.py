@@ -195,11 +195,22 @@ class MovizlandCom(CBaseHostClass):
         if not sts: return []
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'class="iframeWide"', '<div class="footer">')[1]
-        data = re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"]''').findall(data)
-        for url in data:
-            if 'movizland.com' in url: continue
-            if 'moshahda.net' in url and ('embedM-' in url or '?download' in url): continue
-            if self.up.checkHostSupport(url) == 1:
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''', 1)[0]
+            url = self._getFullUrl( url )
+            if not self.cm.isValidUrl(url): continue
+            title = self.cleanHtmlStr(item)
+            printDBG(">>>>>>>>>>>>>> " + title)
+            if 'class="ViewMovieNow"' not in item: continue
+            
+            if '?view=1' in url or '?high' in url or '?download' in url or 'embedM-' in url:
+                urlTab.append({'name':title, 'url':url, 'need_resolve':0})
+            elif 'movizland.com' in url:
+                continue
+            elif 'moshahda.net' in url and ('embedM-' in url or '?download' in url):
+                continue
+            elif self.up.checkHostSupport(url) == 1:
                 title = self.up.getHostName(url)
                 urlTab.append({'name':title, 'url':url, 'need_resolve':1})
         return urlTab
