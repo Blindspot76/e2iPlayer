@@ -29,6 +29,7 @@ from Plugins.Extensions.IPTVPlayer.libs.goldvodtv         import GoldVodTVApi, G
 from Plugins.Extensions.IPTVPlayer.libs.showsporttvcom    import ShowsportTVApi
 from Plugins.Extensions.IPTVPlayer.libs.sport365live      import Sport365LiveApi
 from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, GetConfigList as PierwszaTV_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.yooanimecom       import YooanimeComApi
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
 
 
@@ -146,6 +147,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://ftp.vectranet.pl/xbmc/addons/helix/plugin.video.ustvnow/icon.png'}, \
                         {'alias_id':'showsport-tv.com',        'name': 'showsport-tv.com',    'title': 'showsport-tv.com',                  'url': 'http://showsport-tv.com/',                                           'icon': 'http://showsport-tv.com/images/logo.png'}, \
                         {'alias_id':'sport365.live',           'name': 'sport365.live',       'title': 'sport365.live',                     'url': 'http://www.sport365.live/',                                          'icon': 'http://s1.medianetworkinternational.com/images/icons/48x48px.png'}, \
+                        {'alias_id':'yooanime.com',            'name': 'yooanime.com',        'title': 'yooanime.com',                      'url': 'http://yooanime.com/',                                               'icon': 'https://socialtvplayground.files.wordpress.com/2012/11/logo-technicolor2.png?w=960'}, \
                         {'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=',                'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'alias_id':'wownet.ro',               'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://wownet.ro/iptv/',                                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'alias_id':'iptv.ink',                'name': 'm3u',                 'title': 'Free Iptv Project',                 'url': 'http://tv.iptv.ink/iptv.ink',                                        'icon': 'http://community.iptv.ink/styles/uix/uix/logo_new_001.png'}, \
@@ -177,6 +179,7 @@ class HasBahCa(CBaseHostClass):
         self.purecastNetApi    = None
         self.telewizjadaNetApi = None
         self.iKlubNetApi       = None
+        self.yooanimeComApi    = None
         self.teleWizjaComApi   = None
         self.meteoPLApi        = None
         self.liveStreamTvApi   = None
@@ -763,6 +766,23 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.iKlubNetApi.getVideoLink(cItem)
         return urlsTab
         
+    def getYooanimeComtList(self, cItem):
+        printDBG("getYooanimeComtList start")
+        if None == self.yooanimeComApi:
+            self.yooanimeComApi = YooanimeComApi()
+        tmpList = self.yooanimeComApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']:
+                self.addVideo(item) 
+            else:
+                self.addDir(item)
+        
+    def getYooanimeComLink(self, cItem):
+        printDBG("getYooanimeComLink start")
+        urlsTab = self.yooanimeComApi.getVideoLink(cItem)
+        return urlsTab
+        
+        
     def getTeleWizjaComList(self, cItem):
         printDBG("getTeleWizjaComList start")
         if None == self.teleWizjaComApi:
@@ -996,6 +1016,9 @@ class HasBahCa(CBaseHostClass):
     #iklub.net items
         elif name == 'iklub.net':
             self.getIKlubNetList(self.currItem)
+    #yooanime.com items
+        elif name == 'yooanime.com':
+            self.getYooanimeComtList(self.currItem)
     #tele-wizja.com items
         elif name == 'tele-wizja.com':
             self.getTeleWizjaComList(self.currItem)
@@ -1093,6 +1116,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getTelewizjadaNetLink(cItem)
         elif name == 'iklub.net':
             urlList = self.host.getIKlubNetLink(cItem)
+        elif name == 'yooanime.com':
+            urlList = self.host.getYooanimeComLink(cItem)
         elif name == 'tele-wizja.com':
             urlList = self.host.getTeleWizjaComLink(cItem)
         elif name == 'meteo.pl':
