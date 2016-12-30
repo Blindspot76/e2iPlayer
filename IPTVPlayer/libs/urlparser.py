@@ -1338,9 +1338,10 @@ class pageParser:
         data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
         data = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
         data = byteify(json.loads(data+']'))
+        printDBG(data)
         retTab = []
         for item in data:
-            try: retTab.append({'name':'rapidvideo.com', 'url':item['file']})
+            try: retTab.append({'name':'rapidvideo.com ' + item.get('label', item.get('res', '')), 'url':item['file']})
             except Exception: pass
         return retTab
         
@@ -3492,14 +3493,25 @@ class pageParser:
         
     def parserVIDFILENET(self, baseUrl):
         printDBG("parserVIDFILENET baseUrl[%s]" % baseUrl)
+        vidTab = []
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         params = {'header' : HTTP_HEADER}
         sts, data = self.cm.getPage(baseUrl, params)
-        if sts:
-            data = self.cm.ph.getSearchGroups(data, """["']*file["']*:[ ]*["'](http[^"']+?)["']""")[0]
-            if '' != data:
-                return data
-        return False
+        if not sts: return False
+        videoUrl = self.cm.ph.getSearchGroups(data, """["']*file["']*:[ ]*["'](http[^"']+?)["']""")[0]
+        if self.cm.isValidUrl(videoUrl):
+            vidTab.append()
+                
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
+        for item in data:
+            if 'video/mp4' in item or '.mp4' in item:
+                res = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+                url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                if url.startswith('//'): url = 'http:' + url
+                if not self.cm.isValidUrl(url): continue
+                vidTab.append({'name':'vidfile.net ' + res, 'url':strwithmeta(url, {'Referer':baseUrl})})
+        vidTab.reverse()
+        return vidTab
         
     def parserMP4UPLOAD(self, baseUrl):
         printDBG("parserMP4UPLOAD baseUrl[%s]" % baseUrl)
