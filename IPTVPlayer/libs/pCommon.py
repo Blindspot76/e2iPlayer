@@ -294,6 +294,25 @@ class common:
                     printExc()
         return self.geolocation.get('countryCode', '').lower()
         
+    def clearCookie(self, cookiefile, leaveNames=[]):
+        try:
+            toRemove = []
+            if not self.useMozillaCookieJar:
+                cj = cookielib.LWPCookieJar()
+            else:
+                cj = cookielib.MozillaCookieJar()
+            cj.load(cookiefile, ignore_discard = True)
+            for cookie in cj:
+                if cookie.name not in leaveNames:
+                    toRemove.append(cookie)
+            for cookie in toRemove:
+                cj.clear(cookie.domain, cookie.path, cookie.name)
+            cj.save(cookiefile, ignore_discard = True)
+        except Exception:
+            printExc()
+            return False
+        return True
+        
     def getCookieItem(self, cookiefile, item):
         ret = ''
         try:
@@ -308,7 +327,7 @@ class common:
             printExc()
         return ret
         
-    def getCookieHeader(self, cookiefile):
+    def getCookieHeader(self, cookiefile, allowedNames=[]):
         ret = ''
         try:
             if not self.useMozillaCookieJar:
@@ -316,7 +335,8 @@ class common:
             else:
                 cj = cookielib.MozillaCookieJar()
             cj.load(cookiefile, ignore_discard = True)
-            for cookie in cj:   
+            for cookie in cj:
+                if 0 < len(allowedNames) and cookie.name not in allowedNames: continue
                 ret += '%s=%s; ' % (cookie.name, urllib.unquote(cookie.value))
         except Exception:
             printExc()

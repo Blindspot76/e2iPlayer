@@ -76,9 +76,9 @@ class AlltubeTV(CBaseHostClass):
     def getIconUrl(self, url):
         url = self.getFullUrl(url.strip())
         if url == '': return ''
-        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID'])
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
-            
+        
     def _listFilters(self, cItem, data):
         printDBG("AlltubeTV._listFilters")
         ret = False
@@ -422,6 +422,7 @@ class AlltubeTV(CBaseHostClass):
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
         
+        self.cm.clearCookie(self.COOKIE_FILE, ['PHPSESSID'])
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
