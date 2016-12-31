@@ -5,8 +5,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify
-
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang
 ###################################################
 # FOREIGN import
 ###################################################
@@ -413,6 +412,9 @@ class common:
         header.update(params.get('header', {}))
         params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
         sts, data = self.getPage(url, params, post_data)
+        #usususuus
+        sts = False
+        data = 'usun te linie'
         
         current = 0
         while current < 3:
@@ -421,53 +423,100 @@ class common:
                 current += 1
                 doRefresh = False
                 try:
-                    verData = data.fp.read()
+                    verData = ''''                <form class="challenge-form" id="challenge-form" action="/cdn-cgi/l/chk_captcha" method="get">
+  <script type="text/javascript" src="/cdn-cgi/scripts/cf.challenge.js" data-type="normal"  data-ray="319c7322341915bf" async data-sitekey="6LfOYgoTAAAAAInWDVTLSc8Yibqp-c9DaLimzNGM" data-stoken="-RLhAOXq700RoJEdL4OmoQa0ivSEpLBRBjbQwXcep4VeEYlQOpJSOs1ve2RQlOA75sPcOvzdl-RWXIph0zmBlPAqbqkudCyOwnrHyjMkiHQ"></script>
+  <div class="g-recaptcha"></div>
+  <noscript id="cf-captcha-bookmark" class="cf-captcha-info">
+    <div><div style="width: 302px">
+      <div>
+        <iframe src="https://www.google.com/recaptcha/api/fallback?k=6LfOYgoTAAAAAInWDVTLSc8Yibqp-c9DaLimzNGM&stoken=-RLhAOXq700RoJEdL4OmoQa0ivSEpLBRBjbQwXcep4VeEYlQOpJSOs1ve2RQlOA75sPcOvzdl-RWXIph0zmBlPAqbqkudCyOwnrHyjMkiHQ" frameborder="0" scrolling="no" style="width: 302px; height:422px; border-style: none;"></iframe>
+      </div>
+      <div style="width: 300px; border-style: none; bottom: 12px; left: 25px; margin: 0px; padding: 0px; right: 25px; background: #f9f9f9; border: 1px solid #c1c1c1; border-radius: 3px;">
+        <textarea id="g-recaptcha-response" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid #c1c1c1; margin: 10px 25px; padding: 0px; resize: none;"></textarea>
+        <input type="submit" value="Submit"></input>
+      </div>
+    </div></div>
+  </noscript>
+</form>'''
+                    
+                    
+                    #verData = data.fp.read()
                     printDBG("===============================================================")
                     printDBG(verData)
                     printDBG("===============================================================")
-                    dat = self.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
-                    tmp = self.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
-                    varName = tmp[0]
-                    expresion= ['a=%s' % tmp[1]]
-                    e = re.compile('%s([-+*])=([^;]+?);' % varName).findall(dat)
-                    for item in e:
-                        expresion.append('a%s=%s' % (item[0], item[1]) )
                     
-                    for idx in range(len(expresion)):
-                        e = expresion[idx]
-                        e = e.replace('!+[]', '1')
-                        e = e.replace('!![]', '1')
-                        e = e.replace('=+(', '=int(')
-                        if '+[]' in e:
-                            e = e.replace(')+(', ')+str(')
-                            e = e.replace('int((', 'int(str(')
-                            e = e.replace('(+[])', '(0)')
-                            e = e.replace('+[]', '')
-                        expresion[idx] = e
+                    sitekey = self.ph.getSearchGroups(verData, 'data-sitekey="([^"]+?)"')[0]
+                    if sitekey != '':
+                        from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
+                        # google captcha
+                        token = UnCaptchaReCaptcha(lang=GetDefaultLang()).processCaptcha(sitekey)
+                        if token == '': return False, None
                     
-                    answer = self.calcAnswer('\n'.join(expresion)) + len(cfParams['domain'])
-                    refreshData = data.fp.info().get('Refresh', '')
-                    
-                    verData = self.ph.getDataBeetwenReMarkers(verData, re.compile('<form[^>]+?id="challenge-form"'), re.compile('</form>'), False)[1]
-                    printDBG("===============================================================")
-                    printDBG(verData)
-                    printDBG("===============================================================")
-                    verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
-                    get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
-                    get_data['jschl_answer'] = answer
-                    verUrl += '?'
-                    for key in get_data:
-                        verUrl += '%s=%s&' % (key, get_data[key])
-                    verUrl = _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
-                    verUrl = _getFullUrl2( verUrl )
-                    params2 = dict(params)
-                    params2['load_cookie'] = True
-                    params2['save_cookie'] = True
-                    params2['header'] = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
-                    printDBG("Time spent: [%s]" % (time.time() - start_time))
-                    time.sleep(5-(time.time() - start_time))
-                    printDBG("Time spent: [%s]" % (time.time() - start_time))
-                    sts, data = self.getPage(verUrl, params2, post_data)
+                        sts, tmp = self.ph.getDataBeetwenMarkers(verData, '<form', '</form>', caseSensitive=False)
+                        if not sts: return False, None
+                        
+                        url = _getFullUrl( self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0] )
+                        actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
+                        post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+                        if '' != token:
+                            post_data2['g-recaptcha-response'] = token
+                        else:
+                            continue
+                        params2 = dict(params)
+                        params2['header']= dict(params['header'])
+                        params2['header']['Referer'] = baseUrl
+                        if actionType == 'get':
+                            if '?' in url:
+                                url += '&'
+                            else:
+                                url += '?'
+                            url += urllib.urlencode(post_data2)
+                            post_data2 = None
+                        sts, data = self.getPage(url, params2)
+                    else:
+                        dat = self.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
+                        tmp = self.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
+                        varName = tmp[0]
+                        expresion= ['a=%s' % tmp[1]]
+                        e = re.compile('%s([-+*])=([^;]+?);' % varName).findall(dat)
+                        for item in e:
+                            expresion.append('a%s=%s' % (item[0], item[1]) )
+                        
+                        for idx in range(len(expresion)):
+                            e = expresion[idx]
+                            e = e.replace('!+[]', '1')
+                            e = e.replace('!![]', '1')
+                            e = e.replace('=+(', '=int(')
+                            if '+[]' in e:
+                                e = e.replace(')+(', ')+str(')
+                                e = e.replace('int((', 'int(str(')
+                                e = e.replace('(+[])', '(0)')
+                                e = e.replace('+[]', '')
+                            expresion[idx] = e
+                        
+                        answer = self.calcAnswer('\n'.join(expresion)) + len(cfParams['domain'])
+                        refreshData = data.fp.info().get('Refresh', '')
+                        
+                        verData = self.ph.getDataBeetwenReMarkers(verData, re.compile('<form[^>]+?id="challenge-form"'), re.compile('</form>'), False)[1]
+                        printDBG("===============================================================")
+                        printDBG(verData)
+                        printDBG("===============================================================")
+                        verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
+                        get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
+                        get_data['jschl_answer'] = answer
+                        verUrl += '?'
+                        for key in get_data:
+                            verUrl += '%s=%s&' % (key, get_data[key])
+                        verUrl = _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
+                        verUrl = _getFullUrl2( verUrl )
+                        params2 = dict(params)
+                        params2['load_cookie'] = True
+                        params2['save_cookie'] = True
+                        params2['header'] = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
+                        printDBG("Time spent: [%s]" % (time.time() - start_time))
+                        time.sleep(5-(time.time() - start_time))
+                        printDBG("Time spent: [%s]" % (time.time() - start_time))
+                        sts, data = self.getPage(verUrl, params2, post_data)
                 except Exception:
                     printExc()
             else:

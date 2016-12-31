@@ -422,7 +422,7 @@ class AlltubeTV(CBaseHostClass):
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
         
-        self.cm.clearCookie(self.COOKIE_FILE, ['PHPSESSID'])
+        self.cm.clearCookie(self.COOKIE_FILE, ['PHPSESSID', '__cfduid', 'cf_clearance'])
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
