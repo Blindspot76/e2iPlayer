@@ -412,9 +412,6 @@ class common:
         header.update(params.get('header', {}))
         params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
         sts, data = self.getPage(url, params, post_data)
-        #usususuus
-        sts = False
-        data = 'usun te linie'
         
         current = 0
         while current < 3:
@@ -423,24 +420,7 @@ class common:
                 current += 1
                 doRefresh = False
                 try:
-                    verData = ''''                <form class="challenge-form" id="challenge-form" action="/cdn-cgi/l/chk_captcha" method="get">
-  <script type="text/javascript" src="/cdn-cgi/scripts/cf.challenge.js" data-type="normal"  data-ray="319c7322341915bf" async data-sitekey="6LfOYgoTAAAAAInWDVTLSc8Yibqp-c9DaLimzNGM" data-stoken="-RLhAOXq700RoJEdL4OmoQa0ivSEpLBRBjbQwXcep4VeEYlQOpJSOs1ve2RQlOA75sPcOvzdl-RWXIph0zmBlPAqbqkudCyOwnrHyjMkiHQ"></script>
-  <div class="g-recaptcha"></div>
-  <noscript id="cf-captcha-bookmark" class="cf-captcha-info">
-    <div><div style="width: 302px">
-      <div>
-        <iframe src="https://www.google.com/recaptcha/api/fallback?k=6LfOYgoTAAAAAInWDVTLSc8Yibqp-c9DaLimzNGM&stoken=-RLhAOXq700RoJEdL4OmoQa0ivSEpLBRBjbQwXcep4VeEYlQOpJSOs1ve2RQlOA75sPcOvzdl-RWXIph0zmBlPAqbqkudCyOwnrHyjMkiHQ" frameborder="0" scrolling="no" style="width: 302px; height:422px; border-style: none;"></iframe>
-      </div>
-      <div style="width: 300px; border-style: none; bottom: 12px; left: 25px; margin: 0px; padding: 0px; right: 25px; background: #f9f9f9; border: 1px solid #c1c1c1; border-radius: 3px;">
-        <textarea id="g-recaptcha-response" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 40px; border: 1px solid #c1c1c1; margin: 10px 25px; padding: 0px; resize: none;"></textarea>
-        <input type="submit" value="Submit"></input>
-      </div>
-    </div></div>
-  </noscript>
-</form>'''
-                    
-                    
-                    #verData = data.fp.read()
+                    verData = data.fp.read()
                     printDBG("===============================================================")
                     printDBG(verData)
                     printDBG("===============================================================")
