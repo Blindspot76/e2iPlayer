@@ -426,6 +426,7 @@ class common:
                     printDBG("===============================================================")
                     
                     sitekey = self.ph.getSearchGroups(verData, 'data-sitekey="([^"]+?)"')[0]
+                    id = self.ph.getSearchGroups(verData, 'data-ray="([^"]+?)"')[0]
                     if sitekey != '':
                         from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
                         # google captcha
@@ -438,6 +439,7 @@ class common:
                         url = _getFullUrl( self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0] )
                         actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
                         post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+                        #post_data2['id'] = id
                         if '' != token:
                             post_data2['g-recaptcha-response'] = token
                         else:

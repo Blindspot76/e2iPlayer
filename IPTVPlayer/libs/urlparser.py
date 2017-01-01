@@ -4840,8 +4840,33 @@ class pageParser:
         
         url = 'http://%s/embed-%s-960x480.html' % (host, video_id)
         sts, data = self.cm.getPage(url)
-        if not sts: return False
-        return self._findLinks(data, host,  m1='setup(', m2=')')
+        if not sts and data != None:
+            #USER_AGENT = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
+            url = 'http://%s/%s' % (host, video_id)
+            HTTP_HEADER = dict(self.HTTP_HEADER)
+            #HTTP_HEADER['User-Agent'] = USER_AGENT
+            HTTP_HEADER['Referer'] = url
+            sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+            if not sts: return False
+            
+            try:
+                sleep_time =  self.cm.ph.getDataBeetwenMarkers(data, '<div class="btn-box"', '</div>')[1]
+                sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>([0-9]+?)<')[0]
+                time.sleep(int(sleep_time))
+            except Exception:
+                printExc()
+                
+            sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST" action', '</Form>', False, False)
+            if sts:
+                post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+                post_data.pop('method_premium', None)
+                HTTP_HEADER['Referer'] = url
+                sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
+            
+            return self._findLinks(data, host,  m1='options', m2='}')
+        else:
+            return self._findLinks(data, host,  m1='setup(', m2=')')
+        return False
         
     def parserTHEVIDEOME(self, baseUrl):
         printDBG("parserTHEVIDEOME baseUrl[%s]" % baseUrl)
