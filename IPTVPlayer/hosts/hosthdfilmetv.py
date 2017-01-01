@@ -202,7 +202,7 @@ class HDFilmeTV(CBaseHostClass):
         trailerUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<a[^>]*?class="btn btn-xemnow pull-right"[^>]*?href=['"]([^'^"]+?)['"][^>]*?>Trailer<''')[0])
         if trailerUrl.startswith('http'):
             params = dict(cItem)
-            params.update({'title':_('Trailer'), 'urls':[{'name':'trailer', 'url':trailerUrl, 'need_resolve':1}]})
+            params.update({'title':_('Trailer'), 'urls':[{'name':'trailer', 'url':trailerUrl.replace('&amp;', '&'), 'need_resolve':1}]})
             self.addVideo(params)
         
         episodesTab = []
@@ -220,7 +220,7 @@ class HDFilmeTV(CBaseHostClass):
                 if episodeName not in episodesTab:
                     episodesTab.append(episodeName)
                     episodesLinks[episodeName] = []
-                episodesLinks[episodeName].append({'name':serverName, 'url':episodeUrl, 'need_resolve':1})
+                episodesLinks[episodeName].append({'name':serverName, 'url':episodeUrl.replace('&amp;', '&'), 'need_resolve':1})
         
         season = self.cm.ph.getSearchGroups(cItem['url'], '''staf[f]+?el-([0-9]+?)-''')[0]
         try: episodesTab.sort(key=lambda item: int(item))
@@ -246,7 +246,7 @@ class HDFilmeTV(CBaseHostClass):
         if not sts: return []
         
         googleUrls = self.cm.ph.getSearchGroups(data, '''var hdfilme[^=]*?=[^[]*?(\[[^;]+?);''')[0].strip()
-        if '' == googleUrls: googleUrls = self.cm.ph.getSearchGroups(data, '''sources[^=^:]*?[=:][\s]*[^[]*?(\[[^]]+?\])''')[0].strip()
+        if '' == googleUrls: googleUrls = self.cm.ph.getSearchGroups(data, '''[\s]['"]?sources['"]?[^=^:]*?[=:][\s]*[^[]*?(\[[^]]+?\])''')[0].strip()
         printDBG(googleUrls)
         
         if googleUrls != '':
