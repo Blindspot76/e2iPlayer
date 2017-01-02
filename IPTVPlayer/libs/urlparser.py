@@ -5983,6 +5983,10 @@ class pageParser:
         if not sts: return False 
         TOKEN = byteify(json.loads(token))['token']
         if token != "": token = ' token=%s ' % TOKEN
+        sts, token = self.cm.getPage('http://textuploader.com/ddf5v')
+        if not sts: return False 
+        token = self.cm.ph.getSearchGroups(token, 'description"\s*content="([^"]+?)"')[0]
+        token = base64.b64decode(token)
 
         # get others params
         data = CParsingHelper.getDataBeetwenMarkers(data, '.setup(', '</script>', False)[1]
@@ -5998,8 +6002,6 @@ class pageParser:
         if rtmpUrl.startswith('video://'):
             linksTab.append({'name':'http', 'url': rtmpUrl.replace('video://', 'http://')})
         elif '' != file and '' != rtmpUrl:
-        
-            token = base64.b64decode(base64.b64decode('YldRNU4ySTBZMlUxWldGak1qVTBaakJpTlRSaU1XVXlZakJpWmpFME4yWT0='))
             printDBG("streamer[%s]" % streamer)
             parsed_uri = urlparse( streamer )
             printDBG("parsed_uri[%r]" % [parsed_uri])
