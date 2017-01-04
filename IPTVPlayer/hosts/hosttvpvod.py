@@ -46,6 +46,7 @@ config.plugins.iptvplayer.tvpVodDefaultformat = ConfigSelection(default = "59000
                                                                                                ("9100000", "1920x1080") ])
 config.plugins.iptvplayer.tvpVodUseDF    = ConfigYesNo(default = True)
 config.plugins.iptvplayer.tvpVodNextPage = ConfigYesNo(default = True)
+config.plugins.iptvplayer.tvpVodPreferedformat = ConfigSelection(default = "m3u8", choices = [("mp4",  "MP4"), ("m3u8",  "HLS/m3u8")])
 
 ###################################################
 # Config options for HOST
@@ -57,8 +58,9 @@ def GetConfigList():
     if config.plugins.iptvplayer.tvpvod_premium.value:
         optionList.append(getConfigListEntry("  email:", config.plugins.iptvplayer.tvpvod_login))
         optionList.append(getConfigListEntry("  hasło:", config.plugins.iptvplayer.tvpvod_password))
-    optionList.append(getConfigListEntry("Domyślny format video",           config.plugins.iptvplayer.tvpVodDefaultformat))
-    optionList.append(getConfigListEntry("Używaj domyślnego format video:", config.plugins.iptvplayer.tvpVodUseDF))
+    optionList.append(getConfigListEntry("Peferowany format wideo",               config.plugins.iptvplayer.tvpVodPreferedformat))
+    optionList.append(getConfigListEntry("Domyślna jakość wideo",           config.plugins.iptvplayer.tvpVodDefaultformat))
+    optionList.append(getConfigListEntry("Używaj domyślnej jakości wideo:", config.plugins.iptvplayer.tvpVodUseDF))
     optionList.append(getConfigListEntry("Korzystaj z proxy?",              config.plugins.iptvplayer.tvpVodProxyEnable))
     optionList.append(getConfigListEntry("Więcej jako następna strona",     config.plugins.iptvplayer.tvpVodNextPage))
     return optionList
@@ -575,7 +577,12 @@ class TvpVod(CBaseHostClass):
                         videoTab = oneLink.getSortedLinks()
                 return videoTab
             
-            for item in TvpVod.ALL_FORMATS:
+            preferedFormats  = []
+            if config.plugins.iptvplayer.tvpVodPreferedformat.value == 'm3u8':
+                preferedFormats = [TvpVod.ALL_FORMATS[1], TvpVod.ALL_FORMATS[0], TvpVod.ALL_FORMATS[2]]
+            else:
+                preferedFormats = TvpVod.ALL_FORMATS
+            for item in preferedFormats:
                 videoTab = _getVideoLink(data, item )
                 if len(videoTab):
                     break
