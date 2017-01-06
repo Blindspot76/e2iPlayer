@@ -318,8 +318,9 @@ class ZalukajCOM(CBaseHostClass):
                         url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
                         if url.startswith('//'): url = 'http:' + url
                         if not self.cm.isValidUrl(url): continue
-                        urlTab.append({'name':'vshare.io ' + label, 'url':strwithmeta(url, {'Referer':baseUrl})})
-                
+                        urlTab.append({'name':'vshare.io ' + label, 'url':strwithmeta(url, {'Referer':cItem['url']})})
+                        premium = True
+            if not premium:
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(data, 'iframe src="([^"]+?)" width=', 1)[0] )
                 if self.cm.isValidUrl(url):
                     urlTab.extend(self.up.getVideoLinkExt(url))
