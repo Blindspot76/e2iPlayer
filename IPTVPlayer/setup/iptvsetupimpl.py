@@ -584,8 +584,8 @@ class IPTVSetupImpl:
     ###################################################
     def gstplayerStep(self, ret=None):
         printDBG("IPTVSetupImpl.gstplayerStep")
-        if self.gstreamerVersion == "0.10" and self.platform in ['armv7', 'armv5t']:
-            printDBG('Skip gstplayer 0.10 step installation - no binary for armv7 and armv5t platforms')
+        if self.gstreamerVersion == "0.10" and self.platform in ['armv5t']:
+            printDBG('Skip gstplayer 0.10 step installation - no binary for armv5t platform')
             self.gstplayerStepFinished(False)
         else:
             def _detectValidator(code, data):
