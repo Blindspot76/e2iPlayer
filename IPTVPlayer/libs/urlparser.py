@@ -4190,6 +4190,8 @@ class pageParser:
         printDBG("parserMYVIRU linkUrl[%s]" % linkUrl)
         COOKIE_FILE = GetCookieDir('myviru.cookie')
         params  = {'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        if linkUrl.startswith('https://'):
+            linkUrl = 'http' + linkUrl[5:]
         videoTab = []
         if '/player/flash/' in linkUrl:
             videoId = linkUrl.split('/')[-1]
@@ -4212,6 +4214,8 @@ class pageParser:
             elif data.startswith("/"): linkUrl = "http://myvi.ru" + data
             elif data.startswith("http"): linkUrl = data
             else: return videoTab 
+            if linkUrl.startswith('https://'):
+                linkUrl = 'http' + linkUrl[5:]
             sts, data = self.cm.getPage(linkUrl, params)
             if not sts: return videoTab
             try:
