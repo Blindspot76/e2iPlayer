@@ -6243,15 +6243,17 @@ class pageParser:
         ##########################################################
         # new algo 2016-12-04 ;)
         ##########################################################
-        varName = self.cm.ph.getSearchGroups(tmp, '''window.r=['"]([^'^"]+?)''', ignoreCase=True)[0]
+        varName = self.cm.ph.getSearchGroups(tmp, '''window.r=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
         encTab = re.compile('''<span[^>]+?id="%s[^"]*?"[^>]*?>([^<]+?)<\/span>''' % varName).findall(data)
+        printDBG(">>>>>>>>>>>> varName[%s] encTab[%s]" % (varName, encTab) )
         for enc in encTab:
             dec = ''
             try:
-                a = int(enc[0:2])
-                idx = 2
+                s = int(enc[0:3])
+                e = int(enc[3:5])
+                idx = 5
                 while idx < len(enc):
-                    dec += chr(int(enc[idx:idx+3]) - a * int(enc[idx+3:idx+3+2]))
+                    dec += chr(int(enc[idx:idx+3]) - s - e * int(enc[idx+3:idx+3+2]))
                     idx += 5
             except Exception:
                 printExc()
