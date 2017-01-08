@@ -308,7 +308,7 @@ class TantiFilmOrg(CBaseHostClass):
             return self.up.getVideoLinkExt(cItem['url'])
         else:
             sts, data = self.cm.getPage(cItem['url'])
-            if not sts: return
+            if not sts: return []
         
         urlTab = []
         if type == 'movie':
@@ -323,7 +323,7 @@ class TantiFilmOrg(CBaseHostClass):
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<nav class="', '</select>')
             if len(data) < 3: 
                 printDBG("!!!!!!!!!!!! wrong makers for links TV series -> url[%s]" % cItem['url'])
-                return
+                return []
             
             data = data[2]
             seasonName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data.split('<ul')[0], '<a', '</a>')[1])
