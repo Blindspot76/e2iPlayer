@@ -42,7 +42,6 @@ hosticefilmsinfo
 hostiitvpl
 hostipla
 hostkabarety
-hostkinomantv
 hostkinopokaz
 hostkinotan
 hostkissanimeto
