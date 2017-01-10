@@ -435,6 +435,8 @@ class T123MoviesTO(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         printDBG('T123MoviesTO.getLinksForFavourite')
+        if self.MAIN_URL == None:
+            self.selectDomain()
         links = []
         try:
             cItem = byteify(json.loads(fav_data))
@@ -444,6 +446,8 @@ class T123MoviesTO(CBaseHostClass):
         
     def setInitListFromFavouriteItem(self, fav_data):
         printDBG('T123MoviesTO.setInitListFromFavouriteItem')
+        if self.MAIN_URL == None:
+            self.selectDomain()
         try:
             params = byteify(json.loads(fav_data))
         except Exception: 
