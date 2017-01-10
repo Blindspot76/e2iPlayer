@@ -6257,7 +6257,7 @@ class pageParser:
                 e = int(enc[3:5])
                 idx = 5
                 while idx < len(enc):
-                    dec += chr(int(enc[idx:idx+3]) - s - e * int(enc[idx+3:idx+3+2]))
+                    dec += chr(int(enc[idx:idx+3]) + s - e * int(enc[idx+3:idx+3+2]))
                     idx += 5
             except Exception:
                 printExc()
