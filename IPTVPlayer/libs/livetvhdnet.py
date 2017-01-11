@@ -80,18 +80,35 @@ class LivetvhdNetApi(CBaseHostClass):
     def getList(self, cItem):
         printDBG("LivetvhdNetApi.getChannelsList")
         channelsTab = []
-        sts, data = self.cm.getPage('https://livetvhd.net/api/videos')
-        if not sts: return []
         
         try:
-            data = byteify(json.loads(data))
-            for item in data['videos']:
-                url   = item['url']
-                icon  = item['thumbnail']
-                title = self.cleanHtmlStr(item['title'])
+            initList = cItem.get('init_list', True)
+            if initList:
+                rm(self.COOKIE_FILE)
                 params = dict(cItem)
-                params.update({'type':'video', 'title':title, 'url':url, 'icon':self.getFullIconUrl(icon)})
+                params.update({'init_list':False, 'url':'https://livetvhd.net/api/videos', 'title':_('--All--')})
                 channelsTab.append(params)
+                    
+                sts, data = self.cm.getPage('https://livetvhd.net/api/categories')
+                if not sts: return []
+                data = byteify(json.loads(data))
+                for item in data:
+                    params = dict(cItem)
+                    params.update({'init_list':False, 'url':'https://livetvhd.net/api/videos/category/' + item['seo_name'], 'title':self.cleanHtmlStr(item['name'])})
+                    channelsTab.append(params)
+            else:
+                sts, data = self.cm.getPage(cItem['url'])
+                if not sts: return []
+                data = byteify(json.loads(data))
+                if 'videos' in data: data = data['videos']
+                for item in data:
+                    url   = item['url']
+                    icon  = item['thumbnail']
+                    title = self.cleanHtmlStr(item['title'])
+                    desc  = _('Views: ') + str(item.get('views', ''))
+                    params = dict(cItem)
+                    params.update({'type':'video', 'title':title, 'url':url, 'desc':desc, 'icon':self.getFullIconUrl(icon)})
+                    channelsTab.append(params)
         except Exception:
             printExc()
         return channelsTab
