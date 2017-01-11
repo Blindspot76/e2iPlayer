@@ -57,6 +57,25 @@ class LivetvhdNetApi(CBaseHostClass):
         self.http_params.update({'header':self.HEADER, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
         
         self.cacheList = {}
+        
+        self.needProxy = None
+        
+    def isNeedProxy(self):
+        if self.needProxy == None:
+            sts, data = self.cm.getPage('https://static.livetvhd.net/thumbs/first.jpg')
+            self.needProxy = not sts
+        return self.needProxy
+        
+    def getFullIconUrl(self, url):
+        url = self.getFullUrl(url)
+        if url != '' and self.isNeedProxy():
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e1'.format(urllib.quote(url, ''))
+            params = {}
+            params['User-Agent'] = self.HEADER['User-Agent'],
+            params['Referer'] = proxy
+            params['Cookie'] = 'flags=2e5;'
+            url = strwithmeta(proxy, params) 
+        return url
     
     def getList(self, cItem):
         printDBG("LivetvhdNetApi.getChannelsList")
@@ -71,7 +90,7 @@ class LivetvhdNetApi(CBaseHostClass):
                 icon  = item['thumbnail']
                 title = self.cleanHtmlStr(item['title'])
                 params = dict(cItem)
-                params.update({'type':'video', 'title':title, 'url':url, 'icon':icon})
+                params.update({'type':'video', 'title':title, 'url':url, 'icon':self.getFullIconUrl(icon)})
                 channelsTab.append(params)
         except Exception:
             printExc()
