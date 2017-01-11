@@ -136,6 +136,7 @@ class HasBahCa(CBaseHostClass):
                         #{'alias_id':'iklub.net',               'name': 'iklub.net',           'title': 'iKlub.net',                         'url': '',                                                                   'icon': 'http://iklub.net/wp-content/uploads/2015/11/klub2.png'}, \
                         {'alias_id':'tele-wizja.com',          'name': 'tele-wizja.com',      'title': 'tele-wizja.com',                    'url': '',                                                                   'icon': 'http://htk.net.pl/wp-content/uploads/2016/07/cache_2422349465.jpg'}, \
                         {'alias_id':'pierwsza.tv',             'name': 'pierwsza.tv',         'title': 'Pierwsza.TV',                       'url': '',                                                                   'icon': 'http://pierwsza.tv/img/logo.png'}, \
+                        {'alias_id':'telewizja-live.com',      'name': 'telewizja-live.com',  'title': 'Telewizja-Live.com',                'url': '',                                                                   'icon': 'http://mksolimpia.com/wp-content/uploads/2015/12/LIVE.png'}, \
                         #{'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
                         {'alias_id':'iptv_matzgpl',            'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',                'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
@@ -152,7 +153,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'livetvhd.net',            'name': 'livetvhd.net',        'title': 'livetvhd.net',                      'url': 'https://livetvhd.net/',                                              'icon': 'https://livetvhd.net/images/logo.png'}, \
                         #{'alias_id':'hasbahca',                'name': 'HasBahCa',            'title': 'HasBahCa',                          'url': 'http://hasbahcaiptv.com/m3u/HasBahCa/index.php?dir=',                'icon': 'http://hasbahcaiptv.com/xml/iptv.png'}, \
                         {'alias_id':'wownet.ro',               'name': 'm3u',                 'title': 'Deutsch-Fernseher',                 'url': 'http://wownet.ro/iptv/',                                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
-                        {'alias_id':'iptv.ink',                'name': 'm3u',                 'title': 'Free Iptv Project',                 'url': 'http://tv.iptv.ink/iptv.ink',                                        'icon': 'http://community.iptv.ink/styles/uix/uix/logo_new_001.png'}, \
+                        {'alias_id':'iptv.ink',                'name': 'm3u',                 'title': 'Free Iptv Project',                 'url': 'http://tv.iptv.ink/iptv.ink',                                        'icon': ''}, \
                         {'alias_id':'hellenic_tv',             'name': 'hellenic-tv',         'title': 'Hellenic TV',                       'url':'',  'icon':'https://superrepo.org/static/images/icons/original/xplugin.video.hellenic.tv.png.pagespeed.ic.siOAiUGkC0.jpg'},
                         {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'Live-Stream.tv',                    'url': 'http://www.live-stream.tv/',                                          'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
@@ -184,6 +185,7 @@ class HasBahCa(CBaseHostClass):
         self.yooanimeComApi    = None
         self.livetvhdNetApi    = None
         self.teleWizjaComApi   = None
+        self.telewizjaLiveComApi = None
         self.meteoPLApi        = None
         self.liveStreamTvApi   = None
         self.pierwszaTvApi     = None
@@ -801,6 +803,23 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.livetvhdNetApi.getVideoLink(cItem)
         return urlsTab
         
+    def getTelewizjaLiveComList(self, cItem):
+        printDBG("getTelewizjaLiveComList start")
+        if None == self.telewizjaLiveComApi:
+            from Plugins.Extensions.IPTVPlayer.libs.telewizjalivecom  import TelewizjaLiveComApi
+            self.telewizjaLiveComApi = TelewizjaLiveComApi()
+        tmpList = self.telewizjaLiveComApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']:
+                self.addVideo(item) 
+            else:
+                self.addDir(item)
+        
+    def getTelewizjaLiveComLink(self, cItem):
+        printDBG("getTelewizjaLiveComLink start")
+        urlsTab = self.telewizjaLiveComApi.getVideoLink(cItem)
+        return urlsTab
+    
     def getTeleWizjaComList(self, cItem):
         printDBG("getTeleWizjaComList start")
         if None == self.teleWizjaComApi:
@@ -1040,6 +1059,9 @@ class HasBahCa(CBaseHostClass):
     #livetvhd.net items
         elif name == 'livetvhd.net':
             self.geLivetvhdNetList(self.currItem)
+    #telewizja-live.com items
+        elif name == 'telewizja-live.com':
+            self.getTelewizjaLiveComList(self.currItem)
     #tele-wizja.com items
         elif name == 'tele-wizja.com':
             self.getTeleWizjaComList(self.currItem)
@@ -1141,6 +1163,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getYooanimeComLink(cItem)
         elif name == 'livetvhd.net':
             urlList = self.host.getLivetvhdNetLink(cItem)
+        elif name == 'telewizja-live.com':
+            urlList = self.host.getTelewizjaLiveComLink(cItem)
         elif name == 'tele-wizja.com':
             urlList = self.host.getTeleWizjaComLink(cItem)
         elif name == 'meteo.pl':
