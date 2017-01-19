@@ -6128,8 +6128,11 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
-        if 'We are sorry!' in data:
-            SetIPTVPlayerLastHostError(clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead"', '</p>')[1]).strip())
+        if 'content-blocked' in data:
+            msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<img class="image-blocked"', '</div>')[1]).strip()
+            if msg == '': msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead"', '</p>')[1]).strip()
+            if msg == '': msg = _("We can't find the file you are looking for. It maybe got deleted by the owner or was removed due a copyright violation.")
+            SetIPTVPlayerLastHostError(msg)
         
         subTracksData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track ', '>', False, False)
         subTracks = []
