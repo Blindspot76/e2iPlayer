@@ -291,7 +291,7 @@ class TvpVod(CBaseHostClass):
                 title = str(item['title'])
                 desc  = str(item['lead'])
                 asset_id  = str(item['asset_id'])
-                #url   = str(item['video_id'])
+                asset_id  = str(item['video_id'])
                 icon  = self.getImageUrl(item)
                 desc  = item['release_date_hour'] + ' - ' + item['broadcast_end_date_hour'] + '[/br]' + desc 
                 self.addVideo({'title':title, 'url':'', 'object_id':asset_id, 'icon':icon, 'desc':desc})
