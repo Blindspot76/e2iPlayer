@@ -166,16 +166,40 @@ class IPTVSetupImpl:
         
         if len(stsTab) > 0 and True == stsTab[-1]:
             _saveConfig( self.supportedPlatforms[len(stsTab)-1] )
-            # NEXT STEP
-            #self.showMessage(_("Your platform is [%s]") % self.platform, MessageBox.TYPE_INFO, self.setOpenSSLVersion)
-            self.setOpenSSLVersion()
+            self.getOpensslVersion()
         else:
             _saveConfig( "unknown" )
             self.showMessage(_("Fatal Error!\nPlugin is not supported with your platform."), MessageBox.TYPE_ERROR, boundFunction(self.finish, False) )
-            
+    
     ###################################################
     # STEP: OpenSSL DETECTION
     ###################################################
+    def getOpensslVersion(self):
+        printDBG("IPTVSetupImpl.getOpensslVersion")
+        self.setInfo(_("Detection of the OpenSSL version."), _("OpenSSL lib is needed by wget and rtmpdump utilities."))
+        
+        def _verValidator(code, data):
+            if code == 0: 
+                return True,False
+        verCmdTab = []
+        verCmdTab.append('openssl version -a')
+        self.workingObj = CCmdValidator(self.getOpensslVersionFinished, _verValidator, verCmdTab)
+        self.workingObj.start()
+        
+    def getOpensslVersionFinished(self, stsTab, dataTab):
+        printDBG("IPTVSetupImpl.getOpensslVersionFinished")
+        if len(stsTab) > 0 and True == stsTab[-1]:
+            for ver in ['0.9.8', '1.0.0', '1.0.2']:
+                if ver in dataTab[-1]:
+                    self.openSSLVersion = '.' + ver
+                    break
+        
+        if self.openSSLVersion == '':
+            # use old detection manner
+            self.setOpenSSLVersion()
+        else:
+            self.getGstreamerVer()
+    
     def setOpenSSLVersion(self, ret=None):
         printDBG('Check opennSSL version')
         self.setInfo(_("Detection of the OpenSSL version."), _("OpenSSL lib is needed by wget and rtmpdump utilities."))
