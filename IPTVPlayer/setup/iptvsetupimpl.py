@@ -181,6 +181,8 @@ class IPTVSetupImpl:
         def _verValidator(code, data):
             if code == 0: 
                 return True,False
+            else: 
+                return False,True
         verCmdTab = []
         verCmdTab.append('openssl version -a')
         self.workingObj = CCmdValidator(self.getOpensslVersionFinished, _verValidator, verCmdTab)
