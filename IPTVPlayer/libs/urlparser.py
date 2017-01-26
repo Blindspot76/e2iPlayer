@@ -5189,8 +5189,16 @@ class pageParser:
             url += ' playpath=%s swfUrl=%s token=%s pageUrl=%s live=1 ' % (file, swfUrl, '#ed%h0#w@1', baseUrl)
             printDBG(url)
             return url
-        elif file.startswith('http') and file.split('?')[0].endswith('.m3u8'):
-            return getDirectM3U8Playlist(file)
+        else:
+            data = re.compile('''["'](http[^'^"]+?\.m3u8[^'^"]*?)["']''').findall(data)
+            data.reverse()
+            printDBG(data)
+            data.insert(0, file)
+            data.reverse()
+            for file in data:
+                if file.startswith('http') and file.split('?')[0].endswith('.m3u8'):
+                    tab = getDirectM3U8Playlist(file, checkContent=True)
+                    if len(tab): return tab
         return False
         
     def saveGet(self, b, a):
