@@ -3153,26 +3153,34 @@ class pageParser:
         tmp = self.cm.ph.getSearchGroups(data, '''file\s*:\s*['"]([,]*?http[^'^"]+?)['"]''', 1, True)[0]
         urls.extend(tmp.split(' or '))
         
+        urlsTab = []
         for item in urls:
-            urlsTab = item.split(',')
-            for url in urlsTab:
-                url = url.strip()
-                if not self.cm.isValidUrl(url): continue
-                if url in unique: continue
-                label = self.cm.ph.getSearchGroups(url, '''/([0-9]+?)\-''', 1, True)[0]
-                if label == '': label = '360'
-                if url.split('?')[0].endswith('.m3u8'):
-                    url = urlparser.decorateUrl(url, HTTP_HEADER)
-                    tmpTab = getDirectM3U8Playlist(url, checkContent=True)
-                    tmpTab.extend(vidTab)
-                    vidTab = tmpTab
-                elif url.split('?')[0].endswith('.f4m'):
-                    url = urlparser.decorateUrl(url, HTTP_HEADER)
-                    tmpTab = getF4MLinksWithMeta(url)
-                    tmpTab.extend(vidTab)
-                    vidTab = tmpTab
-                else:
-                    vidTab.append({'name':label, 'url':url})
+            urlsTab.extend(item.split(','))
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'media:', ']', False)[1].split('}')
+        for item in tmp:
+            if 'video/mp4' in item: 
+                url = self.cm.ph.getSearchGroups(item,'''["'](http[^"^']+?)["']''', 1, True)[0]
+                urlsTab.append(url)
+        
+        for url in urlsTab:
+            url = url.strip()
+            if not self.cm.isValidUrl(url): continue
+            if url in unique: continue
+            label = self.cm.ph.getSearchGroups(url, '''/([0-9]+?)\-''', 1, True)[0]
+            if label == '': label = '360'
+            if url.split('?')[0].endswith('.m3u8'):
+                url = urlparser.decorateUrl(url, HTTP_HEADER)
+                tmpTab = getDirectM3U8Playlist(url, checkContent=True)
+                tmpTab.extend(vidTab)
+                vidTab = tmpTab
+            elif url.split('?')[0].endswith('.f4m'):
+                url = urlparser.decorateUrl(url, HTTP_HEADER)
+                tmpTab = getF4MLinksWithMeta(url)
+                tmpTab.extend(vidTab)
+                vidTab = tmpTab
+            else:
+                vidTab.append({'name':label, 'url':url})
         return vidTab
         
     def parserUSERSCLOUDCOM(self, url):

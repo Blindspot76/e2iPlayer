@@ -86,6 +86,34 @@ class MoonwalkParser():
         sec_header['X-CSRF-Token'] = csrfToken
         sec_header['X-Requested-With'] = 'XMLHttpRequest'
         post_data = {}
+        
+        allVariables = re.compile("[,\s]([^:^,^\s]+?)\s*:\s*([^,^\s]+?)[,\s]").findall(data)
+        for item in allVariables:
+            varName  = item[0].strip()
+            varValue = item[1].strip()
+            printDBG('>>>>> [%s] [%s] ' % (varName, varValue) )
+            if varName not in ['cd', 'ad_attr', 'partner', 'd_id', 'video_token', 'content_type', 'access_key', 'mw_pid', 'mw_did', 'mw_key', 'mw_domain_id', 'uuid', 'debug']:
+                try:
+                    tmp = int(varName)
+                    continue
+                except Exception: pass
+                if varValue.startswith('"') or varValue.startswith("'") or varValue in ['true', 'false']:
+                    post_data[varName] = varValue[1:-1]
+                else:
+                    try: 
+                        post_data[varName] = int(varValue)
+                        continue
+                    except Exception:
+                        pass
+                    printDBG('+++++++ [%s] [%s] ' % (varName, varValue) )
+                    tmpVal = self.cm.ph.getSearchGroups(data, r'var\s+' + varName + '\s*=\s*([^;]+?);')[0]
+                    printDBG('+++++++ [%s] [%s] [%s]' % (varName, varValue, tmpVal) )
+                    if tmpVal.startswith('"') or tmpVal.startswith("'") or tmpVal in ['true', 'false']:
+                        post_data[varName] = tmpVal[1:-1]
+                    else:
+                        try:post_data[varName] = int(tmpVal)
+                        except Exception: pass
+        
         if 'cd:' in data: post_data['cd'] = cd
         if 'ad_attr:' in data: post_data['ad_attr'] = cd
         if 'partner:' in data: post_data['partner'] = partner
