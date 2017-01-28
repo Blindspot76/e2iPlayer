@@ -2345,8 +2345,8 @@ class pageParser:
             if '' != hd_file_url:
                 urlTab.append({'name':'liveleak.com HD', 'url':hd_file_url})
             if len(urlTab) == 0:
-                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
-                for item in data:
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
+                for item in tmp:
                     if 'video/mp4' in item or '.mp4' in item:
                         label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
                         if label == '': label = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
@@ -2357,9 +2357,12 @@ class pageParser:
                 
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % urlTab)
             if 0 == len(urlTab):
-                url = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="(http[^"]+?youtube[^"]+?)"')[0]
-                if '' != url:
-                    urlTab = self.parserYOUTUBE(url)
+                data = re.compile('<iframe[^>]+?src="([^"]+?youtube[^"]+?)"').findall(data)
+                for item in data:
+                    url = item
+                    if url.startswith('//'): url = 'http:' + url
+                    if not self.cm.isValidUrl(url): continue
+                    urlTab.extend(self.parserYOUTUBE(url))
         return urlTab
             
     def parserVIDUPME(self, baseUrl):
