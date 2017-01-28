@@ -10,7 +10,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.libs.anyfilesapi import AnyFilesVideoUrlExtractor
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, rm
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 # FOREIGN import
@@ -43,12 +43,12 @@ def gettytul():
     return 'AnyFiles'
 
 class AnyFiles(CBaseHostClass):
-    MAIN_URL = 'http://video.anyfiles.pl'
+    MAIN_URL = 'http://anyfiles.pl'
     SEARCH_URL = MAIN_URL + '/search.jsp'
     
     MAIN_CAT_TAB = [{'category':'genres',             'title': _('Genres'),       'url':MAIN_URL + '/pageloading/index-categories-loader.jsp', 'icon':''},
-                    {'category':'list_movies',        'title': _('Newest'),       'url':MAIN_URL + '/najnowsze/0', 'icon':''},
-                    {'category':'list_movies',        'title': _('Most Popular'), 'url':MAIN_URL + '/najpopularniejsze/0', 'icon':''},
+                    #{'category':'list_movies',        'title': _('Newest'),       'url':MAIN_URL + '/najnowsze/0', 'icon':''},
+                    #{'category':'list_movies',        'title': _('Most Popular'), 'url':MAIN_URL + '/najpopularniejsze/0', 'icon':''},
                     {'category':'search',             'title': _('Search'), 'search_item':True},
                     {'category':'search_history',     'title': _('Search history')} ]
 
@@ -224,6 +224,7 @@ class AnyFiles(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
+            rm(self.COOKIE_FILE)
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
     #MOVIES
         elif category == 'genres':
