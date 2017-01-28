@@ -2375,13 +2375,17 @@ class pageParser:
     def parserVIDLOXTV(self, baseUrl):
         printDBG("parserVIDLOXTV baseUrl[%r]" % baseUrl)
         # example video: http://vidlox.tv/embed-e9r0y7i65i1v.html
-        urlTab = []
-        tmpTab = self._parserUNIVERSAL_A(baseUrl, 'http://vidlox.tv/embed-{0}.html', self._findLinks)
-        for item in tmpTab:
-            if item['url'].endswith('.mp4'): continue
-            urlTab.append(item)
-        if 0 == len(urlTab): urlTab = tmpTab
-        return urlTab
+        def _findLinks(data):
+            linksTab = []
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
+            data = re.compile('"(http[^"]+?)"').findall(data)
+            for link in data:
+                if link.split('?')[0].endswith('m3u8'):
+                    linksTab.extend(getDirectM3U8Playlist(link, checkContent=True))
+                elif link.split('?')[0].endswith('mp4'):
+                    linksTab.append({'name':'mp4', 'url': link})
+            return linksTab
+        return self._parserUNIVERSAL_A(baseUrl, 'http://vidlox.tv/embed-{0}.html', _findLinks)
         
     def parserVIDABCCOM(self, baseUrl):
         printDBG("parserVIDABCCOM baseUrl[%r]" % baseUrl)
