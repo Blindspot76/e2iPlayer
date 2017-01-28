@@ -2344,6 +2344,16 @@ class pageParser:
                 urlTab.append({'name':'liveleak.com SD', 'url':file_url})
             if '' != hd_file_url:
                 urlTab.append({'name':'liveleak.com HD', 'url':hd_file_url})
+            if len(urlTab) == 0:
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
+                for item in data:
+                    if 'video/mp4' in item or '.mp4' in item:
+                        label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
+                        if label == '': label = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+                        url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                        if url.startswith('//'): url = 'http:' + url
+                        if not self.cm.isValidUrl(url): continue
+                        urlTab.append({'name':label, 'url':strwithmeta(url, {'Referer':baseUrl})})
                 
             printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % urlTab)
             if 0 == len(urlTab):
