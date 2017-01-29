@@ -3159,8 +3159,11 @@ class pageParser:
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'media:', ']', False)[1].split('}')
         for item in tmp:
-            if 'video/mp4' in item: 
-                url = self.cm.ph.getSearchGroups(item,'''["'](http[^"^']+?)["']''', 1, True)[0]
+            ok = False
+            if 'video/mp4' in item:
+                ok = True
+            url = self.cm.ph.getSearchGroups(item,'''["'](http[^"^']+?)["']''', 1, True)[0]
+            if ok or url.split('?')[0].endswith('.mp4'): 
                 urlsTab.append(url)
         
         for url in urlsTab:
@@ -3168,7 +3171,10 @@ class pageParser:
             if not self.cm.isValidUrl(url): continue
             if url in unique: continue
             label = self.cm.ph.getSearchGroups(url, '''/([0-9]+?)\-''', 1, True)[0]
-            if label == '': label = '360'
+            if label == '':
+                if '/3/' in url: label = '720p'
+                elif '/2/' in url: label = '480p'
+                else: label = '360p'
             if url.split('?')[0].endswith('.m3u8'):
                 url = urlparser.decorateUrl(url, HTTP_HEADER)
                 tmpTab = getDirectM3U8Playlist(url, checkContent=True)
