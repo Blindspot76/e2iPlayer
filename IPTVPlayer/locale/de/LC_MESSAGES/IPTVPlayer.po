@@ -1461,7 +1461,7 @@ msgid "Select update server"
 msgstr "Wähle Update-Server"
 
 msgid "Select video option"
-msgstr "Auswahl Video-Optionen"
+msgstr "Wähle Videooption"
 
 msgid "Selected version [%s]."
 msgstr "Gewählte Version [%s]."
@@ -1912,7 +1912,7 @@ msgid "Video format:"
 msgstr "Videoformat: "
 
 msgid "Video options"
-msgstr "Video-Optionen"
+msgstr "Video Optionen"
 
 msgid "View count"
 msgstr "Anzahl der Betrachter"
@@ -3500,21 +3500,3 @@ msgstr "Alternativer Proxy Server (2)"
 
 msgid "Use proxy server:"
 msgstr "Benutze Proxy Server:"
-
-msgid "Is this message displayed correctly?"
-msgstr "Wird diese Nachricht korrekt dargestellt?"
-
-msgid "Current video mode [%s]"
-msgstr "Aktueller Video-Modus [%s]"
-
-msgid "Current video mode [%s], previus video mode [%s]"
-msgstr "Aktueller Video-Modus, vorheriger Video-Modus [%s]"
-
-msgid "Restore previus video mode"
-msgstr "Vorherigen Video-Modus wiederherstellen"
-
-msgid "Video mode"
-msgstr "Video Modus"
-
-msgid "Select Video mode"
-msgstr "Auswahl Video-Modus"
