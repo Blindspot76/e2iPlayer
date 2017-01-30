@@ -602,7 +602,7 @@ class IPTVExtMoviePlayer(Screen):
             printDBG('choices %s' % (choices))
             filteredChoices = []
             for item in choices:
-                if item in [self.defVideoOptions['videomode'], self.currVideoOptions['videomode']] or item.startswith('1080'):
+                if item in [self.defVideoOptions['videomode'], self.currVideoOptions['videomode']] or item.startswith('1080') or item.startswith('2160'):
                     filteredChoices.append(item)
             
             for idx in range(len(filteredChoices)):
