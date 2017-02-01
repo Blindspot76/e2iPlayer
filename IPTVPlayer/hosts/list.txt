@@ -32,7 +32,6 @@ hostfilmy3deu
 hostfilmydokumentalneeu
 hostfilmyto
 hostfreediscpl
-hostgamatocom
 hostgreekdocumentaries3
 hosthdfilmetv
 hosthdkinomir
