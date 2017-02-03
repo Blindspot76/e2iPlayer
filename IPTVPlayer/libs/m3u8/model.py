@@ -364,7 +364,12 @@ def quoted(string):
 
 def _urijoin(base_uri, path):
     #print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> base_uri[%s] path[%s]" % (base_uri, path))
-    if parser.is_url(base_uri):
+    if parser.is_url(path):
+        return path
+    elif parser.is_url(base_uri):
+        if path.startswith('/'):
+            return urlparse.urljoin(base_uri, path)
+        
         parsed_url = urlparse.urlparse(base_uri)
         prefix = parsed_url.scheme + '://' + parsed_url.netloc
         new_path = os.path.normpath(parsed_url.path + '/' + path)

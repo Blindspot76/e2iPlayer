@@ -63,6 +63,8 @@ class MoonwalkParser():
         cd = self.cm.ph.getSearchGroups(data, 'var condition_detected = ([^;]+?);')[0]
         if 'true' == cd: cd = 1
         else: cd = 0
+        
+        allData = data
         data = self.cm.ph.getDataBeetwenMarkers(data, '/sessions/new_session', '.success', False)[1]
         partner = self.cm.ph.getSearchGroups(data, 'partner: ([^,]+?),')[0]
         if 'null' in partner: partner = ''
@@ -88,6 +90,8 @@ class MoonwalkParser():
         post_data = {}
         
         allVariables = re.compile("[,\s]([^:^,^\s]+?)\s*:\s*([^,^\s]+?)[,\s]").findall(data)
+        allVariables.extend( re.compile("session_params\.([^=]+?)\s*=\s*([^;]+?);").findall(data) )
+        
         for item in allVariables:
             varName  = item[0].strip()
             varValue = item[1].strip()
@@ -97,8 +101,10 @@ class MoonwalkParser():
                     tmp = int(varName)
                     continue
                 except Exception: pass
-                if varValue.startswith('"') or varValue.startswith("'") or varValue in ['true', 'false']:
+                if varValue.startswith('"') or varValue.startswith("'"):
                     post_data[varName] = varValue[1:-1]
+                elif varValue in ['true', 'false']:
+                    post_data[varName] = varValue
                 else:
                     try: 
                         post_data[varName] = int(varValue)
@@ -106,10 +112,14 @@ class MoonwalkParser():
                     except Exception:
                         pass
                     printDBG('+++++++ [%s] [%s] ' % (varName, varValue) )
-                    tmpVal = self.cm.ph.getSearchGroups(data, r'var\s+' + varName + '\s*=\s*([^;]+?);')[0]
+                    tmpVal = self.cm.ph.getSearchGroups(data, r'var\s+' + varValue + '\s*=\s*([^;]+?);')[0]
+                    if tmpVal == '': tmpVal = self.cm.ph.getSearchGroups(allData, r'var\s+' + varValue + '\s*=\s*([^;]+?);')[0]
+                        
                     printDBG('+++++++ [%s] [%s] [%s]' % (varName, varValue, tmpVal) )
-                    if tmpVal.startswith('"') or tmpVal.startswith("'") or tmpVal in ['true', 'false']:
+                    if tmpVal.startswith('"') or tmpVal.startswith("'"):
                         post_data[varName] = tmpVal[1:-1]
+                    elif tmpVal in ['true', 'false']:
+                        post_data[varName] = tmpVal
                     else:
                         try:post_data[varName] = int(tmpVal)
                         except Exception: pass
@@ -128,6 +138,8 @@ class MoonwalkParser():
         if 'uuid:' in data: post_data['uuid'] = uuid
         if 'debug:' in data: post_data['debug'] = debug   
         #post_data['ad_attr'] =0
+        
+        printDBG(allData)
         
         return sec_header, post_data
 

@@ -1370,17 +1370,18 @@ class pageParser:
 
     def parserDAILYMOTION(self, baseUrl):
         # https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/dailymotion.py
-        COOKIEFILE = self.COOKIE_PATH + "dailymotion.cookie"
+        COOKIE_FILE = self.COOKIE_PATH + "dailymotion.cookie"
         _VALID_URL = r'(?i)(?:https?://)?(?:(www|touch)\.)?dailymotion\.[a-z]{2,3}/(?:(embed|swf|#)/)?video/(?P<id>[^/?_]+)'
         mobj = re.match(_VALID_URL, baseUrl)
         video_id = mobj.group('id')
         
+        HTTP_HEADER= {'User-Agent': "Mozilla/5.0"}
         
         url = 'http://www.dailymotion.com/embed/video/' + video_id
         familyUrl = 'http://www.dailymotion.com/family_filter?enable=false&urlback=' + urllib.quote_plus('/embed/video/' + video_id)
-        sts, data = self.cm.getPage(url, {'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIEFILE})
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIE_FILE})
         if not sts or "player" not in data: 
-            sts, data = self.cm.getPage(familyUrl, {'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIEFILE})
+            sts, data = self.cm.getPage(familyUrl, {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIE_FILE})
             if not sts: return []
         
         vidTab = []
@@ -1399,6 +1400,7 @@ class pageParser:
                 pass
             
         if None != playerConfig:
+            hlsTab = []
             for quality, media_list in playerConfig.items():
                 for media in media_list:
                     media_url = media.get('url')
@@ -1408,21 +1410,28 @@ class pageParser:
                     if type_ == 'application/vnd.lumberjack.manifest':
                         continue
                     if type_ == 'application/x-mpegURL' or media_url.split('?')[-1].endswith('m3u8'):
-                        continue
-                        tmpTab = getDirectM3U8Playlist(media_url, False)
-                        for tmp in tmpTab:
-                            vidTab.append({'name':'dailymotion.com: %s hls' % (tmp.get('bitrate', '0')), 'url':tmp['url']})
+                        hlsTab.append(media_url)
                     else:
-                        vidTab.append({'name':'dailymotion.com: %s' % quality, 'url':media_url})
+                        vidTab.append({'name':'dailymotion.com: %sp' % quality, 'url':media_url, 'quality':quality})
             
+            if len(hlsTab) and 0 == len(vidTab):
+                for media_url in hlsTab:
+                    tmpTab = getDirectM3U8Playlist(media_url, False, checkContent=True, cookieParams={'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True})
+                    cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
+                    for tmp in tmpTab:
+                        redirectUrl =  strwithmeta(tmp['url'], {'iptv_proto':'m3u8', 'Cookie':cookieHeader, 'User-Agent': HTTP_HEADER['User-Agent']})
+                        vidTab.append({'name':'dailymotion.com: %sp hls' % (tmp.get('heigth', '0')), 'url':redirectUrl, 'quality':tmp.get('heigth', '0')})
+                        
         if 0 == len(vidTab):
             data = CParsingHelper.getDataBeetwenMarkers(data, 'id="player"', '</script>', False)[1].replace('\/', '/')
             match = re.compile('"stream_h264.+?url":"(http[^"]+?H264-)([^/]+?)(/[^"]+?)"').findall(data)
             for i in range(len(match)):
                 url = match[i][0] + match[i][1] + match[i][2]
                 name = match[i][1]
-                vidTab.append({'name': 'dailymotion.com: ' + name, 'url':url})
-
+                try: vidTab.append({'name': 'dailymotion.com: ' + name, 'url':url})
+                except Exception: pass
+        try: vidTab = sorted(vidTab, key=lambda item: int(item.get('quality', '0')))
+        except Exception: pass
         return vidTab[::-1]
 
     def parserSIBNET(self, baseUrl):
