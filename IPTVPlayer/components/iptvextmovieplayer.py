@@ -1784,6 +1784,12 @@ class IPTVExtMoviePlayer(Screen):
             if audioUri != '':
                 cmd += ' -x "%s" ' % audioUri
             
+            if 'iptv_video_rep_idx' in tmpUri.meta:
+                cmd += ' -0 %s ' % tmpUri.meta['iptv_video_rep_idx']
+            
+            if 'iptv_audio_rep_idx' in tmpUri.meta:
+                cmd += ' -1 %s ' % tmpUri.meta['iptv_audio_rep_idx']
+            
             cmd += (' "%s"' % videoUri) + " > /dev/null"
         
         self.console = eConsoleAppContainer()
