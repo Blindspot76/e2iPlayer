@@ -29,8 +29,9 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                KINGFILESNET_decryptPlayerParams, \
                                                                captchaParser, \
                                                                getDirectM3U8Playlist, \
-                                                               decorateUrl, \
+                                                               getMPDLinksWithMeta, \
                                                                getF4MLinksWithMeta, \
+                                                               decorateUrl, \
                                                                MYOBFUSCATECOM_OIO, \
                                                                MYOBFUSCATECOM_0ll, \
                                                                int2base, drdX_fx, \
@@ -302,6 +303,7 @@ class urlparser:
                        'oload.tv':             self.pp.parserOPENLOADIO    ,
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        'vevo.com':             self.pp.parserVEVO          ,
+                       'bbc.co.uk':            self.pp.parserBBC           ,
                        'shared.sx':            self.pp.parserSHAREDSX      ,
                        'gorillavid.in':        self.pp.parserFASTVIDEOIN   , 
                        'daclips.in':           self.pp.parserFASTVIDEOIN   ,
@@ -781,6 +783,7 @@ class pageParser:
         self.ytParser = None
         self.moonwalkParser = None
         self.vevoIE = None
+        self.bbcIE = None
         
         #config
         self.COOKIE_PATH = GetCookieDir('')
@@ -806,6 +809,16 @@ class pageParser:
                 self.vevoIE = None
                 printExc()
         return self.vevoIE
+        
+    def getBBCIE(self):
+        if self.bbcIE == None:
+            try:
+                from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.bbc import BBCCoUkIE
+                self.bbcIE = BBCCoUkIE()
+            except Exception:
+                self.bbcIE = None
+                printExc()
+        return self.bbcIE
         
     def getMoonwalkParser(self):
         if self.moonwalkParser == None:
@@ -6465,6 +6478,54 @@ class pageParser:
             videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
             if config.plugins.iptvplayer.vevo_use_default_quality.value:
                 videoUrls = [videoUrls[0]]
+        return videoUrls
+        
+    def parserBBC(self, baseUrl):
+        printDBG("parserBBC baseUrl[%r]" % baseUrl )
+        
+        vpid = self.cm.ph.getSearchGroups(baseUrl, '/vpid/([^/]+?)/')[0]
+        
+        if vpid == '':
+            data = self.getBBCIE()._real_extract(baseUrl)
+        else:
+            formats, subtitles = self.getBBCIE()._download_media_selector(vpid)
+            data = {'formats':formats, 'subtitles':subtitles}
+        
+        subtitlesTab = []
+        for sub in data.get('subtitles', []):
+            if self.cm.isValidUrl(sub.get('url', '')):
+                subtitlesTab.append({'title':_(sub['lang']), 'url':sub['url'], 'lang':sub['lang'], 'format':sub['ext']})
+        
+        videoUrls = []
+        hlsLinks = []
+        mpdLinks = []
+        for vidItem in data['formats']:
+            url = vidItem['url'].replace('&amp;', '&')
+            if vidItem['ext'] == 'hls' and 0 == len(hlsLinks):
+                hlsLinks.extend(getDirectM3U8Playlist(url, False, checkContent=True))
+            elif vidItem['ext'] == 'mpd' and 0 == len(mpdLinks):
+                mpdLinks.extend(getMPDLinksWithMeta(url, False))
+        
+        tmpTab = [hlsLinks, mpdLinks]
+        
+        if config.plugins.iptvplayer.bbc_prefered_format.value == 'dash':
+            tmpTab.reverse()
+        
+        max_bitrate = int(config.plugins.iptvplayer.bbc_default_quality.value)
+        for item in tmpTab:
+            def __getLinkQuality( itemLink ):
+                try: return int(itemLink['height'])
+                except Exception: return 0
+            item = CSelOneLink(item, __getLinkQuality, max_bitrate).getSortedLinks()
+            if config.plugins.iptvplayer.bbc_use_default_quality.value:
+                videoUrls.append(item[0])
+                break
+            videoUrls.extend(item)
+        
+        if len(subtitlesTab):
+            for idx in range(len(videoUrls)):
+                videoUrls[idx]['url'] = strwithmeta(videoUrls[idx]['url'], {'external_sub_tracks':subtitlesTab})
+        
         return videoUrls
         
     def parserSHAREDSX(self, baseUrl):

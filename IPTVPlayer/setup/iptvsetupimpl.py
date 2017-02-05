@@ -94,7 +94,7 @@ class IPTVSetupImpl:
         self.gstifdsrcPaths = ["/usr/lib/gstreamer-1.0/libgstifdsrc.so"]
         
         # subparser
-        self.subparserVersion = 0.3
+        self.subparserVersion = 0.4
         self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/_subparser.so')]
         
         self.binaryInstalledSuccessfully = False
