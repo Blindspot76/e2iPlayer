@@ -516,11 +516,15 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParam
                 
                 item['width'] = item['with']
                 item['height'] = item['heigth']
-                tmpCodecs =  playlist.stream_info.codecs.split(',')
-                codecs = []
-                for c in tmpCodecs[::-1]:
-                    codecs.append(c.split('.')[0].strip())
-                item['codecs'] = ','.join(codecs)
+                try:
+                    tmpCodecs =  playlist.stream_info.codecs.split(',')
+                    codecs = []
+                    for c in tmpCodecs[::-1]:
+                        codecs.append(c.split('.')[0].strip())
+                        item['codecs'] = ','.join(codecs)
+                except Exception:
+                    pass
+                item['codecs'] = None
                 item['name']  = "bitrate: %s res: %dx%d %s" % ( item['bitrate'], \
                                                                 item['width'],    \
                                                                 item['height'],  \
