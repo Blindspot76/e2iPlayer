@@ -39,9 +39,11 @@ from Screens.MessageBox import MessageBox
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("Default video quality:"),     config.plugins.iptvplayer.bbc_default_quality))
-    optionList.append(getConfigListEntry(_("Use default video quality:"), config.plugins.iptvplayer.bbc_use_default_quality))
-    optionList.append(getConfigListEntry(_("Preferred format:"),          config.plugins.iptvplayer.bbc_prefered_format))
+    optionList.append(getConfigListEntry(_("Default video quality:"),             config.plugins.iptvplayer.bbc_default_quality))
+    optionList.append(getConfigListEntry(_("Use default video quality:"),         config.plugins.iptvplayer.bbc_use_default_quality))
+    optionList.append(getConfigListEntry(_("Preferred format:"),                  config.plugins.iptvplayer.bbc_prefered_format))
+    optionList.append(getConfigListEntry(_("Use web-proxy (it may be illegal):"), config.plugins.iptvplayer.bbc_use_web_proxy))
+    
     return optionList
 ###################################################
 
@@ -388,7 +390,32 @@ class BBCiPlayer(CBaseHostClass):
     
     def getLinksForVideo(self, cItem):
         printDBG("BBCiPlayer.getLinksForVideo [%s]" % cItem)
-        return self.up.getVideoLinkExt(cItem['url'])
+        retTab = []
+        vidTab = self.up.getVideoLinkExt(cItem['url'])
+        if not config.plugins.iptvplayer.bbc_use_web_proxy.value:
+            return vidTab
+        
+        for item in vidTab:
+            if strwithmeta(item['url']).meta.get('iptv_proto', '') in ['m3u8']:
+                item['need_resolve'] = 1
+                retTab.append(item)
+        return retTab
+        
+    def getVideoLinks(self, url):
+        printDBG("BBCiPlayer.getVideoLinks [%s]" % url)
+        retTab = []
+        url = strwithmeta(url)
+        try:
+            params = dict(self.defaultParams)
+            params.update({'return_data':False})
+            sts, response = self.up.pp.getBBCIE().getPage(url, params)
+            redirectUrl = response.geturl() 
+            response.close()
+            retTab.append({'name':'bbc', 'url':strwithmeta(redirectUrl, url.meta)})
+        except Exception:
+            printExc()
+        return retTab
+        
         
     def getFavouriteData(self, cItem):
         printDBG('BBCiPlayer.getFavouriteData')

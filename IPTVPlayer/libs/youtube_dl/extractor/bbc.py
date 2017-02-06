@@ -26,6 +26,7 @@ config.plugins.iptvplayer.bbc_prefered_format     = ConfigSelection(default = "h
 ("hls", _("HLS/m3u8")),
 ("dash", _("DASH/mpd")),
 ])
+config.plugins.iptvplayer.bbc_use_web_proxy = ConfigYesNo(default = False)
 
 def int_or_none(data):
     ret = 0
@@ -60,16 +61,30 @@ class BBCCoUkIE(InfoExtractor):
                 'http://open.live.bbc.co.uk/mediaselector/4/mtis/stream/%s',
                 'http://open.live.bbc.co.uk/mediaselector/5/select/version/2.0/mediaset/journalism-pc/vpid/%s',
             ]
+        
+        self._MEDIASELECTOR_URLS_2 = self._MEDIASELECTOR_URLS
             
         InfoExtractor.__init__(self)
         self.COOKIE_FILE = GetCookieDir('bbciplayer.cookie')
         self.HEADER = {'User-Agent':'Mozilla/5.0', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
         self.cm.HEADER = self.HEADER # default header
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+    
+    def getFullUrl(self, url):
+        if config.plugins.iptvplayer.bbc_use_web_proxy.value and 'englandproxy.co.uk' not in url:
+            try: url = 'https://www.englandproxy.co.uk/' + url[url.find('://')+3:]
+            except Exception: pass
+        return url
+        
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
+        return self.cm.getPage(self.getFullUrl(url), params, post_data)
 
+        
     def _extract_asx_playlist(self, connection, programme_id):
         url = self.xmlGetArg(connection, 'href')
-        sts, asx = self.cm.getPage(url, self.defaultParams)
+        sts, asx = self.getPage(url, self.defaultParams)
         if not sts: return []
         a = FixMe
         return [ref.get('href') for ref in asx.findall('./Entry/ref')]
@@ -88,7 +103,7 @@ class BBCCoUkIE(InfoExtractor):
             subUrl = self.xmlGetArg(connection, 'href')
             if not self.cm.isValidUrl(subUrl):
                 continue
-            sts, captions = self.cm.getPage(subUrl, self.defaultParams)
+            sts, captions = self.getPage(subUrl, self.defaultParams)
             if not sts:
                 continue
             lang = self.cm.ph.getSearchGroups(captions, '''[\:\s]lang="([^"]+?)"''')[0]
@@ -103,12 +118,17 @@ class BBCCoUkIE(InfoExtractor):
 
     def _download_media_selector(self, programme_id):
         last_exception = None
-        config.plugins.iptvplayer.bbc_prefered_format
         
         formatsTab = []
         subtitlesTab = []
         withSubtitles = True
-        for mediaselector_url in self._MEDIASELECTOR_URLS:
+        
+        if config.plugins.iptvplayer.bbc_prefered_format.value == 'hls':
+            mediaselectorUrls = self._MEDIASELECTOR_URLS
+        else:
+            mediaselectorUrls = self._MEDIASELECTOR_URLS_2
+        
+        for mediaselector_url in mediaselectorUrls:
             try:
                 if len(subtitlesTab): withSubtitles = False
                 formats, subtitles = self._download_media_selector_url(mediaselector_url % programme_id, programme_id, withSubtitles)
@@ -127,7 +147,7 @@ class BBCCoUkIE(InfoExtractor):
         self._raise_extractor_error(last_exception)
 
     def _download_media_selector_url(self, url, programme_id=None, withSubtitles=False):
-        sts, media_selection = self.cm.getPage(url, self.defaultParams)
+        sts, media_selection = self.getPage(url, self.defaultParams)
         if not sts: return [], []
         return self._process_media_selector(media_selection, programme_id, withSubtitles)
 
@@ -219,7 +239,7 @@ class BBCCoUkIE(InfoExtractor):
 
     def _real_extract(self, url):
 
-        sts, webpage = self.cm.getPage(url, self.defaultParams)
+        sts, webpage = self.getPage(url, self.defaultParams)
         if not sts: return None
 
         programme_id = None
