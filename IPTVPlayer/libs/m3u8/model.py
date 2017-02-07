@@ -370,7 +370,6 @@ def quoted(string):
     return '"%s"' % string
 
 def _urijoin(base_uri, path):
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> base_uri[%s] path[%s]" % (base_uri, path))
     if parser.is_url(path):
         return path
     elif parser.is_url(base_uri):
