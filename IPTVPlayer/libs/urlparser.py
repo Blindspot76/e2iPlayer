@@ -904,11 +904,8 @@ class pageParser:
         post_data = None
         
         sts, data = self.cm.getPage(url, params, post_data)
-        if not sts:
-            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
-            data = iptv_execute()( cmd )
-            if not data['sts'] or 0 != data['code']: return False
-            data = data['data']
+        if not sts: sts, data = self.cm.getPageWithWget(url, params, post_data)
+        if not sts: return False
         
         errMarkers = ['File was deleted', 'File Removed', 'File Deleted.', 'File Not Found']
         for errMarker in errMarkers:
@@ -2432,11 +2429,8 @@ class pageParser:
             url = 'https://uptostream.com/iframe/' + url.split('/')[-1]
             baseUrl = url
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts:
-            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
-            data = iptv_execute()( cmd )
-            if not data['sts'] or 0 != data['code']: return False
-            data = data['data']
+        if not sts: sts, data = self.cm.getPageWithWget(url, {'header':HTTP_HEADER})
+        if not sts: return False
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
         tab = []
@@ -2489,11 +2483,9 @@ class pageParser:
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         url = baseUrl
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts:
-            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
-            data = iptv_execute()( cmd )
-            if not data['sts'] or 0 != data['code']: return False
-            data = data['data']
+        if not sts: sts, data = self.cm.getPageWithWget(url, {'header':HTTP_HEADER})
+        if not sts: return False
+        
         data = re.sub('''atob\(["']([^"^']+?)['"]\)''', lambda m: base64.b64decode(m.group(1)), data)
         printDBG(data)
         tab = self._findLinks(data, 'stream.moe', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+(?:\.mp4|\.flv)[^"^']*)['"][,}]''', m1='clip:')
@@ -3560,14 +3552,16 @@ class pageParser:
     def parserVIDFILENET(self, baseUrl):
         printDBG("parserVIDFILENET baseUrl[%s]" % baseUrl)
         vidTab = []
+        #COOKIE_FILE = GetCookieDir('vidfilenet.cookie')
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
-        params = {'header' : HTTP_HEADER}
+        params = {'header':HTTP_HEADER} #, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        rm(HTTP_HEADER)
+        
         sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: sts, data = self.cm.getPageWithWget(baseUrl, params)
         if not sts: return False
-        videoUrl = self.cm.ph.getSearchGroups(data, """["']*file["']*:[ ]*["'](http[^"']+?)["']""")[0]
-        if self.cm.isValidUrl(videoUrl):
-            vidTab.append()
-                
+        
+        #cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
         for item in data:
             if 'video/mp4' in item or '.mp4' in item:
@@ -3575,7 +3569,7 @@ class pageParser:
                 url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
                 if url.startswith('//'): url = 'http:' + url
                 if not self.cm.isValidUrl(url): continue
-                vidTab.append({'name':'vidfile.net ' + res, 'url':strwithmeta(url, {'Referer':baseUrl})})
+                vidTab.append({'name':'vidfile.net ' + res, 'url':strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})}) #'Cookie':cookieHeader,
         vidTab.reverse()
         return vidTab
         
@@ -3805,11 +3799,8 @@ class pageParser:
         printDBG("parserVIVOSX baseUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
-        if not sts:
-            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + "'{0}'".format(baseUrl) + ' -O - 2> /dev/null'
-            data = iptv_execute()( cmd )
-            #if not data['sts'] or 0 != data['code']: return False
-            data = data['data']
+        if not sts: sts, data = self.cm.getPageWithWget(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'InitializeStream', ';', False)[1]
         data = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]+?)['"]''')[0]
@@ -3834,11 +3825,8 @@ class pageParser:
         
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts:
-            cmd = DMHelper.getBaseWgetCmd(HTTP_HEADER) + url + ' -O - 2> /dev/null'
-            data = iptv_execute()( cmd )
-            if not data['sts'] or 0 != data['code']: return False
-            data = data['data']
+        if not sts: sts, data = self.cm.getPageWithWget(url, {'header':HTTP_HEADER})
+        if not sts: return False
         
         videoUrl = self.cm.ph.getSearchGroups(data, 'type="video[^>]*?src="([^"]+?)"')[0]
         if not self.cm.isValidUrl(videoUrl): videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"[^>]*?type="video')[0]
@@ -3934,21 +3922,7 @@ class pageParser:
             baseUrl = 'https' + baseUrl[4:]
         
         def _getPage(url, params={}, post_data=None):
-            cmd = DMHelper.getBaseWgetCmd(params.get('header', {})) + url
-            if post_data != None:
-                if params.get('raw_post_data', False):
-                    post_data_str = post_data
-                else:
-                    post_data_str = urllib.urlencode(post_data)
-                cmd += " --post-data '{0}' ".format(post_data_str)
-            cmd += ' -O - 2> /dev/null'
-            
-            printDBG('getPage request: ' + cmd)
-            data = iptv_execute()( cmd )
-            if not data['sts'] or 0 != data['code']: 
-                return False, None
-            else:
-                return True, data['data']
+            return self.cm.getPageWithWget(url, params, post_data)
 
         sts, data = _getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
