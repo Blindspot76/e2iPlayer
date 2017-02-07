@@ -6326,20 +6326,23 @@ class pageParser:
         ok = False
         for enc in encTab:
             for fs in [-1, 1]:
-                for fe in [-1, 1]:
+                decTab = {}
+                try:
+                    s = int(enc[0:2]) * fs
+                    idx = 2
+                    while idx < len(enc):
+                        key = int(enc[idx+3:idx+5])
+                        decTab[key] = chr(int(enc[idx:idx+3]) + s)
+                        idx += 5
                     dec = ''
-                    try:
-                        s = int(enc[0:3]) * fs
-                        e = int(enc[3:5]) * fe
-                        idx = 5
-                        while idx < len(enc):
-                            dec += chr(int(enc[idx:idx+3]) + s + e * int(enc[idx+3:idx+3+2]))
-                            idx += 5
-                        if re.compile('~[0-9]{10}~').search(dec):
-                            ok = True
-                            break
-                    except Exception:
-                        continue
+                    for key in range(len(decTab)):
+                        dec += decTab[key]
+                    if re.compile('~[0-9]{10}~').search(dec):
+                        ok = True
+                        break
+                except Exception:
+                    printExc()
+                    continue
                 if ok:
                     break
             if ok:
