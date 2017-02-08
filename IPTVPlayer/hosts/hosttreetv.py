@@ -228,6 +228,7 @@ class TreeTv(CBaseHostClass):
         data = data.split(marker)
         for item in data:
             baseTitle = self.cleanHtmlStr(item.split('<div class="accordion_content')[0])
+            linksTitle = self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0]
             tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(item, '<div class="quality">', '<div class="clear">', withMarkers=True)
             for tmp in tmpTab:
                 title = baseTitle #+ ' - ' + self.cleanHtmlStr(tmp.split('<div class="film_actions">')[0])
@@ -235,11 +236,11 @@ class TreeTv(CBaseHostClass):
                 key = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<a ', '</a>', withMarkers=True)[1]).upper()
                 if key not in keyTab:
                     keyTab.append(key)
-                    linksTab[key] = []
-                linksTab[key].append({'name':title, 'url':url})
+                    linksTab[key] = {'urls':[], 'title':linksTitle}
+                linksTab[key]['urls'].append({'name':title, 'url':url})
         
         for key in keyTab:
-            self.addVideo({'good_for_fav': False, 'title':cItem['title'] + ' ' + key, 'icon':cItem['icon'], 'urls':linksTab[key]})
+            self.addVideo({'good_for_fav': False, 'title':linksTab[key]['title'], 'desc': key, 'icon':cItem['icon'], 'urls':linksTab[key]['urls']})
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("TreeTv.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
