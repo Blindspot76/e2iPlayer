@@ -7237,118 +7237,7 @@ class pageParser:
         if file_url.startswith('http'): 
             return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
         
-        return False
-        
-    def parseNETUTV2(self, url):
-        def OIO(data, _0x84de):
-            _0lllOI = _0x84de[0];
-            enc = _0x84de[1];
-            i = 0;
-            while i < len(data):
-                h1 = _0lllOI.find(data[i]);
-                h2 = _0lllOI.find(data[i+1]);
-                h3 = _0lllOI.find(data[i+2]);
-                h4 = _0lllOI.find(data[i+3]);
-                i += 4;
-                bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
-                o1 = bits >> 16 & 0xff;
-                o2 = bits >> 8 & 0xff;
-                o3 = bits & 0xff;
-                if h3 == 64:
-                    enc += chr(o1);
-                else:
-                    if h4 == 64:
-                        enc += chr(o1) + chr(o2);
-                    else:
-                        enc += chr(o1) + chr(o2) + chr(o3);
-            return enc
-        
-        def _0ll(string, _0x84de):
-            ret = _0x84de[1]
-            
-            i = len(string) - 1
-            while i >= 0:
-                ret += string[i]
-                i -= 1
-            return ret
-        
-        def K12K(a, typ='b'):
-            tmp = "G.L.M.N.Z.o.I.t.V.y.x.p.R.m.z.u.D.7.W.v.Q.n.e.0.b.=//2.6.i.k.8.X.J.B.a.s.d.H.w.f.T.3.l.c.5.Y.g.1.4.9.U.A"
-            tmp = tmp.split("//")
-            codec_a = tmp[0].split('.')
-            codec_b = tmp[1].split('.')
-            if 'd' == typ:
-                tmp = codec_a
-                codec_a = codec_b
-                codec_b = tmp
-            idx = 0
-            while idx < len(codec_a):
-                a = a.replace(codec_a[idx], "___");
-                a = a.replace(codec_b[idx], codec_a[idx]);
-                a = a.replace("___", codec_b[idx]);
-                idx += 1
-            return a
-            
-        def _xc13(_arg1):
-            _lg27 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
-            _local2 = ""
-            _local3 = [0, 0, 0, 0]
-            _local4 = [0, 0, 0]
-            _local5 = 0
-            while _local5 < len(_arg1):
-                _local6 = 0;
-                while _local6 < 4 and (_local5 + _local6) < len(_arg1):
-                    _local3[_local6] = ( _lg27.find( _arg1[_local5 + _local6] ) )
-                    _local6 += 1
-                _local4[0] = ((_local3[0] << 2) + ((_local3[1] & 48) >> 4))
-                _local4[1] = (((_local3[1] & 15) << 4) + ((_local3[2] & 60) >> 2))
-                _local4[2] = (((_local3[2] & 3) << 6) + _local3[3])
-                
-                _local7 = 0
-                while _local7 < len(_local4):
-                    if _local3[_local7 + 1] == 64:
-                        break
-                    _local2 += chr(_local4[_local7])
-                    _local7 += 1
-                _local5 += 4
-            return _local2
-    
-        printDBG("parseNETUTV url[%s]\n" % url)
-        #http://netu.tv/watch_video.php?v=ODM4R872W3S9
-        match = re.search("=([0-9A-Z]+?)[^0-9^A-Z]", url + '|' )
-        playerUrl = "http://netu.tv/player/embed_player.php?vid=%s&autoplay=no" % match.group(1)
-        
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
-                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
-        #HTTP_HEADER['Referer'] = url
-        sts, data = self.cm.getPage(playerUrl, {'header' : HTTP_HEADER})
-        data = base64.b64decode(re.search('base64\,([^"]+?)"', data).group(1))
-        #printDBG(data)
-        l01 = re.search("='([^']+?)'", data).group(1)
-        _0x84de = re.search("var _0x84de=\[([^]]+?)\]", data).group(1)
-        _0x84de = re.compile('"([^"]*?)"').findall(_0x84de)
-        
-        data = OIO( _0ll(l01, _0x84de), _0x84de )
-        data = re.search("='([^']+?)'", data).group(1).replace('%', '\\').decode('unicode-escape').encode('UTF-8')
-        
-        data = re.compile('<input name="([^"]+?)" [^>]+? value="([^"]+?)">').findall(data)
-        post_data = {}
-        for idx in range(len(data)):
-            post_data[ data[idx][0] ] = data[idx][1]
-        
-        sts, data = self.cm.getPage(playerUrl, {'header' : HTTP_HEADER}, post_data)
-        #CParsingHelper.writeToFile('/home/sulge/test.html', data)
-        file_vars = re.search("file='\+([^']+?)\+'", data).group(1)
-        file_vars = file_vars.split('+')
-        file_url = ''
-        for file_var in file_vars:
-            file_url += re.search('var %s = "([^"]*?)"' % file_var, data).group(1)
-        file_url = _xc13(K12K(file_url, 'd'))
-        
-        if "http" in file_url:
-            return file_url
-
-        return False  
+        return False 
         
     def parseNETUTV(self, url):
         printDBG("parseNETUTV url[%s]" % url)
@@ -7360,17 +7249,16 @@ class pageParser:
         match = re.search("=([0-9a-zA-Z]+?)[^0-9^a-z^A-Z]", url + '|' )
         vid = match.group(1)
         
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
-                       'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                       'Referer': 'http://hqq.tv/'
-                     }
-        #HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36',
-        #               'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+        # User-Agent - is important!!!
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Referer': 'http://hqq.tv/'
+                      }
         
-        COOKIEFILE = self.COOKIE_PATH + "netu.tv.cookie"
+        COOKIE_FILE = self.COOKIE_PATH + "netu.tv.cookie"
         # remove old cookie file
-        rm(COOKIEFILE)
-        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIEFILE}
+        rm(COOKIE_FILE)
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
         sts, ipData = self.cm.getPage('http://hqq.tv/player/ip.php?type=json', params)
         ipData = byteify(json.loads(ipData)) #{"ip":"MTc4LjIzNS40My4zNw==","ip_blacklist":0}
 
@@ -7391,20 +7279,21 @@ class pageParser:
         #HTTP_HEADER['Referer'] = url
         sts, data = self.cm.getPage(playerUrl, params)
         
-        tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
-        printDBG(tmpData)
-        while 'eval' in tmpData:
-            tmp = tmpData.split('eval(')
-            if len(tmp): del tmp[0]
-            tmpData = ''
-            for item in tmp:
-                for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
-                    tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
-                    if '' != tmpData:   
-                        break
-                printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
-                printDBG(tmpData)
-                printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+        def _getEvalData(data):
+            tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
+            printDBG(tmpData)
+            while 'eval' in tmpData:
+                tmp = tmpData.split('eval(')
+                if len(tmp): del tmp[0]
+                tmpData = ''
+                for item in tmp:
+                    for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
+                        tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
+                        if '' != tmpData:   
+                            break
+            return tmpData
+            
+        tmpData = _getEvalData(data)
                 
         iss = '' #ipData['ip']
         need_captcha = '0' #str(ipData['ip_blacklist'])
@@ -7421,32 +7310,12 @@ class pageParser:
         http_referer = _getVar(tmpData, 'http_referer')
                 
         secPlayerUrl = "http://hqq.tv/sec/player/embed_player.php?iss="+iss+"&vid="+vid+"&at="+at+"&autoplayed="+autoplayed+"&referer="+referer+"&http_referer="+http_referer+"&pass="+passwd+"&embed_from="+embed_from+"&need_captcha="+need_captcha
-        post_data = None
-        if False:
-            data = base64.b64decode(re.search('base64\,([^"]+?)"', data).group(1))
-            #printDBG(data)
-            l01 = re.search("='([^']+?)'", data).group(1)
-            _0x84de = re.search("var _0x84de=\[([^]]+?)\]", data).group(1)
-            _0x84de = re.compile('"([^"]*?)"').findall(_0x84de)
-            
-            data = MYOBFUSCATECOM_OIO( MYOBFUSCATECOM_0ll(l01, _0x84de[1]), _0x84de[0], _0x84de[1])
-            data = re.search("='([^']+?)'", data).group(1).replace('%', '\\').decode('unicode-escape').encode('UTF-8')
-            
-            data = re.compile('<input name="([^"]+?)" [^>]+? value="([^"]+?)">').findall(data)
-            post_data = {}
-            for idx in range(len(data)):
-                post_data[ data[idx][0] ] = data[idx][1]
-            
-            secPlayerUrl = "http://hqq.tv/sec/player/embed_player.php?vid=%s&at=%s&autoplayed=%s&referer=on&http_referer=%s&pass=" % (vid, post_data.get('at', ''),  post_data.get('autoplayed', ''), urllib.quote(referer))
-        
         HTTP_HEADER['Referer'] = referer
-        sts, data = self.cm.getPage(secPlayerUrl, params, post_data)
+        sts, data = self.cm.getPage(secPlayerUrl, params)
         
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
-        printDBG("=================================================================")
-        printDBG(data)
-        printDBG("=================================================================")
-        #CParsingHelper.writeToFile('/mnt/new2/test.html', data)
+        data += _getEvalData(data)
+        
         def getUtf8Str(st):
             idx = 0
             st2 = ''
@@ -7454,45 +7323,46 @@ class pageParser:
                 st2 += '\\u0' + st[idx:idx + 3]
                 idx += 3
             return st2.decode('unicode-escape').encode('UTF-8')
-        file_vars = CParsingHelper.getDataBeetwenMarkers(data, 'Uppod(', ')', False)[1]
-        file_vars = CParsingHelper.getDataBeetwenMarkers(data, 'file:', ',', False)[1].strip()
-        file_vars = file_vars.split('+')
-        file_url = ''
-        for file_var in file_vars:
-            file_var = file_var.strip()
-            if 0 < len(file_var):
-                match = re.search('''["']([^"]*?)["']''', file_var)
-                if match: file_url += match.group(1)
-                else: file_url += re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % file_var, data).group(1)
-        if file_url == '':
-            playerData = self.cm.ph.getDataBeetwenMarkers(data, 'get_md5.php', '})')[1]
-            playerData = self.cm.ph.getDataBeetwenMarkers(playerData, '{', '}', False)[1]
-            playerData = playerData.split(',')
-            getParams = {}
-            for p in playerData:
-                tmp = p.split(':')
-                printDBG(tmp)
-                key = tmp[0].replace('"', '').strip()
-                val = tmp[1].strip()
-                if '"' not in val:
-                    v = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % val, data).group(1)
-                    if '' != val: val = v
-                if key == 'adb':
-                    val = val.replace('1', '0')
-                getParams[key] = val.replace('"', '').strip()
-            playerUrl = 'http://hqq.tv/player/get_md5.php?' + urllib.urlencode(getParams)
-            params['header']['X-Requested-With'] = 'XMLHttpRequest'
-            sts, data = self.cm.getPage(playerUrl, params)
-            printDBG(data)
-            if not sts: return False
-            data = byteify( json.loads(data) )
-            file_url = data['html5_file']
+        
+        data += tmpData
+        #printDBG("=================================================================")
+        #printDBG(data)
+        #printDBG("=================================================================")
+        #self.cm.ph.writeToFile('/mnt/new2/test.html', data)
+
+        playerData = self.cm.ph.getDataBeetwenMarkers(data, 'get_md5.php', '})')[1]
+        playerData = self.cm.ph.getDataBeetwenMarkers(playerData, '{', '}', False)[1]
+        playerData = playerData.split(',')
+        getParams = {}
+        for p in playerData:
+            tmp = p.split(':')
+            printDBG(tmp)
+            key = tmp[0].replace('"', '').strip()
+            val = tmp[1].strip()
+            if len(val) and val[0] not in ['"', "'"]:
+                printDBG("MY VAL: " + val)
+                v = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % val, data).group(1)
+                if '' != val: val = v
+            if key == 'adb':
+                val = val.replace('1', '0')
+            getParams[key] = val.replace('"', '').strip()
+        playerUrl = 'http://hqq.tv/player/get_md5.php?' + urllib.urlencode(getParams)
+        #params.pop('use_cookie')
+        #strTime = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % 'time', data).group(1)
+        #params['header']['Cookie'] = self.cm.getCookieHeader(COOKIE_FILE) + 'adc1=opened; user_ad=1; user_ad_time={0}; '.format(strTime)
+        params['header']['X-Requested-With'] = 'XMLHttpRequest'
+        params['header']['Referer'] = secPlayerUrl
+        sts, data = self.cm.getPage(playerUrl, params)
+        
+        printDBG(data)
+        if not sts: return False
+        data = byteify( json.loads(data) )
+        file_url = data['html5_file']
         
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
         printDBG(data['file'])
         if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
-        #printDBG("[[[[[[[[[[[[[[[[[[[[[[%r]" % file_url)
-        if file_url.startswith('http'): 
+        if self.cm.isValidUrl(file_url): 
             file_url = urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
             if file_url.split('?')[0].endswith('.m3u8'):
                 return getDirectM3U8Playlist(file_url, False)
