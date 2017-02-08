@@ -4562,9 +4562,9 @@ class pageParser:
         
         printDBG("vid[%s] play[%s]" % (vid, play))
         
-        tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?counter[^'^"]+?)['"]""")[0]
-        if tmpUrl == '': tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?jquery2[^'^"]+?)['"]""")[0]
-        tmpUrls = re.compile("""['"]([^'^"]+?[^'^"]+?\.js[^'^"]+?)['"]""").findall(data)
+        #tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?counter[^'^"]+?)['"]""")[0]
+        #if tmpUrl == '': tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?jquery2[^'^"]+?)['"]""")[0]
+        tmpUrls = re.compile("""['"]([^'^"]+?\.js[^'^"]+?)['"]""").findall(data)
         for tmpUrl in tmpUrls:
             if tmpUrl.startswith('.'):
                 tmpUrl = tmpUrl[1:]
