@@ -411,6 +411,10 @@ class BBCiPlayer(CBaseHostClass):
             sts, response = self.up.pp.getBBCIE().getPage(url, params)
             redirectUrl = response.geturl() 
             response.close()
+            
+            if redirectUrl.startswith('https://') and 'englandproxy.co.uk' in redirectUrl:
+                redirectUrl = 'http://' + redirectUrl[8:]
+                
             retTab.append({'name':'bbc', 'url':strwithmeta(redirectUrl, url.meta)})
         except Exception:
             printExc()

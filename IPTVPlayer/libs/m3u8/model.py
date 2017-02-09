@@ -202,7 +202,7 @@ class BasePathMixin(object):
         # ugly workaround to be fixed
         proxyUri = 'englandproxy.co.uk'
         if proxyUri in self.base_uri and proxyUri not in uri:
-            try: uri = 'https://www.englandproxy.co.uk/' + uri[uri.find('://')+3:]
+            try: uri = 'http://www.englandproxy.co.uk/' + uri[uri.find('://')+3:]
             except Exception: pass
         return uri
             
