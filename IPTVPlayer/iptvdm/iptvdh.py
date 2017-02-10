@@ -92,6 +92,10 @@ class DMHelper:
     @staticmethod
     def GET_F4M_PATH():
         return config.plugins.iptvplayer.f4mdumppath.value
+        
+    @staticmethod
+    def GET_HLSDL_PATH():
+        return config.plugins.iptvplayer.hlsdlpath.value
     
     @staticmethod
     def GET_RTMPDUMP_PATH():

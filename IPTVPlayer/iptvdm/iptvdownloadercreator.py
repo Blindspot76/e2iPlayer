@@ -20,6 +20,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.rtmpdownloader    import RtmpDownloade
 from Plugins.Extensions.IPTVPlayer.iptvdm.f4mdownloader     import F4mDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.mergedownloader   import MergeDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh            import DMHelper
+from Plugins.Extensions.IPTVPlayer.iptvdm.hlsdownloader     import HLSDownloader
 ###################################################
 
 ###################################################
@@ -41,7 +42,10 @@ def DownloaderCreator(url):
     url = urlparser.decorateUrl(url)
     iptv_proto = url.meta.get('iptv_proto', '')
     if 'm3u8' == iptv_proto:
-        downloader = M3U8Downloader()
+        if config.plugins.iptvplayer.hlsdlpath.value != '':
+            downloader = HLSDownloader()
+        else:
+            downloader = M3U8Downloader()
     elif 'em3u8' == iptv_proto:
         downloader = EM3U8Downloader()
     elif 'f4m' == iptv_proto:
