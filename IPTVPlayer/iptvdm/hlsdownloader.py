@@ -78,7 +78,7 @@ class HLSDownloader(BaseDownloader):
         # baseWgetCmd = DMHelper.getBaseWgetCmd(self.downloaderParams) 
         # TODO: add all HTTP parameters
         
-        cmd = DMHelper.getBaseHLSDLCmd() + (' "%s"' % self.url) + (' -o "%s"' % self.filePath) + ' > /dev/null'
+        cmd = DMHelper.getBaseHLSDLCmd(self.downloaderParams) + (' "%s"' % self.url) + (' -o "%s"' % self.filePath) + ' > /dev/null'
 
         printDBG("HLSDownloader::start cmd[%s]" % cmd)
         

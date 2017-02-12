@@ -998,7 +998,7 @@ class IPTVExtMoviePlayer(Screen):
                 downloadDuration = self.downloader.getDownloadedFileDuration()
                 if 0 < totalDuration and 0 < downloadDuration:
                     self['bufferingBar'].value = (downloadDuration * 100000) / totalDuration
-                    if self.playback['Length'] < downloadDuration: # live ?
+                    if self.playback['Length'] < totalDuration:
                         self.setPlaybackLength(totalDuration)
                 return
         
