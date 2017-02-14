@@ -284,6 +284,10 @@ class TreeTv(CBaseHostClass):
         data = re.sub("<!--[\s\S]*?-->", "", data)
         
         url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+        
+        if 1 == self.up.checkHostSupport(url):
+            return self.up.getVideoLinkExt(url)
+        
         params = dict(self.defaultParams)
         params['header'] = dict(params['header'])
         params['header']['Referer'] = str(videoUrl)

@@ -402,6 +402,7 @@ class urlparser:
                        'fastplay.cc':          self.pp.parserFASTPLAYCC     ,
                        'spruto.tv':            self.pp.parserSPRUTOTV       ,
                        'raptu.com':            self.pp.parserRAPTUCOM       ,
+                       'ovva.tv':              self.pp.parserOVVATV         ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2426,14 +2427,6 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)
-        data = byteify(json.loads(data))
-        
-    def parserRAPTUCOM(self, baseUrl):
-        printDBG("parserRAPTUCOM baseUrl[%r]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
-        if not sts: return False
-        
         data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
         data = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
         data = byteify(json.loads(data+']'))
@@ -2444,6 +2437,22 @@ class pageParser:
             except Exception: pass
         return retTab[::-1]
         
+    def parserOVVATV(self, baseUrl):
+        printDBG("parserOVVATV baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'ovva(', ')', False)[1].strip()[1:-1]
+        data = json.loads(base64.b64decode(data))
+        url = data['url']
+        
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        data = data.strip()
+        if data.startswith('302='):
+            url = data[4:]
+        
+        return getDirectM3U8Playlist(url, checkContent=True)[::-1]
         
     def parserUPTOSTREAMCOM(self, baseUrl):
         printDBG("parserUPTOSTREAMCOM baseUrl[%r]" % baseUrl)
