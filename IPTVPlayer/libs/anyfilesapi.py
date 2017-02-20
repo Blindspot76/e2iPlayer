@@ -69,9 +69,10 @@ class AnyFilesVideoUrlExtractor:
         # GET VIDEO ID
         u = url.split('/')
         vidID = u[-1]
-        match = re.search('([0-9]+?)\,', url )
-        if match:
-            vidID = match.group(1)
+        tmp = self.cm.ph.getSearchGroups(url, '([0-9]+?)\,')[0]
+        if tmp != '': vidID = tmp
+        if tmp == '': tmp = self.cm.ph.getSearchGroups(url+'|', 'id=([0-9]+?)[^0-9]')[0]
+        if tmp != '': vidID = tmp
 
         # get COOKIE
         url = self.MAINURL + '/videos.jsp?id=' + vidID
