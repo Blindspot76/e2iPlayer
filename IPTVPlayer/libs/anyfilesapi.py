@@ -4,6 +4,7 @@
 # LOCAL import
 from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 import Plugins.Extensions.IPTVPlayer.libs.xppod as xppod
@@ -65,6 +66,13 @@ class AnyFilesVideoUrlExtractor:
         #self.cm.addCookieItem(COOKIEFILE, {'name': 'AnyF18', 'value': 'mam18', 'domain': 'video.anyfiles.pl'}, False)
         if not self.isLogged():
             self.tryTologin()
+        
+        url = strwithmeta(url)
+        
+        params = dict(self.defaultParams)
+        params['header'] = dict(params['header'])
+        params['header']['Referer'] = url.meta.get('Referer', 'http://www.google.pl/')
+        sts, data = self.cm.getPage(url, params)
 
         # GET VIDEO ID
         u = url.split('/')

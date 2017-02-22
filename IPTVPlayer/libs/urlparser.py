@@ -143,6 +143,7 @@ class urlparser:
                        'cda.pl':               self.pp.parserCDA           ,
                        'ebd.cda.pl':           self.pp.parserCDA           ,
                        'video.anyfiles.pl':    self.pp.parserANYFILES      ,
+                       'anyfiles.pl':          self.pp.parserANYFILES      ,
                        'videoweed.es':         self.pp.parserVIDEOWEED     ,
                        'videoweed.com':        self.pp.parserVIDEOWEED     ,
                        'bitvid.sx':            self.pp.parserVIDEOWEED     ,
