@@ -404,6 +404,7 @@ class urlparser:
                        'spruto.tv':            self.pp.parserSPRUTOTV       ,
                        'raptu.com':            self.pp.parserRAPTUCOM       ,
                        'ovva.tv':              self.pp.parserOVVATV         ,
+                       'streamplay.to':        self.pp.parserSTREAMPLAYTO   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -1161,6 +1162,26 @@ class pageParser:
                 videoUrls.append(params)
                 uniqUrls.append(params['url'])
         
+        def __ca(dat):
+            def __replace(c):
+                code = ord(c.group(1))
+                if code <= ord('Z'):
+                    tmp = 90
+                else: 
+                    tmp = 122
+                c = code + 13
+                if tmp < c:
+                    c -= 26
+                return chr(c)
+            
+            if not self.cm.isValidUrl(dat):
+                try:
+                    dat = re.sub('([a-zA-Z])', __replace, dat)
+                except Exception:
+                    dat = ''
+                    printExc()
+            return str(dat)
+        
         for urlItem in tmpUrls:
             if urlItem['url'].startswith('/'): inUrl = 'http://www.cda.pl/' + urlItem['url']
             else: inUrl = urlItem['url']
@@ -1187,10 +1208,40 @@ class pageParser:
             try:
                 if tmp != '':
                     tmp = byteify(json.loads(tmp))
-                    tmp = tmp['video']['file']
+                    tmp = __ca(tmp['video']['file'])
             except Exception:
                 tmp = ''
                 printExc()
+                
+            # confirm
+            def __getValue(dat):
+                dat = dat.strip()
+                if len(dat) < 2: return dat
+                if dat[0] in ['"', "'"] and dat[-1] in ['"', "'"]:
+                    return dat[1:-1]
+                return dat
+                    
+            confirmData = self.cm.ph.getDataBeetwenMarkers(tmpData, '$.get(', ');', False)[1]
+            _confirmData = self.cm.ph.getDataBeetwenMarkers(confirmData, '{', '}', False)[1]
+            url         = __getValue(confirmData.split('{')[0])
+            url = __getValue(confirmData.split(',')[0])
+            if url.startswith('/'):
+                url = urlparser.getDomain(inUrl, False) + url[1:]
+            _confirmData = _confirmData.split(',')
+            confirmData = ''
+            printDBG(_confirmData)
+            for item in _confirmData:
+                item = item.split(':')
+                if len(item) != 2: continue
+                confirmData += '%s=%s&' % (__getValue(item[0]), __getValue(item[1]))
+            
+            confirmParams = dict(defaultParams)
+            confirmParams['header'] = dict(confirmParams['header'])
+            confirmParams['Referer'] = inUrl
+            sts, confirmData = self.cm.getPage(url + '?' + confirmData, confirmParams)
+            printDBG("===========================================")
+            printDBG("confirmData: " + confirmData)
+            printDBG("===========================================")
             
             if tmp == '':
                 data = self.cm.ph.getDataBeetwenReMarkers(tmpData, re.compile('''modes['"]?[\s]*:'''), re.compile(']'), False)[1]
@@ -6350,11 +6401,16 @@ class pageParser:
             for fs in [-1, 1]:
                 decTab = {}
                 try:
-                    s = int(enc[0:2]) * fs
-                    idx = 2
+                    s = int(enc[0]) * fs
+                    idx = 1
                     while idx < len(enc):
-                        key = int(enc[idx+3:idx+5])
-                        decTab[key] = chr(int(enc[idx:idx+3]) + s)
+                        tmp = ord(enc[idx])
+                        key = 0
+                        if tmp <= 90:
+                            key = tmp - 65
+                        elif tmp >= 97:
+                            key = 25 + tmp - 97
+                        decTab[key] = chr(int(enc[idx + 2:idx + 5]) // int(enc[idx + 1]) + s)
                         idx += 5
                     dec = ''
                     for key in range(len(decTab)):
@@ -7388,4 +7444,19 @@ class pageParser:
             file_url = urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
             if file_url.split('?')[0].endswith('.m3u8'):
                 return getDirectM3U8Playlist(file_url, False)
-        return file_url     
+        return file_url
+        
+    def parserSTREAMPLAYTO(self, url):
+        printDBG("parserSTREAMPLAYTO url[%s]\n" % url)
+        sts, data = self.cm.getPage(url)
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, ">eval(", '</script>')
+        if sts:
+            # unpack and decode params from JS player script code
+            data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0, r2=True)
+            printDBG(data)
+            # get direct link to file from params
+            file = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
+            if self.cm.isValidUrl(file):
+                return file
+        return False
