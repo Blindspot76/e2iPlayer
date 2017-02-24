@@ -469,12 +469,13 @@ class SVTPlaySE(CBaseHostClass):
         hlsUrl  = cItem.get('hls_url')
         dashUrl = cItem.get('dash_url')
         
+        subtitlesTab = []
+        
         if hlsUrl == None or dashUrl == None:
             url = self.getFullApiUrl('/title_page;title=' + cItem['url'])
             sts, data = self.cm.getPage(url, self.defaultParams)
             if not sts: return
             
-            subtitlesTab = []
             try:
                 data = byteify(json.loads(data))
                 
@@ -508,17 +509,19 @@ class SVTPlaySE(CBaseHostClass):
             if item == dashUrl:
                 item = getMPDLinksWithMeta(item, False)
             elif item == hlsUrl:
+                # item = strwithmeta(item, {'X-Forwarded-For':'83.172.75.170'})
                 item = getDirectM3U8Playlist(item, False, checkContent=True)
             else: continue
             
-            def __getLinkQuality( itemLink ):
-                try: return int(itemLink['height'])
-                except Exception: return 0
-            item = CSelOneLink(item, __getLinkQuality, max_bitrate).getSortedLinks()
-            if config.plugins.iptvplayer.svt_use_default_quality.value:
-                videoUrls.append(item[0])
-                break
-            videoUrls.extend(item)
+            if len(item):
+                def __getLinkQuality( itemLink ):
+                    try: return int(itemLink['height'])
+                    except Exception: return 0
+                item = CSelOneLink(item, __getLinkQuality, max_bitrate).getSortedLinks()
+                if config.plugins.iptvplayer.svt_use_default_quality.value:
+                    videoUrls.append(item[0])
+                    break
+                videoUrls.extend(item)
         
         if len(subtitlesTab):
             for idx in range(len(videoUrls)):
