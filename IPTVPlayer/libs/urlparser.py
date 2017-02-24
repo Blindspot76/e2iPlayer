@@ -1177,6 +1177,9 @@ class pageParser:
             if not self.cm.isValidUrl(dat):
                 try:
                     dat = re.sub('([a-zA-Z])', __replace, dat)
+                    if not dat.endswith('.mp4'):
+                        dat += '.mp4'
+                    dat = dat.replace("adc.mp4", ".mp4")
                 except Exception:
                     dat = ''
                     printExc()
@@ -1214,34 +1217,34 @@ class pageParser:
                 printExc()
                 
             # confirm
-            def __getValue(dat):
-                dat = dat.strip()
-                if len(dat) < 2: return dat
-                if dat[0] in ['"', "'"] and dat[-1] in ['"', "'"]:
-                    return dat[1:-1]
-                return dat
-                    
-            confirmData = self.cm.ph.getDataBeetwenMarkers(tmpData, '$.get(', ');', False)[1]
-            _confirmData = self.cm.ph.getDataBeetwenMarkers(confirmData, '{', '}', False)[1]
-            url         = __getValue(confirmData.split('{')[0])
-            url = __getValue(confirmData.split(',')[0])
-            if url.startswith('/'):
-                url = urlparser.getDomain(inUrl, False) + url[1:]
-            _confirmData = _confirmData.split(',')
-            confirmData = ''
-            printDBG(_confirmData)
-            for item in _confirmData:
-                item = item.split(':')
-                if len(item) != 2: continue
-                confirmData += '%s=%s&' % (__getValue(item[0]), __getValue(item[1]))
-            
-            confirmParams = dict(defaultParams)
-            confirmParams['header'] = dict(confirmParams['header'])
-            confirmParams['Referer'] = inUrl
-            sts, confirmData = self.cm.getPage(url + '?' + confirmData, confirmParams)
-            printDBG("===========================================")
-            printDBG("confirmData: " + confirmData)
-            printDBG("===========================================")
+            #def __getValue(dat):
+            #    dat = dat.strip()
+            #    if len(dat) < 2: return dat
+            #    if dat[0] in ['"', "'"] and dat[-1] in ['"', "'"]:
+            #        return dat[1:-1]
+            #    return dat
+            #        
+            #confirmData = self.cm.ph.getDataBeetwenMarkers(tmpData, '$.get(', ');', False)[1]
+            #_confirmData = self.cm.ph.getDataBeetwenMarkers(confirmData, '{', '}', False)[1]
+            #url         = __getValue(confirmData.split('{')[0])
+            #url = __getValue(confirmData.split(',')[0])
+            #if url.startswith('/'):
+            #    url = urlparser.getDomain(inUrl, False) + url[1:]
+            #_confirmData = _confirmData.split(',')
+            #confirmData = ''
+            #printDBG(_confirmData)
+            #for item in _confirmData:
+            #    item = item.split(':')
+            #    if len(item) != 2: continue
+            #    confirmData += '%s=%s&' % (__getValue(item[0]), __getValue(item[1]))
+            #
+            #confirmParams = dict(defaultParams)
+            #confirmParams['header'] = dict(confirmParams['header'])
+            #confirmParams['Referer'] = inUrl
+            #sts, confirmData = self.cm.getPage(url + '?' + confirmData, confirmParams)
+            #printDBG("===========================================")
+            #printDBG("confirmData: " + confirmData)
+            #printDBG("===========================================")
             
             if tmp == '':
                 data = self.cm.ph.getDataBeetwenReMarkers(tmpData, re.compile('''modes['"]?[\s]*:'''), re.compile(']'), False)[1]
