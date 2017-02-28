@@ -57,20 +57,25 @@ class TitlovicomProvider(CBaseSubProviderClass):
         params['cookie'] = 'titlovicom.cookie'
         CBaseSubProviderClass.__init__(self, params)
         
-        self.LANGUAGE_CACHE = ['rs', 'hr', 'ba' , 'mk', 'si', 'en']
+        self.LANGUAGE_CACHE = ['hr', 'ba' , 'mk', 'si', 'rs']
+        self.BASE_URL_CACHE = {'hr':'titlovi', 'ba':'prijevodi', 'mk':'prevodi', 'si':'podnapisi', 'rs':'prevodi'}
+        self.pageLang = 'hr'
         self.USER_AGENT    = 'Mozilla/5.0'
         self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.getMainUrl(), 'Accept':'gzip'}
         
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.dInfo = params['discover_info']
         
+    def getBaseGet(self):
+        return self.BASE_URL_CACHE.get(self.pageLang, '') + '/'
+        
     def getMainUrl(self):
         lang = GetDefaultLang()
-        if lang not in self.LANGUAGE_CACHE:
-            lang = 'en'
-        if lang == 'rs':
+        if lang in self.LANGUAGE_CACHE:
+            self.pageLang = lang
+        if self.pageLang == 'hr':
             return 'http://titlovi.com/'
-        return 'http://%s.titlovi.com/' % lang
+        return 'http://%s.titlovi.com/' % self.pageLang
         
     def getMoviesTitles(self, cItem, nextCategory):
         printDBG("TitlovicomProvider.getMoviesTitles")
@@ -118,16 +123,16 @@ class TitlovicomProvider(CBaseSubProviderClass):
     def getLanguages(self, cItem, nextCategory):
         printDBG("OpenSubOrgProvider.getEpisodes")
         
-        url = self.getFullUrl('search.aspx')
+        url = self.getFullUrl(self.getBaseGet())
         sts, data = self.cm.getPage(url)
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<li class="field-language">', '</select>', False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'name="jezikSelectedValues"', '</select>', False)[1]
         data = re.compile('<option[^>]+?value="([^"]+?)"[^>]*>([^<]+?)</option>').findall(data)
         
         if len(data):
             params = dict(cItem)
-            params.update({'title':_('All'), 'search_lang':'null'})
+            params.update({'title':_('All'), 'search_lang':''})
             params.update({'category':nextCategory})
             self.addDir(params)
         
@@ -140,30 +145,67 @@ class TitlovicomProvider(CBaseSubProviderClass):
     def getSearchList(self, cItem, nextCategory):
         printDBG("TitlovicomProvider.getSearchList")
         
-        year = cItem.get('year', '')
-        if '' == year: year = -1
+        page = cItem.get('page', 1)
         
-        mt = '-1'
-        if 'season' in cItem and 'episode' in cItem:
-            mt = '2'
-            year = -1
+        post_data = None
+        if page == 1:
+            url = self.getFullUrl(self.getBaseGet())
+            sts, data = self.cm.getPage(url, self.defaultParams)
+            if not sts: return
+            searchName = ''
+            post_data = {}
             
-        title = self.imdbGetOrginalByTitle(cItem['imdbid'])[1].get('title', cItem['base_title'])
-        url = self.getFullUrl('search.aspx?keyword=%s&language=%s&uploader=&mt=%s&season=%s&episode=%s&year=%s&cd=-1' % \
-        (urllib.quote_plus(title), cItem['search_lang'], mt, cItem.get('season', -1), cItem.get('episode', -1), year))
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="advanced_search hidden">', '</form>', False)[1]
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '/>')
+            for item in data:
+                name  = self.cm.ph.getSearchGroups(item, 'name="([^"]+?)"')[0]
+                value = self.cm.ph.getSearchGroups(item, 'value="([^"]+?)"')[0]
+                if 'Token' in name:
+                    post_data[name] = value
+                if searchName == '' and 'type="text"' in item:
+                    searchName = name
+            
+            year = cItem.get('year', '')
+            if '' == year: 
+                year = -1
+            
+            if 'season' in cItem and 'episode' in cItem:
+                post_data['t'] = '2' # type
+                post_data['g'] = -1  # year
+                post_data['s'] = cItem['season']
+                post_data['e'] = cItem['episode']
+            else:
+                post_data['t'] = '0'  # type
+                post_data['g'] = year # year
+                
+            title = self.imdbGetOrginalByTitle(cItem['imdbid'])[1].get('title', cItem['base_title'])
+            post_data[searchName] = title
+            post_data['sort'] = 4
+            
+            if cItem.get('search_lang', '') != '':
+                post_data['jezikSelectedValues'] = cItem['search_lang']
+        else:
+            url = cItem.get('next_page_url', '')
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.cm.getPage(url, self.defaultParams, post_data)
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<li class="listing">', '<!-- Content -->', False)[1]
-        data = data.split('clearfix">')
-        if len(data): del data[0]
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="titlovi">', '</section>', False)[1].split('<div class="paging">')
+        if 2 == len(tmp):
+            nextPage = self.cm.ph.getSearchGroups(tmp[1], '<a[^>]+?href="([^"]+?)"[^>]*?>%s<' % (page + 1))[0]
+        else:
+            nextPage = ''
+        
+        data = tmp[0]
+        del tmp
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<h3', '</div></li>')
         for item in data:
             descTab = []
             url = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             if url == '': continue
-            title  = self.cm.ph.getDataBeetwenMarkers(item, '<h4', '</h4>')[1]
-            lang   = self.cm.ph.getSearchGroups(item, '"lang ([a-z]{2})"')[0]
+            title  = item.split('<h5>')[0] #self.cm.ph.getDataBeetwenMarkers(item, '<h4', '</h4>')[1]
+            lang   = self.cm.ph.getSearchGroups(item, 'flags/([a-z]{2})')[0] 
             
             # lang name
             desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<span class="lang', '</span>')[1])
@@ -177,20 +219,26 @@ class TitlovicomProvider(CBaseSubProviderClass):
             if desc != '': descTab.append(desc)
             
             params = dict(cItem)
-            params.update({'category':nextCategory, 'url':url, 'title':self.cleanHtmlStr(title), 'lang':lang, 'desc':'[/br]'.join(descTab)})
+            params.update({'category':nextCategory, 'url':self.getFullUrl(url), 'title':self.cleanHtmlStr(title), 'lang':lang, 'desc':self.cleanHtmlStr(item)}) #'[/br]'.join(descTab)
+            params['title'] = ('[%s] ' % lang) + params['title']
+            self.addDir(params)
+            
+        if nextPage != '':
+            params = dict(cItem) 
+            params.update({'title':_('Next page'), 'page':page+1, 'next_page_url':self.getFullUrl(nextPage)})
             self.addDir(params)
             
     def getSubtitlesList(self, cItem):
         printDBG("TitlovicomProvider.getSubtitlesList")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
         imdbid = self.cm.ph.getSearchGroups(data, '/title/(tt[0-9]+?)[^0-9]')[0]
         subId  = self.cm.ph.getSearchGroups(data, 'mediaid=([0-9]+?)[^0-9]')[0]
-        url    = self.cm.ph.getSearchGroups(data, 'href="([^"]+?/downloads/[^"]+?mediaid=[^"]+?)"')[0]
+        url    = self.getFullUrl( self.cm.ph.getSearchGroups(data, 'href="([^"]*?/download[^"]+?mediaid=[^"]+?)"')[0] )
         
-        try: fps = float(self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<li class="fps">', '</li>')[1].upper().replace('FPS', '')))
+        try: fps = float(self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'class="fps">', 'FPS', False)[1].upper()))
         except Exception:
             fps = 0
             printExc()
