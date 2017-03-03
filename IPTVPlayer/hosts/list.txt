@@ -27,7 +27,6 @@ hostfighttube
 hostfilisertv
 hostfilma24hdcom
 hostfilmotopia
-hostfilmovita
 hostfilmovizijastudio
 hostfilmstreamvkcom
 hostfilmy3deu
