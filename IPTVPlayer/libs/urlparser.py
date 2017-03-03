@@ -166,6 +166,7 @@ class urlparser:
                        'divxstage.to':         self.pp.parserDIVXSTAGE     ,
                        'movdivx.com':          self.pp.parserMODIVXCOM     ,
                        'movshare.net':         self.pp.parserWHOLECLOUD     ,
+                       'wholecloud.net':       self.pp.parserWHOLECLOUD     ,
                        'wholecloud.net':       self.pp.parserWHOLECLOUD    ,
                        'tubecloud.net':        self.pp.parserTUBECLOUD     ,
                        'bestreams.net':        self.pp.parserBESTREAMS     ,
@@ -941,7 +942,7 @@ class pageParser:
         printDBG("Data: " + data)
         return _findLinks(data)
         
-    def _parserUNIVERSAL_B(self, url):
+    def _parserUNIVERSAL_B(self, url, userAgent='Mozilla/5.0'):
         printDBG("_parserUNIVERSAL_B url[%s]" % url)
         
         sts, response = self.cm.getPage(url, {'return_data':False})
@@ -951,7 +952,7 @@ class pageParser:
         post_data = None
         
         if '/embed' not in url: 
-            sts, data = self.cm.getPage( url, {'header':{'User-Agent': 'Mozilla/5.0'}} )
+            sts, data = self.cm.getPage( url, {'header':{'User-Agent': userAgent}} )
             if not sts: return False
             try:
                 tmp = self.cm.ph.getDataBeetwenMarkers(data, '<form method="post" action="">', '</form>', False, False)[1]
@@ -964,7 +965,7 @@ class pageParser:
             except Exception:
                 printExc()
         videoUrl = False
-        params = {'header':{ 'User-Agent': 'Mozilla/5.0', 'Content-Type':'application/x-www-form-urlencoded','Referer':url} }
+        params = {'header':{ 'User-Agent': userAgent, 'Content-Type':'application/x-www-form-urlencoded','Referer':url} }
         try:
             sts, data = self.cm.getPage(url, params, post_data)
             printDBG(data)
@@ -1016,6 +1017,11 @@ class pageParser:
                     sts, data2 = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)
                     if sts:
                         post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data2))
+                        try:
+                            tmp = dict(re.findall(r'<button[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+                            post_data.update(tmp)
+                        except Exception:
+                            printExc()
                         if tries == 0:
                             try:
                                 sleep_time = self.cm.ph.getSearchGroups(data2, '>([0-9]+?)</span> seconds<')[0]
@@ -5976,14 +5982,47 @@ class pageParser:
     
     def parserWHOLECLOUD(self, baseUrl):
         printDBG("parserWHOLECLOUD baseUrl[%s]" % baseUrl)
+        
+        sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+        url = response.geturl()
+        response.close()
+        
         #url = baseUrl.replace('movshare.net', 'wholecloud.net')
+        mobj = re.search(r'/(?:file|video)/(?P<id>[a-z\d]{13})', baseUrl)
+        video_id = mobj.group('id')
+        domain = urlparser.getDomain(url, False) 
+        url = domain + 'video/' + video_id
+
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+            
         try:
-            mobj = re.search(r'/(?:file|video)/(?P<id>[a-z\d]{13})', baseUrl)
-            video_id = mobj.group('id')
-            url = 'http://www.wholecloud.net/embed/?v=' + video_id
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '<form method="post" action="">', '</form>', False, False)[1]
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+            tmp = dict(re.findall(r'<button[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+            post_data.update(tmp)
         except Exception:
             printExc()
-        return self._parserUNIVERSAL_B(url)
+            
+        params = {'header':{'Content-Type':'application/x-www-form-urlencoded','Referer':url} }
+        sts, data = self.cm.getPage(url, params, post_data)
+        if not sts: return False
+        
+        videoTab = []
+        url = self.cm.ph.getSearchGroups(data, '"([^"]*?/download[^"]+?)"')[0]
+        if url[0] == '/':
+            url = domain + url[1:]
+        if self.cm.isValidUrl(url):
+            videoTab.append({'name':'[mp4] wholecloud.net', 'url':url})
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.ready', '}')[1]
+        url = self.cm.ph.getSearchGroups(tmp, '''src['"\s]*?:\s['"]([^'^"]+?)['"]''')[0]
+        if url[0] == '/':
+            url = domain + url[1:]
+        if self.cm.isValidUrl(url) and url.split('?')[0].endswith('.mpd'):
+            videoTab.extend(getMPDLinksWithMeta(url, False))
+        printDBG(data)
+        return videoTab
         
     def parserSTREAM4KTO(self, baseUrl):
         printDBG("parserSTREAM4KTO baseUrl[%s]" % baseUrl)
