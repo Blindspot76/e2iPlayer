@@ -5983,7 +5983,8 @@ class pageParser:
     def parserWHOLECLOUD(self, baseUrl):
         printDBG("parserWHOLECLOUD baseUrl[%s]" % baseUrl)
         
-        sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+        params = {'header': {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'}, 'return_data':False}
+        sts, response = self.cm.getPage(baseUrl, params)
         url = response.geturl()
         response.close()
         
@@ -5993,7 +5994,8 @@ class pageParser:
         domain = urlparser.getDomain(url, False) 
         url = domain + 'video/' + video_id
 
-        sts, data = self.cm.getPage(url)
+        params['return_data'] = True
+        sts, data = self.cm.getPage(url, params)
         if not sts: return False
             
         try:
@@ -6004,7 +6006,7 @@ class pageParser:
         except Exception:
             printExc()
             
-        params = {'header':{'Content-Type':'application/x-www-form-urlencoded','Referer':url} }
+        params['header'].update({'Content-Type':'application/x-www-form-urlencoded','Referer':url})
         sts, data = self.cm.getPage(url, params, post_data)
         if not sts: return False
         
@@ -6013,6 +6015,7 @@ class pageParser:
         if url[0] == '/':
             url = domain + url[1:]
         if self.cm.isValidUrl(url):
+            url = strwithmeta(url, {'User-Agent':params['header']})
             videoTab.append({'name':'[mp4] wholecloud.net', 'url':url})
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.ready', '}')[1]
@@ -6020,6 +6023,7 @@ class pageParser:
         if url[0] == '/':
             url = domain + url[1:]
         if self.cm.isValidUrl(url) and url.split('?')[0].endswith('.mpd'):
+            url = strwithmeta(url, {'User-Agent':params['header']})
             videoTab.extend(getMPDLinksWithMeta(url, False))
         printDBG(data)
         return videoTab
