@@ -6399,38 +6399,23 @@ class pageParser:
         varName = self.cm.ph.getSearchGroups(tmp, '''window.r=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
         encTab = re.compile('''<span[^>]+?id="%s[^"]*?"[^>]*?>([^<]+?)<\/span>''' % varName).findall(data)
         printDBG(">>>>>>>>>>>> varName[%s] encTab[%s]" % (varName, encTab) )
-        ok = False
-        for enc in encTab:
-            for fs in [-1, 1]:
-                decTab = {}
-                try:
-                    s = int(enc[0]) * fs
-                    idx = 1
-                    while idx < len(enc):
-                        tmp = ord(enc[idx])
-                        key = 0
-                        if tmp <= 90:
-                            key = tmp - 65
-                        elif tmp >= 97:
-                            key = 25 + tmp - 97
-                        decTab[key] = chr(int(enc[idx + 2:idx + 5]) // int(enc[idx + 1]) + s)
-                        idx += 5
-                    dec = ''
-                    for key in range(len(decTab)):
-                        dec += decTab[key]
-                    if re.compile('~[0-9]{10}~').search(dec):
-                        ok = True
-                        break
-                except Exception:
-                    printExc()
-                    continue
-                if ok:
-                    break
-            if ok:
-                break
         
-        printDBG(dec)
-        if not ok: return False
+        def __decode_k(k):
+            d = max(2, ord(k[0]) - 55)
+            e = min(d, len(k) - 12 - 2)
+            t = k[e:e + 12]
+            g = []
+            for h in range(0, len(t), 2):
+                f = t[h:h+2]
+                g.append(int(f, 16))
+            v = k[0:2] + k[14:]
+            p = []
+            for h in range(0, len(v), 2):
+                p.append( chr(int(v[h:h + 2], 16) ^ g[(h / 2) % 6]) )
+
+            return "".join(p)
+
+        dec = __decode_k(encTab[0])
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
         params = dict(HTTP_HEADER)
         params['external_sub_tracks'] = subTracks
