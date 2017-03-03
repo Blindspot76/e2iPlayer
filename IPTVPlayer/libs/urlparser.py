@@ -6408,7 +6408,7 @@ class pageParser:
             for h in range(0, len(t), 2):
                 f = t[h:h+2]
                 g.append(int(f, 16))
-            v = k[0:2] + k[14:]
+            v = k[0:e] + k[e+12:]
             p = []
             for h in range(0, len(v), 2):
                 p.append( chr(int(v[h:h + 2], 16) ^ g[(h / 2) % 6]) )
