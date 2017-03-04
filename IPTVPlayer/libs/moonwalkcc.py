@@ -138,7 +138,7 @@ class MoonwalkParser():
         if 'mw_pid:' in data: post_data['mw_pid'] = mw_pid
         if 'mw_did:' in data: post_data['mw_did'] = mw_did
         if 'mw_key' in data: 
-            try: post_data['mw_key'] = mw_key[0:4] + '\xd1\x81' + mw_key[5:]
+            try: post_data['mw_key'] = mw_key#[0:4] + '\xd1\x81' + mw_key[5:]
             except Exception: printExc()
         if 'mw_domain_id:' in data: post_data['mw_domain_id'] = mw_domain_id
         if 'uuid:' in data: post_data['uuid'] = uuid
