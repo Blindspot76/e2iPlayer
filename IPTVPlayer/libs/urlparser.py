@@ -6012,19 +6012,35 @@ class pageParser:
         
         videoTab = []
         url = self.cm.ph.getSearchGroups(data, '"([^"]*?/download[^"]+?)"')[0]
-        if url[0] == '/':
+        if url.startswith('/'):
             url = domain + url[1:]
         if self.cm.isValidUrl(url):
             url = strwithmeta(url, {'User-Agent':params['header']})
-            videoTab.append({'name':'[mp4] wholecloud.net', 'url':url})
+            videoTab.append({'name':'[Download] wholecloud.net', 'url':url})
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.ready', '}')[1]
         url = self.cm.ph.getSearchGroups(tmp, '''src['"\s]*?:\s['"]([^'^"]+?)['"]''')[0]
-        if url[0] == '/':
+        if url.startswith('/'):
             url = domain + url[1:]
         if self.cm.isValidUrl(url) and url.split('?')[0].endswith('.mpd'):
             url = strwithmeta(url, {'User-Agent':params['header']})
             videoTab.extend(getMPDLinksWithMeta(url, False))
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>', False)
+        links = []
+        for item in tmp:
+            if 'video/' not in item: continue
+            url = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0] 
+            if url.startswith('/'):
+                url = domain + url[1:]
+            if self.cm.isValidUrl(url):
+                if url in links: continue
+                links.append(url)
+                url = strwithmeta(url, {'User-Agent':params['header']})
+                videoTab.append({'name':'[%s] wholecloud.net' % type, 'url':url})
+                
         printDBG(data)
         return videoTab
         
