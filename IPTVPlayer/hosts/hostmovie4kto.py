@@ -34,51 +34,59 @@ from Components.Language import language
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.movie4kto_language = ConfigSelection(default = "", choices = [("", _("Auto")), ("en", _("English")), ("de", _("German")), ("fr", _("French")), ("es", _("Spanish")), ("it", _("Italian")), ("jp", _("Japanese")), ("tr", _("Turkish")), ("ru", _("Russian")) ])
-#config.plugins.iptvplayer.movie4kto_use_proxy_gateway  = ConfigYesNo(default = False)
+config.plugins.iptvplayer.movie4kto_alt_domain = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
     optionList.append( getConfigListEntry( _("Language:"), config.plugins.iptvplayer.movie4kto_language) )
-    #optionList.append(getConfigListEntry(_("Use proxy gateway"), config.plugins.iptvplayer.movie4kto_use_proxy_gateway))
+    optionList.append( getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.movie4kto_alt_domain))
     return optionList
 ###################################################
 
 def gettytul():
-    return 'movie4k.to'
+    return 'http://movie4k.org/'
 
 class Movie4kTO(CBaseHostClass):
-    USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'
-    HEADER = {'User-Agent': USER_AGENT, 'Accept': 'text/html'}
-    AJAX_HEADER = dict(HEADER)
-    AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-    
-    MAIN_URL    = 'http://movie4k.org/'
-    SRCH_URL    = MAIN_URL + 'movies.php?list=search&search='
-    MOVIE_GENRES_URL  = MAIN_URL + 'movies-genre-%s-{0}.html'
-    TV_SHOWS_GENRES_URL  = MAIN_URL + 'tvshows-genre-%s-{0}.html'
-    
-    MOVIES_ABC_URL = MAIN_URL + 'movies-all-%s-{0}.html'
-    TV_SHOWS_ABC_URL = MAIN_URL + 'tvshows-all-%s.html'
-    MAIN_CAT_TAB = [{'category':'cat_movies',            'title': _('Movies'),     },
-                    {'category':'cat_tv_shows',          'title': _('TV shows'),   },
-                    {'category':'search',                'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',        'title': _('Search history')} ]
-                    
-    MOVIES_CAT_TAB = [{'category':'cat_movies_list1',    'title': _('Cinema movies'),  'url':MAIN_URL+'index.php'},
-                      {'category':'cat_movies_list2',    'title': _('Latest updates'), 'url':MAIN_URL+'movies-updates.html' },
-                      {'category':'cat_movies_abc',      'title': _('All movies'),     'url':MAIN_URL+'movies-all.html' },
-                      {'category':'cat_movies_genres',   'title': _('Genres'),         'url':MAIN_URL+'genres-movies.html' } ]
-                      
-    TV_SHOWS_CAT_TAB = [{'category':'cat_tv_shows_list1',  'title': _('Featured'),       'url':MAIN_URL+'featuredtvshows.html'},
-                        {'category':'cat_tv_shows_list2',  'title': _('Latest updates'), 'url':MAIN_URL+'tvshows-updates.html'},
-                        {'category':'cat_tv_shows_abc',    'title': _('All TV shows'),   'url':MAIN_URL+'tvshows-all.html' },
-                        {'category':'cat_tv_shows_genres', 'title': _('Genres'),         'url':MAIN_URL+'genres-tvshows.html' } ]
 
     def __init__(self):
         printDBG("Movie4kTO.__init__")
         CBaseHostClass.__init__(self, {'history':'Movie4kTO', 'cookie':'Movie4kTO.cookie'})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.DEFAULT_ICON_URL = 'https://superrepo.org/static/images/icons/original/xplugin.video.movie4k.png.pagespeed.ic.l0TuslqM0i.jpg'
+        
+        self.USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'
+        self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
+        self.AJAX_HEADER = dict(self.HEADER)
+        self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+        
+        self.MAIN_URL    = 'http://movie4k.org/'
+        self.SRCH_URL    = self.getFullUrl('movies.php?list=search&search=')
+        self.MOVIE_GENRES_URL    = self.getFullUrl('movies-genre-%s-{0}.html')
+        self.TV_SHOWS_GENRES_URL = self.getFullUrl('tvshows-genre-%s-{0}.html')
+        
+        self.MOVIES_ABC_URL   = self.getFullUrl('movies-all-%s-{0}.html')
+        self.TV_SHOWS_ABC_URL = self.getFullUrl('tvshows-all-%s.html')
+        self.MAIN_CAT_TAB = [{'category':'cat_movies',            'title': _('Movies'),     },
+                             {'category':'cat_tv_shows',          'title': _('TV shows'),   },
+                             {'category':'search',                'title': _('Search'), 'search_item':True},
+                             {'category':'search_history',        'title': _('Search history')} ]
+                        
+        self.MOVIES_CAT_TAB = [{'category':'cat_movies_list1',    'title': _('Cinema movies'),  'url':self.getFullUrl('index.php')           },
+                               {'category':'cat_movies_list2',    'title': _('Latest updates'), 'url':self.getFullUrl('movies-updates.html') },
+                               {'category':'cat_movies_abc',      'title': _('All movies'),     'url':self.getFullUrl('movies-all.html')     },
+                               {'category':'cat_movies_genres',   'title': _('Genres'),         'url':self.getFullUrl('genres-movies.html')  } ]
+                          
+        self.TV_SHOWS_CAT_TAB = [{'category':'cat_tv_shows_list1',  'title': _('Featured'),       'url':self.getFullUrl('featuredtvshows.html')},
+                                 {'category':'cat_tv_shows_list2',  'title': _('Latest updates'), 'url':self.getFullUrl('tvshows-updates.html')},
+                                 {'category':'cat_tv_shows_abc',    'title': _('All TV shows'),   'url':self.getFullUrl('tvshows-all.html')    },
+                                 {'category':'cat_tv_shows_genres', 'title': _('Genres'),         'url':self.getFullUrl('genres-tvshows.html') } ]
+                                 
+    def getMainUrl(self):
+        domain = config.plugins.iptvplayer.movie4kto_alt_domain.value.strip()
+        if self.cm.isValidUrl(domain):
+            if domain[-1] != '/': domain += '/'
+            return domain
+        return self.MAIN_URL
         
     def getPage(self, baseUrl, params={}, post_data=None):
         if params == {}: params = dict(self.defaultParams)
@@ -88,7 +96,7 @@ class Movie4kTO(CBaseHostClass):
                 lang = language.getActiveLanguage().split('_')[0]
             except Exception: lang = 'en'
         params['cookie_items'] = {'lang':lang}
-        params['cloudflare_params'] = {'domain':self.up.getDomain(self.MAIN_URL), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
+        params['cloudflare_params'] = {'domain':self.up.getDomain(self.getMainUrl()), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
     def getFullIconUrl(self, url):
@@ -337,7 +345,7 @@ class Movie4kTO(CBaseHostClass):
         
     def listCategories(self, cItem, category):
         printDBG("Movie4kTO.listCategories")
-        sts, data = self.getPage(Movie4kTO.MAIN_URL)
+        sts, data = self.getPage(self.getMainUrl())
         if not sts: return
         sts, data = self.cm.ph.getDataBeetwenMarkers(data, 'aria-labelledby="menu_select">', '</ul>', False)
         if not sts: return
@@ -393,7 +401,7 @@ class Movie4kTO(CBaseHostClass):
         cItem = dict(cItem)
         page = cItem.get('page', 1)
         if page == 1:
-            cItem['url'] = Movie4kTO.SRCH_URL + urllib.quote(searchPattern)
+            cItem['url'] = self.SRCH_URL + urllib.quote(searchPattern)
             cItem['category'] = 'search'
         
         self.listsItems2(cItem, None)
@@ -495,10 +503,10 @@ class Movie4kTO(CBaseHostClass):
 
     #MAIN MENU
         if None == name:
-            self.listsTab(Movie4kTO.MAIN_CAT_TAB, {'name':'category'})
+            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
     #TV SHOW
         elif 'cat_tv_shows' == category:
-            self.listsTab(Movie4kTO.TV_SHOWS_CAT_TAB, self.currItem)
+            self.listsTab(self.TV_SHOWS_CAT_TAB, self.currItem)
         elif 'cat_tv_shows_list1' == category:
             self.listsTVShow1(self.currItem, 'episodes')
         elif 'cat_tv_shows_list2' == category:
@@ -511,7 +519,7 @@ class Movie4kTO(CBaseHostClass):
             self.listEpisodes(self.currItem)
     #MOVIES
         elif 'cat_movies' == category:
-            self.listsTab(Movie4kTO.MOVIES_CAT_TAB, self.currItem)
+            self.listsTab(self.MOVIES_CAT_TAB, self.currItem)
         elif 'cat_movies_list1' == category:
             self.listsMovies1(self.currItem)
         elif 'cat_movies_list2' == category:
