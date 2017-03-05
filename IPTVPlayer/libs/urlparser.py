@@ -1985,11 +1985,11 @@ class pageParser:
             if not url.endswith('.html'):
              url += '-640x360.html'
 
-        sts, data = self.cm.getPage(url)
+        sts, allData = self.cm.getPage(url)
         if not sts: return False
         
         # get JS player script code from confirmation page
-        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(allData, ">eval(", '</script>', False)
         if sts:
             data = tmpData
             tmpData = None
@@ -1997,8 +1997,26 @@ class pageParser:
             data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0, r2=True) #YOUWATCH_decryptPlayerParams == VIDUPME_decryptPlayerParams
 
         printDBG(data)
+        
         # get direct link to file from params
-        return self._findLinks(data, serverName=urlparser.getDomain(baseUrl))
+        linksTab = self._findLinks(data, serverName=urlparser.getDomain(baseUrl))
+        if len(linksTab): return linksTab
+        
+        domain = urlparser.getDomain(url, False) 
+        tmp = self.cm.ph.getDataBeetwenMarkers(allData, '<video', '</video>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>', False)
+        for item in tmp:
+            url = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0] 
+            if 'video' not in type and 'x-mpeg' not in type: continue
+            if url.startswith('/'):
+                url = domain + url[1:]
+            if self.cm.isValidUrl(url):
+                if 'video' in type:
+                    linksTab.append({'name':'[%s]' % type, 'url':url})
+                elif 'x-mpeg' in type:
+                    linksTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+        return linksTab[::-1]
 
     def parserPLAYEDTO(self, baseUrl):
         if 'embed' in baseUrl:
