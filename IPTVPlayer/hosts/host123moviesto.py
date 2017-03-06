@@ -322,6 +322,9 @@ class T123MoviesTO(CBaseHostClass):
         episodeId = tmp[1]
         referer   = tmp[2]
         
+        if referer.endswith('/'):
+            referer += 'watching.html'
+        
         sts, data = self.getPage(referer, self.defaultParams)
         if not sts: return []
         
