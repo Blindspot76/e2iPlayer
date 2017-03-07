@@ -100,7 +100,7 @@ class IPTVSetupImpl:
         
         # hlsdl
         self.hlsdlVersion = 0.03
-        self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/_platform_/hlsdl')]
+        self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl')]
         
         self.binaryInstalledSuccessfully = False
         self.tries = 0
@@ -540,7 +540,6 @@ class IPTVSetupImpl:
     def hlsdlStep(self, ret=None):
         printDBG("IPTVSetupImpl.hlsdlStep")
         self.binaryInstalledSuccessfully = False
-        self.hlsdlPaths[0] = self.hlsdlPaths[0].replace('_platform_', self.platform)
             
         def _detectValidator(code, data):
             if 'hlsdl v' in data:
