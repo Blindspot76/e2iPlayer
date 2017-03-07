@@ -205,8 +205,12 @@ class T123MoviesTO(CBaseHostClass):
         episodeKeys = []
         episodeLinks = {}
         
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG(tab)
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        
         for item in tab:
-            title = item['title']
+            title = item['title'].replace(' 0', ' ')
             if title not in episodeKeys:
                 episodeLinks[title] = []
                 episodeKeys.append(title)
