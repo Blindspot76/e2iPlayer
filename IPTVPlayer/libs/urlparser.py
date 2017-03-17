@@ -6479,29 +6479,39 @@ class pageParser:
         
         def __decode_k(k):
             y = ord(k[0]);
-            e = y - 0x32
+            e = y - 0x37
             d = max(2, e)
-            e = min(d, len(k) - 0x14 - 2)
-            t = k[e:e + 0x14]
+            e = min(d, len(k) - 0x18 - 2)
+            t = k[e:e + 0x18]
             h = 0
             g = []
             while h < len(t):
-                f = t[h:h+2]
-                g.append(int(f, 0x10))
-                h += 2
-            v = k[0:e] + k[e+0x14:]
+                f = t[h:h+3]
+                g.append(int(f, 0x8))
+                h += 3
+            v = k[0:e] + k[e+0x18:]
             p = []
+            i = 0
             h = 0
             while h < len(v):
-                B = v[h:h + 3]
+                B = v[h:h + 2]
+                C = v[h:h + 3]
                 f = int(B, 0x10)
-                if (h / 3) % 3 == 0:
-                    f = int(B, 8)
-                A = g[(h / 3) % 0xa]
-                f = f ^ 0x2F;
+                h += 0x2
+                
+                if (i % 3) == 0:
+                    f = int(C, 8)
+                    h += 1
+                elif i % 2 == 0 and i != 0 and ord(v[i-1]) < 0x3c:
+                    f = int(C, 0xa)
+                    h += 1
+                    
+                A = g[i % 0x8]
+                f = f ^ 0xd5;
                 f = f ^ A;
                 p.append( chr(f) )
-                h += 3
+                i += 1
+                
             return "".join(p)
 
         dec = __decode_k(encTab[0])
