@@ -6481,15 +6481,15 @@ class pageParser:
             y = ord(k[0]);
             e = y - 0x37
             d = max(2, e)
-            e = min(d, len(k) - 0x18 - 2)
-            t = k[e:e + 0x18]
+            e = min(d, len(k) - 0x24 - 2)
+            t = k[e:e + 0x24]
             h = 0
             g = []
             while h < len(t):
                 f = t[h:h+3]
                 g.append(int(f, 0x8))
                 h += 3
-            v = k[0:e] + k[e+0x18:]
+            v = k[0:e] + k[e+0x24:]
             p = []
             i = 0
             h = 0
@@ -6506,7 +6506,7 @@ class pageParser:
                     f = int(C, 0xa)
                     h += 1
                     
-                A = g[i % 0x8]
+                A = g[i % 0xc]
                 f = f ^ 0xd5;
                 f = f ^ A;
                 p.append( chr(f) )
