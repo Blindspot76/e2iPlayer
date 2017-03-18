@@ -290,28 +290,47 @@ class T123MoviesTO(CBaseHostClass):
         self.cacheLinks[cItem['url']] = urlTab
         return urlTab
 
-    def uncensored(self, a, b):
-        def jav(a):
-            b = str(a)
-            code = ord(b[0])
-            if 0xD800 <= code and code <= 0xDBFF:
-                c = code
-                if len(b) == 1:
-                    return code
-                d = b[1]
-                return ((c - 0xD800) * 0x400) + (d - 0xDC00) + 0x10000
-            if 0xDC00 <= code and code <= 0xDFFF:
-                return code
-            return code
-        c = ""
-        i = 0;
-        for i in range(len(a)):
-            d = a[i]
-            e = b[i % len(b) - 1]
-            d = jav(d) + jav(e)
-            d = chr(d)
-            c += d
-        return base64.b64encode(c)
+    def uncensored1(self, data):
+        xx = ''
+        xy = ''
+        try:
+            data = '(' + data.split("(_$$)) ('_');")[0].split("/* `$$` */")[-1].strip()
+            data = data.replace('(__$)[$$$]', '\'"\'')
+            data = data.replace('(__$)[_$]', '"\\\\"')
+            data = data.replace('(o^_^o)', '3')
+            data = data.replace('(c^_^o)', '0')
+            data = data.replace('(_$$)', '1')
+            data = data.replace('($$_)', '4')
+            code = '''def retA():
+    class Infix:
+        def __init__(self, function):
+            self.function = function
+        def __ror__(self, other):
+            return Infix(lambda x, self=self, other=other: self.function(other, x))
+        def __or__(self, other):
+            return self.function(other)
+        def __rlshift__(self, other):
+            return Infix(lambda x, self=self, other=other: self.function(other, x))
+        def __rshift__(self, other):
+            return self.function(other)
+        def __call__(self, value1, value2):
+            return self.function(value1, value2)
+    def my_add(x, y):
+        try: return x + y
+        except Exception: return str(x) + str(y)
+    x = Infix(my_add)
+    return %s
+param = retA()'''
+
+            vGlobals = {"__builtins__": None, '__name__':__name__, 'str':str, 'Exception':Exception}
+            vLocals = { 'param': None }
+            exec( code % data.replace('+','|x|'), vGlobals, vLocals)
+            data = vLocals['param'].decode('string_escape')
+            xx = self.cm.ph.getSearchGroups(data, '''xx=['"]([^"^']+?)['"]''')[0]
+            xy = self.cm.ph.getSearchGroups(data, '''xy=['"]([^"^']+?)['"]''')[0]
+        except Exception:
+            printExc()
+        return xx, xy
         
     def getVideoLinks(self, videoUrl):
         printDBG("T123MoviesTO.getVideoLinks [%s]" % videoUrl)
@@ -333,14 +352,7 @@ class T123MoviesTO(CBaseHostClass):
         if not sts: return []
         
         rm(self.COOKIE_FILE)
-        
-        url = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''['"]([^"^']*?resources/images/[^"^']*?)['"]''')[0] )
-        params = dict(self.defaultParams)
-        params['header'] = dict(self.HEADER)
-        params['header']['Referer'] = referer
-        sts, data = self.getPage(url, params)
-        if not sts: return []
-        cookie = self.cm.getCookieHeader(self.COOKIE_FILE)
+        #cookie = self.cm.getCookieHeader(self.COOKIE_FILE)
         
         if serverId in ['12', '13', '14', '15']:
             url = 'ajax/load_embed/' + episodeId
@@ -355,16 +367,40 @@ class T123MoviesTO(CBaseHostClass):
                 printExc()
                 return []
         else:
-            magic = 'n1sqcua67bcq9826avrbi6m49vd7shxkn985mhodk06twz87wwxtp3dqiicks2dfyud213k6ygiomq01s94e4tr9v0k887bkyud213k6ygiomq01s94e4tr9v0k887bkqocxzw39esdyfhvtkpzq9n4e7at4kc6k8sxom08bl4dukp16h09oplu7zov4m5f8'
-            cookieValue = ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(16))
-            cookieName  = md5(episodeId + '87wwxtp3dqii').hexdigest()
-            hash = self.uncensored(episodeId + '7bcq9826avrbi6m49vd7shxkn985mhod', cookieValue)
-            url = 'ajax/v2_get_sources/' + episodeId + '?hash=' + urllib.quote(hash)
+            url = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''['"]([^"^']*?js/client[^"^']*?)['"]''')[0] )
+            if not self.cm.isValidUrl(url): return []
+            
+            params = dict(self.defaultParams)
+            params['header'] = dict(self.HEADER)
+            params['header']['Referer'] = referer
+            data = ''
+            tries = 0
+            while tries < 10:
+                tries += 1
+                sts, data = self.getPage(url, params)
+                if not sts: 
+                    data = ''
+                    continue
+                printDBG( "--------------" )
+                printDBG( data[0:20] )
+                printDBG( "--------------" )
+                if '[]' not in data:
+                    time.sleep(1)
+                    break
+                    
+            if '[]' in data:
+                SetIPTVPlayerLastHostError(_('Not supported obfuscation algorithm detected. Try again later.'))
+                return []
+                
+            if data == '':
+                return []
+            
+            xx, xy = self.uncensored1(data)
+            url = 'ajax/v3_get_sources/%s?xx=%s&xy=%s' % (episodeId, xx, xy)
             url = self.getFullUrl( url )
 
             params = {}
             params['header'] = dict(self.AJAX_HEADER)
-            params['header']['Cookie'] = cookie + ' %s=%s;' % (cookieName, cookieValue)
             sts, data = self.getPage(url, params)
             if not sts: return []
             
