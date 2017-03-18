@@ -87,16 +87,29 @@ class HDPopcornsCom(CBaseHostClass):
         tmpData = self.cm.ph.getDataBeetwenMarkers(data, 'ofcategory', '</select>')[1]
         tmpData = self.cm.ph.getAllItemsBeetwenMarkers(tmpData, '<option', '</option>', withMarkers=True)
         addFilter(tmpData, 'ofcategory', False, '', 'value') 
+        if 0 == len(self.cacheFilters['ofcategory']):
+            for item in [("46","Action"),("24","Adventure"),("25","Animation"),("26","Biography"),("27","Comedy"),("28","Crime"),("29","Documentary"),("30","Drama"),("31","Family"),("32","Fantasy"),("33","Film-Noir"),("35","History"),("36","Horror"),("37","Music"),("38","Musical"),("39","Mystery"),("40","Romance"),("41","Sci-Fi"),("42","Sports"),("43","Thriller")]:
+                self.cacheFilters['ofcategory'].append({'title':item[1], 'ofcategory':item[0]})
         
         # rating
         tmpData = self.cm.ph.getDataBeetwenMarkers(data, 'ofrating', '</select>')[1]
         tmpData = self.cm.ph.getAllItemsBeetwenMarkers(tmpData, '<option', '</option>', withMarkers=True)
         addFilter(tmpData, 'ofrating', False, '', 'value') 
+        if 0 == len(self.cacheFilters['ofrating']):
+            for i in range(10):
+                i = str(i)
+                if i == '0': title = 'All Ratings'
+                else: title = i
+                self.cacheFilters['ofrating'].append({'title':title, 'ofrating':i})
+        
         
         # quality
         tmpData = self.cm.ph.getDataBeetwenMarkers(data, 'ofquality', '</select>')[1]
         tmpData = self.cm.ph.getAllItemsBeetwenMarkers(tmpData, '<option', '</option>', withMarkers=True)
         addFilter(tmpData, 'ofquality', False, '', 'value') 
+        if 0 == len(self.cacheFilters['ofquality']):
+            for item in [("0","All Qualities"),("47","1080p"),("48","720p")]:
+                self.cacheFilters['ofquality'].append({'title':item[1], 'ofquality':item[0]})
         
         printDBG(self.cacheFilters)
         
