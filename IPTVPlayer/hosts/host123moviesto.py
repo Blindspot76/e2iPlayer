@@ -61,14 +61,18 @@ class T123MoviesTO(CBaseHostClass):
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.DEFAULT_ICON_URL = 'http://koditips.com/wp-content/uploads/123movies-kodi.png'
-        self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        self.HEADER = {'User-Agent': 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = None
         self.cacheFilters = {}
         self.cacheLinks = {}
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
     def getPage(self, url, addParams = {}, post_data = None):
+        if addParams == {}:
+            addParams = dict(self.defaultParams)
+            
         proxy = config.plugins.iptvplayer.moviesto123_proxy.value
         if proxy != 'None':
             if proxy == 'proxy_1':
@@ -92,18 +96,26 @@ class T123MoviesTO(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        domains = ['https://123movies.net.ru/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/']
+        domains = ['https://123movieshd.to/', 'https://123movies.net.ru/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/']
         domain = config.plugins.iptvplayer.moviesto123_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
             domains.insert(0, domain)
         
         for domain in domains:
-            sts, data = self.getPage(domain)
-            if sts and 'genre/action/' in data:
-                self.MAIN_URL = domain
+            for i in range(2):
+                sts, data = self.getPage(domain)
+                if sts:
+                    if 'genre/action/' in data:
+                        self.MAIN_URL = domain
+                        break
+                    else: 
+                        continue
                 break
-        
+            
+            if self.MAIN_URL != None:
+                break
+                
         if self.MAIN_URL == None:
             self.MAIN_URL = 'https://123movies.is/' # first domain is default one
         
@@ -244,7 +256,7 @@ class T123MoviesTO(CBaseHostClass):
         if len(urlTab): return urlTab
         self.cacheLinks = {}
         
-        rm(self.COOKIE_FILE)
+        #rm(self.COOKIE_FILE)
         
         sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return []
@@ -351,7 +363,7 @@ param = retA()'''
         sts, data = self.getPage(referer, self.defaultParams)
         if not sts: return []
         
-        rm(self.COOKIE_FILE)
+        #rm(self.COOKIE_FILE)
         #cookie = self.cm.getCookieHeader(self.COOKIE_FILE)
         
         if serverId in ['12', '13', '14', '15']:
@@ -515,6 +527,7 @@ param = retA()'''
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         if self.MAIN_URL == None:
+            #rm(self.COOKIE_FILE)
             self.selectDomain()
 
         name     = self.currItem.get("name", '')
