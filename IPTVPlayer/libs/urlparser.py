@@ -3325,16 +3325,18 @@ class pageParser:
             if errorItem in data:
                 SetIPTVPlayerLastHostError(_(errorItem))
                 break
-        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_code"', '</div>', True)
-        sts, tmp = self.cm.ph.getDataBeetwenMarkers(tmp, ">eval(", '</script>')
-        if sts:
-            # unpack and decode params from JS player script code
-            data = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
-            printDBG(data)
-            # get direct link to file from params
-            file = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
-            if file.startswith('http'):
-                return file
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player_code"', '</div>', True)[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(tmp, ">eval(", '</script>')[1]
+        # unpack and decode params from JS player script code
+        tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
+        if tmp != None: data = tmp + data
+        # printDBG(data)
+        # get direct link to file from params
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"][^>]+?["']video''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
+        
         return False
         
     def parseTUNEPK(self, url):
