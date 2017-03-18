@@ -380,6 +380,7 @@ class KissCartoonMe(CBaseHostClass):
                 continue
                 
         def _decUrl(data, password):
+            printDBG('PASSWORD 2: ' + sha256(password).hexdigest())
             key = a2b_hex( sha256(password).hexdigest() )
             iv = a2b_hex("a5e8d2e9c1721ae0e84ad660c472c1f3")
             encrypted = base64.b64decode(data)
@@ -401,7 +402,27 @@ class KissCartoonMe(CBaseHostClass):
         tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="selectQuality">', '</select>', False)[1]
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
         if len(tmpTab):
-            password = self.getPage(self.getFullUrl('/External/RSK'), post_data={})[1]
+            password = self.getPage(self.getFullUrl('/External/RSK'), post_data={'krsk':'1378'})[1]
+        
+        passworVarName =  self.cm.ph.getSearchGroups(data, '''var\s+?([^=]+?)=\$kissenc''')[0]
+        code = self.cm.ph.getDataBeetwenMarkers(data, 'End Episodes and pages', '</script>', True)[1]
+        code = self.cm.ph.getDataBeetwenReMarkers(code, re.compile('<script[^>]*?>'), re.compile('</script>'), False)[1]
+        code = code.replace('var ', '').replace(' ', '').replace('function', 'def ').replace('return', 'return ').replace('){', '):\n\t').replace(';', '\n').replace('}', '\n')
+        code += 'return ' + passworVarName
+        code = '\n\t'.join( code.split('\n') )
+        code = 'def fkoteczek():\n' + ('\t%s="%s"\n' % (passworVarName, password)) + code
+        code += '\nkoteczek = fkoteczek()'
+        printDBG("================================")
+        printDBG(code)
+        printDBG("================================")
+        try:
+            vGlobals = {"__builtins__": None, 'str':str}
+            vLocals = { 'koteczek': None }
+            exec( code, vGlobals, vLocals)
+            password = str(vLocals['koteczek'])
+        except Exception:
+            printExc()
+
         for item in tmpTab:
             url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
             if '' == url: continue
