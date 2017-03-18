@@ -381,6 +381,7 @@ class urlparser:
                        'tvope.com':            self.pp.parserTVOPECOM      ,
                        'fileone.tv':           self.pp.parserFILEONETV     ,
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
+                       'tusfiles.net':         self.pp.parserUSERSCLOUDCOM ,
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
                        'streamable.com':       self.pp.parserSTREAMABLECOM  ,
