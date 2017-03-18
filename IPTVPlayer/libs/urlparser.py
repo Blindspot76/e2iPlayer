@@ -5078,6 +5078,9 @@ class pageParser:
         if not sts: return False
         
         authKey = self.cm.ph.getSearchGroups(pageData, r"""Key\s*=\s*['"]([^'^"]+?)['"]""")[0]
+        try_again = self.cm.ph.getSearchGroups(pageData, r"""try_again\s*=\s*['"]([^'^"]+?)['"]""")[0]
+        if len(try_again) > len(authKey): authKey = try_again
+        
         params['header']['Referer'] = url
         sts, authKey = self.cm.getPage('http://thevideo.me/jwv/' + authKey, params)
         if not sts: return False
