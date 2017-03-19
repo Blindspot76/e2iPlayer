@@ -346,6 +346,14 @@ class KissAnimeTo(CBaseHostClass):
         if 'kissanime' not in videoUrl:
             return self.up.getVideoLinkExt(videoUrl)
         #if '&s=' in videoUrl:
+        
+        def _decUrl(data, password):
+            printDBG('PASSWORD 2: ' + sha256(password).hexdigest())
+            key = a2b_hex( sha256(password).hexdigest() )
+            iv = a2b_hex("a5e8d2e9c1721ae0e84ad660c472c1f3")
+            encrypted = base64.b64decode(data)
+            cipher = AES_CBC(key=key, keySize=32)
+            return cipher.decrypt(encrypted, iv)
             
         sts, data = self.getPage(videoUrl) 
         if not sts: return urlTab
@@ -370,15 +378,16 @@ class KissAnimeTo(CBaseHostClass):
                 printExc()
                 continue
                
-        tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="selectQuality">', '</select>', False)[1]
+        tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="slcQualix">', '</select>', False)[1]
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
         for item in tmpTab:
             url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
             if '' == url: continue
             try:
                 printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
-                url = base64.b64decode(url)
+                url = _decUrl(url, 'nhasasdbasdtene7230asb6n23ncasdln213')
                 printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
+                url = strwithmeta(url, {'Referer':'http://kissanime.ru/Scripts/jwplayer/jwplayer.flash.swf'})
             except Exception:
                 printExc()
                 continue
