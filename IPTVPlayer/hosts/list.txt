@@ -37,6 +37,7 @@ hostgamatocom
 hostgreekdocumentaries3
 hosthdfilmetv
 hosthdkinomir
+hosthdpopcornscom
 hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
@@ -49,7 +50,6 @@ hostkissanimeto
 hostkisscartoonme
 hostkreskoweczki
 hostkreskowkazone
-hostkwejktv
 hostlaola1tv
 hostlibrestream
 hostliveleak
