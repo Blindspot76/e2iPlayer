@@ -2173,19 +2173,19 @@ class pageParser:
         sts, data = self.cm.getPage(url, params)
         
         # get JS player script code from confirmation page
-        sts, data = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')
+        tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
         if not sts: return False
         # unpack and decode params from JS player script code
-        data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams)
-        
-        printDBG(data)
+        tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
+        if tmp != None: data = tmp + data
+        printDBG(tmp)
         subData = CParsingHelper.getDataBeetwenMarkers(data, "captions", '}')[1]
         subData = self.cm.ph.getSearchGroups(subData, '''['"](http[^'^"]+?)['"]''')[0]
         sub_tracks = []
         if (subData.startswith('https://') or subData.startswith('http://')) and (subData.endswith('.srt') or subData.endswith('.vtt')):
             sub_tracks.append({'title':'attached', 'url':subData, 'lang':'unk', 'format':'srt'})
         linksTab = []
-        links = self._findLinks(data, 'vidto.me', m1='hd', m2=']')
+        links = self._findLinks(data, 'vidto.me')
         for item in links:
             item['url'] = strwithmeta(item['url'], {'external_sub_tracks':sub_tracks})
             linksTab.append(item)
