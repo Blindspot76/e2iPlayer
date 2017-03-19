@@ -643,6 +643,9 @@ class CBaseHostClass:
             
     def setInitListFromFavouriteItem(self, fav_data):
         return False
+        
+    def getLinksForItem(self, cItem):
+        return self.getLinksForVideo(cItem)
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         self.moreMode = False
