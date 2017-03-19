@@ -347,6 +347,16 @@ class KissCartoonMe(CBaseHostClass):
         if 0 == len(urlTab):
             urlTab.append({'name':'default', 'url':cItem['url'], 'need_resolve':1})
         return urlTab
+    
+    def _execCode(self, code):
+        try:
+            vGlobals = {"__builtins__": None, 'str':str}
+            vLocals = { 'koteczek': None }
+            exec( code, vGlobals, vLocals)
+            return str(vLocals['koteczek'])
+        except Exception:
+            printExc()
+        return ''
         
     def getVideoLinks(self, videoUrl):
         printDBG("KissCartoonMe.getVideoLinks [%s]" % videoUrl)
@@ -415,13 +425,7 @@ class KissCartoonMe(CBaseHostClass):
         printDBG("================================")
         printDBG(code)
         printDBG("================================")
-        try:
-            vGlobals = {"__builtins__": None, 'str':str}
-            vLocals = { 'koteczek': None }
-            exec( code, vGlobals, vLocals)
-            password = str(vLocals['koteczek'])
-        except Exception:
-            printExc()
+        password = self._execCode(code)
 
         for item in tmpTab:
             url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
