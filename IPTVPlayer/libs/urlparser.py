@@ -6512,7 +6512,7 @@ class pageParser:
                     f = int(C, 0xa)
                     h += 1
                     
-                A = g[i % 0xc]
+                A = g[i % 0x7]
                 f = f ^ 0xd5;
                 f = f ^ A;
                 p.append( chr(f) )
