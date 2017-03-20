@@ -60,7 +60,7 @@ class KissCartoonMe(CBaseHostClass):
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
     MAIN_URL = 'http://kisscartoon.se/'
-    DEFAULT_ICON_URL = "http://justifynow.com/wp-content/uploads/2016/12/logo.png"
+    DEFAULT_ICON_URL = "http://kisscartoon.so/image/logo.png"
     
     MAIN_CAT_TAB = [{'category':'home',            'title': _('Home'),              'url':MAIN_URL,               },
                     {'category':'list_cats',       'title': _('Catrtoon list'),     'url':MAIN_URL+'CartoonList', },
