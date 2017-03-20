@@ -408,7 +408,7 @@ class KissCartoonMe(CBaseHostClass):
             cipher = AES_CBC(key=key, keySize=16)
             return cipher.decrypt(encrypted, iv)
         
-        
+        password = ''
         tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="selectQuality">', '</select>', False)[1]
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
         if len(tmpTab):
@@ -425,7 +425,9 @@ class KissCartoonMe(CBaseHostClass):
         printDBG("================================")
         printDBG(code)
         printDBG("================================")
-        password = self._execCode(code)
+        tmp = self._execCode(code)
+        if tmp != '': password = tmp
+        else: password = '3pkr%s9bs11' % password
 
         for item in tmpTab:
             url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
