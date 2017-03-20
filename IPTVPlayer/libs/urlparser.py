@@ -6324,6 +6324,8 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
+        orgData = data
+        
         if 'content-blocked' in data:
             msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<img class="image-blocked"', '</div>')[1]).strip()
             if msg == '': msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<p class="lead"', '</p>')[1]).strip()
@@ -6427,6 +6429,7 @@ class pageParser:
                 decodestring = decodestring.replace("+","")
                 decodestring = decodestring.replace("\"","")
             return decodestring
+        
         preDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'a="0%', '{}', withMarkers=True, caseSensitive=False)
         for item in preDataTab:
             try:
@@ -6523,8 +6526,26 @@ class pageParser:
                 return ''
                 
             return "".join(p)
-
-        for item in [(0x24, 0x37, 0x7), (0x1e, 0x34, 0x6)]:
+            
+        tab = [(0x24, 0x37, 0x7), (0x1e, 0x34, 0x6)]
+        try: 
+            orgData = self.cm.ph.getDataBeetwenMarkers(orgData, '$(document)', '}});')[1].decode('string_escape')
+            p0 = self.cm.ph.getDataBeetwenMarkers(orgData, "splice", ';')[1]
+            p0 = self.cm.ph.getSearchGroups(p0, "\,(0x[0-9a-fA-F]+?)\)")[0]
+            p1 = self.cm.ph.getDataBeetwenMarkers(orgData, "'#'", 'continue;')[1]
+            p1 = self.cm.ph.getSearchGroups(p1, "\,(0x[0-9a-fA-F]+?)\)")[0]
+            p2 = self.cm.ph.rgetDataBeetwenMarkers2(orgData, '^=0x', 'var ')[1]
+            p2 = self.cm.ph.getSearchGroups(p2, "\,(0x[0-9a-fA-F]+?)\)")[0]
+            printDBG("p0[%s] p1[%s] p2[%s]" % (p0, p1, p2))
+            tab.insert(0, (int(p0, 16), int(p1, 16), int(p2, 16)))
+        except Exception:
+            printExc()
+            
+        printDBG("++++++++++++++++++++++++++++++++")
+        printDBG(tab)
+        printDBG("++++++++++++++++++++++++++++++++")
+        
+        for item in tab:
             dec = __decode_k(encTab[0], item[0], item[1], item[2])
             if dec != '': break
         
