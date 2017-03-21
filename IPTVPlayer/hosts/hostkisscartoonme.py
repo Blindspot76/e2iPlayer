@@ -436,6 +436,12 @@ class KissCartoonMe(CBaseHostClass):
                 printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
                 url = _decUrl(url, password)
                 printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
+                if 'kisscartoon' in self.up.getDomain(url):
+                    params = dict(self.defaultParams )
+                    params['return_data'] = False
+                    sts, response = self.getPage(url, params)
+                    url = response.geturl()
+                    response.close()
             except Exception:
                 printExc()
                 continue
