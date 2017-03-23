@@ -1289,7 +1289,7 @@ msgid "Pol'skiy"
 msgstr ""
 
 msgid "Poland"
-msgstr ""
+msgstr "Polska"
 
 msgid "Policy"
 msgstr ""
@@ -1389,13 +1389,13 @@ msgid "Promoted games"
 msgstr "Promowane gry"
 
 msgid "Protocol: "
-msgstr ""
+msgstr "Protokół:"
 
 msgid "Proxy server url"
 msgstr "Adres serwera proxy"
 
 msgid "Quality"
-msgstr ""
+msgstr "Jakość"
 
 msgid "Random"
 msgstr "Losowe"
@@ -1437,7 +1437,7 @@ msgid "Remember last watched position"
 msgstr "Pamiętać ostatnią pozycję filmu"
 
 msgid "Remove"
-msgstr ""
+msgstr "Usuń"
 
 msgid "Remove file"
 msgstr "Usuń plik"
@@ -1455,7 +1455,7 @@ msgid "Removing unnecessary files."
 msgstr "Usuwanie zbędnych plików."
 
 msgid "Rename"
-msgstr ""
+msgstr "Zmień nazwę"
 
 msgid "Request token from \"%s\""
 msgstr ""
@@ -1471,7 +1471,7 @@ msgstr ""
 "Proszę ponownie uruchomić odbiornik."
 
 msgid "Russia"
-msgstr ""
+msgstr "Rosja"
 
 msgid "Russian proxy server url"
 msgstr "Adres rosyjskiego serwera proxy"
@@ -1498,7 +1498,7 @@ msgid "Search for subitile for \"%s\""
 msgstr "Szukam napisów dla \"%s\""
 
 msgid "Search for subitile for %s"
-msgstr ""
+msgstr "Szukaj napisów dla %s"
 
 msgid "Search history"
 msgstr "Historia wyszukiwania"
@@ -1561,7 +1561,7 @@ msgid "Select subtitles track"
 msgstr "Wybierz ścieżkę napisów"
 
 msgid "Select the directory"
-msgstr ""
+msgstr "Wybierz katalog"
 
 msgid "Select update server"
 msgstr "Wybierz serwer aktualizacji"
@@ -1660,7 +1660,7 @@ msgid "Sort search result by"
 msgstr "Sortuj wyniki wyszukiwania według"
 
 msgid "Sort the list:"
-msgstr ""
+msgstr "Sotuj listę:"
 
 # weeb.tv main menu
 msgid "Sorted channels A-Z [live]"
@@ -1673,7 +1673,7 @@ msgid "Sorted most viewed channels now [live]"
 msgstr "Sortowanie kanałów najczęściej oglądanych [na żywo]"
 
 msgid "Spanish"
-msgstr ""
+msgstr "Hiszpański"
 
 msgid "Start"
 msgstr "Uruchom"
@@ -2059,7 +2059,7 @@ msgid "VIDEO"
 msgstr "WIDEO"
 
 msgid "Version"
-msgstr ""
+msgstr "Wersja"
 
 msgid ""
 "Version [%s] is ready for installation. After installation, restart of the "
@@ -3306,7 +3306,7 @@ msgid "By default, sort by:"
 msgstr ""
 
 msgid "***Any***"
-msgstr ""
+msgstr "***Dowolny***"
 
 msgid "most viewed"
 msgstr ""
@@ -3324,10 +3324,10 @@ msgid "Lastest"
 msgstr ""
 
 msgid "Use a proxy"
-msgstr ""
+msgstr "Użyj proxy"
 
 msgid "Films"
-msgstr ""
+msgstr "Filmy"
 
 msgid "Documents"
 msgstr "Dokumenty"
@@ -3381,19 +3381,19 @@ msgid "The Witcher"
 msgstr ""
 
 msgid "Size of the icons"
-msgstr ""
+msgstr "Rozmiar ikon"
 
 msgid "Connection type:"
-msgstr ""
+msgstr "Typ połączenia:"
 
 msgid "Very high"
 msgstr ""
 
 msgid "Best"
-msgstr ""
+msgstr "Najlepsza"
 
 msgid "Worst"
-msgstr ""
+msgstr "Najgorsza"
 
 msgid "Very low"
 msgstr ""
@@ -3414,7 +3414,7 @@ msgid "Audience zone"
 msgstr ""
 
 msgid "  password:"
-msgstr ""
+msgstr "  hasło:"
 
 msgid "The default video format"
 msgstr ""
@@ -3560,7 +3560,7 @@ msgid "Less viewed"
 msgstr ""
 
 msgid "Login failed."
-msgstr ""
+msgstr "Logowanie nieudane."
 
 msgid ""
 "This host requires registration. \n"
@@ -3575,7 +3575,7 @@ msgid "Use default video quality"
 msgstr ""
 
 msgid "Icon type"
-msgstr ""
+msgstr "Typ ikon"
 
 msgid "The problem with user logon \"%s\".\n"
 msgstr ""
