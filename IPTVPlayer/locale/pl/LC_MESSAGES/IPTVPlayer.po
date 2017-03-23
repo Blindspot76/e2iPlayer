@@ -635,15 +635,17 @@ msgid "Episodes"
 msgstr "Odcinki"
 
 msgid "Error deleting file \"%s\" .\n"
-msgstr ""
+msgstr "Wystąpił błąd podczas usuwania pliku \"%s\".\n"
 
 msgid "Error occurs during download."
-msgstr ""
+msgstr "Podczas pobierania wystąpił błąd."
 
 msgid ""
 "Error occurs during download. \n"
 "Status[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]"
 msgstr ""
+"Podczas pobierania wystąpił błąd.\n"
+"Status[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]"
 
 msgid ""
 "Error occurs.\n"
@@ -653,10 +655,10 @@ msgstr ""
 "[%s]"
 
 msgid "Error reading file \"%s\" .\n"
-msgstr ""
+msgstr "Wystąpił błąd podczas odczytywania pliku \"%s\".\n"
 
 msgid "Error writing file \"%s\" .\n"
-msgstr ""
+msgstr "Wystąpił błąd podczas zapisywania pliku \"% s\".\n"
 
 msgid "Executing user scripts."
 msgstr "Wykonywanie skryptów użytkownika."
@@ -677,13 +679,13 @@ msgid "External player use software decoder for the DTS"
 msgstr "Wykorzystać programowe dekodowanie dla DTS"
 
 msgid "Extra"
-msgstr ""
+msgstr "Dodatkowy"
 
 msgid "Extracting an update packet."
 msgstr "Wyodrębnianie pakietów aktualizacji."
 
 msgid "Favorite addresses are stored under the file urllist.user"
-msgstr ""
+msgstr "Ulubione adresy przechowywane są w pliku urllist.user"
 
 msgid "Favorites"
 msgstr "Ulubione"
@@ -716,7 +718,7 @@ msgid "First movie player without buffering mode"
 msgstr "Pierwszy odtwarzacz bez trybu buforowania"
 
 msgid "Fluendo mpegdemux for GSTREAMER 0.10"
-msgstr ""
+msgstr "Fluendo mpegdemux dla GSTREAMER 0.10"
 
 msgid "Folder for cache data"
 msgstr "Folder na dane do pamięci podręcznej"
@@ -734,7 +736,7 @@ msgid "Following host are broken or additional python modules are needed."
 msgstr "Poniższe hosty są niepoprawne lub brakuje im modułów pythona."
 
 msgid "For children"
-msgstr ""
+msgstr "Dla dzieci"
 
 msgid "Format 'wmv' blocked in configuration."
 msgstr "Format 'wmv' zablokowany w konfiguracji."
@@ -743,16 +745,16 @@ msgid "French"
 msgstr "Francuski"
 
 msgid "GST-IFDSRC for GSTREAMER 1.X"
-msgstr ""
+msgstr "GST-IFDSRC dla GSTREAMER 1.X"
 
 msgid "Games"
 msgstr "Gry"
 
 msgid "Genres"
-msgstr ""
+msgstr "Gatunki"
 
 msgid "German"
-msgstr ""
+msgstr "Niemcy"
 
 msgid "German channles"
 msgstr "Kanały w języku Niemieckim"
@@ -761,7 +763,7 @@ msgid "German proxy server url"
 msgstr "Adres niemieckiego serwera proxy"
 
 msgid "Get EPG"
-msgstr ""
+msgstr "Pobierz EPG"
 
 msgid "Get episodes list."
 msgstr "Pobieranie listy odcinków."
@@ -773,7 +775,7 @@ msgid "Get supported languages list."
 msgstr "Pobierz listę obsługiwanych języków."
 
 msgid "Global"
-msgstr ""
+msgstr "Globalny"
 
 msgid "Grade"
 msgstr ""
@@ -788,13 +790,13 @@ msgid "Group %d"
 msgstr "Grupa %d"
 
 msgid "Group links into categories: "
-msgstr ""
+msgstr "Grupuje linki w kategorie:"
 
 msgid "Group with id[%s] not found."
 msgstr "Grupa o identyfikatorze [%s] nie została odnaleziona."
 
 msgid "HIGH"
-msgstr ""
+msgstr "WYSOKI"
 
 msgid "High (or HD)"
 msgstr "Wysoka (lub HD)"
@@ -812,31 +814,31 @@ msgid "Hosting: %s, %s"
 msgstr ""
 
 msgid "IPTV - Player mode"
-msgstr ""
+msgstr "IPTV - Tryb odtwarzania"
 
 msgid "IPTV - the recorder mode"
-msgstr ""
+msgstr "IPTV - Tryb nagrywania"
 
 msgid "IPTV Player"
-msgstr ""
+msgstr "IPTV Player"
 
 msgid "IPTV Player "
-msgstr ""
+msgstr "IPTV Player "
 
 msgid "IPTV Player %s"
-msgstr ""
+msgstr "IPTV Player %s"
 
 msgid "IPTV Player - settings"
 msgstr "IPTV Player - Ustawienia"
 
 msgid "IPTV Player HD version %s"
-msgstr ""
+msgstr "IPTV Player wersja HD %s"
 
 msgid "IPTV Player version %s"
-msgstr ""
+msgstr "IPTV Player wersja %s"
 
 msgid "IPTV Recordings"
-msgstr ""
+msgstr "IPTV Nagrania"
 
 msgid "IPTV download manager"
 msgstr "Menadżer pobierania IPTV"
@@ -845,7 +847,7 @@ msgid "IPTVPlayer - update"
 msgstr "IPTVPlayer - Aktualizacja"
 
 msgid "IPTVPlayer need some additional setup"
-msgstr ""
+msgstr "IPTVPlayer wymaga dodatkowej konfiguracji"
 
 msgid ""
 "IPTVPlayer need some additional setup.\n"
@@ -860,10 +862,10 @@ msgid "IPTVPlayer services configuration"
 msgstr "IPTVPlayer konfiguracja hostów"
 
 msgid "IPTVPlayer setup version %s"
-msgstr ""
+msgstr "IPTVPlayer konfiguracja wersja %s"
 
 msgid "IPTVPlayer setup version %s "
-msgstr ""
+msgstr "IPTVPlayer konfiguracja wersja %s "
 
 msgid "Icons size"
 msgstr "Rozmiar ikon"
@@ -881,7 +883,7 @@ msgid "Input"
 msgstr "Dane wejściowe"
 
 msgid "Install into the \"%s\" ."
-msgstr ""
+msgstr "Zainstaluj w \"% s\"."
 
 msgid "Installation binary failed. Retry?"
 msgstr "Instalacja binarna nie powiodła się.Ponowić próbę?"
@@ -893,7 +895,7 @@ msgid "Installation has been confirmed."
 msgstr "Instalacja została potwierdzona."
 
 msgid "Installing \"%s\" ."
-msgstr ""
+msgstr "Instalowanie \"%s\"."
 
 msgid "Installing new version."
 msgstr "Instalowanie nowej wersji."
@@ -902,13 +904,13 @@ msgid "Invalid name."
 msgstr "Nieprawidłowa nazwa."
 
 msgid "It improves buffering mode with the gstplayer.\n"
-msgstr ""
+msgstr "Poprawia tryb buforowania przy użyciu gstplayera.\n"
 
 msgid "It improves playing of streams hls/m3u8.\n"
-msgstr ""
+msgstr "Poprawia odtwarzanie strumieni hls / m3u8.\n"
 
 msgid "It seems that the host \"%s\" has crashed."
-msgstr ""
+msgstr "Wygląda na to, że host \"%s\" się wysypał."
 
 msgid ""
 "It seems that the host \"%s\" has crashed. Do you want to report this "
@@ -937,7 +939,7 @@ msgid "Item idx[%d] not found in group[%s]."
 msgstr "Element [%d] nie znaleziony w grupie [%s]."
 
 msgid "Items in group"
-msgstr ""
+msgstr "Przedmioty w grupie"
 
 msgid "Items in group \"%s\""
 msgstr "Pozycji w grupie \"%s\""
@@ -946,10 +948,10 @@ msgid "JSON module not available!"
 msgstr "Brak modułu json!"
 
 msgid "Japanese"
-msgstr "Japońsie"
+msgstr "Japońskie"
 
 msgid "Junior"
-msgstr ""
+msgstr "junior"
 
 msgid "Language:"
 msgstr "Język:"
@@ -972,23 +974,28 @@ msgid ""
 "restrictions. The good news, is there are tens of thousands of other videos "
 "to choose from.\""
 msgstr ""
+"Ostatni błąd: \"Ludzie, którzy mieszkają tam gdzie Ty nie mogą oglądać tego "
+"filmu.. Nie dlatego, że Cię nie lubią, ale dlatego że właściciele mają pewne "
+"ograniczenia. Dobrą wiadomością są dziesiątki tysięcy innych filmów wideo do "
+"wybrania.\""
 
 msgid "Last error: \"Silverlight stream not supported.\""
-msgstr ""
+msgstr "Ostatni błąd: \"strumień Silverlight nie jest obsługiwany\"."
 
 msgid ""
 "Last error: \"The Mirror is broken.If available you can choose other source."
 "\""
 msgstr ""
+"Ostatni błąd: \"Toźródło jest uszkodzone. Jeśli jest dostępne wybierz inne.\""
 
 msgid "Last error: %s"
-msgstr ""
+msgstr "Ostatni błąd: %s"
 
 msgid "Latest added"
 msgstr "Ostatnio dodane"
 
 msgid "Latest updates"
-msgstr ""
+msgstr "Ostatnie aktualizacje"
 
 msgid "Lightgray"
 msgstr "Jasno szare"
@@ -1000,13 +1007,13 @@ msgid "Link"
 msgstr ""
 
 msgid "Links are videos and messages, without division into categories"
-msgstr ""
+msgstr "Linki do filmów i wiadomości bez podziału na kategorie."
 
 msgid "Links to the video files from the file urllist.txt"
-msgstr ""
+msgstr "Linki do plików wideo z urllist.txt"
 
 msgid "List only channels with subscription"
-msgstr ""
+msgstr "Wyświetl tylko kanały kodowane"
 
 msgid "Live"
 msgstr "Transmisja na żywo"
@@ -1015,7 +1022,7 @@ msgid "Live Channels"
 msgstr "Kanały na żywo"
 
 msgid "Live broadcasts from the file urllist.stream"
-msgstr ""
+msgstr "Transmisje na żywo z pliku urllist.stream"
 
 msgid "Load"
 msgstr "Pobierz"
@@ -1033,22 +1040,22 @@ msgid "LocalMedia"
 msgstr ""
 
 msgid "Login"
-msgstr ""
+msgstr "Login"
 
 msgid "Login user \"%s\" into %s"
 msgstr "Logowanie użytkownika \"%s\" do %s"
 
 msgid "Login:"
-msgstr ""
+msgstr "Login:"
 
 msgid "MEDIUM"
-msgstr ""
+msgstr "ŚREDNI"
 
 msgid "MERGE protocol source"
 msgstr ""
 
 msgid "MORE"
-msgstr ""
+msgstr "WIĘCEJ"
 
 msgid "Main"
 msgstr ""
@@ -3017,43 +3024,43 @@ msgid "Localization"
 msgstr ""
 
 msgid "Argentina"
-msgstr ""
+msgstr "Argentyna"
 
 msgid "Australia"
-msgstr ""
+msgstr "Australia"
 
 msgid "Belgium"
-msgstr ""
+msgstr "Belgia"
 
 msgid "Brazil"
-msgstr ""
+msgstr "Brazylia"
 
 msgid "Canada"
-msgstr ""
+msgstr "Kanada"
 
 msgid "France"
-msgstr ""
+msgstr "Francja"
 
 msgid "Germany"
-msgstr ""
+msgstr "Niemcy"
 
 msgid "India"
-msgstr ""
+msgstr "Indie"
 
 msgid "Indonesia"
-msgstr ""
+msgstr "Indonezja"
 
 msgid "International"
-msgstr ""
+msgstr "Międzynarodowy"
 
 msgid "Ireland"
-msgstr ""
+msgstr "Irlandia"
 
 msgid "Italy"
-msgstr ""
+msgstr "Włochy"
 
 msgid "Malaysia"
-msgstr ""
+msgstr "Malezja"
 
 msgid "Morocco"
 msgstr "Maroko"
@@ -3176,91 +3183,91 @@ msgid "User PREMIUM KinomanTV?"
 msgstr ""
 
 msgid "  KinomanTV login:"
-msgstr ""
+msgstr "  KinomanTV login:"
 
 msgid "  KinomanTV password:"
-msgstr ""
+msgstr "  KinomanTV hasło:"
 
 msgid "Categories films"
 msgstr ""
 
 msgid "Last added"
-msgstr ""
+msgstr "Ostatnio dodane"
 
 msgid "Most rated"
-msgstr ""
+msgstr "Najwyżej oceniane"
 
 msgid "My Favorites"
-msgstr ""
+msgstr "Moje Ulubione"
 
 msgid "Enter data into your account (blue key)."
-msgstr ""
+msgstr "Wpisz dane na swoim koncie (niebieski klawisz)."
 
 msgid "Geolocation IP:"
-msgstr ""
+msgstr "Geolokalizacja IP:"
 
 msgid "TV channels"
-msgstr ""
+msgstr "Kanały TV"
 
 msgid "Radio stations"
-msgstr ""
+msgstr "Stacje Radiowe"
 
 msgid "Latest series"
 msgstr "Najnowsze seriale"
 
 msgid "bitrate: worst"
-msgstr ""
+msgstr "Bitrate: najgorsza"
 
 msgid "bitrate: 200p"
-msgstr ""
+msgstr "Bitrate: 200p"
 
 msgid "bitrate: 450p"
-msgstr ""
+msgstr "Bitrate: 450p"
 
 msgid "bitrate: 900"
-msgstr ""
+msgstr "Bitrate: 900"
 
 msgid "bitrate: 1800"
-msgstr ""
+msgstr "Bitrate: 1800"
 
 msgid "bitrate: the best"
-msgstr ""
+msgstr "Bitrate: najlepsza"
 
 msgid "The default video format:"
-msgstr ""
+msgstr "Domyślny format wideo:"
 
 msgid "Use the default video format:"
-msgstr ""
+msgstr "Użyj domyślny format wideo:"
 
 msgid "Ekstraklasa use a proxy?"
-msgstr ""
+msgstr "Użyć poxy Ekstraklasa?"
 
 msgid "Goals"
 msgstr ""
 
 msgid "Shortcuts"
-msgstr ""
+msgstr "Skróty"
 
 msgid "Gateway queue"
-msgstr ""
+msgstr "Kolejka bramy"
 
 msgid "Warehouse"
 msgstr ""
 
 msgid "The most relevant"
-msgstr ""
+msgstr "Najtrafniejsze"
 
 msgid "Popularity"
-msgstr ""
+msgstr "Popularne"
 
 msgid "Items"
 msgstr ""
 
 msgid "Recent Items (Popular)"
-msgstr ""
+msgstr "Ostatnie pozycje (Popularne)"
 
 msgid "Recent Items (All)"
-msgstr ""
+msgstr "Ostatnie pozycje (Wszystkie)"
 
 msgid "Feature Potential Items"
 msgstr ""
@@ -3323,7 +3330,7 @@ msgid "Films"
 msgstr ""
 
 msgid "Documents"
-msgstr ""
+msgstr "Dokumenty"
 
 msgid "Tales"
 msgstr ""
@@ -3422,7 +3429,7 @@ msgid ":for"
 msgstr ""
 
 msgid "Programs"
-msgstr ""
+msgstr "Programy"
 
 msgid "Information & journalism"
 msgstr ""
@@ -3874,7 +3881,7 @@ msgid "Views"
 msgstr ""
 
 msgid "Preview"
-msgstr ""
+msgstr "Podgląd"
 
 msgid ""
 "It seems that the subtitle's provider \"%s\" has crashed. Do you want to "
@@ -3882,54 +3889,56 @@ msgid ""
 msgstr ""
 
 msgid "Subtitles \"%s\" downloaded correctly."
-msgstr ""
+msgstr "Napisy \"%s\" pobrane prawidłowo."
 
 msgid "Do you want to finish?"
 msgstr ""
 
 msgid "Season %s"
-msgstr ""
+msgstr "Sezon %s"
 
 msgid "Failed to create directory \"%s\"."
 msgstr ""
 
 msgid "Unzip error code[%s]."
-msgstr ""
+msgstr "Uznip kod błędu [%s]."
 
 msgid "It seems that unzip utility is not installed."
 msgstr ""
 
 msgid "Wrong format of zip archive."
-msgstr ""
+msgstr "Niewłaściwy format archiwum zip."
 
 msgid "Unrar error code[%s]."
-msgstr ""
+msgstr "Unrar kod błędu [%s]."
 
 msgid "It seems that unrar utility is not installed."
 msgstr ""
 
 msgid "Wrong format of rar archive."
-msgstr ""
+msgstr "Niewłaściwy format archiwum rar."
 
 msgid "Failed to write the file \"%s\"."
-msgstr ""
+msgstr "Nie udało się zapisać pliku \"%s\"."
 
 msgid "Failed to convert the file \"%s\" to UTF-8."
-msgstr ""
+msgstr "Nie udało się przekonwertować pliku \"%s\" na UTF-8."
 
 msgid "Failed to open the file \"%s\"."
-msgstr ""
+msgstr "Nie można otworzyć pliku \"%s\"."
 
 msgid "Login failed!"
-msgstr ""
+msgstr "Logowanie nieudane!"
 
 msgid ""
 "Error message: \"%s\".\n"
 "Error code: \"%s\"."
 msgstr ""
+"Komunikat o błędzie: \"%s\".\n"
+"Kod błędu: \"%s\"."
 
 msgid "Get languages failed!"
-msgstr ""
+msgstr "Pobranie języków nieudane!"
 
 msgid "Failed to download subtitle."
 msgstr ""
@@ -3979,19 +3988,19 @@ msgid "Select subtitles provider:"
 msgstr "Wybierz dostawcę napisów:"
 
 msgid "OpenSubtitles.org"
-msgstr ""
+msgstr "OpenSubtitles.org"
 
 msgid "Napisy24.pl"
-msgstr ""
+msgstr "Napisy24.pl"
 
 msgid "Titlovi.com"
-msgstr ""
+msgstr "Titlovi.com"
 
 msgid "Youtube.com"
-msgstr ""
+msgstr "v"
 
 msgid "Subscene.com"
-msgstr ""
+msgstr "OpenSubtitles.org"
 
 msgid "If available you can choose other source."
 msgstr ""
