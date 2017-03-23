@@ -14,6 +14,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 # FOREIGN import
 ###################################################
+import urlparse
 import time
 import re
 import urllib
@@ -61,7 +62,8 @@ class T123MoviesTO(CBaseHostClass):
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.DEFAULT_ICON_URL = 'http://koditips.com/wp-content/uploads/123movies-kodi.png'
-        self.HEADER = {'User-Agent': 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'DNT':'1', 'Accept': 'text/html'}
+        self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = None
@@ -69,7 +71,7 @@ class T123MoviesTO(CBaseHostClass):
         self.cacheLinks = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-    def getPage(self, url, addParams = {}, post_data = None):
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}:
             addParams = dict(self.defaultParams)
             
@@ -81,8 +83,15 @@ class T123MoviesTO(CBaseHostClass):
                 proxy = config.plugins.iptvplayer.alternative_proxy2.value
             addParams = dict(addParams)
             addParams.update({'http_proxy':proxy})
-        
-        return self.cm.getPage(url, addParams, post_data)
+            
+        def _getFullUrl(url):
+            if self.cm.isValidUrl(url):
+                return url
+            else:
+                return urlparse.urljoin(baseUrl, url)
+            
+        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
     def getFullIconUrl(self, url):
         url = self.getFullUrl(url)
@@ -93,6 +102,9 @@ class T123MoviesTO(CBaseHostClass):
             else:
                 proxy = config.plugins.iptvplayer.alternative_proxy2.value
             url = strwithmeta(url, {'iptv_http_proxy':proxy})
+            
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         return url
         
     def selectDomain(self):
@@ -222,7 +234,10 @@ class T123MoviesTO(CBaseHostClass):
         printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         
         for item in tab:
-            title = item['title'].replace(' 0', ' ')
+            title = item['title'].upper()
+            title = title.replace('EPISODE', ' ')
+            title = title.replace(' 0', ' ').strip()
+            if 'TRAILER' not in title: title = 'Episode ' + title
             if title not in episodeKeys:
                 episodeLinks[title] = []
                 episodeKeys.append(title)
@@ -308,12 +323,19 @@ class T123MoviesTO(CBaseHostClass):
         
         
         subTracks = []
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']')[1]
-        data = data.split('}')
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']')[1]
+        if tmp != '':
+            tmp = data.split('}')
+            urlAttrName = 'file'
+            sp = ':'
+        else:
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', withMarkers=True)
+            urlAttrName = 'src'
+            sp = '='
         
-        for item in data:
-            url  = self.cm.ph.getSearchGroups(item, r'''['"]?file['"]?\s*:\s*['"](https?://[^"^']+)['"]''')[0]
-            name = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
+        for item in tmp:
+            url  = self.cm.ph.getSearchGroups(item, r'''['"]?{0}['"]?\s*{1}\s*['"](https?://[^"^']+)['"]'''.format(urlAttrName, sp))[0]
+            name = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?\s*{0}\s*['"]([^"^']+)['"]'''.format(sp))[0]
             
             printDBG('---------------------------')
             printDBG('url:  ' + url)
