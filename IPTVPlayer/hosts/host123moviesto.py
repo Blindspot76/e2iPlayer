@@ -52,7 +52,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://123movies.to/'
+    return 'http://123movieshd.tv/'
 
 class T123MoviesTO(CBaseHostClass):
  
@@ -96,7 +96,7 @@ class T123MoviesTO(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        domains = ['https://123movieshd.to/', 'https://123movies.net.ru/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/']
+        domains = ['https://123movieshd.tv/', 'https://seriesonline.io/']
         domain = config.plugins.iptvplayer.moviesto123_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -117,13 +117,14 @@ class T123MoviesTO(CBaseHostClass):
                 break
                 
         if self.MAIN_URL == None:
-            self.MAIN_URL = 'https://123movies.is/' # first domain is default one
+            self.MAIN_URL = 'https://123movieshd.tv/' # first domain is default one
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
         
         self.MAIN_CAT_TAB = [{'category':'list_filter_genre', 'title': 'Movies',    'url':self.MAIN_URL+'movie/filter/movie' },
                              {'category':'list_filter_genre', 'title': 'TV-Series', 'url':self.MAIN_URL+'movie/filter/series'},
+                             {'category':'list_filter_genre', 'title': 'Cinema',    'url':self.MAIN_URL+'movie/filter/cinema'},
                              {'category':'search',          'title': _('Search'), 'search_item':True,                        },
                              {'category':'search_history',  'title': _('Search history'),                                    } 
                             ]
@@ -131,7 +132,7 @@ class T123MoviesTO(CBaseHostClass):
     def fillCacheFilters(self):
         self.cacheFilters = {}
         
-        sts, data = self.getPage(self.getFullUrl('movie/filter/all'), self.defaultParams)
+        sts, data = self.getPage(self.getFullUrl('movie/filter/series/all/all/all/all/latest/'), self.defaultParams)
         if not sts: return
         
         # get sort by
@@ -139,7 +140,7 @@ class T123MoviesTO(CBaseHostClass):
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'Sort by</span>', '</ul>', False)[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>', withMarkers=True, caseSensitive=False)
         for item in tmp:
-            value = self.cm.ph.getSearchGroups(item, 'href="[^"]+?/filter/all/([^"^/]+?)/')[0]
+            value = self.cm.ph.getSearchGroups(item, 'href="[^"]+?/filter/all/all/all/all/all/([^"^/]+?)/')[0]
             self.cacheFilters['sort_by'].append({'sort_by':value, 'title':self.cleanHtmlStr(item)})
             
         for filter in [{'key':'quality', 'marker':'Quality</span>'},
@@ -173,31 +174,30 @@ class T123MoviesTO(CBaseHostClass):
         url = cItem['url']
         page = cItem.get('page', 1)
         if '/search' not in url:
-            # var url = 'http://123movies.to/movie/filter/' + type + '/' + 'view' + '/' + genres + '/' + countries + '/' + year + '/' + 'all' + '/' + quality;
-            url += '/{0}/{1}/{2}/{3}/all/{4}'.format(cItem['sort_by'], cItem['genre'], cItem['country'], cItem['year'], cItem['quality'])
+            url += '/{0}/{1}/{2}/{3}/{4}/'.format(cItem['quality'], cItem['genre'], cItem['country'], cItem['year'], cItem['sort_by'])
         
-        if page > 1: url = url + '/{0}'.format(page)
+        if page > 1: url = url + '?page={0}'.format(page)
         sts, data = self.getPage(url)
         if not sts: return
         
-        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="pagination">', '</ul>', False)[1]
-        if '>Next &rarr;<' in nextPage:
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', '</ul>', False)[1]
+        if '' != self.cm.ph.getSearchGroups(nextPage, 'page=(%s)[^0-9]' % (page+1))[0]:
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div data-movie-id=', '</a>', withMarkers=True)
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="ml-item">', '</a>', withMarkers=True)
         for item in data:
             url  = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             icon = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'data-original="([^"]+?)"')[0] )
-            movieId = self.cm.ph.getSearchGroups(item, 'data-movie-id="([^"]+?)"')[0]
+            dataUrl = self.cm.ph.getSearchGroups(item, 'data-url="([^"]+?)"')[0]
             if icon == '': icon = cItem.get('icon', '')
             desc = self.cleanHtmlStr( item )
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1] )
             if title == '': title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0] )
             if title == '': title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0] )
             if url.startswith('http'):
-                params = {'good_for_fav': True, 'title':title, 'url':url, 'movie_id':movieId, 'desc':desc, 'info_url':url, 'icon':icon}
-                if '-season-' not in url and 'class="mli-eps"' not in item: #and '/series' not in cItem['url']
+                params = {'good_for_fav': True, 'title':title, 'url':url, 'data_url':dataUrl, 'desc':desc, 'info_url':url, 'icon':icon}
+                if '-season-' not in url and 'class="mli-eps"' not in item:
                     self.addVideo(params)
                 else:
                     params['category'] = nextCategory
@@ -243,9 +243,9 @@ class T123MoviesTO(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("T123MoviesTO.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = self.SEARCH_URL + '/' + urllib.quote_plus(searchPattern)
+        cItem['url'] = self.SEARCH_URL + '/' + urllib.quote_plus(searchPattern).replace('+', '-')
         self.listItems(cItem, 'list_episodes')
-    
+        
     def getLinksForVideo(self, cItem, forEpisodes=False):
         printDBG("T123MoviesTO.getLinksForVideo [%s]" % cItem)
         
@@ -256,27 +256,21 @@ class T123MoviesTO(CBaseHostClass):
         if len(urlTab): return urlTab
         self.cacheLinks = {}
         
-        #rm(self.COOKIE_FILE)
-        
-        sts, data = self.getPage(cItem['url'], self.defaultParams)
+        url = cItem['url']        
+        sts, data = self.getPage(url, self.defaultParams)
         if not sts: return []
         
         # get trailer
         trailer = self.cm.ph.getDataBeetwenMarkers(data, '''$('#pop-trailer')''', '</script>', False)[1]
         trailer = self.cm.ph.getSearchGroups(trailer, '''['"](http[^"^']+?)['"]''')[0]
         
-        movieId = cItem.get('movie_id', '')
-        if '' == movieId:
-            try: movieId = str(int(cItem['url'].split('-')[-1]))
-            except Exception:
-                printExc()
-        
-        if '' == movieId: return []
-        url = 'ajax/v2_get_episodes/' + movieId
-        url = self.getFullUrl( url )
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'id="mv-info"', '</a>')[1]
+        url  = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''href=['"]([^'^"]+?)['"]''')[0])
         
         params = dict(self.defaultParams)
-        params['header'] = self.AJAX_HEADER
+        params['header'] = dict(params['header'])
+        params['header']['Referer'] = cItem['url']
+        
         sts, data = self.getPage(url, params)
         if not sts: return []
         
@@ -285,167 +279,59 @@ class T123MoviesTO(CBaseHostClass):
             serverTitle = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div id="server', '</div>', withMarkers=True)[1] )
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a', '</a>', withMarkers=True)
             for eItem in tmp:
-                tmp = self.cm.ph.getDataBeetwenMarkers(eItem, 'loadEpisode(', ')', False)[1].split(',')
-                if len(tmp) != 2: continue
-                serverId = tmp[0].strip()
-                episodeId = tmp[1].strip()
+                url = self.getFullUrl(self.cm.ph.getSearchGroups(eItem, '''player-data=['"]([^'^"]+?)['"]''')[0])
                 title = self.cleanHtmlStr( eItem )
                 if not forEpisodes:
                     name = serverTitle + ': ' + title
                 else:
                     name = ''
-                urlTab.append({'name':name, 'title':title, 'server_title':serverTitle, 'url':serverId + '|' + episodeId + '|' + cItem['url'], 'server_id':serverId, 'episode_id':episodeId, 'need_resolve':1})
+                urlTab.append({'name':name, 'title':title, 'server_title':serverTitle, 'url':url, 'need_resolve':1})
             
         if len(urlTab) and self.cm.isValidUrl(trailer) and len(trailer) > 10:
             urlTab.insert(0, {'name':'Trailer', 'title':'Trailer', 'server_title':'Trailer', 'url':trailer, 'need_resolve':1})
         
         self.cacheLinks[cItem['url']] = urlTab
         return urlTab
-
-    def uncensored1(self, data):
-        xx = ''
-        xy = ''
-        try:
-            data = '(' + data.split("(_$$)) ('_');")[0].split("/* `$$` */")[-1].strip()
-            data = data.replace('(__$)[$$$]', '\'"\'')
-            data = data.replace('(__$)[_$]', '"\\\\"')
-            data = data.replace('(o^_^o)', '3')
-            data = data.replace('(c^_^o)', '0')
-            data = data.replace('(_$$)', '1')
-            data = data.replace('($$_)', '4')
-            code = '''def retA():
-    class Infix:
-        def __init__(self, function):
-            self.function = function
-        def __ror__(self, other):
-            return Infix(lambda x, self=self, other=other: self.function(other, x))
-        def __or__(self, other):
-            return self.function(other)
-        def __rlshift__(self, other):
-            return Infix(lambda x, self=self, other=other: self.function(other, x))
-        def __rshift__(self, other):
-            return self.function(other)
-        def __call__(self, value1, value2):
-            return self.function(value1, value2)
-    def my_add(x, y):
-        try: return x + y
-        except Exception: return str(x) + str(y)
-    x = Infix(my_add)
-    return %s
-param = retA()'''
-
-            vGlobals = {"__builtins__": None, '__name__':__name__, 'str':str, 'Exception':Exception}
-            vLocals = { 'param': None }
-            exec( code % data.replace('+','|x|'), vGlobals, vLocals)
-            data = vLocals['param'].decode('string_escape')
-            xx = self.cm.ph.getSearchGroups(data, '''xx=['"]([^"^']+?)['"]''')[0]
-            xy = self.cm.ph.getSearchGroups(data, '''xy=['"]([^"^']+?)['"]''')[0]
-        except Exception:
-            printExc()
-        return xx, xy
         
     def getVideoLinks(self, videoUrl):
         printDBG("T123MoviesTO.getVideoLinks [%s]" % videoUrl)
         urlTab = []
         
-        if self.cm.isValidUrl(videoUrl):
-            return self.up.getVideoLinkExt(videoUrl)
+        if not self.cm.isValidUrl(videoUrl):
+            return []
         
-        tmp = videoUrl.split('|')
-        if len(tmp) != 3: return []
-        serverId  = tmp[0]
-        episodeId = tmp[1]
-        referer   = tmp[2]
+        tab = self.up.getVideoLinkExt(videoUrl)
+        if len(tab): return tab
         
-        if referer.endswith('/'):
-            referer += 'watching.html'
-        
-        sts, data = self.getPage(referer, self.defaultParams)
+        sts, data = self.getPage(videoUrl, self.defaultParams)
         if not sts: return []
         
-        #rm(self.COOKIE_FILE)
-        #cookie = self.cm.getCookieHeader(self.COOKIE_FILE)
         
-        if serverId in ['12', '13', '14', '15']:
-            url = 'ajax/load_embed/' + episodeId
-            url = self.getFullUrl( url )
-            sts, data = self.getPage(url)
-            if not sts: return []
-            try:
-                data = byteify(json.loads(data))
-                if data['status']:
-                    urlTab = self.up.getVideoLinkExt(data['embed_url'])
-            except Exception:
-                printExc()
-                return []
-        else:
-            url = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''['"]([^"^']*?js/client[^"^']*?)['"]''')[0] )
-            if not self.cm.isValidUrl(url): return []
+        subTracks = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']')[1]
+        data = data.split('}')
+        
+        for item in data:
+            url  = self.cm.ph.getSearchGroups(item, r'''['"]?file['"]?\s*:\s*['"](https?://[^"^']+)['"]''')[0]
+            name = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
             
-            params = dict(self.defaultParams)
-            params['header'] = dict(self.HEADER)
-            params['header']['Referer'] = referer
-            data = ''
-            tries = 0
-            while tries < 10:
-                tries += 1
-                sts, data = self.getPage(url, params)
-                if not sts: 
-                    data = ''
-                    continue
-                printDBG( "--------------" )
-                printDBG( data[0:20] )
-                printDBG( "--------------" )
-                if '[]' not in data:
-                    time.sleep(1)
-                    break
-                    
-            if '[]' in data:
-                SetIPTVPlayerLastHostError(_('Not supported obfuscation algorithm detected. Try again later.'))
-                return []
-                
-            if data == '':
-                return []
+            printDBG('---------------------------')
+            printDBG('url:  ' + url)
+            printDBG('name: ' + name)
+            printDBG('+++++++++++++++++++++++++++')
+            printDBG(item)
             
-            xx, xy = self.uncensored1(data)
-            url = 'ajax/v3_get_sources/%s?xx=%s&xy=%s' % (episodeId, xx, xy)
-            url = self.getFullUrl( url )
-
-            params = {}
-            params['header'] = dict(self.AJAX_HEADER)
-            sts, data = self.getPage(url, params)
-            if not sts: return []
+            if 'mp4' in item:
+                urlTab.append({'name':name, 'url':url})
+            elif 'captions' in item:
+                format = url[-3:]
+                if format in ['srt', 'vtt']:
+                    subTracks.append({'title':name, 'url':self.getFullIconUrl(url), 'lang':name, 'format':format})
             
-            subTracks = []
-            if False:
-                tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<jwplayer', '>', withMarkers=True)
-                printDBG("------------------------------------------------\n%s+++++++++++++++++++++++++++++++++++++++++++++\n" % tmp)
-                for item in tmp:
-                    url  = self.cm.ph.getSearchGroups(item, 'file="(http[^"]+?)"')[0].replace('&amp;', '&')
-                    name = self.cm.ph.getSearchGroups(item, 'label="([^"]+?)"')[0]
-                    if 'type="mp4"' in item:
-                        urlTab.append({'name':name, 'url':url})
-                    elif 'kind="captions"' in item:
-                        format = url[-3:]
-                        if format in ['srt', 'vtt']:
-                            subTracks.append({'title':name, 'url':self.getFullIconUrl(url), 'lang':name, 'format':format})
-            else:
-                try:
-                    tmp = byteify(json.loads(data))
-                    printDBG("------------------------------------------------\n%s+++++++++++++++++++++++++++++++++++++++++++++\n" % tmp)
-                    for item in tmp['playlist'][0]['sources']:
-                        if "mp4" == item['type']:
-                            urlTab.append({'name':item['label'], 'url':item['file']})
-                    for item in tmp['playlist'][0]['tracks']:
-                        format = item['file'][-3:]
-                        if format in ['srt', 'vtt'] and "captions" == item['kind']:
-                            subTracks.append({'title':item['label'], 'url':self.getFullIconUrl(item['file']), 'lang':item['label'], 'format':format})
-                except Exception:
-                    printExc()
-            printDBG(subTracks)
-            if len(subTracks):
-                for idx in range(len(urlTab)):
-                    urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'external_sub_tracks':subTracks})
+        printDBG(subTracks)
+        if len(subTracks):
+            for idx in range(len(urlTab)):
+                urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'external_sub_tracks':subTracks})
         
         return urlTab
         
@@ -486,17 +372,11 @@ param = retA()'''
                 try: otherInfo[descTabMap[key]] = val
                 except Exception: continue
         
-        if '' != cItem.get('movie_id', ''):
-            rating = ''
-            sts, data = self.getPage(self.getFullUrl('ajax/movie_rate_info/' + cItem['movie_id']))
-            if sts: rating = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div id="movie-mark"', '</label>', True)[1] )
-            if rating != '': otherInfo['rating'] = self.cleanHtmlStr( rating )
-        
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
     def getFavouriteData(self, cItem):
         printDBG('T123MoviesTO.getFavouriteData')
-        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'movie_id':cItem['movie_id'], 'desc':cItem['desc'], 'info_url':cItem['info_url'], 'icon':cItem['icon']}
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'data_url':cItem['data_url'], 'desc':cItem['desc'], 'info_url':cItem['info_url'], 'icon':cItem['icon']}
         return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):
