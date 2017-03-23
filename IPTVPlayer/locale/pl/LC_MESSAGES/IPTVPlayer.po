@@ -3015,7 +3015,7 @@ msgid "Homepage"
 msgstr ""
 
 msgid "Category"
-msgstr ""
+msgstr "Kategoria"
 
 msgid "Katalog A-Z"
 msgstr ""
@@ -3807,7 +3807,7 @@ msgid "By country"
 msgstr ""
 
 msgid "Translations"
-msgstr ""
+msgstr "Tłumaczenia"
 
 msgid "Collections"
 msgstr ""
