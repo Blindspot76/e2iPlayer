@@ -2340,7 +2340,7 @@ msgid "lime"
 msgstr "cytrynowo zielony"
 
 msgid "live"
-msgstr ""
+msgstr "na żywo"
 
 msgid "live transfers"
 msgstr ""
