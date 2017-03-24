@@ -1115,13 +1115,13 @@ msgid "Movies"
 msgstr "Filmy"
 
 msgid "Music"
-msgstr ""
+msgstr "Muzyka"
 
 msgid "Music-Box"
 msgstr ""
 
 msgid "Musik"
-msgstr ""
+msgstr "Muzyka"
 
 msgid "Name cannot be empty."
 msgstr "Nazwa nie może być pusta."
@@ -1310,13 +1310,13 @@ msgid "Popular Artists"
 msgstr ""
 
 msgid "Português"
-msgstr ""
+msgstr "Portugalskie"
 
 msgid "Prefered quality"
 msgstr "Preferowana jakość"
 
 msgid "Preferred quality"
-msgstr ""
+msgstr "Preferowana jakość"
 
 msgid "Preferred streaming protocol"
 msgstr ""
@@ -1331,7 +1331,7 @@ msgid "Premium user"
 msgstr ""
 
 msgid "Press OK to start"
-msgstr ""
+msgstr "Naciśnij przycisk OK, aby rozpocząć"
 
 msgid "Previous"
 msgstr "Poprzedni"
@@ -1781,13 +1781,13 @@ msgid "Synchronize"
 msgstr "Synchronizacja"
 
 msgid "TV Shows"
-msgstr ""
+msgstr "Programy TV"
 
 msgid "TV series"
-msgstr ""
+msgstr "Seriale TV"
 
 msgid "TV shows"
-msgstr ""
+msgstr "Programy TV"
 
 msgid "Teletext decoder"
 msgstr ""
@@ -1918,7 +1918,7 @@ msgid "Try again for some time"
 msgstr ""
 
 msgid "Turkish"
-msgstr ""
+msgstr "Turecki"
 
 # hostwebstream
 msgid "Turn off buffering for http://prognoza.pogody.tv/"
@@ -1928,7 +1928,7 @@ msgid "Type: "
 msgstr "Typ: "
 
 msgid "Türk"
-msgstr ""
+msgstr "Turecki"
 
 msgid "UNKNOWN"
 msgstr "NIEZNANY"
@@ -2256,7 +2256,7 @@ msgid "descending"
 msgstr ""
 
 msgid "deutsch"
-msgstr ""
+msgstr "niemiecki"
 
 msgid "direct link"
 msgstr ""
@@ -2268,10 +2268,10 @@ msgid "downmix"
 msgstr ""
 
 msgid "english"
-msgstr ""
+msgstr "angielski"
 
 msgid "espanol"
-msgstr ""
+msgstr "hiszpański"
 
 msgid "external eplayer3"
 msgstr "zewnętrzny eplayer3"
@@ -2280,7 +2280,7 @@ msgid "external gstplayer"
 msgstr "zewnętrzny gstplayer"
 
 msgid "favourites"
-msgstr ""
+msgstr "ulubione"
 
 msgid "favourtes"
 msgstr ""
