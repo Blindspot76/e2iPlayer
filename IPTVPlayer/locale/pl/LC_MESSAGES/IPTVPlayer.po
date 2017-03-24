@@ -3548,10 +3548,10 @@ msgid "Oldest year"
 msgstr ""
 
 msgid "Best rating"
-msgstr ""
+msgstr "Najlepiej oceniane"
 
 msgid "Worse rating"
-msgstr ""
+msgstr "Najgorzej oceniane"
 
 msgid "Most viewed"
 msgstr "Najczęściej oglądane"
@@ -4059,10 +4059,10 @@ msgid "http://tree.tv/"
 msgstr ""
 
 msgid "Live TV"
-msgstr ""
+msgstr "TV na żywo"
 
 msgid "Live Radio"
-msgstr ""
+msgstr "Radio na żywo"
 
 msgid "Icons quality"
 msgstr ""
