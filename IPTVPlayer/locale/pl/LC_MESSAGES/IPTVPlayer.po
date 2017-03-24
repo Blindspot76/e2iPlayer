@@ -271,16 +271,16 @@ msgstr "Automatyczny wybór na podstawie ustawień"
 
 msgid "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg"
 msgstr ""
-"Autorzy: Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, "
-"matzg"
+"Autorzy: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg"
 
 msgid ""
 "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, "
 "tomashj291"
 msgstr ""
 "Autorzy samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, "
-"tomashj291 informują, że zajmują się wtyczką IPTV Player 'pro publico bono' "
-"z nadzieją, ale bez gwarancji jej użyteczności."
+"tomashj29 \n"
+"informują, że zajmują się wtyczką IPTV Player 'pro publico bono' z nadzieją, "
+"ale bez gwarancji jej użyteczności."
 
 msgid "Black"
 msgstr "Czarne"
@@ -1510,7 +1510,7 @@ msgid "Search type"
 msgstr "Wybierz typ wyszukiwania"
 
 msgid "Search youtube materials "
-msgstr ""
+msgstr "Szukaj materiałów w YouTube "
 
 msgid "Second movie player in buffering mode"
 msgstr "Drugi odtwarzacz z trybem buforowania"
@@ -1519,7 +1519,7 @@ msgid "Second movie player without buffering mode"
 msgstr "Drugi odtwarzacz bez trybu buforowania"
 
 msgid "Select"
-msgstr ""
+msgstr "Wybierz"
 
 msgid "Select %s"
 msgstr "Wybierz %s"
@@ -1528,7 +1528,7 @@ msgid "Select action"
 msgstr "Wybierz działanie"
 
 msgid "Select audio track"
-msgstr ""
+msgstr "Wybierz ścieżkę dźwiękową"
 
 msgid "Select favourite group"
 msgstr "Wybierz grupę ulubionych"
@@ -1618,7 +1618,7 @@ msgid "Shows"
 msgstr ""
 
 msgid "Silverlight stream not supported."
-msgstr ""
+msgstr "Strumień Silverlight nie jest obsługiwany."
 
 msgid "Simple subtitles downloader"
 msgstr "Pobieranie prostych napisów"
@@ -1633,6 +1633,8 @@ msgid ""
 "Skipping IPTVPlayer serup may cause problems.Are you sure to skip IPTVPlayer "
 "setup?"
 msgstr ""
+"Pomijanie ustawień odtwarzacza IPTVPlayer może powodować problemy. Czy na "
+"pewno chcesz pominąć ?"
 
 msgid ""
 "Skipping IPTVPlayer setup may cause problems.\n"
@@ -1645,7 +1647,7 @@ msgid "SmackDown"
 msgstr ""
 
 msgid "Some changes will be applied only after plugin update."
-msgstr ""
+msgstr "Niektóre zmiany będą zastosowane dopiero po aktualizacji wtyczki."
 
 msgid "Songs"
 msgstr "Piosenki"
@@ -1796,7 +1798,7 @@ msgid "Testers: "
 msgstr "Testerzy: "
 
 msgid "Text files ytlist and urllist are in:"
-msgstr ""
+msgstr "Pliki tekstowe ytlist i urllist są w:"
 
 msgid "The \"%s\" utility is used by IPTVPlayer."
 msgstr "Narzędzie \"%s\" jest wykorzystywane przez IPTVPlayera."
@@ -1824,24 +1826,26 @@ msgid ""
 "The \"%s\" utility is used by the IPTVPlayer to determine the encoding of "
 "the text."
 msgstr ""
+"Narzędzie \"%s\" używane jest przez IPTVPlayer w celu określenia kodowania "
+"tekstu."
 
 msgid "The current host crashed"
 msgstr "Obecny host uległ awarii"
 
 msgid "The default video quality:"
-msgstr ""
+msgstr "Domyślna jakość wideo:"
 
 msgid "The number of items in the search history"
 msgstr "Liczba pozycji w historii wyszukiwania"
 
 msgid "The preferred protocol:"
-msgstr ""
+msgstr "Preferowany protokół:"
 
 msgid "The problem with creating a directory [%s]."
 msgstr "Problem z stworzeniem katalogu [%s]."
 
 msgid "The problem with obtaining the gateway proxy!"
-msgstr ""
+msgstr "Problem z uzyskaniem bramy proxy!"
 
 msgid ""
 "The problem with the logged-in user \"%s. Check your login details in the "
