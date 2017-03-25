@@ -60,6 +60,7 @@ hostmovizlandcom
 hostmusicbox
 hostnaszekinoonline
 hostninateka
+hostokgoals
 hostonetvod
 hostourmatchnet
 hostpapystreamingus
