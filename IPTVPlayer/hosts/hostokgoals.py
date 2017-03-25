@@ -44,7 +44,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://www.okgoals.com/'
+    return 'http://okgoals.com/'
 
 class OkGoals(CBaseHostClass):
  

@@ -54,6 +54,7 @@ hostlaola1tv
 hostlibrestream
 hostliveleak
 hostlocalmedia
+hostlosmovies
 hostmovie4kto
 hostmovienightws
 hostmovizlandcom
@@ -70,6 +71,7 @@ hostplwwecom
 hostserialnet
 hostserienstreamto
 hostseriesenstreamingcom
+hostseriesonline
 hostsovdub
 hostsportdeutschland
 hostspryciarze
