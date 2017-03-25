@@ -61,6 +61,8 @@ class OkGoals(CBaseHostClass):
         
         self.MAIN_CAT_TAB = [{'category':'list_items',        'title': _('Main'),       'url':self.getFullUrl('index.php') },
                              {'category':'list_categories',   'title': _('Categories'), 'url':self.getMainUrl()            },
+                             {'category':'search',            'title': _('Search'),     'search_item':True,                },
+                             {'category':'search_history',    'title': _('Search history'),                                },
                             ]
         
     def listCategories(self, cItem, nextCategory):
@@ -163,9 +165,23 @@ class OkGoals(CBaseHostClass):
     def getVideoLinks(self, videoUrl):
         printDBG("OkGoals.getVideoLinks [%s]" % videoUrl)
         urlTab = []
-        
-
         return urlTab
+        
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("KissCartoonMe.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        cItem = dict(cItem)
+        url = self.getFullUrl('search.php?dosearch=yes&search_in_archives=yes&title=') + urllib.quote_plus(searchPattern)
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Founded matches', '<div class="clear">')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>', withMarkers=True)
+        for item in data:
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            title = self.cleanHtmlStr(item)
+
+            params = {'good_for_fav': True, 'category':'explore_item', 'title':title, 'url':url}
+            self.addDir(params)
         
     def getFavouriteData(self, cItem):
         printDBG('OkGoals.getFavouriteData')
@@ -211,6 +227,14 @@ class OkGoals(CBaseHostClass):
             self.listItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
             self.exploreItem(self.currItem)
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
         
