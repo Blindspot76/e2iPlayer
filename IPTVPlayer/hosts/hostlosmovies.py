@@ -337,7 +337,7 @@ class LosMovies(CBaseHostClass):
         subTracks = []
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']')[1]
         if tmp != '':
-            tmp = data.split('}')
+            tmp = tmp.split('}')
             urlAttrName = 'file'
             sp = ':'
         else:

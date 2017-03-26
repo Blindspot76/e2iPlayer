@@ -836,6 +836,35 @@ class pageParser:
                 self.moonwalkParser = None
         return self.moonwalkParser
         
+    def _getSources(self, data):
+        printDBG('>>>>>>>>>> _getSources')
+        urlTab = []
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']')[1]
+        if tmp != '':
+            tmp = tmp.replace('\\', '')
+            tmp = tmp.split('}')
+            urlAttrName = 'file'
+            sp = ':'
+        else:
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', withMarkers=True)
+            urlAttrName = 'src'
+            sp = '='
+        printDBG(tmp)
+        for item in tmp:
+            url  = self.cm.ph.getSearchGroups(item, r'''['"]?{0}['"]?\s*{1}\s*['"](https?://[^"^']+)['"]'''.format(urlAttrName, sp))[0]
+            if not self.cm.isValidUrl(url): continue
+            name = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?\s*''' + sp + r'''\s*['"]?([^"^'^\,^\{]+)['"\,\{]''')[0]
+            
+            printDBG('---------------------------')
+            printDBG('url:  ' + url)
+            printDBG('name: ' + name)
+            printDBG('+++++++++++++++++++++++++++')
+            printDBG(item)
+            
+            if 'mp4' in item:
+                urlTab.append({'name':name, 'url':url})
+        return urlTab
+        
     def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']', contain=''):
         linksTab = []
         
@@ -965,11 +994,20 @@ class pageParser:
                 post_data.update(tmp)
             except Exception:
                 printExc()
-        videoUrl = False
+        videoTab = []
         params = {'header':{ 'User-Agent': userAgent, 'Content-Type':'application/x-www-form-urlencoded','Referer':url} }
         try:
             sts, data = self.cm.getPage(url, params, post_data)
             printDBG(data)
+            
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.ready', '}')[1]
+            url = self.cm.ph.getSearchGroups(tmp, '''src['"\s]*?:\s['"]([^'^"]+?)['"]''')[0]
+            if url.startswith('/'):
+                url = domain + url[1:]
+            if self.cm.isValidUrl(url) and url.split('?')[0].endswith('.mpd'):
+                url = strwithmeta(url, {'User-Agent':params['header']['User-Agent']})
+                videoTab.extend(getMPDLinksWithMeta(url, False))
+            
             filekey = re.search('flashvars.filekey="([^"]+?)";', data)
             if None == filekey: 
                 filekey = re.search("flashvars.filekey=([^;]+?);", data)
@@ -988,10 +1026,10 @@ class pageParser:
             errUrl = re.search("url=([^&]+?)&", data).group(1)
             if '' != errUrl: url = errUrl
             if '' != url:
-                videoUrl = url
+                videoTab.append({'name':'base', 'url':url})
         except Exception:
             printExc()
-        return videoUrl
+        return videoTab
         
     def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None, folowIframe=False, sleep_time=None):
         printDBG("pageParser.__parseJWPLAYER_A serverName[%s], baseUrl[%r]" % (serverName, baseUrl))
@@ -5890,6 +5928,9 @@ class pageParser:
             if len(linksTab): return linksTab
         except Exception:
             printExc()
+            
+        urlTab = self._getSources(data)
+        if len(urlTab): return urlTab
         return self._findLinks(data, contain='mp4')
         
     def parseSPEEDVICEONET(self, baseUrl):
@@ -6018,6 +6059,7 @@ class pageParser:
         #url = baseUrl.replace('movshare.net', 'wholecloud.net')
         mobj = re.search(r'/(?:file|video)/(?P<id>[a-z\d]{13})', baseUrl)
         video_id = mobj.group('id')
+        onlyDomain = urlparser.getDomain(url, True) 
         domain = urlparser.getDomain(url, False) 
         url = domain + 'video/' + video_id
 
@@ -6043,7 +6085,7 @@ class pageParser:
             url = domain + url[1:]
         if self.cm.isValidUrl(url):
             url = strwithmeta(url, {'User-Agent':params['header']})
-            videoTab.append({'name':'[Download] wholecloud.net', 'url':url})
+            videoTab.append({'name':'[Download] %s' % onlyDomain, 'url':url})
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.ready', '}')[1]
         url = self.cm.ph.getSearchGroups(tmp, '''src['"\s]*?:\s['"]([^'^"]+?)['"]''')[0]
@@ -6066,7 +6108,7 @@ class pageParser:
                 if url in links: continue
                 links.append(url)
                 url = strwithmeta(url, {'User-Agent':params['header']})
-                videoTab.append({'name':'[%s] wholecloud.net' % type, 'url':url})
+                videoTab.append({'name':'[%s] %s' % (type, onlyDomain), 'url':url})
                 
         printDBG(data)
         return videoTab
