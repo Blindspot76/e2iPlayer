@@ -63,7 +63,7 @@ class ArticleContent:
     # Posible args and values for richDescParams:
     RICH_DESC_PARAMS        = ["alternate_title", "views", "status", "country", "language", "quality", "subtitles", "year", "imdb_rating", \
                                "released", "rating", "rated", "duration", "genre", "production", "director", "directors", "writer", "writers", \
-                               "creator", "creators", "actors", "stars", "awards" ]
+                               "creator", "creators", "actors", "stars", "awards", "budget" ]
     # labels here must be in english language 
     # translation should be done before presentation using "locals" mechanism
     RICH_DESC_LABELS = {"alternate_title":   "Alternate Title:",
@@ -89,7 +89,8 @@ class ArticleContent:
                         "actors":            "Actors:", 
                         "stars":             "Stars:",
                         "awards":            "Awards:",
-                        "views":             "Views",}
+                        "views":             "Views",
+                        "budget":            "Budget",}
     def __init__(self, title = '', text = '', images = [], trailers = [], richDescParams = {}, visualizer=None):
         self.title    = title
         self.text     = text

@@ -1989,6 +1989,9 @@ class pageParser:
         sts, allData = self.cm.getPage(url)
         if not sts: return False
         
+        errMsg = clean_html(CParsingHelper.getDataBeetwenMarkers(allData, '<div class="delete"', '</div>')[1]).strip()
+        if errMsg != '': SetIPTVPlayerLastHostError(errMsg)
+        
         # get JS player script code from confirmation page
         sts, tmpData = CParsingHelper.getDataBeetwenMarkers(allData, ">eval(", '</script>', False)
         if sts:
