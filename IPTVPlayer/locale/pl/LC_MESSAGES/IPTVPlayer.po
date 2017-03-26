@@ -1290,16 +1290,16 @@ msgid "Preferred quality"
 msgstr "Preferowana jakość"
 
 msgid "Preferred streaming protocol"
-msgstr ""
+msgstr "Preferowany protokół przesyłania strumieniowego"
 
 msgid "Preferred streaming protocol' + ': "
-msgstr ""
+msgstr "Preferowany protokół przesyłania strumieniowego ' + ': "
 
 msgid "Preferred video quality:"
 msgstr "Preferowana jakość obrazu wideo:"
 
 msgid "Premium user"
-msgstr ""
+msgstr "Użytkownik Premium"
 
 msgid "Press OK to start"
 msgstr "Naciśnij przycisk OK, aby rozpocząć"
@@ -1399,7 +1399,7 @@ msgid "Regular"
 msgstr "Regularna"
 
 msgid "Releases"
-msgstr ""
+msgstr "Wydania"
 
 msgid "Relevance"
 msgstr "Trafność"
@@ -1448,7 +1448,7 @@ msgid "Russian proxy server url"
 msgstr "Adres rosyjskiego serwera proxy"
 
 msgid "SEARCH"
-msgstr ""
+msgstr "SZUKAJ"
 
 msgid "STARTED"
 msgstr "URUCHOMIONY"
@@ -1819,13 +1819,11 @@ msgstr ""
 "Nie ma aktywnego konta premium.\n"
 "Korzystanie z ograniczonej wersji, która może nie działać poprawnie z przeciążonymi liniami."
 
-msgid ""
-"There is a new version available do you want to update? \n"
-"Your version [%s], latest version on server [%s]."
+msgid "There is a new version available do you want to update? Your version [%s], latest version on server [%s]"
 msgstr ""
-"Dostępna jest nowa wersja, chcesz aktualizować?\n"
+"Dostępna jest nowa wersja, chcesz aktualizować? \n"
 "Twoja wersja [%s]\n"
-"Najnowsza wersja na serwerze [%s]."
+"Najnowsza wersja na serwerze [%s]"
 
 msgid "There are no other favourite groups"
 msgstr "Nie ma innych ulubionych grup"
@@ -1875,7 +1873,7 @@ msgid "Transparent"
 msgstr "Przezroczyste"
 
 msgid "Try again for some time"
-msgstr ""
+msgstr "Spróbuj jeszcze raz"
 
 msgid "Turkish"
 msgstr "Turecki"
@@ -1900,7 +1898,7 @@ msgid "Unknown"
 msgstr "Nieznany"
 
 msgid "Unknown protocol %s"
-msgstr ""
+msgstr "Nieznany protokół %s"
 
 msgid "Unknown protocol [%s]"
 msgstr "Link zablokowany.Nieznany protokół [%s]"
@@ -1912,7 +1910,9 @@ msgid "Update"
 msgstr "Aktualizacja"
 
 msgid "Update completed successfully. For the moment, the system will reboot."
-msgstr "Aktualizacja zakończona pomyślnie.Za chwilę nastąpi ponowne uruchomienie systemu."
+msgstr ""
+"Aktualizacja zakończona pomyślnie.\n"
+"Za chwilę nastąpi ponowne uruchomienie systemu."
 
 msgid ""
 "Update failed.\n"
@@ -1922,7 +1922,7 @@ msgstr ""
 "Sprawdź stan wybierając interesujący i naciśnij OK."
 
 msgid "Update failed. Check the status by selectiong interesting and pressing ok."
-msgstr ""
+msgstr "Aktualizacja nie powiodła się. Sprawdź status, wybierając interesujące i naciskając przycisk ok."
 
 msgid "Update not available."
 msgstr "Aktualizacja nie jest dostępna."
@@ -1955,7 +1955,7 @@ msgid "Use default video quality:"
 msgstr "Użyć domyślnego format wideo:"
 
 msgid "Use defauult qality:"
-msgstr ""
+msgstr "Użyj domyślnej jakości:"
 
 msgid "Use ru proxy server:"
 msgstr ""
@@ -1967,7 +1967,7 @@ msgid "User [%s] logon failure."
 msgstr "Problem z zalogowaniem użytkownika [%s]."
 
 msgid "User files"
-msgstr ""
+msgstr "Pliki użytkownika"
 
 msgid "User links"
 msgstr "Linki użytkownika"
@@ -1982,7 +1982,7 @@ msgid "Username:"
 msgstr "Nazwa użytkownika:"
 
 msgid "Uses the default video quality:"
-msgstr ""
+msgstr "Użyj domyślnej jakości wideo:"
 
 msgid ""
 "Utility \"%s\" has not been detected. \n"
@@ -2022,14 +2022,15 @@ msgid ""
 "Version [%s] is ready for installation. After installation, restart of the system will be done.\n"
 "Do you want to continue?"
 msgstr ""
-"Wersja [%s] jest gotowa do instalacji.Po instalacji nastąpi ponowne uruchomienie systemu.\n"
+"Wersja [%s] jest gotowa do instalacji.\n"
+"Po instalacji nastąpi ponowne uruchomienie systemu.\n"
 "Czy na pewno chcesz kontynuować?"
 
 msgid "Video"
 msgstr "Materiały wideo"
 
 msgid "Video buffer size [MB]"
-msgstr ""
+msgstr "Rozmiar buforu wideo [MB]"
 
 msgid "Video format:"
 msgstr "Preferowany format wideo:"
@@ -2261,7 +2262,7 @@ msgid "hd"
 msgstr ""
 
 msgid "headertext"
-msgstr ""
+msgstr "tekst nagłówka"
 
 msgid "high"
 msgstr "wysoka"
@@ -2339,7 +2340,7 @@ msgid "nocnyseans.pl"
 msgstr ""
 
 msgid "number of views"
-msgstr ""
+msgstr "Liczba wyświetleń"
 
 msgid "olive"
 msgstr "oliwkowy"
@@ -2432,7 +2433,7 @@ msgid "unknown"
 msgstr "nieznana"
 
 msgid "updated"
-msgstr ""
+msgstr "zaktualizowane"
 
 msgid "very high"
 msgstr "bardzo wysoka"
@@ -2441,13 +2442,13 @@ msgid "video"
 msgstr ""
 
 msgid "web-live.tv login:"
-msgstr ""
+msgstr "web-live.tv login:"
 
 msgid "web-live.tv password:"
-msgstr ""
+msgstr "web-live.tv hasło:"
 
 msgid "web-live.tv premium user?"
-msgstr ""
+msgstr "web-live.tv użytkownik premium?"
 
 msgid "white"
 msgstr "biały"
@@ -2579,19 +2580,19 @@ msgid "--- Cams ---"
 msgstr ""
 
 msgid "Cams"
-msgstr ""
+msgstr "Kamery"
 
 msgid "Update Now & Restart Enigma2"
-msgstr ""
+msgstr "Zaktualizuj Teraz i Uruchom Ponownie E2"
 
 msgid "ERROR - Error unpacking %s' % source"
-msgstr ""
+msgstr "BŁĄD - błąd podczas rozpakowywania %s' % źródła"
 
 msgid "Require pin:"
 msgstr "Wymagaj kod PIN:"
 
 msgid "File Location xxxlist.txt :"
-msgstr ""
+msgstr "Lokalizacja pliku xxxlist.txt :"
 
 msgid "Sort xxxlist :"
 msgstr ""
@@ -2684,46 +2685,46 @@ msgid "new"
 msgstr ""
 
 msgid "ERROR - Error downloading: "
-msgstr ""
+msgstr "BŁĄD - błąd pobierania: "
 
 msgid "ERROR"
-msgstr ""
+msgstr "BŁĄD"
 
 msgid "ERROR - Error unpacking /tmp/iptv-host-xxx.tar.gz"
-msgstr ""
+msgstr "BŁĄD - Błąd podczas rozpakowywania pliku /tmp/iptv-host-xxx.tar.gz"
 
 msgid "ERROR - Invalid file format /tmp/iptv-host-xxx.tar.gz"
-msgstr ""
+msgstr "BŁĄD - Nieprawidłowy format pliku /tmp/iptv-host-xxx.tar.gz"
 
 msgid "ERROR - copy error"
 msgstr ""
 
 msgid "Update End. Please manual restart enigma2"
-msgstr ""
+msgstr "Aktualizacja zakończona. Proszę ręcznie uruchomić ponownie E2"
 
 msgid "---UPDATE---"
-msgstr ""
+msgstr "---AKTUALIZACJA---"
 
 msgid "UPDATE MENU"
-msgstr ""
+msgstr "MENU AKTUALIZACJI"
 
 msgid " - Remote version"
-msgstr ""
+msgstr "- wersja zdalna"
 
 msgid "UPDATE"
-msgstr ""
+msgstr "AKTUALIZACJA"
 
 msgid "UPDATE-CHANGES"
-msgstr ""
+msgstr "AKTUALIZACJA-ZMIANY"
 
 msgid "UPDATE-NOW"
-msgstr ""
+msgstr "AKTUALIZACJA-TERAZ"
 
 msgid "CHANGES IN VERSION"
-msgstr ""
+msgstr "ZMIANY W WERSJI"
 
 msgid "Update Now"
-msgstr ""
+msgstr "Aktualizuj Teraz"
 
 msgid "Remote XXXversion"
 msgstr ""
@@ -2789,7 +2790,7 @@ msgid "Software decoding as"
 msgstr "Programowe dekodowanie jako"
 
 msgid "Some changes will be applied only after movie player restart."
-msgstr ""
+msgstr "Niektóre zmiany zostaną zastosowane dopiero po ponownym uruchomieniu odtwarzacza."
 
 msgid "IPTV Player download manager"
 msgstr "IPTV Player menadżer pobierania"
@@ -2828,46 +2829,46 @@ msgid "New Movies"
 msgstr ""
 
 msgid "HD Movies"
-msgstr ""
+msgstr "Filmy HD"
 
 msgid "Latest Movies"
-msgstr ""
+msgstr "Ostatnie Filmy"
 
 msgid "Latest TV Episodes"
-msgstr ""
+msgstr "Ostatnie Seriale TV"
 
 msgid "New TV Episodes"
-msgstr ""
+msgstr "Nowe Seriale TV"
 
 msgid "Coming Soon"
-msgstr ""
+msgstr "Wkótce"
 
 msgid "Most popular"
 msgstr "Najbardziej popularny"
 
 msgid "Treat episode as TV Show"
-msgstr ""
+msgstr "Traktuj odcinek serialu jako program TV"
 
 msgid "Show recommended by Rafalcool1:"
-msgstr ""
+msgstr "Pokaż rekomendację od @Rafalcool1:"
 
 msgid "Recommended by Rafalcool1"
-msgstr ""
+msgstr "Rekomendacja od @Rafalcool1"
 
 msgid "List of movies prepared by Rafalcool1"
-msgstr ""
+msgstr "Lista filmów przygotowana przez @Rafalcool1"
 
 msgid "http://fs.to/"
 msgstr ""
 
 msgid "Use ru proxy server to get file lists"
-msgstr ""
+msgstr "Użyj serwer proxy ru, aby wyświetlić listę plików"
 
 msgid "Audio"
 msgstr ""
 
 msgid "New episodes"
-msgstr ""
+msgstr "Nowe Odcinki"
 
 msgid "External player use software decoder for the WMA"
 msgstr "Wykorzystać programowe dekodowanie dla WMA"
@@ -2876,10 +2877,10 @@ msgid "AAC mix mode"
 msgstr "Tryb mieszany AAC"
 
 msgid "Preferred protocol:"
-msgstr ""
+msgstr "Preferowany protokół:"
 
 msgid "Use the default video quality:"
-msgstr ""
+msgstr "Użyj domyślnej jakości wideo:"
 
 msgid "password:"
 msgstr "hasło:"
@@ -2888,16 +2889,16 @@ msgid "login:"
 msgstr "login:"
 
 msgid "Sort results after:"
-msgstr ""
+msgstr "Sortuj wyniki po:"
 
 msgid "Alphabetically"
 msgstr "Alfabetycznie"
 
 msgid "Top rated"
-msgstr ""
+msgstr "Najlepiej oceniane"
 
 msgid "Latest"
-msgstr ""
+msgstr "Najnowsze"
 
 msgid "Najtrafniejsze"
 msgstr ""
@@ -2933,10 +2934,10 @@ msgid "Sport"
 msgstr ""
 
 msgid "Comedies"
-msgstr ""
+msgstr "Komedie"
 
 msgid "Miscellaneous"
-msgstr ""
+msgstr "Różne"
 
 msgid "Life of students"
 msgstr ""
@@ -2954,7 +2955,7 @@ msgid "  Filmy3dEU password:"
 msgstr "  Filmy3dEU hasło:"
 
 msgid "Added date"
-msgstr ""
+msgstr "Data dodania"
 
 msgid "Comment count"
 msgstr "Liczba komentarzy"
@@ -2975,7 +2976,7 @@ msgid "Katalog A-Z"
 msgstr ""
 
 msgid "Localization"
-msgstr ""
+msgstr "Lokalizacja"
 
 msgid "Argentina"
 msgstr "Argentyna"
@@ -3095,7 +3096,7 @@ msgid "sun sessions"
 msgstr ""
 
 msgid "Other videos"
-msgstr ""
+msgstr "Inne wideo"
 
 msgid "Ibiza Global Radio"
 msgstr ""
@@ -3119,7 +3120,7 @@ msgid "List of anime"
 msgstr ""
 
 msgid "List of films"
-msgstr ""
+msgstr "Lista filmów"
 
 msgid "Anime Issued"
 msgstr ""
@@ -3128,7 +3129,7 @@ msgid "New episodes broadcast"
 msgstr ""
 
 msgid "Recently added episodes from previous seasons"
-msgstr ""
+msgstr "Ostatnio dodane odcinki z poprzednich sezonów"
 
 msgid "Harbinger"
 msgstr ""
@@ -3143,7 +3144,7 @@ msgid "  KinomanTV password:"
 msgstr "  KinomanTV hasło:"
 
 msgid "Categories films"
-msgstr ""
+msgstr "Kategorie filmów"
 
 msgid "Last added"
 msgstr "Ostatnio dodane"
@@ -3251,25 +3252,25 @@ msgid "Syria"
 msgstr ""
 
 msgid "Entertainment"
-msgstr ""
+msgstr "Rozrywka"
 
 msgid "Browse Channels"
-msgstr ""
+msgstr "Przeglądaj Kanały"
 
 msgid "By default, sort by:"
-msgstr ""
+msgstr "Domyślnie sortuj według:"
 
 msgid "***Any***"
 msgstr "***Dowolny***"
 
 msgid "most viewed"
-msgstr ""
+msgstr "Najczęściej oglądane"
 
 msgid "longest"
-msgstr ""
+msgstr "najdłuższy"
 
 msgid "top rated"
-msgstr ""
+msgstr "najwyżej oceniane"
 
 msgid "random"
 msgstr ""
@@ -3290,13 +3291,13 @@ msgid "Tales"
 msgstr ""
 
 msgid "preferred streaming protocol"
-msgstr ""
+msgstr "Preferowany protokół przesyłania strumieniowego"
 
 msgid "Age viewer:"
 msgstr ""
 
 msgid "Hide Video in the list above the age of the viewer:"
-msgstr ""
+msgstr "Ukryj Film na liście powyżej wieku widza:"
 
 msgid "TOP100 Always"
 msgstr ""
@@ -3726,7 +3727,7 @@ msgid "Newest Episodes"
 msgstr ""
 
 msgid "All A-Z"
-msgstr ""
+msgstr "Wszystkie A-Z"
 
 msgid "From E2 settings"
 msgstr "Z ustawień E2"
@@ -3765,10 +3766,10 @@ msgid "Fatal error: consoleWrite failed!"
 msgstr "Błąd krytyczny:zapis w konsoli nie powiódł się!"
 
 msgid "Most Viewed"
-msgstr ""
+msgstr "Najczęściej oglądane"
 
 msgid "Windows Media Video 9 Screen decoder"
-msgstr ""
+msgstr "Dekoder ekranu Windows Media Video 9"
 
 msgid "Sort alphabetically"
 msgstr "Sortuj"
@@ -3978,10 +3979,10 @@ msgid "Sort Myfreecams :"
 msgstr ""
 
 msgid "Global search :"
-msgstr ""
+msgstr "Wyszukiwanie globalne :"
 
 msgid "Global sorting :"
-msgstr ""
+msgstr "Sortowanie globalne :"
 
 msgid "External player use software decoder for the AC3"
 msgstr "Wykorzystać programowe dekodowanie dla AC3"
@@ -4007,10 +4008,10 @@ msgid "Live Radio"
 msgstr "Radio na żywo"
 
 msgid "Icons quality"
-msgstr ""
+msgstr "Jakość ikon"
 
 msgid "Your language preference:"
-msgstr ""
+msgstr "Preferencje językowe:"
 
 msgid "By title"
 msgstr ""
@@ -4031,6 +4032,8 @@ msgid ""
 "Please remember to visit http://www.sport365.live/ and watch a few advertisements.\n"
 "This will fix problem, if your playback is constantly interrupted."
 msgstr ""
+"Pamiętaj, aby odwiedzić stronę /www.sport365.live i obejrzeć kilka reklam.\n"
+"Rozwiąże to problem przerwania odtwarzania."
 
 msgid "Anime list"
 msgstr ""
@@ -4039,10 +4042,10 @@ msgid "Movies list"
 msgstr ""
 
 msgid "Opening. Please wait..."
-msgstr ""
+msgstr "Otwieranie. Proszę czekać..."
 
 msgid "Closing. Please wait..."
-msgstr ""
+msgstr "Zamykanie. Proszę czekać..."
 
 msgid "Alternative proxy server (2)"
 msgstr "Alternatywny serwer proxy (2)"
@@ -4057,7 +4060,7 @@ msgid "Any"
 msgstr "Dowolny"
 
 msgid "Year: "
-msgstr ""
+msgstr "Rok:"
 
 msgid "Connection to server failed!"
 msgstr ""
@@ -4101,7 +4104,7 @@ msgid "Owner:"
 msgstr "Wydawca:"
 
 msgid "Polish"
-msgstr "Polskie"
+msgstr ""
 
 #~ msgid "Cannot import class IPTVHost for host [%r]"
 #~ msgstr "Nie można zaimportować IPTVHosta do hosta [%r]"
