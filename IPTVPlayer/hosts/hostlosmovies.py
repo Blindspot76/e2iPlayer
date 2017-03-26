@@ -276,14 +276,14 @@ class LosMovies(CBaseHostClass):
         return urlTab
         
     def unSecure(self, data):
-        data = self.cm.ph.getSearchGroups(data, r'''S=['"]([A-Za-z0-9\+/]{40,})['"]''')[0]
+        data = self.cm.ph.getSearchGroups(data, r'''=['"]([A-Za-z0-9+=\/]{40,})['"]''')[0]
         try:
             data = base64.b64decode(data).replace('\n', '').replace('location.reload();', '').replace('; ', '').replace(';document.cookie', '\ncookie ')
             data = data.replace('String.fromCharCode', 'chr')
-            data = re.sub('\.charAt\(([0-9]+?)\)', lambda x: '[%s]' % x.group(1), data)
-            data = re.sub('\.substr\(([0-9]+?),([0-9]+?)\)', lambda x: '[%s:%s]' % (x.group(1), x.group(2)), data)
-            data = re.sub('\.substr\(([0-9]+?),([0-9]+?)\)', lambda x: '[%s:%s]' % (x.group(1), x.group(2)), data)
-            data = re.sub('\.slice\(([0-9]+?),([0-9]+?)\)', lambda x: '[%s:%s]' % (x.group(1), x.group(2)), data)
+            data = re.sub('\.charAt\((\s*[0-9]+?\s*)\)', lambda x: '[%s]' % x.group(1), data)
+            data = re.sub('\.substr\(\s*([0-9]+?)\s*,\s*([0-9]+?)\s*\)', lambda x: '[%s:%s]' % (x.group(1), x.group(2)), data)
+            data = re.sub('\.substr\(\s*([0-9]+?)\s*,\s*([0-9]+?)\s*\)', lambda x: '[%s:%s]' % (x.group(1), x.group(2)), data)
+            data = re.sub('\.slice\(\s*([0-9]+?)\s*,\s*([0-9]+?)\s*\)', lambda x: '[%s:%s]' % (x.group(1), x.group(2)), data)
             data = data.replace('\n', '\n\t')
             data = 'def retA():\n\t' + data
             data += '\n\treturn cookie\n'
