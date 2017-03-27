@@ -459,7 +459,7 @@ msgid "Display thumbnails"
 msgstr "Wyświetlać miniatury"
 
 msgid "Do not install (not recommended)"
-msgstr "Nie instaluj(nie zalecane)"
+msgstr "Nie instaluj (nie zalecane)."
 
 msgid "Download again"
 msgstr "Pobrać ponownie"
@@ -901,6 +901,9 @@ msgstr "Poprawia tryb buforowania przy użyciu gstplayera.\n"
 
 msgid "It improves playing of streams hls/m3u8.\n"
 msgstr "Poprawia odtwarzanie strumieni hls / m3u8.\n"
+
+msgid "It improves HLS/M3U8 stream download."
+msgstr "Poprawia pobieranie strumieni HLS/M3U8."
 
 msgid "It seems that the host \"%s\" has crashed."
 msgstr "Wygląda na to, że host \"%s\" się wysypał."
@@ -1819,14 +1822,16 @@ msgstr ""
 "Nie ma aktywnego konta premium.\n"
 "Korzystanie z ograniczonej wersji, która może nie działać poprawnie z przeciążonymi liniami."
 
-msgid "There is a new version available do you want to update? Your version [%s], latest version on server [%s]"
-msgstr ""
-"Dostępna jest nowa wersja, chcesz aktualizować? \n"
-"Twoja wersja [%s]\n"
-"Najnowsza wersja na serwerze [%s]"
-
 msgid "There are no other favourite groups"
 msgstr "Nie ma innych ulubionych grup"
+
+msgid ""
+"There is a new version available do you want to update? \n"
+"Your version [%s], latest version on server [%s]"
+msgstr ""
+"Pojawiła się nowa dostępna wersja, chcesz zaktualizować? \n"
+"Twoja aktualna wersja [%s]\n"
+"Najnowsza wersja na serwerze [%s]"
 
 msgid "There is no free space on the drive [%s]."
 msgstr "Nie ma wolnego miejsca na dysku [%s]."
@@ -2079,7 +2084,9 @@ msgid "You can use Russian proxy server as a workaround."
 msgstr "Jako obejście można użyć rosyjskiego serwera proxy."
 
 msgid "You do not have a premium account. Starting a sponsored broadcast."
-msgstr "Nie posiadasz konta premium.Rozpoczynanie transmisji sponsorowanej."
+msgstr ""
+"Nie posiadasz konta premium.\n"
+"Rozpoczynanie transmisji sponsorowanej."
 
 msgid "You do not have a premium account.Starting a sponsored broadcast."
 msgstr "Nie masz konta premium. Rozpoczyna się transmisja sponsorowana."
@@ -2121,13 +2128,13 @@ msgid "[For download only] "
 msgstr "[Tylko do pobrania]"
 
 msgid "[HLS/M3U8] buffering"
-msgstr "Buforować z linków m3u8"
+msgstr "Buforować z linków HLS/M3U8"
 
 msgid "[HTTP] buffering"
-msgstr "Buforować z linków http"
+msgstr "Buforować z linków HTTP"
 
 msgid "[RTMP] buffering (rtmpdump required)"
-msgstr "Buforować z linków rtmp(wymaga rtmpdump)"
+msgstr "Buforować z linków RTMP (wymaga rtmpdump)"
 
 msgid "[group]"
 msgstr "[grupa]"
@@ -3612,6 +3619,9 @@ msgid ""
 "Some changes will be applied only after plugin update.\n"
 "Do you want to perform update now?"
 msgstr ""
+"Niektóre zmiany będą zastosowane\n"
+"dopiero po aktualizacji wtyczki.\n"
+"Czy chcesz teraz wykonać aktualizację ?"
 
 msgid "Make directory [%s]"
 msgstr ""
@@ -3784,7 +3794,7 @@ msgid "Answer"
 msgstr ""
 
 msgid "Wrong answer."
-msgstr ""
+msgstr "Zła odpowiedź."
 
 msgid "Get free credits"
 msgstr ""
@@ -3907,16 +3917,16 @@ msgid "unzip error - please check if utitlity unzip is available"
 msgstr ""
 
 msgid "write error"
-msgstr ""
+msgstr "zapisz błąd"
 
 msgid "decode error"
-msgstr ""
+msgstr "zdekoduj błąd"
 
 msgid "read error"
-msgstr ""
+msgstr "wczytaj błąd"
 
 msgid "gzip error"
-msgstr ""
+msgstr "spakuj błąd do gzip"
 
 msgid "_checkStatus except error"
 msgstr ""
@@ -3997,6 +4007,9 @@ msgid ""
 "Using this host in your country can be illegal.\n"
 "Do you want to continue at your own risk?"
 msgstr ""
+"Korzystanie z tego hosta w Twoim kraju \n"
+"może być nielegalne.\n"
+"Czy chcesz kontynuować na własne ryzyko ?"
 
 msgid "http://tree.tv/"
 msgstr ""
@@ -4103,8 +4116,8 @@ msgstr "Pobierz z Internetu"
 msgid "Owner:"
 msgstr "Wydawca:"
 
-msgid "Polish"
-msgstr ""
+msgid "Video mode"
+msgstr "Tryb Obrazu"
 
 #~ msgid "Cannot import class IPTVHost for host [%r]"
 #~ msgstr "Nie można zaimportować IPTVHosta do hosta [%r]"
@@ -4204,13 +4217,6 @@ msgstr ""
 
 #~ msgid "Installing \"%s\"."
 #~ msgstr "Instalacja \"%s\"."
-
-#~ msgid ""
-#~ "There is a new version available do you want to update? \n"
-#~ "Your version [%s], latest version on server [%s]"
-#~ msgstr ""
-#~ "Pojawiła się nowa dostępna wersja,chcesz zaktualizować? \n"
-#~ "Twoja wersja [%s],najnowsza wersja na serwerze [%s]"
 
 #~ msgid "get host name exception for host \"%s\""
 #~ msgstr "uzyskać nazwę hosta wyjątek dla hosta \"%s\""
