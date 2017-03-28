@@ -6531,49 +6531,44 @@ class pageParser:
         encTab = re.compile('''<span[^>]+?id="%s[^"]*?"[^>]*?>([^<]+?)<\/span>''' % varName).findall(data)
         printDBG(">>>>>>>>>>>> varName[%s] encTab[%s]" % (varName, encTab) )
         
-        def __decode_k(k, p0, p1, p2):
+        def __decode_k(enc):
+            decoded = ''
             try:
-                y = ord(k[0]);
-                e = y - p1
-                d = max(2, e)
-                e = min(d, len(k) - p0 - 2)
-                t = k[e:e + p0]
-                h = 0
-                g = []
-                while h < len(t):
-                    f = t[h:h+3]
-                    g.append(int(f, 0x8))
-                    h += 3
-                v = k[0:e] + k[e+p0:]
-                p = []
-                i = 0
-                h = 0
-                while h < len(v):
-                    B = v[h:h + 2]
-                    C = v[h:h + 3]
-                    D = v[h:h + 4]
-                    f = int(B, 0x10)
-                    h += 0x2
-                    
-                    if (i % 3) == 0:
-                        f = int(C, 8)
-                        h += 1
-                    elif i % 2 == 0 and i != 0 and ord(v[i-1]) < 0x3c:
-                        f = int(D, 0xa)
-                        h += 2
-                        
-                    A = g[i % p2]
-                    f = f ^ 0xd5;
-                    f = f ^ A;
-                    p.append( chr(f) )
-                    i += 1
+                a = enc[0:24]
+                b = []
+                for i in range(0, len(a), 8):
+                    b.append(int(a[i:i + 8] or '0', 16))
+                enc = enc[24:]
+                j = 0
+                k = 0
+                while j < len(enc):
+                    c = 128
+                    d = 0
+                    e = 0
+                    f = 0
+                    _more = True
+                    while _more:
+                        if j + 1 >= len(enc):
+                            c = 143
+                        f = int(enc[j:j + 2] or '0', 16)
+                        j += 2
+                        d += (f & 127) << e
+                        e += 7
+                        _more = f >= c
+                    g = d ^ b[k % 3]
+                    for i in range(4):
+                        char_dec = (g >> 8 * i) & (c + 127)
+                        char = chr(char_dec)
+                        if char != '#':
+                            decoded += char
+                    k += 1
             except Exception:
                 printExc()
                 return ''
                 
-            return "".join(p)
+            return decoded
             
-        tab = [(0x24, 0x37, 0x7), (0x1e, 0x34, 0x6)]
+        '''
         try: 
             orgData = self.cm.ph.getDataBeetwenMarkers(orgData, '$(document)', '}});')[1].decode('string_escape')
             printDBG("++++++++++++++++++++++++++++++++")
@@ -6589,14 +6584,9 @@ class pageParser:
             tab.insert(0, (int(p0, 16), int(p1, 16), int(p2, 16)))
         except Exception:
             printExc()
-            
-        printDBG("++++++++++++++++++++++++++++++++")
-        printDBG(tab)
-        printDBG("++++++++++++++++++++++++++++++++")
+        '''
         
-        for item in tab:
-            dec = __decode_k(encTab[0], item[0], item[1], item[2])
-            if dec != '': break
+        dec = __decode_k(encTab[0])
         
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
         params = dict(HTTP_HEADER)
