@@ -102,6 +102,10 @@ class IPTVSetupImpl:
         self.hlsdlVersion = 0.03
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl')]
         
+        # duk
+        self.dukVersion = "2.0.1" # at now not used
+        self.dukPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/duk')]
+        
         self.binaryInstalledSuccessfully = False
         self.tries = 0
         
@@ -595,6 +599,65 @@ class IPTVSetupImpl:
     
     def hlsdlStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.hlsdlStepFinished sts[%r]" % sts)
+        self.dukStep()
+        
+    ###################################################
+    # STEP: duk
+    ###################################################
+    def dukStep(self, ret=None):
+        printDBG("IPTVSetupImpl.dukStep")
+        self.binaryInstalledSuccessfully = False
+            
+        def _detectValidator(code, data):
+            if 'restrict-memory' in data:
+                # parse version here and check
+                return True, False
+            return False,True
+        
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            sts, retPath = False, ""
+            #for idx in range(len(dataTab)):
+            #    if 'restrict-memory' in dataTab[idx]: sts, retPath = True, paths[idx]
+            return sts, retPath
+        
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            old = ''
+            versions = {'sh4':2190, 'mipsel':2200}
+            
+            if platform in ['sh4', 'mipsel'] and (self.binaryInstalledSuccessfully or self.glibcVersion < versions[platform] ):
+                old = '_old'
+            
+            if old == '' and platform == 'mipsel' and not IsFPUAvailable():
+                old = '_softfpu'
+            
+            url = server + 'bin/' + platform + ('/%s%s' % (binName, old))
+            if self.binaryInstalledSuccessfully:
+                self.binaryInstalledSuccessfully = False
+                
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        
+        self.stepHelper = CBinaryStepHelper("duk", self.platform, self.openSSLVersion, config.plugins.iptvplayer.dukpath)
+        msg1 = _("duktape")
+        msg2 = _("\nPlease visit http://duktape.org/")
+        msg3 = _('Duktape is an embeddable Javascript engine, with a focus on portability and compact footprint.\n')
+        self.stepHelper.updateMessage('detection', msg1, 0)
+        self.stepHelper.updateMessage('detection', msg2, 1)
+        self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+        self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+        
+        self.stepHelper.setInstallChoiseList( [('duk', self.dukPaths[0])] )
+        self.stepHelper.setPaths( self.dukPaths )
+        self.stepHelper.setDetectCmdBuilder( lambda path: path + " --help 2>&1 " )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.dukStepFinished )
+        self.binaryDetect()
+    
+    def dukStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.dukStepFinished sts[%r]" % sts)
         self.f4mdumpStep()
         
     ###################################################

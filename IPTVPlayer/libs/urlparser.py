@@ -7,7 +7,7 @@
 from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, GetDefaultLang, GetDukPath, CreateTmpFile
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
@@ -6531,62 +6531,47 @@ class pageParser:
         encTab = re.compile('''<span[^>]+?id="%s[^"]*?"[^>]*?>([^<]+?)<\/span>''' % varName).findall(data)
         printDBG(">>>>>>>>>>>> varName[%s] encTab[%s]" % (varName, encTab) )
         
-        def __decode_k(enc):
+        def __decode_k(enc, jscode):
             decoded = ''
+            tmpPath = ''
             try:
-                a = enc[0:24]
-                b = []
-                for i in range(0, len(a), 8):
-                    b.append(int(a[i:i + 8] or '0', 16))
-                enc = enc[24:]
-                j = 0
-                k = 0
-                while j < len(enc):
-                    c = 128
-                    d = 0
-                    e = 0
-                    f = 0
-                    _more = True
-                    while _more:
-                        if j + 1 >= len(enc):
-                            c = 143
-                        f = int(enc[j:j + 2] or '0', 16)
-                        j += 2
-                        d += (f & 127) << e
-                        e += 7
-                        _more = f >= c
-                    g = d ^ b[k % 3]
-                    for i in range(4):
-                        char_dec = (g >> 8 * i) & (c + 127)
-                        char = chr(char_dec)
-                        if char != '#':
-                            decoded += char
-                    k += 1
+                jscode = '''
+                var id = "%s"
+                  , decoded
+                  , document = {
+                    getElementById: true
+                  }
+                  , window = this
+                  , $ = function(){
+                      return {
+                        text: function(a){
+                          if(a)
+                            decoded = a;
+                          else
+                            return id;
+                        },
+                        ready: function(a){
+                          a()
+                        }
+                      }
+                    };
+                %s;
+                print(decoded);''' % (enc, jscode)
+                sts, tmpPath = CreateTmpFile('.iptv_openload.js', jscode)
+                cmd =  GetDukPath() + ' ' + tmpPath + ' 2> /dev/null'
+                printDBG("iptv_execute cmd[%s" % cmd)
+                ret = iptv_execute()( cmd )
+                if ret['sts'] and 0 == ret['code']:
+                    decoded = ret['data'].strip()
+                printDBG('DECODED DATA -> [%s]' % decoded)
             except Exception:
                 printExc()
-                return ''
-                
+            #rm(tmpPath)
             return decoded
-            
-        '''
-        try: 
-            orgData = self.cm.ph.getDataBeetwenMarkers(orgData, '$(document)', '}});')[1].decode('string_escape')
-            printDBG("++++++++++++++++++++++++++++++++")
-            printDBG(orgData)
-            printDBG("++++++++++++++++++++++++++++++++")
-            p0 = self.cm.ph.getDataBeetwenMarkers(orgData, "splice", ';')[1]
-            p0 = self.cm.ph.getSearchGroups(p0, "\,(0x[0-9a-fA-F]+?)\)")[0]
-            p1 = self.cm.ph.getDataBeetwenMarkers(orgData, "'#'", 'continue;')[1]
-            p1 = self.cm.ph.getSearchGroups(p1, "\,(0x[0-9a-fA-F]+?)\)")[0]
-            p2 = self.cm.ph.rgetDataBeetwenMarkers2(orgData, '^=0x', 'var ')[1]
-            p2 = self.cm.ph.getSearchGroups(p2, "\,(0x[0-9a-fA-F]+?)\)")[0]
-            printDBG("p0[%s] p1[%s] p2[%s]" % (p0, p1, p2))
-            tab.insert(0, (int(p0, 16), int(p1, 16), int(p2, 16)))
-        except Exception:
-            printExc()
-        '''
         
-        dec = __decode_k(encTab[0])
+        marker = 'ﾟωﾟﾉ= /｀ｍ´）ﾉ'
+        orgData = marker + self.cm.ph.getDataBeetwenMarkers(orgData, marker, marker, False)[1]
+        dec = __decode_k(encTab[0], orgData)
         
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
         params = dict(HTTP_HEADER)

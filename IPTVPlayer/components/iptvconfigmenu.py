@@ -42,7 +42,8 @@ from Plugins.Extensions.IPTVPlayer.components.configextmovieplayer import Config
 config.plugins.iptvplayer.exteplayer3path = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.gstplayerpath   = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.wgetpath        = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.hlsdlpath        = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.hlsdlpath       = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.dukpath         = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.rtmpdumppath    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.f4mdumppath     = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.uchardetpath    = ConfigText(default = "", fixed_size = False)
@@ -246,6 +247,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("wgetpath", config.plugins.iptvplayer.wgetpath))
             list.append(getConfigListEntry("rtmpdumppath", config.plugins.iptvplayer.rtmpdumppath))
             list.append(getConfigListEntry("hlsdlpath", config.plugins.iptvplayer.hlsdlpath))
+            list.append(getConfigListEntry("dukpath", config.plugins.iptvplayer.dukpath))
             list.append(getConfigListEntry("f4mdumppath", config.plugins.iptvplayer.f4mdumppath))
             list.append(getConfigListEntry("uchardetpath", config.plugins.iptvplayer.uchardetpath))
         

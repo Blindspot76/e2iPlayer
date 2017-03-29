@@ -458,6 +458,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                            ('gstplayer', config.plugins.iptvplayer.gstplayerpath.value), \
                            ('wget', config.plugins.iptvplayer.wgetpath.value), \
                            ('hlsdl', config.plugins.iptvplayer.hlsdlpath.value), \
+                           ('duk', config.plugins.iptvplayer.dukpath.value), \
                            ('f4mdump', config.plugins.iptvplayer.f4mdumppath.value), \
                            ('uchardet', config.plugins.iptvplayer.uchardetpath.value)]
             for binItem in binariesTab:
