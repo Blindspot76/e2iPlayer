@@ -6571,6 +6571,7 @@ class pageParser:
         
         marker = 'ﾟωﾟﾉ= /｀ｍ´）ﾉ'
         orgData = marker + self.cm.ph.getDataBeetwenMarkers(orgData, marker, marker, False)[1]
+        orgData = re.sub('''if\s*\([^\}]+?typeof[^\}]+?\}''', '', orgData)
         dec = __decode_k(encTab[0], orgData)
         
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
