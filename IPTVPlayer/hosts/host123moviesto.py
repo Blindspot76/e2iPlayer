@@ -20,6 +20,7 @@ import urllib
 import string
 import random
 import base64
+from urlparse import urlparse
 from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
@@ -338,8 +339,9 @@ param = retA()'''
             vLocals = { 'param': None }
             exec( code % data.replace('+','|x|'), vGlobals, vLocals)
             data = vLocals['param'].decode('string_escape')
-            xx = self.cm.ph.getSearchGroups(data, '''xx=['"]([^"^']+?)['"]''')[0]
-            xy = self.cm.ph.getSearchGroups(data, '''xy=['"]([^"^']+?)['"]''')[0]
+            data = re.compile('''=['"]([^"^']+?)['"]''').findall(data)
+            xx = data[0]
+            xy = data[1]
         except Exception:
             printExc()
         return xx, xy
@@ -379,7 +381,11 @@ param = retA()'''
                 printExc()
                 return []
         else:
-            url = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''['"]([^"^']*?js/client[^"^']*?)['"]''')[0] )
+            try: mid = urlparse(referer).path.split('/')[2].split('-')[-1]
+            except Exception:
+                mid = ''
+                printExc()
+            url = self.getFullUrl( 'https://gomovies.to/ajax/movie_token?eid=%s&mid=%s&_=%s' % (episodeId, mid, int(time.time() * 10000)))
             if not self.cm.isValidUrl(url): return []
             
             params = dict(self.defaultParams)
@@ -408,7 +414,8 @@ param = retA()'''
                 return []
             
             xx, xy = self.uncensored1(data)
-            url = 'ajax/v3_get_sources/%s?xx=%s&xy=%s' % (episodeId, xx, xy)
+            url = 'ajax/movie_sources/%s?x=%s&y=%s' % (episodeId, xx, xy)
+            #url = 'ajax/v3_get_sources/%s?xx=%s&xy=%s' % (episodeId, xx, xy)
             url = self.getFullUrl( url )
 
             params = {}
