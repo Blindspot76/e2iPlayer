@@ -53,7 +53,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://123movies.to/'
+    return 'https://gomovies.to/'
 
 class T123MoviesTO(CBaseHostClass):
  
@@ -97,7 +97,7 @@ class T123MoviesTO(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        domains = ['https://123movieshd.to/', 'https://123movies.net.ru/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/']
+        domains = ['https://gomovies.to/', 'https://123movieshd.to/', 'https://123movies.net.ru/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/']
         domain = config.plugins.iptvplayer.moviesto123_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -118,7 +118,7 @@ class T123MoviesTO(CBaseHostClass):
                 break
                 
         if self.MAIN_URL == None:
-            self.MAIN_URL = 'https://123movies.is/' # first domain is default one
+            self.MAIN_URL = 'https://gomovies.to/' # first domain is default one
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
