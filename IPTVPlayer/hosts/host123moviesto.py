@@ -362,10 +362,16 @@ class T123MoviesTO(CBaseHostClass):
             params['header'] = dict(self.HEADER)
             params['header']['Referer'] = referer
             
-            sts, data = self.getPage(url, params)
-            if not sts: return []
+            tries = 0
+            if tries < 10:
+                sts, data = self.getPage(url, params)
+                if not sts: return []
+                
+                xx, xy = self.uncensored1(data)
+                if xx != '' and xy != '':
+                    break
+                tries += 1
             
-            xx, xy = self.uncensored1(data)
             url = 'ajax/movie_sources/%s?x=%s&y=%s' % (episodeId, xx, xy)
             url = self.getFullUrl( url )
 
