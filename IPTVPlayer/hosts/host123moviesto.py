@@ -363,7 +363,7 @@ class T123MoviesTO(CBaseHostClass):
             params['header']['Referer'] = referer
             
             tries = 0
-            if tries < 10:
+            while tries < 10:
                 sts, data = self.getPage(url, params)
                 if not sts: return []
                 
