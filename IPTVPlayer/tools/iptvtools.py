@@ -47,7 +47,7 @@ def GetNice(pid=None):
     return nice
     
 def E2PrioFix(cmd):
-    if config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
+    if '/duk' not in cmd and config.plugins.iptvplayer.plarform.value in ('mipsel', 'armv7', 'armv5t'):
         return 'nice -n %d %s' % (GetNice()+2, cmd)
     else:
         return cmd

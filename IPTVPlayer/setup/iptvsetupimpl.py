@@ -103,7 +103,7 @@ class IPTVSetupImpl:
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl')]
         
         # duk
-        self.dukVersion = "2.0.1" # at now not used
+        self.dukVersion = 2 # "2.0.1" # real version
         self.dukPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/duk')]
         
         self.binaryInstalledSuccessfully = False
@@ -610,14 +610,18 @@ class IPTVSetupImpl:
             
         def _detectValidator(code, data):
             if 'restrict-memory' in data:
-                # parse version here and check
-                return True, False
+                try:
+                    ver = int(re.search('VER_FOR_IPTV\:\s([0-9]+?)\n', data).group(1))
+                    if ver >= self.dukVersion:
+                        return True, False
+                except Exception:
+                    printExc()
             return False,True
         
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
-            #for idx in range(len(dataTab)):
-            #    if 'restrict-memory' in dataTab[idx]: sts, retPath = True, paths[idx]
+            for idx in range(len(dataTab)):
+                if 'restrict-memory' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):

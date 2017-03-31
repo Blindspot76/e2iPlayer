@@ -38,7 +38,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                unicode_escape, JS_FromCharCode, pythonUnescape
 from Plugins.Extensions.IPTVPlayer.libs.jjdecode import JJDecoder
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, MainSessionWrapper
+from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, iptv_js_execute, MainSessionWrapper
 from Screens.MessageBox import MessageBox
 ###################################################
 # FOREIGN import
@@ -6535,35 +6535,11 @@ class pageParser:
             decoded = ''
             tmpPath = ''
             try:
-                jscode = '''
-                var id = "%s"
-                  , decoded
-                  , document = {
-                    getElementById: true
-                  }
-                  , window = this
-                  , $ = function(){
-                      return {
-                        text: function(a){
-                          if(a)
-                            decoded = a;
-                          else
-                            return id;
-                        },
-                        ready: function(a){
-                          a()
-                        }
-                      }
-                    };
-                %s;
-                print(decoded);''' % (enc, jscode)
-                sts, tmpPath = CreateTmpFile('.iptv_openload.js', jscode)
-                cmd =  GetDukPath() + ' ' + tmpPath + ' 2> /dev/null'
-                printDBG("iptv_execute cmd[%s" % cmd)
-                ret = iptv_execute()( cmd )
+                jscode = '''var id = "%s", decoded, document = {getElementById: true}, window = this, $ = function(){return {text: function(a){if(a){decoded = a;}else {return id;}},ready: function(a){a()}}}; %s; print(decoded);''' % (enc, jscode)
+                ret = iptv_js_execute( jscode )
                 if ret['sts'] and 0 == ret['code']:
                     decoded = ret['data'].strip()
-                printDBG('DECODED DATA -> [%s]' % decoded)
+                    printDBG('DECODED DATA -> [%s]' % decoded)
             except Exception:
                 printExc()
             #rm(tmpPath)
