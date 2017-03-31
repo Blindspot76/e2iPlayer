@@ -308,7 +308,7 @@ class T123MoviesTO(CBaseHostClass):
         xx = ''
         xy = ''
         try:
-            data = 'String.prototype.italics=function(){return "<i></i>";};String.prototype.link=function(){return "<a href=\\"undefined\\"></a>";};String.prototype.fontcolor=function(){return "<font color=\\"undefined\\"></font>";};\n' + data + '\nfor (n in this){print(n+"="+this[n]+";");}'
+            data = 'var location="https://gomovies.to/";String.prototype.italics=function(){return "<i></i>";};String.prototype.link=function(){return "<a href=\\"undefined\\"></a>";};String.prototype.fontcolor=function(){return "<font color=\\"undefined\\"></font>";};\n' + data + '\nfor (n in this){print(n+"="+this[n]+";");}'
             ret = iptv_js_execute( data )
             xx = data = self.cm.ph.getSearchGroups(ret['data'], '''x=([^;]+?);''')[0]
             xy = data = self.cm.ph.getSearchGroups(ret['data'], '''y=([^;]+?);''')[0]
