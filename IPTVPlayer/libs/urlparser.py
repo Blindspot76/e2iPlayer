@@ -407,6 +407,7 @@ class urlparser:
                        'raptu.com':            self.pp.parserRAPTUCOM       ,
                        'ovva.tv':              self.pp.parserOVVATV         ,
                        'streamplay.to':        self.pp.parserSTREAMPLAYTO   ,
+                       'streamango.com':       self.pp.parserSTREAMANGOCOM  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -7582,3 +7583,43 @@ class pageParser:
             if self.cm.isValidUrl(file):
                 return file
         return False
+        
+    def parserSTREAMANGOCOM(self, baseUrl):
+        printDBG("parserSTREAMANGOCOM url[%s]\n" % baseUrl)
+        videoTab = []
+        if '/embed/' not in baseUrl:
+            sts, data = self.cm.getPage(baseUrl)
+            if not sts: return videoTab
+            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?/embed/[^"^']+?)["']''', 1, True)[0]
+        else:
+            url = baseUrl
+        
+        sts, data = self.cm.getPage(url)
+        if not sts: return videoTab
+        
+        dashTab = []
+        hlsTab = []
+        mp4Tab = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'srces.push(', ')', False)
+        printDBG(data)
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, r'''['"]?src['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
+            if url.startswith('//'): url = 'http:' + url
+            type = self.cm.ph.getSearchGroups(item, r'''['"]?type['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
+            if not self.cm.isValidUrl(url): continue
+        
+            #url = strwithmeta(url, {'User-Agent':params['header']})
+            if '/dash' in type:
+                dashTab.extend(getMPDLinksWithMeta(url, False))
+            elif 'hls' in type:
+                hlsTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True))
+            elif '/mp4' in type:
+                name = self.cm.ph.getSearchGroups(item, '''height\s*\:\s*([^\,]+?)[\,]''')[0]
+                mp4Tab.append({'name':'[%s] %sp' % (type, name), 'url':url})
+
+        videoTab.extend(mp4Tab)
+        videoTab.extend(hlsTab)
+        videoTab.extend(dashTab)
+        return videoTab
+        
+        
