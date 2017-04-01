@@ -346,9 +346,9 @@ class LosMovies(CBaseHostClass):
             sp = '='
         
         for item in tmp:
-            url  = self.cm.ph.getSearchGroups(item, r'''['"]?{0}['"]?\s*{1}\s*['"](https?://[^"^']+)['"]'''.format(urlAttrName, sp))[0]
+            url  = self.cm.ph.getSearchGroups(item.replace('\\/', '/'), r'''['"]?{0}['"]?\s*{1}\s*['"](https?://[^"^']+)['"]'''.format(urlAttrName, sp))[0]
             if not self.cm.isValidUrl(url): continue
-            name = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?\s*{0}\s*['"]([^"^']+)['"]'''.format(sp))[0]
+            name = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?\s*{0}\s*['"]?([^"^'^,]+)[,'"]'''.format(sp))[0]
             
             printDBG('---------------------------')
             printDBG('url:  ' + url)
