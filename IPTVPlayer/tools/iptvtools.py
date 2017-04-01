@@ -410,19 +410,21 @@ class CSelOneLink():
 # prints debugs on screen or to the file
 #############################################################
 # debugs
-def printDBG( DBGtxt ):
+def getDebugMode():
+    DBG=''
     try:
         from Components.config import config
         DBG = config.plugins.iptvplayer.debugprint.value
     except Exception:
-        #nie zainicjowany modul Config, sprawdzamy wartosc bezposredio w pliku
-        DBG=''
         file = open(resolveFilename(SCOPE_CONFIG, "settings"))
         for line in file:
             if line.startswith('config.plugins.iptvplayer.debugprint=' ) :
                 DBG=line.split("=")[1].strip()
                 break
-        #print DBG
+    return DBG
+
+def printDBG( DBGtxt ):
+    DBG = getDebugMode()
     if DBG == '':
         return
     elif DBG == 'console':

@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import iptv_system, printDBG, GetDukPath, CreateTmpFile
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import iptv_system, printDBG, GetDukPath, CreateTmpFile, rm, getDebugMode
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 ###################################################
 # FOREIGN import
@@ -256,6 +256,10 @@ def iptv_js_execute(jscode):
         cmd =  GetDukPath() + ' ' + tmpPath + ' 2> /dev/null'
         printDBG("iptv_js_execute cmd[%s]" % cmd)
         ret = iptv_execute()( cmd )
+        
+        # leave last script for debug purpose
+        if getDebugMode() == '':
+            rm(tmpPath)
     else:
         ret = {'sts':False, 'code':-12, 'data':''}
     printDBG('iptv_js_execute cmd ret[%s]' % ret)
