@@ -358,6 +358,14 @@ class KissAnimeTo(CBaseHostClass):
         sts, data = self.getPage(videoUrl) 
         if not sts: return urlTab
         
+        keySeed = self.cm.ph.getSearchGroups(data, r'"(\\x[^"]+?)"')[0]
+        try: keySeed = keySeed.decode('string-escape')
+        except Exception: printExc()
+        
+        printDBG('keySeed: ' + keySeed)
+        # "nhasasdbasdtene7230asb"
+        # "nhcscsdbcsdtene7230csb6n23nccsdln213"
+        
         tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'asp.wrap(', ')', False)
         for tmp in tmpTab:
             tmp = tmp.strip()
@@ -385,7 +393,7 @@ class KissAnimeTo(CBaseHostClass):
             if '' == url: continue
             try:
                 printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
-                url = _decUrl(url, "nhcscsdbcsdtene7230csb6n23nccsdln213")
+                url = _decUrl(url, keySeed)
                 printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
                 url = strwithmeta(url, {'Referer':'http://kissanime.ru/Scripts/jwplayer/jwplayer.flash.swf'})
             except Exception:
