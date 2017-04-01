@@ -38,16 +38,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.moviesto123_proxy = ConfigSelection(default = "None", choices = [("None",         _("None")),
-                                                                                           ("proxy_1",  _("Alternative proxy server (1)")),
-                                                                                           ("proxy_2",  _("Alternative proxy server (2)"))])
-config.plugins.iptvplayer.moviesto123_alt_domain = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("Use proxy server:"), config.plugins.iptvplayer.moviesto123_proxy))
-    if config.plugins.iptvplayer.moviesto123_proxy.value == 'None':
-        optionList.append(getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.moviesto123_alt_domain))
     return optionList
 ###################################################
 
