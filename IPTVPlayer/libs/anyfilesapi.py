@@ -35,6 +35,7 @@ class AnyFilesVideoUrlExtractor:
         return self.logged
         
     def tryTologin(self):
+        rm(AnyFilesVideoUrlExtractor.COOKIEFILE)
         login    = config.plugins.iptvplayer.anyfilespl_login.value
         password = config.plugins.iptvplayer.anyfilespl_password.value
         printDBG("AnyFilesVideoUrlExtractor.tryTologin login[%s]" % login)
