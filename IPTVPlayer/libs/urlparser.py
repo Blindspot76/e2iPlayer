@@ -7515,7 +7515,7 @@ class pageParser:
         sts, data = self.cm.getPage(secPlayerUrl, params)
         
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
-        data += _getEvalData(data)
+        data += str(_getEvalData(data))
         
         def getUtf8Str(st):
             idx = 0
@@ -7525,12 +7525,9 @@ class pageParser:
                 idx += 3
             return st2.decode('unicode-escape').encode('UTF-8')
         
-        data += tmpData
-        #printDBG("=================================================================")
-        #printDBG(data)
-        #printDBG("=================================================================")
+        data += str(tmpData)
         #self.cm.ph.writeToFile('/mnt/new2/test.html', data)
-
+        
         playerData = self.cm.ph.getDataBeetwenMarkers(data, 'get_md5.php', '})')[1]
         playerData = self.cm.ph.getDataBeetwenMarkers(playerData, '{', '}', False)[1]
         playerData = playerData.split(',')
