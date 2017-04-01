@@ -60,11 +60,11 @@ class ChiaanimeCO(CBaseHostClass):
         self.MAIN_URL = 'http://chiaanime.co/'
         self.SEARCH_URL = self.MAIN_URL +'Search?s='
         
-        self.DEFAULT_ICON  = "http://clipartist.net/RSS/openclipart.org/2012/May/dibujo_7_samurai_chibi_anime-1979px.png"
-        self.MAIN_CAT_TAB = [{'category':'list_types',  'title': _('Anime list'),     'url':self.MAIN_URL+'AnimeList', 'icon':self.DEFAULT_ICON},
-                             {'category':'categories',  'title': _('Genres'),         'url':self.MAIN_URL, 'icon':self.DEFAULT_ICON},
-                             {'category':'search',          'title': _('Search'), 'search_item':True, 'icon':self.DEFAULT_ICON},
-                             {'category':'search_history',  'title': _('Search history'),             'icon':self.DEFAULT_ICON} ]
+        self.DEFAULT_ICON_URL  = "http://clipartist.net/RSS/openclipart.org/2012/May/dibujo_7_samurai_chibi_anime-1979px.png"
+        self.MAIN_CAT_TAB = [{'category':'list_types',  'title': _('Anime list'),     'url':self.MAIN_URL+'AnimeList'},
+                             {'category':'categories',  'title': _('Genres'),         'url':self.MAIN_URL},
+                             {'category':'search',          'title': _('Search'), 'search_item':True},
+                             {'category':'search_history',  'title': _('Search history')} ]
         
         
     def getPage(self, baseUrl, params={}, post_data=None):
@@ -72,7 +72,7 @@ class ChiaanimeCO(CBaseHostClass):
         params['cloudflare_params'] = {'domain':'chiaanime.co', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
-    def getIconUrl(self, url):
+    def getFullIconUrl(self, url):
         url = self.getFullUrl(url)
         if url == '': return ''
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
@@ -122,7 +122,7 @@ class ChiaanimeCO(CBaseHostClass):
         data = re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>([^<]+?)<''').findall(data)
         for item in data:
             title = self.cleanHtmlStr(item[1])
-            url   = self.getFullUrl(item[0])
+            url   = urlparse.urljoin(cItem['url'], item[0])
             tab.append({'title':title, 'url':url})
             
         cItem = dict(cItem)
@@ -139,7 +139,7 @@ class ChiaanimeCO(CBaseHostClass):
         if len(tmp)>1: query = tmp[1]
         else: query = ''
         
-        if not url.endswith('/'): url += '/'
+        #if not url.endswith('/'): url += '/'
         if page > 1: url += '?page=%d&' % page
         else: url += '?'
         if query != '': url += query
@@ -147,15 +147,17 @@ class ChiaanimeCO(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return
         
-        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '<!-- end pager -->', False)[1]
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '</ul>', False)[1]
         if ('>%d<' % (page+1)) in nextPage: nextPage = True
         else: nextPage = False
         
         m1 = '<div class="anime_movies_items">'
+        if m1 not in data: m1 = '<div class="last_episodes_items">'
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, '</section>', False)[1]
         data = data.split(m1)
         for item in data:
             icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0] )
+            if icon == '': icon = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''url\(\s*['"]([^'^"]+?\.jpe?g)['"]''')[0] )
             url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<p class="name">', '</p>', True)[1] )
             if title == '': title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0] )
@@ -184,7 +186,7 @@ class ChiaanimeCO(CBaseHostClass):
         if len(tmp)>1: query = tmp[1]
         else: query = ''
         
-        if not url.endswith('/'): url += '/'
+        #if not url.endswith('/'): url += '/'
         if page > 1: url += '?page=%d&' % page
         else: url += '?'
         if query != '': url += query
@@ -353,82 +355,4 @@ class ChiaanimeCO(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        # for now we must disable favourites due to problem with links extraction for types other than movie
-        CHostBase.__init__(self, ChiaanimeCO(), True, favouriteTypes=[]) #, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-        
-    #def getArticleContent(self, Index = 0):
-    #    retCode = RetHost.ERROR
-    #    retlist = []
-    #    if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-    #
-    #    hList = self.host.getArticleContent(self.host.currList[Index])
-    #    for item in hList:
-    #        title      = item.get('title', '')
-    #        text       = item.get('text', '')
-    #        images     = item.get("images", [])
-    #        othersInfo = item.get('other_info', '')
-    #        retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-    #    return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append((_("Movies"),   "movie"))
-        #searchTypesOptions.append((_("TV Shows"), "tv_shows"))
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  self.host.getIconUrl( cItem.get('icon', '') )
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
+        CHostBase.__init__(self, ChiaanimeCO(), True, favouriteTypes=[])
