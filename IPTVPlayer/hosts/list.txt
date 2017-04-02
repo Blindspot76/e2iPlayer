@@ -26,7 +26,6 @@ hostfavourites
 hostfighttube
 hostfilisertv
 hostfilma24hdcom
-hostfilmotopia
 hostfilmovizijastudio
 hostfilmstreamvkcom
 hostfilmy3deu
@@ -58,6 +57,7 @@ hostlosmovies
 hostmovie4kto
 hostmovienightws
 hostmovizlandcom
+hostmrpiracy
 hostmusicbox
 hostnaszekinoonline
 hostninateka
