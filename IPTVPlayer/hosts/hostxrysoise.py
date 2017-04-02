@@ -133,7 +133,7 @@ class XrysoiSE(CBaseHostClass):
         if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, "class='pages'", '</div>', False)[1]
-        if '>&raquo;<' in nextPage:
+        if 'rel="next"' in nextPage:
             nextPage = True
         else: nextPage = False
         
