@@ -208,8 +208,7 @@ class urlparser:
                        'my.mail.ru':           self.pp.parserVIDEOMAIL     ,
                        'api.video.mail.ru':    self.pp.parserVIDEOMAIL     ,
                        'videoapi.my.mail.ru':  self.pp.parserVIDEOMAIL     ,
-                       'cloud.mail.ru':        self.pp.parserVIDEOMAIL     ,
-                       'mail.ru':              self.pp.parserVIDEOMAIL     ,
+                       'cloud.mail.ru':        self.pp.parserCOUDMAILRU    ,
                        'wrzuta.pl':            self.pp.parserWRZUTA        ,
                        'goldvod.tv':           self.pp.parserGOLDVODTV     ,
                        'vidzer.net':           self.pp.parserVIDZER        ,
@@ -2779,7 +2778,20 @@ class pageParser:
         if not sts: return False
         r = re.compile("file:.+?'(.+?)'").findall(data)
         return r[0]
+    
+    def parserCOUDMAILRU(self, baseUrl):
+        printDBG("parserCOUDMAILRU baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0'}
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
         
+        weblink  = self.cm.ph.getSearchGroups(data, '"weblink"\s*:\s*"([^"]+?)"')[0]
+        videoUrl = self.cm.ph.getSearchGroups(data, '"weblink_video"\s*:[^\]]*?"url"\s*:\s*"(https?://[^"]+?)"')[0]
+        videoUrl += '0p/%s.m3u8?double_encode=1' % (base64.b64encode(weblink))
+        videoUrl = strwithmeta(videoUrl, {'User-Agent':HTTP_HEADER['User-Agent']})
+        
+        return getDirectM3U8Playlist(videoUrl, checkContent=True)
+    
     def parserVIDEOMAIL(self, url):
         printDBG("parserVIDEOMAIL baseUrl[%s]" % url)
         #http://api.video.mail.ru/videos/embed/mail/etaszto/_myvideo/852.html
