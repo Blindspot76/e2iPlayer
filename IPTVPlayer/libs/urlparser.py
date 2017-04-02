@@ -6527,6 +6527,12 @@ class pageParser:
         encTab = re.compile('''<span[^>]+?id="%s[^"]*?"[^>]*?>([^<]+?)<\/span>''' % varName).findall(data)
         printDBG(">>>>>>>>>>>> varName[%s] encTab[%s]" % (varName, encTab) )
         
+        if varName == '':
+            for e in encTab:
+                if len(e) > 40:
+                    encTab.insert(0, e)
+                    break
+        
         def __decode_k(enc, jscode):
             decoded = ''
             tmpPath = ''
