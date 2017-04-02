@@ -208,6 +208,8 @@ class urlparser:
                        'my.mail.ru':           self.pp.parserVIDEOMAIL     ,
                        'api.video.mail.ru':    self.pp.parserVIDEOMAIL     ,
                        'videoapi.my.mail.ru':  self.pp.parserVIDEOMAIL     ,
+                       'cloud.mail.ru':        self.pp.parserVIDEOMAIL     ,
+                       'mail.ru':              self.pp.parserVIDEOMAIL     ,
                        'wrzuta.pl':            self.pp.parserWRZUTA        ,
                        'goldvod.tv':           self.pp.parserGOLDVODTV     ,
                        'vidzer.net':           self.pp.parserVIDZER        ,
