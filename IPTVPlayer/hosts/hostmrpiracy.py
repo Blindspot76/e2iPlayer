@@ -361,7 +361,22 @@ class MRPiracyGQ(CBaseHostClass):
         if not sts: return urlTab
         
         token = self.cm.ph.getSearchGroups(data, '''var\s+form_data\s*=\s*['"]([^'^"]+?)['"]''')[0]
-        url = self.getFullUrl('%s_player_include_welele.php?imdb=%s&p=%s&token=%s' % (type, playerData[1], playerData[0], token))
+        data  = self.cm.ph.getDataBeetwenMarkers(data, 'form_data', '</script>')[1]
+        data  = self.cm.ph.getDataBeetwenMarkers(data, '[', ']', False)[1]
+        data  = re.compile('"([^"]*?)"').findall(data)
+        
+        uriTmp  = [] 
+        try:
+            for item in data:
+                uriTmp.append(item.decode('string_escape').encode('utf-8'))
+        except Exception:
+            uriTmp = []
+            printExc()
+        
+        if len(uriTmp) == 39 and 'token' in uriTmp[-4] and '_player_' in uriTmp[-6]:
+            url = self.getFullUrl(uriTmp[-6] + playerData[1] + uriTmp[-5] + playerData[0] + uriTmp[-4] + token)
+        else:
+            url = self.getFullUrl('%s_player_include_welele.php?imdb=%s&p=%s&token=%s' % (type, playerData[1], playerData[0], token))
         
         sts, data = self.getPage(url)
         if not sts: return urlTab
