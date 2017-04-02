@@ -364,7 +364,6 @@ class urlparser:
                        'sharerepo.com':        self.pp.parseSHAREREPOCOM   ,
                        'easyvideo.me':         self.pp.parseEASYVIDEOME    ,
                        'playbb.me':            self.pp.parseEASYVIDEOME    ,
-                       'uptostream.com':       self.pp.parseUPTOSTREAMCOM  ,
                        'vimeo.com':            self.pp.parseVIMEOCOM       ,
                        'jacvideo.com':         self.pp.parseJACVIDEOCOM    ,
                        'caston.tv':            self.pp.parseCASTONTV       ,
@@ -402,8 +401,8 @@ class urlparser:
                        'kingfiles.net':        self.pp.parserKINGFILESNET   ,
                        'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
                        'vidabc.com':           self.pp.parserVIDABCCOM      ,
-                       'uptostream.com':       self.pp.parserUPTOSTREAMCOM  ,
                        'uptobox.com':          self.pp.parserUPTOSTREAMCOM  ,
+                       'uptostream.com':       self.pp.parserUPTOSTREAMCOM  ,
                        'fastplay.cc':          self.pp.parserFASTPLAYCC     ,
                        'spruto.tv':            self.pp.parserSPRUTOTV       ,
                        'raptu.com':            self.pp.parserRAPTUCOM       ,
@@ -2577,30 +2576,6 @@ class pageParser:
             url = data[4:]
         
         return getDirectM3U8Playlist(url, checkContent=True)[::-1]
-        
-    def parserUPTOSTREAMCOM(self, baseUrl):
-        printDBG("parserUPTOSTREAMCOM baseUrl[%r]" % baseUrl)
-        
-        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
-        url = baseUrl
-        if '/iframe/' not in url:
-            url = 'https://uptostream.com/iframe/' + url.split('/')[-1]
-            baseUrl = url
-        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts: sts, data = self.cm.getPageWithWget(url, {'header':HTTP_HEADER})
-        if not sts: return False
-        
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
-        tab = []
-        for item in data:
-            if 'video/mp4' in item:
-                res = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
-                url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
-                if url.startswith('//'): url = 'http:' + url
-                if not self.cm.isValidUrl(url): continue
-                tab.append({'name':res, 'url':strwithmeta(url, {'Referer':baseUrl})})
-        tab.reverse()
-        return tab
             
     def parseMOSHAHDANET(self, baseUrl):
         printDBG("parseMOSHAHDANET baseUrl[%r]" % baseUrl)
@@ -5817,20 +5792,36 @@ class pageParser:
             tab.insert(0, {'name':'main', 'url':video_url})
         return tab
         
-    def parseUPTOSTREAMCOM(self, baseUrl):
-        printDBG("parseUPTOSTREAMCOM baseUrl[%s]" % baseUrl)
+    def parserUPTOSTREAMCOM(self, baseUrl):
+        printDBG("parserUPTOSTREAMCOM baseUrl[%s]" % baseUrl)
         
-        if 'iframe' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
-            url = 'https://uptostream.com/iframe/' + video_id
+        url = baseUrl
+        domain = urlparser.getDomain(baseUrl) 
+        if '/iframe/' not in url:
+            url = 'https://' + domain + '/iframe/' + url.split('/')[-1]
+            baseUrl = url
         else:
             url = baseUrl
         sts, data = self.cm.getPage(url)
         if not sts: return False
+        subTracks = []
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '</track>', False, False)
+        for item in tmp:
+            if 'subtitles' not in item: continue
+            type  = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+            lang  = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
+            label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
+            url   = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            if url.startswith('//'):
+                url = 'http:' + url
+            if '://' not in url: continue
+            subTracks.append({'title':label, 'url':url, 'lang':label, 'format':type})
+        
         #'<font color="red">', '</font>'
         urlTab = []
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
         for item in data:
+            if 'video/mp4' not in item: continue
             type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
             res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
             lang = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
@@ -5838,7 +5829,9 @@ class pageParser:
             if url.startswith('//'):
                 url = 'http:' + url
             if url.startswith('http'):
-                urlTab.append({'name':'uptostream {0}: {1}'.format(lang, res), 'url':url})
+                url = strwithmeta(url, {'Referer':baseUrl, 'external_sub_tracks':subTracks})
+                urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
+        urlTab.reverse()
         return urlTab
         
     def parseVIMEOCOM(self, baseUrl):
