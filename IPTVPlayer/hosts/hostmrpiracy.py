@@ -310,6 +310,8 @@ class MRPiracyGQ(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return urlTab
         
+        trailerUrl = self.cm.ph.getSearchGroups(data, '''trailer\(\s*["'](https?://youtube.com/[^"^']+?)["']''')[0]
+        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="deleted">', '</center>')[1]
         
         errorMsg = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h2', '</h2>')[1])
@@ -327,6 +329,9 @@ class MRPiracyGQ(CBaseHostClass):
             playerData.append(cItem['url'])
             urlTab.append({'name':name, 'url':'|'.join(playerData), 'need_resolve':1})
         
+        if self.cm.isValidUrl(trailerUrl):
+            urlTab.append({'name':_('Trailer'), 'url':trailerUrl, 'need_resolve':1})
+        
         if len(urlTab):
             self.cacheLinks[cItem['url']] = urlTab
         return urlTab
@@ -343,7 +348,10 @@ class MRPiracyGQ(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
-                        
+        
+        if self.cm.isValidUrl(videoUrl):
+            return self.up.getVideoLinkExt(videoUrl)
+        
         playerData = videoUrl.split('|')
         url = playerData[-1]
         
@@ -440,6 +448,56 @@ class MRPiracyGQ(CBaseHostClass):
         self.addDir(params)
         return True
         
+    def getArticleContent(self, cItem):
+        printDBG("MRPiracyGQ.getArticleContent [%s]" % cItem)
+        retTab = []
+        
+        sts, data = self.getPage(cItem.get('url', ''))
+        if not sts: return retTab
+        
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<[^>]+?id="movie-synopsis"[^>]*?>'), re.compile('</div>'))[1])
+        if desc == '': desc  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta property="og:description"[^>]+?content="([^"]+?)"')[0] )
+        
+        title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta property="og:title"[^>]+?content="([^"]+?)"')[0] )
+        icon  = self.getFullUrl( self.cm.ph.getSearchGroups(data, '<meta property="og:image"[^>]+?content="([^"]+?)"')[0] )
+        
+        if title == '': title = cItem['title']
+        if desc == '':  title = cItem['desc']
+        if icon == '':  title = cItem['icon']
+        
+        descData = self.cm.ph.getDataBeetwenMarkers(data, '<div class="movie-detailed-info">', '<div class="clear">', False)[1] 
+        descTabMap = {"genre":         "genre",
+                      "year":          "year",
+                      "original-name": "alternate_title"}
+        
+        otherInfo = {}
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(descData, '<span', '</span>')
+        for item in tmp:
+            key = self.cm.ph.getSearchGroups(item, '''class=['"]([^'^"]+?)['"]''')[0]
+            if key in descTabMap:
+                try: otherInfo[descTabMap[key]] = self.cleanHtmlStr(item)
+                except Exception: continue
+                
+        status = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(descData, 'Estado:', '</span>', False)[1])
+        if status != '': otherInfo['status'] = status
+        
+        year = self.cm.ph.getSearchGroups(self.cm.ph.getDataBeetwenMarkers(descData, '<span class="year">', '<span class="', False)[1], '[^0-9]([0-9]+?)[^0-9]')[0]
+        if year != '': otherInfo['year'] = year
+        
+        director = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(descData, re.compile('Realizador:\s*</span>'), re.compile('</span>'), False)[1])
+        if director != '': otherInfo['director'] = director
+        
+        creator = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(descData, re.compile('Criador:\s*</span>'), re.compile('</span>'), False)[1])
+        if creator != '': otherInfo['creator'] = creator
+        
+        actors = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(descData, re.compile('Elenco:\s*</span>'), re.compile('</span>'), False)[1])
+        if actors != '': otherInfo['actors'] = actors
+        
+        imdb_rating = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(descData, '<div class="imdb-rate">', '</span>', False)[1])
+        if imdb_rating != '': otherInfo['imdb_rating'] = imdb_rating
+        
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
+    
     def tryTologin(self, login, password):
         printDBG('tryTologin start')
         connFailed = _('Connection to server failed!')
@@ -531,4 +589,10 @@ class IPTVHost(CHostBase):
         searchTypesOptions.append((_("TV Show"), "serie"))
         searchTypesOptions.append((_("Anime"),   "anime"))
         return searchTypesOptions
+        
+    def withArticleContent(self, cItem):
+        if cItem['type'] != 'video' and cItem['category'] != 'list_episodes' and cItem['category'] != 'list_seasons':
+            return False
+        return True
+    
     
