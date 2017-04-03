@@ -374,15 +374,19 @@ class MRPiracyGQ(CBaseHostClass):
         data  = re.compile('"([^"]*?)"').findall(data)
         
         uriTmp  = [] 
+        canBeAdded = False
         try:
             for item in data:
-                uriTmp.append(item.decode('string_escape').encode('utf-8'))
+                item = item.decode('string_escape').encode('utf-8')
+                if '_player_' in item:
+                    canBeAdded = True
+                if canBeAdded: uriTmp.append(item)
         except Exception:
             uriTmp = []
             printExc()
         
-        if len(uriTmp) == 39 and 'token' in uriTmp[-4] and '_player_' in uriTmp[-6]:
-            url = self.getFullUrl(uriTmp[-6] + playerData[1] + uriTmp[-5] + playerData[0] + uriTmp[-4] + token)
+        if len(uriTmp) >= 3:
+            url = self.getFullUrl(uriTmp[0] + playerData[1] + uriTmp[1] + playerData[0] + uriTmp[2] + token)
         else:
             url = self.getFullUrl('%s_player_include_welele.php?imdb=%s&p=%s&token=%s' % (type, playerData[1], playerData[0], token))
         
