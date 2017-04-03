@@ -105,6 +105,6 @@ class KarwanTvApi(CBaseHostClass):
         dashUrl = self.cm.ph.getSearchGroups(data, '''['"]?dash['"]?\s*:\s*['"]([^"^']+?)['"]''')[0]
         
         urlsTab.extend( getDirectM3U8Playlist(hlsUrl, checkContent=True) )
-        urlsTab.extend( getMPDLinksWithMeta(dashUrl, checkExt=True) )
+        if 0 == len(urlsTab): urlsTab.extend( getMPDLinksWithMeta(dashUrl, checkExt=True) )
         
         return urlsTab
