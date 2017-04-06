@@ -368,8 +368,9 @@ class MRPiracyGQ(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return urlTab
         
-        token = self.cm.ph.getSearchGroups(data, '''var\s+form_data\s*=\s*['"]([^'^"]+?)['"]''')[0]
-        data  = self.cm.ph.getDataBeetwenMarkers(data, 'form_data', '</script>')[1]
+        token = self.cm.ph.getSearchGroups(data, '''var\s+[^=^\(^\)^\{^\}]+?=\s*['"]([0-9a-fA-F]+?)['"]''')[0]
+        data  = self.cm.ph.getDataBeetwenMarkers(data, 'player(', '</script>')[1]
+        data  = self.cm.ph.getDataBeetwenMarkers(data, '<script', '</script>', False)[1]
         data  = self.cm.ph.getDataBeetwenMarkers(data, '[', ']', False)[1]
         data  = re.compile('"([^"]*?)"').findall(data)
         
