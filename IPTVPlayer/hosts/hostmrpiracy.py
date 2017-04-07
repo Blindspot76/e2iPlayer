@@ -514,7 +514,7 @@ class MRPiracyGQ(CBaseHostClass):
         data  = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>', False)[1]
         url   = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
         token = self.cm.ph.getSearchGroups(data, '''<input[^>]+?value="([^"]+?)"[^>]+?name="csrv_token"''')[0]
-        
+        if token == '': token = self.cm.ph.getSearchGroups(data, '''<input[^>]+?name="csrv_token"[^>]+?value="([^"]+?)"''')[0]
         post_data = {'email':login, 'password':password, 'lembrar_senha':'lembrar', 'csrv_token':token}
         params = dict(self.defaultParams)
         params['header'] = dict(self.HEADER)
@@ -524,7 +524,9 @@ class MRPiracyGQ(CBaseHostClass):
         sts, data = self.cm.getPage(url, params, post_data)
         if not sts: return False, connFailed
         
-        if 'logout-btn.png' in data:
+        
+        
+        if 'logout.php' in data:
             return True, 'OK'
         else:
             return False, 'NOT OK'
