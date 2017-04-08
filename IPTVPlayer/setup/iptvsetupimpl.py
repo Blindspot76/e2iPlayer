@@ -103,7 +103,7 @@ class IPTVSetupImpl:
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl')]
         
         # duk
-        self.dukVersion = 2 # "2.0.1" # real version
+        self.dukVersion = 3 # "2.0.1" # real version
         self.dukPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/duk')]
         
         self.binaryInstalledSuccessfully = False
@@ -200,10 +200,52 @@ class IPTVSetupImpl:
         
         if len(stsTab) > 0 and True == stsTab[-1]:
             _saveConfig( self.supportedPlatforms[len(stsTab)-1] )
-            self.getOpensslVersion()
+            self.detectFPU()
         else:
             _saveConfig( "unknown" )
             self.showMessage(_("Fatal Error!\nPlugin is not supported with your platform."), MessageBox.TYPE_ERROR, boundFunction(self.finish, False) )
+            
+    ###################################################
+    # STEP: FPU DETECTION
+    ###################################################
+    def detectFPU(self):
+        printDBG("IPTVSetupImpl.detectFPU")
+        if config.plugins.iptvplayer.plarform.value != 'mipsel' or IsFPUAvailable() or config.plugins.iptvplayer.plarformfpuabi.value != '':
+            self.getOpensslVersion()
+        else:
+            self.setInfo(_("Detection of MIPSEL FPU ABI."), _("This step is required to proper select binaries for installation."))
+            
+            def _cmdValidator(code, data):
+                if 'IPTVPLAYER FPU TEST' in data: 
+                    return True,False
+                else: 
+                    return False,True
+            outCmdTab = []
+            outCmdTab.append('wget -q "http://iptvplayer.pl/resources/bin/mipsel/fputest" -O "%s/fputest" ; chmod 777 "%s/fputest" ; "%s/fputest" ; rm "%s/fputest" 2>/dev/null' % (self.tmpDir, self.tmpDir, self.tmpDir, self.tmpDir))
+            outCmdTab.append('wget -q "http://iptvplayer.vline.pl/resources/bin/mipsel/fputest" -O "%s/fputest" ; chmod 777 "%s/fputest" ; "%s/fputest" ; rm "%s/fputest" 2>/dev/null' % (self.tmpDir, self.tmpDir, self.tmpDir, self.tmpDir))
+            self.workingObj = CCmdValidator(self.detectFPUFinished, _cmdValidator, outCmdTab)
+            self.workingObj.start()
+        
+    def detectFPUFinished(self, stsTab, dataTab):
+        printDBG("IPTVSetupImpl.detectFPUFinished")
+        def _saveConfig(isHardFloat):
+            if isHardFloat:
+                config.plugins.iptvplayer.plarformfpuabi.value = "hard_float"
+            else:
+                config.plugins.iptvplayer.plarformfpuabi.value = "soft_float"
+            printDBG("IPTVSetupImpl.detectFPUFinished isHardFloat[%r]" % isHardFloat)
+            config.plugins.iptvplayer.plarformfpuabi.save()
+            configfile.save()
+        
+        if len(stsTab) > 0:
+            if 'IPTVPLAYER FPU TEST OK' in dataTab[-1]:
+                _saveConfig(True)
+            elif 'IPTVPLAYER FPU TEST NOT OK' in dataTab[-1]:
+                _saveConfig(False)
+            else:
+                printDBG("IPTVSetupImpl.detectFPUFinished detection failed")
+        
+        self.getOpensslVersion()
     
     ###################################################
     # STEP: OpenSSL DETECTION
@@ -626,15 +668,16 @@ class IPTVSetupImpl:
         
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
             old = ''
+            softfpu = ''
             versions = {'sh4':2190, 'mipsel':2200}
             
             if platform in ['sh4', 'mipsel'] and (self.binaryInstalledSuccessfully or self.glibcVersion < versions[platform] ):
                 old = '_old'
             
-            if old == '' and platform == 'mipsel' and not IsFPUAvailable():
-                old = '_softfpu'
+            if platform == 'mipsel' and not IsFPUAvailable():
+                softfpu = '_softfpu'
             
-            url = server + 'bin/' + platform + ('/%s%s' % (binName, old))
+            url = server + 'bin/' + platform + ('/%s%s%s' % (binName, old, softfpu))
             if self.binaryInstalledSuccessfully:
                 self.binaryInstalledSuccessfully = False
                 

@@ -50,6 +50,7 @@ config.plugins.iptvplayer.uchardetpath    = ConfigText(default = "", fixed_size 
 config.plugins.iptvplayer.set_curr_title  = ConfigYesNo(default = False)
 config.plugins.iptvplayer.curr_title_file = ConfigText(default = "", fixed_size = False) 
 config.plugins.iptvplayer.plarform        = ConfigSelection(default = "auto", choices = [("auto", "auto"),("mipsel", _("mipsel")),("sh4", _("sh4")),("i686", _("i686")), ("armv7", _("armv7")), ("armv5t", _("armv5t")), ("unknown", _("unknown"))])
+config.plugins.iptvplayer.plarformfpuabi  = ConfigSelection(default = "", choices = [("", ""),("hard_float", _("Hardware floating point")),("soft_float", _("Software floating point"))])
 
 config.plugins.iptvplayer.showcover          = ConfigYesNo(default = True)
 config.plugins.iptvplayer.deleteIcons        = ConfigSelection(default = "3", choices = [("0", _("after closing")),("1", _("after day")),("3", _("after three days")),("7", _("after a week"))]) 
@@ -250,6 +251,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("dukpath", config.plugins.iptvplayer.dukpath))
             list.append(getConfigListEntry("f4mdumppath", config.plugins.iptvplayer.f4mdumppath))
             list.append(getConfigListEntry("uchardetpath", config.plugins.iptvplayer.uchardetpath))
+            list.append(getConfigListEntry("MIPS Floating Point Architecture", config.plugins.iptvplayer.plarformfpuabi))
         
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
