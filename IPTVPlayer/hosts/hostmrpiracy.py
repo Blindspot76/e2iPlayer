@@ -51,7 +51,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'http://mrpiracy.gq/'
+    return 'http://mrpiracy.site/'
 
 class MRPiracyGQ(CBaseHostClass):
  
@@ -64,12 +64,35 @@ class MRPiracyGQ(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'http://mrpiracy.gq/'
+        self.MAIN_URL = None
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
+        self.login    = ''
+        self.password = ''
+        self.loggedIn = False
+        
+    def selectDomain(self):
+        domain = None
+        for url in ['http://mrpiracy.site/', 'http://mrpiracy.gq/']:
+            sts, data = self.getPage(url)
+            if not sts: continue
+            tmp = self.cm.ph.getSearchGroups(data, '<a[^>]+?href="(https?://[^"]+?)"[^>]*?>[^>]+?site')[0]
+            if self.cm.isValidUrl(tmp):
+                domain = tmp
+                if not domain.endswith('/'):
+                    domain += '/'
+                break
+        
+        printDBG("DOMAN: [%s]" % domain)
+            
+        if domain == None:
+            domain = 'http://v1.mrpiracy.xyz/'
+        
+        self.MAIN_URL = domain
+    
         self.MAIN_CAT_TAB = [{'category':'list_filters',      'mode':'movie',   'title': 'Movies',       'url':self.getFullUrl('filmes.php') },
                              {'category':'list_filters',      'mode':'serie',   'title': 'TV Shows',     'url':self.getFullUrl('series.php') },
                              {'category':'list_filters',      'mode':'anime',   'title': 'Animes',       'url':self.getFullUrl('animes.php') },
@@ -77,9 +100,7 @@ class MRPiracyGQ(CBaseHostClass):
                              {'category':'search',            'title': _('Search'), 'search_item':True,                                    },
                              {'category':'search_history',    'title': _('Search history'),                                                } 
                             ]
-        self.login    = ''
-        self.password = ''
-        self.loggedIn = False
+    
         
     def getFullUrl(self, url):
         if url.startswith('..'): url = url[2:]
@@ -533,6 +554,9 @@ class MRPiracyGQ(CBaseHostClass):
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
+        
+        if self.MAIN_URL == None:
+            self.selectDomain()
         
         if self.login != config.plugins.iptvplayer.mrpiracy_login.value and \
            self.password != config.plugins.iptvplayer.mrpiracy_password.value and \
