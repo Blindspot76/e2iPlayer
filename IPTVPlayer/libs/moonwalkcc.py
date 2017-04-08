@@ -87,6 +87,8 @@ class MoonwalkParser():
         uuid = self.cm.ph.getSearchGroups(data, "uuid:\s*'([^,^']+?)'")[0]
         debug = self.cm.ph.getSearchGroups(data, "debug:\s*([^,^\s]+?)[,\s]")[0].strip()
         async_method = self.cm.ph.getSearchGroups(allData, "var\s+async_method\s*=\s*'([^']+?)'")[0]
+        runner_go = self.cm.ph.getSearchGroups(allData, "post_method\.runner_go\s*=\s*'([^']+?)'")[0]
+        
         
         printDBG("=======================================================================")
         printDBG(data)
@@ -154,6 +156,8 @@ class MoonwalkParser():
         if 'version_control' in allData: post_data['version_control'] = version_control   
         if 'detect_true' in allData: post_data['detect_true'] = detect_true
         if 'async_method' in allData: post_data['async_method'] = async_method
+        if 'runner_go' in allData: post_data['runner_go'] = runner_go
+        
         #post_data['ad_attr'] =0
         
         #printDBG(allData)
