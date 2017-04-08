@@ -40,13 +40,17 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 
-config.plugins.iptvplayer.mrpiracy_login    = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.mrpiracy_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.mrpiracy_cookiename  = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.mrpiracy_cookievalue = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.mrpiracy_username    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.mrpiracy_userid      = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("e-mail"), config.plugins.iptvplayer.mrpiracy_login))
-    optionList.append(getConfigListEntry(_("Password"), config.plugins.iptvplayer.mrpiracy_password))
+    optionList.append(getConfigListEntry(_("Secure cookie name"), config.plugins.iptvplayer.mrpiracy_cookiename))
+    optionList.append(getConfigListEntry(_("Secure cookie value"), config.plugins.iptvplayer.mrpiracy_cookievalue))
+    optionList.append(getConfigListEntry(_("Name"), config.plugins.iptvplayer.mrpiracy_username))
+    optionList.append(getConfigListEntry(_("ID"), config.plugins.iptvplayer.mrpiracy_userid))
     return optionList
 ###################################################
 
@@ -57,8 +61,6 @@ class MRPiracyGQ(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'mrpiracy.gq', 'cookie':'mrpiracygq.cookie', 'cookie_type':'MozillaCookieJar'})
-        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        
         self.DEFAULT_ICON_URL = 'https://pbs.twimg.com/profile_images/790277002544766976/w_TjhbiK.jpg'
         self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
@@ -70,8 +72,11 @@ class MRPiracyGQ(CBaseHostClass):
         self.cacheFiltersKeys = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.login    = ''
-        self.password = ''
+        self.cookiename  = ''
+        self.cookievalue = ''
+        self.username    = ''
+        self.userid      = ''
+        
         self.loggedIn = False
         
     def selectDomain(self):
@@ -524,28 +529,33 @@ class MRPiracyGQ(CBaseHostClass):
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
-    def tryTologin(self, login, password):
+    def tryTologin(self):
         printDBG('tryTologin start')
+        cookie = {}
+        cookie[config.plugins.iptvplayer.mrpiracy_cookiename.value] = config.plugins.iptvplayer.mrpiracy_cookievalue.value
+        cookie['nome'] = config.plugins.iptvplayer.mrpiracy_username.value
+        cookie['id_utilizador'] = config.plugins.iptvplayer.mrpiracy_userid.value
+        cookie['admin'] = config.plugins.iptvplayer.mrpiracy_userid.value
+        self.defaultParams['cookie_items'] = cookie
         connFailed = _('Connection to server failed!')
         
         rm(self.COOKIE_FILE)
         sts, data = self.getPage(self.getMainUrl())
         if not sts: return False, connFailed 
         
-        data  = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>', False)[1]
-        url   = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
-        token = self.cm.ph.getSearchGroups(data, '''<input[^>]+?value="([^"]+?)"[^>]+?name="csrv_token"''')[0]
-        if token == '': token = self.cm.ph.getSearchGroups(data, '''<input[^>]+?name="csrv_token"[^>]+?value="([^"]+?)"''')[0]
-        post_data = {'email':login, 'password':password, 'lembrar_senha':'lembrar', 'csrv_token':token}
-        params = dict(self.defaultParams)
-        params['header'] = dict(self.HEADER)
-        params['header']['Referer'] = self.getMainUrl()
-        
-        # login
-        sts, data = self.cm.getPage(url, params, post_data)
-        if not sts: return False, connFailed
-        
-        
+        if False:
+            data  = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>', False)[1]
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
+            token = self.cm.ph.getSearchGroups(data, '''<input[^>]+?value="([^"]+?)"[^>]+?name="csrv_token"''')[0]
+            if token == '': token = self.cm.ph.getSearchGroups(data, '''<input[^>]+?name="csrv_token"[^>]+?value="([^"]+?)"''')[0]
+            post_data = {'email':login, 'password':password, 'lembrar_senha':'lembrar', 'csrv_token':token}
+            params = dict(self.defaultParams)
+            params['header'] = dict(self.HEADER)
+            params['header']['Referer'] = self.getMainUrl()
+            
+            # login
+            sts, data = self.cm.getPage(url, params, post_data)
+            if not sts: return False, connFailed
         
         if 'logout.php' in data:
             return True, 'OK'
@@ -558,20 +568,31 @@ class MRPiracyGQ(CBaseHostClass):
         if self.MAIN_URL == None:
             self.selectDomain()
         
-        if self.login != config.plugins.iptvplayer.mrpiracy_login.value and \
-           self.password != config.plugins.iptvplayer.mrpiracy_password.value and \
-           '' != config.plugins.iptvplayer.mrpiracy_login.value.strip() and \
-           '' != config.plugins.iptvplayer.mrpiracy_password.value.strip():
-            self.loggedIn, msg = self.tryTologin(config.plugins.iptvplayer.mrpiracy_login.value, config.plugins.iptvplayer.mrpiracy_password.value)
+        if self.cookiename != config.plugins.iptvplayer.mrpiracy_cookiename.value and \
+           self.cookievalue != config.plugins.iptvplayer.mrpiracy_cookievalue.value and \
+           self.username != config.plugins.iptvplayer.mrpiracy_username.value and \
+           self.userid != config.plugins.iptvplayer.mrpiracy_userid.value and \
+           '' != config.plugins.iptvplayer.mrpiracy_cookiename.value.strip() and \
+           '' != config.plugins.iptvplayer.mrpiracy_cookievalue.value.strip() and \
+           '' != config.plugins.iptvplayer.mrpiracy_username.value.strip() and \
+           '' != config.plugins.iptvplayer.mrpiracy_userid.value.strip():
+           
+           
+           
+            self.loggedIn, msg = self.tryTologin()
             if not self.loggedIn:
-                self.sessionEx.open(MessageBox, 'Login failed for user "%s".' % config.plugins.iptvplayer.mrpiracy_login.value, type = MessageBox.TYPE_INFO, timeout = 10 )
+                self.sessionEx.open(MessageBox, 'Login failed for user "%s".' % config.plugins.iptvplayer.mrpiracy_username.value, type = MessageBox.TYPE_INFO, timeout = 10 )
             else:
-                self.login    = config.plugins.iptvplayer.mrpiracy_login.value
-                self.password = config.plugins.iptvplayer.mrpiracy_password.value
+                self.cookiename  = config.plugins.iptvplayer.mrpiracy_cookiename.value
+                self.cookievalue = config.plugins.iptvplayer.mrpiracy_cookievalue.value 
+                self.username    = config.plugins.iptvplayer.mrpiracy_username.value 
+                self.userid      = config.plugins.iptvplayer.mrpiracy_userid.value
                 
-        if '' == config.plugins.iptvplayer.mrpiracy_login.value.strip() or \
-           '' == config.plugins.iptvplayer.mrpiracy_password.value.strip():
-           self.sessionEx.open(MessageBox, 'Access to this service requires login.\nPlease register on the site \"%s\" and then put your e-mail and password in the host configuration under blue button.' % self.getMainUrl(), type=MessageBox.TYPE_INFO, timeout=20 )
+        if '' == config.plugins.iptvplayer.mrpiracy_cookiename.value.strip() or \
+           '' == config.plugins.iptvplayer.mrpiracy_cookievalue.value.strip() or \
+           '' == config.plugins.iptvplayer.mrpiracy_username.value.strip() or \
+           '' == config.plugins.iptvplayer.mrpiracy_userid.value.strip():
+           self.sessionEx.open(MessageBox, 'Access to this service requires login.\nPlease register on the site \"%s\". Then log in and then put your login cookie value in the host configuration under blue button.' % self.getMainUrl(), type=MessageBox.TYPE_INFO, timeout=20 )
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
@@ -584,7 +605,7 @@ class MRPiracyGQ(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            if self.login == '' or self.password == '':
+            if self.cookiename == '' or self.cookievalue == '' or self.username == '' or self.userid == '':
                 rm(self.COOKIE_FILE)
             self.cacheLinks = {}
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
