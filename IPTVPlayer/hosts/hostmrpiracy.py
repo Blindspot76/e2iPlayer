@@ -532,7 +532,8 @@ class MRPiracyGQ(CBaseHostClass):
     def tryTologin(self):
         printDBG('tryTologin start')
         cookie = {}
-        cookie[config.plugins.iptvplayer.mrpiracy_cookiename.value] = config.plugins.iptvplayer.mrpiracy_cookievalue.value
+        try: cookie[config.plugins.iptvplayer.mrpiracy_cookiename.value] = urllib.unquote(config.plugins.iptvplayer.mrpiracy_cookievalue.value)
+        except Exception: cookie[config.plugins.iptvplayer.mrpiracy_cookiename.value] = config.plugins.iptvplayer.mrpiracy_cookievalue.value
         cookie['nome'] = config.plugins.iptvplayer.mrpiracy_username.value
         cookie['id_utilizador'] = config.plugins.iptvplayer.mrpiracy_userid.value
         cookie['admin'] = config.plugins.iptvplayer.mrpiracy_userid.value
