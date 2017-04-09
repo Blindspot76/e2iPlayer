@@ -269,9 +269,6 @@ class OpenSubtitles(CBaseSubProviderClass):
         data = self.cm.ph.getDataBeetwenMarkers(data, '<table id="search_results"', '</tbody>')[1]
         data = data.split('<span id="season')
         if len(data): del data[0]
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        printDBG(data)
-        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         for seasonItem in data:
             seasonTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(seasonItem, '<b', '</b>')[1])
             episodesTab = []
