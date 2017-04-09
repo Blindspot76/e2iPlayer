@@ -5110,17 +5110,20 @@ class pageParser:
         
         authKey = self.cm.ph.getSearchGroups(pageData, r"""Key\s*=\s*['"]([^'^"]+?)['"]""")[0]
         try_again = self.cm.ph.getSearchGroups(pageData, r"""try_again\s*=\s*['"]([^'^"]+?)['"]""")[0]
+        better_luck_next_time = self.cm.ph.getSearchGroups(pageData, r"""better_luck_next_time\s*=\s*['"]([^'^"]+?)['"]""")[0]
         if len(try_again) > len(authKey): authKey = try_again
+        if len(better_luck_next_time) > len(authKey): authKey = better_luck_next_time
         
         params['header']['Referer'] = url
-        sts, authKey = self.cm.getPage('http://thevideo.me/jwv/' + authKey, params)
+        sts, authKey = self.cm.getPage('https://thevideo.me/vsign/player/' + authKey, params)
         if not sts: return False
+        printDBG(authKey)
         authKey = self.cm.ph.getSearchGroups(authKey, r"""\|([a-z0-9]{40}[a-z0-9]+?)\|""")[0]
         
         def decorateUrls(urlsTab):
             for idx in range(len(urlsTab)):
                 urlsTab[idx]['url'] = urlparser.decorateUrl(urlsTab[idx]['url'] + '?direct=false&ua=1&vt=' + authKey, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':'http://thevideo.me/player/jw/7/jwplayer.flash.swf'})
-            return urlsTab
+            return urlsTab[::-1]
         
         videoLinks = self._findLinks(pageData, 'thevideo.me', r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,} ]''')
         if len(videoLinks): return decorateUrls(videoLinks)
