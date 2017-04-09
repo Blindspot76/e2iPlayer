@@ -3566,4 +3566,4 @@ msgid "Detection of MIPSEL FPU ABI."
 msgstr "Erkennung der MIPSEL FPU ABI."
 
 msgid "This step is required to proper select binaries for installation."
-msgstr "Dieser Vorgang ist notwendig, um die richtigen Binärdateien für die Installation zu ermitteln."
+msgstr "Dieser Vorgang ist notwendig, um die passenden Binärdateien für die Installation zu ermitteln."
