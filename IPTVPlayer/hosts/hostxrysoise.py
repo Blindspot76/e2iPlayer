@@ -42,14 +42,14 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://xrysoi.se/'
+    return 'https://xrysoi.online/'
 
 class XrysoiSE(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL = 'http://xrysoi.se/'
+    MAIN_URL = 'https://xrysoi.online/'
     SEARCH_SUFFIX = '?s='
     
     MAIN_CAT_TAB = [{'category':'movies',         'mode':'movies',     'title': 'Ταινιες',      'url':'',                                     'icon':''},
