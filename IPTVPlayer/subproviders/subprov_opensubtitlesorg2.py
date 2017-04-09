@@ -68,6 +68,7 @@ class OpenSubtitles(CBaseSubProviderClass):
         self.searchTypes = [{'title':_('Search Movies and TV Series')}, {'title':_('Search only in Movies'), 'search_only_movies':'on'}, {'title':_('Search only in TV Series'), 'search_only_tv_series':'on'} ]
         self.episodesCache = {}
         self.logedIn = None
+        self.searchURL = ""
         
     def getPage(self, url, params={}, post_data=None):
         if params == {}:
@@ -86,13 +87,17 @@ class OpenSubtitles(CBaseSubProviderClass):
         if not sts: return
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="lang-selector"', '</ul>')[1]
-        printDBG(tmp)
         lang = GetDefaultLang()
         url  = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, 'href="([^"]+?setlang\-%s[^"]*?)"' % lang)[0])
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>> LANG URL: " + url)
         if self.cm.isValidUrl(url):
             sts, data = self.getPage(url)
             if not sts: return
-            
+        
+        printDBG(self.cm.ph.getAllItemsBeetwenMarkers(data, '<form', '>'))
+        self.searchURL = self.cm.ph.getSearchGroups(data, '<form[^>]+?"searchform"[^>]+?action="([^"]+?)"')[0]
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>> SEARCH URL: " + self.searchURL)
+        
         # fill language cache
         self.languages = []
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<select name="SubLanguageID"', '</select>')[1]
@@ -170,7 +175,11 @@ class OpenSubtitles(CBaseSubProviderClass):
             query['Season']  = season
             query['Episode'] = episode
             
-            url = self.getFullUrl('/search2') + '?' + urllib.urlencode(query)
+            if self.searchURL != '':
+                searchURL = self.searchURL
+            else:
+                searchURL = '/search2'
+            url = self.getFullUrl(searchURL) + '?' + urllib.urlencode(query)
         else:
             url = cItem['url']
         
@@ -393,7 +402,7 @@ class OpenSubtitles(CBaseSubProviderClass):
     #MAIN MENU
         if name == None:
             self.initSubProvider(self.currItem)
-            self.listSearchTypes(self.currItem, 'list_languages')
+            if len(self.languages): self.listSearchTypes(self.currItem, 'list_languages')
         elif category == 'list_languages':
             self.listLanguages(self.currItem, 'search_subtitles')
         elif category == 'search_subtitles':

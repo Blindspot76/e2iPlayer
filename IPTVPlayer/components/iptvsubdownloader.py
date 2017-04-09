@@ -598,8 +598,8 @@ class IPTVSubDownloaderWidget(Screen):
             if IsSubtitlesParserExtensionCanBeUsed():
                 subProvidersList.append(napiprojektpl)
         
-        subProvidersList.append(openSubtitles)
         subProvidersList.append(openSubtitles2)
+        subProvidersList.append(openSubtitles)
         subProvidersList.append(podnapisinet)
         subProvidersList.append(titlovi)
         subProvidersList.append(subscene)
