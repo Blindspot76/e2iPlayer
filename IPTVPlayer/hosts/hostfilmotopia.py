@@ -71,11 +71,11 @@ class Filmotopia(CBaseHostClass):
                              {'category':'search_history',    'title': _('Search history'),              } 
                             ]
                             
-        self.MOVIES_CAT_TAB = [{'category':'list_items',   'title': _('News'),    'url':self.M_MAIN_URL              },
+        self.MOVIES_CAT_TAB = [{'category':'list_items',   'title': _('New'),     'url':self.M_MAIN_URL              },
                                {'category':'list_items',   'title': _('Popular'), 'url':self.getFullUrl('popularno/')},
                               ]
         
-        self.SERIES_CAT_TAB = [{'category':'list_items',   'title': _('News'),         'url':self.S_MAIN_URL                       },
+        self.SERIES_CAT_TAB = [{'category':'list_items',   'title': _('New'),          'url':self.S_MAIN_URL                       },
                                {'category':'list_items',   'title': _('New episodes'), 'url':self.getFullUrl('nove-epizode/', True)},
                                {'category':'list_items',   'title': _('Popular'),      'url':self.getFullUrl('popularno/',    True)},
                               ]
