@@ -7,7 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, Ret
 from Plugins.Extensions.IPTVPlayer.components.isubprovider import CSubProviderBase, CBaseSubProviderClass
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetCookieDir, byteify, \
-                                                          RemoveDisallowedFilenameChars, GetSubtitlesDir
+                                                          RemoveDisallowedFilenameChars, GetSubtitlesDir, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 ###################################################
@@ -423,6 +423,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
         
     #MAIN MENU
         if name == None:
+            rm(self.COOKIE_FILE)
             login = config.plugins.iptvplayer.opensuborg_login.value
             password = config.plugins.iptvplayer.opensuborg_password.value
             self._doLogin(login, password)
