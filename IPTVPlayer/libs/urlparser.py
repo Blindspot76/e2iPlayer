@@ -408,6 +408,7 @@ class urlparser:
                        'ovva.tv':              self.pp.parserOVVATV         ,
                        'streamplay.to':        self.pp.parserSTREAMPLAYTO   ,
                        'streamango.com':       self.pp.parserSTREAMANGOCOM  ,
+                       'casacinema.cc':        self.pp.parserCASACINEMACC   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -7639,4 +7640,17 @@ class pageParser:
         videoTab.extend(dashTab)
         return videoTab
         
+    def parserCASACINEMACC(self, baseUrl):
+        printDBG("parserCASACINEMACC url[%s]\n" % baseUrl)
         
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>')[1]
+        tmp = unpackJSPlayerParams(tmp, TEAMCASTPL_decryptPlayerParams, type=0)
+        data += tmp
+        
+        printDBG(data)
+        
+        urlTab = self._findLinks(data, 'casacinema.cc')
+        return urlTab
