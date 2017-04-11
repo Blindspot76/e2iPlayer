@@ -489,7 +489,10 @@ class common:
                     if sitekey != '':
                         from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
                         # google captcha
-                        token = UnCaptchaReCaptcha(lang=GetDefaultLang()).processCaptcha(sitekey)
+                        recaptcha = UnCaptchaReCaptcha(lang=GetDefaultLang())
+                        recaptcha.HTTP_HEADER['Referer'] = baseUrl
+                        if '' != cfParams.get('User-Agent', ''): recaptcha.HTTP_HEADER['User-Agent'] = cfParams['User-Agent']
+                        token = recaptcha.processCaptcha(sitekey)
                         if token == '': return False, None
                     
                         sts, tmp = self.ph.getDataBeetwenMarkers(verData, '<form', '</form>', caseSensitive=False)

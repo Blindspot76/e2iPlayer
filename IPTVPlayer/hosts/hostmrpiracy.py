@@ -540,7 +540,7 @@ class MRPiracyGQ(CBaseHostClass):
         self.defaultParams['cookie_items'] = cookie
         connFailed = _('Connection to server failed!')
         
-        rm(self.COOKIE_FILE)
+        #rm(self.COOKIE_FILE)
         sts, data = self.getPage(self.getMainUrl())
         if not sts: return False, connFailed 
         
@@ -606,8 +606,8 @@ class MRPiracyGQ(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            if self.cookiename == '' or self.cookievalue == '' or self.username == '' or self.userid == '':
-                rm(self.COOKIE_FILE)
+            #if self.cookiename == '' or self.cookievalue == '' or self.username == '' or self.userid == '':
+            #    rm(self.COOKIE_FILE)
             self.cacheLinks = {}
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category == 'list_filters':
