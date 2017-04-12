@@ -108,6 +108,7 @@ class MRPiracyGQ(CBaseHostClass):
         if domain == None:
             domain = 'http://v1.mrpiracy.xyz/'
         
+        domain = domain.replace('http://', 'https://')
         self.MAIN_URL = domain
     
         self.MAIN_CAT_TAB = [{'category':'list_filters',      'mode':'movie',   'title': 'Movies',       'url':self.getFullUrl('filmes.php') },
