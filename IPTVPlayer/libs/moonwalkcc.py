@@ -93,6 +93,8 @@ class MoonwalkParser():
         printDBG("=======================================================================")
         printDBG(data)
         printDBG("=======================================================================")
+        postParamName =  self.cm.ph.getSearchGroups(data, "\.post\([^\,]+?\,\s*([^\s^\)^\,]+?)[\s\)\,]")[0]
+        printDBG(">>>> postParamName[%s]" % postParamName)
         
         sec_header['Encoding-Pool'] = base64.b64encode(contentData.replace('|', ''))
         sec_header['X-Data-Pool'] = xDataPool
@@ -101,7 +103,8 @@ class MoonwalkParser():
         post_data = {}
         
         allVariables = re.compile("[,\s]([^:^,^\s]+?)\s*:\s*([^,^\s]+?)[,\s]").findall(data)
-        allVariables.extend( re.compile("session_params\.([^=]+?)\s*=\s*([^;]+?);").findall(data) )
+        allVariables.extend( re.compile(postParamName + "\.([^=]+?)\s*=\s*([^;]+?);").findall(data) )
+        allVariables.extend( re.compile(postParamName + '''\[['"]([^'^"]+?)['"]\]\s*=\s*(['"][^'^"]+?['"])\s*;''').findall(allData) )
         
         for item in allVariables:
             varName  = item[0].strip()
