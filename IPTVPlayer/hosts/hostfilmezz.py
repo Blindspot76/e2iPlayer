@@ -205,13 +205,15 @@ class AnimeTo(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div class="text"', '</div>')[1])
+        
         # trailer 
         tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<a[^>]+?class="venobox"'), re.compile('>'))[1]
         url = self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"]''')[0]
         title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(tmp, '''title=['"]([^'^"]+?)['"]''')[0])
         if 1 == self.up.checkHostSupport(url):
             params = dict(cItem)
-            params.update({'good_for_fav': False, 'title':title, 'url':url})
+            params.update({'good_for_fav': False, 'title':title, 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'desc':desc})
             self.addVideo(params)
         
         reDescObj = re.compile('title="([^"]+?)"')
@@ -243,7 +245,7 @@ class AnimeTo(CBaseHostClass):
             params = dict(cItem)
             title = cItem['title']
             if item != '': title += ' : ' + item
-            params.update({'good_for_fav': False, 'title':title, 'links_key':item})
+            params.update({'good_for_fav': False, 'title':title, 'links_key':item, 'prev_desc':cItem.get('desc', ''), 'desc':desc})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -325,49 +327,47 @@ class AnimeTo(CBaseHostClass):
         printDBG("AnimeTo.getArticleContent [%s]" % cItem)
         retTab = []
         
-        sts, data = self.getPage(cItem.get('url', ''))
+        url = cItem.get('prev_url', '')
+        if url == '': url = cItem.get('url', '')
+        
+        sts, data = self.getPage(url)
         if not sts: return retTab
         
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<[^>]+?id="movie-synopsis"[^>]*?>'), re.compile('</div>'))[1])
-        if desc == '': desc  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta property="og:description"[^>]+?content="([^"]+?)"')[0] )
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div class="text"', '</div>')[1])
+        if desc == '': desc = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta[^>]+?name="description"[^>]+?content="([^"]+?)"')[0] )
+        titleData = self.cm.ph.getDataBeetwenMarkers(data, '<div class="title"', '</div>')[1]
         
-        title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta property="og:title"[^>]+?content="([^"]+?)"')[0] )
-        icon  = self.getFullUrl( self.cm.ph.getSearchGroups(data, '<meta property="og:image"[^>]+?content="([^"]+?)"')[0] )
+        title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(titleData, '<h1', '</h1>')[1] )
+        altTitle = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(titleData, '<h2', '</h2>')[1] )
+        if title != '': title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta[^>]+?name="title"[^>]+?content="([^"]+?)"')[0] )
+        icon  = self.getFullUrl( self.cm.ph.getSearchGroups(data, '<link[^>]+?rel="image_src"[^>]+?href="([^"]+?)"')[0] )
         
         if title == '': title = cItem['title']
         if desc == '':  title = cItem['desc']
         if icon == '':  title = cItem['icon']
         
-        descData = self.cm.ph.getDataBeetwenMarkers(data, '<div class="movie-detailed-info">', '<div class="clear">', False)[1] 
-        descTabMap = {"genre":         "genre",
-                      "year":          "year",
-                      "original-name": "alternate_title"}
+        descTabMap = {"Kategória":    "genre",
+                      "Rendező":      "director",
+                      "Hossz":        "duration"}
         
         otherInfo = {}
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(descData, '<span', '</span>')
-        for item in tmp:
-            key = self.cm.ph.getSearchGroups(item, '''class=['"]([^'^"]+?)['"]''')[0]
+        descData = cItem.get('prev_desc', '')
+        if descData == '': descData = cItem.get('desc', '')
+        descData = descData.split('[/br]')
+        for item in descData:
+            item = item.split(':')
+            key = item[0]
             if key in descTabMap:
-                try: otherInfo[descTabMap[key]] = self.cleanHtmlStr(item)
+                try: otherInfo[descTabMap[key]] = self.cleanHtmlStr(item[-1])
                 except Exception: continue
-                
-        status = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(descData, 'Estado:', '</span>', False)[1])
-        if status != '': otherInfo['status'] = status
         
-        year = self.cm.ph.getSearchGroups(self.cm.ph.getDataBeetwenMarkers(descData, '<span class="year">', '<span class="', False)[1], '[^0-9]([0-9]+?)[^0-9]')[0]
-        if year != '': otherInfo['year'] = year
-        
-        director = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(descData, re.compile('Realizador:\s*</span>'), re.compile('</span>'), False)[1])
-        if director != '': otherInfo['director'] = director
-        
-        creator = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(descData, re.compile('Criador:\s*</span>'), re.compile('</span>'), False)[1])
-        if creator != '': otherInfo['creator'] = creator
-        
-        actors = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(descData, re.compile('Elenco:\s*</span>'), re.compile('</span>'), False)[1])
-        if actors != '': otherInfo['actors'] = actors
-        
-        imdb_rating = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(descData, '<div class="imdb-rate">', '</span>', False)[1])
+        imdb_rating = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<span class="score">', '</span>', False)[1])
         if imdb_rating != '': otherInfo['imdb_rating'] = imdb_rating
+        
+        if altTitle != '': otherInfo['alternate_title'] = altTitle
+        year = self.cm.ph.getSearchGroups(cItem.get('prev_title', ''), '\(([0-9]{4})\)')[0]
+        if year == '': year = self.cm.ph.getSearchGroups(cItem['title'], '\(([0-9]{4})\)')[0]
+        if year != '': otherInfo['year'] = year
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
         
@@ -411,9 +411,9 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, AnimeTo(), True, [])
         
-    #def withArticleContent(self, cItem):
-    #    if cItem['type'] != 'video' and cItem['category'] != 'list_episodes' and cItem['category'] != 'list_seasons':
-    #        return False
-    #    return True
+    def withArticleContent(self, cItem):
+        if (cItem['type'] != 'video' and cItem['category'] != 'explore_item'):
+            return False
+        return True
     
     
