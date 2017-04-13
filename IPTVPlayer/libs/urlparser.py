@@ -69,6 +69,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.mtv import Gametrai
 try:    from urlparse import urlsplit, urlunsplit, urljoin
 except Exception: printExc()
 ###################################################
+
 class urlparser:
     def __init__(self):
         self.cm = common()
@@ -410,7 +411,7 @@ class urlparser:
                        'streamango.com':       self.pp.parserSTREAMANGOCOM  ,
                        'casacinema.cc':        self.pp.parserCASACINEMACC   ,
                        'indavideo.hu':         self.pp.parserINDAVIDEOHU    ,
-                       #'1fichier.com':         self.pp.parser1FICHIERCOM    ,
+                       '1fichier.com':         self.pp.parser1FICHIERCOM    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -787,6 +788,7 @@ class pageParser:
     HTTP_HEADER= {  'User-Agent'  : 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
                     'Accept'      :  'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Content-type': 'application/x-www-form-urlencoded' }
+    FICHIER_DOWNLOAD_NUM = 0
     def __init__(self):
         self.cm = common()
         self.captcha = captchaParser()
@@ -4066,10 +4068,91 @@ class pageParser:
         
     def parser1FICHIERCOM(self, baseUrl):
         printDBG("parserUPLOAD baseUrl[%s]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
-        if not sts: return []
+        HTTP_HEADER = { 'User-Agent':'Mozilla/%s%s' % (pageParser.FICHIER_DOWNLOAD_NUM, pageParser.FICHIER_DOWNLOAD_NUM),
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
+                        'Accept-Encoding':'gzip, deflate',
+                        'DNT':1,
+                      }
+        pageParser.FICHIER_DOWNLOAD_NUM += 1
+        COOKIE_FILE = GetCookieDir('1fichiercom.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True, 'return_data':True}
         
+        rm(COOKIE_FILE)
+        login    = config.plugins.iptvplayer.fichiercom_login.value
+        password = config.plugins.iptvplayer.fichiercom_password.value
+        logedin = False
+        if login != '' and password != '':
+            url = 'https://1fichier.com/login.pl'
+            post_data = {'mail':login, 'pass':password, 'lt':'on', 'purge':'on', 'valider':'Send'}
+            params['header']['Referer'] = url
+            sts, data = self.cm.getPage(url, params, post_data)
+            printDBG(data)
+            if sts:
+                if 'My files' in data:
+                    logedin = True
+                else:
+                    error = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<div class="bloc2"', '</div>')[1])
+                    sessionEx = MainSessionWrapper() 
+                    sessionEx.waitForFinishOpen(MessageBox, _('Login on https://1fichier.com/ failed.') + '\n' + error, type = MessageBox.TYPE_INFO, timeout = 5)
         
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
+        printDBG(data)
+        action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'", ignoreCase=True)[0]
+        post_data = dict(re.compile(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', re.IGNORECASE).findall(data))
+        
+        if 'use_credits' in data:
+            post_data['use_credits'] = 'on'
+            logedin = True
+        else:
+            logedin = False
+        
+        error = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<span style="color:red">', '</div>')[1])
+        if error != '' and not logedin:
+            timeout = self.cm.ph.getSearchGroups(error, '''wait\s+([0-9]+)\s+([a-zA-Z]{3})''', 2, ignoreCase=True)
+            printDBG(timeout)
+            if timeout[1].lower() == 'min':
+                timeout = int(timeout[0]) * 60 
+            elif timeout[1].lower() == 'sec':
+                timeout = int(timeout[0])
+            else:
+                timeout = 0
+            printDBG(timeout)
+            if timeout > 0:
+                sessionEx = MainSessionWrapper() 
+                sessionEx.waitForFinishOpen(MessageBox, error, type = MessageBox.TYPE_INFO, timeout = timeout )
+            else:
+                SetIPTVPlayerLastHostError(error)
+        else:
+            SetIPTVPlayerLastHostError(error)
+        
+        post_data['dl_no_ssl'] = 'on'
+        action = urljoin(baseUrl, action)
+        
+        if logedin:
+            params['return_data'] = False
+            params['header']['Referer'] = baseUrl
+            sts, response = self.cm.getPage(action, params, post_data)
+            if not sts: return False
+            videoUrl = response.geturl()
+            response.close()
+        
+        else:
+            params['header']['Referer'] = baseUrl
+            sts, data = self.cm.getPage(action, params, post_data)
+            if not sts: return False
+            
+            printDBG(data)
+            videoUrl = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?)['"][^>]+?ok btn-general''')[0]
+            
+        printDBG('>>> videoUrl[%s]' % videoUrl)
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
+        
+        return False
     
     def parserUPLOAD(self, baseUrl):
         printDBG("parserUPLOAD baseUrl[%s]" % baseUrl)
@@ -7695,16 +7778,31 @@ class pageParser:
         printDBG("parserINDAVIDEOHU url[%s]\n" % baseUrl)
         urlTab = []
         
+        templateUrl = 'http://amfphp.indavideo.hu/SYm0json.php/player.playerHandler.getVideoData/'
         videoId = self.cm.ph.getSearchGroups(baseUrl, 'indavideo\.hu/(?:player/video|video)/([0-9A-Za-z-_]+)')[0]
-        url = 'http://amfphp.indavideo.hu/SYm0json.php/player.playerHandler.getVideoData/' + videoId
         
+        url = templateUrl + videoId
         sts, data = self.cm.getPage(url)
-        if not sts: return urlTab
-        
+        if not sts: return []
         data = byteify(json.loads(data))
+        
+        if data['success'] == '0': 
+            sts, data = self.cm.getPage('http://indavideo.hu/video/%s' % videoId)
+            if not sts: return []
+        
+            hash = self.cm.ph.getSearchGroups('emb_hash.+?value\s*=\s*"([^"]+)', data)[0]
+            if '' == hash:
+                SetIPTVPlayerLastHostError("File not found.")
+                return []
+
+            url = templateUrl + hash
+            sts, data = self.cm.getPage(url)
+            if not sts: return []
+            data = byteify(json.loads(data))
+        
         if data['success'] == '1':
             if not data['data'].get('video_files', []):
-                SetIPTVPlayerLastHostError("File has been removed.")
+                SetIPTVPlayerLastHostError("File not found.")
                 return []
             
             tmpTab = []

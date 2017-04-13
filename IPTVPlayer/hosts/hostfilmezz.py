@@ -229,7 +229,7 @@ class AnimeTo(CBaseHostClass):
             serverName = reDescObj.findall(t)
             if t != '': serverName.append(self.cleanHtmlStr(t))
             serverName = ' | '.join(serverName)
-            if 'letöltés' in serverName: continue
+            #if 'letöltés' in serverName: continue
             
             url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''(/link_to\.php\?id=[^'^"]+?)['"]''')[0])
             if not self.cm.isValidUrl(url): continue

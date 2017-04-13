@@ -135,6 +135,9 @@ config.plugins.iptvplayer.ZablokujWMV = ConfigYesNo(default = True)
 config.plugins.iptvplayer.vkcom_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.vkcom_password = ConfigText(default="", fixed_size = False)
 
+config.plugins.iptvplayer.fichiercom_login    = ConfigText(default="", fixed_size = False)
+config.plugins.iptvplayer.fichiercom_password = ConfigText(default="", fixed_size = False)
+
 config.plugins.iptvplayer.useSubtitlesParserExtension = ConfigYesNo(default = True)
 config.plugins.iptvplayer.opensuborg_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.opensuborg_password = ConfigText(default="", fixed_size = False)
@@ -308,6 +311,9 @@ class ConfigMenu(ConfigBaseWidget):
         
         list.append(getConfigListEntry("http://vk.com/ " + _("login"), config.plugins.iptvplayer.vkcom_login))
         list.append(getConfigListEntry("http://vk.com/ " + _("password"), config.plugins.iptvplayer.vkcom_password))
+        
+        list.append(getConfigListEntry("http://1fichier.com/ " + _("e-mail"), config.plugins.iptvplayer.fichiercom_login))
+        list.append(getConfigListEntry("http://1fichier.com/ " + _("password"), config.plugins.iptvplayer.fichiercom_password))
         
         players = []
         bufferingMode = config.plugins.iptvplayer.buforowanie.value or config.plugins.iptvplayer.buforowanie_m3u8.value or config.plugins.iptvplayer.buforowanie_rtmp.value
