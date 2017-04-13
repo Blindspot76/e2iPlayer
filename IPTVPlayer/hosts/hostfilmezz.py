@@ -46,28 +46,29 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://9anime.to/'
+    return 'http://filmezz.eu/'
 
 class AnimeTo(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'9anime.to', 'cookie':'9animeto.cookie', 'cookie_type':'MozillaCookieJar'})
-        self.DEFAULT_ICON_URL = 'http://redeneobux.com/wp-content/uploads/2017/01/2-4.png'
+        CBaseHostClass.__init__(self, {'history':'filmezz.eu', 'cookie':'filmezzeu.cookie', 'cookie_type':'MozillaCookieJar'})
+        self.DEFAULT_ICON_URL = 'http://plugins.movian.tv/data/3c3f8bf962820103af9e474604a0c83ca3b470f3'
         self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://9anime.to/'
+        self.MAIN_URL = 'http://filmezz.eu/'
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
-        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Home'),        'url':self.getFullUrl('filter')        },
-                             {'category':'list_items',      'title': _('Newest'),      'url':self.getFullUrl('newest')        },
-                             {'category':'list_items',      'title': _('Last update'), 'url':self.getFullUrl('updated')       },
-                             {'category':'list_items',      'title': _('Most watched'),'url':self.getFullUrl('most-watched')  },
-                             #{'category':'list_items2',     'title': _('Upcoming'),   'url':self.getFullUrl('upcoming') },
+        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Home'),               'url':self.getFullUrl('kereses.php')   },
+                             {'category':'list_items',      'title': _('Movies'),             'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=1&h=0&o=feltoltve')  },
+                             {'category':'list_items',      'title': _('Series'),             'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=2&h=0&o=feltoltve')  },
+                             {'category':'list_items',      'title': _('Top movies'),         'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=1&h=0&o=nezettseg')  },
+                             {'category':'list_items',      'title': _('Top series'),         'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=2&h=0&o=nezettseg')  },
+                             {'category':'list_items',      'title': _('Latest added'),       'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=0&h=0&o=feltoltve')  },
                              
                              {'category':'search',            'title': _('Search'), 'search_item':True,},
                              {'category':'search_history',    'title': _('Search history'),            } 
@@ -103,13 +104,10 @@ class AnimeTo(CBaseHostClass):
             key = 'f_' + baseKey
             self.cacheFilters[key] = []
             for item in data:
-                if ('name="%s"' % baseKey) not in item:
-                    continue
                 value = self.cm.ph.getSearchGroups(item, marker + '''="([^"]+?)"''')[0]
-                if value == '':
-                    continue
+                if value == '': continue
                 title = self.cleanHtmlStr(item)
-                if title.lower() in ['all', 'default', 'any']:
+                if title in ['Összes']:
                     addAll = False
                 self.cacheFilters[key].append({'title':title.title(), key:value})
                 
@@ -117,11 +115,11 @@ class AnimeTo(CBaseHostClass):
                 if addAll: self.cacheFilters[key].insert(0, {'title':_('All')})
                 self.cacheFiltersKeys.append(key)
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="filter dropdown">', '</ul>')
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="row form-group">', '</select>')
         for tmp in data:
             key = self.cm.ph.getSearchGroups(tmp, '''name="([^"]+?)"''')[0]
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
-            addFilter(tmp, 'value', key)
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
+            addFilter(tmp, 'value', key, False)
         
         printDBG(self.cacheFilters)
         
@@ -144,10 +142,10 @@ class AnimeTo(CBaseHostClass):
     def listItems(self, cItem, nextCategory):
         printDBG("AnimeTo.listItems")
         url = cItem['url']
-        page = cItem.get('page', 1)
+        page = cItem.get('page', 0)
         
         query = {}
-        if page > 1: query['page'] = page
+        if page > 0: query['p'] = page
         
         for key in self.cacheFiltersKeys:
             baseKey = key[2:] # "f_"
@@ -160,21 +158,39 @@ class AnimeTo(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return
         
-        if  '>Next<' in data: nextPage = True
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', '</ul>')[1]
+        if  '' != self.cm.ph.getSearchGroups(nextPage, 'p=(%s)[^0-9]' % (page+1))[0]: nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="item">', '</div>')
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'movie-list', '<footer class="footer">')[1]        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</a>')
+        reDescObj = re.compile('title="([^"]+?)"')
         for item in data:
             url = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
-            tip = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'data-tip="([^"]+?)"')[0] )
             if not self.cm.isValidUrl(url): continue
+            if 'kereses.php' in url: continue
+            
             icon = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
-            title = self.cleanHtmlStr( item )
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<span class="title">', '</span>')[1] )
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
-
+            
+            # desc start
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<li>', '</li>')
+            descTab = []
+            for t in tmp:
+                t = self.cleanHtmlStr(t)
+                if t == '': continue
+                descTab.append(t)
+            tmp = self.cm.ph.getDataBeetwenMarkers(item, 'movie-icons">', '</ul>', False)[1]
+            t = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<span class="cover-element imdb"', '</span>')[1])
+            tmp = reDescObj.findall(tmp)
+            if t != '': tmp.insert(0, t)
+            descTab.insert(0, ' | '.join(tmp))
+            ######
+            
             params = dict(cItem)
-            params = {'good_for_fav': True, 'title':title, 'url':url, 'tip_url':tip, 'icon':icon}
+            params = {'good_for_fav': True, 'title':title, 'url':url, 'desc':'[/br]'.join(descTab), 'icon':icon}
             params['category'] = nextCategory
             self.addDir(params)
         
@@ -189,36 +205,59 @@ class AnimeTo(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        # trailer 
+        tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<a[^>]+?class="venobox"'), re.compile('>'))[1]
+        url = self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"]''')[0]
+        title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(tmp, '''title=['"]([^'^"]+?)['"]''')[0])
+        if 1 == self.up.checkHostSupport(url):
+            params = dict(cItem)
+            params.update({'good_for_fav': False, 'title':title, 'url':url})
+            self.addVideo(params)
+        
+        reDescObj = re.compile('title="([^"]+?)"')
         titlesTab = []
         self.cacheLinks  = {}
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="servers">', '<div class="widget')[1]
-        data = data.split('<div class="server row"')
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'url-list', '</section>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="col-sm-4 col-xs-12 host">', '</a>')
         for tmp in data:
-            serverName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<label', '</label>')[1])
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
-            for item in tmp:
-                title = self.cleanHtmlStr(item)
-                id    = self.cm.ph.getSearchGroups(item, '''data-id=['"]([^'^"]+?)['"]''')[0]
-                url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-                if title not in titlesTab:
-                    titlesTab.append(title)
-                    self.cacheLinks[title] = []
-                url = strwithmeta(url, {'id':id})
-                self.cacheLinks[title].append({'name':serverName, 'url':url, 'need_resolve':1})
+            dTab = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<div', '</div>')
+            if len(dTab) < 2: continue 
+            title = self.cleanHtmlStr(dTab[1])
+            
+            # serverName
+            t = self.cm.ph.getDataBeetwenMarkers(tmp, 'movie-icons">', '<div', False)[1]
+            serverName = reDescObj.findall(t)
+            if t != '': serverName.append(self.cleanHtmlStr(t))
+            serverName = ' | '.join(serverName)
+            if 'letöltés' in serverName: continue
+            
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''(/link_to\.php\?id=[^'^"]+?)['"]''')[0])
+            if not self.cm.isValidUrl(url): continue
+            
+            if title not in titlesTab:
+                titlesTab.append(title)
+                self.cacheLinks[title] = []
+            self.cacheLinks[title].append({'name':serverName, 'url':url, 'need_resolve':1})
         
         for item in titlesTab:
             params = dict(cItem)
-            params.update({'good_for_fav': False, 'title':'%s : %s' % (cItem['title'], item), 'links_key':item})
+            title = cItem['title']
+            if item != '': title += ' : ' + item
+            params.update({'good_for_fav': False, 'title':title, 'links_key':item})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AnimeTo.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = self.getFullUrl('search?keyword=' + urllib.quote_plus(searchPattern))
+        cItem['url'] = self.getFullUrl('kereses.php?s=' + urllib.quote_plus(searchPattern))
         self.listItems(cItem, 'explore_item')
         
     def getLinksForVideo(self, cItem):
         printDBG("AnimeTo.getLinksForVideo [%s]" % cItem)
+        if 1 == self.up.checkHostSupport(cItem.get('url', '')):
+            videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
+            return self.up.getVideoLinkExt(videoUrl)
+        
         key = cItem.get('links_key', '')
         return self.cacheLinks.get(key, [])
         
@@ -235,51 +274,22 @@ class AnimeTo(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
-        
-        id = videoUrl.meta.get('id', '')
-        params = dict(self.defaultParams)
-        params['header'] = dict(self.AJAX_HEADER)
-        params['header']['Referer'] = str(videoUrl)
-        
-        sts, data = self.getPage('https://9anime.to/ajax/episode/info?id=%s&update=0' % id, params)
-        if not sts: return []
-        
-        videoUrl = ''
-        subTrack = ''
-        try:
-            data = byteify(json.loads(data))
-            subTrack = data.get('subtitle', '')
-            if data['type'] == 'iframe':
-                videoUrl = data['target']
-            elif data['type'] == 'direct':
-                query = dict(data['params'])
-                query.update({'mobile':'0'})
-                url = data['grabber'] + '?' + urllib.urlencode(query)
-                sts, data = self.getPage(url, params)
-                if not sts: return []
-                data = byteify(json.loads(data))
-                for item in data['data']:
-                    if item['type'] != 'mp4': continue
-                    if not self.cm.isValidUrl(item['file']): continue
-                    urlTab.append({'name':item['label'], 'url':item['file']})
-                urlTab = urlTab[::-1]
-            else:
-                printDBG('Unknown url type!')
-                printDBG(">>>>>>>>>>>>>>>>>>>>>")
-                printDBG(data)
-                printDBG("<<<<<<<<<<<<<<<<<<<<<")
+                        
+        try:         
+            sts, response = self.cm.getPage(videoUrl, {'return_data':False})
+            videoUrl = response.geturl()
+            response.close()
         except Exception:
             printExc()
-
-        if self.cm.isValidUrl(videoUrl) and 0 == len(urlTab):
-            urlTab = self.up.getVideoLinkExt(videoUrl)
+            return []
         
-        if self.cm.isValidUrl(subTrack):
-            format = subTrack[-3:]
-            for idx in range(len(urlTab)):
-                urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'])
-                if 'external_sub_tracks' not in urlTab[idx]['url'].meta: urlTab[idx]['url'].meta['external_sub_tracks'] = []
-                urlTab[idx]['url'].meta['external_sub_tracks'].append({'title':'', 'url':subTrack, 'lang':'pt', 'format':format})
+        if self.up.getDomain(self.getMainUrl()) in videoUrl:
+            sts, data = self.getPage(videoUrl)
+            if not sts: return []
+            videoUrl = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+        
+        if self.cm.isValidUrl(videoUrl):
+            urlTab = self.up.getVideoLinkExt(videoUrl)
         
         return urlTab
     
@@ -401,9 +411,9 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, AnimeTo(), True, [])
         
-    def withArticleContent(self, cItem):
-        if cItem['type'] != 'video' and cItem['category'] != 'list_episodes' and cItem['category'] != 'list_seasons':
-            return False
-        return True
+    #def withArticleContent(self, cItem):
+    #    if cItem['type'] != 'video' and cItem['category'] != 'list_episodes' and cItem['category'] != 'list_seasons':
+    #        return False
+    #    return True
     
     

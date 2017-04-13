@@ -409,6 +409,8 @@ class urlparser:
                        'streamplay.to':        self.pp.parserSTREAMPLAYTO   ,
                        'streamango.com':       self.pp.parserSTREAMANGOCOM  ,
                        'casacinema.cc':        self.pp.parserCASACINEMACC   ,
+                       'indavideo.hu':         self.pp.parserINDAVIDEOHU    ,
+                       #'1fichier.com':         self.pp.parser1FICHIERCOM    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4061,6 +4063,13 @@ class pageParser:
         if videoUrl.startswith('http'):
             return videoUrl
         return False
+        
+    def parser1FICHIERCOM(self, baseUrl):
+        printDBG("parserUPLOAD baseUrl[%s]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return []
+        
+        
     
     def parserUPLOAD(self, baseUrl):
         printDBG("parserUPLOAD baseUrl[%s]" % baseUrl)
@@ -5109,11 +5118,8 @@ class pageParser:
         sts, pageData = self.cm.getPage(url, params)
         if not sts: return False
         
-        authKey = self.cm.ph.getSearchGroups(pageData, r"""Key\s*=\s*['"]([^'^"]+?)['"]""")[0]
-        try_again = self.cm.ph.getSearchGroups(pageData, r"""try_again\s*=\s*['"]([^'^"]+?)['"]""")[0]
-        better_luck_next_time = self.cm.ph.getSearchGroups(pageData, r"""better_luck_next_time\s*=\s*['"]([^'^"]+?)['"]""")[0]
-        if len(try_again) > len(authKey): authKey = try_again
-        if len(better_luck_next_time) > len(authKey): authKey = better_luck_next_time
+        varName = self.cm.ph.getSearchGroups(pageData, '''concat\(\s*['"]/["']\s*\+([^\+]+?)\+''')[0].strip()
+        authKey = self.cm.ph.getSearchGroups(pageData, varName + r"""\s*=\s*['"]([^'^"]+?)['"]""")[0]
         
         params['header']['Referer'] = url
         sts, authKey = self.cm.getPage('https://thevideo.me/vsign/player/' + authKey, params)
@@ -7654,3 +7660,33 @@ class pageParser:
         
         urlTab = self._findLinks(data, 'casacinema.cc')
         return urlTab
+        
+    def parserINDAVIDEOHU(self, baseUrl):
+        printDBG("parserINDAVIDEOHU url[%s]\n" % baseUrl)
+        urlTab = []
+        
+        videoId = self.cm.ph.getSearchGroups(baseUrl, 'indavideo\.hu/(?:player/video|video)/([0-9A-Za-z-_]+)')[0]
+        url = 'http://amfphp.indavideo.hu/SYm0json.php/player.playerHandler.getVideoData/' + videoId
+        
+        sts, data = self.cm.getPage(url)
+        if not sts: return urlTab
+        
+        data = byteify(json.loads(data))
+        if data['success'] == '1':
+            if not data['data'].get('video_files', []):
+                SetIPTVPlayerLastHostError("File has been removed.")
+                return []
+            
+            tmpTab = []
+            for file in data['data']['video_files']:
+                try:
+                    name = self.cm.ph.getSearchGroups(file, '\.([0-9]+)\.mp4')[0]
+                    url  = file + '&token=' + data['data']['filesh'][name]
+                    if url not in tmpTab:
+                        tmpTab.append(url)
+                        urlTab.append({'name':name, 'url':url})
+                except Exception:
+                    printExc()
+
+        return urlTab
+        
