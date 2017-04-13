@@ -66,7 +66,7 @@ import codecs
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.mtv import GametrailersIE
     
-try:    from urlparse import urlsplit, urlunsplit
+try:    from urlparse import urlsplit, urlunsplit, urljoin
 except Exception: printExc()
 ###################################################
 class urlparser:
@@ -4671,22 +4671,52 @@ class pageParser:
                         'DNT':1,
                         'Connection':'keep-alive',
                       }
-                      
+        COOKIE_FILE = GetCookieDir('flashxtv.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':True}
+        
+        if baseUrl.split('?')[0].endswith('.jsp'):
+            rm(COOKIE_FILE)
+            sts, data = self.cm.getPage(baseUrl, params)
+            if not sts: return False
+            
+            cookies = dict(re.compile(r'''cookie\(\s*['"]([^'^"]+?)['"]\s*\,\s*['"]([^'^"]+?)['"]''', re.IGNORECASE).findall(data))
+            tmpParams = dict(params)
+            tmpParams['cookie_items'] = cookies
+            
+            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
+            printDBG(data)
+            action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'", ignoreCase=True)[0]
+            post_data = dict(re.compile(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', re.IGNORECASE).findall(data))
+            
+            try: time.sleep(int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0])+1)
+            except Exception:
+                printExc()
+            
+            if {} == post_data:  post_data = None
+            action = urljoin(baseUrl, action)
+            
+            tmpParams['header']['Referer'] = baseUrl
+            sts, data = self.cm.getPage(action, tmpParams, post_data)
+            if not sts: return False
+            
+            printDBG(data)
+            baseUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src="(https?://[^/]+?/embed\-[^\.]+?\.html)"''', ignoreCase=True)[0]
+        
         if '.tv/embed-' not in baseUrl:
             baseUrl = baseUrl.replace('.tv/', '.tv/embed-')
         if not baseUrl.endswith('.html'):
             baseUrl += '.html'
-        HTTP_HEADER['Referer'] = baseUrl
-        SWF_URL = 'http://static.flashx.tv/player6/jwplayer.flash.swf'
+            
         
-        COOKIE_FILE = GetCookieDir('flashxtv.cookie')
-        rm(COOKIE_FILE)
-        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':False}
+        params['header']['Referer'] = baseUrl
+        SWF_URL = 'http://static.flashx.tv/player6/jwplayer.flash.swf'
         
         id = self.cm.ph.getSearchGroups(baseUrl+'/', 'c=([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
         if id == '': id = self.cm.ph.getSearchGroups(baseUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
         baseUrl = 'http://www.flashx.tv/embed.php?c=' + id
         
+        rm(COOKIE_FILE)
+        params['return_data'] = False
         sts, response = self.cm.getPage(baseUrl, params)
         redirectUrl = response.geturl() 
         response.close()
