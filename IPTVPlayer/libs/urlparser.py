@@ -412,6 +412,7 @@ class urlparser:
                        'casacinema.cc':        self.pp.parserCASACINEMACC   ,
                        'indavideo.hu':         self.pp.parserINDAVIDEOHU    ,
                        '1fichier.com':         self.pp.parser1FICHIERCOM    ,
+                       'ultimatedown.com':     self.pp.parserULTIMATEDOWN   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -7773,6 +7774,19 @@ class pageParser:
         
         urlTab = self._findLinks(data, 'casacinema.cc')
         return urlTab
+        
+    def parserULTIMATEDOWN(self, baseUrl):
+        printDBG("parserCASACINEMACC url[%s]\n" % baseUrl)
+        if 'embed.php' not in baseUrl:
+            videoId = self.cm.ph.getSearchGroups(baseUrl, 'ultimatedown\.com/([a-zA-z0-9]+?)/')[0]
+            baseUrl = 'https://ultimatedown.com/plugins/mediaplayer/site/_embed.php?u=%s&w=640h=320' % videoId
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        urlTab = self._getSources(data)
+        if len(urlTab): return urlTab
+        return self._findLinks(data, contain='mp4')
         
     def parserINDAVIDEOHU(self, baseUrl):
         printDBG("parserINDAVIDEOHU url[%s]\n" % baseUrl)
