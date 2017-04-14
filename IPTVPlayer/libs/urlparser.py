@@ -2552,13 +2552,45 @@ class pageParser:
         
     def parserRAPTUCOM(self, baseUrl):
         printDBG("parserRAPTUCOM baseUrl[%r]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5',
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
+                        'Accept-Encoding':'gzip, deflate',
+                        'DNT':1,
+                      }
+        
+        COOKIE_FILE = GetCookieDir('raptucom.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True, 'return_data':True}
+        
+        rm(COOKIE_FILE)
+        
+        sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
+        
+        tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
+        if tmp != '':
+            printDBG(tmp)
+            action = self.cm.ph.getSearchGroups(tmp, '''action=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<input', '>', False, False)
+            post_data = {}
+            for item in tmp:
+                name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                if name != '' and value != '': post_data[name] = value
+            
+            printDBG(post_data)
+            printDBG(action)
+            if action == '#':
+                post_data['confirm.x'] = 70 - randint(0, 30)
+                post_data['confirm.y'] = 70 - randint(0, 30)
+                params['header']['Referer'] = baseUrl
+                sts, data = self.cm.getPage(baseUrl+'#', params, post_data)
+                if not sts: return False
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
         data = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
-        data = byteify(json.loads(data+']'))
         printDBG(data)
+        data = byteify(json.loads(data+']'))
         retTab = []
         for item in data:
             try: retTab.append({'name':'raptu.com ' + item.get('label', item.get('res', '')), 'url':item['file']})
