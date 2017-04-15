@@ -27,6 +27,7 @@ hostfavourites
 hostfighttube
 hostfilisertv
 hostfilma24hdcom
+hostfilmezz
 hostfilmotopia
 hostfilmovizijastudio
 hostfilmstreamvkcom
@@ -41,6 +42,7 @@ hosthdkinomir
 hosthdpopcornscom
 hosthitboxtv
 hosthoofootcom
+hosticefilmsinfo
 hostiitvpl
 hostipla
 hostkabarety
@@ -64,6 +66,7 @@ hostninateka
 hostokgoals
 hostonetvod
 hostourmatchnet
+hostpaczamy
 hostpapystreamingus
 hostpinkbike
 hostplaypuls
