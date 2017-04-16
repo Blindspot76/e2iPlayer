@@ -2220,6 +2220,9 @@ class pageParser:
         params = {'header' : HTTP_HEADER}
         sts, data = self.cm.getPage(url, params)
         
+        if '<b>File Not Found</b>' in data:
+            SetIPTVPlayerLastHostError(_('File Not Found.'))
+        
         # get JS player script code from confirmation page
         tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>')[1]
         if not sts: return False
