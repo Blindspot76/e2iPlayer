@@ -5970,35 +5970,48 @@ class pageParser:
             baseUrl = url
         else:
             url = baseUrl
-        sts, data = self.cm.getPage(url)
-        if not sts: return False
-        subTracks = []
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '</track>', False, False)
-        for item in tmp:
-            if 'subtitles' not in item: continue
-            type  = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
-            lang  = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
-            label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
-            url   = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
-            if url.startswith('//'):
-                url = 'http:' + url
-            if '://' not in url: continue
-            subTracks.append({'title':label, 'url':url, 'lang':label, 'format':type})
         
-        #'<font color="red">', '</font>'
-        urlTab = []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
-        for item in data:
-            if 'video/mp4' not in item: continue
-            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
-            res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
-            lang = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
-            url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
-            if url.startswith('//'):
-                url = 'http:' + url
-            if url.startswith('http'):
-                url = strwithmeta(url, {'Referer':baseUrl, 'external_sub_tracks':subTracks})
-                urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
+        tries = 0
+        while tries < 2:
+            tries += 1
+            
+            if tries == 2 and domain != 'uptostream.com':
+                url = url.replace(domain, 'uptostream.com')
+                domain = 'uptostream.com'
+                baseUrl = url
+            
+            sts, data = self.cm.getPage(url)
+            if not sts: return False
+        
+            subTracks = []
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '</track>', False, False)
+            for item in tmp:
+                if 'subtitles' not in item: continue
+                type  = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+                lang  = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
+                label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
+                url   = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                if url.startswith('//'):
+                    url = 'http:' + url
+                if '://' not in url: continue
+                subTracks.append({'title':label, 'url':url, 'lang':label, 'format':type})
+            
+            #'<font color="red">', '</font>'
+            urlTab = []
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+            for item in data:
+                if 'video/mp4' not in item: continue
+                type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+                res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+                lang = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
+                url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                if url.startswith('//'):
+                    url = 'http:' + url
+                if url.startswith('http'):
+                    url = strwithmeta(url, {'Referer':baseUrl, 'external_sub_tracks':subTracks})
+                    urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
+            if len(urlTab):
+                break
         urlTab.reverse()
         return urlTab
         
