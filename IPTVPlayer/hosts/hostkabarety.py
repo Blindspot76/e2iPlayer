@@ -260,6 +260,12 @@ class Kabarety(CBaseHostClass):
         videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^"^']+?)['"]''', 1, True)[0]
         if self.cm.isValidUrl(videoUrl):
             urlTab = self.up.getVideoLinkExt(videoUrl)
+            
+        if 0 == len(urlTab):
+            videoUrl = self.cm.ph.getSearchGroups(data, '''<div class="fb-video"[^>]+?data-href=['"](https?://[^"^']+?)['"]''', 1, True)[0]
+            if self.cm.isValidUrl(videoUrl):
+                urlTab = self.up.getVideoLinkExt(videoUrl)
+            
         return urlTab
     
     def getFavouriteData(self, cItem):

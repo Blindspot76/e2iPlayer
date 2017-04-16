@@ -5178,9 +5178,11 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return []
         
+        printDBG(data)
+        
         urlsTab = []
         for item in ['hd_src_no_ratelimit', 'hd_src', 'sd_src_no_ratelimit', 'sd_src']:
-            url = self.cm.ph.getSearchGroups(data, '''"%s"\s*?:\s*?"(http[^"]+?\.mp4[^"]*?)"''' % item)[0]
+            url = self.cm.ph.getSearchGroups(data, '''"?%s"?\s*?:\s*?"(http[^"]+?\.mp4[^"]*?)"''' % item)[0]
             url = url.replace('\\/', '/')
             if self.cm.isValidUrl(url):
                 urlsTab.append({'name':'facebook %s' % item, 'url':url})
