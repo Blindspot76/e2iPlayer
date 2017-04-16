@@ -5072,17 +5072,19 @@ class pageParser:
         printDBG("parserTVP baseUrl[%s]" % baseUrl)
         vidTab = []
         try:
-            sts, data = self.cm.getPage(baseUrl)
-            if sts:
-                
-                object_id = self.cm.ph.getSearchGroups(data, 'data-video-id="([0-9]+?)"')[0]
-                if '' == object_id:
-                    object_id = self.cm.ph.getSearchGroups(data, "object_id:'([0-9]+?)'")[0]
-                if '' == object_id:
-                    object_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
-                if '' != object_id:
-                    from Plugins.Extensions.IPTVPlayer.hosts.hosttvpvod import TvpVod
-                    vidTab = TvpVod().getVideoLink(object_id)
+            object_id = self.cm.ph.getSearchGroups(baseUrl, 'object_id=([0-9]+?)[^0-9]')[0]
+            if object_id == '':
+                sts, data = self.cm.getPage(baseUrl)
+                if sts:
+                    object_id = self.cm.ph.getSearchGroups(data, 'data-video-id="([0-9]+?)"')[0]
+                    if '' == object_id:
+                        object_id = self.cm.ph.getSearchGroups(data, "object_id:'([0-9]+?)'")[0]
+                    if '' == object_id:
+                        object_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
+                    
+            if '' != object_id:
+                from Plugins.Extensions.IPTVPlayer.hosts.hosttvpvod import TvpVod
+                vidTab = TvpVod().getVideoLink(object_id)
         except Exception:
             printExc()
         return vidTab

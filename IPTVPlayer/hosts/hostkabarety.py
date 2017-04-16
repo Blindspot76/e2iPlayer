@@ -265,7 +265,20 @@ class Kabarety(CBaseHostClass):
             videoUrl = self.cm.ph.getSearchGroups(data, '''<div class="fb-video"[^>]+?data-href=['"](https?://[^"^']+?)['"]''', 1, True)[0]
             if self.cm.isValidUrl(videoUrl):
                 urlTab = self.up.getVideoLinkExt(videoUrl)
-            
+                
+        if 0 == len(urlTab):
+            videoId = self.cm.ph.getSearchGroups(cItem['url'], '''\.pl/([0-9]+?)_''', 1, True)[0]
+            if videoId != '':
+                HEADER = dict(self.AJAX_HEADER)
+                HEADER['Referer'] = cItem['url']
+                
+                url = self.getFullUrl('index/exec/load.php?tod=vidplay&name=' + videoId)
+                sts, data = self.getPage(url, {'header':HEADER})
+                if sts:
+                    videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^"^']+?)['"]''', 1, True)[0]
+                    if self.cm.isValidUrl(videoUrl):
+                        urlTab = self.up.getVideoLinkExt(videoUrl)
+        
         return urlTab
     
     def getFavouriteData(self, cItem):
