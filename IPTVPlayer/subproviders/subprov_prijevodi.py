@@ -39,6 +39,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
         self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         
         params['cookie'] = 'opensubtitlesorg2.cookie'
+        params['min_py_ver'] = (2,7,9)
         CBaseSubProviderClass.__init__(self, params)
         
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -74,6 +75,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
+        promItem = None
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pages">', '</ul>')[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
         for item in data:
@@ -82,7 +84,12 @@ class PrijevodiOnline(CBaseSubProviderClass):
             if not self.cm.isValidUrl(url): continue
             params = dict(cItem)
             params.update({'category':nextCategory, 'title':title, 'url':url})
-            self.addDir(params)
+            if promItem == None and self.params['confirmed_title'].title().startswith(title.upper()):
+                promItem = params
+            else:
+                self.addDir(params)
+        if promItem != None:
+            self.addDir(promItem, False)
             
     def listSeries(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listSeries")
@@ -90,6 +97,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
+        promItems = []
         data = self.cm.ph.getDataBeetwenMarkers(data, '<table', '</table>')[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>')
         for item in data:
@@ -107,12 +115,21 @@ class PrijevodiOnline(CBaseSubProviderClass):
             
             params = dict(cItem)
             params.update({'category':nextCategory, 'title':title, 'url':url, 'desc':' | '.join(descTab)})
-            self.addDir(params)
+            if self.params['confirmed_title'].lower().startswith(title.lower()):
+                promItems.append(params)
+            else:
+                self.addDir(params)
+        for item in promItems:
+            self.addDir(item, False)
         
     def listSeasons(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listSeasons")
         
         self.episodesCache = {}
+        promSeasonsItems = []
+        promEpisodesItems = []
+        
+        printDBG(self.dInfo)
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
@@ -126,18 +143,19 @@ class PrijevodiOnline(CBaseSubProviderClass):
         for sItem in data:
             sItem = '<h3 ' + sItem
             tmp = self.cm.ph.getDataBeetwenMarkers(sItem, '<h3', '</h3>')[1]
-            sNum = self.cm.ph.getSearchGroups(tmp, '''id=['"]sezona\-([0-9]+)['"]''')[0]
+            sNum = self.cm.ph.getSearchGroups(tmp, '''id=['"]sezona\-([0-9]+)['"]''')[0].strip()
             sTitle = self.cleanHtmlStr(tmp)
             
             sItem = self.cm.ph.getAllItemsBeetwenMarkers(sItem, '<div', '</ul>')
             self.episodesCache[sNum] = []
+            promEpisodesItems = []
             for eItem in sItem:
                 tmp = self.cm.ph.getAllItemsBeetwenMarkers(eItem, '<li', '</li>')
                 if len(tmp) < 2: continue
                 url   = self.getFullUrl( self.cm.ph.getSearchGroups(tmp[1], 'rel="([^"]+?/get/[^"]+?)"')[0] )
                 if not self.cm.isValidUrl(url): continue
                 
-                eNum = self.cleanHtmlStr(tmp[0]).replace('.', '')
+                eNum = self.cleanHtmlStr(tmp[0]).replace('.', '').strip()
                 title = self.cleanHtmlStr(''.join(tmp[0:2]))
                 
                 descTab = []
@@ -145,12 +163,25 @@ class PrijevodiOnline(CBaseSubProviderClass):
                     t = self.cleanHtmlStr(t)
                     if t != '': descTab.append(t)
             
-                self.episodesCache[sNum].append({'s_num':sNum, 'e_num':eNum, 'title':title, 'url':url, 'desc':' | '.join(descTab)})
+                params = {'s_num':sNum, 'e_num':eNum, 'title':title, 'url':url, 'desc':' | '.join(descTab)}
+                if eNum == str(self.dInfo.get('episode')):
+                    promEpisodesItems.append(params)
+                else:
+                    self.episodesCache[sNum].append(params)
+            
+            for item in promEpisodesItems:
+                self.episodesCache[sNum].insert(0, item)
             
             if len(self.episodesCache[sNum]):
                 params = dict(cItem)
                 params.update({'category':nextCategory, 'title':sTitle, 's_num':sNum})
-                self.addDir(params)
+                if sNum == str(self.dInfo.get('season')):
+                    promSeasonsItems.append(params)
+                else:
+                    self.addDir(params)
+        
+        for item in promSeasonsItems:
+            self.addDir(item, False)
         
     def listEpisodesItems(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listEpisodesItems")
@@ -198,6 +229,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
+        promItems = []
         if cItem['url'].endswith('izdvojeno'):
             data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="filmovi-forum-index">', '<scrip', False)[1]
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
@@ -210,7 +242,11 @@ class PrijevodiOnline(CBaseSubProviderClass):
                 
                 params = dict(cItem)
                 params.update({'category':nextCategory, 'title':title, 'url':url, 'desc':desc})
-                self.addDir(params)
+                title = re.sub('\([0-9]{4}\)', '', title).strip()
+                if self.params['confirmed_title'].lower().startswith(title.lower()):
+                    promItems.append(params)
+                else:
+                    self.addDir(params)
         else:
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr id="film-', '</tr>')
             for item in data:
@@ -228,7 +264,14 @@ class PrijevodiOnline(CBaseSubProviderClass):
                 
                 params = dict(cItem)
                 params.update({'category':nextCategory, 'title':title, 'url':url, 'desc':' | '.join(descTab)})
-                self.addDir(params)
+                title = re.sub('\([0-9]{4}\)', '', title).strip()
+                if self.params['confirmed_title'].lower().startswith(title.lower()):
+                    promItems.append(params)
+                else:
+                    self.addDir(params)
+        
+        for item in promItems:
+            self.addDir(item, False)
         
     def listTopicDownloadItems(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listTopicDownloadItems")

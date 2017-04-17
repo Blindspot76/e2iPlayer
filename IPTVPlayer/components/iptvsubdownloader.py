@@ -573,17 +573,17 @@ class IPTVSubDownloaderWidget(Screen):
     def listSubtitlesProviders(self):
         printDBG("IPTVSubDownloaderWidget.listSubtitlesProviders")
         subProvidersList = []
-        napisy24pl       = {'title':_("Napisy24.pl"),                'sub_provider':'napisy24pl'        }
-        openSubtitles    = {'title':_("OpenSubtitles.org API"),      'sub_provider':'opensubtitlesorg'  }
-        openSubtitles2   = {'title':_("OpenSubtitles.org WWW"),      'sub_provider':'opensubtitlesorg2' }
-        napiprojektpl    = {'title':_("Napiprojekt.pl"),             'sub_provider':'napiprojektpl'     }
-        podnapisinet     = {'title':_("Podnapisi.net"),              'sub_provider':'podnapisinet'      }
-        titlovi          = {'title':_("Titlovi.com"),                'sub_provider':'titlovicom'        }
-        subscene         = {'title':_("Subscene.com"),               'sub_provider':'subscenecom'       }
-        youtube          = {'title':_("Youtube.com"),                'sub_provider':'youtubecom'        }
-        popcornsubtitles = {'title':_("PopcornSubtitles.com"),       'sub_provider':'popcornsubtitles'  }
-        subtitlesgr      = {'title':_("Subtitles.gr"),               'sub_provider':'subtitlesgr'       }
-        prijevodi        = {'title':_("Prijevodi-Online.org"),       'sub_provider':'prijevodi'         }
+        napisy24pl       = {'title':"Napisy24.pl",                'sub_provider':'napisy24pl'        }
+        openSubtitles    = {'title':"OpenSubtitles.org API",      'sub_provider':'opensubtitlesorg'  }
+        openSubtitles2   = {'title':"OpenSubtitles.org WWW",      'sub_provider':'opensubtitlesorg2' }
+        napiprojektpl    = {'title':"Napiprojekt.pl",             'sub_provider':'napiprojektpl'     }
+        podnapisinet     = {'title':"Podnapisi.net",              'sub_provider':'podnapisinet'      }
+        titlovi          = {'title':"Titlovi.com",                'sub_provider':'titlovicom'        }
+        subscene         = {'title':"Subscene.com",               'sub_provider':'subscenecom'       }
+        youtube          = {'title':"Youtube.com",                'sub_provider':'youtubecom'        }
+        popcornsubtitles = {'title':"PopcornSubtitles.com",       'sub_provider':'popcornsubtitles'  }
+        subtitlesgr      = {'title':"Subtitles.gr",               'sub_provider':'subtitlesgr'       }
+        prijevodi        = {'title':"Prijevodi-Online.org",       'sub_provider':'prijevodi'         }
         
         
         if 'youtube_id' in self.params['url_params'] and '' != self.params['url_params']['youtube_id']:

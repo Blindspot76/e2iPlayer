@@ -542,7 +542,7 @@ class CBaseHostClass:
             from Screens.MessageBox import MessageBox
             import sys
             if sys.version_info < pyVer:
-                message = _('This host requires a new Enigma2 image with a Python version %s or later.') % ('.'.join(str(x) for x in pyVer))
+                message = _('This service requires a new Enigma2 image with a Python version %s or later.') % ('.'.join(str(x) for x in pyVer))
                 self.sessionEx.waitForFinishOpen(MessageBox, message, type = MessageBox.TYPE_INFO, timeout = 10)
         except Exception:
             printExc()
