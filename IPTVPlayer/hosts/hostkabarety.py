@@ -89,6 +89,10 @@ class Kabarety(CBaseHostClass):
     def getFullIconUrl(self, url):
         url = url.replace('&amp;', '&')
         return CBaseHostClass.getFullIconUrl(self, url)
+        
+    def getFullUrl(self, url):
+        url = url.replace('&amp;', '&')
+        return CBaseHostClass.getFullUrl(self, url)
     
     def fillCacheFilters(self, cItem):
         printDBG("Kabarety.listCategories")
@@ -259,12 +263,12 @@ class Kabarety(CBaseHostClass):
         
         videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^"^']+?)['"]''', 1, True)[0]
         if self.cm.isValidUrl(videoUrl):
-            urlTab = self.up.getVideoLinkExt(videoUrl)
+            urlTab = self.up.getVideoLinkExt(self.getFullUrl(videoUrl))
             
         if 0 == len(urlTab):
             videoUrl = self.cm.ph.getSearchGroups(data, '''<div class="fb-video"[^>]+?data-href=['"](https?://[^"^']+?)['"]''', 1, True)[0]
             if self.cm.isValidUrl(videoUrl):
-                urlTab = self.up.getVideoLinkExt(videoUrl)
+                urlTab = self.up.getVideoLinkExt(self.getFullUrl(videoUrl))
                 
         if 0 == len(urlTab):
             videoId = self.cm.ph.getSearchGroups(cItem['url'], '''\.pl/([0-9]+?)_''', 1, True)[0]
@@ -277,7 +281,7 @@ class Kabarety(CBaseHostClass):
                 if sts:
                     videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^"^']+?)['"]''', 1, True)[0]
                     if self.cm.isValidUrl(videoUrl):
-                        urlTab = self.up.getVideoLinkExt(videoUrl)
+                        urlTab = self.up.getVideoLinkExt(self.getFullUrl(videoUrl))
         
         return urlTab
     

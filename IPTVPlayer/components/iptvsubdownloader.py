@@ -583,12 +583,17 @@ class IPTVSubDownloaderWidget(Screen):
         youtube          = {'title':_("Youtube.com"),                'sub_provider':'youtubecom'        }
         popcornsubtitles = {'title':_("PopcornSubtitles.com"),       'sub_provider':'popcornsubtitles'  }
         subtitlesgr      = {'title':_("Subtitles.gr"),               'sub_provider':'subtitlesgr'       }
+        prijevodi        = {'title':_("Prijevodi-Online.org"),       'sub_provider':'prijevodi'         }
+        
         
         if 'youtube_id' in self.params['url_params'] and '' != self.params['url_params']['youtube_id']:
             subProvidersList.append(youtube)
             
         if 'popcornsubtitles_url' in self.params['url_params'] and '' != self.params['url_params']['popcornsubtitles_url']:
             subProvidersList.append(popcornsubtitles)
+            
+        if 'hr' == GetDefaultLang(): 
+            subProvidersList.append(prijevodi)
         
         if 'el' == GetDefaultLang(): 
             subProvidersList.append(subtitlesgr)
@@ -611,6 +616,9 @@ class IPTVSubDownloaderWidget(Screen):
                 
         if 'el' != GetDefaultLang(): 
             subProvidersList.append(subtitlesgr)
+        
+        if 'hr' != GetDefaultLang(): 
+            subProvidersList.append(prijevodi)
         
         self.currList = []
         for item in subProvidersList:
