@@ -32,6 +32,7 @@ from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, 
 from Plugins.Extensions.IPTVPlayer.libs.yooanimecom       import YooanimeComApi
 from Plugins.Extensions.IPTVPlayer.libs.livetvhdnet       import LivetvhdNetApi
 from Plugins.Extensions.IPTVPlayer.libs.karwantv          import KarwanTvApi
+from Plugins.Extensions.IPTVPlayer.libs.wizjatv           import WizjaTvApi, GetConfigList as WizjaTV_GetConfigList
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
 
 
@@ -123,6 +124,10 @@ def GetConfigList():
     try:    optionList.extend( GoldVodTV_GetConfigList() )
     except Exception: printExc()
     
+    optionList.append(getConfigListEntry("-----------------Wizja.TV------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( WizjaTV_GetConfigList() )
+    except Exception: printExc()
+    
     return optionList
 
 ###################################################
@@ -163,6 +168,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                         {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'Goldvod TV',                        'url': '',                                                                   'icon': 'http://goldvod.tv/img/logo.png'}, \
                         {'alias_id':'pure-cast.net',           'name': 'pure-cast.net',       'title': 'Pure-Cast.net',                     'url': '',                                                                   'icon': 'http://blog-social-stream.dit.upm.es/wp-content/uploads/2013/05/logo.png'}, \
+                        {'alias_id':'wizja.tv',                'name': 'wizja.tv',            'title': 'wizja.tv',                          'url': 'http://wizja.tv/',                                                   'icon': 'http://wizja.tv/logo.png'}, \
                        ] 
     #http://play.tvip.ga/iptvde.m3u
     
@@ -197,6 +203,7 @@ class HasBahCa(CBaseHostClass):
         self.wkylinewebcamsComApi = None
         self.livespottingTvApi    = None
         self.karwanTvApi          = None
+        self.wizjaTvApi           = None
         
         self.weebTvApi    = None
         self.hasbahcaiptv = {}
@@ -773,6 +780,24 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.karwanTvApi.getVideoLink(cItem)
         return urlsTab
         
+    def getWizjaTvList(self, cItem):
+        printDBG("getWizjaTvList start")
+        if None == self.wizjaTvApi:
+            self.wizjaTvApi = WizjaTvApi()
+        tmpList = self.wizjaTvApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']:
+                self.addVideo(item) 
+            elif 'audio' == item['type']:
+                self.addAudio(item) 
+            else:
+                self.addDir(item)
+        
+    def getWizjaTvLink(self, cItem):
+        printDBG("getWizjaTvLink start")
+        urlsTab = self.wizjaTvApi.getVideoLink(cItem)
+        return urlsTab
+        
     def getTelewizjaLiveComList(self, cItem):
         printDBG("getTelewizjaLiveComList start")
         if None == self.telewizjaLiveComApi:
@@ -1029,6 +1054,9 @@ class HasBahCa(CBaseHostClass):
     #karwan.tv items
         elif name == 'karwan.tv':
             self.getKarwanTvList(self.currItem)
+    #wizja.tv items
+        elif name == 'wizja.tv':
+            self.getWizjaTvList(self.currItem)
     #telewizja-live.com items
         elif name == 'telewizja-live.com':
             self.getTelewizjaLiveComList(self.currItem)
@@ -1135,6 +1163,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getLivetvhdNetLink(cItem)
         elif name == 'karwan.tv':
             urlList = self.host.getKarwanTvLink(cItem)
+        elif name == 'wizja.tv':
+            urlList = self.host.getWizjaTvLink(cItem)
         elif name == 'telewizja-live.com':
             urlList = self.host.getTelewizjaLiveComLink(cItem)
         elif name == 'tele-wizja.com':
