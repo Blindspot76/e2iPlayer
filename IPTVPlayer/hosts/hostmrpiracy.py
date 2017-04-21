@@ -359,6 +359,7 @@ class MRPiracyGQ(CBaseHostClass):
         
         token = self.cm.ph.getSearchGroups(data, '''var\s+form_data\s*=\s*['"]([^'^"]+?)['"]''')[0]
         linksData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a id="sv', '</a>')
+        linksData.extend(self.cm.ph.getAllItemsBeetwenMarkers(data, '<span id="sv', '</span>'))
         for item in linksData:
             playerData = self.cm.ph.getDataBeetwenMarkers(item, 'player(', ')', False)[1]
             playerData = re.sub('''["'\s]''', '', playerData).split(',')
