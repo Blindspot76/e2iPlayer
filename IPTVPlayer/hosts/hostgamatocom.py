@@ -40,7 +40,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://gamato-movies.com/'
+    return 'https://gamato-movies.com/'
 
 class GamatoMovies(CBaseHostClass):
  

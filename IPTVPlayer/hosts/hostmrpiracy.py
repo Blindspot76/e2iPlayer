@@ -69,7 +69,7 @@ def gettytul():
 class MRPiracyGQ(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'mrpiracy.gq', 'cookie':'mrpiracygq.cookie', 'cookie_type':'MozillaCookieJar'})
+        CBaseHostClass.__init__(self, {'history':'mrpiracy.gq', 'cookie':'mrpiracygq.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
         self.DEFAULT_ICON_URL = 'https://pbs.twimg.com/profile_images/790277002544766976/w_TjhbiK.jpg'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
