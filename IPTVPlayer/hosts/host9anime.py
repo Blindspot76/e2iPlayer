@@ -132,7 +132,7 @@ class AnimeTo(CBaseHostClass):
         f_idx = cItem.get('f_idx', 0)
         if f_idx == 0: self.fillCacheFilters(cItem)
         
-        if 0 == len(self.cacheFiltersKeys): return
+        if f_idx >= len(self.cacheFiltersKeys): return
         
         filter = self.cacheFiltersKeys[f_idx]
         f_idx += 1
@@ -285,7 +285,7 @@ class AnimeTo(CBaseHostClass):
     
     def getFavouriteData(self, cItem):
         printDBG('AnimeTo.getFavouriteData')
-        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem['desc'], 'icon':cItem['icon']}
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem.get('icon', '')}
         return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):

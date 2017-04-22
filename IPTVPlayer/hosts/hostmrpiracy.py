@@ -209,6 +209,9 @@ class MRPiracyGQ(CBaseHostClass):
         
         f_idx = cItem.get('f_idx', 0)
         if f_idx == 0: self.fillCacheFilters(cItem)
+        
+        if f_idx >= len(self.cacheFiltersKeys): return
+        
         filter = self.cacheFiltersKeys[f_idx]
         f_idx += 1
         cItem['f_idx'] = f_idx
