@@ -38,11 +38,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.ChiaanimeCO_language = ConfigSelection(default = "en", choices = [("en", _("English")), ("es", _("Spanish"))])
 
 def GetConfigList():
     optionList = []
-    #optionList.append(getConfigListEntry(_("Language:"), config.plugins.iptvplayer.ChiaanimeCO_language))
     return optionList
 ###################################################
 
@@ -164,7 +162,7 @@ class ChiaanimeCO(CBaseHostClass):
             
             if url.startswith('http'):
                 params = dict(cItem)
-                params.update({'title':title, 'url':url, 'icon':icon})
+                params.update({'good_for_fav': True, 'title':title, 'url':url, 'icon':icon})
                 if '/WATCH/' in url.upper():
                     self.addVideo(params)
                 else:
@@ -209,7 +207,7 @@ class ChiaanimeCO(CBaseHostClass):
             
             if url.startswith('http'):
                 params = dict(cItem)
-                params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
+                params.update({'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
                 if '/WATCH/' in url.upper():
                     self.addVideo(params)
                 else:
@@ -242,46 +240,72 @@ class ChiaanimeCO(CBaseHostClass):
             videoUrl = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] )
             if not videoUrl.startswith('http'): continue
             params = dict(cItem)
-            params.update({'title':title + ' ' + eTitle, 'url':videoUrl, 'icon':icon, 'desc':desc})
+            params.update({'good_for_fav': True,'title':title + ' ' + eTitle, 'url':videoUrl, 'icon':icon, 'desc':desc})
             self.addVideo(params)
     
     def getLinksForVideo(self, cItem):
         printDBG("ChiaanimeCO.getLinksForVideo [%s]" % cItem)
         urlTab = [] 
         
-        if 'chiaanime.co' not in cItem['url']:
-            return [{'name':'', 'url':cItem['url'], 'need_resolve':1}]
+        uniquTab = []
         
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return []
-        
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '#player_load', 'success', False)[1]
-        url       = self.cm.ph.getSearchGroups(tmp, '''url: ['"]([^'^"]+?)['"]''')[0]
-        if url != '':
+        def _appendLinks(data):
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '#player_load', 'success', False)[1]
+            url       = self.cm.ph.getSearchGroups(tmp, '''url: ['"]([^'^"]+?)['"]''')[0]
             post_data = self.cm.ph.getSearchGroups(tmp, '''data: ['"]([^"^']+?)['"]''')[0]
             
-            sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
-            if not sts: return []
-        else:
-            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
-            sts, data = self.getPage(url)
-            if not sts: return []
-        
-        #printDBG(data)
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '"divDownload"', '<script ', False)[1]
-        printDBG(tmp)
-        tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
-        printDBG(tmp)
-        for item in tmp:
-            urlTab.append({'name':item[1], 'url':item[0], 'need_resolve':1})
-        
-        if 0 == len(urlTab):
+            if self.cm.isValidUrl(url) and post_data != '':
+                sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
+                if not sts: return []
+            
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '>Download', '<script ', False)[1]
+            tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
+            for item in tmp:
+                if item[0] in uniquTab: continue
+                urlTab.append({'name':item[1], 'url':item[0], 'need_resolve':1})
+                uniquTab.append(item[0])
+                
+            titles = re.compile('selectquality[^>]*?>([^<]+?)<').findall(data)
+            urls   = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('var\s+part\s+='), re.compile('\]'), False)[1]
+            urls   = re.compile('"(https?://[^"]+?)"').findall(urls)
+            printDBG(titles)
+            printDBG(urls)
+            if len(urls) == len(titles):
+                for idx in range(len(titles)):
+                    if urls[idx] in uniquTab: continue
+                    urlTab.append({'name':titles[idx], 'url':urls[idx], 'need_resolve':1})
+                    uniquTab.append(urls[idx])
+            
             tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player', '</script>', False)[1]
             if 'docid=' in tmp:
                 docid = self.cm.ph.getSearchGroups(tmp, '''['"]([a-zA-Z0-9_-]{28})['"]''')[0]
                 if docid != '':
                     url = 'https://video.google.com/get_player?docid=%s&authuser=&eurl=%s' % (docid, urllib.quote(cItem['url']))
-                    urlTab.append({'name':'video.google.com', 'url':url, 'need_resolve':1})
+                    if url not in uniquTab: 
+                        urlTab.append({'name':'video.google.com', 'url':url, 'need_resolve':1})
+                        uniquTab.append(url)
+            
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '>')
+            for item in data:
+                url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0]
+                if 1 != self.up.checkHostSupport(url): continue 
+                if url in uniquTab: continue
+                urlTab.append({'name':self.up.getHostName(url), 'url':url, 'need_resolve':1})
+                uniquTab.append(url)
+        
+        if self.up.getDomain(self.MAIN_URL) not in cItem['url']:
+            return [{'name':'', 'url':cItem['url'], 'need_resolve':1}]
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return []
+        
+        if '#player_load' not in data:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            sts, data = self.getPage(url)
+            if not sts: return []
+        
+        _appendLinks(data)
+        
         return urlTab
         
     def getVideoLinks(self, videoUrl):
@@ -301,6 +325,30 @@ class ChiaanimeCO(CBaseHostClass):
         elif videoUrl.startswith('http'):
             urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
+        
+    def getFavouriteData(self, cItem):
+        printDBG('CartoonME.getFavouriteData')
+        params = dict(cItem)
+        return json.dumps(params) 
+        
+    def getLinksForFavourite(self, fav_data):
+        printDBG('CartoonME.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('CartoonME.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("ChiaanimeCO.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))

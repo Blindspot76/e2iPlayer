@@ -51,7 +51,7 @@ def gettytul():
     return 'http://9cartoon.me/'
 
 class CartoonME(CBaseHostClass):
-    USER_AGENT = 'curl/7'
+    USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'9cartoon.me', 'cookie':'CartoonME.cookie'})
@@ -70,9 +70,17 @@ class CartoonME(CBaseHostClass):
     def getPage(self, baseUrl, params={}, post_data=None):
         if params == {}: params = dict(self.defaultParams)
         params['cloudflare_params'] = {'domain':'9cartoon.me', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
+        
+        def _getFullUrl(url):
+            if self.cm.isValidUrl(url):
+                return url
+            else:
+                return urlparse.urljoin(baseUrl, url)
+            
+        params['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
-    def getIconUrl(self, url):
+    def getFullIconUrl(self, url):
         url = self.getFullUrl(url)
         if url == '': return ''
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
@@ -122,7 +130,7 @@ class CartoonME(CBaseHostClass):
         data = re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>([^<]+?)<''').findall(data)
         for item in data:
             title = self.cleanHtmlStr(item[1])
-            url   = self.getFullUrl(item[0])
+            url   = urlparse.urljoin(cItem['url'], item[0])
             tab.append({'title':title, 'url':url})
             
         cItem = dict(cItem)
@@ -139,7 +147,7 @@ class CartoonME(CBaseHostClass):
         if len(tmp)>1: query = tmp[1]
         else: query = ''
         
-        if not url.endswith('/'): url += '/'
+        #if not url.endswith('/'): url += '/'
         if page > 1: url += '?page=%d&' % page
         else: url += '?'
         if query != '': url += query
@@ -147,22 +155,25 @@ class CartoonME(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return
         
-        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '<!-- end pager -->', False)[1]
+        #nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '<!-- end pager -->', False)[1]
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '</ul>', False)[1]
         if ('>%d<' % (page+1)) in nextPage: nextPage = True
         else: nextPage = False
         
         m1 = '<div class="anime_movies_items">'
+        if m1 not in data: m1 = '<div class="last_episodes_items">'
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, '</section>', False)[1]
         data = data.split(m1)
         for item in data:
             icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0] )
+            if icon == '': icon = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''url\(\s*['"]([^'^"]+?\.jpe?g)['"]''')[0] )
             url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<p class="name">', '</p>', True)[1] )
             if title == '': title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0] )
             
             if url.startswith('http'):
                 params = dict(cItem)
-                params.update({'title':title, 'url':url, 'icon':icon})
+                params.update({'good_for_fav': True, 'title':title, 'url':url, 'icon':icon})
                 if '/WATCH/' in url.upper():
                     self.addVideo(params)
                 else:
@@ -184,7 +195,7 @@ class CartoonME(CBaseHostClass):
         if len(tmp)>1: query = tmp[1]
         else: query = ''
         
-        if not url.endswith('/'): url += '/'
+        #if not url.endswith('/'): url += '/'
         if page > 1: url += '?page=%d&' % page
         else: url += '?'
         if query != '': url += query
@@ -192,7 +203,8 @@ class CartoonME(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return
         
-        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '<!-- end pager -->', False)[1]
+        #nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '<!-- end pager -->', False)[1]
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pagination">', '</ul>', False)[1]
         if ('>%d<' % (page+1)) in nextPage: nextPage = True
         else: nextPage = False
         
@@ -207,7 +219,7 @@ class CartoonME(CBaseHostClass):
             
             if url.startswith('http'):
                 params = dict(cItem)
-                params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})
+                params.update({'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
                 if '/WATCH/' in url.upper():
                     self.addVideo(params)
                 else:
@@ -240,12 +252,58 @@ class CartoonME(CBaseHostClass):
             videoUrl = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] )
             if not videoUrl.startswith('http'): continue
             params = dict(cItem)
-            params.update({'title':title + ' ' + eTitle, 'url':videoUrl, 'icon':icon, 'desc':desc})
+            params.update({'good_for_fav': True, 'title':title + ' ' + eTitle, 'url':videoUrl, 'icon':icon, 'desc':desc})
             self.addVideo(params)
     
     def getLinksForVideo(self, cItem):
         printDBG("CartoonME.getLinksForVideo [%s]" % cItem)
         urlTab = [] 
+        
+        uniquTab = []
+        
+        def _appendLinks(data):
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '#player_load', 'success', False)[1]
+            url       = self.cm.ph.getSearchGroups(tmp, '''url: ['"]([^'^"]+?)['"]''')[0]
+            post_data = self.cm.ph.getSearchGroups(tmp, '''data: ['"]([^"^']+?)['"]''')[0]
+            
+            if self.cm.isValidUrl(url) and post_data != '':
+                sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
+                if not sts: return []
+            
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '>Download', '<script ', False)[1]
+            tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
+            for item in tmp:
+                if item[0] in uniquTab: continue
+                urlTab.append({'name':item[1], 'url':item[0], 'need_resolve':1})
+                uniquTab.append(item[0])
+                
+            titles = re.compile('selectquality[^>]*?>([^<]+?)<').findall(data)
+            urls   = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('var\s+part\s+='), re.compile('\]'), False)[1]
+            urls   = re.compile('"(https?://[^"]+?)"').findall(urls)
+            printDBG(titles)
+            printDBG(urls)
+            if len(urls) == len(titles):
+                for idx in range(len(titles)):
+                    if urls[idx] in uniquTab: continue
+                    urlTab.append({'name':titles[idx], 'url':urls[idx], 'need_resolve':1})
+                    uniquTab.append(urls[idx])
+            
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player', '</script>', False)[1]
+            if 'docid=' in tmp:
+                docid = self.cm.ph.getSearchGroups(tmp, '''['"]([a-zA-Z0-9_-]{28})['"]''')[0]
+                if docid != '':
+                    url = 'https://video.google.com/get_player?docid=%s&authuser=&eurl=%s' % (docid, urllib.quote(cItem['url']))
+                    if url not in uniquTab: 
+                        urlTab.append({'name':'video.google.com', 'url':url, 'need_resolve':1})
+                        uniquTab.append(url)
+            
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '>')
+            for item in data:
+                url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0]
+                if 1 != self.up.checkHostSupport(url): continue 
+                if url in uniquTab: continue
+                urlTab.append({'name':self.up.getHostName(url), 'url':url, 'need_resolve':1})
+                uniquTab.append(url)
         
         if self.up.getDomain(self.MAIN_URL) not in cItem['url']:
             return [{'name':'', 'url':cItem['url'], 'need_resolve':1}]
@@ -258,37 +316,8 @@ class CartoonME(CBaseHostClass):
             sts, data = self.getPage(url)
             if not sts: return []
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '#player_load', 'success', False)[1]
-        url       = self.cm.ph.getSearchGroups(data, '''url: ['"]([^'^"]+?)['"]''')[0]
-        post_data = self.cm.ph.getSearchGroups(data, '''data: ['"]([^"^']+?)['"]''')[0]
+        _appendLinks(data)
         
-        sts, data = self.getPage(url, {'raw_post_data':True, 'header':{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'}}, post_data)
-        if not sts: return []
-        
-        printDBG(data)
-        
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '>Download', '<script ', False)[1]
-        tmp = re.compile('''<a[^>]+?href=['"](http[^"^']+?)['"][^>]*?>([^<]+?)<''').findall(tmp)
-        for item in tmp:
-            urlTab.append({'name':item[1], 'url':item[0], 'need_resolve':1})
-            
-        if 0 == len(urlTab):
-            titles = re.compile('selectquality[^>]*?>([^<]+?)<').findall(data)
-            urls   = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('var\s+part\s+='), re.compile('\]'), False)[1]
-            urls   = re.compile('"(https?://[^"]+?)"').findall(urls)
-            printDBG(titles)
-            printDBG(urls)
-            if len(urls) == len(titles):
-                for idx in range(len(titles)):
-                    urlTab.append({'name':titles[idx], 'url':urls[idx], 'need_resolve':1})
-                
-        if 0 == len(urlTab):
-            tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player', '</script>', False)[1]
-            if 'docid=' in tmp:
-                docid = self.cm.ph.getSearchGroups(tmp, '''['"]([a-zA-Z0-9_-]{28})['"]''')[0]
-                if docid != '':
-                    url = 'https://video.google.com/get_player?docid=%s&authuser=&eurl=%s' % (docid, urllib.quote(cItem['url']))
-                    urlTab.append({'name':'video.google.com', 'url':url, 'need_resolve':1})
         return urlTab
         
     def getVideoLinks(self, videoUrl):
@@ -308,6 +337,30 @@ class CartoonME(CBaseHostClass):
         elif videoUrl.startswith('http'):
             urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
+        
+    def getFavouriteData(self, cItem):
+        printDBG('CartoonME.getFavouriteData')
+        params = dict(cItem)
+        return json.dumps(params) 
+        
+    def getLinksForFavourite(self, fav_data):
+        printDBG('CartoonME.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('CartoonME.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("CartoonME.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -362,82 +415,4 @@ class CartoonME(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        # for now we must disable favourites due to problem with links extraction for types other than movie
-        CHostBase.__init__(self, CartoonME(), True, favouriteTypes=[]) #, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-        
-    #def getArticleContent(self, Index = 0):
-    #    retCode = RetHost.ERROR
-    #    retlist = []
-    #    if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-    #
-    #    hList = self.host.getArticleContent(self.host.currList[Index])
-    #    for item in hList:
-    #        title      = item.get('title', '')
-    #        text       = item.get('text', '')
-    #        images     = item.get("images", [])
-    #        othersInfo = item.get('other_info', '')
-    #        retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-    #    return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append((_("Movies"),   "movie"))
-        #searchTypesOptions.append((_("TV Shows"), "tv_shows"))
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  self.host.getIconUrl( cItem.get('icon', '') )
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
+        CHostBase.__init__(self, CartoonME(), True, favouriteTypes=[])
