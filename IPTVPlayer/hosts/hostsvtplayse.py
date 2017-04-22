@@ -442,14 +442,14 @@ class SVTPlaySE(CBaseHostClass):
             if 'api' not in self.up.getDomain(cItem['url']):
                 url = self.getFullUrl(cItem['url'])
                 sts, data = self.cm.getPage(url, self.defaultParams)
-                if not sts: return
+                if not sts: return []
                 videoId = self.cm.ph.getSearchGroups(data, '<video\s+?data-video-id="([^"]+?)"')[0]
                 url = 'http://api.svt.se/videoplayer-api/video/' + videoId
             else:
                 url = cItem['url']
             
             sts, data = self.cm.getPage(url, self.defaultParams)
-            if not sts: return
+            if not sts: return []
             
             printDBG(data)
             
