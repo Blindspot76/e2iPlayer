@@ -319,6 +319,10 @@ class SVTPlaySE(CBaseHostClass):
         for item in data:
             title = self.cleanHtmlStr(item)
             url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            if url == '':
+                tmp = self.cm.ph.getSearchGroups(item, '''<a[^>]+?id=['"]([^'^"]+?)['"]''')[0].split('-')
+                if len(tmp) >= 2:
+                    url = '?%s=%s' % (tmp[-1], '-'.join(tmp[0:-1]))
             if url.startswith('?'):
                 url = cItem['url'] + url
             
