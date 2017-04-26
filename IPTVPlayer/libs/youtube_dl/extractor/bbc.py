@@ -128,14 +128,14 @@ class BBCCoUkIE(InfoExtractor):
         else:
             mediaselectorUrls = self._MEDIASELECTOR_URLS_2
         
+        hasDASH = False
+        hasHLS = False
         for mediaselector_url in mediaselectorUrls:
             try:
                 if len(subtitlesTab): withSubtitles = False
                 formats, subtitles = self._download_media_selector_url(mediaselector_url % programme_id, programme_id, withSubtitles)
                 formatsTab.extend(formats)
                 subtitlesTab.extend(subtitles)
-                hasDASH = False
-                hasHLS = False
                 for item in formatsTab:
                     if item.get('ext', '') == 'dash': hasDASH = True
                     if item.get('ext', '') == 'hls':  hasHLS = True
@@ -249,9 +249,17 @@ class BBCCoUkIE(InfoExtractor):
         
         player = None
         if tviplayer != '':
-            player = byteify(json.loads(tviplayer)).get('player', {})
+            printDBG(tviplayer)
+            tmp = byteify(json.loads(tviplayer))
+            player = tmp.get('player', {})
             duration = int_or_none(player.get('duration'))
             programme_id = player.get('vpid')
+            if not programme_id:
+                try:
+                    #programme_id = tmp['episode']['master_brand'].get('ident_id')
+                    programme_id = tmp['episode']['versions'][0]['id']
+                except Exception:
+                    printExc()
 
         if not programme_id:
             programme_id = self.cm.ph.getSearchGroups(webpage, r'"vpid"\s*:\s*"(%s)"' % self._ID_REGEX)[0]

@@ -42,7 +42,7 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("Default video quality:"),             config.plugins.iptvplayer.bbc_default_quality))
     optionList.append(getConfigListEntry(_("Use default video quality:"),         config.plugins.iptvplayer.bbc_use_default_quality))
     optionList.append(getConfigListEntry(_("Preferred format:"),                  config.plugins.iptvplayer.bbc_prefered_format))
-    optionList.append(getConfigListEntry(_("Use web-proxy (it may be illegal):"), config.plugins.iptvplayer.bbc_use_web_proxy))
+    # optionList.append(getConfigListEntry(_("Use web-proxy (it may be illegal):"), config.plugins.iptvplayer.bbc_use_web_proxy))
     
     return optionList
 ###################################################
@@ -391,35 +391,32 @@ class BBCiPlayer(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("BBCiPlayer.getLinksForVideo [%s]" % cItem)
         retTab = []
-        vidTab = self.up.getVideoLinkExt(cItem['url'])
-        if not config.plugins.iptvplayer.bbc_use_web_proxy.value:
-            return vidTab
         
-        for item in vidTab:
-            if strwithmeta(item['url']).meta.get('iptv_proto', '') in ['m3u8']:
-                item['need_resolve'] = 1
-                retTab.append(item)
+        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
+        if not sts: return retTab
+        
+        data = self.cm.ph.getSearchGroups(data, r'mediator\.bind\(({.+?})\s*,\s*document\.getElementById')[0]
+        try:
+            uniqueTab = []
+            data = byteify(json.loads(data))
+            for item in data['episode']['versions']:
+                url  = self.getFullUrl('/iplayer/vpid/%s/' % item['id'])
+                if url in uniqueTab: continue
+                uniqueTab.append(url)
+                name = item['kind'].title()
+                retTab.append({'name':name, 'url':url, 'need_resolve':1})
+        except Exception:
+            printExc()
+        
+        if len(retTab):
+            return retTab
+        else:
+            retTab.append({'name':'', 'url':cItem['url'], 'need_resolve':1})
         return retTab
         
     def getVideoLinks(self, url):
         printDBG("BBCiPlayer.getVideoLinks [%s]" % url)
-        retTab = []
-        url = strwithmeta(url)
-        try:
-            params = dict(self.defaultParams)
-            params.update({'return_data':False})
-            sts, response = self.up.pp.getBBCIE().getPage(url, params)
-            redirectUrl = response.geturl() 
-            response.close()
-            
-            if redirectUrl.startswith('https://') and 'englandproxy.co.uk' in redirectUrl:
-                redirectUrl = 'http://' + redirectUrl[8:]
-                
-            retTab.append({'name':'bbc', 'url':strwithmeta(redirectUrl, url.meta)})
-        except Exception:
-            printExc()
-        return retTab
-        
+        return self.up.getVideoLinkExt(url)
         
     def getFavouriteData(self, cItem):
         printDBG('BBCiPlayer.getFavouriteData')
