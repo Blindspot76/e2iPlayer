@@ -7630,7 +7630,20 @@ class pageParser:
         
         if file_url.startswith('http'): 
             return urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
+            
         
+        jscode = self.cm.ph.getDataBeetwenMarkers(data, 'JSON.parse(', '),', False)[1]
+        jscode = 'print(%s);' % jscode
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            decoded = ret['data'].strip()
+            printDBG('DECODED DATA -> [%s]' % decoded)
+            decoded = byteify(json.loads(decoded))
+            vidTab = []
+            for item in decoded['sources']:
+                if 'mp4' in item['type']:
+                    vidTab.append({'url':item['src'], 'name':item['label']})
+            return vidTab
         return False 
         
     def parseNETUTV(self, url):
