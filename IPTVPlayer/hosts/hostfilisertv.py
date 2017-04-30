@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -297,7 +297,7 @@ class FiliserTv(CBaseHostClass):
         
         if self.WaitALittleBit == None:
             try:
-                tmp = 'ZGVmIHphcmF6YShpbl9hYmMpOg0KICAgIGRlZiByaGV4KGEpOg0KICAgICAgICBoZXhfY2hyID0gJzAxMjM0NTY3ODlhYmNkZWYnDQogICAgICABiID0gZmYoYiwgYywgZCwgYSwgdGFiQlszXSwgMjIsIC0xMDQ0NTI1MzMwKTsN\rZGVmIFdhaXRBTGl0dGxlQml0KHRyaWVzKToNCiAgICBmaXJzdEJ5dGUgPSBbODUsMTA5LDg5LDkxLDQ2LDE3OCwyMTcsMjEzXQ0KICAgIGlwID0gJyVzLiVzLiVzLiVzJyAlIChmaXJzdEJ5dGVbcmFuZGludCgwLCBsZW4oZmlyc3RCeXRlKSldLCByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NikpDQogICAgcmV0dXJuIHsnVXNlci1BZ2VudCc6J01vemlsbGEvNS4wJywnQWNjZXB0JzondGV4dC9odG1sJywnWC1Gb3J3YXJkZWQtRm9yJzppcH0NCg0K'
+                tmp = 'ZGVmIHphcmF6YShpbl9hYmMpOg0KICAgIGRlZiByaGV4KGEpOg0KICAgICAgICBoZXhfY2hyID0gJzAxMjM0NTY3ODlhYmNkZWYnDQogICAgICABiID0gZmYoYiwgYywgZCwgYSwgdGFiQlszXSwgMjIsIC0xMDQ0NTI1MzMwKTsN\rZGVmIFdhaXRBTGl0dGxlQml0KHRyaWVzKToNCiAgICBmaXJzdEJ5dGUgPSBbODUsMTA5LDg5LDkxLDQ2LDE3OCwyMTcsMjEzXQ0KICAgIGlwID0gJyVzLiVzLiVzLiVzJyAlIChmaXJzdEJ5dGVbcmFuZGludCgwLCBsZW4oZmlyc3RCeXRlKSldLCByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NikpDQogICAgcmV0dXJuIHsnVXNlci1BZ2VudCc6J01vemlsbGEvNS4wICglcyknICUgaXAsJ0FjY2VwdCc6J3RleHQvaHRtbCcsJ1gtRm9yd2FyZGVkLUZvcic6aXB9DQoNCg=='
                 tmp = base64.b64decode(tmp.split('\r')[-1]).replace('\r', '')
                 WaitALittleBit = compile(tmp, '', 'exec')
                 vGlobals = {"__builtins__": None, 'len': len, 'list': list, 'dict':dict, 'randint':randint}
@@ -311,6 +311,23 @@ class FiliserTv(CBaseHostClass):
         except Exception:
             printExc()
         return header
+        
+    def getSweetCaptchaRespond(self, data):
+        printDBG("FiliserTv.getSweetCaptchaRespond")
+        retData = {}
+        try:
+            tmp = 'ZGVmIHphcmF6YShpbl9hYmMpOg0KICAgIGRlZiByaGV4KGEpOg0KICAgICAgICBoZXhfY2hyID0gJzAxMjM0NTY3ODlhYmNkZWYnDQogICAgICABiID0gZmYoYiwgYywgZCwgYSwgdGFiQlszXSwgMjIsIC0xMDQ0NTI1MzMwKTsN\rZGVmIFdhaXRBTGl0dGxlQml0KHRyaWVzKToNCiAgICBzY2tleSA9IGhleChyYW5kaW50KDAsIDI1NikpWzI6XSArIGhleChyYW5kaW50KDAsIDI1NikpWzI6XSArIGhleChyYW5kaW50KDAsIDI1NikpWzI6XSArIGhleChyYW5kaW50KDAsIDI1NikpWzI6XSArIGhleChyYW5kaW50KDAsIDI1NikpWzI6XSArIGhleChyYW5kaW50KDAsIDI1NikpWzI6XSArIGhleChyYW5kaW50KDAsIDI1NikpWzI6XSArIGhleChyYW5kaW50KDAsIDI1NikpWzI6XQ0KICAgIHNjdmFsdWUgPSBoZXgocmFuZGludCgwLCAyNTYpKVsyOl0gKyBoZXgocmFuZGludCgwLCAyNTYpKVsyOl0gKyBoZXgocmFuZGludCgwLCAyNTYpKVsyOl0gKyBoZXgocmFuZGludCgwLCAyNTYpKVsyOl0NCiAgICBzY3ZhbHVlMiA9ICcwJw0KICAgIHJldHVybiB7J3Nja2V5JzpzY2tleSwgJ3NjdmFsdWUnOnNjdmFsdWUsICdzY3ZhbHVlMic6c2N2YWx1ZTJ9DQo='
+            tmp = base64.b64decode(tmp.split('\r')[-1]).replace('\r', '')
+            WaitALittleBit = compile(tmp, '', 'exec')
+            vGlobals = {"__builtins__": None, 'len': len, 'list': list, 'dict':dict, 'randint':randint, 'hex':hex}
+            vLocals = { 'WaitALittleBit': '' }
+            exec WaitALittleBit in vGlobals, vLocals
+            retData = vLocals['WaitALittleBit'](data)
+        except Exception:
+            printExc()
+            retData = {}
+        printDBG('>>>>>>>>|%s|<<<<<<<<<<<<' % retData)
+        return retData
         
     def getVideoLinks(self, videoUrl):
         printDBG("FiliserTv.getVideoLinks [%s]" % videoUrl)
@@ -333,8 +350,11 @@ class FiliserTv(CBaseHostClass):
                 tries = 0
                 while tries < 6:
                     tries += 1
+                    if tries > 2:
+                        rm(self.COOKIE_FILE)
+                    
                     url = 'http://filiser.tv/embed?salt=' + videoUrl
-                    httpParams['header'] = self.getHeaders(tries)
+                    if reCaptcha: httpParams['header'] = self.getHeaders(tries)
                     sts, data = self.cm.getPage(url, httpParams)
                     if not sts: return urlTab
                     
@@ -342,6 +362,15 @@ class FiliserTv(CBaseHostClass):
                         reCaptcha = True
                         sleep(1)
                         continue
+                        
+                    if 'sweetcaptcha' in data:
+                        post_data = self.getSweetCaptchaRespond(data)
+                        sleep(1)
+                        httpParams2 = dict(httpParams)
+                        httpParams2['header']['Referer'] = url
+                        sts, data = self.cm.getPage(url, httpParams2, post_data)
+                        if not sts: continue
+
                     
                     reCaptcha = False
                     
