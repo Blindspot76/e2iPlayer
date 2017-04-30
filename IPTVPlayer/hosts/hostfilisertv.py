@@ -58,7 +58,7 @@ class FiliserTv(CBaseHostClass):
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.MAIN_URL = 'http://filiser.tv/'
-        self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/img/logo.png'
+        self.DEFAULT_ICON_URL = 'https://superrepo.org/static/images/icons/original/xplugin.video.filisertv.png.pagespeed.ic.TvuWrsxCIN.png'
         
         self.MAIN_CAT_TAB = [{'category':'list_items',        'title': _('Movies'),                       'url':self.getFullUrl('filmy')   },
                              {'category':'list_items',        'title': _('Series'),                       'url':self.getFullUrl('seriale') },
@@ -90,6 +90,12 @@ class FiliserTv(CBaseHostClass):
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         return sts, data
+        
+    def getFullIconUrl(self, url):
+        url = CBaseHostClass.getFullIconUrl(self, url)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
     def fillFilters(self, cItem):
         self.cacheFilters = {}
