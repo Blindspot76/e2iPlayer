@@ -393,9 +393,9 @@ class FiliserTv(CBaseHostClass):
                 printDBG(challenge)
                 
                 retArg = self.sessionEx.waitForFinishOpen(UnCaptchaSweetCaptchaWidget, params={'icon_list':thumbFileTab, 'title':verify, 'challenge':challenge})
-                printDBG('>>>>>>>> Captcha response[%s]' % (retArg))
+                printDBG('>>>>>>>> Captcha response %r' % (retArg))
                 if retArg is not None and len(retArg) and retArg[0]:
-                    answer = retArg[0]
+                    answer = retArg[0]['resp_idx']
                     printDBG('>>>>>>>> Captcha answer[%s]' % (answer))
                     retData = {'sckey':data['k'], 'scvalue':data['a'][answer]['hash'][5:15], 'scvalue2':0}
                 else:
@@ -446,6 +446,7 @@ class FiliserTv(CBaseHostClass):
                         
                     if 'sweetcaptcha' in data:
                         post_data = self.getSweetCaptchaRespond(data)
+                        printDBG(post_data)
                         
                         if post_data == None: # cancelled
                             videoUrl = ''
@@ -461,6 +462,9 @@ class FiliserTv(CBaseHostClass):
                         if not sts or 'sweetcaptcha' in data:
                             continue # wrong answer? -> Another try 
                         reCaptcha = True
+                        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                        printDBG(data)
+                        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                     
                     videoUrl = self.cm.ph.getSearchGroups(data, '''var\s*url\s*=\s*['"](http[^'^"]+?)['"]''')[0]
                     videoUrl = videoUrl.replace('#WIDTH', '800').replace('#HEIGHT', '600')
