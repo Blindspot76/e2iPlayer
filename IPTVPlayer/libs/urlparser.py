@@ -6251,6 +6251,9 @@ class pageParser:
     def parserWHOLECLOUD(self, baseUrl):
         printDBG("parserWHOLECLOUD baseUrl[%s]" % baseUrl)
         
+        tab = self._parserUNIVERSAL_B(baseUrl)
+        if len(tab): return tab
+        
         params = {'header': {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'}, 'return_data':False}
         sts, response = self.cm.getPage(baseUrl, params)
         url = response.geturl()
@@ -6266,7 +6269,6 @@ class pageParser:
         params['return_data'] = True
         sts, data = self.cm.getPage(url, params)
         if not sts: return False
-            
         try:
             tmp = self.cm.ph.getDataBeetwenMarkers(data, '<form method="post" action="">', '</form>', False, False)[1]
             post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
@@ -6274,10 +6276,11 @@ class pageParser:
             post_data.update(tmp)
         except Exception:
             printExc()
-            
-        params['header'].update({'Content-Type':'application/x-www-form-urlencoded','Referer':url})
-        sts, data = self.cm.getPage(url, params, post_data)
-        if not sts: return False
+        
+        if post_data != {}:
+            params['header'].update({'Content-Type':'application/x-www-form-urlencoded','Referer':url})
+            sts, data = self.cm.getPage(url, params, post_data)
+            if not sts: return False
         
         videoTab = []
         url = self.cm.ph.getSearchGroups(data, '"([^"]*?/download[^"]+?)"')[0]

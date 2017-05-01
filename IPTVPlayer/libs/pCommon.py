@@ -757,7 +757,7 @@ class common:
                 data = response.read()
                 response.close()
             except urllib2.HTTPError, e:
-                if e.code == 404:
+                if e.code in [404, 500]:
                     printDBG('!!!!!!!! 404: getURLRequestData - page not found handled')
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
                         gzip_encoding = True
