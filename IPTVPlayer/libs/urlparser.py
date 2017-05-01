@@ -982,6 +982,8 @@ class pageParser:
     def _parserUNIVERSAL_B(self, url, userAgent='Mozilla/5.0'):
         printDBG("_parserUNIVERSAL_B url[%s]" % url)
         
+        domain = urlparser.getDomain(url) 
+        
         sts, response = self.cm.getPage(url, {'return_data':False})
         url = response.geturl()
         response.close()
@@ -1006,6 +1008,20 @@ class pageParser:
         try:
             sts, data = self.cm.getPage(url, params, post_data)
             printDBG(data)
+            
+            sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')
+            if sts:
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>')
+                printDBG(tmp)
+                for item in tmp:
+                    if 'video/mp4' not in item and 'video/x-flv' not in item: continue
+                    tType = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0].replace('video/', '')
+                    tUrl  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+                    printDBG(tUrl)
+                    if self.cm.isValidUrl(tUrl):
+                        videoTab.append({'name':'[%s] %s' % (tType, domain), 'url':tUrl})
+                if len(videoTab):
+                    return videoTab
             
             tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.ready', '}')[1]
             url = self.cm.ph.getSearchGroups(tmp, '''src['"\s]*?:\s['"]([^'^"]+?)['"]''')[0]
