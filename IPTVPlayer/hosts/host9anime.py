@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 ###################################################
 
 ###################################################
@@ -222,6 +223,18 @@ class AnimeTo(CBaseHostClass):
         key = cItem.get('links_key', '')
         return self.cacheLinks.get(key, [])
         
+    def uncensored(self, data):    
+        cookieItem = {}
+        try:
+            jscode = base64.b64decode('''dmFyIGRvY3VtZW50PXt9Ow0KdmFyIGxvY2F0aW9uPSJodHRwczovLzlhbmltZS50by8iOw0KU3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQp2YXIgZW1wdHlDb2RlPSJmdW5jdGlvbiAoKSB7IFtlY21hc2NyaXB0IGNvZGVdIH0iOw0KQXJyYXkucHJvdG90eXBlLmZpbmQ9ZW1wdHlDb2RlOw0KQXJyYXkucHJvdG90eXBlLmZpbGw9ZW1wdHlDb2RlOw0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZ1bmN0aW9uKGZ1bikNCnsNCiAgICB2YXIgbGVuID0gdGhpcy5sZW5ndGg7DQogICAgaWYgKHR5cGVvZiBmdW4gIT0gImZ1bmN0aW9uIikNCiAgICAgICAgdGhyb3cgbmV3IFR5cGVFcnJvcigpOw0KICAgIHZhciByZXMgPSBuZXcgQXJyYXkoKTsNCiAgICB2YXIgdGhpc3AgPSBhcmd1bWVudHNbMV07DQogICAgZm9yICh2YXIgaSA9IDA7IGkgPCBsZW47IGkrKykNCiAgICB7DQogICAgICAgIGlmIChpIGluIHRoaXMpDQogICAgICAgIHsNCiAgICAgICAgICAgIHZhciB2YWwgPSB0aGlzW2ldOw0KICAgICAgICAgICAgaWYgKGZ1bi5jYWxsKHRoaXNwLCB2YWwsIGksIHRoaXMpKQ0KICAgICAgICAgICAgICAgIHJlcy5wdXNoKHZhbCk7DQogICAgICAgIH0NCiAgICB9DQogICAgcmV0dXJuIHJlczsNCn07DQolcw0KcHJpbnQoZG9jdW1lbnQuY29va2llKTsNCg==''') % (data)                     
+            ret = iptv_js_execute( jscode )
+            if ret['sts'] and 0 == ret['code']:
+                tmp = str(ret['data']).replace(' ', '').split('=')
+                cookieItem = {tmp[0]:tmp[1].split('path')[0][:-1]}
+        except Exception:
+            printExc()
+        return cookieItem
+        
     def getVideoLinks(self, videoUrl):
         printDBG("AnimeTo.getVideoLinks [%s]" % videoUrl)
         videoUrl = strwithmeta(videoUrl)
@@ -235,11 +248,16 @@ class AnimeTo(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
+                        
+        sts, data = self.getPage(self.getFullUrl('token'))
+        if not sts: return []
+        cookieItem = self.uncensored(data)
         
         id = videoUrl.meta.get('id', '')
         params = dict(self.defaultParams)
         params['header'] = dict(self.AJAX_HEADER)
         params['header']['Referer'] = str(videoUrl)
+        params['cookie_items'] = cookieItem
         
         sts, data = self.getPage('https://9anime.to/ajax/episode/info?id=%s&update=0' % id, params)
         if not sts: return []
