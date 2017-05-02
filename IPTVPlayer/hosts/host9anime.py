@@ -229,6 +229,7 @@ class AnimeTo(CBaseHostClass):
             jscode = base64.b64decode('''dmFyIGRvY3VtZW50PXt9Ow0KdmFyIGxvY2F0aW9uPSJodHRwczovLzlhbmltZS50by8iOw0KU3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQp2YXIgZW1wdHlDb2RlPSJmdW5jdGlvbiAoKSB7IFtlY21hc2NyaXB0IGNvZGVdIH0iOw0KQXJyYXkucHJvdG90eXBlLmZpbmQ9ZW1wdHlDb2RlOw0KQXJyYXkucHJvdG90eXBlLmZpbGw9ZW1wdHlDb2RlOw0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZ1bmN0aW9uKGZ1bikNCnsNCiAgICB2YXIgbGVuID0gdGhpcy5sZW5ndGg7DQogICAgaWYgKHR5cGVvZiBmdW4gIT0gImZ1bmN0aW9uIikNCiAgICAgICAgdGhyb3cgbmV3IFR5cGVFcnJvcigpOw0KICAgIHZhciByZXMgPSBuZXcgQXJyYXkoKTsNCiAgICB2YXIgdGhpc3AgPSBhcmd1bWVudHNbMV07DQogICAgZm9yICh2YXIgaSA9IDA7IGkgPCBsZW47IGkrKykNCiAgICB7DQogICAgICAgIGlmIChpIGluIHRoaXMpDQogICAgICAgIHsNCiAgICAgICAgICAgIHZhciB2YWwgPSB0aGlzW2ldOw0KICAgICAgICAgICAgaWYgKGZ1bi5jYWxsKHRoaXNwLCB2YWwsIGksIHRoaXMpKQ0KICAgICAgICAgICAgICAgIHJlcy5wdXNoKHZhbCk7DQogICAgICAgIH0NCiAgICB9DQogICAgcmV0dXJuIHJlczsNCn07DQolcw0KcHJpbnQoZG9jdW1lbnQuY29va2llKTsNCg==''') % (data)                     
             ret = iptv_js_execute( jscode )
             if ret['sts'] and 0 == ret['code']:
+                printDBG(ret['data'])
                 tmp = str(ret['data']).replace(' ', '').split('=')
                 cookieItem = {tmp[0]:tmp[1].split('path')[0][:-1]}
         except Exception:
