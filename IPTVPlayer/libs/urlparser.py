@@ -181,6 +181,7 @@ class urlparser:
                        'donevideo.com':        self.pp.parserLIMEVIDEO     ,
                        'scs.pl':               self.pp.parserSCS           ,
                        'youwatch.org':         self.pp.parserYOUWATCH      ,
+                       'voodaith7e.com':       self.pp.parserYOUWATCH      ,
                        'played.to':            self.pp.parserPLAYEDTO      ,
                        'playedto.me':          self.pp.parserPLAYEDTO      ,
                        'watchers.to':          self.pp.parserWATCHERSTO    ,
