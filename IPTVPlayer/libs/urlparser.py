@@ -414,6 +414,7 @@ class urlparser:
                        'indavideo.hu':         self.pp.parserINDAVIDEOHU    ,
                        '1fichier.com':         self.pp.parser1FICHIERCOM    ,
                        'ultimatedown.com':     self.pp.parserULTIMATEDOWN   ,
+                       'filez.tv':             self.pp.parserFILEZTV        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -873,7 +874,7 @@ class pageParser:
                 urlTab.append({'name':name, 'url':url})
         return urlTab
         
-    def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']', contain=''):
+    def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']', contain='', meta={}):
         linksTab = []
         
         def _isSmil(data):
@@ -900,6 +901,7 @@ class pageParser:
             link = self.cm.ph.getSearchGroups(item, linkMarker)[0].replace('\/', '/')
             if '%3A%2F%2F' in link and '://' not in link:
                 link = urllib.unquote(link)
+            link = strwithmeta(link, meta)
             label = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?[ ]*:[ ]*['"]([^"^']+)['"]''')[0]
             if _isSmil(link):
                 link = _getSmilUrl(link)
@@ -917,6 +919,7 @@ class pageParser:
         if 0 == len(linksTab):
             printDBG('_findLinks B')
             link = self.cm.ph.getSearchGroups(data, linkMarker)[0].replace('\/', '/')
+            link = strwithmeta(link, meta)
             if _isSmil(link):
                 link = _getSmilUrl(link)
             if '://' in link:
@@ -2061,11 +2064,12 @@ class pageParser:
             tmpData = None
             # unpack and decode params from JS player script code
             data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0, r2=True) #YOUWATCH_decryptPlayerParams == VIDUPME_decryptPlayerParams
-
-        printDBG(data)
+            printDBG(data)
+        else:
+            data = allData
         
         # get direct link to file from params
-        linksTab = self._findLinks(data, serverName=urlparser.getDomain(baseUrl))
+        linksTab = self._findLinks(data, serverName=urlparser.getDomain(baseUrl), meta={'Referer':baseUrl})
         if len(linksTab): return linksTab
         
         domain = urlparser.getDomain(url, False) 
@@ -7872,6 +7876,19 @@ class pageParser:
         urlTab = self._getSources(data)
         if len(urlTab): return urlTab
         return self._findLinks(data, contain='mp4')
+        
+    def parserFILEZTV(self, baseUrl):
+        printDBG("parserFILEZTV url[%s]\n" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ')', False)[1].strip()
+        printDBG(data)
+        videoUrl = self.cm.ph.getSearchGroups(data, '''['"]?file['"]?\s*:\s*['"](http[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
+        return False
         
     def parserINDAVIDEOHU(self, baseUrl):
         printDBG("parserINDAVIDEOHU url[%s]\n" % baseUrl)
