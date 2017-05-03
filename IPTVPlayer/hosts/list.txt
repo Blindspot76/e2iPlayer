@@ -1,4 +1,4 @@
-host123moviesto
+host123movies
 host9anime
 host9cartoonme
 hostalltubetv
@@ -28,7 +28,6 @@ hostfighttube
 hostfilisertv
 hostfilma24hdcom
 hostfilmezz
-hostfilmotopia
 hostfilmovizijastudio
 hostfilmstreamvkcom
 hostfilmy3deu
@@ -36,6 +35,7 @@ hostfilmydokumentalneeu
 hostfilmyto
 hostfreediscpl
 hostgamatocom
+hostgomovies
 hostgreekdocumentaries3
 hosthdfilmetv
 hosthdkinomir
