@@ -138,10 +138,10 @@ class T123Movies(CBaseHostClass):
         
         self.SEARCH_URL = self.MAIN_URL + 'search'
         
-        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': 'Movies',     'url':self.MAIN_URL+'movies'   },
-                             {'category':'list_filters',    'title': 'TV-Series',  'url':self.MAIN_URL+'tv-series'},
-                             {'category':'search',          'title': _('Search'), 'search_item':True,             },
-                             {'category':'search_history',  'title': _('Search history'),                         } 
+        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': 'Movies',     'url':self.MAIN_URL+'movies',    'f_type':{'name':'type[]', 'value':'movie'} },
+                             {'category':'list_filters',    'title': 'TV-Series',  'url':self.MAIN_URL+'tv-series', 'f_type':{'name':'type[]', 'value':'series'}},
+                             {'category':'search',          'title': _('Search'), 'search_item':True, },
+                             {'category':'search_history',  'title': _('Search history'),             } 
                             ]
         
     def fillCacheFilters(self, cItem):
@@ -173,7 +173,20 @@ class T123Movies(CBaseHostClass):
                 self.cacheFiltersKeys.append(key)
                 if not allItemAdded:
                     self.cacheFilters[key].insert(0, {'title':allLabel})
-                    
+        
+        # fix problem with GENRE and 'COUNTRY' filter
+        for fixItem in [('f_genre', 'GENRE'), ('f_country', 'COUNTRY')]:
+            key = fixItem[0]
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, fixItem[1], '</ul>', False)[1]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>', withMarkers=True, caseSensitive=False)
+            for item in tmp:
+                url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+                title = self.cleanHtmlStr(item)
+                for idx in range(len(self.cacheFilters[key])):
+                    if self.cacheFilters[key][idx]['title'] == title:
+                        self.cacheFilters[key][idx][key]['url'] = url
+                        break
+        
         # get sort by
         key = 'f_sort'
         self.cacheFilters[key] = []
@@ -214,13 +227,17 @@ class T123Movies(CBaseHostClass):
         if '/search' in url:
             getParams['keyword'] = searchPattern
         else:
+            url = ''
             for key in cItem:
                 if key.startswith('f_') and key not in ['f_idx']:
                     filter = cItem[key]
-                    getParams[filter['name']] = filter['value']
+                    if url == '' and 'url' in filter:
+                        url = filter['url']
+                    else:
+                        getParams[filter['name']] = filter['value']
             
         url += '?' + urllib.urlencode(getParams)
-        sts, data = self.getPage(url)
+        sts, data = self.getPage(self.getFullUrl(url))
         if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="pagination">', '</ul>', False)[1]
