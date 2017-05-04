@@ -7947,7 +7947,7 @@ class pageParser:
         for item in data['Streams']:
             url = item['Url']
             if item.get('Type') == 'Live':
-                url = urlparser.decorateUrl(url, {'iptv_livestream':True})
+                url = urlparser.decorateUrl(url, {'User-Agent':'VLC', 'iptv_livestream':True})
             if self.cm.isValidUrl(url):
                 streamsTab.append({'name':'Type: %s, MediaType: %s, Bandwidth: %s' % (item['Type'], item['MediaType'], item['Bandwidth']), 'url':url})
         
