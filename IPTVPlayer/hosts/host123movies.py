@@ -227,14 +227,16 @@ class T123Movies(CBaseHostClass):
         if '/search' in url:
             getParams['keyword'] = searchPattern
         else:
-            url = ''
+            newUrl = ''
             for key in cItem:
                 if key.startswith('f_') and key not in ['f_idx']:
                     filter = cItem[key]
-                    if url == '' and 'url' in filter:
-                        url = filter['url']
+                    if newUrl == '' and 'url' in filter:
+                        newUrl = filter['url']
                     else:
                         getParams[filter['name']] = filter['value']
+            if newUrl != '':
+                url = newUrl
             
         url += '?' + urllib.urlencode(getParams)
         sts, data = self.getPage(self.getFullUrl(url))
