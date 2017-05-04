@@ -226,12 +226,39 @@ class AnimeTo(CBaseHostClass):
     def uncensored(self, data):    
         cookieItem = {}
         try:
-            jscode = base64.b64decode('''dmFyIGRvY3VtZW50PXt9Ow0KdmFyIGxvY2F0aW9uPSJodHRwczovLzlhbmltZS50by8iOw0KU3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQp2YXIgZW1wdHlDb2RlPSJmdW5jdGlvbiAoKSB7IFtlY21hc2NyaXB0IGNvZGVdIH0iOw0KQXJyYXkucHJvdG90eXBlLmZpbmQ9ZW1wdHlDb2RlOw0KQXJyYXkucHJvdG90eXBlLmZpbGw9ZW1wdHlDb2RlOw0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZ1bmN0aW9uKGZ1bikNCnsNCiAgICB2YXIgbGVuID0gdGhpcy5sZW5ndGg7DQogICAgaWYgKHR5cGVvZiBmdW4gIT0gImZ1bmN0aW9uIikNCiAgICAgICAgdGhyb3cgbmV3IFR5cGVFcnJvcigpOw0KICAgIHZhciByZXMgPSBuZXcgQXJyYXkoKTsNCiAgICB2YXIgdGhpc3AgPSBhcmd1bWVudHNbMV07DQogICAgZm9yICh2YXIgaSA9IDA7IGkgPCBsZW47IGkrKykNCiAgICB7DQogICAgICAgIGlmIChpIGluIHRoaXMpDQogICAgICAgIHsNCiAgICAgICAgICAgIHZhciB2YWwgPSB0aGlzW2ldOw0KICAgICAgICAgICAgaWYgKGZ1bi5jYWxsKHRoaXNwLCB2YWwsIGksIHRoaXMpKQ0KICAgICAgICAgICAgICAgIHJlcy5wdXNoKHZhbCk7DQogICAgICAgIH0NCiAgICB9DQogICAgcmV0dXJuIHJlczsNCn07DQolcw0KcHJpbnQoZG9jdW1lbnQuY29va2llKTsNCg==''') % (data)                     
+            def _getData(data):
+                sIdx = 0
+                eIdx = 0
+                start = False
+                c = 0
+                l = len(data)
+                for idx in range(-1,-l-1,-1):
+                    if ')' == data[idx]:
+                        c += 1
+                        if not start:
+                            start = True
+                            sIdx = idx
+                    elif '(' == data[idx]:
+                        c -= 1
+                    if c == 0 and start:
+                        eIdx = idx
+                        break
+                return data[eIdx+l:sIdx+l+1]
+            
+            tmp = _getData(data)[:-3]
+            printDBG(tmp)
+            printDBG('-----------------------------------')
+            data = _getData(tmp)
+            printDBG(data)
+            printDBG('-----------------------------------')
+            
+            jscode = base64.b64decode('''U3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQpBcnJheS5wcm90b3R5cGUuZmluZD0iZnVuY3Rpb24gZmluZCgpIHsgW25hdGl2ZSBjb2RlXSB9IjsNCkFycmF5LnByb3RvdHlwZS5maWxsPSJmdW5jdGlvbiBmaWxsKCkgeyBbbmF0aXZlIGNvZGVdIH0iOw0KZnVuY3Rpb24gZmlsdGVyKCkNCnsNCiAgICBmdW4gPSBhcmd1bWVudHNbMF07DQogICAgdmFyIGxlbiA9IHRoaXMubGVuZ3RoOw0KICAgIGlmICh0eXBlb2YgZnVuICE9ICJmdW5jdGlvbiIpDQogICAgICAgIHRocm93IG5ldyBUeXBlRXJyb3IoKTsNCiAgICB2YXIgcmVzID0gbmV3IEFycmF5KCk7DQogICAgdmFyIHRoaXNwID0gYXJndW1lbnRzWzFdOw0KICAgIGZvciAodmFyIGkgPSAwOyBpIDwgbGVuOyBpKyspDQogICAgew0KICAgICAgICBpZiAoaSBpbiB0aGlzKQ0KICAgICAgICB7DQogICAgICAgICAgICB2YXIgdmFsID0gdGhpc1tpXTsNCiAgICAgICAgICAgIGlmIChmdW4uY2FsbCh0aGlzcCwgdmFsLCBpLCB0aGlzKSkNCiAgICAgICAgICAgICAgICByZXMucHVzaCh2YWwpOw0KICAgICAgICB9DQogICAgfQ0KICAgIHJldHVybiByZXM7DQp9Ow0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZpbHRlcjsNCnZhciBkdXBhID0gZXZhbCgiJXMiKTsNCmR1cGEgPSAiZnVuY3Rpb24gemFyYXphKCl7IiArIGR1cGEgKyAifTsgcHJpbnQoemFyYXphKCkpIg0KZXZhbChkdXBhKTsNCg==''') % (data)                     
             ret = iptv_js_execute( jscode )
             if ret['sts'] and 0 == ret['code']:
                 printDBG(ret['data'])
-                tmp = str(ret['data']).replace(' ', '').split('=')
-                cookieItem = {tmp[0]:tmp[1].split('path')[0][:-1]}
+                tmp = self.cm.ph.getSearchGroups(ret['data'], '''['"]([^'^"]+?)['"]''')[0]
+                tmp = tmp.replace(' ', '').split('=')
+                cookieItem = {tmp[0]:tmp[1].split(';')[0]}
         except Exception:
             printExc()
         return cookieItem
@@ -267,6 +294,7 @@ class AnimeTo(CBaseHostClass):
         subTrack = ''
         try:
             data = byteify(json.loads(data))
+            printDBG(data)
             subTrack = data.get('subtitle', '')
             if data['type'] == 'iframe':
                 videoUrl = data['target']
