@@ -415,6 +415,8 @@ class urlparser:
                        '1fichier.com':         self.pp.parser1FICHIERCOM    ,
                        'ultimatedown.com':     self.pp.parserULTIMATEDOWN   ,
                        'filez.tv':             self.pp.parserFILEZTV        ,
+                       'wiiz.tv':              self.pp.parserWIIZTV         ,
+                       'tunein.com':           self.pp.parserTUNEINCOM      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -7889,6 +7891,67 @@ class pageParser:
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         return False
+        
+    def parserWIIZTV(self, baseUrl):
+        printDBG("parserWIIZTV url[%s]\n" % baseUrl)
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'}
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        playerUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=["']([^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(playerUrl):
+            playerUrl = urlparser.decorateUrl(playerUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+            urlsTab = getDirectM3U8Playlist(playerUrl, checkExt=True, checkContent=True)
+            if len(urlsTab):
+                return urlsTab
+        return False
+        
+    def parserTUNEINCOM(self, baseUrl):
+        printDBG("parserTUNEINCOM url[%s]\n" % baseUrl)
+        streamsTab = []
+        
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0', 'Referer':baseUrl}
+        
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'TuneIn.payload =', '});', False)[1].strip()
+        tmp = byteify(json.loads(tmp))
+        
+        
+        partnerId = self.cm.ph.getSearchGroups(data, '''partnerServiceId\s*=\s*['"]([^'^"]+?)['"]''')[0]
+        if partnerId == '': partnerId = self.cm.ph.getSearchGroups(data, '''embedPartnerKey\s*=\s*['"]([^'^"]+?)['"]''')[0]
+        
+        stationId = tmp['EmbedPlayer']['guideItem']['Id']
+        itemToken = tmp['EmbedPlayer']['guideItem']['Token']
+        tuneType  = tmp['EmbedPlayer']['guideItem']['Type']
+        
+        url = 'http://tunein.com/tuner/tune/?tuneType=%s&preventNextTune=true&waitForAds=false&audioPrerollEnabled=false&partnerId=%s&stationId=%s&itemToken=%s' % (tuneType, partnerId, stationId, itemToken)
+        
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts: return False
+        data = byteify(json.loads(data))
+        printDBG(data)
+        printDBG("---------------------------------")
+        url  = data['StreamUrl']
+        if url.startswith('//'): url = 'http:' + url
+        
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+        if not sts: return False
+        data = byteify(json.loads(data))
+        printDBG(data)
+        printDBG("---------------------------------")
+        
+        for item in data['Streams']:
+            url = item['Url']
+            if item.get('Type') == 'Live':
+                url = urlparser.decorateUrl(url, {'iptv_livestream':True})
+            if self.cm.isValidUrl(url):
+                streamsTab.append({'name':'Type: %s, MediaType: %s, Bandwidth: %s' % (item['Type'], item['MediaType'], item['Bandwidth']), 'url':url})
+        
+        return streamsTab 
         
     def parserINDAVIDEOHU(self, baseUrl):
         printDBG("parserINDAVIDEOHU url[%s]\n" % baseUrl)

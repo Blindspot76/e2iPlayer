@@ -33,6 +33,7 @@ from Plugins.Extensions.IPTVPlayer.libs.yooanimecom       import YooanimeComApi
 from Plugins.Extensions.IPTVPlayer.libs.livetvhdnet       import LivetvhdNetApi
 from Plugins.Extensions.IPTVPlayer.libs.karwantv          import KarwanTvApi
 from Plugins.Extensions.IPTVPlayer.libs.wizjatv           import WizjaTvApi, GetConfigList as WizjaTV_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.wiiztv            import WiizTvApi
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
 
 
@@ -151,6 +152,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'skylinewebcams.com',      'name': 'skylinewebcams.com',  'title': 'SkyLineWebCams.com',                'url': 'https://www.skylinewebcams.com/',                                    'icon': 'https://cdn.skylinewebcams.com/skylinewebcams.png'}, \
                         {'alias_id':'livespotting.tv',         'name': 'livespotting.tv',     'title': 'Livespotting.tv',                   'url': 'http://livespotting.tv/',                                            'icon': 'http://livespotting.tv/img/ls_logo.png'}, \
                         {'alias_id':'inne_matzg',              'name': 'm3u',                 'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.prv.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.prv.pl/iptv.png'}, \
+                        {'alias_id':'wiiz.tv',                 'name': 'wiiz.tv',             'title': 'wiiz.tv',                           'url': 'http://www.wiiz.tv/',                                                'icon': 'http://www.wiiz.tv/logowiiz.png'}, \
                         {'alias_id':'filmon.com',              'name': 'filmon_groups',       'title': 'FilmOn TV',                         'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://2.bp.blogspot.com/-SVJ4uZ2-zPc/UBAZGxREYRI/AAAAAAAAAKo/lpbo8OFLISU/s1600/ustvnow.png'}, \
                         {'alias_id':'showsport-tv.com',        'name': 'showsport-tv.com',    'title': 'showsport-tv.com',                  'url': 'http://showsport-tv.com/',                                           'icon': 'http://showsport-tv.com/img/logo1-white-inverse.png'}, \
@@ -204,6 +206,7 @@ class HasBahCa(CBaseHostClass):
         self.livespottingTvApi    = None
         self.karwanTvApi          = None
         self.wizjaTvApi           = None
+        self.wiizTvApi            = None
         
         self.weebTvApi    = None
         self.hasbahcaiptv = {}
@@ -798,6 +801,24 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.wizjaTvApi.getVideoLink(cItem)
         return urlsTab
         
+    def getWiizTvList(self, cItem):
+        printDBG("getWiizTvList start")
+        if None == self.wiizTvApi:
+            self.wiizTvApi = WiizTvApi()
+        tmpList = self.wiizTvApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']:
+                self.addVideo(item) 
+            elif 'audio' == item['type']:
+                self.addAudio(item) 
+            else:
+                self.addDir(item)
+        
+    def getWiizTvLink(self, cItem):
+        printDBG("getWiizTvLink start")
+        urlsTab = self.wiizTvApi.getVideoLink(cItem)
+        return urlsTab
+        
     def getTelewizjaLiveComList(self, cItem):
         printDBG("getTelewizjaLiveComList start")
         if None == self.telewizjaLiveComApi:
@@ -1057,6 +1078,9 @@ class HasBahCa(CBaseHostClass):
     #wizja.tv items
         elif name == 'wizja.tv':
             self.getWizjaTvList(self.currItem)
+    #wiiz.tv items
+        elif name == 'wiiz.tv':
+            self.getWiizTvList(self.currItem)
     #telewizja-live.com items
         elif name == 'telewizja-live.com':
             self.getTelewizjaLiveComList(self.currItem)
@@ -1165,6 +1189,8 @@ class IPTVHost(CHostBase):
             urlList = self.host.getKarwanTvLink(cItem)
         elif name == 'wizja.tv':
             urlList = self.host.getWizjaTvLink(cItem)
+        elif name == 'wiiz.tv':
+            urlList = self.host.getWiizTvLink(cItem)
         elif name == 'telewizja-live.com':
             urlList = self.host.getTelewizjaLiveComLink(cItem)
         elif name == 'tele-wizja.com':
