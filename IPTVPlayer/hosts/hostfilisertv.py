@@ -320,7 +320,7 @@ class FiliserTv(CBaseHostClass):
         
         if self.WaitALittleBit == None:
             try:
-                tmp = 'ZGVmIHphcmF6YShpbl9hYmMpOg0KICAgIGRlZiByaGV4KGEpOg0KICAgICAgICBoZXhfY2hyID0gJzAxMjM0NTY3ODlhYmNkZWYnDQogICAgICABiID0gZmYoYiwgYywgZCwgYSwgdGFiQlszXSwgMjIsIC0xMDQ0NTI1MzMwKTsN\rZGVmIFdhaXRBTGl0dGxlQml0KHRyaWVzKToNCiAgICBmaXJzdEJ5dGUgPSBbODUsMTA5LDg5LDkxLDQ2LDE3OCwyMTcsMjEzXQ0KICAgIGlwID0gJyVzLiVzLiVzLiVzJyAlIChmaXJzdEJ5dGVbcmFuZGludCgwLCBsZW4oZmlyc3RCeXRlKSldLCByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NikpDQogICAgcmV0dXJuIHsnVXNlci1BZ2VudCc6J01vemlsbGEvNS4wICglcyknICUgaXAsJ0FjY2VwdCc6J3RleHQvaHRtbCcsJ1gtRm9yd2FyZGVkLUZvcic6aXB9DQoNCg=='
+                tmp = 'ZGVmIHphcmF6YShpbl9hYmMpOg0KICAgIGRlZiByaGV4KGEpOg0KICAgICAgICBoZXhfY2hyID0gJzAxMjM0NTY3ODlhYmNkZWYnDQogICAgICABiID0gZmYoYiwgYywgZCwgYSwgdGFiQlszXSwgMjIsIC0xMDQ0NTI1MzMwKTsN\rZGVmIFdhaXRBTGl0dGxlQml0KHRyaWVzKToNCiAgICBmaXJzdEJ5dGUgPSBbODUsMTA5LDg5LDkxLDQ2LDE3OCwyMTcsMjEzXQ0KICAgIGlwID0gJyVzLiVzLiVzLiVzJyAlIChmaXJzdEJ5dGVbcmFuZGludCgwLCBsZW4oZmlyc3RCeXRlKSldLCByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NiksICByYW5kaW50KDAsIDI0NikpDQogICAgcmV0dXJuIHsnVXNlci1BZ2VudCc6J01vemlsbGEvNS4wJywnQWNjZXB0JzondGV4dC9odG1sJywnWC1Gb3J3YXJkZWQtRm9yJzppcH0NCg0K'
                 tmp = base64.b64decode(tmp.split('\r')[-1]).replace('\r', '')
                 WaitALittleBit = compile(tmp, '', 'exec')
                 vGlobals = {"__builtins__": None, 'len': len, 'list': list, 'dict':dict, 'randint':randint}
@@ -427,6 +427,7 @@ class FiliserTv(CBaseHostClass):
             if salt not in FiliserTv.SALT_CACHE:
                 httpParams = dict(self.defaultParams)
                 tries = 0
+                googleCaptcha = False
                 while tries < 6:
                     reCaptcha = False
                     
@@ -435,11 +436,12 @@ class FiliserTv(CBaseHostClass):
                     #    rm(self.COOKIE_FILE)
                     
                     url = 'http://filiser.tv/embed?salt=' + videoUrl
-                    if reCaptcha: httpParams['header'] = self.getHeaders(tries)
+                    if tries > 1 and googleCaptcha: httpParams['header'] = self.getHeaders(tries)
                     sts, data = self.getPage(url, httpParams)
                     if not sts: return urlTab
                     
                     if '/captchaResponse' in data:
+                        googleCaptcha = True
                         reCaptcha = True
                         sleep(1)
                         continue

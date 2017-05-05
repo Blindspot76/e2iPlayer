@@ -556,7 +556,8 @@ class common:
                         params2 = dict(params)
                         params2['load_cookie'] = True
                         params2['save_cookie'] = True
-                        params2['header'] = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
+                        params2['header'] = dict(params.get('header', {}))
+                        params2['header'].update({'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'})
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
                         time.sleep(5-(time.time() - start_time))
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
