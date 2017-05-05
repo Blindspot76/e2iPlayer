@@ -3848,6 +3848,18 @@ class pageParser:
         
     def parserUSTREAMTV(self, linkUrl):
         printDBG("parserUSTREAMTV linkUrl[%s]" % linkUrl)
+        WS_URL = "http://r{0}-1-{1}-{2}-{3}.ums.ustream.tv"
+        def generate_rsid():
+            return "{0:x}:{1:x}".format(randint(0, 1e10), randint(0, 1e10))
+
+        def generate_rpin():
+            return "_rpin.{0:x}".format(randint(0, 1e15))
+        
+        referer = linkUrl
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25', 'Accept':'*/*', 'Accept-Encoding': 'gzip, deflate', 'Referer': referer}
+        COOKIE_FILE = GetCookieDir('ustreamtv.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
+        
         #http://www.ustream.tv/channel/nasa-educational
         linksTab = []
         live = True
@@ -3872,7 +3884,31 @@ class pageParser:
             
             # get mobile streams
             if live:
-                playlist_url = "http://iphone-streaming.ustream.tv/uhls/%s/streams/live/iphone/playlist.m3u8" % channelID
+                rsid = generate_rsid()
+                rpin = generate_rpin()
+                mediaId = channelID
+                apiUrl = WS_URL.format(randint(0, 0xffffff), mediaId, 'channel', 'lp-live') + '/1/ustream'
+                #('password', '')
+                url = apiUrl + '?' + urllib.urlencode([('media', mediaId), ('referrer', referer), ('appVersion', 2), ('application', 'channel'), ('rsid', rsid), ('appId', 11), ('rpin', rpin), ('type', 'viewer') ])
+                sts, data = self.cm.getPage(url, params)
+                if not sts: return []
+                data = byteify(json.loads(data))
+                printDBG(data)
+                host = data[0]['args'][0]['host']
+                connectionId = data[0]['args'][0]['connectionId']
+                if len(host):
+                    apiUrl = "http://" + host + '/1/ustream'
+                url = apiUrl + '?connectionId=' + str(connectionId)
+                
+                for i in range(5):
+                    sts, data = self.cm.getPage(url, params)
+                    if not sts: continue
+                    if 'm3u8' in data:
+                        break
+                    time.sleep(1)
+                data = byteify(json.loads(data))
+                # playlist_url = "http://iphone-streaming.ustream.tv/uhls/%s/streams/live/iphone/playlist.m3u8" % channelID
+                playlist_url = data[0]['args'][0]['stream'][0]['url']
                 try:
                     retTab = getDirectM3U8Playlist(playlist_url)
                     if len(retTab):
