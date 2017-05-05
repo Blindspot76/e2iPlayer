@@ -7339,27 +7339,46 @@ class pageParser:
         
     def parserOKRU(self, baseUrl):
         printDBG("parserOKRU baseUrl[%r]" % baseUrl)
-        if 'videoPlayerMetadata' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([0-9]+)/')[0]
-            if video_id == '': return False
-            url = 'http://ok.ru/dk?cmd=videoPlayerMetadata&mid=%s' % video_id
-        else:
-            url = baseUrl
-        
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0',
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36',
                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                        'Referer':baseUrl,
                        'Cookie':'_flashVersion=18',
                        'X-Requested-With':'XMLHttpRequest'}
-        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts: return False
-        data = byteify(json.loads(data))
+        
+        if 'videoPlayerMetadata' not in baseUrl:
+            sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+            if not sts: return False
+            data = self.cm.ph.getSearchGroups(data, '''data-options=['"]([^'^"]+?)['"]''')[0]
+            data = clean_html(data)
+            data = byteify(json.loads(data))
+            data = byteify(json.loads(data['flashvars']['metadata']))
+        else:
+            url = baseUrl
+            sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
+            if not sts: return False
+            data = byteify(json.loads(data))
+        
         urlsTab = []
         for item in data['videos']:
             url = item['url'].replace('&ct=4&', '&ct=0&') + '&bytes'#=0-7078'
             url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
             urlsTab.append({'name':item['name'], 'url':url})
-        return urlsTab[::-1]
+        urlsTab = urlsTab[::-1]
+        
+        if 1: #0 == len(urlsTab):
+            url = urlparser.decorateUrl(data['hlsManifestUrl'], {'iptv_proto':'m3u8', 'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            linksTab = getDirectM3U8Playlist(url, checkExt=False, checkContent=True)
+            
+            for idx in range(len(linksTab)):
+                meta = dict(linksTab[idx]['url'].meta)
+                meta['iptv_proto'] = 'm3u8'
+                url = linksTab[idx]['url']
+                if url.endswith('/'):
+                    linksTab[idx]['url'] = strwithmeta(url+'playlist.m3u8', meta)
+                    
+            try: urlsTab.extend(sorted(linksTab, key=lambda item: -1 * int(item.get('bitrate', 0))))
+            except Exception:  printExc()
+        return urlsTab
         
     def parserALLOCINEFR(self, baseUrl):
         printDBG("parserOKRU baseUrl[%r]" % baseUrl)
