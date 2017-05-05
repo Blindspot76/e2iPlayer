@@ -3907,14 +3907,14 @@ class pageParser:
                         break
                     time.sleep(1)
                 data = byteify(json.loads(data))
-                # playlist_url = "http://iphone-streaming.ustream.tv/uhls/%s/streams/live/iphone/playlist.m3u8" % channelID
                 playlist_url = data[0]['args'][0]['stream'][0]['url']
                 try:
                     retTab = getDirectM3U8Playlist(playlist_url)
                     if len(retTab):
                         for item in retTab:
-                            name = ('ustream.tv %s' % item.get('heigth', 0)) + '_mobile'
-                            url = urlparser.decorateUrl(item['url'], {'iptv_livestream': True})
+                            pyCmd = GetPyScriptCmd('ustreamtv') + ' "%s" "%s" "%s" "%s" ' % (item['width'], mediaId, referer, HTTP_HEADER['User-Agent'])
+                            name = ('ustream.tv %s' % item.get('heigth', 0))
+                            url = urlparser.decorateUrl("ext://url/" + item['url'], {'iptv_proto':'em3u8', 'iptv_livestream': True, 'iptv_refresh_cmd':pyCmd})
                             linksTab.append({'name':name, 'url':url})
                         break
                 except Exception:
