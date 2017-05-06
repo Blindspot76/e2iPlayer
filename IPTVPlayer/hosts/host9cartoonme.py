@@ -51,33 +51,35 @@ def gettytul():
     return 'http://9cartoon.me/'
 
 class CartoonME(CBaseHostClass):
-    USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'9cartoon.me', 'cookie':'CartoonME.cookie'})
+        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36'
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        
+        self.COOKIE_FILE_2 = GetCookieDir('CartoonME_links.cookie')
         self.MAIN_URL = 'http://9cartoon.me/'
         self.SEARCH_URL = self.MAIN_URL +'Search?s='
         
-        self.DEFAULT_ICON  = "http://www.siwallpaperhd.com/wp-content/uploads/2015/07/spongebob_squarepants_face_wallpaper_hd_8_cartoon-724x453.png"
-        self.MAIN_CAT_TAB = [{'category':'list_types',  'title': _('Cartoon list'),   'url':self.MAIN_URL+'CartoonList', 'icon':self.DEFAULT_ICON},
-                             {'category':'categories',  'title': _('Genres'),         'url':self.MAIN_URL, 'icon':self.DEFAULT_ICON},
-                             {'category':'search',          'title': _('Search'), 'search_item':True, 'icon':self.DEFAULT_ICON},
-                             {'category':'search_history',  'title': _('Search history'),             'icon':self.DEFAULT_ICON} ]
+        self.DEFAULT_ICON_URL  = "http://www.siwallpaperhd.com/wp-content/uploads/2015/07/spongebob_squarepants_face_wallpaper_hd_8_cartoon-724x453.png"
+        
+        self.MAIN_CAT_TAB = [{'category':'list_types',      'title': _('Cartoon list'),   'url':self.getFullUrl('CartoonList')},
+                             {'category':'categories',      'title': _('Genres'),         'url':self.getMainUrl()             },
+                             {'category':'search',          'title': _('Search'),         'search_item':True                  },
+                             {'category':'search_history',  'title': _('Search history')                                      } ]
         
         
     def getPage(self, baseUrl, params={}, post_data=None):
         if params == {}: params = dict(self.defaultParams)
-        params['cloudflare_params'] = {'domain':'9cartoon.me', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
-        
         def _getFullUrl(url):
             if self.cm.isValidUrl(url):
                 return url
             else:
                 return urlparse.urljoin(baseUrl, url)
-            
-        params['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        
+        tmp = self.defaultParams.get('header', {})
+        USER_AGENT = tmp.get('USER_AGENT', self.USER_AGENT)
+        
+        params['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':USER_AGENT, 'full_url_handle':_getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
     def getFullIconUrl(self, url):
