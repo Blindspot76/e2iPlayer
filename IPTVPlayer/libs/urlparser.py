@@ -7360,7 +7360,7 @@ class pageParser:
         
         urlsTab = []
         for item in data['videos']:
-            url = item['url'].replace('&ct=4&', '&ct=0&') + '&bytes'#=0-7078'
+            url = item['url'].replace('&ct=4&', '&ct=0&') #+ '&bytes'#=0-7078'
             url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
             urlsTab.append({'name':item['name'], 'url':url})
         urlsTab = urlsTab[::-1]
