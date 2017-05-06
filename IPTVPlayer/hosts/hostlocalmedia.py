@@ -62,6 +62,14 @@ def GetConfigList():
 
 def gettytul():
     return (_('LocalMedia'))
+    
+def iptv_execute_wrapper(cmd):
+    printDBG("LocalMedia.iptv_execute_wrapper cmd[%r]" % cmd)
+    obj = iptv_execute()
+    ret = obj(cmd)
+    obj = None
+    printDBG("LocalMedia.iptv_execute_wrapper ret[%r]" % ret)
+    return ret
 
 class LocalMedia(CBaseHostClass):
     ISO_MOUNT_POINT_NAME = '.iptvplayer_iso'
@@ -173,7 +181,7 @@ class LocalMedia(CBaseHostClass):
         table = []
         
         cmd = 'mount  2>&1'
-        ret = iptv_execute()(cmd)
+        ret = iptv_execute_wrapper(cmd)
         if ret['sts']:
             data = ret.get('data', '')
             if 0 == ret['code']:
@@ -217,11 +225,11 @@ class LocalMedia(CBaseHostClass):
             # umount if different image already mounted
             if self.isMountPoint(defaultMountPoint):
                 cmd = 'umount "{0}"'.format(defaultMountPoint) + ' 2>&1'
-                ret = iptv_execute()(cmd)
+                ret = iptv_execute_wrapper(cmd)
                 if ret['sts'] and 0 != ret['code']:
                     # normal umount failed, so detach filesystem only
                     cmd = 'umount -l "{0}"'.format(defaultMountPoint) + ' 2>&1'
-                    ret = iptv_execute()(cmd)
+                    ret = iptv_execute_wrapper(cmd)
                     
             # now mount the iso file
             if not mkdirs(defaultMountPoint):
@@ -230,7 +238,7 @@ class LocalMedia(CBaseHostClass):
                 return
             else:
                 cmd = 'mount -r "{0}" "{1}"'.format(path, defaultMountPoint) + ' 2>&1'
-                ret = iptv_execute()(cmd)
+                ret = iptv_execute_wrapper(cmd)
                 if ret['sts']:
                     if 0 != ret['code']:
                         message = _('Mount ISO file [%s] on [%s] failed.\nReturn code[%s].\nReturn data[%s].') % (path, defaultMountPoint, ret['code'], ret['data'])
@@ -257,7 +265,7 @@ class LocalMedia(CBaseHostClass):
         path  = cItem['path']
         cmd = self.prepareCmd(path, start, end+1) + ' 2>&1'
         printDBG("cmd [%s]" % cmd) 
-        ret = iptv_execute()(cmd)
+        ret = iptv_execute_wrapper(cmd)
         printDBG(ret)
         
         if ret['sts'] and 0 == ret['code']:
@@ -564,7 +572,7 @@ class IPTVHost(CHostBase):
                         self.needRefresh = cutPath
                     elif self.cType == 'copy':
                         cmd = 'cp "%s" "%s"' % (self.cFilePath, newPath)
-                        ret = iptv_execute()(cmd)
+                        ret = iptv_execute_wrapper(cmd)
                 if ok:
                     self.cType =  ''
                     self.cFilePath =  ''
@@ -574,11 +582,11 @@ class IPTVHost(CHostBase):
                 printExc()
         elif privateData['action'] == 'umount_iso_file':
             cmd = 'umount "{0}"'.format(privateData['iso_mount_path']) + ' 2>&1'
-            ret = iptv_execute()(cmd)
+            ret = iptv_execute_wrapper(cmd)
             if ret['sts'] and 0 != ret['code']:
                 # normal umount failed, so detach filesystem only
                 cmd = 'umount -l "{0}"'.format(privateData['iso_mount_path']) + ' 2>&1'
-                ret = iptv_execute()(cmd)
+                ret = iptv_execute_wrapper(cmd)
         
         return RetHost(retCode, value=retlist)
         
