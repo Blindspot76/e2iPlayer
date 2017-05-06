@@ -226,37 +226,11 @@ class AnimeTo(CBaseHostClass):
     def uncensored(self, data):    
         cookieItem = {}
         try:
-            def _getData(data):
-                sIdx = 0
-                eIdx = 0
-                start = False
-                c = 0
-                l = len(data)
-                for idx in range(-1,-l-1,-1):
-                    if ')' == data[idx]:
-                        c += 1
-                        if not start:
-                            start = True
-                            sIdx = idx
-                    elif '(' == data[idx]:
-                        c -= 1
-                    if c == 0 and start:
-                        eIdx = idx
-                        break
-                return data[eIdx+l:sIdx+l+1]
-            
-            tmp = _getData(data)[:-3]
-            printDBG(tmp)
-            printDBG('-----------------------------------')
-            data = _getData(tmp)
-            printDBG(data)
-            printDBG('-----------------------------------')
-            
-            jscode = base64.b64decode('''U3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQpBcnJheS5wcm90b3R5cGUuZmluZD0iZnVuY3Rpb24gZmluZCgpIHsgW25hdGl2ZSBjb2RlXSB9IjsNCkFycmF5LnByb3RvdHlwZS5maWxsPSJmdW5jdGlvbiBmaWxsKCkgeyBbbmF0aXZlIGNvZGVdIH0iOw0KZnVuY3Rpb24gZmlsdGVyKCkNCnsNCiAgICBmdW4gPSBhcmd1bWVudHNbMF07DQogICAgdmFyIGxlbiA9IHRoaXMubGVuZ3RoOw0KICAgIGlmICh0eXBlb2YgZnVuICE9ICJmdW5jdGlvbiIpDQogICAgICAgIHRocm93IG5ldyBUeXBlRXJyb3IoKTsNCiAgICB2YXIgcmVzID0gbmV3IEFycmF5KCk7DQogICAgdmFyIHRoaXNwID0gYXJndW1lbnRzWzFdOw0KICAgIGZvciAodmFyIGkgPSAwOyBpIDwgbGVuOyBpKyspDQogICAgew0KICAgICAgICBpZiAoaSBpbiB0aGlzKQ0KICAgICAgICB7DQogICAgICAgICAgICB2YXIgdmFsID0gdGhpc1tpXTsNCiAgICAgICAgICAgIGlmIChmdW4uY2FsbCh0aGlzcCwgdmFsLCBpLCB0aGlzKSkNCiAgICAgICAgICAgICAgICByZXMucHVzaCh2YWwpOw0KICAgICAgICB9DQogICAgfQ0KICAgIHJldHVybiByZXM7DQp9Ow0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZpbHRlcjsNCnZhciBkdXBhID0gZXZhbCgiJXMiKTsNCmR1cGEgPSAiZnVuY3Rpb24gemFyYXphKCl7IiArIGR1cGEgKyAifTsgcHJpbnQoemFyYXphKCkpIg0KZXZhbChkdXBhKTsNCg==''') % (data)                     
+            jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgbG9jYXRpb24gPSAiaHR0cHM6Ly85YW5pbWUudG8vIjsNClN0cmluZy5wcm90b3R5cGUuaXRhbGljcz1mdW5jdGlvbigpe3JldHVybiAiPGk+PC9pPiI7fTsNClN0cmluZy5wcm90b3R5cGUubGluaz1mdW5jdGlvbigpe3JldHVybiAiPGEgaHJlZj1cInVuZGVmaW5lZFwiPjwvYT4iO307DQpTdHJpbmcucHJvdG90eXBlLmZvbnRjb2xvcj1mdW5jdGlvbigpe3JldHVybiAiPGZvbnQgY29sb3I9XCJ1bmRlZmluZWRcIj48L2ZvbnQ+Ijt9Ow0KQXJyYXkucHJvdG90eXBlLmZpbmQ9ImZ1bmN0aW9uIGZpbmQoKSB7IFtuYXRpdmUgY29kZV0gfSI7DQpBcnJheS5wcm90b3R5cGUuZmlsbD0iZnVuY3Rpb24gZmlsbCgpIHsgW25hdGl2ZSBjb2RlXSB9IjsNCmZ1bmN0aW9uIGZpbHRlcigpDQp7DQogICAgZnVuID0gYXJndW1lbnRzWzBdOw0KICAgIHZhciBsZW4gPSB0aGlzLmxlbmd0aDsNCiAgICBpZiAodHlwZW9mIGZ1biAhPSAiZnVuY3Rpb24iKQ0KICAgICAgICB0aHJvdyBuZXcgVHlwZUVycm9yKCk7DQogICAgdmFyIHJlcyA9IG5ldyBBcnJheSgpOw0KICAgIHZhciB0aGlzcCA9IGFyZ3VtZW50c1sxXTsNCiAgICBmb3IgKHZhciBpID0gMDsgaSA8IGxlbjsgaSsrKQ0KICAgIHsNCiAgICAgICAgaWYgKGkgaW4gdGhpcykNCiAgICAgICAgew0KICAgICAgICAgICAgdmFyIHZhbCA9IHRoaXNbaV07DQogICAgICAgICAgICBpZiAoZnVuLmNhbGwodGhpc3AsIHZhbCwgaSwgdGhpcykpDQogICAgICAgICAgICAgICAgcmVzLnB1c2godmFsKTsNCiAgICAgICAgfQ0KICAgIH0NCiAgICByZXR1cm4gcmVzOw0KfTsNCkFycmF5LnByb3RvdHlwZS5maWx0ZXIgPSBmaWx0ZXI7DQolcw0KcHJpbnQoZG9jdW1lbnQuY29va2llKTsNCg==''') % (data)                     
             ret = iptv_js_execute( jscode )
             if ret['sts'] and 0 == ret['code']:
                 printDBG(ret['data'])
-                tmp = self.cm.ph.getSearchGroups(ret['data'], '''['"]([^'^"]+?)['"]''')[0]
+                tmp = ret['data'].split(';')[0]
                 tmp = tmp.replace(' ', '').split('=')
                 cookieItem = {tmp[0]:tmp[1].split(';')[0]}
         except Exception:
