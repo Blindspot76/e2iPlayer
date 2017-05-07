@@ -1025,7 +1025,7 @@ class pageParser:
                     tUrl  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
                     printDBG(tUrl)
                     if self.cm.isValidUrl(tUrl):
-                        videoTab.append({'name':'[%s] %s' % (tType, domain), 'url':tUrl})
+                        videoTab.append({'name':'[%s] %s' % (tType, domain), 'url':strwithmeta(tUrl, {'User-Agent': userAgent})})
                 if len(videoTab):
                     return videoTab
             
@@ -1055,7 +1055,7 @@ class pageParser:
             errUrl = re.search("url=([^&]+?)&", data).group(1)
             if '' != errUrl: url = errUrl
             if '' != url:
-                videoTab.append({'name':'base', 'url':url})
+                videoTab.append({'name':'base', 'url':strwithmeta(url, {'User-Agent': userAgent})})
         except Exception:
             printExc()
         return videoTab
