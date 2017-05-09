@@ -9,6 +9,7 @@ hostarconaitvme
 hostardmediathek
 hostbajeczkiorg
 hostbbciplayer
+hostbsto
 hostcartoonhd
 hostcdapl
 hostchiaanimeco
