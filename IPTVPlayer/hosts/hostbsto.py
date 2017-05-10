@@ -24,7 +24,7 @@ import random
 import base64
 import hashlib
 from binascii import hexlify, unhexlify
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
@@ -74,7 +74,7 @@ class BSTO(CBaseHostClass):
         
         def _getFullUrl(url):
             if self.cm.isValidUrl(url): return url
-            else: return urlparse.urljoin(baseUrl, url)
+            else: return urljoin(baseUrl, url)
         
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
@@ -117,7 +117,7 @@ class BSTO(CBaseHostClass):
         for item in tab:
             params = dict(cItem)
             params.update(item)
-            params.update({'good_for_fav':True, 'category':nextCategory})
+            params.update({'good_for_fav':True, 'category':nextCategory, 'icon':item['url'] + '?fake=need_resolve.jpeg'})
             self.addDir(params)
     
     def listSeasons(self, cItem, nextCategory):
@@ -206,7 +206,7 @@ class BSTO(CBaseHostClass):
             item = self.cacheSeries[item['idx']]
             params = dict(cItem)
             params.update(item)
-            params.update({'good_for_fav':True, 'category':'list_seasons'})
+            params.update({'good_for_fav':True, 'category':'list_seasons', 'icon':item['url'] + '?fake=need_resolve.jpeg'})
             self.addDir(params)
     
     def getLinksForVideo(self, cItem, forEpisodes=False):
