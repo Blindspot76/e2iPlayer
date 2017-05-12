@@ -166,7 +166,7 @@ class Youtube(CBaseHostClass):
             
     def listSearchResult(self, cItem, pattern, searchType):
         page = self.currItem.get("page", '1')
-        tmpList =  self.ytp.getSearchResult(urllib.quote_plus(pattern), searchType, page, 'Wyszukaj', config.plugins.iptvplayer.ytSortBy.value)
+        tmpList =  self.ytp.getSearchResult(urllib.quote_plus(pattern), searchType, page, 'search', config.plugins.iptvplayer.ytSortBy.value)
         for item in tmpList:
             item.update({'name':'category'})
             if 'video' == item['type']:

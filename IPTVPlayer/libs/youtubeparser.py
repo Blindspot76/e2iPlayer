@@ -354,7 +354,7 @@ class YouTubeParser():
         try:
             sts,data =  self.cm.getPage(url, {'host': self.HOST})
             if sts:
-                self.cm.ph.writeToFile('/mnt/new2/yt.html', data)
+                #self.cm.ph.writeToFile('/mnt/new2/yt.html', data)
                 if '1' == page:
                     sts,data = CParsingHelper.getDataBeetwenMarkers(data, '<div class="yt-lockup clearfix', 'footer-container')
                 else:
