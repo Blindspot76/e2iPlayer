@@ -13,8 +13,8 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 
 class CUrlItem:
     def __init__(self, name = "", url = "", urlNeedsResolve = 0):
-        self.name = name
-        self.url = url # used only for TYPE_VIDEO item 
+        self.name = str(name)
+        self.url = str(url) # used only for TYPE_VIDEO item 
         self.urlNeedsResolve = urlNeedsResolve #  additional request to host is needed to resolv this url (url is not direct link)
 ## class CDisplayListItem
 # define attribiutes for item of diplay list
@@ -42,12 +42,15 @@ class CDisplayListItem:
                 possibleTypesOfSearch = None, \
                 pinLocked = False, \
                 isGoodForFavourites = False):
-        self.name = name
-        self.description = description
-        self.type = type
-        self.iconimage = iconimage
-        self.pinLocked = pinLocked
-        self.isGoodForFavourites = isGoodForFavourites
+        self.name = str(name)
+        self.description = str(description)
+        self.type = str(type)
+        self.iconimage = str(iconimage)
+        if pinLocked: self.pinLocked = True
+        else: self.pinLocked = False
+            
+        if isGoodForFavourites: self.isGoodForFavourites = True
+        else: self.isGoodForFavourites = False
         
         # used only for TYPE_VIDEO item
         self.urlItems = urlItems # url to VIDEO
