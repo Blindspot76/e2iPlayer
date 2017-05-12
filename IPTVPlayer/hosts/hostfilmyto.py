@@ -58,12 +58,12 @@ class FilmyTo(CBaseHostClass):
         self.MAIN_URL = 'http://filmy.to/'
         self.DEFAULT_ICON_URL = self.MAIN_URL + 'static/frontend/img/logo.06ac9ed751db.png'
         
-        self.MAIN_CAT_TAB = [{'category':'list_items',        'title': _('Movies'),                       'url':self.getFullUrl('filmy/'),        'icon':self.DEFAULT_ICON_URL},
-                             {'category':'list_items',        'title': _('Series'),                       'url':self.getFullUrl('seriale/'),      'icon':self.DEFAULT_ICON_URL},
-                             {'category':'list_items',        'title': _('Dokumentalne'),                 'url':self.getFullUrl('dokumentalne/'), 'icon':self.DEFAULT_ICON_URL},
-                             {'category':'list_items',        'title': _('Dla dzieci'),                   'url':self.getFullUrl('dzieci/'),       'icon':self.DEFAULT_ICON_URL},
-                             {'category':'search',            'title': _('Search'), 'search_item':True,         'icon':self.DEFAULT_ICON_URL},
-                             {'category':'search_history',    'title': _('Search history'),                     'icon':self.DEFAULT_ICON_URL} 
+        self.MAIN_CAT_TAB = [{'category':'list_items',        'title': _('Movies'),                       'url':self.getFullUrl('filmy/'),        },
+                             {'category':'list_items',        'title': _('Series'),                       'url':self.getFullUrl('seriale/'),      },
+                             {'category':'list_items',        'title': _('Dokumentalne'),                 'url':self.getFullUrl('dokumentalne/'), },
+                             {'category':'list_items',        'title': _('Dla dzieci'),                   'url':self.getFullUrl('dzieci/'),       },
+                             {'category':'search',            'title': _('Search'), 'search_item':True,                                           },
+                             {'category':'search_history',    'title': _('Search history'),                                                       } 
                             ]
         
         self.cacheFilters = {}
@@ -473,68 +473,3 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, FilmyTo(), True, []) #[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]
     
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item.get('need_resolve', False)))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append((_("Movies"),   "movie"))
-        #searchTypesOptions.append((_("TV Shows"), "series"))
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        isGoodForFavourites = cItem.get('good_for_fav', False)
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch,
-                                    isGoodForFavourites = isGoodForFavourites)
-    # end converItem
-
