@@ -67,6 +67,8 @@ class Youtube(CBaseHostClass):
         printDBG("Youtube._getCategory")
         if '/playlist?list=' in url:
             category = 'playlist'
+        elif url.split('?')[0].endswith('/playlists'):
+            category = 'playlists'
         elif None != re.search('/watch\?v=[^\&]+?\&list=',  url):
             category = 'traylist'
         elif 'user/' in url or 'channel/' in url:
@@ -128,6 +130,19 @@ class Youtube(CBaseHostClass):
                     else:
                         self.addDir(params)
                         
+    def listItems(self, cItem):
+        printDBG('Youtube.listItems cItem[%s]' % (cItem))
+        category = cItem.get("category", '')
+        url      = cItem.get("url", '')
+        page     = cItem.get("page", '1')
+        
+        if "playlists" == category:
+            self.currList = self.ytp.getListPlaylistsItems(url, category, page, cItem)
+        
+        for idx in range(len(self.currList)):
+            if self.currList[idx]['category'] in ["channel","playlist","movie","traylist"]:
+                self.currList[idx]['good_for_fav'] = True
+        
     def getVideos(self, cItem):
         printDBG('Youtube.getVideos cItem[%s]' % (cItem))
         
@@ -227,6 +242,8 @@ class Youtube(CBaseHostClass):
             self.listCategory(self.currItem)
         elif category in ["channel","playlist","movie","traylist"]:
             self.getVideos(self.currItem)
+        elif category == 'playlists':
+            self.listItems(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
