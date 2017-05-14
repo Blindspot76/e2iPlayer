@@ -872,8 +872,13 @@ class pageParser:
             printDBG('+++++++++++++++++++++++++++')
             printDBG(item)
             
-            if 'mp4' in item:
+            if 'flv' in item:
+                if name == '': name = '[FLV]'
+                urlTab.insert(0, {'name':name, 'url':url})
+            elif 'mp4' in item:
+                if name == '': name = '[MP4]'
                 urlTab.append({'name':name, 'url':url})
+            
         return urlTab
         
     def _findLinks(self, data, serverName='', linkMarker=r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='sources', m2=']', contain='', meta={}):
@@ -2867,7 +2872,7 @@ class pageParser:
             if 'This video is only available on Mail.Ru' in data:
                 tmpUrl = self.cm.ph.getSearchGroups(data, 'href="([^"]+?)"')[0]
                 sts, data = self.cm.getPage(tmpUrl)
-            metadataUrl =  self.cm.ph.getSearchGroups(data, """["']*metadataUrl["']*[ ]*:[ ]*["'](http[^"']+?\.json[^"']*?)["']""")[0]
+            metadataUrl =  self.cm.ph.getSearchGroups(data, """["']*metadataUrl["']*[ ]*:[ ]*["']((?:https?\:)?//[^"']+?[^"']*?)["']""")[0]
             if '' == metadataUrl:
                 tmp =  self.cm.ph.getSearchGroups(data, """["']*metadataUrl["']*[ ]*:[ ]*["'][^0-9]*?([0-9]{19})[^0-9]*?["']""")[0]
                 if '' == tmp:
@@ -2875,12 +2880,15 @@ class pageParser:
                     if '' == tmp: tmp = self.cm.ph.getSearchGroups(data, '<link[^>]*?href="([^"]+?)"[^>]*?rel="image_src"[^>]*?')[0]
                     tmp = self.cm.ph.getSearchGroups(urllib.unquote(tmp), '[^0-9]([0-9]{19})[^0-9]')[0]
                 metadataUrl = 'http://videoapi.my.mail.ru/videos/{0}.json?ver=0.2.102'.format(tmp)
+            if metadataUrl.startswith('//'): metadataUrl = 'http:' + metadataUrl
             sts, data = self.cm.getPage(metadataUrl, {'cookiefile': COOKIEFILE, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True})
             video_key = self.cm.getCookieItem(COOKIEFILE,'video_key')
             if '' != video_key:
-                data = json.loads(data)['videos']
+                data = byteify(json.loads(data)['videos'])
                 for item in data:
-                    videoUrl = strwithmeta(item['url'].encode('utf-8'), {'Cookie':"video_key=%s" % video_key, 'iptv_buffering':'required'})
+                    videoUrl = item['url']
+                    if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+                    videoUrl = strwithmeta(videoUrl, {'Cookie':"video_key=%s" % video_key, 'iptv_buffering':'required'})
                     videoName = 'mail.ru: %s' % item['key'].encode('utf-8')
                     movieUrls.append({ 'name': videoName, 'url': videoUrl}) 
         except Exception:
@@ -7560,6 +7568,9 @@ class pageParser:
         url = _EMBED_URL % (video_host, video_id)
         sts, data = self.cm.getPage(url)
         if not sts: return False
+        
+        urlTab = self._getSources(data)
+        if len(urlTab): return urlTab
 
         file_key = self.cm.ph.getSearchGroups(data, r'key\s*:\s*"([^"]+)"')[0]
         if '' == file_key:
