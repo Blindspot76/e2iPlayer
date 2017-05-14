@@ -417,6 +417,7 @@ class urlparser:
                        'filez.tv':             self.pp.parserFILEZTV        ,
                        'wiiz.tv':              self.pp.parserWIIZTV         ,
                        'tunein.com':           self.pp.parserTUNEINCOM      ,
+                       'speedvid.net':         self.pp.parserSPEEDVIDNET    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -806,6 +807,16 @@ class pageParser:
         self.COOKIE_PATH = GetCookieDir('')
         #self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
+        
+    def getPageCF(self, baseUrl, addParams = {}, post_data = None):
+        def _getFullUrl(url):
+            if self.cm.isValidUrl(url):
+                return url
+            else:
+                return urljoin(baseUrl, url)
+        addParams['cloudflare_params'] = {'domain':urlparser.getDomain(baseUrl), 'cookie_file':addParams['cookiefile'], 'User-Agent':addParams['header']['User-Agent'], 'full_url_handle':_getFullUrl}
+        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        return sts, data
     
     def getYTParser(self):
         if self.ytParser == None:
@@ -947,16 +958,20 @@ class pageParser:
         refUrl = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
         HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':refUrl }
         HTTP_HEADER.update(httpHeader)
+        
         if 'embed' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
             url = embedUrl.format(video_id)
         else:
             url = baseUrl
+        
         params = dict(params)
         params.update({'header':HTTP_HEADER})
         post_data = None
         
-        sts, data = self.cm.getPage(url, params, post_data)
+        if params.get('cfused', False): sts, data = self.getPageCF(url, params, post_data)
+        else: sts, data = self.cm.getPage(url, params, post_data)
+        
         if not sts: sts, data = self.cm.getPageWithWget(url, params, post_data)
         if not sts: return False
         
@@ -985,6 +1000,7 @@ class pageParser:
             tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams)
             if tmpData == '':
                 tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams, 0)
+                
             if None != tmpData:
                 data = data + tmpData
         printDBG("Data: " + data)
@@ -2551,6 +2567,14 @@ class pageParser:
         #def _findLinks(data):
         #    return self._findLinks(data, 'vidup.me', m1='setup(', m2='image:')
         return self._parserUNIVERSAL_A(baseUrl, 'http://vidup.me/embed-{0}-640x360.html', self._findLinks)
+        
+    def parserSPEEDVIDNET(self, baseUrl):
+        printDBG("parserSPEEDVIDNET baseUrl[%r]" % baseUrl)
+        def _findLinks(data):
+            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''jwplayer\(\s*['"]vplayer['"]\s*\)\.setup'''), re.compile(';'))[1]
+            return self._findLinks(data, 'speedvid.net')
+        defaultParams = {'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
+        return self._parserUNIVERSAL_A(baseUrl, 'http://www.speedvid.net/embed-{0}-540x360.html', _findLinks, params=defaultParams)
         
     def parserVIDLOXTV(self, baseUrl):
         printDBG("parserVIDLOXTV baseUrl[%r]" % baseUrl)
