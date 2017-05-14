@@ -7393,7 +7393,7 @@ class pageParser:
         
         urlsTab = []
         for item in data['videos']:
-            url = item['url'].replace('&ct=4&', '&ct=0&') #+ '&bytes'#=0-7078'
+            url = item['url'] #.replace('&ct=4&', '&ct=0&') #+ '&bytes'#=0-7078'
             url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
             urlsTab.append({'name':item['name'], 'url':url})
         urlsTab = urlsTab[::-1]
@@ -7409,7 +7409,10 @@ class pageParser:
                 if url.endswith('/'):
                     linksTab[idx]['url'] = strwithmeta(url+'playlist.m3u8', meta)
                     
-            try: urlsTab.extend(sorted(linksTab, key=lambda item: -1 * int(item.get('bitrate', 0))))
+            try:
+                tmpUrlTab = sorted(linksTab, key=lambda item: -1 * int(item.get('bitrate', 0)))
+                tmpUrlTab.extend(urlsTab)
+                urlsTab = tmpUrlTab
             except Exception:  printExc()
         return urlsTab
         
