@@ -220,6 +220,7 @@ class FightVideo(CBaseHostClass):
                         title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tItem, '<strong', '</strong>')[1])
                         directUrl = True
                         url = self.cm.ph.getSearchGroups(tItem, '<source[^>]+?src="(https?://[^"]+?)"[^>]*?type="video')[0]
+                        url = url.replace(' ', '%20')
                         if url == '': 
                             url = self.getFullUrl(self.cm.ph.getSearchGroups(tItem, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
                             directUrl = False
@@ -232,6 +233,7 @@ class FightVideo(CBaseHostClass):
             else:
                 tmpVideos = re.compile('''['"](https?://video\[^'^"]+?\.mp4)['"]''').findall(item1)
                 for url in tmpVideos:
+                    url = url.replace(' ', '%20')
                     if url not in allUrls and self.cm.isValidUrl(url):
                         allUrls.append(url)
                         title = 'Video %d - %s' % (idx, self.up.getDomain(url))
