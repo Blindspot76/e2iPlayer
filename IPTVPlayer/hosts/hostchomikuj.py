@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, formatBytes, CSearchHistoryHelper, GetLogoDir, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
@@ -123,8 +124,8 @@ class Chomikuj(CBaseHostClass):
         account = self._getJItemStr(self.loginData, 'AccountName', '')
         title   = 'Chomik "%s" (%s transferu)' % (account, quota)
         self.addDir({'name':'category', 'title':title,                       'category':'account'})
-        self.addDir({'name':'category', 'title':'Wyszukaj',                  'category':'Wyszukaj'})
-        self.addDir({'name':'category', 'title':'Historia wyszukiwania',     'category':'Historia wyszukiwania'})
+        self.addDir({'name':'category', 'title':'Wyszukaj',                  'category':'search', 'search_item':True})
+        self.addDir({'name':'category', 'title':'Historia wyszukiwania',     'category':'search_history'})
         
     def requestLoginData(self):
         url      = "api/v3/account/login"
@@ -152,8 +153,8 @@ class Chomikuj(CBaseHostClass):
                 self.sessionEx.open(MessageBox, errorMessage, type = MessageBox.TYPE_INFO, timeout = 10 )
         return sts
 
-    def handleSearch(self, cItem, searchPattern, searchType):
-        printDBG("Chomikuj.handleSearch cItem[%s], searchPattern[%s], searchType[%s]" % (cItem, searchPattern, searchType))
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("Chomikuj.listSearchResult cItem[%s], searchPattern[%s], searchType[%s]" % (cItem, searchPattern, searchType))
         page   = cItem.get('page', 1)
         
         map = {"images":"Image", "video":"Video", "music":"Music"}
@@ -242,116 +243,25 @@ class Chomikuj(CBaseHostClass):
                 self.listsMainMenu()
         elif 'account' == category:
             self.handleProfile(self.currItem)
-    #WYSZUKAJ
-        elif category == "Wyszukaj":
-            self.handleSearch(self.currItem, searchPattern, searchType)
-    #HISTORIA WYSZUKIWANIA
-        elif category == "Historia wyszukiwania":
-            self.listsHistory()
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
 
 class IPTVHost(CHostBase):
 
-    def __init__(self):
-        CHostBase.__init__(self, Chomikuj(), True)
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('chomikujlogo.png')])
-
-    def getLinksForItem(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForItem - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] not in ['audio', 'video', 'picture']:
-            printDBG( "ERROR getLinksForItem - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
-        retlist = []
-        urlList = self.host.getLinksForItem(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item["need_resolve"]))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        url = self.host.getLinkToFile(url)
-        urlTab = []
-        if isinstance(url, basestring) and '://' in url:
-            urlTab.append(url)
-        return RetHost(RetHost.OK, value = urlTab)
-
-    def convertList(self, cList):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
+    def getSearchTypes(self):
+        searchTypesOptions = [] 
         searchTypesOptions.append(("Zdjęcia", "images"))
         searchTypesOptions.append(("Wideo", "video"))
         searchTypesOptions.append(("Audio", "music"))
-    
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
+        return searchTypesOptions
 
-            if cItem['type'] == 'category':
-                if cItem['title'] == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] in ['audio', 'video', 'picture']:
-                if 'video' == cItem['type']: 
-                    type = CDisplayListItem.TYPE_VIDEO
-                elif 'audio' == cItem['type']: 
-                    type = CDisplayListItem.TYPE_AUDIO
-                else:
-                    type = CDisplayListItem.TYPE_PICTURE
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  cItem.get('title', '')
-            description =  clean_html(cItem.get('desc', '')) + clean_html(cItem.get('plot', ''))
-            icon        =  cItem.get('icon', '')
-            
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
-
-    def getSearchItemInx(self):
-        # Find 'Wyszukaj' item
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'Wyszukaj':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
+    def __init__(self):
+        CHostBase.__init__(self, Chomikuj(), True)
