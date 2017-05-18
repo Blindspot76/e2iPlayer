@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, formatBytes, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, formatBytes, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
@@ -170,6 +170,7 @@ class Chomikuj(CBaseHostClass):
     def handleDataRequest(self, cItem, url):
         sts, data = self.requestJsonData(url)
         if sts:
+            printDBG(byteify(data))
             if 0 == self._getJItemNum(data, 'Code', -1):
                 # list folders
                 for item in data.get('Folders', []):
@@ -219,16 +220,17 @@ class Chomikuj(CBaseHostClass):
             videoUrls.append({'name':'Full (%s)' % cItem['size'], 'url':'%s' % cItem['file_id'], 'need_resolve':1})
         return videoUrls
         
-    def getLinkToFile(self, file_id):
+    def getVideoLinks(self, file_id):
         printDBG("Chomikuj.getLinkToFile [%s]" % file_id)
-        url = ''
+        urlTab = []
         try:
             sts, data = self.requestJsonData(Chomikuj.FILE_REQUEST_URL + file_id)
             if sts:
                 url = self._getJItemStr(data, 'FileUrl', '')
+                urlTab.append({'name':'direct', 'url':url})
         except Exception:
             printExc()
-        return url
+        return urlTab
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Chomikuj.handleService start')
