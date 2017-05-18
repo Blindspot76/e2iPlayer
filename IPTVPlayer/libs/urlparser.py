@@ -7402,15 +7402,30 @@ class pageParser:
                        'Cookie':'_flashVersion=18',
                        'X-Requested-With':'XMLHttpRequest'}
         
+        metadataUrl = ''
         if 'videoPlayerMetadata' not in baseUrl:
             sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
             if not sts: return False
-            data = self.cm.ph.getSearchGroups(data, '''data-options=['"]([^'^"]+?)['"]''')[0]
-            data = clean_html(data)
-            data = byteify(json.loads(data))
-            data = byteify(json.loads(data['flashvars']['metadata']))
+            tmpTab = re.compile('''data-options=['"]([^'^"]+?)['"]''').findall(data)
+            for tmp in tmpTab:
+                tmp = clean_html(tmp)
+                tmp = byteify(json.loads(tmp))
+                printDBG("==============================================================")
+                printDBG(tmp)
+                printDBG("==============================================================")
+                
+                tmp = tmp['flashvars']
+                if 'metadata' in tmp:
+                    data = byteify(json.loads(tmp['metadata']))
+                    metadataUrl = ''
+                    break
+                else:
+                    metadataUrl = urllib.unquote(tmp['metadataUrl'])
         else:
-            url = baseUrl
+            metadataUrl = baseUrl
+        
+        if metadataUrl != '':
+            url = metadataUrl
             sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
             if not sts: return False
             data = byteify(json.loads(data))
