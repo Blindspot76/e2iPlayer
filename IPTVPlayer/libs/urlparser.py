@@ -1493,9 +1493,16 @@ class pageParser:
             return False
 
     def parserRAPIDVIDEO(self, baseUrl):
-        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|view)[/-]([A-Za-z0-9]{8})')[0]
-        sts, data = self.cm.getPage('http://www.rapidvideo.com/view/'+video_id)
+        if '/embed/' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|view)[/-]([A-Za-z0-9]+?)[^A-Za-z0-9]')[0]
+            url = 'http://www.rapidvideo.com/embed/'+video_id
+        else:
+            url = baseUrl
+        
+        sts, data = self.cm.getPage(url)
         if not sts: return False
+        
+        printDBG(data)
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
         data = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
