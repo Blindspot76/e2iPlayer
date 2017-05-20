@@ -44,7 +44,7 @@ class IPTVSetupImpl:
         self.glibcVersion = -1
         
         # wget members
-        self.wgetVersion = 15 # 1.15 
+        self.wgetVersion = 19 # 1.15 
         self.wgetpaths = ["wget", "/usr/bin/wget", "/usr/bin/fullwget", GetBinDir("wget", "")]
         self._wgetInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/fullwget " + _("recommended")), "/usr/bin/fullwget"),
                                        (_('Install into the "%s".') % "IPTVPlayer/bin/wget", GetBinDir("wget", "")),
@@ -419,12 +419,31 @@ class IPTVSetupImpl:
                 if 'BusyBox' not in dataTab[idx] and '+https' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            old = ''
+            versions = {'sh4':2190, 'mipsel':2200}
+            
+            if platform in ['sh4', 'mipsel'] and (self.binaryInstalledSuccessfully or self.glibcVersion < versions[platform] ):
+                old = '_old'
+            
+            if old == '' and platform == 'mipsel' and not IsFPUAvailable():
+                old = '_softfpu'
+            
+            url = server + 'bin/' + platform + ('/%s%s' % (binName, old)) + '_openssl' + openSSLVersion
+            if self.binaryInstalledSuccessfully:
+                self.binaryInstalledSuccessfully = False
+                
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        
         self.stepHelper = CBinaryStepHelper("wget", self.platform, self.openSSLVersion, config.plugins.iptvplayer.wgetpath)
         self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.') % ('wget', 'http, https, f4m, uds, hls')), 1)
         self.stepHelper.setInstallChoiseList( self._wgetInstallChoiseList )
         self.stepHelper.setPaths( self.wgetpaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " -V 2>&1 " )
         self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
         self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
         self.stepHelper.setFinishHandler( self.wgetStepFinished )
         self.binaryDetect()

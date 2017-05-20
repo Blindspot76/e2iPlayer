@@ -180,7 +180,7 @@ class Chomikuj(CBaseHostClass):
                 
             if data.get('IsNextPageAvailable', False):
                 params = dict(cItem)
-                params.update({'title':'Następna strona', 'page': cItem.get('page', 1) + 1})
+                params.update({'good_for_fav': True, 'title':'Następna strona', 'page': cItem.get('page', 1) + 1})
                 self.addDir(params)
         else:
             map = {"images":"Image", "video":"Video", "music":"Music"}
@@ -208,13 +208,13 @@ class Chomikuj(CBaseHostClass):
                 if 'ParentId' in data and 'ParentName' in data and len(self._getJItemStr(data, 'ParentName')) and 'Owner' in data and 'Id' in data['Owner']:
                     if cItem.get('prev_parent', None) != self._getJItemNum(data, 'ParentId'):
                         params = dict(cItem)
-                        params.update({'category':'foreign_folder', 'title':'\xe2\x86\x91 ' + self._getJItemStr(data, 'ParentName'), 'prev_parent':cItem.get('parent', None), 'parent':self._getJItemNum(data, 'ParentId'), 'owner':self._getJItemNum(data['Owner'], 'Id')})
+                        params.update({'good_for_fav': True, 'category':'foreign_folder', 'title':'\xe2\x86\x91 ' + self._getJItemStr(data, 'ParentName'), 'prev_parent':cItem.get('parent', None), 'parent':self._getJItemNum(data, 'ParentId'), 'owner':self._getJItemNum(data['Owner'], 'Id')})
                         self.addDir(params)
                 
                 # list folders
                 for item in data.get('Folders', []):
                     params = dict(cItem)
-                    params.update({'title':self._getJItemStr(item, 'Name', ''), 'page': 1, 'prev_parent':cItem.get('parent', None), 'parent':self._getJItemNum(item, 'Id', 0)})
+                    params.update({'good_for_fav': True, 'title':self._getJItemStr(item, 'Name', ''), 'page': 1, 'prev_parent':cItem.get('parent', None), 'parent':self._getJItemNum(item, 'Id', 0)})
                     self.addDir(params)
                 
                 # list files
@@ -279,11 +279,11 @@ class Chomikuj(CBaseHostClass):
             owner = self._getJItemNum(item['Owner'], 'Id')
             parent = self._getJItemNum(item, 'FolderId')
             params = dict(cItem)
-            params.update({'category':'foreign_folder', 'title':'do chomika: ' + self._getJItemStr(item['Owner'], 'Name'), 'parent':0, 'owner':owner})
+            params.update({'good_for_fav': True, 'category':'foreign_folder', 'title':'do chomika: ' + self._getJItemStr(item['Owner'], 'Name'), 'parent':0, 'owner':owner})
             self.addDir(params)
             
             params = dict(cItem)
-            params.update({'category':'foreign_folder', 'title':'do folderu: ' +self._getJItemStr(item, 'FolderName'), 'parent':parent, 'owner':owner})
+            params.update({'good_for_fav': True, 'category':'foreign_folder', 'title':'do folderu: ' +self._getJItemStr(item, 'FolderName'), 'parent':parent, 'owner':owner})
             self.addDir(params)
         
         params = dict(cItem)
@@ -353,6 +353,33 @@ class Chomikuj(CBaseHostClass):
         except Exception:
             printExc()
         return urlTab
+        
+    def getFavouriteData(self, cItem):
+        printDBG('Chomikuj.getFavouriteData')
+        return json.dumps(cItem) 
+        
+    def getLinksForFavourite(self, fav_data):
+        printDBG('Chomikuj.getLinksForFavourite')
+        if 'ApiKey' not in self.loginData:
+            self.requestLoginData()
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('Chomikuj.setInitListFromFavouriteItem')
+        if 'ApiKey' not in self.loginData:
+            self.requestLoginData()
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Chomikuj.handleService start')
