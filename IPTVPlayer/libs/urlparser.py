@@ -7256,7 +7256,9 @@ class pageParser:
         
     def parserFILEPUPNET(self, baseUrl):
         printDBG("parserFILEPUPNET baseUrl[%r]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
+        Referer = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         data = self.cm.ph.getDataBeetwenMarkers(data, 'window.onload', '</script>', False)[1]
         qualities = self.cm.ph.getSearchGroups(data, 'qualities:[ ]*?\[([^\]]+?)\]')[0]
@@ -7279,11 +7281,11 @@ class pageParser:
         linksTab = []
         data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
         defaultUrl = self.cm.ph.getSearchGroups(data, '"(http[^"]+?)"')[0]
-        linksTab.append({'name':defaultQuality, 'url': strwithmeta(defaultUrl, {'Referer':'baseUrl', 'external_sub_tracks':sub_tracks})})
+        linksTab.append({'name':defaultQuality, 'url': strwithmeta(defaultUrl, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl, 'external_sub_tracks':sub_tracks})})
         for item in qualities:
             if '.mp4' in defaultUrl:
                 url = defaultUrl.replace('.mp4', '-%s.mp4' % item)
-                linksTab.append({'name':item, 'url': strwithmeta(url, {'Referer':'baseUrl', 'external_sub_tracks':sub_tracks})})
+                linksTab.append({'name':item, 'url': strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl, 'external_sub_tracks':sub_tracks})})
         return linksTab
         
     def parserHDFILMSTREAMING(self, baseUrl):
