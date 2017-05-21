@@ -418,6 +418,7 @@ class urlparser:
                        'wiiz.tv':              self.pp.parserWIIZTV         ,
                        'tunein.com':           self.pp.parserTUNEINCOM      ,
                        'speedvid.net':         self.pp.parserSPEEDVIDNET    ,
+                       'vsports.pt':           self.pp.parserVSPORTSPT      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -8137,3 +8138,16 @@ class pageParser:
 
         return urlTab
         
+    def parserVSPORTSPT(self, baseUrl):
+        printDBG("parserVSPORTSPT baseUrl[%s]\n" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return []
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
+        printDBG(data)
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((:?https?:)?//[^"^']+\.mp4)['"]''')[0]
+        if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
+        
+        return False
