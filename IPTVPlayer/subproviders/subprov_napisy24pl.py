@@ -64,6 +64,51 @@ class Napisy24plProvider(CBaseSubProviderClass):
         self.dInfo = params['discover_info']
         
         self.cacheSeasons = {}
+        self.logedIn = None
+        
+    def getPage(self, url, params={}, post_data=None):
+        if params == {}:
+            params = dict(self.defaultParams)
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts:
+            error = self.cm.ph.getDataBeetwenMarkers(data, '<div class="alert-message"', '</div>')[1]
+            if error != '': SetIPTVPlayerLastHostError(self.cleanHtmlStr(error))
+        return sts, data
+        
+    def initSubProvider(self, cItem):
+        printDBG("Napisy24plProvider.initSubProvider")
+        self.logedIn = False
+        
+        rm(self.COOKIE_FILE)
+        
+        # select site language 
+        sts, data = self.getPage(self.getMainUrl())
+        if not sts: return
+        
+        # login user 
+        login  = config.plugins.iptvplayer.napisy24pl_login.value
+        passwd = config.plugins.iptvplayer.napisy24pl_password.value
+        if login != '' and passwd != '':
+            errMsg = _('Failed to connect to server "%s".') % self.getMainUrl()
+            
+            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?login'), re.compile('</form>'))[1]
+            loginUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, 'action="([^"]+?)"')[0])
+            data = re.compile('<input[^>]+?name="([^"]+?)"[^>]+?value="([^"]+?)"').findall(data)
+            post_data = {}
+            for item in data:
+                post_data[item[0]] = item[1]
+            post_data.update({'username':login, 'passwd':passwd, 'remember':'yes', 'Submit':''})
+            
+            sts, data = self.getPage(loginUrl, post_data=post_data)
+            if not sts:
+                self.sessionEx.open(MessageBox, errMsg, type = MessageBox.TYPE_ERROR, timeout = 5)
+            elif 'logout' not in data:
+                self.sessionEx.open(MessageBox, _('Failed to log in user "%s". Please check your login and password.') % login, type = MessageBox.TYPE_ERROR, timeout = 10)
+                self.logedIn = False
+            else:
+                self.logedIn = True
+        else:
+            self.sessionEx.open(MessageBox, _('Service http://napisy24.pl/ requires registration. \nPlease fill your login and password in the IPTVPlayer configuration.'), type = MessageBox.TYPE_ERROR, timeout = 10)
         
     def sortSubtitlesByDurationMatch(self):
         # we need duration to sort
@@ -93,7 +138,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         title = urllib.quote_plus( self.params['confirmed_title'] )
         url = self.getFullUrl('szukaj?page={0}&lang=0&search={1}&typ=0'.format(page, title))
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         if 'title="Next"' in data:
@@ -144,7 +189,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         printDBG("Napisy24plProvider.getEpisodes")
         url = cItem['url']
         self.cacheSeasons = {}
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         titleN24 = self.cm.ph.getSearchGroups(data, 'titleN24="([^"]+?)"')[0]
@@ -209,7 +254,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         post_data = {'serial':cItem['serie_title'], 'sezon':cItem['d_seazon'], 'epizod':cItem['d_episode'], 'nid':cItem['d_nid']}
         
         url = self.getFullUrl('run/pages/serial_napis.php')
-        sts, data = self.cm.getPage(url, self.defaultParams, post_data)
+        sts, data = self.getPage(url, self.defaultParams, post_data)
         if not sts: return
         
         try:
@@ -257,7 +302,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         fileName = self._getFileName(title, lang, subId, imdbid)
         fileName = GetSubtitlesDir(fileName)
         
-        url = 'http://napisy24.pl/run/pages/download.php?napisId={0}&typ=sru'.format(subId)
+        url = 'http://napisy24.pl/download?napisId={0}&typ=sru'.format(subId)
         tmpFile = GetTmpDir( self.TMP_FILE_NAME )
         tmpFileZip = tmpFile + '.zip'
         
@@ -266,7 +311,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         
         try:
             fileSize = self.getMaxFileSize()
-            sts, response = self.cm.getPage(url, urlParams)
+            sts, response = self.getPage(url, urlParams)
             data = response.read(fileSize)
             response.close()
         except Exception:
@@ -358,6 +403,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         
     #MAIN MENU
         if name == None:
+            self.initSubProvider(self.currItem)
             self.getMoviesList({'name':'category', 'category':'get_movies_list'}, 'get_seasons')
         elif category == 'get_movies_list':
             self.getMoviesList(self.currItem, 'get_seasons')
