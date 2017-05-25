@@ -70,7 +70,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         if params == {}:
             params = dict(self.defaultParams)
         sts, data = self.cm.getPage(url, params, post_data)
-        if sts:
+        if sts and params.get('return_data', False):
             error = self.cm.ph.getDataBeetwenMarkers(data, '<div class="alert-message"', '</div>')[1]
             if error != '': SetIPTVPlayerLastHostError(self.cleanHtmlStr(error))
         return sts, data
