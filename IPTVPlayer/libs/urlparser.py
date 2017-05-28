@@ -363,8 +363,8 @@ class urlparser:
                        'vid.me':               self.pp.parseVIDME          ,
                        'veehd.com':            self.pp.parseVEEHDCOM       ,
                        'sharerepo.com':        self.pp.parseSHAREREPOCOM   ,
-                       'easyvideo.me':         self.pp.parseEASYVIDEOME    ,
-                       'playbb.me':            self.pp.parseEASYVIDEOME    ,
+                       'easyvideo.me':         self.pp.parserEASYVIDEOME   ,
+                       'playbb.me':            self.pp.parserEASYVIDEOME   ,
                        'vimeo.com':            self.pp.parseVIMEOCOM       ,
                        'jacvideo.com':         self.pp.parseJACVIDEOCOM    ,
                        'caston.tv':            self.pp.parseCASTONTV       ,
@@ -389,7 +389,6 @@ class urlparser:
                        'streamable.com':       self.pp.parserSTREAMABLECOM  ,
                        'auroravid.to':         self.pp.parserAURORAVIDTO    ,
                        'playpanda.net':        self.pp.parserPLAYPANDANET   ,
-                       'easyvideo.me':         self.pp.parserEASYVIDEOME    ,
                        'vidlox.tv':            self.pp.parserVIDLOXTV       ,
                        'embeducaster.com':     self.pp.parserUCASTERCOM     ,
                        'darkomplayer.com':     self.pp.parserDARKOMPLAYER   ,
@@ -2919,7 +2918,7 @@ class pageParser:
                 data = byteify(json.loads(data)['videos'])
                 for item in data:
                     videoUrl = item['url']
-                    if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+                    if videoUrl.startswith('//'): videoUrl = 'https:' + videoUrl
                     videoUrl = strwithmeta(videoUrl, {'Cookie':"video_key=%s" % video_key, 'iptv_buffering':'required'})
                     videoName = 'mail.ru: %s' % item['key'].encode('utf-8')
                     movieUrls.append({ 'name': videoName, 'url': videoUrl}) 
@@ -3621,10 +3620,6 @@ class pageParser:
         if self.cm.isValidUrl(videoUrl):
             return videoUrl        
         return False
-
-    def parserEASYVIDEOME(self, baseUrl):
-        printDBG("parserEASYVIDEOME baseUrl[%r]" % baseUrl)
-        return self.parserPLAYPANDANET(baseUrl)
             
     def parserVSHAREEU(self, baseUrl):
         printDBG("parserVSHAREEU baseUrl[%r]" % baseUrl)
@@ -6078,18 +6073,39 @@ class pageParser:
             tab.append(item)
         return tab
         
-    def parseEASYVIDEOME(self, baseUrl):
-        printDBG("parseEASYVIDEOME baseUrl[%s]" % baseUrl)
+    def parserEASYVIDEOME(self, baseUrl):
+        printDBG("parserEASYVIDEOME baseUrl[%s]" % baseUrl)
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'}
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="flowplayer">', '</script>', False)[1]
-        tab = self._findLinks(data, serverName='playlist', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='playlist', m2=']')
+        subTracks = []
+        videoUrls = []
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div id="flowplayer">', '</script>', False)[1]
+        videoUrls = self._findLinks(tmp, serverName='playlist', linkMarker=r'''['"]?url['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,}]''', m1='playlist', m2=']')
+        try:
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '"storage":', ']', False)[1]
+            printDBG("|||" + tmp)
+            tmp = byteify(json.loads(tmp + ']'))
+            for item in tmp:
+                videoUrls.append({'name':str(item['quality']), 'url':item['link']})
+                if self.cm.isValidUrl(item.get('sub', '')):
+                    url  = item['sub']
+                    type = url.split('.')[-1]
+                    subTracks.append({'title':_('default'), 'url':url, 'lang':'unk', 'format':type})
+        except Exception:
+            printExc()
+        
         video_url = self.cm.ph.getSearchGroups(data, '_url = "(http[^"]+?)"')[0]
         if '' != video_url: 
             video_url = urllib.unquote(video_url)
-            tab.insert(0, {'name':'main', 'url':video_url})
-        return tab
+            videoUrls.insert(0, {'name':'main', 'url':video_url})
+            
+        if len(subTracks):
+            for idx in range(len(videoUrls)):
+                videoUrls[idx]['url'] = strwithmeta(videoUrls[idx]['url'], {'external_sub_tracks':subTracks})
+        
+        return videoUrls
         
     def parserUPTOSTREAMCOM(self, baseUrl):
         printDBG("parserUPTOSTREAMCOM baseUrl[%s]" % baseUrl)
