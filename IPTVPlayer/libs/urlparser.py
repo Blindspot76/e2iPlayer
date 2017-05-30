@@ -221,6 +221,7 @@ class urlparser:
                        'tune.pk':              self.pp.parseTUNEPK         ,
                        'netu.tv':              self.pp.parseNETUTV         ,
                        'hqq.tv':               self.pp.parseNETUTV         ,
+                       'hqq.watch':            self.pp.parseNETUTV         ,
                        'waaw.tv':              self.pp.parseNETUTV         ,
                        'vshare.io':            self.pp.parseVSHAREIO       ,
                        'vidspot.net':          self.pp.parserVIDSPOT       ,
@@ -7844,28 +7845,28 @@ class pageParser:
         # User-Agent - is important!!!
         HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
                         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Referer': 'http://hqq.tv/'
+                        'Referer': 'http://hqq.watch/'
                       }
         
         COOKIE_FILE = self.COOKIE_PATH + "netu.tv.cookie"
         # remove old cookie file
         rm(COOKIE_FILE)
         params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
-        sts, ipData = self.cm.getPage('http://hqq.tv/player/ip.php?type=json', params)
+        sts, ipData = self.cm.getPage('http://hqq.watch/player/ip.php?type=json', params)
         ipData = byteify(json.loads(ipData)) #{"ip":"MTc4LjIzNS40My4zNw==","ip_blacklist":0}
 
         printDBG("=================================================================")
         printDBG(ipData)
         printDBG("=================================================================")
         
-        #http://hqq.tv/player/hash.php?hash=229221213221211228239245206208212229194271217271255
+        #http://hqq.watch/player/hash.php?hash=229221213221211228239245206208212229194271217271255
         if 'hash.php?hash' in url:
             sts, data = self.cm.getPage(url, params)
             if not sts: return False
             data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
             vid = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % 'vid', data).group(1)
         
-        playerUrl = "http://hqq.tv/player/embed_player.php?vid=%s&autoplay=no" % vid
+        playerUrl = "http://hqq.watch/player/embed_player.php?vid=%s&autoplay=no" % vid
         referer = strwithmeta(url).meta.get('Referer', playerUrl)
         
         #HTTP_HEADER['Referer'] = url
@@ -7901,7 +7902,7 @@ class pageParser:
         embed_from   = _getVar(tmpData, 'embed_from')
         http_referer = _getVar(tmpData, 'http_referer')
                 
-        secPlayerUrl = "http://hqq.tv/sec/player/embed_player.php?iss="+iss+"&vid="+vid+"&at="+at+"&autoplayed="+autoplayed+"&referer="+referer+"&http_referer="+http_referer+"&pass="+passwd+"&embed_from="+embed_from+"&need_captcha="+need_captcha
+        secPlayerUrl = "http://hqq.watch/sec/player/embed_player.php?iss="+iss+"&vid="+vid+"&at="+at+"&autoplayed="+autoplayed+"&referer="+referer+"&http_referer="+http_referer+"&pass="+passwd+"&embed_from="+embed_from+"&need_captcha="+need_captcha
         HTTP_HEADER['Referer'] = referer
         sts, data = self.cm.getPage(secPlayerUrl, params)
         
@@ -7935,7 +7936,7 @@ class pageParser:
             if key == 'adb':
                 val = val.replace('1', '0')
             getParams[key] = val.replace('"', '').strip()
-        playerUrl = 'http://hqq.tv/player/get_md5.php?' + urllib.urlencode(getParams)
+        playerUrl = 'http://hqq.watch/player/get_md5.php?' + urllib.urlencode(getParams)
         #params.pop('use_cookie')
         #strTime = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % 'time', data).group(1)
         #params['header']['Cookie'] = self.cm.getCookieHeader(COOKIE_FILE) + 'adc1=opened; user_ad=1; user_ad_time={0}; '.format(strTime)
