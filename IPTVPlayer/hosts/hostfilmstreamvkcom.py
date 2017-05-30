@@ -52,13 +52,13 @@ def gettytul():
 class FilmstreamvkCom(CBaseHostClass):
     HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     MAIN_URL = 'http://filmstreamvk.ws/'
-    DEFAULT_ICON = 'http://filmstreamvk.ws/wp-content/themes/keremiyav4/logo/logo.png'
-    MAIN_CAT_TAB = [{'category':'main',            'title':_('Main'),         'url':MAIN_URL,         'icon':DEFAULT_ICON},
-                    {'category':'categories',      'title':_('Categories'),   'url':MAIN_URL,         'icon':DEFAULT_ICON},
-                    {'category':'list_items',      'title':_('Series'),       'url':MAIN_URL+'serie', 'icon':DEFAULT_ICON},
-                    {'category':'list_items',      'title':_('Manga'),        'url':MAIN_URL+'manga', 'icon':DEFAULT_ICON},
-                    {'category':'search',          'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
-                    {'category':'search_history',  'title': _('Search history'),             'icon':DEFAULT_ICON} ]
+    DEFAULT_ICON_URL = 'http://filmstreamvk.ws/wp-content/themes/keremiyav4/logo/logo.png'
+    MAIN_CAT_TAB = [{'category':'main',            'title':_('Main'),         'url':MAIN_URL,         },
+                    {'category':'categories',      'title':_('Categories'),   'url':MAIN_URL,         },
+                    {'category':'list_items',      'title':_('Series'),       'url':MAIN_URL+'serie', },
+                    {'category':'list_items',      'title':_('Manga'),        'url':MAIN_URL+'manga', },
+                    {'category':'search',          'title': _('Search'), 'search_item':True,          },
+                    {'category':'search_history',  'title': _('Search history'),                      } ]
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'filmstreamvk.com', 'cookie':'filmstreamvkcom.cookie'})
@@ -263,46 +263,6 @@ class FilmstreamvkCom(CBaseHostClass):
             return self.up.getVideoLinkExt(videoUrl)
         return []
         
-    def getArticleContent(self, cItem):
-        printDBG("FilmstreamvkCom.getArticleContent [%s]" % cItem)
-        retTab = []
-        
-        if 'resource_uri' not in cItem:
-            return []
-            
-        if 0 == len(self.loginData['api_key']) and 0 == len(self.loginData['username']):
-            self.requestLoginData()
-        
-        url = cItem['resource_uri']
-        url += '?api_key=%s&username=%s' % (self.loginData['api_key'], self.loginData['username'])
-        url = self._getFullUrl(url, False)
-        
-        sts, data = self.cm.getPage(url)
-        if not sts: return []
-        
-        title = cItem['title']
-        desc  = cItem.get('desc', '')
-        icon  = cItem.get('icon', '')
-        otherInfo = {}
-        try:
-            data = byteify(json.loads(data))
-            icon = self._viaProxy( self._getFullUrl(data['poster'], False) )
-            title = data['title']
-            desc = data['overview']
-            otherInfo['actors'] = data['actors']
-            otherInfo['director'] = data['director']
-            genres = []
-            for item in data['genre']:
-                genres.append(item['name'])
-            otherInfo['genre'] = ', '.join(genres)
-            otherInfo['rating']= data['imdb_rating']
-            otherInfo['year']  = data['year']
-            otherInfo['duration'] = str(datetime.timedelta(seconds=data['runtime']))
-        except Exception:
-            printExc()
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo}]
-        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -344,7 +304,4 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, FilmstreamvkCom(), True, [])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('filmstreamvkcomlogo.png')])
     
