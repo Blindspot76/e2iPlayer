@@ -142,34 +142,22 @@ class FilmstreamvkCom(CBaseHostClass):
             params = dict(cItem)
             params.update({'title':_("Next page"), 'url':nextPage})
             self.addDir(params)
-        
-    def listEpisodes2(self, cItem):
+    
+    def listEpisodes(self, cItem, nextCategory):
         printDBG("FilmstreamvkCom.listEpisodes")
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
-        descData  = self.cm.ph.getDataBeetwenMarkers(data, 'Synopsis', '</p>')[1]
-        desc = self.cleanHtmlStr(descData)
-        icon = self.cm.ph.getSearchGroups(descData, '''src=['"]([^'^"]+?)['"]''')[0]
-        titleSeason = cItem['title'].split('Saison')[0]
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="keremiya_part">', '</div>')[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
-        for item in data:
-            url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
-            if url.startswith('http'):
-                title = self.cleanHtmlStr(item)
-                params = dict(cItem)
-                fullTitle = titleSeason + ' '
-                if cItem['season'] != '':
-                    fullTitle += 's%s' % cItem['season']
-                fullTitle += 'e%s' % (title)
-                params.update({'url':url, 'title':fullTitle, 'episode':True, 'icon':icon, 'desc':desc})
-                self.addVideo(params)
-                
-    def listEpisodes(self, cItem):
-        printDBG("FilmstreamvkCom.listEpisodes")
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'liste_episode', '</tr>')
+        for idx in range(len(data)):
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data[idx], '>', '<', False)[1])
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'title':title, 's_title':cItem['title'], 'erow_idx':idx})
+            self.addDir(params)
+            
+    def listEpisodesByLanguage(self, cItem):
+        printDBG("FilmstreamvkCom.listEpisodesByLanguage")
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
@@ -177,36 +165,34 @@ class FilmstreamvkCom(CBaseHostClass):
         descData  = self.cm.ph.getDataBeetwenMarkers(data, '<div class="filmalti">', '<div class="filmborder">')[1]
         desc = self.cleanHtmlStr(descData)
         icon = self.cm.ph.getSearchGroups(descData, '''src=['"]([^'^"]+?)['"]''')[0]
-        titleSeason = cItem['title'].split('Saison')[0]
+        titleSeason = self.cleanHtmlStr(cItem.get('s_title', '').split('Saison')[0])
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'liste_episode', '</table>')[1]
+        idx = cItem.get('erow_idx', 0)
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'liste_episode', '</tr>')
+        if idx < len(data): data = data[idx]
+        else: return
+        
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
-        episodesTab = []
-        episodesLinks = {}
         for item in data:
             url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
-            if url.startswith('http'):
+            if self.cm.isValidUrl(url):
                 title = self.cleanHtmlStr(item)
                 fullTitle = titleSeason + ' '
                 if cItem['season'] != '':
-                    fullTitle += 's%s' % cItem['season']
+                    fullTitle += 's%s' % str(cItem['season']).zfill(2)
                 try:
                     title = int(title)
-                    fullTitle += 'e%s' % (title) 
+                    fullTitle += 'e%s' % str(title).zfill(2)
                 except Exception:
-                    fullTitle += ' %s' % (title)
+                    fullTitle += ' %s' % str(title).zfill(2)
+                
                 urlName = url.split('-')[-1]
-                if fullTitle not in episodesTab:
-                    episodesTab.append(fullTitle)
-                    episodesLinks[fullTitle] = [{'name':urlName, 'url':url, 'need_resolve':1}]
-                else:
-                    episodesLinks[fullTitle].append({'name':urlName, 'url':url, 'need_resolve':1})
-                    
-        for title in episodesTab:
-            params = dict(cItem)
-            params.update({'urls':episodesLinks[title], 'title':title, 'episode':True, 'icon':icon, 'desc':desc})
-            self.addVideo(params)
-    
+                if urlName != '': fullTitle += ' [%s]' %  urlName
+                
+                params = dict(cItem)
+                params.update({'url':url, 'title':fullTitle, 'icon':icon, 'desc':desc})
+                self.addVideo(params)
+        
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FilmstreamvkCom.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
@@ -236,21 +222,18 @@ class FilmstreamvkCom(CBaseHostClass):
         printDBG("FilmstreamvkCom.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        if cItem.get('episode', False):
-            urlTab = cItem['urls']
-        else:        
-            sts, data = self.cm.getPage(cItem['url'])
-            if not sts: return []
-                
-            urlTab = self._getBaseVideoLink(data)
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return []
             
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="keremiya_part">', '</div>')[1]
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>')
-            for item in data:
-                url  = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
-                name = self.cleanHtmlStr(item)
-                if url.startswith('http'):
-                    urlTab.append({'name': name, 'url':url, 'need_resolve':1})
+        urlTab = self._getBaseVideoLink(data)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="keremiya_part">', '</div>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>')
+        for item in data:
+            url  = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            name = self.cleanHtmlStr(item)
+            if url.startswith('http'):
+                urlTab.append({'name': name, 'url':url, 'need_resolve':1})
         
         if 1 == len(urlTab) and 'filmstreamvk' in self.up.getDomain(urlTab[0]['url']):
             sts, data = self.cm.getPage(urlTab[0]['url'])
@@ -342,7 +325,9 @@ class FilmstreamvkCom(CBaseHostClass):
         elif category == 'list_items':
             self.listItems(self.currItem, 'episodes')
         elif category == 'episodes':
-            self.listEpisodes(self.currItem)
+            self.listEpisodes(self.currItem, 'episodes_by_language')
+        elif category == 'episodes_by_language':
+            self.listEpisodesByLanguage(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -363,105 +348,3 @@ class IPTVHost(CHostBase):
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('filmstreamvkcomlogo.png')])
     
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def getArticleContent(self, Index = 0):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        cItem = self.host.currList[Index]
-        
-        hList = self.host.getArticleContent(cItem)
-        if 0 == len(hList):
-            return RetHost(retCode, value=retlist)
-        for item in hList:
-            title      = item.get('title', '')
-            text       = item.get('text', '')
-            images     = item.get("images", [])
-            othersInfo = item.get('other_info', '')
-            retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
