@@ -187,9 +187,9 @@ class LocalMedia(CBaseHostClass):
             if 0 == ret['code']:
                 data = data.split('\n')
                 for line in data:
-                    item = self.cm.ph.getSearchGroups(line, '(.+?) on (.+?) type ([^ ]+?) ', 3)
-                    if len(item) < 3: continue
-                    table.append({'device':item[0], 'node':item[1], 'filesystem':item[2]})
+                    item = self.cm.ph.getSearchGroups(line, '(.+?) on (.+?) type ([^ ]+?) (\([^\)]+?\))', 4)
+                    if len(item) < 4: continue
+                    table.append({'device':item[0], 'node':item[1], 'filesystem':item[2], 'options':item[3]})
             else:
                 message = _('Can not get mount points - cmd mount failed.\nReturn code[%s].\nReturn data[%s].') % (ret['code'], data)
         return table
@@ -211,7 +211,20 @@ class LocalMedia(CBaseHostClass):
             if path == item['node']:
                 return True
         return False
-            
+        
+    def getCharsetEncodingOfMountPoint(self, mountPoint):
+        printDBG("getCharsetEncodingOfMountPoint mountPoint[%s]" % mountPoint)
+        encoding = 'utf-8'
+        table = self.getMountsTable(True)
+        for item in table:
+            if mountPoint == item['node']:
+                encoding = self.cm.ph.getSearchGroups(item['options'], 'iocharset=([^\,^\)]+?)[\,\)]')[0]
+                printDBG("mountPoint[%s] encoding[%s]" % (mountPoint, encoding))
+                break
+        if encoding == '':
+            encoding = 'utf-8'
+        return encoding
+        
     def listIso(self, cItem):
         printDBG("LocalMedia.listIso [%s]" % cItem)
         # check if iso file is mounted
@@ -271,6 +284,11 @@ class LocalMedia(CBaseHostClass):
         if ret['sts'] and 0 == ret['code']:
             self.setCurrDir(path)
             data = ret['data'].split('\n')
+            if len(data) and '//' not in data[0] and len(data[0]):
+                encoding = self.getCharsetEncodingOfMountPoint(data[0])
+            else:
+                encoding = 'utf-8'
+            
             dirTab = []
             m3uTab = []
             isoTab = []
@@ -293,7 +311,11 @@ class LocalMedia(CBaseHostClass):
                     except Exception:
                         printExc()
                         continue
-                params = {'title':item[0]}
+                try: title = item[0].decode(encoding).encode('utf-8')
+                except Exception:
+                    title = item[0]
+                    printExc()
+                params = {'title':title, 'raw_name':item[0]}
                 if 'd' == item[1]:
                     dirTab.append(params)
                 elif 'r' == item[1]:
@@ -336,7 +358,7 @@ class LocalMedia(CBaseHostClass):
             params = dict(params)
             params.update( {'title':item['title'], 'category':category, 'desc':''} )
             if category in ['m3u', 'dir', 'iso']:
-                fullPath = os_path.join(path, item['title'])
+                fullPath = os_path.join(path, item['raw_name'])
                 params['path']  = fullPath
                 if category != 'dir':
                     descTab = []
@@ -352,7 +374,7 @@ class LocalMedia(CBaseHostClass):
                         params['desc'] = '[/br]'.join(descTab)
                 self.addDir(params)
             else:
-                fullPath = 'file://' + os_path.join(path, item['title'])
+                fullPath = 'file://' + os_path.join(path, item['raw_name'])
                 params['url']  = fullPath
                 params['type'] = category
                 if 'picture' == category:
