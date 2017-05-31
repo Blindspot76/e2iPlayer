@@ -4409,10 +4409,10 @@ class pageParser:
             printExc()
         return streamsTab
         
-    def parserDOTSTREAMTV(self, linkUrl):
-        printDBG("parserDOTSTREAMTV linkUrl[%s]" % linkUrl)
+    def parserDOTSTREAMTV(self, baseUrl):
+        printDBG("parserDOTSTREAMTV linkUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
-        videoUrl = strwithmeta(linkUrl)
+        videoUrl = strwithmeta(baseUrl)
         if 'Referer' in videoUrl.meta:
             HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
         sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
@@ -4425,17 +4425,18 @@ class pageParser:
                 d = int(self.cm.ph.getSearchGroups(data, 'var d = ([0-9]+?);')[0])
                 f = int(self.cm.ph.getSearchGroups(data, 'var f = ([0-9]+?);')[0])
                 v_part = self.cm.ph.getSearchGroups(data, "var v_part = '([^']+?)'")[0]
-                
+                v_part_m = self.cm.ph.getSearchGroups(data, "var v_part_m = '([^']+?)'")[0]
+                videoTabs = []
                 url = ('://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) )
-                if True:
-                    url = 'rtmp' + url + v_part
-                    url += ' swfUrl=%sjwp/jwplayer.flash.swf pageUrl=%s live=1 token=‪%s ' % (self.cm.getBaseUrl(videoUrl), videoUrl, '#atd%#$ZH')
-                else:
-                    tmp = v_part.split('?')
-                    url = 'http' + url + tmp[0] + '/index.m3u8?' + tmp[1]
-                    printDBG(url)
-                    return getDirectM3U8Playlist(url)
-                return url
+                if v_part != '':
+                    rtmpUrl = 'rtmp' + url + v_part
+                    rtmpUrl += ' swfUrl=%sclappr/RTMP.swf pageUrl=%s live=1' % (self.cm.getBaseUrl(videoUrl), videoUrl) #token=‪%s '#atd%#$ZH'
+                    videoTabs.append({'name':'rtmp', 'url':rtmpUrl})
+                if v_part_m != '':
+                    hlsUrl = 'http' + url + v_part_m
+                    hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                    videoTabs.extend( getDirectM3U8Playlist(hlsUrl, checkContent=True) )
+                return videoTabs
             except Exception:
                 printExc()
         return False
@@ -5558,32 +5559,33 @@ class pageParser:
         sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
-        sts, data = CParsingHelper.getDataBeetwenMarkers(data, '<div id="player">', '</script>', False)
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player">', '</script>')
         if not sts: return False
         
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
+        data = 'var ' + self.cm.ph.getDataBeetwenMarkers(data, 'var ', '</script>', False)[1]
         
+        printDBG("--------------------")
         printDBG(data)
+        printDBG("--------------------")
+        jscode = base64.b64decode('''dmFyIHBsYXllciA9IHt9Ow0KZnVuY3Rpb24gc2V0dXAob2JqKQ0Kew0KICAgIHRoaXMub2JqID0gb2JqOw0KfTsNCg0KcGxheWVyLnNldHVwID0gc2V0dXA7DQoNCmZ1bmN0aW9uIGp3cGxheWVyKCkNCnsNCiAgICByZXR1cm4gcGxheWVyOw0KfQ0KDQolcw0KDQpwcmludChKU09OLnN0cmluZ2lmeShwbGF5ZXIub2JqKSk7DQo=''') % (data)                     
+        printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
+        printDBG(jscode)
+        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            decoded = ret['data'].strip()
+            decoded = json.loads(decoded)
+            swfUrl = decoded['flashplayer']
+            url    = decoded['streamer']
+            file   = decoded['file']
+
+            if '' != file and '' != url:
+                url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
+                printDBG(url)
+                return url
         
-        def _getParam(name):
-            return self.cm.ph.getSearchGroups(data, """['"]%s['"][^'^"^,]+?['"]([^'^"^,]+?)['"]""" % name)[0] 
-        swfUrl = _getParam('flashplayer')
-        url    = self.cm.ph.getSearchGroups(data, """\|(rtmp[^'^"^\|]+?)['"\|]""")[0] 
-        printDBG(">>>>>>>>>>>>>> url[%s]" % url)
-        file   = _getParam('file')
-        if file == '':
-            file = self.cm.ph.getSearchGroups(data, """['"]file['"]\s*:([^,]+?),""")[0].strip() 
-            tmp = re.compile('(%s\s*=[^;]+?);' % file).findall(data)
-            code = ''
-            for ins in tmp:
-                code += ins.strip() + '\n'
-            file = self.parserCASTAMPCOMUnpackJS(code, file)
-        
-        if '' != file and '' != url:
-            url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
-            printDBG(url)
-            return url
         return False
         
     def parserCRICHDTV(self, baseUrl):
