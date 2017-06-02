@@ -3500,15 +3500,46 @@ class pageParser:
         return redirectUrl
         
         
-    def parseTUNEPK(self, url):
-        printDBG("parseTUNEPK url[%s]\n" % url)
+    def parseTUNEPK(self, baseUrl):
+        printDBG("parseTUNEPK url[%s]\n" % baseUrl)
         # example video: http://tune.pk/video/4203444/top-10-infamous-mass-shootings-in-the-u
+        HTTP_HEADER = {'User-Agent': "Mozilla/5.0"}
+        COOKIE_FILE = GetCookieDir('tunepk.cookie')
+        rm(COOKIE_FILE)
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
+        
         for item in ['vid=', '/video/', '/play/']:
-            vid = self.cm.ph.getSearchGroups(url+'&', item+'([0-9]+)[^0-9]')[0]
+            vid = self.cm.ph.getSearchGroups(baseUrl+'&', item+'([0-9]+)[^0-9]')[0]
             if '' != vid: break
         if '' == vid: return []
+        
         url = 'http://embed.tune.pk/play/%s?autoplay=no&ssl=no' % vid
-        return self.__parseJWPLAYER_A(url, 'tune.pk')
+        
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return []
+        
+        printDBG(data)
+        
+        url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](https?://[^"^']+?)["']''', 1, True)[0]
+        if self.cm.isValidUrl(url):
+            params['header']['Referer'] = url
+            sts, data = self.cm.getPage(url, params)
+            if not sts: return []
+        
+        url = self.cm.ph.getSearchGroups(data, '''var\s+?requestURL\s*?=\s*?["'](https?://[^"^']+?)["']''', 1, True)[0]
+        
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return []
+        
+        data = byteify(json.loads(data))
+        vidTab = []
+        for item in data['data']['details']['player']['sources']:
+            if 'mp4' == item['type']:
+                url  = item['file']
+                name = str(item['label']) + ' ' + str(item['type'])
+                vidTab.append({'name':name, 'url':url})
+        
+        return vidTab
     
     def parserVIDEOTT(self, url):
         printDBG("parserVIDEOTT url[%r]" % url)
