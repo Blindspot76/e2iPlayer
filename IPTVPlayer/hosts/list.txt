@@ -26,12 +26,12 @@ hostekstraklasatv
 hosteskago
 hostfavourites
 hostfighttube
+hostfightvideo
 hostfilisertv
 hostfilma24hdcom
 hostfilmezz
 hostfilmovizijastudio
 hostfilmstreamvkcom
-hostfilmy3deu
 hostfilmydokumentalneeu
 hostfilmyto
 hostfreediscpl
@@ -90,7 +90,6 @@ hosttvgrypl
 hosttvjworg
 hosttvn24
 hosttvnvod
-hosttvproart
 hosttvpvod
 hosttwitchtv
 hosturllist
