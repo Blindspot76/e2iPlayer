@@ -447,7 +447,9 @@ class T123Movies(CBaseHostClass):
                 url = serverData['grabber']
                 getParams.update(serverData['params'])
                 getParams = self._updateParams(getParams)
-                sts, data = self.getPage(url + '?' + urllib.urlencode(getParams))
+                if '?' in url: url += '&'
+                else: url += '?'
+                sts, data = self.getPage(url + urllib.urlencode(getParams))
                 if not sts: return []
                 data = byteify(json.loads(data))
                 printDBG('%s\n%s\n%s' % (m, data, m))
