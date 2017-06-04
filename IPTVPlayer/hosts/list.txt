@@ -27,7 +27,6 @@ hosteskago
 hostfavourites
 hostfighttube
 hostfightvideo
-hostfilisertv
 hostfilma24hdcom
 hostfilmezz
 hostfilmovizijastudio
