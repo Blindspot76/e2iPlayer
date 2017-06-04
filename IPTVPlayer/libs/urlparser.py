@@ -2404,64 +2404,54 @@ class pageParser:
         return redirectUrl
 
     def parserRUTUBE(self, url):
+        videoUrls = []
+        videoID = ''
+        videoPrivate = ''
+        url += '/'
+        
         if '//rutube.ru/video/embed' in url or '//rutube.ru/play/embed/' in url:
             sts, data = self.cm.getPage(url)
             if not sts: return False
             data = re.search('href="([^"]+?)"', data)
             if not data: return False
-            url = data.group(1)
-        videoID = ''
-        url += '/'
+            tmp = data.group(1)
+            if '/private/' in tmp:
+                videoID = self.cm.ph.getSearchGroups(url+'&', '''/([0-9]+?)[/&\?]''')[0]
+                videoPrivate = self.cm.ph.getSearchGroups(url+'&', '''[&\?]p=([^&^/]+?)[&/]''')[0]
 
-        # get videoID/hash
-        match = re.search('video\.rutube\.ru/(\w+?)/', url)
-        if match:
-            videoID = match.group(1)
-        else:
-            match = re.search('/video/(\w+?)/', url)
+        if videoID != '':
+            # get videoID/hash
+            match = re.search('video\.rutube\.ru/(\w+?)/', url)
             if match:
                 videoID = match.group(1)
             else:
-                match = re.search('hash=([^/]+?)/', url)
+                match = re.search('/video/(\w+?)/', url)
                 if match:
                     videoID = match.group(1)
+                else:
+                    match = re.search('hash=([^/]+?)/', url)
+                    if match:
+                        videoID = match.group(1)
+        
         if '' != videoID:
-            printDBG('parserRUTUBE:                 videoID[%s]' % videoID)
+            printDBG('parserRUTUBE: videoID[%s]' % videoID)
             # get videoInfo:
             #vidInfoUrl = 'http://rutube.ru/api/play/trackinfo/%s/?format=json' % videoID
             vidInfoUrl = 'http://rutube.ru/api/play/options/%s/?format=json&referer=&no_404=true&sqr4374_compat=1' % videoID
-            query_data = { 'url': vidInfoUrl, 'return_data': True }
-            try:
-                videoInfo = self.cm.getURLRequestData(query_data)
-            except Exception:
-                printDBG('parserRUTUBE problem with getting video info page')
-                return []
-            printDBG('---------------------------------------------------------')
-            printDBG(videoInfo)
-            printDBG('---------------------------------------------------------')
-            # "m3u8": "http://bl.rutube.ru/ae8621ff85153a30c398746ed8d6cc03.m3u8"
-            # "f4m": "http://bl.rutube.ru/ae8621ff85153a30c398746ed8d6cc03.f4m"
-            videoUrls = []
-            match = re.search('"m3u8":[ ]*?"(http://bl\.rutube\.ru/.+?)"', videoInfo)
-            if match:
-                printDBG('parserRUTUBE m3u8 link[%s]' % match.group(1))
-                retTab = getDirectM3U8Playlist(match.group(1))
-                videoUrls.extend(retTab)
-            else:
-                printDBG('parserRUTUBE there is no m3u8 link in videoInfo:')
-                printDBG('---------------------------------------------------------')
-                printDBG(videoInfo)
-                printDBG('---------------------------------------------------------')
-               
-            match = re.search('"default":[ ]*?"(http://[^"]+?f4m[^"]*?)"', videoInfo)
-            if match:
-                printDBG('parserRUTUBE f4m link[%s]' % match.group(1))
-                retTab = getF4MLinksWithMeta(match.group(1))
-                videoUrls.extend(retTab)
-            return videoUrls
-        else:
-            printDBG('parserRUTUBE ERROR cannot find videoID in link[%s]' % url)
-            return []
+            if videoPrivate != '': vidInfoUrl += '&p=' + videoPrivate
+            
+            sts, data = self.cm.getPage(vidInfoUrl)
+            data = byteify(json.loads(data))
+            if 'm3u8' in data['video_balancer'] and self.cm.isValidUrl(data['video_balancer'].get('m3u8', '')):
+                videoUrls = getDirectM3U8Playlist(data['video_balancer']['m3u8'])
+            elif 'json' in data['video_balancer'] and self.cm.isValidUrl(data['video_balancer'].get('json', '')): 
+                sts, data = self.cm.getPage(data['video_balancer']['json'])
+                printDBG(data)
+                data = byteify(json.loads(data))
+                if self.cm.isValidUrl(data['results'][0]):
+                    videoUrls.append({'name':'default', 'url':data['results'][0]})
+        
+        return videoUrls
     
     def parserYOUTUBE(self, url):
         if None != self.getYTParser():
