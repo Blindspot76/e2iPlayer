@@ -95,6 +95,7 @@ hosttwitchtv
 hosturllist
 hostustreamtv
 hostvevo
+hostvideopenny
 hostvumooch
 hostwatchwrestling
 hostwebstream
