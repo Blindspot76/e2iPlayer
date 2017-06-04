@@ -280,7 +280,10 @@ class AnimeTo(CBaseHostClass):
             elif data['type'] == 'direct':
                 query = dict(data['params'])
                 query.update({'mobile':'0'})
-                url = data['grabber'] + '?' + urllib.urlencode(query)
+                url = data['grabber']
+                if '?' in url: url += '&'
+                else: url += '?'
+                url += urllib.urlencode(query)
                 sts, data = self.getPage(url, params)
                 if not sts: return []
                 data = byteify(json.loads(data))
