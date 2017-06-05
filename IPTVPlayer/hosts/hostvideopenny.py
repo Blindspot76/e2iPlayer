@@ -88,8 +88,8 @@ class VideoPenny(CBaseHostClass):
         
     def selectDomain(self):                
         self.MAIN_URL = 'https://video.penny.ie/'
-        self.MAIN_CAT_TAB = [{'category':'list_series',         'title': 'Seriale',           'url':self.getMainUrl()},
-                             {'category':'list_programs',       'title': 'Programy online',   'url':self.getMainUrl()},
+        self.MAIN_CAT_TAB = [{'category':'list_series',         'title': 'Seriale',           'url':self.getFullUrl('/new-header/')},
+                             {'category':'list_programs',       'title': 'Programy online',   'url':self.getFullUrl('/new-header/')},
                              {'category':'list_sort_filter',    'title': 'Filmy',             'url':self.getFullUrl('/category/filmy-pl/')},
                              {'category':'list_sort_filter',    'title': 'Bajki',             'url':self.getFullUrl('/category/bajki/')},
                              {'category':'list_last',           'title': 'Ostatnio dodane',   'url':self.getFullUrl('/new-header/')},
