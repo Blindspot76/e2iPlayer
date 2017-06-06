@@ -28,6 +28,7 @@ hostfavourites
 hostfighttube
 hostfightvideo
 hostfilma24hdcom
+hostfilmativa
 hostfilmezz
 hostfilmovizijastudio
 hostfilmstreamvkcom
