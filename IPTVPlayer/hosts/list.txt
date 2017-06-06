@@ -65,6 +65,7 @@ hostnaszekinoonline
 hostninateka
 hostokgoals
 hostonetvod
+hostotakufr
 hostourmatchnet
 hostpaczamy
 hostpapystreamingus
@@ -75,6 +76,7 @@ hostserialnet
 hostserienstreamto
 hostseriesenstreamingcom
 hostseriesonline
+hostskstream
 hostsovdub
 hostsportdeutschland
 hostspryciarze
