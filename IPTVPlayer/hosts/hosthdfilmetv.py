@@ -259,7 +259,9 @@ class HDFilmeTV(CBaseHostClass):
                 for item in tmp['playinfo']:
                     if 'mp4' not in item['type']:
                         continue
-                    urlTab.append({'name':str(item['label']), 'url':self.getFullUrl(str(item['file']))})
+                    url = self.getFullUrl(str(item['file'])) 
+                    url = strwithmeta(url, {'Referer':self.getMainUrl()})
+                    urlTab.append({'name':str(item['label']), 'url':url})
             except Exception:
                 printExc()
         if len(urlTab):
@@ -277,7 +279,9 @@ class HDFilmeTV(CBaseHostClass):
                 for item in googleUrls:
                     if 'mp4' not in item['type']:
                         continue
-                    urlTab.append({'name':str(item['label']), 'url':self.getFullUrl(str(item['file']))})
+                    url = self.getFullUrl(str(item['file'])) 
+                    url = strwithmeta(url, {'Referer':self.getMainUrl()})
+                    urlTab.append({'name':str(item['label']), 'url':url})
             except Exception:
                 printExc()
         if len(urlTab):
