@@ -7544,8 +7544,23 @@ class pageParser:
                 player_data = byteify(json.loads(player))
                 video_id = player_data['refMedia']
             else:
-                model = self.cm.ph.getSearchGroups(webpage, r'data-model="([^"]+)">')[0] 
-                model_data = byteify(json.loads(unescapeHTML(model)))
+                model = self.cm.ph.getSearchGroups(webpage, r'data-model="([^"]+)"')[0] 
+                model_data = byteify(json.loads(unescapeHTML(model.decode())))
+                if 'videos' in model_data:
+                    try:
+                        urlsTab = []
+                        for item in model_data['videos']:
+                            for key in item['sources']:
+                                url = item['sources'][key]
+                                if url.startswith('//'):
+                                    url = 'http:' + url
+                                if self.cm.isValidUrl(url):
+                                    urlsTab.append({'name':key, 'url':url})
+                        if len(urlsTab):
+                            return urlsTab
+                    except Exception:
+                        printExc()
+                
                 video_id = model_data['id']
 
         sts, data = self.cm.getPage('http://www.allocine.fr/ws/AcVisiondataV5.ashx?media=%s' % video_id)
