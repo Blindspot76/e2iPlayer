@@ -97,17 +97,23 @@ class VideoPenny(CBaseHostClass):
                              {'category':'search',          'title': _('Search'), 'search_item':True, },
                              {'category':'search_history',  'title': _('Search history'),             } 
                             ]
-    def _listTitles(self, cItem, nextCategory, cacheTab, m1, m2):
+    def _listTitles(self, cItem, nextCategory, cacheTab, m1, m2, idx):
         printDBG("VideoPenny.listSeries")
         
         if 0 == len(cacheTab):
             uniqueTab = []
             
-            sts, data = self.getPage(cItem['url'])
-            if not sts: return
+            #sts, data = self.getPage(cItem['url'])
+            #if not sts: return
+            #data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2)[1]
+            
+            if idx == 0: url = 'http://textuploader.com/d0rjd/raw'
+            else: url = 'http://textuploader.com/d0rjr/raw'
+            sts, data = self.cm.getPage(url)
+            if not sts: return False 
+            data = base64.b64decode(data)
             
             allItem = None
-            data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2)[1]
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li ', '</li>')
             for item in data:
                 url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
@@ -135,11 +141,11 @@ class VideoPenny(CBaseHostClass):
     
     def listSeries(self, cItem, nextCategory):
         printDBG("VideoPenny.listSeries")
-        self._listTitles(cItem, nextCategory, self.cacheSeries, 'menu-popularne-container', 'menu-tv-shows')
+        self._listTitles(cItem, nextCategory, self.cacheSeries, 'menu-popularne-container', 'menu-tv-shows', 0)
             
     def listPrograms(self, cItem, nextCategory):
         printDBG("VideoPenny.listPrograms")
-        self._listTitles(cItem, nextCategory, self.cachePrograms, 'menu-tv-shows', '</ul>')
+        self._listTitles(cItem, nextCategory, self.cachePrograms, 'menu-tv-shows', '</ul>', 1)
             
     def listSortFilters(self, cItem, nextCategory):
         printDBG("VideoPenny.listSortFilters")
