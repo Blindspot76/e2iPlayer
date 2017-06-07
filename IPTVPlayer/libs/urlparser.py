@@ -2561,10 +2561,30 @@ class pageParser:
             
     def parserVIDUPME(self, baseUrl):
         printDBG("parserVIDUPME baseUrl[%r]" % baseUrl)
-        # example video: http://beta.vidup.me/embed-p1ko9zqn5e4h-640x360.html
-        #def _findLinks(data):
-        #    return self._findLinks(data, 'vidup.me', m1='setup(', m2='image:')
-        return self._parserUNIVERSAL_A(baseUrl, 'http://vidup.me/embed-{0}-640x360.html', self._findLinks)
+        
+        def _preProcessing(data):
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')
+            for item in tmp:
+                if 'eval' in item:
+                    item = self.cm.ph.getDataBeetwenReMarkers(item, re.compile('<script[^>]*?>'), re.compile('</script>'), False)[1]
+                    jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQpkb2N1bWVudC53cml0ZSA9IGZ1bmN0aW9uIChzdHIpDQp7DQogICAgcHJpbnQoc3RyKTsNCn07DQoNCiVz''') % (item)
+                    ret = iptv_js_execute( jscode )
+                    if ret['sts'] and 0 == ret['code']:
+                        item = self.cm.ph.getSearchGroups(ret['data'], '''<script[^>]+?src=['"]([^'^"]+?)['"]''')[0]
+                        if item != '':
+                            item = urljoin(baseUrl, item)
+                            sts, item = self.cm.getPage(item)
+                            if sts:
+                                jscode = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('var\s*jwConfig[^=]*\s*=\s*\{'), re.compile('\};'))[1]
+                                varName = jscode[3:jscode.find('=')].strip()
+                                jscode = base64.b64decode('''JXMNCnZhciBpcHR2YWxhID0gandDb25maWcoJXMpOw0KcHJpbnQoSlNPTi5zdHJpbmdpZnkoaXB0dmFsYSkpOw==''') % (item + '\n' + jscode, varName)
+                                ret = iptv_js_execute( jscode )
+                                if ret['sts'] and 0 == ret['code']:
+                                    printDBG(ret['data'])
+                                    return ret['data']
+            
+            return data
+        return self._parserUNIVERSAL_A(baseUrl, 'http://vidup.me/embed-{0}-640x360.html', self._findLinks, _preProcessing)
         
     def parserSPEEDVIDNET(self, baseUrl):
         printDBG("parserSPEEDVIDNET baseUrl[%r]" % baseUrl)
