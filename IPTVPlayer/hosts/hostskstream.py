@@ -104,6 +104,10 @@ class SKStream(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        params = dict(cItem)
+        params.update({'good_for_fav':False, 'category':'list_items', 'title':_('--All--')})
+        self.addDir(params)
+        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<nav ', '</nav>')[1]
         data = data.split('<div class="panel panel-default">')
         if len(data) > 2: data = data[2:]
