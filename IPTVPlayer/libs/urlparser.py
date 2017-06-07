@@ -6609,6 +6609,25 @@ class pageParser:
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl.meta.get('Referer', baseUrl) }
         defaultParams = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('streamliveto.cookie')}
         
+        #----------------------------------------
+        params = dict(defaultParams)
+        HTTP_HEADER = dict(HTTP_HEADER)
+        HTTP_HEADER['Referer'] = baseUrl
+        params.update({'header':{'header':HTTP_HEADER}})
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False 
+        streamHlsUrl = self.cm.ph.getSearchGroups(data, '"((?:https:)?//[^"]+?\.m3u8[^"]*?)"')[0]
+        if streamHlsUrl.startswith('//'):
+            streamHlsUrl = 'http:' + streamHlsUrl
+        if self.cm.isValidUrl(streamHlsUrl):
+            streamHlsUrl = urlparser.decorateUrl(streamHlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+            urlsTab = getDirectM3U8Playlist(streamHlsUrl, checkExt=True, checkContent=True)
+            if len(urlsTab):
+                return urlsTab
+        return False
+        #----------------------------------------
+        
+        
         _url_re = re.compile("http(s)?://(\w+\.)?(ilive.to|streamlive.to)/.*/(?P<channel>\d+)")
         channel = _url_re.match(baseUrl).group("channel")
         
