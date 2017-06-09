@@ -23,6 +23,7 @@ import string
 import random
 import base64
 import hashlib
+from datetime import timedelta
 from binascii import hexlify, unhexlify
 from urlparse import urlparse, urljoin
 try:    import json
@@ -64,6 +65,7 @@ class TED(CBaseHostClass):
         self.MAIN_URL = None
         
         self.cacheTalksFilters = []
+        self.cachePlaylistsFilters = []
         self.cacheAllTopics = []
         self.cacheTalksLanguages = []
         self.cacheAllEvents = []
@@ -101,6 +103,8 @@ class TED(CBaseHostClass):
     def selectDomain(self):                
         self.MAIN_URL = 'https://ted.com/'
         self.MAIN_CAT_TAB = [{'category':'list_talks_filters',      'title': _('Talks'),                    'url':self.getFullUrl('/talks')},
+                             {'category':'list_playlists_filters',  'title': _('Playlists'),                'url':self.getFullUrl('/playlists')},
+                             
                              {'category':'search',          'title': _('Search'), 'search_item':True, },
                              {'category':'search_history',  'title': _('Search history'),             } 
                             ]
@@ -152,13 +156,35 @@ class TED(CBaseHostClass):
         tmp = self.cm.ph.getDataBeetwenMarkers(data, "filters-sort", '</select>')[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
         self._addFilter(tmp, self.cacheTalksFilters, 'f_sort')
+        
+    def _fillPlaylistsFilters(self, cItem):
+        self.cachePlaylistsFilters = []
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        # topics
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, "name='topics'", '</select>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
+        if self._addFilter(tmp, self.cachePlaylistsFilters, 'f_topics', _('--Any--')):
+            self.cachePlaylistsFilters[-1].append({'category':'list_playlists_topics_abc', 'title':_('See all topics'), 'f_url':self.getFullUrl('/topics/combo?models=Talks')})
+        
+        # durations
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, "name='duration'", '</select>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
+        self._addFilter(tmp, self.cachePlaylistsFilters, 'f_duration', _('--Any--'))
             
-    def listTalksFilters(self, cItem):
+        # sort
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, "name='curator'", '</select>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
+        self._addFilter(tmp, self.cachePlaylistsFilters, 'f_curator',  _('--Any--'))
+            
+    def listFilters(self, cItem, cacheTab):
         params = dict(cItem)
         idx = params.get('f_idx', 0)
         params['f_idx'] = idx + 1
-        if idx < len(self.cacheTalksFilters):
-            self.listsTab(self.cacheTalksFilters[idx], params)
+        if idx < len(cacheTab):
+            self.listsTab(cacheTab[idx], params)
         
     def listTopicsABC(self, cItem, nextCategory):
         printDBG("TED.listTopicsABC")
@@ -321,12 +347,88 @@ class TED(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
             self.addDir(params)
+            
+    def listPlaylists(self, cItem, nextCategory):
+        printDBG("TED.listPlaylists")
+        httpParams = dict(self.defaultAjaxParams)
+        httpParams['header']['Referer'] = cItem['url']
+        
+        url = self.getFullUrl('/playlists/browse.json')
+        page = cItem.get('page', 1)
+        
+        query = {}
+        if page > 1: query['page'] = page
+        query['per_page'] = 24
+        
+        queryParamsMap = {'f_topics':'topics[]', 'f_duration':'duration', 'f_curator':'curator'}
+        for key in cItem:
+            if key not in queryParamsMap: continue
+            query[queryParamsMap[key]] = cItem[key]
+        
+        query = urllib.urlencode(query)
+        if '?' in url: url += '&' + query
+        else: url += '?' + query
+        
+        sts, data = self.getPage(url, httpParams)
+        if not sts: return
+        nextPage = False
+        try:
+            data = byteify(json.loads(data))
+            if page < data['metadata']['pageCount']: nextPage = True
+            for item in data['records']:
+                url   = self.getFullUrl(item['url'])
+                icon  = self.getFullIconUrl(item['thumb'])
+                title = self.cleanHtmlStr(item['title'])
+                
+                descTab = ['%s: %s' %(_('Talks'), item['talks'])]
+                duration = str( timedelta( seconds = int(item['duration']) ) )
+                if duration.startswith("0:"): duration = duration[2:]
+                descTab.append('%s: %s' % (_('Duration'), duration))
+                descTab.append('%s: %s' % (_('Curator'), item['curator']))
+                desc = '[/br]'.join(descTab)
+                
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'desc':desc, 'icon':icon})
+                self.addDir(params)
+        except Exception:
+            printExc()
+            
+        if nextPage:
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
+            self.addDir(params)
+        
+    def listPlaylistItems(self, cItem):
+        printDBG("TED.listTalksItems")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'playlist-talks', '</ul>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        for item in data:
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''', ignoreCase=True)[0])
+            if not self.cm.isValidUrl(url): continue
+            icon  = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0])
+            
+            titles = [self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h9', '</h9>')[1])]
+            speaker = self.cm.ph.getSearchGroups(item, '<a[^>]+?speaker[^>]*?>([^>]+?)<')[0]
+            if speaker != '': titles.insert(0, speaker)
+            title = ': '.join(titles)
+            
+            duration = self.cm.ph.getSearchGroups(item, '<span[^>]+?duration[^>]*?>([^>]+?)<')[0]
+            desc  = self.cleanHtmlStr(item.split("</h9>")[-1])
+            if duration != '': desc = duration + ' | ' + desc
+            
+            params = dict(cItem)
+            params.update({'good_for_fav':True, 'title':title, 'url':url, 'desc':desc, 'icon':icon})
+            self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("TED.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         page = cItem.get('page', 1)
         
-        url = self.getFullUrl('/search?cat=%s&page=1&per_page=12&q=%s' % (searchType, urllib.quote_plus(searchPattern)))
+        url = self.getFullUrl('/search?cat=%s&page=%s&per_page=12&q=%s' % (searchType, page, urllib.quote_plus(searchPattern)))
         
         sts, data = self.getPage(url)
         if not sts: return
@@ -346,6 +448,9 @@ class TED(CBaseHostClass):
             params.update({'good_for_fav':True, 'title':title, 'url':url, 'desc':desc, 'icon':icon})
             if searchType == 'talks':
                 self.addVideo(params)
+            elif searchType == 'playlists':
+                params['category'] = 'list_playlist_items'
+                self.addDir(params)
             
         if nextPage:
             params = dict(cItem)
@@ -474,7 +579,7 @@ class TED(CBaseHostClass):
             idx = self.currItem.get('f_idx', 0)
             if idx == 0: self._fillTalksFilters(self.currItem)
             if idx < len(self.cacheTalksFilters):
-                self.listTalksFilters(self.currItem)
+                self.listFilters(self.currItem, self.cacheTalksFilters)
             else:
                 self.listTalksItems(self.currItem)
         elif category == 'list_talks_topics_abc':
@@ -489,8 +594,19 @@ class TED(CBaseHostClass):
             self.listEvents(self.currItem, 'list_talks_filters')
 
     # PLAYLISTS
-        # TODO
-        
+        elif 'list_playlists_filters' == category:
+            idx = self.currItem.get('f_idx', 0)
+            if idx == 0: self._fillPlaylistsFilters(self.currItem)
+            if idx < len(self.cachePlaylistsFilters):
+                self.listFilters(self.currItem, self.cachePlaylistsFilters)
+            else:
+                self.listPlaylists(self.currItem, 'list_playlist_items')
+        elif category == 'list_playlists_topics_abc':
+            self.listTopicsABC(self.currItem, 'list_playlists_topics')
+        elif category == 'list_playlists_topics':
+            self.listTopics(self.currItem, 'list_playlists_filters')
+        elif category == 'list_playlist_items':
+            self.listPlaylistItems(self.currItem)
     # PEOPLES 
         # TOTO
     
@@ -516,4 +632,6 @@ class IPTVHost(CHostBase):
     def getSearchTypes(self):
         searchTypesOptions = []
         searchTypesOptions.append((_("Talks"), "talks"))
+        searchTypesOptions.append((_("Playlists"), "playlists"))
+        
         return searchTypesOptions
