@@ -86,6 +86,7 @@ hoststreamingseriesxyz
 hoststreamliveto
 hostsvtplayse
 hosttantifilmorg
+hostted
 hostthewatchseriesto
 hosttreetv
 hosttvgrypl
