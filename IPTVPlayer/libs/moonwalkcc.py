@@ -103,9 +103,12 @@ class MoonwalkParser():
         sec_header['X-Requested-With'] = 'XMLHttpRequest'
         post_data = {}
         
-        allVariables = re.compile("[,\s]([^:^,^\s]+?)\s*:\s*([^,^\s]+?)[,\s]").findall(data)
-        allVariables.extend( re.compile(postParamName + "\.([^=]+?)\s*=\s*([^;]+?);").findall(data) )
-        allVariables.extend( re.compile(postParamName + '''\[['"]([^'^"]+?)['"]\]\s*=\s*(['"][^'^"]+?['"])\s*;''').findall(allData) )
+        try: allVariables = re.compile("[,\s]([^:^,^\s]+?)\s*:\s*([^,^\s]+?)[,\s]").findall(data)
+        except Exception: printExc()
+        try: allVariables.extend( re.compile(postParamName + "\.([^=]+?)\s*=\s*([^;]+?);").findall(data) )
+        except Exception: printExc()
+        try: allVariables.extend( re.compile(postParamName + '''\[['"]([^'^"]+?)['"]\]\s*=\s*(['"][^'^"]+?['"])\s*;''').findall(allData) )
+        except Exception: printExc()
         
         for item in allVariables:
             varName  = item[0].strip()
