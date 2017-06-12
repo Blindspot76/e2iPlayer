@@ -4,12 +4,13 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 ###################################################
 
 ###################################################
@@ -23,6 +24,7 @@ import string
 import random
 import base64
 from copy import deepcopy
+from binascii import hexlify, unhexlify
 from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
@@ -73,6 +75,7 @@ class AnimeTo(CBaseHostClass):
                              {'category':'search',            'title': _('Search'), 'search_item':True,},
                              {'category':'search_history',    'title': _('Search history'),            } 
                             ]
+        self._myFun = None
                             
     def getFullIconUrl(self, url):
         url = url.replace('&amp;', '&')
@@ -242,6 +245,40 @@ class AnimeTo(CBaseHostClass):
             printExc()
         return cookieItems
         
+    def _cryptoJS_AES(self, encrypted, password, decrypt=True):
+        def derive_key_and_iv(password, key_length, iv_length):
+            d = d_i = ''
+            while len(d) < key_length + iv_length:
+                d_i = md5(d_i + password).digest()
+                d += d_i
+            return d[:key_length], d[key_length:key_length+iv_length]
+        bs = 16
+        key, iv = derive_key_and_iv(password, 32, 16)
+        cipher = AES_CBC(key=key, keySize=32)
+        if decrypt:
+            return cipher.decrypt(encrypted, iv)
+        else:
+            return cipher.encrypt(encrypted, iv)
+            
+        
+    def _updateParams(self, params):
+        if self._myFun == None:
+            try:
+                tmp = '89aac45129123590486772c958b0efc9074993ad1ffddc7fecfec3755806ca1d51a76813a3fbf891ee09081e10ea4f74681823b1443295b8b4ee2f14d8f209194fe5db528cbbf29117101f346dc7b4dd1474dff6face052de50948157720f1fd9d162c4068f329ca732336edd335ae93e29d3515f32b9c1963255b979da52f52bede1bfa1f505581bd8a92a4d43ce162ebe4efe19303d3a3b141305610bfe8257fa70af3c548003c3b5a216e2e5204568f09abfa0f8448d18aafc79bd7d893f5a182f7529ffbb5678b236ef43a0e3378ad5a470ef3680ed8ee7543fc32da6f818e5a82a8404f40c7b12409c2f301c72d878fb6769b5b92564d8728db24e54504ec79ae8c59dd3283887a6d16c4baac80aed4d55d04e599813662ed50e68b0ae1a360d576d49c3af3d0cd0f71ba701a6a2be1ee99112fd1f0dac8973651fa9d674cb436034490b83f8bf8d210033cf9f87dcf859ba7751777d4d1432dc890d11b48041fee901fb9ed88b1e42f58de5eb1e50b006c63773565b9cc3d511257418edd376fe826a93743dce8b583bb4f0f0caded22c3d6f291ad2548795f4ea999ad370a6e763218bb95f62168d2fedcb653abeb75415f150595301db6f92b22d315bbda20f6da1c5cbffa39097a3e8e631e5f7323af323da41d20d916a7728a0949429832f1006cb1eb67d1169540ef06fe8b72b7ac5aa74c3b893522046ebedc7c8b9e7e9516e0159f9c7e55e85b62c904018b89e104108a221d3888d81eb9404c7958686a26d9e9e265dddda99a09865ebf1631a468c6ab2b365f9c835db60299bfec9aab464881f91712697d3d0118abaf6d654601393e7716ea31e58d09d230194c31e5ad56f5347b7d6936bdc2f79aae11eb5114c8c8cc7dd28f16245dab5974a532a3b6833587ed3bc9f9da5b1e5eb3a50376a8cda879a5c803fad9cae3484646bf8a9c0a2b928c1261466a88d01f82ba448def49f97f2777164d689b49d6c074044abe0b488c9df71f3c2d10c9c228343d7c5478502031d9c96891bc6ca652aabeede46a1faf98516e633aa3b410f067b153bc6daa0b07c8f416abc9892456416034ebc85ebb98431ee9ab62cb68ae2df581b216acf7388b6289c24305d959500eaad36968a49b012850d8a0d967ead31bf4f1527d5fa930d24cf77b209d8e11e6ab3a6fc0c7bfefe0db87f5f591c50807684209d5a91304e73853a170bff5a33d06fe0f0f5c9d9cd2b86ef628dc768766a29ed45e3ddc28a33c1a3d39c821204c1a7c1ffc44c67256127ee63ccf'
+                tmp = self._cryptoJS_AES(unhexlify(tmp), ''.join(GetPluginDir().split('/')[-5:]))
+                tmp = base64.b64decode(tmp.split('\r')[-1]).replace('\r', '')
+                
+                _myFun = compile(tmp, '', 'exec')
+                vGlobals = {"__builtins__": None, 'len': len, 'dict':dict, 'list': list, 'ord':ord, 'range':range, 'str':str, 'max':max, 'hex':hex}
+                vLocals = { 'zaraza': '' }
+                exec _myFun in vGlobals, vLocals
+                self._myFun = vLocals['zaraza']
+            except Exception:
+                printExc()
+        try: params = self._myFun(params)
+        except Exception: printExc()
+        return params
+        
     def getVideoLinks(self, videoUrl):
         printDBG("AnimeTo.getVideoLinks [%s]" % videoUrl)
         videoUrl = strwithmeta(videoUrl)
@@ -266,7 +303,28 @@ class AnimeTo(CBaseHostClass):
         params['header']['Referer'] = str(videoUrl)
         params['cookie_items'] = cookieItem
         
-        sts, data = self.getPage('https://9anime.to/ajax/episode/info?id=%s&update=0' % id, params)
+        #sts, data = self.getPage('https://9anime.to/ajax/episode/info?id=%s&update=0' % id, params)
+        #if not sts: return []
+        
+        sts, data = self.getPage(videoUrl, params)
+        if not sts: return []
+        
+        timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+
+        getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'Q':'1'}
+        getParams = self._updateParams(getParams)
+        url = self.getFullUrl('/ajax/film/update-views?' + urllib.urlencode(getParams))
+        sts, data = self.getPage(url, params)
+        if not sts: return []
+        
+        m = "++++++++++++++++++++++++++++++++"
+        printDBG('%s\n%s\n%s' % (m, data, m))
+        
+        getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'update':'0'}
+        getParams = self._updateParams(getParams)
+        
+        url = self.getFullUrl('/ajax/episode/info?' + urllib.urlencode(getParams))
+        sts, data = self.getPage(url, params)
         if not sts: return []
         
         videoUrl = ''
@@ -277,6 +335,7 @@ class AnimeTo(CBaseHostClass):
             subTrack = data.get('subtitle', '')
             if data['type'] == 'iframe':
                 videoUrl = data['target']
+                if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
             elif data['type'] == 'direct':
                 query = dict(data['params'])
                 query.update({'mobile':'0'})

@@ -419,6 +419,7 @@ class urlparser:
                        'tunein.com':           self.pp.parserTUNEINCOM      ,
                        'speedvid.net':         self.pp.parserSPEEDVIDNET    ,
                        'vsports.pt':           self.pp.parserVSPORTSPT      ,
+                       'mycloud.to':           self.pp.parserMYCLOUDTO      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2608,6 +2609,15 @@ class pageParser:
                     linksTab.append({'name':'mp4', 'url': link})
             return linksTab
         return self._parserUNIVERSAL_A(baseUrl, 'http://vidlox.tv/embed-{0}.html', _findLinks)
+        
+    def parserMYCLOUDTO(self, baseUrl):
+        printDBG("parserMYCLOUDTO baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        url = self.cm.ph.getSearchGroups(data, '''['"]((:?https?:)?//[^"^']+\.m3u8[^'^"]*?)['"]''')[0]
+        if url.startswith('//'):
+            url = 'http:' + url
+        return getDirectM3U8Playlist(url, checkContent=True)[::-1]
         
     def parserVIDABCCOM(self, baseUrl):
         printDBG("parserVIDABCCOM baseUrl[%r]" % baseUrl)
