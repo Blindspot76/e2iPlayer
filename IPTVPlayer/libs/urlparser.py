@@ -273,6 +273,7 @@ class urlparser:
                        'hdcast.info':          self.pp.parserHDCASTINFO    ,
                        'deltatv.pw':           self.pp.parserDELTATVPW     ,
                        'pxstream.tv':          self.pp.parserPXSTREAMTV    ,
+                       'kabab.lima-city.de':   self.pp.parserKABABLIMA     ,
                        'coolcast.eu':          self.pp.parserCOOLCASTEU    ,
                        'filenuke.com':         self.pp.parserFILENUKE      ,
                        'sharesix.com':         self.pp.parserFILENUKE      ,
@@ -667,8 +668,14 @@ class urlparser:
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif 'pxstream.tv' in data:
-                id = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
-                videoUrl = 'http://pxstream.tv/embed.php?file=' + id
+                videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]+?)['"]''', ignoreCase=True)[0]
+                if not self.cm.isValidUrl(videoUrl):
+                    id = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
+                    videoUrl = 'http://pxstream.tv/embed.php?file=' + id
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'kabab.lima-city.de' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]+?)['"]''', ignoreCase=True)[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif 'coolcast.eu' in data:
@@ -717,7 +724,11 @@ class urlparser:
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif "ustream.tv" in data:
-                videoUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?ustream.tv[^"]+?)"')[0]
+                tmp = self.cm.ph.getSearchGroups(data, '<([^>]+?src="[^"]+?ustream.tv[^"]+?"[^>]*?)>')[0]
+                videoUrl = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?ustream.tv[^"]+?)"')[0]
+                if '/flash/' in videoUrl or videoUrl.split('?')[0].endswith('.swf'):
+                    cid = self.cm.ph.getSearchGroups(tmp, """cid=([0-9]+?)[^0-9]""")[0]
+                    videoUrl = 'http://www.ustream.tv/channel/' + cid
                 if videoUrl.startswith('//'):
                     videoUrl = 'http:' + videoUrl
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
@@ -4095,10 +4106,10 @@ class pageParser:
             
         return urlsTab
         
-    def parserPRIVATESTREAM(self, linkUrl):
-        printDBG("parserPRIVATESTREAM linkUrl[%s]" % linkUrl)
+    def parserPRIVATESTREAM(self, baseUrl):
+        printDBG("parserPRIVATESTREAM baseUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
-        videoUrl = strwithmeta(linkUrl)
+        videoUrl = strwithmeta(baseUrl)
         if 'Referer' in videoUrl.meta:
             HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
 
@@ -4122,10 +4133,22 @@ class pageParser:
                 d = int(self.cm.ph.getSearchGroups(data, 'var d = ([0-9]+?);')[0])
                 f = int(self.cm.ph.getSearchGroups(data, 'var f = ([0-9]+?);')[0])
                 v_part = self.cm.ph.getSearchGroups(data, "var v_part = '([^']+?)'")[0]
+                v_part_m = self.cm.ph.getSearchGroups(data, "var v_part_m = '([^']+?)'")[0]
+                addr_part  = self.cm.ph.getSearchGroups(data, "var addr_part = '([^']+?)'")[0]
+                videoTabs = []
+                url = ('://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) )
+                if url == '://0.0.0.0':
+                    url = '://' + addr_part
                 
-                url = ('rtmp://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) ) + v_part
-                url += ' swfUrl=http://privatestream.tv/js/jwplayer.flash.swf pageUrl=%s' % (videoUrl)
-                return url
+                if v_part != '':
+                    rtmpUrl = 'rtmp' + url + v_part
+                    rtmpUrl += ' swfUrl=%sclappr/RTMP.swf pageUrl=%s live=1' % (self.cm.getBaseUrl(videoUrl), baseUrl) #token=‪%s '#atd%#$ZH'
+                    videoTabs.append({'name':'rtmp', 'url':rtmpUrl})
+                if v_part_m != '':
+                    hlsUrl = 'http' + url + v_part_m
+                    hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                    videoTabs.extend( getDirectM3U8Playlist(hlsUrl, checkContent=True) )
+                return videoTabs
             except Exception:
                 printExc()
         return False
@@ -4477,8 +4500,12 @@ class pageParser:
                 f = int(self.cm.ph.getSearchGroups(data, 'var f = ([0-9]+?);')[0])
                 v_part = self.cm.ph.getSearchGroups(data, "var v_part = '([^']+?)'")[0]
                 v_part_m = self.cm.ph.getSearchGroups(data, "var v_part_m = '([^']+?)'")[0]
+                addr_part  = self.cm.ph.getSearchGroups(data, "var addr_part = '([^']+?)'")[0]
                 videoTabs = []
                 url = ('://%d.%d.%d.%d' % (a/f, b/f, c/f, d/f) )
+                if url == '://0.0.0.0':
+                    url = '://' + addr_part
+                
                 if v_part != '':
                     rtmpUrl = 'rtmp' + url + v_part
                     rtmpUrl += ' swfUrl=%sclappr/RTMP.swf pageUrl=%s live=1' % (self.cm.getBaseUrl(videoUrl), videoUrl) #token=‪%s '#atd%#$ZH'
@@ -5837,6 +5864,24 @@ class pageParser:
             return url
         return False
         
+    def parserKABABLIMA(self, baseUrl):
+        printDBG("parserKABABLIMA baseUrl[%s]" % baseUrl)
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        printDBG(data)
+        hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+        if hlsUrl != '':
+            return getDirectM3U8Playlist(hlsUrl, checkContent=True)
+        return False
+        
     def parserPXSTREAMTV(self, baseUrl):
         printDBG("parserPXSTREAMTV baseUrl[%s]" % baseUrl)
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
@@ -5845,13 +5890,22 @@ class pageParser:
         HTTP_HEADER['Referer'] = Referer
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
+        
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        printDBG(data)
+        
         def _getParam(name):
             return self.cm.ph.getSearchGroups(data, """%s:[^'^"]*?['"]([^'^"]+?)['"]""" % name)[0] 
         swfUrl = "http://pxstream.tv/player510.swf"
         url    = _getParam('streamer')
         file   = _getParam('file')
+        if file == '':
+            hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+            if self.cm.isValidUrl(hlsUrl):
+                tmp = getDirectM3U8Playlist(hlsUrl, checkContent=True)
+                if len(tmp): return tmp
         if file.split('?')[0].endswith('.m3u8'):
             return getDirectM3U8Playlist(file)
         elif '' != file and '' != url:
