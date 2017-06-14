@@ -164,7 +164,7 @@ class TeleWizjaComApi(CBaseHostClass):
             for url in tmp:
                 stripUrl = self.getFullUrl(url)
                 data = data.replace(url, stripUrl)
-            printDBG(data)
+            #printDBG(data)
             tmpLinks = self.up.getAutoDetectedStreamLink(frameUrl, data)
             for idx in range(len(tmpLinks)):
                 tmpLinks[idx]['name'] = prefix + tmpLinks[idx]['name']

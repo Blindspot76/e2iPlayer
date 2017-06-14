@@ -274,6 +274,7 @@ class urlparser:
                        'deltatv.pw':           self.pp.parserDELTATVPW     ,
                        'pxstream.tv':          self.pp.parserPXSTREAMTV    ,
                        'kabab.lima-city.de':   self.pp.parserKABABLIMA     ,
+                       'ustreamix.com':        self.pp.parserUSTREAMIXCOM  ,
                        'coolcast.eu':          self.pp.parserCOOLCASTEU    ,
                        'filenuke.com':         self.pp.parserFILENUKE      ,
                        'sharesix.com':         self.pp.parserFILENUKE      ,
@@ -683,6 +684,10 @@ class urlparser:
                 return self.getVideoLinkExt(videoUrl)
             elif 'kabab.lima-city.de' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]+?)['"]''', ignoreCase=True)[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'ustreamix.com' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]*?ustreamix[^'^"]+?)['"]''', ignoreCase=True)[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
             elif 'coolcast.eu' in data:
@@ -5886,6 +5891,41 @@ class pageParser:
         printDBG(data)
         hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
         if hlsUrl != '':
+            return getDirectM3U8Playlist(hlsUrl, checkContent=True)
+        return False
+        
+    def parserUSTREAMIXCOM(self, baseUrl):
+        printDBG("parserUSTREAMIXCOM baseUrl[%s]" % baseUrl)
+        baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
+        Referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = Referer
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        val = int(self.cm.ph.getSearchGroups(data, ' \- (\d+)')[0])
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '= [', ']')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '"', '"')
+        text = ''
+        numObj = re.compile('(\d+)')
+        for value in data:
+            value = base64.b64decode(value)
+            text += chr(int(numObj.search(value).group(1)) - val)
+        
+        statsUrl = self.cm.ph.getSearchGroups(text, '''src=["'](https?://[^'^"]*?stats\.php[^'^"]*?)["']''', ignoreCase=True)[0] 
+        HTTP_HEADER['Referer'] = baseUrl
+        sts, data = self.cm.getPage(statsUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        token = self.cm.ph.getAllItemsBeetwenMarkers(data, '"', '"', False)[-1]
+        
+        printDBG("token||||||||||||||||| " + token)
+        
+        hlsUrl = self.cm.ph.getSearchGroups(text, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+        printDBG("hlsUrl||||||||||||||||| " + hlsUrl)
+        if hlsUrl != '':
+            if hlsUrl.endswith('='): hlsUrl += token
+            hlsUrl = strwithmeta(hlsUrl, {'Referer':baseUrl})
             return getDirectM3U8Playlist(hlsUrl, checkContent=True)
         return False
         
