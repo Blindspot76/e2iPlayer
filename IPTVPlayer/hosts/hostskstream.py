@@ -287,12 +287,23 @@ class SKStream(CBaseHostClass):
                     url = response.geturl()
                     if 'dl-protect.co' in self.up.getDomain(url):
                         data = response.read(1024*1024*1024)
-                        url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+                        response.close()
                         printDBG(data)
-                    response.close()
+                        url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+                        if not self.cm.isValidUrl(url):
+                            data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', '],', False)[1] + ']'
+                            data = byteify(json.loads(data))
+                            for item in data:
+                                if "mp4" == item['type']:
+                                    urlTab.append({'name':str(item.get('label', 'default')), 'url':item['file']})
+                    else:
+                        response.close()
                 except Exception:
                     printExc()
                     continue
+            
+            if len(urlTab):
+                break
             
             urlTab = self.up.getVideoLinkExt(url)
             if len(urlTab):

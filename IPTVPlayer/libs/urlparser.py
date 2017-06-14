@@ -475,7 +475,14 @@ class urlparser:
                     host = self.getHostName(url)
                     videoTab.append({'name': host, 'url': ret})
             elif isinstance(ret, list) or isinstance(ret, tuple):
-                return ret
+                videoTab = ret
+                
+            for idx in range(len(videoTab)):
+                if not self.cm.isValidUrl(url): continue
+                url = strwithmeta(videoTab[idx]['url'])
+                if 'User-Agent' not in url.meta:
+                    url.meta['User-Agent'] = 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'
+                    videoTab[idx]['url'] = url
         except Exception:
             printExc()
             
