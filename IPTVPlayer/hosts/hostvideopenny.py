@@ -49,7 +49,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://video.penny.ie/'
+    return 'http://videopenny.net/'
 
 class VideoPenny(CBaseHostClass):
  
@@ -60,7 +60,7 @@ class VideoPenny(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.DEFAULT_ICON_URL = 'https://video.penny.ie/wp-content/uploads/icons/Video-Penny-logo-126x21.png'
+        self.DEFAULT_ICON_URL = 'http://videopenny.net/wp-content/uploads/icons/VideoPennyNet-logo_126x30.png'
         self.MAIN_URL = None
         self.cacheSeries = []
         self.cachePrograms = []
@@ -87,9 +87,9 @@ class VideoPenny(CBaseHostClass):
         return url
         
     def selectDomain(self):                
-        self.MAIN_URL = 'https://video.penny.ie/'
-        self.MAIN_CAT_TAB = [{'category':'list_series',         'title': 'Seriale',           'url':self.getFullUrl('/new-header/')},
-                             {'category':'list_programs',       'title': 'Programy online',   'url':self.getFullUrl('/new-header/')},
+        self.MAIN_URL = 'http://videopenny.net/'
+        self.MAIN_CAT_TAB = [{'category':'list_series',         'title': 'Seriale',           'url':self.getMainUrl()},
+                             {'category':'list_programs',       'title': 'Programy online',   'url':self.getMainUrl()},
                              {'category':'list_sort_filter',    'title': 'Filmy',             'url':self.getFullUrl('/category/filmy-pl/')},
                              {'category':'list_sort_filter',    'title': 'Bajki',             'url':self.getFullUrl('/category/bajki/')},
                              {'category':'list_last',           'title': 'Ostatnio dodane',   'url':self.getFullUrl('/new-header/')},
@@ -103,15 +103,15 @@ class VideoPenny(CBaseHostClass):
         if 0 == len(cacheTab):
             uniqueTab = []
             
-            #sts, data = self.getPage(cItem['url'])
-            #if not sts: return
-            #data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2)[1]
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return
+            data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2)[1]
             
-            if idx == 0: url = 'http://textuploader.com/d0rjd/raw'
-            else: url = 'http://textuploader.com/d0rjr/raw'
-            sts, data = self.cm.getPage(url)
-            if not sts: return False 
-            data = base64.b64decode(data)
+            #if idx == 0: url = 'http://textuploader.com/d0rjd/raw'
+            #else: url = 'http://textuploader.com/d0rjr/raw'
+            #sts, data = self.cm.getPage(url)
+            #if not sts: return False 
+            #data = base64.b64decode(data)
             
             allItem = None
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li ', '</li>')
@@ -203,7 +203,7 @@ class VideoPenny(CBaseHostClass):
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<article', '</article>')[1]
-        data = data.split('<div class="smart-box-head">')
+        data = data.split('<div class="smart-box-head"')
         if len(data): del data[0]
         for section in data:
             sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(section, '<h2', '</h2>')[1])
