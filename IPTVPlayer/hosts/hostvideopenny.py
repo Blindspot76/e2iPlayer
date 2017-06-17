@@ -163,8 +163,11 @@ class VideoPenny(CBaseHostClass):
             params.update({'good_for_fav':False, 'title':title, 'url':url, 'category':nextCategory})
             self.addDir(params)
                 
-    def listItems(self, cItem):
+    def listItems(self, cItem, search=False):
         printDBG("VideoPenny.listItems")
+        
+        uniqueTab = []
+        dirsTab = []
         
         page = cItem.get('page', 1)
         
@@ -179,16 +182,35 @@ class VideoPenny(CBaseHostClass):
         for item in data:
             if 'item-head"' not in item: continue
             
-            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
             if not self.cm.isValidUrl(url): continue
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3>', '</h3>')[1])
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
             icon  = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''data-lazy-src=['"]([^'^"]+?)['"]''')[0])
             desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>')[1])
             
+            if search and page == 1 and ('/seriale' in url or '/programy' in url):
+                dirUrl = url
+                if dirUrl.endswith('/'): dirUrl = dirUrl[:-1]
+                dirUrl = '/'.join(dirUrl.split('/')[:-1])
+                if dirUrl not in uniqueTab and dirUrl != cItem['url']:
+                    uniqueTab.append(dirUrl)
+                    dirsTab.append({'title':title.split('odc.')[0], 'url':dirUrl, 'icon':icon, 'desc':desc})
+            
             params = dict(cItem)
             params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
             self.addVideo(params)
+        
+        printDBG("|||||||||||||||||||>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s" % uniqueTab)
+        
+        tmpList = []
+        for item in dirsTab:
+            params = dict(cItem)
+            params.update(item)
+            params.update({'good_for_fav':True, 'category':'list_items'})
+            tmpList.append(params)
+        tmpList.extend(self.currList)
+        self.currList = tmpList
         
         if self.cm.isValidUrl(nextPage):
             params = dict(cItem)
@@ -241,7 +263,7 @@ class VideoPenny(CBaseHostClass):
         
         cItem = dict(cItem)
         cItem['url'] = self.getFullUrl('page/%s/?s=%s' % (page, urllib.quote_plus(searchPattern)))
-        self.listItems(cItem)
+        self.listItems(cItem, True)
     
     def getLinksForVideo(self, cItem):
         printDBG("VideoPenny.getLinksForVideo [%s]" % cItem)
