@@ -56,7 +56,7 @@ class RteIE(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'RteIE.tv', 'cookie':'rte.ie.cookie', 'cookie_type':'MozillaCookieJar'})
-        self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -254,6 +254,7 @@ class RteIE(CBaseHostClass):
                     
                     if ('/hds-vod/' in item['url'] or '/hds-live/' in item['url']) and item['url'].endswith('.f4m'):
                         hlsUrl = item['url'].replace('/hds-vod/', '/hls-vod/').replace('/hds-live/', '/hls-live/')[:-3] + 'm3u8'
+                        hlsUrl = strwithmeta(hlsUrl, {'Referer':cItem['url'], 'User-Agent':self.USER_AGENT})
                         tmp = getDirectM3U8Playlist(hlsUrl, checkContent=True)
                         if 1 == len(tmp): 
                             tmp[0]['name'] = '[m3u8/hls] %sk' % item.get('bitrate', item['name'])
