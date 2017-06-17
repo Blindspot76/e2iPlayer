@@ -1060,7 +1060,8 @@ class IPTVExtMoviePlayer(Screen):
                     tmpLength = self.playback['CurrentTime']
                     if val > self.playback['CurrentTime']: tmpLength = val
                     if self.playback['Length'] < tmpLength:
-                        self.setPlaybackLength(tmpLength)
+                        if None == self.downloader or not self.downloader.hasDurationInfo():
+                            self.setPlaybackLength(tmpLength)
                     self.playback['LengthFromPlayerReceived'] = True
             elif 'CurrentTime' == key:
                 if self.playback['Length'] < val:

@@ -79,7 +79,7 @@ class ArticleContent:
     VISUALIZER_DEFAULT = 'DEFAULT'
     # Posible args and values for richDescParams:
     RICH_DESC_PARAMS        = ["alternate_title", "views", "status", "country", "language", "quality", "subtitles", "year", "imdb_rating", \
-                               "released", "rating", "rated", "duration", "genre", "production", "director", "directors", "writer", "writers", \
+                               "released", "broadcast", "remaining", "rating", "rated", "duration", "genre", "production", "director", "directors", "writer", "writers", \
                                "creator", "creators", "actors", "stars", "awards", "budget" ]
     # labels here must be in english language 
     # translation should be done before presentation using "locals" mechanism
@@ -91,6 +91,8 @@ class ArticleContent:
                         "language":          "Language",
                         "year":              "Year:", 
                         "released":          "Released:",
+                        "broadcast":         "Broadcast:",
+                        "remaining":         "Remaining:",
                         "imdb_rating":       "IMDb Rating:",
                         "rating":            "Rating:", 
                         "rated":             "Rated:",

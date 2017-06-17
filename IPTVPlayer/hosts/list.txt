@@ -72,6 +72,7 @@ hostpapystreamingus
 hostpinkbike
 hostplaypuls
 hostplwwecom
+hostrteieplayer
 hostserialnet
 hostserienstreamto
 hostseriesenstreamingcom
