@@ -33,7 +33,7 @@ config.plugins.iptvplayer.wagasworld_password = ConfigText(default = "", fixed_s
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry('wagasworld.com ' + _("email") + ':', config.plugins.iptvplayer.wagasworld_login))
+    optionList.append(getConfigListEntry('wagasworld.com ' + _("login") + ':', config.plugins.iptvplayer.wagasworld_login))
     optionList.append(getConfigListEntry('wagasworld.com ' + _("password") + ':', config.plugins.iptvplayer.wagasworld_password))
     return optionList
     
