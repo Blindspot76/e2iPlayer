@@ -504,6 +504,7 @@ class CHostBase(IHost):
         icon        =  self.getFullIconUrl( cItem.get('icon', '') )
         if icon == '': icon = self.getDefaulIcon(cItem)
         isGoodForFavourites = cItem.get('good_for_fav', False)
+        pinLocked = cItem.get('pin_locked', False)
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -512,6 +513,7 @@ class CHostBase(IHost):
                                     urlSeparateRequest = 1,
                                     iconimage = icon,
                                     possibleTypesOfSearch = possibleTypesOfSearch,
+                                    pinLocked = pinLocked,
                                     isGoodForFavourites = isGoodForFavourites)
     # end converItem
 

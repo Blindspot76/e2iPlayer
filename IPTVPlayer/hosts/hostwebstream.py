@@ -180,8 +180,8 @@ class HasBahCa(CBaseHostClass):
     #http://play.tvip.ga/iptvde.m3u
     
     def __init__(self):
-        self.up = urlparser()
-        self.cm = common()
+        CBaseHostClass.__init__(self)
+        
         # temporary data
         self.currList = []
         self.currItem = {}
@@ -497,11 +497,13 @@ class HasBahCa(CBaseHostClass):
             params.update({'name':'wagasworld.com'})
             if 'video' == item['type']:
                 self.addVideo(params)
+            elif 'more' == item['type']:
+                self.addMore(params)
             else:
                 self.addDir(params)
             
-    def getWagasWorldLink(self, url):
-        return self.wagasWorldApi.getVideoLink(url)
+    def getWagasWorldLink(self, cItem):
+        return self.wagasWorldApi.getVideoLink(cItem)
         
     def getOthersList(self, cItem):
         sts, data = self.cm.getPage("http://www.elevensports.pl/")
@@ -1016,16 +1018,7 @@ class HasBahCa(CBaseHostClass):
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
-        if 0 == refresh:
-            if len(self.currList) <= index:
-                printDBG( "handleService wrong index: %s, len(self.currList): %d" % (index, len(self.currList)) )
-                return
-            if -1 == index:
-                # use default value
-                self.currItem = { "name": None }
-                printDBG( "handleService for first self.category" )
-            else:
-                self.currItem = self.currList[index]
+        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
         name     = self.currItem.get("name", '')
         title    = self.currItem.get("title", '')
@@ -1125,6 +1118,7 @@ class HasBahCa(CBaseHostClass):
     # others
         elif name == 'others':
             self.getOthersList(self.currItem)
+        CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
 
@@ -1164,7 +1158,7 @@ class IPTVHost(CHostBase):
         elif "sport365.live" == name:
             urlList = self.host.getSport365LiveLink(cItem)
         elif 'wagasworld.com' == name:
-            urlList = self.host.getWagasWorldLink(url)
+            urlList = self.host.getWagasWorldLink(cItem)
         elif 'others' == name:
             urlList = self.host.getOthersLinks(cItem)
         elif 'weeb.tv' in name:
@@ -1251,47 +1245,3 @@ class IPTVHost(CHostBase):
             
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
-
-    def convertList(self, cList):
-        hostList = []
-
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-
-            if cItem['type'] == 'category':
-                type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] in ['audio', 'video']:
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem.get('url', '')
-                if url.endswith(".jpeg") or url.endswith(".jpg") or url.endswith(".png"):
-                    type = CDisplayListItem.TYPE_PICTURE
-                elif cItem['type'] == 'audio':
-                    type = CDisplayListItem.TYPE_AUDIO
-                else:
-                    type = CDisplayListItem.TYPE_VIDEO
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-            elif cItem['type'] == 'picture':
-                type = CDisplayListItem.TYPE_PICTURE
-                url = cItem.get('url', '')
-                if '' != url: hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  self.host._cleanHtmlStr( cItem.get('title', '') )
-            description =  self.host._cleanHtmlStr( cItem.get('desc', '') )
-            icon        =  strwithmeta(cItem.get('icon', ''))
-            icon        =  strwithmeta(self.host._cleanHtmlStr(icon), icon.meta)
-            
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = [])
-            hostItem.pinLocked = cItem.get('pin_locked', False)
-            
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
