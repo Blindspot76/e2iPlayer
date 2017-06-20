@@ -1519,7 +1519,7 @@ class pageParser:
 
     def parserRAPIDVIDEO(self, baseUrl):
         if '/embed/' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|view)[/-]([A-Za-z0-9]+?)[^A-Za-z0-9]')[0]
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|view|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
             url = 'http://www.rapidvideo.com/embed/'+video_id
         else:
             url = baseUrl
@@ -8168,6 +8168,10 @@ class pageParser:
             sts, data = self.cm.getPage(baseUrl)
             if not sts: return videoTab
             url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?/embed/[^"^']+?)["']''', 1, True)[0]
+            if url == '':
+                data = self.cm.ph.getDataBeetwenMarkers(data, 'embedbox', '</textarea>')[1]
+                data = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<textarea', '</textarea>')[1])
+                url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?/embed/[^"^']+?)["']''', 1, True)[0]
         else:
             url = baseUrl
         
