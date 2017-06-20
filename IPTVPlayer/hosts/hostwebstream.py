@@ -15,7 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.filmonapi         import FilmOnComApi, G
 from Plugins.Extensions.IPTVPlayer.libs.videostar         import VideoStarApi, GetConfigList as VideoStar_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.weebtv            import WeebTvApi, GetConfigList as WeebTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.purecastnet       import PurecastNetApi, GetConfigList as PurecastNet_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi
+from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi, GetConfigList as WagasWorld_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow           import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
 #from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet    import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
 #from Plugins.Extensions.IPTVPlayer.libs.iklubnet          import IKlubNetApi, GetConfigList as IKlubNet_GetConfigList
@@ -128,6 +128,11 @@ def GetConfigList():
     optionList.append(getConfigListEntry("-----------------Wizja.TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WizjaTV_GetConfigList() )
     except Exception: printExc()
+    
+    optionList.append(getConfigListEntry("--------------wagasworld.com---------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( WagasWorld_GetConfigList() )
+    except Exception: printExc()
+    
     
     return optionList
 
