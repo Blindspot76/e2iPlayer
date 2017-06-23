@@ -125,7 +125,7 @@ class OkGoals(CBaseHostClass):
             if not self.cm.isValidUrl(url): url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0])
             
             if not self.cm.isValidUrl(url): continue
-            if self.up.checkHostSupport(url) != 1: continue
+            if 'playwire.com' not in url and  self.up.checkHostSupport(url) != 1: continue
             
             title = self.cleanHtmlStr(item)
             if title == '': title = cItem['title']
