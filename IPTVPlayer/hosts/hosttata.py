@@ -29,6 +29,7 @@ from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from urlparse import urlparse, urljoin
 ###################################################
 
 
@@ -55,7 +56,7 @@ def gettytul():
 class Tata(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'tata.to', 'cookie':'tata.to.cookie', 'cookie_type':'MozillaCookieJar'})
+        CBaseHostClass.__init__(self, {'history':'tata.to', 'cookie':'tata.to.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
         self.USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
@@ -149,47 +150,6 @@ class Tata(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
             self.addVideo(params)
-        
-    def listCategories(self, cItem, nextCategory):
-        printDBG("Tata.listCategories")
-        
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        
-        calendarTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<section class="sidebar-content-box', '<table class="calendar">')[1])
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'dropdown-programmes', '</ul>')[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
-        for item in data:
-            url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+)['"]''')[0] )
-            title = self.cleanHtmlStr(item)
-            
-            if  '/a-z/' in url:
-                category = 'list_az'
-            else:
-                category = nextCategory
-            params = {'good_for_fav': False, 'category':category, 'title':title, 'url':url}
-            self.addDir(params)
-        
-        if calendarTitle != '':
-            params = dict(cItem)
-            params.update({'good_for_fav': False, 'category':'list_calendar', 'title':calendarTitle})
-            self.addDir(params)
-        
-    def _listFilters(self, cItem, nextCategory, marker):
-    
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, marker, '</table>')[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<td', '</td>')
-        for item in data:
-            url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+)['"]''')[0] )
-            if not self.cm.isValidUrl(url): continue
-            title = url.split('/')[-2] #self.cleanHtmlStr(item)
-            params = dict(cItem)
-            params = {'good_for_fav': False, 'category':nextCategory, 'title':title, 'url':url}
-            self.addDir(params)
             
     def listItems(self, cItem, nextCategory='', searchPattern=''):
         printDBG("Tata.listItems |%s|" % cItem)
