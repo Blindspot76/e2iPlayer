@@ -47,6 +47,7 @@ class Favourites(CBaseHostClass):
         self.host = None
         self.hostName = ''
         self.guestMode = False # main or guest
+        self.DEFAULT_ICON_URL = 'http://sarah-bauer.weebly.com/uploads/4/2/2/3/42234635/1922500_orig.png'
         
     def _setHost(self, hostName):
         if hostName == self.hostName: return True
@@ -151,6 +152,21 @@ class Favourites(CBaseHostClass):
             printExc()
         CBaseHostClass.endHandleService(self, index, refresh)
         
+    def prepareGuestHostItem(self, index):
+        ret = False
+        try:
+            cItem = self.currList[index]
+            sts, data = self.helper.getGroupItems(cItem['group_id'])
+            if sts:
+                item = data[cItem['item_idx']]
+                if self._setHost(cItem['host']):
+                    ret = self.host.setInitFavouriteItem(item)
+                    if RetHost.OK == ret.status: 
+                        ret = True
+        except Exception:
+            printExc()
+        return ret
+        
     def getCurrentGuestHost(self):
         return self.host
 
@@ -182,45 +198,6 @@ class IPTVHost(CHostBase):
             return self.host.getCurrentGuestHost().getResolvedURL(url)
         else:
             return self.host.getResolvedURL(url)
-    
-    def convertList(self, cList):
-        hostList = []
-        searchTypesOptions = []
-        
-        for cItem in cList:
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
-
-            if 'category' == cItem['type']:
-                if cItem.get('search_item', False):
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-            elif 'more' == cItem['type']:
-                type = CDisplayListItem.TYPE_MORE
-            elif 'audio' == cItem['type']:
-                type = CDisplayListItem.TYPE_AUDIO
-            elif 'picture' == cItem['type']:
-                type = CDisplayListItem.TYPE_PICTURE
-                
-            title       =  self.host.cleanHtmlStr( cItem.get('title', '') )
-            description =  self.host.cleanHtmlStr( cItem.get('desc', '') )
-            icon        =  self.host.cleanHtmlStr( cItem.get('icon', '') )
-            
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = [],
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
     
     def getListForItem(self, Index = 0, refresh = 0, selItem = None):
         guestIndex = Index
@@ -264,3 +241,17 @@ class IPTVHost(CHostBase):
             for idx in range(len(ret.value)):
                 ret.value[idx].isGoodForFavourites = False
         return ret
+    
+    def getArticleContent(self, Index = 0):
+        retCode = RetHost.ERROR
+        retlist = []
+        guestIndex = Index
+        callQuestHost = True
+        if not self.host.isQuestMode():
+            callQuestHost = self.host.prepareGuestHostItem(Index)
+            guestIndex = 0
+        if callQuestHost: 
+            return self.host.getCurrentGuestHost().getArticleContent(guestIndex)
+        return RetHost(retCode, value = retlist)
+        
+        

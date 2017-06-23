@@ -278,10 +278,10 @@ class CHostBase(IHost):
     def isValidIndex(self, Index, validTypes=None):
         listLen = len(self.host.currList)
         if listLen <= Index or Index < 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
+            printDBG( "ERROR isValidIndex - current list is to short len: %d, Index: %d" % (listLen, Index) )
             return False
         if None != validTypes and self.converItem(self.host.currList[Index]).type not in validTypes:
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
+            printDBG( "ERROR isValidIndex - current item has wrong type" )
             return False
         return True
         
