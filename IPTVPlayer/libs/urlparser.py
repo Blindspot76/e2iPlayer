@@ -422,6 +422,9 @@ class urlparser:
                        'speedvid.net':         self.pp.parserSPEEDVIDNET    ,
                        'vsports.pt':           self.pp.parserVSPORTSPT      ,
                        'mycloud.to':           self.pp.parserMYCLOUDTO      ,
+                       'vod-share.com':        self.pp.parserVODSHARECOM    ,
+                       'vidoza.net':           self.pp.parserVIDOZANET      ,
+                       'clipwatching.com':     self.pp.parserCLIPWATCHINGCOM,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2641,6 +2644,54 @@ class pageParser:
         if url.startswith('//'):
             url = 'http:' + url
         return getDirectM3U8Playlist(url, checkContent=True)[::-1]
+        
+    def parserVODSHARECOM(self, baseUrl):
+        printDBG("parserVODSHARECOM baseUrl[%r]" % baseUrl)
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0', 'Referer':baseUrl}
+        COOKIE_FILE = GetCookieDir('vod-share.com.cookie')
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':True, 'save_cookie':True, 'return_data':True}
+        
+        rm(COOKIE_FILE)
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        url = self.cm.ph.getSearchGroups(data, '''location\.href=['"]([^'^"]+?)['"]''')[0]
+        params['header']['Referer'] = baseUrl
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return False
+        
+        cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
+        
+        urlTab = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+        for item in data:
+            url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            if url.startswith('//'):
+                url = 'http:' + url
+            if not url.startswith('http'):
+                continue
+            
+            if 'video/mp4' in item:
+                type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+                res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+                label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
+                if label == '': label = res
+                url = urlparser.decorateUrl(url, {'Cookie':cookieHeader, 'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
+                urlTab.append({'name':'{0}'.format(label), 'url':url})
+            elif 'mpegurl' in item:
+                url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Cookie':cookieHeader, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                tmpTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
+                urlTab.extend(tmpTab)
+        return urlTab
+        
+    def parserVIDOZANET(self, baseUrl):
+        printDBG("parserVIDOZANET baseUrl[%r]" % baseUrl)
+        return self._parserUNIVERSAL_A(baseUrl, 'https://vidoza.net/embed-{0}.html', self._findLinks)
+        
+    def parserCLIPWATCHINGCOM(self, baseUrl):
+        printDBG("parserCLIPWATCHINGCOM baseUrl[%r]" % baseUrl)
+        return self._parserUNIVERSAL_A(baseUrl, 'http://clipwatching.com/embed-{0}.html', self._findLinks)
         
     def parserVIDABCCOM(self, baseUrl):
         printDBG("parserVIDABCCOM baseUrl[%r]" % baseUrl)
