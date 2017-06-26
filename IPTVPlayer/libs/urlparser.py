@@ -6727,14 +6727,15 @@ class pageParser:
         params.update({'header':{'header':HTTP_HEADER}})
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False 
-        streamHlsUrl = self.cm.ph.getSearchGroups(data, '"((?:https:)?//[^"]+?\.m3u8[^"]*?)"')[0]
-        if streamHlsUrl.startswith('//'):
-            streamHlsUrl = 'http:' + streamHlsUrl
-        if self.cm.isValidUrl(streamHlsUrl):
-            streamHlsUrl = urlparser.decorateUrl(streamHlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
-            urlsTab = getDirectM3U8Playlist(streamHlsUrl, checkExt=True, checkContent=True)
-            if len(urlsTab):
-                return urlsTab
+        streamHlsUrls = re.compile('"((?:https:)?//[^"]+?\.m3u8[^"]*?)"').findall(data)
+        for streamHlsUrl in streamHlsUrls:
+            if streamHlsUrl.startswith('//'):
+                streamHlsUrl = 'http:' + streamHlsUrl
+            if self.cm.isValidUrl(streamHlsUrl):
+                streamHlsUrl = urlparser.decorateUrl(streamHlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                urlsTab = getDirectM3U8Playlist(streamHlsUrl, checkExt=True, checkContent=True)
+                if len(urlsTab):
+                    return urlsTab
         return False
         #----------------------------------------
         
