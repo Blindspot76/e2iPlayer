@@ -4788,6 +4788,8 @@ class pageParser:
         printDBG("parserMYVIRU linkUrl[%s]" % linkUrl)
         COOKIE_FILE = GetCookieDir('myviru.cookie')
         params  = {'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        rm(COOKIE_FILE)
+        
         if linkUrl.startswith('https://'):
             linkUrl = 'http' + linkUrl[5:]
         videoTab = []
@@ -4805,27 +4807,38 @@ class pageParser:
             if not data.startswith("//"): return videoTab
             linkUrl = "http:" + data
         if '/embed/html/' in linkUrl: 
-            sts, data = self.cm.getPage(linkUrl)
-            if not sts: return videoTab
-            data = self.cm.ph.getSearchGroups(data, """dataUrl[^'^"]*?:[^'^"]*?['"]([^'^"]+?)['"]""")[0]
-            if data.startswith("//"): linkUrl = "http:" + data
-            elif data.startswith("/"): linkUrl = "http://myvi.ru" + data
-            elif data.startswith("http"): linkUrl = data
-            else: return videoTab 
-            if linkUrl.startswith('https://'):
-                linkUrl = 'http' + linkUrl[5:]
             sts, data = self.cm.getPage(linkUrl, params)
             if not sts: return videoTab
-            try:
-                # get cookie data
+            tmp = self.cm.ph.getSearchGroups(data, """dataUrl[^'^"]*?:[^'^"]*?['"]([^'^"]+?)['"]""")[0]
+            if tmp.startswith("//"): linkUrl = "http:" + tmp
+            elif tmp.startswith("/"): linkUrl = "http://myvi.ru" + tmp
+            elif tmp.startswith("http"): linkUrl = tmp
+
+            if linkUrl.startswith('https://'):
+                linkUrl = 'http' + linkUrl[5:]
+            if self.cm.isValidUrl(linkUrl):
+                sts, data = self.cm.getPage(linkUrl, params)
+                if not sts: return videoTab
+                try:
+                    # get cookie data
+                    universalUserID = self.cm.getCookieItem(COOKIE_FILE,'UniversalUserID')
+                    tmp = json.loads(data)
+                    for item in tmp['sprutoData']['playlist']:
+                        url = item['video'][0]['url'].encode('utf-8')
+                        if url.startswith('http'):
+                            videoTab.append({'name': 'myvi.ru: %s' % item['duration'], 'url':strwithmeta(url, {'Cookie':'UniversalUserID=%s; vp=0.33' % universalUserID})})
+                except Exception: 
+                    printExc()
+
+            data = self.cm.ph.getSearchGroups(data, '''createPlayer\(\s*['"]([^'^"]+?)['"]''')[0].decode('unicode-escape').encode("utf-8")
+            printDBG("+++++++++++++++++++++++++++++++++++++++")
+            printDBG(data)
+            printDBG("+++++++++++++++++++++++++++++++++++++++")
+            data = parse_qs(data)
+            videoUrl = data.get('v', [''])[0]
+            if self.cm.isValidUrl(videoUrl):
                 universalUserID = self.cm.getCookieItem(COOKIE_FILE,'UniversalUserID')
-                data = json.loads(data)
-                for item in data['sprutoData']['playlist']:
-                    url = item['video'][0]['url'].encode('utf-8')
-                    if url.startswith('http'):
-                        videoTab.append({'name': 'myvi.ru: %s' % item['duration'], 'url':strwithmeta(url, {'Cookie':'UniversalUserID=%s; vp=0.33' % universalUserID})})
-            except Exception: 
-                printExc()
+                videoTab.append({'name': 'myvi.ru', 'url':strwithmeta(videoUrl, {'Cookie':'UniversalUserID=%s; vp=0.33' % universalUserID})})
         return videoTab
         
     def parserARCHIVEORG(self, linkUrl):
@@ -8414,3 +8427,4 @@ class pageParser:
             return videoUrl
         
         return False
+        
