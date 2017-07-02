@@ -5527,10 +5527,8 @@ class pageParser:
                 HTTP_HEADER['Referer'] = url
                 sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
             
-            return self._findLinks(data, host,  m1='options', m2='}')
-        else:
-            return self._findLinks(data, host,  m1='setup(', m2=')')
-        return False
+        return self._findLinks(data, host, linkMarker=r'''['"](https?://[^"^']+(?:\.mp4|\.flv)[^'^"]*?)['"]''')
+
         
     def parserTHEVIDEOME(self, baseUrl):
         printDBG("parserTHEVIDEOME baseUrl[%s]" % baseUrl)
@@ -7879,7 +7877,7 @@ class pageParser:
             (?:v/|embed\.php\?id=)
             (?P<id>[A-Za-z0-9]+)
             '''
-        _EMBED_URL = 'http://www.%s/embed.php?id=%s'
+        _EMBED_URL = 'http://www.%s/embed.php?id=%s&playerPage=1&autoplay=1'
         _API_URL = 'http://www.%s/api/player.api.php?%s'
         _MAX_TRIES = 2
         
