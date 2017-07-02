@@ -8209,19 +8209,54 @@ class pageParser:
                 return getDirectM3U8Playlist(file_url, False)
         return file_url
         
-    def parserSTREAMPLAYTO(self, url):
-        printDBG("parserSTREAMPLAYTO url[%s]\n" % url)
-        sts, data = self.cm.getPage(url)
+    def parserSTREAMPLAYTO(self, baseUrl):
+        printDBG("parserSTREAMPLAYTO url[%s]\n" % baseUrl)
         
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, ">eval(", '</script>')
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10',
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Referer': baseUrl
+                      }
+        
+        COOKIE_FILE = self.COOKIE_PATH + "streamplay.to.cookie"
+        # remove old cookie file
+        rm(COOKIE_FILE)
+        
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)[1]
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        try:
+            sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
+            time.sleep(sleep_time)
+        except Exception:
+            printExc()
+        
+        sts, data = self.cm.getPage(baseUrl, params, post_data)
+        if not sts: return False
+        
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, ">eval(", '</script>')
         if sts:
             # unpack and decode params from JS player script code
-            data = unpackJSPlayerParams(data, VIDUPME_decryptPlayerParams, 0, r2=True)
-            printDBG(data)
-            # get direct link to file from params
-            file = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
-            if self.cm.isValidUrl(file):
-                return file
+            tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams, 0, r2=True)
+            printDBG(tmp)
+            tab = self._findLinks(tmp, 'streamplay.to', contain='.mp4')
+            for idx in range(len(tab)):
+                tab[idx]['file'] = tab[idx]['url']
+            
+            jscode = self.cm.ph.getDataBeetwenMarkers(data, '<script>', '</script>', False)[1]
+            atob = base64.b64decode('''ZnVuY3Rpb24gYXRvYihyKXt2YXIgbj0vW1x0XG5cZlxyIF0vZyx0PShyPVN0cmluZyhyKS5yZXBsYWNlKG4sIiIpKS5sZW5ndGg7dCU0PT0wJiYodD0ocj1yLnJlcGxhY2UoLz09PyQvLCIiKSkubGVuZ3RoKTtmb3IodmFyIGUsYSxpPTAsbz0iIixmPS0xOysrZjx0OylhPSJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWmFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6MDEyMzQ1Njc4OSsvIi5pbmRleE9mKHIuY2hhckF0KGYpKSxlPWklND82NCplK2E6YSxpKyslNCYmKG8rPVN0cmluZy5mcm9tQ2hhckNvZGUoMjU1JmU+PigtMippJjYpKSk7cmV0dXJuIG99DQp2YXIgd2luZG93ID0gdGhpczs=''') 
+            jscode = atob + '\n' + jscode + '\n' + (base64.b64decode('''ZnVuY3Rpb24gbWFwKHRhYiwgZikNCnsNCiAgICB2YXIgYXJyYXlMZW5ndGggPSB0YWIubGVuZ3RoOw0KICAgIGZvciAodmFyIGkgPSAwOyBpIDwgYXJyYXlMZW5ndGg7IGkrKykgew0KICAgICAgICB0YWJbaV0gPSBmKHRhYltpXSk7DQogICAgfQ0KICAgIHJldHVybiB0YWI7DQp9Ow0KDQp2YXIgJCA9IHt9Ow0KJC5tYXAgPSBtYXA7DQoNCnZhciBkdXBhID0gJXM7DQpkdXBhWydzaXplJ10oKTsNCg0KcHJpbnQoSlNPTi5zdHJpbmdpZnkoZHVwYSkpOw==''') % json.dumps(tab))
+            ret = iptv_js_execute( jscode )
+            if ret['sts'] and 0 == ret['code']:
+                decoded = ret['data'].strip()
+                tab = byteify(json.loads(decoded))
+            
+            for idx in range(len(tab)):
+                tab[idx]['url'] = strwithmeta(tab[idx]['file'], {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            return tab
         return False
         
     def parserSTREAMANGOCOM(self, baseUrl):
