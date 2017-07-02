@@ -40,6 +40,7 @@ hostgreekdocumentaries3
 hosthdfilmetv
 hosthdkinomir
 hosthdpopcornscom
+hosthdstreams
 hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
@@ -61,6 +62,7 @@ hostmovienightws
 hostmovizlandcom
 hostmrpiracy
 hostmusicbox
+hostmythewatchseries
 hostnaszekinoonline
 hostninateka
 hostokgoals
