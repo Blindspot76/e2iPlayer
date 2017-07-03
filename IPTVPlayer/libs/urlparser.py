@@ -5514,8 +5514,17 @@ class pageParser:
         #http://fastvideo.in/nr4kzevlbuws
         host = self.cm.ph.getDataBeetwenMarkers(baseUrl, "://", '/', False)[1]
         video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
+        url = ''
+        if video_id == '':
+            sts, data = self.cm.getPage(baseUrl)
+            if not sts: url = baseUrl
+            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]+?)['"]''', ignoreCase=True)[0]
+            host = self.cm.ph.getDataBeetwenMarkers(url, "://", '/', False)[1]
+            video_id = self.cm.ph.getSearchGroups(url+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
         
-        url = 'http://%s/embed-%s-960x480.html' % (host, video_id)
+        if video_id != '' and host != '':
+            url = 'http://%s/embed-%s-960x480.html' % (host, video_id)
+        
         sts, data = self.cm.getPage(url)
         if not sts and data != None:
             #USER_AGENT = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
