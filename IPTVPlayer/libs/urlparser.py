@@ -318,6 +318,7 @@ class urlparser:
                        'movpod.in':            self.pp.parserFASTVIDEOIN   ,
                        'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
                        'realvid.net':          self.pp.parserFASTVIDEOIN   ,
+                       'suspents.info':        self.pp.parserFASTVIDEOIN   ,
                        'rapidvideo.ws':        self.pp.parserRAPIDVIDEOWS  ,
                        'hdvid.tv':             self.pp.parserHDVIDTV       ,
                        'exashare.com':         self.pp.parserEXASHARECOM   ,
@@ -425,6 +426,7 @@ class urlparser:
                        'vod-share.com':        self.pp.parserVODSHARECOM    ,
                        'vidoza.net':           self.pp.parserVIDOZANET      ,
                        'clipwatching.com':     self.pp.parserCLIPWATCHINGCOM,
+                       'kingvid.tv':           self.pp.parserKINGVIDTV      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -3773,10 +3775,17 @@ class pageParser:
         else:
             sts, data = self.cm.getPage(baseUrl)
             if not sts: return False
+            
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, ">eval(", '</script>')
+        if sts:
+            # unpack and decode params from JS player script code
+            tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams, 0, r2=True)
+            printDBG(tmp)
+            data = tmp + data
         
-        linksTab = self._findLinks(data, 'vshare.eu')
+        linksTab = self._findLinks(data, urlparser.getDomain(baseUrl))
         for idx in range(len(linksTab)):
-            linksTab[idx]['url'] = strwithmeta(linksTab[idx]['url'] + '?start=0', {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            linksTab[idx]['url'] = strwithmeta(linksTab[idx]['url'], {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
         return linksTab
         
         #X-Requested-With:ShockwaveFlash/23.0.0.205
@@ -5206,21 +5215,25 @@ class pageParser:
         except Exception:
             printExc()
         
-        data = self.cm.ph.getSearchGroups(data, """["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""")[0]
-        if data.startswith('http'):
-            if data.split('?')[0].endswith('.smil'):
-                # get stream link
-                sts, data = self.cm.getPage(data)
-                if sts:
-                    base = self.cm.ph.getSearchGroups(data, 'base="([^"]+?)"')[0]
-                    src = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
-                    #if ':' in src:
-                    #    src = src.split(':')[1]   
-                    if base.startswith('rtmp'):
-                        return base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, redirectUrl)
-            else:
-                return data
-        return False
+        retTab = []
+        linksTab = re.compile("""["']*file["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""").findall(data)
+        linksTab.extend(re.compile("""["']*src["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""").findall(data))
+        linksTab = set(linksTab)
+        for item in linksTab:
+            if self.cm.isValidUrl(item):
+                if item.split('?')[0].endswith('.smil'):
+                    # get stream link
+                    sts, tmp = self.cm.getPage(item)
+                    if sts:
+                        base = self.cm.ph.getSearchGroups(tmp, 'base="([^"]+?)"')[0]
+                        src = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
+                        #if ':' in src:
+                        #    src = src.split(':')[1]   
+                        if base.startswith('rtmp'):
+                            retTab.append({'name':'rtmp', 'url': base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, redirectUrl)})
+                elif '.mp4' in item:
+                    retTab.append({'name':'mp4', 'url': item})
+        return retTab
         
     def parserMYVIDEODE(self, baseUrl):
         printDBG("parserMYVIDEODE baseUrl[%s]" % baseUrl)
@@ -8242,7 +8255,7 @@ class pageParser:
             # unpack and decode params from JS player script code
             tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams, 0, r2=True)
             printDBG(tmp)
-            tab = self._findLinks(tmp, 'streamplay.to', contain='.mp4')
+            tab = self._findLinks(tmp, urlparser.getDomain(baseUrl), contain='.mp4')
             for idx in range(len(tab)):
                 tab[idx]['file'] = tab[idx]['url']
             
@@ -8461,3 +8474,40 @@ class pageParser:
         
         return False
         
+    def parserKINGVIDTV(self, baseUrl):
+        printDBG("parserKINGVIDTV url[%s]\n" % baseUrl)
+        
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10',
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Referer': baseUrl
+                      }
+        
+        COOKIE_FILE = self.COOKIE_PATH + "kingvidtv.to.cookie"
+        # remove old cookie file
+        rm(COOKIE_FILE)
+        
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)[1]
+        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        try:
+            sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
+            time.sleep(sleep_time)
+        except Exception:
+            printExc()
+        
+        sts, data = self.cm.getPage(baseUrl, params, post_data)
+        if not sts: return False
+        
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, ">eval(", '</script>')
+        if sts:
+            # unpack and decode params from JS player script code
+            tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams, 0, r2=True)
+            printDBG(tmp)
+            tab = self._findLinks(tmp, urlparser.getDomain(baseUrl), contain='.mp4')
+            return tab
+        return False
+    
