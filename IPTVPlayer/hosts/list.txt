@@ -109,7 +109,6 @@ hostwebstream
 hostwgrane
 hostwolnelekturypl
 hostwptv
-hostwrestlingnetwork
 hostwrzuta
 hostxrysoise
 hostyifytv
