@@ -10,6 +10,7 @@ import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
 ###################################################
@@ -389,6 +390,8 @@ class GoMovies(CBaseHostClass):
                     name = self.cm.ph.getSearchGroups(item, 'label="([^"]+?)"')[0]
                     if 'type="mp4"' in item:
                         urlTab.append({'name':name, 'url':url})
+                    elif 'type="m3u8"' in item:
+                        urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
                     elif 'kind="captions"' in item:
                         format = url[-3:]
                         if format in ['srt', 'vtt']:
@@ -400,6 +403,8 @@ class GoMovies(CBaseHostClass):
                     for item in tmp['playlist'][0]['sources']:
                         if "mp4" == item['type']:
                             urlTab.append({'name':str(item.get('label', 'default')), 'url':item['file']})
+                        elif "m3u8" == item['type']:
+                            urlTab.extend(getDirectM3U8Playlist(item['file'], checkContent=True))
                     for item in tmp['playlist'][0]['tracks']:
                         format = item['file'][-3:]
                         if format in ['srt', 'vtt'] and "captions" == item['kind']:
