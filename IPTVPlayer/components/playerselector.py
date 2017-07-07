@@ -458,7 +458,6 @@ class PlayerSelectorWidget(Screen):
                 self.keyBlue()
         
     def changeReorderingMode(self):
-        self.reorderingItemSelected  = False
         selIdx = self.currLine * self.numOfCol +  self.dispX
         if not self.reorderingMode and (self.numOfItems - self.numOfSpecialItems) > 0:
             if selIdx >= (self.numOfItems - self.numOfSpecialItems):
@@ -466,7 +465,10 @@ class PlayerSelectorWidget(Screen):
                 self.setIdx(selIdx)
             self.reorderingMode = True
         else:
+            if self.reorderingItemSelected:
+                self["marker"].setPixmap( self.markerPixmap )
             self.reorderingMode = False
+        self.reorderingItemSelected  = False
     
     def hideWindow(self):
         self.visible = False
