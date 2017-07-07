@@ -1005,6 +1005,8 @@ class pageParser:
         if not sts: sts, data = self.cm.getPageWithWget(url, params, post_data)
         if not sts: return False
         
+        printDBG(data)
+        
         errMarkers = ['File was deleted', 'File Removed', 'File Deleted.', 'File Not Found']
         for errMarker in errMarkers:
             if errMarker in data:
@@ -2689,6 +2691,8 @@ class pageParser:
         
     def parserVIDOZANET(self, baseUrl):
         printDBG("parserVIDOZANET baseUrl[%r]" % baseUrl)
+        referer = strwithmeta(baseUrl).meta.get('Referer', '')
+        baseUrl = strwithmeta(baseUrl, {'Referer':referer})
         return self._parserUNIVERSAL_A(baseUrl, 'https://vidoza.net/embed-{0}.html', self._findLinks)
         
     def parserCLIPWATCHINGCOM(self, baseUrl):

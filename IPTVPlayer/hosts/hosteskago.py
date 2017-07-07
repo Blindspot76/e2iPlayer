@@ -212,6 +212,7 @@ class EskaGo(CBaseHostClass):
                         
         elif '/tv/' in url:
             data = self.cm.ph.getDataBeetwenMarkers(data, '$.post(', 'function', withMarkers=False)[1]
+            printDBG(data)
             url  =  self.cm.ph.getSearchGroups(data, '''(https?://[^'^"]+?)['"]''')[0]
             streamUri = self.cm.ph.getSearchGroups(data, '''streamUri['"\s]*?:\s*?['"]([^'^"]+?)['"]''')[0]
             sts, url = self.cm.getPage(url, post_data={'streamUri':streamUri})
