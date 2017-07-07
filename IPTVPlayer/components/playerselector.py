@@ -320,11 +320,11 @@ class PlayerSelectorWidget(Screen):
         self.setIdx(self.lastSelection)
         return
         
-    def updateIconsList(self, indexList):
+    def updateIconsList(self, rangeList):
         idx = self.currPage * (self.numOfCol*self.numOfRow)
         for y in range(1,self.numOfRow+1):
             for x in range(1,self.numOfCol+1):
-                if idx in indexList:
+                if idx >= rangeList[0] and idx <= rangeList[1]:
                     strIndex = "cover_%s%s" % (x,y)
                     printDBG("updateIconsList [%s]" % strIndex)
                     self[strIndex].setPixmap(self.pixmapList[idx])
@@ -386,13 +386,18 @@ class PlayerSelectorWidget(Screen):
         return
     
     def moveMarker(self, prev_idx=0):
-        idx = self.currLine * self.numOfCol +  self.dispX
+        new_idx = self.currLine * self.numOfCol +  self.dispX
         
         if self.reorderingItemSelected:
-            if prev_idx != idx:
-                self.currList[prev_idx], self.currList[idx] = self.currList[idx], self.currList[prev_idx]
-                self.pixmapList[prev_idx], self.pixmapList[idx] = self.pixmapList[idx], self.pixmapList[prev_idx]
-                self.updateIconsList([prev_idx, idx])
+            if prev_idx != new_idx:
+                prevHost   = self.currList[prev_idx]
+                prevPixmap = self.pixmapList[prev_idx]
+                del self.currList[prev_idx]
+                del self.pixmapList[prev_idx]
+                
+                self.currList.insert(new_idx, prevHost)
+                self.pixmapList.insert(new_idx, prevPixmap)
+                self.updateIconsList(sorted([prev_idx, new_idx]))
 
         # calculate position of image
         imgPosX = self.offsetCoverX + (self.coverWidth + self.disWidth) * self.dispX
@@ -405,7 +410,7 @@ class PlayerSelectorWidget(Screen):
         #x =  30 + self.dispX * 180
         #y = 130 + self.dispY * 125
         self["marker"].instance.move(ePoint(x,y))
-        self["statustext"].setText(self.currList[idx][0])
+        self["statustext"].setText(self.currList[new_idx][0])
         return
 
     def back_pressed(self):
