@@ -88,8 +88,8 @@ class VideoPenny(CBaseHostClass):
         
     def selectDomain(self):                
         self.MAIN_URL = 'http://videopenny.net/'
-        self.MAIN_CAT_TAB = [{'category':'list_series',         'title': 'Seriale',           'url':self.getMainUrl()},
-                             {'category':'list_programs',       'title': 'Programy online',   'url':self.getMainUrl()},
+        self.MAIN_CAT_TAB = [{'category':'list_series',         'title': 'Seriale',           'url':self.getFullUrl('?s=')},
+                             {'category':'list_programs',       'title': 'Programy online',   'url':self.getFullUrl('category/programy-rozrywkowe/')},
                              {'category':'list_sort_filter',    'title': 'Filmy',             'url':self.getFullUrl('/category/filmy-pl/')},
                              {'category':'list_sort_filter',    'title': 'Bajki',             'url':self.getFullUrl('/category/bajki/')},
                              {'category':'list_last',           'title': 'Ostatnio dodane',   'url':self.getFullUrl('/new-header/')},
@@ -97,8 +97,9 @@ class VideoPenny(CBaseHostClass):
                              {'category':'search',          'title': _('Search'), 'search_item':True, },
                              {'category':'search_history',  'title': _('Search history'),             } 
                             ]
+    
     def _listTitles(self, cItem, nextCategory, cacheTab, m1, m2, idx):
-        printDBG("VideoPenny.listSeries")
+        printDBG("VideoPenny._listTitles")
         
         if 0 == len(cacheTab):
             uniqueTab = []
@@ -141,11 +142,11 @@ class VideoPenny(CBaseHostClass):
     
     def listSeries(self, cItem, nextCategory):
         printDBG("VideoPenny.listSeries")
-        self._listTitles(cItem, nextCategory, self.cacheSeries, 'menu-popularne-container', 'menu-tv-shows', 0)
+        self._listTitles(cItem, nextCategory, self.cacheSeries, 'menu-popularne-container', '<footer', 0)
             
     def listPrograms(self, cItem, nextCategory):
         printDBG("VideoPenny.listPrograms")
-        self._listTitles(cItem, nextCategory, self.cachePrograms, 'menu-tv-shows', '</ul>', 1)
+        self._listTitles(cItem, nextCategory, self.cachePrograms, 'class="sub-menu"', '</ul>', 1)
             
     def listSortFilters(self, cItem, nextCategory):
         printDBG("VideoPenny.listSortFilters")
