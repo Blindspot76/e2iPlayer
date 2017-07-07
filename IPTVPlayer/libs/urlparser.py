@@ -990,7 +990,7 @@ class pageParser:
         HTTP_HEADER.update(httpHeader)
         
         if 'embed' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.-]')[0]
             url = embedUrl.format(video_id)
         else:
             url = baseUrl
@@ -8283,6 +8283,10 @@ class pageParser:
         
     def parserSTREAMANGOCOM(self, baseUrl):
         printDBG("parserSTREAMANGOCOM url[%s]\n" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = dict(pageParser.HTTP_HEADER) 
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
         videoTab = []
         if '/embed/' not in baseUrl:
             sts, data = self.cm.getPage(baseUrl)
@@ -8295,7 +8299,7 @@ class pageParser:
         else:
             url = baseUrl
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts: return videoTab
         
         dashTab = []
@@ -8485,10 +8489,12 @@ class pageParser:
         
     def parserKINGVIDTV(self, baseUrl):
         printDBG("parserKINGVIDTV url[%s]\n" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
         
         HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10',
                         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Referer': baseUrl
+                        'Referer': referer
                       }
         
         COOKIE_FILE = self.COOKIE_PATH + "kingvidtv.to.cookie"
@@ -8500,16 +8506,19 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)[1]
-        post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
-        try:
-            sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
-            time.sleep(sleep_time)
-        except Exception:
-            printExc()
         
-        sts, data = self.cm.getPage(baseUrl, params, post_data)
-        if not sts: return False
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)[1]
+        if tmp != '':
+            data = tmp
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+            try:
+                sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
+                time.sleep(sleep_time)
+            except Exception:
+                printExc()
+            
+            sts, data = self.cm.getPage(baseUrl, params, post_data)
+            if not sts: return False
         
         sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, ">eval(", '</script>')
         if sts:

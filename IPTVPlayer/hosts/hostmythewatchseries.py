@@ -275,6 +275,7 @@ class HDStreams(CBaseHostClass):
                 videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^"]+?)['"]''', 1, True)[0]
         
         if 0 == len(linksTab):
+            videoUrl = strwithmeta(videoUrl, {'Referer':self.getMainUrl()})
             linksTab = self.up.getVideoLinkExt(videoUrl)
         
         return linksTab
