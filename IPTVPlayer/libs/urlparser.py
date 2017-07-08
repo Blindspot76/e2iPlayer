@@ -95,7 +95,7 @@ class urlparser:
         tmp        = baseUrl.split('|')
         baseUrl    = urlparser.decorateUrl(tmp[0].strip(), strwithmeta(baseUrl).meta)
         KEYS_TAB = list(DMHelper.HANDLED_HTTP_HEADER_PARAMS)
-        KEYS_TAB.extend(["iptv_audio_url", "Host", "Accept", "MPEGTS-Live"])
+        KEYS_TAB.extend(["iptv_audio_url", "Host", "Accept", "MPEGTS-Live", "PROGRAM-ID"])
         if 2 == len(tmp):
             baseParams = tmp[1].strip()
             try:

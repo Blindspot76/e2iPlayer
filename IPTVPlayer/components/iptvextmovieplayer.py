@@ -1745,6 +1745,9 @@ class IPTVExtMoviePlayer(Screen):
                     url = urlparser.decorateParamsFromUrl(url)
                     if '1' == url.meta.get('MPEGTS-Live', '0'):
                         cmd += ' -v '
+                programId = url.meta.get('PROGRAM-ID', '')
+                if programId != '':
+                    cmd += ' -P "%s" ' % programId
                     
             if config.plugins.iptvplayer.stereo_software_decode.value:
                 cmd += ' -s '
