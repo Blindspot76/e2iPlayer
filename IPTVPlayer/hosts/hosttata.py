@@ -57,7 +57,7 @@ class Tata(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'tata.to', 'cookie':'tata.to.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
-        self.USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
+        self.USER_AGENT = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -226,6 +226,10 @@ class Tata(CBaseHostClass):
                 url = self.cm.ph.getSearchGroups(data, '''data-url=['"](https?://[^'^"]+)['"]''')[0]
                 sts, data = self.getPage(url, getParams)
                 if not sts: return []
+                printDBG("+++++++++++++++++++++++++++++++++++++++")
+                printDBG(data)
+                printDBG("+++++++++++++++++++++++++++++++++++++++")
+                
                 data = base64.b64decode(data)
                 data = byteify(json.loads(data))
                 videoUrl = data['playinfo'].replace('\\/', '/')
@@ -241,10 +245,30 @@ class Tata(CBaseHostClass):
             sts, data = self.getPage(videoUrl, getParams)
             if not sts: return []
             
+            printDBG("+++++++++++++++++++++++++++++++++++++++")
+            printDBG(data)
+            printDBG("+++++++++++++++++++++++++++++++++++++++")
+            try:
+                data = base64.b64decode(data)
+                data = byteify(json.loads(data))
+                videoUrl = data['playinfo'].replace('\\/', '/')
+                
+                sts, data = self.getPage(videoUrl, getParams)
+                if not sts: return []
+                
+                printDBG("+++++++++++++++++++++++++++++++++++++++")
+                printDBG(data)
+                printDBG("+++++++++++++++++++++++++++++++++++++++")
+            except Exception:
+                printExc()
+            
             hlsUrl = videoUrl.replace('/embed.html', '/index.m3u8')
             hlsUrl = strwithmeta(hlsUrl, {'Referer':videoUrl, 'User-Agent':self.USER_AGENT})
             
             linksTab = getDirectM3U8Playlist(hlsUrl, checkContent=True)
+            for idx in range(len(linksTab)):
+                if linksTab[idx]['url'].startswith('https:'):
+                    linksTab[idx]['url'] = strwithmeta('http' + linksTab[idx]['url'][5:], {'User-Agent':self.USER_AGENT})
             
         if len(linksTab) and self.cm.isValidUrl(trailerUrl):
             linksTab.append({'name':'Trailer', 'url':trailerUrl, 'need_resolve':1})
