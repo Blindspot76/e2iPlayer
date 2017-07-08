@@ -148,7 +148,7 @@ class LocalMedia(CBaseHostClass):
         sts, data = ReadTextFile(path)
         if not sts: return
         baseUrl = ''
-        if '#EXTM3U' not in data:
+        if '#EXT' not in data:
             baseUrl = data.strip()
             if baseUrl.startswith('http') and '://' in baseUrl:
                 baseUrl = self.up.decorateParamsFromUrl(baseUrl) 
@@ -169,6 +169,8 @@ class LocalMedia(CBaseHostClass):
                     url = 'http:' + url
                 else:
                     url = self.cm.getBaseUrl(baseUrl) + url[1:]
+            if '' != item.get('PROGRAM-ID', ''): 
+                url = strwithmeta(url, {'PROGRAM-ID': item['PROGRAM-ID']})
             params.update( {'title':item['title'], 'category':'m3u_item', 'url':url, 'need_resolve':need_resolve} )
             self.addVideo(params)
             
