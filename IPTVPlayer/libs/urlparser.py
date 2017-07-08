@@ -427,6 +427,7 @@ class urlparser:
                        'vidoza.net':           self.pp.parserVIDOZANET      ,
                        'clipwatching.com':     self.pp.parserCLIPWATCHINGCOM,
                        'kingvid.tv':           self.pp.parserKINGVIDTV      ,
+                       'ekstraklasa.tv':       self.pp.parserEKSTRAKLASATV  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -8532,4 +8533,61 @@ class pageParser:
             tab = self._findLinks(tmp, urlparser.getDomain(baseUrl), contain='.mp4')
             return tab
         return False
+        
+    def _parserEKSTRAKLASATV(self, ckmId):
+        printDBG("_parserEKSTRAKLASATV ckmId[%r]" % ckmId )
+        tm = str(int(time.time() * 1000))
+        jQ = str(randrange(562674473039806,962674473039806))
+        authKey = 'FDF9406DE81BE0B573142F380CFA6043'
+        contentUrl = 'http://qi.ckm.onetapi.pl/?callback=jQuery183040'+ jQ + '_' + tm + '&body%5Bid%5D=' + authKey + '&body%5Bjsonrpc%5D=2.0&body%5Bmethod%5D=get_asset_detail&body%5Bparams%5D%5BID_Publikacji%5D=' + ckmId + '&body%5Bparams%5D%5BService%5D=ekstraklasa.onet.pl&content-type=application%2Fjsonp&x-onet-app=player.front.onetapi.pl&_=' + tm
+        sts, data = self.cm.getPage(contentUrl)
+        valTab = []
+        if sts:
+            try:
+                result = byteify(json.loads(data[data.find("(")+1:-2]))
+                strTab = []
+                valTab = []
+                for items in result['result']['0']['formats']['wideo']:
+                    for i in range(len(result['result']['0']['formats']['wideo'][items])):
+                        strTab.append(items)
+                        strTab.append(result['result']['0']['formats']['wideo'][items][i]['url'])
+                        if result['result']['0']['formats']['wideo'][items][i]['video_bitrate']:
+                            strTab.append(int(float(result['result']['0']['formats']['wideo'][items][i]['video_bitrate'])))
+                        else:
+                            strTab.append(0)
+                        valTab.append(strTab)
+                        strTab = []
+            except Exception:
+                printExc()
+        return valTab
+        
+    def parserEKSTRAKLASATV(self, baseUrl):
+        printDBG("parserEKSTRAKLASATV url[%s]\n" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        url = baseUrl
+        
+        videoUrls = []
+        tries = 0
+        while tries < 2:
+            tries += 1
+            sts, data = self.cm.getPage(url)
+            if not sts: return videoUrls
+            
+            ckmId = self.cm.ph.getSearchGroups(data, 'data-params-mvp="([^"]+?)"')[0]
+            if '' == ckmId: ckmId = self.cm.ph.getSearchGroups(data, 'id="mvp:([^"]+?)"')[0]
+            if '' != ckmId: 
+                tab = self._parserEKSTRAKLASATV(ckmId)
+                break
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'pulsembed_embed', '</div>')[1]
+            url  = self.cm.ph.getSearchGroups(data, 'href="([^"]+?)"')[0] 
+        
+        for item in tab:
+            if item[0] != 'mp4': continue
+            
+            name = "[%s] %s" % (item[0], item[2])
+            url  = item[1]
+            videoUrls.append({'name':name, 'url':url, 'bitrate':item[2]})
+        
+        return videoUrls
     
