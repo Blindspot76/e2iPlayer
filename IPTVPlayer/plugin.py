@@ -19,6 +19,7 @@ from Plugins.Plugin import PluginDescriptor
 from Screens.MessageBox import MessageBox
 from Tools.BoundFunction import boundFunction
 from Components.config import config
+from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
 ###################################################
 
 ####################################################
@@ -33,6 +34,13 @@ def Plugins(**kwargs):
     list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = PluginDescriptor.WHERE_MENU, fnc=startIPTVfromMenu))
     if config.plugins.iptvplayer.showinextensions.value:
         list.append (PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main))
+    if  (fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.py')) or
+        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyo')) or
+        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyc'))):
+        try:
+            list.append(PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionstart, needsRestart=False)) # activating IPTV web interface
+        except Exception:
+            print "IPTVplayer Exception appending PluginDescriptor.WHERE_SESSIONSTART descriptor."
     return list
 
 ####################################################
@@ -90,4 +98,10 @@ def pinCallback(session, callbackFun, pin=None):
         return
     callbackFun(session)
     
-    
+def sessionstart(reason, **kwargs):
+    if reason == 0 and 'session' in kwargs:
+        try:
+            import Plugins.Extensions.IPTVPlayer.Web.initiator
+            print "IPTVplayer web component initiated properly"
+        except Exception:
+            print "Exception initiating IPTVplayer web component."
