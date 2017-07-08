@@ -24,7 +24,10 @@ class PlayerSelectorWidget(Screen):
         printDBG("PlayerSelectorWidget.__init__ --------------------------------")
         screenwidth = getDesktop(0).size().width()
         iconSize = GetAvailableIconSize()
-        if len(list) > 16 and iconSize == 100:
+        if len(list) >= 30 and iconSize == 100 and screenwidth and screenwidth > 1100:
+            numOfRow = 4
+            numOfCol = 8
+        elif len(list) > 16 and iconSize == 100:
             numOfRow = 4
             numOfCol = 5
         elif len(list) > 12 and iconSize == 100:
@@ -33,7 +36,7 @@ class PlayerSelectorWidget(Screen):
         elif len(list) > 9:
             if screenwidth and screenwidth == 1920:
                 numOfRow = 4
-                numOfCol = 8      
+                numOfCol = 8
             else:
                 numOfRow = 3
                 numOfCol = 4
