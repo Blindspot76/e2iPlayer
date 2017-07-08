@@ -14,7 +14,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser         import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.filmonapi         import FilmOnComApi, GetConfigList as FilmOn_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.videostar         import VideoStarApi, GetConfigList as VideoStar_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.weebtv            import WeebTvApi, GetConfigList as WeebTv_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.purecastnet       import PurecastNetApi, GetConfigList as PurecastNet_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi, GetConfigList as WagasWorld_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow           import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
 #from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet    import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
@@ -117,10 +116,6 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("Turn off buffering for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
     optionList.append(getConfigListEntry(_("Use Polish proxy for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weather_useproxy))
     
-    optionList.append(getConfigListEntry("---------------Pure-Cast.net----------------", config.plugins.iptvplayer.fake_separator))
-    try:    optionList.extend( PurecastNet_GetConfigList() )
-    except Exception: printExc()
-    
     optionList.append(getConfigListEntry("----------------GoldVod.TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( GoldVodTV_GetConfigList() )
     except Exception: printExc()
@@ -174,7 +169,6 @@ class HasBahCa(CBaseHostClass):
                         #{'alias_id':'freetuxtv_programmes_en', 'name': 'm3u',                 'title': 'Angielska TV',                      'url': 'http://database.freetuxtv.net/playlists/playlist_programmes_en.m3u'}, \
                         {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                         {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'http://goldvod.tv/',                'url': '',                                                                   'icon': 'http://goldvod.tv/assets/images/logo.png'}, \
-                        {'alias_id':'pure-cast.net',           'name': 'pure-cast.net',       'title': 'Pure-Cast.net',                     'url': '',                                                                   'icon': 'http://blog-social-stream.dit.upm.es/wp-content/uploads/2013/05/logo.png'}, \
                         {'alias_id':'wizja.tv',                'name': 'wizja.tv',            'title': 'wizja.tv',                          'url': 'http://wizja.tv/',                                                   'icon': 'http://wizja.tv/logo.png'}, \
                        ] 
     #http://play.tvip.ga/iptvde.m3u
@@ -193,7 +187,6 @@ class HasBahCa(CBaseHostClass):
         self.videoStarApi = None
         self.wagasWorldApi= None
         self.ustvnowApi   = None
-        self.purecastNetApi    = None
         self.telewizjadaNetApi = None
         #self.iKlubNetApi       = None
         self.yooanimeComApi    = None
@@ -691,22 +684,6 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.ustvnowApi.getVideoLink(cItem)
         return urlsTab
     #############################################################
-        
-    def getPurecastNetList(self, cItem):
-        printDBG("getPurecastNetList start")
-        if None == self.purecastNetApi:
-            self.purecastNetApi = PurecastNetApi()
-        tmpList = self.purecastNetApi.getChannelsList(cItem)
-        for item in tmpList:
-            if 'video' == item['type']:
-                self.addVideo(item) 
-            else:
-                self.addDir(item)
-        
-    def getPurecastNetLink(self, cItem):
-        printDBG("getPurecastNetLink start")
-        urlsTab = self.purecastNetApi.getVideoLink(cItem)
-        return urlsTab
     
     def getTelewizjadaNetList(self, cItem):
         printDBG("getTelewizjadaNetList start")
@@ -1055,9 +1032,6 @@ class HasBahCa(CBaseHostClass):
     #ustvnow.com items
         elif name == 'ustvnow':
             self.getUstvnowList(self.currItem)
-    #pure-cast.net items
-        elif name == 'pure-cast.net':
-            self.getPurecastNetList(self.currItem)
     #telewizjada.net items
         elif name == 'telewizjada.net':
             self.getTelewizjadaNetList(self.currItem)
@@ -1174,8 +1148,6 @@ class IPTVHost(CHostBase):
             #    url =  tmpList[0]['url']
         elif name == 'ustvnow':
             urlList = self.host.getUstvnowLink(cItem)
-        elif name == 'pure-cast.net':
-            urlList = self.host.getPurecastNetLink(cItem)
         elif name == 'telewizjada.net':
             urlList = self.host.getTelewizjadaNetLink(cItem)
         #elif name == 'iklub.net':
