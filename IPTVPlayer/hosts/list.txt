@@ -67,6 +67,7 @@ hostmrpiracy
 hostmusicbox
 hostmythewatchseries
 hostnaszekinoonline
+hostngolos
 hostninateka
 hostokgoals
 hostonetvod

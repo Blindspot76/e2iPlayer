@@ -53,12 +53,12 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://www.meczyki.pl/'
+    return 'https://ngolos.com/'
 
-class MeczykiPL(CBaseHostClass):
+class NGolosCOM(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'meczykipl', 'cookie':'meczykipl.cookie', 'cookie_type':'MozillaCookieJar'}) #, 'min_py_ver':(2,7,9)
+        CBaseHostClass.__init__(self, {'history':'meczykipl', 'cookie':'meczykipl.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
         self.USER_AGENT = 'Mozilla/5.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
@@ -66,81 +66,94 @@ class MeczykiPL(CBaseHostClass):
         
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'http://www.meczyki.pl/images/logo.png'
+        self.DEFAULT_ICON_URL = 'https://www.ngolos.com/images/site.png'
         self.MAIN_URL = None
+        self.cacheCategories = []
         
     def selectDomain(self):
-        self.MAIN_URL = 'http://www.meczyki.pl/'
+        self.MAIN_URL   = 'https://www.ngolos.com/'
+        self.SEARCH_URL = self.MAIN_URL + 'videos.php?dosearch=Y&search='
+        self.MAIN_CAT_TAB = [{'category':'list_groups', 'title': _('Categories'),   'url':self.getMainUrl()},
+                             
+                             {'category':'search',          'title': _('Search'), 'search_item':True},
+                             {'category':'search_history',  'title': _('Search history'),           },
+                            ]
     
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         return self.cm.getPage(baseUrl, addParams, post_data)
     
-    def listMainMenu(self, cItem, nextCategory):
-        printDBG("MeczykiPL.listMainMenu")
+    def listGroups(self, cItem, nextCategory):
+        printDBG("NGolosCOM.listGroups")
+        self.cacheCategories = []
         
-        params = dict(cItem)
-        params.update({'category':nextCategory, 'title':_('--All--'), 'f_cat':'0'})
-        self.addDir(params)
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
         
-        sts, data = self.getPage(self.getFullUrl('/najnowsze_skroty.html'))
-        if not sts: return 
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content-box-text"', 'shortcuts-content-start')[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<table', '</table>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>')
+        for groupItem in data:
+            groupItem = groupItem.split('<td>')
+            if len(groupItem) < 2: continue
+            tab = []
+            groupTitle = self.cleanHtmlStr(groupItem[0])
+            groupUrl   = self.getFullUrl(self.cm.ph.getSearchGroups(groupItem[0], '''href=['"]([^'^"]+?)['"]''')[0])
+            if self.cm.isValidUrl(groupUrl):
+                tab.append({'title':_("--All--"), 'url':groupUrl})
+            groupItem = self.cm.ph.getAllItemsBeetwenMarkers(groupItem[1], '<a', '</a>')
+            for item in groupItem:
+                title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
+                if title == '': title = self.cleanHtmlStr(item)
+                url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+                if self.cm.isValidUrl(url):
+                    tab.append({'title':title, 'url':url})
+            if len(tab):
+                params = dict(cItem)
+                params.update({'category':nextCategory, 'title':groupTitle, 'cat_id':len(self.cacheCategories)})
+                self.addDir(params)
+                self.cacheCategories.append(tab)
+        
+    def listCatItems(self, cItem, nextCategory):
+        printDBG("NGolosCOM.listCatItems")
+        
+        catId = cItem.get('cat_id', 0)
+        if catId >= len(self.cacheCategories): return 
+        
+        tab = self.cacheCategories[catId]
+        for item in tab:
+            params = dict(cItem)
+            params.update(item)
+            params.update({'good_for_fav':True, 'category':nextCategory})
+            self.addDir(params)
+             
+    def listItems(self, cItem, nextCategory):
+        printDBG("NGolosCOM.listItems |%s|" % cItem)
+        
+        page = cItem.get('page', 1)
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'next-news', '>')[1]
+        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''href=['"]([^'^"]+?)['"]''')[0])
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<section id="mainContent">', '</section>')[1].split('<div class="pagination">')[0]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
         for item in data:
-            cat   = self.cm.ph.getSearchGroups(item, '''setCategory\(\s*([0-9]+?)\s*\)''')[0]
-            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''url\(\s*['"]([^'^"]+?)['"]\s*\)''')[0])
+            title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
+            if title == '': title = self.cleanHtmlStr(item)
             url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            title = self.cleanHtmlStr(item)
+            icon  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+            if icon.startswith('..'): icon = icon[2:]
             params = dict(cItem)
-            params.update({'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'f_cat':cat})
+            params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon})
             self.addDir(params)
-    
-    def listItems(self, cItem, nextCategory):
-        printDBG("MeczykiPL.listItems |%s|" % cItem)
         
-        baseUrl  = self.getFullUrl('/front/shortcut/get-shortcuts')
-        page = cItem.get('page', 1)
-        cat  = cItem.get('f_cat', '0')
         
-        query = {'category':cat, 'page':page}
-        url = baseUrl + '?' + urllib.urlencode(query)
+        if self.cm.isValidUrl(nextPage):
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':_('Next page'), 'url':nextPage, 'page':page+1})
+            self.addDir(params)
         
-        sts, data = self.getPage(url)
-        if not sts: return
-        
-        try:
-            data = byteify(json.loads(data))
-            data = data['shortcuts']
-            keys = list(data.keys())
-            keys.sort(reverse=True)
-            for key in keys:
-                for item in data[key]['shortcuts']:
-                    title = self.cleanHtmlStr(item['title']) + ' ' + item['score']
-                    url   = self.getFullUrl(item['url'])
-                    icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item['title'], '''src=['"]([^'^"]+?)['"]''')[0])
-                    if icon == '': icon = self.getFullIconUrl(item['area'])
-                    desc  = '%s | %s' % (item['competition'], item['event_date'])
-                    params = dict(cItem)
-                    params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
-                    self.addDir(params)
-        except Exception:
-            printExc()
-        
-        if 0 == len(self.currList): return
-        
-        query['page'] = page + 1
-        url = baseUrl + '?' + urllib.urlencode(query)
-        sts, data = self.getPage(url)
-        if not sts: return
-        
-        try:
-            if len(byteify(json.loads(data))['shortcuts'].keys()):
-                params = dict(cItem)
-                params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
-                self.addDir(params)
-        except Exception:
-            printExc()
-            
     def exploreItem(self, cItem):
         printDBG("OkGoals.exploreItem")
         
@@ -148,7 +161,7 @@ class MeczykiPL(CBaseHostClass):
         if not sts: return
         
         titles = []
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div class="video-watch">', '</div>')[1].split('<BR>')
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, ' <div id="tab-1"', '</strong>')[1].split('</div>')
         for title in tmp:
             title = self.cleanHtmlStr(title) 
             if title != '': titles.append(title)
@@ -156,17 +169,28 @@ class MeczykiPL(CBaseHostClass):
         tmp = re.compile('''['"]([^'^"]*?//config\.playwire\.com[^'^"]+?\.json)['"]''').findall(data)
         tmp.extend(re.compile('<iframe[^>]+?src="([^"]+?)"').findall(data))
         tmp.extend(re.compile('''<a[^>]+?href=['"](https?://[^'^"]*?ekstraklasa.tv[^'^"]+?)['"]''').findall(data))
-        
+        urlsTab = []
         for idx in range(len(tmp)):
+            if 'facebook' in tmp[idx]: continue
             url = self.getFullUrl(tmp[idx])
             if not self.cm.isValidUrl(url): continue
             if 'playwire.com' not in url and  self.up.checkHostSupport(url) != 1: continue
+            urlsTab.append(url)
+        
+        for idx in range(len(urlsTab)):
             title = cItem['title']
-            if len(titles) == len(tmp): title += ' - ' + titles[idx]
-            
+            if len(titles) == len(urlsTab): title += ' - ' + titles[idx]
             params = dict(cItem)
-            params.update({'good_for_fav': False, 'title':title, 'url':url})
+            params.update({'good_for_fav': False, 'title':title, 'url':urlsTab[idx]})
             self.addVideo(params)
+            
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("OkGoals.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        cItem = dict(cItem)
+        page = cItem.get('page', 1)
+        if page == 1:
+            cItem['url'] = self.SEARCH_URL + urllib.quote_plus(searchPattern)
+        self.listItems(cItem, 'explore_item')
     
     def getLinksForVideo(self, cItem):
         printDBG("OkGoals.getLinksForVideo [%s]" % cItem)
@@ -212,11 +236,11 @@ class MeczykiPL(CBaseHostClass):
         return urlTab
     
     def getFavouriteData(self, cItem):
-        printDBG('MeczykiPL.getFavouriteData')
+        printDBG('NGolosCOM.getFavouriteData')
         return json.dumps(cItem) 
         
     def getLinksForFavourite(self, fav_data):
-        printDBG('MeczykiPL.getLinksForFavourite')
+        printDBG('NGolosCOM.getLinksForFavourite')
         if self.MAIN_URL == None:
             self.selectDomain()
         links = []
@@ -227,7 +251,7 @@ class MeczykiPL(CBaseHostClass):
         return links
         
     def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('MeczykiPL.setInitListFromFavouriteItem')
+        printDBG('NGolosCOM.setInitListFromFavouriteItem')
         if self.MAIN_URL == None:
             self.selectDomain()
         try:
@@ -255,11 +279,23 @@ class MeczykiPL(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listMainMenu({'name':'category'}, 'list_items')
+            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif 'list_groups' == category:
+            self.listGroups(self.currItem, 'list_cat_items')
+        elif 'list_cat_items' == category:
+            self.listCatItems(self.currItem, 'list_items')
         elif 'list_items' == category:
             self.listItems(self.currItem, 'explore_item')
         elif 'explore_item' == category:
             self.exploreItem(self.currItem)
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
         
@@ -268,6 +304,6 @@ class MeczykiPL(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, MeczykiPL(), True, [])
+        CHostBase.__init__(self, NGolosCOM(), True, [])
 
     
