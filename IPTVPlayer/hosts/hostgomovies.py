@@ -60,7 +60,7 @@ def gettytul():
 class GoMovies(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'GoMovies.tv', 'cookie':'gomovies.cookie', 'cookie_type':'MozillaCookieJar'})
+        CBaseHostClass.__init__(self, {'history':'GoMovies.tv', 'cookie':'gomovies.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.DEFAULT_ICON_URL = 'https://cdn.unlonecdn.ru/images/gomovies-logo-light.png'
@@ -430,8 +430,8 @@ class GoMovies(CBaseHostClass):
         icon  = self.getFullUrl( self.cm.ph.getSearchGroups(data, '<meta property="og:image"[^>]+?content="([^"]+?)"')[0] )
         
         if title == '': title = cItem['title']
-        if desc == '':  title = cItem['desc']
-        if icon == '':  title = cItem['icon']
+        if desc == '':  desc = cItem.get('desc', '')
+        if icon == '':  icon = cItem.get('icon', '')
         
         descData = self.cm.ph.getDataBeetwenMarkers(data, '<div class="mvic-info">', '<div class="clearfix">', False)[1]
         descData = self.cm.ph.getAllItemsBeetwenMarkers(descData, '<p', '</p>')
