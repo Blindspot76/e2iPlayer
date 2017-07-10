@@ -999,7 +999,8 @@ class IPTVPlayerWidget(Screen):
                 self.displayHostsList.append((title, hostName))
         # if there is no order hosts list use old behavior
         if 0 == len(GetHostsOrderList()):
-            self.displayHostsList.sort()
+            try: self.displayHostsList.sort(key=lambda t : tuple(str(t[0]).lower()))
+            except Exception: self.displayHostsList.sort()
         self.displayHostsList.append((_("Configuration"), "config"))
         
         # prepare info message when some host or update cannot be used
