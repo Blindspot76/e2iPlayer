@@ -201,7 +201,7 @@ class ConfigHostsMenu(ConfigBaseWidget):
         sortedList = list(listOfHostsNames)
         for hostName in sortedList:
             try:    
-                exec( 'self.list.append(getConfigListEntry("%s ' + hostName + '", config.plugins.iptvplayer.host' + hostName + '))' % _('Host'))
+                exec( 'self.list.append(getConfigListEntry("Player ' + hostName + '", config.plugins.iptvplayer.host' + hostName + '))' )
                 self.hostsConfigsAvailableList.append(True)
                 self.listOfHostsNames.append(hostName)
             except:
