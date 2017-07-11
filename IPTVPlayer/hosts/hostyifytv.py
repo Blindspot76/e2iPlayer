@@ -7,9 +7,10 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
 ###################################################
 
 ###################################################
@@ -21,7 +22,8 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
+from binascii import hexlify, unhexlify, a2b_hex
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -43,38 +45,32 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'yify.tv'
+    return 'http://yify.bz/'
 
 class YifyTV(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-    MAIN_URL    = 'http://yify.tv/'
+    MAIN_URL    = 'http://yify.bz/'
     SRCH_URL    = MAIN_URL + '?s='
+    DEFAULT_ICON= MAIN_URL + 'wp-content/themes/yifybootstrap3/img/logo3s.png'
     
-    MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Releases'),          'url':MAIN_URL+'files/releases/'                                                 },
-                    {'category':'list_items',            'title': _('Popular'),           'url':MAIN_URL+'popular/'                                                        },
-                    {'category':'list_items',            'title': _('Top +250'),          'url':MAIN_URL+'files/movies/?meta_key=imdbRating&orderby=meta_value&order=desc' },
-                    {'category':'list_genres_filter',    'title': _('Genres'),            'url':MAIN_URL+'files/movies/'                                                   },
-                    {'category':'list_languages_filter', 'title': _('Languages'),         'url':MAIN_URL+'languages/'                                                      },
-                    {'category':'list_countries_filter', 'title': _('Countries'),         'url':MAIN_URL+'countries/'                                                      },
-                    {'category':'search',                'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',        'title': _('Search history')} ]
- 
+    MAIN_CAT_TAB = [{'category':'list_items',            'title': _('Releases'),          'icon':DEFAULT_ICON, 'url':MAIN_URL+'files/releases/'                                                 },
+                    {'category':'list_popular',          'title': _('Popular'),           'icon':DEFAULT_ICON, 'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&needcap=1'                                                        },
+                    {'category':'list_items',            'title': _('Top +250'),          'icon':DEFAULT_ICON, 'url':MAIN_URL+'files/movies/?meta_key=imdbRating&orderby=meta_value&order=desc' },
+                    {'category':'list_genres_filter',    'title': _('Genres'),            'icon':DEFAULT_ICON, 'url':MAIN_URL+'files/movies/'                                                   },
+                    {'category':'list_languages_filter', 'title': _('Languages'),         'icon':DEFAULT_ICON, 'url':MAIN_URL+'languages/'                                                      },
+                    {'category':'list_countries_filter', 'title': _('Countries'),         'icon':DEFAULT_ICON, 'url':MAIN_URL+'countries/'                                                      },
+                    {'category':'search',                'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON },
+                    {'category':'search_history',        'title': _('Search history'),             'icon':DEFAULT_ICON } ]
+                    
+    POPULAR_TAB = [{'category':'list_items2', 'title': _('All'),        'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&needcap=1'       },
+                   {'category':'list_items2', 'title': _('Comedies'),   'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&genre=comedy'    },
+                   {'category':'list_items2', 'title': _('Animations'), 'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&genre=animation' },
+                   {'category':'list_items2', 'title': _('Dramas'),     'url':MAIN_URL+'wp-admin/admin-ajax.php?action=noprivate_movies_loop&asec=get_pop&genre=drama'     }]
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'YifyTV', 'cookie':'alltubetv.cookie'})
         self.filterCache = {}
-        
-    def _getFullUrl(self, url):
-        if url.startswith('//'):
-            return 'http:' + url
-        if url.startswith('/'):
-            url = url[1:]
-        if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        if not self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
-        return url
     
     def getPage(self, url, params={}, post_data=None):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
@@ -86,16 +82,6 @@ class YifyTV(CBaseHostClass):
         #sts, data = self.cm.getPage(url, params, post_data)
         #printDBG(data)
         return self.cm.getPage(url, params, post_data)
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("YifyTV.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
             
     def fillFiltersCache(self):
         printDBG("YifyTV.fillFiltersCache")
@@ -132,21 +118,21 @@ class YifyTV(CBaseHostClass):
             sts, data = self.cm.getPage(self.MAIN_URL + 'languages/')
             if sts:
                 #languages
-                languages = self.cm.ph.getDataBeetwenMarkers(data, '<tbody><tr><td>', '</table>', False)[1]
+                languages = self.cm.ph.getDataBeetwenMarkers(data, '<!-- start content container -->', '</section>', False)[1]
                 languages = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(languages)
                 self.filterCache['languages'] = []
                 for item in languages:
-                    self.filterCache['languages'].append({'title': self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+                    self.filterCache['languages'].append({'title': self.cleanHtmlStr(item[1]), 'url':self.getFullUrl(item[0])})
                     
         if 0 == len(self.filterCache.get('countries', [])):
             sts, data = self.cm.getPage(self.MAIN_URL + 'countries/')
             if sts:
                 #countries
-                countries = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+                countries = self.cm.ph.getDataBeetwenMarkers(data, '<!-- start content container -->', '</section>', False)[1]
                 countries = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(countries)
                 self.filterCache['countries'] = []
                 for item in countries:
-                    self.filterCache['countries'].append({'title': self.cleanHtmlStr(item[1]), 'url':self._getFullUrl(item[0])})
+                    self.filterCache['countries'].append({'title': self.cleanHtmlStr(item[1]), 'url':self.getFullUrl(item[0])})
                     
     def listFilters(self, cItem, filter, category):
         printDBG("YifyTV.listFilters")
@@ -189,18 +175,33 @@ class YifyTV(CBaseHostClass):
         else: nextPage = False
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'var posts = {', '};', False)[1]
+        data = '{' + data + '}'
+        self._listItems(cItem, data, nextPage)
+        
+    def listItems2(self, cItem):
+        printDBG("YifyTV.listItems2")
+        
+        url = cItem['url'] + '&num=%s' % cItem.get('page', 1)
+        sts, data = self.cm.getPage(url)
+        if not sts: return 
+        
+        self._listItems(cItem, data, True)
+        
+    def _listItems(self, cItem, data, nextPage):
+        printDBG("YifyTV.listItems")
         try:
-            data = byteify(json.loads('{' + data + '}'))
+            data = byteify(json.loads(data))
             for item in data['posts']:
-                item['url']   = self._getFullUrl(item['link'])
+                item['url']   = self.getFullUrl(item['link'])
                 item['title'] = self.cleanHtmlStr(item['title'])
                 item['desc']  = self.cleanHtmlStr(item['post_content'])
-                item['icon']  = self._getFullUrl(item['image'])
+                item['icon']  = self.getFullUrl(item['image'])
                 self.addVideo(item)
-        except:
+        except Exception:
             printExc()
         
         if nextPage:
+            page = cItem.get('page', 1)
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
@@ -212,33 +213,35 @@ class YifyTV(CBaseHostClass):
         currItem['url'] = self.SRCH_URL + urllib.quote_plus(searchPattern)
         self.listItems(currItem)
         
+    def __saveGet(self, b, a):
+        try:
+            return b[a]
+        except Exception:
+            return 'pic'
+            
     def unpackJS(self, data, name):
         data = data.replace('Math.min', 'min').replace(' + (', ' + str(').replace('String.fromCharCode', 'chr').replace('return b[a]', 'return saveGet(b, a)')
-        def saveGet(b, a):
-            try:
-                return b[a]
-            except:
-                return 'pic'
+        printDBG(data)
         
         def justRet(data):
             return data
         
         try:
             paramsAlgoObj = compile(data, '', 'exec')
-        except:
+        except Exception:
             printExc('unpackJS compile algo code EXCEPTION')
             return ''
-        vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':saveGet, 'justRet':justRet}
-        vLocals = { name: None }
 
         try:
+            vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote, 'min':min, 'saveGet':self.__saveGet, 'justRet':justRet}
+            vLocals = { name: None }
             exec( data, vGlobals, vLocals )
-        except:
+        except Exception:
             printExc('unpackJS exec code EXCEPTION')
             return ''
         try:
             return vLocals[name]
-        except:
+        except Exception:
             printExc('decryptPlayerParams EXCEPTION')
         return ''
         
@@ -278,7 +281,18 @@ class YifyTV(CBaseHostClass):
             return funName
         
         data = re.sub('\(eval\("[^"]+?"\)\)', evalSimple, data)
-        args = self.cm.ph.getDataBeetwenMarkers(data, 'parseRes2', ";})", False)[1]
+        
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'eval(', ");", False)
+        if sts:
+            funName = 'eval%d()' % self.evalNum
+            funData = 'def justRet%s:' % funName
+            self.evalNum += 1
+            funData += '\n\treturn ' + tmp.strip()
+            funData += '\n'
+            self.pyCode += funData
+            args = funName
+        else:
+            args = self.cm.ph.getDataBeetwenMarkers(data, 'parseRes2', ";})", False)[1]
         
         data2 = data.split('\n')
         data = []
@@ -298,7 +312,7 @@ class YifyTV(CBaseHostClass):
             funBody = ''
             for ins in funIns:
                 ins = ins.replace('var', ' ').strip()
-                if len(ins) and ins[-1] not in [')', ']']:
+                if len(ins) and ins[-1] not in [')', ']', '"']:
                     ins += '()'
                 funBody += '\t%s\n' % ins
             if '' == funBody.replace('\t', '').replace('\n', '').strip():
@@ -313,17 +327,23 @@ class YifyTV(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
         
+        #printDBG(data)
+        
         #data = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^"]*?=[^"]*?"([^"]+?)"')[0]
-        dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var mouse_and_cat_playing_for_ever')[0].replace('var ', '')
+        #dat1 = self.cm.ph.getSearchGroups(data, '\}([^\{^\}]+?)var mouse_and_cat_playing_for_ever')[0].replace('var ', '')
+        dat1 = ""
         
-        parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
+        #parametros = self.cm.ph.getDataBeetwenMarkers(data, 'var mouse_and_cat_playing_for_ever', ';', False)[1]
+        parametros = self.cm.ph.getSearchGroups(data, 'var[^"]*?parametros[^=]*?(=[^;]+?);')[0]
         
-        globalTabCode, pyCode, args = self.getPyCode(data)
+        #dd = self.cm.ph.getDataBeetwenMarkers(data, 'sourcesConfigMod', 'var mouse_and_cat_playing_for_ever', False)[1]
+        dd = self.cm.ph.getDataBeetwenMarkers(data, 'function fofofo(){};', '"?" +')[1]
+        
+        globalTabCode, pyCode, args = self.getPyCode(dd)
         
         pyCode = dat1.strip() + '\n' +  pyCode  + 'parametros ' + parametros.strip()
         pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n' + pyCode.replace('\n', '\n\t') + '\n\treturn parametros\n' + 'param = retA()'
-        #printDBG(pyCode)
+        printDBG(pyCode)
         data = self.unpackJS(pyCode, 'param')
         #printDBG(pyCode)
         printDBG(data)
@@ -347,7 +367,7 @@ class YifyTV(CBaseHostClass):
             subLangs = subLangs.split(',')
             for lang in subLangs:
                 if subID != '':
-                    sub_tracks.append({'title':lang, 'url':'http://yify.tv/player/bajarsub.php?%s_%s' % (subID, lang), 'lang':lang, 'format':'srt'})
+                    sub_tracks.append({'title':lang, 'url':'http://yify.bz/player/bajarsub.php?%s_%s' % (subID, lang), 'lang':lang, 'format':'srt'})
         
         data = data.split('&')
         idx = 1
@@ -366,18 +386,26 @@ class YifyTV(CBaseHostClass):
         try:
             data = byteify(json.loads(data))
             code = data[0]['jscode']
+            tmpData = ''
+            for decFun in [VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams]:
+                tmpData = unpackJSPlayerParams(code, decFun, 0)
+                if '' != tmpData:
+                    printDBG(tmpData)
+                    return tmpData
             m1 = '(function (){'
             code = code[len(m1):]
             globalTabCode, pyCode, args = self.getPyCode(code)
             pyCode = 'def retA():\n\t' + globalTabCode.replace('\n', '\n\t') + '\n\t' + pyCode.replace('\n', '\n\t') + ('\n\treturn justRet%s\n' % args) + 'param = retA()'
-            #printDBG(pyCode)
+            printDBG(pyCode)
             data = self.unpackJS(pyCode, 'param')
-        except:
+            printDBG(data)
+        except Exception:
             printExc()
         return data
         
     def getVideoLinks(self, baseUrl):
-        printDBG("Movie4kTO.getVideoLinks [%s]" % baseUrl)
+        printDBG("YifyTV.getVideoLinks [%s]" % baseUrl)
+        
         urlTab = []
         sub_tracks = strwithmeta(baseUrl).meta.get('external_sub_tracks', [])
         
@@ -385,23 +413,67 @@ class YifyTV(CBaseHostClass):
         header['Referer'] = baseUrl.meta['Referer']
         
         souTab = [baseUrl.meta.get('sou', '')]
-        #if souTab[0] == 'pic':
-        #    souTab.append('adr')
+        if souTab[0] == 'pic':
+            souTab.append('adr')
+        if souTab[0] == 'adr':
+            souTab.append('pic')
         for sou in souTab:
-            post_data = {'fv':'18', 'url':baseUrl, 'sou':baseUrl.meta.get('sou', '')}
-            url = 'http://yify.tv/player/pk/pk/plugins/player_p2.php'
+            post_data = {'fv':'18', 'url':baseUrl, 'sou':sou}
+            url = 'http://yify.bz/playerlite/pk/pk/plugins/player_p2.php'
             sts, data = self.cm.getPage(url, {'header':header}, post_data)
             if not sts: return []
             #printDBG('>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<' % data)
             try:
+                printDBG(data)
                 if 'jscode' in data:
+                    #printDBG("+++++++++++++++++++++++++++++++++++++++++")
+                    #printDBG(data)
+                    #printDBG("+++++++++++++++++++++++++++++++++++++++++")
+                    #return []
                     data = self._evalJscode(data)
+                    if 'showiFrame(' in data:
+                        url = urllib.unquote(self.cm.ph.getDataBeetwenMarkers(data, "emb='+'", "'", False)[1])
+                        tmp = url.split('sub.file')
+                        url = tmp[0]
+                        subTrack = urllib.unquote(tmp[1])
+                        if url.startswith('//'):
+                            url = 'http:' + url
+                        if subTrack.startswith('//'):
+                            subTrack = 'http:' + subTrack
+                        tmpUrlTab = self.up.getVideoLinkExt(url)
+                        if self.cm.isValidUrl(subTrack):
+                            format = subTrack[-3:]
+                            for idx in range(len(tmpUrlTab)):
+                                tmpUrlTab[idx]['url'] = strwithmeta(tmpUrlTab[idx]['url'], {'external_sub_tracks':[{'title':'', 'url':subTrack, 'lang':'en', 'format':format}]})
+                        urlTab.extend(tmpUrlTab)
+                        printDBG(urlTab)
+                        break
+                        
+                    if 'sources[sourceSelected]["paramId"]' in data:
+                        data = data.replace('"+"', '').replace(' ', '')
+                        paramSite = self.cm.ph.getSearchGroups(data, 'sources\[sourceSelected\]\["paramSite"\]="([^"]+?)"')[0]
+                        data = self.cm.ph.getSearchGroups(data, 'sources\[sourceSelected\]\["paramId"\]="([^"]+?)"')[0]
+                        printDBG('data ------------------------- [%s]' % data)
+                        if data.startswith('enc'):
+                            encrypted = base64.b64decode(data[3:])
+                            key = unhexlify(base64.b64decode('MzAzOTM4NzMzOTM3MzU0MTMxMzIzMzczMzEzMzM1NjQ2NDY2Njc3NzQ4MzczODM0MzczNTMzMzQzNjcyNjQ3Nw=='))
+                            iv = unhexlify(base64.b64decode('NWE0MTRlMzEzNjMzNjk2NDZhNGM1MzUxMzU0YzY0MzU='))
+                            cipher = AES_CBC(key=key, padding=noPadding(), keySize=32)
+                            data = cipher.decrypt(encrypted, iv).split('\x00')[0]
+                            if 'ucl' == paramSite:
+                                urlTab.extend( self.up.getVideoLinkExt("https://userscloud.com/embed-" + data + "-1280x534.html") )
+                            elif 'tus' == paramSite:
+                                urlTab.extend( self.up.getVideoLinkExt("https://tusfiles.net/embed-" + data + "-1280x534.html?v=34") )
+                            elif 'up' == paramSite:
+                                urlTab.extend( self.up.getVideoLinkExt("http://uptobox.com/" + data) )
+                            break
+                    
                 data = byteify(json.loads(data))
                 for item in data:
                     #printDBG('++++++++++++++++++++++\n%s\n++++++++++++++++++++++' % item)
-                    if item.get('type', '').startswith('video/') and item.get('url', '').startswith('http'):
+                    if (item.get('type', '').startswith('video/') or item.get('type', '').startswith('application/x-shockwave-flash')) and self.cm.isValidUrl(item.get('url', '')):
                         urlTab.append({'name':'{0}x{1}'.format(item.get('height', ''), item.get('width', '')), 'url':item['url'], 'need_resolve':0})
-            except:
+            except Exception:
                 SetIPTVPlayerLastHostError('The Mirror is broken.\nIf available you can choose other source.')
                 printExc()
             if len(urlTab): break;
@@ -411,9 +483,17 @@ class YifyTV(CBaseHostClass):
             if url.startswith('//'):
                 videoUrl = 'http:' + videoUrl
             urlTab = self.up.getVideoLinkExt(videoUrl)
-        for idx in range(len(urlTab)):
-            urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'external_sub_tracks':sub_tracks})
         
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(urlTab)
+        
+        for idx in range(len(urlTab)):
+            subs = strwithmeta(urlTab[idx]['url']).meta.get('external_sub_tracks', [])
+            subs.extend(sub_tracks)
+            urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'external_sub_tracks':subs})
+        
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(urlTab)
         return urlTab
         
     def getFavouriteData(self, cItem):
@@ -434,7 +514,7 @@ class YifyTV(CBaseHostClass):
         otherInfo['genre']    = cItem['genre']
         otherInfo['director'] = cItem['director']
         otherInfo['actors']   = cItem['actors']
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -449,6 +529,8 @@ class YifyTV(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif category == 'list_popular':
+            self.listsTab(self.POPULAR_TAB, self.currItem)
     #MOVIES
         elif category == 'list_countries_filter':
             self.listFilters(self.currItem, 'countries', 'list_genres_filter')
@@ -462,6 +544,8 @@ class YifyTV(CBaseHostClass):
             self.listFilters(self.currItem, 'orderby', 'list_items')
         elif category == 'list_items':
             self.listItems(self.currItem)
+        elif category == 'list_items2':
+            self.listItems2(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -562,28 +646,3 @@ class IPTVHost(CHostBase):
                                     iconimage = icon,
                                     possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

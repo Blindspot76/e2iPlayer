@@ -21,7 +21,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -125,7 +125,7 @@ class Hitbox(CBaseHostClass):
                 params = dict(cItem)
                 params.update( {'title':_('Next page'), 'page':page+1} )
                 self.addDir(params)
-        except: printExc()
+        except Exception: printExc()
         
     def listGamesTab(self, cItem, category=''):
         printDBG("Hitbox.listGamesTab")
@@ -163,7 +163,7 @@ class Hitbox(CBaseHostClass):
                 params = dict(cItem)
                 params.update( {'title':_('Next page'), 'page':page+1} )
                 self.addDir(params)
-        except: printExc()
+        except Exception: printExc()
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("Hitbox.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -202,7 +202,7 @@ class Hitbox(CBaseHostClass):
                         if url.startswith('http'):
                             urls.append( {'name':item.get('label', 'vod'), 'type':type, 'url':url} )
                             if 'vod' == type: break
-                except: printExc()
+                except Exception: printExc()
                 
         urlTab = []
         for urlItem in urls:
@@ -325,7 +325,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -338,7 +338,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

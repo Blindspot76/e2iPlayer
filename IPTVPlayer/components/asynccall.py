@@ -3,15 +3,18 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import iptv_system, printDBG
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import iptv_system, printDBG, GetDukPath, CreateTmpFile, rm, getDebugMode
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 ###################################################
 # FOREIGN import
 ###################################################
 import threading
 import traceback
+try: import ctypes
+except Exception: pass
 ###################################################
 
-gMainFunctionsQueue = None
+gMainFunctionsQueueTab = [None, None]
 
 class AsyncCall(object):
     def __init__(self, fnc, callback=None, callbackWithThreadID=False):
@@ -29,6 +32,7 @@ class AsyncCall(object):
         printDBG("AsyncCall.__del__  --------------------------------------------")
 
     def __call__(self, *args, **kwargs):
+        SetIPTVPlayerLastHostError()
         self.Thread = threading.Thread(target = self.run, name = self.Callable.__name__, args = args, kwargs = kwargs)
         self.Thread.start()
         return self
@@ -38,6 +42,32 @@ class AsyncCall(object):
     
     def isAlive(self):
         return None != self.Thread and self.Thread.isAlive()
+        
+    def _kill(self):
+        if None != self.Thread:
+            try:
+                thread_id = None
+                # do we have it cached?
+                if hasattr(self.Thread, "_thread_id"):
+                    thread_id = self.Thread._thread_id
+                
+                # no, look for it in the _active dict
+                for tid, tobj in threading._active.items():
+                    if tobj is self.Thread:
+                        thread_id = tid
+                if None != thread_id:
+                    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), ctypes.py_object(SystemExit))
+                    if res == 0:
+                        printDBG("AsyncCall._kill ********************************* invalid thread id")
+                    elif res != 1:
+                        # "if it returns a number greater than one, you're in trouble,
+                        # and you should call it again with exc=NULL to revert the effect"
+                        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), None)
+                        printDBG("AsyncCall._kill ********************************* PyThreadState_SetAsyncExc failed")
+                    else:
+                        printDBG("AsyncCall._kill ********************************* KILL OK")
+            except Exception:
+                printDBG("AsyncCall._kill ********************************* exception")
 
     def kill(self):
         bRet = False
@@ -46,6 +76,7 @@ class AsyncCall(object):
         self.Callback = None
         if self.finished == False:
             if self.Thread.isAlive():
+                self._kill()
                 self.Thread._Thread__stop()
             bRet = True
 
@@ -62,7 +93,7 @@ class AsyncCall(object):
     def run(self, *args, **kwargs):
         try:
             result = self.Callable(*args, **kwargs)
-        except: 
+        except Exception: 
             self.mainLock.acquire()
             self.exceptStack = traceback.format_exc()
             self.mainLock.release()
@@ -135,13 +166,12 @@ class Delegate(object):
     #    printDBG("Delegate.__del__ ---------------------------------")
 
 class DelegateToMainThread(Delegate):
-    def __init__(self, fnc):
-        global gMainFunctionsQueue
-        Delegate.__init__(self, gMainFunctionsQueue, fnc)
+    def __init__(self, fnc, mainThreadIdx=0):
+        global gMainFunctionsQueueTab
+        Delegate.__init__(self, gMainFunctionsQueueTab[mainThreadIdx], fnc)
         
     #def __del__(self):
     #    printDBG("DelegateToMainThread.__del__ ---------------------------------")
-        
 
 class MainSessionWrapper(object):
     '''
@@ -149,19 +179,20 @@ class MainSessionWrapper(object):
     can be used only from other thread then MainThread.
     '''
     WAIT_RET = "WaitForFinish"
-    def __init__(self):
+    def __init__(self, mainThreadIdx=0):
         self.retVal = None
         self.event = threading.Event()
+        self.mainThreadIdx = mainThreadIdx
         
     def open(self, *args, **kwargs):
-        DelegateToMainThread(self._open)(*args, **kwargs)
+        DelegateToMainThread(self._open, self.mainThreadIdx)(*args, **kwargs)
         
     def _open(self, session, *args, **kwargs):
         session.open(*args, **kwargs)
 
     def waitForFinishOpen(self, *args, **kwargs):
         self.event.clear()
-        tmpRet = DelegateToMainThread(self._waitForFinishOpen)(*args, **kwargs)
+        tmpRet = DelegateToMainThread(self._waitForFinishOpen, self.mainThreadIdx)(*args, **kwargs)
         if tmpRet and tmpRet[0] == MainSessionWrapper.WAIT_RET: 
             self.event.wait()
             return self.retVal
@@ -188,14 +219,15 @@ class iptv_execute(object):
     used inside MainThread context
     '''
     WAIT_RET = "WaitForFinish"
-    def __init__(self):
+    def __init__(self, mainThreadIdx=0):
         self.retVal = None
         self.event = threading.Event()
+        self.mainThreadIdx = mainThreadIdx
 
     def __call__(self, cmd):
         printDBG("iptv_execute.__call__: Here we must not be in main thread context: [%s]" % threading.current_thread());
         self.event.clear()
-        tmpRet = DelegateToMainThread(self._system)(cmd)
+        tmpRet = DelegateToMainThread(self._system, self.mainThreadIdx)(cmd)
         if tmpRet and tmpRet[0] == iptv_execute.WAIT_RET: 
             self.event.wait()
             ret = self.retVal
@@ -217,6 +249,21 @@ class iptv_execute(object):
 
     #def __del__(self):
     #    printDBG("iptv_execute.__del__ ---------------------------------")
+
+def iptv_js_execute(jscode):
+    sts, tmpPath = CreateTmpFile('.iptv_js.js', jscode)
+    if sts:
+        cmd =  GetDukPath() + ' ' + tmpPath + ' 2> /dev/null'
+        printDBG("iptv_js_execute cmd[%s]" % cmd)
+        ret = iptv_execute()( cmd )
+        
+        # leave last script for debug purpose
+        if getDebugMode() == '':
+            rm(tmpPath)
+    else:
+        ret = {'sts':False, 'code':-12, 'data':''}
+    printDBG('iptv_js_execute cmd ret[%s]' % ret)
+    return ret
 
 ###############################################################################
 #                          Proxy function Queue

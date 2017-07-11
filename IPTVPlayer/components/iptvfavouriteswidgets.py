@@ -103,7 +103,7 @@ class IPTVFavouritesAddItemWidget(Screen):
             options.append((item['title'], item['group_id']))
         if self.canAddNewGroup: options.append((_("Add new group of favourites"), None))
         if len(options): self.session.openWithCallback(self.addFavouriteToGroup, ChoiceBox, title=_("Select favourite group"), list=options)
-        else: self.session.open(MessageBox, _("There is no favourites groups."), type=MessageBox.TYPE_INFO, timeout=10 )
+        else: self.session.openWithCallback(self.iptvDoFinish, MessageBox, _("There are no other favourite groups"), type=MessageBox.TYPE_INFO, timeout=10 )
         
     def addFavouriteToGroup(self, retArg):
         if retArg and 2 == len(retArg):
@@ -116,10 +116,10 @@ class IPTVFavouritesAddItemWidget(Screen):
                     self.result = True
                     self.iptvDoFinish()
                     return
-                else: self.session.open(MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
+                else: self.session.openWithCallback(self.iptvDoFinish, MessageBox, self.favourites.getLastError(), type=MessageBox.TYPE_ERROR, timeout=10)
             else: # addn new group
                 self.session.openWithCallback( self.addNewFavouriteGroup, IPTVFavouritesAddNewGroupWidget, self.favourites)
-        self.iptvDoFinish()
+        else: self.iptvDoFinish()
                 
     def addNewFavouriteGroup(self, group):
         if None != group:
@@ -140,21 +140,21 @@ class IPTVFavouritesMainWidget(Screen):
     skin = """
         <screen name="IPTVFavouritesMainWidget" position="center,center" title="%s" size="%d,%d">
          <ePixmap position="5,9"   zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
-         <ePixmap position="180,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
-         <ePixmap position="400,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
+         <ePixmap position="335,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
+         <ePixmap position="665,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
          
-         <widget name="label_red"     position="45,9"  size="175,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
-         <widget name="label_yellow"  position="220,9" size="175,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
-         <widget name="label_green"   position="440,9" size="175,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
-         
+         <widget name="label_red"     position="45,9"  size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+         <widget name="label_green"   position="375,9" size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+         <widget name="label_yellow"  position="705,9" size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+
          <widget name="list"  position="5,80"  zPosition="2" size="%d,%d" scrollbarMode="showOnDemand" transparent="1"  backgroundColor="#00000000" enableWrapAround="1" />
          <widget name="title" position="5,47"  zPosition="1" size="%d,23" font="Regular;20"            transparent="1"  backgroundColor="#00000000"/>
         </screen>""" %(
             _("Favourites manager"),
             sz_w, sz_h, # size
             GetIconDir("red.png"),
-            GetIconDir("yellow.png"),
             GetIconDir("green.png"),
+            GetIconDir("yellow.png"),
             sz_w - 10, sz_h - 105, # size list
             sz_w - 135, # size title
             )
@@ -170,16 +170,21 @@ class IPTVFavouritesMainWidget(Screen):
         self.menu       = ":groups:" # "items"
         self.modified   = False
         
+        self.IDS_ENABLE_REORDERING = _('Enable reordering')
+        self.IDS_DISABLE_REORDERING = _('Disable reordering')
+        self.reorderingMode = False
+        
         self["title"]         = Label(_("Favourites groups"))
         self["label_red"]     = Label(_("Remove group"))
-        self["label_yellow"]  = Label(_("Move group"))
+        self["label_yellow"]  = Label(self.IDS_ENABLE_REORDERING)
         self["label_green"]   = Label(_("Add new group"))
         
         self["list"] = IPTVMainNavigatorList()
         self["list"].connectSelChanged(self.onSelectionChanged)
         
-        self["actions"] = ActionMap(["ColorActions", "SetupActions", "WizardActions", "ListboxActions"],
+        self["actions"] = ActionMap(["ColorActions", "WizardActions", "ListboxActions"],
             {
+                "back"  : self.keyExit,
                 "cancel": self.keyExit,
                 "ok"    : self.keyOK,
                 "red"   : self.keyRed,
@@ -188,8 +193,8 @@ class IPTVFavouritesMainWidget(Screen):
                 
                 "up"      : self.keyUp,
                 "down"    : self.keyDown,
-                "left"    : self.keyDrop,
-                "right"   : self.keyDrop,
+                "left"    : self.keyLeft,
+                "right"   : self.keyRight,
                 "moveUp"  : self.keyDrop,
                 "moveDown": self.keyDrop,
                 "moveTop" : self.keyDrop,
@@ -201,7 +206,7 @@ class IPTVFavouritesMainWidget(Screen):
             }, -2)
             
         self.prevIdx = 0
-        self.reorderingMode = False
+        self.duringMoving = False
             
     def __onClose(self):
         self["list"].disconnectSelChanged(self.onSelectionChanged)
@@ -251,19 +256,18 @@ class IPTVFavouritesMainWidget(Screen):
     
     def keyExit(self):
         if ":groups:" == self.menu:
-            if self.reorderingMode: self._changeMode()
+            if self.duringMoving: self._changeMode()
             if self.modified: self.askForSave()
             else: self.close(False)
         else:
             self["title"].setText(_("Favourites groups"))
             self["label_red"].setText(_("Remove group"))
-            self["label_yellow"].setText(_("Move group"))
             self["label_green"].setText(_("Add new group"))
         
             self.menu = ":groups:"
             self.displayList()
             try: self["list"].moveToIndex(self.prevIdx)
-            except: pass
+            except Exception: pass
             
     def askForSave(self):
         self.session.openWithCallback(self.save, MessageBox, text = _("Save changes?"), type = MessageBox.TYPE_YESNO)
@@ -281,7 +285,8 @@ class IPTVFavouritesMainWidget(Screen):
             
     def keyOK(self):
         if self.reorderingMode: 
-            self._changeMode()
+            if None != self.getSelectedItem():
+                self._changeMode()
             return
         if ":groups:" == self.menu:
             sel = self.getSelectedItem()
@@ -289,19 +294,18 @@ class IPTVFavouritesMainWidget(Screen):
             
             self.menu = sel.privateData
             try: self["title"].setText(_("Items in group \"%s\"") % self.favourites.getGroup(self.menu)['title'])
-            except: printExc()
+            except Exception: printExc()
             self["label_red"].setText(_("Remove item"))
-            self["label_yellow"].setText(_("Move item"))
             self["label_green"].setText(_("Add item to group"))
             
             try: self.prevIdx = self["list"].getCurrentIndex()
-            except: self.prevIdx = 0
+            except Exception: self.prevIdx = 0
             self.displayList()
             try: self["list"].moveToIndex(0)
-            except: pass
+            except Exception: pass
             
     def keyRed(self):
-        if self.reorderingMode: return
+        if self.duringMoving: return
         sel = self.getSelectedItem()
         if None == sel: return
         sts = True
@@ -315,9 +319,20 @@ class IPTVFavouritesMainWidget(Screen):
     
     def keyYellow(self):
         if None != self.getSelectedItem():
-            self._changeMode()
+            if self.reorderingMode:
+                self.reorderingMode = False
+                self["label_yellow"].setText(self.IDS_ENABLE_REORDERING)
+            else:
+                self.reorderingMode = True
+                self["label_yellow"].setText(self.IDS_DISABLE_REORDERING)
+                
+            if self.duringMoving and not self.reorderingMode:
+                self._changeMode()
+            elif not self.duringMoving and self.reorderingMode:
+                self._changeMode()
         
     def keyGreen(self):
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> keyGreen 1")
         if ":groups:" == self.menu: 
             self.session.openWithCallback( self._groupAdded, IPTVFavouritesAddNewGroupWidget, self.favourites)
         else:
@@ -335,40 +350,49 @@ class IPTVFavouritesMainWidget(Screen):
             self.modified = True
             self.displayList()
             try: self["list"].moveToIndex( len(self.favourites.getGroups())-1 )
-            except: pass
+            except Exception: pass
             
     def _itemCloned(self, ret):
         if ret: self.modified = True
     
     def _changeMode(self):
-            if not self.reorderingMode:
+            if not self.duringMoving:
                 self["list"].instance.setForegroundColorSelected(gRGB(0xFF0505))
-                self.reorderingMode = True
+                self.duringMoving = True
             else:
                 self["list"].instance.setForegroundColorSelected(gRGB(0xFFFFFF))
-                self.reorderingMode = False
+                self.duringMoving = False
             self.displayList()
-            
-    def _moveItem(self, dir):
-        curIndex = self["list"].getCurrentIndex()
-        newIndex = curIndex + dir
-        if ":groups:" == self.menu: sts = self.favourites.moveGroup(curIndex, newIndex)
-        else: sts = self.favourites.moveGroupItem(curIndex, newIndex, self.menu)
-        if sts: 
-            self.modified = True
-            self.displayList()
+        
+    def moveItem(self, key):
+        if self["list"].instance is not None:
+            if self.duringMoving:
+                curIndex = self["list"].getCurrentIndex()
+                self["list"].instance.moveSelection(key)
+                newIndex = self["list"].getCurrentIndex()
+                if ":groups:" == self.menu: sts = self.favourites.moveGroup(curIndex, newIndex)
+                else: sts = self.favourites.moveGroupItem(curIndex, newIndex, self.menu)
+                if sts: 
+                    self.modified = True
+                    self.displayList()
+            else:
+                self["list"].instance.moveSelection(key)
         
     def keyUp(self):
         if self["list"].instance is not None:
-            if self.reorderingMode:
-                self._moveItem(-1)
-            self["list"].instance.moveSelection(self["list"].instance.moveUp)
-        
+            self.moveItem(self["list"].instance.moveUp)
+    
     def keyDown(self):
         if self["list"].instance is not None:
-            if self.reorderingMode:
-                self._moveItem(1)
-            self["list"].instance.moveSelection(self["list"].instance.moveDown)
+            self.moveItem(self["list"].instance.moveDown)
+    
+    def keyLeft(self):
+        if self["list"].instance is not None:
+            self.moveItem(self["list"].instance.pageUp)
+            
+    def keyRight(self):
+        if self["list"].instance is not None:
+            self.moveItem(self["list"].instance.pageDown)
         
     def keyDrop(self):
         pass
@@ -376,7 +400,7 @@ class IPTVFavouritesMainWidget(Screen):
     def getSelectedItem(self):
         sel = None
         try: sel = self["list"].l.getCurrentSelection()[0]
-        except: pass
+        except Exception: pass
         return sel
     
     

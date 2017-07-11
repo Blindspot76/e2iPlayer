@@ -1,7 +1,8 @@
 ﻿###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSubtitlesDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSubtitlesDir, byteify, IsSubtitlesParserExtensionCanBeUsed
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import CParsingHelper
 
 # INFO about subtitles format
 # https://wiki.videolan.org/Subtitles#Subtitles_support_in_VLC
@@ -18,13 +19,24 @@ import re
 import codecs
 import time
 try:    import json
-except: import simplejson as json
-from os import remove as os_remove
+except Exception: import simplejson as json
+from os import remove as os_remove, path as os_path
 ###################################################
 
 class IPTVSubtitlesHandler:
+    SUPPORTED_FORMATS = ['srt', 'vtt', 'mpl']
+    
+    @staticmethod
+    def getSupportedFormats():
+        printDBG("getSupportedFormats")
+        if IsSubtitlesParserExtensionCanBeUsed():
+            printDBG("getSupportedFormats after import")
+            return ['srt', 'vtt', 'mpl', 'ssa', 'smi', 'rt', 'txt', 'sub', 'dks', 'jss', 'psb', 'ttml']
+        printDBG("getSupportedFormats end")
+        return IPTVSubtitlesHandler.SUPPORTED_FORMATS
+    
     def __init__(self):
-        printDBG("OpenSubOrg.__init__")
+        printDBG("IPTVSubtitlesHandler.__init__")
         self.subAtoms = [] 
         self.pailsOfAtoms = {}
         self.CAPACITY = 10 * 1000 # 10s
@@ -63,11 +75,21 @@ class IPTVSubtitlesHandler:
         for idx in range(len(srtText)):
             line += 1
             st = srtText[idx].split('\n')
-            if len(st)>=3:
+            #printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            #printDBG(st)
+            #printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            if len(st)>=2:
                 try:
-                    split = st[1].split(' --> ')
-                    subAtoms.append( { 'start':self._srtTc2ms(split[0].strip()), 'end':self._srtTc2ms(split[1].strip()), 'text':self._srtClearText('\n'.join(j for j in st[2:len(st)])) } )
-                except:
+                    try:
+                        tmp = int(st[0].strip())
+                        i = 1
+                    except Exception:
+                        if '' == st[0]: i = 1
+                        else: i = 0
+                    if len(st)<(i+2): continue
+                    split = st[i].split(' --> ')
+                    subAtoms.append( { 'start':self._srtTc2ms(split[0].strip()), 'end':self._srtTc2ms(split[1].strip()), 'text':self._srtClearText('\n'.join(j for j in st[i+1:len(st)])) } )
+                except Exception:
                     printExc("Line number [%d]" % line)
         return subAtoms
         
@@ -139,7 +161,7 @@ class IPTVSubtitlesHandler:
         cacheFile = self._getCacheFileName(filePath)
         try:
             os_remove(cacheFile)
-        except:
+        except Exception:
             printExc()
             
     def _getCacheFileName(self, filePath):
@@ -157,9 +179,9 @@ class IPTVSubtitlesHandler:
                 if len(self.subAtoms):
                     sts = True
                     printDBG("IPTVSubtitlesHandler._loadFromCache orgFilePath[%s] --> cacheFile[%s]" % (orgFilePath, filePath))
-            except:
+            except Exception:
                 printExc()
-        except:
+        except Exception:
             printExc()
         return sts
         
@@ -170,30 +192,10 @@ class IPTVSubtitlesHandler:
             with codecs.open(filePath, 'w', encoding) as fp:
                 fp.write(json.dumps(self.subAtoms))
             printDBG("IPTVSubtitlesHandler._saveToCache orgFilePath[%s] --> cacheFile[%s]" % (orgFilePath, filePath))
-        except: 
+        except Exception: 
             printExc()
-    
-    def loadSubtitles(self, filePath, encoding='utf-8'):
-        printDBG("OpenSubOrg.loadSubtitles filePath[%s]" % filePath)
-        saveCache = True
-        self.subAtoms = []
-        #time1 = time.time()
-        sts = self._loadFromCache(filePath)
-        if not sts:
-            try:
-                with codecs.open(filePath, 'r', encoding, 'replace') as fp:
-                    subText = fp.read().encode('utf-8')
-                    if filePath.endswith('.srt'):
-                        self.subAtoms = self._srtToAtoms(subText)
-                        sts = True
-                    elif filePath.endswith('.mpl'):
-                        self.subAtoms = self._mplToAtoms(subText)
-                        sts = True
-            except:
-                printExc()
-        else:
-            saveCache = False
-
+            
+    def _fillPailsOfAtoms(self):
         self.pailsOfAtoms = {}
         for idx in range(len(self.subAtoms)):
             tmp = self.subAtoms[idx]['start'] / self.CAPACITY
@@ -207,6 +209,87 @@ class IPTVSubtitlesHandler:
                 self.pailsOfAtoms[tmp] = [idx]
             elif idx not in self.pailsOfAtoms[tmp]:
                 self.pailsOfAtoms[tmp].append( idx )
+            
+    def loadSubtitles(self, filePath, encoding='utf-8', fps=0):
+        printDBG("OpenSubOrg.loadSubtitles filePath[%s]" % filePath)
+        # try load subtitles using C-library 
+        try:
+            if IsSubtitlesParserExtensionCanBeUsed():
+                try:
+                    if fps <= 0:
+                        filename, file_extension = os_path.splitext(filePath)
+                        tmp = CParsingHelper.getSearchGroups(filename.upper()+'_', '_FPS([0-9.]+)_')[0]
+                        if '' != tmp: fps = float(tmp)
+                except Exception:
+                    printExc()
+                
+                from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as subparser
+                with codecs.open(filePath, 'r', encoding, 'replace') as fp:
+                    subText = fp.read().encode('utf-8')
+                # if in subtitles will be line {1}{1}f_fps
+                # for example {1}{1}23.976 and we set microsecperframe = 0
+                # then microsecperframe will be calculated as follow: llroundf(1000000.f / f_fps)
+                if fps > 0:
+                    microsecperframe = int(1000000.0 / fps)
+                else:
+                    microsecperframe = 0
+                # calc end time if needed - optional, default True
+                setEndTime = True
+                # characters per second - optional, default 12, can not be set to 0
+                CPS = 12
+                # words per minute - optional, default 138, can not be set to 0
+                WPM = 138
+                # remove format tags, like <i> - optional, default True
+                removeTags = True
+                subsObj = subparser.parse(subText, microsecperframe, removeTags, setEndTime, CPS, WPM)
+                if 'type' in subsObj:
+                    self.subAtoms = subsObj['list']
+                    # Workaround start
+                    try:
+                        printDBG('Workaround for subtitles from Das Erste: %s' % self.subAtoms[0]['start'])
+                        if len(self.subAtoms) and self.subAtoms[0]['start'] >= 36000000:
+                            for idx in range(len(self.subAtoms)):
+                                for key in ['start', 'end']:
+                                    if key not in self.subAtoms[idx]:
+                                        continue
+                                    if self.subAtoms[idx][key] >= 36000000:
+                                        self.subAtoms[idx][key] -= 36000000
+                    except Exception:
+                        printExc()
+                    # workaround end
+                    self._fillPailsOfAtoms()
+                    return True
+                else:
+                    return False
+        except Exception:
+            printExc()
+        return self._loadSubtitles(filePath, encoding)
+    
+    def _loadSubtitles(self, filePath, encoding):
+        printDBG("OpenSubOrg._loadSubtitles filePath[%s]" % filePath)
+        saveCache = True
+        self.subAtoms = []
+        #time1 = time.time()
+        sts = self._loadFromCache(filePath)
+        if not sts:
+            try:
+                with codecs.open(filePath, 'r', encoding, 'replace') as fp:
+                    subText = fp.read().encode('utf-8')
+                    if filePath.endswith('.srt'):
+                        self.subAtoms = self._srtToAtoms(subText)
+                        sts = True
+                    elif filePath.endswith('.vtt'):
+                        self.subAtoms = self._srtToAtoms(subText)
+                        sts = True
+                    elif filePath.endswith('.mpl'):
+                        self.subAtoms = self._mplToAtoms(subText)
+                        sts = True
+            except Exception:
+                printExc()
+        else:
+            saveCache = False
+
+        self._fillPailsOfAtoms()
         
         if saveCache and len(self.subAtoms):
             self._saveToCache(filePath)
@@ -215,6 +298,69 @@ class IPTVSubtitlesHandler:
         #printDBG('>>>>>>>>>>loadSubtitles function took %0.3f ms' % ((time2-time1)*1000.0))
 
         return sts
+        
+class IPTVEmbeddedSubtitlesHandler:
+    def __init__(self):
+        printDBG("IPTVEmbeddedSubtitlesHandler.__init__")
+        self.subAtoms = [] 
+        self.pailsOfAtoms = {}
+        self.CAPACITY = 10 * 1000 # 10s
+        
+    def _srtClearText(self, text):
+        return re.sub('<[^>]*>', '', text)
+        #<b></b> : bold
+        #<i></i> : italic
+        #<u></u> : underline
+        #<font color=”#rrggbb”></font>
+        
+    def addSubAtom(self, inAtom):
+        try:
+            inAtom = byteify(inAtom)
+            textTab = inAtom['text'].split('\n')
+            for text in textTab:
+                text = self._srtClearText(text).strip()
+                if text != '':
+                    idx = len(self.subAtoms)
+                    self.subAtoms.append( { 'start':inAtom['start'], 'end':inAtom['end'], 'text':text} )
+                    
+                    tmp = self.subAtoms[idx]['start'] / self.CAPACITY
+                    if tmp not in self.pailsOfAtoms:
+                        self.pailsOfAtoms[tmp] = [idx]
+                    elif idx not in self.pailsOfAtoms[tmp]:
+                        self.pailsOfAtoms[tmp].append( idx )
+                    
+                    tmp = self.subAtoms[idx]['end'] / self.CAPACITY
+                    if tmp not in self.pailsOfAtoms:
+                        self.pailsOfAtoms[tmp] = [idx]
+                    elif idx not in self.pailsOfAtoms[tmp]:
+                        self.pailsOfAtoms[tmp].append( idx )
+        except Exception:
+            pass
+            
+    def getSubtitles(self, currTimeMS, prevMarker):
+        subsText = []
+        tmp = currTimeMS / self.CAPACITY
+        tmp = self.pailsOfAtoms.get(tmp, [])
+        
+        ret = None
+        validAtomsIdexes = []
+        for idx in tmp:
+            item = self.subAtoms[idx]
+            if currTimeMS >= item['start'] and currTimeMS < item['end']:
+                validAtomsIdexes.append(idx)
+                
+        marker = validAtomsIdexes
+        #printDBG("OpenSubOrg.getSubtitles marker[%s] prevMarker[%s] %.1fs" % (marker, prevMarker, currTimeMS/1000.0))
+        if prevMarker != marker:
+            for idx in validAtomsIdexes:
+                item = self.subAtoms[idx]
+                subsText.append(item['text'])
+            ret = '\n'.join(subsText)
+        return marker, ret
+        
+    def flushSubtitles(self):
+        self.subAtoms = [] 
+        self.pailsOfAtoms = {}
         
 if __name__ == "__main__":
     obj = IPTVSubtitlesHandler()

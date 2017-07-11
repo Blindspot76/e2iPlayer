@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 ###################################################
 # LOCAL import
@@ -16,12 +16,14 @@ import time
 import string
 import codecs
 import urllib
+try:    from urlparse import urlsplit, urlunsplit, urljoin
+except Exception: printExc()
 ###################################################
 try:
     from hashlib import md5
     def hex_md5(e):
         return md5(e).hexdigest()
-except:
+except Exception:
     from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5 as md5
     def hex_md5(e):
         hashAlg = MD5()
@@ -213,6 +215,17 @@ def OPENLOADIO_decryptPlayerParams(p, a, c, k, e, d):
             reg = '\\b' + e(c) + '\\b'
             p = re.sub(reg, k[c], p)
     return p
+    
+def KINGFILESNET_decryptPlayerParams(p, a, c, k, e=None, d=None):
+    def e1(c, a):
+        return JS_toString(c, a)
+    e = e1
+    while c != 0:
+        c -= 1
+        if k[c]:
+            reg = '\\b' + e(c, a) + '\\b'
+            p = re.sub(reg, k[c], p)
+    return p
 
 def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
     def e1(c):
@@ -248,12 +261,16 @@ def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
 #
 #       
 def getParamsTouple(code, type=1, r1=False, r2=False ):
-    mark1 = "}("
+    mark1Tab = ["}(", "}\r\n(", "}\n(", "}\r("]
     mark2 = "))"
-    if r1:
-        idx1 = code.rfind(mark1)
-    else:
-        idx1 = code.find(mark1)
+    
+    for mark1 in mark1Tab:
+        if r1:
+            idx1 = code.rfind(mark1)
+        else:
+            idx1 = code.find(mark1)
+        if idx1 > -1: break
+    
     if -1 == idx1: return ''
     idx1 += len(mark1)
     if r2:
@@ -274,7 +291,7 @@ def unpackJS(data, decryptionFun, addCode=''):
     paramsCode += 'paramsTouple = (' + data + ')'
     try:
         paramsAlgoObj = compile(paramsCode, '', 'exec')
-    except:
+    except Exception:
         printExc('unpackJS compile algo code EXCEPTION')
         return ''
     vGlobals = {"__builtins__": None, 'string': string, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote}
@@ -282,13 +299,13 @@ def unpackJS(data, decryptionFun, addCode=''):
 
     try:
         exec( paramsAlgoObj, vGlobals, vLocals )
-    except:
+    except Exception:
         printExc('unpackJS exec code EXCEPTION')
         return ''
     # decrypt JS Player params
     try:
         return decryptionFun(*vLocals['paramsTouple'])
-    except:
+    except Exception:
         printExc('decryptPlayerParams EXCEPTION')
     return ''
     
@@ -305,7 +322,7 @@ def VIDUPME_decryptPlayerParams(p=None, a=None, c=None, k=None, e=None, d=None):
 ###############################################################################
 # VIDEOWEED HELPER FUNCTIONS
 ###############################################################################
-def VIDEOWEED_decryptPlayerParams(w, i, s, e):
+def VIDEOWEED_decryptPlayerParams(w, i, s=None, e=None):
     lIll = 0
     ll1I = 0
     Il1l = 0
@@ -339,6 +356,13 @@ def VIDEOWEED_decryptPlayerParams(w, i, s, e):
         lIll += 2
     return ''.join(l1ll)
 
+def VIDEOWEED_decryptPlayerParams2(w, i, s=None, e=None):
+    s = 0
+    while s < len(w):
+        i += JS_FromCharCode(int(w[s:s+2], 36))
+        s += 2
+    return i
+
 def VIDEOWEED_unpackJSPlayerParams(code):
     sts, code = CParsingHelper.rgetDataBeetwenMarkers(code, 'eval(function', '</script>')
     if not sts: return ''
@@ -356,14 +380,14 @@ def VIDEOWEED_unpackJSPlayerParams(code):
         paramsAlgoObj = compile(paramsCode, '', 'exec')
         try:
             paramsAlgoObj = compile(paramsCode, '', 'exec')
-        except:
+        except Exception:
             printDBG('unpackJSPlayerParams compile algo code EXCEPTION')
             return ''
         vGlobals = {"__builtins__": None, 'string': string}
         vLocals = { 'paramsTouple': None }
         try:
             exec( paramsAlgoObj, vGlobals, vLocals )
-        except:
+        except Exception:
             printDBG('unpackJSPlayerParams exec code EXCEPTION')
             return ''
         # decrypt JS Player params
@@ -372,7 +396,7 @@ def VIDEOWEED_unpackJSPlayerParams(code):
             code = VIDEOWEED_decryptPlayerParams(*vLocals['paramsTouple'])
             if -1 == code.find('eval'):
                 return code
-        except:
+        except Exception:
             printDBG('decryptPlayerParams EXCEPTION')
             return ''
     return ''
@@ -382,14 +406,14 @@ def pythonUnescape(data):
     sourceCode = "retData = '''%s'''" % data
     try:
         code = compile(sourceCode, '', 'exec')
-    except:
+    except Exception:
         printExc('pythonUnescape compile algo code EXCEPTION')
         return ''
     vGlobals = {"__builtins__": None, 'string': string}
     vLocals = { 'paramsTouple': None }
     try:
         exec( code, vGlobals, vLocals )
-    except:
+    except Exception:
         printExc('pythonUnescape exec code EXCEPTION')
         return ''
     return vLocals['retData']
@@ -451,7 +475,7 @@ def decorateUrl(url, metaParams={}):
             retUrl.meta['iptv_proto'] = 'm3u8'
     return retUrl
 
-def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParams={}):
+def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParams={}, checkContent=False):
     if checkExt and not M3U8Url.split('?')[0].endswith('.m3u8'):
         return []
         
@@ -491,16 +515,31 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParam
                 else:
                     item['with'] = 0
                     item['heigth'] = 0
-                item['codec'] = playlist.stream_info.codecs
-                item['name']  = "bitrate: %s res: %dx%d kodek: %s" % ( item['bitrate'], \
-                                                                        item['with'],    \
-                                                                        item['heigth'],  \
-                                                                        item['codec'] )
+                
+                item['width'] = item['with']
+                item['height'] = item['heigth']
+                try:
+                    tmpCodecs =  playlist.stream_info.codecs.split(',')
+                    codecs = []
+                    for c in tmpCodecs[::-1]:
+                        codecs.append(c.split('.')[0].strip())
+                        item['codecs'] = ','.join(codecs)
+                except Exception:
+                    printExc()
+                    item['codecs'] = None
+                    pass
+                
+                item['name']  = "bitrate: %s res: %dx%d %s" % ( item['bitrate'], \
+                                                                item['width'],    \
+                                                                item['height'],  \
+                                                                item['codecs'] )
                 retPlaylists.append(item)
         else:
-            item = {'name':'m3u8', 'url':M3U8Url, 'codec':'unknown', 'with':0, 'heigth':0, 'bitrate':'unknown'}
+            if checkContent and 0 == len(m3u8Obj.segments):
+                return []
+            item = {'name':'m3u8', 'url':M3U8Url, 'codec':'unknown', 'with':0, 'heigth':0, 'width':0, 'height':0, 'bitrate':'unknown'}
             retPlaylists.append(item)
-    except:
+    except Exception:
         printExc()
     return retPlaylists
     
@@ -517,19 +556,128 @@ def getF4MLinksWithMeta(manifestUrl, checkExt=True):
         liveStreamDetected = False
         if 'live' == CParsingHelper.getDataBeetwenMarkers('<streamType>', '</streamType>', False):
             liveStreamDetected = True
-        bitrates = re.compile('bitrate="([0-9]+?)"').findall(data)
-        for item in bitrates:
-            link = strwithmeta(manifestUrl, {'iptv_proto':'f4m', 'iptv_bitrate':item})
-            if liveStreamDetected:
-                link.meta['iptv_livestream'] = True
-            retPlaylists.append({'name':'[f4m/hds] bitrate[%s]' % item, 'url':link})
+        
+        tmp = cm.ph.getDataBeetwenMarkers(data, '<manifest', '</manifest>')[1]
+        baseUrl = cm.ph.getDataBeetwenReMarkers(tmp, re.compile('<baseURL[^>]*?>'), re.compile('</baseURL>'), False)[1].strip()
+        printDBG("|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| " + baseUrl)
+        if baseUrl == '': baseUrl = manifestUrl
+        tmp = cm.ph.getAllItemsBeetwenMarkers(tmp, '<media', '>')
+        for item in tmp:
+            link = cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+)['"]''')[0]
+            if link != '': link = urljoin(baseUrl, link)
+            if cm.isValidUrl(link):
+                try: bitrate = int(cm.ph.getSearchGroups(item, '''bitrate=['"]([^'^"]+)['"]''')[0])
+                except Exception: bitrate = 0
+                retPlaylists.append({'name':'[f4m/hds] bitrate[%s]' % bitrate, 'bitrate':bitrate, 'url':link})
+        
+        if 0 == len(retPlaylists):
+            bitrates = re.compile('bitrate="([0-9]+?)"').findall(data)
+            for item in bitrates:
+                link = strwithmeta(manifestUrl, {'iptv_proto':'f4m', 'iptv_bitrate':item})
+                if liveStreamDetected:
+                    link.meta['iptv_livestream'] = True
+                try: bitrate = int(item)
+                except Exception: bitrate = 0
+                retPlaylists.append({'name':'[f4m/hds] bitrate[%s]' % item, 'bitrate':bitrate, 'url':link})
         
         if 0 == len(retPlaylists):
             link = strwithmeta(manifestUrl, {'iptv_proto':'f4m'})
             if liveStreamDetected:
                 link.meta['iptv_livestream'] = True
-            retPlaylists.append({'name':'[f4m/hds]', 'url':link})
+            retPlaylists.append({'name':'[f4m/hds]', 'bitrate':0, 'url':link})
     return retPlaylists
     
+def getMPDLinksWithMeta(manifestUrl, checkExt=True):
+    if checkExt and not manifestUrl.split('?')[0].endswith('.mpd'):
+        return []
+        
+    cm = common()
+    
+    def _getNumAttrib(data, name, default=0):
+        try: return int(cm.ph.getSearchGroups(data, '[\s]' + name + '''=['"]([^'^"]+?)['"]''')[0])
+        except Exception: return default
+    
+    headerParams, postData = cm.getParamsFromUrlWithMeta(manifestUrl)
+    
+    retPlaylists = []
+    sts, data = cm.getPage(manifestUrl, headerParams, postData)
+    if sts:
+        liveStreamDetected = False
+        if 'type="dynamic"' in data:
+            liveStreamDetected = True
+        
+        representation = {'audio':[], 'video':[]}
+        data = cm.ph.getAllItemsBeetwenMarkers(data, "<AdaptationSet", '</AdaptationSet>', withMarkers=True)
+        for item in data:
+            type = ''
+            if re.compile('''=['"]audio['"/]''').search(item):
+                type = 'audio'
+            elif re.compile('''=['"]video['"/]''').search(item):
+                type = 'video'
+            else:
+                continue
+            tmp = cm.ph.getAllItemsBeetwenMarkers(item, '<Representation', '>', withMarkers=True)
+            for rep in tmp:
+                repParam = {}
+                repParam['bandwidth'] = _getNumAttrib(rep, 'bandwidth')
+                
+                repParam['codecs']  = cm.ph.getSearchGroups(rep, '''codecs=['"]([^'^"]+?)['"]''')[0]
+                if '' == repParam['codecs']: repParam['codecs'] = cm.ph.getSearchGroups(item, '''codecs=['"]([^'^"]+?)['"]''')[0]
+                
+                repParam['codecs'] = repParam['codecs'].split('.')[0]
+                
+                if type == 'video':
+                    repParam['width']  = _getNumAttrib(rep, 'width')
+                    if 0 == repParam['width']: repParam['width']  = _getNumAttrib(item, 'width')
+                    
+                    repParam['height']  = _getNumAttrib(rep, 'height')
+                    if 0 == repParam['height']: repParam['height']  = _getNumAttrib(item, 'height')
+                    
+                    repParam['frame_rate']  = cm.ph.getSearchGroups(rep, '''frameRate=['"]([^'^"]+?)['"]''')[0]
+                    if '' == repParam['frame_rate']: repParam['frame_rate'] = cm.ph.getSearchGroups(item, '''frameRate=['"]([^'^"]+?)['"]''')[0]
+                else:
+                    repParam['lang'] = cm.ph.getSearchGroups(rep, '''lang=['"]([^'^"]+?)['"]''')[0]
+                    if '' == repParam['lang']: repParam['lang'] = cm.ph.getSearchGroups(item, '''lang=['"]([^'^"]+?)['"]''')[0]
+                    
+                representation[type].append(repParam)
+        
+        audioIdx = 0
+        for audio in representation['audio']:
+            audioItem = {}
+            audioItem['livestream'] = liveStreamDetected
+            audioItem['codecs']     = audio['codecs']
+            audioItem['bandwidth']  = audio['bandwidth']
+            audioItem['lang']       = audio['lang']
+            audioItem['audio_rep_idx'] = audioIdx
+            
+            if len(representation['video']):
+                videoIdx = 0
+                for video in representation['video']:
+                    videoItem = dict(audioItem)
+                    videoItem['codecs'] += ',' + video['codecs']
+                    videoItem['bandwidth'] += video['bandwidth']
+                    videoItem['width']      = video['width']
+                    videoItem['height']     = video['height']
+                    videoItem['frame_rate'] = video['frame_rate']
+                    
+                    videoItem['name']  = "[%s] bitrate: %s %dx%d %s %sfps" % ( videoItem['lang'],      \
+                                                                               videoItem['bandwidth'], \
+                                                                               videoItem['width'],     \
+                                                                               videoItem['height'],    \
+                                                                               videoItem['codecs'],    \
+                                                                               videoItem['frame_rate'])
+                    videoItem['url'] = strwithmeta(manifestUrl, {'iptv_proto':'mpd', 'iptv_audio_rep_idx':audioIdx, 'iptv_video_rep_idx':videoIdx, 'iptv_livestream':videoItem['livestream']})
+                    retPlaylists.append(videoItem)
+                    videoIdx += 1
+            else:
+                audioItem['name']  = "[%s] bandwidth: %s %s" % ( audioItem['lang'],      \
+                                                                 audioItem['bandwidth'], \
+                                                                 audioItem['codecs'])
+                audioItem['url'] = strwithmeta(manifestUrl, {'iptv_proto':'mpd', 'iptv_audio_rep_idx':audioIdx, 'iptv_livestream':audioItem['livestream']})
+                retPlaylists.append(audioItem)
+            
+            audioIdx += 1
+    
+    return retPlaylists
     
 

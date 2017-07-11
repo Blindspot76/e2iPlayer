@@ -5,10 +5,8 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
 ###################################################
@@ -19,7 +17,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -157,11 +155,25 @@ class PLWWECOM(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("PLWWECOM.getLinksForVideo [%s]" % cItem)
         urlTab = []
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: urlTab
         
         if '' == self.countryCode:
             self.countryCode = self.cm.getCountryCode()
+            
+        HTTP_HEADER = dict(self.HTTP_HEADER) 
+        if 'pl' != self.countryCode:
+            HTTP_HEADER['Referer'] = self.proxy_gateway
+            params =  {'header' : HTTP_HEADER, 'proxy_gateway':self.proxy_gateway}
+        else:
+            params =  {}
+            
+        sts, data = self.cm.getPage(cItem['url'], params)
+        if not sts: return urlTab
+        
+        hlsUrl = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?\.m3u8[^'^"]*?)['"]''')[0].replace('\\/', '/')
+        if hlsUrl.startswith('//'):
+            hlsUrl = 'http:' + hlsUrl
+        if self.cm.isValidUrl(hlsUrl):
+            return getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=False)
         
         baseUrl     = 'http://c.brightcove.com/services/viewer/htmlFederated?playerID={0}&playerKey={1}&purl={2}&%40videoPlayer={3}&flashID={4}'
         data        = self.cm.ph.getDataBeetwenMarkers(data, '<object id=', '</object>', True)[1]
@@ -179,7 +191,7 @@ class PLWWECOM(CBaseHostClass):
             params =  {}
             
         sts, data = self.cm.getPage(url, params)
-        if not sts: urlTab
+        if not sts: return urlTab
         data = self.cm.ph.getDataBeetwenMarkers(data, 'var experienceJSON = {', '};', False)[1]
         data = '{%s}' % data
         try:
@@ -190,7 +202,7 @@ class PLWWECOM(CBaseHostClass):
                     item['name'] = '%sx%s' % (item['frameWidth'], item['frameHeight'])
                     item['url']  = item['defaultURL']
                     urlTab.append(item)
-        except:
+        except Exception:
             printExc()
             
         return urlTab
@@ -200,7 +212,7 @@ class PLWWECOM(CBaseHostClass):
         data = {'url':cItem['url'], 'type':cItem['type']}
         try:
             data = json.dumps(data).encode('utf-8')
-        except:
+        except Exception:
             printExc()
             data = ''
         return data
@@ -211,7 +223,7 @@ class PLWWECOM(CBaseHostClass):
             cItem = byteify(json.loads(fav_data))
             if cItem['type'] == 'picture':
                 return[{'name':'url', 'url':cItem['url'], 'need_resolve':0}]
-        except:
+        except Exception:
             printExc()
             return []
         return self.getLinksForVideo(cItem)
@@ -268,7 +280,7 @@ class IPTVHost(CHostBase):
         
         urlList = self.host.getLinksForVideo(self.host.currList[Index])
         for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
+            retlist.append(CUrlItem(item["name"], item["url"], item.get('need_resolve', False)))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
@@ -324,7 +336,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -337,7 +349,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

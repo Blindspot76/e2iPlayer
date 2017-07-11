@@ -9,7 +9,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 import re
 try:    import simplejson as json
-except: import json
+except Exception: import json
 
 #from __future__ import unicode_literals
 
@@ -225,7 +225,7 @@ class JSInterpreter(object):
     def extract_object(self, objname):
         obj = {}
         obj_m = re.search(
-            (r'(?:var\s+)?%s\s*=\s*\{' % re.escape(objname)) +
+            (r'(?<!this\.)%s\s*=\s*\{' % re.escape(objname)) +
             r'\s*(?P<fields>([a-zA-Z$0-9]+\s*:\s*function\(.*?\)\s*\{.*?\}(?:,\s*)?)*)' +
             r'\}\s*;',
             self.code)
@@ -244,7 +244,7 @@ class JSInterpreter(object):
     def extract_function(self, funcname):
         func_m = re.search(
             r'''(?x)
-                (?:function\s+%s|[{;,]%s\s*=\s*function|var\s+%s\s*=\s*function)\s*
+                (?:function\s+%s|[{;,]\s*%s\s*=\s*function|var\s+%s\s*=\s*function)\s*
                 \((?P<args>[^)]*)\)\s*
                 \{(?P<code>[^}]+)\}''' % (
                 re.escape(funcname), re.escape(funcname), re.escape(funcname)),
@@ -252,6 +252,10 @@ class JSInterpreter(object):
         if func_m is None:
             raise ExtractorError('Could not find JS function %r' % funcname)
         argnames = func_m.group('args').split(',')
+        
+        printDBG("====================================================")
+        printDBG('def %s(%s)\n%s' % (funcname, func_m.group('args'), func_m.group('code')))
+        printDBG("====================================================")
 
         return self.build_function(argnames, func_m.group('code'))
 

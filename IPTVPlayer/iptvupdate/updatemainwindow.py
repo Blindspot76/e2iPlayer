@@ -7,7 +7,9 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, \
+                                                                   GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir, \
+                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile, IsExecutable
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes          import enum
 from Plugins.Extensions.IPTVPlayer.iptvupdate.iptvlist      import IPTVUpdateList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import UpdateDownloaderCreator
@@ -23,6 +25,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 ###################################################
 # FOREIGN import
 ###################################################
+from Tools.Directories import fileExists
 from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 from Screens.Screen import Screen
@@ -33,11 +36,10 @@ from Tools.BoundFunction import boundFunction
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 
 from os import path as os_path, remove as os_remove, listdir as os_listdir
 ###################################################
-
 
 class IPTVUpdateWindow(Screen):
 
@@ -55,7 +57,7 @@ class IPTVUpdateWindow(Screen):
         printDBG("IPTVUpdateMainWindow.__init__ -------------------------------")
         Screen.__init__(self, session)
         self.autoStart = autoStart
-
+        
         self.updateObjImpl = updateObjImpl
         self.updateObjImpl.setStepFinishedCallBack(self.stepFinished)
 
@@ -73,6 +75,11 @@ class IPTVUpdateWindow(Screen):
         self.onLayoutFinish.append(self.layoutFinished)
         self.onClose.append(self.__onClose)
         self.status =  None
+        
+        self.messages = {}
+        self.messages['not_interrupt']   = _("During processing, please do not interrupt.")
+        self.messages['please_wait']     = _("During processing, please wait.")
+        self.messages['not_aborted']     = _("Step [%s] cannot be aborted. Please wait.")
 
     def __del__(self):
         printDBG("IPTVUpdateMainWindow.__del__ -------------------------------")
@@ -122,7 +129,7 @@ class IPTVUpdateWindow(Screen):
 
     def keyExit(self):
         if 'working' == self.status and not self.list[self.currStep].get('breakable', False):
-            self.session.open(MessageBox, _("Step [%s] cannot be aborted. Please wait."), type = MessageBox.TYPE_INFO, timeout = 5 )
+            self.session.open(MessageBox, self.messages['not_aborted'], type = MessageBox.TYPE_INFO, timeout = 5 )
         else:
             self.close()
 
@@ -135,9 +142,9 @@ class IPTVUpdateWindow(Screen):
     def stepExecute(self):
         self["list"].moveToIndex(self.currStep)
         if self.list[self.currStep].get('breakable', False):
-            self.list[self.currStep].update( {'info': _("During processing, please wait."), 'icon': self.ICON.PROCESSING} )
+            self.list[self.currStep].update( {'info': self.messages['please_wait'], 'icon': self.ICON.PROCESSING} )
         else:
-            self.list[self.currStep].update( {'info': _("During processing, please do not interrupt."), 'icon': self.ICON.PROCESSING_NOT_BREAK} )
+            self.list[self.currStep].update( {'info': self.messages['not_interrupt'], 'icon': self.ICON.PROCESSING_NOT_BREAK} )
         self.reloadList()
         if self.updateObjImpl.isReadyToExecuteStep(self.currStep):
             self.list[self.currStep]['execFunction']()
@@ -217,7 +224,7 @@ class IUpdateObjectInterface():
                 if not mkdirs(path):
                     msg = _("The problem with creating a directory [%s].") % path
                     sts = False
-        except:
+        except Exception:
             printExc()
             msg = _("Problem with the directory [%s].") % path
             sts = False
@@ -235,12 +242,13 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     SERVERS_LIST_URLS = ["http://iptvplayer.pl/download/update/serwerslist.json", "http://iptvplayer.vline.pl/download/update/serwerslist.json"]
     VERSION_PATTERN   = 'IPTV_VERSION="([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"'
     
-    def __init__(self, session):
+    def __init__(self, session, allowTheSameVersion=False):
         printDBG("UpdateMainAppImpl.__init__ -------------------------------")
         self.session = session
         IUpdateObjectInterface.__init__(self, session)
         self.cm = common()
 
+        self.allowTheSameVersion = allowTheSameVersion
         self.setup_title = _("IPTVPlayer - update")
         self.tmpDir = GetTmpDir('iptv_update')
         self.ExtensionPath = resolveFilename(SCOPE_PLUGINS, 'Extensions/')
@@ -257,9 +265,14 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.destinationArchive = None
         self.serverIdx          = 0
         
+        self.messages = {}
+        self.messages['completed']       = _("Completed.")
+        self.messages['problem_removal'] = _("Problem with the removal of the previous version.\nStatus[%d], outData[%s].")
+        self.messages['problem_install'] = _("Problem with installing the new version.\nStatus[%d], outData[%s]")
+        
     def checkVersionFile(self, newVerPath):
         code = 0
-        msg  = 'Wersja poprawna.'
+        msg  = _('Correct version.')
         
         newVerFile = os_path.join(newVerPath, 'version.py')
         if os_path.isfile(newVerFile):
@@ -275,7 +288,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             if newVerNum != self.serversList[self.currServIdx]['version']:
                 code = -1
                 msg  = _("Wrong version. \n downloaded version [%s] is different from the requested [%s].") % (newVerNum, self.serversList[self.currServIdx]['version'])
-        except:
+        except Exception:
             printExc()
             code = -1
             msg  = _("File [%s] reading failed.") % newVerFile
@@ -283,13 +296,25 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         
     def doRestart(self, *args):
         try:
-            msgtxt = _("Please remember that you use this plugin at your own risk.")
-            self.session.open(MessageBox, _("E2 GUI restart after IPTVPlayer update to version[%s].\n\n") % self.serversList[self.currServIdx]['version'] + msgtxt, type = MessageBox.TYPE_INFO, timeout = 5 )
-            from enigma import quitMainloop
-            quitMainloop(3)
-        except:
+            try:
+                from Screens.Standby import TryQuitMainloop
+                self.session.openWithCallback(self.doRestartFailed, TryQuitMainloop, retvalue=3)
+            except Exception:
+                printExc()
+                msgtxt = _("Please remember that you use this plugin at your own risk.")
+                self.session.open(MessageBox, _("E2 GUI restart after IPTVPlayer update to version[%s].\n\n") % self.serversList[self.currServIdx]['version'] + msgtxt, type = MessageBox.TYPE_INFO, timeout = 5 )
+                from enigma import quitMainloop
+                quitMainloop(3)
+        except Exception:
             printExc()
-            self.session.open(MessageBox, _("Restart GUI failed. \nPlease restart STB manually."), type = MessageBox.TYPE_INFO, timeout=5 )
+            self.doRestartFailed()
+    
+    def doRestartFailed(self, *args):
+        try:
+            self.list[currStep].update( {'info': _("Aborted"), 'icon': self.ICON.CANCELLED} )
+        except Exception:
+            printExc()
+        self.session.open(MessageBox, _("Restart GUI failed. \nPlease restart STB manually."), type = MessageBox.TYPE_INFO, timeout=5 )
 
     #########################################################
     # INREFACE IMPLEMENTATION METHODS
@@ -330,6 +355,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         list.append( __getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
         list.append( __getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
         list.append( __getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
+        list.append( __getStepDesc(title = _("Copy post installed binaries."),   execFunction = self.stepCopyPostInatalledBinaries, breakable=True, ignoreError=True ) )
         list.append( __getStepDesc(title = _("Executing user scripts."),         execFunction = self.stepExecuteUserScripts ) )
         list.append( __getStepDesc(title = _("Checking version."),               execFunction = self.stepCheckFiles ) )
         list.append( __getStepDesc(title = _("Removing unnecessary files."),     execFunction = self.stepRemoveUnnecessaryFiles, breakable=True, ignoreError=True) )
@@ -383,18 +409,75 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         
     def stepRemoveUnnecessaryFiles(self):
         printDBG("stepRemoveUnnecessaryFiles")
-        path = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/PlayerSelector/')
+        playerSelectorPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/PlayerSelector/')
+        logosPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/logos/')
+        hostsPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/hosts/')
         cmds = []
         iconSize = int(config.plugins.iptvplayer.IconsSize.value)
         if not config.plugins.iptvplayer.ListaGraficzna.value:
             iconSize = 0
         for size in [135, 120, 100]:
             if size != iconSize:
-                cmds.append('rm -f %s' % (path + '*{0}.png'.format(size)) )
-                cmds.append('rm -f %s' % (path + 'marker{0}.png'.format(size + 45)) )
-        cmd = ' && '.join(cmds)
+                cmds.append('rm -f %s' % (playerSelectorPath + '*{0}.png'.format(size)) )
+                cmds.append('rm -f %s' % (playerSelectorPath + 'marker{0}.png'.format(size + 45)) )
+        
+        # removing not needed hosts
+        if config.plugins.iptvplayer.remove_diabled_hosts.value:
+            enabledHostsList = GetEnabledHostsList()
+            hostsFromList    = GetHostsList(fromList=True, fromHostFolder=False)
+            hostsFromFolder  = GetHostsList(fromList=False, fromHostFolder=True)
+            hostsToRemove = []
+            for hostItem in hostsFromList:
+                if hostItem not in enabledHostsList and hostItem in hostsFromFolder:
+                    cmds.append('rm -f %s' % (playerSelectorPath + '{0}*.png'.format(hostItem)) )
+                    cmds.append('rm -f %s' % (logosPath + '{0}logo.png'.format(hostItem)) )
+                    cmds.append('rm -f %s' % (hostsPath + 'host{0}.py*'.format(hostItem)) )
+                
+            # we need to prepare temporary file with removing cmds because cmd can be to long
+            cmdFilePath = GetTmpDir('.iptv_remove_cmds.sh')
+            cmds.insert(0, '#!/bin/sh')
+            cmds.append('exit 0\n')
+            text = '\n'.join(cmds)
+            WriteTextFile(cmdFilePath, text, 'ascii')
+            cmd = '/bin/sh "{0}" '.format(cmdFilePath)
+            #cmd = '/bin/sh "{0}" && rm -rf "{1}" '.format(cmdFilePath, cmdFilePath)
+        else:
+            cmd = ' && '.join(cmds)
         printDBG("stepRemoveUnnecessaryFiles cmdp[%s]" % cmd)
         self.cmd = iptv_system( cmd, self.__removeUnnecessaryFilesCmdFinished )
+        
+    def stepCopyPostInatalledBinaries(self, init=True, code=0, msg=''):
+        # get users scripts
+        if init:
+            self.copyBinariesCmdList = []
+            if fileExists("%s/libs/iptvsubparser/_subparser.so" % os_path.join(self.ExtensionPath, 'IPTVPlayer')):
+                self.copyBinariesCmdList.append( 'cp -f "%s/libs/iptvsubparser/_subparser.so" "%s/libs/iptvsubparser/_subparser.so"  2>&1 ' % (os_path.join(self.ExtensionPath, 'IPTVPlayer'), os_path.join(self.ExtensionTmpPath, 'IPTVPlayer')) )
+            
+            binPath = "%s/bin/" % (os_path.join(self.ExtensionPath, 'IPTVPlayer'))
+            binariesTab = [('exteplayer3', config.plugins.iptvplayer.exteplayer3path.value), \
+                           ('gstplayer', config.plugins.iptvplayer.gstplayerpath.value), \
+                           ('wget', config.plugins.iptvplayer.wgetpath.value), \
+                           ('hlsdl', config.plugins.iptvplayer.hlsdlpath.value), \
+                           ('duk', config.plugins.iptvplayer.dukpath.value), \
+                           ('f4mdump', config.plugins.iptvplayer.f4mdumppath.value), \
+                           ('uchardet', config.plugins.iptvplayer.uchardetpath.value)]
+            for binItem in binariesTab:
+                if binPath in binItem[1]:
+                    self.copyBinariesCmdList.append( 'cp -f "%s/%s" "%s/bin/"  2>&1 ' % (binPath, binItem[0], os_path.join(self.ExtensionTmpPath, 'IPTVPlayer')) )
+            
+            if 0 < len(self.copyBinariesCmdList):
+                self.copyBinariesMsg = ''
+            else:
+                self.copyBinariesMsg = _("Nothing to do here.")
+
+        self.copyBinariesMsg += msg
+        if 0 != code:
+            self.stepFinished(-1, _("Problem with copy binary.\n") + self.copyBinariesMsg)
+        elif 0 < len(self.copyBinariesCmdList):
+            cmd = self.copyBinariesCmdList.pop()
+            self.cmd = iptv_system( cmd, self.__copyBinariesCmdFinished )
+        else:
+            self.stepFinished(0, _("Completed.\n") + self.copyBinariesMsg)
         
     def stepExecuteUserScripts(self, init=True, code=0, msg=''):
         # get users scripts
@@ -407,7 +490,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
 
         self.customUserMsg += msg
         if 0 != code:
-            self.stepFinished(-1, _("Problem with user script execution [%s].") + self.customUserMsg)
+            self.stepFinished(-1, _("Problem with user script execution.\n") + self.customUserMsg)
         elif 0 < len(self.customUserCmdList):
             cmd = self.customUserCmdList.pop()
             self.cmd = iptv_system( cmd, self.__userCmdFinished )
@@ -448,7 +531,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     def clearTmpData(self):
         try:
             rmtree(self.tmpDir)
-        except:
+        except Exception:
             printExc()
     
     ##############################################################################
@@ -474,14 +557,14 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     def __serversListDownloadFinished(self, arg, status):
         def ServerComparator(x, y):
             try:    val1 = int(x['version'].replace('.', ''))
-            except: val1 = 0
+            except Exception: val1 = 0
             try:    val2 = int(y['version'].replace('.', ''))
-            except: val2 = 0
+            except Exception: val2 = 0
             #printDBG("ServerComparator val1[%d], val2[%d]" % (val1, val2))
             return cmp(val1, val2)
         try:
             currVerNum = int(GetIPTVPlayerVerstion().replace('.', ''))
-        except:
+        except Exception:
             printDBG('Version of the current instalation [%s]' % GetIPTVPlayerVerstion())
             currVerNum = 0
         pythonVer = GetShortPythonVersion()
@@ -519,7 +602,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                     if not serverOK: continue
                     newServer = dict(extServer)
                     serversList.append(newServer)
-            except:
+            except Exception:
                 printExc()
                 self.stepFinished(-1, _("Problem with downloading the server list."))
                 return
@@ -534,11 +617,11 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                     server = serversList[idx]
                     if not config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
                         try: newVerNum = int(server['version'].replace('.', ''))
-                        except: continue
+                        except Exception: continue
                         #printDBG("newVerNum[%s], currVerNum[%s]" % (newVerNum, currVerNum))
                         if newVerNum < currVerNum and not config.plugins.iptvplayer.downgradePossible.value:
                             continue
-                        if newVerNum == currVerNum:
+                        if newVerNum == currVerNum and not self.allowTheSameVersion:
                             continue
                         if 'X.X' != server['pyver'] and pythonVer != server['pyver']:
                             continue
@@ -599,7 +682,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         else:
             try:
                 os_remove
-            except:
+            except Exception:
                 printExc()
             code = 0
             msg  = _("Unpacking the archive completed successfully.")
@@ -642,10 +725,19 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                         continue 
                     cmdList.append('%s "%s" "%s" "%s" 2>&1 ' % (interpreterBinName, filePath, os_path.join(self.ExtensionPath, 'IPTVPlayer/'), os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/')) )
             cmdList.sort()
-        except:
+        except Exception:
             printExc()
         printDBG('UpdateMainAppImpl.__getScriptsList [%r]' % cmdList)
         return cmdList
+        
+    def __copyBinariesCmdFinished(self, status, outData):
+        self.cmd = None
+        if 0 != status:
+            code = -1
+        else:
+            code = 0
+        msg  = '------------\nstatus[%d]\n[%s]\n------------\n' % (status, outData)
+        self.stepCopyPostInatalledBinaries(init=False, code=code, msg=msg)
      
     def __userCmdFinished(self, status, outData):
         self.cmd = None
@@ -663,16 +755,16 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.cmd = None
         if 0 != status:
             code = -1
-            msg = _("Problem with the removal of the previous version.\nStatus[%d], outData[%s].") % (status, outData)
+            msg = self.messages['problem_removal'] % (status, outData)
         else:
             code = 0
-            msg = _("Completed.")
+            msg = self.messages['completed']
         self.stepFinished(code, msg)
         
     def __installNewVersionCmdFinished(self, status, outData):
         self.cmd = None
         if 0 != status:
-            msg = _("Problem with installing the new version.\nStatus[%d], outData[%s]") % (status, outData)
+            msg = self.messages['problem_install'] % (status, outData)
             self.stepFinished(-1, msg)
         else:
             self.cmd = iptv_system( 'rm -rf ' + self.tmpDir + " && sync" , self.__doSyncCallBack )

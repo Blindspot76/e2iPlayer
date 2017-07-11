@@ -19,7 +19,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
@@ -87,7 +87,7 @@ class UstreamTV(CBaseHostClass):
             filterData = re.compile('<option value="([^"]*?)"[^>]*?>([^<]+?)</option>').findall(filterData)
             self.cacheFilters[filterName] = []
             for item in filterData:
-                self.cacheFilters[filterName].append({'title':item[1], 'value':item[0]})
+                self.cacheFilters[filterName].append({'title':self.cleanHtmlStr( item[1] ), 'value':item[0]})
         #printDBG("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK [%s]" % )
         
     def listFilters(self, cItem, filterName, category):
@@ -130,7 +130,7 @@ class UstreamTV(CBaseHostClass):
             cat_id  = cItem['cat_id']
             url = self.MAIN_URL + 'ajax-alwayscache/explore/%s/all.json?subCategory=%s&type=%s&location=%s'
             catFilterName = 'subCategory'
-        filters = cItem['filters']
+        filters = cItem.get('filters', {})
         page    = cItem.get('page', 1)
         url = url % (cat_id, filters.get(catFilterName, ''), filters.get('type', ''), filters.get('location', ''))
         if page > 1:
@@ -141,12 +141,13 @@ class UstreamTV(CBaseHostClass):
         printDBG("UstreamTV.listCategories")
         sts, data = self.cm.getPage(self.MAIN_URL + 'explore/all')
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="sub-menu-list categories">', '</ul>', False)[1]
-        data = re.compile('<a href="/explore/([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="submenu-column half-width-links">', '<form', False)[1]
+        data = re.compile('<a href="[^"]*?/explore/([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
         #data = re.compile('<a[^>]*?/([^/]+?)\.json[^>]*?>([^<]+?)<').findall(data)
         for item in data:
+            if item[0] == 'all': continue
             params = dict(cItem)
-            params.update({'category':category, 'title':item[1].strip(), 'cat_id':item[0]})
+            params.update({'category':category, 'title':self.cleanHtmlStr( item[1] ), 'cat_id':item[0]})
             self.addDir(params)
         
     def listRegular(self, cItem):
@@ -175,7 +176,7 @@ class UstreamTV(CBaseHostClass):
                 desc  = self.cleanHtmlStr( item )
                 params.update({'title':self.cleanHtmlStr( title ), 'icon':self._getFullUrl(icon), 'desc':desc, 'url':self._getFullUrl(url)})
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()
         
         if nextPage:
@@ -307,7 +308,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -320,7 +321,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

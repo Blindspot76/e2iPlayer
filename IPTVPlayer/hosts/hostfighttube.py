@@ -84,7 +84,7 @@ class FightTube:
         query_data = {'url': self.MAINURL, 'return_data': True}
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             FightTube.printDBG('listsMainMenu exception')
             return
     
@@ -107,7 +107,7 @@ class FightTube:
         query_data = { 'url': url, 'return_data': True }
         try:
             data = self.cm.getURLRequestData(query_data)
-        except:
+        except Exception:
             FightTube.printDBG('getMovieTab exception')
             return            
         # get next page url
@@ -265,16 +265,8 @@ class IPTVHost(IHost):
         if self.host.currList[Index]["type"] != 'video':
             printDBG( "ERROR getLinksForVideo - current item has wrong type" )
             return RetHost(RetHost.ERROR, value = [])
-            
-        
         
         urlsTab = self.host.getVideoUrl(self.host.currList[Index]["page"])
-        if config.plugins.iptvplayer.ytUseDF.value:
-            maxRes = int(config.plugins.iptvplayer.ytDefaultformat.value) * 1.1
-            def __getLinkQuality( itemLink ):
-                tab = itemLink['name'].split('x')
-                return int(tab[0])
-            urlsTab = CSelOneLink(urlsTab, __getLinkQuality, maxRes).getOneLink()
         retlist = []
         for urlItem in urlsTab:
             retlist.append(CUrlItem(urlItem['name'], urlItem['url'], 0))
@@ -334,7 +326,7 @@ class IPTVHost(IHost):
             for i in range( len(list) ):
                 if list[i]['title'] == 'Wyszukaj':
                     return self.getListForItem( i )
-        except:
+        except Exception:
             printDBG('getSearchResults EXCEPTION')
             
         return RetHost(RetHost.ERROR, value = [])

@@ -9,12 +9,14 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
-from Plugins.Extensions.IPTVPlayer.components.iptvdirbrowser import IPTVDirectorySelectorWidget
+from Plugins.Extensions.IPTVPlayer.components.iptvdirbrowser import IPTVDirectorySelectorWidget, IPTVFileSelectorWidget
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
+import re
 from enigma import getDesktop
 
 from Screens.MessageBox import MessageBox
@@ -28,13 +30,18 @@ from Components.ConfigList import ConfigListScreen
 from Tools.BoundFunction import boundFunction
 ###################################################
 
+class ConfigIPTVFileSelection(ConfigDirectory):
+    def __init__(self, ignoreCase=True, fileMatch=None, default="", visible_width=60):
+        self.fileMatch = fileMatch
+        self.ignoreCase = ignoreCase
+        ConfigDirectory.__init__(self, default, visible_width)
 
 class ConfigBaseWidget(Screen, ConfigListScreen):
     screenwidth = getDesktop(0).size().width()
     if screenwidth and screenwidth == 1920:
         skin = """
             <screen position="center,center" size="920,860" title="" >
-                <widget name="config"    position="10,70" size="900,780" zPosition="1" transparent="1" scrollbarMode="showOnDemand" />
+                <widget name="config"    position="10,70" size="900,780" zPosition="1" transparent="1" scrollbarMode="showOnDemand" enableWrapAround="1" />
                 <widget name="key_red"   position="10,10" zPosition="2" size="600,35" valign="center" halign="left"   font="Regular;28" transparent="1" foregroundColor="red" />
                 <widget name="key_ok"    position="10,10" zPosition="2" size="600,35" valign="center" halign="center" font="Regular;28" transparent="1" foregroundColor="white" />
                 <widget name="key_green" position="10,10" zPosition="2" size="600,35" valign="center" halign="right"  font="Regular;28" transparent="1" foregroundColor="green" />
@@ -44,7 +51,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
     else:
         skin = """
             <screen position="center,center" size="620,440" title="" >
-                <widget name="config"    position="10,50" size="600,370" zPosition="1" transparent="1" scrollbarMode="showOnDemand" />
+                <widget name="config"    position="10,50" size="600,370" zPosition="1" transparent="1" scrollbarMode="showOnDemand" enableWrapAround="1" />
                 <widget name="key_red"   position="10,10" zPosition="2" size="600,35" valign="center" halign="left"   font="Regular;22" transparent="1" foregroundColor="red" />
                 <widget name="key_ok"    position="10,10" zPosition="2" size="600,35" valign="center" halign="center" font="Regular;22" transparent="1" foregroundColor="white" />
                 <widget name="key_green" position="10,10" zPosition="2" size="600,35" valign="center" halign="right"  font="Regular;22" transparent="1" foregroundColor="green" />
@@ -164,6 +171,9 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
     
     def getMessageAfterSave(self):
         return ''
+        
+    def getMessageBeforeClose(self):
+        return ''
     
     def askForSave(self, callbackYesFun, callBackNoFun):
         self.session.openWithCallback(boundFunction(self.saveOrCancelChanges, callbackYesFun, callBackNoFun), MessageBox, text=_('Save changes?'), type = MessageBox.TYPE_YESNO)
@@ -198,7 +208,12 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         
     def saveAndClose(self):
         self.save()
-        message = self.getMessageAfterSave()
+        self.performCloseWithMessage(True)
+        
+    def performCloseWithMessage(self, afterSave=True):
+        if afterSave:
+            message = self.getMessageAfterSave()
+        else: message = self.getMessageBeforeClose()
         if message == '':
             self.close()
         else:
@@ -209,7 +224,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         
     def cancelAndClose(self):
         self.cancel()
-        self.close()
+        self.performCloseWithMessage()
       
     def keyOK(self):
         if not self.isOkEnabled: 
@@ -217,7 +232,25 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
 
         curIndex = self["config"].getCurrentIndex()
         currItem = self["config"].list[curIndex][1]
-        if isinstance(currItem, ConfigDirectory):
+        
+        if isinstance(currItem, ConfigIPTVFileSelection):
+            def SetFilePathCallBack(curIndex, newPath):
+                if None != newPath: self["config"].list[curIndex][1].value = newPath
+            try:
+                if None != currItem.fileMatch:
+                    if currItem.ignoreCase:
+                        fileMatch = re.compile(currItem.fileMatch, re.IGNORECASE)
+                    else:
+                        fileMatch = re.compile(currItem.fileMatch)
+                else:
+                    fileMatch = None
+            except Exception:
+                printExc()
+                return
+            self.session.openWithCallback(boundFunction(SetFilePathCallBack, curIndex), IPTVFileSelectorWidget, currItem.value,  _('Select the file'), fileMatch)
+            return
+        
+        elif isinstance(currItem, ConfigDirectory):
             def SetDirPathCallBack(curIndex, newPath):
                 if None != newPath: self["config"].list[curIndex][1].value = newPath
             self.session.openWithCallback(boundFunction(SetDirPathCallBack, curIndex), IPTVDirectorySelectorWidget, currDir=currItem.value,  title=_('Select the directory'))
@@ -234,7 +267,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         if self.isChanged():
             self.askForSave(self.saveAndClose, self.cancelAndClose)
         else:
-            self.close()
+            self.performCloseWithMessage()
         
     def keyCancel(self):
         self.cancelAndClose()

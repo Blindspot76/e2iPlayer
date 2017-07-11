@@ -56,7 +56,7 @@ class IPTVSetupMainWidget(Screen):
                 spinnerName = "spinner"
                 if idx: spinnerName += '_%d' % idx 
                 self[spinnerName] = Cover3()
-        except: printExc()
+        except Exception: printExc()
         self.spinnerPixmap = [LoadPixmap(GetIconDir('radio_button_on.png')), LoadPixmap(GetIconDir('radio_button_off.png'))]
         
         self.onClose.append(self.__onClose)

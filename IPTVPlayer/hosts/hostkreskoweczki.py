@@ -1,263 +1,314 @@
 # -*- coding: utf-8 -*-
-# Based on (root)/trunk/xbmc-addons/src/plugin.video.polishtv.live/self.HOSTs/ @ 419 - Wersja 636
-
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, GetLogoDir
-import Plugins.Extensions.IPTVPlayer.libs.pCommon as pCommon
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, remove_html_markup, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import re, urllib
-from Tools.Directories import resolveFilename, SCOPE_PLUGINS, fileExists
+from datetime import timedelta
+import time
+import re
+import urllib
+import unicodedata
+import base64
+try:    import json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+###################################################
+
+
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Screens.MessageBox import MessageBox
 ###################################################
 
 ###################################################
 # Config options for HOST
 ###################################################
-# None
 
 def GetConfigList():
     optionList = []
-    # None
     return optionList
 ###################################################
 
+
 def gettytul():
-    return 'Kreskóweczki'
+    return 'http://kreskoweczki.pl/'
 
-class Kreskoweczki(CBaseHostClass):
-    MAINURL = 'http://www.kreskoweczki.pl'
-
-    MENU_TAB = {
-        1: "Kreskówki alfabetycznie",
-        2: "Ostatnio uzupełnione",
-        3: "Wyszukaj",
-        4: "Historia Wyszukiwania"
-    }
+class KreskoweczkiPL(CBaseHostClass):
+ 
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'kreskoweczki'})
-
-    def setTable(self):
-        return self.MENU_TAB
-
-    def listsMainMenu(self, table):
-        for num, val in table.items():
-            params = { 'name': 'main-menu','category': val, 'title': val, 'icon': ''}
-            self.addDir(params)
-
-    def listsABCMenu(self, table):
-        for i in range(len(table)):
-            params = { 'name': 'abc-menu','category': table[i], 'title': table[i], 'icon': ''}
-            self.addDir(params)
-
-    def showTitles(self, letter):
-        query_data = {'url': self.MAINURL, 'return_data': True}
-        try:
-            data = self.cm.getURLRequestData(query_data)
-        except:
-            printDBG('showTitles EXCEPTION')
-            return
-        matchAll = re.compile('<ul class="menu" id="categories_block">(.+?)</ul>', re.DOTALL).findall(data)
-        if len(matchAll) > 0:
-            match = re.compile('<a href=.(.+?). class=.level0. alt=.(.+?) \(([0-9]+?)\).>').findall(matchAll[1])
-            if len(match) > 0:
-                for i in range(len(match)):
-                    addItem = False
-                    title = match[i][1].strip()
-
-                    if letter == '0 - 9' and (ord(title[0]) < 65 or ord(title[0]) > 91): addItem = True
-                    if (letter == title[0].upper()): addItem = True
-                    if int(match[i][2]) == 0: addItem = False
-                    if (addItem):
-                        params = { 'name': 'episode', 'title': title, 'page': match[i][0], 'icon': ''}
-                        self.addDir(params)
-
-    def showParts(self, url):
-        query_data = {'url': url, 'return_data': True}
-        try:
-            data = self.cm.getURLRequestData(query_data)
-        except:
-            printDBG('showParts EXCEPTION')
-            return
-
-        matchAll = re.compile("<div class='list-videos'>(.+?)<br />", re.DOTALL).findall(data)
-        if len(matchAll) > 0:
-            match = re.compile("<a href='(.+?)' title='(.+?)'><img src='(.+?)'.+?<dt class='series'>.+?title='(.+?)'>", re.DOTALL).findall(matchAll[0])
-            if len(match) > 0:
-                for i in range(len(match)):
-                    serial = match[i][3]
-                    title = '%s - %s' % (serial, match[i][1])
-                    link = match[i][0]
-                    params = {'title': title, 'page': link, 'icon': match[i][2]}
-                    self.addVideo(params)
-        match2 = re.compile("class='active'>.+?</a>  <a href='(.+?)'").findall(data)
-        printDBG(str(match2))
-        if len(match2) > 0:
-            params = { 'name': 'nextpage', 'title': 'Następna strona', 'page': match2[0], 'icon': ''}
-            self.addDir(params)
-
-    def getVideoUrl(self, url):
-        videoUrl = ''
-        videosTab = []
-        vid = re.compile("kreskowka/(.+?)/").findall(url)
+        CBaseHostClass.__init__(self, {'history':'  KreskoweczkiPL.tv', 'cookie':'kreskoweczkipl.cookie'})
+        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.abcCache = {}
         
-        if 0 == len(vid): return []
+        self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        self.AJAX_HEADER = dict(self.HEADER)
+        self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        HEADER = {'Referer' : url}
-        query_data = {'url': 'http://www.kreskoweczki.pl/fullscreen/', 'header': HEADER, 'return_data': True}
-        postdata = {'v_id' : vid[0]}
-        try:
-            data = self.cm.getURLRequestData(query_data, postdata)
-        except:
-            printDBG('getVideoUrl EXCEPTION')
-            return videosTab
-        matchAll = re.compile("Loader.skipBanners(.+?)Loader.skipBanners", re.DOTALL).findall(data)
-        printDBG(str(matchAll))
-        if len(matchAll) > 0:
-            match = re.compile('Loader.loadFlashFile."(.+?)"').findall(matchAll[0])
-            if len(match) > 0:
-                videoUrl = match[0]
-            else:
-                match = re.compile('src="(.+?)"').findall(matchAll[0])
-                if len(match) > 0:
-                    videoUrl = match[0]
-                    
-        match = re.search('src="(http[^"]+?)"', videoUrl )
-        if match:
-            videoUrl = match.group(1)
+        self.MAIN_URL      = 'https://www.kreskoweczki.pl/'
+        self.SEARCH_URL    = self.MAIN_URL + 'szukaj'
+        self.DEFAULT_ICON  = "http://svn.sd-xbmc.org/filedetails.php?repname=sd-xbmc&path=%2Ftrunk%2Fxbmc-addons%2Fsrc%2Fxbmc-addons%2Fkreskoweczki.png&rev=936&peg=936"
+
+        self.MAIN_CAT_TAB = [{'icon':self.DEFAULT_ICON, 'category':'list_abc',        'title': 'Alfabetycznie',   'url':self.MAIN_URL },
+                             {'icon':self.DEFAULT_ICON, 'category':'list_items',      'title': 'Ostatnio dodane', 'url':self.MAIN_URL + 'ostatnio-dodane/wszystkie'},
+                             {'icon':self.DEFAULT_ICON, 'category':'list_items',      'title': 'Anime',           'url':self.MAIN_URL + 'typ/anime/'},
+                             {'icon':self.DEFAULT_ICON, 'category':'list_items',      'title': 'Bajki',           'url':self.MAIN_URL + 'typ/toon/'},
+                             {'icon':self.DEFAULT_ICON, 'category':'list_items',      'title': 'Seriale',         'url':self.MAIN_URL + 'typ/serial/'},
+                             {'icon':self.DEFAULT_ICON, 'category':'list_items',      'title': 'Pozostałe',       'url':self.MAIN_URL + 'typ/pozostale/'},
+                             {'icon':self.DEFAULT_ICON, 'category':'search',          'title': _('Search'), 'search_item':True},
+                             {'icon':self.DEFAULT_ICON, 'category':'search_history',  'title': _('Search history')} ]
+        self.needProxy = None
+        
+    def isNeedProxy(self):
+        if self.needProxy == None:
+            sts, data = self.cm.getPage(self.MAIN_URL)
+            self.needProxy = not sts
+        return self.needProxy
+        
+    def getPage(self, url, params={}, post_data=None):
+        HTTP_HEADER= dict(self.HEADER)
+        params.update({'header':HTTP_HEADER})
+        
+        if self.isNeedProxy() and self.up.getDomain(self.MAIN_URL) in url:
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e1'.format(urllib.quote(url, ''))
+            params['header']['Referer'] = proxy
+            params['header']['Cookie'] = 'flags=2e5;'
+            url = proxy
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and None == data:
+            sts = False
+        if sts and 'Duze obciazenie!' in data:
+            SetIPTVPlayerLastHostError(self.cleanHtmlStr(data))
+        return sts, data
+        
+    def getFullIconUrl(self, url):
+        url = self.getFullUrl(url)
+        if self.up.getDomain(self.MAIN_URL) in url and self.isNeedProxy():
+            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=2e1'.format(urllib.quote(url, ''))
+            params = {}
+            params['User-Agent'] = self.HEADER['User-Agent'],
+            params['Referer'] = proxy
+            params['Cookie'] = 'flags=2e5;'
+            url = strwithmeta(proxy, params) 
+        return url
+        
+    def getFullUrl(self, url):
+        if 'proxy-german.de' in url:
+            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
+        return CBaseHostClass.getFullUrl(self, url)
+        
+    def listABC(self, cItem, category):
+        printDBG("KreskoweczkiPL.listABC")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="category-list one-quarter">', '</ul>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        for item in data:
+            title = self.cleanHtmlStr(item)
+            url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
+            params = dict(cItem)
+            params.update({'category':category, 'title':title, 'url':url})
+            self.addDir(params)
             
-        match = re.search("/embed/proxy[^.]+?.php", videoUrl)
-        if match:
-            sts,data = self.cm.getPage(videoUrl)
-            if sts:
-                match = re.search('url: "[^?^"]+?\?url=([^"]+?)"', data)
-                if match:
-                    url = match.group(1)
-                    if url.endswith('.m3u8'):
-                        return getDirectM3U8Playlist(url)
+    def listTitles(self, cItem, nextCategory):
+        printDBG("KreskoweczkiPL.listTitles")
+        subCat = cItem.get('sub_cat', '')
+        tab = self.abcCache.get(subCat, [])
+        params = dict(cItem)
+        params['category'] = nextCategory
+        self.listsTab(tab, params)
+            
+    def listItems(self, cItem):
+        printDBG("KreskoweczkiPL.listItems")
+        
+        url = cItem['url']
+        page = cItem.get('page', 1)
+        
+        if page > 1:
+            if '?' in url:
+                url += '&page=%d' % page
+            else:
+                url += '/strona-%d' % page
+        
+        post_data = cItem.get('post_data', None)
+        sts, data = self.getPage(url, {}, post_data)
+        if not sts: return
+        
+        nextPage = self.cm.ph.getSearchGroups(data, '''strona\-(%s)[^0-9]''' % (page + 1))[0]
+        if nextPage == '': nextPage = self.cm.ph.getSearchGroups(data, '''page\,(%s)[^0-9]''' % (page + 1))[0]
+        if nextPage != '':
+            nextPage = True
         else: 
-            if videoUrl.startswith('//'):
-                videoUrl = 'http:' + videoUrl
-            return self.up.getVideoLinkExt(videoUrl)
-        return []
+            nextPage = False
+        
+        videoMarker = '''/([0-9]+?)/'''
+        if self.isNeedProxy():
+            videoMarker = videoMarker.replace('/', '\\%2F')
+        
+        video = True
+        m1 = '<a class="item" '
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</li>')
+        for item in data:
+            video = True
+            if '' == self.cm.ph.getSearchGroups(item, videoMarker)[0]:
+                video = False
+            # icon
+            icon  = self.cm.ph.getSearchGroups(item, '''url\(['"]([^'^"]+?)['"]''')[0]
+            if icon == '': icon = self.cm.ph.getSearchGroups(item, '''data-bg-url=['"]([^'^"]+?\.jpe?g)['"]''')[0]
+            if icon == '': icon = cItem.get('icon', '')
+            # url
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            if url == '': continue
+            #title
+            title = self.cm.ph.getDataBeetwenMarkers(item, '<div class="category-name"', '</div>')[1]
+            if title == '': title = self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0]
+            if title == '': title = self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>')[1]
+            title = self.cm.ph.getDataBeetwenMarkers(item, '<span class="pm-category-name', '</span>')[1] + ' ' + title
+            
+            params = dict(cItem)
+            params.pop('post_data', None)
+            params.update({'good_for_fav':True, 'page':1, 'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon':self.getFullUrl(icon)})
+            printDBG(icon)
+            if video:
+                params.update({'desc':self.cleanHtmlStr(item)})
+                self.addVideo(params)
+            else:
+                params.update({'desc':self.cleanHtmlStr(item.replace('</b>', '[/br]'))})
+                self.addDir(params)
+        
+        if nextPage:
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
+            self.addDir(params)
+        
+    def getLinksForVideo(self, cItem):
+        printDBG("KreskoweczkiPL.getLinksForVideo [%s]" % cItem)
+        urlTab = []
+        
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return []
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>', caseSensitive=False)
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''action="([^"]+?)"''')[0]
+            vid = self.cm.ph.getSearchGroups(item, '''value="([0-9]+?)"''')[0]
+            if url != '' and vid != '':
+                url = strwithmeta(self.getFullUrl(url), {'Referer':cItem['url'], 'vid':vid})
+                urlTab.append({'name':self.cleanHtmlStr(item), 'url':url, 'need_resolve':1})
+        
+        return urlTab
+        
+    def getVideoLinks(self, videoUrl):
+        printDBG("KreskoweczkiPL.getVideoLinks [%s]" % videoUrl)
+
+        videoUrl = strwithmeta(videoUrl)
+        vid = videoUrl.meta.get('vid', '')
+        ref = videoUrl.meta.get('Referer', '')
+        if '' == vid: return []
+        
+        HEADER = dict(self.HEADER)
+        HEADER['Referer'] = ref
+        post_data = {'source_id' : vid}
+        sts, data = self.getPage(videoUrl, {'header': HEADER}, post_data)
+        if not sts: return []
+        
+        urlTab = []
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>', caseSensitive=False)
+        for item in tmp:
+            videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"', ignoreCase=True)[0])
+            if 1 != self.up.checkHostSupport(videoUrl): continue 
+            urlTab.extend( self.up.getVideoLinkExt(videoUrl) )
+            
+        if 0 == len(urlTab):
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="playerholder">', '</div>', caseSensitive=False)
+            for item in tmp:
+                videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"', ignoreCase=True)[0])
+                if 1 != self.up.checkHostSupport(videoUrl): continue 
+                urlTab.extend( self.up.getVideoLinkExt(videoUrl) )
+        
+        return urlTab
+        
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("KreskoweczkiPL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        cItem = dict(cItem)
+        cItem['url'] = self.SEARCH_URL
+        cItem['post_data'] = {'query':searchPattern}
+        self.listItems(cItem)
         
     def getFavouriteData(self, cItem):
-        return cItem['page']
+        printDBG('KreskoweczkiPL.getFavouriteData')
+        return json.dumps(cItem) 
         
     def getLinksForFavourite(self, fav_data):
-        return self.getVideoUrl(fav_data)
+        printDBG('KreskoweczkiPL.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception:
+            return self.getLinksForVideo({'url':fav_data})
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('KreskoweczkiPL.setInitListFromFavouriteItem')
+        try: params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
+        
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
         name     = self.currItem.get("name", '')
-        title    = self.currItem.get("title", '')
         category = self.currItem.get("category", '')
-        page     = self.currItem.get("page", '')
-        icon     = self.currItem.get("icon", '')
-
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| [%s] " % name )
+        mode     = self.currItem.get("mode", '')
+        filter   = self.currItem.get("filter", '')
+        
+        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
-
+        
     #MAIN MENU
         if name == None:
-            self.listsMainMenu(self.MENU_TAB)
-    #KRESKÓWKI ALFABETYCZNIE
-        elif category == self.setTable()[1]:
-            self.listsABCMenu(self.cm.makeABCList())
-        elif name == 'abc-menu':
-            self.showTitles(category)
-        elif name == 'episode' or name == 'nextpage':
-            self.showParts(page)
-    #OSTATNIO UZUPEŁNIONE
-        elif category == self.setTable()[2]:
-            self.showParts(self.MAINURL)
-    #WYSZUKAJ
-        elif category == self.setTable()[3]:
-            text = searchPattern
-            self.showParts(self.MAINURL+"/search/?keywords="+urllib.quote_plus(text))
-    #HISTORIA WYSZUKIWANIA
-        elif category == self.setTable()[4]:
-            self.listsHistory()
+            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif category == 'list_abc':
+            self.listABC(self.currItem, 'list_items')
+        elif category == 'list_titles':
+            self.listTitles(self.currItem, 'list_items')
+        elif category == 'list_items':
+            self.listItems(self.currItem)
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+        else:
+            printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
-
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, Kreskoweczki(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):  
-        return RetHost(RetHost.OK, value = [ GetLogoDir('kreskoweczkilogo.png') ])
-
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-
-        urlList = self.host.getVideoUrl(self.host.currList[Index]["page"])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], 0))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-
-    def converItem(self, cItem):
-        hostList = []        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-
-        if cItem['type'] == 'category':
-            if cItem['title'] == 'Wyszukaj':
-                type = CDisplayListItem.TYPE_SEARCH
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-            page = cItem.get('page', '')
-            if '' != page:
-                hostLinks.append(CUrlItem("Link", page, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('plot', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                description = description,
-                                type = type,
-                                urlItems = hostLinks,
-                                urlSeparateRequest = 1,
-                                iconimage = icon )
-    # end converItem
-
-    def getSearchItemInx(self):
-        # Find 'Wyszukaj' item
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'Wyszukaj':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                self.host.history.addHistoryItem( pattern )
-                self.searchPattern = pattern
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-        return
+        # for now we must disable favourites due to problem with links extraction for types other than movie
+        CHostBase.__init__(self, KreskoweczkiPL(), True, favouriteTypes=[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])

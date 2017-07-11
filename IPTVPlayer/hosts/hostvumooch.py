@@ -18,7 +18,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
@@ -34,101 +34,81 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.alltubetv_premium  = ConfigYesNo(default = False)
-#config.plugins.iptvplayer.alltubetv_login    = ConfigText(default = "", fixed_size = False)
-#config.plugins.iptvplayer.alltubetv_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    #if config.plugins.iptvplayer.alltubetv_premium.value:
-    #    optionList.append(getConfigListEntry("  alltubetv login:", config.plugins.iptvplayer.alltubetv_login))
-    #    optionList.append(getConfigListEntry("  alltubetv hasło:", config.plugins.iptvplayer.alltubetv_password))
     return optionList
 ###################################################
 
 
 def gettytul():
-    return 'http://vumoo.ch/'
+    return 'http://vumoo.li/'
 
 class Vumoo(CBaseHostClass):
-    MAIN_URL    = 'http://vumoo.ch/'
+    USER_AGENT = 'curl/7'
+    MAIN_URL    = 'http://vumoo.li/'
     SRCH_URL    = MAIN_URL + 'videos/search/?search='
-    DEFAULT_ICON_URL = 'http://pbs.twimg.com/profile_images/559558208411287552/fFKLeLBS.png'
+    DEFAULT_ICON_URL = 'http://www.matrixable.org/wp-content/uploads/2016/02/vumoo.jpg'
     
-    MAIN_CAT_TAB = [{'category':'movies',         'title': _('Movies'),       'url':MAIN_URL,        'icon':DEFAULT_ICON_URL},
-                    {'category':'tv_shows_genres','title': _('TV Shows'),     'url':MAIN_URL + 'tv', 'icon':DEFAULT_ICON_URL},
+    MAIN_CAT_TAB = [{'category':'movies',         'title': _('Movies'),       'url':MAIN_URL                                          },
+                    {'category':'list_items',     'title': _('TV Shows'),     'url':MAIN_URL + 'videos/category/trending-television'  },
                     {'category':'search',         'title': _('Search'),       'search_item':True},
                     {'category':'search_history', 'title': _('Search history')} 
                    ]
-    MOVIES_TAB = [{'category':'movies_genres',   'title':_('Genres')},
-                  {'category':'list_movies',     'title':_('HD Movies'),      'url':MAIN_URL + 'videos/category/hd'},
-                  {'category':'list_movies',     'title':_('New Releases'),   'url':MAIN_URL + 'videos/category/new-releases'},
-                  {'category':'list_movies',     'title':_('Recently Added'), 'url':MAIN_URL + 'videos/category/recently-added'},
+    MOVIES_TAB = [{'category':'genres',          'title':_('Genres')},
+                  {'category':'list_items',      'title':_('Currently Watching'),      'url':MAIN_URL + 'videos/category/currently-watching'},
+                  {'category':'list_items',      'title':_('Popular this Week'),       'url':MAIN_URL + 'videos/category/popular-this-week'},
+                  {'category':'list_items',      'title':_('IMDB Top Rated'),          'url':MAIN_URL + 'videos/category/top-rated-imdb'},
+                  {'category':'list_items',      'title':_('IMDB Top Rated'),          'url':MAIN_URL + 'videos/category/top-rated-imdb'},
+                  {'category':'list_items',      'title':_('New Releases'),            'url':MAIN_URL + 'videos/category/new-releases'},
+                  {'category':'list_items',      'title':_('Recently Added'),          'url':MAIN_URL + 'videos/category/recently-added'},
                  ]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'Vumoo', 'cookie':'Vumoo.cookie'})
-        self.movieGenresCache = []
-        self.tvshowGenresCache = []
-        self.seriesCache = []
-        self.episodesCache = []
+        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.genresCache = []
+        self.linksCache = {}
         
-    def _getFullUrl(self, url, series=False):
-        if not series:
-            mainUrl = self.MAIN_URL
-        else:
-            mainUrl = self.S_MAIN_URL
-        if url.startswith('/'):
-            url = url[1:]
-        if 0 < len(url) and not url.startswith('http'):
-            url = mainUrl + url
-        if not mainUrl.startswith('https://'):
-            url = url.replace('https://', 'http://')
-        return url
+    def getPage(self, baseUrl, params={}, post_data=None):
+        if params == {}: params = dict(self.defaultParams)
+        params['cloudflare_params'] = {'domain':'vumoo.at', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
-    def fillMovieFilters(self, url):
-        printDBG("Vumoo.fillMovieFilters")
-        self.movieGenresCache = []
-        sts, data = self.cm.getPage(url)
+    def getIconUrl(self, url):
+        url = self.getFullUrl(url)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+        
+        
+    def listGenres(self, cItem, category):
+        printDBG("Vumoo.listGenres")
+
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="multi-column-dropdown">', '<a href="/tv">', False)[1]
-        data = data.split('</li>')
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="multi-column-dropdown">', '<button', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
         for item in data:
             title = self.cleanHtmlStr( item )
-            url   = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
-            if url.startswith('http'):
-                self.movieGenresCache.append({'title':title, 'url':url})
-        
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("Vumoo.listsTab")
-        for item in tab:
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
             params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
+            if title != '' and url != '':
+                params.update({'category':category, 'title':title, 'url':url})
                 self.addDir(params)
-            else: self.addVideo(params)
-        
-    def listMoviesGenres(self, cItem, category):
-        printDBG("Vumoo.listMoviesGenres")
-        if 0 == len(self.movieGenresCache):
-            self.fillMovieFilters(cItem['url'])
-        
-        cItem = dict(cItem)
-        cItem['category'] = category
-        self.listsTab(self.movieGenresCache, cItem)
         
     def fillTvShowFilters(self, url):
         printDBG("Vumoo.fillTvShowFilters")
         self.tvshowGenresCache = []
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         data = self.cm.ph.getDataBeetwenMarkers(data, 'Subgenres', '<section', False)[1]
         data = data.split('<li>')
         if len(data): del data[0]
         for item in data:
             title = self.cleanHtmlStr( item )
-            url   = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
             if url.startswith('http'):
                 self.tvshowGenresCache.append({'title':title, 'url':url})
         
@@ -144,8 +124,8 @@ class Vumoo(CBaseHostClass):
             tab.extend(self.tvshowGenresCache)
             self.listsTab(tab, cItem)
             
-    def listItems(self, cItem, category='video'):
-        printDBG("Vumoo.listMovies")
+    def listItems(self, cItem, category='explore_item'):
+        printDBG("Vumoo.listItems")
         url = cItem['url']
         if '?' in url:
             post = url.split('?')
@@ -160,105 +140,110 @@ class Vumoo(CBaseHostClass):
         if post != '': 
             url += post
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         nextPage = False
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<section ', '</section>', True)[1]
-        data = data.split('</article>')
-        if len(data): del data[-1]
+        #nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<div class="navigation"', '</div>', False)[1]
+        #if '>{0}<'.format(page+1) in nextPage: nextPage = True
+        #else: nextPage = False
         
+        num = 0
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<article', '</article>')       
         for item in data:
+            num += 1
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            if icon == '': icon = self.cm.ph.getDataBeetwenMarkers(item, 'url(', ')', False)[1].strip()
             title  = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
-            params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( item ), 'icon':self._getFullUrl(icon)} )
-            if category == 'video':
-                self.addVideo(params)
-            else:
+            if title == '': title = self.cm.ph.getSearchGroups(item, 'data-title="([^"]+?)"')[0]
+            
+            if url != '' and title != '': 
+                params = dict(cItem)
+                params.update( {'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url), 'desc': self.cleanHtmlStr( item ), 'icon':self.getFullUrl(icon)} )
                 params['category'] = category
                 self.addDir(params)
-            nextPage = True
         
-        if nextPage:
+        if nextPage or num >= 20:
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
             
-    def listSeasons(self, cItem, category):
-        printDBG("Vumoo.listSeasons")
-        self.episodesCache = []
+    def exploreItem(self, cItem, category):
+        printDBG("Vumoo.exploreItem")
+        self.linksCache = {}
+        type = None
+        #try:
+        #    sts, response = self.cm.getPage(cItem['url'], {'return_data':False})
+        #    url = response.geturl()
+        #    response.close()
+        #    if '/tv/' in url: type = 'tv'
+        #    elif '/play/' in url: type = 'movie'
+        #except Exception:
+        #    printExc()
         
-        baseUrl = cItem['url']
-        sts, data = self.cm.getPage(baseUrl)
-        if not sts: return 
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="tv-details-episodes synopsis-container">', '</ol>', False)[1]
-        data = data.split('</li>')
-        if len(data): del data[-1]
-        
-        seasonsTab = []        
-        for item in data:
-            tmp = self.cm.ph.getSearchGroups(item, 'season([0-9]+?)-([0-9]+?)[^0-9]', 2)
-            sNum = tmp[0]
-            eNum = tmp[1]
+        if type == None:
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return
+            if 'tv-details-seasons' in data: type = 'tv'
+            else: type = 'movie'
             
-            tmp    = item.split('</span>')
-            eUrl   = self.cm.ph.getSearchGroups(item, 'data-click="([^"]+?)"')[0].strip()
-            eIcon  = self.cm.ph.getSearchGroups(item, 'data-poster="([^"]+?)"')[0].strip()
-            eTitle = self.cleanHtmlStr( tmp[0] )
-            eDesc  = self.cleanHtmlStr( tmp[-1] )
-            
-            if sNum in seasonsTab:
-                sIdx = seasonsTab.index(sNum)
-            else:
-                sIdx = len(seasonsTab)
-                # add new season
-                seasonsTab.append(sNum)
-                self.episodesCache.append([])
-                params = dict(cItem)
-                params.update({'category':category, 'season_idx':sIdx, 'title':'Season %s' % sNum})
-                self.addDir(params)
-            
-            # add episode to season
-            params = {'title':cItem['title'] + ': ' + eTitle, 'icon':self._getFullUrl(eIcon), 'desc':eDesc, 'episode_url':eUrl}
-            self.episodesCache[-1].append(params)
-        
-    def listEpisodes(self, cItem):
-        printDBG("Vumoo.listEpisodes")
-        seasonIdx = cItem['season_idx']
-        
-        if seasonIdx >= 0 and seasonIdx < len(self.episodesCache):
-            episodesList = self.episodesCache[seasonIdx]
-            self.listsTab(episodesList, cItem, 'video')
+        if type == 'movie':
+            printDBG('Vumoo.exploreItem - MOVIE')
+            mov_id = self.cm.ph.getSearchGroups(data, '''mov_id[\s]*=[\s]*["']([0-9]+?)["']''')[0]
+            t_id   = self.cm.ph.getSearchGroups(data, '''t_id[\s]*=[\s]*["']([0-9]+?)["']''')[0]
+            googleLink    = self.cm.ph.getSearchGroups(data, 'googleLink[\s]*=[\s]*"(http[^"]+?)"')[0].replace('\\/', '/')
+            openloadLink  = self.cm.ph.getSearchGroups(data, 'openloadLink[\s]*=[\s]*"(http[^"]+?)"')[0].replace('\\/', '/')
+            self.linksCache[mov_id] = []
+            #if googleLink.startswith('http'): self.linksCache[mov_id].append({'type':'google', 'url':googleLink})
+            if openloadLink.startswith('http'): self.linksCache[mov_id].append({'type':'openload', 'url':openloadLink})
+            params = dict(cItem)
+            params.update({'links_id':mov_id, 't_id':t_id})
+            self.addVideo(params)
+        elif type == 'tv':
+            printDBG('Vumoo.exploreItem - TV SERIES')
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="tv-details-episodes synopsis-container">', '</ol>')[1]
+            sp = '<li id=season'
+            data = data.split(sp)
+            if len(data): del data[0]
+            num = 0 
+            for item in data:
+                num += 1
+                item = sp + item
+                tmp = self.cm.ph.getSearchGroups(item, 'season([0-9]+?)-([0-9]+?)[^0-9]', 2)
+                sNum = tmp[0]
+                eNum = tmp[1]
+                title = ''
+                if '' != eNum and '' != sNum: title = 's%se%s ' % (sNum.zfill(2), eNum.zfill(2))
+                title += self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1] )
+                #icon   = self.cm.ph.getSearchGroups(item, 'data-poster="([^"]+?)"')[0]
+                #if not icon.endswith('.jpg'): icon = cItem.get('icon', '')
+                
+                links_id = title + str(num)
+                self.linksCache[links_id] = []
+                tmp = re.compile('<[^>]+?id="([^"]+?)"[^>]+?data-click="([^"]+?)"').findall(item)
+                for tmpItem in tmp:
+                    link = tmpItem[1].strip()
+                    if link.startswith('http') and '://' in link and 'ubershared.co' not in link:
+                        self.linksCache[links_id].append({'type':tmpItem[0].strip(), 'url':link})
+                if len(self.linksCache[links_id]):
+                    params = dict(cItem)
+                    params.update({'title':'{0}: {1}'.format(cItem['title'], title), 'links_id':links_id, 'desc': self.cleanHtmlStr( item ) }) #, 'icon':self.getFullUrl(icon)})
+                    self.addVideo(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         cItem['url']  = self.SRCH_URL + urllib.quote_plus(searchPattern)
-        self.listItems(cItem)
+        self.listItems(cItem, 'explore_item')
         
     def getLinksForVideo(self, cItem):
         printDBG("Vumoo.getLinksForVideo [%s]" % cItem)
         urlTab = []
-        url = cItem['url']
-        
-        if 'episode_url' in cItem:
-            eUrl = cItem['episode_url']
-            if eUrl.startswith('http'):
-                eUrl = strwithmeta(eUrl, {'Referer':url})
-                urlTab.append({'name':'episode', 'url':eUrl, 'need_resolve':0})
-        else:
-            sts, data = self.cm.getPage(url)
-            if not sts: return
-            
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="video">', '</div>', False)[1]
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>', False)
-            for item in data:
-                vidUrl = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-                if 1 != self.up.checkHostSupport(vidUrl): continue 
-                urlTab.append({'name':self.up.getHostName(vidUrl), 'url':vidUrl, 'need_resolve':1})
+        linksID = cItem.get('links_id', 'none')
+        if linksID in self.linksCache:
+            for item in self.linksCache[linksID]:
+                urlTab.append({'name':item['type'], 'url':item['url'], 'need_resolve':1})
         return urlTab
         
     def getVideoLinks(self, baseUrl):
@@ -274,41 +259,7 @@ class Vumoo(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         return self.getLinksForVideo({'url':fav_data})
-
-    def getArticleContent(self, cItem):
-        printDBG("MoviesHDCO.getArticleContent [%s]" % cItem)
-        retTab = []
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return retTab
-        
-        title = self.cm.ph.getDataBeetwenMarkers(data, '"og:title" content="', '"', False)[1].split('|')[0]
-        desc  = self.cm.ph.getDataBeetwenMarkers(data, '"og:description" content="', '"', False)[1]
-        icon  = self.cm.ph.getDataBeetwenMarkers(data, '"og:image" content="', '"', False)[1]
-        
-        descData = self.cm.ph.getDataBeetwenMarkers(data, '<strong>', '<div id="extras">', False)[1].split('<strong>')
-        printDBG(descData)
-        descTabMap = {"Oryginalny tytuł": "alternate_title",
-                      "Kraj": "country",
-                      "Rok produkcji": "year",
-                      "Reżyseria": "director",
-                      "Scenariusz": "writer",
-                      "Aktorzy": "actors",}
-        otherInfo = {}
-        for item in descData:
-            item = item.split('</strong>')
-            if len(item) < 2: continue
-            key = self.cleanHtmlStr( item[0] ).replace(':', '').strip()
-            val = self.cleanHtmlStr( item[1] )
-            if key in descTabMap:
-                otherInfo[descTabMap[key]] = val
-        
-        cats = self.cm.ph.getAllItemsBeetwenMarkers(data, 'rel="category tag">', '</a>', False)
-        if len(cats):
-            otherInfo['genre'] = ', '.join(cats)
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self._getFullUrl(icon)}], 'other_info':otherInfo}]
-        
+    
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -322,22 +273,17 @@ class Vumoo(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
-    #MOVIES
+    #ITEMS
         elif category == 'movies':
             self.listsTab(self.MOVIES_TAB, self.currItem)
-        elif category == 'movies_genres':
-            self.listMoviesGenres(self.currItem, 'list_movies')
-        elif category == 'list_movies':
-            self.listItems(self.currItem)
-    #SERIES
-        elif category == 'tv_shows_genres':
-            self.listTvShowsGenres(self.currItem, 'list_series')
-        elif category == 'list_series':
-            self.listItems(self.currItem, 'list_seasons')
-        elif category == 'list_seasons':
-            self.listSeasons(self.currItem, 'list_episodes')
-        elif category == 'list_episodes':
-            self.listEpisodes(self.currItem)
+        elif category == 'genres':
+            self.listGenres(self.currItem, 'list_items')
+        elif category == 'list_items':
+            self.listItems(self.currItem, 'explore_item')
+    #EXPLORE
+        elif category == 'explore_item':
+            self.exploreItem(self.currItem, 'list_episodes')
+            
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -353,107 +299,4 @@ class Vumoo(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, Vumoo(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('vumoochlogo.png')])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-        
-    #def getArticleContent(self, Index = 0):
-    #    retCode = RetHost.ERROR
-    #    retlist = []
-    #    if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-    #
-    #    hList = self.host.getArticleContent(self.host.currList[Index])
-    #    for item in hList:
-    #        title      = item.get('title', '')
-    #        text       = item.get('text', '')
-    #        images     = item.get("images", [])
-    #        othersInfo = item.get('other_info', '')
-    #        retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-    #    return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie  
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
+        CHostBase.__init__(self, Vumoo(), True, [])#[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])

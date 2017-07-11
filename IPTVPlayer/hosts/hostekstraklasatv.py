@@ -18,7 +18,7 @@ import urllib
 import time
 import random
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from os import urandom as os_urandom
 
 ###################################################
@@ -63,6 +63,7 @@ class Ekstraklasa(CBaseHostClass):
                     ]
     ETV_CATEGORY  = 'etv_category'
     ETV_FORMAT    = 'mp4'
+    MAIN_URL = ETV_MAIN_URL
     def __init__(self):
         printDBG("Ekstraklasa.__init__")
         CBaseHostClass.__init__(self, {'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.ekstraklasa_proxy.value})
@@ -76,7 +77,7 @@ class Ekstraklasa(CBaseHostClass):
                        'url'      : Ekstraklasa.ETV_MAIN_URL + item['navi'],
                        'title'    : item['name'],
                        'desc'     : 'ekstraklasa.tv',
-                       'icon'     : '',
+                       'icon'     : 'http://footballtripper.com/wp-content/themes/ft/flags/Ekstraklasa-flag.png',
                        'depth'    : 0,
                        'host'     : 'ekstraklasa.tv'
                      }  
@@ -140,7 +141,7 @@ class Ekstraklasa(CBaseHostClass):
                     params = dict(cItem)
                     params.update({'title':'Następna strona', 'url':url })
                     self.addDir(params)
-            except:
+            except Exception:
                 printExc()
         # list items
         
@@ -168,18 +169,26 @@ class Ekstraklasa(CBaseHostClass):
                             strTab.append(0)
                         valTab.append(strTab)
                         strTab = []
-            except:
+            except Exception:
                 printExc()
         return valTab
 
     def getLinks_ETV(self, url):
         printDBG("Ekstraklasa.getLinks_ETV url[%r]" % url )
         videoUrls = []
-        sts, data = self.cm.getPage(url)
-        if not sts: return videoUrls
-        ckmId = self.cm.ph.getSearchGroups(data, 'data-params-mvp="([^"]+?)"')[0]
-        if '' == ckmId: ckmId = self.cm.ph.getSearchGroups(data, 'id="mvp:([^"]+?)"')[0]
-        if '' != ckmId: videoUrls = self.getVideoTab_ETV(ckmId)
+        tries = 0
+        while tries < 2:
+            tries += 1
+            sts, data = self.cm.getPage(url)
+            if not sts: return videoUrls
+            ckmId = self.cm.ph.getSearchGroups(data, 'data-params-mvp="([^"]+?)"')[0]
+            if '' == ckmId: ckmId = self.cm.ph.getSearchGroups(data, 'id="mvp:([^"]+?)"')[0]
+            if '' != ckmId: 
+                videoUrls = self.getVideoTab_ETV(ckmId)
+                break
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'pulsembed_embed', '</div>')[1]
+            url  = self.cm.ph.getSearchGroups(data, 'href="([^"]+?)"')[0] 
+        
         return videoUrls
         
     def getDescription_ETV(self, url):
@@ -306,7 +315,7 @@ class IPTVHost(CHostBase):
                 
             title       =  cItem.get('title', '')
             description =  clean_html(cItem.get('desc', ''))
-            icon        =  cItem.get('icon', '')
+            icon        =  self.host.getFullUrl(cItem.get('icon', ''))
             
             hostItem = CDisplayListItem(name = title,
                                         description = description,

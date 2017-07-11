@@ -18,7 +18,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -33,15 +33,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.alltubetv_premium  = ConfigYesNo(default = False)
-#config.plugins.iptvplayer.alltubetv_login    = ConfigText(default = "", fixed_size = False)
-#config.plugins.iptvplayer.alltubetv_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    #if config.plugins.iptvplayer.alltubetv_premium.value:
-    #    optionList.append(getConfigListEntry("  alltubetv login:", config.plugins.iptvplayer.alltubetv_login))
-    #    optionList.append(getConfigListEntry("  alltubetv hasło:", config.plugins.iptvplayer.alltubetv_password))
     return optionList
 ###################################################
 
@@ -50,51 +44,56 @@ def gettytul():
     return 'alltube.tv'
 
 class AlltubeTV(CBaseHostClass):
+    USER_AGENT = 'curl/7'
     MAIN_URL    = 'http://alltube.tv/'
     SRCH_URL    = MAIN_URL + 'szukaj'
-    DEFAULT_ICON = 'https://scontent-waw1-1.xx.fbcdn.net/hphotos-xal1/v/l/t1.0-9/11012948_860312804054948_8203520643827603823_n.png?oh=36b6777a5723b93b1aabbdc14c0c2934&oe=57194120'
-    
-    MAIN_CAT_TAB = [{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
-                    {'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':DEFAULT_ICON},
+    DEFAULT_ICON = 'http://alltube.tv/static/main/newlogoall.png'
+    #{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
+    MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':DEFAULT_ICON},
                     {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
-                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'filmy-online/',  'cat':'5', 'icon':DEFAULT_ICON, 'mtype':True},
-                    {'category':'list_rank',          'title': _('Ranking'),       'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
-                    {'category':'search',             'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',     'title': _('Search history')} ]
-                    
-    LAST_ADDED_TAB = [{'category':'latest_added_movies',  'title': _('Movies'),        'url':MAIN_URL, 'icon':DEFAULT_ICON},
-                      {'category':'latest_added_series',  'title': _('Series'),        'url':MAIN_URL, 'icon':DEFAULT_ICON} ]
+                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'dla-dzieci/',     'icon':DEFAULT_ICON},
+                    {'category':'search',             'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
+                    {'category':'search_history',     'title': _('Search history'), 'icon':DEFAULT_ICON} ]
                       
-    SERIES_CAT_TAB = [{'category':'list_series_abc',  'title': _('ABC'),                        'url':MAIN_URL, 'icon':DEFAULT_ICON},
-                      {'category':'list_series',      'title': _('All'), 'letter':'all',        'url':MAIN_URL, 'icon':DEFAULT_ICON} ]
-                      
-    RANK_TAB = [{'category':'list_rank_movie_view',  'title': 'Filmy wg. odsłon',   'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
-                {'category':'list_rank_movie',       'title': 'Filmy wg. oceny',    'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},
-                {'category':'list_rank_series_view', 'title': 'Seriale wg. odsłon', 'url':MAIN_URL+'ranking', 'icon':DEFAULT_ICON},]
+    SERIES_CAT_TAB = [{'category':'list_series_list', 'title': _('List'),                       'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
+                      {'category':'list_series_abc',  'title': _('ABC'),                        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
+                      {'category':'list_series',      'title': _('All'), 'letter':'all',        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON} ]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'AlltubeTV', 'cookie':'alltubetv.cookie'})
+        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        
         self.filterCache = {}
         self.seriesCache = {}
         self.seriesLetters = []
         self.episodesCache = []
+        self._myFun = None
         
-    def _getFullUrl(self, url):
-        if 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        if not self.MAIN_URL.startswith('https://'):
-            url = url.replace('https://', 'http://')
-        return url
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("AlltubeTV.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
+    def getPage(self, baseUrl, params={}, post_data=None):
+        if params == {}: params = dict(self.defaultParams)
+        params['cloudflare_params'] = {'domain':'alltube.tv', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, params, post_data)
+        
+    def getIconUrl(self, url):
+        url = self.getFullUrl(url.strip())
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID'])
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+        
+    def _listFilters(self, cItem, data):
+        printDBG("AlltubeTV._listFilters")
+        ret = False
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<form id="filter"', '</form>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<button', '</button>')
+        for item in data:
+            filter = self.cm.ph.getSearchGroups(item, 'value="([^"]+?)"')[0]
+            title  = self.cleanHtmlStr(item)
+            if filter != '' and title != '':
+                ret = True
+                params = dict(cItem)
+                params.update({'title':title, 'check_filter':False, 'post_data':{'filter':filter}})
                 self.addDir(params)
-            else: self.addVideo(params)
+        return ret
             
     def _listItemsTab(self, cItem, m1, m2, sp, category='video'):
         printDBG("AlltubeTV._listItemsTab >>>>>>> cItem[%r]" % cItem)
@@ -108,20 +107,33 @@ class AlltubeTV(CBaseHostClass):
             url += 'rok[%s]+' % cItem['year']
         page = cItem.get('page', 1)
         if page > 1:
-            url += 'strona[%s]+' % page
+            if category == 'video':
+                url += 'strona[%s]+' % page
+            else: url += '/%s' % page
+            
+        if 'filter' in cItem:
+            filter = cItem['filter']
+        else: filter = None
+            
+        post_data = cItem.get('post_data', None)
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url, {}, post_data)
         if not sts: return 
         
-        if ('strona[%s]+' % (page + 1)) in data:
+        if cItem.get('check_filter', True):
+            if self._listFilters(cItem, data): return
+            else: cItem['check_filter'] = False
+            
+        pageM1 = '<div id="pager"'
+        
+        if ('strona[%s]+' % (page + 1)) in data or 'Następna strona' in data:
             nextPage = True
         else: nextPage = False
         
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1]
-        #printDBG("DAAAAAAAAAAAAAA [%s]" % data)
         data = data.split(sp)
-        if len(data): del data[0]
-        if len(data): data[-1] = data[-1].split('<div id="pager">')[0]
+        if len(data) and m1 != sp: del data[0]
+        if len(data): data[-1] = data[-1].split(pageM1)[0]
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
@@ -135,8 +147,8 @@ class AlltubeTV(CBaseHostClass):
                 desc = item.split('<p>')[-1]
             
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
-            if category != 'video':
+            params.update( {'good_for_fav': True, 'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url), 'desc': self.cleanHtmlStr( desc ), 'icon':self.getFullUrl(icon)} )
+            if category != 'video': #or '/serial/' in params['url']:
                 params['category'] = category
                 self.addDir(params)
             else: self.addVideo(params)
@@ -145,30 +157,9 @@ class AlltubeTV(CBaseHostClass):
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
-            
-    def listLatestAddedMovies(self, cItem):
-        printDBG("AlltubeTV.listLatestAddedMovies")
-        self._listItemsTab(cItem, 'statnio dodane filmy', '<div class="col-sm-6">', '<div class="item clearfix">', category='video')
-        
-    def listLatestAddedSeries(self, cItem, category):
-        printDBG("AlltubeTV.listLatestAddedSeries")
-        #self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-6">', '<div class="item clearfix">', category)
-        self._listItemsTab(cItem, 'statnio dodane seriale', '<div class="col-sm-12 clearfix">', '<div class="item clearfix">', category)
-            
-    def listRankViewMovies(self, cItem):
-        printDBG("AlltubeTV.listRankViewMovies")
-        self._listItemsTab(cItem, '<h2>Filmy wg. odsłon</h2>', '<div class="col-sm-4">', '<div class="item clearfix">', category='video')
-        
-    def listRankMovie(self, cItem):
-        printDBG("AlltubeTV.listRankMovie")
-        self._listItemsTab(cItem, '<h2>Filmy wg. oceny</h2>', '<div class="col-sm-4">', '<div class="item clearfix">', category='video')
-        
-    def listRankViewSeries(self, cItem, category):
-        printDBG("AlltubeTV.listRankViewSeries")
-        self._listItemsTab(cItem, '<h2>Seriale wg. odsłon</h2>', '<footer>', '<div class="item clearfix">', category)
     
     def fillFilterCache(self, url):
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         def _getFilters(m1, m2, key):
             tab = []
@@ -179,9 +170,9 @@ class AlltubeTV(CBaseHostClass):
             if len(tab):
                 tab.insert(0, {'title':_('All')})
             return tab
-        self.filterCache['category'] = _getFilters('<ul id="filter-category">', '</ul>', 'cat')
-        self.filterCache['version']  = _getFilters('<ul id="filter-version">', '</ul>', 'ver')
-        self.filterCache['year']     = _getFilters('<ul id="filter-year">', '</ul>', 'year')
+        self.filterCache['category'] = _getFilters('filter-category">', '</ul>', 'cat')
+        self.filterCache['version']  = _getFilters('id="filter-version">', '</ul>', 'ver')
+        self.filterCache['year']     = _getFilters('id="filter-year">', '</ul>', 'year')
         
     def listFilters(self, cItem, filter, category):
         printDBG("AlltubeTV.listFilters")
@@ -192,21 +183,22 @@ class AlltubeTV(CBaseHostClass):
         cItem = dict(cItem)
         cItem['category'] = category
         self.listsTab(tab, cItem)
-            
+         
     def listMovies(self, cItem):
         printDBG("AlltubeTV.listMovies")
-        if cItem.get('mtype', False):
-            self._listItemsTab(cItem, '<div id="list-movie">', '<div class="col-sm-12">', '<div class="col-xs-3 col-md-2">', category='video')
-        else:
-            self._listItemsTab(cItem, '<div class="clearfix">', '<footer>', '<div class="border-box clearfix">', category='video')
+        self._listItemsTab(cItem, '<div class="item-block clearfix">', '<script>', '<div class="item-block clearfix">', category='video')
+        
+    def listSeriesList(self, cItem, category):
+        printDBG("AlltubeTV.listSeriesList")
+        self._listItemsTab(cItem, '<div class="item-block clearfix">', '<script>', '<div class="item-block clearfix">', category=category)
         
     def fillSeriesCache(self, url):
         printDBG("AlltubeTV.fillSeriesCache")
         self.seriesCache = {}
         self.seriesLetters = []
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="term-list clearfix">', '</ul>', False)[1]
+        data = CParsingHelper.getDataBeetwenMarkers(data, 'term-list clearfix">', '</ul>', False)[1]
         data = re.compile('<li[^>]*?data-letter="([^"]+)"[^>]*?>[^<]*?<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
         for item in data:
             letter = item[0]
@@ -215,7 +207,7 @@ class AlltubeTV(CBaseHostClass):
             if letter not in self.seriesCache:
                 self.seriesCache[letter] = []
                 self.seriesLetters.append({'title':letter,  'letter':letter})
-            self.seriesCache[letter].append({'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url)})
+            self.seriesCache[letter].append({'good_for_fav':True, 'title': self.cleanHtmlStr( title ), 'url':self.getFullUrl(url)})
         for idx in range(len(self.seriesLetters)):
             letter = self.seriesLetters[idx]['letter']
             self.seriesLetters[idx]['title'] = letter + ' [%d]' % len(self.seriesCache[letter]) 
@@ -246,7 +238,7 @@ class AlltubeTV(CBaseHostClass):
             self.listsTab(tab, cItem)
         
     def listAllSeries(self, category):
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return 
 
         data = CParsingHelper.getDataBeetwenMarkers(data, '<ul class="term-list">', '</ul>', False)[1]
@@ -257,7 +249,7 @@ class AlltubeTV(CBaseHostClass):
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
             icon   = ''
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( item ), 'url':self._getFullUrl(url), 'desc': '', 'icon':self._getFullUrl(icon)} )
+            params.update( {'title': self.cleanHtmlStr( item ), 'url':self.getFullUrl(url), 'desc': '', 'icon':self.getFullUrl(icon)} )
             params['category'] = category
             self.addDir(params)
             
@@ -265,7 +257,7 @@ class AlltubeTV(CBaseHostClass):
         printDBG("AlltubeTV.listSeasons")
         self.episodesCache = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return 
         seriesTitle =  self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-xs-12 col-sm-9">', '</h3>', False)[1] )
         if '' == seriesTitle: seriesTitle = cItem['title']    
@@ -273,16 +265,16 @@ class AlltubeTV(CBaseHostClass):
         desc = self.cm.ph.getDataBeetwenMarkers(data, '<div class="custome-panel clearfix">', '</div>', False)[1]
         icon = self.cm.ph.getSearchGroups(desc, 'src="([^"]+?)"')[0]
         desc = self.cleanHtmlStr( desc )
-        icon = self._getFullUrl( icon )
+        icon = self.getFullUrl( icon )
         
         if '' == icon: icon = cItem.get('icon', '')
         if '' == desc: desc = cItem.get('desc', '')
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-sm-4">', '<script>', False)[1]
-        data = data.split('</ul>')
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'ta odcin', '<script>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<h3 class="headline">', '</div>')
         for season in data:
-            seasonTitle = self.cm.ph.getDataBeetwenMarkers(season, '<h3>', '</h3>', False)[1].strip()
-            episodes = re.compile('<li[^>]*?class="episode"[^>]*?><a[^>]*?href="([^"]+?)">([^<]+?)</a></li>').findall( season )
+            seasonTitle = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(season, '<h3', '</h3>')[1] )
+            episodes = re.compile('<li[^>]*?class="episode"[^>]*?><a[^>]*?href="([^"]+?)">([^<]+?)</a>').findall( season )
             sort = True
             episodesList = []
             for item in episodes:
@@ -290,99 +282,79 @@ class AlltubeTV(CBaseHostClass):
                     tmp = self.cm.ph.getSearchGroups(item[0], 'odcinek-([0-9]+?)-sezon-([0-9]+?)[^0-9]', 2)
                     season  = int(tmp[1])
                     episode = int(tmp[0])
-                except:
+                except Exception:
                     printExc()
                     season  = 0
                     episode = 0
                     sort    = False
-                episodesList.append( {'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
+                episodesList.append( {'good_for_fav': True, 'title': seriesTitle + ': ' + self.cleanHtmlStr( item[1] ), 'url':self.getFullUrl(item[0]), 'desc':  desc, 'icon':icon, 'season':season, 'episode':episode})
             if sort:
                 episodesList.sort(key=lambda item: item['season']*1000 + item['episode'])#, reverse=True)
                 #episodesList.reverse()
             if len(episodesList):
                 params = dict(cItem)
-                params.update({'category':category, 'season_idx':len(self.episodesCache), 'title':seasonTitle, 'desc':  desc, 'icon':icon})
+                params.update({'good_for_fav': False, 'category':category, 'season_idx':len(self.episodesCache), 'title':seasonTitle, 'desc':  desc, 'icon':icon})
                 self.addDir(params)
                 self.episodesCache.append(episodesList)
         
     def listEpisodes(self, cItem):
         printDBG("AlltubeTV.listEpisodes")
-        seasonIdx = cItem['season_idx']
+        seasonIdx = cItem.get('season_idx', -1)
         
         if seasonIdx >= 0 and seasonIdx < len(self.episodesCache):
             episodesList = self.episodesCache[seasonIdx]
             self.listsTab(episodesList, cItem, 'video')
         
-    def listRanking(self, cItem):
-        printDBG("AlltubeTV.listRanking")
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return
-        
-        data = CParsingHelper.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
-        data = data.split('</tr>')
-        if len(data): del data[-1]
-        for item in data:
-            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
-            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            title  = self.cm.ph.getDataBeetwenMarkers(item, '<strong>', '</strong>', False)[1]
-            if '' == title: title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
-            desc   = self.cm.ph.getDataBeetwenMarkers(item, '<p>', '</p>', False)[1]
-            rank   = self.cm.ph.getSearchGroups(item, '>([0-9.]+?)<')[0]
-            
-            params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': rank + ', ' + self.cleanHtmlStr( desc ), 'icon':self._getFullUrl(icon)} )
-            self.addVideo(params)
-        
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AlltubeTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        post_data = {'search':searchPattern}
-        sts, data = self.cm.getPage(self.SRCH_URL, {}, post_data)
+        sts, data = self.getPage(self.SRCH_URL, {}, post_data={'search':searchPattern})
         if not sts: return
         
-        if searchType == 'movies':
-            key = 'film'
-        elif searchType == 'series':
-            key = 'serial'
-            
-        data = re.compile('<a[^>]*?href="([^"]*?/%s/[^"]*?)"[^>]*?>([^<]+?)<' % key).findall(data)
-        for item in data:
-            if item[0] == '': continue
-            params = dict(cItem)
-            params.update( {'title':self.cleanHtmlStr( item[1] ), 'url':self._getFullUrl(item[0])} )
-            if searchType == 'movies':
-                self.addVideo(params)
-            elif searchType == 'series':
-                params['category'] =  'list_seasons'
-                self.addDir(params)
-        return
+        data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', 'Kontakt')[1]
+        data = data.split('<h2 class="headline">')
+        if len(data): del data[0]
         
-        data = data.split('</a>')
-        if len(data): del data[-1]
-        for item in data:
-            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]*?/%s/[^"]*?)"' % key)[0]
-            if '' == url: continue
-            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            
-            title  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<b>', '</b>', False)[1] )
-            if '' == title: title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0] )
-            if '' == title: title = self.cm.ph.getSearchGroups(url, '/%s/([^"/]*?)[/"]' % key)[0].replace('-', ' ').capitalize()
-            desc  = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '</b>', '</p>', False)[1] )
+        if searchType == 'series':
+            marker = 'Seriale'
+        elif searchType == 'movies':
+            marker = 'Filmy'
+        else:
+            return
+        
+        found = False
+        for idx in range(len(data)):
+            if data[idx].startswith(marker):
+                found = True
+                break
+                
+        if not found: return
+        data = data[idx]
+        data = data.split('<div class="item-block clearfix">')
+        if len(data): del data[0]
 
+        for item in data:
+            url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title  = self.cm.ph.getDataBeetwenMarkers(item, '<div class="title">', '</div>', False)[1]
+            if '' == title: title = self.cm.ph.getDataBeetwenMarkers(item, '<h3>', '</h3>', False)[1]
+            if '' == title:  title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0]
+            desc   = self.cm.ph.getDataBeetwenMarkers(item, '<div class="description">', '</div>', False)[1]
+            if '' == desc: desc = item.split('<p>')[-1]
+            
             params = dict(cItem)
-            params.update( {'title':title, 'url':self._getFullUrl(url), 'desc':desc, 'icon':self._getFullUrl(icon)} )
-            if searchType == 'movies':
-                self.addVideo(params)
-            elif searchType == 'series':
-                params['category'] =  'list_seasons'
+            params.update({'good_for_fav': True, 'title':self.cleanHtmlStr( title ), 'url':self.getFullUrl( url ), 'icon':self.getFullUrl( icon ), 'desc':self.cleanHtmlStr( desc )})
+            if searchType == 'series':
+                params['category'] = 'list_seasons'
                 self.addDir(params)
-        
+            else:
+                self.addVideo(params)
+    
     def getLinksForVideo(self, cItem):
         printDBG("AlltubeTV.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return urlTab
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
@@ -394,17 +366,46 @@ class AlltubeTV(CBaseHostClass):
                 url  = base64.b64decode(url)
                 name = self.cleanHtmlStr(item)
                 urlTab.append({'name':name, 'url':url, 'need_resolve':1})
-            except:
+            except Exception:
                 printExc()
         
         return urlTab
         
     def getVideoLinks(self, baseUrl):
-        printDBG("Movie4kTO.getVideoLinks [%s]" % baseUrl)
+        printDBG("AlltubeTV.getVideoLinks [%s]" % baseUrl)
+        if self._myFun == None:
+            try:
+                tmp = 'ZGVmIHphcmF6YShpbl9hYmMpOg0KICAgIGRlZiByaGV4KGEpOg0KICAgICAgICBoZXhfY2hyID0gJzAxMjM0NTY3ODlhYmNkZWYnDQogICAgICAgIHJldCA9ICcnDQogICAgICAgIGZvciBpIGluIHJhbmdlKDQpOg0KICAgICAgICAgICAgcmV0ICs9IGhleF9jaHJbKGEgPj4gKGkgKiA4ICsgNCkpICYgMHgwRl0gKyBoZXhfY2hyWyhhID4+IChpICogOCkpICYgMHgwRl0NCiAgICAgICAgcmV0dXJuIHJldA0KICAgIGRlZiBoZXgodGV4dCk6DQogICAgICAgIHJldCA9ICcnDQogICAgICAgIGZvciBpIGluIHJhbmdlKGxlbih0ZXh0KSk6DQogICAgICAgICAgICByZXQgKz0gcmhleCh0ZXh0W2ldKQ0KICAgICAgICByZXR1cm4gcmV0DQogICAgZGVmIGFkZDMyKGEsIGIpOg0KICAgICAgICByZXR1cm4gKGEgKyBiKSAmIDB4RkZGRkZGRkYNCiAgICBkZWYgY21uKGEsIGIsIGMsIGQsIGUsIGYpOg0KICAgICAgICBiID0gYWRkMzIoYWRkMzIoYiwgYSksIGFkZDMyKGQsIGYpKTsNCiAgICAgICAgcmV0dXJuIGFkZDMyKChiIDw8IGUpIHwgKGIgPj4gKDMyIC0gZSkpLCBjKQ0KICAgIGRlZiBmZihhLCBiLCBjLCBkLCBlLCBmLCBnKToNCiAgICAgICAgcmV0dXJuIGNtbigoYiAmIGMpIHwgKCh+YikgJiBkKSwgYSwgYiwgZSwgZiwgZykNCiAgICBkZWYgZ2coYSwgYiwgYywgZCwgZSwgZiwgZyk6DQogICAgICAgIHJldHVybiBjbW4oKGIgJiBkKSB8IChjICYgKH5kKSksIGEsIGIsIGUsIGYsIGcpDQogICAgZGVmIGhoKGEsIGIsIGMsIGQsIGUsIGYsIGcpOg0KICAgICAgICByZXR1cm4gY21uKGIgXiBjIF4gZCwgYSwgYiwgZSwgZiwgZykNCiAgICBkZWYgaWkoYSwgYiwgYywgZCwgZSwgZiwgZyk6DQogICAgICAgIHJldHVybiBjbW4oYyBeIChiIHwgKH5kKSksIGEsIGIsIGUsIGYsIGcpDQogICAgZGVmIGNyeXB0Y3ljbGUodGFiQSwgdGFiQik6DQogICAgICAgIGEgPSB0YWJBWzBdDQogICAgICAgIGIgPSB0YWJBWzFdDQogICAgICAgIGMgPSB0YWJBWzJdDQogICAgICAgIGQgPSB0YWJBWzNdDQogICAgICAgIGEgPSBmZihhLCBiLCBjLCBkLCB0YWJCWzBdLCA3LCAtNjgwODc2OTM2KTsNCiAgICAgICAgZCA9IGZmKGQsIGEsIGIsIGMsIHRhYkJbMV0sIDEyLCAtMzg5NTY0NTg2KTsNCiAgICAgICAgYyA9IGZmKGMsIGQsIGEsIGIsIHRhYkJbMl0sIDE3LCA2MDYxMDU4MTkpOw0KICAgICAgICBiID0gZmYoYiwgYywgZCwgYSwgdGFiQlszXSwgMjIsIC0xMDQ0NTI1MzMwKTsNCiAgICAgICAgYSA9IGZmKGEsIGIsIGMsIGQsIHRhYkJbNF0sIDcsIC0xNzY0MTg4OTcpOw0KICAgICAgICBkID0gZmYoZCwgYSwgYiwgYywgdGFiQls1XSwgMTIsIDEyMDAwODA0MjYpOw0KICAgICAgICBjID0gZmYoYywgZCwgYSwgYiwgdGFiQls2XSwgMTcsIC0xNDczMjMxMzQxKTsNCiAgICAgICAgYiA9IGZmKGIsIGMsIGQsIGEsIHRhYkJbN10sIDIyLCAtNDU3MDU5ODMpOw0KICAgICAgICBhID0gZmYoYSwgYiwgYywgZCwgdGFiQls4XSwgNywgMTc3MDAzNTQxNik7DQogICAgICAgIGQgPSBmZihkLCBhLCBiLCBjLCB0YWJCWzldLCAxMiwgLTE5NTg0MTQ0MTcpOw0KICAgICAgICBjID0gZmYoYywgZCwgYSwgYiwgdGFiQlsxMF0sIDE3LCAtNDIwNjMpOw0KICAgICAgICBiID0gZmYoYiwgYywgZCwgYSwgdGFiQlsxMV0sIDIyLCAtMTk5MDQwNDE2Mik7DQogICAgICAgIGEgPSBmZihhLCBiLCBjLCBkLCB0YWJCWzEyXSwgNywgMTgwNDYwMzY4Mik7DQogICAgICAgIGQgPSBmZihkLCBhLCBiLCBjLCB0YWJCWzEzXSwgMTIsIC00MDM0MTEwMSk7DQogICAgICAgIGMgPSBmZihjLCBkLCBhLCBiLCB0YWJCWzE0XSwgMTcsIC0xNTAyMDAyMjkwKTsNCiAgICAgICAgYiA9IGZmKGIsIGMsIGQsIGEsIHRhYkJbMTVdLCAyMiwgMTIzNjUzNTMyOSk7DQogICAgICAgIGEgPSBnZyhhLCBiLCBjLCBkLCB0YWJCWzFdLCA1LCAtMTY1Nzk2NTEwKTsNCiAgICAgICAgZCA9IGdnKGQsIGEsIGIsIGMsIHRhYkJbNl0sIDksIC0xMDY5NTAxNjMyKTsNCiAgICAgICAgYyA9IGdnKGMsIGQsIGEsIGIsIHRhYkJbMTFdLCAxNCwgNjQzNzE3NzEzKTsNCiAgICAgICAgYiA9IGdnKGIsIGMsIGQsIGEsIHRhYkJbMF0sIDIwLCAtMzczODk3MzAyKTsNCiAgICAgICAgYSA9IGdnKGEsIGIsIGMsIGQsIHRhYkJbNV0sIDUsIC03MDE1NTg2OTEpOw0KICAgICAgICBkID0gZ2coZCwgYSwgYiwgYywgdGFiQlsxMF0sIDksIDM4MDE2MDgzKTsNCiAgICAgICAgYyA9IGdnKGMsIGQsIGEsIGIsIHRhYkJbMTVdLCAxNCwgLTY2MDQ3ODMzNSk7DQogICAgICAgIGIgPSBnZyhiLCBjLCBkLCBhLCB0YWJCWzRdLCAyMCwgLTQwNTUzNzg0OCk7DQogICAgICAgIGEgPSBnZyhhLCBiLCBjLCBkLCB0YWJCWzldLCA1LCA1Njg0NDY0MzgpOw0KICAgICAgICBkID0gZ2coZCwgYSwgYiwgYywgdGFiQlsxNF0sIDksIC0xMDE5ODAzNjkwKTsNCiAgICAgICAgYyA9IGdnKGMsIGQsIGEsIGIsIHRhYkJbM10sIDE0LCAtMTg3MzYzOTYxKTsNCiAgICAgICAgYiA9IGdnKGIsIGMsIGQsIGEsIHRhYkJbOF0sIDIwLCAxMTYzNTMxNTAxKTsNCiAgICAgICAgYSA9IGdnKGEsIGIsIGMsIGQsIHRhYkJbMTNdLCA1LCAtMTQ0NDY4MTQ2Nyk7DQogICAgICAgIGQgPSBnZyhkLCBhLCBiLCBjLCB0YWJCWzJdLCA5LCAtNTE0MDM3ODQpOw0KICAgICAgICBjID0gZ2coYywgZCwgYSwgYiwgdGFiQls3XSwgMTQsIDE3MzUzMjg0NzMpOw0KICAgICAgICBiID0gZ2coYiwgYywgZCwgYSwgdGFiQlsxMl0sIDIwLCAtMTkyNjYwNzczNCk7DQogICAgICAgIGEgPSBoaChhLCBiLCBjLCBkLCB0YWJCWzVdLCA0LCAtMzc4NTU4KTsNCiAgICAgICAgZCA9IGhoKGQsIGEsIGIsIGMsIHRhYkJbOF0sIDExLCAtMjAyMjU3NDQ2Myk7DQogICAgICAgIGMgPSBoaChjLCBkLCBhLCBiLCB0YWJCWzExXSwgMTYsIDE4MzkwMzA1NjIpOw0KICAgICAgICBiID0gaGgoYiwgYywgZCwgYSwgdGFiQlsxNF0sIDIzLCAtMzUzMDk1NTYpOw0KICAgICAgICBhID0gaGgoYSwgYiwgYywgZCwgdGFiQlsxXSwgNCwgLTE1MzA5OTIwNjApOw0KICAgICAgICBkID0gaGgoZCwgYSwgYiwgYywgdGFiQls0XSwgMTEsIDEyNzI4OTMzNTMpOw0KICAgICAgICBjID0gaGgoYywgZCwgYSwgYiwgdGFiQls3XSwgMTYsIC0xNTU0OTc2MzIpOw0KICAgICAgICBiID0gaGgoYiwgYywgZCwgYSwgdGFiQlsxMF0sIDIzLCAtMTA5NDczMDY0MCk7DQogICAgICAgIGEgPSBoaChhLCBiLCBjLCBkLCB0YWJCWzEzXSwgNCwgNjgxMjc5MTc0KTsNCiAgICAgICAgZCA9IGhoKGQsIGEsIGIsIGMsIHRhYkJbMF0sIDExLCAtMzU4NTM3MjIyKTsNCiAgICAgICAgYyA9IGhoKGMsIGQsIGEsIGIsIHRhYkJbM10sIDE2LCAtNzIyNTIxOTc5KTsNCiAgICAgICAgYiA9IGhoKGIsIGMsIGQsIGEsIHRhYkJbNl0sIDIzLCA3NjAyOTE4OSk7DQogICAgICAgIGEgPSBoaChhLCBiLCBjLCBkLCB0YWJCWzldLCA0LCAtNjQwMzY0NDg3KTsNCiAgICAgICAgZCA9IGhoKGQsIGEsIGIsIGMsIHRhYkJbMTJdLCAxMSwgLTQyMTgxNTgzNSk7DQogICAgICAgIGMgPSBoaChjLCBkLCBhLCBiLCB0YWJCWzE1XSwgMTYsIDUzMDc0MjUyMCk7DQogICAgICAgIGIgPSBoaChiLCBjLCBkLCBhLCB0YWJCWzJdLCAyMywgLTk5NTMzODY1MSk7DQogICAgICAgIGEgPSBpaShhLCBiLCBjLCBkLCB0YWJCWzBdLCA2LCAtMTk4NjMwODQ0KTsNCiAgICAgICAgZCA9IGlpKGQsIGEsIGIsIGMsIHRhYkJbN10sIDEwLCAxMTI2ODkxNDE1KTsNCiAgICAgICAgYyA9IGlpKGMsIGQsIGEsIGIsIHRhYkJbMTRdLCAxNSwgLTE0MTYzNTQ5MDUpOw0KICAgICAgICBiID0gaWkoYiwgYywgZCwgYSwgdGFiQls1XSwgMjEsIC01NzQzNDA1NSk7DQogICAgICAgIGEgPSBpaShhLCBiLCBjLCBkLCB0YWJCWzEyXSwgNiwgMTcwMDQ4NTU3MSk7DQogICAgICAgIGQgPSBpaShkLCBhLCBiLCBjLCB0YWJCWzNdLCAxMCwgLTE4OTQ5ODY2MDYpOw0KICAgICAgICBjID0gaWkoYywgZCwgYSwgYiwgdGFiQlsxMF0sIDE1LCAtMTA1MTUyMyk7DQogICAgICAgIGIgPSBpaShiLCBjLCBkLCBhLCB0YWJCWzFdLCAyMSwgLTIwNTQ5MjI3OTkpOw0KICAgICAgICBhID0gaWkoYSwgYiwgYywgZCwgdGFiQls4XSwgNiwgMTg3MzMxMzM1OSk7DQogICAgICAgIGQgPSBpaShkLCBhLCBiLCBjLCB0YWJCWzE1XSwgMTAsIC0zMDYxMTc0NCk7DQogICAgICAgIGMgPSBpaShjLCBkLCBhLCBiLCB0YWJCWzZdLCAxNSwgLTE1NjAxOTgzODApOw0KICAgICAgICBiID0gaWkoYiwgYywgZCwgYSwgdGFiQlsxM10sIDIxLCAxMzA5MTUxNjQ5KTsNCiAgICAgICAgYSA9IGlpKGEsIGIsIGMsIGQsIHRhYkJbNF0sIDYsIC0xNDU1MjMwNzApOw0KICAgICAgICBkID0gaWkoZCwgYSwgYiwgYywgdGFiQlsxMV0sIDEwLCAtMTEyMDIxMDM3OSk7DQogICAgICAgIGMgPSBpaShjLCBkLCBhLCBiLCB0YWJCWzJdLCAxNSwgNzE4Nzg3MjU5KTsNCiAgICAgICAgYiA9IGlpKGIsIGMsIGQsIGEsIHRhYkJbOV0sIDIxLCAtMzQzNDg1NTUxKTsNCiAgICAgICAgdGFiQVswXSA9IGFkZDMyKGEsIHRhYkFbMF0pOw0KICAgICAgICB0YWJBWzFdID0gYWRkMzIoYiwgdGFiQVsxXSk7DQogICAgICAgIHRhYkFbMl0gPSBhZGQzMihjLCB0YWJBWzJdKTsNCiAgICAgICAgdGFiQVszXSA9IGFkZDMyKGQsIHRhYkFbM10pDQogICAgZGVmIGNyeXB0YmxrKHRleHQpOg0KICAgICAgICByZXQgPSBbXQ0KICAgICAgICBmb3IgaSBpbiByYW5nZSgwLCA2NCwgNCk6DQogICAgICAgICAgICByZXQuYXBwZW5kKG9yZCh0ZXh0W2ldKSArIChvcmQodGV4dFtpKzFdKSA8PCA4KSArIChvcmQodGV4dFtpKzJdKSA8PCAxNikgKyAob3JkKHRleHRbaSszXSkgPDwgMjQpKQ0KICAgICAgICByZXR1cm4gcmV0DQogICAgZGVmIGpjc3lzKHRleHQpOg0KICAgICAgICB0eHQgPSAnJzsNCiAgICAgICAgdHh0TGVuID0gbGVuKHRleHQpDQogICAgICAgIHJldCA9IFsxNzMyNTg0MTkzLCAtMjcxNzMzODc5LCAtMTczMjU4NDE5NCwgMjcxNzMzODc4XQ0KICAgICAgICBpID0gNjQNCiAgICAgICAgd2hpbGUgaSA8PSBsZW4odGV4dCk6DQogICAgICAgICAgICBjcnlwdGN5Y2xlKHJldCwgY3J5cHRibGsodGV4dFsnc3Vic3RyaW5nJ10oaSAtIDY0LCBpKSkpDQogICAgICAgICAgICBpICs9IDY0DQogICAgICAgIHRleHQgPSB0ZXh0W2kgLSA2NDpdDQogICAgICAgIHRtcCA9IFswLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwLCAwXQ0KICAgICAgICBpID0gMA0KICAgICAgICB3aGlsZSBpIDwgbGVuKHRleHQpOg0KICAgICAgICAgICAgdG1wW2kgPj4gMl0gfD0gb3JkKHRleHRbaV0pIDw8ICgoaSAlIDQpIDw8IDMpDQogICAgICAgICAgICBpICs9IDENCiAgICAgICAgdG1wW2kgPj4gMl0gfD0gMHg4MCA8PCAoKGkgJSA0KSA8PCAzKQ0KICAgICAgICBpZiBpID4gNTU6DQogICAgICAgICAgICBjcnlwdGN5Y2xlKHJldCwgdG1wKTsNCiAgICAgICAgICAgIGZvciBpIGluIHJhbmdlKDE2KToNCiAgICAgICAgICAgICAgICB0bXBbaV0gPSAwDQogICAgICAgIHRtcFsxNF0gPSB0eHRMZW4gKiA4Ow0KICAgICAgICBjcnlwdGN5Y2xlKHJldCwgdG1wKTsNCiAgICAgICAgcmV0dXJuIHJldA0KICAgIGRlZiByZXplZG93YSh0ZXh0KToNCiAgICAgICAgcmV0dXJuIGhleChqY3N5cyh0ZXh0KSkNCiAgICByZXR1cm4gcmV6ZWRvd2EoaW5fYWJjKQ0K'
+                tmp = base64.b64decode(tmp).replace('\r', '')
+                _myFun = compile(tmp, '', 'exec')
+                vGlobals = {"__builtins__": None, 'len': len, 'list': list, 'ord':ord, 'range':range}
+                vLocals = { 'zaraza': '' }
+                exec _myFun in vGlobals, vLocals
+                self._myFun = vLocals['zaraza']
+            except Exception:
+                printExc()
+        
+        url  = self.getFullUrl('/jsverify.php?op=tag')
+        sts, data = self.getPage(url)
+        try:
+            data = byteify(json.loads(data))
+            cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID'])
+            d = {};
+            for i in range(len(data['key'])):
+                d[data['key'][i]] = data['hash'][i]
+            tmp = '';
+            for k in sorted(d.keys()):
+                tmp += d[k]
+            cookieHeader += ' tmvh=%s;' % self._myFun(tmp)
+            params = {'header':{'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT}}
+        except Exception:
+            params = {}
+            printExc()
+        
         urlTab = []
         url = ''
         if self.MAIN_URL in baseUrl:
-            sts, data = self.cm.getPage(baseUrl)
+            sts, data = self.getPage(baseUrl, params)
             if not sts: return []
             url = self.cm.ph.getDataBeetwenMarkers(data, 'src="', '"', False, False)[1]
         else:
@@ -418,10 +419,28 @@ class AlltubeTV(CBaseHostClass):
         return urlTab
         
     def getFavouriteData(self, cItem):
-        return cItem['url']
+        printDBG('AlltubeTV.getFavouriteData')
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem.get('icon', '')}
+        return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
+        printDBG('AlltubeTV.getLinksForFavourite')
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('AlltubeTV.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -433,6 +452,7 @@ class AlltubeTV(CBaseHostClass):
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
         
+        self.cm.clearCookie(self.COOKIE_FILE, ['PHPSESSID', '__cfduid', 'cf_clearance'])
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
@@ -445,14 +465,6 @@ class AlltubeTV(CBaseHostClass):
             self.listFilters(self.currItem, 'year', 'list_movies')
         elif category == 'list_movies':
             self.listMovies(self.currItem)
-        elif category == 'list_rank':
-            self.listsTab(self.RANK_TAB, {'name':'category'})
-        elif category == 'list_rank_movie_view':
-            self.listRankViewMovies(self.currItem)
-        elif category == 'list_rank_movie':
-            self.listRankMovie(self.currItem)
-        elif category == 'list_rank_series_view':
-            self.listRankViewSeries(self.currItem, 'list_seasons')
     #SERIES
         elif category == 'cat_series':
             self.listsTab(self.SERIES_CAT_TAB, {'name':'category'})
@@ -460,17 +472,12 @@ class AlltubeTV(CBaseHostClass):
             self.listSeriesABC(self.currItem, 'list_series')
         elif category == 'list_series':
             self.listSeries(self.currItem, 'list_seasons')
+        elif category == 'list_series_list':
+            self.listSeriesList(self.currItem, 'list_seasons')
         elif category == 'list_seasons':
             self.listSeasons(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
-    #LATEST ADDED
-        elif category == 'latest_added':
-            self.listsTab(self.LAST_ADDED_TAB, {'name':'category'})
-        elif category == 'latest_added_movies':
-            self.listLatestAddedMovies(self.currItem)
-        elif category == 'latest_added_series':
-            self.listLatestAddedSeries(self.currItem, 'list_seasons')
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -478,7 +485,7 @@ class AlltubeTV(CBaseHostClass):
             self.listSearchResult(cItem, searchPattern, searchType)
     #HISTORIA SEARCH
         elif category == "search_history":
-            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+            self.listsHistory({'name':'history', 'category': 'search', 'icon':self.DEFAULT_ICON}, 'desc', _("Type: "))
         else:
             printExc()
         
@@ -486,10 +493,7 @@ class AlltubeTV(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, AlltubeTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('alltubetvlogo.png')])
+        CHostBase.__init__(self, AlltubeTV(), True)#, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
     
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -558,7 +562,8 @@ class IPTVHost(CHostBase):
             
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
+        icon        =  self.host.getIconUrl( cItem.get('icon', '') )
+        isGoodForFavourites = cItem.get('good_for_fav', False)
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -566,30 +571,6 @@ class IPTVHost(CHostBase):
                                     urlItems = hostLinks,
                                     urlSeparateRequest = 1,
                                     iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
+                                    possibleTypesOfSearch = possibleTypesOfSearch,
+                                    isGoodForFavourites = isGoodForFavourites)
     # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

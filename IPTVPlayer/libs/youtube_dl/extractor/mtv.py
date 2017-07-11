@@ -8,7 +8,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.base import InfoExtractor
 
 try: import json
-except: import simplejson as json
+except Exception: import simplejson as json
 
 class MTVServicesInfoExtractor(InfoExtractor):
     _MOBILE_TEMPLATE = None
@@ -78,7 +78,7 @@ class MTVServicesInfoExtractor(InfoExtractor):
                 params['height']  = self.xmlGetArg(rendition, 'height')
                 params['bitrate'] = self.xmlGetArg(rendition, 'bitrate')
                 formats.append(params)
-            except:
+            except Exception:
                 printExc()
         return formats
 
@@ -146,7 +146,7 @@ class MTVServicesInfoExtractor(InfoExtractor):
             mgid = url_basename(og_url)
             if mgid.endswith('.swf'):
                 mgid = mgid[:-4]
-        except:
+        except Exception:
             mgid = None
 
         if mgid is None or ':' not in mgid:

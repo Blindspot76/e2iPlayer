@@ -22,7 +22,7 @@ import urllib
 import random
 import string
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ############################################
 
 ###################################################
@@ -35,9 +35,11 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.telwizjadanet_categorization  = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_('Categorization') + ": ", config.plugins.iptvplayer.telwizjadanet_categorization))
     return optionList
     
 ###################################################
@@ -51,6 +53,7 @@ class TelewizjadaNetApi:
         self.up = urlparser()
         self.http_params = {}
         self.http_params.update({'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
+        self.cacheList = {}
         
     def getFullUrl(self, url):
         if url.startswith('http'):
@@ -64,27 +67,68 @@ class TelewizjadaNetApi:
         
     def getChannelsList(self, cItem):
         printDBG("TelewizjadaNetApi.getChannelsList")
-        
-        url = self.MAIN_URL + 'get_channels.php'
-        http_params = dict(self.http_params)
-        http_params['load_cookie'] = False
-        sts, data = self.cm.getPage(url, http_params)
-        if not sts: return []
         channelsTab = []
-        try:
-            data = byteify(json.loads(data))
-            for item in data['channels']:
-                if 0 == item['online']: continue
-                url   = self.getFullUrl(item['url'])
-                icon  = self.getFullUrl(item['thumb'])
-                title = item['displayName']
-                cid   = item['id']
-                desc  = item['description']
-                params = dict(cItem)
-                params.update({'title':title, 'desc':desc, 'vid_url':url, 'cid':cid, 'type':'video', 'icon':icon})
-                channelsTab.append(params)
-        except:
-            printExc()
+        getList = cItem.get('get_list', True)
+        if getList:
+            self.cacheList = {}
+            channelUrl = self.MAIN_URL + 'get_channels.php'
+            http_params = dict(self.http_params)
+            http_params['load_cookie'] = False
+            
+            sts, data = self.cm.getPage(channelUrl, http_params)
+            if not sts: return []
+            try:
+                self.cacheList = byteify(json.loads(data))
+            except Exception:
+                printExc()
+                
+        def __addChannel(item):
+            icon  = self.getFullUrl(item['thumb'])
+            title = item['displayName']
+            cid   = item['id']
+            desc  = item.get('description', '')
+            params = dict(cItem)
+            params.update({'type':'video', 'title':title, 'desc':desc, 'cid':cid, 'type':'video', 'icon':icon})
+            channelsTab.append(params)
+        
+        addAdultCat = False
+        if False == config.plugins.iptvplayer.telwizjadanet_categorization.value:
+            try:
+                for item in self.cacheList['channels']:
+                    if 0 == item['online']: continue
+                    
+                    if int(item['isAdult']) == 1 and not cItem.get('adult_cat', False):
+                        addAdultCat = True
+                        continue
+                    elif int(item['isAdult']) != 1 and cItem.get('adult_cat', False):
+                        continue
+                    __addChannel(item)
+            
+                if addAdultCat:
+                    params = dict(cItem)
+                    params.update({'title':_('Dla dorosłych'), 'adult_cat':True, 'get_list':False, 'pin_locked':True})
+                    channelsTab.append(params)
+            except Exception:
+                printExc()
+        else:
+            try:
+                if getList:
+                    for idx in range(len(self.cacheList['categories'])):
+                        cat = self.cacheList['categories'][idx]
+                        adult = False
+                        for item in cat['Categorychannels']:
+                            if int(item['isAdult']) == 1:
+                                adult = True
+                                break
+                        params = dict(cItem)
+                        params.update({'cat_id':idx, 'title':cat['Categoryname'], 'desc':cat['Categorydescription'], 'get_list':False, 'pin_locked':adult})
+                        channelsTab.append(params)
+                else:
+                    idx = cItem.get('cat_id', -1)
+                    for item in self.cacheList['categories'][idx]['Categorychannels']:
+                        __addChannel(item)
+            except Exception:
+                printExc()
         return channelsTab
         
     def getVideoLink(self, cItem):
@@ -105,7 +149,7 @@ class TelewizjadaNetApi:
         try:
             data = byteify(json.loads(data))
             vid_url = data['url']
-        except:
+        except Exception:
             printExc()
             return []
         
@@ -117,12 +161,21 @@ class TelewizjadaNetApi:
         sts, data = self.cm.getPage(url, http_params, {'cid':cItem['cid']})
         if not sts: return []
         
+        try:
+            vid_url = byteify(json.loads(data))
+            vid_url = vid_url['url']
+        except Exception:
+            vid_url = data
+        
         urlsTab = []
-        data = data.strip()
-        if data.startswith('http://') and 'm3u8' in data:
-            sessid = self.cm.getCookieItem(self.COOKIE_FILE, 'sessid')
-            msec   = self.cm.getCookieItem(self.COOKIE_FILE, 'msec')
-            statid = self.cm.getCookieItem(self.COOKIE_FILE, 'statid')
-            url = strwithmeta(data, {'Cookie':'sessid=%s; msec=%s; statid=%s;' % (sessid, msec, statid)})
-            urlsTab = getDirectM3U8Playlist(url)
+        vid_url = vid_url.strip()
+        if vid_url.startswith('http://') and 'm3u8' in vid_url:
+            try:
+                sessid = self.cm.getCookieItem(self.COOKIE_FILE, 'sessid')
+                msec   = self.cm.getCookieItem(self.COOKIE_FILE, 'msec')
+                statid = self.cm.getCookieItem(self.COOKIE_FILE, 'statid')
+                url = strwithmeta(vid_url, {'Cookie':'sessid=%s; msec=%s; statid=%s;' % (sessid, msec, statid)})
+                urlsTab = getDirectM3U8Playlist(url)
+            except Exception:
+                SetIPTVPlayerLastHostError("Problem z dostępem do pliku \"%\".\nSprawdź, czy masz wolne miejsce na pliki cookies." % self.COOKIE_FILE)
         return urlsTab

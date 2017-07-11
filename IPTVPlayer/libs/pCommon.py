@@ -5,28 +5,41 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify
-
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang
 ###################################################
 # FOREIGN import
 ###################################################
 import urllib
 import urllib2
 try: import ssl
-except: pass
+except Exception: pass
 import re
+import string
+import time
 import htmlentitydefs
 import cookielib
 import unicodedata
+#import urllib2_ssl
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 try:
     try: from cStringIO import StringIO
-    except: from StringIO import StringIO 
+    except Exception: from StringIO import StringIO 
     import gzip
-except: pass
+except Exception: pass
+from Tools.Directories import fileExists
 ###################################################
 
+class NoRedirection(urllib2.HTTPRedirectHandler):
+    def http_error_302(self, req, fp, code, msg, headers):
+        infourl = urllib.addinfourl(fp, headers, req.get_full_url())
+        infourl.status = code
+        infourl.code = code
+        return infourl
+    http_error_300 = http_error_302
+    http_error_301 = http_error_302
+    http_error_303 = http_error_302
+    http_error_307 = http_error_302
 
 class MultipartPostHandler(urllib2.BaseHandler):
     handler_order = urllib2.HTTPHandler.handler_order - 10
@@ -67,7 +80,7 @@ class CParsingHelper:
         
         for idx in range(grupsNum):
             try:    value = match.group(idx + 1)
-            except: value = ''
+            except Exception: value = ''
             tab.append(value)
         return tab
         
@@ -129,7 +142,52 @@ class CParsingHelper:
         return itemsTab
         
     @staticmethod
+    def rgetAllItemsBeetwenMarkers(data, marker1, marker2, withMarkers=True, caseSensitive=True):
+        itemsTab = []
+        if caseSensitive:
+            sData = data
+        else:
+            sData = data.lower()
+            marker1 = marker1.lower()
+            marker2 = marker2.lower()
+        idx1 = len(data)
+        while True:
+            idx1 = sData.rfind(marker1, 0, idx1)
+            if -1 == idx1: return itemsTab
+            idx2 = sData.rfind(marker2, 0, idx1)
+            if -1 == idx2: return itemsTab
+            
+            if withMarkers:
+                itemsTab.insert(0, data[idx2:idx1+len(marker1)])
+            else:
+                itemsTab.insert(0, data[idx2+len(marker2):idx1])
+            idx1 = idx2
+        return itemsTab
+        
+    @staticmethod
+    def rgetDataBeetwenMarkers2(data, marker1, marker2, withMarkers=True, caseSensitive=True):
+        if caseSensitive:
+            sData = data
+        else:
+            sData = data.lower()
+            marker1 = marker1.lower()
+            marker2 = marker2.lower()
+        idx1 = len(data)
+        
+        idx1 = sData.rfind(marker1, 0, idx1)
+        if -1 == idx1: return False, ''
+        idx2 = sData.rfind(marker2, 0, idx1)
+        if -1 == idx2: return False, ''
+        
+        if withMarkers:
+            return True, data[idx2:idx1+len(marker1)]
+        else:
+            return True, data[idx2+len(marker2):idx1]
+        
+    @staticmethod
     def rgetDataBeetwenMarkers(data, marker1, marker2, withMarkers = True):
+        # this methods is not working as expected, but is is used in many places
+        # so I will leave at it is, please use rgetDataBeetwenMarkers2
         idx1 = data.rfind(marker1)
         if -1 == idx1: return False, ''
         idx2 = data.rfind(marker2, idx1 + len(marker1))
@@ -204,7 +262,8 @@ class common:
     
     @staticmethod
     def getParamsFromUrlWithMeta(url, baseHeaderOutParams=None):
-        HANDLED_HTTP_HEADER_PARAMS = ['Host', 'User-Agent', 'Referer', 'Cookie', 'Accept', 'X-Forwarded-For', 'Range']
+        from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
+        HANDLED_HTTP_HEADER_PARAMS = DMHelper.HANDLED_HTTP_HEADER_PARAMS #['Host', 'User-Agent', 'Referer', 'Cookie', 'Accept',  'Range']
         outParams = {}
         tmpParams = {}
         postData = None
@@ -218,14 +277,22 @@ class common:
                 outParams = tmpParams
             if 'iptv_proxy_gateway' in url.meta:
                 outParams['proxy_gateway'] = url.meta['iptv_proxy_gateway']
+            if 'iptv_http_proxy' in url.meta:
+                outParams['http_proxy'] = url.meta['iptv_http_proxy']
         return outParams, postData
+        
+    @staticmethod
+    def getBaseUrl(url):
+        from urlparse import urlparse
+        parsed_uri = urlparse( url )
+        domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+        return domain
     
-    def __init__(self, proxyURL= '', useProxy = False, useMozillaCookieJar=False):
+    def __init__(self, proxyURL= '', useProxy = False, useMozillaCookieJar=True):
         self.proxyURL = proxyURL
         self.useProxy = useProxy
         self.geolocation = {}
         self.useMozillaCookieJar = useMozillaCookieJar
-        
         
     def getCountryCode(self, lower=True):
         if 'countryCode' not in self.geolocation:
@@ -233,19 +300,56 @@ class common:
             if sts:
                 try:
                     self.geolocation['countryCode'] = byteify(json.loads(data))['countryCode']
-                except:
+                except Exception:
                     printExc()
         return self.geolocation.get('countryCode', '').lower()
         
+    def clearCookie(self, cookiefile, leaveNames=[]):
+        try:
+            toRemove = []
+            if not self.useMozillaCookieJar:
+                cj = cookielib.LWPCookieJar()
+            else:
+                cj = cookielib.MozillaCookieJar()
+            cj.load(cookiefile, ignore_discard = True)
+            for cookie in cj:
+                if cookie.name not in leaveNames:
+                    toRemove.append(cookie)
+            for cookie in toRemove:
+                cj.clear(cookie.domain, cookie.path, cookie.name)
+            cj.save(cookiefile, ignore_discard = True)
+        except Exception:
+            printExc()
+            return False
+        return True
+        
     def getCookieItem(self, cookiefile, item):
         ret = ''
-        if not self.useMozillaCookieJar:
-            cj = cookielib.LWPCookieJar()
-        else:
-            cj = cookielib.MozillaCookieJar()
-        cj.load(cookiefile, ignore_discard = True)
-        for cookie in cj:
-            if cookie.name == item: ret = cookie.value
+        try:
+            if not self.useMozillaCookieJar:
+                cj = cookielib.LWPCookieJar()
+            else:
+                cj = cookielib.MozillaCookieJar()
+            cj.load(cookiefile, ignore_discard = True)
+            for cookie in cj:
+                if cookie.name == item: ret = cookie.value
+        except Exception:
+            printExc()
+        return ret
+        
+    def getCookieHeader(self, cookiefile, allowedNames=[]):
+        ret = ''
+        try:
+            if not self.useMozillaCookieJar:
+                cj = cookielib.LWPCookieJar()
+            else:
+                cj = cookielib.MozillaCookieJar()
+            cj.load(cookiefile, ignore_discard = True)
+            for cookie in cj:
+                if 0 < len(allowedNames) and cookie.name not in allowedNames: continue
+                ret += '%s=%s; ' % (cookie.name, urllib.unquote(cookie.value))
+        except Exception:
+            printExc()
         return ret
 
     def html_entity_decode_char(self, m):
@@ -254,7 +358,7 @@ class common:
             return unichr(int(ent[1:],16))
         try:
             return unichr(int(ent))
-        except:
+        except Exception:
             if ent in htmlentitydefs.name2codepoint:
                 return unichr(htmlentitydefs.name2codepoint[ent])
             else:
@@ -264,6 +368,9 @@ class common:
         string = string.decode('UTF-8')
         s = re.compile("&#?(\w+?);").sub(self.html_entity_decode_char, string)
         return s.encode('UTF-8')
+        
+    def isValidUrl(self, url):
+        return url.startswith('http://') or url.startswith('https://')
     
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
@@ -277,17 +384,197 @@ class common:
             printExc()
             response = e
             status = False
-        except:
+        except Exception:
             printExc()
             response = None
             status = False
+        
+        if addParams['return_data'] and status and not isinstance(response, basestring):
+            status = False
+            
         return (status, response)
+        
+    def getPageWithWget(self, url, params={}, post_data=None):
+        from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
+        cmd = DMHelper.getBaseWgetCmd(params.get('header', {})) +  (" '%s' " % url)
+        if post_data != None:
+            if params.get('raw_post_data', False):
+                post_data_str = post_data
+            else:
+                post_data_str = urllib.urlencode(post_data)
+            cmd += " --post-data '{0}' ".format(post_data_str)
+        
+        if params.get('use_cookie', False):
+            cmd += " --keep-session-cookies "
+            cookieFile = str(params.get('cookiefile', ''))
+            if params.get('load_cookie', False) and fileExists(cookieFile):
+                cmd += "  --load-cookies '%s' " %  cookieFile
+            if params.get('save_cookie', False):
+                cmd += "  --save-cookies '%s' " %  cookieFile
+        cmd += ' -O - 2> /dev/null'
+        
+        printDBG('_getPageWget request: [%s]' % cmd)
+        from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
+        
+        data = iptv_execute()( cmd )
+        
+        if params.get('use_cookie', False) and params.get('save_cookie', False) and fileExists(cookieFile):
+            # fix cookie 
+            
+            try:
+                f = open(cookieFile, "r")
+                cookieStr = f.read()
+                f.close()
+                
+                marker = '# HTTP cookie file.'
+                if cookieStr.startswith(marker):
+                    cookieStr = cookieStr.replace(marker, '# HTTP Cookie File.')
+                    f = open(cookieFile, "w")
+                    f.write(cookieStr)
+                    f.close()
+            except Exception:
+                printExc()
+            
+        
+        if not data['sts'] or 0 != data['code']: 
+            return False, None
+        else:
+            return True, data['data']
+        
+        
+    def calcAnswer(self, data):
+        sourceCode = data
+        try:
+            code = compile(sourceCode, '', 'exec')
+        except Exception:
+            printExc()
+            return 0
+        vGlobals = {"__builtins__": None, 'string': string, 'int':int, 'str':str}
+        vLocals = { 'paramsTouple': None }
+        try:
+            exec( code, vGlobals, vLocals )
+        except Exception:
+            printExc()
+            return 0
+        return vLocals['a']
+        
+    def getPageCFProtection(self, baseUrl, params={}, post_data=None):
+        cfParams = params.get('cloudflare_params', {})
+        
+        def _getFullUrlEmpty(url):
+            return url
+        _getFullUrl  = cfParams.get('full_url_handle', _getFullUrlEmpty)
+        _getFullUrl2 = cfParams.get('full_url_handle2', _getFullUrlEmpty)
+        
+        url = baseUrl
+        header = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
+        header.update(params.get('header', {}))
+        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
+        sts, data = self.getPage(url, params, post_data)
+        
+        current = 0
+        while current < 3:
+            if not sts and None != data:
+                start_time = time.time()
+                current += 1
+                doRefresh = False
+                try:
+                    verData = data.fp.read()
+                    printDBG("===============================================================")
+                    printDBG(verData)
+                    printDBG("===============================================================")
+                    
+                    sitekey = self.ph.getSearchGroups(verData, 'data-sitekey="([^"]+?)"')[0]
+                    id = self.ph.getSearchGroups(verData, 'data-ray="([^"]+?)"')[0]
+                    if sitekey != '':
+                        from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
+                        # google captcha
+                        recaptcha = UnCaptchaReCaptcha(lang=GetDefaultLang())
+                        recaptcha.HTTP_HEADER['Referer'] = baseUrl
+                        if '' != cfParams.get('User-Agent', ''): recaptcha.HTTP_HEADER['User-Agent'] = cfParams['User-Agent']
+                        token = recaptcha.processCaptcha(sitekey)
+                        if token == '': return False, None
+                    
+                        sts, tmp = self.ph.getDataBeetwenMarkers(verData, '<form', '</form>', caseSensitive=False)
+                        if not sts: return False, None
+                        
+                        url = _getFullUrl( self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0] )
+                        actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
+                        post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+                        #post_data2['id'] = id
+                        if '' != token:
+                            post_data2['g-recaptcha-response'] = token
+                        else:
+                            continue
+                        params2 = dict(params)
+                        params2['header']= dict(params['header'])
+                        params2['header']['Referer'] = baseUrl
+                        if actionType == 'get':
+                            if '?' in url:
+                                url += '&'
+                            else:
+                                url += '?'
+                            url += urllib.urlencode(post_data2)
+                            post_data2 = None
+                        sts, data = self.getPage(url, params2)
+                    else:
+                        dat = self.ph.getDataBeetwenMarkers(verData, 'setTimeout', 'submit()', False)[1]
+                        tmp = self.ph.getSearchGroups(dat, '={"([^"]+?)"\:([^}]+?)};', 2)
+                        varName = tmp[0]
+                        expresion= ['a=%s' % tmp[1]]
+                        e = re.compile('%s([-+*])=([^;]+?);' % varName).findall(dat)
+                        for item in e:
+                            expresion.append('a%s=%s' % (item[0], item[1]) )
+                        
+                        for idx in range(len(expresion)):
+                            e = expresion[idx]
+                            e = e.replace('!+[]', '1')
+                            e = e.replace('!![]', '1')
+                            e = e.replace('=+(', '=int(')
+                            if '+[]' in e:
+                                e = e.replace(')+(', ')+str(')
+                                e = e.replace('int((', 'int(str(')
+                                e = e.replace('(+[])', '(0)')
+                                e = e.replace('+[]', '')
+                            expresion[idx] = e
+                        
+                        answer = self.calcAnswer('\n'.join(expresion)) + len(cfParams['domain'])
+                        refreshData = data.fp.info().get('Refresh', '')
+                        
+                        verData = self.ph.getDataBeetwenReMarkers(verData, re.compile('<form[^>]+?id="challenge-form"'), re.compile('</form>'), False)[1]
+                        printDBG("===============================================================")
+                        printDBG(verData)
+                        printDBG("===============================================================")
+                        verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
+                        get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
+                        get_data['jschl_answer'] = answer
+                        verUrl += '?'
+                        for key in get_data:
+                            verUrl += '%s=%s&' % (key, get_data[key])
+                        verUrl = _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
+                        verUrl = _getFullUrl2( verUrl )
+                        params2 = dict(params)
+                        params2['load_cookie'] = True
+                        params2['save_cookie'] = True
+                        params2['header'] = dict(params.get('header', {}))
+                        params2['header'].update({'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'})
+                        printDBG("Time spent: [%s]" % (time.time() - start_time))
+                        time.sleep(5-(time.time() - start_time))
+                        printDBG("Time spent: [%s]" % (time.time() - start_time))
+                        sts, data = self.getPage(verUrl, params2, post_data)
+                except Exception:
+                    printExc()
+            else:
+                break
+        return sts, data
         
     def saveWebFile(self, file_path, url, addParams = {}, post_data = None):
         bRet = False
         downDataSize = 0
         dictRet = {}
         try:
+            outParams, postData = self.getParamsFromUrlWithMeta(url)
+            addParams.update(outParams)
             if 'header' not in addParams and 'host' not in addParams:
                 host = 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.18) Gecko/20110621 Mandriva Linux/1.9.2.18-0.1mdv2010.2 (2010.2) Firefox/3.6.18'
                 header = {'User-Agent': host, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
@@ -300,44 +587,70 @@ class common:
                 contentLength = int(meta.getheaders("Content-Length")[0])
             else:
                 contentLength = None
-                
+            
+            checkFromFirstBytes = addParams.get('check_first_bytes', [])
             OK = True
             if 'maintype' in addParams and addParams['maintype'] != downHandler.headers.maintype:
-                downHandler.close()
                 printDBG("common.getFile wrong maintype! requested[%r], retrieved[%r]" % (addParams['maintype'], downHandler.headers.maintype))
+                if 0 == len(checkFromFirstBytes):
+                    downHandler.close()
                 OK = False
-            if 'subtypes' in addParams:
+            
+            if OK and 'subtypes' in addParams:
                 OK = False
                 for item in addParams['subtypes']:
                     if item == downHandler.headers.subtype:
                         OK = True
                         break
-            if OK:
+            
+            if OK or len(checkFromFirstBytes):
                 blockSize = addParams.get('block_size', 8192)
-                fileHandler = file(file_path, "wb")
+                fileHandler = None
                 while True:
                     buffer = downHandler.read(blockSize)
+                    
+                    if len(checkFromFirstBytes):
+                        OK = False
+                        for item in checkFromFirstBytes:
+                            if buffer.startswith(item):
+                                OK = True
+                                break
+                        if not OK:
+                            break
+                        else:
+                            checkFromFirstBytes = []
+                    
                     if not buffer:
                         break
                     downDataSize += len(buffer)
-                    fileHandler.write(buffer)
-                fileHandler.close()
+                    if len(buffer):
+                        if fileHandler == None:
+                            fileHandler = file(file_path, "wb")
+                        fileHandler.write(buffer)
+                if fileHandler != None:
+                    fileHandler.close()
                 downHandler.close()
                 if None != contentLength and contentLength == downDataSize:
                     bRet = True
-        except:
+        except Exception:
             printExc("common.getFile download file exception")
         dictRet.update( {'sts': True, 'fsize': downDataSize} )
         return dictRet
     
     def getURLRequestData(self, params = {}, post_data = None):
         
-        def urlOpen(req, customOpeners):
+        def urlOpen(req, customOpeners, timeout):
             if len(customOpeners) > 0:
                 opener = urllib2.build_opener( *customOpeners )
-                response = opener.open(req)
+                if timeout != None:
+                    response = opener.open(req, timeout=timeout)
+                else:
+                    response = opener.open(req)
             else:
-                response = urllib2.urlopen(req)
+                if timeout != None:
+                    response = urllib2.urlopen(req, timeout=timeout)
+                else:
+                    response = urllib2.urlopen(req)
             return response
         
         if not self.useMozillaCookieJar:
@@ -348,6 +661,8 @@ class common:
         req      = None
         out_data = None
         opener   = None
+        
+        timeout = params.get('timeout', None)
         
         if 'host' in params:
             host = params['host']
@@ -376,22 +691,30 @@ class common:
             if params.get('load_cookie', False):
                 try:
                     cj.load(params['cookiefile'], ignore_discard = True)
-                except:
+                except IOError:
+                    printDBG('Cookie file [%s] not exists' % params['cookiefile'])
+                except Exception:
                     printExc()
             try:
                 for cookieKey in params.get('cookie_items', {}).keys():
                     printDBG("cookie_item[%s=%s]" % (cookieKey, params['cookie_items'][cookieKey]))
                     cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=params['cookie_items'][cookieKey], port=None, port_specified=False, domain='', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=False, expires=None, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
                     cj.set_cookie(cookieItem)
-            except:
+            except Exception:
                 printExc()
             customOpeners.append( urllib2.HTTPCookieProcessor(cj) )
+            
+        if params.get('no_redirection', False):
+            customOpeners.append( NoRedirection() )
+        
         # debug 
         #customOpeners.append(urllib2.HTTPSHandler(debuglevel=1))
         #customOpeners.append(urllib2.HTTPHandler(debuglevel=1))
         if not IsHttpsCertValidationEnabled():
+            #try: customOpeners.append(urllib2_ssl.HTTPSHandler(ssl_version=ssl.PROTOCOL_SSLv3)) # #PROTOCOL_TLSv1 PROTOCOL_SSLv3
+            #except Exception:printExc()
             try: customOpeners.append(urllib2.HTTPSHandler(context=ssl._create_unverified_context()))
-            except: pass
+            except Exception: pass
         #proxy support
         if self.useProxy:
             http_proxy = self.proxyURL
@@ -425,17 +748,17 @@ class common:
             req = urllib2.Request(pageUrl, None, headers)
 
         if not params.get('return_data', False):
-            out_data = urlOpen(req, customOpeners)
+            out_data = urlOpen(req, customOpeners, timeout)
         else:
             gzip_encoding = False
             try:
-                response = urlOpen(req, customOpeners)
+                response = urlOpen(req, customOpeners, timeout)
                 if response.info().get('Content-Encoding') == 'gzip':
                     gzip_encoding = True
                 data = response.read()
                 response.close()
             except urllib2.HTTPError, e:
-                if e.code == 404:
+                if e.code in [404, 500]:
                     printDBG('!!!!!!!! 404: getURLRequestData - page not found handled')
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
                         gzip_encoding = True
@@ -464,7 +787,7 @@ class common:
                     out_data = f.read()
                 else:
                     out_data = data
-            except:
+            except Exception:
                 out_data = data
  
         if params.get('use_cookie', False) and params.get('save_cookie', False):
@@ -473,9 +796,8 @@ class common:
         return out_data 
 
 
-    def makeABCList(self):
-        strTab = []
-        strTab.append('0 - 9');
+    def makeABCList(self, tab = ['0 - 9']):
+        strTab = list(tab)
         for i in range(65,91):
             strTab.append(str(unichr(i)))    
         return strTab
@@ -484,7 +806,8 @@ class common:
         try:
             float(s)
             return True
-        except ValueError:
+        #except ValueError:
+        except Exception:
             return False
         
     def setLinkTable(self, url, host):

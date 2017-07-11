@@ -15,7 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
 import re
 import urllib
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 ####################################################
 # E2 GUI COMMPONENTS
 ####################################################
@@ -116,13 +116,13 @@ class MusicBox(CBaseHostClass):
                 track_name = item['im:name']['label']
                 try:
                     iconimage = item['im:image'][2]['label']
-                except:
+                except Exception:
                     iconimage = ''
                 plot = ''
                 search_string = urllib.quote(artist + ' ' + track_name + ' music video')
                 params = {'title': str(x + 1) + '. ' + artist + '- ' + track_name, 'page': search_string, 'icon': iconimage, 'plot': plot}
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()  # wypisz co poszło nie tak
 
     def Itunes_album_charts(self, url):
@@ -139,12 +139,12 @@ class MusicBox(CBaseHostClass):
                 idx = item['id']['attributes']['im:id']
                 try:
                     iconimage = item['im:image'][2]['label']
-                except:
+                except Exception:
                     iconimage = ''
                 plot = ''
                 params = {'name': 'Itunes_list_album_tracks','title': str(x + 1) + '. ' + artist + '- ' + album_name, 'page': idx, 'album': album_name, 'country': country, 'icon': iconimage, 'plot': plot}
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()  # wypisz co poszło nie tak
 
     def Itunes_list_album_tracks(self, url, album, country):
@@ -159,13 +159,13 @@ class MusicBox(CBaseHostClass):
                 track_name = item['trackName']
                 try:
                     iconimage = item['artworkUrl100']
-                except:
+                except Exception:
                     iconimage = ''
                 plot = ''
                 search_string = urllib.quote(artist + ' ' + track_name + ' music video')
                 params = {'title': artist + '- ' + track_name, 'page': search_string, 'icon': iconimage, 'plot': plot}
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()
 ###############################################################################
 # Beatport
@@ -190,7 +190,7 @@ class MusicBox(CBaseHostClass):
                     search_string = urllib.quote(artist + ' ' + track_name + ' music video')
                     params = {'title': track_number + '. ' + artist + '- ' + track_name, 'page': search_string, 'icon': iconimage, 'plot': ''}
                     self.addVideo(params)
-                except:
+                except Exception:
                     pass
 ###############################################################################
 # Bilboard
@@ -210,7 +210,7 @@ class MusicBox(CBaseHostClass):
                 search_string = urllib.quote(artist + ' ' + track_name + ' music video')
                 params = {'title': name + ' - ' + artist, 'page': search_string, 'icon': '', 'plot': ''}
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()  # wypisz co poszło nie tak
 
     def Billboard_chartsalbums(self, url):
@@ -226,7 +226,7 @@ class MusicBox(CBaseHostClass):
                 album_name = item['chart_item_title']
                 params = {'name': 'List_album_tracks','title': name + ' - ' + artist, 'page': 0, 'artist': artist, 'album': album_name, 'icon': '', 'plot': ''}
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()  # wypisz co poszło nie tak
 ###############################################################################
 # Szukanie tytułu z albumow
@@ -249,12 +249,12 @@ class MusicBox(CBaseHostClass):
                 track_name = item['name']
                 try:
                     iconimage = item['album']['image'][3]['#text']
-                except:
+                except Exception:
                     iconimage = ''
                 search_string = urllib.quote(artist + ' ' + track_name + ' music video')
                 params = {'title': track_name + ' - ' + artist, 'page': search_string, 'icon': iconimage, 'plot': ''}
                 self.addVideo(params)
-        except:
+        except Exception:
                         printExc()  # wypisz co poszło nie tak
 
 ###############################################################################
@@ -277,7 +277,7 @@ class MusicBox(CBaseHostClass):
                     playlist_id = item['id']
                     params = {'name': 'Lastfmlist_track', 'title': playlist_name, 'artist': playlist_id}
                     self.addDir(params)
-            except:
+            except Exception:
                 printExc()  # wypisz co poszło nie tak
 
     def Lastfmlist_track(self, artist):
@@ -296,12 +296,12 @@ class MusicBox(CBaseHostClass):
                 track_name = item['title']
                 try:
                     iconimage = item['image']
-                except:
+                except Exception:
                     iconimage = ''
                 search_string = urllib.quote(artist + ' ' + track_name + ' music video')
                 params = {'title': track_name + ' - ' + artist, 'page': search_string, 'icon': iconimage, 'plot': ''}
                 self.addVideo(params)
-        except:
+        except Exception:
             printExc()  # wypisz co poszło nie tak
 
 ###############################################################################
@@ -330,8 +330,9 @@ class MusicBox(CBaseHostClass):
         tmpTab, dashTab = self.ytp.getDirectLinks(url, ytformats, dash, dashSepareteList = True)
         
         def __getLinkQuality( itemLink ):
-            tab = itemLink['format'].split('x')
-            return int(tab[0])
+            val = self.cm.ph.getSearchGroups('|%s|' %itemLink['format'], '[^0-9]([0-9]+?)[^0-9]')[0]
+            if '' == val: return 0
+            return int(val)
         tmpTab = CSelOneLink(tmpTab, __getLinkQuality, maxRes).getSortedLinks()
         if config.plugins.iptvplayer.ytUseDF.value and 0 < len(tmpTab):
             tmpTab = [tmpTab[0]]
@@ -340,7 +341,7 @@ class MusicBox(CBaseHostClass):
         for item in tmpTab:
             videoUrls.append({'name': item['format'] + ' | ' + item['ext'] , 'url':item['url']})
         for item in dashTab:
-            videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | ' + item['ext'] , 'url':item['url']})
+            videoUrls.append({'name': _("[dash] ") + item['format'] + ' | ' + item['ext'] , 'url':item['url']})
         return videoUrls
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('handleService start')

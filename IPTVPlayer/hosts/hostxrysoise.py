@@ -18,7 +18,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -42,14 +42,14 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'xrysoi.se'
+    return 'https://xrysoi.online/'
 
 class XrysoiSE(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    MAIN_URL = 'http://xrysoi.se/'
+    MAIN_URL = 'https://xrysoi.online/'
     SEARCH_SUFFIX = '?s='
     
     MAIN_CAT_TAB = [{'category':'movies',         'mode':'movies',     'title': 'Ταινιες',      'url':'',                                     'icon':''},
@@ -59,7 +59,8 @@ class XrysoiSE(CBaseHostClass):
                     {'category':'search_history',  'title': _('Search history')} ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'XrysoiSE.tv', 'cookie':'XrysoiSEtv.cookie'})
+        CBaseHostClass.__init__(self, {'history':'XrysoiSE.tv', 'cookie':'XrysoiSEtv.cookie', 'min_py_ver':(2,7,9)})
+        self.DEFAULT_ICON_URL = self.MAIN_URL + 'wp-content/uploads/2015/03/logo-GM.png'
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.cacheFilters = {}
         self.cacheLinks = {}
@@ -92,7 +93,10 @@ class XrysoiSE(CBaseHostClass):
         sts, data = self.cm.getPage(self.MAIN_URL)
         if not sts: return
 
-        moviesTab = [{'title':'Όλα', 'url':self._getFullUrl('category/new-good/')}]
+        moviesTab = [{'title':'2017', 'url':self._getFullUrl('category/tainiesonline/2017/')},
+                     {'title':'2016', 'url':self._getFullUrl('category/2016/')},
+                     {'title':'2013-2015', 'url':self._getFullUrl('category/new-good/')},
+                     {'title':'Ελληνικές Ταινίες', 'url':self._getFullUrl('category/ελλ-ταινίες/')}]
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '>Ταινιες<', '</ul>', False)[1]
         tmp = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(tmp)
         for item in tmp:
@@ -129,22 +133,21 @@ class XrysoiSE(CBaseHostClass):
         if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, "class='pages'", '</div>', False)[1]
-        if '>&raquo;<' in nextPage:
+        if 'rel="next"' in nextPage:
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="moviefilm">', '<div class="filmborder">', False)[1]
-        data = data.split('<div class="moviefilm">')
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class=', 'class="filmborder">', False)[1]
+        data = data.split('class="moviefilm">')
         for item in data:
             url  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             icon = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
-            title  = self.cleanHtmlStr( item )
-            if 'search' == cItem.get('mode'):
-                if '-collection' in url: continue
+            title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0])
+            #if 'search' == cItem.get('mode'):
+            #    if '-collection' in url: continue
             if url.startswith('http'):
                 params = dict(cItem)
-                params.update({'title':title, 'url':url, 'icon':icon})
-                params['category'] = nextCategory
+                params.update({'category':nextCategory, 'good_for_fav': True, 'title':title, 'url':url, 'icon':icon})
                 self.addDir(params)
         if nextPage:
             params = dict(cItem)
@@ -156,7 +159,7 @@ class XrysoiSE(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
-        desc  = self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:description"[^>]*?content="([^"]+?)"')[0]
+        desc  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:description"[^>]*?content="([^"]+?)"')[0] )
         title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(data, '<meta[^>]*?property="og:title"[^>]*?content="([^"]+?)"')[0] )
         if '' == title: title = cItem['title']
         
@@ -191,12 +194,13 @@ class XrysoiSE(CBaseHostClass):
         episodes = []
         if '-collection' in cItem['url']:
             mode = 'collect_item'
-            spTab = ['<div class="separator" style="text-align: center;">', '<div style="text-align: center;">']
+            spTab = [re.compile('<b>'), re.compile('<div[\s]+class="separator"[\s]+style="text-align\:[\s]+center;">'), re.compile('<div[\s]+style="text-align\:[\s]+center;">')]
             for sp in spTab:
-                if sp in linksData: break
+                if None != sp.search(linksData): break
             
-            collectionItems = linksData.split(sp)
+            collectionItems = sp.split(linksData)
             if len(collectionItems) > 0: del collectionItems[0]
+            linksData = ''
             for item in collectionItems:
                 itemTitle = item.find('<')
                 if itemTitle < 0: continue
@@ -295,7 +299,7 @@ class XrysoiSE(CBaseHostClass):
         return urlTab
         
     def getArticleContent(self, cItem):
-        printDBG("MoviesHDCO.getArticleContent [%s]" % cItem)
+        printDBG("XrysoiSE.getArticleContent [%s]" % cItem)
         retTab = []
         
         if 'movie' == cItem.get('mode') or 'explore_item' == cItem.get('category'):        
@@ -313,15 +317,19 @@ class XrysoiSE(CBaseHostClass):
              return retTab
         
     def getFavouriteData(self, cItem):
-        return json.dumps({'url':cItem['url'], 'mode':cItem.get('mode')}) 
+        printDBG('XrysoiSE.getFavouriteData')
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem['icon']}
+        return json.dumps(params) 
         
-    def getLinksForFavourite(self, fav_data):
-        links = []
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('XrysoiSE.setInitListFromFavouriteItem')
         try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except: printExc()
-        return links
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -334,6 +342,7 @@ class XrysoiSE(CBaseHostClass):
         
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
+        self.currItem.pop('good_for_fav', None)
         
     #MAIN MENU
         if name == None:
@@ -357,113 +366,8 @@ class XrysoiSE(CBaseHostClass):
             printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
+
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        # for now we must disable favourites due to problem with links extraction for types other than movie
-        CHostBase.__init__(self, XrysoiSE(), True, favouriteTypes=[]) #, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('xrysoiselogo.png')])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-        
-    def getArticleContent(self, Index = 0):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-
-        hList = self.host.getArticleContent(self.host.currList[Index])
-        for item in hList:
-            title      = item.get('title', '')
-            text       = item.get('text', '')
-            images     = item.get("images", [])
-            othersInfo = item.get('other_info', '')
-            retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append((_("Movies"),   "movie"))
-        #searchTypesOptions.append((_("TV Shows"), "tv_shows"))
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
+        CHostBase.__init__(self, XrysoiSE(), True, favouriteTypes=[]) 

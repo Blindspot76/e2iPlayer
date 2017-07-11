@@ -21,7 +21,7 @@ import urllib
 import time
 import random
 try:    import simplejson as json
-except: import json
+except Exception: import json
 ###################################################
 
 
@@ -56,15 +56,16 @@ class Vevo(CBaseHostClass):
     ARTIST_URL   = MAIN_URL + 'artist/'
     VIDEO_URL    = MAIN_URL + 'watch/'
     SEARCH_URL   = API2_URL + 'search?query={0}&sortBy=MostViewedLastMonth&videosLimit=18&skippedVideos=0&artistsLimit=6&includecategories='
+    DEFAULT_LOGO = 'http://1.bp.blogspot.com/-pSTjDlSgahQ/VVsbLaM40NI/AAAAAAAAHvU/wr8F9v9gPoE/s1600/Vevo.png'
 
     BASE_IMAGE = MAIN_URL + 'public/images/'
     
-    MAIN_CAT_TAB = [{'category':'apiv2',  'keys':['nowPosts'], 'url': API2_URL + 'now?size=20', 'title': _("Main"),     'icon':''},
-                    {'category':'browse_videos',            'title': "Browse",     'icon':''},
-                    {'category':'browse_artists',           'title': "Popular Artists",     'icon':''},
-                    {'category':'browse_shows',             'title': "Shows",     'icon':''},
-                    {'category':'search',                   'title':_('Search'), 'search_item':True},
-                    {'category':'search_history',           'title':_('Search history')} ]
+    MAIN_CAT_TAB = [{'category':'apiv2',  'keys':['nowPosts'], 'url': API2_URL + 'now?size=20', 'title': _("Main"),     'icon':DEFAULT_LOGO},
+                    {'category':'browse_videos',            'title': "Browse",     'icon':DEFAULT_LOGO},
+                    {'category':'browse_artists',           'title': "Popular Artists",     'icon':DEFAULT_LOGO},
+                    #{'category':'browse_shows',             'title': "Shows",     'icon':DEFAULT_LOGO},
+                    {'category':'search',                   'title':_('Search'), 'search_item':True, 'icon':DEFAULT_LOGO},
+                    {'category':'search_history',           'title':_('Search history'), 'icon':DEFAULT_LOGO} ]
                     
                     
     VIDEO_SORT_TAB = [ {'title':"Most Viewed Today",      'sort':"MostViewedLastDay"},
@@ -82,9 +83,15 @@ class Vevo(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'vevo.com', 'cookie':'vevocom.cookie'})
         self.vevoIE = None
         self.translations = {}
+        self.webDataCache = []
         self.browseCategoryList = []
         self.cacheShows = []
         self.language = []
+        
+    def getStr(self, item, key):
+        if key not in item: return ''
+        if item[key] == None: return ''
+        return str(item[key])
         
     def _getFullUrl(self, url):
         if 0 < len(url):
@@ -97,10 +104,19 @@ class Vevo(CBaseHostClass):
         return url
         
     def apiv2PrepareUrl(self, url, page=None, session=None):
+        oauth_token = ''
+        #sts, data = self.cm.getPage('http://www.vevo.com/auth', {}, b'')
+        #if sts:
+        #    try: oauth_token = byteify(json.loads(data))['access_token']
+        #    except Exception: printExc()
+        sts, data = self.cm.getPage('http://www.vevo.com/')
+        if sts:
+            oauth_token = self.cm.ph.getSearchGroups(data, '''"access_token":"([^"]+?)"''')[0]
+        
         if '?' in url:
             url += '&'
         else: url += '?'
-        url += '&token=%s' % self.vevoIE._oauth_token
+        url += '&token=%s' % oauth_token
         if None != page:
             url += '&page=%s' % page
         if None != session:
@@ -117,9 +133,25 @@ class Vevo(CBaseHostClass):
                 params['title'] = self.translations.get(params['title'], params['title'])
             self.addDir(params)
             
+    def fillBrowse2(self):
+        if self.translations == {} or self.webDataCache == []:
+            sts, data = self.cm.getPage(self.MAIN_URL)
+            if not sts: return
+            
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'window.__INITIAL_STORE__ = ', '</script>', False)[1]
+            try:
+                data = byteify(json.loads(data.strip()[:-1]))
+                language = list(data['default']['localeData'].keys())[0]
+                self.language = language.split('-')
+                self.translations = data['default']['localeData'][language]['translation']
+                self.webDataCache = data
+            except Exception:
+                printExc()
+                return
+                
     def fillBrowse(self):
         if self.translations == {} or self.browseCategoryList == []:
-            sts, data = self.cm.getPage(self.MAIN_URL + 'browse')
+            sts, data = self.cm.getPage(self.MAIN_URL + 'auth')
             if not sts: return
             translations = self.cm.ph.getDataBeetwenMarkers(data, 'translations:', 'config:', False)[1]
             translations = '{"translations":%s}' % translations.strip()[:-2]
@@ -130,7 +162,7 @@ class Vevo(CBaseHostClass):
             try:
                 self.translations = byteify(json.loads(translations))['translations']
                 self.browseCategoryList = byteify(json.loads(browseCategoryList))['browseCategoryList']
-            except:
+            except Exception:
                 printExc()
                 return
             
@@ -142,7 +174,7 @@ class Vevo(CBaseHostClass):
                 title = self.translations.get(item['loc'], item['loc'])
                 params.update({'title':title, 'category':category, 'genre':item['id']})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
             
     def listBrowseArtists(self, cItem):
@@ -165,7 +197,7 @@ class Vevo(CBaseHostClass):
                 data = byteify(json.loads(data))
                 if data['success']:
                    self.cacheShows = data['result']
-            except:
+            except Exception:
                 printExc()
                 return
         
@@ -210,13 +242,18 @@ class Vevo(CBaseHostClass):
                 self.addVideo(params)
                 
             if None != item.get('playlist'):
-                params.update({'category':'playlist', 'title':item['title'], 'icon':icon, 'url':self.PLAYLIST_URL + item['playlist']})
-                self.addDir(params)
+                if '-' not in item['playlist']: # bug in VEVO?
+                    params.update({'title':item['title'], 'icon':icon, 'isrc':item['playlist']})
+                    self.addVideo(params)
+                else:
+                    params.update({'category':'playlist', 'title':item['title'], 'icon':icon, 'url':self.PLAYLIST_URL + item['playlist']})
+                    self.addDir(params)
             
     def addVideoItem(self, cItem, item):
         params = dict(cItem)
-        icon = item.get('image', '')
-        if '' == icon: icon = item.get('thumbnailUrl', '')
+        icon = self.getStr(item, 'image') 
+        if '' == icon: icon = self.getStr(item, 'thumbnailUrl')
+        if '' == icon: icon = cItem.get('icon', '')
         
         desc = item.get('description', '')
         if '' == desc: 
@@ -226,20 +263,20 @@ class Vevo(CBaseHostClass):
             if 'viewCount' in item: desc.append( _('view count: %s') % item['viewCount'] )
             if 'copyright' in item: desc.append( item['copyright'] )
             desc = ', '.join(desc)
-        params.update({'title':item['title'], 'icon':icon, 'desc':desc, 'isrc':item['isrc']})
+        params.update({'title':item['title'], 'icon':self.getFullUrl(icon), 'desc':desc, 'isrc':item['isrc']})
         self.addVideo(params)
         
     def addPlaylistItem(self, cItem, item):
         params = dict(cItem)
         try: icon = item['images'][0]['image']
-        except: icon = ''
+        except Exception: icon = ''
         params.update({'category':'playlist', 'title':item['name'], 'icon':icon, 'desc':item['description'], 'url':self.PLAYLIST_URL + item['playlistId']})
         self.addDir(params)
         
     def addArtistItem(self, cItem, item):
         params = dict(cItem)
         try: icon = item['thumbnailUrl']
-        except: icon = ''
+        except Exception: icon = ''
         params.update({'category':'artist', 'title':item['name'], 'icon':icon, 'desc':_('video count: %s') % item.get('totalVideos', ''), 'url': self.ARTIST_URL + item['urlSafeName']})
         self.addDir(params)
         
@@ -265,13 +302,40 @@ class Vevo(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':_("Next page"), 'page':page+1, 'session':data.get('session')})
                 self.addDir(params)
-        except:
+        except Exception:
             printExc()
     
     def listVideosFromPage(self, cItem):
         printDBG("Vevo.listVideosFromPage")
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('window\.__INITIAL_STORE__\s*=\s*'), re.compile('</script>'), False)[1]
+        try:
+            data = byteify(json.loads(data.strip()[:-1]))
+            if cItem['category'] == 'artist':
+                data = data['apollo']['data']
+                for key in data.keys():
+                    if key.endswith('.videos'):
+                        tmp = data[key]['data']
+                        for item in tmp:
+                            videoKey = "$%s.basicMeta" % item['id']
+                            self.addVideoItem(cItem, data[videoKey])
+            elif cItem['category'] == 'playlist':
+                playlistId = data['routing']['locationBeforeTransitions']['pathname'].split('/')[-1]
+                data = data['apollo']['data']
+                for key in data[playlistId].keys():
+                    if key.startswith('videos('):
+                        for item in data[data[playlistId][key]['id']]['items']:
+                            videoKey = "$%s.basicMetaV3" % data[item['id']]['isrc']
+                            if 1 == len(data[videoKey].get('artists', [])):
+                                artistKey = '$%s.basicMeta' % data[videoKey]['artists'][0]['id']
+                                data[videoKey]['title'] = data[artistKey]['name'] + ' ' + data[videoKey]['title']
+                            self.addVideoItem(cItem, data[videoKey])
+                        break
+        except Exception:
+            printExc()
+        return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '"key"', ']}}', True)[1]
         data = self.cm.ph.getDataBeetwenMarkers(data, '"videos":[', ']}}', False)[1]
@@ -283,7 +347,7 @@ class Vevo(CBaseHostClass):
             data = byteify(json.loads(data))
             for item in data['videos']:
                 self.addVideoItem(cItem, item)
-        except:
+        except Exception:
             printExc()
         
     def listBrowseVideos(self, cItem):
@@ -312,6 +376,11 @@ class Vevo(CBaseHostClass):
         
         if 'isrc' in cItem:
             videoUrl = self.VIDEO_URL + cItem['isrc']
+            sts, data = self.cm.getPage(videoUrl)
+            if not sts: return []
+            url = self.cm.ph.getSearchGroups(data, '''<link href=['"](http[^'^"]+?)['"]''')[0]
+            if url != '': videoUrl = url
+            
             urlTab = self.up.getVideoLinkExt( videoUrl )
             for idx in range(len(urlTab)):
                 urlTab[idx]['need_resolve'] = 0
@@ -328,7 +397,7 @@ class Vevo(CBaseHostClass):
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         if self.vevoIE == None:
             self.vevoIE = VevoIE()
-        self.fillBrowse()
+            self.fillBrowse()
         name     = self.currItem.get("name", None)
         category = self.currItem.get("category", '')
         printDBG( "Vevo.handleService: ---------> name[%s], category[%s] " % (name, category) )
@@ -451,7 +520,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -464,7 +533,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

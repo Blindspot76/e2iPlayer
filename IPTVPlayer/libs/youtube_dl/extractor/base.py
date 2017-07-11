@@ -7,7 +7,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 import re
 
 try: import json
-except: import simplejson as json
+except Exception: import simplejson as json
 
 NO_DEFAULT = None
 compiled_regex_type = type(re.compile(''))
@@ -29,7 +29,7 @@ class InfoExtractor():
         else:
             try:
                 data = byteify(json.loads(data))
-            except:
+            except Exception:
                 printExc()
                 data = None
         return data
@@ -37,8 +37,13 @@ class InfoExtractor():
     def xmlGetArg(self, data, name):
         return self.cm.ph.getDataBeetwenMarkers(data, '%s="' % name, '"', False)[1]
         
-    def xmlGetText(self, data, name):
-        return self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<%s[^>]*?>' % name), re.compile('</%s>' % name), False)[1]
+    def xmlGetText(self, data, name, withMarkers=False):
+        return self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<%s[^>]*?>' % name), re.compile('</%s>' % name), withMarkers)[1]
+        
+    def xmlGetAllNodes(self, data, name):
+        nodes = self.cm.ph.getAllItemsBeetwenMarkers(data, '<' + name, '</%s>' % name)
+        if 0 == len(nodes): nodes = self.cm.ph.getAllItemsBeetwenMarkers(data, '<' + name, '/>')
+        return nodes
         
     def _search_regex(self, pattern, string, name, default=NO_DEFAULT, fatal=True, flags=0, group=None):
         """
@@ -70,10 +75,11 @@ class InfoExtractor():
         else:
             return None
             
-    def _extract_m3u8_formats(self, m3u8_url, video_id, entry_protocol='m3u8_native', ext='mp4', preference=0):
+    def _extract_m3u8_formats(self, m3u8_url, *args, **kwargs):
         formats = []
         tmpTab = getDirectM3U8Playlist(m3u8_url, False)
         for tmp in tmpTab:
             tmp['format_id'] = tmp['name']
             formats.append(tmp)
         return formats
+    

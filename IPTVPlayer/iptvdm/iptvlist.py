@@ -20,6 +20,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from enigma import eListboxPythonMultiContent, eListbox, gFont, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER
 from Tools.LoadPixmap import LoadPixmap
 import skin
+from datetime import timedelta
 ###################################################
 
 class IPTVDownloadManagerList(IPTVListComponentBase):
@@ -35,11 +36,11 @@ class IPTVDownloadManagerList(IPTVListComponentBase):
         
         self.fonts = {}
         try: self.fonts[0] = skin.fonts["iptvdwnlistitem_0"]
-        except: self.fonts[0] = ("Regular", 20, 40, 0)
+        except Exception: self.fonts[0] = ("Regular", 20, 40, 0)
         try: self.fonts[1] = skin.fonts["iptvdwnlistitem_1"]
-        except: self.fonts[1] = ("Regular", 16, 20, 0)
+        except Exception: self.fonts[1] = ("Regular", 16, 20, 0)
         try: self.fonts[2] = skin.fonts["iptvdwnlistitem_2"]
-        except: self.fonts[2] = ("Regular", 26, 55, 0)
+        except Exception: self.fonts[2] = ("Regular", 26, 55, 0)
         
         self.l.setFont(0, gFont(self.fonts[0][0], self.fonts[0][1]))
         self.l.setFont(1, gFont(self.fonts[1][0], self.fonts[1][1]))
@@ -61,7 +62,7 @@ class IPTVDownloadManagerList(IPTVListComponentBase):
             try:
                 pixFile = self.ICONS_FILESNAMES.get(key, None)
                 if None != pixFile: self.dictPIX[key] = LoadPixmap(cached=True, path=GetIconDir(pixFile))
-            except: printExc()
+            except Exception: printExc()
 
     def onDestroy(self):
         self._nullPIX()
@@ -75,7 +76,19 @@ class IPTVDownloadManagerList(IPTVListComponentBase):
         info1 = formatBytes(item.downloadedSize)
         
         # File Size
-        if item.fileSize > 0: info1 += "/" + formatBytes(item.fileSize)
+        if item.fileSize > 0:
+            info1 += "/" + formatBytes(item.fileSize)
+        
+        elif item.totalFileDuration > 0 and item.downloadedFileDuration > 0:
+            totalDuration = item.totalFileDuration
+            downloadDuration = item.downloadedFileDuration
+            totalDuration = str(timedelta(seconds=totalDuration))
+            downloadDuration = str(timedelta(seconds=downloadDuration))
+            if totalDuration.startswith('0:'):
+                totalDuration = totalDuration[2:]
+            if downloadDuration.startswith('0:'):
+                downloadDuration = downloadDuration[2:]
+            info1 = "{0}/{1} ({2})".format(downloadDuration, totalDuration, info1)
 
         # Downloaded Procent
         if item.downloadedProcent >= 0: info1 += ", " + str(item.downloadedProcent) + "%"
@@ -84,7 +97,7 @@ class IPTVDownloadManagerList(IPTVListComponentBase):
         info2 = info1 + ", " + formatBytes(item.downloadedSpeed) + "/s"
         
         try: fileName = item.fileName.split('/')[-1]
-        except: fileName = ''
+        except Exception: fileName = ''
         res.append((eListboxPythonMultiContent.TYPE_TEXT, 70, 0, width-70, self.fonts[0][2], 0, RT_HALIGN_LEFT|RT_VALIGN_CENTER, fileName))
         res.append((eListboxPythonMultiContent.TYPE_TEXT, 70, self.fonts[0][2], width-70, self.fonts[1][2], 1, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item.url))
         

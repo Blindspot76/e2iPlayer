@@ -18,7 +18,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
@@ -48,7 +48,10 @@ class MoviesNight(CBaseHostClass):
     SRCH_URL    = MAIN_URL + '?s='
     DEFAULT_ICON_URL = 'http://movienight.ws/wp-content/uploads/2015/09/movineight-logo-160.png'
     
-    MAIN_CAT_TAB = [{'category':'movies_genres',         'title': _('Movies'),       'url':MAIN_URL + 'movies/',  'icon':DEFAULT_ICON_URL},
+    MAIN_CAT_TAB = [{'category':'list_items',     'title': _('Latest movies'),                          'url':MAIN_URL,             'icon':DEFAULT_ICON_URL},
+                    {'category':'movies_genres',  'title': _('Movies genres'),   'filter':'genres',     'url':MAIN_URL,             'icon':DEFAULT_ICON_URL},
+                    {'category':'movies_genres',  'title': _('Movies by year'),  'filter':'years',      'url':MAIN_URL,             'icon':DEFAULT_ICON_URL},
+                    {'category':'list_items',     'title': _('TV Series'),                              'url':MAIN_URL+'tvshows/',  'icon':DEFAULT_ICON_URL},
                     {'category':'search',         'title': _('Search'),       'search_item':True},
                     {'category':'search_history', 'title': _('Search history')} 
                    ]
@@ -56,7 +59,8 @@ class MoviesNight(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'MoviesNight', 'cookie':'MoviesNight.cookie'})
-        self.movieGenresCache = []
+        self.movieFiltersCache = {'genres':[], 'years':[]}
+        self.episodesCache = {}
         
     def _getFullUrl(self, url, series=False):
         if not series:
@@ -73,44 +77,46 @@ class MoviesNight(CBaseHostClass):
         
     def _fillFilters(self, url):
         printDBG("MoviesNight._fillFilters")
-        table = []
+        cache = {'genres':[], 'years':[]}
         sts, data = self.cm.getPage(url)
-        if not sts: return
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="menu_container">', '</ul>', False)[1]
-        data = data.split('</li>')
+        if not sts: return {}
         
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="scrolling years">', '</ul>', False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a ', '</a>')
+        for item in tmp:
+            title = self.cleanHtmlStr( item )
+            url   = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+            if url.startswith('http'):
+                cache['years'].append({'title':title, 'url':url})
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'Genre', '</ul>', False)[1]
+        data = data.split('</li>')
         for item in data:
             title = self.cleanHtmlStr( item )
             url   = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
             if url.startswith('http'):
-                table.append({'title':title, 'url':url})
-        return table
+                cache['genres'].append({'title':title, 'url':url})
+        return cache
         
     def fillMovieFilters(self, url):
         printDBG("MoviesNight.fillMovieFilters")
-        self.movieGenresCache = self._fillFilters(url)
+        self.movieFiltersCache = self._fillFilters(url)
         return
-        
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("MoviesNight.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
         
     def listMoviesGenres(self, cItem, category):
         printDBG("MoviesNight.listMoviesGenres")
-        if 0 == len(self.movieGenresCache):
+        filter = cItem.get('filter', '')
+        if 0 == len(self.movieFiltersCache.get(filter, [])):
             self.fillMovieFilters(cItem['url'])
         
         cItem = dict(cItem)
         cItem['category'] = category
-        self.listsTab(self.movieGenresCache, cItem)
+        #params = dict(cItem) 
+        #params.update({'title':_('All')})
+        #self.addDir(params)
+        self.listsTab(self.movieFiltersCache.get(filter, []), cItem)
             
-    def listItems(self, cItem, category='video'):
+    def listItems(self, cItem, category='list_seasons'):
         printDBG("MoviesNight.listMovies")
         url = cItem['url']
         if '?' in url:
@@ -132,33 +138,72 @@ class MoviesNight(CBaseHostClass):
         if ('/page/%d/' % (page + 1)) in data:
             nextPage = True
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="content">', '<div id="footer">', False)[1]
-        data = data.split('<div class="home_post_cont post_box">')
-        if len(data): del data[0]
+        m1 = '<div class="movie">'
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div class="footer', False)[1]
+        data = data.split(m1)
+        if len(data): 
+            data[-1] = data[-1].split('<div id="paginador">')[0]
         
         for item in data:
             url    = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+            if url == '': continue
             icon   = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            title = self.cm.ph.getDataBeetwenMarkers(item, '<h2>', '</h2>', False)[1]
+            desc = self.cleanHtmlStr( item )
             
-            tmp = self.cm.ph.getDataBeetwenMarkers(item, 'title="', '"', False)[1]
-            try:
-                tmp = unescapeHTML( tmp.decode('utf-8') ).encode('utf-8')
-            except:
-                printExc()
-                tmp = ''
-            #printDBG("----------------------------------")
-            #printDBG(tmp)
-            tmp = tmp.split('<p>')
-            desc = self.cleanHtmlStr( tmp[-1].replace('\n', '|') )
             
             params = dict(cItem)
-            params.update( {'title': self.cleanHtmlStr( tmp[0] ), 'url':self._getFullUrl(url), 'desc': desc, 'icon':self._getFullUrl(icon)} )
-            self.addVideo(params)
+            params.update( {'title': self.cleanHtmlStr( title ), 'url':self._getFullUrl(url), 'desc': desc, 'icon':self._getFullUrl(icon), 'good_for_fav': True} )
+            if '/tvshows/' in url:
+                params['category'] = category
+                self.addDir(params)
+            else:
+                self.addVideo(params)
         
         if nextPage:
             params = dict(cItem)
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
+            
+    def listSeasons(self, cItem, category):
+        printDBG("MoviesNight.listSeasons [%s]" % cItem)
+        self.episodesCache = {}
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, "<div id='cssmenu'>", '</div>', False)[1]
+        data = data.split("<li class='has-sub'>")
+        if len(data): 
+            del data[0]
+        
+        for item in data:
+            if 'No episodes' in item: continue
+            seasonTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<a ', '</a>')[1])
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>> " + seasonTitle)
+            
+            episodesTab = []
+            episodesData = self.cm.ph.getAllItemsBeetwenMarkers(item, '<li', '</li>')
+            for eItem in episodesData:
+                eTmp = eItem.split('<span class="datix">')
+                title = self.cleanHtmlStr( eTmp[0] )
+                desc  = self.cleanHtmlStr( eTmp[-1] )
+                url   = self._getFullUrl(self.cm.ph.getSearchGroups(eItem, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+                if url.startswith('http'):
+                    episodesTab.append({'title':'{0} - {1}: {2}'.format( cItem['title'], seasonTitle, title),  'url':url, 'desc':desc})
+            
+            if len(episodesTab):
+                self.episodesCache[seasonTitle] = episodesTab
+                params = dict(cItem)
+                params.update( {'category':category, 'title': seasonTitle, 'season_key':seasonTitle, 'good_for_fav': False} )
+                self.addDir(params)
+        
+    def listEpisodes(self, cItem):
+        printDBG("MoviesNight.listEpisodes [%s]" % cItem)
+        seasonKey = cItem.get('season_key', '')
+        if '' == seasonKey: return
+        cItem = dict(cItem)
+        self.listsTab(self.episodesCache.get(seasonKey, []), cItem, 'video')
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         searchPattern = urllib.quote_plus(searchPattern)
@@ -182,10 +227,30 @@ class MoviesNight(CBaseHostClass):
         return urlTab
         
     def getFavouriteData(self, cItem):
-        return cItem['url']
+        printDBG('MoviesNight.getFavouriteData')
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem.get('icon', '')}
+        return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
+        printDBG('MoviesNight.getLinksForFavourite')
+        if fav_data.startswith('http://') or fav_data.startswith('https://'):
+            return self.getLinksForVideo({'url':fav_data})
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+        
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('MoviesNight.setInitListFromFavouriteItem')
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
 
     def getArticleContent(self, cItem):
         printDBG("MoviesNight.getArticleContent [%s]" % cItem)
@@ -232,9 +297,14 @@ class MoviesNight(CBaseHostClass):
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
     #MOVIES
         elif category == 'movies_genres':
-            self.listMoviesGenres(self.currItem, 'list_movies')
-        elif category == 'list_movies':
+            self.listMoviesGenres(self.currItem, 'list_items')
+        elif category == 'list_items':
             self.listItems(self.currItem)
+    #TVSERIES
+        elif category == 'list_seasons':
+            self.listSeasons(self.currItem, 'list_episodes')
+        elif category == 'list_episodes':
+            self.listEpisodes(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -313,6 +383,7 @@ class IPTVHost(CHostBase):
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
         icon        =  cItem.get('icon', '')
+        isGoodForFavourites = cItem.get('good_for_fav', False)
         
         return CDisplayListItem(name = title,
                                     description = description,
@@ -320,30 +391,6 @@ class IPTVHost(CHostBase):
                                     urlItems = hostLinks,
                                     urlSeparateRequest = 1,
                                     iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
+                                    possibleTypesOfSearch = possibleTypesOfSearch,
+                                    isGoodForFavourites = isGoodForFavourites)
     # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

@@ -147,7 +147,7 @@ class IPTVPicturePlayerWidget(Screen):
                         p_w, p_h, p_x, p_y  # picture
                       )
    
-    def __init__(self, session, url, pathForRecordings, pictureTitle):
+    def __init__(self, session, url, pathForRecordings, pictureTitle, addParams={}):
         self.session = session
         Screen.__init__(self, session)
         self.onStartCalled = False
@@ -155,10 +155,13 @@ class IPTVPicturePlayerWidget(Screen):
         self.recordingPath = pathForRecordings
         try:
             self.filePath = os.path.join(pathForRecordings, '.iptv_buffering.jpg')
-        except:
+        except Exception:
             self.filePath = ''
             printExc()
-            
+        
+        self.addParams = {'seq_mode':False}
+        self.addParams.update(addParams)
+        
         self.url           = url
         self.pictureTitle  = pictureTitle
         self.audioUrl      = strwithmeta(url).meta.get("iptv_audio_url", '')
@@ -186,8 +189,14 @@ class IPTVPicturePlayerWidget(Screen):
         #main Timer
         self.mainTimer = eTimer()
         self.mainTimerEnabled = False
-        self.mainTimer_conn = eConnectCallback(self.mainTimer.timeout, self.updateDisplay)
-        self.mainTimerInterval = 100 # by default 0,1s
+        
+        if self.addParams['seq_mode']:
+            self.canAutoClose = True
+            self.mainTimer_conn = eConnectCallback(self.mainTimer.timeout, self.closeAfterTimeout)
+            self.mainTimerInterval = 1000 * 10 #10s
+        else:
+            self.mainTimer_conn = eConnectCallback(self.mainTimer.timeout, self.updateDisplay)
+            self.mainTimerInterval = 100 # by default 0,1s
         # download
         self.downloader = DownloaderCreator(self.url)
         
@@ -213,6 +222,9 @@ class IPTVPicturePlayerWidget(Screen):
         printDBG('IPTVPicturePlayerWidget.__onClose ------------------------------------')
         if None != self.audioPlayer: self.audioPlayer.close()
         self.onEnd()
+        if None != self.mainTimer:
+            try: self.mainTimer.stop()
+            except Exception: pass
         self.mainTimer_conn = None
         self.mainTimer = None
         
@@ -221,6 +233,10 @@ class IPTVPicturePlayerWidget(Screen):
         
     def _getDownloadFilePath(self):
         return self.filePath + self.refreshPostfixes[self.refreshCount % len(self.refreshPostfixes) ]
+        
+    def closeAfterTimeout(self):
+        if self.canAutoClose:
+            self.close()
         
     def onStart(self):
         '''
@@ -243,6 +259,9 @@ class IPTVPicturePlayerWidget(Screen):
                 self.session.openWithCallback(self.close, MessageBox, _("Downloading cannot be started.\n Invalid URI[%s].") % self.url, type = MessageBox.TYPE_ERROR, timeout = 10)
             
     def _doStart(self, force=False):
+        if self.addParams['seq_mode']:
+            self.mainTimer.start(self.mainTimerInterval, True) #single shot
+            return
         if self.autoRefresh or force:
             self.refreshing = True
             self.downloader = DownloaderCreator(self.url)
@@ -272,17 +291,27 @@ class IPTVPicturePlayerWidget(Screen):
         self.close()
         
     def key_play(self):
+        if self.addParams['seq_mode']:
+            self.canAutoClose = False
+            return
+        
         if not self.autoRefresh and not self.url.startswith('file://'):
             if None != self.audioPlayer: self.audioPlayer.start(self.audioUrl)
             self.autoRefresh = True
             if not self.refreshing: self._doStart()
 
     def key_pause(self):
+        if self.addParams['seq_mode']:
+            self.canAutoClose = False
+            return
         if self.autoRefresh:
             if None != self.audioPlayer: self.audioPlayer.stop()
             self.autoRefresh = False
         
     def key_ok(self):
+        if self.addParams['seq_mode']:
+            self.canAutoClose = False
+            return
         if self.autoRefresh: self.key_pause()
         else: self.key_play()
 
@@ -322,7 +351,7 @@ class IPTVPicturePlayerWidget(Screen):
                 if self.mainTimerEnabled:
                     self.mainTimer.stop()
                     self.mainTimerEnabled = False
-        except:
+        except Exception:
             printExc("IPTVPicturePlayerWidget.setMainTimerSts status[%r] EXCEPTION" % start)
             
     def updateDisplay(self):
@@ -338,7 +367,7 @@ class IPTVPicturePlayerWidget(Screen):
             filePath = self.filePath + item
             if fileExists(filePath):
                 try: os.remove(filePath)
-                except: printDBG('Problem with removing old buffering file')
+                except Exception: printDBG('Problem with removing old buffering file')
             
     def doStart(self):
         self.onShow.remove(self.doStart)

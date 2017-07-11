@@ -1,18 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import urllib, urllib2, re
+import urllib, urllib2, re, time
+from urlparse import urlparse, urlunparse
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import *
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import _unquote
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.jsinterp import JSInterpreter
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 
-try:
-    import json
-except:
-    import simplejson as json
+try: import json
+except Exception: import simplejson as json
 
 SignAlgoExtractorObj = None
+
+def ExtractorError(text):
+    printDBG(text)
+    SetIPTVPlayerLastHostError(_(text))
+    
 
 class CVevoSignAlgoExtractor:
     # MAX RECURSION Depth for security
@@ -27,14 +33,19 @@ class CVevoSignAlgoExtractor:
     def _cleanTmpVariables(self):
         self.fullAlgoCode = ''
         self.allLocalFunNamesTab = []
+        self.objCache = {}
         self.playerData = ''
 
     def _jsToPy(self, jsFunBody):
+        classNames = set()
         pythonFunBody = jsFunBody.replace('function', 'def').replace('{', ':\n\t').replace('}', '').replace(';', '\n\t').replace('var ', '')
-        pythonFunBody = pythonFunBody.replace('.reverse()', '[::-1]')
 
         lines = pythonFunBody.split('\n')
         for i in range(len(lines)):
+            #
+            if '.reverse()' in lines[i] and '=' in lines[i] or 'return' in lines[i]:
+                    lines[i] = lines[i].replace('.reverse()', '[::-1]')
+            
             # a.split("") -> list(a)
             match = re.search('(\w+?)\.split\(""\)', lines[i])
             if match:
@@ -47,19 +58,73 @@ class CVevoSignAlgoExtractor:
             match = re.search('(\w+?)\.slice\(([0-9]+?)\)', lines[i])
             if match:
                 lines[i] = lines[i].replace( match.group(0), match.group(1) + ('[%s:]' % match.group(2)) )
+                if '=' not in lines[i] and 'return' not in lines[i]:
+                    lines[i] = match.group(1) + '=' + lines[i]
+                else:
+                    TODO()
+            
+            # a.splice(e,f) -> a[e:f]
+            match = re.search('(\w+?)\.splice\(([^,]+,[^,]+)\)', lines[i])
+            if match:
+                if '=' not in lines[i] and 'return' not in lines[i]:
+                    lines[i] = lines[i].replace( match.group(0), 'del ' + match.group(1) + ('[%s]' % match.group(2).replace(',', ':')) )
+                else:
+                    TODO()
+                
             # a.join("") -> "".join(a)
             match = re.search('(\w+?)\.join\(("[^"]*?")\)', lines[i])
             if match:
                 lines[i] = lines[i].replace( match.group(0), match.group(2) + '.join(' + match.group(1) + ')' )
-        return "\n".join(lines)
+                
+            # check if not class
+            match = re.search('(\w+?)\.(\w+?)\((.+)\)', lines[i])
+            if match and match.group(2) not in ['split', 'length', 'slice', 'join']:
+                printDBG(': adding class [%s]\n' % match.group(1))
+                classNames.add(match.group(1))
+            
+        return "\n".join(lines), classNames
 
-    def _getLocalFunBody(self, funName):
+    def _getLocalFunBody(self, funcname):
         # get function body
-        match = re.search('(function %s\([^)]+?\){[^}]+?})' % re.escape(funName), self.playerData)
-        if match:
+        func_m = re.search(
+            r'''(?x)
+                (?:function\s+%s|[{;,]\s*%s\s*=\s*function|var\s+%s\s*=\s*function)\s*
+                \((?P<args>[^)]*)\)\s*
+                \{(?P<code>[^}]+)\}''' % (
+                re.escape(funcname), re.escape(funcname), re.escape(funcname)),
+            self.playerData)
+        if func_m is None:
+            SetIPTVPlayerLastHostError(_('Could not find JS function %r') % funcname)
+            return ''
+        if func_m:
             # return jsFunBody
-            return match.group(1)
+            return 'function %s(%s){%s}' % (funcname, func_m.group('args'), func_m.group('code').replace('\n', '').replace('\r', ''))
         return ''
+        
+    def _getFakeClassMethodName(self, className, methodName):
+        return 'obj_%s_%s' % (className, methodName)
+        
+    def _extract_object(self, objname):
+        obj = {}
+        obj_m = re.search(
+            (r'(?<!this\.)%s\s*=\s*\{' % re.escape(objname)) +
+            r'\s*(?P<fields>([a-zA-Z$0-9]+\s*:\s*function\(.*?\)\s*\{.*?\}(?:,\s*)?)*)' +
+            r'\}\s*;',
+            self.playerData)
+        fields = obj_m.group('fields')
+        # Currently, it only supports function definitions
+        fields_m = re.finditer(
+            r'(?P<key>[a-zA-Z$0-9]+)\s*:\s*function'
+            r'\((?P<args>[a-z,]+)\){(?P<code>[^}]+)}',
+            fields)
+            
+        for f in fields_m:
+            argnames = f.group('args').split(',')
+            argnames.append('*args')
+            argnames.append('**kwargs')
+            obj[f.group('key')] = 'function %s(%s){%s}' % (self._getFakeClassMethodName(objname, f.group('key')), ','.join(argnames), f.group('code'))
+            
+        return obj
 
     def _getAllLocalSubFunNames(self, mainFunBody):
         #match = re.compile('[ =(,](\w+?)\([^)]*?\)').findall( mainFunBody )
@@ -72,9 +137,8 @@ class CVevoSignAlgoExtractor:
             return funNameTab
         return set()
 
-    def decryptSignature(self, s, playerUrl):
-        printDBG("decrypt_signature sign_len[%d] playerUrl[%s]" % (len(s), playerUrl) )
-
+    def decryptSignature(self, s, playerUrl, extract_type='own'):
+        printDBG("decrypt_signature sign_len[%d] playerUrl[%s] extract_type[%s] " % (len(s), playerUrl, extract_type) )
         # clear local data
         self._cleanTmpVariables()
 
@@ -86,66 +150,100 @@ class CVevoSignAlgoExtractor:
             else:
                 printExc('Unable to download playerUrl webpage')
                 self._cleanTmpVariables()
-                return ''
+                return '', extract_type
         
             #match = re.search("signature=([$a-zA-Z]+)", self.playerData)
             #if not match:
-            match = re.search(r'\.sig\|\|([a-zA-Z0-9\$]+)\(', self.playerData)
+            #get main function name 
+
+            for rgx in [r'(["\'])signature\1\s*,\s*(?P<sig>[a-zA-Z0-9$]+)\(', r'\.sig\|\|(?P<sig>[a-zA-Z0-9$]+)\(']:
+                match = re.search(rgx, self.playerData)
+                if match:
+                    break
+            
             if match:
-                mainFunName = match.group(1)
+                mainFunName = match.group('sig')
                 printDBG('Main signature function name = "%s"' % mainFunName)
             else: 
                 printDBG('Can not get main signature function name')
                 self._cleanTmpVariables()
-                return ''
-                
-            # get main function name 
-            jsi = JSInterpreter(self.playerData)
-            initial_function = jsi.extract_function(mainFunName)
-            algoCodeObj = lambda s: initial_function([s])
+                return '', extract_type
             
+            if extract_type == 'own':
+                self._getfullAlgoCode(mainFunName)
+                
+                # wrap all local algo function into one function extractedSignatureAlgo()
+                algoLines = self.fullAlgoCode.split('\n')
+                for i in range(len(algoLines)):
+                    algoLines[i] = '\t' + algoLines[i]
+                self.fullAlgoCode  = 'def extractedSignatureAlgo(param):'
+                self.fullAlgoCode += '\n'.join(algoLines)
+                self.fullAlgoCode += '\n\treturn %s(param)' % mainFunName
+                self.fullAlgoCode += '\noutSignature = extractedSignatureAlgo\n'
+                self.fullAlgoCode = self.fullAlgoCode.replace("$", "xyz_")
+                
+                printDBG( "---------------------------------------" )
+                printDBG( "|    ALGO FOR SIGNATURE DECRYPTION    |" )
+                printDBG( "---------------------------------------" )
+                printDBG( self.fullAlgoCode                         )
+                printDBG( "---------------------------------------" )
+                
+                try:
+                    algoCodeObj = compile(self.fullAlgoCode, '', 'exec')
+                    # for security alow only flew python global function in algo code
+                    vGlobals = {"__builtins__": None, 'len': len, 'list': list}
+
+                    # local variable to pass encrypted sign and get decrypted sign
+                    vLocals = { 'outSignature': '' }
+                    
+                    # execute prepared code
+                    exec algoCodeObj in vGlobals, vLocals
+                    algoCodeObj = vLocals['outSignature']
+                    
+                except Exception:
+                    printExc('decryptSignature compile algo code EXCEPTION')
+                    return '', extract_type
+            else:
+                jsi = JSInterpreter(self.playerData)
+                initial_function = jsi.extract_function(mainFunName)
+                algoCodeObj = lambda s: initial_function([s])
         else:
             # get algoCodeObj from algoCache
-            printDBG('Algo taken from cache')
-            algoCodeObj = self.algoCache[playerUrl]
-
-        # for security alow only flew python global function in algo code
-        vGlobals = {"__builtins__": None, 'len': len, 'list': list}
-
-        # local variable to pass encrypted sign and get decrypted sign
-        vLocals = { 'inSignature': s, 'outSignature': '' }
-
-        # execute prepared code
+            extract_type = self.algoCache[playerUrl][0]
+            algoCodeObj = self.algoCache[playerUrl][1]
+            printDBG('Algo taken from cache extract_type[%s]' % extract_type)
+        
+        
         try:
             sig = algoCodeObj(s)
-        except:
+        except Exception:
             printExc('decryptSignature exec code EXCEPTION')
             self._cleanTmpVariables()
-            return ''
+            return '', extract_type
         
-        printDBG('Decrypted signature = [%s]' % vLocals['outSignature'])
         # if algo seems ok and not in cache, add it to cache
         if playerUrl not in self.algoCache and '' != sig:
             printDBG('Algo from player [%s] added to cache' % playerUrl)
-            self.algoCache[playerUrl] = algoCodeObj
+            self.algoCache[playerUrl] = (extract_type, algoCodeObj)
             
         # free not needed data
         self._cleanTmpVariables()
-
-        return sig
+        
+        return sig, extract_type
 
     # Note, this method is using a recursion
-    def _getfullAlgoCode( self, mainFunName, recDepth = 0 ):
+    def _getfullAlgoCode( self, mainFunName, recDepth = 0, funBody = None ):
         if self.MAX_REC_DEPTH <= recDepth:
             printDBG('_getfullAlgoCode: Maximum recursion depth exceeded')
             return 
-            
-        printDBG("============================================")
-        printDBG(mainFunName)
-        printDBG("============================================")
-        funBody = self._getLocalFunBody( mainFunName )
-        printDBG(funBody)
-        printDBG("============================================")
+        
+        if funBody == None:
+            printDBG("============================================")
+            printDBG(mainFunName)
+            printDBG("============================================")
+            funBody = self._getLocalFunBody( mainFunName )
+            printDBG(funBody)
+            printDBG("============================================")
         if '' != funBody:
             funNames = self._getAllLocalSubFunNames(funBody)
             if len(funNames):
@@ -156,7 +254,22 @@ class CVevoSignAlgoExtractor:
                         self._getfullAlgoCode( funName, recDepth + 1 )
 
             # conver code from javascript to python 
-            funBody = self._jsToPy(funBody)
+            funBody, cassesNames = self._jsToPy(funBody)
+            for className in cassesNames:
+                addMethods = False
+                if className in self.objCache:
+                    obj = self.objCache[className]
+                else:
+                    obj = self._extract_object(className)
+                    self.objCache[className] = obj
+                    addMethods = True
+                    
+                for method in obj:
+                    if addMethods:
+                        fakeFunName = self._getFakeClassMethodName(className, method)
+                        self._getfullAlgoCode( fakeFunName, recDepth + 1, obj[method] )
+                    funBody = funBody.replace('%s.%s(' % (className, method), '%s(' % fakeFunName)
+            
             self.fullAlgoCode += '\n' + funBody + '\n'
         return
 
@@ -261,8 +374,7 @@ class InfoExtractor(object):
         if sts:
             return response
         else:
-            printDBG('ERROR _request_webpage')
-            raise ExtractorError(u'ERROR _request_webpage')
+            raise ExtractorError('ERROR _request_webpage')
 
     def _download_webpage_handle(self, url_or_request, video_id, note=None, errnote=None):
         """ Returns a tuple (page content as string, URL handle) """
@@ -284,6 +396,26 @@ class InfoExtractor(object):
         #printDBG(dump)
         content = webpage_bytes.decode(encoding, 'replace')
         return (content, urlh)
+        
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        if addParams.get('return_data', False):
+            addParams = dict(addParams)
+            addParams['return_data'] = False
+            try:
+                sts, response = self.cm.getPage(baseUrl, addParams, post_data)
+                content_type = response.headers.get('Content-Type', '')
+                m = re.match(r'[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+\s*;\s*charset=(.+)', content_type)
+                if m: encoding = m.group(1)
+                else: encoding = 'utf-8'
+                data = response.read()
+                response.close()
+                data = data.decode(encoding, 'replace')
+                return sts, data
+            except Exception:
+                printExc()
+                return False, None
+        else:
+            return self.cm.getPage(baseUrl, addParams, post_data)
 
     def _download_webpage(self, url_or_request, video_id, note=None, errnote=None):
         """ Returns the data of the page as a string """
@@ -346,8 +478,7 @@ class SearchInfoExtractor(InfoExtractor):
     def _real_extract(self, query):
         mobj = re.match(self._make_valid_url(), query)
         if mobj is None:
-            printDBG('Invalid search query "%s"' % query)
-            raise ExtractorError(u'Invalid search query "%s"' % query)
+            raise ExtractorError('Invalid search query "%s"' % query)
 
         prefix = mobj.group('prefix')
         query = mobj.group('query')
@@ -359,7 +490,7 @@ class SearchInfoExtractor(InfoExtractor):
             n = int(prefix)
             if n <= 0:
                 printDBG('invalid download number %s for query "%s"' % (n, query))
-                raise ExtractorError(u'invalid download number %s for query "%s"' % (n, query))
+                raise ExtractorError('invalid download number %s for query "%s"' % (n, query))
             elif n > self._MAX_RESULTS:
                 self._downloader.report_warning(u'%s returns max %i results (you requested %i)' % (self._SEARCH_KEY, self._MAX_RESULTS, n))
                 n = self._MAX_RESULTS
@@ -422,6 +553,14 @@ class YoutubeIE(InfoExtractor):
                                       # Dash audio
                                       '172', '141', '171', '140', '139',
                                       ]
+                                      
+    _supported_formats = ['18', '22', '37', '38', # mp4
+                          '82', '83', '84', '85', # mp4 3D
+                          '92', '93', '94', '95', '96', '132', '151', # Apple HTTP Live Streaming
+                          '133', '134', '135', '136', '137', '138', '160', # Dash mp4
+                          '139', '140', '141', # Dash mp4 audio
+                          ]
+    
     _video_formats_map = {
         'flv': ['35', '34', '6', '5'],
         '3gp': ['36', '17', '13'],
@@ -585,10 +724,6 @@ class YoutubeIE(InfoExtractor):
         """Report attempt to log in."""
         printDBG(u'Logging in')
 
-    def report_video_webpage_download(self, video_id):
-        """Report attempt to download video webpage."""
-        printDBG(u'%s: Downloading video webpage' % video_id)
-
     def report_video_info_webpage_download(self, video_id):
         """Report attempt to download video info webpage."""
         printDBG(u'%s: Downloading video info webpage' % video_id)
@@ -695,15 +830,90 @@ class YoutubeIE(InfoExtractor):
         sts, age_results = self.cm.getPage(self._AGE_URL, {}, age_form)
         if not sts:
             printDBG('Unable to confirm age')
-            raise ExtractorError(u'Unable to confirm age')
+            raise ExtractorError('Unable to confirm age')
 
     def _extract_id(self, url):
+        video_id = ''
         mobj = re.match(self._VALID_URL, url, re.VERBOSE)
-        if mobj is None:
-            printDBG('Invalid URL: %s' % url)
-            raise ExtractorError(u'Invalid URL: %s' % url)
-        video_id = mobj.group(2)
+        if mobj != None:
+            video_id = mobj.group(2)
+        
         return video_id
+
+    def _get_automatic_captions(self, video_id, webpage=None):
+        sub_tracks = []
+        if None == webpage:
+            url = 'http://www.youtube.com/watch?v=%s&hl=%s&has_verified=1' % (video_id, GetDefaultLang())
+            sts, data = self.cm.getPage(url)
+            if not sts: return sub_tracks
+        
+        sts, data = self.cm.ph.getDataBeetwenMarkers(data, ';ytplayer.config =', '};', False)
+        if not sts: return sub_tracks
+        try:
+            player_config = byteify(json.loads(data.strip()+'}'))
+            args = player_config['args']
+            caption_url = args.get('ttsurl')
+            if caption_url:
+                timestamp = args['timestamp']
+                # We get the available subtitles
+                list_params = urllib.urlencode({
+                    'type': 'list',
+                    'tlangs': 1,
+                    'asrs': 1,
+                })
+                list_url = caption_url + '&' + list_params
+                caption_list = self.cm.getPage(list_url)
+                printDBG(caption_list)
+                return sub_lang_list
+                
+                original_lang_node = caption_list.find('track')
+                if original_lang_node is None:
+                    return []
+                original_lang = original_lang_node.attrib['lang_code']
+                caption_kind = original_lang_node.attrib.get('kind', '')
+
+                sub_lang_list = {}
+                for lang_node in caption_list.findall('target'):
+                    sub_lang = lang_node.attrib['lang_code']
+                    sub_formats = []
+                    for ext in self._SUBTITLE_FORMATS:
+                        params = urllib.urlencode({
+                            'lang': original_lang,
+                            'tlang': sub_lang,
+                            'fmt': ext,
+                            'ts': timestamp,
+                            'kind': caption_kind,
+                        })
+                        sub_formats.append({
+                            'url': caption_url + '&' + params,
+                            'ext': ext,
+                        })
+                    sub_lang_list[sub_lang] = sub_formats
+                return sub_lang_list
+            
+            # Some videos don't provide ttsurl but rather caption_tracks and
+            # caption_translation_languages (e.g. 20LmZk1hakA)
+            caption_tracks = args['caption_tracks']
+            caption_translation_languages = args['caption_translation_languages']
+            caption_url = compat_parse_qs(caption_tracks.split(',')[0])['u'][0]
+            parsed_caption_url = urlparse(caption_url)
+            caption_qs = compat_parse_qs(parsed_caption_url.query)
+
+            sub_lang_list = {}
+            for lang in caption_translation_languages.split(','):
+                lang_qs = compat_parse_qs(urllib.unquote_plus(lang))
+                sub_lang = lang_qs.get('lc', [None])[0]
+                if not sub_lang: continue
+                caption_qs.update({
+                    'tlang': [sub_lang],
+                    'fmt': ['vtt'],
+                })
+                sub_url = urlunparse(parsed_caption_url._replace(
+                    query=urllib.urlencode(caption_qs, True)))
+                sub_tracks.append({'title':lang_qs['n'][0].encode('utf-8'), 'url':sub_url, 'lang':sub_lang.encode('utf-8'), 'ytid':len(sub_tracks), 'format':'vtt'})
+        except Exception:
+            printExc()
+        return sub_tracks
         
     def _get_subtitles(self, video_id):
         sub_tracks = []
@@ -712,8 +922,11 @@ class YoutubeIE(InfoExtractor):
             sts, data = self.cm.getPage(url)
             if not sts: return sub_tracks
             
+            encoding = self.cm.ph.getDataBeetwenMarkers(data, 'encoding="', '"', False)[1]
+            
             def getArg(item, name):
-                return self.cm.ph.getDataBeetwenMarkers(item, '%s="' % name, '"', False)[1].encode('utf-8')
+                val = self.cm.ph.getDataBeetwenMarkers(item, '%s="' % name, '"', False)[1]
+                return val.decode(encoding).encode(encoding)
             
             data = data.split('/>')
             for item in data:
@@ -725,27 +938,39 @@ class YoutubeIE(InfoExtractor):
                 lang_translated = getArg(item, 'lang_translated')
 
                 title = (name + ' ' + lang_translated).strip()
-                params = {'lang':lang_code, 'v':video_id, 'fmt':'srt', 'name':name}
+                params = {'lang':lang_code, 'v':video_id, 'fmt':'vtt', 'name':name}
                 url = 'https://www.youtube.com/api/timedtext?' + urllib.urlencode(params)
-                sub_tracks.append({'title':title, 'url':url, 'lang':lang_code, 'format':'srt'})
-        except:
+                sub_tracks.append({'title':title, 'url':url, 'lang':lang_code, 'ytid':id, 'format':'vtt'})
+        except Exception:
             printExc()
+        printDBG(sub_tracks)
         return sub_tracks
 
-    def _real_extract(self, url, ):
+    def _real_extract(self, url):
         # Extract original video URL from URL with redirection, like age verification, using next_url parameter
         mobj = re.search(self._NEXT_URL_RE, url)
         if mobj:
             #https
             url = 'http://www.youtube.com/' + compat_urllib_parse.unquote(mobj.group(1)).lstrip('/')
         video_id = self._extract_id(url)
+        if 'yt-video-id' == video_id:
+            video_id = self.cm.ph.getSearchGroups(url+'&', '[\?&]docid=([^\?^&]+)[\?&]')[0]
+            isGoogleDoc = True
+            url = url
+            videoKey = 'docid'
+            videoInfoBase = 'https://docs.google.com/get_video_info?docid=%s' % video_id
+            COOKIE_FILE = GetCookieDir('docs.google.com.cookie')
+            videoInfoparams = {'cookiefile':COOKIE_FILE, 'use_cookie': True, 'load_cookie':False, 'save_cookie':True}
+        else:
+            url = 'http://www.youtube.com/watch?v=%s&' % video_id
+            isGoogleDoc = False
+            videoKey = 'video_id'
+            videoInfoBase = 'https://www.youtube.com/get_video_info?video_id=%s&' % video_id
+            videoInfoparams = {}
         
-        # Get video webpage
-        self.report_video_webpage_download(video_id)
-        url = 'http://www.youtube.com/watch?v=%s&gl=US&hl=en&has_verified=1' % video_id
         sts, video_webpage_bytes = self.cm.getPage(url)
+        
         if not sts:
-            printDBG('Unable to download video webpage')
             raise ExtractorError('Unable to download video webpage')
 
         video_webpage = video_webpage_bytes.decode('utf-8', 'ignore')
@@ -765,74 +990,58 @@ class YoutubeIE(InfoExtractor):
             age_gate = True
             # We simulate the access to the video from www.youtube.com/v/{video_id}
             # this can be viewed without login into Youtube
-            data = compat_urllib_parse.urlencode({'video_id': video_id,
-                                                  'el': 'embedded',
+            data = compat_urllib_parse.urlencode({'el': 'embedded',
                                                   'gl': 'US',
                                                   'hl': 'en',
                                                   'eurl': 'https://youtube.googleapis.com/v/' + video_id,
                                                   'asv': 3,
                                                   'sts':'1588',
                                                   })
-            video_info_url = 'https://www.youtube.com/get_video_info?' + data
-            video_info_webpage = self._download_webpage(video_info_url, video_id,
-                                    note=False,
-                                    errnote='unable to download video info webpage')
-            video_info = compat_parse_qs(video_info_webpage)
+            video_info_url = videoInfoBase + data
+            sts, video_info = self.getPage(video_info_url, videoInfoparams)
+            if not sts: raise ExtractorError('Faile to get "%s"' % video_info_url)
         else:
             age_gate = False
-            for el_type in ['&el=embedded', '&el=detailpage', '&el=vevo', '']:
+            for el_type in ['&el=detailpage', '&el=embedded', '&el=vevo', '']:
                 #https
-                video_info_url = ('http://www.youtube.com/get_video_info?&video_id=%s%s&ps=default&eurl=&gl=US&hl=en'
-                        % (video_id, el_type))
-                video_info_webpage = self._download_webpage(video_info_url, video_id,
-                                        note=False,
-                                        errnote='unable to download video info webpage')
-                video_info = compat_parse_qs(video_info_webpage)
-                if 'token' in video_info:
+                video_info_url = videoInfoBase + ('%s&ps=default&eurl=&gl=US&hl=en'% ( el_type))
+                sts, video_info = self.getPage(video_info_url, videoInfoparams)
+                if not sts: continue
+                if '&token=' in video_info:
                     break
-        if 'token' not in video_info:
+        if '&token=' not in video_info:
             if 'reason' in video_info:
-                printDBG('YouTube said: %s' % video_info['reason'][0])
-                raise ExtractorError(u'YouTube said: %s' % video_info['reason'][0])
-            else:
-                printDBG('"token" parameter not in video info for unknown reason')
-                raise ExtractorError(u'"token" parameter not in video info for unknown reason')
-
+                pass # ToDo extract reason
+            raise ExtractorError('"token" parameter not in video info')
+        
         # Check for "rental" videos
         if 'ypc_video_rental_bar_text' in video_info and 'author' not in video_info:
             printDBG('"rental" videos not supported')
-            raise ExtractorError(u'"rental" videos not supported')
+            raise ExtractorError('"rental" videos not supported')
 
         # Start extracting information
         self.report_information_extraction(video_id)
-
-        # uploader
-        if 'author' not in video_info:
-            printDBG('Unable to extract uploader name')
-            raise ExtractorError(u'Unable to extract uploader name')
-        video_uploader = compat_urllib_parse.unquote_plus(video_info['author'][0])
-
-
-        # title
-        if 'title' not in video_info:
-            printDBG('Unable to extract video title')
-            raise ExtractorError(u'Unable to extract video title')
-        video_title = compat_urllib_parse.unquote_plus(video_info['title'][0])
-
-        # thumbnail image
-        if 'thumbnail_url' not in video_info:
-            self._downloader.report_warning(u'unable to extract video thumbnail')
-            video_thumbnail = ''
-        else:   # don't panic if we can't find it
-            video_thumbnail = compat_urllib_parse.unquote_plus(video_info['thumbnail_url'][0])
+        
+        video_info = video_info.split('&')
+        video_info2 = {}
+        for item in video_info:
+            item = item.split('=')
+            if len(item) < 2: continue
+            video_info2[item[0].strip()] = item[1].strip()
+        video_info = video_info2
+        del video_info2
 
         # subtitles
         if 'length_seconds' not in video_info:
-            self._downloader.report_warning(u'unable to extract video duration')
             video_duration = ''
         else:
-            video_duration = compat_urllib_parse.unquote_plus(video_info['length_seconds'][0])
-
+            video_duration = video_info['length_seconds']
+        
+        if 'url_encoded_fmt_stream_map' in video_info:
+            video_info['url_encoded_fmt_stream_map'] = [_unquote(video_info['url_encoded_fmt_stream_map'])]
+        if 'adaptive_fmts' in video_info:
+            video_info['adaptive_fmts'] = [_unquote(video_info['adaptive_fmts'])]
+        
         # Decide which formats to download
         try:
             mobj = re.search(r';ytplayer.config = ({.*?});', video_webpage)
@@ -849,7 +1058,7 @@ class YoutubeIE(InfoExtractor):
             if m_s is not None:
                 self.to_screen(u'%s: Encrypted signatures detected.' % video_id)
                 video_info['url_encoded_fmt_stream_map'] = [args['url_encoded_fmt_stream_map']]
-            m_s = re_signature.search(args.get('adaptive_fmts', u''))
+            m_s = re_signature.search(args.get('adaptive_fmts', ''))
         except ValueError:
             pass
 
@@ -857,66 +1066,87 @@ class YoutubeIE(InfoExtractor):
         req_format = 'all'
         
         is_m3u8 = 'no'
-
-        #if 'conn' in video_info and video_info['conn'][0].startswith('rtmp'):
-        #    self.report_rtmp_download()
-        #    video_url_list = [(None, video_info['conn'][0])]
+        
+        url_map = {}
         if len(video_info.get('url_encoded_fmt_stream_map', [])) >= 1 or len(video_info.get('adaptive_fmts', [])) >= 1:
             encoded_url_map = video_info.get('url_encoded_fmt_stream_map', [''])[0] + ',' + video_info.get('adaptive_fmts',[''])[0]
             if 'rtmpe%3Dyes' in encoded_url_map:
                 printDBG('rtmpe downloads are not supported, see https://github.com/rg3/youtube-dl/issues/343 for more information.')
                 raise
-            url_map = {}
+            
             for url_data_str in encoded_url_map.split(','):
-                url_data = compat_parse_qs(url_data_str)
                 add = True
-                if 'itag' in url_data and 'url' in url_data:
-                    url = url_data['url'][0]
+                if 'itag=' in url_data_str and 'url=' in url_data_str:
+                    url_data_str = url_data_str.split('&')
+                    url_data = {}
+                    
+                    supported = False
+                    for item in url_data_str:
+                        item = item.split('=')
+                        if len(item) < 2: continue
+                        key = item[1].strip()
+                        if item[0] == 'itag':
+                            if key in self._supported_formats:
+                                supported = True
+                            else:
+                                break
+                        url_data[item[0]] = key
+                            
+                    if not supported:
+                        continue
+                    
+                    url = _unquote(url_data['url'])
                     if 'sig' in url_data:
-                        signature = url_data['sig'][0]
+                        signature = url_data['sig']
                         url += '&signature=' + signature
                     elif 's' in url_data:
-                        encrypted_sig = url_data['s'][0]
+                        encrypted_sig = url_data['s']
                         signature = ''
-                        match = re.search('"([^"]+?html5player-[^"]+?\.js)"', video_webpage)
-                        if None == match:
-                            match = re.search('"([^"]+?(?:www|player)-([^/]+)/base\.js)"', video_webpage)
-                        if match:
-                            playerUrl = match.group(1).replace('\\', '').replace('https:', 'http:')
-                            if not playerUrl.startswith('http'):
+                        playerUrl = ''
+                        for reObj in ['"assets"\:[^\}]+?"js"\s*:\s*"([^"]+?)"', 'src="([^"]+?)"[^>]+?name="player/base"']:
+                            match = re.search(reObj, video_webpage)
+                            if None != match:
+                                playerUrl =  match.group(1).replace('\\', '').replace('https:', 'http:')
+                                break
+                        
+                        if playerUrl != '':
+                            if playerUrl.startswith('//'):
                                 playerUrl = 'http:' + playerUrl
+                            elif playerUrl.startswith('/'):
+                                playerUrl = 'http://www.youtube.com' + playerUrl
+                            elif not playerUrl.startswith('http'):
+                                playerUrl = 'http://www.youtube.com/' + playerUrl
                             global SignAlgoExtractorObj
                             if None == SignAlgoExtractorObj:
                                 SignAlgoExtractorObj = CVevoSignAlgoExtractor()
-                            signature = SignAlgoExtractorObj.decryptSignature( encrypted_sig, playerUrl )
+                            signature, eType = SignAlgoExtractorObj.decryptSignature( encrypted_sig, playerUrl )
+                            if '' == signature and eType == 'own':
+                                signature, eType = SignAlgoExtractorObj.decryptSignature( encrypted_sig, playerUrl, 'youtube_dl' )
                         else:
                             printDBG("YT HTML PLAYER not available!")
                         if 0 == len(signature):
                             printDBG("YT signature description problem")
                             add = False
                         url += '&signature=' + signature
-                    
 
                     if not 'ratebypass' in url:
                         url += '&ratebypass=yes'
-                    if add: url_map[url_data['itag'][0]] = url
-               
+                    if add:
+                        url_map[url_data['itag']] = url
             video_url_list = self._get_video_url_list(url_map)
-            if not video_url_list:
-                return []
    
-        elif video_info.get('hlsvp'):
+        if video_info.get('hlsvp') and not video_url_list:
             is_m3u8 = 'yes'
-            manifest_url = video_info['hlsvp'][0]
+            manifest_url = _unquote(video_info['hlsvp'])
             url_map = self._extract_from_m3u8(manifest_url, video_id)
             video_url_list = self._get_video_url_list(url_map)
-            if not video_url_list:
-                return []
-
-        else:
-            printDBG('no conn, hlsvp or url_encoded_fmt_stream_map information found in video info')
-            raise
-
+        
+        if not video_url_list:
+            return []
+        
+        if isGoogleDoc:
+            cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
+        
         sub_tracks = self._get_subtitles(video_id)
         results = []
         for format_param, video_real_url in video_url_list:
@@ -929,15 +1159,17 @@ class YoutubeIE(InfoExtractor):
             video_real_url = video_real_url.encode('utf-8')
             if len(sub_tracks):
                 video_real_url = strwithmeta(video_real_url, {'external_sub_tracks':sub_tracks})
+            if isGoogleDoc:
+                video_real_url = strwithmeta(video_real_url, {'Cookie':cookieHeader})
 
             results.append({
                 'id':       video_id.encode('utf-8'),
                 'url':      video_real_url,
-                'uploader': video_uploader.encode('utf-8'),
-                'title':    video_title.encode('utf-8'),
+                'uploader': '',
+                'title':    '',
                 'ext':      video_extension.encode('utf-8'),
                 'format':   video_format.encode('utf-8'),
-                'thumbnail':    video_thumbnail.encode('utf-8'),
+                'thumbnail':    '',
                 'duration':     video_duration.encode('utf-8'),
                 'player_url':   player_url.encode('utf-8'),
                 'm3u8'      :   is_m3u8.encode('utf-8'),

@@ -8,7 +8,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, eConnectCallback, E2PrioFix
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, eConnectCallback, E2PrioFix, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import enum
 from Plugins.Extensions.IPTVPlayer.iptvdm.basedownloader import BaseDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
@@ -17,6 +17,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 ###################################################
 # FOREIGN import
 ###################################################
+from Tools.Directories import fileExists
 from Tools.BoundFunction import boundFunction
 from enigma import eConsoleAppContainer
 from time import sleep
@@ -46,6 +47,9 @@ class WgetDownloader(BaseDownloader):
         # instance of E2 console
         self.console = None
         self.iptv_sys = None
+        self.curContinueRetry = 0
+        self.maxContinueRetry = 0
+        self.downloadCmd = ''
         
     def __del__(self):
         printDBG("WgetDownloader.__del__ ----------------------------------")
@@ -84,13 +88,20 @@ class WgetDownloader(BaseDownloader):
             info = "--progress=dot:default"
         else: info = ""
         
-        cmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' %s -t %d ' % (info, retries)) + '"' + self.url + '" -O "' + self.filePath + '" > /dev/null'
-        printDBG("Download cmd[%s]" % cmd)
+        # remove file if exists
+        if fileExists(self.filePath):
+            rm(self.filePath)
+        
+        self.downloadCmd = DMHelper.getBaseWgetCmd(self.downloaderParams) + (' %s -t %d ' % (info, retries)) + '"' + self.url + '" -O "' + self.filePath + '" > /dev/null'
+        printDBG("Download cmd[%s]" % self.downloadCmd)
+        
+        if self.downloaderParams.get('iptv_wget_continue', False):
+            self.maxContinueRetry = 3
         
         self.console = eConsoleAppContainer()
         self.console_appClosed_conn  = eConnectCallback(self.console.appClosed, self._cmdFinished)
         self.console_stderrAvail_conn = eConnectCallback(self.console.stderrAvail, self._dataAvail)
-        self.console.execute( E2PrioFix( cmd ) )
+        self.console.execute( E2PrioFix( self.downloadCmd ) )
 
         self.wgetStatus = self.WGET_STS.CONNECTING
         self.status     = DMHelper.STS.DOWNLOADING
@@ -147,15 +158,22 @@ class WgetDownloader(BaseDownloader):
     def _cmdFinished(self, code, terminated=False):
         printDBG("WgetDownloader._cmdFinished code[%r] terminated[%r]" % (code, terminated))
         
+        # When finished updateStatistic based on file sie on disk
+        BaseDownloader.updateStatistic(self)
+        
+        if not terminated and self.remoteFileSize > 0 \
+           and self.remoteFileSize > self.localFileSize \
+           and self.curContinueRetry < self.maxContinueRetry:
+            self.curContinueRetry += 1
+            self.console.execute( E2PrioFix( self.downloadCmd ) )
+            return
+        
         # break circular references
         self.console_appClosed_conn  = None
         self.console_stderrAvail_conn = None
         self.console = None
     
         self.wgetStatus = self.WGET_STS.ENDED
-        
-        # When finished updateStatistic based on file sie on disk
-        BaseDownloader.updateStatistic(self)
 
         if terminated:
             self.status = DMHelper.STS.INTERRUPTED

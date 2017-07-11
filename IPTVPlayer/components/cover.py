@@ -40,7 +40,7 @@ class Cover(Pixmap):
         try:
             if 'preWidgetRemove' in dir(Pixmap):
                 Pixmap.preWidgetRemove(self, instance)
-        except: printExc()
+        except Exception: printExc()
 
     def onShow(self):      
         Pixmap.onShow(self)
@@ -60,6 +60,7 @@ class Cover(Pixmap):
             if not self.decoding:
                 printDBG("_______________start decodeCover")
                 self.decoding = True
+                prevIcon = self.currIcon
                 self.currIcon = self.waitIcon
                 self.waitIcon = {}
                 self.picload_conn = eConnectCallback(self.picload.PictureData, self.decodeCallBack)
@@ -68,6 +69,7 @@ class Cover(Pixmap):
                     printDBG("_______________error start decodeCover[%d]" % ret)
                     self.picload_conn = None
                     self.decoding = False
+                    self.currIcon = prevIcon
                     return -1
             return True
         else:
@@ -115,7 +117,7 @@ class Cover2(Pixmap):
         try:
             if 'preWidgetRemove' in dir(Pixmap):
                 Pixmap.preWidgetRemove(self, instance)
-        except: printExc()
+        except Exception: printExc()
 
     def onShow(self):
         Pixmap.onShow(self)

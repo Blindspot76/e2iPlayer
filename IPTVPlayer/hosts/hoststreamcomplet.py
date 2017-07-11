@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -19,11 +19,11 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, VIDEOMEGA_decryptPlayerParams, VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams
 ###################################################
-
 
 ###################################################
 # E2 GUI COMMPONENTS 
@@ -56,9 +56,10 @@ class StreamComplet(CBaseHostClass):
                    ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'StreamComplet', 'cookie':'StreamComplet.cookie'})
+        CBaseHostClass.__init__(self, {'history':'StreamComplet', 'cookie_type':'MozillaCookieJar', 'cookie':'StreamComplet.cookie'})
         self.cacheFilters = {}
-        self.USER_AGENT = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
+        self.USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko" #"Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
+        self.USER_AGENT2 = "Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20150101 Firefox/44.0 (Chrome)"
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
@@ -140,62 +141,130 @@ class StreamComplet(CBaseHostClass):
         cItem['url'] = self.SRCH_URL + searchPattern
         self.listItems(cItem)
         
+    def _unpackJS(self, data, name):
+        try:
+            vGlobals = {"__builtins__": None, 'str':str, 'chr':chr, 'list':list}
+            vLocals = { name: None }
+            exec( data, vGlobals, vLocals )
+        except Exception:
+            printExc('_unpackJS exec code EXCEPTION')
+            return ''
+        try:
+            return vLocals[name]
+        except Exception:
+            printExc('_unpackJS EXCEPTION')
+        return ''
+        
+    def _decodeData(self, baseData):
+        data = baseData
+        fullDecData = ''
+        decData = ''
+        for idx in range(3):
+            if 'eval(' not in data:
+                break
+            tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>')
+            for tmpData in tmpTab:
+                tmp = tmpData.split('eval(')
+                if len(tmp): del tmp[0]
+                for tmpItem in tmp:
+                    tmpDec = ''
+                    for decFun in [VIDEOMEGA_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
+                        tmpDec = unpackJSPlayerParams('eval('+tmpItem, decFun, 0)
+                        if '' != tmpDec:   
+                            break
+                    decData += tmpDec
+            fullDecData += decData
+            data = decData
+            
+        # ++++++++++++++++++++
+        codeData = 'def go123():\n'
+        tmp = self.cm.ph.getSearchGroups(baseData, '''document\[([^\]]+?)\[[0-9]\]\]\(([^)]+?)\)''', 2)
+        mainVar = tmp[0]
+        mainVal = self.cm.ph.getSearchGroups(baseData, '''var\s+?%s\s*=\s*(\[[^\]]+?\])''' % mainVar)[0]
+        mainVal = mainVal.replace('"', '\\"').replace('[\\', '[').replace('\\"]', '"]').replace(',\\"', ',"').replace('\\",', '",')
+
+        subTab = re.compile('''\+([^\+]+?)\+''').findall(tmp[1])
+        for item in subTab:
+            var = item.strip()
+            val = self.cm.ph.getSearchGroups(fullDecData, '''var\s*%s\s*=\s*(['"][^'^"]+?['"])''' % var)[0]
+            codeData += '\t%s = %s\n' % (var, val) 
+        codeData += '\t%s = %s\n' % (mainVar, mainVal)
+        codeData += '\treturn ' + tmp[1]
+        codeData += '\nkoteczek = go123()'
+        codeData = self._unpackJS(codeData, 'koteczek')
+        # ++++++++++++++++++++
+        
+        if codeData != '':
+            return codeData
+        
+        subTab = re.compile('''(['"]\s*\+[^\+]+?\+\s*['"])''').findall(fullDecData)
+        for item in subTab:
+            var  = self.cm.ph.getSearchGroups(item, '''\+([^\+]+?)\+''')[0].strip()
+            val  = self.cm.ph.getSearchGroups(fullDecData, '''var\s*%s\s*=\s*['"]([^'^"]+?)['"]''' % var)[0] 
+            fullDecData = fullDecData.replace(item, val)
+        fullData = baseData + fullDecData
+        fullData = fullData.replace('\\"', '"').replace('\\/', '/')
+        return fullData
+        
     def getLinksForVideo(self, cItem):
         printDBG("StreamComplet.getLinksForVideo [%s]" % cItem)
         urlTab = []
+        
+        rm(self.COOKIE_FILE)
         
         params = dict(self.defaultParams)
         header = dict(self.HEADER)
         header['Referer'] = cItem['url']
         params['header'] = header
         
-        sts, data = self.cm.getPage(cItem['url'], params)
-        if not sts: return []
+        frameUrlsTab = [cItem['url']]
+
+        for idx in range(3):
+            newFrameUrlsTab = []
+            for frameUrl in frameUrlsTab:
+                sts, data = self.cm.getPage(frameUrl, params)
+                printDBG("============================ start ============================")
+                printDBG(data)
+                printDBG("============================ end ============================")
+                if not sts: continue
+                enc1 = self.cm.ph.getDataBeetwenMarkers(data, 'enc1|', '|', False)[1].strip()
+                data = self._decodeData(data)
+                printDBG("============================ start ============================")
+                printDBG(data)
+                printDBG("============================ end ============================")
+                tryLinksTab = re.compile('<iframe[^>]+?src="([^"]+?)"').findall(data)
+                tryLinksTab.extend(re.compile('\s(https?:[^\s]+?)\s').findall(data))
+                try:
+                    if enc1 != '':
+                        tryLinksTab.append('http://hqq.tv/player/embed_player.php?vid=' + base64.b64decode(enc1))
+                except Exception:
+                    printExc()
+                
+                for item in tryLinksTab:
+                    item = item.replace('\\/', '/')
+                    if '' == item.strip(): continue
+                    if 'facebook' in item: continue
+                    if 'wp-content' in item: continue
+                    if not self.cm.isValidUrl(item):
+                        if item.startswith('../'):
+                            item = self.up.getDomain(frameUrl, False) + item.replace('../', '')
+                        elif item.startswith('//'):
+                            item = 'http://' + item
+                        elif item.startswith('/'):
+                            item = self.up.getDomain(frameUrl, False) + item[1:]
+                        else:
+                            item = self.up.getDomain(frameUrl, False) + item[1:]
+                    if 1 == self.up.checkHostSupport(item):
+                        urlTab.append({'name':self.up.getHostName(item), 'url':item, 'need_resolve':1})
+                    else:
+                        newFrameUrlsTab.append(item)
+            frameUrlsTab = newFrameUrlsTab
         
-        if 0:
-            adminData = self.cm.ph.getDataBeetwenMarkers(data, 'jQuery.ajax({', '});', False)[1]
-            adminUrl  = self.cm.ph.getSearchGroups(adminData, "url:'([^']+?)'")[0] 
-            adminUrl += '?' + self.cm.ph.getSearchGroups(adminData, "data:'([^']+?)'")[0] 
-            
-            header = dict(self.HEADER)
-            header['X-Requested-With'] = 'XMLHttpRequest'
-            header['Referer'] = cItem['url']
-            paramsAdmin = dict(self.defaultParams)
-            paramsAdmin['header'] = header
-            sts, adminData = self.cm.getPage(adminUrl, paramsAdmin)
-            printDBG('>>>>>>>>>>>>>> adminData[%s]' % adminData)
-            
-            projekktor_controlbar={"muted":false,"volume":0.5};
-        
-        playerUrl = self.cm.ph.getSearchGroups(data, 'src="(http[^"]+?player[^"]+?)"')[0]
-        #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> playerUrl[%s]" % playerUrl)
-        
-        movieId = self.cm.ph.getSearchGroups(playerUrl+'/', 'f=([0-9]+?)/')[0]
-        if movieId != '':
-            playerUrl = 'http://m.ok.ru/video/' + movieId
-            sts, data = self.cm.getPage(playerUrl, params)
-            if not sts: return []
-            videoUrl = self.cm.ph.getSearchGroups(data, 'href="(http[^"]+?moviePlaybackRedirect[^"]+?)"')[0].replace('&amp;', '&')
-            videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-            return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
-        
-        playerUrl = playerUrl.replace('&#038;', '&')
-        sts, data = self.cm.getPage(playerUrl, params)
-        if not sts: return []
-        
-        videoUrl = self.cm.ph.getSearchGroups(data, """src:[^'^"]+?['"]([^'^"]+?)['"]""")[0]
-        if videoUrl == '' or videoUrl == 'vimplevideo.mp4': return []
-        
-        videoUrl = 'http://media.vimple.me/playeryw.swf/' + videoUrl
-        videoUrl = self.up.decorateUrl(videoUrl, {'User-Agent':self.USER_AGENT})
-        return [{'name':'vimeo.me', 'url':videoUrl, 'need_resolve':0}]
-        
-        
-        tmp = self.up.getVideoLinkExt(cItem['url'])
-        for item in tmp:
-            item['need_resolve'] = 0
-            urlTab.append(item)
         return urlTab
+        
+    def getVideoLinks(self, videoUrl):
+        printDBG("StreamComplet.getVideoLinks [%s]" % videoUrl)
+        return self.up.getVideoLinkExt(videoUrl)
         
     def getFavouriteData(self, cItem):
         return cItem['url']
@@ -237,82 +306,3 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, StreamComplet(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('streamcompletlogo.png')])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie  
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

@@ -47,15 +47,16 @@ def gettytul():
 
 class EkinoTv(CBaseHostClass):
     MAIN_URL = 'http://ekino-tv.pl/'
+    DEFAUL_ICON = 'http://ekino-tv.pl/views/img/logo.png'
     #LOGIN_URL     = MAIN_URL + 'logowanie.html'
     SEARCH_URL    = MAIN_URL + 'search/'
     FILMS_CAT_URL = MAIN_URL + 'movie/cat/'  
     SERIES_URL    = MAIN_URL + 'serie/'
-    MAIN_CAT_TAB = [{'category':'list_cats',             'title': 'Filmy',           'url':FILMS_CAT_URL},
-                    {'category':'series_abc',            'title': 'Seriale',         'url':SERIES_URL},
-                    {'category':'list_movies',           'title': 'Dla dzieci',      'url':FILMS_CAT_URL, 'cat':'2,3,5,6'},
-                    {'category':'search',                'title': _('Search'), 'search_item':True},
-                    {'category':'search_history',        'title': _('Search history')} ]
+    MAIN_CAT_TAB = [{'category':'list_cats',             'title': 'Filmy',           'url':FILMS_CAT_URL, 'icon':DEFAUL_ICON},
+                    {'category':'series_abc',            'title': 'Seriale',         'url':SERIES_URL, 'icon':DEFAUL_ICON},
+                    {'category':'list_movies',           'title': 'Dla dzieci',      'url':FILMS_CAT_URL, 'cat':'2,3,5,6', 'icon':DEFAUL_ICON},
+                    {'category':'search',                'title': _('Search'), 'search_item':True, 'icon':DEFAUL_ICON},
+                    {'category':'search_history',        'title': _('Search history'), 'icon':DEFAUL_ICON} ]
     
     SORT_MAP  = {'data-dodania':'add',
                  'data-aktualizacji':'update',
@@ -141,6 +142,7 @@ class EkinoTv(CBaseHostClass):
                 title += ' [%s]' % (ids[-1])
             url    = self.cm.ph.getSearchGroups(item[0], 'href="([^"]+?)"')[0]
             icon   = self.cm.ph.getSearchGroups(item[0], 'src="([^"]+?jpg)"')[0]
+            if url == '': continue
             params = dict(cItem)
             params.update({'title':self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'icon': self._getFullUrl(icon), 'desc': self.cleanHtmlStr(item[-1])})
             if category == 'video':
@@ -223,7 +225,7 @@ class EkinoTv(CBaseHostClass):
             for eItem in eData:
                 s = self.cm.ph.getSearchGroups(eItem[0], 'season\[([0-9]+?)\]')[0]
                 e = self.cm.ph.getSearchGroups(eItem[0], 'episode\[([0-9]+?)\]')[0]
-                title = '%s s%se%s %s' % (cItem['title'], s, e, eItem[1])
+                title = '%s s%se%s %s' % (cItem['title'], s.zfill(2), e.zfill(2), eItem[1])
                 params = dict(cItem)
                 params.update({'title':title, 'url':self._getFullUrl(eItem[0])})
                 self.addVideo(params)
@@ -252,7 +254,12 @@ class EkinoTv(CBaseHostClass):
         urlTab = []
         
         sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return urlTab
+        if not sts: return []
+        
+        if 'dmcabitch.jpg' in data:
+            message = self.cm.ph.getDataBeetwenMarkers(data, '<div class="playerContainer"', '<br style="clear:both">', True)[1]
+            SetIPTVPlayerLastHostError(self.cleanHtmlStr(message))
+            return []
         
         playersData = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="players"', '</ul>', False)[1]
         
@@ -274,8 +281,13 @@ class EkinoTv(CBaseHostClass):
         #printDBG(data)
         for item in data:
             id  = self.cm.ph.getSearchGroups(item, 'id="([^"]+?)"')[0]
-            url = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+            playerParams = self.cm.ph.getSearchGroups(item, '''ShowPlayer[^"^']*?['"]([^"^']+?)['"]\s*\,\s*['"]([^"^']+?)['"]''', 2)
+            if playerParams[0] != '' and playerParams[1] != '':
+                url = 'watch/' + '/'.join(playerParams)
+            if url == '': url = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
             url = self._getFullUrl(url)
+            if url == '' or url.split('.')[-1] in ['jpg', 'jepg', 'gif']:
+                continue
             for p in players:
                 if p['id'] == id:
                     urlTab.append({'name':p['title'], 'url':url, 'need_resolve':1})
@@ -286,13 +298,26 @@ class EkinoTv(CBaseHostClass):
         printDBG("EkinoTv.getVideoLinks [%s]" % baseUrl)
         urlTab = []
         
-        url = ''
-        if 'ekino-tv.pl' in baseUrl:
-            sts, data = self.cm.getPage(baseUrl)
+        try:
+            sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+            baseUrl = response.geturl()
+            response.close()
+            printDBG(baseUrl)
+        except Exception:
+            printExc()
+        
+        url = baseUrl
+        tries = 1
+        while 'ekino-tv.pl' in url and tries < 3:
+            tries += 1
+            sts, data = self.cm.getPage(url)
             if not sts: return urlTab
-            url = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0]
-        else:
-            url = baseUrl
+            printDBG(data)
+            url = self._getFullUrl(self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0])
+            
+            if not self.cm.isValidUrl(url):
+                url = self._getFullUrl(self.cm.ph.getSearchGroups(data, '''var\s+url\s*=\s*['"]([^'^"]+?)['"]''')[0])
+            printDBG("|||"  + url)
         
         if url.startswith('//'):
             url = 'http:' + url
@@ -468,7 +493,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -481,7 +506,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

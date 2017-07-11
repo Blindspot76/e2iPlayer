@@ -36,6 +36,8 @@ class DMItemBase:
         self.downloadedSize = 0
         self.downloadedProcent = -1
         self.downloadedSpeed = 0
+        self.totalFileDuration = -1
+        self.downloadedFileDuration = -1
         
         self.status = DMHelper.STS.WAITING
         self.tries = DMHelper.DOWNLOAD_TYPE.INITIAL
@@ -63,15 +65,22 @@ class DMHelper:
     DOWNLOADER_TYPE = enum( WGET = 'WGET_DOWNLOADER',
                             F4F  = 'F4F_DOWNLOADER' )
                             
-    HEADER_PARAMS = [{'marker':'Cookie=',          'name':'Cookie'},
-                     {'marker':'Referer=',         'name':'Referer'},
-                     {'marker':'User-Agent=',      'name':'User-Agent'},
-                     {'marker':'Range=',           'name':'Range'},
-                     {'marker':'Orgin=',           'name':'Orgin'},
-                     {'marker':'X-Forwarded-For=', 'name':'X-Forwarded-For'}]
+    HEADER_PARAMS = [{'marker':'Host=',             'name':'Host'},
+                     {'marker':'Accept=',           'name':'Accept'},
+                     {'marker':'Cookie=',           'name':'Cookie'},
+                     {'marker':'Referer=',          'name':'Referer'},
+                     {'marker':'User-Agent=',       'name':'User-Agent'},
+                     {'marker':'Range=',            'name':'Range'},
+                     {'marker':'Orgin=',            'name':'Orgin'},
+                     {'marker':'Origin=',           'name':'Origin'},
+                     {'marker':'X-Playback-Session-Id=',           'name':'X-Playback-Session-Id'},
+                     {'marker':'If-Modified-Since=','name':'If-Modified-Since'},
+                     {'marker':'If-None-Match=',    'name':'If-None-Match'},
+                     {'marker':'X-Forwarded-For=',  'name':'X-Forwarded-For'}]
                      
-    HANDLED_HTTP_HEADER_PARAMS = ['Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'X-Forwarded-For']
-
+    HANDLED_HTTP_HEADER_PARAMS = ['Host', 'Accept', 'Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'Origin', 'X-Playback-Session-Id', 'If-Modified-Since', 'If-None-Match', 'X-Forwarded-For']
+    IPTV_DOWNLOADER_PARAMS = ['iptv_wget_continue', 'iptv_wget_timeout', 'iptv_wget_waitretry']
+    
     @staticmethod
     def GET_PWGET_PATH():
         return GetPluginDir('iptvdm/pwget.py')
@@ -83,6 +92,10 @@ class DMHelper:
     @staticmethod
     def GET_F4M_PATH():
         return config.plugins.iptvplayer.f4mdumppath.value
+        
+    @staticmethod
+    def GET_HLSDL_PATH():
+        return config.plugins.iptvplayer.hlsdlpath.value
     
     @staticmethod
     def GET_RTMPDUMP_PATH():
@@ -140,7 +153,7 @@ class DMHelper:
             fo = open(file, "r")
             lines = fo.readlines()
             fo.close()
-        except:
+        except Exception:
             return ret
         if 0 < len(lines):
             match = re.search("|PROGRESS|([0-9]+?)/([0-9]+?)|" , lines[1])
@@ -153,7 +166,7 @@ class DMHelper:
         try:
             st = os.stat(filename)
             ret = st.st_size
-        except:
+        except Exception:
             ret = -1
         return ret
         
@@ -171,7 +184,7 @@ class DMHelper:
             remoteContentInfo = {'Content-Length': tmpInfo.get('Content-Length', -1), 'Content-Type': tmpInfo.get('Content-Type', '')}
         if response:
             try: response.close()
-            except: pass
+            except Exception: pass
 
         printDBG("getRemoteContentInfoByUrllib: [%r]" % remoteContentInfo)
         return sts,remoteContentInfo
@@ -190,7 +203,7 @@ class DMHelper:
             return {}
             
     @staticmethod
-    def getDownloaderParamFromUrlWithMeta(url):
+    def getDownloaderParamFromUrlWithMeta(url, httpHeadersOnly=False):
         printDBG("DMHelper.getDownloaderParamFromUrlWithMeta url[%s], url.meta[%r]" % (url, url.meta))
         downloaderParams = {}
         for key in url.meta:
@@ -198,6 +211,10 @@ class DMHelper:
                 downloaderParams[key] = url.meta[key]
             elif key == 'http_proxy':
                 downloaderParams[key] = url.meta[key]
+        if not httpHeadersOnly:
+            for key in DMHelper.IPTV_DOWNLOADER_PARAMS:
+                if key in url.meta:
+                    downloaderParams[key] = url.meta[key]
         return url, downloaderParams
     
     @staticmethod
@@ -236,8 +253,32 @@ class DMHelper:
                     if key == 'User-Agent': defaultHeader = ''
                 elif key == 'http_proxy':
                     proxyOptions += ' -e use_proxy=yes -e http_proxy="%s" -e https_proxy="%s" ' % (value, value)
-                
         
-        cmd = DMHelper.GET_WGET_PATH() + defaultHeader + ' --no-check-certificate ' + headerOptions + proxyOptions
+        wgetContinue = ''
+        if downloaderParams.get('iptv_wget_continue', False):
+            wgetContinue = ' -c --timeout=%s --waitretry=%s ' % (downloaderParams.get('iptv_wget_timeout', 30), downloaderParams.get('iptv_wget_waitretry', 1))
+            
+        cmd = DMHelper.GET_WGET_PATH() + wgetContinue + defaultHeader + ' --no-check-certificate ' + headerOptions + proxyOptions
         printDBG("getBaseWgetCmd return cmd[%s]" % cmd)
+        return cmd
+        
+    @staticmethod
+    def getBaseHLSDLCmd(downloaderParams = {}):
+        printDBG("getBaseWgetCmd downloaderParams[%r]" % downloaderParams)
+        headerOptions = ''
+        proxyOptions = ''
+        
+        userAgent = ' -u "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0" '
+        for key, value in downloaderParams.items():
+            if value != '':
+                if key in DMHelper.HANDLED_HTTP_HEADER_PARAMS:
+                    if key == 'User-Agent':
+                        userAgent = ' -u "%s" ' % value
+                    else:
+                        headerOptions += ' -h "%s: %s" ' % (key, value)
+                elif key == 'http_proxy':
+                    proxyOptions += ' -e use_proxy=yes -e http_proxy="%s" -e https_proxy="%s" ' % (value, value)
+        
+        cmd = DMHelper.GET_HLSDL_PATH() + ' -q -f -b ' + userAgent + headerOptions + proxyOptions
+        printDBG("getBaseHLSDLCmd return cmd[%s]" % cmd)
         return cmd

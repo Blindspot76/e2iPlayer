@@ -7,6 +7,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher import aes_cbc, base
 ###################################################
@@ -20,7 +21,7 @@ import urllib
 import time
 import binascii
 try:    import simplejson as json
-except: import json
+except Exception: import json
 from os import urandom as os_urandom
 try:
     from hashlib import sha1
@@ -39,9 +40,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.TVNDefaultformat = ConfigSelection(default = "4", choices = [("0", "Najgorsza"), ("1", "Bardzo niska"), ("2", "Niska"),  ("3", "Średnia"), ("4", "Standard"), ("5", "Wysoka"), ("6", "Bardzo wysoka"), ("7", "HD"), ("9999", "Najlepsza")])
+config.plugins.iptvplayer.TVNDefaultformat = ConfigSelection(default = "9999", choices = [("0", "Najgorsza"), ("1", "Bardzo niska"), ("2", "Niska"),  ("3", "Średnia"), ("4", "Standard"), ("5", "Wysoka"), ("6", "Bardzo wysoka"), ("7", "HD"), ("9999", "Najlepsza")])
 config.plugins.iptvplayer.TVNUseDF = ConfigYesNo(default = False)
-config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "Samsung TV", choices = [("Mobile (Android)", "Mobile (Android)"),("Samsung TV", "Samsung TV")])
+config.plugins.iptvplayer.TVNdevice = ConfigSelection(default = "_mobile_", choices = [("_mobile_", "Mobile"),("_tv_", "TV")])
 config.plugins.iptvplayer.proxyenable = ConfigYesNo(default = False)
    
 def GetConfigList():
@@ -49,7 +50,7 @@ def GetConfigList():
 
     optionList.append(getConfigListEntry("Domyślna jakość video:", config.plugins.iptvplayer.TVNDefaultformat))
     optionList.append(getConfigListEntry("Używaj domyślnej jakości video:", config.plugins.iptvplayer.TVNUseDF))
-    optionList.append(getConfigListEntry("TVN-Przedstaw się jako:", config.plugins.iptvplayer.TVNdevice))
+    #optionList.append(getConfigListEntry("TVN-Przedstaw się jako:", config.plugins.iptvplayer.TVNdevice))
     optionList.append(getConfigListEntry("TVN-korzystaj z proxy?", config.plugins.iptvplayer.proxyenable))
 
     return optionList
@@ -59,8 +60,6 @@ def gettytul():
     return 'TVN Player'
 
 class TvnVod(CBaseHostClass):
-    HOST         = 'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7'
-    HOST_ANDROID = 'Apache-HttpClient/UNAVAILABLE (java 1.4)'
     ICON_URL     = 'http://redir.atmcdn.pl/scale/o2/tvn/web-content/m/%s?quality=50&dstw=290&dsth=287&type=1'
     
     QUALITIES_TABLE = { 
@@ -81,23 +80,80 @@ class TvnVod(CBaseHostClass):
     
     def __init__(self):
         printDBG("TvnVod.__init__")
-        CBaseHostClass.__init__(self, {'history':'TvnVod', 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
-        
-        if config.plugins.iptvplayer.TVNdevice.value == 'Samsung TV':
-            self.baseUrl = 'https://api.tvnplayer.pl/api?platform=ConnectedTV&terminal=Samsung&format=json&v=3.0&authKey=ba786b315508f0920eca1c34d65534cd'
-            userAgent = TvnVod.HOST
-        else:
-            self.baseUrl = 'https://api.tvnplayer.pl/api?platform=Mobile&terminal=Android&format=json&v=3.1&authKey=4dc7b4f711fb9f3d53919ef94c23890c' #b4bc971840de63d105b3166403aa1bea
-            userAgent = TvnVod.HOST_ANDROID
-        
-        self.cm.HEADER = {'User-Agent': userAgent, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        CBaseHostClass.__init__(self, {'history':'TvnVod', 'history_store_type':True, 'proxyURL': config.plugins.iptvplayer.proxyurl.value, 'useProxy': config.plugins.iptvplayer.proxyenable.value})
         self.itemsPerPage = 30 # config.plugins.iptvplayer.tvp_itemsperpage.value
-        self.loggedIn = None
-        self.ACCOUNT  = False
+        
+        self.platforms = {
+            'Panasonic': {
+                'platform' : 'ConnectedTV',
+                'terminal' : 'Panasonic',
+                'authKey' : '064fda5ab26dc1dd936f5c6e84b7d3c2',
+                'base_url' : 'http://api.tvnplayer.pl/api2',
+                'header' : {'User-Agent':'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7', 'X-Api-Version':'3.1', 'Accept-Encoding':'gzip'},
+                'api' : '3.1',
+            },
+            'Samsung': {
+                'platform' : 'ConnectedTV',
+                'terminal' : 'Samsung2',
+                'authKey' : '453198a80ccc99e8485794789292f061',
+                'base_url' : 'http://api.tvnplayer.pl/api2',
+                'header' : {'User-Agent':'Mozilla/5.0 (SmartHub; SMART-TV; U; Linux/SmartTV; Maple2012) AppleWebKit/534.7 (KHTML, like Gecko) SmartTV Safari/534.7', 'X-Api-Version':'3.6', 'Accept-Encoding':'gzip'},
+                'api' : '3.6',
+            },
+            'Android': {
+                'platform' : 'Mobile',
+                'terminal' : 'Android',
+                'authKey' : 'b4bc971840de63d105b3166403aa1bea',
+                'base_url' : 'http://api.tvnplayer.pl/api',
+                'header' : {'User-Agent':'Apache-HttpClient/UNAVAILABLE (java 1.4)'},
+                'api' : '3.0',
+            },
+            'Android2': {
+                'platform' : 'Mobile',
+                'terminal' : 'Android',
+                'authKey' : 'b4bc971840de63d105b3166403aa1bea',
+                'header' : {'User-Agent':'Apache-HttpClient/UNAVAILABLE (java 1.4)'},
+                'base_url' : 'http://api.tvnplayer.pl/api',
+                'api' : '2.0',
+            },
+            'Android3': {
+                'platform' : 'Mobile',
+                'terminal' : 'Android',
+                'authKey' : '4dc7b4f711fb9f3d53919ef94c23890c',
+                'base_url' : 'http://api.tvnplayer.pl/api',
+                'header' : {'User-Agent':'Apache-HttpClient/UNAVAILABLE (java 1.4)'},
+                'api' : '3.1',
+            },
+            'Android4': {
+                'platform' : 'Mobile',
+                'terminal' : 'Android',
+                'authKey' : '4dc7b4f711fb9f3d53919ef94c23890c',
+                'base_url' : 'http://api.tvnplayer.pl/api2',
+                'header' : {'User-Agent':'Player/3.3.4 tablet Android/4.1.1 net/wifi', 'X-Api-Version':'3.7', 'Accept-Encoding':'gzip'},
+                'api' : '3.7',
+            },
+        }
+        
+    def getDefaultPlatform(self):
+        if '_tv_' == config.plugins.iptvplayer.TVNdevice.value:
+            return 'Panasonic'
+        return "Android4"
+        
+    def getBaseUrl(self, pl):
+        url = self.platforms[pl]['base_url'] + '/?platform=%s&terminal=%s&format=json&authKey=%s&v=%s&' % (self.platforms[pl]['platform'], self.platforms[pl]['terminal'],  self.platforms[pl]['authKey'], self.platforms[pl]['api'] )
+        if pl not in ['Android', 'Android2', 'Panasonic']:
+            url += 'showContentContractor=free%2Csamsung%2Cstandard&'
+        return url 
+        
+    def getHttpHeader(self, pl):
+        return self.platforms[pl]['header']
         
     def _getJItemStr(self, item, key, default=''):
-        v = item.get(key, None)
-        if None == v:
+        try:
+            v = item.get(key, None)
+            if None == v:
+                return default
+        except Exception:
             return default
         return clean_html(u'%s' % v).encode('utf-8')
         
@@ -128,7 +184,7 @@ class TvnVod(CBaseHostClass):
                     if tmp.endswith('png'): pngUrl = tmp
                 if '' == iconUrl: iconUrl = pngUrl
                 if '' != iconUrl: iconUrl = TvnVod.ICON_URL % iconUrl
-        except:
+        except Exception:
             printExc()
         return iconUrl
         
@@ -152,15 +208,18 @@ class TvnVod(CBaseHostClass):
         encryptedTokenHEX = binascii.hexlify(encryptedToken).upper()
         return "http://redir.atmcdn.pl/http/%s?salt=%s&token=%s" % (url, salt, encryptedTokenHEX)
         
-    def listsCategories(self, cItem):
+    def listsCategories(self, cItem, searchCategories=False):
         printDBG("TvnVod.listsCategories cItem[%s]" % cItem)
+        pl = self.getDefaultPlatform()
         
         searchMode = False
         page = 1 + cItem.get('page', 0)
         if 'search' == cItem.get('category', None):
-            #https://api.tvnplayer.pl/api/?v=3.1&platform=Mobile&terminal=Android&format=json&authKey=4dc7b4f711fb9f3d53919ef94c23890c&limit=30&sort=&m=getSearchItems&isUserLogged=0&page=1&query=film
             searchMode = True
             urlQuery  = '&sort=newest&m=getSearchItems&page=%d&query=%s' % (page, cItem['pattern'])
+            if cItem.get('search_category', False):
+                pl = 'Android4'
+
         elif None != cItem.get('category', None) and None != cItem.get('id', None):
             groupName = 'items'
             urlQuery = '&type=%s&id=%s&limit=%s&page=%s&sort=newest&m=getItems' % (cItem['category'], cItem['id'], self.itemsPerPage, page)
@@ -171,8 +230,8 @@ class TvnVod(CBaseHostClass):
             urlQuery = '&m=mainInfo'
         
         try:
-            url = self.baseUrl + urlQuery
-            sts, data = self.cm.getPage(url)
+            url = self.getBaseUrl(pl) + urlQuery
+            sts, data = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
             data = json.loads(data)
             
             if 'success' != data['status']:
@@ -193,6 +252,7 @@ class TvnVod(CBaseHostClass):
                     tmp.extend(resItem.get('items', []))
                 for resItem in data.get('vodArticleItems', {}).get('program', []):
                     tmp.extend(resItem.get('items', []))
+                tmp.extend(data.get('items', []))
                 data = tmp
                 tmp = None
             else:
@@ -236,7 +296,7 @@ class TvnVod(CBaseHostClass):
                             tmp = time.strptime(tmp, "%Y-%m-%d %H:%M")
                             if tmp > time.localtime():
                                 title += _(" (planowany)")
-                    except:
+                    except Exception:
                         printExc()
                     
                     # get description
@@ -253,8 +313,12 @@ class TvnVod(CBaseHostClass):
                                'season'   : 0,
                              }
                     if 'episode' == category:
+                        if cItem.get('search_category', False):
+                            continue
                         self.addVideo(params)
                     else:
+                        if title in ['SPORT', 'Live', 'STREFY', 'KONTYNUUJ OGLĄDANIE', 'ULUBIONE', 'PAKIETY']:
+                            continue
                         self.addDir(params)
             else:
                 showNextPage = False
@@ -274,37 +338,52 @@ class TvnVod(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'title':_('Następna strona'), 'page': page, 'icon':'', 'desc':''})
                 self.addDir(params)
-        except: 
+        except Exception: 
             printExc()
 
         
-    def listSearchResults(self, pattern, searchType):
-        printDBG("TvnVod.listSearchResults pattern[%s], searchType[%s]" % (pattern, searchType))
-        params = { 'id'       : 0,
-                   'title'    : '',
-                   'desc'     : '',
-                   'icon'     : '',
-                   'category' : 'search',
-                   'pattern'  : pattern,
-                   'season'   : 0,
-                 }
+    def listSearchResult(self, cItem, pattern, searchType):
+        printDBG("TvnVod.listSearchResult pattern[%s], searchType[%s]" % (pattern, searchType))
+        params = dict(cItem)
+        params.update({ 'id'       : 0,
+                       'title'    : '',
+                       'desc'     : '',
+                       'icon'     : '',
+                       'category' : 'search',
+                       'pattern'  : pattern,
+                       'season'   : 0,
+                     })
+        params2 = dict(params)
+        params2['search_category'] = True
+        self.listsCategories(params2)
         self.listsCategories(params)
 
     def listsMainMenu(self):
         for item in TvnVod.SERVICE_MENU_TABLE:
             params = {'name': 'category', 'title': item, 'category': item}
+            if item == 'Wyszukaj':
+                params['category'] = 'search'
+                params['search_item'] = True
+            if item == 'Historia wyszukiwania':
+                params['category'] = 'search_history'
             self.addDir(params)
     
     def resolveLink(self, url):
         printDBG("TvnVod.resolveLink url[%s]" % url)
+        url = strwithmeta(url)
+        pl = url.meta.get('tvn_platform', self.getDefaultPlatform())
         videoUrl = ''
         if len(url) > 0:
-            if config.plugins.iptvplayer.TVNdevice.value == 'Mobile (Android)':
+            if 'Android' in pl:
                 videoUrl = self._generateToken(url).encode('utf-8')
-            elif config.plugins.iptvplayer.TVNdevice.value == 'Samsung TV':
-                sts, data  = self.cm.getPage(url)
+            elif 'Panasonic' in pl:
+                videoUrl = url
+            else:
+                sts, data  = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
                 if sts and data.startswith('http'):
                     videoUrl =  data.encode('utf-8')
+                    
+        videoUrl = strwithmeta(videoUrl, { 'header': self.getHttpHeader(pl) })
         return videoUrl
             
     def getLinksForVideo(self, cItem):
@@ -314,9 +393,15 @@ class TvnVod(CBaseHostClass):
         printDBG("TvnVod.getLinks cItem.id[%r]" % id )
         videoUrls = []
         
-        url = self.baseUrl + '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
-        sts, data = self.cm.getPage(url)
-        if sts:
+        for pl in ['Panasonic', 'Samsung', 'Android2']:#, 'Android4']: #'Android', ''Samsung', 
+            if pl in ['Android', 'Android2', 'Panasonic']:
+                url = '&type=episode&id=%s&limit=%d&page=1&sort=newest&m=%s' % (id, self.itemsPerPage, 'getItem')
+            else:
+                url = 'm=getItem&id=%s&android23video=1&deviceType=Tablet&os=4.1.1&playlistType=&connectionType=WIFI&deviceScreenWidth=1920&deviceScreenHeight=1080&appVersion=3.3.4&manufacturer=unknown&model=androVMTablet' % id
+            url = self.getBaseUrl(pl) + url
+            
+            sts, data = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
+            if not sts: continue
             try:
                 data = json.loads(data)
                 if 'success' == data['status']:
@@ -339,6 +424,7 @@ class TvnVod(CBaseHostClass):
                                 SetIPTVPlayerLastHostError("DRM protection.")
                             #    url = self._getJItemStr(video, 'src', '')
                             if '' != url:
+                                url = strwithmeta(url, {'tvn_platform':pl})
                                 qualityName = self._getJItemStr(video, 'profile_name', '')
                                 videoUrls.append({'name':qualityName, 'profile_name':qualityName, 'url':url, 'need_resolve':1})
                     if  1 < len(videoUrls):
@@ -348,7 +434,9 @@ class TvnVod(CBaseHostClass):
                         videoUrls = CSelOneLink(videoUrls, __getLinkQuality, max_bitrate).getSortedLinks()
                         if config.plugins.iptvplayer.TVNUseDF.value:
                             videoUrls = [videoUrls[0]]
-            except: printExc()
+            except Exception: printExc()
+            if len(videoUrls):
+                break
         return videoUrls
         
     def getFavouriteData(self, cItem):
@@ -357,36 +445,8 @@ class TvnVod(CBaseHostClass):
     def getLinksForFavourite(self, fav_data):
         return self.getLinks(fav_data)
 
-    def tryTologin(self):
-        printDBG('tryTologin start')
-        if '' == self.LOGIN.strip() or '' == self.PASSWORD.strip():
-            printDBG('tryTologin wrong login data')
-            return False
-        
-        post_data = {'email':self.LOGIN, 'password':self.PASSWORD}
-        params = {'header':self.HEADER, 'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
-        sts, data = self.cm.getPage( self.MAINURL + "logowanie.html", params, post_data)
-        if not sts:
-            printDBG('tryTologin problem with login')
-            return False
-            
-        if 'wyloguj.html' in data:
-            printDBG('tryTologin user[%s] logged with VIP accounts' % self.LOGIN)
-            return True
-     
-        printDBG('tryTologin user[%s] does not have status VIP' % self.LOGIN)
-        return False
-        
-
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('TvnVod..handleService start')
-        
-        if None == self.loggedIn and self.ACCOUNT:
-            self.loggedIn = self.tryTologin()
-            if not self.loggedIn:
-                self.sessionEx.open(MessageBox, 'Problem z zalogowaniem użytkownika "%s".' % self.LOGIN, type = MessageBox.TYPE_INFO, timeout = 10 )
-            else:
-                self.sessionEx.open(MessageBox, 'Zostałeś poprawnie \nzalogowany.', type = MessageBox.TYPE_INFO, timeout = 10 )
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
@@ -400,26 +460,25 @@ class TvnVod(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listsMainMenu()           
-    #WYSZUKAJ
-        elif category == "Wyszukaj":
+            self.listsMainMenu()
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
             pattern = urllib.quote_plus(searchPattern)
-            printDBG("Wyszukaj: " + pattern)
-            self.listSearchResults(pattern, searchType)
-    #HISTORIA WYSZUKIWANIA
-        elif category == "Historia wyszukiwania":
-            self.listsHistory()
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, pattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
     #KATEGORIE
         else:
             self.listsCategories(self.currItem)
+        CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, TvnVod(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('tvnvodlogo.png')])
 
     def getLinksForVideo(self, Index = 0, selItem = None):
         retCode = RetHost.ERROR
@@ -451,7 +510,7 @@ class IPTVHost(CHostBase):
         possibleTypesOfSearch = None
 
         if cItem['type'] == 'category':
-            if cItem['title'] == 'Wyszukaj':
+            if cItem.get('search_item', False):
                 type = CDisplayListItem.TYPE_SEARCH
                 possibleTypesOfSearch = searchTypesOptions
             else:
@@ -475,28 +534,3 @@ class IPTVHost(CHostBase):
                                 possibleTypesOfSearch = possibleTypesOfSearch)
     # end converItem
 
-    def getSearchItemInx(self):
-        # Find 'Wyszukaj' item
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'Wyszukaj':
-                    return i
-        except:
-            printExc()
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex].get('name', ''):
-                pattern = list[self.currIndex]['title']
-                search_type = ''
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printExc()
-            self.searchPattern = ''
-            self.searchType = ''
-        return

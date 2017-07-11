@@ -21,7 +21,7 @@ import re
 import urllib
 import base64
 try:    import json
-except: import simplejson as json
+except Exception: import simplejson as json
 from datetime import datetime
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
@@ -45,10 +45,10 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://libre-stream.com/'
+    return 'http://ls-streaming.com/'
 
 class LibreStream(CBaseHostClass):
-    MAIN_URL   = 'http://libre-stream.com/'
+    MAIN_URL   = 'http://ls-streaming.com/'
     SEARCH_URL = MAIN_URL + 'index.php?q='
     DEFAULT_ICON_URL = 'http://thumbnail.easycounter.com/thumbnails/300x180/l/libre-stream.org.png'
     
@@ -222,8 +222,7 @@ class LibreStream(CBaseHostClass):
             self.addDir(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
-        #searchPattern = 'Человек'
-        searchPattern = searchPattern.decode('utf-8').encode('cp1251')
+        searchPattern = searchPattern
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         cItem['url'] = self.SEARCH_URL + searchPattern + '&search_start=%s' % cItem.get('page', 1)
@@ -247,7 +246,7 @@ class LibreStream(CBaseHostClass):
                 episodeTitle  = self.cm.ph.getDataBeetwenMarkers(item, '<h3 class="episodetitle">', '</h3>', False)[1]
                 etitleMap[id] = self.cleanHtmlStr(episodeTitle)
         
-        servers = self.cm.ph.getDataBeetwenMarkers(data, "<ul class='etabs'>", '</ul>', False)[1]
+        servers = self.cm.ph.getDataBeetwenMarkers(data, "<ul class='etabs'", '</ul>')[1]
         servers = servers.split('</li>')
         if len(servers): del servers[-1]
         for item in servers:
@@ -262,7 +261,7 @@ class LibreStream(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("LibreStream.getLinksForVideo [%s]" % cItem)
         urlTab = []
-        if 'libre-stream.com' in cItem['url']:
+        if 'libre-stream.com' in cItem['url'] or self.up.getDomain(self.getMainUrl(), True) in cItem['url']:
             sts, data = self.cm.getPage(cItem['url'])
             if not sts: return []
             urlTab = self._getLinksFromContent(data, 'name', {'need_resolve':1})
@@ -394,7 +393,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'search':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -407,7 +406,7 @@ class IPTVHost(CHostBase):
                 self.host.history.addHistoryItem( pattern, search_type)
                 self.searchPattern = pattern
                 self.searchType = search_type
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
             self.searchType = ''

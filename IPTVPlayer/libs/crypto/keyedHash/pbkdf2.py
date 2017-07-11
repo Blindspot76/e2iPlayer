@@ -24,7 +24,7 @@ def pbkdf2(password, salt, iterations, keySize, PRF=HMAC_SHA1):
 		raise 'keySize too long for PBKDF2'
 
 	prf = PRF(key=password)  # HMAC_SHA1
-	numBlocks = ceil(1.*keySize/prf.digest_size) # ceiling function
+	numBlocks = int(ceil(1.*keySize/prf.digest_size)) # ceiling function
 	key = ''
 	for block in range(1,numBlocks+1):
 		# Calculate F(P, salt, iterations, i)

@@ -4,7 +4,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, CSearchHistoryHelper, GetLogoDir, printExc
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import unescapeHTML
@@ -109,6 +109,25 @@ class Ninateka:
         if not sts:
             printDBG("getVideoUrl except")
             return linksTab
+        
+        try:
+            arg = self.cm.ph.getDataBeetwenMarkers(data, '(playerOptionsWithMainSource,', ')', False)[1].strip()
+            arg = int(arg)
+            def _repFun(matchObj):
+                url = ''
+                item = matchObj.group(1) 
+                
+                if not self.cm.isValidUrl(item):
+                    for c in item:
+                        url += chr(arg ^ ord(c))
+                else:
+                    url = item
+                
+                printDBG(">>>> " + url)
+                return matchObj.group(0).replace(matchObj.group(1), url) 
+            data = re.sub('{"file":"([^"]+?)"}', _repFun, data)
+        except Exception:
+            printExc()
         
         match = re.search( '{"file":"([^"]+?.mp4)"}', data )
         if match: 
@@ -304,7 +323,7 @@ class IPTVHost(CHostBase):
             for i in range( len(list) ):
                 if list[i]['category'] == 'Wyszukaj':
                     return i
-        except:
+        except Exception:
             printDBG('getSearchItemInx EXCEPTION')
             return -1
 
@@ -315,7 +334,7 @@ class IPTVHost(CHostBase):
                 pattern = list[self.currIndex]['title']
                 self.host.history.addHistoryItem( pattern )
                 self.searchPattern = pattern
-        except:
+        except Exception:
             printDBG('setSearchPattern EXCEPTION')
             self.searchPattern = ''
         return

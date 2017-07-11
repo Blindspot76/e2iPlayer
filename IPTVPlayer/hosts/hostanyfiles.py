@@ -10,7 +10,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.libs.anyfilesapi import AnyFilesVideoUrlExtractor
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, rm
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 # FOREIGN import
@@ -43,12 +43,12 @@ def gettytul():
     return 'AnyFiles'
 
 class AnyFiles(CBaseHostClass):
-    MAIN_URL = 'http://video.anyfiles.pl'
+    MAIN_URL = 'https://anyfiles.pl'
     SEARCH_URL = MAIN_URL + '/search.jsp'
-    
-    MAIN_CAT_TAB = [{'category':'genres',             'title': _('Genres'),       'url':MAIN_URL + '/pageloading/index-categories-loader.jsp', 'icon':''},
-                    {'category':'list_movies',        'title': _('Newest'),       'url':MAIN_URL + '/najnowsze/0', 'icon':''},
-                    {'category':'list_movies',        'title': _('Most Popular'), 'url':MAIN_URL + '/najpopularniejsze/0', 'icon':''},
+    DEFAULT_ICON_URL = 'http://anyfiles.pl/css/images/logo.png'
+    MAIN_CAT_TAB = [{'category':'list_movies',        'title': _('Most Popular'), 'url':MAIN_URL + '/all.jsp'},
+                    {'category':'genres',             'title': _('Genres'),       'url':MAIN_URL + '/pageloading/index-categories-loader.jsp'},
+                    {'category':'list_movies',        'title': _('Most Popular'), 'url':MAIN_URL + '/all.jsp'},
                     {'category':'search',             'title': _('Search'), 'search_item':True},
                     {'category':'search_history',     'title': _('Search history')} ]
 
@@ -127,11 +127,11 @@ class AnyFiles(CBaseHostClass):
             tmp = tmpTab
         
         try: cItem['num_of_pages'] = int(tmp[0])
-        except: cItem['num_of_pages'] = 1
+        except Exception: cItem['num_of_pages'] = 1
         try: cItem['url'] = self._getFullUrl(tmp[1])
-        except: pass
+        except Exception: pass
         try: cItem['page_size'] = int(tmp[2])
-        except: cItem['page_size'] = 1
+        except Exception: cItem['page_size'] = 1
         
         if 'priv_search' in cItem:
             pageloadUrl = '/pageloading/search-media-loader.jsp'
@@ -161,11 +161,11 @@ class AnyFiles(CBaseHostClass):
             if newhandle:
                 title = self.cm.ph.getDataBeetwenMarkers(item, '<strong>', '</strong>', False)[1]
                 try: desc = self.cleanHtmlStr(item.split('</div>')[1])
-                except: desc = ''
+                except Exception: desc = ''
             else:
                 title = self.cm.ph.getSearchGroups(item, reTitle, 1)[0]
                 try: desc = self.cleanHtmlStr(item.split('</tr>')[1])
-                except: desc = ''
+                except Exception: desc = ''
             if title != '' and url != '':
                 params = dict(cItem)
                 params.update( {'title':title, 'url':self._getFullUrl(url), 'icon':self._getFullUrl(icon), 'desc':desc} )
@@ -183,11 +183,8 @@ class AnyFiles(CBaseHostClass):
         if 1 == page:
             sts, data = self.cm.getPage(self._getFullUrl('/all.jsp?reset_f=true'), self.defaultParams) #self.MAIN_URL
             if not sts: return
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'POST', ';', False)[1]
-            data = re.compile('[ ]*?se:[ ]*?"([^"]+?)"').findall(data)
             post_data = {}
-            for item in data:
-                post_data['se'] = item
+            post_data['se'] = self.cm.ph.getSearchGroups(data, '''\sname=['"]se['"][^>]+?value=['"]([^'^"]+?)['"]''')[0]
             post_data['q'] = searchPattern
             cItem = dict(cItem)
             #cItem['post_data'] = post_data
@@ -224,6 +221,7 @@ class AnyFiles(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
+            rm(self.COOKIE_FILE)
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
     #MOVIES
         elif category == 'genres':
@@ -252,88 +250,3 @@ class IPTVHost(CHostBase):
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('anyfileslogo.png')])
     
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-    
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

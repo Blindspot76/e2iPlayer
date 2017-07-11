@@ -45,20 +45,20 @@ class IPTVDMWidget(Screen):
     if sz_h < 500:
         sz_h += 4
     skin = """
-        <screen name="IPTVDMWidget" position="center,center" title="IPTV Player download manager" size="%d,%d">
+        <screen name="IPTVDMWidget" position="center,center" title="%s" size="%d,%d">
          <ePixmap position="5,9"   zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
          <ePixmap position="180,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
          <ePixmap position="385,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
          <ePixmap position="590,9" zPosition="4" size="35,30" pixmap="%s" transparent="1" alphatest="on" />
          <widget render="Label" source="key_red"    position="45,9"  size="140,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
-         <widget render="Label" source="key_yellow" position="225,9" size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />            
-         <widget render="Label" source="key_green"  position="425,9" size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />            
+         <widget render="Label" source="key_green"  position="225,9" size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />            
+         <widget render="Label" source="key_yellow" position="425,9" size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />            
          <widget render="Label" source="key_blue"   position="635,9" size="300,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />            
          <widget name="list" position="5,100" zPosition="2" size="%d,%d" scrollbarMode="showOnDemand" transparent="0"  backgroundColor="#00000000" enableWrapAround="1" />
          <widget name="titel" position="5,47" zPosition="1" size="%d,23" font="Regular;20" transparent="1"  backgroundColor="#00000000"/>
-        </screen>""" %(
+        </screen>""" %(_("IPTV Player download manager"),
             sz_w, sz_h, # size
-            GetIconDir('red.png'), GetIconDir('yellow.png'), GetIconDir('green.png'), GetIconDir('blue.png'),
+            GetIconDir('red.png'), GetIconDir('green.png'), GetIconDir('yellow.png'), GetIconDir('blue.png'),
             sz_w - 10, sz_h - 20, # size list
             sz_w - 135, # size titel
             )
@@ -157,7 +157,7 @@ class IPTVDMWidget(Screen):
                 if skip: continue
                 listItem = DMItemBase(url=fileName, fileName=fileName)
                 try: listItem.downloadedSize = os_path.getsize(fileName)
-                except: listItem.downloadedSize = 0
+                except Exception: listItem.downloadedSize = 0
                 listItem.status      = DMHelper.STS.DOWNLOADED
                 listItem.downloadIdx = -1
                 self.tmpList.append( listItem )
@@ -196,7 +196,7 @@ class IPTVDMWidget(Screen):
             self.mainTimer_conn = None
             self.mainTimer.stop()
             self.mainTimer = None
-        except: printExc()
+        except Exception: printExc()
         try:
             self.currentService = None
             self.session.nav.event.remove(self.__event)
@@ -204,7 +204,7 @@ class IPTVDMWidget(Screen):
 
             self.onClose.remove(self.__onClose)
             self.onShow.remove(self.onStart)
-        except: printExc()
+        except Exception: printExc()
         
     def red_pressed(self):
         self.DM.stopWorkThread()
@@ -224,7 +224,7 @@ class IPTVDMWidget(Screen):
             self.tmpData = ''
             lsdirPath = GetBinDir("lsdir")
             try: os_chmod(lsdirPath, 0777)
-            except: printExc()
+            except Exception: printExc()
             cmd = '%s "%s" rl r' % (lsdirPath, config.plugins.iptvplayer.NaszaSciezka.value)
             printDBG("cmd[%s]" % cmd)
             self.console.execute( E2PrioFix( cmd ) )
@@ -301,17 +301,28 @@ class IPTVDMWidget(Screen):
                 try:
                     title = os_path.basename(title)
                     title = os_path.splitext(title)[0]
-                except:
+                except Exception:
                     printExc()
                 # when we watch we no need update sts
                 self.DM.setUpdateProgress(False)
                 player = ret[2]
                 if "mini" == player:
                     self.session.openWithCallback(self.leaveMoviePlayer, IPTVMiniMoviePlayer, item.fileName, title)
-                elif "exteplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'eplayer')
-                elif "extgstplayer" == player:
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'gstplayer')
+                elif player in ["exteplayer", "extgstplayer"]:
+                    additionalParams = {}
+                    if item.fileName.split('.')[-1] in ['mp3', 'm4a', 'ogg', 'wma', 'fla', 'wav', 'flac']:
+                        additionalParams['show_iframe'] = config.plugins.iptvplayer.show_iframe.value
+                        additionalParams['iframe_file_start'] = config.plugins.iptvplayer.iframe_file.value
+                        additionalParams['iframe_file_end'] = config.plugins.iptvplayer.clear_iframe_file.value
+                        if 'sh4' == config.plugins.iptvplayer.plarform.value:
+                            additionalParams['iframe_continue'] = True
+                        else:
+                            additionalParams['iframe_continue'] = False
+                        
+                    if "exteplayer" == player:
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'eplayer', additionalParams)
+                    else:
+                        self.session.openWithCallback(self.leaveMoviePlayer, IPTVExtMoviePlayer, item.fileName, title, None, 'gstplayer', additionalParams)
                 else:
                     self.session.openWithCallback(self.leaveMoviePlayer, IPTVStandardMoviePlayer, item.fileName, title)
             elif self.localMode:
@@ -323,7 +334,7 @@ class IPTVDMWidget(Screen):
                                 del self.localFiles[idx]
                                 self.reloadList(True)
                                 break
-                    except: printExc()
+                    except Exception: printExc()
             elif ret[1] == "continue":
                 self.DM.continueDownloadItem(item.downloadIdx)
             elif ret[1] == "retry":
@@ -354,7 +365,7 @@ class IPTVDMWidget(Screen):
         sel = None
         try:
             sel = self["list"].l.getCurrentSelection()[0]
-        except:return None
+        except Exception:return None
         return sel
         
     def onStart(self):
