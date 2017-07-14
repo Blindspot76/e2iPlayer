@@ -429,6 +429,11 @@ class urlparser:
                        'clipwatching.com':     self.pp.parserCLIPWATCHINGCOM,
                        'kingvid.tv':           self.pp.parserKINGVIDTV      ,
                        'ekstraklasa.tv':       self.pp.parserEKSTRAKLASATV  ,
+                       'dailyuploads.net':     self.pp.parserUPLOAD2        ,
+                       'upload.mn':            self.pp.parserUPLOAD2        ,
+                       'owndrives.com':        self.pp.parserUPLOAD         ,
+                       'uploadx.link':         self.pp.parserUPLOAD         ,
+                       'uploadz.org':          self.pp.parserUPLOAD         ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -4510,8 +4515,12 @@ class pageParser:
         videoUrl = self.cm.ph.getSearchGroups(videoData, 'href="([^"]+?)"')[0]
         if self.cm.isValidUrl(videoUrl): return videoUrl
         
-        videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?class="downloadbtn"[^>]+?['"](http[s]?://[^'^"]+?['"])''')[0]
-        if self.cm.isValidUrl(videoUrl): return videoUrl   
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?class="downloadbtn"[^>]+?['"](http[s]?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'class="downloadbtn"', '</a>', caseSensitive=False)[1]
+        videoUrl = self.cm.ph.getSearchGroups(tmp, '''['"](http[s]?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
         
         return False
         
@@ -8591,4 +8600,59 @@ class pageParser:
             videoUrls.append({'name':name, 'url':url, 'bitrate':item[2]})
         
         return videoUrls
+        
+    def parserUPLOAD2(self, baseUrl):
+        printDBG("parserUPLOAD2 baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
+            
+        sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+        baseUrl = response.geturl()
+        response.close()
+
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        for marker in ['File Not Found', 'The file you were looking for could not be found, sorry for any inconvenience.']:
+            if marker in data: SetIPTVPlayerLastHostError(_(marker))
+            
+        tries = 5
+        while tries > 0:
+            tries -= 1
+            sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</form>', caseSensitive=False)
+            if not sts: break
+        
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+            for key in post_data:
+                post_data[key] = clean_html(post_data[key])
+            HTTP_HEADER['Referer'] = baseUrl
+        
+            try:
+                sleep_time = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<span[^>]+?id="countdown'), re.compile('</span>'))[1]
+                sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>\s*([0-9]+?)\s*<')[0]
+                if '' != sleep_time: time.sleep(int(sleep_time))
+            except Exception: pass
+                            
+            sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER}, post_data )
+            if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        videoData = self.cm.ph.rgetDataBeetwenMarkers2(data, '>download<', '<a ', caseSensitive=False)[1]
+        printDBG('videoData[%s]' % videoData)
+        videoUrl = self.cm.ph.getSearchGroups(videoData, 'href="([^"]+?)"')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?class="downloadbtn"[^>]+?['"](https?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'class="downloadbtn"', '</a>', caseSensitive=False)[1]
+        videoUrl = self.cm.ph.getSearchGroups(tmp, '''['"](https?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'direct link', '</a>', caseSensitive=False)[1]
+        videoUrl = self.cm.ph.getSearchGroups(tmp, '''['"](https?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+        
+        return False
     
