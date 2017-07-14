@@ -402,6 +402,7 @@ class urlparser:
                        'upload.af':            self.pp.parserUPLOAD         ,
                        'uploadx.org':          self.pp.parserUPLOAD         ,
                        'clicknupload.link':    self.pp.parserUPLOAD         ,
+                       'clicknupload.org':     self.pp.parserUPLOAD         ,
                        'kingfiles.net':        self.pp.parserKINGFILESNET   ,
                        'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
                        'vidabc.com':           self.pp.parserVIDABCCOM      ,
