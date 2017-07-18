@@ -673,8 +673,11 @@ class urlparser:
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'cast4u.tv' in data:
-                fid = self.cm.ph.getSearchGroups(data, """fid=['"]([^'^"]+?)['"]""")[0]
-                videoUrl = 'http://www.cast4u.tv/embed.php?v={0}&vw=700&vh=450'.format(fid)
+                channel = self.cm.ph.getSearchGroups(data, """channel=['"]([^'^"]+?)['"]""")[0]
+                g = self.cm.ph.getSearchGroups(data, """g=['"]([^'^"]+?)['"]""")[0]
+                height = 640
+                width = 360
+                videoUrl = 'http://www.cast4u.tv/hembedplayer/{0}/{1}/{2}/{3}'.format(channel, g, width, height)
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'hdcast.info' in data:
@@ -5880,13 +5883,35 @@ class pageParser:
             printExc('decryptPlayerParams EXCEPTION')
         return ''
         
-        
     def parserHDCASTINFO(self, baseUrl):
         printDBG("parserHDCASTINFO baseUrl[%s]" % baseUrl)
         return self.parserCAST4UTV(baseUrl, 'hdcast.info')
         
     def parserCAST4UTV(self, baseUrl, domain='cast4u.tv'):
         printDBG("parserCAST4UTV baseUrl[%s]" % baseUrl)
+        urlTab = []
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
+        M_HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25', 'Accept':'*/*', 'Accept-Encoding': 'gzip, deflate', 'Referer': referer}
+        H_HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36', 'Accept':'*/*', 'Accept-Encoding': 'gzip, deflate', 'Referer': referer}
+        
+        for header in [H_HTTP_HEADER, M_HTTP_HEADER]:
+            sts, data = self.cm.getPage(baseUrl, {'header':header})
+            if not sts: continue
+            printDBG(data)
+            loadbalancerUrl = self.cm.ph.getSearchGroups(data, '''['"](https?[^'^"]+?/loadbalancer[^'^"]*?)['"]''')[0]
+            if loadbalancerUrl.endswith('?'): loadbalancerUrl += '36'
+            streamUrl = self.cm.ph.getSearchGroups(data, '''["']([^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+            pk = self.cm.ph.getSearchGroups(data, '''enableVideo\(\s*['"]([^'^"]+?)['"]\s*\)''')[0]
+            
+            if not self.cm.isValidUrl(streamUrl):
+                sts, data = self.cm.getPage(loadbalancerUrl, {'header':header})
+                if not sts: continue
+                url = data.split('=')[-1]
+                url = 'http://' + url + streamUrl + pk
+                urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+        
+        return urlTab
         
         def _getVariables(data):
             printDBG('_getVariables')
@@ -7449,6 +7474,7 @@ class pageParser:
         
     def parserLIVEONLINETV247(self, baseUrl):
         printDBG("parserLIVEONLINETV247 baseUrl[%r]" % baseUrl)
+        urlTab = []
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', '')
         HTTP_HEADER = dict(self.HTTP_HEADER) 
@@ -7460,10 +7486,14 @@ class pageParser:
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
         
-        hlsUrl = self.cm.ph.getSearchGroups(data, '''<source\s+?type="application/x-mpegurl"\s+?src=["'](http[^'^"]+?)["']''')[0]
-        if hlsUrl == '': return False
-        return getDirectM3U8Playlist(hlsUrl)
-        return False
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>')
+        printDBG(tmp)
+        for item in tmp:
+            if 'application/x-mpegurl' not in item.lower(): continue
+            hlsUrl = self.cm.ph.getSearchGroups(item, '''src=["'](https?://[^'^"]+?)["']''')[0]
+            if not self.cm.isValidUrl(hlsUrl): continue
+            urlTab.extend(getDirectM3U8Playlist(hlsUrl))
+        return urlTab
         
     def parseBROADCAST(self, baseUrl):
         printDBG("parseBROADCAST baseUrl[%r]" % baseUrl)
