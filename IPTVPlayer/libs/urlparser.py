@@ -402,6 +402,7 @@ class urlparser:
                        'upload.af':            self.pp.parserUPLOAD         ,
                        'uploadx.org':          self.pp.parserUPLOAD         ,
                        'clicknupload.link':    self.pp.parserUPLOAD         ,
+                       'clicknupload.org':     self.pp.parserUPLOAD         ,
                        'kingfiles.net':        self.pp.parserKINGFILESNET   ,
                        'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
                        'vidabc.com':           self.pp.parserVIDABCCOM      ,
@@ -428,6 +429,11 @@ class urlparser:
                        'clipwatching.com':     self.pp.parserCLIPWATCHINGCOM,
                        'kingvid.tv':           self.pp.parserKINGVIDTV      ,
                        'ekstraklasa.tv':       self.pp.parserEKSTRAKLASATV  ,
+                       'dailyuploads.net':     self.pp.parserUPLOAD2        ,
+                       'upload.mn':            self.pp.parserUPLOAD2        ,
+                       'owndrives.com':        self.pp.parserUPLOAD         ,
+                       'uploadx.link':         self.pp.parserUPLOAD         ,
+                       'uploadz.org':          self.pp.parserUPLOAD         ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -667,8 +673,11 @@ class urlparser:
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'cast4u.tv' in data:
-                fid = self.cm.ph.getSearchGroups(data, """fid=['"]([^'^"]+?)['"]""")[0]
-                videoUrl = 'http://www.cast4u.tv/embed.php?v={0}&vw=700&vh=450'.format(fid)
+                channel = self.cm.ph.getSearchGroups(data, """channel=['"]([^'^"]+?)['"]""")[0]
+                g = self.cm.ph.getSearchGroups(data, """g=['"]([^'^"]+?)['"]""")[0]
+                height = 640
+                width = 360
+                videoUrl = 'http://www.cast4u.tv/hembedplayer/{0}/{1}/{2}/{3}'.format(channel, g, width, height)
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'hdcast.info' in data:
@@ -4509,8 +4518,12 @@ class pageParser:
         videoUrl = self.cm.ph.getSearchGroups(videoData, 'href="([^"]+?)"')[0]
         if self.cm.isValidUrl(videoUrl): return videoUrl
         
-        videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?class="downloadbtn"[^>]+?['"](http[s]?://[^'^"]+?['"])''')[0]
-        if self.cm.isValidUrl(videoUrl): return videoUrl   
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?class="downloadbtn"[^>]+?['"](http[s]?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'class="downloadbtn"', '</a>', caseSensitive=False)[1]
+        videoUrl = self.cm.ph.getSearchGroups(tmp, '''['"](http[s]?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
         
         return False
         
@@ -5870,13 +5883,35 @@ class pageParser:
             printExc('decryptPlayerParams EXCEPTION')
         return ''
         
-        
     def parserHDCASTINFO(self, baseUrl):
         printDBG("parserHDCASTINFO baseUrl[%s]" % baseUrl)
         return self.parserCAST4UTV(baseUrl, 'hdcast.info')
         
     def parserCAST4UTV(self, baseUrl, domain='cast4u.tv'):
         printDBG("parserCAST4UTV baseUrl[%s]" % baseUrl)
+        urlTab = []
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
+        M_HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25', 'Accept':'*/*', 'Accept-Encoding': 'gzip, deflate', 'Referer': referer}
+        H_HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36', 'Accept':'*/*', 'Accept-Encoding': 'gzip, deflate', 'Referer': referer}
+        
+        for header in [H_HTTP_HEADER, M_HTTP_HEADER]:
+            sts, data = self.cm.getPage(baseUrl, {'header':header})
+            if not sts: continue
+            printDBG(data)
+            loadbalancerUrl = self.cm.ph.getSearchGroups(data, '''['"](https?[^'^"]+?/loadbalancer[^'^"]*?)['"]''')[0]
+            if loadbalancerUrl.endswith('?'): loadbalancerUrl += '36'
+            streamUrl = self.cm.ph.getSearchGroups(data, '''["']([^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+            pk = self.cm.ph.getSearchGroups(data, '''enableVideo\(\s*['"]([^'^"]+?)['"]\s*\)''')[0]
+            
+            if not self.cm.isValidUrl(streamUrl):
+                sts, data = self.cm.getPage(loadbalancerUrl, {'header':header})
+                if not sts: continue
+                url = data.split('=')[-1]
+                url = 'http://' + url + streamUrl + pk
+                urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+        
+        return urlTab
         
         def _getVariables(data):
             printDBG('_getVariables')
@@ -7439,6 +7474,7 @@ class pageParser:
         
     def parserLIVEONLINETV247(self, baseUrl):
         printDBG("parserLIVEONLINETV247 baseUrl[%r]" % baseUrl)
+        urlTab = []
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', '')
         HTTP_HEADER = dict(self.HTTP_HEADER) 
@@ -7450,10 +7486,14 @@ class pageParser:
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
         
-        hlsUrl = self.cm.ph.getSearchGroups(data, '''<source\s+?type="application/x-mpegurl"\s+?src=["'](http[^'^"]+?)["']''')[0]
-        if hlsUrl == '': return False
-        return getDirectM3U8Playlist(hlsUrl)
-        return False
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>')
+        printDBG(tmp)
+        for item in tmp:
+            if 'application/x-mpegurl' not in item.lower(): continue
+            hlsUrl = self.cm.ph.getSearchGroups(item, '''src=["'](https?://[^'^"]+?)["']''')[0]
+            if not self.cm.isValidUrl(hlsUrl): continue
+            urlTab.extend(getDirectM3U8Playlist(hlsUrl))
+        return urlTab
         
     def parseBROADCAST(self, baseUrl):
         printDBG("parseBROADCAST baseUrl[%r]" % baseUrl)
@@ -8590,4 +8630,59 @@ class pageParser:
             videoUrls.append({'name':name, 'url':url, 'bitrate':item[2]})
         
         return videoUrls
+        
+    def parserUPLOAD2(self, baseUrl):
+        printDBG("parserUPLOAD2 baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
+            
+        sts, response = self.cm.getPage(baseUrl, {'return_data':False})
+        baseUrl = response.geturl()
+        response.close()
+
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        
+        for marker in ['File Not Found', 'The file you were looking for could not be found, sorry for any inconvenience.']:
+            if marker in data: SetIPTVPlayerLastHostError(_(marker))
+            
+        tries = 5
+        while tries > 0:
+            tries -= 1
+            sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</form>', caseSensitive=False)
+            if not sts: break
+        
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+            for key in post_data:
+                post_data[key] = clean_html(post_data[key])
+            HTTP_HEADER['Referer'] = baseUrl
+        
+            try:
+                sleep_time = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<span[^>]+?id="countdown'), re.compile('</span>'))[1]
+                sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>\s*([0-9]+?)\s*<')[0]
+                if '' != sleep_time: time.sleep(int(sleep_time))
+            except Exception: pass
+                            
+            sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER}, post_data )
+            if not sts: return False
+        
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        data = re.sub("/\*[\s\S]*?\*/", "", data)
+        
+        videoData = self.cm.ph.rgetDataBeetwenMarkers2(data, '>download<', '<a ', caseSensitive=False)[1]
+        printDBG('videoData[%s]' % videoData)
+        videoUrl = self.cm.ph.getSearchGroups(videoData, 'href="([^"]+?)"')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
+        
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<[^>]+?class="downloadbtn"[^>]+?['"](https?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'class="downloadbtn"', '</a>', caseSensitive=False)[1]
+        videoUrl = self.cm.ph.getSearchGroups(tmp, '''['"](https?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'direct link', '</a>', caseSensitive=False)[1]
+        videoUrl = self.cm.ph.getSearchGroups(tmp, '''['"](https?://[^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl  
+        
+        return False
     

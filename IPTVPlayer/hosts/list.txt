@@ -108,7 +108,6 @@ hostustreamtv
 hostvevo
 hostvideopenny
 hostvumooch
-hostwatchwrestling
 hostwebstream
 hostwgrane
 hostwolnelekturypl
