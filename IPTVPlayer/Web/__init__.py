@@ -1,5 +1,5 @@
-WebInterfaceVersion = '0.1'
-
+WebInterfaceVersion = '0.2'
+MaxLogLinesToShow = 1000
 
 # WebComponent will use own translation files to simplify management.
 from Components.Language import language
@@ -15,7 +15,9 @@ def localeInit():
 def _(txt):
 	t = gettext.dgettext(PluginLanguageDomain, txt)
 	if t == txt:
-		t = gettext.gettext(txt)
+		t = gettext.dgettext("IPTVPlayer", txt)
+		if t == txt:
+			t = gettext.gettext(txt)
 	return t
 
 def getWebInterfaceVersion():

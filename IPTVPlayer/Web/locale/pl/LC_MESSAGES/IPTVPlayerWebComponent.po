@@ -24,21 +24,54 @@ msgstr "Używasz starej wersji wtyczki OpenWebif.<br>Aby przejść na stronę IP
 msgid "Click"
 msgstr "Kliknij"
 
+msgid "Debug file does not exist - nothing to download"
+msgstr "Plik dziennika diagnostycznego jest niedostępny - nie można go pobrać"
+
+msgid "not available"
+msgstr "nie dostępne"
+
 #webParts
 msgid "Information"
 msgstr "Informacje"
 
-msgid "Supported hosts"
+msgid "Selected hosts"
 msgstr "Wspierane serwisy"
 
-msgid "Downloader status"
-msgstr "Stan pobierania"
+msgid "Download manager"
+msgstr "Manadżer pobierania"
 
 msgid "Settings"
 msgstr "Ustawienia"
+
+msgid "Logs"
+msgstr "Logi"
 
 msgid "version"
 msgstr "wersja"
 
 msgid "Web interface version"
 msgstr "Wersja interfejsu web"
+
+msgid "Disable"
+msgstr "Wyłącz"
+
+msgid "Enable"
+msgstr "Włącz"
+
+msgid "Debug option is disabled - nothing to display"
+msgstr "Diagnostyka wtyczki jest wyłączona - nie można wyświetlić loga"
+
+msgid "Debug option set to console - nothing to display"
+msgstr "Informacje diagnostyczne wtyczki są wyświetlane na konsoli - nie można wyświetlić loga"
+
+msgid "Debug option set to debugfile, but file does not exist - nothing to display"
+msgstr "Informacje diagnostyczne wtyczki są zaisywanie do pliku, ale plik nie istnieje - nie można go wyświetlić"
+
+msgid "Content of the %s file"
+msgstr "Informacje diagnostyczne z pliku %s"
+
+msgid "<font color=\"#FE642E\">REMEMBER:</font></b> IPTVPlayer <b>IS ONLY</b> specialized Web browser. It does <b>NOT</b> host any materials!!!</font>"
+msgstr "<font color=\"#FE642E\">PAMIĘTAJ:</font></b> IPTVPlayer <b>JEST TYLKO</b> specyficzną przeglądarką sieci i <b>NIE</b> zawiera żadnych materiałów!!!</font>"
+
+msgid "Download log file"
+msgstr "Pobierz plik diagnostyczny"

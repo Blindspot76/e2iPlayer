@@ -8,7 +8,8 @@ from twisted.web import static
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetPluginDir
 from __init__ import getWebInterfaceVersion
 
-IPTVwebRoot = static.File(GetPluginDir()) #webRoot = pluginDir to get access to icons and logos
+IPTVwebRoot = static.File(GetPluginDir('Web/')) #webRoot = pluginDir to get access to icons and logos
+IPTVwebRoot.putChild("icons", static.File(GetPluginDir('icons/')))
 IPTVwebRoot.putChild("", StartPage())
 IPTVwebRoot.putChild("hosts", hostsPage())
 IPTVwebRoot.putChild("downloader", downloaderPage())
@@ -45,8 +46,8 @@ if os.path.exists(resolveFilename(SCOPE_PLUGINS,'Extensions/WebInterface/web/ext
 		addExternalChild( ("iptvplayer", IPTVwebRoot) )
 # registration for openwebif
 elif os.path.exists(resolveFilename(SCOPE_PLUGINS,'Extensions/OpenWebif/pluginshook.src')):
-	# Old openwebif version has a bug and does not populate links to all properly registered web addons except fancontrol
-	# see: https://github.com/E2OpenPlugins/e2openplugin-OpenWebif/pull/628/commits/bb7c9e46c0b896d7fe53485aaf43d08f9ba642b8
+	# Old openwebif version (prior July the 14th) has a bug and does not populate links to all properly registered web addons except fancontrol
+	# see: https://github.com/E2OpenPlugins/e2openplugin-OpenWebif/pull/629
 	#  A HACK: we will canibalize fancontrol entry point (if not installed) to present IPTVplayer option on the web
 	if checkForFC() == True and not os.path.exists(resolveFilename(SCOPE_PLUGINS,'Extensions/FanControl2/FC2webSite.pyo')):
 		fcRoot = static.File(GetPluginDir('Web/'))
