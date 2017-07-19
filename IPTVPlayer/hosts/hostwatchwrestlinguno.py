@@ -51,20 +51,20 @@ class WatchwrestlingUNO(CBaseHostClass):
         self.SRCH_URL    = self.getFullUrl('index.php?s=')
         self.DEFAULT_ICON_URL = 'http://i.imgur.com/UsYsZ.png' #'http://watchwrestling.uno/wp-content/uploads/2016/03/wwunologo2.png'
         
-        self.MAIN_CAT_TAB = [{'category':'categories',    'title': _('Categories'),  'url':self.getMainUrl(),  'm1':'Categories</h3>'          },
-                             {'category':'categories',    'title': _('WWE'),         'url':self.getMainUrl(),  'm1':'>WWE</a>'                 },
-                             {'category':'live',          'title': _('LIVE 24/7'),   'url':self.getFullUrl('watch-wwe-network-247-live-free/') },
-                             {'category':'list_filters',  'title': _('Replay Shows'),'url':self.getFullUrl('category/wwe-network/')            },
-                             {'category':'list_filters',  'title': _('iMPACT Wrestling'), 'url':self.getFullUrl('category/tna/')               },
-                             {'category':'list_filters',  'title': _('RAW'),              'url':self.getFullUrl('category/wwe/raw/')           },
-                             {'category':'list_filters',  'title': _('Smackdown'),        'url':self.getFullUrl('category/wwe/smackdown/')     },
-                             {'category':'list_filters',  'title': _('Total Divas'),      'url':self.getFullUrl('category/wwe-total-divas/')   },
-                             {'category':'list_filters',  'title': _('NXT'),              'url':self.getFullUrl('category/wwe/nxt/')           },
-                             {'category':'list_filters',  'title': _('Main Event'),       'url':self.getFullUrl('category/wwe/main-event/')    },
-                             {'category':'list_filters',  'title': _('UFC'),              'url':self.getFullUrl('category/ufc/')               },
-                             {'category':'categories',    'title': _('Indy'),             'url':self.getMainUrl(),  'm1':'>Indy</a>'           },
-                             {'category':'list_filters',  'title': _('NJPW'),             'url':self.getFullUrl('category/njpw/')              },
-                             {'category':'list_filters',  'title': _('Others'),           'url':self.getFullUrl('category/wrestling-archives/')},
+        self.MAIN_CAT_TAB = [{'category':'categories',    'title': _('Categories'),  'url':self.getMainUrl(),  'm1':'Categories</h3>'              },
+                             {'category':'categories',    'title': _('WWE'),         'url':self.getFullUrl('category/wwe/'),  'm1':'>WWE</a>'      },
+                             {'category':'live',          'title': _('LIVE 24/7'),   'url':self.getFullUrl('watch-wwe-network-247-live-free/')     },
+                             {'category':'list_filters',  'title': _('Replay Shows'),'url':self.getFullUrl('category/wwe-network/')                },
+                             {'category':'list_filters',  'title': _('iMPACT Wrestling'), 'url':self.getFullUrl('category/tna/')                   },
+                             {'category':'list_filters',  'title': _('RAW'),              'url':self.getFullUrl('category/wwe/raw/')               },
+                             {'category':'list_filters',  'title': _('Smackdown'),        'url':self.getFullUrl('category/wwe/smackdown/')         },
+                             {'category':'list_filters',  'title': _('Total Divas'),      'url':self.getFullUrl('category/wwe-total-divas/')       },
+                             {'category':'list_filters',  'title': _('NXT'),              'url':self.getFullUrl('category/wwe/nxt/')               },
+                             {'category':'list_filters',  'title': _('Main Event'),       'url':self.getFullUrl('category/wwe/main-event/')        },
+                             {'category':'list_filters',  'title': _('UFC'),              'url':self.getFullUrl('category/ufc/')                   },
+                             {'category':'categories',    'title': _('Indy'),             'url':self.getFullUrl('category/indy/'), 'm1':'>Indy</a>'},
+                             {'category':'list_filters',  'title': _('NJPW'),             'url':self.getFullUrl('category/njpw/')                  },
+                             {'category':'list_filters',  'title': _('Others'),           'url':self.getFullUrl('category/wrestling-archives/')    },
                              
                              {'category':'search',             'title': _('Search'),       'search_item':True},
                              {'category':'search_history',     'title': _('Search history')} 
@@ -76,16 +76,6 @@ class WatchwrestlingUNO(CBaseHostClass):
                          {'sort':'comments', 'title':_('COMMENTS')}
                         ]
         self.serversCache = []
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("WatchwrestlingUNO.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
             
     def listCategories(self, cItem, nexCategory):
         printDBG("WatchwrestlingUNO.listCategories")
