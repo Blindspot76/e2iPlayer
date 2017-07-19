@@ -8334,7 +8334,6 @@ class pageParser:
         printDBG("parserSTREAMANGOCOM url[%s]\n" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         HTTP_HEADER = dict(pageParser.HTTP_HEADER) 
-        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         videoTab = []
         if '/embed/' not in baseUrl:
@@ -8345,31 +8344,37 @@ class pageParser:
                 data = self.cm.ph.getDataBeetwenMarkers(data, 'embedbox', '</textarea>')[1]
                 data = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<textarea', '</textarea>')[1])
                 url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?/embed/[^"^']+?)["']''', 1, True)[0]
+                HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         else:
             url = baseUrl
         
         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts: return videoTab
         
+        printDBG(data)
+        
+        
         dashTab = []
         hlsTab = []
         mp4Tab = []
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'srces.push(', ')', False)
         printDBG(data)
-        for item in data:
-            url = self.cm.ph.getSearchGroups(item, r'''['"]?src['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
-            if url.startswith('//'): url = 'http:' + url
-            type = self.cm.ph.getSearchGroups(item, r'''['"]?type['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
-            if not self.cm.isValidUrl(url): continue
-        
-            #url = strwithmeta(url, {'User-Agent':params['header']})
-            if '/dash' in type:
-                dashTab.extend(getMPDLinksWithMeta(url, False))
-            elif 'hls' in type:
-                hlsTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True))
-            elif '/mp4' in type:
-                name = self.cm.ph.getSearchGroups(item, '''height\s*\:\s*([^\,]+?)[\,]''')[0]
-                mp4Tab.append({'name':'[%s] %sp' % (type, name), 'url':url})
+        for tmp in data:
+            tmp = tmp.split('}')
+            for item in tmp:
+                url = self.cm.ph.getSearchGroups(item, r'''['"]?src['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
+                if url.startswith('//'): url = 'http:' + url
+                type = self.cm.ph.getSearchGroups(item, r'''['"]?type['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
+                if not self.cm.isValidUrl(url): continue
+            
+                #url = strwithmeta(url, {'User-Agent':params['header']})
+                if '/dash' in type:
+                    dashTab.extend(getMPDLinksWithMeta(url, False))
+                elif 'hls' in type:
+                    hlsTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True))
+                elif '/mp4' in type:
+                    name = self.cm.ph.getSearchGroups(item, '''height\s*\:\s*([^\,]+?)[\,]''')[0]
+                    mp4Tab.append({'name':'[%s] %sp' % (type, name), 'url':url})
 
         videoTab.extend(mp4Tab)
         videoTab.extend(hlsTab)
