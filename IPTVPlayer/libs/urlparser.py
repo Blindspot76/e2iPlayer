@@ -5353,7 +5353,7 @@ class pageParser:
         videoTab = []
         if 'embed' not in baseUrl:
             vid = self.cm.ph.getSearchGroups(baseUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
-            baseUrl = 'http://vidzi.tv/embed-%s-682x500.html' % vid
+            baseUrl = 'http://vidzi.tv/embed-%s.html' % vid
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return False
         
