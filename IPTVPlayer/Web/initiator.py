@@ -2,19 +2,21 @@ import os
 from Plugins.Extensions.WebInterface.WebChilds.Toplevel import addExternalChild
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 
-from webSite import StartPage, redirectionPage, hostsPage, downloaderPage, settingsPage, logsPage
+from webSite import StartPage, redirectionPage, hostsPage, useHostPage, downloaderPage, settingsPage, logsPage, searchPage
 from twisted.web import static
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetPluginDir
-from __init__ import getWebInterfaceVersion
+import settings
 
 IPTVwebRoot = static.File(GetPluginDir('Web/')) #webRoot = pluginDir to get access to icons and logos
 IPTVwebRoot.putChild("icons", static.File(GetPluginDir('icons/')))
 IPTVwebRoot.putChild("", StartPage())
 IPTVwebRoot.putChild("hosts", hostsPage())
+IPTVwebRoot.putChild("usehost", useHostPage())
 IPTVwebRoot.putChild("downloader", downloaderPage())
 IPTVwebRoot.putChild("settings", settingsPage())
 IPTVwebRoot.putChild("logs", logsPage())
+IPTVwebRoot.putChild("search", searchPage())
 
 def checkForFC():
 	ret = False
@@ -41,7 +43,7 @@ def checkForFC():
 # registration for old webinterface
 if os.path.exists(resolveFilename(SCOPE_PLUGINS,'Extensions/WebInterface/web/external.xml')):
 	try:
-		addExternalChild( ("iptvplayer", IPTVwebRoot, "IPTVPlayer", getWebInterfaceVersion(), True) )
+		addExternalChild( ("iptvplayer", IPTVwebRoot, "IPTVPlayer", settings.WebInterfaceVersion, True) )
 	except Exception:
 		addExternalChild( ("iptvplayer", IPTVwebRoot) )
 # registration for openwebif
@@ -53,13 +55,13 @@ elif os.path.exists(resolveFilename(SCOPE_PLUGINS,'Extensions/OpenWebif/pluginsh
 		fcRoot = static.File(GetPluginDir('Web/'))
 		fcRoot.putChild("", redirectionPage())
 		try:
-			addExternalChild( ("fancontrol", fcRoot, "IPTV Player", getWebInterfaceVersion()) )
+			addExternalChild( ("fancontrol", fcRoot, "IPTV Player", settings.WebInterfaceVersion) )
 			addExternalChild( ("iptvplayer", IPTVwebRoot, None, None) )
 		except Exception:
 			pass
 	else: #user still can use IPTV web interface, but need to mark URL manually
 		try:
-			addExternalChild( ("iptvplayer", IPTVwebRoot, "IPTVPlayer", getWebInterfaceVersion()) )
+			addExternalChild( ("iptvplayer", IPTVwebRoot, "IPTVPlayer", settings.WebInterfaceVersion) )
 		except Exception:
 			pass
 else:

@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 #### Local imports
-from __init__ import _, getWebInterfaceVersion
+from __init__ import _
+import settings
 import webParts
 import Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget
 
+from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent, CFavItem
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper, DMItemBase
+from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import IsUrlDownloadable
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetPluginDir, printDBG
-
+from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
 #### e2 imports
 from Components.config import configfile, config
 from Components.Language import language
 
 #### system imports
 import os
-from twisted.web import resource, http
+from threading import Thread
+from twisted.web import resource, http, util
+import urllib
 
 ########################################################
 def reloadWebParts():
@@ -26,6 +31,17 @@ def reloadWebParts():
 	else:
 		reload(webParts)
   
+########################################################
+class getDataInThread(Thread):
+	def __init__(self, args):
+		''' Constructor. '''
+		Thread.__init__(self)
+		self.args = args
+
+	def run(self):
+		import time
+		time.sleep(10)
+		print 'from thread' , self.args.keys()
 ########################################################
 class redirectionPage(resource.Resource):
     
@@ -61,7 +77,29 @@ class redirectionPage(resource.Resource):
 class StartPage(resource.Resource):
     
 	title = "IPTVPlayer Webinterface"
- 	isLeaf = False
+	isLeaf = False
+   
+	def __init__(self):
+		pass
+   
+	def render(self, req):
+		req.setHeader('Content-type', 'text/html')
+		req.setHeader('charset', 'UTF-8')
+
+		""" rendering server response """
+		reloadWebParts()
+		html = '<html lang="%s">' % language.getLanguage()[:2]
+		html += webParts.IncludeHEADER()
+		html += webParts.Body().StartPageContent()
+		return html 
+#######################################################
+class searchPage(resource.Resource):
+    
+	title = "IPTVPlayer Webinterface"
+	isLeaf = False
+   
+	def __init__(self):
+		pass
    
 	def render(self, req):
 		req.setHeader('Content-type', 'text/html')
@@ -74,13 +112,18 @@ class StartPage(resource.Resource):
 		html += webParts.Body().StartPageContent()
 		return html 
 
+
 #######################################################
 class hostsPage(resource.Resource):
-    
 	title = "IPTVPlayer Webinterface"
  	isLeaf = False
+    
+	def __init__(self):
+		pass
    
 	def render(self, req):
+		settings.initActiveHost( None )
+
 		req.setHeader('Content-type', 'text/html')
 		req.setHeader('charset', 'UTF-8')
 
@@ -95,6 +138,9 @@ class logsPage(resource.Resource):
     
 	title = "IPTVPlayer Webinterface"
  	isLeaf = False
+   
+	def __init__(self):
+		pass
    
 	def render(self, req):
 
@@ -144,9 +190,12 @@ class logsPage(resource.Resource):
 		return html
 #######################################################
 class settingsPage(resource.Resource):
-    
+   
 	title = "IPTVPlayer Webinterface"
- 	isLeaf = False
+	isLeaf = False
+   
+	def __init__(self):
+		pass
    
 	def render(self, req):
 		req.setHeader('Content-type', 'text/html')
@@ -166,6 +215,7 @@ class settingsPage(resource.Resource):
 					#exec('config.plugins.iptvplayer.%s.save()') % 
 				elif key == 'cmd' and arg[:4] == 'OFF:':
 					exec('config.plugins.iptvplayer.%s.setValue(False)\nconfig.plugins.iptvplayer.%s.save()' % (arg[4:],arg[4:]) )
+					settings.activeHostsHTML.pop(arg[4:], None)
 				elif key[:4] ==  "CFG:":
 					exec('config.plugins.iptvplayer.%s.setValue("%s")' % (key[4:],arg))
 				elif key[:4] ==  "INT:":
@@ -186,12 +236,15 @@ class downloaderPage(resource.Resource):
 	title = "IPTVPlayer Webinterface"
  	isLeaf = False
    
+	def __init__(self):
+		pass
+   
 	def render(self, req):
 		req.setHeader('Content-type', 'text/html')
 		req.setHeader('charset', 'UTF-8')
 
 		""" rendering server response """
-		extraMeta = ''
+		extraMeta = '<meta http-equiv="refresh" content="5">'
 		key = None
 		arg = None
 		arg2 = None
@@ -207,31 +260,45 @@ class downloaderPage(resource.Resource):
 			print 'Received: "%s"="%s","%s","%s"' % ( key,arg,arg2,arg3)
 
 		if key is None or arg is None:
-			pass
+			if None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
+				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
 		elif key == 'cmd' and arg == 'initDM':
 			if None == Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
-				from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi
 				printDBG('============WebSite.py Initialize Download Manager============')
 				Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager = IPTVDMApi(2, int(config.plugins.iptvplayer.IPTVDMMaxDownloadItem.value))
+				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
 		elif key == 'cmd' and arg == 'runDM':
 			if None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
-				printDBG('============WebSite.py gDownloadManager.runWorkThread() ============')
 				Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.runWorkThread() 
+				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
 		elif key == 'cmd' and arg == 'stopDM':
 			if None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
-				printDBG('============WebSite.py gDownloadManager.stopWorkThread() ============')
 				Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.stopWorkThread()
+				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
+			  	extraMeta = '<meta http-equiv="refresh" content="10">'
 		elif key == 'cmd' and arg == 'downloadsDM':
 			if None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
-				printDBG('============WebSite.py gDownloadManager.getList() ============')
 				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
-				if len(DMlist) == 0:
-					listItem = DMItemBase(_('No materials waiting in the downloader queue'), '')
-					listItem.status      = 'INFO'
-					DMlist.append( listItem )
-				else:
-				  	extraMeta = '<meta http-equiv="refresh" content="10">'
+		elif key == 'watchMovie' and os.path.exists(arg):
+			return util.redirectTo("/file?action=download&file=%s" % urllib.quote(arg.decode('utf8', 'ignore').encode('utf-8')) , req)
+		elif key == 'stopDownload' and arg.isdigit():
+			if None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
+				Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.stopDownloadItem(int(arg))
+				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
+		elif key == 'downloadAgain' and arg.isdigit():
+			if None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
+				Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.continueDownloadItem(int(arg))
+				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
+		elif key == 'removeMovie' and arg.isdigit():
+			if None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
+				Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.removeDownloadItem(int(arg))
+				DMlist = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.getList()
+
 		elif key == 'cmd' and arg == 'arvchiveDM':
+			if arg2 == 'deleteMovie' and os.path.exists(arg3):
+				os.remove(arg3)
+			elif arg2 == 'watchMovie' and os.path.exists(arg3):
+				return util.redirectTo("/file?action=download&file=%s" % urllib.quote(arg3.decode('utf8', 'ignore').encode('utf-8')) , req)
 			if os.path.exists(config.plugins.iptvplayer.NaszaSciezka.value) and None != Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
 				files = os.listdir(config.plugins.iptvplayer.NaszaSciezka.value)
 				files.sort(key=lambda x: x.lower())
@@ -255,9 +322,119 @@ class downloaderPage(resource.Resource):
 					listItem = DMItemBase(_('Nothing has been downloaded yet.'), '')
 					listItem.status = 'INFO'
 					DMlist.append( listItem )
+			
+		if len(DMlist) == 0 and arg != 'arvchiveDM':
+			listItem = DMItemBase(_('No materials waiting in the downloader queue'), '')
+			listItem.status      = 'INFO'
+			DMlist.append( listItem )
+			extraMeta = ''
+		elif len(DMlist) == 0 and arg in ['arvchiveDM','stopDM'] :
+			extraMeta = ''
+			
 		reloadWebParts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER(extraMeta)
 		html += webParts.Body().downloaderPageContent(Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager, DMlist)
+		return html
+#######################################################
+class useHostPage(resource.Resource):
+    
+	title = "IPTVPlayer Webinterface"
+ 	isLeaf = False
+   
+	def __init__(self):
+		pass
+   
+	def render(self, req):
+		reloadWebParts()
+		getDataInThread(req.args).start()
+		#downThread = getDatainThread(req)
+		#downThread.setName('downloadData')
+		
+		""" rendering server response """
+		key = None
+		arg = None
+		html= ''
+		extraMeta = ''
+		#extraMeta = '<meta http-equiv="refresh" content="10">'
+		errMSG = ''
+		
+		if len(req.args.keys()) > 0:
+			key = req.args.keys()[0]
+			arg = req.args.get(key,None)[0]
+			print "useHostPage received: '%s'='%s'" % (key, str(arg))
+		
+		if key is None and settings.isActiveHostInitiated() == False:
+			return util.redirectTo("/iptvplayer/hosts", req)
+		elif key == 'activeHost' and settings.isActiveHostInitiated() == False:
+			settings.initActiveHost(arg)
+		elif key == 'activeHost' and arg != settings.activeHost['Name']:
+			settings.initActiveHost(arg)
+		elif key == 'cmd' and arg == 'hosts':
+			return util.redirectTo("/iptvplayer/hosts", req)
+		elif key == 'cmd' and arg == 'InitList':
+			settings.retObj = settings.activeHost['Obj'].getInitList()
+			settings.activeHost['PathLevel'] = 1
+			settings.activeHost['ListType'] = 'ListForItem'
+			settings.activeHost['Status'] =  ''
+			settings.currItem = {}
+		elif key == 'cmd' and arg == 'RefreshList':
+			settings.retObj = settings.activeHost['Obj'].getCurrentList()
+			settings.activeHost['ListType'] = 'ListForItem'
+			settings.currItem = {}
+		elif key == 'cmd' and arg == 'PreviousList':
+			settings.retObj = settings.activeHost['Obj'].getPrevList()
+			settings.activeHost['PathLevel'] -= 1
+			settings.activeHost['ListType'] = 'ListForItem'
+			settings.currItem = {}
+		elif key == 'DownloadURL' and arg.isdigit():
+			myID = int(arg)
+			url = settings.retObj.value[myID].url
+			if url != '' and IsUrlDownloadable(url):
+				titleOfMovie = settings.currItem['itemTitle'].replace('/','-').replace(':','-').replace('*','-').replace('?','-').replace('"','-').replace('<','-').replace('>','-').replace('|','-')
+				fullFilePath = config.plugins.iptvplayer.NaszaSciezka.value + '/' + titleOfMovie + 'mp4'
+				if None == Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
+					printDBG('============WebSite.py Initialize Download Manager============')
+					Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager = IPTVDMApi(2, int(config.plugins.iptvplayer.IPTVDMMaxDownloadItem.value))
+				ret = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.addToDQueue( DMItem(url, fullFilePath))
+				print ret
+		elif key == 'ListForItem' and arg.isdigit():
+			myID = int(arg)
+			settings.activeHost['selectedItemType'] = settings.retObj.value[myID].type
+			if settings.activeHost['selectedItemType'] in ['CATEGORY']:
+				settings.currItem = {}
+				settings.retObj = settings.activeHost['Obj'].getListForItem(myID,0,settings.retObj.value[myID])
+				settings.activeHost['PathLevel'] += 1
+			elif settings.activeHost['selectedItemType'] in ['VIDEO']:
+				settings.currItem['itemTitle'] = settings.retObj.value[myID].name
+				try:
+					print "ListForItem>getLinksForVideo"
+					settings.retObj = settings.activeHost['Obj'].getLinksForVideo(myID,settings.retObj.value[myID]) #returns "NOT_IMPLEMENTED" when host is using curlitem
+					print 'got status' , settings.retObj.status
+					if settings.retObj.status == "NOT_IMPLEMENTED" or len(settings.retObj.value) == 0:
+						raise Exception
+				except Exception:
+					print "building CUrlItem"
+					settings.retObj = RetHost(RetHost.NOT_IMPLEMENTED, value = [(CUrlItem("No valid urls", "fakeUrl", 0))])
+					try:
+						tempUrls=[]
+						iindex=1
+						links = ret.value[myID].urlItems
+						for link in links:
+							if link.name == '':
+								tempUrls.append(CUrlItem('link %d' % iindex, link.url, link.urlNeedsResolve))
+							else:
+								tempUrls.append(CUrlItem(link.name, link.url, link.urlNeedsResolve))
+							iindex += 1
+						settings.retObj = RetHost(RetHost.OK, value = tempUrls)
+					except:
+						pass
+
+		req.setHeader('Content-type', 'text/html')
+		req.setHeader('charset', 'UTF-8')
+
+		html += '<html lang="%s">' % language.getLanguage()[:2]
+		html += webParts.IncludeHEADER(extraMeta)
+		html += webParts.Body().useHostPageContent( errMSG )
 		return html
 ##########################################################
