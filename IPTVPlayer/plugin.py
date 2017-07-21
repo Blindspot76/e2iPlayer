@@ -7,7 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu
 from Plugins.Extensions.IPTVPlayer.components.iptvpin import IPTVPinWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetupwidget import IPTVSetupMainWidget
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import IsExecutable
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import IsExecutable, IsWebInterfaceModuleAvailable
 ###################################################
 
 ###################################################
@@ -34,9 +34,7 @@ def Plugins(**kwargs):
     list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = PluginDescriptor.WHERE_MENU, fnc=startIPTVfromMenu))
     if config.plugins.iptvplayer.showinextensions.value:
         list.append (PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main))
-    if  (fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.py')) or
-        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyo')) or
-        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyc'))):
+    if  IsWebInterfaceModuleAvailable():
         try:
             list.append(PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionstart, needsRestart=False)) # activating IPTV web interface
         except Exception:
