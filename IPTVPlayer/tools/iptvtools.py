@@ -198,10 +198,14 @@ class iptv_system:
 def IsHttpsCertValidationEnabled():
     return config.plugins.iptvplayer.httpssslcertvalidation.value
     
-def IsWebInterfaceModuleAvailable():
-    if (fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.py')) or
-        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyo')) or
-        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyc'))):
+def IsWebInterfaceModuleAvailable(chekInit=False):
+    if chekInit:
+        file = '__init__'
+    else:
+        file = 'initiator'
+    if (fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/%s.py'  % file)) or
+        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/%s.pyo' % file)) or
+        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/%s.pyc' % file))):
         return True
     else:
         return False

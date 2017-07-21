@@ -478,7 +478,7 @@ class ConfigMenu(ConfigBaseWidget):
                                 needPluginUpdate = True
                                 break
                                 
-        if not needPluginUpdate and config.plugins.iptvplayer.IPTVWebIterface.value != IsWebInterfaceModuleAvailable():
+        if not needPluginUpdate and config.plugins.iptvplayer.IPTVWebIterface.value != IsWebInterfaceModuleAvailable(True):
             needPluginUpdate = True
             
         if needPluginUpdate:
