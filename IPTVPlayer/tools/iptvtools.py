@@ -198,6 +198,14 @@ class iptv_system:
 def IsHttpsCertValidationEnabled():
     return config.plugins.iptvplayer.httpssslcertvalidation.value
     
+def IsWebInterfaceModuleAvailable():
+    if (fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.py')) or
+        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyo')) or
+        fileExists(resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/Web/initiator.pyc'))):
+        return True
+    else:
+        return False
+    
 def GetAvailableIconSize(checkAll=True):
     iconSizes = [config.plugins.iptvplayer.IconsSize.value]
     if checkAll:

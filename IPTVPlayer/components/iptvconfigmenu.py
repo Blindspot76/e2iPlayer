@@ -8,7 +8,8 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSkinsList, GetHostsList, GetEnabledHostsList, \
-                                                          IsHostEnabled, IsExecutable, CFakeMoviePlayerOption, GetAvailableIconSize
+                                                          IsHostEnabled, IsExecutable, CFakeMoviePlayerOption, GetAvailableIconSize, \
+                                                          IsWebInterfaceModuleAvailable
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
 from Plugins.Extensions.IPTVPlayer.components.configbase import ConfigBaseWidget
@@ -29,6 +30,7 @@ from Components.Label import Label
 from Components.config import config, ConfigSubsection, ConfigSelection, ConfigDirectory, ConfigYesNo, ConfigOnOff, Config, ConfigInteger, ConfigSubList, ConfigText, getConfigListEntry, configfile
 from Components.ConfigList import ConfigListScreen
 from Tools.BoundFunction import boundFunction
+from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
 ###################################################
 
 
@@ -73,6 +75,7 @@ config.plugins.iptvplayer.IPTVDMMaxDownloadItem = ConfigSelection(default = "1",
 config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = True)
 config.plugins.iptvplayer.sortuj = ConfigYesNo(default = True)
 config.plugins.iptvplayer.remove_diabled_hosts = ConfigYesNo(default = False)
+config.plugins.iptvplayer.IPTVWebIterface = ConfigYesNo(default = False)
 
 def GetMoviePlayerName(player):
     map = {"auto":_("auto"), "mini": _("internal"), "standard":_("standard"), 'exteplayer': _("external eplayer3"), 'extgstplayer': _("external gstplayer")}
@@ -263,6 +266,8 @@ class ConfigMenu(ConfigBaseWidget):
         list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
         list.append( getConfigListEntry(_("Services configuration"), config.plugins.iptvplayer.fakeHostsList) )
         list.append( getConfigListEntry(_("Remove disabled services"), config.plugins.iptvplayer.remove_diabled_hosts) )
+        list.append( getConfigListEntry(_("Initialize web interface (experimental)"), config.plugins.iptvplayer.IPTVWebIterface) )
+        
         list.append( getConfigListEntry(_("Disable live at plugin start"), config.plugins.iptvplayer.disable_live))
         list.append( getConfigListEntry(_("Pin protection for plugin"), config.plugins.iptvplayer.pluginProtectedByPin))
         list.append( getConfigListEntry(_("Pin protection for configuration"), config.plugins.iptvplayer.configProtectedByPin) )
@@ -472,6 +477,9 @@ class ConfigMenu(ConfigBaseWidget):
                                 # standard host has been enabled but it is not in folder
                                 needPluginUpdate = True
                                 break
+                                
+        if not needPluginUpdate and config.plugins.iptvplayer.IPTVWebIterface.value != IsWebInterfaceModuleAvailable():
+            needPluginUpdate = True
             
         if needPluginUpdate:
             return _('Some changes will be applied only after plugin update.\nDo you want to perform update now?')

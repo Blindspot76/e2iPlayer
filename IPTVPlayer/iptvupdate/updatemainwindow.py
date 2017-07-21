@@ -412,6 +412,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         playerSelectorPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/PlayerSelector/')
         logosPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/icons/logos/')
         hostsPath = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/hosts/')
+        webPath   = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/Web/')
         cmds = []
         iconSize = int(config.plugins.iptvplayer.IconsSize.value)
         if not config.plugins.iptvplayer.ListaGraficzna.value:
@@ -420,6 +421,10 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             if size != iconSize:
                 cmds.append('rm -f %s' % (playerSelectorPath + '*{0}.png'.format(size)) )
                 cmds.append('rm -f %s' % (playerSelectorPath + 'marker{0}.png'.format(size + 45)) )
+        
+        # remove Web iterface module if not needed
+        if not config.plugins.iptvplayer.IPTVWebIterface.value:
+            cmds.append('rm -f %s' % (webPath))
         
         # removing not needed hosts
         if config.plugins.iptvplayer.remove_diabled_hosts.value:
