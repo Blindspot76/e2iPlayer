@@ -424,7 +424,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         
         # remove Web iterface module if not needed
         if not config.plugins.iptvplayer.IPTVWebIterface.value:
-            cmds.append('rm -f %s' % (webPath))
+            cmds.append('rm -rf %s' % (webPath))
         
         # removing not needed hosts
         if config.plugins.iptvplayer.remove_diabled_hosts.value:
