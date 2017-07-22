@@ -591,6 +591,8 @@ class CBaseHostClass:
         return self.MAIN_URL
     
     def getFullUrl(self, url):
+        if url.startswith('./'):
+            url = url[1:]
         if url.startswith('//'):
             url = 'http:' + url
         elif url.startswith('://'):

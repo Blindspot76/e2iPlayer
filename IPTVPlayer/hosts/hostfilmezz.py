@@ -417,9 +417,6 @@ class FilmezzEU(CBaseHostClass):
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
-                
-        self.password = config.plugins.iptvplayer.filmezzeu_password.value
-        
         if None == self.loggedIn or self.login != config.plugins.iptvplayer.filmezzeu_login.value or\
             self.password != config.plugins.iptvplayer.filmezzeu_password.value:
             self.loggedIn = self.tryTologin()

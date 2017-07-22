@@ -434,6 +434,7 @@ class urlparser:
                        'owndrives.com':        self.pp.parserUPLOAD         ,
                        'uploadx.link':         self.pp.parserUPLOAD         ,
                        'uploadz.org':          self.pp.parserUPLOAD         ,
+                       'stopbot.tk':           self.pp.parserSTOPBOTTK      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -8694,4 +8695,70 @@ class pageParser:
         if self.cm.isValidUrl(videoUrl): return videoUrl  
         
         return False
-    
+        
+    def parserSTOPBOTTK(self, baseUrl):
+        printDBG("parserSTOPBOTTK baseUrl[%s]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        
+        HTTP_HEADER = { 'User-Agent':     'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10',
+                        'Accept':         'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 
+                        'Accept-Encoding':'gzip, deflate',
+                      }
+        if referer != '': HTTP_HEADER['Referer'] = referer
+        
+        COOKIE_FILE = self.COOKIE_PATH + "stopbot.tk.cookie"
+        rm(COOKIE_FILE)
+        
+        urlParams = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'function bot()', '});')[1]
+        botUrl = urljoin(baseUrl, self.cm.ph.getSearchGroups(tmp, '''['"]?url["']?\s*:\s*['"]([^'^"]+?)['"]''')[0])
+        raw_post_data = self.cm.ph.getSearchGroups(tmp, '''['"]?data["']?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+        
+        url = urljoin(baseUrl, '/scripts/jquery.min.js')
+        
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts: return False
+        
+        session_ms = ''
+        session_id = ''
+        cookieItems = {}
+        
+        jscode = self.cm.ph.getDataBeetwenMarkers(data, 'function csb()', 'csb();')[1]
+        part1 = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQpmdW5jdGlvbiBhdG9iKHIpe3ZhciBuPS9bXHRcblxmXHIgXS9nLHQ9KHI9U3RyaW5nKHIpLnJlcGxhY2UobiwiIikpLmxlbmd0aDt0JTQ9PTAmJih0PShyPXIucmVwbGFjZSgvPT0/JC8sIiIpKS5sZW5ndGgpO2Zvcih2YXIgZSxhLGk9MCxvPSIiLGY9LTE7KytmPHQ7KWE9IkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5Ky8iLmluZGV4T2Yoci5jaGFyQXQoZikpLGU9aSU0PzY0KmUrYTphLGkrKyU0JiYobys9U3RyaW5nLmZyb21DaGFyQ29kZSgyNTUmZT4+KC0yKmkmNikpKTtyZXR1cm4gb30NCnZhciB3aW5kb3cgPSB0aGlzOw0KDQpTdHJpbmcucHJvdG90eXBlLml0YWxpY3M9ZnVuY3Rpb24oKXtyZXR1cm4gIjxpPjwvaT4iO307DQpTdHJpbmcucHJvdG90eXBlLmxpbms9ZnVuY3Rpb24oKXtyZXR1cm4gIjxhIGhyZWY9XCJ1bmRlZmluZWRcIj48L2E+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5mb250Y29sb3I9ZnVuY3Rpb24oKXtyZXR1cm4gIjxmb250IGNvbG9yPVwidW5kZWZpbmVkXCI+PC9mb250PiI7fTsNCkFycmF5LnByb3RvdHlwZS5maW5kPSJmdW5jdGlvbiBmaW5kKCkgeyBbbmF0aXZlIGNvZGVdIH0iOw0KQXJyYXkucHJvdG90eXBlLmZpbGw9ImZ1bmN0aW9uIGZpbGwoKSB7IFtuYXRpdmUgY29kZV0gfSI7DQpmdW5jdGlvbiBmaWx0ZXIoKQ0Kew0KICAgIGZ1biA9IGFyZ3VtZW50c1swXTsNCiAgICB2YXIgbGVuID0gdGhpcy5sZW5ndGg7DQogICAgaWYgKHR5cGVvZiBmdW4gIT0gImZ1bmN0aW9uIikNCiAgICAgICAgdGhyb3cgbmV3IFR5cGVFcnJvcigpOw0KICAgIHZhciByZXMgPSBuZXcgQXJyYXkoKTsNCiAgICB2YXIgdGhpc3AgPSBhcmd1bWVudHNbMV07DQogICAgZm9yICh2YXIgaSA9IDA7IGkgPCBsZW47IGkrKykNCiAgICB7DQogICAgICAgIGlmIChpIGluIHRoaXMpDQogICAgICAgIHsNCiAgICAgICAgICAgIHZhciB2YWwgPSB0aGlzW2ldOw0KICAgICAgICAgICAgaWYgKGZ1bi5jYWxsKHRoaXNwLCB2YWwsIGksIHRoaXMpKQ0KICAgICAgICAgICAgICAgIHJlcy5wdXNoKHZhbCk7DQogICAgICAgIH0NCiAgICB9DQogICAgcmV0dXJuIHJlczsNCn07DQpPYmplY3QuZGVmaW5lUHJvcGVydHkoZG9jdW1lbnQsICJjb29raWUiLCB7DQogICAgZ2V0IDogZnVuY3Rpb24gKCkgew0KICAgICAgICByZXR1cm4gdGhpcy5fY29va2llOw0KICAgIH0sDQogICAgc2V0IDogZnVuY3Rpb24gKHZhbCkgew0KICAgICAgICBwcmludCh2YWwpOw0KICAgICAgICB0aGlzLl9jb29raWUgPSB2YWw7DQogICAgfQ0KfSk7DQpBcnJheS5wcm90b3R5cGUuZmlsdGVyID0gZmlsdGVyOw0KDQp2YXIgc2Vzc2lvbl9tczsNCnZhciBzZXNzaW9uX2lkOw==''') 
+        part2 =  base64.b64decode('''DQpwcmludCgiXG5zZXNzaW9uX21zPSIgKyBzZXNzaW9uX21zICsgIjtcbiIpOw0KcHJpbnQoIlxzZXNzaW9uX2lkPSIgKyBzZXNzaW9uX2lkICsgIjtcbiIpOw0KDQo=''')
+        jscode = part1 + '\n' + jscode + '\n' + part2
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            decoded = ret['data'].strip()
+            decoded = decoded.split('\n')
+            for line in decoded:
+                line = line.strip()
+                line = line.split(';')[0]
+                line = line.replace(' ', '').split('=')
+                if 2 != len(line): continue
+                name  = line[0].strip()
+                value = line[1].split(';')[0].strip()
+                if name == 'session_ms':
+                    session_ms = int(value)
+                elif name == 'session_id':
+                    session_id = int(value)
+                else:
+                    cookieItems[name] = value
+        urlParams['cookie_items']  = cookieItems
+        urlParams['raw_post_data'] = True
+        
+        time.sleep(1)
+        sts, data = self.cm.getPage(botUrl, urlParams, raw_post_data + str(session_id)) # 
+        if not sts: return False
+        printDBG(data)
+        data = byteify(json.loads(data))
+        if str(data['error']) == '0' and self.cm.isValidUrl(data['message']):
+            return urlparser().getVideoLinkExt(data['message'])
+        else:
+            SetIPTVPlayerLastHostError(data['message']+' Error: ' + str(data['error']))
+        return []
