@@ -16,32 +16,20 @@ from Components.Language import language
 
 #### system imports
 import os
-from threading import Thread
 from twisted.web import resource, http, util
 import urllib
 
 ########################################################
-def reloadWebParts():
+def reloadScripts():
 	#### Reload scripts if new version of source exists ####
 	webPath = GetPluginDir(file = '/Web/')
-	if os.path.exists(os.path.join(webPath, "webParts.pyo")):
-		if (int(os.path.getmtime(os.path.join(webPath, "webParts.pyo"))) < 
-			int(os.path.getmtime(os.path.join(webPath, "webParts.py")))):
+	if os.path.exists(os.path.join(webPath, "webParts.py")):
+		if os.path.exists(os.path.join(webPath, "webParts.pyo")):
+			if (int(os.path.getmtime(os.path.join(webPath, "webParts.pyo"))) < 
+				int(os.path.getmtime(os.path.join(webPath, "webParts.py")))):
+				reload(webParts)
+		else:
 			reload(webParts)
-	else:
-		reload(webParts)
-  
-########################################################
-class getDataInThread(Thread):
-	def __init__(self, args):
-		''' Constructor. '''
-		Thread.__init__(self)
-		self.args = args
-
-	def run(self):
-		import time
-		time.sleep(10)
-		print 'from thread' , self.args.keys()
 ########################################################
 class redirectionPage(resource.Resource):
     
@@ -87,7 +75,7 @@ class StartPage(resource.Resource):
 		req.setHeader('charset', 'UTF-8')
 
 		""" rendering server response """
-		reloadWebParts()
+		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER()
 		html += webParts.Body().StartPageContent()
@@ -106,7 +94,7 @@ class searchPage(resource.Resource):
 		req.setHeader('charset', 'UTF-8')
 
 		""" rendering server response """
-		reloadWebParts()
+		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER()
 		html += webParts.Body().StartPageContent()
@@ -128,7 +116,7 @@ class hostsPage(resource.Resource):
 		req.setHeader('charset', 'UTF-8')
 
 		""" rendering server response """
-		reloadWebParts()
+		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER()
 		html += webParts.Body().hostsPageContent()
@@ -161,7 +149,7 @@ class logsPage(resource.Resource):
 		if DBGFileName == '':
 			req.setHeader('Content-type', 'text/html')
 			req.setHeader('charset', 'UTF-8')
-			reloadWebParts()
+			reloadScripts()
 			html = '<html lang="%s">' % language.getLanguage()[:2]
 			html += webParts.IncludeHEADER()
 			html += webParts.Body().logsPageContent()
@@ -174,7 +162,7 @@ class logsPage(resource.Resource):
 		elif command[0] ==  'deleteLog':
 			req.setHeader('Content-type', 'text/html')
 			req.setHeader('charset', 'UTF-8')
-			reloadWebParts()
+			reloadScripts()
 			html = '<html lang="%s">' % language.getLanguage()[:2]
 			html += webParts.IncludeHEADER()
 			if os.path.exists(DBGFileName):
@@ -224,7 +212,7 @@ class settingsPage(resource.Resource):
 			except Exception:
 				printDBG("[webSite.py:settingsPage] EXCEPTION for updating value '%s' for key '%s'" %(arg,key))
 
-		reloadWebParts()
+		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER()
 		html += webParts.Body().settingsPageContent()
@@ -331,7 +319,7 @@ class downloaderPage(resource.Resource):
 		elif len(DMlist) == 0 and arg in ['arvchiveDM','stopDM'] :
 			extraMeta = ''
 			
-		reloadWebParts()
+		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER(extraMeta)
 		html += webParts.Body().downloaderPageContent(Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager, DMlist)
@@ -346,10 +334,7 @@ class useHostPage(resource.Resource):
 		pass
    
 	def render(self, req):
-		reloadWebParts()
-		getDataInThread(req.args).start()
-		#downThread = getDatainThread(req)
-		#downThread.setName('downloadData')
+		reloadScripts()
 		
 		""" rendering server response """
 		key = None
