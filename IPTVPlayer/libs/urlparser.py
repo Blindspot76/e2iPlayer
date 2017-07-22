@@ -1537,9 +1537,9 @@ class pageParser:
             return False
 
     def parserRAPIDVIDEO(self, baseUrl):
-        if '/embed/' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|view|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
-            url = 'http://www.rapidvideo.com/embed/'+video_id
+        if '/e/' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|e|view|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
+            url = 'http://www.rapidvideo.com/e/'+video_id
         else:
             url = baseUrl
         
