@@ -3,8 +3,10 @@
 from __init__ import _
 import settings
 import webParts
+import webThreads
 import Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget
 
+from webTools import *
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent, CFavItem
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper, DMItemBase
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import IsUrlDownloadable
@@ -30,6 +32,13 @@ def reloadScripts():
 				reload(webParts)
 		else:
 			reload(webParts)
+	if os.path.exists(os.path.join(webPath, "webThreads.py")):
+		if os.path.exists(os.path.join(webPath, "webThreads.pyo")):
+			if (int(os.path.getmtime(os.path.join(webPath, "webThreads.pyo"))) < 
+				int(os.path.getmtime(os.path.join(webPath, "webThreads.py")))):
+				reload(webThreads)
+		else:
+			reload(webThreads)
 ########################################################
 class redirectionPage(resource.Resource):
     
@@ -110,16 +119,27 @@ class hostsPage(resource.Resource):
 		pass
    
 	def render(self, req):
-		settings.initActiveHost( None )
-
+		
 		req.setHeader('Content-type', 'text/html')
 		req.setHeader('charset', 'UTF-8')
 
 		""" rendering server response """
 		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
-		html += webParts.IncludeHEADER()
-		html += webParts.Body().hostsPageContent()
+
+		if iSactiveHostsHTMLempty() and not isThreadRunning('buildActiveHostsHTML'):
+			webThreads.buildActiveHostsHTML().start()
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Initiating data, please wait')
+		elif isThreadRunning('buildActiveHostsHTML'):
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Loading data, please wait')
+		else:
+			extraMeta = ''
+			MenuStatusMSG = ''
+
+		html += webParts.IncludeHEADER(extraMeta)
+		html += webParts.Body().hostsPageContent(MenuStatusMSG)
 		return html
 ##########################################################
 class logsPage(resource.Resource):
@@ -133,48 +153,55 @@ class logsPage(resource.Resource):
 	def render(self, req):
 
 		""" rendering server response """
-		DBGFileName = ''
 		htmlError = ''
-		command = req.args.get("cmd",None)
-		if command is None:
-			pass
-		elif command[0] ==  "getLog" or command[0] ==  "deleteLog":
-			if os.path.exists('/hdd/iptv.dbg'):
-				DBGFileName = '/hdd/iptv.dbg'
-			elif os.path.exists('/tmp/iptv.dbg'):
-				DBGFileName = '/tmp/iptv.dbg'
-			else:
-				htmlError = '<p align="center"><b><font color="#FFE4C4">%s</font></b></p>' % _('Debug file does not exist - nothing to download')
+		DBGFileContent = ''
+		MenuStatusMSG = ''
+		extraMeta = ''
+		
+		if os.path.exists('/hdd/iptv.dbg'):
+			DBGFileName = '/hdd/iptv.dbg'
+		elif os.path.exists('/tmp/iptv.dbg'):
+			DBGFileName = '/tmp/iptv.dbg'
+		else:
+			DBGFileName = ''
+			
 
+		command = req.args.get("cmd",['NOcmd'])
+		
 		if DBGFileName == '':
 			req.setHeader('Content-type', 'text/html')
 			req.setHeader('charset', 'UTF-8')
 			reloadScripts()
 			html = '<html lang="%s">' % language.getLanguage()[:2]
-			html += webParts.IncludeHEADER()
-			html += webParts.Body().logsPageContent()
-			html += htmlError
-		elif command[0] ==  "getLog":
+			html += webParts.IncludeHEADER(extraMeta)
+			html += webParts.Body().logsPageContent(MenuStatusMSG, htmlError, DBGFileName, DBGFileContent)
+			html += '<p align="center"><b><font color="#FFE4C4">%s</font></b></p>' % _('Debug file does not exist - nothing to download')
+			return html
+		elif command[0] ==  "downloadLog":
 			req.responseHeaders.setRawHeaders('content-disposition', ['attachment; filename="iptv_dbg.txt"'])
 			with open(DBGFileName, 'r') as f:
 			      html = f.read()
 			      f.close()
 		elif command[0] ==  'deleteLog':
-			req.setHeader('Content-type', 'text/html')
-			req.setHeader('charset', 'UTF-8')
-			reloadScripts()
-			html = '<html lang="%s">' % language.getLanguage()[:2]
-			html += webParts.IncludeHEADER()
 			if os.path.exists(DBGFileName):
 				try:
 					os.remove(DBGFileName)
-					status = 'deleteLogOK'
+					htmlError = 'deleteLogOK'
 				except Exception:
-					status = 'deleteLogError'
+					htmlError = 'deleteLogError'
 			else:
-				status = 'deleteLogNO'
-			html += webParts.Body().logsPageContent(status)
-		  
+				htmlError = 'deleteLogNO'
+
+		req.setHeader('Content-type', 'text/html')
+		req.setHeader('charset', 'UTF-8')
+		reloadScripts()
+		if  settings.tempLogsHTML == '' and not isThreadRunning('buildtempLogsHTML'):
+			webThreads.buildtempLogsHTML(DBGFileName).start()
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Loading data, please wait')
+		html = '<html lang="%s">' % language.getLanguage()[:2]
+		html += webParts.IncludeHEADER(extraMeta)
+		html += webParts.Body().logsPageContent(MenuStatusMSG, htmlError, DBGFileName, DBGFileContent )
 		return html
 #######################################################
 class settingsPage(resource.Resource):
@@ -186,6 +213,8 @@ class settingsPage(resource.Resource):
 		pass
    
 	def render(self, req):
+		extraMeta = ''
+		MenuStatusMSG = ''
 		req.setHeader('Content-type', 'text/html')
 		req.setHeader('charset', 'UTF-8')
 
@@ -199,23 +228,37 @@ class settingsPage(resource.Resource):
 				if key is None or arg is None:
 					pass
 				elif key == 'cmd' and arg[:3] == 'ON:':
-					exec('config.plugins.iptvplayer.%s.setValue(True)\nconfig.plugins.iptvplayer.%s.save()' % (arg[3:],arg[3:]) )
-					#exec('config.plugins.iptvplayer.%s.save()') % 
+					exec('config.plugins.iptvplayer.%s.setValue(True)\nconfig.plugins.iptvplayer.%s.save()' % (arg[3:], arg[3:]) )
+					settings.configsHTML = {}
 				elif key == 'cmd' and arg[:4] == 'OFF:':
-					exec('config.plugins.iptvplayer.%s.setValue(False)\nconfig.plugins.iptvplayer.%s.save()' % (arg[4:],arg[4:]) )
+					exec('config.plugins.iptvplayer.%s.setValue(False)\nconfig.plugins.iptvplayer.%s.save()' % (arg[4:], arg[4:]) )
 					settings.activeHostsHTML.pop(arg[4:], None)
+					settings.configsHTML = {}
 				elif key[:4] ==  "CFG:":
-					exec('config.plugins.iptvplayer.%s.setValue("%s")' % (key[4:],arg))
+					exec('config.plugins.iptvplayer.%s.setValue("%s")\nconfig.plugins.iptvplayer.%s.save()' % (key[4:], arg, key[4:]))
+					settings.configsHTML = {}
 				elif key[:4] ==  "INT:":
-					exec('config.plugins.iptvplayer.%s.setValue("%s")' % (key[4:],arg))
+					exec('config.plugins.iptvplayer.%s.setValue("%s")\nconfig.plugins.iptvplayer.%s.save()' % (key[4:], arg, key[4:]))
+					settings.configsHTML = {}
 				configfile.save()
 			except Exception:
 				printDBG("[webSite.py:settingsPage] EXCEPTION for updating value '%s' for key '%s'" %(arg,key))
 
+		if isConfigsHTMLempty() and not isThreadRunning('buildConfigsHTML'):
+			webThreads.buildConfigsHTML().start()
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Initiating data, please wait')
+		elif isThreadRunning('buildConfigsHTML'):
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Loading data, please wait')
+		else:
+			extraMeta = ''
+			MenuStatusMSG = ''
+
 		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
-		html += webParts.IncludeHEADER()
-		html += webParts.Body().settingsPageContent()
+		html += webParts.IncludeHEADER(extraMeta)
+		html += webParts.Body().settingsPageContent(MenuStatusMSG)
 
 		return html
 #######################################################
@@ -331,95 +374,58 @@ class useHostPage(resource.Resource):
  	isLeaf = False
    
 	def __init__(self):
-		pass
+		self.Counter = 0
    
 	def render(self, req):
 		reloadScripts()
 		
 		""" rendering server response """
-		key = None
-		arg = None
+		self.key = None
+		self.arg = None
 		html= ''
 		extraMeta = ''
-		#extraMeta = '<meta http-equiv="refresh" content="10">'
+		MenuStatusMSG = ''
 		errMSG = ''
 		
 		if len(req.args.keys()) > 0:
-			key = req.args.keys()[0]
-			arg = req.args.get(key,None)[0]
-			print "useHostPage received: '%s'='%s'" % (key, str(arg))
+			self.key = req.args.keys()[0]
+			self.arg = req.args.get(self.key,None)[0]
+			print "useHostPage received: '%s'='%s'" % (self.key, str(self.arg))
 		
-		if key is None and settings.isActiveHostInitiated() == False:
+		if self.key is None and isActiveHostInitiated() == False:
 			return util.redirectTo("/iptvplayer/hosts", req)
-		elif key == 'activeHost' and settings.isActiveHostInitiated() == False:
-			settings.initActiveHost(arg)
-		elif key == 'activeHost' and arg != settings.activeHost['Name']:
-			settings.initActiveHost(arg)
-		elif key == 'cmd' and arg == 'hosts':
+		elif self.key == 'cmd' and self.arg == 'hosts':
 			return util.redirectTo("/iptvplayer/hosts", req)
-		elif key == 'cmd' and arg == 'InitList':
+		elif self.key == 'cmd' and self.arg == 'InitList':
 			settings.retObj = settings.activeHost['Obj'].getInitList()
 			settings.activeHost['PathLevel'] = 1
 			settings.activeHost['ListType'] = 'ListForItem'
 			settings.activeHost['Status'] =  ''
 			settings.currItem = {}
-		elif key == 'cmd' and arg == 'RefreshList':
-			settings.retObj = settings.activeHost['Obj'].getCurrentList()
-			settings.activeHost['ListType'] = 'ListForItem'
-			settings.currItem = {}
-		elif key == 'cmd' and arg == 'PreviousList':
+			setNewHostListShown(False)
+		elif self.key == 'cmd' and self.arg == 'PreviousList':
 			settings.retObj = settings.activeHost['Obj'].getPrevList()
 			settings.activeHost['PathLevel'] -= 1
 			settings.activeHost['ListType'] = 'ListForItem'
 			settings.currItem = {}
-		elif key == 'DownloadURL' and arg.isdigit():
-			myID = int(arg)
-			url = settings.retObj.value[myID].url
-			if url != '' and IsUrlDownloadable(url):
-				titleOfMovie = settings.currItem['itemTitle'].replace('/','-').replace(':','-').replace('*','-').replace('?','-').replace('"','-').replace('<','-').replace('>','-').replace('|','-')
-				fullFilePath = config.plugins.iptvplayer.NaszaSciezka.value + '/' + titleOfMovie + 'mp4'
-				if None == Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
-					printDBG('============WebSite.py Initialize Download Manager============')
-					Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager = IPTVDMApi(2, int(config.plugins.iptvplayer.IPTVDMMaxDownloadItem.value))
-				ret = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.addToDQueue( DMItem(url, fullFilePath))
-				print ret
-		elif key == 'ListForItem' and arg.isdigit():
-			myID = int(arg)
-			settings.activeHost['selectedItemType'] = settings.retObj.value[myID].type
-			if settings.activeHost['selectedItemType'] in ['CATEGORY']:
-				settings.currItem = {}
-				settings.retObj = settings.activeHost['Obj'].getListForItem(myID,0,settings.retObj.value[myID])
-				settings.activeHost['PathLevel'] += 1
-			elif settings.activeHost['selectedItemType'] in ['VIDEO']:
-				settings.currItem['itemTitle'] = settings.retObj.value[myID].name
-				try:
-					print "ListForItem>getLinksForVideo"
-					settings.retObj = settings.activeHost['Obj'].getLinksForVideo(myID,settings.retObj.value[myID]) #returns "NOT_IMPLEMENTED" when host is using curlitem
-					print 'got status' , settings.retObj.status
-					if settings.retObj.status == "NOT_IMPLEMENTED" or len(settings.retObj.value) == 0:
-						raise Exception
-				except Exception:
-					print "building CUrlItem"
-					settings.retObj = RetHost(RetHost.NOT_IMPLEMENTED, value = [(CUrlItem("No valid urls", "fakeUrl", 0))])
-					try:
-						tempUrls=[]
-						iindex=1
-						links = ret.value[myID].urlItems
-						for link in links:
-							if link.name == '':
-								tempUrls.append(CUrlItem('link %d' % iindex, link.url, link.urlNeedsResolve))
-							else:
-								tempUrls.append(CUrlItem(link.name, link.url, link.urlNeedsResolve))
-							iindex += 1
-						settings.retObj = RetHost(RetHost.OK, value = tempUrls)
-					except:
-						pass
+			setNewHostListShown(False)
+		#long running commands
+		elif isNewHostListShown() and not isThreadRunning('doUseHostAction'):
+			self.Counter = 0
+			setNewHostListShown(False)
+			webThreads.doUseHostAction(self.key, self.arg).start()
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Initiating data, please wait')
+		elif isThreadRunning('doUseHostAction'):
+			self.Counter += 1
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Loading data, please wait (%d)') % self.Counter
 
 		req.setHeader('Content-type', 'text/html')
 		req.setHeader('charset', 'UTF-8')
 
 		html += '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER(extraMeta)
-		html += webParts.Body().useHostPageContent( errMSG )
+		html += webParts.Body().useHostPageContent( MenuStatusMSG, errMSG )
 		return html
 ##########################################################
