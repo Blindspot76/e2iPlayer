@@ -231,7 +231,7 @@ class doUseHostAction(threading.Thread):
 					try:
 						tempUrls=[]
 						iindex=1
-						links = ret.value[myID].urlItems
+						links = settings.retObj.value[myID].urlItems
 						for link in links:
 							if link.name == '':
 								tempUrls.append(CUrlItem('link %d' % iindex, link.url, link.urlNeedsResolve))
@@ -239,6 +239,6 @@ class doUseHostAction(threading.Thread):
 								tempUrls.append(CUrlItem(link.name, link.url, link.urlNeedsResolve))
 							iindex += 1
 						settings.retObj = RetHost(RetHost.OK, value = tempUrls)
-					except:
-						pass
+					except Exception, e:
+						print 'Exception trying to get Curlitems: ', str(e)
 		
