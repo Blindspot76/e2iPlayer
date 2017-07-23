@@ -38,7 +38,7 @@ msgid "Selected hosts"
 msgstr "Wspierane serwisy"
 
 msgid "Download manager"
-msgstr "Manadżer pobierania"
+msgstr "Menadżer pobierania"
 
 msgid "Settings"
 msgstr "Ustawienia"
@@ -75,3 +75,90 @@ msgstr "<font color=\"#FE642E\">PAMIĘTAJ:</font></b> IPTVPlayer <b>JEST TYLKO</
 
 msgid "Download log file"
 msgstr "Pobierz plik diagnostyczny"
+
+msgid "Initiating data, please wait"
+msgstr "Inicjalizacja danych, proszę czekać"
+
+msgid "Loading data, please wait (%d)"
+msgstr "Pobieranie danych, proszę czekać (%d)"
+
+msgid "No materials waiting in the downloader queue"
+msgstr "Brak materiałów czekających w kolejce na obranie"
+
+msgid "Nothing has been downloaded yet."
+msgstr "Nic nie zostało jeszcze pobrane"
+
+msgid "Loading data, please wait"
+msgstr "Pobieranie danych, proszę czekać"
+
+msgid "Delete log file"
+msgstr "Skasuj plik z informacjami diagnostycznymi"
+
+msgid "Debug file has been deleted"
+msgstr "Plik z informacjami diagnostycznymi został skasowany"
+
+msgid "Error during deletion of the debug file."
+msgstr "Błąd podczas kasowania pliku z informacjami diagnostycznymi"
+
+msgid "Debug file does not exist - nothing to delete"
+msgstr "Plik z informacjami diagnostycznymi nie istnieje"
+
+msgid "%s file is %d MB in size. Last %d lines are:"
+msgstr "Plik %s ma wielkość %d MB. Ostatnie %d linii:"
+
+msgid "Last %d lines of the %s file are:"
+msgstr "Ostatnie %d linii pliku %s:"
+
+msgid "Hosts settings"
+msgstr "Ustawienia serwisów"
+
+msgid "Plugin global settings"
+msgstr "Globalne ustawienia wtyczki"
+
+msgid "Download manager is not initialized"
+msgstr "Menadżer pobierania jest niezainicjowany"
+
+msgid "Initialize Download Manager"
+msgstr "Inicjuj Menadżera pobierania"
+
+msgid "Downloads"
+msgstr "Pobrania"
+
+msgid "REMEMBER: "
+msgstr "PAMIĘTAJ: "
+
+msgid "accessing host via web <b>HAS LIMITED FUNCTIONALITY.</b> Use IPTVPlayer GUI version for full support!!!"
+msgstr "korzystanie z serwisu przez stronę WWW <b>MA NIEPEŁNĄ FUNKCJONALNOŚĆ.</b>Korzystaj z wersji GUI dla pełnego wsparcia!!!"
+
+msgid "Previous list"
+msgstr "Poprzednia lista"
+
+msgid "Reload list"
+msgstr "Przeładuj listę"
+
+msgid "Initial list"
+msgstr "Lista początkowa"
+
+msgid "Return to hosts list"
+msgstr "Powrót do listy serwisów"
+
+msgid "Watch"
+msgstr "Oglądaj"
+
+msgid "Add to downloader"
+msgstr "Dodaj do kolejki pobierania"
+
+msgid "Active host"
+msgstr "Wybrany serwis"
+
+msgid "host:"
+msgstr "Serwis:"
+
+msgid "Title:"
+msgstr "Tytuł:"
+
+msgid "Level:"
+msgstr "Poziom:"
+
+msgid "Path:"
+msgstr "Ścieżka:"
