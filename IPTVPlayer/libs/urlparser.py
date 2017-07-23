@@ -5107,7 +5107,7 @@ class pageParser:
             tmpParams['cookie_items'] = cookies
             
             data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
-            printDBG(data)
+            #printDBG(data)
             action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'", ignoreCase=True)[0]
             post_data = dict(re.compile(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', re.IGNORECASE).findall(data))
             
@@ -5123,7 +5123,15 @@ class pageParser:
             if not sts: return False
             
             printDBG(data)
-            baseUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src="(https?://[^/]+?/embed\-[^\.]+?\.html)"''', ignoreCase=True)[0]
+            # get JS player script code from confirmation page
+            sts, tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+            if sts:
+                try:
+                    tmp = urllib.unquote(unpackJSPlayerParams(tmp, SAWLIVETV_decryptPlayerParams, 0))
+                    baseUrl = self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src="(https?://[^/]+?/embed\-[^\.]+?\.html)"''', ignoreCase=True)[0]
+                except Exception: printExc()
+            if '/embed-' not in baseUrl:
+                baseUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src="(https?://[^/]+?/embed\-[^\.]+?\.html)"''', ignoreCase=True)[0]
         
         if '.tv/embed-' not in baseUrl:
             baseUrl = baseUrl.replace('.tv/', '.tv/embed-')

@@ -419,10 +419,10 @@ class PlayMaxMX(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="f_c_tab1"', '<div class="f_c_tab2"')[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="f_t"', '<div class="f_c_tab2"')[1]
         
-        title = '' #self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h2', '</h2>')[1])
-        icon  = '' #self.getFullIconUrl( self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+\.jpe?g)['"]''')[0] )
+        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div class="f_t_b">', '</div>')[1])
+        icon  = self.getFullIconUrl( self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?\.jpe?g[^"^']*?)["']''')[0] )
         desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'inopsis</div>', '</span>', False)[1])
         
         tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'original</div>', '</span>', False)[1])
@@ -436,6 +436,31 @@ class PlayMaxMX(CBaseHostClass):
         
         tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'aís</div>', '</span>', False)[1])
         if tmp != '': otherInfo['country'] = tmp
+        
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'title_h="', '"', False)[1])
+        if tmp != '': otherInfo['rating'] = tmp
+        
+        tmpTab = []
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'eparto</h5>', '<div class="opdlf">', False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
+        for t in tmp:
+            t = self.cleanHtmlStr(t)
+            if t != '': tmpTab.append(t)
+        if len(tmpTab): otherInfo['actors'] = ', '.join(tmpTab)
+        
+        tmpTab = []
+        tmp = self.cm.ph.rgetAllItemsBeetwenMarkers(data, '<div class="acxenf">Director</div>', '<div class="palidlp">', False)
+        for t in tmp:
+            t = self.cleanHtmlStr(t)
+            if t != '': tmpTab.append(t)
+        if len(tmpTab): otherInfo['directors'] = ', '.join(tmpTab)
+        
+        tmpTab = []
+        tmp = self.cm.ph.rgetAllItemsBeetwenMarkers(data, '<div class="acxenf">Guión</div>', '<div class="palidlp">', False)
+        for t in tmp:
+            t = self.cleanHtmlStr(t)
+            if t != '': tmpTab.append(t)
+        if len(tmpTab): otherInfo['writers'] = ', '.join(tmpTab)
         
         if title == '': title = cItem['title']
         if desc == '':  desc = cItem.get('desc', '')
