@@ -32,6 +32,7 @@ hostfilma24hdcom
 hostfilmativa
 hostfilmezz
 hostfilmovizijastudio
+hostfilmpalast
 hostfilmstreamvkcom
 hostfilmydokumentalneeu
 hostfilmyto
@@ -76,6 +77,7 @@ hostourmatchnet
 hostpaczamy
 hostpapystreamingus
 hostpinkbike
+hostplaymaxmx
 hostplaypuls
 hostplwwecom
 hostrteieplayer
