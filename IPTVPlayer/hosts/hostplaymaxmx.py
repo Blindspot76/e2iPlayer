@@ -217,7 +217,7 @@ class PlayMaxMX(CBaseHostClass):
             trailerTitle = self.cm.ph.getDataBeetwenReMarkers(tabTmp, re.compile('load_trailers\(\);[^>]+?>'), re.compile('</div>'), False)[1]
             if trailerTitle != '':
                 params = dict(cItem)
-                params.update({'url':trailerUrl, 'title':trailerTitle, 'category':'list_trailers'})
+                params.update({'good_for_fav': False, 'url':trailerUrl, 'title':trailerTitle, 'category':'list_trailers'})
                 self.addDir(params)
         
         if '<div class="f_cl_t">' not in data:
@@ -225,7 +225,7 @@ class PlayMaxMX(CBaseHostClass):
             if '' not in link:
                 url = self.getFullUrl('/c_enlaces_n.php?ficha=%s&c_id=%s' % (link[1], link[0]))       
                 params = dict(cItem)
-                params.update({'url':url})
+                params.update({'good_for_fav': False, 'url':url})
                 self.addVideo(params)
             return
         
