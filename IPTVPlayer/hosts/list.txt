@@ -30,7 +30,6 @@ hostfightvideo
 hostfilisertv
 hostfilma24hdcom
 hostfilmativa
-hostfilmezz
 hostfilmovizijastudio
 hostfilmpalast
 hostfilmstreamvkcom
