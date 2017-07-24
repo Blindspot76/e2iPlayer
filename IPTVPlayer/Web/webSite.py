@@ -84,6 +84,8 @@ class StartPage(resource.Resource):
 		req.setHeader('charset', 'UTF-8')
 
 		""" rendering server response """
+		if isActiveHostInitiated():
+			return util.redirectTo("/iptvplayer/usehost", req)
 		reloadScripts()
 		html = '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER()
@@ -116,7 +118,7 @@ class hostsPage(resource.Resource):
  	isLeaf = False
     
 	def __init__(self):
-		pass
+		self.Counter = 0
    
 	def render(self, req):
 		
@@ -131,15 +133,20 @@ class hostsPage(resource.Resource):
 			webThreads.buildActiveHostsHTML().start()
 			extraMeta = '<meta http-equiv="refresh" content="1">'
 			MenuStatusMSG = _('Initiating data, please wait')
+			ShowCancelButton = False
 		elif isThreadRunning('buildActiveHostsHTML'):
+			self.Counter += 1
 			extraMeta = '<meta http-equiv="refresh" content="1">'
-			MenuStatusMSG = _('Loading data, please wait')
+			MenuStatusMSG = _('Loading data, please wait (%d)') % self.Counter
+			ShowCancelButton = True
 		else:
 			extraMeta = ''
 			MenuStatusMSG = ''
+			self.Counter = 0
+			ShowCancelButton = False
 
 		html += webParts.IncludeHEADER(extraMeta)
-		html += webParts.Body().hostsPageContent(MenuStatusMSG)
+		html += webParts.Body().hostsPageContent(MenuStatusMSG, ShowCancelButton)
 		return html
 ##########################################################
 class logsPage(resource.Resource):
@@ -385,7 +392,6 @@ class useHostPage(resource.Resource):
 		html= ''
 		extraMeta = ''
 		MenuStatusMSG = ''
-		errMSG = ''
 		
 		if len(req.args.keys()) > 0:
 			self.key = req.args.keys()[0]
@@ -396,6 +402,9 @@ class useHostPage(resource.Resource):
 			return util.redirectTo("/iptvplayer/hosts", req)
 		elif self.key == 'cmd' and self.arg == 'hosts':
 			return util.redirectTo("/iptvplayer/hosts", req)
+		elif self.key == 'cmd' and self.arg == 'stopThread':
+			stopRunningThread('doUseHostAction')
+			self.Counter = 0
 		elif self.key == 'cmd' and self.arg == 'InitList':
 			settings.retObj = settings.activeHost['Obj'].getInitList()
 			settings.activeHost['PathLevel'] = 1
@@ -408,6 +417,7 @@ class useHostPage(resource.Resource):
 			settings.activeHost['PathLevel'] -= 1
 			settings.activeHost['ListType'] = 'ListForItem'
 			settings.currItem = {}
+			settings.activeHost['Status'] = settings.activeHost['Status'].rpartition('>')[0]
 			setNewHostListShown(False)
 		#long running commands
 		elif isNewHostListShown() and not isThreadRunning('doUseHostAction'):
@@ -426,6 +436,6 @@ class useHostPage(resource.Resource):
 
 		html += '<html lang="%s">' % language.getLanguage()[:2]
 		html += webParts.IncludeHEADER(extraMeta)
-		html += webParts.Body().useHostPageContent( MenuStatusMSG, errMSG )
+		html += webParts.Body().useHostPageContent( MenuStatusMSG, True )
 		return html
 ##########################################################
