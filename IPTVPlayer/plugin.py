@@ -100,5 +100,5 @@ def sessionstart(reason, **kwargs):
     if reason == 0 and 'session' in kwargs:
         try:
             import Plugins.Extensions.IPTVPlayer.Web.initiator
-        except Exception:
-            print "Exception initiating IPTVplayer web component."
+        except Exception, e:
+            print "EXCEPTION initiating IPTVplayer WebComponent:", str(e)
