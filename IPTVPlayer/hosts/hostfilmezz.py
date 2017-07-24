@@ -300,7 +300,7 @@ class FilmezzEU(CBaseHostClass):
             sts, data = self.getPage(videoUrl)
             if not sts: return []
             
-            if 'google' in data:
+            if 'captcha' in data and 'data-siteke' in data:
                 message = _('Link protected with google recaptcha v2.')
                 if True != self.loggedIn:
                     message += '\n' + _('Please fill your login and password in the host configuration (available under blue button) and try again.')
