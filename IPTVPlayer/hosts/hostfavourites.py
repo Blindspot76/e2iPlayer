@@ -5,17 +5,21 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem, CFavItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, GetLogoDir, GetFavouritesDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, GetLogoDir, GetFavouritesDir, mkdirs, rm, touch
 from Plugins.Extensions.IPTVPlayer.tools.iptvfavourites import IPTVFavourites
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxItem
+from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
 from Components.config import config, ConfigInteger, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from Tools.Directories import fileExists
 try:    import simplejson as json
 except Exception: import json
+from binascii import hexlify
 ###################################################
 
 
@@ -25,6 +29,7 @@ except Exception: import json
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Screens.MessageBox import MessageBox
 ###################################################
+config.plugins.iptvplayer.favourites_use_watched_flag = ConfigYesNo(default = False)
 
 ###################################################
 # Config options for HOST
@@ -32,6 +37,7 @@ from Screens.MessageBox import MessageBox
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Allow watched flag to be set (experimental)"), config.plugins.iptvplayer.favourites_use_watched_flag))
     return optionList
 ###################################################
 
@@ -60,6 +66,10 @@ class Favourites(CBaseHostClass):
                 return True
         except Exception: printExc()
         return False
+        
+    def getHostNameFromItem(self, index):
+        hostName = self.currList[index]['host']
+        return hostName
         
     def isQuestMode(self):
         return self.guestMode
@@ -169,12 +179,91 @@ class Favourites(CBaseHostClass):
         
     def getCurrentGuestHost(self):
         return self.host
+        
+    def getCurrentGuestHostName(self):
+        return self.hostName
 
 class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, Favourites(), False, [])
-
+        self.cachedRet = None
+        self.useWatchedFlag = config.plugins.iptvplayer.favourites_use_watched_flag.value
+        self.refreshAfterWatchedFlagChange = False
+        
+    def getItemHashData(self, index, displayItem):
+        if self.host.isQuestMode(): 
+            hostName = str(self.host.getCurrentGuestHostName())
+        else:
+            hostName = str(self.host.getHostNameFromItem(index))
+        
+        ret = None
+        if hostName not in [None, '']:
+            # prepare item hash
+            hashAlg = MD5()
+            hashData = ('%s_%s' % (str(displayItem.name), str(displayItem.type)))
+            hashData = hexlify(hashAlg(hashData))
+            return (hostName, hashData)
+        return ret
+    
+    def isItemWatched(self, index, displayItem):
+        ret = self.getItemHashData(index, displayItem)
+        if ret != None:
+            return fileExists( GetFavouritesDir('IPTVWatched/%s/.%s.iptvhash' % ret) )
+        else:
+            return False
+            
+    def fixWatchedFlag(self, ret):
+        if self.useWatchedFlag:
+            # check watched flag from hash
+            for idx in range(len(ret.value)):
+                if ret.value[idx].type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO] and not ret.value[idx].isWatched:
+                    if self.isItemWatched(idx, ret.value[idx]):
+                        ret.value[idx].isWatched = True
+                        ret.value[idx].name = ret.value[idx].name
+            self.cachedRet = ret
+        return ret
+    
+    def getCustomActions(self, Index = 0):
+        retCode = RetHost.ERROR
+        retlist = []
+        if self.useWatchedFlag:
+            ret = self.cachedRet
+            if ret.value[Index].type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]:
+                tmp = self.getItemHashData(Index, ret.value[Index])
+                if tmp != '':
+                    if self.cachedRet.value[Index].isWatched:
+                        params = IPTVChoiceBoxItem(_('Unset watched'), "", {'action':'unset_watched_flag', 'item_index':Index, 'hash_data':tmp})
+                    else:
+                        params = IPTVChoiceBoxItem(_('Set wathed'), "", {'action':'set_watched_flag', 'item_index':Index, 'hash_data':tmp})
+                    retlist.append(params)
+                retCode = RetHost.OK
+        return RetHost(retCode, value = retlist)
+        
+    def performCustomAction(self, privateData):
+        retCode = RetHost.ERROR
+        retlist = []
+        if self.useWatchedFlag:
+            hashData = privateData['hash_data']
+            Index = privateData['item_index']
+            if privateData['action'] == 'unset_watched_flag':
+                flagFilePath = GetFavouritesDir('IPTVWatched/%s/.%s.iptvhash' % hashData)
+                if rm(flagFilePath):
+                    self.cachedRet.value[Index].isWatched = False
+                    retCode = RetHost.OK
+            elif privateData['action'] == 'set_watched_flag':
+                if mkdirs( GetFavouritesDir('IPTVWatched') + ('/%s/' % hashData[0]) ):
+                    flagFilePath = GetFavouritesDir('IPTVWatched/%s/.%s.iptvhash' % hashData)
+                    if touch(flagFilePath):
+                        self.cachedRet.value[Index].isWatched = True
+                        retCode = RetHost.OK
+            
+            if retCode == RetHost.OK:
+                self.refreshAfterWatchedFlagChange = True
+                retlist = ['refresh']
+        
+        return RetHost(retCode, value=retlist)
+        
     def getLogoPath(self):
         return RetHost(RetHost.OK, value = [GetLogoDir('favouriteslogo.png')])
 
@@ -209,6 +298,8 @@ class IPTVHost(CHostBase):
             ret = self.host.getCurrentGuestHost().getListForItem(guestIndex, refresh)
             for idx in range(len(ret.value)):
                 ret.value[idx].isGoodForFavourites = False
+        
+        self.fixWatchedFlag(ret)
         return ret
 
     def getPrevList(self, refresh = 0):
@@ -220,16 +311,22 @@ class IPTVHost(CHostBase):
             ret = self.host.getCurrentGuestHost().getPrevList(refresh)
             for idx in range(len(ret.value)):
                 ret.value[idx].isGoodForFavourites = False
+        self.fixWatchedFlag(ret)
         return ret
 
     def getCurrentList(self, refresh = 0):
-        ret = RetHost(RetHost.ERROR, value = [])
-        if not self.host.isQuestMode(): 
-            ret = CHostBase.getCurrentList(self, refresh)
-        if self.host.isQuestMode(): 
-            ret = self.host.getCurrentGuestHost().getCurrentList(refresh)
-            for idx in range(len(ret.value)):
-                ret.value[idx].isGoodForFavourites = False
+        if refresh == 1 and self.refreshAfterWatchedFlagChange and self.cachedRet != None:
+            ret = self.cachedRet
+        else: 
+            ret = RetHost(RetHost.ERROR, value = [])
+            if not self.host.isQuestMode(): 
+                ret = CHostBase.getCurrentList(self, refresh)
+            if self.host.isQuestMode(): 
+                ret = self.host.getCurrentGuestHost().getCurrentList(refresh)
+                for idx in range(len(ret.value)):
+                    ret.value[idx].isGoodForFavourites = False
+            self.fixWatchedFlag(ret)
+        self.refreshAfterWatchedFlagChange = False
         return ret
         
     def getMoreForItem(self, Index = 0):
@@ -240,6 +337,7 @@ class IPTVHost(CHostBase):
             ret = self.host.getCurrentGuestHost().getMoreForItem(Index)
             for idx in range(len(ret.value)):
                 ret.value[idx].isGoodForFavourites = False
+        self.fixWatchedFlag(ret)
         return ret
     
     def getArticleContent(self, Index = 0):

@@ -46,7 +46,8 @@ class CDisplayListItem:
                 iconimage = '', \
                 possibleTypesOfSearch = None, \
                 pinLocked = False, \
-                isGoodForFavourites = False):
+                isGoodForFavourites = False, \
+                isWatched = False):
                 
         if isinstance(name, basestring): self.name = name
         else: self.name = str(name)
@@ -65,6 +66,9 @@ class CDisplayListItem:
             
         if isGoodForFavourites: self.isGoodForFavourites = True
         else: self.isGoodForFavourites = False
+        
+        if isWatched: self.isWatched = True
+        else: self.isWatched = False
         
         # used only for TYPE_VIDEO item
         self.urlItems = urlItems # url to VIDEO
