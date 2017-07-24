@@ -3,7 +3,7 @@
 import os
 import settings
 import time
-import webThreads
+import threading
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetLogoDir
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent, CFavItem
@@ -104,9 +104,18 @@ def setNewHostListShown(status):
 	settings.NewHostListShown = status
 ########################################################
 def isThreadRunning(name):
-	return webThreads.isThreadRunning(name)
+	status = False
+	for i in threading.enumerate():
+		#print 'isThreadRunning>running threads:' , i.name
+		if name == i.name:
+			status = True
+	return status
 ########################################################
 def stopRunningThread(name):
-	webThreads.stopRunningThread(name)
+	for myThread in threading.enumerate():
+		#print 'isThreadRunning>running threads:' , i.name
+		if name == myThread.name:
+			if (myThread.isAlive()):
+				myThread.terminate()
 	time.sleep(0.2) #time for thread to close
 	return isThreadRunning(name)
