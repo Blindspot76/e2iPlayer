@@ -46,7 +46,7 @@ def IncludeHEADER(extraMetas = ''):
 	return tempText
 	
 ########################################################
-def IncludeMENU( MenuStatusMSG = ''):
+def IncludeMENU( MenuStatusMSG = '', ShowCancelButton = False):
 	if isActiveHostInitiated():
 		tempText = """
   <div class="topbar">
@@ -75,9 +75,10 @@ def IncludeMENU( MenuStatusMSG = ''):
     <a>, %s: <b>%s</b></a/>
   </div>
 """ % ( _('Information'), _('Selected hosts'), _('Download manager'), _('Settings'), _('Logs'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
-	if MenuStatusMSG != '':
-		tempText += '<div class="main">\n%s\n<table border="0" cellspacing="50px">\n<tbody></div>\n' % MenuStatusMSG
-
+	if MenuStatusMSG != '' and ShowCancelButton == True:
+		tempText += '<div class="main">%s<br></div>\n' % formSUBMITvalue([('cmd','stopThread')], _('Cancel'), input_text = MenuStatusMSG + '... ')
+	elif MenuStatusMSG != '':
+		tempText += '<div class="main">%s<br></div>\n' % MenuStatusMSG
 	return tempText
 
 ########################################################
@@ -202,9 +203,9 @@ class Body():
 		tempText += pluginCFG + '<p><br</p>\n' + hostsCFG + '</div></body>\n'
 		return tempText
 	########################################################
-	def hostsPageContent(self, MenuStatusMSG):
+	def hostsPageContent(self, MenuStatusMSG, ShowCancelButton):
 		tempText = '<body bgcolor=\"#666666\" text=\"#FFFFFF\">\n'
-		tempText += IncludeMENU( MenuStatusMSG )
+		tempText += IncludeMENU( MenuStatusMSG, ShowCancelButton )
 		tempText += '<div class="main"><table border="0" cellspacing="50px"><tbody>\n<tr>'
 		columnIndex = 1
 		displayHostsList = SortHostsList(GetHostsList())
@@ -347,7 +348,7 @@ class Body():
 	def useHostSubMenu(self, isTop = True, LVL = 1 ):
 		txt = '<table border="0" width="800px" cellspacing="5px"><tbody>\n'
 		txtWarning = '<tr><td colspan="4" align="center"><p><b><font size="2" color="#FE642E">%s</font></b><font size="2">%s</font></p></td></tr>\n' % (
-				      _('REMEMBER: '), _('accessing host via web <b>HAS LIMITED FUNCTIONALITY.</b> Use IPTVPlayer GUI version for full support!!!'))
+				      _('REMEMBER: '), _('first check if host works properly in GUI and web <b>BEFORE</b> reporting error in it !!!'))
 		if isTop:
 			txt += txtWarning
 		txt += '<tr><td><br></td>'
@@ -399,20 +400,17 @@ class Body():
 			txt += '<td colspan="2" align="center">%s</td></tr>' % ( iName )
 		else:
 			if int(item.urlNeedsResolve) == 1:
-				txt += '<td>%s</td><td>%s</td></tr>' % ( iName , formSUBMITvalue( [('ResolveURL' , index)], _('Download')) )
+				txt += '<td>%s</td><td>%s</td></tr>' % ( iName , formSUBMITvalue( [('ResolveURL' , index)], _('Select')) )
 			else:
 				#txt += '<td>%s</td><td>%s</td>' % ( iName , formSUBMITvalue( [('DownloadURL' , index)], _('Download')) )
 				txt += '<td>%s</td><td><a href="/iptvplayer/usehost?DownloadURL=%d" class = "lnkbtn">%s</a></td>' % (iName, index, _('Add to downloader'))
 				txt += '<td> <a href="%s" target="_blank" class = "lnkbtn">%s</a></td></tr>' % (iUrl, _('Watch'))
 		return txt
 	########################################################
-	def useHostPageContent(self, MenuStatusMSG, errMSG):
+	def useHostPageContent(self, MenuStatusMSG, ShowCancelButton):
 		tempText = '<body bgcolor=\"#666666\" text=\"#FFFFFF\">\n'
-		tempText += IncludeMENU(MenuStatusMSG)
+		tempText += IncludeMENU(MenuStatusMSG, ShowCancelButton)
 		tempText += '<div class="main">\n'
-		#error msg
-		if errMSG != '':
-			tempText += '<p align="center"><b><font color="#FE642E">%s</font></b>, %s</p>' % ( _('Exception occured:'), errMSG )
 		#Status table
 		if not isNewHostListShown() and not isThreadRunning('doUseHostAction'):
 			tempText += '<table border="0" cellspacing="5px"><tbody>\n'

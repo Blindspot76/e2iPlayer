@@ -2,14 +2,15 @@
 
 import os
 import settings
-import threading
+import time
+import webThreads
 
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetLogoDir
 from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CDisplayListItem, RetHost, CUrlItem, ArticleContent, CFavItem
 
 ########################################################
-def formSUBMITvalue( inputHiddenObjects, caption, input_def = '' ):
-	retTxt = '\n<form method="GET">'
+def formSUBMITvalue( inputHiddenObjects, caption, input_def = '', input_text = '' ):
+	retTxt = '\n<form method="GET">%s' % input_text
 	for inputObj in inputHiddenObjects:
 		retTxt += '<input type="hidden" name="%s" value="%s">' % (inputObj[0], inputObj[1])
 	retTxt += '<input type="submit" value="%s" %s></form>\n' % (caption, input_def)
@@ -89,14 +90,6 @@ def iSactiveHostsHTMLempty():
 	else:
 		return False
 ########################################################
-def isThreadRunning(name):
-	status = False
-	for i in threading.enumerate():
-		print 'isThreadRunning>running threads:' , i.name
-		if name == i.name:
-			status = True
-	return status
-########################################################
 def isConfigsHTMLempty():
 	if len(settings.configsHTML.keys()) == 0:
 		return True
@@ -109,3 +102,11 @@ def isNewHostListShown():
 ########################################################
 def setNewHostListShown(status):
 	settings.NewHostListShown = status
+########################################################
+def isThreadRunning(name):
+	return webThreads.isThreadRunning(name)
+########################################################
+def stopRunningThread(name):
+	webThreads.stopRunningThread(name)
+	time.sleep(0.2) #time for thread to close
+	return isThreadRunning(name)

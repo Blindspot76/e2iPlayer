@@ -2,13 +2,53 @@
 import os
 import settings
 import threading
+import inspect
 
 from webTools import *
 
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetHostsList, IsHostEnabled, SaveHostsOrderList, SortHostsList, GetLogoDir, GetHostsOrderList, getDebugMode, formatBytes
 from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu
+import Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget
+
+from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
+from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import IsUrlDownloadable
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import GetHostsList, IsHostEnabled, SaveHostsOrderList, SortHostsList, GetLogoDir, GetHostsOrderList, getDebugMode, formatBytes, printDBG
 from Components.config import config
 
+########################################################
+def _async_raise(tid, exctype):
+	"""raises the exception, performs cleanup if needed"""
+	if not inspect.isclass(exctype):
+		raise TypeError("Only types can be raised (not instances)")
+	res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(exctype))
+	if res == 0:
+		print 'res=%d' % res
+		raise ValueError("invalid thread id")
+	elif res != 1:
+		print 'res=%d' % res
+		# """if it returns a number greater than one, you're in trouble, 
+		# and you should call it again with exc=NULL to revert the effect"""
+		ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+		raise SystemError("PyThreadState_SetAsyncExc failed")
+
+########################################################
+def isThreadRunning(name):
+	status = False
+	for i in threading.enumerate():
+		#print 'isThreadRunning>running threads:' , i.name
+		if name == i.name:
+			status = True
+	return status
+########################################################
+def stopRunningThread(name):
+	status = False
+	for myThread in threading.enumerate():
+		#print 'isThreadRunning>running threads:' , i.name
+		if name == myThread.name:
+			if (myThread.isAlive()):
+				myThread.terminate()
+			status = True
+	return status
+########################################################
 class buildActiveHostsHTML(threading.Thread):
 	def __init__(self, args = []):
 		''' Constructor. '''
@@ -188,6 +228,15 @@ class doUseHostAction(threading.Thread):
 		self.name = 'doUseHostAction'
 		self.key = key
 		self.arg = arg
+
+	def raise_exc(self, exctype):
+		"""raises the given exception type in the context of this thread"""
+		_async_raise(self.ident, exctype)
+    
+	def terminate(self):
+		"""raises SystemExit in the context of the given thread, which should 
+		cause the thread to exit silently (unless caught)"""
+		self.raise_exc(SystemExit)
 	########################################################
 	def run(self):
 		print "doUseHostAction received: '%s'='%s'" % (self.key, str(self.arg))
@@ -204,41 +253,60 @@ class doUseHostAction(threading.Thread):
 			url = settings.retObj.value[myID].url
 			if url != '' and IsUrlDownloadable(url):
 				titleOfMovie = settings.currItem['itemTitle'].replace('/','-').replace(':','-').replace('*','-').replace('?','-').replace('"','-').replace('<','-').replace('>','-').replace('|','-')
-				fullFilePath = config.plugins.iptvplayer.NaszaSciezka.value + '/' + titleOfMovie + 'mp4'
+				fullFilePath = config.plugins.iptvplayer.NaszaSciezka.value + '/' + titleOfMovie + '.mp4'
 				if None == Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager:
-					printDBG('============WebSite.py Initialize Download Manager============')
+					printDBG('============webThreads.py Initialize Download Manager============')
 					Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager = IPTVDMApi(2, int(config.plugins.iptvplayer.IPTVDMMaxDownloadItem.value))
 				ret = Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget.gDownloadManager.addToDQueue( DMItem(url, fullFilePath))
-				print ret
+				#print ret
+		elif self.key == 'ResolveURL' and self.arg.isdigit():
+			myID = int(self.arg)
+			url = "NOVALIDURLS"
+			linkList = []
+			ret = settings.activeHost['Obj'].getResolvedURL(settings.retObj.value[myID].url)
+			if ret.status == RetHost.OK and isinstance(ret.value, list):
+				for item in ret.value:
+					if isinstance(item, CUrlItem): 
+						item.urlNeedsResolve = 0 # protection from recursion 
+						linkList.append(item)
+					elif isinstance(item, basestring): linkList.append(CUrlItem(item, item, 0))
+					else: print "selectResolvedVideoLinks: wrong resolved url type!"
+				settings.retObj = RetHost(RetHost.OK, value = linkList)
+			else:
+				print "selectResolvedVideoLinks: wrong status or value"
+				
 		elif self.key == 'ListForItem' and self.arg.isdigit():
 			myID = int(self.arg)
 			settings.activeHost['selectedItemType'] = settings.retObj.value[myID].type
 			if settings.activeHost['selectedItemType'] in ['CATEGORY']:
+				settings.activeHost['Status'] += '>' + settings.retObj.value[myID].name
 				settings.currItem = {}
 				settings.retObj = settings.activeHost['Obj'].getListForItem(myID,0,settings.retObj.value[myID])
 				settings.activeHost['PathLevel'] += 1
 			elif settings.activeHost['selectedItemType'] in ['VIDEO']:
 				settings.currItem['itemTitle'] = settings.retObj.value[myID].name
 				try:
-					print "ListForItem>getLinksForVideo"
+					links = settings.retObj.value[myID].urlItems
+				except Exception, e:
+					print "ListForItem>urlItems exception:", str(e)
+					links='NOVALIDURLS'
+				try:
 					settings.retObj = settings.activeHost['Obj'].getLinksForVideo(myID,settings.retObj.value[myID]) #returns "NOT_IMPLEMENTED" when host is using curlitem
-					print 'got status' , settings.retObj.status
-					if settings.retObj.status == "NOT_IMPLEMENTED" or len(settings.retObj.value) == 0:
-						raise Exception
-				except Exception:
-					print "building CUrlItem"
+				except Exception, e:
+					print "ListForItem>getLinksForVideo exception:", str(e)
+					settings.retObj = RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+				
+				if settings.retObj.status == RetHost.NOT_IMPLEMENTED and links != 'NOVALIDURLS':
+					print "getLinksForVideo not implemented, using CUrlItem"
+					tempUrls=[]
+					iindex=1
+					for link in links:
+						if link.name == '':
+							tempUrls.append(CUrlItem('link %d' % iindex, link.url, link.urlNeedsResolve))
+						else:
+							tempUrls.append(CUrlItem(link.name, link.url, link.urlNeedsResolve))
+						iindex += 1
+					settings.retObj = RetHost(RetHost.OK, value = tempUrls)
+				elif settings.retObj.status == RetHost.NOT_IMPLEMENTED:
 					settings.retObj = RetHost(RetHost.NOT_IMPLEMENTED, value = [(CUrlItem("No valid urls", "fakeUrl", 0))])
-					try:
-						tempUrls=[]
-						iindex=1
-						links = settings.retObj.value[myID].urlItems
-						for link in links:
-							if link.name == '':
-								tempUrls.append(CUrlItem('link %d' % iindex, link.url, link.urlNeedsResolve))
-							else:
-								tempUrls.append(CUrlItem(link.name, link.url, link.urlNeedsResolve))
-							iindex += 1
-						settings.retObj = RetHost(RetHost.OK, value = tempUrls)
-					except Exception, e:
-						print 'Exception trying to get Curlitems: ', str(e)
 		

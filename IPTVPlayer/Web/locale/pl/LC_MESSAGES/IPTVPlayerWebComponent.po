@@ -127,8 +127,8 @@ msgstr "Pobrania"
 msgid "REMEMBER: "
 msgstr "PAMIĘTAJ: "
 
-msgid "accessing host via web <b>HAS LIMITED FUNCTIONALITY.</b> Use IPTVPlayer GUI version for full support!!!"
-msgstr "korzystanie z serwisu przez stronę WWW <b>MA NIEPEŁNĄ FUNKCJONALNOŚĆ.</b>Korzystaj z wersji GUI dla pełnego wsparcia!!!"
+msgid "first check if host works properly in GUI and web <b>BEFORE</b> reporting error in it !!!"
+msgstr "najpierw sprawdź, czy host działa w wersji GUI i bezpośrednio przez stronę <b>PRZED ZGŁOSZENIEM</b> problemu z jego działaniem!!!"
 
 msgid "Previous list"
 msgstr "Poprzednia lista"
@@ -162,3 +162,9 @@ msgstr "Poziom:"
 
 msgid "Path:"
 msgstr "Ścieżka:"
+
+msgid "No valid urls"
+msgstr "Brak poprawnych linków"
+
+msgid "Links for"
+msgstr "Linki dla "
