@@ -31,24 +31,6 @@ def _async_raise(tid, exctype):
 		raise SystemError("PyThreadState_SetAsyncExc failed")
 
 ########################################################
-def isThreadRunning(name):
-	status = False
-	for i in threading.enumerate():
-		#print 'isThreadRunning>running threads:' , i.name
-		if name == i.name:
-			status = True
-	return status
-########################################################
-def stopRunningThread(name):
-	status = False
-	for myThread in threading.enumerate():
-		#print 'isThreadRunning>running threads:' , i.name
-		if name == myThread.name:
-			if (myThread.isAlive()):
-				myThread.terminate()
-			status = True
-	return status
-########################################################
 class buildActiveHostsHTML(threading.Thread):
 	def __init__(self, args = []):
 		''' Constructor. '''
