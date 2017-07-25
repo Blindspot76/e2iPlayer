@@ -401,6 +401,7 @@ class useHostPage(resource.Resource):
 		if self.key is None and isActiveHostInitiated() == False:
 			return util.redirectTo("/iptvplayer/hosts", req)
 		elif self.key == 'cmd' and self.arg == 'hosts':
+			initActiveHost(None)
 			return util.redirectTo("/iptvplayer/hosts", req)
 		elif self.key == 'cmd' and self.arg == 'stopThread':
 			stopRunningThread('doUseHostAction')
