@@ -335,12 +335,12 @@ class Body():
 					icon = ''
 					info = ''
 					buttons = ''
-				tempText += '<tr><td colspan="3" style="border: 1px solid red;"</td></tr>\n'
+				tempText += tableHorizontalRedLine( colspan = 3 )
 				tempText += '<tr><td rowspan="4" align="center">%s</td><td colspan="2"><b>%s</b></td></tr>\n' % (icon,fileName)
 				tempText += '<tr><td><div style="text-indent: 20px">%s</div></td></tr>\n' % item.url
 				tempText += '<tr><td>%s</td><td align="right">%s</td></tr>\n' %(info,status)
 				tempText += '<tr><td colspan="3" align="right">%s</td></tr>\n' % (buttons)
-			tempText += '<tr><td colspan="3" style="border: 1px solid red;"</td></tr>\n'
+			tempText += tableHorizontalRedLine( colspan = 3 )
 			tempText += '</tbody></table>\n'
 		tempText += '</div></body>\n'
 		return tempText
@@ -385,7 +385,7 @@ class Body():
 			icon = '<img border="0" src="./icons/AudioItem.png" width="64" height="64">'
 		else:
 			icon = iType
-		txt = '<tr><td colspan="2" style="border: 1px solid red;"></td></tr>\n'
+		txt = tableHorizontalRedLine( colspan = 2 )
 		txt += '<tr><td rowspan="2" style="width:64px">%s</td>' % icon
 		txt += '<td>%s</td></tr>' % formSUBMITvalue( [(ListType , iIndex)], _(iName), 'style="color: #DBA901;background: none;border: none;text-decoration: underline"')
 		txt += '<tr><td style="text-indent: 40px">%s</td></tr>' % iDescr
@@ -395,7 +395,7 @@ class Body():
 		iName= removeSpecialChars(item.name)
 		iUrl= item.url #.replace("ext://url/","") #to chyba sss zrobil do wymuszenia extplayera przyklad pierwszatv
 		iurlNeedsResolve= int(item.urlNeedsResolve)
-		txt = '<tr><td colspan = "3" style="border: 1px solid red;"></td></tr>\n'
+		txt = tableHorizontalRedLine( colspan = 3 )
 		if iUrl	in ['', 'fake','fakeUrl']:
 			txt += '<td colspan="2" align="center">%s</td></tr>' % ( iName )
 		else:
@@ -432,14 +432,19 @@ class Body():
 				tempText += '<table border="0" width="800px" cellspacing="5px"><tbody>\n'
 			#if type(settings.retObj.value) is list:
 			index=0
-			if len(settings.retObj.value) > 0:
-				for item in settings.retObj.value:
-					if isCurrentItemSelected():
-						tempText += self.buildUrlsTable(item, index)
-					else:
-						tempText += self.buildItemsListTable(item, index)
-					index += 1
-			txt = '<tr><td colspan="3" style="border: 1px solid red;"></td></tr>\n'
+			try:
+				if len(settings.retObj.value) > 0:
+					for item in settings.retObj.value:
+						if isCurrentItemSelected():
+							tempText += self.buildUrlsTable(item, index)
+						else:
+							tempText += self.buildItemsListTable(item, index)
+						index += 1
+			except Exception, e:
+				print 'EXCEPTION in webParts:useHostPageContent - ', str(e)
+				tempText += tableHorizontalRedLine( colspan = 3 )
+				tempText += '<td colspan="3" align="center">%s %s</td></tr>' % ( _('ERROR:'), str(e) )
+				tempText += tableHorizontalRedLine( colspan = 3 )
 			tempText += '</tbody></table>\n'
 			# end main list
 			if index > 10:

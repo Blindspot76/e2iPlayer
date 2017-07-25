@@ -29,6 +29,10 @@ def formGET( radioList ):
 	else:
 		return '\n<form method="GET">\n%s\n<input type="submit" value="%s"></form>\n' % (radioList, _('Save'))
 ########################################################
+def tableHorizontalRedLine( colspan ):
+	retTxt = '<tr><td colspan = "%d" style="border: 1px solid red;"></td></tr>\n' % colspan
+	return retTxt
+########################################################
 def removeSpecialChars(text):
     text = text.replace('\n', ' ').replace('\r', '').replace('\t', ' ').replace('"', "'").replace('  ', " ").strip()
     text = text.replace('&oacute;', 'ó').replace('&Oacute;', 'Ó')
@@ -73,16 +77,22 @@ def initActiveHost( hostName ):
 	return
 ########################################################
 def isActiveHostInitiated():
-	if len(settings.activeHost.keys()) == 0:
-		return False
-	else:
-		return True
+	status = False
+	try:
+		if len(settings.activeHost.keys()) > 0:
+			status = True
+	except Exception, e:
+		print 'EXCEPTION in webTools:isActiveHostInitiated - ', str(e)
+	return status
 ########################################################
 def isCurrentItemSelected():
-	if len(settings.currItem.keys()) == 0:
-		return False
-	else:
-		return True
+	status = False
+	try:
+		if len(settings.currItem.keys()) > 0:
+			status = True
+	except Exception, e:
+		print 'EXCEPTION in webTools:isCurrentItemSelected - ', str(e)
+	return status
 ########################################################
 def iSactiveHostsHTMLempty():
 	if len(settings.activeHostsHTML.keys()) == 0:
