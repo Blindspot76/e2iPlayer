@@ -237,16 +237,20 @@ class settingsPage(resource.Resource):
 				elif key == 'cmd' and arg[:3] == 'ON:':
 					exec('config.plugins.iptvplayer.%s.setValue(True)\nconfig.plugins.iptvplayer.%s.save()' % (arg[3:], arg[3:]) )
 					settings.configsHTML = {}
+					return util.redirectTo("/iptvplayer/settings" , req)
 				elif key == 'cmd' and arg[:4] == 'OFF:':
 					exec('config.plugins.iptvplayer.%s.setValue(False)\nconfig.plugins.iptvplayer.%s.save()' % (arg[4:], arg[4:]) )
 					settings.activeHostsHTML.pop(arg[4:], None)
 					settings.configsHTML = {}
+					return util.redirectTo("/iptvplayer/settings" , req)
 				elif key[:4] ==  "CFG:":
 					exec('config.plugins.iptvplayer.%s.setValue("%s")\nconfig.plugins.iptvplayer.%s.save()' % (key[4:], arg, key[4:]))
 					settings.configsHTML = {}
+					return util.redirectTo("/iptvplayer/settings" , req)
 				elif key[:4] ==  "INT:":
 					exec('config.plugins.iptvplayer.%s.setValue("%s")\nconfig.plugins.iptvplayer.%s.save()' % (key[4:], arg, key[4:]))
 					settings.configsHTML = {}
+					return util.redirectTo("/iptvplayer/settings" , req)
 				configfile.save()
 			except Exception:
 				printDBG("[webSite.py:settingsPage] EXCEPTION for updating value '%s' for key '%s'" %(arg,key))
