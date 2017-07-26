@@ -563,6 +563,7 @@ def GetSkinsList():
     fileList = os.listdir( SKINS_PATH )
     for filename in fileList: skins.append((filename, filename))
     skins.sort()
+    skins.insert(0,("Auto", "Auto"))
     skins.insert(0,("Default", "Default"))
     printDBG('getSkinsList end')
     return skins

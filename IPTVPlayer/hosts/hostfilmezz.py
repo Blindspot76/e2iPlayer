@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -33,6 +33,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 # E2 GUI COMMPONENTS 
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
 from Screens.MessageBox import MessageBox
 ###################################################
 
@@ -285,33 +286,99 @@ class FilmezzEU(CBaseHostClass):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
                         
-        try:
-            httpParams = dict(self.defaultParams)
-            httpParams['return_data'] = False
+        url = videoUrl
+        post_data = None
+        while True:
+            try:
+                httpParams = dict(self.defaultParams)
+                httpParams['return_data'] = False
+                
+                sts, response = self.cm.getPage(url, httpParams, post_data)
+                videoUrl = response.geturl()
+                response.close()
+            except Exception:
+                printExc()
+                return []
             
-            sts, response = self.cm.getPage(videoUrl, httpParams)
-            videoUrl = response.geturl()
-            response.close()
-        except Exception:
-            printExc()
-            return []
-        
-        if self.up.getDomain(self.getMainUrl()) in videoUrl:
-            sts, data = self.getPage(videoUrl)
-            if not sts: return []
-            
-            if 'captcha' in data and 'data-siteke' in data:
-                message = _('Link protected with google recaptcha v2.')
-                if True != self.loggedIn:
-                    message += '\n' + _('Please fill your login and password in the host configuration (available under blue button) and try again.')
-                SetIPTVPlayerLastHostError(message)
-            
-            printDBG(data)
-            tmp = re.compile('''<iframe[^>]+?src=['"]([^"^']+?)['"]''', re.IGNORECASE).findall(data)
-            for url in tmp:
-                if 1 == self.up.checkHostSupport(url):
-                    videoUrl = url
+            if self.up.getDomain(self.getMainUrl()) in videoUrl:
+                sts, data = self.getPage(videoUrl)
+                if not sts: return []
+                
+                if 'captcha' in data: data = re.sub("<!--[\s\S]*?-->", "", data)
+                
+                if 'google.com/recaptcha/' in data and 'sitekey' in data:
+                    message = _('Link protected with google recaptcha v2.')
+                    if True != self.loggedIn:
+                        message += '\n' + _('Please fill your login and password in the host configuration (available under blue button) and try again.')
+                    SetIPTVPlayerLastHostError(message)
                     break
+                elif '<input name="captcha"' in data:
+                    data = self.cm.ph.getDataBeetwenMarkers(data, '<div align="center">', '</form>')[1]
+                    captchaTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h3', '</h3>')[1])
+                    captchaDesc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '</h3>', '</span>')[1])
+                    
+                    # parse form data
+                    data = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>')[1]
+                    
+                    imgUrl = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+                    if imgUrl != '': imgUrl = '/' + imgUrl
+                    if imgUrl.startswith('/'): imgUrl = urlparse.urljoin(videoUrl, imgUrl)
+                    
+                    printDBG("img URL [%s]" % imgUrl)
+                        
+                    actionUrl = self.cm.ph.getSearchGroups(data, 'action="([^"]+?)"')[0]
+                    if actionUrl != '': actionUrl = '/' + actionUrl
+                    if actionUrl.startswith('/'): actionUrl = urlparse.urljoin(videoUrl, actionUrl)
+                    elif actionUrl == '': actionUrl = videoUrl
+                        
+                    captcha_post_data = dict(re.findall(r'''<input[^>]+?name=["']([^"^']*)["'][^>]+?value=["']([^"^']*)["'][^>]*>''', data))
+                    
+                    if self.cm.isValidUrl(imgUrl):
+                        params = dict(self.defaultParams)
+                        params['header'] = dict(params['header'] )
+                        params['header']['Accept'] = 'image/png,image/*;q=0.8,*/*;q=0.5'
+                        params = dict(self.defaultParams)
+                        params.update( {'maintype': 'image', 'subtypes':['jpeg', 'png'], 'check_first_bytes':['\xFF\xD8','\xFF\xD9','\x89\x50\x4E\x47'], 'header':params['header']} )
+                        filePath = GetTmpDir('.iptvplayer_captcha.jpg')
+                        ret = self.cm.saveWebFile(filePath, imgUrl.replace('&amp;', '&'), params)
+                        if not ret.get('sts'):
+                            SetIPTVPlayerLastHostError(_('Fail to get "%s".') % imgUrl)
+                            return urlTab
+
+                        params = deepcopy(IPTVMultipleInputBox.DEF_PARAMS)
+                        params['accep_label'] = _('Send')
+                        params['title'] = captchaTitle
+                        params['status_text'] = captchaDesc
+                        params['with_accept_button'] = True
+                        params['list'] = []
+                        item = deepcopy(IPTVMultipleInputBox.DEF_INPUT_PARAMS)
+                        item['label_size'] = (160,75)
+                        item['input_size'] = (480,25)
+                        item['icon_path'] = filePath
+                        item['title'] = _('Answer')
+                        item['input']['text'] = ''
+                        params['list'].append(item)
+            
+                        ret = 0
+                        retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleInputBox, params)
+                        printDBG(retArg)
+                        if retArg and len(retArg) and retArg[0]:
+                            printDBG(retArg[0])
+                            captcha_post_data['captcha'] = retArg[0][0]
+                            post_data = captcha_post_data
+                            url = actionUrl
+                        
+                        if not sts:
+                            return urlTab
+                        else:
+                            continue
+                
+                tmp = re.compile('''<iframe[^>]+?src=['"]([^"^']+?)['"]''', re.IGNORECASE).findall(data)
+                for url in tmp:
+                    if 1 == self.up.checkHostSupport(url):
+                        videoUrl = url
+                        break
+            break
         
         if self.cm.isValidUrl(videoUrl):
             urlTab = self.up.getVideoLinkExt(videoUrl)
