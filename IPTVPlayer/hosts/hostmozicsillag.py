@@ -64,9 +64,9 @@ class MuziCsillangCC(CBaseHostClass):
         self.cacheSortOrder = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
-        self.MAIN_CAT_TAB = [#{'category':'list_filters',    'title': _('Catalog'),            'url':self.getFullUrl('kereses.php')   },
-                             {'category':'list_movies',     'title': _('Movies'),             'url':self.getMainUrl()  },
-                             {'category':'list_series',     'title': _('Series'),             'url':self.getMainUrl()  },
+        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Catalog'), 'url':self.getMainUrl(), 'use_query':True },
+                             {'category':'list_movies',     'title': _('Movies'),  'url':self.getMainUrl()  },
+                             {'category':'list_series',     'title': _('Series'),  'url':self.getMainUrl()  },
                              
                              {'category':'search',            'title': _('Search'), 'search_item':True,},
                              {'category':'search_history',    'title': _('Search history'),            } 
@@ -98,26 +98,52 @@ class MuziCsillangCC(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
-        def addFilter(data, marker, baseKey, addAll=True, titleBase=''):
+        def addFilter(data, marker, baseKey, allTitle='', titleBase=''):
             key = 'f_' + baseKey
             self.cacheFilters[key] = []
             for item in data:
+                type  = self.cm.ph.getSearchGroups(item, '''type="([^"]+?)"''')[0]
                 value = self.cm.ph.getSearchGroups(item, marker + '''="([^"]+?)"''')[0]
                 if value == '': continue
                 title = self.cleanHtmlStr(item)
                 if title in ['Összes']:
-                    addAll = False
-                self.cacheFilters[key].append({'title':title.title(), key:value})
+                    allTitle = ''
+                self.cacheFilters[key].append({'title':title.title(), key:value, ('%s_type' % key):type })
                 
             if len(self.cacheFilters[key]):
-                if addAll: self.cacheFilters[key].insert(0, {'title':_('All')})
+                if allTitle != '': self.cacheFilters[key].insert(0, {'title':allTitle})
                 self.cacheFiltersKeys.append(key)
+                
+        # search_type
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input id="search_type', '</label>')
+        if len(tmp): addFilter(tmp, 'value', 'search_type')
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="row form-group">', '</select>')
-        for tmp in data:
-            key = self.cm.ph.getSearchGroups(tmp, '''name="([^"]+?)"''')[0]
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
-            addFilter(tmp, 'value', key, False)
+        # search_sync_
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input id="search_sync_', '</label>')
+        if len(tmp): addFilter(tmp, 'value', 'search_sync_', _('Any'))
+        
+        # search_rating_start
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<select id="search_rating_start"', '</select>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')[::-1]
+        if len(tmp): addFilter(tmp, 'value', 'search_rating_start', _('Any'))
+        
+        # year
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<select id="search_year_from"', '</select>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')[::-1]
+        if len(tmp): addFilter(tmp, 'value', 'year', _('Any'), 'IMDB pont')
+        
+        # search_categ_
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input id="search_categ_', '</label>')
+        if len(tmp) > 1: tmp = tmp[2:]
+        if len(tmp): addFilter(tmp, 'value', 'search_categ_', _('Any'))
+        
+        # search_qual_
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input id="search_qual_', '</label>')
+        if len(tmp): addFilter(tmp, 'value', 'search_qual_', _('Any'))
+        
+        # search_share_
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input id="search_share_', '</label>')
+        if len(tmp): addFilter(tmp, 'value', 'search_share_', _('Any'))
         
         printDBG(self.cacheFilters)
         
@@ -143,12 +169,20 @@ class MuziCsillangCC(CBaseHostClass):
         page = cItem.get('page', 1)
         sort = cItem.get('f_sort', '')
         
-        query = {}
-        for key in self.cacheFiltersKeys:
-            baseKey = key[2:] # "f_"
-            if key in cItem: query[baseKey] = urllib.quote(cItem[key])
+        query = ''
+        if cItem.get('use_query', False):
+            url = self.getFullUrl('/kereses/')
+            query += 'search_type=%s&' % cItem.get('f_search_type', '0')
+            query += 'search_where=%s&' % cItem.get('f_search_where', '0')
+            query += 'search_rating_start=%s&search_rating_end=10&' % cItem.get('f_search_rating_start', '1')
+            query += 'search_year_from=%s&search_year_to=%s&' % (cItem.get('f_year', '1900'), cItem.get('f_year', '2090'))
+            if 'f_search_sync_' in cItem: query += 'search_sync_%s=%s&' % (cItem['f_search_sync_'], cItem['f_search_sync_'])
+            if 'f_search_categ_' in cItem: query += 'search_categ_%s=%s&' % (cItem['f_search_categ_'], cItem['f_search_categ_'])
+            if 'f_search_qual_' in cItem: query += 'search_qual_%s=%s&' % (cItem['f_search_qual_'], cItem['f_search_qual_'])
+            if 'f_search_share_' in cItem: query += 'search_share_%s=%s&' % (cItem['f_search_share_'], cItem['f_search_share_'])
+            if query.endswith('&'): query = query[:-1]
+            printDBG('>>> query[%s]' % query)
         
-        query = urllib.urlencode(query)
         if not url.endswith('/'): url += '/'
         if sort != '': url += sort + '/'
         if query != '': url += base64.b64encode(query)
@@ -442,7 +476,7 @@ class MuziCsillangCC(CBaseHostClass):
             self.cacheLinks = {}
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category == 'list_filters':
-            self.listFilters(self.currItem, 'list_items')
+            self.listFilters(self.currItem, 'list_sort')
         elif category == 'list_movies':
             self.listMovies(self.currItem, 'list_sort')
         elif category == 'list_series':
