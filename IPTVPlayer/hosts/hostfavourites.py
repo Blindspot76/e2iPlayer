@@ -235,7 +235,7 @@ class IPTVHost(CHostBase):
                     if self.cachedRet.value[Index].isWatched:
                         params = IPTVChoiceBoxItem(_('Unset watched'), "", {'action':'unset_watched_flag', 'item_index':Index, 'hash_data':tmp})
                     else:
-                        params = IPTVChoiceBoxItem(_('Set wathed'), "", {'action':'set_watched_flag', 'item_index':Index, 'hash_data':tmp})
+                        params = IPTVChoiceBoxItem(_('Set watched'), "", {'action':'set_watched_flag', 'item_index':Index, 'hash_data':tmp})
                     retlist.append(params)
                 retCode = RetHost.OK
         return RetHost(retCode, value = retlist)
