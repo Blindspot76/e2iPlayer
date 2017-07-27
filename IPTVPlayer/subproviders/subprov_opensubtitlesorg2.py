@@ -294,27 +294,47 @@ class OpenSubtitles(CBaseSubProviderClass):
         printDBG("OpenSubtitles.getSubtitlesList")
         
         url = cItem['url']
+        downloadUrl = ''
+        data = ''
         
-        if '/subtitleserve/sub/' not in url:
+        def _getDownloadUrl(url):
+            urlParams = dict(self.defaultParams)
+            urlParams['return_data'] = False
+            try:
+                sts, response = self.cm.getPage(url, urlParams)
+                if not sts: return False
+                fileName = response.info().get('Content-Disposition', '')
+                fileName = self.cm.ph.getSearchGroups(fileName.lower(), '''filename=['"]([^'^"]+?)['"]''')[0]
+                response.close()
+                if fileName.endswith('.zip') or fileName.endswith('.rar'):
+                    return url
+            except Exception:
+                printExc()
+            return ''
+        
+        downloadUrl = _getDownloadUrl(url)
+        if downloadUrl == '':
             sts, data = self.getPage(url)
             if not sts: return
             url = self.getFullUrl(self.cm.ph.getSearchGroups(data, 'href="([^"]*?/subtitleserve/sub/[^"]+?)"')[0])
-        
-        if not self.cm.isValidUrl(url): return 
+            if url == '': url = self.getFullUrl(self.cm.ph.getSearchGroups(data, 'href="([^"]*?/download/sub/[^"]+?)"')[0])
+            if not self.cm.isValidUrl(url): return 
         
         imdbid = cItem.get('imdbid', '')
         subId  = url.split('/')[-2]
         fps    = cItem.get('fps', 0)
         
-        if not self.logedIn:
-            sts, data = self.getPage(url)
-            if not sts: return
-            url = self.cm.ph.getSearchGroups(data, '''URL=(https?://[^"^'^\s]+?)["'\s]''')[0]
+        if not self.logedIn and downloadUrl == '' and url != cItem['url']:
+            downloadUrl = _getDownloadUrl(url)
+            if downloadUrl == '':
+                sts, data = self.getPage(url)
+                if not sts: return
+                downloadUrl = self.cm.ph.getSearchGroups(data, '''URL=(https?://[^"^'^\s]+?)["'\s]''')[0]
         
-        if not self.cm.isValidUrl(url): return 
+        if not self.cm.isValidUrl(downloadUrl): return 
         
         urlParams = dict(self.defaultParams)
-        tmpDIR = self.downloadAndUnpack(url, urlParams)
+        tmpDIR = self.downloadAndUnpack(downloadUrl, urlParams)
         if None == tmpDIR: return
         
         cItem = dict(cItem)
