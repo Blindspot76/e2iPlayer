@@ -11,6 +11,10 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetLogoDir
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 
+
+from Components.config import config
+from skin import parseColor
+
 class CUrlItem:
     def __init__(self, name = "", url = "", urlNeedsResolve = 0):
         if isinstance(name, basestring): self.name = name
@@ -84,6 +88,14 @@ class CDisplayListItem:
             return '*' + self.name
         else:
             return self.name
+        
+    def getTextColor(self):
+        try:
+            if self.isWatched:
+                return parseColor(config.plugins.iptvplayer.watched_item_color.value).argb()
+        except Exception:
+            printExc()
+        return None
 
 class ArticleContent:
     VISUALIZER_DEFAULT = 'DEFAULT'

@@ -38,6 +38,8 @@ config.plugins.iptvplayer.favourites_use_watched_flag = ConfigYesNo(default = Fa
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Allow watched flag to be set (experimental)"), config.plugins.iptvplayer.favourites_use_watched_flag))
+    if config.plugins.iptvplayer.favourites_use_watched_flag.value:
+        optionList.append(getConfigListEntry(_("The color of the watched item"), config.plugins.iptvplayer.watched_item_color))
     return optionList
 ###################################################
 

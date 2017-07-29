@@ -12,7 +12,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Ge
                                                           IsWebInterfaceModuleAvailable
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
-from Plugins.Extensions.IPTVPlayer.components.configbase import ConfigBaseWidget
+from Plugins.Extensions.IPTVPlayer.components.configbase import ConfigBaseWidget, COLORS_DEFINITONS
 from Plugins.Extensions.IPTVPlayer.components.confighost import ConfigHostsMenu
 from Plugins.Extensions.IPTVPlayer.components.iptvdirbrowser import IPTVDirectorySelectorWidget
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetupwidget import IPTVSetupMainWidget
@@ -194,6 +194,8 @@ config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio = ConfigSelection(d
         
 config.plugins.iptvplayer.search_history_size  = ConfigInteger(50, (0, 1000000))
 config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (1, 1000000))
+
+config.plugins.iptvplayer.watched_item_color = ConfigSelection(default = "#808080", choices = COLORS_DEFINITONS)
 
 ###################################################
 
