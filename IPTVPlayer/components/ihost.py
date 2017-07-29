@@ -277,6 +277,10 @@ class IHost:
         
     def performCustomAction(self, privateData):
         return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+        
+    def markItemAsViewed(self, Index = 0):
+        return RetHost(RetHost.NOT_IMPLEMENTED, value = [])
+    
 '''
 CHostBase implements some typical methods
           from IHost interface

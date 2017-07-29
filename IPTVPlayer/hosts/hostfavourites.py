@@ -39,7 +39,7 @@ def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Allow watched flag to be set (experimental)"), config.plugins.iptvplayer.favourites_use_watched_flag))
     if config.plugins.iptvplayer.favourites_use_watched_flag.value:
-        optionList.append(getConfigListEntry(_("The color of the watched item"), config.plugins.iptvplayer.watched_item_color))
+        optionList.append(getConfigListEntry(_("The color of the viewed item"), config.plugins.iptvplayer.watched_item_color))
     return optionList
 ###################################################
 
@@ -225,6 +225,27 @@ class IPTVHost(CHostBase):
                         ret.value[idx].name = ret.value[idx].name
             self.cachedRet = ret
         return ret
+        
+    def _createViewedFile(self, hashData):
+        if hashData != None and mkdirs( GetFavouritesDir('IPTVWatched') + ('/%s/' % hashData[0]) ):
+            flagFilePath = GetFavouritesDir('IPTVWatched/%s/.%s.iptvhash' % hashData)
+            if touch(flagFilePath):
+                return True
+        return False
+        
+    def markItemAsViewed(self, Index = 0):
+        retCode = RetHost.ERROR
+        retlist = []
+        if self.useWatchedFlag:
+            ret = self.cachedRet
+            if ret.value[Index].isWatched != True and ret.value[Index].type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]:
+                hashData = self.getItemHashData(Index, ret.value[Index])
+                if self._createViewedFile(hashData):
+                    self.cachedRet.value[Index].isWatched = True
+                    retCode = RetHost.OK
+                    retlist = ['refresh']
+                    self.refreshAfterWatchedFlagChange = True
+        return RetHost(retCode, value = retlist)
     
     def getCustomActions(self, Index = 0):
         retCode = RetHost.ERROR
@@ -254,11 +275,9 @@ class IPTVHost(CHostBase):
                     self.cachedRet.value[Index].isWatched = False
                     retCode = RetHost.OK
             elif privateData['action'] == 'set_watched_flag':
-                if mkdirs( GetFavouritesDir('IPTVWatched') + ('/%s/' % hashData[0]) ):
-                    flagFilePath = GetFavouritesDir('IPTVWatched/%s/.%s.iptvhash' % hashData)
-                    if touch(flagFilePath):
-                        self.cachedRet.value[Index].isWatched = True
-                        retCode = RetHost.OK
+                if self._createViewedFile(hashData):
+                    self.cachedRet.value[Index].isWatched = True
+                    retCode = RetHost.OK
             
             if retCode == RetHost.OK:
                 self.refreshAfterWatchedFlagChange = True
