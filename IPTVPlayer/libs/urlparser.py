@@ -8558,7 +8558,7 @@ class pageParser:
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'playlist:', ']', False)[1].strip()
         printDBG(data)
-        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((:?https?:)?//[^"^']+\.mp4)['"]''')[0]
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((:?https?:)?//[^"^']+(:?\.mp4|\.flv))['"]''')[0]
         if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
