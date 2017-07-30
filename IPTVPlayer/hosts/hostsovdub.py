@@ -138,11 +138,11 @@ class Sovdub(CBaseHostClass):
         data = re.compile('src="(.*jpg)".*alt="(.*)" />*\s.*<a href="(.*?)"></a></div>').findall(data)
         for item in data:
             title = item[1]
-            icon = item[0]
-            url = item[2]
+            icon  = self.getFullIconUrl(item[0])
+            url   = self.getFullUrl(item[2])
             printDBG(icon)
             params = dict(cItem)
-            params.update({'category': category, 'title': item[1], 'icon': item[0], 'desc': item[1], 'url': item[2]})
+            params.update({'category': category, 'title': title, 'icon': icon, 'desc': title, 'url': url})
             self.addDir(params)
 
         if nextPage:
@@ -238,87 +238,3 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, Sovdub(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('sovdublogo.png')])
-
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-        return RetHost(RetHost.OK, value = retlist)
-
-    def getResolvedURL(self, url):
-        retlist = []
-        urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-        return RetHost(RetHost.OK, value = retlist)
-
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = []
-
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if cItem['type'] == 'category':
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif cItem['type'] == 'more':
-            type = CDisplayListItem.TYPE_MORE
-        elif cItem['type'] == 'audio':
-            type = CDisplayListItem.TYPE_AUDIO
-
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range(len(list)):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem(pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
