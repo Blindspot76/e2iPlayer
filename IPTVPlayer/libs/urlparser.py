@@ -436,6 +436,7 @@ class urlparser:
                        'uploadz.org':          self.pp.parserUPLOAD         ,
                        'stopbot.tk':           self.pp.parserSTOPBOTTK      ,
                        'publicvideohost.org':  self.pp.parserPUBLICVIDEOHOST,
+                       'vidnode.net':          self.pp.parserVIDNODENET     ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -8567,6 +8568,40 @@ class pageParser:
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         return False
+        
+    def parserVIDNODENET(self, baseUrl):
+        printDBG("parserVIDNODENET baseUrl[%s]\n" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0', 'Referer':referer}
+        params = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return []
+        
+        urlTab = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+        for item in data:
+            url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            if url.startswith('//'):
+                url = 'http:' + url
+            if not url.startswith('http'):
+                continue
+            
+            if 'video/mp4' in item:
+                type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+                res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
+                label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
+                if label == '': label = res
+                url = urlparser.decorateUrl(url, {'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
+                urlTab.append({'name':'{0}'.format(label), 'url':url})
+            elif 'mpegurl' in item:
+                url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                tmpTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
+                urlTab.extend(tmpTab)
+        return urlTab
         
     def parserKINGVIDTV(self, baseUrl):
         printDBG("parserKINGVIDTV url[%s]\n" % baseUrl)
