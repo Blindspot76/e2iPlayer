@@ -1720,6 +1720,9 @@ class pageParser:
             if not sts: return False            
             if 'logout_link' not in data: return False
             return True
+            
+        if baseUrl.startswith('http://'):
+            baseUrl = 'https' + baseUrl[4:]
         
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
