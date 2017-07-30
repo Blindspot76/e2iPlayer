@@ -3565,6 +3565,7 @@ class pageParser:
                 tmpTab.extend(vidTab)
                 vidTab = tmpTab
             else:
+                url = urlparser.decorateUrl(url, HTTP_HEADER)
                 vidTab.append({'name':label, 'url':url})
         return vidTab
         
