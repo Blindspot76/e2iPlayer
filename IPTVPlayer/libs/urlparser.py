@@ -437,6 +437,7 @@ class urlparser:
                        'stopbot.tk':           self.pp.parserSTOPBOTTK      ,
                        'publicvideohost.org':  self.pp.parserPUBLICVIDEOHOST,
                        'vidnode.net':          self.pp.parserVIDNODENET     ,
+                       'videa.hu':             self.pp.parserVIDEAHU        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -8578,7 +8579,7 @@ class pageParser:
         HTTP_HEADER = { 'User-Agent':'Mozilla/5.0', 'Referer':referer}
         params = {'header':HTTP_HEADER}
         
-        sts, data = self.cm.getPage(baseUrl)
+        sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return []
         
         urlTab = []
@@ -8603,6 +8604,50 @@ class pageParser:
                 urlTab.extend(tmpTab)
         return urlTab
         
+    def parserVIDEAHU(self, baseUrl):
+        printDBG("parserVIDEAHU baseUrl[%s]\n" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0', 'Referer':referer}
+        params = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return []
+        
+        f = self.cm.ph.getSearchGroups(data, '''"/player\?f=([0-9\.]+?)&''')[0]
+        if f == '': return []
+        
+        sts, data = self.cm.getPage('http://videa.hu/videaplayer_get_xml.php?f={0}&start=0&enablesnapshot=0&platform=desktop&referrer={1}'.format(f, urllib.quote(baseUrl)))
+        if not sts: return []
+        
+        urlTab = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video_sources', '</video_sources>', False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<video_source', '</video_source>')
+        for item in data:
+            printDBG(item)
+            url  = self.cm.ph.getDataBeetwenMarkers(item, '>', '<', False)[1].strip()
+            if url.startswith('//'):
+                url = 'http:' + url
+            if not url.startswith('http'):
+                continue
+                
+            printDBG('>>>>>>>>>>>>> ' + url)
+            
+            if 'video/mp4' in item:
+                width  = self.cm.ph.getSearchGroups(item, '''width=['"]([^"^']+?)['"]''')[0]
+                height = self.cm.ph.getSearchGroups(item, '''height=['"]([^"^']+?)['"]''')[0]
+                name   = self.cm.ph.getSearchGroups(item, '''name=['"]([^"^']+?)['"]''')[0]
+                url    = urlparser.decorateUrl(url, {'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
+                urlTab.append({'name':'{0} - {1}x{2}'.format(name, width, height), 'url':url})
+            elif 'mpegurl' in item:
+                url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                tmpTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
+                urlTab.extend(tmpTab)
+        urlTab.reverse()
+        return urlTab
+    
     def parserKINGVIDTV(self, baseUrl):
         printDBG("parserKINGVIDTV url[%s]\n" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
