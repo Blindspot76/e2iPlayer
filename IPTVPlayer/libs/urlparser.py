@@ -435,6 +435,7 @@ class urlparser:
                        'uploadx.link':         self.pp.parserUPLOAD         ,
                        'uploadz.org':          self.pp.parserUPLOAD         ,
                        'stopbot.tk':           self.pp.parserSTOPBOTTK      ,
+                       'publicvideohost.org':  self.pp.parserPUBLICVIDEOHOST,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -8548,6 +8549,19 @@ class pageParser:
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         
+        return False
+        
+    def parserPUBLICVIDEOHOST(self, baseUrl):
+        printDBG("parserPUBLICVIDEOHOST baseUrl[%s]\n" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return []
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'playlist:', ']', False)[1].strip()
+        printDBG(data)
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((:?https?:)?//[^"^']+\.mp4)['"]''')[0]
+        if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
         return False
         
     def parserKINGVIDTV(self, baseUrl):

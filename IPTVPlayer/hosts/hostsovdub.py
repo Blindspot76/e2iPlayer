@@ -46,42 +46,37 @@ def gettytul():
 
 
 class Sovdub(CBaseHostClass):
-    MAIN_URL = 'http://sovdub.ru/'
-    DEFAULT_ICON_URL = 'http://sovdub.ru/templates/simplefilms/images/logo.png'
-    SRCH_URL = MAIN_URL + '?do=search&mode=advanced&subaction=search&story='
-
-    MAIN_CAT_TAB = [{'category': 'genres', 'title': _('Genres'), 'url': MAIN_URL, 'icon': DEFAULT_ICON_URL},
-                    {'category': 'countries', 'title': _('Countries'), 'url': MAIN_URL, 'icon': DEFAULT_ICON_URL},
-                    {'category': 'search', 'title': _('Search'), 'icon': DEFAULT_ICON_URL, 'search_item': True},
-                    {'category': 'search_history', 'title': _('Search history'), 'icon': DEFAULT_ICON_URL}]
-
     def __init__(self):
         CBaseHostClass.__init__(self, {'history': 'Sovdub', 'cookie': 'Sovdub.cookie'})
+        
+        self.MAIN_URL = 'http://sovdub.ru/'
+        self.DEFAULT_ICON_URL = self.getFullIconUrl('/templates/simplefilms/images/logo.png')
 
-    def _getFullUrl(self, url):
-        mainUrl = self.MAIN_URL
-        if 0 < len(url) and not url.startswith('http'):
-            if url.startswith('/'):
-                url = url[1:]
-            url = mainUrl + url
-        if not mainUrl.startswith('https://'):
-            url = url.replace('https://', 'http://')
-        return url
-
+        self.MAIN_CAT_TAB = [{'category': 'genres',         'title': _('Genres'),    'url': self.getMainUrl()},
+                             {'category': 'countries',      'title': _('Countries'), 'url': self.getMainUrl()},
+                             {'category': 'search',         'title': _('Search'),    'search_item': True     },
+                             {'category': 'search_history', 'title': _('Search history')                     }
+                            ]
+        self.encoding = ''
+        
+    def _decodeData(self, data):
+        charset = self.cm.ph.getSearchGroups(data, 'charset=([^"]+?)"')[0]
+        self.encoding = charset
+        retData = data
+        try:
+            retData = data.decode(charset).encode('utf-8')
+        except Exception:
+            printExc()
+        return retData
+    
     def getPage(self, url, params={}, post_data=None):
-        sts, data = self.cm.getPage(url, params, post_data)
-        if sts: data = data.decode('windows-1251').encode('utf-8')
-        return sts, data
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("Sovdub.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name'] = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
+        sts,data = self.cm.getPage(url, params, post_data)
+        if sts: data = self._decodeData(data)
+        return sts,data
+    
+    def getFullUrl(self, url):
+        url = url.replace('&amp;', '&')
+        return CBaseHostClass.getFullUrl(self, url)
 
     def listGenres(self, cItem, category):
         printDBG("Sovdub.listGenres")
@@ -100,7 +95,7 @@ class Sovdub(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
 
-        canData = self.cm.ph.getDataBeetwenMarkers(data, '()\n//-->', '</div>', False)[1]
+        canData = self.cm.ph.getDataBeetwenMarkers(data, 'Выбор страны', '</div>', False)[1]
         canData = re.compile('href="([^"]+?)">([^<]+?)</a>').findall(canData)
         for item in canData:
             params = dict(cItem)
@@ -165,15 +160,35 @@ class Sovdub(CBaseHostClass):
             params['url'] = url
             params.update({'desc': desc, 'url': url})
             self.addVideo(params)
-
+            
     def listSearchResult(self, cItem, searchPattern, searchType):
-        try: searchPattern = searchPattern.decode('utf-8').encode('cp1251', 'ignore')
+        #searchPattern = 'Колонна'
+        
+        if self.encoding == '':
+            sts, data = self.getPage(self.getMainUrl())
+            if not sts: return
+            
+        try: searchPattern = searchPattern.decode('utf-8').encode(self.encoding, 'ignore')
         except Exception: searchPattern = ''
-        searchPattern = urllib.quote_plus(searchPattern)
-        cItem = dict(cItem)
-        cItem['url'] = self.SRCH_URL + urllib.quote_plus(searchPattern)
-        cItem['post_data'] = {'do': 'search', 'subaction': 'search', 'x': 0, 'y': 0, 'story': searchPattern}
-        self.listItems(cItem, 'list_items')
+        
+        post_data = {'do':'search', 'subaction':'search', 'story':searchPattern, 'x': 0, 'y': 0}
+        
+        sts, data = self.getPage(self.getMainUrl(), post_data=post_data)
+        if not sts: return
+        
+        m1 = '<div class="main-news">'
+        data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<div style="clear: both;">', False)[1]
+        data = data.split(m1)
+        for item in data:
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1])
+            if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
+            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '</h2>', '</div>')[1])
+            if self.cm.isValidUrl(url):
+                params = dict(cItem)
+                params.update({'category': 'list_content', 'title': title, 'icon': icon, 'desc': desc, 'url': url})
+                self.addDir(params)
 
     def getLinksForVideo(self, cItem):
         printDBG("Sovdub.getLinksForVideo [%s]" % cItem)
@@ -184,13 +199,7 @@ class Sovdub(CBaseHostClass):
     def getVideoLinks(self, videoUrl):
         printDBG("Sovdub.getVideoLinks [%s]" % videoUrl)
         urlTab = []
-        if 'publicvideohost.org' in videoUrl:
-            sts, data = self.getPage(videoUrl)
-            if not sts: return []
-            url = self.cm.ph.getSearchGroups(data, 'file: "(.*?)"')[0]
-            urlTab.append({'name': 'Main url', 'url': url, 'need_resolve': 0})
-        else: 
-            urlTab = self.up.getVideoLinkExt(videoUrl)
+        urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
 
     def getFavouriteData(self, cItem):
