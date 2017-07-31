@@ -75,7 +75,7 @@ class MoovieCC(CBaseHostClass):
                                {'category':'list_main',       'title': 'Népszerű online filmek', 'tab_id':'pop_movies' },
                               ]
         
-        self.SERIES_CAT_TAB = [{'category':'list_series',     'title': _('Categories'),             'url':self.getFullUrl('/online-sorozatok/')},
+        self.SERIES_CAT_TAB = [{'category':'series_cats',     'title': _('Categories'),             'url':self.getFullUrl('/online-sorozatok/')},
                                {'category':'list_main',       'title': 'Népszerű online sorozatok', 'tab_id':'pop_series'},
                                {'category':'list_main',       'title': 'Új Epizódok',               'tab_id':'new_episodes'},
                               ]
@@ -536,7 +536,7 @@ class MoovieCC(CBaseHostClass):
             self.listsTab(self.SERIES_CAT_TAB, self.currItem)
         elif category == 'movies_cats':
             self.listMovies(self.currItem, 'list_sort')
-        elif category == 'series?cats':
+        elif category == 'series_cats':
             self.listSeries(self.currItem, 'list_sort')
         elif category == 'list_sort':
             self.listSort(self.currItem, 'list_items')
