@@ -271,7 +271,7 @@ class EskaGo(CBaseHostClass):
         links = []
         try:
             cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
+            links = self.getLinksForItem(cItem)
         except Exception: printExc()
         return links
         
