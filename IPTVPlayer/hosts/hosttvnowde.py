@@ -22,6 +22,7 @@ import urllib
 import string
 import random
 import base64
+from datetime import date, timedelta
 from copy import deepcopy
 from hashlib import md5
 try:    import json
@@ -212,13 +213,16 @@ class TVNowDE(CBaseHostClass):
             else:
                 id = data['id']
                 for item in data['annualNavigation']['items']:
-                    year = self.getStr(item, 'year')
+                    year = int(self.getStr(item, 'year'))
                     months = item['months']
                     for m in range(1, 13, 1):
+                        m1 = (m + 1)
+                        if m1 > 12: m1 = m1 % 12
+                        days = (date(year +(m+1)/12, m1, 1)  - date(year, m, 1)).days
                         m = str(m)
                         if not m in months: continue
                         title = '%s/%s' % (year, m.zfill(2))
-                        url = self.getFullUrl('/movies?fields=*,format,paymentPaytypes,pictures,trailers,packages&filter=%7B%22BroadcastStartDate%22:%7B%22between%22:%7B%22start%22:%22{0}-{1}-{2}+00:00:00%22,%22end%22:+%22{3}-{4}-{5}+23:59:59%22%7D%7D,+%22FormatId%22+:+{6}%7D&maxPerPage=300&order=BroadcastStartDate+desc'.format(year, m.zfill(2), '01', year, m.zfill(2), '30', id))
+                        url = self.getFullUrl('/movies?fields=*,format,paymentPaytypes,pictures,trailers,packages&filter=%7B%22BroadcastStartDate%22:%7B%22between%22:%7B%22start%22:%22{0}-{1}-{2}+00:00:00%22,%22end%22:+%22{3}-{4}-{5}+23:59:59%22%7D%7D,+%22FormatId%22+:+{6}%7D&maxPerPage=300&order=BroadcastStartDate+desc'.format(year, m.zfill(2), '01', year, m.zfill(2), str(days).zfill(2), id))
                         params = {'name':'category', 'category':'list_video_items', 'url' :url, 'title':title, 'icon':cItem.get('icon', ''), 'desc':cItem.get('desc', '')}
                         self.addDir(params)
                 self.currList.reverse()
