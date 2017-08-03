@@ -106,37 +106,44 @@ class TVNowDE(CBaseHostClass):
             self.cacheAZ = {'list':[], 'cache':{}}
         
             page = cItem.get('page', 1)
-            url = self.getFullUrl('/formats?fields=id,title,station,title,titleGroup,seoUrl,icon,hasFreeEpisodes,hasPayEpisodes,categoryId,searchAliasName,genres&filter=%7B%22Id%22:%7B%22containsNotIn%22:%5B%221896%22%5D%7D,%22Disabled%22:0%7D&maxPerPage=500&page=1&page={0}'.format(page))
-            
-            sts, data = self.getPage(url)
-            if not sts: return 
-            try:
-                data = byteify(json.loads(data))
-                for item in data['items']:  
-                    if not config.plugins.iptvplayer.tvnowde_show_paid_items.value and not item.get('hasFreeEpisodes', False): 
+            total = 0
+            while True:
+                url = self.getFullUrl('/formats?fields=id,title,station,title,titleGroup,seoUrl,icon,hasFreeEpisodes,hasPayEpisodes,categoryId,searchAliasName,genres&filter=%7B%22Id%22:%7B%22containsNotIn%22:%5B%221896%22%5D%7D,%22Disabled%22:0%7D&maxPerPage=500&page=1&page={0}'.format(page))
+                
+                sts, data = self.getPage(url)
+                if not sts: return 
+                try:
+                    data = byteify(json.loads(data))
+                    total += len(data['items'])
+                    for item in data['items']:  
+                        if not config.plugins.iptvplayer.tvnowde_show_paid_items.value and not item.get('hasFreeEpisodes', False): 
+                            continue
+                        letter = self.getStr(item, 'titleGroup')
+                        title    = self.getStr(item, 'title')
+                        station  = self.getStr(item, 'station')
+                        name     = self.cleanHtmlStr(self.getStr(item, 'seoUrl'))
+                        desc     = item.get('genres', [])
+                        if isinstance(desc, list):
+                            desc = ' | '.join(desc)
+                        else: desc  = ''
+                        
+                        params = {'f_station':station, 'f_name':name, 'title':title, 'desc':desc}
+                        if not letter in self.cacheAZ['list']:
+                            self.cacheAZ['list'].append(letter)
+                            self.cacheAZ['cache'][letter] = []
+                        self.cacheAZ['cache'][letter].append(params)
+                        
+                        categoryId = self.getStr(item, 'categoryId')
+                        if categoryId not in ['serie', 'film', 'news']:
+                            printDBG("Unknown categoryId [%s]" % categoryId)
+                            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+                            printDBG(item)
+                    if data['total'] > total:
+                        page += 1
                         continue
-                    letter = self.getStr(item, 'titleGroup')
-                    title    = self.getStr(item, 'title')
-                    station  = self.getStr(item, 'station')
-                    name     = self.cleanHtmlStr(self.getStr(item, 'seoUrl'))
-                    desc     = item.get('genres', [])
-                    if isinstance(desc, list):
-                        desc = ' | '.join(desc)
-                    else: desc  = ''
-                    
-                    params = {'f_station':station, 'f_name':name, 'title':title, 'desc':desc}
-                    if not letter in self.cacheAZ['list']:
-                        self.cacheAZ['list'].append(letter)
-                        self.cacheAZ['cache'][letter] = []
-                    self.cacheAZ['cache'][letter].append(params)
-                    
-                    categoryId = self.getStr(item, 'categoryId')
-                    if categoryId not in ['serie', 'film', 'news']:
-                        printDBG("Unknown categoryId [%s]" % categoryId)
-                        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-                        printDBG(item)
-            except Exception:
-                printExc()
+                except Exception:
+                    printExc()
+                break
         
         self.cacheAZ['list'].sort()
         for letter in self.cacheAZ['list']:
@@ -236,7 +243,7 @@ class TVNowDE(CBaseHostClass):
         
         try:
             for item in containers:
-                url = self.getFullUrl('/containers/{0}/movies?fields=*,format.*,paymentPaytypes.*,livestreamEvent.*,pictures,trailers,packages,annualNavigation&maxPerPage=300&order=OrderWeight+asc,+BroadcastStartDate+desc'.format(item))
+                url = self.getFullUrl('/containers/{0}/movies?fields=*,format.*,paymentPaytypes.*,livestreamEvent.*,pictures,trailers,packages,annualNavigation&maxPerPage=500&order=OrderWeight+asc,+BroadcastStartDate+desc'.format(item))
                 params = dict(cItem)
                 cItem['url'] = url
                 self.listVideoItems(cItem)
