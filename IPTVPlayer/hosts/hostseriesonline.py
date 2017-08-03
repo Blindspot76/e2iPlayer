@@ -157,7 +157,7 @@ class SeriesOnlineIO(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        domains = ['http://123movieshd.us/', 'http://theseriesonline.com/']
+        domains = ['http://theseriesonline.com/'] #'http://123movieshd.us/'
         domain = config.plugins.iptvplayer.seriesonlineio_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -178,7 +178,7 @@ class SeriesOnlineIO(CBaseHostClass):
                 break
                 
         if self.MAIN_URL == None:
-            self.MAIN_URL = 'https://seriesonline.io/'
+            self.MAIN_URL = 'http://theseriesonline.com/'
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
