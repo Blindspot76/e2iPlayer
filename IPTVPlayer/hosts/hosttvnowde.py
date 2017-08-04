@@ -42,11 +42,14 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.tvnowde_show_paid_items = ConfigYesNo(default = False)
+config.plugins.iptvplayer.tvnowde_show_drm_items = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Show paid items (it may be illegal)"), config.plugins.iptvplayer.tvnowde_show_paid_items))
+    optionList.append(getConfigListEntry(_("Show items with DRM"), config.plugins.iptvplayer.tvnowde_show_drm_items))
     return optionList
+    
 ###################################################
 
 def gettytul():
@@ -95,7 +98,7 @@ class TVNowDE(CBaseHostClass):
         genres = ["Soap", "Action", "Crime", "Ratgeber", "Comedy", "Show", "Docutainment", "Drama", "Tiere", "News", "Mags", "Romantik", "Horror", "Familie", "Kochen", "Auto", "Sport", "Reportage und Dokumentationen", "Sitcom", "Mystery", "Lifestyle", "Musik", "Spielfilm", "Anime"]
         for item in genres:
             params = dict(cItem)
-            params = {'good_for_fav': True, 'title':item, 'f_genre':item.lower()}
+            params = {'good_for_fav': False, 'title':item, 'f_genre':item.lower()}
             params['category'] = nextCategory
             self.addDir(params)
             
@@ -127,7 +130,7 @@ class TVNowDE(CBaseHostClass):
                             desc = ' | '.join(desc)
                         else: desc  = ''
                         
-                        params = {'f_station':station, 'f_name':name, 'title':title, 'desc':desc}
+                        params = {'good_for_fav':True, 'orig_item':item, 'f_station':station, 'f_name':name, 'title':title, 'desc':desc}
                         if not letter in self.cacheAZ['list']:
                             self.cacheAZ['list'].append(letter)
                             self.cacheAZ['cache'][letter] = []
@@ -181,7 +184,7 @@ class TVNowDE(CBaseHostClass):
                 name     = self.cleanHtmlStr(self.getStr(item, 'seoUrl'))
                 desc     = self.cleanHtmlStr(self.getStr(item, 'metaDescription'))
                 
-                params = {'name':'category', 'category':nextCategory, 'f_station':station, 'f_name':name, 'title':title, 'icon':icon, 'desc':desc}
+                params = {'name':'category', 'good_for_fav':True, 'orig_item':item, 'category':nextCategory, 'f_station':station, 'f_name':name, 'title':title, 'icon':icon, 'desc':desc}
                 self.addDir(params)
 
                 categoryId = self.getStr(item, 'categoryId')
@@ -263,6 +266,10 @@ class TVNowDE(CBaseHostClass):
                 try:
                     if not config.plugins.iptvplayer.tvnowde_show_paid_items.value and not item.get('free', False): 
                         continue
+                        
+                    if not config.plugins.iptvplayer.tvnowde_show_drm_items.value and item.get('isDrm', False): 
+                        SetIPTVPlayerLastHostError(_("Items with DRM protection."))
+                        continue
                     
                     urlDashClear = item['manifest']['dashclear']
                     if not self.cm.isValidUrl(urlDashClear): continue
@@ -274,7 +281,7 @@ class TVNowDE(CBaseHostClass):
                     seoUrlFormat = self.getStr(item['format'], 'seoUrl')
                     station = self.getStr(item['format'], 'station')
                     url = '/%s/%s' % (seoUrlFormat, seoUrlItem)
-                    params = {'dashclear':urlDashClear, 'f_seo_url_format':seoUrlFormat, 'f_seo_url_item':seoUrlItem, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
+                    params = {'good_for_fav':True, 'orig_item':item, 'dashclear':urlDashClear, 'f_seo_url_format':seoUrlFormat, 'f_seo_url_item':seoUrlItem, 'f_station':station, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
                     self.addVideo(params)
                 except Exception:
                     printExc()
@@ -296,9 +303,25 @@ class TVNowDE(CBaseHostClass):
         if len(cacheTab):
             return cacheTab
         
-        url = cItem.get('dashclear', '')
-        if self.cm.isValidUrl(url):
-            retTab = getMPDLinksWithMeta(url, False)
+        urlDashClear = '' #cItem.get('dashclear', '')
+        if not self.cm.isValidUrl(urlDashClear):
+            try:
+                seoUrlItem = cItem['f_seo_url_format']
+                seoUrlFormat = cItem['f_seo_url_item']
+                station = cItem['f_station']
+                url = self.getFullUrl('/movies/{0}/{1}?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages&station={2}'.format(seoUrlItem, seoUrlFormat, station))
+                sts, data = self.getPage(url)
+                if not sts: return []
+                data = byteify(json.loads(data))
+                urlDashClear = data['manifest']['dashclear']
+                if data.get('isDrm', False): 
+                    SetIPTVPlayerLastHostError(_("Video with DRM protection."))
+                if not self.cm.isValidUrl(urlDashClear): return []
+            except Exception:
+                printExc()
+        
+        if self.cm.isValidUrl(urlDashClear):
+            retTab = getMPDLinksWithMeta(urlDashClear, False)
         
         if len(retTab):
             self.cacheLinks[cItem['url']] = retTab
@@ -328,7 +351,9 @@ class TVNowDE(CBaseHostClass):
     
     def getFavouriteData(self, cItem):
         printDBG('TVNowDE.getFavouriteData')
-        return json.dumps(cItem) 
+        params = dict(cItem)
+        params.pop('dashclear', None)
+        return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):
         printDBG('TVNowDE.getLinksForFavourite')
