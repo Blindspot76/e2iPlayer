@@ -53,7 +53,7 @@ class Movs4uCOM(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'movs4u.com', 'cookie':'movs4u.com.cookie', 'cookie_type':'MozillaCookieJar'})
         self.DEFAULT_ICON_URL = 'http://www.movs4u.com/wp-content/uploads/2017/06/1IMG_1930.png'
-        self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -82,6 +82,12 @@ class Movs4uCOM(CBaseHostClass):
         if addParams == {}:
             addParams = dict(self.defaultParams)
         
+        origBaseUrl = baseUrl
+        tmp = re.compile('/([^/]+)/').findall(baseUrl)
+        for item in tmp:
+            baseUrl = baseUrl.replace('/%s/' % item, '/%s/' % urllib.quote(item))
+        printDBG('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++> [%s] - > [%s]' % (origBaseUrl, baseUrl) )
+        
         def _getFullUrl(url):
             if self.cm.isValidUrl(url):
                 return url
@@ -90,6 +96,7 @@ class Movs4uCOM(CBaseHostClass):
             
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        
         return sts, data
         
     def listMainItems(self, cItem, nextCategory):
@@ -343,7 +350,7 @@ class Movs4uCOM(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
-                        
+        
         try:
             httpParams = dict(self.defaultParams)
             httpParams['return_data'] = False
