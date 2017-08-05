@@ -22,7 +22,7 @@ import urllib
 import string
 import random
 import base64
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 from copy import deepcopy
 from hashlib import md5
 try:    import json
@@ -43,11 +43,16 @@ from Screens.MessageBox import MessageBox
 ###################################################
 config.plugins.iptvplayer.tvnowde_show_paid_items = ConfigYesNo(default = False)
 config.plugins.iptvplayer.tvnowde_show_drm_items = ConfigYesNo(default = False)
+config.plugins.iptvplayer.tvnowde_prefered_format     = ConfigSelection(default = "hls", choices = [
+("hls",  _("HLS/m3u8")),
+("dash", _("DASH/mpd"))
+])
 
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Show paid items (it may be illegal)"), config.plugins.iptvplayer.tvnowde_show_paid_items))
     optionList.append(getConfigListEntry(_("Show items with DRM"), config.plugins.iptvplayer.tvnowde_show_drm_items))
+    optionList.append(getConfigListEntry(_("Preferred format:"), config.plugins.iptvplayer.tvnowde_prefered_format))
     return optionList
     
 ###################################################
@@ -66,11 +71,21 @@ class TVNowDE(CBaseHostClass):
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = 'https://api.tvnow.de/v3/'
         self.cacheLinks = {}
+        self.cacheAllAZ = []
         self.cacheAZ = {'list':[], 'cache':{}}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
-        self.MAIN_CAT_TAB = [{'category':'list_az',         'title': _('A-Z')},
+        self.MAIN_CAT_TAB = [{'category':'az',              'title': _('A-Z')},
+                             {'category':'missed',          'title': _('Missed the program?')},
                              {'category':'list_cats',       'title': _('Categories')},
+                            ]
+        self.CHANNELS_TAB = [{'title':'RTL',      'f_channel':'rtl'},
+                             {'title':'Vox',      'f_channel':'vox'},
+                             {'title':'RTL 2',    'f_channel':'rtl2'},
+                             {'title':'Nitro',    'f_channel':'nitro'},
+                             {'title':'N-TV',     'f_channel':'ntv'},
+                             {'title':'RTLplus',  'f_channel':'rtlplus'},
+                             {'title':'Super RTL','f_channel':'superrtl'},
                             ]
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
@@ -92,6 +107,45 @@ class TVNowDE(CBaseHostClass):
         if value == None: value = ''
         return str(value)
         
+    def addChannelFilter(self, cItem, nextCategory, withWatchBox=False):
+        printDBG("TVNowDE.addChannelFilter")
+        allChannels = []
+        channelList = list(self.CHANNELS_TAB)
+        
+        if withWatchBox:
+            channelList.append({'title':'WatchBox','f_channel':'watchbox'})
+        else:
+            for item in self.CHANNELS_TAB:
+                allChannels.append(item['f_channel'])
+        
+        channelList.insert(0, {'title':_('--All--'), 'f_channels':allChannels})
+        for item in channelList:
+            if 'f_channel' in item:
+                icon = 'https://www.tvnow.de/styles/modules/headerstations/%s.png' % item['f_channel']
+                fChannels = [item['f_channel']]
+            else:
+                icon = cItem.get('icon', '')
+                fChannels = item['f_channels']
+            
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'title':item['title'], 'icon':icon, 'f_channels':fChannels})
+            self.addDir(params)
+            
+    def addMissedDay(self, cItem, nextCategory):
+        printDBG("TVNowDE.addMissedDay")
+        
+        now = datetime.now()
+        for d in range(8):
+            t = (now - timedelta(days=d)).strftime('%Y-%m-%d')
+            if d == 0: title = _('Today')
+            elif d == 1: title = _('Yesterday')
+            else: title = t
+            url = '/movies?fields=*,format,paymentPaytypes,pictures,trailers,packages&filter=%7B%22BroadcastStartDate%22:%7B%22between%22:%7B%22start%22:%22{0}+00:00:00%22,%22end%22:%22{1}+23:59:59%22%7D%7D%7D&maxPerPage=200&order=BroadcastStartDate+asc'.format(t, t)
+            url = self.getFullUrl(url)
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'url':url, 'title':title, 'icon':cItem.get('icon', '')})
+            self.addDir(params)
+        
     def listCats(self, cItem, nextCategory):
         printDBG("TVNowDE.listCats")
         
@@ -102,12 +156,9 @@ class TVNowDE(CBaseHostClass):
             params['category'] = nextCategory
             self.addDir(params)
             
-    def listAZ(self, cItem, nextCategory):
-        printDBG("TVNowDE.listAZ")
-        
-        if 0 == len(self.cacheAZ.get('list', [])): 
-            self.cacheAZ = {'list':[], 'cache':{}}
-        
+    def fillAZCache(self, cItem):
+        printDBG("TVNowDE.fillAZCache")
+        if 0 == len(self.cacheAllAZ): 
             page = cItem.get('page', 1)
             total = 0
             while True:
@@ -119,28 +170,7 @@ class TVNowDE(CBaseHostClass):
                     data = byteify(json.loads(data))
                     total += len(data['items'])
                     for item in data['items']:  
-                        if not config.plugins.iptvplayer.tvnowde_show_paid_items.value and not item.get('hasFreeEpisodes', False): 
-                            continue
-                        letter = self.getStr(item, 'titleGroup')
-                        title    = self.getStr(item, 'title')
-                        station  = self.getStr(item, 'station')
-                        name     = self.cleanHtmlStr(self.getStr(item, 'seoUrl'))
-                        desc     = item.get('genres', [])
-                        if isinstance(desc, list):
-                            desc = ' | '.join(desc)
-                        else: desc  = ''
-                        
-                        params = {'good_for_fav':True, 'orig_item':item, 'f_station':station, 'f_name':name, 'title':title, 'desc':desc}
-                        if not letter in self.cacheAZ['list']:
-                            self.cacheAZ['list'].append(letter)
-                            self.cacheAZ['cache'][letter] = []
-                        self.cacheAZ['cache'][letter].append(params)
-                        
-                        categoryId = self.getStr(item, 'categoryId')
-                        if categoryId not in ['serie', 'film', 'news']:
-                            printDBG("Unknown categoryId [%s]" % categoryId)
-                            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-                            printDBG(item)
+                        self.cacheAllAZ.append(item)
                     if data['total'] > total:
                         page += 1
                         continue
@@ -148,7 +178,47 @@ class TVNowDE(CBaseHostClass):
                     printExc()
                 break
         
+    def listAZ(self, cItem, nextCategory):
+        printDBG("TVNowDE.listAZ")
+        
+        self.fillAZCache(cItem)
+        self.cacheAZ = {'list':[], 'cache':{}}
+        fChannels = cItem.get('f_channels', [])
+        
+        try:
+            for item in self.cacheAllAZ:  
+                if not config.plugins.iptvplayer.tvnowde_show_paid_items.value and not item.get('hasFreeEpisodes', False): 
+                    continue
+                station  = self.getStr(item, 'station')
+                if len(fChannels) and station not in fChannels: continue
+                letter   = self.getStr(item, 'titleGroup')
+                title    = self.getStr(item, 'title')
+                name     = self.cleanHtmlStr(self.getStr(item, 'seoUrl'))
+                desc     = item.get('genres', [])
+                if isinstance(desc, list):
+                    desc = ' | '.join(desc)
+                else: desc  = ''
+                
+                params = {'good_for_fav':True, 'orig_item':item, 'f_station':station, 'f_name':name, 'title':title, 'desc':desc}
+                if not letter in self.cacheAZ['list']:
+                    self.cacheAZ['list'].append(letter)
+                    self.cacheAZ['cache'][letter] = []
+                self.cacheAZ['cache'][letter].append(params)
+                
+                categoryId = self.getStr(item, 'categoryId')
+                if categoryId not in ['serie', 'film', 'news']:
+                    printDBG("Unknown categoryId [%s]" % categoryId)
+                    printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+                    printDBG(item)
+        except Exception:
+            printExc()
+        
         self.cacheAZ['list'].sort()
+        if len(fChannels) and len(self.cacheAZ['list']) > 1:
+            params = dict(cItem)
+            params = {'name':'category', 'category':nextCategory, 'f_letter':'all', 'title':_('--All--')}
+            self.addDir(params)
+            
         for letter in self.cacheAZ['list']:
             params = dict(cItem)
             params = {'name':'category', 'category':nextCategory, 'f_letter':letter, 'title':letter}
@@ -156,12 +226,14 @@ class TVNowDE(CBaseHostClass):
                 
     def listItemsByLetter(self, cItem, nextCategory):
         printDBG("TVNowDE.listItemsByLetter")
-        letter = cItem.get('f_letter', '')
-        tab = self.cacheAZ['cache'].get(letter, [])
-        for item in tab:
-            params = dict(item)
-            params.update({'name':'category', 'category':nextCategory})
-            self.addDir(params)
+        fLetter = cItem.get('f_letter', '')
+        for letter in self.cacheAZ['list']:
+            if fLetter == 'all' or fLetter == letter:
+                tab = self.cacheAZ['cache'].get(letter, [])
+                for item in tab:
+                    params = dict(item)
+                    params.update({'name':'category', 'category':nextCategory})
+                    self.addDir(params)
             
     def listCatsItems(self, cItem, nextCategory):
         printDBG("TVNowDE.listCatsItems")
@@ -257,6 +329,7 @@ class TVNowDE(CBaseHostClass):
         printDBG("TVNowDE.listVideoItems [%s]" % cItem)
         page = cItem.get('page', 1)
         url  = cItem['url'] + '&page=%s' % page 
+        fChannels = cItem.get('f_channels', [])
         
         sts, data = self.getPage(url)
         if not sts: return 
@@ -273,13 +346,17 @@ class TVNowDE(CBaseHostClass):
                     
                     urlDashClear = item['manifest']['dashclear']
                     if not self.cm.isValidUrl(urlDashClear): continue
+                    
+                    station = self.getStr(item['format'], 'station')
+                    if len(fChannels) and station not in fChannels: continue
+                    
                     id = self.getStr(item, 'id')
                     icon = 'https://ais.tvnow.de/tvnow/movie/{0}/600x716/title.jpg'.format(id)
                     title    = self.getStr(item, 'title')
                     desc     = self.cleanHtmlStr(self.getStr(item, 'articleLong'))
                     seoUrlItem = self.getStr(item, 'seoUrl')
                     seoUrlFormat = self.getStr(item['format'], 'seoUrl')
-                    station = self.getStr(item['format'], 'station')
+                    
                     url = '/%s/%s' % (seoUrlFormat, seoUrlItem)
                     params = {'good_for_fav':True, 'orig_item':item, 'dashclear':urlDashClear, 'f_seo_url_format':seoUrlFormat, 'f_seo_url_item':seoUrlItem, 'f_station':station, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
                     self.addVideo(params)
@@ -312,7 +389,11 @@ class TVNowDE(CBaseHostClass):
                 url = self.getFullUrl('/movies/{0}/{1}?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages&station={2}'.format(seoUrlItem, seoUrlFormat, station))
                 sts, data = self.getPage(url)
                 if not sts: return []
-                data = byteify(json.loads(data))
+                try: data = byteify(json.loads(data))
+                except Exception: data = 'error'
+                
+                if 'error' in data: data = cItem['orig_item']
+                
                 urlDashClear = data['manifest']['dashclear']
                 if data.get('isDrm', False): 
                     SetIPTVPlayerLastHostError(_("Video with DRM protection."))
@@ -321,8 +402,20 @@ class TVNowDE(CBaseHostClass):
                 printExc()
         
         if self.cm.isValidUrl(urlDashClear):
-            retTab = getMPDLinksWithMeta(urlDashClear, False)
-        
+            urlHlsClear = urlDashClear.replace('/vodnowusodash.', '/vodnowusohls.')[:-3] + 'm3u8'
+            hlsTab  = getDirectM3U8Playlist(urlHlsClear, checkContent=True)
+            dashTab = getMPDLinksWithMeta(urlDashClear, False)
+            try:
+                hlsTab  = sorted(hlsTab, key=lambda item: -1 * int(item.get('bitrate', 0)))
+                dashTab = sorted(dashTab, key=lambda item: -1 * int(item.get('bandwidth', 0)))
+            except Exception:
+                printExc()
+            if config.plugins.iptvplayer.tvnowde_prefered_format.value == 'hls':
+                retTab.extend(hlsTab)
+                retTab.extend(dashTab)
+            else:
+                retTab.extend(dashTab)
+                retTab.extend(hlsTab)
         if len(retTab):
             self.cacheLinks[cItem['url']] = retTab
         
@@ -393,6 +486,14 @@ class TVNowDE(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif category == 'missed':
+            self.addChannelFilter(self.currItem, 'missed_day')
+        elif category == 'missed_day':
+            self.addMissedDay(self.currItem, 'list_video_items')
+        elif category == 'list_missed':
+            self.listMissedItems(self.currItem, 'list_missed')
+        elif category == 'az':
+            self.addChannelFilter(self.currItem, 'list_az', True)
         elif category == 'list_az':
             self.listAZ(self.currItem, 'list_items_by_letter')
         elif category == 'list_items_by_letter':
