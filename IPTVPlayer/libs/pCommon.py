@@ -795,6 +795,16 @@ class common:
 
         return out_data 
 
+    def urlEncodeNonAscii(self, b):
+        return re.sub('[\x80-\xFF]', lambda c: '%%%02x' % ord(c.group(0)), b)
+
+    def iriToUri(self, iri):
+        import urlparse
+        parts = urlparse.urlparse(iri.decode('utf-8'))
+        return urlparse.urlunparse(
+            part.encode('idna') if parti==1 else self.urlEncodeNonAscii(part.encode('utf-8'))
+            for parti, part in enumerate(parts)
+        )
 
     def makeABCList(self, tab = ['0 - 9']):
         strTab = list(tab)

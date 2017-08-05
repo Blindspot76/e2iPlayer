@@ -83,9 +83,7 @@ class Movs4uCOM(CBaseHostClass):
             addParams = dict(self.defaultParams)
         
         origBaseUrl = baseUrl
-        tmp = re.compile('/([^/]+)/').findall(baseUrl)
-        for item in tmp:
-            baseUrl = baseUrl.replace('/%s/' % item, '/%s/' % urllib.quote(item))
+        baseUrl = self.cm.iriToUri(baseUrl)
         printDBG('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++> [%s] - > [%s]' % (origBaseUrl, baseUrl) )
         
         def _getFullUrl(url):
