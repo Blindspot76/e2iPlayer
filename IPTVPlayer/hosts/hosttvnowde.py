@@ -142,7 +142,7 @@ class TVNowDE(CBaseHostClass):
         channelList.insert(0, {'title':_('--All--'), 'f_channels':allChannels})
         for item in channelList:
             if 'f_channel' in item:
-                icon = 'https://www.tvnow.de/styles/modules/headerstations/%s.png' % item['f_channel']
+                icon = 'https://www.tvnow.de/styles/modules/headerstations/%s_active.png' % item['f_channel']
                 fChannels = [item['f_channel']]
             else:
                 icon = cItem.get('icon', '')
