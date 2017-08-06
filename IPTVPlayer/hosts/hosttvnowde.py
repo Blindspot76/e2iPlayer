@@ -77,6 +77,7 @@ class TVNowDE(CBaseHostClass):
     
         self.MAIN_CAT_TAB = [{'category':'az',              'title': _('A-Z')},
                              {'category':'missed',          'title': _('Missed the program?')},
+                             {'category':'channels',        'title': _('Channels')},
                              {'category':'list_cats',       'title': _('Categories')},
                             ]
         self.CHANNELS_TAB = [{'title':'RTL',      'f_channel':'rtl'},
@@ -107,6 +108,26 @@ class TVNowDE(CBaseHostClass):
         if value == None: value = ''
         return str(value)
         
+    def listChannelsCats(self, cItem, nextCategory):
+        printDBG("TVNowDE.listChannelsCats")
+        url = self.getFullUrl('/channels/?fields=*&filter=%7B%22Active%22:true%7D&maxPerPage=50&page=1')
+        sts, data = self.getPage(url)
+        if not sts: return 
+        try:
+            data = byteify(json.loads(data))
+            for item in data['items']:
+                if not item.get('active', True): continue
+                #url = '/channels/{0}?fields=%5B%22*%22,%22movies%22,%5B%22id%22,%22title%22,%22episode%22,%22broadcastStartDate%22,%22blockadeText%22,%22free%22,%22replaceMovieInformation%22,%22seoUrl%22,%22pictures%22,%5B%22*%22%5D,%22packages%22,%5B%22*%22%5D,%22manifest%22,%5B%22*%22%5D,%22format%22,%5B%22id%22,+%22station%22,+%22title%22,%22seoUrl%22,%22defaultDvdImage%22%5D%5D%5D'.format(item['id'])
+                url = '/channels/{0}?fields=%5B%22*%22,%22movies%22,%5B%22id%22,%22title%22,%22episode%22,%22broadcastStartDate%22,%22articleLong%22,%22duration%22,%22free%22,%22replaceMovieInformation%22,%22seoUrl%22,%22pictures%22,%5B%22*%22%5D,%22packages%22,%5B%22*%22%5D,%22manifest%22,%5B%22*%22%5D,%22format%22,%5B%22id%22,+%22station%22,+%22title%22,%22seoUrl%22,%22defaultDvdImage%22%5D%5D%5D'.format(item['id'])
+                url = self.getFullUrl(url)
+                title = self.getStr(item, 'title')
+                icon = 'https://ais.tvnow.de/tvnow/cms/{0}/300x169/image2.jpg'.format(self.getStr(item, 'defaultImage'))
+                params = dict(cItem)
+                params.update({'category':nextCategory, 'sub_key':'movies', 'title':title, 'url':url, 'icon':icon})
+                self.addDir(params)
+        except Exception:
+            printExc()
+    
     def addChannelFilter(self, cItem, nextCategory, withWatchBox=False):
         printDBG("TVNowDE.addChannelFilter")
         allChannels = []
@@ -335,6 +356,8 @@ class TVNowDE(CBaseHostClass):
         if not sts: return 
         try:
             data = byteify(json.loads(data))
+            subKey = cItem.get('sub_key', '')
+            if subKey != '': data = data[subKey]
             for item in data['items']:
                 try:
                     if not config.plugins.iptvplayer.tvnowde_show_paid_items.value and not item.get('free', False): 
@@ -356,6 +379,13 @@ class TVNowDE(CBaseHostClass):
                     desc     = self.cleanHtmlStr(self.getStr(item, 'articleLong'))
                     seoUrlItem = self.getStr(item, 'seoUrl')
                     seoUrlFormat = self.getStr(item['format'], 'seoUrl')
+                    
+                    descTab = []
+                    for d in [('broadcastStartDate', _('%s')), ('episode', _('episode: %s')), ('duration', _('duration: %s'))]:
+                        t = self.getStr(item, d[0])
+                        if t != '': descTab.append(d[1] % t)
+                    if len(descTab):
+                        desc = ' | '.join(descTab) + '[/br]' + desc
                     
                     url = '/%s/%s' % (seoUrlFormat, seoUrlItem)
                     params = {'good_for_fav':True, 'orig_item':item, 'dashclear':urlDashClear, 'f_seo_url_format':seoUrlFormat, 'f_seo_url_item':seoUrlItem, 'f_station':station, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
@@ -486,6 +516,8 @@ class TVNowDE(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif category == 'channels':
+            self.listChannelsCats(self.currItem, 'list_video_items')
         elif category == 'missed':
             self.addChannelFilter(self.currItem, 'missed_day')
         elif category == 'missed_day':
