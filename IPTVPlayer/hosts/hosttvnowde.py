@@ -261,7 +261,7 @@ class TVNowDE(CBaseHostClass):
         page = cItem.get('page', 1)
         genre = cItem.get('f_genre', '')
         
-        url = self.getFullUrl('/formats/genre/{0}?fields=*&filter=%7B%22station%22:%22none%22%7D&maxPerPage=500&order=NameLong+asc&page={1}'.format(genre, page))
+        url = self.getFullUrl('/formats/genre/{0}?fields=*&filter=%7B%22station%22:%22none%22%7D&maxPerPage=500&order=NameLong+asc&page={1}'.format(urllib.quote(genre), page))
         
         sts, data = self.getPage(url)
         if not sts: return 
