@@ -3395,11 +3395,33 @@ class pageParser:
         # http://vshare.io/d/72f9061/1
         video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/[dv]/([A-Za-z0-9]{7})/')[0]
         url = 'http://vshare.io/v/{0}/width-470/height-305/'.format(video_id)
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Referer':baseUrl}
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36', 'Accept-Encoding':'gzip, deflate', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Referer':baseUrl}
         
         vidTab = []
-        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
-        if not sts: return
+        
+        sts, data = self.cm.getPageWithWget(url, {'header' : HTTP_HEADER})
+        if not sts: sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+        if not sts: return []
+        
+        tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<div[^>]+?class="xxx-error"[^>]*>'), re.compile('</div>'), False)[1]
+        SetIPTVPlayerLastHostError(clean_html(tmp).strip())
+        
+        printDBG(data)
+        
+        enc = self.cm.ph.getDataBeetwenMarkers(data, 'eval(', '{}))')[1]
+        if enc != '':
+            try:
+                jscode = base64.b64decode('''dmFyIGRlY29kZWQgPSAiIjsNCnZhciAkID0gZnVuY3Rpb24oKXsNCiAgcmV0dXJuIHsNCiAgICBhcHBlbmQ6IGZ1bmN0aW9uKGEpew0KICAgICAgaWYoYSkNCiAgICAgICAgZGVjb2RlZCArPSBhOw0KICAgICAgZWxzZQ0KICAgICAgICByZXR1cm4gaWQ7DQogICAgfQ0KICB9DQp9Ow0KDQolczsNCg0KcHJpbnQoZGVjb2RlZCk7DQo=''') % (enc)                     
+                printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
+                printDBG(jscode)
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                ret = iptv_js_execute( jscode )
+                if ret['sts'] and 0 == ret['code']:
+                    decoded = ret['data'].strip()
+                    printDBG('DECODED DATA -> [%s]' % decoded)
+                    data = decoded + '\n' + data
+            except Exception:
+                printExc()
         
         stream   = self.cm.ph.getSearchGroups(data, '''['"](http://[^"^']+?/stream\,[^"^']+?)['"]''')[0]
         if '' == stream: stream   = byteify(json.loads('"%s"' % self.cm.ph.getSearchGroups(data, '''['"](http://[^"^']+?\.flv)['"]''')[0]))
@@ -7009,7 +7031,7 @@ class pageParser:
                'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
                'Accept-Encoding': 'none',
                'Accept-Language': 'en-US,en;q=0.8',
-               'Referer':baseUrl} #'Connection': 'keep-alive'           
+               'Referer':baseUrl} #'Connection': 'keep-alive'
 
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False

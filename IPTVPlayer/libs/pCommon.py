@@ -396,7 +396,7 @@ class common:
         
     def getPageWithWget(self, url, params={}, post_data=None):
         from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
-        cmd = DMHelper.getBaseWgetCmd(params.get('header', {})) +  (" '%s' " % url)
+        cmd = DMHelper.getBaseWgetCmd(params.get('header', {})) +  (" --timeout=20 --tries=1 '%s' " % url)
         if post_data != None:
             if params.get('raw_post_data', False):
                 post_data_str = post_data
