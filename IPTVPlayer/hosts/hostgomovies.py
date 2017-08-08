@@ -64,7 +64,7 @@ class GoMovies(CBaseHostClass):
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.DEFAULT_ICON_URL = 'https://cdn.unlonecdn.ru/images/gomovies-logo-light.png'
-        self.HEADER = {'User-Agent': 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'DNT':'1', 'Accept': 'text/html'}
+        self.HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = None
@@ -99,7 +99,7 @@ class GoMovies(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        domains = ['https://gomovies.to/', 'https://gomovies.pet/'] #, 'https://123movieshd.to/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/'
+        domains = ['https://gomovies.is/', 'https://gomovies.to/', 'https://gomovies.pet/'] #, 'https://123movieshd.to/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/'
         domain = config.plugins.iptvplayer.gomovies_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -120,7 +120,7 @@ class GoMovies(CBaseHostClass):
                 break
                 
         if self.MAIN_URL == None:
-            self.MAIN_URL = 'https://gomovies.to/' # first domain is default one
+            self.MAIN_URL = 'https://gomovies.is/' # first domain is default one
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
@@ -391,6 +391,7 @@ class GoMovies(CBaseHostClass):
                     if 'type="mp4"' in item:
                         urlTab.append({'name':name, 'url':url})
                     elif 'type="m3u8"' in item:
+                        url = strwithmeta(url, {'Referer':referer, 'User-Agent':params['header']['User-Agent']})
                         urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
                     elif 'kind="captions"' in item:
                         format = url[-3:]
@@ -404,7 +405,8 @@ class GoMovies(CBaseHostClass):
                         if "mp4" == item['type']:
                             urlTab.append({'name':str(item.get('label', 'default')), 'url':item['file']})
                         elif "m3u8" == item['type']:
-                            urlTab.extend(getDirectM3U8Playlist(item['file'], checkContent=True))
+                            url = strwithmeta(item['file'], {'Referer':referer, 'User-Agent':params['header']['User-Agent']})
+                            urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
                     for item in tmp['playlist'][0]['tracks']:
                         format = item['file'][-3:]
                         if format in ['srt', 'vtt'] and "captions" == item['kind']:
@@ -412,9 +414,12 @@ class GoMovies(CBaseHostClass):
                 except Exception:
                     printExc()
             printDBG(subTracks)
+            urlParams = {'Referer':referer, 'User-Agent':params['header']['User-Agent']}
             if len(subTracks):
-                for idx in range(len(urlTab)):
-                    urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'external_sub_tracks':subTracks})
+                urlParams.upadate({'external_sub_tracks':subTracks})
+            
+            for idx in range(len(urlTab)):
+                urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], urlParams)
         
         return urlTab
         
