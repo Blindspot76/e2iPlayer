@@ -118,7 +118,7 @@ class IceFilms(CBaseHostClass):
             self.cacheFilters[cacheKey] = {}
             sts, data = self.getPage(cItem['url'])
             if not sts: return
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, "<div class='menu submenu", '</div>', withMarkers=True)
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '''<div class="menu submenu''', '</div>', withMarkers=True)
             numOfTabs = len(data)
             if numOfTabs <= cItem['f_idx']:
                 self.listItems(cItem, 'list_episodes')
@@ -285,14 +285,14 @@ class IceFilms(CBaseHostClass):
             
             sourcesTab = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a', '</i>')
             for source in sourcesTab:
-                sourceId = self.cm.ph.getSearchGroups(source, "onclick='go\((\d+)\)'")[0]
+                sourceId = self.cm.ph.getSearchGroups(source, '''onclick=['"]go\((\d+)\)['"]''')[0]
                 if sourceId == '': continue
                 sourceName = self.cleanHtmlStr(clean_html(source.replace('</a>', ' ')))
                 
                 # hostings filter
                 # do not add hostings wich require captcha
                 add = True
-                for notSup in [' uploadx ', ' uploadz ', ' owndrives ']:
+                for notSup in [' uploadx ', ' uploadz ', ' owndrives ', ' upload ']:
                     if notSup in (' %s ' % sourceName.lower()): 
                         add = False
                         break
