@@ -131,7 +131,6 @@ class SKStream(CBaseHostClass):
                     params.update({'good_for_fav':False, 'category':nextCategory, 'title':groupTitle, 'c_idx':len(self.cacheCategories)})
                     self.addDir(params)
                     self.cacheCategories.append(tab)
-        printDBG(self.cacheCategories[0])
 
     def listCatsItems(self, cItem, nextCategory):
         printDBG("SKStream.listCatsItems")
