@@ -416,7 +416,7 @@ class GoMovies(CBaseHostClass):
             printDBG(subTracks)
             urlParams = {'Referer':referer, 'User-Agent':params['header']['User-Agent']}
             if len(subTracks):
-                urlParams.upadate({'external_sub_tracks':subTracks})
+                urlParams.update({'external_sub_tracks':subTracks})
             
             for idx in range(len(urlTab)):
                 urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], urlParams)
