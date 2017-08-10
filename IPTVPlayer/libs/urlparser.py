@@ -2663,16 +2663,16 @@ class pageParser:
         
     def parserMYCLOUDTO(self, baseUrl):
         printDBG("parserMYCLOUDTO baseUrl[%r]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl, {'header': pageParser.HTTP_HEADER})
+        header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36', 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate'}
+        
+        
+        sts, data = self.cm.getPage(baseUrl, {'header': header})
         if not sts: return False
         url = self.cm.ph.getSearchGroups(data, '''['"]((:?https?:)?//[^"^']+\.m3u8[^'^"]*?)['"]''')[0]
         if url.startswith('//'):
             url = 'http:' + url
-        url = strwithmeta(url, {'User-Agent':pageParser.HTTP_HEADER['User-Agent']})
-        sts, data = self.cm.getPage(url, {'header': pageParser.HTTP_HEADER, 'Origin':'http://mycloud.to', 'Referer':'http://mycloud.to/embed/vv8ylv?ui=ZAnbzYVVRutD686J2Z2cM0Sc0NU%3D'})
         
-        printDBG("+++++++++++++++++++++++++++++++++++++++++")
-        printDBG(data)
+        url = strwithmeta(url, {'User-Agent':header['User-Agent'], 'Origin':urlparser.getDomain(baseUrl), 'Referer':baseUrl})
         tab =  getDirectM3U8Playlist(url, checkContent=True)[::-1]
         
         printDBG("parserMYCLOUDTO tab[%s]" % tab)
