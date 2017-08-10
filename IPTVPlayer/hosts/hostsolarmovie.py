@@ -133,7 +133,7 @@ class SolarMovie(CBaseHostClass):
         m1 = 'amp;url='
         if m1 in url: url = url.split(m1)[-1]
         url = self.getFullUrl(url)
-        proxy = config.plugins.iptvplayer.seriesonlineio_proxy.value
+        proxy = config.plugins.iptvplayer.solarmovie_proxy.value
         if proxy != 'None':
             if proxy == 'proxy_1':
                 proxy = config.plugins.iptvplayer.alternative_proxy1.value
