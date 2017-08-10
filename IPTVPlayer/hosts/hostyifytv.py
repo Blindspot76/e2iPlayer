@@ -330,7 +330,7 @@ class YifyTV(CBaseHostClass):
         
         jscode = self.cm.ph.getDataBeetwenMarkers(data, 'jQuery.noConflict();', '</script>', False)[1]
         try:
-            jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCnZhciBsb2NhdGlvbiA9ICIlcyI7DQoNCiVzDQoNCnByaW50KHdpbmRvdy5wYXJhbWV0cm9zKQ==''') % (self.getMainUrl(), jscode)                     
+            jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCnZhciBsb2NhdGlvbiA9IHt9Ow0KbG9jYXRpb24uaG9zdG5hbWUgPSAiJXMiOw0KbG9jYXRpb24udG9TdHJpbmcgPSBmdW5jdGlvbigpew0KICAgICAgICAgICAgICAgICAgICAgIHJldHVybiAiJXMiOw0KICAgICAgICAgICAgICAgICAgICB9Ow0KJXM7DQoNCnByaW50KHdpbmRvdy5wYXJhbWV0cm9zKQ==''') % (self.up.getDomain(self.getMainUrl()), self.getMainUrl(), jscode)                   
             printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
             printDBG(jscode)
             printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
