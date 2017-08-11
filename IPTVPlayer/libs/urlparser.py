@@ -1350,9 +1350,12 @@ class pageParser:
             tmpData += pageData
             
             tmp = self.cm.ph.getDataBeetwenMarkers(tmpData, "player_data='", "'", False)[1].strip()
-            #printDBG("===========================================")
-            #printDBG(tmp)
-            #printDBG("===========================================")
+            if tmp == '': tmp = self.cm.ph.getDataBeetwenMarkers(tmpData, 'player_data="', '"', False)[1].strip()
+            tmp = clean_html(tmp).replace('&quot;', '"')
+            
+            printDBG("===========================================")
+            printDBG(tmp)
+            printDBG("===========================================")
             try:
                 if tmp != '':
                     tmp = byteify(json.loads(tmp))
@@ -1408,7 +1411,7 @@ class pageParser:
     
         #if len(videoUrls):
         #    videoUrls = [videoUrls[0]]
-        return videoUrls
+        return videoUrls[::-1]
 
     def parserDWN(self,url):
         if "play4.swf" in url:
