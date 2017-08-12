@@ -11,6 +11,7 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, unpackJS, VIDEOMEGA_decryptPlayerParams
 ###################################################
 
 ###################################################
@@ -55,7 +56,7 @@ class SKStream(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'skstream.co', 'cookie':'skstream.co.cookie', 'cookie_type':'MozillaCookieJar'})
-        self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -281,14 +282,21 @@ class SKStream(CBaseHostClass):
                 try:
                     params['header'] = dict(params['header'])
                     params['header']['Referer'] = videoUrl.meta['Referer']
+                    #params['header'].pop('Referer', None)
                     params['return_data'] = False
                     sts, response = self.getPage(url, params)
                     url = response.geturl()
                     if 'dl-protect.co' in self.up.getDomain(url):
                         data = response.read(1024*1024*1024)
                         response.close()
+                        
+                        # get JS player script code from confirmation page
+                        sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+                        if sts: data += unpackJSPlayerParams(tmpData, VIDEOMEGA_decryptPlayerParams, 0, r2=True) #YOUWATCH_decryptPlayerParams == VIDUPME_decryptPlayerParams
+                        
                         printDBG(data)
                         url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+                        if url == '': url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''iframe.src\s*=\s*['"]([^"^']+?)['"]''', 1, True)[0])
                         if not self.cm.isValidUrl(url):
                             data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', '],', False)[1] + ']'
                             data = byteify(json.loads(data))
