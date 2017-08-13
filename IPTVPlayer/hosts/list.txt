@@ -65,6 +65,7 @@ hostmooviecc
 hostmovie4kto
 hostmovienightws
 hostmovizlandcom
+hostmovs4ucom
 hostmozicsillag
 hostmrpiracy
 hostmusicbox
@@ -104,6 +105,7 @@ hosttreetv
 hosttvgrypl
 hosttvjworg
 hosttvn24
+hosttvnowde
 hosttvnvod
 hosttvpvod
 hosttwitchtv
