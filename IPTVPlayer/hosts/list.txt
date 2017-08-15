@@ -74,7 +74,6 @@ hostnaszekinoonline
 hostngolos
 hostninateka
 hostokgoals
-hostonetvod
 hostotakufr
 hostourmatchnet
 hostpaczamy
@@ -113,6 +112,7 @@ hosturllist
 hostustreamtv
 hostvevo
 hostvideopenny
+hostvodpl
 hostvumooch
 hostwatchwrestling
 hostwatchwrestlinguno
