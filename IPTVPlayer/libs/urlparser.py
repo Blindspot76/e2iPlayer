@@ -1267,9 +1267,8 @@ class pageParser:
         def _decorateUrl(inUrl, host, referer):
             # prepare extended link
             retUrl = strwithmeta( inUrl )
-            retUrl.meta['Host']              = host
             retUrl.meta['Referer']           = referer
-            retUrl.meta['Cookie']            = self.cm.getCookieHeader(COOKIE_FILE) #"PHPSESSID=1"
+            retUrl.meta['Cookie']            = "PHPSESSID=1" #self.cm.getCookieHeader(COOKIE_FILE) 
             retUrl.meta['iptv_proto']        = 'http'
             retUrl.meta['iptv_urlwithlimit'] = False
             retUrl.meta['iptv_livestream']   = False
