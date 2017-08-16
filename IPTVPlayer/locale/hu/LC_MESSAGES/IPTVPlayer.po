@@ -817,7 +817,7 @@ msgid "IPTV Player"
 msgstr "IPTV Player"
 
 msgid "IPTV Player "
-msgstr "IPTV Player"
+msgstr "IPTV Player "
 
 msgid "IPTV Player %s"
 msgstr "IPTV Player %s"
@@ -1211,7 +1211,7 @@ msgid "PICTURE"
 msgstr "KÉP"
 
 msgid "Password:"
-msgstr "Jelszó"
+msgstr "Jelszó:"
 
 msgid "Paste \"%s\""
 msgstr "\"%s\" beillesztése."
@@ -1220,7 +1220,7 @@ msgid "Path to ytlist.txt, urllist.txt"
 msgstr "ytlist.txt, urllist.txt fájlok útvonala"
 
 msgid "Pending"
-msgstr "VÁRAKOZIK"
+msgstr "Várakozik"
 
 msgid "Photos"
 msgstr "Fényképek"
@@ -1449,7 +1449,7 @@ msgid "Request token from \"%s\""
 msgstr "Token kérése innen: \"%s\""
 
 msgid "Request token from %s"
-msgstr "Token kérése innen: \"%s\""
+msgstr "Jel kérése innen: \"%s\""
 
 msgid ""
 "Restart GUI failed. \n"
@@ -2074,7 +2074,7 @@ msgid "Video"
 msgstr "Videó"
 
 msgid "Video buffer size [MB]"
-msgstr "Video pufferméret [MB]"
+msgstr "Video pufferméret (MB)"
 
 msgid "Video format:"
 msgstr "Video formátuma:"
@@ -2379,7 +2379,7 @@ msgid "navy"
 msgstr "Katonai"
 
 msgid "no"
-msgstr "Nincs"
+msgstr "Nem"
 
 msgid "nocnyseans.pl"
 msgstr "nocnyseans.pl"
@@ -2475,7 +2475,7 @@ msgid "top"
 msgstr "Csúcs"
 
 msgid "unknown"
-msgstr "ISMERETLEN"
+msgstr "Ismeretlen"
 
 msgid "updated"
 msgstr "Frissített"
@@ -2613,13 +2613,13 @@ msgid "Search History"
 msgstr "Keresés az előzmények közt"
 
 msgid "---Search"
-msgstr "Keresés"
+msgstr "---Keresés"
 
 msgid "Search movies"
 msgstr "Filmek keresése"
 
 msgid "Search "
-msgstr "KERESÉS"
+msgstr "Keresés"
 
 msgid "--- Cams ---"
 msgstr "--- Kamerás ---"
@@ -2673,34 +2673,34 @@ msgid "--- Girl ---"
 msgstr "---Lányok---"
 
 msgid "boy"
-msgstr "---Fiú---"
+msgstr "Fiú"
 
 msgid "gay"
-msgstr "---Meleg---"
+msgstr "Meleg"
 
 msgid "Transgender"
-msgstr "---Transzvesztita---"
+msgstr "Transzvesztita"
 
 msgid "Couple"
-msgstr "--- Párban ---"
+msgstr "Párban"
 
 msgid "Mature"
-msgstr "---Érett---"
+msgstr "Érett"
 
 msgid "Fetish"
-msgstr "----Fétis----"
+msgstr "Fétis"
 
 msgid "Lesbian"
-msgstr "---Leszbi---"
+msgstr "Leszbi"
 
 msgid "Soul_mate"
-msgstr "---Lelki társ---"
+msgstr "Lelki társ"
 
 msgid "Hot_flirt"
-msgstr "---Forró flörtök---"
+msgstr "Forró flört"
 
 msgid "Girl"
-msgstr "---Lányok---"
+msgstr "Lányok"
 
 msgid "--- Couples ---"
 msgstr "--- Párok ---"
@@ -2787,10 +2787,10 @@ msgid "+++ XXXLIST +++"
 msgstr "+++ XXX LISTA +++"
 
 msgid "On Air"
-msgstr "---Adásban---"
+msgstr "Adásban"
 
 msgid "Longest"
-msgstr "---Leghosszabb---"
+msgstr "Leghosszabb"
 
 msgid "Highest Rated"
 msgstr "Legjobbra értékelt"
@@ -2802,22 +2802,22 @@ msgid "Last"
 msgstr "UTOLSÓ"
 
 msgid "Most Favored"
-msgstr "---Legkedveltebb---"
+msgstr "Legkedveltebb"
 
 msgid "Newest"
-msgstr "---Újabb---"
+msgstr "Legújabb"
 
 msgid "Featured videos"
 msgstr "Videók témája"
 
 msgid "New Videos"
-msgstr "---Új Videók---"
+msgstr "Új Videók"
 
 msgid "Hits"
-msgstr "----Sikerek---"
+msgstr "Sikerek"
 
 msgid "Hot"
-msgstr "---Forró flörtök---"
+msgstr "Forró"
 
 msgid "LAST"
 msgstr "UTOLSÓ"
@@ -2928,7 +2928,7 @@ msgid "Use the default video quality:"
 msgstr "Használd az alapértelmezett videó minőséget:"
 
 msgid "password:"
-msgstr "Jelszó"
+msgstr "Jelszó:"
 
 msgid "login:"
 msgstr "Felhasználónév:"
@@ -3309,13 +3309,13 @@ msgid "***Any***"
 msgstr "***Összes***"
 
 msgid "most viewed"
-msgstr "---Legnézettebb---"
+msgstr "Legnézettebb"
 
 msgid "longest"
-msgstr "---Leghosszabb---"
+msgstr "Leghosszabb"
 
 msgid "top rated"
-msgstr "LEgjobbnak értékelt"
+msgstr "Legjobbnak értékelt"
 
 msgid "random"
 msgstr "Véletlenszerű"
@@ -3426,7 +3426,7 @@ msgid "More as next page"
 msgstr "Tovább a következő oldalon"
 
 msgid ":for"
-msgstr "részére"
+msgstr ":részére"
 
 msgid "Programs"
 msgstr "Programok"
@@ -3555,7 +3555,7 @@ msgid "Worse rating"
 msgstr "Rossz értékelés"
 
 msgid "Most viewed"
-msgstr "---Legnézettebb---"
+msgstr "Legnézettebb"
 
 msgid "Less viewed"
 msgstr "Kevésbé népszerűek"
@@ -3575,7 +3575,7 @@ msgid "Default video quality"
 msgstr "Alapértelmezett minőség"
 
 msgid "Use default video quality"
-msgstr "Használd az alapértelmezett videó minőséget:"
+msgstr "Használd az alapértelmezett videó minőséget"
 
 msgid "Icon type"
 msgstr "Ikon típusa"
@@ -3656,7 +3656,7 @@ msgid "Sort by popularity"
 msgstr "Népszerűségi sorrendben"
 
 msgid "Latest update"
-msgstr "Legújabb Frissítés"
+msgstr "Legújabb Frissítések"
 
 msgid "Remove disabled services"
 msgstr "Kikapcsolt szolgálatások elrejtése"
@@ -3774,7 +3774,7 @@ msgid "Decode file [%s] problem."
 msgstr "Hiba a  [%s]  fájl dekódolása közben."
 
 msgid "Latest movies"
-msgstr "Legújabb"
+msgstr "Legújabb filmek"
 
 msgid "Movies genres"
 msgstr "Témakörök"
@@ -3947,7 +3947,7 @@ msgid "Failed to open the file \"%s\"."
 msgstr "Hiba a [%s] fájl megnyitása közben!"
 
 msgid "Login failed!"
-msgstr "Belépés sikertelen."
+msgstr "Belépés sikertelen!"
 
 msgid ""
 "Error message: \"%s\".\n"
@@ -4166,6 +4166,192 @@ msgid ""
 msgstr ""
 "A \"%s\"  felhasználó  bejelentkezése a  http://vk.com/ oldalra sikertelen!\n"
 "Kérlek, ellenőrizd az adataidat a Konfigurációs menüben."
+
+msgid "The problem with user logon \"%s\"."
+msgstr "A [%s] bejelentkezése sikertelen."
+
+msgid "http://sovdub.ru/"
+msgstr "http://sovdub.ru/"
+
+msgid "Video mode"
+msgstr "Videó mód"
+
+msgid "Is this message displayed correctly?"
+msgstr "Ez az üzenet rendben van?"
+
+msgid "Preferred format:"
+msgstr "Előnyben részesített formátum:"
+
+msgid "Use web-proxy (it may be illegal):"
+msgstr "Web-proxy használata (Illegállis lehet)"
+
+msgid "Latest programs"
+msgstr "Legújabb programok"
+
+msgid "Latest news broadcast"
+msgstr "Legfrissebb hírek"
+
+msgid "Last chance"
+msgstr "Utolsó lehetőség"
+
+msgid "Live broadcasts"
+msgstr "Élő adások"
+
+msgid "Programs A-Ö"
+msgstr "Programok A-Ö"
+
+msgid "Only available in Sweden.\n"
+msgstr "Csak Svédországban elérhető.\n"
+
+msgid "Only available in Sweden."
+msgstr "Csak Svédországban elérhető."
+
+msgid "Detection of glibc version."
+msgstr "glibc keresése."
+
+msgid "Detection version of installed standard C library."
+msgstr "Telepített C könyvtár keresés."
+
+msgid "hlsdl downloader"
+msgstr "hlsdl letöltő"
+
+msgid ""
+"\n"
+"For more info please ask samsamsam@o2.pl"
+msgstr ""
+"\n"
+"További információ: samsamsam@o2.pl"
+
+msgid "It improves HLS/M3U8 stream download.\n"
+msgstr "Ez javítja a HLS/M3U8 streamek letöltését.\n"
+
+msgid "Alternative domain:"
+msgstr "Alternatív cím:"
+
+msgid ""
+"Fatal Error!\n"
+"Plugin is not supported with your platform."
+msgstr ""
+"Végzetes hiba!\n"
+"A plugin nem támogatja ezt a  platformot."
+
+msgid ""
+"\n"
+"Please visit http://duktape.org/"
+msgstr ""
+"\n"
+"További információ: http://ducktape.org/"
+
+msgid ""
+"Duktape is an embeddable Javascript engine, with a focus on portability and "
+"compact footprint.\n"
+msgstr ""
+"A Ducktape egy beágyazható Javascript egység, amely a kompakt méretre és  a "
+"hordozhatóságra fókuszál.\n"
+
+msgid "TV Show"
+msgstr "TV Show"
+
+msgid ""
+"Access to this service requires login.\n"
+"Please register on the site \"%s\" and then put your e-mail and password in "
+"the host configuration under blue button."
+msgstr ""
+"A szolgáltató regisztrációt igényel.\n"
+"Regisztrálj el a \"%s\" oldalon, majd a kék gomb lenyomása után add meg a "
+"belépési adatokat. "
+
+msgid "Login mode"
+msgstr "Belépési mód"
+
+msgid "Secure cookie name"
+msgstr "Biztonsági cookie neve"
+
+msgid "Secure cookie value"
+msgstr "Biztonsági cookie neve"
+
+msgid "Name"
+msgstr "Név"
+
+msgid "ID"
+msgstr "Azonosító"
+
+msgid "Trailer"
+msgstr "Előzetes"
+
+msgid ""
+"This service requires a new Enigma2 image with a Python version %s or later."
+msgstr ""
+"Ez az oldal új Enigma2 rendszert igényel, %s vagy újabb Python verzióval."
+
+msgid "Genre: "
+msgstr "Témakör:"
+
+msgid "Order by: "
+msgstr "Rendezés mód:"
+
+msgid "Score at least: "
+msgstr "Minimális pontszám:"
+
+msgid "trailer"
+msgstr "Előzetes"
+
+msgid "Advance (cookie item)"
+msgstr "Korszerű (cookie elem)"
+
+msgid "Simple (e-mail, password)"
+msgstr "Egyszerű (e-mail,jelszó)"
+
+msgid "Top series"
+msgstr "Legjobb Sorozatok"
+
+msgid "Top movies"
+msgstr "Csúcsmozik"
+
+msgid "Upcoming"
+msgstr "Közelgő"
+
+msgid "Most watched"
+msgstr "Legnézettebb"
+
+msgid "Last update"
+msgstr "Legutóbb Frissítés"
+
+msgid "Cartoon list"
+msgstr "Rajzfilmek listája"
+
+msgid "Initialize web interface (experimental)"
+msgstr "Web Interface indítása (Kísérleti jellegű)"
+
+msgid "Allow watched flag to be set (experimental)"
+msgstr "Megtekintettnek jelölés engedélyezése  (Kísérleti jellegű)"
+
+msgid "The color of the viewed item"
+msgstr "Megtekintett elem színe"
+
+msgid "The color of the watched item"
+msgstr "Nézett elem színe"
+
+msgid "Unset watched"
+msgstr "Jelölés törlése"
+
+msgid "Set watched"
+msgstr "Megtekintettnek jelöl"
+
+msgid "http://kinotan.ru/"
+msgstr "http://kinotan.ru/"
+
+msgid "Show paid items (it may be illegal)"
+msgstr "Előfizetéses elemek megjelenítése"
+
+msgid "Show items with DRM"
+msgstr "Másolásvédett elemek megjelenítése"
+
+msgid "Items with DRM protection."
+msgstr "Másolásvédett elemek"
+
+msgid "Video with DRM protection."
+msgstr "Másolásvédett videók"
 
 msgid "Trailers"
 msgstr "Előzetesek"
