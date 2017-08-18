@@ -450,10 +450,11 @@ class BBCiPlayer(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return retTab
         
-        data = self.cm.ph.getSearchGroups(data, r'mediator\.bind\(({.+?})\s*,\s*document\.getElementById')[0]
+        tmp = self.cm.ph.getSearchGroups(data, r'mediator\.bind\(({.+?})\s*,\s*document\.getElementById')[0]
+        if tmp == '': tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('window\.mediatorDefer\s*=\s*[^,]*?\,'), re.compile('\);'), False)[1]
         try:
             uniqueTab = []
-            data = byteify(json.loads(data))
+            data = byteify(json.loads(tmp))
             for item in data['episode']['versions']:
                 url  = self.getFullUrl('/iplayer/vpid/%s/' % item['id'])
                 if url in uniqueTab: continue
