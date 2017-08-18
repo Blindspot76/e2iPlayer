@@ -420,33 +420,6 @@ class IceFilms(CBaseHostClass):
         
         return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo}]
         
-    def getFavouriteData(self, cItem):
-        printDBG('IceFilms.getFavouriteData')
-        return json.dumps(cItem)
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('IceFilms.getLinksForFavourite')
-        if self.MAIN_URL == None:
-            self.selectDomain()
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('IceFilms.setInitListFromFavouriteItem')
-        if self.MAIN_URL == None:
-            self.selectDomain()
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -491,7 +464,9 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, IceFilms(), True, [])
         
     def withArticleContent(self, cItem):
-        if cItem['type'] != 'video' and cItem['category'] != 'list_episodes':
+        printDBG(cItem)
+        
+        if cItem['type'] != 'video' and cItem.get('category', '') != 'list_episodes':
             return False
         return True
     

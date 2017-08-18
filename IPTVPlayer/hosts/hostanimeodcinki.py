@@ -334,28 +334,16 @@ class AnimeOdcinkiPL(CBaseHostClass):
         
         return urlTab
         
-    def getFavouriteData(self, cItem):
-        printDBG('AnimeOdcinkiPL.getFavouriteData')
-        return json.dumps(cItem)
+    def getArticleContent(self, cItem):
+        printDBG("SolarMovie.getArticleContent [%s]" % cItem)
+        retTab = []
         
-    def getLinksForFavourite(self, fav_data):
-        printDBG('AnimeOdcinkiPL.getLinksForFavourite')
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
+        title = cItem.get('title', '')
+        desc = cItem.get('desc', '')
+        icon  = self.resolveIconUrl(self.cm, cItem.get('icon', ''))
+        if icon == '':  icon = self.getDefaulIcon()
         
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('AnimeOdcinkiPL.setInitListFromFavouriteItem')
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
+        return [{'title':title, 'text':desc, 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':{}}]
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -422,3 +410,5 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, AnimeOdcinkiPL(), True, [])
     
+    def withArticleContent(self, cItem):
+        return True

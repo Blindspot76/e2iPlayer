@@ -346,7 +346,7 @@ class Chomikuj(CBaseHostClass):
                                 directUrl = self._getJItemStr(item, 'ThumbnailImg', '')
                 
                 if directUrl == '':
-                    directUrl = fileId.meta.get('url', '')
+                    directUrl = fileId.meta.get('priv_url', '')
                 
                 if self.cm.isValidUrl(directUrl):
                     urlTab.append({'name':'direct', 'url':directUrl})
@@ -354,32 +354,17 @@ class Chomikuj(CBaseHostClass):
             printExc()
         return urlTab
         
-    def getFavouriteData(self, cItem):
-        printDBG('Chomikuj.getFavouriteData')
-        return json.dumps(cItem) 
-        
     def getLinksForFavourite(self, fav_data):
         printDBG('Chomikuj.getLinksForFavourite')
         if 'ApiKey' not in self.loginData:
             self.requestLoginData()
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
+        return CBaseHostClass.getLinksForFavourite(self, fav_data)
         
     def setInitListFromFavouriteItem(self, fav_data):
         printDBG('Chomikuj.setInitListFromFavouriteItem')
         if 'ApiKey' not in self.loginData:
             self.requestLoginData()
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
+        return CBaseHostClass.setInitListFromFavouriteItem(self, fav_data)
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Chomikuj.handleService start')

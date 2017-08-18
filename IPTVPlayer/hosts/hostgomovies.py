@@ -467,34 +467,6 @@ class GoMovies(CBaseHostClass):
             if rating != '': otherInfo['rating'] = self.cleanHtmlStr( rating )
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
-    
-    def getFavouriteData(self, cItem):
-        printDBG('GoMovies.getFavouriteData')
-        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'movie_id':cItem['movie_id'], 'desc':cItem['desc'], 'info_url':cItem['info_url'], 'icon':cItem['icon']}
-        return json.dumps(params) 
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('GoMovies.getLinksForFavourite')
-        if self.MAIN_URL == None:
-            self.selectDomain()
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('GoMovies.setInitListFromFavouriteItem')
-        if self.MAIN_URL == None:
-            self.selectDomain()
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -545,7 +517,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, GoMovies(), True, [])
     
     def withArticleContent(self, cItem):
-        if cItem['type'] != 'video' and cItem['category'] != 'list_episodes':
+        if cItem.get('type', 'video') != 'video' and cItem.get('category', 'unk') != 'list_episodes':
             return False
         return True
     

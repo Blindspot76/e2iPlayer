@@ -8,12 +8,14 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetLogoDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetLogoDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
-
 
 from Components.config import config
 from skin import parseColor
+
+try:    import json
+except Exception: import simplejson as json
 
 class CUrlItem:
     def __init__(self, name = "", url = "", urlNeedsResolve = 0):
@@ -720,8 +722,40 @@ class CBaseHostClass:
                 self.addDir(params)
             except Exception: printExc()
             
+    def getFavouriteData(self, cItem):
+        try:
+            return json.dumps(cItem)
+        except Exception: 
+            printExc()
+        return ''
+        
+    def getLinksForFavourite(self, fav_data):
+        try:
+            if self.MAIN_URL == None:
+                self.selectDomain()
+        except Exception: 
+            printExc()
+        links = []
+        try:
+            cItem = byteify(json.loads(fav_data))
+            links = self.getLinksForItem(cItem)
+        except Exception: printExc()
+        return links
+        
     def setInitListFromFavouriteItem(self, fav_data):
-        return False
+        try:
+            if self.MAIN_URL == None:
+                self.selectDomain()
+        except Exception: 
+            printExc()
+        try:
+            params = byteify(json.loads(fav_data))
+        except Exception: 
+            params = {}
+            printExc()
+            return False
+        self.currList.append(params)
+        return True
         
     def getLinksForItem(self, cItem):
         return self.getLinksForVideo(cItem)

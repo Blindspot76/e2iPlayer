@@ -474,29 +474,6 @@ class BBCiPlayer(CBaseHostClass):
         printDBG("BBCiPlayer.getVideoLinks [%s]" % url)
         return self.up.getVideoLinkExt(url)
         
-    def getFavouriteData(self, cItem):
-        printDBG('BBCiPlayer.getFavouriteData')
-        return json.dumps(cItem)
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('BBCiPlayer.getLinksForFavourite')
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('BBCiPlayer.setInitListFromFavouriteItem')
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         

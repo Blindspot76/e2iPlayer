@@ -326,30 +326,6 @@ class ChiaanimeCO(CBaseHostClass):
             urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
-    def getFavouriteData(self, cItem):
-        printDBG('CartoonME.getFavouriteData')
-        params = dict(cItem)
-        return json.dumps(params) 
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('CartoonME.getLinksForFavourite')
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('CartoonME.setInitListFromFavouriteItem')
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-        
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("ChiaanimeCO.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         page = cItem.get('page', 1)

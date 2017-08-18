@@ -285,6 +285,7 @@ class EkinoTv(CBaseHostClass):
         for item in data:
             id  = self.cm.ph.getSearchGroups(item, 'id="([^"]+?)"')[0]
             playerParams = self.cm.ph.getSearchGroups(item, '''ShowPlayer[^"^']*?['"]([^"^']+?)['"]\s*\,\s*['"]([^"^']+?)['"]''', 2)
+            url = ''
             if playerParams[0] != '' and playerParams[1] != '':
                 url = baseVidUrl + '/'.join(playerParams)
             if url == '': url = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
