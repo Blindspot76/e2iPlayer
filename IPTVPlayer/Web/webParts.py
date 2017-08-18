@@ -66,6 +66,7 @@ def IncludeMENU( MenuStatusMSG = '', ShowCancelButton = False):
     <a href="http://iptvplayer.vline.pl/" target="_blank"> <img border="0" alt="IPTVPlayer" src="./icons/iptvlogo.png" width="60" height="24"></a>
     <a href="/iptvplayer/" >%s</a>
     <a href="/iptvplayer/hosts" ">%s</a>
+    <a href="/iptvplayer/search" ">%s</a>
     <a href="/iptvplayer/downloader" >%s</a>
     <a href="/iptvplayer/settings" >%s</a>
     <a href="/iptvplayer/logs" >%s</a>
@@ -74,7 +75,7 @@ def IncludeMENU( MenuStatusMSG = '', ShowCancelButton = False):
     <a href="https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/commits/master" target="_blank" >IPTVPlayer %s: <b><font color="#A9F5F2">%s</font></b></a>
     <a>, %s: <b>%s</b></a/>
   </div>
-""" % ( _('Information'), _('Selected hosts'), _('Download manager'), _('Settings'), _('Logs'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
+""" % ( _('Information'), _('Selected hosts'), _('Search'), _('Download manager'), _('Settings'), _('Logs'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
 	if MenuStatusMSG != '' and ShowCancelButton == True:
 		tempText += '<div class="main">%s<br></div>\n' % formSUBMITvalue([('cmd','stopThread')], _('Cancel'), input_text = MenuStatusMSG + '... ')
 	elif MenuStatusMSG != '':
@@ -211,7 +212,7 @@ class Body():
 		displayHostsList = SortHostsList(GetHostsList())
 		if 0 == len(GetHostsOrderList()):
 			try: displayHostsList.sort(key=lambda t : tuple('.'.join(str(t[0]).replace('://','.').replace('www.','').split('.')[1:-1]).lower()))
-			except Exception: pass
+			except Exception, e: print "Exception during sorting displayHostsList", str(e)
 		for hostName in displayHostsList:
 			if hostName in settings.activeHostsHTML.keys():
 				hostHTML = settings.activeHostsHTML[hostName]
@@ -367,28 +368,39 @@ class Body():
 		txt += '</tbody></table><br>\n'
 		return txt
 	########################################################
-	def buildItemsListTable(self, item, index):
+	def buildItemsListTable(self, item, index, allowedCategories = [], destinationURL = None):
 		iIndex = index
 		iName = removeSpecialChars(item.name)
 		iDescr= removeSpecialChars(item.description)
 		iType = item.type
+		if len(allowedCategories) > 0 and iType not in allowedCategories:
+			return ''
 		ListType = 'ListForItem'
 		if iType == "CATEGORY":
-			icon = '<img border="0" src="./icons/CategoryItem.png" width="64" height="64">'
+			iconSrc = './icons/CategoryItem.png'
 		elif iType == "SEARCH":
-			icon = '<img border="0" src="./icons/SearchItem.png" width="64" height="64">'
+			ListType = 'ForSearch'
+			iconSrc = './icons/SearchItem.png'
 		elif iType == "VIDEO":
 			ListType = 'ListForItem'
-			icon = '<img border="0" src="%s" width="64">' % item.iconimage
-			#icon = '<img border="0" src="./icons/VideoItem.png" width="64" height="64">'
+			iconSrc = item.iconimage
 		elif iType == "AUDIO":
-			icon = '<img border="0" src="./icons/AudioItem.png" width="64" height="64">'
+			iconSrc = './icons/AudioItem.png'
 		else:
-			icon = iType
+			iconSrc = iType
 		txt = tableHorizontalRedLine( colspan = 2 )
-		txt += '<tr><td rowspan="2" style="width:64px">%s</td>' % icon
-		txt += '<td>%s</td></tr>' % formSUBMITvalue( [(ListType , iIndex)], _(iName), 'style="color: #DBA901;background: none;border: none;text-decoration: underline"')
-		txt += '<tr><td style="text-indent: 40px">%s</td></tr>' % iDescr
+		txt += '<tr><td rowspan="2" style="width:64px"><img border="0" src="%s" width="64" height="64"></td>' % iconSrc
+		
+		if iType == "SEARCH":
+			if len(settings.activeHost['SearchTypes']) == 0:
+				txt += '<td>%s</td></tr>\n' % formSUBMITtext( _(iName), ListType, 'style="color: #DBA901;background: none;border: none;text-decoration: underline"')
+			else:
+				txt += '<td>%s</td></tr>\n' % formMultipleSearchesSUBMITtext( settings.activeHost['SearchTypes'], ListType, 'style="color: #DBA901;background: none;border: none;text-decoration: underline"')
+		elif destinationURL is not None:
+			txt += '<td><a href="%s" class = "lnkbtn">%s</a></td></tr>' % (destinationURL, _(iName))
+		else:
+			txt += '<td>%s</td></tr>' % formSUBMITvalue( [(ListType , iIndex)], _(iName), 'style="color: #DBA901;background: none;border: none;text-decoration: underline"')
+		txt += '<tr><td style="text-indent: 40px">%s</td></tr>\n' % iDescr
 		return txt
 	########################################################
 	def buildUrlsTable(self, item, index):
@@ -400,7 +412,7 @@ class Body():
 			txt += '<td colspan="2" align="center">%s</td></tr>' % ( iName )
 		else:
 			if int(item.urlNeedsResolve) == 1:
-				txt += '<td>%s</td><td>%s</td></tr>' % ( iName , formSUBMITvalue( [('ResolveURL' , index)], _('Select')) )
+				txt += '<td>%s</td><td>%s</td></tr>\n' % ( iName , formSUBMITvalue( [('ResolveURL' , index)], _('Select')) )
 			else:
 				#txt += '<td>%s</td><td>%s</td>' % ( iName , formSUBMITvalue( [('DownloadURL' , index)], _('Download')) )
 				txt += '<td>%s</td><td><a href="/iptvplayer/usehost?DownloadURL=%d" class = "lnkbtn">%s</a></td>' % (iName, index, _('Add to downloader'))
@@ -412,7 +424,7 @@ class Body():
 		tempText += IncludeMENU(MenuStatusMSG, ShowCancelButton)
 		tempText += '<div class="main">\n'
 		#Status table
-		if not isNewHostListShown() and not isThreadRunning('doUseHostAction'):
+		if not isNewHostListShown() and not isThreadRunning('doUseHostAction') and 'Name' in  settings.activeHost.keys():
 			tempText += '<table border="0" cellspacing="5px"><tbody>\n'
 			tempText += '<tr>'
 			tempText += '<td align="right"><font color="#f0f0f0">%s</font></td><td><b><font color="#FFE4C4">%s</font></b></td>' % ( _('host:') , settings.activeHost['Name'] )
@@ -452,4 +464,40 @@ class Body():
 				tempText += self.useHostSubMenu(isTop = False) #Submenu table
 			setNewHostListShown(True)
 		tempText += '</div></body>\n'
+		return tempText
+	########################################################
+	def SearchPageContent(self, MenuStatusMSG, ShowCancelButton):
+		tempText = '<body bgcolor=\"#666666\" text=\"#FFFFFF\">\n'
+		tempText += IncludeMENU(MenuStatusMSG, ShowCancelButton)
+		tempText += '<div class="main">\n'
+		#Status table
+		if not isThreadRunning('doGlobalSearch'):
+			tempText += '<table border="0"><td>%s</td></table>' % formSUBMITtextWithOptions( _('Search in all active hosts'),
+										   'GlobalSearch',
+										   'style="color: #DBA901;background: none;border: none;text-decoration: underline"',
+										   settings.GlobalSearchQuery,
+										   [('ALL'  ,''       ,_('All materials')),
+										    ('VIDEO','checked',_('Only videos')),
+										    ('AUDIO',''       ,_('Only music'))]
+										   )
+		if len(settings.GlobalSearchResults.keys()) > 0:
+			tempText += '<table border="0" width="800px" cellspacing="5px"><tbody>\n'
+			for key in settings.GlobalSearchResults.keys():
+				_tempHeader = '<tr><td colspan="2" align="left" style="color: #00A9d1;background: none;border: none;font-size:24px;">%s</td></tr>' % key
+				_tempBody = ''
+	      			index=0
+				try:
+		      			for item in settings.GlobalSearchResults.get(key,None)[1]:
+						_tempBody += self.buildItemsListTable(item, index, allowedCategories = settings.GlobalSearchTypes,
+											destinationURL = '/iptvplayer/usehost?activeHostSearchHistory=%s' % key )
+						index += 1
+				except Exception, e:
+					print 'EXCEPTION in webParts:useHostPageContent - ', str(e)
+					tempText += tableHorizontalRedLine( colspan = 3 )
+					tempText += '<td colspan="2" align="left">%s %s</td></tr>' % ( _('ERROR:'), str(e) )
+					tempText += tableHorizontalRedLine( colspan = 3 )
+				if _tempBody != '':
+					tempText += _tempHeader + _tempBody
+			tempText += '</tbody></table>\n'
+			settings.GlobalSearchListShown = True
 		return tempText

@@ -3,6 +3,7 @@ import os
 import settings
 import threading
 import inspect
+import ctypes
 
 from webTools import *
 
@@ -38,9 +39,18 @@ class buildActiveHostsHTML(threading.Thread):
 		self.name = 'buildActiveHostsHTML'
 		self.args = args
 
+	def raise_exc(self, exctype):
+		"""raises the given exception type in the context of this thread"""
+		_async_raise(self.ident, exctype)
+    
+	def terminate(self):
+		"""raises SystemExit in the context of the given thread, which should 
+		cause the thread to exit silently (unless caught)"""
+		self.raise_exc(SystemExit)
+
 	def run(self):
-		for hostName in GetHostsList():
-			if hostName in ['localmedia','urllist']: # those are local host, nothing to do via web interface
+		for hostName in SortHostsList(GetHostsList()):
+			if hostName in ['localmedia','urllist']: # those are local hosts, nothing to do via web interface
 				continue
 			if not IsHostEnabled(hostName):
 				continue
@@ -74,7 +84,6 @@ class buildActiveHostsHTML(threading.Thread):
 			#build table row
 			hostHTML = '<td align="center">%s</td>' % hostNameWithURLandLOGO
 			settings.activeHostsHTML[hostName] = hostHTML
-			
 ########################################################
 class buildtempLogsHTML(threading.Thread):
 	def __init__(self, DebugFileName ):
@@ -82,6 +91,15 @@ class buildtempLogsHTML(threading.Thread):
 		threading.Thread.__init__(self)
 		self.name = 'buildtempLogsHTML'
 		self.DebugFileName = DebugFileName
+
+	def raise_exc(self, exctype):
+		"""raises the given exception type in the context of this thread"""
+		_async_raise(self.ident, exctype)
+    
+	def terminate(self):
+		"""raises SystemExit in the context of the given thread, which should 
+		cause the thread to exit silently (unless caught)"""
+		self.raise_exc(SystemExit)
 
 	def run(self):
 		with open(self.DebugFileName, 'r') as f:
@@ -97,6 +115,14 @@ class buildConfigsHTML(threading.Thread):
 		threading.Thread.__init__(self)
 		self.name = 'buildConfigsHTML'
 		self.args = args
+	def raise_exc(self, exctype):
+		"""raises the given exception type in the context of this thread"""
+		_async_raise(self.ident, exctype)
+    
+	def terminate(self):
+		"""raises SystemExit in the context of the given thread, which should 
+		cause the thread to exit silently (unless caught)"""
+		self.raise_exc(SystemExit)
 	########################################################
 	def buildSettingsTable(self, List1, List2, exclList, direction):  #direction = '1>2'|'2>1'
 		def getCFGType(option):
@@ -204,12 +230,13 @@ class buildConfigsHTML(threading.Thread):
 			settings.configsHTML[item[1]] = '<tr><td><tt>%s</tt></td><td>%s</td></tr>\n' % (item[1], formGET(item[2]))
 ########################################################
 class doUseHostAction(threading.Thread):
-	def __init__(self, key, arg):
+	def __init__(self, key, arg, searchType):
 		''' Constructor. '''
 		threading.Thread.__init__(self)
 		self.name = 'doUseHostAction'
 		self.key = key
 		self.arg = arg
+		self.searchType = searchType
 
 	def raise_exc(self, exctype):
 		"""raises the given exception type in the context of this thread"""
@@ -219,7 +246,7 @@ class doUseHostAction(threading.Thread):
 		"""raises SystemExit in the context of the given thread, which should 
 		cause the thread to exit silently (unless caught)"""
 		self.raise_exc(SystemExit)
-	########################################################
+
 	def run(self):
 		print "doUseHostAction received: '%s'='%s'" % (self.key, str(self.arg))
 		if self.key == 'activeHost' and isActiveHostInitiated() == False:
@@ -291,4 +318,76 @@ class doUseHostAction(threading.Thread):
 					settings.retObj = RetHost(RetHost.OK, value = tempUrls)
 				elif settings.retObj.status == RetHost.NOT_IMPLEMENTED:
 					settings.retObj = RetHost(RetHost.NOT_IMPLEMENTED, value = [(CUrlItem("No valid urls", "fakeUrl", 0))])
+		elif self.key == 'ForSearch' and None is not self.arg and self.arg != '':
+			settings.retObj = settings.activeHost['Obj'].getSearchResults(self.arg, self.searchType)
+		elif self.key == 'activeHostSearchHistory' and self.arg != '':
+			initActiveHost(self.arg)
+			settings.retObj = settings.activeHost['Obj'].getSearchResults(settings.GlobalSearchQuery, '')
+########################################################
+class doGlobalSearch(threading.Thread):
+	def __init__(self):
+		''' Constructor. '''
+		threading.Thread.__init__(self)
+		self.name = 'doGlobalSearch'
+		settings.searchingInHost = None
+		self.host = None
+		settings.GlobalSearchResults = {}
+		settings.StopThreads = False
+		print 'doGlobalSearch:init'
+
+	def raise_exc(self, exctype):
+		"""raises the given exception type in the context of this thread"""
+		_async_raise(self.ident, exctype)
+    
+	def terminate(self):
+		"""raises SystemExit in the context of the given thread, which should 
+		cause the thread to exit silently (unless caught)"""
+		self.raise_exc(SystemExit)
+
+	def stopIfRequested(self):
+		if settings.StopThreads == True:
+			self.terminate()
+
+	def run(self):
+		if settings.GlobalSearchQuery == '':
+			print "End settings.GlobalSearchQuery is empty"
+			return
+		for hostName in SortHostsList(GetHostsList()):
+			self.stopIfRequested()
+			if hostName in ['localmedia','urllist']: # those are local hosts, nothing to do via web interface
+				continue
+			elif hostName in settings.hostsWithNoSearchOption:
+				continue
+			elif not IsHostEnabled(hostName):
+				continue
+			try:
+				_temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + hostName, globals(), locals(), ['IPTVHost'], -1)
+			except Exception:
+				print "doGlobalSearch: Exception importing %s" % hostName
+				continue
+			try:
+				self.host = _temp.IPTVHost()
+			except Exception, e:
+				print "doGlobalSearch: Exception initializing iptvhost", str(e)
+				continue
+			#print "settings.GlobalSearchQuery=",settings.GlobalSearchQuery, 'hostName=', hostName
+			settings.searchingInHost = hostName
+			ret = self.host.getInitList()
+			try:
+				searchTypes = self.host.getSearchTypes()
+			except:
+				settings.hostsWithNoSearchOption.append(hostName)
+				continue
+			if len(searchTypes) == 0:
+				ret = self.host.getSearchResults(settings.GlobalSearchQuery, '')
+				self.stopIfRequested()
+				if len(ret.value) >0:
+					settings.GlobalSearchResults[hostName] = (None,ret.value)
+			else:
+				for SearchType in searchTypes:
+					ret = self.host.getSearchResults(settings.GlobalSearchQuery, SearchType[1])
+					self.stopIfRequested()
+					print SearchType[1] ,' searched ' , ret.value
+					
+		settings.searchingInHost = None
 		

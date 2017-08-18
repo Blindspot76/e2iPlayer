@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-WebInterfaceVersion = '0.7'
+WebInterfaceVersion = '0.8'
 MaxLogLinesToShow = 1000
 excludedCFGs = ['fakeUpdate','fakeHostsList','fakExtMoviePlayerList']
 activeHost = {}
@@ -12,4 +12,11 @@ configsHTML = {}
 tempLogsHTML = ''
 NewHostListShown = True
 
+StopThreads = False
 
+hostsWithNoSearchOption = []
+GlobalSearchListShown = True
+GlobalSearchTypes = ["VIDEO"]
+GlobalSearchQuery = ''
+GlobalSearchResults = {}
+searchingInHost = None
