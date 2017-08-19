@@ -798,6 +798,13 @@ class IPTVPlayerWidget(Screen):
         if self.visible:
             sel = None
             try:
+                if len(self.currList) > 0 and not self["list"].getVisible():
+                    printDBG("ok_pressed -> ignored /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\")
+                    return
+            except Exception:
+                printExc()
+            
+            try:
                 sel = self["list"].l.getCurrentSelection()[0]
             except Exception:
                 printExc
