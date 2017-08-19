@@ -98,17 +98,70 @@ class searchPage(resource.Resource):
 	isLeaf = False
    
 	def __init__(self):
-		pass
+		self.Counter = 0
    
 	def render(self, req):
+
 		req.setHeader('Content-type', 'text/html')
 		req.setHeader('charset', 'UTF-8')
 
+		if len(req.args.keys()) > 0:
+			key = req.args.keys()[0]
+			arg = req.args.get(key,None)[0]
+			if len(req.args.keys()) > 1:
+				if req.args.keys()[1] == 'type':
+					if req.args.get(req.args.keys()[1],'ALL')[0] == '':
+						settings.GlobalSearchTypes = ["VIDEO","AUDIO"]
+					elif req.args.get(req.args.keys()[1],'ALL')[0] == '':
+						settings.GlobalSearchTypes = ["AUDIO"]
+					else:
+						settings.GlobalSearchTypes = ["VIDEO"]
+				arg = req.args.get(key,None)[0]
+			#print 'searchPage received: ', key, '=' , arg
+		else:
+			key = None
+			arg = None
+			
 		""" rendering server response """
 		reloadScripts()
+		
+		if key is None or arg is None or arg == '':
+			if isThreadRunning('doGlobalSearch'):
+				stopRunningThread('doGlobalSearch')
+				self.Counter += 1
+				extraMeta = '<meta http-equiv="refresh" content="1">'
+				MenuStatusMSG = _('Waiting search thread to stop, please wait (%d)') % (self.Counter)
+			else:
+				MenuStatusMSG = ''
+				extraMeta = ''
+				settings.GlobalSearchListShown = True
+			ShowCancelButton = False
+		elif key == 'cmd' and arg == 'stopThread':
+			stopRunningThread('doGlobalSearch')
+			self.Counter = 0
+			return util.redirectTo("/iptvplayer/search", req)
+		elif not isThreadRunning('doGlobalSearch') and key == 'GlobalSearch' and settings.GlobalSearchListShown == True:
+			settings.GlobalSearchListShown = False
+			settings.GlobalSearchQuery = arg
+			webThreads.doGlobalSearch().start()
+			self.Counter = 0
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Initiating data, please wait')
+			ShowCancelButton = False
+		elif isThreadRunning('doGlobalSearch'):
+			self.Counter += 1
+			extraMeta = '<meta http-equiv="refresh" content="1">'
+			MenuStatusMSG = _('Searching in %s, please wait (%d)') % (settings.searchingInHost, self.Counter)
+			ShowCancelButton = True
+		else:
+			ShowCancelButton = False
+			MenuStatusMSG = ''
+			extraMeta = ''
+			settings.GlobalSearchListShown = False
+		  
 		html = '<html lang="%s">' % language.getLanguage()[:2]
-		html += webParts.IncludeHEADER()
-		html += webParts.Body().StartPageContent()
+		html += webParts.IncludeHEADER(extraMeta)
+		html += webParts.Body().SearchPageContent(MenuStatusMSG, ShowCancelButton)
 		return html 
 
 
@@ -138,7 +191,7 @@ class hostsPage(resource.Resource):
 			self.Counter += 1
 			extraMeta = '<meta http-equiv="refresh" content="1">'
 			MenuStatusMSG = _('Loading data, please wait (%d)') % self.Counter
-			ShowCancelButton = True
+			ShowCancelButton = False
 		else:
 			extraMeta = ''
 			MenuStatusMSG = ''
@@ -237,10 +290,13 @@ class settingsPage(resource.Resource):
 				elif key == 'cmd' and arg[:3] == 'ON:':
 					exec('config.plugins.iptvplayer.%s.setValue(True)\nconfig.plugins.iptvplayer.%s.save()' % (arg[3:], arg[3:]) )
 					settings.configsHTML = {}
+					settings.activeHostsHTML = {}
 					return util.redirectTo("/iptvplayer/settings" , req)
 				elif key == 'cmd' and arg[:4] == 'OFF:':
+					print('config.plugins.iptvplayer.%s.setValue(False)\nconfig.plugins.iptvplayer.%s.save()' % (arg[4:], arg[4:]) )
 					exec('config.plugins.iptvplayer.%s.setValue(False)\nconfig.plugins.iptvplayer.%s.save()' % (arg[4:], arg[4:]) )
 					settings.activeHostsHTML.pop(arg[4:], None)
+					settings.activeHostsHTML.pop(arg[8:], None)
 					settings.configsHTML = {}
 					return util.redirectTo("/iptvplayer/settings" , req)
 				elif key[:4] ==  "CFG:":
@@ -393,6 +449,7 @@ class useHostPage(resource.Resource):
 		""" rendering server response """
 		self.key = None
 		self.arg = None
+		self.searchType = None
 		html= ''
 		extraMeta = ''
 		MenuStatusMSG = ''
@@ -400,7 +457,11 @@ class useHostPage(resource.Resource):
 		if len(req.args.keys()) > 0:
 			self.key = req.args.keys()[0]
 			self.arg = req.args.get(self.key,None)[0]
-			print "useHostPage received: '%s'='%s'" % (self.key, str(self.arg))
+			if len(req.args.keys()) > 1:
+				self.searchType = req.args.keys()[1]
+				print "useHostPage received: '%s'='%s' searchType='%s'" % (self.key, str(self.arg), self.searchType)
+			else:
+				print "useHostPage received: '%s'='%s'" % (self.key, str(self.arg))
 		
 		if self.key is None and isActiveHostInitiated() == False:
 			return util.redirectTo("/iptvplayer/hosts", req)
@@ -409,7 +470,9 @@ class useHostPage(resource.Resource):
 			return util.redirectTo("/iptvplayer/hosts", req)
 		elif self.key == 'cmd' and self.arg == 'stopThread':
 			stopRunningThread('doUseHostAction')
-			self.Counter = 0
+			initActiveHost(None)
+			setNewHostListShown(False)
+			return util.redirectTo("/iptvplayer/hosts", req)
 		elif self.key == 'cmd' and self.arg == 'InitList':
 			settings.retObj = settings.activeHost['Obj'].getInitList()
 			settings.activeHost['PathLevel'] = 1
@@ -428,7 +491,7 @@ class useHostPage(resource.Resource):
 		elif isNewHostListShown() and not isThreadRunning('doUseHostAction'):
 			self.Counter = 0
 			setNewHostListShown(False)
-			webThreads.doUseHostAction(self.key, self.arg).start()
+			webThreads.doUseHostAction(self.key, self.arg, self.searchType).start()
 			extraMeta = '<meta http-equiv="refresh" content="1">'
 			MenuStatusMSG = _('Initiating data, please wait')
 		elif isThreadRunning('doUseHostAction'):
