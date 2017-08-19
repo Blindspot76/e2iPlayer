@@ -180,6 +180,8 @@ class OpenSubtitles(CBaseSubProviderClass):
             self.listDownloadItems(cItem, nextCategory, data)
         elif m3 in tmp:
             self.listSeasonsItems(cItem, 'list_episodes', data)
+        else:
+            self.getSubtitlesList(cItem, 'list_sub_in_packed_file')
             
     def listSearchItems(self, cItem, nextCategory, data=None):
         printDBG("OpenSubtitles.listSearchItems")
@@ -302,7 +304,7 @@ class OpenSubtitles(CBaseSubProviderClass):
             urlParams['return_data'] = False
             try:
                 sts, response = self.cm.getPage(url, urlParams)
-                if not sts: return False
+                if not sts: return ''
                 fileName = response.info().get('Content-Disposition', '')
                 fileName = self.cm.ph.getSearchGroups(fileName.lower(), '''filename=['"]([^'^"]+?)['"]''')[0]
                 response.close()
