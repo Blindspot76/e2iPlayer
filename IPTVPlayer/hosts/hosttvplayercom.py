@@ -66,7 +66,7 @@ class TVPlayer(CBaseHostClass):
         self.login = ''
         self.password = ''
         
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'ignore_http_code_ranges':[(404, 500)]}
     
         self.MAIN_CAT_TAB = [{'category':'list_channels_genres',         'title': _('Channels'),    'url':self.getFullUrl('/channels')      },
                              
@@ -200,10 +200,17 @@ class TVPlayer(CBaseHostClass):
             if 'token' in data: post_data['token'] = data['token']
                 
             sts, data = self.getPage(url, {}, post_data)
-            if not sts: return []
+            if not sts:
+                try: SetIPTVPlayerLastHostError(str(data))
+                except Exception: pass
+                return []
             printDBG("response: [%s]" % data)
             
             data = byteify(json.loads(data))['tvplayer']['response']
+            if 'error' in data: 
+                SetIPTVPlayerLastHostError(data['error'])
+                return []
+            
             if None != data.get('drmToken'):
                 SetIPTVPlayerLastHostError(_('DRM protected streams are not supported.'))
                 return []

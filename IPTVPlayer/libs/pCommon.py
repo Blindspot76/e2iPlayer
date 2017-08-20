@@ -758,8 +758,15 @@ class common:
                 data = response.read()
                 response.close()
             except urllib2.HTTPError, e:
-                if e.code in [404, 500]:
-                    printDBG('!!!!!!!! 404: getURLRequestData - page not found handled')
+                ignoreCodeRanges = params.get('ignore_http_code_ranges', [(404, 404), (500, 500)])
+                ignoreCode = False
+                for ignoreCodeRange in ignoreCodeRanges:
+                    if e.code >= ignoreCodeRange[0] and e.code <= ignoreCodeRange[1]:
+                        ignoreCode = True
+                        break
+                
+                if ignoreCode:
+                    printDBG('!!!!!!!! %s: getURLRequestData - handled' % e.code)
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
                         gzip_encoding = True
                     data = e.fp.read()
