@@ -39,11 +39,24 @@ from Screens.MessageBox import MessageBox
 ###################################################
 config.plugins.iptvplayer.tvplayercom_login    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.tvplayercom_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.tvplayercom_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.tvplayercom_drmbypass = ConfigYesNo(default = False)
+config.plugins.iptvplayer.tvplayercom_preferredbitrate = ConfigSelection(default = "99999999", choices = [("99999999", _("highest")),
+                                                                                               ("2564000",  "2564k"),
+                                                                                               ("1864000",  "1864k"),
+                                                                                               ("1064000", "1064k"),
+                                                                                               ("564000", "564k"),
+                                                                                               ("214000", "214k"),
+                                                                                               ("0",  _("lowest")) ])
+config.plugins.iptvplayer.tvplayercom_usepreferredbitrate = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Preferred bitrate")+":", config.plugins.iptvplayer.tvplayercom_preferredbitrate))
+    optionList.append(getConfigListEntry(_("Use preferred bitrate")+":", config.plugins.iptvplayer.tvplayercom_usepreferredbitrate))
     optionList.append(getConfigListEntry(_("email")+":", config.plugins.iptvplayer.tvplayercom_login))
     optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.tvplayercom_password))
+    optionList.append(getConfigListEntry(_("Try to bypass DRM (it may be illegal)")+":", config.plugins.iptvplayer.tvplayercom_drmbypass))
     return optionList
 ###################################################
 
@@ -165,6 +178,10 @@ class TVPlayer(CBaseHostClass):
         printDBG("TVPlayer.getLinksForVideo [%s]" % cItem)
         self.tryTologin()
         
+        def _SetIPTVPlayerLastHostError(msg):
+            if not cItem.get('next_try', False):
+                SetIPTVPlayerLastHostError(msg)
+        
         retTab = []
         
         sts, data = self.getPage(cItem['url'])
@@ -180,7 +197,7 @@ class TVPlayer(CBaseHostClass):
         
         if 'resource' not in playerData or 'token' not in playerData: 
             msg = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div class="centered-content">', '</h', False)[1])
-            SetIPTVPlayerLastHostError(msg)
+            _SetIPTVPlayerLastHostError(msg)
             return []
         
         url = self.getFullUrl('/watch/context?resource={0}&gen={1}'.format(playerData.get('resource'), playerData.get('token')))
@@ -201,24 +218,30 @@ class TVPlayer(CBaseHostClass):
                 
             sts, data = self.getPage(url, {}, post_data)
             if not sts:
-                try: SetIPTVPlayerLastHostError(str(data))
+                try: _SetIPTVPlayerLastHostError(str(data))
                 except Exception: pass
                 return []
             printDBG("response: [%s]" % data)
             
             data = byteify(json.loads(data))['tvplayer']['response']
             if 'error' in data: 
-                SetIPTVPlayerLastHostError(data['error'])
-                return []
-            
-            if None != data.get('drmToken'):
-                SetIPTVPlayerLastHostError(_('DRM protected streams are not supported.'))
-                return []
-            
-            streamUrl = data.get('stream', '')
-            if not self.cm.isValidUrl(streamUrl):
-                SetIPTVPlayerLastHostError(_('No playable sources found.'))
-                return []
+                _SetIPTVPlayerLastHostError(data['error'])
+                if not config.plugins.iptvplayer.tvplayercom_drmbypass.value or cItem.get('next_try', False):
+                    return []
+                self.getLinksForVideo({'next_try':True, 'url':self.defUrl})
+                streamUrl = 'https://live.tvplayer.com/stream.m3u8?id=%s' % post_data['id']
+            else:
+                if None != data.get('drmToken'):
+                    _SetIPTVPlayerLastHostError(_('DRM protected streams are not supported.'))
+                    if not config.plugins.iptvplayer.tvplayercom_drmbypass.value or cItem.get('next_try', False):
+                        return []
+                    self.getLinksForVideo({'next_try':True, 'url':self.defUrl})
+                    streamUrl = 'https://live.tvplayer.com/stream.m3u8?id=%s' % post_data['id']
+                else:
+                    streamUrl = data.get('stream', '')
+                    if not self.cm.isValidUrl(streamUrl):
+                        _SetIPTVPlayerLastHostError(_('No playable sources found.'))
+                        return []
             
             retTab = getDirectM3U8Playlist(streamUrl, checkExt=True, variantCheck=True, cookieParams=self.defaultParams, checkContent=True)
             if len(retTab):
@@ -233,11 +256,13 @@ class TVPlayer(CBaseHostClass):
                         printExc()
                         return 0
                 
-                retTab = CSelOneLink(retTab, __getLinkQuality, 99999999).getSortedLinks()
+                retTab = CSelOneLink(retTab, __getLinkQuality, int(int(config.plugins.iptvplayer.tvplayercom_preferredbitrate.value)*1.2)).getSortedLinks()
+                if len(retTab) and config.plugins.iptvplayer.tvplayercom_usepreferredbitrate.value:
+                    retTab = [retTab[0]] 
                 printDBG(retTab)
             elif self.cm.isValidUrl(checkUrl):
                 sts, data = self.getPage(checkUrl)
-                if not sts: SetIPTVPlayerLastHostError(_("Sorry. TVPlayer is currently only available in the United Kingdom"))
+                if not sts: _SetIPTVPlayerLastHostError(_("Sorry. TVPlayer is currently only available in the United Kingdom"))
         except Exception:
             printExc()
         
@@ -296,7 +321,7 @@ class TVPlayer(CBaseHostClass):
         
     def tryTologin(self):
         printDBG('tryTologin start')
-        
+        self.defUrl = self.getFullUrl('/watch/russiatoday')
         if None == self.loggedIn or self.login != config.plugins.iptvplayer.tvplayercom_login.value or\
             self.password != config.plugins.iptvplayer.tvplayercom_password.value:
         
