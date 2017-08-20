@@ -179,7 +179,7 @@ class TVPlayer(CBaseHostClass):
         printDBG(playerData)
         
         if 'resource' not in playerData or 'token' not in playerData: 
-            msg = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div class="centered-content">', '</h3>')[1])
+            msg = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div class="centered-content">', '</h', False)[1])
             SetIPTVPlayerLastHostError(msg)
             return []
         
