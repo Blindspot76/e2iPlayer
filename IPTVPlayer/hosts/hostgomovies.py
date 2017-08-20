@@ -55,7 +55,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://gomovies.to/'
+    return 'https://gostream.is/'
 
 class GoMovies(CBaseHostClass):
  
@@ -99,7 +99,7 @@ class GoMovies(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        domains = ['https://gomovies.is/', 'https://gomovies.to/', 'https://gomovies.pet/'] #, 'https://123movieshd.to/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/'
+        domains = ['https://gostream.is/', 'https://gomovies.is/', 'https://gomovies.to/', 'https://gomovies.pet/'] #, 'https://123movieshd.to/', 'http://123movies.moscow/', 'https://123movies.ru/', 'https://123movies.is/'
         domain = config.plugins.iptvplayer.gomovies_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -120,7 +120,16 @@ class GoMovies(CBaseHostClass):
                 break
                 
         if self.MAIN_URL == None:
-            self.MAIN_URL = 'https://gomovies.is/' # first domain is default one
+            self.MAIN_URL = 'https://gostream.is/' # first domain is default one
+            
+        try:
+            urlParams = dict(self.defaultParams)
+            urlParams['return_data'] = False
+            sts, response = self.getPage(self.MAIN_URL, urlParams)
+            url = response.geturl()
+            response.close()
+        except Exception:
+            printExc()
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
