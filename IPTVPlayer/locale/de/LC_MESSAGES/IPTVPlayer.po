@@ -3609,3 +3609,18 @@ msgstr "Inhalt ist DRM geschützt."
 
 msgid "Video with DRM protection."
 msgstr "Inhalt ist DRM geschützt."
+
+msgid "Missed the program?"
+msgstr "Sendung verpasst?"
+
+msgid "email"
+msgstr "Email"
+
+msgid "DRM protected streams are not supported."
+msgstr "DRM geschützte Streams werden nicht unterstützt."
+
+msgid "No playable sources found."
+msgstr "Keine abspielbaren Quellen gefunden."
+
+msgid "Sorry. TVPlayer is currently only available in the United Kingdom"
+msgstr "Entschuldigung. TVPlayer ist zur Zeit nur in Großbritannien verfügbar."
