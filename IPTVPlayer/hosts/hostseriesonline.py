@@ -171,7 +171,6 @@ class SeriesOnlineIO(CBaseHostClass):
                         cookie = {cookie[0]:urllib.unquote(cookie[1])}
                         urlParams['cookie_items'] = cookie
                         addParams['cookie_items'] = cookie
-                        self.defaultParams['cookie_items'] = cookie
                         if not item.get('unload', False):
                             tmpParams = deepcopy(urlParams)
                             tmpParams['header']['Referer'] = baseUrl
@@ -195,6 +194,9 @@ class SeriesOnlineIO(CBaseHostClass):
                 
                 return False, None
             
+            # remove not needed used cookie
+            self.defaultParams.pop('cookie_items', None)
+            self.cm.clearCookie(self.COOKIE_FILE, removeNames=['___utmvc'])
             printDBG(data)
             return sts, data
         
