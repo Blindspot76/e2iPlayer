@@ -47,13 +47,14 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir,\
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
                                                           CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize, \
-                                                          GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode
+                                                          GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, ClearTmpCookieDir
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit, GetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit, GetIPTVPlayerLastHostError, GetIPTVNotify
+
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetupwidget import IPTVSetupMainWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayer import IPTVStandardMoviePlayer, IPTVMiniMoviePlayer
 from Plugins.Extensions.IPTVPlayer.components.iptvextmovieplayer import IPTVExtMoviePlayer
@@ -303,6 +304,10 @@ class IPTVPlayerWidget(Screen):
         self.canRandomizeList = False
         
         self.prevVideoMode = None
+        
+        # clear temp cookie location to use path from configuration
+        ClearTmpCookieDir()
+    
     #end def __init__(self, session):
         
     def __del__(self):
@@ -419,11 +424,31 @@ class IPTVPlayerWidget(Screen):
             self.prevSelList = []
             self.back_pressed()
         except Exception: printExc()
+        
+    def processIPTVNotify(self, callbackArg1=None, callbackArg2=None):
+        try:
+            notifyObj = GetIPTVNotify()
+            if not notifyObj.isEmpty():
+                notification = notifyObj.pop()
+                typeMap = {'info'   : MessageBox.TYPE_INFO, 
+                           'error'  : MessageBox.TYPE_ERROR, 
+                           'warning': MessageBox.TYPE_WARNING,
+                          }
+                self.session.openWithCallback(self.processIPTVNotify, MessageBox, notification.message, type = typeMap.get(notification.type, MessageBox.TYPE_INFO), timeout = notification.timeout )    
+                return
+        except Exception:
+            printExc()
+        self.processProxyQueue()
 
     def processProxyQueue(self):
         if None != self.mainTimer:
-            asynccall.gMainFunctionsQueueTab[0].processQueue()
-            self.mainTimer.start(self.mainTimer_interval, True)
+            funName = asynccall.gMainFunctionsQueueTab[0].peekClientFunName()
+            notifyObj = GetIPTVNotify()
+            if funName != None and notifyObj != None and not notifyObj.isEmpty() and funName in ['showArticleContent', 'selectMainVideoLinks', 'selectResolvedVideoLinks', 'reloadList']:
+                self.processIPTVNotify()
+            else:
+                asynccall.gMainFunctionsQueueTab[0].processQueue()
+                self.mainTimer.start(self.mainTimer_interval, True)
         return
         
     def doProcessProxyQueueItem(self, item):

@@ -4,8 +4,9 @@
 ###################################################
 # LOCAL import
 ###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, SetTmpCookieDir
 ###################################################
 # FOREIGN import
 ###################################################
@@ -798,7 +799,16 @@ class common:
                 out_data = data
  
         if params.get('use_cookie', False) and params.get('save_cookie', False):
-            cj.save(params['cookiefile'], ignore_discard = True)
+            try:
+                cj.save(params['cookiefile'], ignore_discard = True)
+            except Exception as e:
+                printExc()
+                msg1 = _("Critical Error – cookie can't be saved!")
+                msg2 = _("Last error:\n%s" % str(e))
+                msg3 = _("Please make sure that the folder for cache data (set in the configuration) is writable.")
+                GetIPTVNotify().push('%s\n\n%s\n\n%s' % (msg1, msg2, msg3), 'error', 20)
+                SetTmpCookieDir()
+                raise e
 
         return out_data 
 
