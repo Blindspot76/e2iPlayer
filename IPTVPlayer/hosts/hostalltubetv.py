@@ -308,8 +308,12 @@ class AlltubeTV(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AlltubeTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        sts, data = self.getPage(self.SRCH_URL, {}, post_data={'search':searchPattern})
+        params = dict(self.defaultParams)
+        params['header'] = {'User-Agent':self.USER_AGENT, 'Content-Type':'application/x-www-form-urlencoded'}
+        sts, data = self.getPage(self.SRCH_URL, params, post_data={'search':searchPattern})
         if not sts: return
+        
+        printDBG(data)
         
         data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', 'Kontakt')[1]
         data = data.split('<h2 class="headline">')
@@ -470,3 +474,9 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, AlltubeTV(), True)
+
+    def getSearchTypes(self):
+        searchTypesOptions = []
+        searchTypesOptions.append(("Filmy", "movies"))
+        searchTypesOptions.append(("Seriale", "series"))
+        return searchTypesOptions
