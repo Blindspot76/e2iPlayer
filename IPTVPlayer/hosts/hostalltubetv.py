@@ -47,17 +47,17 @@ class AlltubeTV(CBaseHostClass):
     USER_AGENT = 'curl/7'
     MAIN_URL    = 'http://alltube.tv/'
     SRCH_URL    = MAIN_URL + 'szukaj'
-    DEFAULT_ICON = 'http://alltube.tv/static/main/newlogoall.png'
+    DEFAULT_ICON_URL = 'http://alltube.tv/static/main/newlogoall.png'
     #{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
-    MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   'icon':DEFAULT_ICON},
-                    {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
-                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'dla-dzieci/',     'icon':DEFAULT_ICON},
-                    {'category':'search',             'title': _('Search'), 'search_item':True, 'icon':DEFAULT_ICON},
-                    {'category':'search_history',     'title': _('Search history'), 'icon':DEFAULT_ICON} ]
+    MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   },
+                    {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', },
+                    {'category':'list_movies',        'title': _('Junior'),        'url':MAIN_URL+'dla-dzieci/',     },
+                    {'category':'search',             'title': _('Search'), 'search_item':True, },
+                    {'category':'search_history',     'title': _('Search history'), } ]
                       
-    SERIES_CAT_TAB = [{'category':'list_series_list', 'title': _('List'),                       'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
-                      {'category':'list_series_abc',  'title': _('ABC'),                        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON},
-                      {'category':'list_series',      'title': _('All'), 'letter':'all',        'url':MAIN_URL+'seriale-online/', 'icon':DEFAULT_ICON} ]
+    SERIES_CAT_TAB = [{'category':'list_series_list', 'title': _('List'),                       'url':MAIN_URL+'seriale-online/', },
+                      {'category':'list_series_abc',  'title': _('ABC'),                        'url':MAIN_URL+'seriale-online/', },
+                      {'category':'list_series',      'title': _('All'), 'letter':'all',        'url':MAIN_URL+'seriale-online/', } ]
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'AlltubeTV', 'cookie':'alltubetv.cookie'})
@@ -74,8 +74,8 @@ class AlltubeTV(CBaseHostClass):
         params['cloudflare_params'] = {'domain':'alltube.tv', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
-    def getIconUrl(self, url):
-        url = self.getFullUrl(url.strip())
+    def getFullIconUrl(self, url):
+        url = CBaseHostClass.getFullIconUrl(self, url.strip())
         if url == '': return ''
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID'])
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
