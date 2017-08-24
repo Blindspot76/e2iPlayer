@@ -5408,6 +5408,9 @@ class pageParser:
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return False
         
+        msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, 'The file was deleted', '<')[1]).strip()
+        if msg != '': SetIPTVPlayerLastHostError(msg)
+        
         # get JS player script code from confirmation page
         sts, tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
         if sts:
