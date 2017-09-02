@@ -293,15 +293,15 @@ class AnimeTo(CBaseHostClass):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
                         
-        sts, data = self.getPage(self.getFullUrl('token'))
-        if not sts: return []
-        cookieItem = self.uncensored(data)
+        #sts, data = self.getPage(self.getFullUrl('token'))
+        #if not sts: return []
+        #cookieItem = self.uncensored(data)
         
         id = videoUrl.meta.get('id', '')
         params = dict(self.defaultParams)
         params['header'] = dict(self.AJAX_HEADER)
         params['header']['Referer'] = str(videoUrl)
-        params['cookie_items'] = cookieItem
+        #params['cookie_items'] = cookieItem
         
         #sts, data = self.getPage('https://9anime.to/ajax/episode/info?id=%s&update=0' % id, params)
         #if not sts: return []
