@@ -380,7 +380,6 @@ class SerienStreamTo(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.cm.clearCookie(self.COOKIE_FILE, ['__cfduid', 'cf_clearance'])
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif 'list_abc' == category:
             self.listFilter(self.currItem, 'list_items', 'abc')
