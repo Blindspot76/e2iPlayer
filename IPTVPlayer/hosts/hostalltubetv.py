@@ -41,7 +41,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'alltube.tv'
+    return 'http://alltube.tv/'
 
 class AlltubeTV(CBaseHostClass):
     USER_AGENT = 'curl/7'
