@@ -507,7 +507,7 @@ class ConfigMenu(ConfigBaseWidget):
         if isinstance(currItem, ConfigDirectory):
             def SetDirPathCallBack(curIndex, newPath):
                 if None != newPath: self["config"].list[curIndex][1].value = newPath
-            self.session.openWithCallback(boundFunction(SetDirPathCallBack, curIndex), IPTVDirectorySelectorWidget, currDir=currItem.value, title="Wybierz katalog")
+            self.session.openWithCallback(boundFunction(SetDirPathCallBack, curIndex), IPTVDirectorySelectorWidget, currDir=currItem.value, title=_("Select directory"))
         elif config.plugins.iptvplayer.fakePin == currItem:
             self.changePin(start = True)
         elif config.plugins.iptvplayer.fakeUpdate == currItem:
