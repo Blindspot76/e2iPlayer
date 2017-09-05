@@ -248,7 +248,7 @@ class Sport365LiveApi:
         
         return []
         
-    def getAesPassword(self, cItem, forceRefresh=False):
+    def _getAesPassword(self, cItem, forceRefresh=False):
         if Sport365LiveApi.CACHE_AES_PASSWORD != '' and not forceRefresh:
             return Sport365LiveApi.CACHE_AES_PASSWORD
         
@@ -291,7 +291,7 @@ class Sport365LiveApi:
             Sport365LiveApi.CACHE_AES_PASSWORD = aes
         return aes
         
-    def _getAesPassword(self, cItem, forceRefresh=False):
+    def getAesPassword(self, cItem, forceRefresh=False):
         if Sport365LiveApi.CACHE_AES_PASSWORD != '' and not forceRefresh:
             return Sport365LiveApi.CACHE_AES_PASSWORD
         
