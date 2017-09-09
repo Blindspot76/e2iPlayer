@@ -112,11 +112,14 @@ class Sport365LiveApi:
         try:
             sts, response = self.cm.getPage(baseUrl, params)
             baseUrl = response.geturl()
-            data = response.read()
             response.close()
         except Exception:
             printExc()
             return
+        
+        params['return_data'] = True
+        sts, data = self.cm.getPage(self.MAIN_URL, params)
+        if not sts: return 
         
         sessionCookie = self.cm.getCookieHeader(COOKIE_FILE)
         params['return_data'] = True
@@ -127,6 +130,7 @@ class Sport365LiveApi:
         D = datetime.now()
         timeMarker = '{0}{1}{2}{3}'.format(D.year-1900, D.month-1, D.day, D.hour)
         jscUrl = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?jsc\.mgid[^'^"]*?)['"]''')[0]
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % jscUrl)
         if jscUrl.endswith('t='): jscUrl += timeMarker
         adUrl = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?\.adshell\.[^'^"]*?)['"]''')[0] 
         
