@@ -1555,15 +1555,32 @@ class pageParser:
         if not sts: return False
         
         printDBG(data)
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
-        data = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
-        data = byteify(json.loads(data+']'))
-        printDBG(data)
         retTab = []
-        for item in data:
+        try:
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
+            tmp = byteify(json.loads(data+']'))
+            printDBG(tmp)
+        except Exception:
+            printExc()
+        
+        for item in tmp:
             try: retTab.append({'name':'rapidvideo.com ' + item.get('label', item.get('res', '')), 'url':item['file']})
             except Exception: pass
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>', False)
+        for item in tmp:
+            url = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0] 
+            if 'video' not in type and 'x-mpeg' not in type: continue
+            if url.startswith('/'):
+                url = domain + url[1:]
+            if self.cm.isValidUrl(url):
+                if 'video' in type:
+                    retTab.append({'name':'[%s]' % type, 'url':url})
+                elif 'x-mpeg' in type:
+                    retTab.extend(getDirectM3U8Playlist(url, checkContent=True))
         return retTab
         
     def parserVIDEOSLASHER(self, url):
@@ -8414,15 +8431,29 @@ class pageParser:
         
         printDBG(data)
         
+        # select valid section
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')
+        for item in data:
+            if 'srces.push' in item:
+                data = item
+                break
+                
+        jscode = 'var document = {};\nvar window = this;\n' + self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<script[^>]*?>'), re.compile('var\s*srces\s*=\s*\[\];'), False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'srces.push(', ');')
+        jscode += '\nvar srces=[];\n' + '\n'.join(data) + '\nprint(JSON.stringify(srces));'
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = ret['data'].strip()
+            data = byteify(json.loads(data))
         
         dashTab = []
         hlsTab = []
         mp4Tab = []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'srces.push(', ')', False)
         printDBG(data)
         for tmp in data:
-            tmp = tmp.split('}')
+            tmp = str(tmp).split('}')
             for item in tmp:
+                item += ','
                 url = self.cm.ph.getSearchGroups(item, r'''['"]?src['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
                 if url.startswith('//'): url = 'http:' + url
                 type = self.cm.ph.getSearchGroups(item, r'''['"]?type['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
@@ -8434,7 +8465,7 @@ class pageParser:
                 elif 'hls' in type:
                     hlsTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True))
                 elif '/mp4' in type:
-                    name = self.cm.ph.getSearchGroups(item, '''height\s*\:\s*([^\,]+?)[\,]''')[0]
+                    name = self.cm.ph.getSearchGroups(item, '''['"]?height['"]?\s*\:\s*([^\,]+?)[\,]''')[0]
                     mp4Tab.append({'name':'[%s] %sp' % (type, name), 'url':url})
 
         videoTab.extend(mp4Tab)
