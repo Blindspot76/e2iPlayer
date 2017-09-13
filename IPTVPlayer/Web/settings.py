@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-WebInterfaceVersion = '0.8'
+WebInterfaceVersion = '0.9'
 MaxLogLinesToShow = 1000
 excludedCFGs = ['fakeUpdate','fakeHostsList','fakExtMoviePlayerList']
 activeHost = {}

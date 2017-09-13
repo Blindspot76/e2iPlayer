@@ -4,6 +4,7 @@ import settings
 import threading
 import inspect
 import ctypes
+import time
 
 from webTools import *
 
@@ -356,10 +357,13 @@ class doGlobalSearch(threading.Thread):
 			self.stopIfRequested()
 			if hostName in ['localmedia','urllist']: # those are local hosts, nothing to do via web interface
 				continue
-			elif hostName in settings.hostsWithNoSearchOption:
+                        elif hostName in ['localmedia','urllist']: # those are local hosts, nothing to do via web interface
+                                continue
+			elif hostName in ['seriesonline']: # those hosts have issues wth global search, need more investigation
 				continue
 			elif not IsHostEnabled(hostName):
 				continue
+			#print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ---------------- %s ---------------- !!!!!!!!!!!!!!!!!!!!!!!!!" % hostName
 			try:
 				_temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + hostName, globals(), locals(), ['IPTVHost'], -1)
 			except Exception:
@@ -368,14 +372,17 @@ class doGlobalSearch(threading.Thread):
 			try:
 				self.host = _temp.IPTVHost()
 			except Exception, e:
-				print "doGlobalSearch: Exception initializing iptvhost", str(e)
+				print "doGlobalSearch: Exception initializing iptvhost for %s: %s" % (hostName, str(e))
 				continue
 			#print "settings.GlobalSearchQuery=",settings.GlobalSearchQuery, 'hostName=', hostName
 			settings.searchingInHost = hostName
-			ret = self.host.getInitList()
+			time.sleep(0.2) #
 			try:
+				self.host.getSupportedFavoritesTypes()
+				ret = self.host.getInitList()
 				searchTypes = self.host.getSearchTypes()
-			except:
+			except Exception, e:
+				print "doGlobalSearch: Exception in getInitList for %s: %s" % (hostName, str(e))
 				settings.hostsWithNoSearchOption.append(hostName)
 				continue
 			if len(searchTypes) == 0:
