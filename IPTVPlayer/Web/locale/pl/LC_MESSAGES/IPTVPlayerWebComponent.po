@@ -168,3 +168,42 @@ msgstr "Brak poprawnych linków"
 
 msgid "Links for"
 msgstr "Linki dla "
+
+msgid "Web component has been reset and all threads are stopped. :)"
+msgstr "Serwis Web został zresetowany i wszystkie wątki są zatrzymane :)"
+
+msgid "Web component has been reset, the following threads are still working:"
+msgstr "Serwis Web został zresetowany, ale następujące wątki ciągle działają:"
+
+msgid "Reset State"
+msgstr "Reset"
+
+msgid "Searching in %s, please wait (%d)"
+msgstr "Szukam w %s, proszę czekać (%d)"
+
+msgid "Search in all active hosts"
+msgstr "Szukaj we wszystkich aktywnych serwisach"
+
+msgid "All materials"
+msgstr "Wszystkie materiały"
+
+msgid "Only videos"
+msgstr "Tylko filmy"
+
+msgid "Only music"
+msgstr "Tylko muzyka"
+
+msgid "Waiting search thread to stop, please wait (%d)"
+msgstr "Czekam na zatrzymanie wątku, proszę czekać (%d)"
+
+msgid ""
+msgstr ""
+
+msgid ""
+msgstr ""
+
+msgid ""
+msgstr ""
+
+msgid ""
+msgstr ""

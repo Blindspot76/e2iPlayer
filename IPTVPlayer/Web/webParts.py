@@ -54,12 +54,13 @@ def IncludeMENU( MenuStatusMSG = '', ShowCancelButton = False):
     <a href="/iptvplayer/usehost" >%s</a>
     <a href="/iptvplayer/downloader" >%s</a>
     <a href="/iptvplayer/logs" >%s</a>
+    <a href="/iptvplayer/?resetState=1" >%s</a>
   </div>
   <div class="bottombar">
     <a href="https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/commits/master" target="_blank" >IPTVPlayer %s: <b><font color="#A9F5F2">%s</font></b></a>
     <a>, %s: <b>%s</b></a/>
   </div>
-""" % ( _('Active host'), _('Download manager'), _('Logs'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
+""" % ( _('Active host'), _('Download manager'), _('Logs'), _('Reset State'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
 	else:
 		tempText = """
   <div class="topbar">
@@ -70,12 +71,13 @@ def IncludeMENU( MenuStatusMSG = '', ShowCancelButton = False):
     <a href="/iptvplayer/downloader" >%s</a>
     <a href="/iptvplayer/settings" >%s</a>
     <a href="/iptvplayer/logs" >%s</a>
+    <a href="/iptvplayer/?resetState=1" >%s</a>
   </div>
   <div class="bottombar">
     <a href="https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/commits/master" target="_blank" >IPTVPlayer %s: <b><font color="#A9F5F2">%s</font></b></a>
     <a>, %s: <b>%s</b></a/>
   </div>
-""" % ( _('Information'), _('Selected hosts'), _('Search'), _('Download manager'), _('Settings'), _('Logs'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
+""" % ( _('Information'), _('Selected hosts'), _('Search'), _('Download manager'), _('Settings'), _('Logs'), _('Reset State'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
 	if MenuStatusMSG != '' and ShowCancelButton == True:
 		tempText += '<div class="main">%s<br></div>\n' % formSUBMITvalue([('cmd','stopThread')], _('Cancel'), input_text = MenuStatusMSG + '... ')
 	elif MenuStatusMSG != '':
@@ -87,12 +89,13 @@ class Body():
 	def __init__(self):
 		pass
 		
-	def StartPageContent(self):
+	def StartPageContent(self, resetStatusMSG):
 		tempText = '<body bgcolor=\"#666666\" text=\"#FFFFFF\">\n'
 		tempText += '<form method="POST" action="--WEBBOT-SELF--">\n'
 		tempText += IncludeMENU()
 		tempText += '<div class="main">\n'
-		tempText += '<p align="center"><b>%s</b></p>' % _('<font color="#FE642E">REMEMBER:</font></b> IPTVPlayer <b>IS ONLY</b> specialized Web browser. It does <b>NOT</b> host any materials!!!</font>')
+		tempText += '<p align="left"><b>%s</b></p>' % _('<font color="#FE642E">REMEMBER:</font></b> IPTVPlayer <b>IS ONLY</b> specialized Web browser. It does <b>NOT</b> host any materials!!!</font>')
+		tempText += '<p align="left">%s</p>' % resetStatusMSG
 		tempText += '</div></body>\n'
 		return tempText
 	########################################################
@@ -488,7 +491,9 @@ class Body():
 	      			index=0
 				try:
 		      			for item in settings.GlobalSearchResults.get(key,None)[1]:
-						_tempBody += self.buildItemsListTable(item, index, allowedCategories = settings.GlobalSearchTypes,
+						Totest = removeSpecialChars(item.name + item.description).lower()
+						if Totest.find(settings.GlobalSearchQuery.lower()) != -1:
+							_tempBody += self.buildItemsListTable(item, index, allowedCategories = settings.GlobalSearchTypes,
 											destinationURL = '/iptvplayer/usehost?activeHostSearchHistory=%s' % key )
 						index += 1
 				except Exception, e:
