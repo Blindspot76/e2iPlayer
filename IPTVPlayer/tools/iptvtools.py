@@ -1095,13 +1095,17 @@ class CMoviePlayerPerHost():
     def set(self, activePlayer):
         self.activePlayer = activePlayer
         
-def byteify(input):
+def byteify(input, noneReplacement=None, baseTypesAsString=False):
     if isinstance(input, dict):
-        return dict([(byteify(key), byteify(value)) for key, value in input.iteritems()])
+        return dict([(byteify(key, noneReplacement, baseTypesAsString), byteify(value, noneReplacement, baseTypesAsString)) for key, value in input.iteritems()])
     elif isinstance(input, list):
-        return [byteify(element) for element in input]
+        return [byteify(element, noneReplacement, baseTypesAsString) for element in input]
     elif isinstance(input, unicode):
         return input.encode('utf-8')
+    elif input == None and noneReplacement != None:
+        return noneReplacement
+    elif baseTypesAsString:
+        return str(input)
     else:
         return input
 
