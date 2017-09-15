@@ -442,6 +442,7 @@ class urlparser:
                        'aflamyz.com':          self.pp.parserAFLAMYZCOM     ,
                        'polsatsport.pl':       self.pp.parserPOLSATSPORTPL  ,
                        'sharevideo.pl':        self.pp.parserSHAREVIDEOPL   ,
+                       'sharing-box.cloud':    self.pp.parserSHAREVIDEOPL   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
