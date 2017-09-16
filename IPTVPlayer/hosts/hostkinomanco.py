@@ -4,7 +4,8 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm, GetTmpDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, \
+                                                          DaysInMonth, NextMonth, PrevMonth, NextDay, PrevDay
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -93,21 +94,6 @@ class KinomanCO(CBaseHostClass):
         self.loggedIn = None
         self.logginInfo = '' 
         self.isVip = False
-        
-    def DaysInMonth(self, dt):
-        return (datetime.date(dt.year+(dt.month / 12), (dt.month % 12) + 1, 1) - dt).days + dt.day - 1
-        
-    def NextMonth(self, dt):
-        return (dt.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
-        
-    def PrevMonth(self, dt):
-        return (dt.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
-        
-    def NextDay(self, dt):
-        return (dt + datetime.timedelta(days=1))
-        
-    def PrevDay(self, dt):
-        return (dt - datetime.timedelta(days=1))
     
     def cleanHtmlStr(self, txt):
         txt = CBaseHostClass.cleanHtmlStr(txt)
@@ -154,7 +140,7 @@ class KinomanCO(CBaseHostClass):
         return sts, data
     
     def listMainMenu(self, cItem):
-        if self.translations == {}:
+        if self.translations == {} and 'pl' == GetDefaultLang():
             while True:
                 url = self.getFullUrl('/api/translate?lang=1', 'api')
                 sts, data = self.getPage(url)
@@ -291,7 +277,7 @@ class KinomanCO(CBaseHostClass):
         dt = cItem.get('f_date', None)
         ITEMS_PER_PAGE = 3
         if dt == None:
-            dt = self.PrevDay(datetime.date.today())
+            dt = PrevDay(datetime.date.today())
             spin = 1
             nextPage = False
         else:
@@ -309,7 +295,7 @@ class KinomanCO(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':False, 'category':nextCategory, 'title':dtIt.strftime("%d-%m-%Y"), 'f_premiere':dtIt.strftime("%Y-%m-%d")})
             self.addDir(params)
-            dtIt = self.NextDay(dtIt) if spin == 1 else self.PrevDay(dtIt)
+            dtIt = NextDay(dtIt) if spin == 1 else PrevDay(dtIt)
                 
         if spin == -1: self.currList.reverse()
         
@@ -320,7 +306,7 @@ class KinomanCO(CBaseHostClass):
             params.update({'good_for_fav':False, 'title':title, 'f_date': dtIt.strftime('%Y-%m-%d')})
             self.addDir(params)
         else:
-            dt = self.PrevDay(dt)
+            dt = PrevDay(dt)
             params = dict(cItem)
             params.update({'good_for_fav':False, 'title':_('Older'), 'f_direction':-1, 'f_date': dt.strftime('%Y-%m-%d')})
             self.addDir(params)
@@ -333,7 +319,7 @@ class KinomanCO(CBaseHostClass):
         dt = cItem.get('f_date', None)
         ITEMS_PER_PAGE = 3
         if dt == None:
-            dt = self.PrevMonth(datetime.date.today())
+            dt = PrevMonth(datetime.date.today())
             spin = 1
             nextPage = False
         else:
@@ -349,14 +335,14 @@ class KinomanCO(CBaseHostClass):
         for m in range(ITEMS_PER_PAGE):
             premiere = []
             base = dtIt.strftime("%Y-%m-")
-            for d in range(1, self.DaysInMonth(dtIt)+1, 1):
+            for d in range(1, DaysInMonth(dtIt)+1, 1):
                 premiere.append(base + str(d).zfill(2))
             
             params = dict(cItem)
             params.update({'good_for_fav':False, 'category':nextCategory, 'title':dtIt.strftime("%m/%y"), 'f_premiere':','.join(premiere)})
             self.addDir(params)
             
-            dtIt = self.NextMonth(dtIt) if spin == 1 else self.PrevMonth(dtIt)
+            dtIt = NextMonth(dtIt) if spin == 1 else PrevMonth(dtIt)
                 
         if spin == -1: self.currList.reverse()
         
@@ -367,7 +353,7 @@ class KinomanCO(CBaseHostClass):
             params.update({'good_for_fav':False, 'title':title, 'f_date': dtIt.strftime('%Y-%m-%d')})
             self.addDir(params)
         else:
-            dt = self.PrevMonth(dt)
+            dt = PrevMonth(dt)
             params = dict(cItem)
             params.update({'good_for_fav':False, 'title':_('Older'), 'f_direction':-1, 'f_date': dt.strftime('%Y-%m-%d')})
             self.addDir(params)

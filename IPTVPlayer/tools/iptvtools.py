@@ -31,6 +31,24 @@ import stat
 import codecs
 try:    import json
 except Exception: import simplejson as json
+import datetime
+
+###################################################
+def DaysInMonth(dt):
+    return (datetime.date(dt.year+(dt.month / 12), (dt.month % 12) + 1, 1) - dt).days + dt.day - 1
+    
+def NextMonth(dt):
+    return (dt.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+    
+def PrevMonth(dt):
+    return (dt.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
+    
+def NextDay(dt):
+    return (dt + datetime.timedelta(days=1))
+    
+def PrevDay(dt):
+    return (dt - datetime.timedelta(days=1))
+
 ###################################################
 def GetNice(pid=None):
     nice = 0
