@@ -5175,31 +5175,60 @@ class pageParser:
             tmpParams['cookie_items'] = cookies
             
             data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
-            #printDBG(data)
-            action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'", ignoreCase=True)[0]
+            printDBG(data)
+            printDBG("================================================================================")
+            
+            action = self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
             post_data = dict(re.compile(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', re.IGNORECASE).findall(data))
+            try:
+                tmp = dict(re.findall(r'<button[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+                post_data.update(tmp)
+            except Exception:
+                printExc()
             
             try: time.sleep(int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0])+1)
             except Exception:
                 printExc()
             
             if {} == post_data:  post_data = None
-            action = urljoin(baseUrl, action)
+            if not self.cm.isValidUrl(action) and url != '':
+                action = urljoin(baseUrl, action)
             
             tmpParams['header']['Referer'] = baseUrl
             sts, data = self.cm.getPage(action, tmpParams, post_data)
             if not sts: return False
             
             printDBG(data)
+            msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<font color="red">', '</center>', False, False)[1])
+            SetIPTVPlayerLastHostError(msg)
+            
             # get JS player script code from confirmation page
-            sts, tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
-            if sts:
-                try:
-                    tmp = urllib.unquote(unpackJSPlayerParams(tmp, SAWLIVETV_decryptPlayerParams, 0))
-                    baseUrl = self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src="(https?://[^/]+?/embed\-[^\.]+?\.html)"''', ignoreCase=True)[0]
-                except Exception: printExc()
-            if '/embed-' not in baseUrl:
-                baseUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src="(https?://[^/]+?/embed\-[^\.]+?\.html)"''', ignoreCase=True)[0]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, ">eval(", '</script>', False)
+            for item in tmp:
+                printDBG("================================================================================")
+                printDBG(item)
+                printDBG("================================================================================")
+                item = item.strip()
+                if item.endswith(')))'): idx = 1
+                else: idx = 0
+                printDBG("IDX[%s]" % idx)
+                for decFun in [SAWLIVETV_decryptPlayerParams, KINGFILESNET_decryptPlayerParams]:
+                    decItem = urllib.unquote(unpackJSPlayerParams(item, decFun, idx))
+                    printDBG('[%s]' % decItem)
+                    data += decItem + ' '
+                    if decItem != '': break
+            
+            urls = []
+            tmp = re.compile('''\{[^}]*?src[^}]+?video/mp4[^}]+?\}''').findall(data )
+            for item in tmp:
+                label = self.cm.ph.getSearchGroups(item, '''['"]?label['"]?\s*:\s*['"]([^"^']+?)['"]''')[0]
+                res = self.cm.ph.getSearchGroups(item, '''['"]?res['"]?\s*:\s*[^0-9]?([0-9]+?)[^0-9]''')[0]
+                name = '%s - %s' % (res, label)
+                url = self.cm.ph.getSearchGroups(item, '''['"]?src['"]?\s*:\s*['"]([^"^']+?)['"]''')[0]
+                params = {'name':name, 'url':url}
+                if params not in urls: urls.append(params)
+            
+            return urls
         
         if '.tv/embed-' not in baseUrl:
             baseUrl = baseUrl.replace('.tv/', '.tv/embed-')
@@ -5241,7 +5270,7 @@ class pageParser:
             return urlunsplit((scheme, netloc, path, query, fragment))
         
         vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
-        for item in ['playvid', 'playthis', 'playit']:
+        for item in ['playvid', 'playthis', 'playit', 'playme']:
             if item+'-' in data:
                 play = item
                 break
@@ -5260,8 +5289,7 @@ class pageParser:
                 tmpUrl = 'http://www.flashx.tv' + tmpUrl
             if tmpUrl != '':
                 printDBG('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                printDBG(tmpUrl)
-                sts, tmp = self.cm.getPage(tmpUrl, params)
+                if self.cm.isValidUrl(tmpUrl): sts, tmp = self.cm.getPage(tmpUrl, params)
         #sts, tmp = self.cm.getPage(tmpUrl, params)
         
         sts, tmp = self.cm.getPage('https://www.flashx.tv/js/code.js', params)
