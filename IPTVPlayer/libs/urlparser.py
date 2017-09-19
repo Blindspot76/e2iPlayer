@@ -5155,6 +5155,7 @@ class pageParser:
         
     def parserFLASHXTV(self, baseUrl):
         printDBG("parserFLASHXTV baseUrl[%s]" % baseUrl)
+        
         HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0',
                         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
@@ -5165,14 +5166,54 @@ class pageParser:
         COOKIE_FILE = GetCookieDir('flashxtv.cookie')
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':True}
         
+        def __parseErrorMSG(data):
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<center>', '</center>', False, False)
+            for item in data:
+                if 'color="red"' in item or ('ile' in item and '<script' not in item):
+                    SetIPTVPlayerLastHostError(clean_html(item))
+                    break
+        
+        def __getJS(data, params):
+            tmpUrls = re.compile("""<script[^>]+?src=['"]([^'^"]+?)['"]""", re.IGNORECASE).findall(data)
+            printDBG(tmpUrls)
+            for tmpUrl in tmpUrls:
+                if tmpUrl.startswith('.'):
+                    tmpUrl = tmpUrl[1:]
+                if tmpUrl.startswith('//'):
+                    tmpUrl = 'http:' + tmpUrl
+                if tmpUrl.startswith('/'):
+                    tmpUrl = 'http://www.flashx.tv' + tmpUrl
+                if self.cm.isValidUrl(tmpUrl) and ('flashx' in tmpUrl and 'jquery' not in tmpUrl): 
+                    printDBG('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+                    sts, tmp = self.cm.getPage(tmpUrl, params)
+            
+            sts, tmp = self.cm.getPage('https://www.flashx.tv/js/code.js', params)
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, 'function', ';');
+            for tmpItem in tmp:
+                tmpItem = tmpItem.replace(' ', '')
+                if '!=null' in tmpItem:
+                    tmpItem   = self.cm.ph.getDataBeetwenMarkers(tmpItem, 'get(', ')')[1]
+                    tmpUrl    = self.cm.ph.getSearchGroups(tmpItem, """['"](https?://[^'^"]+?)['"]""")[0]
+                    if not self.cm.isValidUrl(tmpUrl): continue
+                    getParams = self.cm.ph.getDataBeetwenMarkers(tmpItem, '{', '}', False)[1]
+                    getParams = getParams.replace(':', '=').replace(',', '&').replace('"', '').replace("'", '')
+                    tmpUrl += '?' + getParams
+                    sts, tmp = self.cm.getPage(tmpUrl, params)
+                    break
+        
         if baseUrl.split('?')[0].endswith('.jsp'):
             rm(COOKIE_FILE)
             sts, data = self.cm.getPage(baseUrl, params)
             if not sts: return False
             
+            __parseErrorMSG(data)
+            
             cookies = dict(re.compile(r'''cookie\(\s*['"]([^'^"]+?)['"]\s*\,\s*['"]([^'^"]+?)['"]''', re.IGNORECASE).findall(data))
             tmpParams = dict(params)
             tmpParams['cookie_items'] = cookies
+            tmpParams['header']['Referer'] = baseUrl
+            
+            __getJS(data, tmpParams)
             
             data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
             printDBG(data)
@@ -5194,13 +5235,11 @@ class pageParser:
             if not self.cm.isValidUrl(action) and url != '':
                 action = urljoin(baseUrl, action)
             
-            tmpParams['header']['Referer'] = baseUrl
             sts, data = self.cm.getPage(action, tmpParams, post_data)
             if not sts: return False
             
             printDBG(data)
-            msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<font color="red">', '</center>', False, False)[1])
-            SetIPTVPlayerLastHostError(msg)
+            __parseErrorMSG(data)
             
             # get JS player script code from confirmation page
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, ">eval(", '</script>', False)
@@ -5256,18 +5295,12 @@ class pageParser:
         params['return_data'] = True
         sts, data = self.cm.getPage(baseUrl, params)
         params['header']['Referer'] = redirectUrl
-        params['return_data'] = True
         params['load_cookie'] = True
         
-        def _first_of_each(*sequences):
-            return (next((x for x in sequence if x), '') for sequence in sequences)
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG(data)
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         
-        def _url_path_join(*parts):
-            """Normalize url parts and join them with a slash."""
-            schemes, netlocs, paths, queries, fragments = zip(*(urlsplit(part) for part in parts))
-            scheme, netloc, query, fragment = _first_of_each(schemes, netlocs, queries, fragments)
-            path = '/'.join(x.strip('/') for x in paths if x)
-            return urlunsplit((scheme, netloc, path, query, fragment))
         
         vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
         for item in ['playvid', 'playthis', 'playit', 'playme']:
@@ -5277,34 +5310,7 @@ class pageParser:
         
         printDBG("vid[%s] play[%s]" % (vid, play))
         
-        #tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?counter[^'^"]+?)['"]""")[0]
-        #if tmpUrl == '': tmpUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?jquery2[^'^"]+?)['"]""")[0]
-        tmpUrls = re.compile("""['"]([^'^"]+?\.js[^'^"]+?)['"]""").findall(data)
-        for tmpUrl in tmpUrls:
-            if tmpUrl.startswith('.'):
-                tmpUrl = tmpUrl[1:]
-            if tmpUrl.startswith('//'):
-                tmpUrl = 'http:' + tmpUrl
-            if tmpUrl.startswith('/'):
-                tmpUrl = 'http://www.flashx.tv' + tmpUrl
-            if tmpUrl != '':
-                printDBG('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                if self.cm.isValidUrl(tmpUrl): sts, tmp = self.cm.getPage(tmpUrl, params)
-        #sts, tmp = self.cm.getPage(tmpUrl, params)
-        
-        sts, tmp = self.cm.getPage('https://www.flashx.tv/js/code.js', params)
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, 'function', ';');
-        for tmpItem in tmp:
-            tmpItem = tmpItem.replace(' ', '')
-            if '!=null' in tmpItem:
-                tmpItem   = self.cm.ph.getDataBeetwenMarkers(tmpItem, 'get(', ')')[1]
-                tmpUrl    = self.cm.ph.getSearchGroups(tmpItem, """['"](https?://[^'^"]+?)['"]""")[0]
-                if not self.cm.isValidUrl(tmpUrl): continue
-                getParams = self.cm.ph.getDataBeetwenMarkers(tmpItem, '{', '}', False)[1]
-                getParams = getParams.replace(':', '=').replace(',', '&').replace('"', '').replace("'", '')
-                tmpUrl += '?' + getParams
-                sts, tmp = self.cm.getPage(tmpUrl, params)
-                break
+        __getJS(data, params)
         
         url = self.cm.ph.getSearchGroups(redirectUrl, """(https?://[^/]+?/)""")[0] + play + '-{0}.html?{1}'.format(vid, play)
         sts, data = self.cm.getPage(url, params)
@@ -5318,8 +5324,7 @@ class pageParser:
         
         try:
             printDBG(data)
-            if 'Sorry, file was deleted!' in data:
-                SetIPTVPlayerLastHostError(_('Sorry, file was deleted!'))
+            __parseErrorMSG(data)
             
             tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, ">eval(", '</script>', False, False)
             for tmp in tmpTab:
@@ -5344,6 +5349,7 @@ class pageParser:
         linksTab.extend(re.compile("""["']*src["']*[ ]*?:[ ]*?["']([^"^']+?)['"]""").findall(data))
         linksTab = set(linksTab)
         for item in linksTab:
+            if item.endswith('/trailer.mp4'): continue
             if self.cm.isValidUrl(item):
                 if item.split('?')[0].endswith('.smil'):
                     # get stream link
