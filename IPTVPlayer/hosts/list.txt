@@ -48,7 +48,9 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
+hostinfoversion
 hostipla
+hostiptvplayerinfo
 hostkabarety
 hostkinomanco
 hostkinopokaz

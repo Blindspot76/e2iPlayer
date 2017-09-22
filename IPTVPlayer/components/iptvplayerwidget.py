@@ -881,7 +881,7 @@ class IPTVPlayerWidget(Screen):
                 elif item.type == CDisplayListItem.TYPE_ARTICLE:
                     printDBG( "ok_pressed selected TYPE_ARTICLE" )
                     self.info_pressed()
-                else:
+                elif item.type == CDisplayListItem.TYPE_SEARCH:
                     printDBG( "ok_pressed selected TYPE_SEARCH" )
                     self.stopAutoPlaySequencer()
                     self.currSelIndex = currSelIndex
