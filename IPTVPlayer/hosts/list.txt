@@ -37,6 +37,7 @@ hostfilmydokumentalneeu
 hostfilmyto
 hostfreediscpl
 hostgamatocom
+hostgamatotvme
 hostgomovies
 hostgreekdocumentaries3
 hosthdfilmetv
@@ -49,8 +50,10 @@ hosticefilmsinfo
 hostiitvpl
 hostipla
 hostkabarety
+hostkinomanco
 hostkinopokaz
 hostkinotan
+hostkinox
 hostkisscartoonme
 hostkreskoweczki
 hostkreskowkazone
@@ -105,11 +108,13 @@ hosttvjworg
 hosttvn24
 hosttvnowde
 hosttvnvod
+hosttvplayercom
 hosttvpvod
 hosttwitchtv
 hosturllist
 hostustreamtv
 hostvevo
+hostvideo4k
 hostvideopenny
 hostvodpl
 hostvumooch
