@@ -53,7 +53,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingW
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit, GetIPTVPlayerLastHostError, GetIPTVNotify
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit, GetIPTVPlayerLastHostError, GetIPTVNotify, GetIPTVSleep
 
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetupwidget import IPTVSetupMainWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayer import IPTVStandardMoviePlayer, IPTVMiniMoviePlayer
@@ -141,7 +141,7 @@ class IPTVPlayerWidget(Screen):
                 selSkin = 'rafalcoo1'
             
         path = GetSkinsDir(selSkin) + "/playlist.xml" 
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % path)
+        printDBG("Playlist skin path [%s]" % path)
         if fileExists(path):
             try:    
                 with open(path, "r") as f:
@@ -307,8 +307,14 @@ class IPTVPlayerWidget(Screen):
         
         # clear temp cookie location to use path from configuration
         ClearTmpCookieDir()
+        
+        self.statusTextValue = ""
     
     #end def __init__(self, session):
+    
+    def setStatusTex(self, msg):
+        self.statusTextValue = msg
+        self["statustext"].setText(msg)
         
     def __del__(self):
         printDBG("IPTVPlayerWidget.__del__ --------------------------")
@@ -384,6 +390,15 @@ class IPTVPlayerWidget(Screen):
         try:
             if self.spinnerEnabled and None != self.workThread:
                 if self.workThread.isAlive():
+                    timeout = GetIPTVSleep().getTimeout()
+                    if timeout > 0:
+                        if timeout > 1: msg = _("wait %s seconds") % timeout
+                        else: msg = _("wait %s second") % timeout
+                        msg = '%s (%s)' % (self.statusTextValue, msg)
+                        self["statustext"].setText(msg)
+                    else:
+                        self["statustext"].setText(self.statusTextValue)
+                    
                     if "spinner" in self:
                         x, y = self["spinner"].getPosition()
                         x   += self["spinner"].getWidth()
@@ -757,7 +772,7 @@ class IPTVPlayerWidget(Screen):
             if self.isInWorkThread():
                 if self.workThread.kill():
                     self.workThread = None
-                    self["statustext"].setText(_("Operation aborted!"))
+                    self.setStatusTex(_("Operation aborted!"))
                 return
         except Exception: return    
         if self.visible:
@@ -824,7 +839,7 @@ class IPTVPlayerWidget(Screen):
             sel = None
             try:
                 if len(self.currList) > 0 and not self["list"].getVisible():
-                    printDBG("ok_pressed -> ignored /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\")
+                    printDBG("ok_pressed -> ignored /\\")
                     return
             except Exception:
                 printExc()
@@ -903,7 +918,7 @@ class IPTVPlayerWidget(Screen):
     
     def showArticleContent(self, ret):
         printDBG("showArticleContent")
-        self["statustext"].setText("")            
+        self.setStatusTex("")            
         self["list"].show()
 
         artItem = None
@@ -921,7 +936,7 @@ class IPTVPlayerWidget(Screen):
             
     def selectMainVideoLinks(self, ret):
         printDBG( "selectMainVideoLinks" )
-        self["statustext"].setText("")
+        self.setStatusTex("")
         self["list"].show()
         
         # ToDo: check ret.status if not OK do something :P
@@ -937,7 +952,7 @@ class IPTVPlayerWidget(Screen):
     
     def selectResolvedVideoLinks(self, ret):
         printDBG( "selectResolvedVideoLinks" )
-        self["statustext"].setText("")
+        self.setStatusTex("")
         self["list"].show()
         linkList = []
         if ret.status == RetHost.OK and isinstance(ret.value, list):
@@ -1206,7 +1221,7 @@ class IPTVPlayerWidget(Screen):
 
     def selectLinkForCurrVideo(self, customUrlItems=None):
         if not self.visible:
-            self["statustext"].setText("")
+            self.setStatusTex("")
             self.showWindow()
         
         item = self.getSelItem()
@@ -1351,7 +1366,7 @@ class IPTVPlayerWidget(Screen):
             if len(ret.value) > 0:
                 url = ret.value[0]
         
-        self["statustext"].setText("")            
+        self.setStatusTex("")            
         self["list"].show()
         
         if url != '' and CDisplayListItem.TYPE_PICTURE == self.currItem.type:
@@ -1502,34 +1517,34 @@ class IPTVPlayerWidget(Screen):
             IDS_REFRESHING  = _("Refreshing") + dots
             try:
                 if type == 'Refresh':
-                    self["statustext"].setText(IDS_REFRESHING)
+                    self.setStatusTex(IDS_REFRESHING)
                     self.workThread = asynccall.AsyncMethod(self.host.getCurrentList, boundFunction(self.callbackGetList, {'refresh':1, 'selIndex':currSelIndex}), True)(1)
                 elif type == 'ForMore':
-                    self["statustext"].setText(IDS_DOWNLOADING)
+                    self.setStatusTex(IDS_DOWNLOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getMoreForItem, boundFunction(self.callbackGetList, {'refresh':2, 'selIndex':currSelIndex}), True)(currSelIndex)
                 elif type == 'Initial':
-                    self["statustext"].setText(IDS_DOWNLOADING)
+                    self.setStatusTex(IDS_DOWNLOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getInitList, boundFunction(self.callbackGetList, {}), True)()
                 elif type == 'Previous':
-                    self["statustext"].setText(IDS_DOWNLOADING)
+                    self.setStatusTex(IDS_DOWNLOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getPrevList, boundFunction(self.callbackGetList, {}), True)()
                 elif type == 'ForItem':
-                    self["statustext"].setText(IDS_DOWNLOADING)
+                    self.setStatusTex(IDS_DOWNLOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getListForItem, boundFunction(self.callbackGetList, {}), True)(currSelIndex, 0, selItem)
                 elif type == 'ForVideoLinks':
-                    self["statustext"].setText(IDS_LOADING)
+                    self.setStatusTex(IDS_LOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getLinksForVideo, self.selectHostVideoLinksCallback, True)(currSelIndex, selItem)
                 elif type == 'ResolveURL':
-                    self["statustext"].setText(IDS_LOADING)
+                    self.setStatusTex(IDS_LOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getResolvedURL, self.getResolvedURLCallback, True)(privateData)
                 elif type == 'ForSearch':
-                    self["statustext"].setText(IDS_LOADING)
+                    self.setStatusTex(IDS_LOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getSearchResults, boundFunction(self.callbackGetList, {}), True)(self.searchPattern, self.searchType)
                 elif type == 'ForArticleContent':
-                    self["statustext"].setText(IDS_DOWNLOADING)
+                    self.setStatusTex(IDS_DOWNLOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getArticleContent, self.getArticleContentCallback, True)(currSelIndex)
                 elif type == 'ForFavItem':
-                    self["statustext"].setText(IDS_LOADING)
+                    self.setStatusTex(IDS_LOADING)
                     self.workThread = asynccall.AsyncMethod(self.host.getFavouriteItem, self.getFavouriteItemCallback, True)(currSelIndex)
                 elif type == 'PerformCustomAction':
                     self.workThread = asynccall.AsyncMethod(self.host.performCustomAction, self.performCustomActionCallback, True)(privateData)
@@ -1659,7 +1674,7 @@ class IPTVPlayerWidget(Screen):
             if lastErrorMsg != '':
                 disMessage += "\n" + _('Last error: "%s"' % lastErrorMsg)
             
-            self["statustext"].setText(disMessage)
+            self.setStatusTex(disMessage)
             self["list"].hide()
         else:
             #restor previus selection
@@ -1669,7 +1684,7 @@ class IPTVPlayerWidget(Screen):
             #selection will not be change so manualy call
             self.changeBottomPanel()
             
-            self["statustext"].setText("")            
+            self.setStatusTex("")            
             self["list"].show()
         if 2 == refresh:
             self.autoPlaySequencerNext(False)
@@ -1739,7 +1754,7 @@ class IPTVPlayerWidget(Screen):
         
     def handleFavouriteItemCallback(self, ret):
         printDBG("IPTVPlayerWidget.handleFavouriteItemCallback")
-        self["statustext"].setText("")
+        self.setStatusTex("")
         self["list"].show()
         linkList = []
         if ret.status == RetHost.OK and \
@@ -1788,7 +1803,7 @@ class IPTVPlayerWidget(Screen):
             
     def handlePerformCustomActionCallback(self, ret):
         printDBG("IPTVPlayerWidget.handlePerformCustomActionCallback")
-        self["statustext"].setText("")
+        self.setStatusTex("")
         self["list"].show()
         linkList = []
         if ret.status == RetHost.OK and \
@@ -1804,7 +1819,7 @@ class IPTVPlayerWidget(Screen):
            
     def handleMarkItemAsViewedCallback(self, ret):
         printDBG("IPTVPlayerWidget.handleMarkItemAsViewedCallback")
-        self["statustext"].setText("")
+        self.setStatusTex("")
         self["list"].show()
         linkList = []
         if ret.status == RetHost.OK and \

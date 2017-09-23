@@ -5,7 +5,7 @@
 # LOCAL import
 ###################################################
 from pCommon import common, CParsingHelper
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, GetDefaultLang, GetDukPath, CreateTmpFile
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
@@ -1166,10 +1166,10 @@ class pageParser:
                         if tries == 0:
                             try:
                                 sleep_time = self.cm.ph.getSearchGroups(data2, '>([0-9]+?)</span> seconds<')[0]
-                                if '' != sleep_time: time.sleep(int(sleep_time))
+                                if '' != sleep_time: GetIPTVSleep().Sleep(int(sleep_time))
                             except Exception:
                                 if sleep_time != None:
-                                    time.sleep(sleep_time)
+                                    GetIPTVSleep().Sleep(sleep_time)
                                 printExc()
                         HTTP_HEADER['Referer'] = url
                         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
@@ -1873,7 +1873,7 @@ class pageParser:
             try:
                 sleep_time = self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]
                 sleep_time = int(sleep_time)
-                if sleep_time < 12: time.sleep(sleep_time)
+                if sleep_time < 12: GetIPTVSleep().Sleep(sleep_time)
             except Exception:
                 printExc()
             
@@ -1903,7 +1903,7 @@ class pageParser:
         FNAME = re.search('name="fname" value="(.+?)">', link)
         HASH = re.search('name="hash" value="(.+?)">', link)
         if ID and FNAME and HASH > 0:
-            time.sleep(105)
+            GetIPTVSleep().Sleep(105)
             postdata = {'fname' : FNAME.group(1), 'hash' : HASH.group(1), 'id' : ID.group(1), 'imhuman' : 'Proceed to video', 'op' : 'download1', 'referer' : url, 'usr_login' : '' }
             query_data = { 'url': url, 'use_host': False, 'use_cookie': True, 'save_cookie': False, 'load_cookie': True, 'cookiefile': self.COOKIEFILE, 'use_post': True, 'return_data': True }
             link = self.cm.getURLRequestData(query_data, postdata)
@@ -2019,7 +2019,7 @@ class pageParser:
         else:
             try: t = int(self.getSearchGroups(data, '''var\s*count\s*=\s*([0-9]+?)\s*;''')[0])
             except Exception: t = 12
-            time.sleep(t)
+            GetIPTVSleep().Sleep(t)
         
         sts, data = self.cm.getPage(url, {}, fields)
         if not sts: return False
@@ -2035,7 +2035,7 @@ class pageParser:
         ID = re.search('name="id" value="(.+?)">', link)
         FNAME = re.search('name="fname" value="(.+?)">', link)
         if ID and FNAME > 0:
-            time.sleep(205)
+            GetIPTVSleep().Sleep(205)
             postdata = {'fname' : FNAME.group(1), 'id' : ID.group(1), 'method_free' : 'Continue to Video', 'op' : 'download1', 'referer' : url, 'usr_login' : '' }
             query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': True, 'return_data': True }
             link = self.cm.getURLRequestData(query_data, postdata)
@@ -2235,7 +2235,7 @@ class pageParser:
         ID = re.search('name="id" value="(.+?)">', link)
         FNAME = re.search('name="fname" value="(.+?)">', link)
         if ID and FNAME > 0:
-            time.sleep(105)
+            GetIPTVSleep().Sleep(105)
             postdata = {'fname' : FNAME.group(1), 'method_free' : '1', 'id' : ID.group(1), 'x' : '82', 'y' : '13', 'op' : 'download1', 'referer' : url, 'usr_login' : '' }
             query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': True, 'return_data': True }
             link = self.cm.getURLRequestData(query_data, postdata)
@@ -2330,7 +2330,7 @@ class pageParser:
             
             if fakeLinkVideo == linkVideo:
                 SetIPTVPlayerLastHostError(_("Videomega has blocked your IP for some time.\nPlease retry this link after some time."))
-                if i == 0: time.sleep(3)
+                if i == 0: GetIPTVSleep().Sleep(3)
                 continue
             
             #printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
@@ -2381,7 +2381,7 @@ class pageParser:
         FNAME = re.search('name="fname" value="(.+?)">', link)
         HASH = re.search('name="hash" value="(.+?)">', link)
         if ID and FNAME and HASH > 0:
-            time.sleep(55)
+            GetIPTVSleep().Sleep(55)
             postdata = {'fname' : FNAME.group(1), 'id' : ID.group(1), 'hash' : HASH.group(1), 'imhuman' : 'Proceed to video', 'op' : 'download1', 'referer' : url, 'usr_login' : '' }
             query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': True, 'return_data': True }
             link = self.cm.getURLRequestData(query_data, postdata)
@@ -2843,7 +2843,7 @@ class pageParser:
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         try:
             sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
-            time.sleep(sleep_time)
+            GetIPTVSleep().Sleep(sleep_time)
         except Exception:
             printExc()
             
@@ -3415,7 +3415,7 @@ class pageParser:
                     HTTP_HEADER['Cookie'] = cookies_data[:-1]
                 try:
                     sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9]+?)</span>')[0])
-                    time.sleep(sleep_time)
+                    GetIPTVSleep().Sleep(sleep_time)
                 except Exception:
                     printExc()
                     
@@ -3852,7 +3852,7 @@ class pageParser:
             post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
             params['header']['Referer'] = baseUrl
             
-            time.sleep(5)
+            GetIPTVSleep().Sleep(5)
             
             sts, data = self.cm.getPage(baseUrl, params, post_data)
             if not sts: return False
@@ -3901,7 +3901,7 @@ class pageParser:
             
             try:
                 sleep_time = int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]) 
-                time.sleep(sleep_time)
+                GetIPTVSleep().Sleep(sleep_time)
             except Exception:
                 printExc()
             if {} == post_data:
@@ -4184,7 +4184,7 @@ class pageParser:
                     if not sts: continue
                     if 'm3u8' in data:
                         break
-                    time.sleep(1)
+                    GetIPTVSleep().Sleep(1)
                 data = byteify(json.loads(data))
                 playlist_url = data[0]['args'][0]['stream'][0]['url']
                 try:
@@ -4249,7 +4249,7 @@ class pageParser:
                 tr += 1
                 videoUrl = self.cm.ph.getSearchGroups(data, '"(http://[^/]+?/player?[^"]+?)"')[0]
                 if "" != videoUrl: break
-                time.sleep(1)
+                GetIPTVSleep().Sleep(1)
         sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
         if not sts: return []
         urlsTab = []
@@ -4278,7 +4278,7 @@ class pageParser:
                 tr += 1
                 videoUrl = self.cm.ph.getSearchGroups(data, '"(http://privatestream.tv/player?[^"]+?)"')[0]
                 if "" != videoUrl: break
-                time.sleep(1)
+                GetIPTVSleep().Sleep(1)
         sts, data = self.cm.getPage(videoUrl, {'header': HTTP_HEADER})
         printDBG(data)
         if sts:
@@ -4414,7 +4414,7 @@ class pageParser:
         
         try:
             sleep_time = self.cm.ph.getSearchGroups(data, '>([0-9]+?)</span> seconds<')[0]
-            if '' != sleep_time: time.sleep(int(sleep_time))
+            if '' != sleep_time: GetIPTVSleep().Sleep(int(sleep_time))
         except Exception:
             printExc()
             
@@ -5227,7 +5227,7 @@ class pageParser:
             except Exception:
                 printExc()
             
-            try: time.sleep(int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0])+1)
+            try: GetIPTVSleep().Sleep(int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0])+1)
             except Exception:
                 printExc()
             
@@ -5624,7 +5624,7 @@ class pageParser:
 
         try:
             sleep_time = self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]
-            if '' != sleep_time: time.sleep(int(sleep_time))
+            if '' != sleep_time: GetIPTVSleep().Sleep(int(sleep_time))
         except Exception:
             printExc()
         try:
@@ -5671,7 +5671,7 @@ class pageParser:
             try:
                 sleep_time =  self.cm.ph.getDataBeetwenMarkers(data, '<div class="btn-box"', '</div>')[1]
                 sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>([0-9]+?)<')[0]
-                time.sleep(int(sleep_time))
+                GetIPTVSleep().Sleep(int(sleep_time))
             except Exception:
                 printExc()
                 
@@ -6275,7 +6275,7 @@ class pageParser:
         printDBG("parserFILENUKE seconds[%s] videoUrl[%s]" % (seconds, videoUrl))
         seconds = int(seconds)
         
-        time.sleep(seconds+1) 
+        GetIPTVSleep().Sleep(seconds+1) 
         
         params_l['header']['Referer'] = videoUrl
         sts, data = self.cm.getPage(videoUrl, params_l)
@@ -6705,7 +6705,7 @@ class pageParser:
         
         try:
             sleep_time = int(self.cm.ph.getSearchGroups(data, '>([0-9])</span> seconds<')[0]) 
-            time.sleep(sleep_time)
+            GetIPTVSleep().Sleep(sleep_time)
         except Exception:
             printExc()
         if {} == post_data:
@@ -8213,7 +8213,7 @@ class pageParser:
         post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
         try:
             sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
-            time.sleep(sleep_time)
+            GetIPTVSleep().Sleep(sleep_time)
         except Exception:
             printExc()
         
@@ -8620,7 +8620,7 @@ class pageParser:
             post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
             try:
                 sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
-                time.sleep(sleep_time)
+                GetIPTVSleep().Sleep(sleep_time)
             except Exception:
                 printExc()
             
@@ -8721,7 +8721,7 @@ class pageParser:
             try:
                 sleep_time = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<span[^>]+?id="countdown'), re.compile('</span>'))[1]
                 sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>\s*([0-9]+?)\s*<')[0]
-                if '' != sleep_time: time.sleep(int(sleep_time))
+                if '' != sleep_time: GetIPTVSleep().Sleep(int(sleep_time))
             except Exception: pass
                             
             sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER}, post_data )
@@ -8804,7 +8804,7 @@ class pageParser:
         urlParams['cookie_items']  = cookieItems
         urlParams['raw_post_data'] = True
         
-        time.sleep(1)
+        GetIPTVSleep().Sleep(1)
         sts, data = self.cm.getPage(botUrl, urlParams, raw_post_data + str(session_id)) # 
         if not sts: return False
         printDBG(data)
@@ -8863,7 +8863,7 @@ class pageParser:
         if sleep_time == '': sleep_time = 5
         else: sleep_time = int(sleep_time)
         
-        time.sleep(sleep_time)
+        GetIPTVSleep().Sleep(sleep_time)
         videoTab = []
         HTTP_HEADER['Referer'] = baseUrl
         sts, data = self.cm.getPage(baseUrl, params, post_data)

@@ -4,7 +4,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, SetTmpCookieDir
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
@@ -635,9 +635,9 @@ class common:
                         params2['header'].update({'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'})
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
                         if current == 1:
-                            time.sleep(1 + (decoded['timeout'] / 1000.0)-(time.time() - start_time))
+                            GetIPTVSleep().Sleep(1 + (decoded['timeout'] / 1000.0)-(time.time() - start_time))
                         else:
-                            time.sleep((decoded['timeout'] / 1000.0))
+                            GetIPTVSleep().Sleep((decoded['timeout'] / 1000.0))
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
                         printDBG("Timeout: [%s]" % decoded['timeout'])
                         sts, data = self.getPage(verUrl, params2, post_data)

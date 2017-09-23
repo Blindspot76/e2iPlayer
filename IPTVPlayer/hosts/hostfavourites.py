@@ -29,7 +29,7 @@ from binascii import hexlify
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Screens.MessageBox import MessageBox
 ###################################################
-config.plugins.iptvplayer.favourites_use_watched_flag = ConfigYesNo(default = False)
+config.plugins.iptvplayer.favourites_use_watched_flag = ConfigYesNo(default = True)
 
 ###################################################
 # Config options for HOST
