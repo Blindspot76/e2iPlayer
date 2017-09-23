@@ -234,6 +234,7 @@ class IPTVPlayerWidget(Screen):
         self.workThread = None
         self.host       = None
         self.hostName     = ''
+        self.hostTitle    = ''
         self.hostFavTypes = []
         
         self.nextSelIndex = 0
@@ -1089,17 +1090,6 @@ class IPTVPlayerWidget(Screen):
         return
     
     def selectHostCallback(self, ret):
-        if 0:
-            try:
-                if os_path.isfile('/etc/init.d/graterlia_init'):
-                    message = "Ostrzężenie (faza 1/3)\n"
-                    message += "Używając IPTVPlayer na tej dystrybucji systemu E2 łamiesz licencje.\n\n"
-                    message += "WARNING (phase 1/3)\n"
-                    message += "You are breaking license using IPTVPlayer on your E2 distribution.\n\n"
-                    #self.session.openWithCallback(self.close, MessageBox, text=message, type=MessageBox.TYPE_ERROR)
-                    self.session.open(MessageBox, text=message, type=MessageBox.TYPE_ERROR)
-            except Exception:
-                printExc()
         checkUpdate = True
         try: 
             if 0 < len(ret) and ret[1] == "update": checkUpdate = False
@@ -1125,6 +1115,7 @@ class IPTVPlayerWidget(Screen):
                 self.runIPTVDM(self.selectHost)
                 return
             else: # host selected
+                self.hostTitle = ret[0]
                 self.hostName = ret[1] 
                 self.loadHost()
                 
@@ -1699,7 +1690,8 @@ class IPTVPlayerWidget(Screen):
             if 1 < num: cat += (' (x%d)' % num)
             return cat
 
-        str = self.hostName
+        #str = self.hostName
+        str = self.hostTitle
         prevCat = ''
         prevNum = 0
         for cat in self.categoryList:
