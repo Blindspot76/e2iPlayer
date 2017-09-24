@@ -2492,26 +2492,10 @@ class pageParser:
         if '//rutube.ru/video/embed' in url or '//rutube.ru/play/embed/' in url:
             sts, data = self.cm.getPage(url)
             if not sts: return False
-            data = re.search('href="([^"]+?)"', data)
-            if not data: return False
-            tmp = data.group(1)
-            if '/private/' in tmp:
-                videoID = self.cm.ph.getSearchGroups(url+'&', '''/([0-9]+?)[/&\?]''')[0]
-                videoPrivate = self.cm.ph.getSearchGroups(url+'&', '''[&\?]p=([^&^/]+?)[&/]''')[0]
+            url = self.cm.ph.getSearchGroups(data, '''<link[^>]+?href=['"]([^'^"]+?)['"]''')[0]
 
-        if videoID != '':
-            # get videoID/hash
-            match = re.search('video\.rutube\.ru/(\w+?)/', url)
-            if match:
-                videoID = match.group(1)
-            else:
-                match = re.search('/video/(\w+?)/', url)
-                if match:
-                    videoID = match.group(1)
-                else:
-                    match = re.search('hash=([^/]+?)/', url)
-                    if match:
-                        videoID = match.group(1)
+        videoID = self.cm.ph.getSearchGroups(url+'/', '''[^0-9^a-z]([0-9a-z]{32})[^0-9^a-z]''')[0]
+        if '/private/' in url: videoPrivate = self.cm.ph.getSearchGroups(url+'&', '''[&\?]p=([^&^/]+?)[&/]''')[0]
         
         if '' != videoID:
             printDBG('parserRUTUBE: videoID[%s]' % videoID)
@@ -8455,17 +8439,27 @@ class pageParser:
         
     def parserVSPORTSPT(self, baseUrl):
         printDBG("parserVSPORTSPT baseUrl[%s]\n" % baseUrl)
+        urlsTab = []
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return []
+        
+        tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''['"]?sources['"]?\s*:\s*\['''), re.compile('\]'), False)[1]
+        tmp = tmp.split('}')
+        for item in tmp:
+            videoUrl = self.cm.ph.getSearchGroups(item, '''['"]?src['"]?\s*:.*?['"]([^'^"]*?//[^'^"]+?)['"]''')[0]
+            type = self.cm.ph.getSearchGroups(item, '''['"]?type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+            if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+            if self.cm.isValidUrl(videoUrl):
+                urlsTab.append({'name':type, 'url':videoUrl})
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
         printDBG(data)
         videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((:?https?:)?//[^"^']+\.mp4)['"]''')[0]
         if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
         if self.cm.isValidUrl(videoUrl):
-            return videoUrl
+            urlsTab.append({'name':'direct', 'url':videoUrl})
         
-        return False
+        return urlsTab
         
     def parserPUBLICVIDEOHOST(self, baseUrl):
         printDBG("parserPUBLICVIDEOHOST baseUrl[%s]\n" % baseUrl)
