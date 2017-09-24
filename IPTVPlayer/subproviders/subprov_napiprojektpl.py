@@ -270,7 +270,7 @@ class NapiProjektProvider(CBaseSubProviderClass):
         
         url = self.getFullUrl('api/api-napiprojekt3.php')
         sts, data = self.cm.getPage(url, self.defaultParams, post_data)
-        if not sts: return
+        if not sts: return retData
        
         fps = self.cm.ph.getDataBeetwenMarkers(data, '<fps>', '</fps>', False)[1]
         try: fps = float( fps.strip() )
@@ -285,7 +285,7 @@ class NapiProjektProvider(CBaseSubProviderClass):
         
         url = self.getFullUrl('api/api-napiprojekt3.php')
         sts, data = self.cm.getPage(url, self.defaultParams, post_data)
-        if not sts: return
+        if not sts: return retData
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<content><![CDATA[', ']]></content>', False)[1]
         try:
@@ -314,104 +314,6 @@ class NapiProjektProvider(CBaseSubProviderClass):
             printExc()
             return retData
         
-        return retData
-            
-    def downloadSubtitleFile2(self, cItem):
-        printDBG("NapiProjektProvider.downloadSubtitleFile")
-        retData = {}
-        title    = cItem['title']
-        lang     = cItem['lang']
-        subId    = cItem['sub_id']
-        imdbid   = cItem['imdbid']
-        fileName = self._getFileName(title, lang, subId, imdbid)
-        fileName = GetSubtitlesDir(fileName)
-        
-        url = 'http://napisy24.pl/run/pages/download.php?napisId={0}&typ=sru'.format(subId)
-        tmpFile = GetTmpDir( self.TMP_FILE_NAME )
-        tmpFileZip = tmpFile + '.zip'
-        
-        urlParams = dict(self.defaultParams)
-        urlParams['return_data'] = False
-        
-        try:
-            fileSize = self.getMaxFileSize()
-            sts, response = self.cm.getPage(url, urlParams)
-            data = response.read(fileSize)
-            response.close()
-        except Exception:
-            printExc()
-            sts = False
-                    
-        if not sts:
-            SetIPTVPlayerLastHostError(_('Failed to download subtitle.'))
-            return retData
-        
-        try:
-            with open(tmpFileZip, 'w') as f:
-                f.write(data)
-        except Exception:
-            printExc()
-            SetIPTVPlayerLastHostError(_('Failed to write file "%s".') % tmpFileZip)
-            return retData
-        
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        printDBG(tmpFile)
-        printDBG(tmpFileZip)
-        printDBG(fileName)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        def __cleanFiles(all=False):
-            if all: rm(fileName)
-            rm(tmpFile)
-            rm(tmpFileZip)
-        
-        cmd = "unzip -po '{0}' -x Napisy24.pl.url > '{1}' 2>/dev/null".format(tmpFileZip, tmpFile)
-        ret = self.iptv_execute(cmd)
-        if not ret['sts'] or 0 != ret['code']:
-            __cleanFiles()
-            message = _('Unzip error code[%s].') % ret['code']
-            if str(ret['code']) == str(127):
-                message += '\n' + _('It seems that unzip utility is not installed.')
-            elif str(ret['code']) == str(9):
-                message += '\n' + _('Wrong format of zip archive.')
-            SetIPTVPlayerLastHostError(message)
-            return retData
-            
-        # detect encoding
-        cmd = '%s "%s"' % (config.plugins.iptvplayer.uchardetpath.value, tmpFile)
-        ret = self.iptv_execute(cmd)
-        if ret['sts'] and 0 == ret['code']:
-            encoding = MapUcharEncoding(ret['data'])
-            if 0 != ret['code'] or 'unknown' in encoding:
-                encoding = ''
-            else: encoding = encoding.strip()
-        else: encoding = ''
-        
-        if GetDefaultLang() == 'pl' and encoding == 'iso-8859-2':
-            encoding = GetPolishSubEncoding(tmpFile)
-        elif '' == encoding:
-            encoding = 'utf-8'
-            
-        # convert file to UTF-8
-        try:
-            with open(tmpFile) as f:
-                data = f.read()
-            try:
-                data = data.decode(encoding).encode('UTF-8')
-                try:
-                    with open(fileName, 'w') as f:
-                        f.write(data)
-                    retData = {'title':title, 'path':fileName, 'lang':lang, 'imdbid':imdbid, 'sub_id':subId}
-                except Exception:
-                    printExc()
-                    SetIPTVPlayerLastHostError(_('Failed to write the file "%s".') % fileName)
-            except Exception:
-                printExc()
-                SetIPTVPlayerLastHostError(_('Failed to convert the file "%s" to UTF-8.') % tmpFile)
-        except Exception: 
-            printExc()
-            SetIPTVPlayerLastHostError(_('Failed to open the file "%s".') % tmpFile)
-        
-        __cleanFiles()
         return retData
     
     def handleService(self, index, refresh = 0):
