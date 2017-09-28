@@ -130,7 +130,7 @@ class YoutubeComProvider(CBaseSubProviderClass):
                 f.write(data)
         except Exception:
             printExc()
-            SetIPTVPlayerLastHostError(_('Failed to write file "%s".') % tmpFileZip)
+            SetIPTVPlayerLastHostError(_('Failed to write file "%s".') % fileName)
             rm(fileName)
             return retData
         
