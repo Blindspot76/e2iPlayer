@@ -218,6 +218,32 @@ for hostName in gListOfHostsNames:
     except Exception:
         printExc(hostName)
 
+def GetListOfHostsNames():
+    global gListOfHostsNames
+    return gListOfHostsNames
+
+def IsUpdateNeededForHostsChangesCommit(enabledHostsListOld, enabledHostsList=None, hostsFromFolder=None):
+    if enabledHostsList == None: 
+        enabledHostsList = GetEnabledHostsList()
+    if hostsFromFolder == None: 
+        hostsFromFolder = GetHostsList(fromList=False, fromHostFolder=True)
+
+    if config.plugins.iptvplayer.remove_diabled_hosts.value and enabledHostsList != enabledHostsListOld:
+        hostsFromList = GetHostsList(fromList=True, fromHostFolder=False)
+        diffDisabledHostsList = set(enabledHostsListOld).difference(set(enabledHostsList))
+        diffList = set(enabledHostsList).symmetric_difference(set(enabledHostsListOld))
+        for hostItem in diffList:
+            if hostItem in hostsFromList:
+                if hostItem in diffDisabledHostsList:
+                    if hostItem in hostsFromFolder:
+                        # standard host has been disabled but it is still in folder
+                        return True
+                else:
+                    if hostItem not in hostsFromFolder:
+                        # standard host has been enabled but it is not in folder
+                        return True
+    return False
+
 ###################################################
 
 class ConfigMenu(ConfigBaseWidget):
@@ -462,24 +488,9 @@ class ConfigMenu(ConfigBaseWidget):
                         # there is missing hosts files, we need updated does not matter 
                         # if these hosts are enabled or disabled
                         needPluginUpdate = True
-                
-            elif config.plugins.iptvplayer.remove_diabled_hosts.value and enabledHostsList != self.enabledHostsListOld:
-                hostsFromList = GetHostsList(fromList=True, fromHostFolder=False)
-                diffDisabledHostsList = set(self.enabledHostsListOld).difference(set(enabledHostsList))
-                diffList = set(enabledHostsList).symmetric_difference(set(self.enabledHostsListOld))
-                for hostItem in diffList:
-                    if hostItem in hostsFromList:
-                        if hostItem in diffDisabledHostsList:
-                            if hostItem in hostsFromFolder:
-                                # standard host has been disabled but it is still in folder
-                                needPluginUpdate = True
-                                break
-                        else:
-                            if hostItem not in hostsFromFolder:
-                                # standard host has been enabled but it is not in folder
-                                needPluginUpdate = True
-                                break
-                                
+            elif IsUpdateNeededForHostsChangesCommit(self.enabledHostsListOld, enabledHostsList, hostsFromFolder):
+                needPluginUpdate = True
+        
         if not needPluginUpdate and config.plugins.iptvplayer.IPTVWebIterface.value != IsWebInterfaceModuleAvailable(True):
             needPluginUpdate = True
             
@@ -589,8 +600,7 @@ class ConfigMenu(ConfigBaseWidget):
                     self.session.open(MessageBox, _("Confirmation error."), type=MessageBox.TYPE_INFO, timeout=5)
                     
     def hostsList(self):
-        global gListOfHostsNames
-        self.session.open(ConfigHostsMenu, gListOfHostsNames)
+        self.session.open(ConfigHostsMenu, GetListOfHostsNames())
         
     def extMoviePlayerList(self):
         self.session.open(ConfigExtMoviePlayer)
