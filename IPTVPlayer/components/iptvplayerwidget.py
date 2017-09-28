@@ -286,8 +286,10 @@ class IPTVPlayerWidget(Screen):
         #################################################################
         global gDownloadManager
         if None == gDownloadManager:
+            from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmui import GetIPTVDMNotification
+            GetIPTVDMNotification().dialogInit(session)
             printDBG('============Initialize Download Menager============')
-            gDownloadManager = IPTVDMApi(2, int(config.plugins.iptvplayer.IPTVDMMaxDownloadItem.value))
+            gDownloadManager = IPTVDMApi(2, int(config.plugins.iptvplayer.IPTVDMMaxDownloadItem.value), GetIPTVDMNotification)
             if config.plugins.iptvplayer.IPTVDMRunAtStart.value:
                 gDownloadManager.runWorkThread() 
         #################################################################
