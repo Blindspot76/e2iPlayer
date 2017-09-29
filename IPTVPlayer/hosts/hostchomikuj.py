@@ -47,7 +47,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'Chomikuj.pl'
+    return 'http://chomikuj.pl/'
 
 class Chomikuj(CBaseHostClass):
     

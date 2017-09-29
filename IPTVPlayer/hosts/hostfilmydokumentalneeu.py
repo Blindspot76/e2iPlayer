@@ -47,7 +47,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'FilmyDokumentalne.eu'
+    return 'http://filmydokumentalne.eu/'
 
 class FilmyDokumentalneEU(CBaseHostClass):
     HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}

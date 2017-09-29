@@ -24,7 +24,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'FightTube'
+    return 'http://fighttube.pl/'
 
 class FightTube:
     MAINURL = 'http://www.fighttube.pl/'

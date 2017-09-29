@@ -61,7 +61,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return (_('LocalMedia'))
+    return _('LocalMedia')
     
 def iptv_execute_wrapper(cmd):
     printDBG("LocalMedia.iptv_execute_wrapper cmd[%r]" % cmd)

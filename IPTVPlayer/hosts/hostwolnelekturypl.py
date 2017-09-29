@@ -47,7 +47,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'wolnelektury.pl'
+    return 'http://wolnelektury.pl/'
 
 class WolnelekturyPL(CBaseHostClass):
     ITEMS_PER_PAGE = 50

@@ -46,7 +46,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'SerialNet.pl'
+    return 'http://serialnet.pl/'
 
 
 class SerialeNet(CBaseHostClass):

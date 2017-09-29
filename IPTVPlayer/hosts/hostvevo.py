@@ -47,7 +47,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'vevo.com'
+    return 'https://vevo.com/'
 
 class Vevo(CBaseHostClass):
     MAIN_URL     = 'http://www.vevo.com/'
