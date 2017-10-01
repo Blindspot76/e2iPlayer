@@ -320,6 +320,7 @@ class HDStreams(CBaseHostClass):
         
         url = self.getFullUrl('/home')
         sts, data = self.getPage(url)
+        if not sts: return
         
         urlParams = dict(self.defaultParams)
         urlParams['header'] = dict(self.AJAX_HEADER)
