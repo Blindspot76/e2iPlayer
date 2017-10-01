@@ -166,7 +166,11 @@ class YifyTV(CBaseHostClass):
         # orderby
         if '' != cItem.get('orderby', ''):
             getArgs.append(cItem['orderby'])
-        url = baseUrl + '?' + '&'.join(getArgs)
+            
+        if len(getArgs):
+            url = baseUrl + '?' + '&'.join(getArgs)
+        else:
+            url = baseUrl
         
         sts, data = self.cm.getPage(url)
         if not sts: return 
