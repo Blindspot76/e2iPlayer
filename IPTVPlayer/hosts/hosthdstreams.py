@@ -121,10 +121,11 @@ class HDStreams(CBaseHostClass):
         
         # year
         key = 'f_year'
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'source.years', ']')[1]
-        tmp = re.compile('''[^0-9]([0-9]+?)[^0-9]''').findall(tmp)
+        tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('source\.years\s*=\s*\['), re.compile('\]'), False)[1].split(',')
         self.cacheFilters[key] = []
         for value in tmp:
+            try: value = str(int(value))
+            except Exception: continue
             self.cacheFilters[key].append({'title':value, key:value})
         if len(self.cacheFilters[key]):
             self.cacheFilters[key].insert(0, {'title':_('Any')})
