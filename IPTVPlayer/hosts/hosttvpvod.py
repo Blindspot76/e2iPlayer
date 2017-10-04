@@ -550,7 +550,6 @@ class TvpVod(CBaseHostClass):
             
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("TvpVod.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        searchPattern = urllib.quote_plus(searchPattern)
         url = TvpVod.SEARCH_VOD_URL % urllib.quote(searchPattern)
         cItem = dict(cItem)
         cItem['url'] = url
