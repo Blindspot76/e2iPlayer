@@ -201,7 +201,9 @@ class YifyTV(CBaseHostClass):
             for item in data['posts']:
                 item['url']   = self.getFullUrl(item['link'])
                 item['title'] = self.cleanHtmlStr(item['title'])
-                item['desc']  = self.cleanHtmlStr(item['post_content'])
+                desc = ' | '.join([item['year'], item['runtime'], item['genre']])
+                desc += '[/br]' + self.cleanHtmlStr(item['post_content'])
+                item['desc']  = desc
                 item['icon']  = self.getFullUrl(item['image'])
                 self.addVideo(item)
         except Exception:
@@ -222,10 +224,15 @@ class YifyTV(CBaseHostClass):
         
     def getLinksForVideo(self, cItem):
         printDBG("YifyTV.getLinksForVideo [%s]" % cItem)
-        urlTab = []
+        
+        urlTab = self.cacheLinks.get(cItem['url'], [])
+        if len(urlTab): return urlTab
         
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return urlTab
+        
+        trailer = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''<a[^>]+?class=['"]video'''), re.compile('''</a>'''))[1]
+        trailerUrl  = self.cm.ph.getSearchGroups(trailer, '''href=['"](https?://[^'^"]+?)['"]''')[0]
         
         imdbid = self.cm.ph.getSearchGroups(data, '''var\s+imdbid\s*=\s*['"]([^'^"]+?)['"]''')[0]
         
@@ -277,10 +284,26 @@ class YifyTV(CBaseHostClass):
                 url = strwithmeta(url, {'Referer': cItem['url'], 'imdbid':imdbid, 'external_sub_tracks':sub_tracks})
                 urlTab.append({'name':_('Mirror') + ' %s [%s]' % (idx, self.up.getHostName(url)), 'url':url, 'need_resolve':1})
             idx += 1
+        
+        if len(urlTab):
+            self.cacheLinks[cItem['url']] = urlTab
+        
+        if self.cm.isValidUrl(trailerUrl) and 1 == self.up.checkHostSupport(trailerUrl):
+            urlTab.insert(0, {'name':self.cleanHtmlStr(trailer), 'url':trailerUrl, 'need_resolve':1})
+        
         return urlTab
         
     def getVideoLinks(self, baseUrl):
         printDBG("YifyTV.getVideoLinks [%s]" % baseUrl)
+        
+        # mark requested link as used one
+        if len(self.cacheLinks.keys()):
+            for key in self.cacheLinks:
+                for idx in range(len(self.cacheLinks[key])):
+                    if baseUrl in self.cacheLinks[key][idx]['url']:
+                        if not self.cacheLinks[key][idx]['name'].startswith('*'):
+                            self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
+                        break
         
         urlTab = []
         
@@ -432,6 +455,8 @@ class YifyTV(CBaseHostClass):
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
         
+        self.cacheLinks = {}
+        
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
@@ -469,6 +494,8 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, YifyTV(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('yifytvlogo.png')])
+    def withArticleContent(self, cItem):
+        if cItem['type'] != 'video':
+            return False
+        return True
 
