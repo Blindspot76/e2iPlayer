@@ -58,6 +58,7 @@ except Exception:
 from os import chmod as os_chmod, path as os_path
 import re
 import time
+import socket
 ###################################################
 
 class ExtPlayerCommandsDispatcher():
@@ -2051,6 +2052,15 @@ class IPTVExtMoviePlayer(Screen):
                 if not self.waitCloseFix['waiting']:
                     self.waitCloseFix['waiting'] = True
                     self.waitCloseFix['timer'].start(5000, True) # singleshot
+                try:
+                    socket_path = "/tmp/iptvplayer_extplayer_term_fd";
+                    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                    sock.connect(socket_path)
+                    #sock.sendall("q")
+                except Exception:
+                    printExc()
+                finally:
+                    sock.close()
                 self.consoleWrite( "q\n" )
             else:
                 printDBG("IPTVExtMoviePlayer.extPlayerSendCommand unknown command[%s]" % command)

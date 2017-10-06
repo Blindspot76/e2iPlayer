@@ -387,6 +387,7 @@ class urlparser:
                        'flashcast.pw':         self.pp.parseCASTFLASHPW    ,
                        'dotstream.tv':         self.pp.parserDOTSTREAMTV   ,
                        'leton.tv':             self.pp.parserDOTSTREAMTV   ,
+                       'srkcast.com':          self.pp.parserSRKCASTCOM    ,
                        'allcast.is':           self.pp.parserALLCASTIS     ,
                        'tvope.com':            self.pp.parserTVOPECOM      ,
                        'fileone.tv':           self.pp.parserFILEONETV     ,
@@ -561,6 +562,10 @@ class urlparser:
                 url = strwithmeta(url, {'Referer':tmpUrl})
                 data = None
                 continue
+            elif 'srkcast.com' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](https?://[^"^']*?srkcast.com/[^"^']+?)["']''', 1, True)[0].replace('&amp;', '&')
+                videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
+                return self.getVideoLinkExt(videoUrl)
             elif 'dotstream.tv' in data:
                 streampage = self.cm.ph.getSearchGroups(data, """streampage=([^&]+?)&""")[0]
                 videoUrl = 'http://dotstream.tv/player.php?streampage={0}&height=490&width=730'.format(streampage)
@@ -4733,6 +4738,23 @@ class pageParser:
             except Exception:
                 printExc()
         return False
+        
+    def parserSRKCASTCOM(self, baseUrl):
+        printDBG("parserSRKCASTCOM linkUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        videoUrl = strwithmeta(baseUrl)
+        if 'Referer' in videoUrl.meta:
+            HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        
+        sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
+        if not sts: return False
+        
+        streamUrl = self.cm.ph.getSearchGroups(data, '''['"](https?://[^'^"]+?\.m3u8[^'^"]*?)['"]''')[0]
+        streamUrl = strwithmeta(streamUrl, {'Referer':videoUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+        
+        streamsTab = []
+        streamsTab.extend(getDirectM3U8Playlist(streamUrl, checkContent=False))
+        return streamsTab
     
     def parserABCASTBIZ(self, linkUrl):
         printDBG("parserABCASTBIZ linkUrl[%s]" % linkUrl)
