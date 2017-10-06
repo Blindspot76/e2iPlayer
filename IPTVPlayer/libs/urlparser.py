@@ -5356,9 +5356,9 @@ class pageParser:
         printDBG(data)
         printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         
-        
+        play = ''
         vid = self.cm.ph.getSearchGroups(redirectUrl+'/', '[^A-Za-z0-9]([A-Za-z0-9]{12})[^A-Za-z0-9]')[0]
-        for item in ['playvid', 'playthis', 'playit', 'playme']:
+        for item in ['playvid', 'playthis', 'playit', 'playme', 'playvideo']:
             if item+'-' in data:
                 play = item
                 break
