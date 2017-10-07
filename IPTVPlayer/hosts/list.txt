@@ -35,6 +35,7 @@ hostfilmpalast
 hostfilmstreamvkcom
 hostfilmydokumentalneeu
 hostfilmyto
+hostfokustv
 hostfreediscpl
 hostgamatocom
 hostgamatotvme
@@ -77,6 +78,7 @@ hostnaszekinoonline
 hostngolos
 hostninateka
 hostokgoals
+hostororotv
 hostotakufr
 hostourmatchnet
 hostpaczamy
