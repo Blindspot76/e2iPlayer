@@ -314,6 +314,7 @@ class IPTVPlayerWidget(Screen):
         
         self.statusTextValue = ""
         self.enabledHostsListOld = []
+        asynccall.SetMainThreadId()
     
     #end def __init__(self, session):
     

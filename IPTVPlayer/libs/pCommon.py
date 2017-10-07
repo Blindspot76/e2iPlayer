@@ -7,7 +7,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, SetTmpCookieDir
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
+from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute, IsMainThread
 ###################################################
 # FOREIGN import
 ###################################################
@@ -744,6 +744,12 @@ class common:
                 else:
                     response = urllib2.urlopen(req)
             return response
+        
+        if IsMainThread():
+            msg1 = _('It is not allowed to call getURLRequestData from main thread.')
+            msg2 = _('You should never perform block I/O operations in the __init__.')
+            msg3 = _('In next release exception will be thrown instead of this message!')
+            GetIPTVNotify().push('%s\n\n%s\n\n%s' % (msg1, msg2, msg3), 'error', 40)
         
         if not self.useMozillaCookieJar:
             cj = cookielib.LWPCookieJar()
