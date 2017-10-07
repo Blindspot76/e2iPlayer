@@ -224,6 +224,7 @@ class urlparser:
                        'netu.tv':              self.pp.parseNETUTV         ,
                        'hqq.tv':               self.pp.parseNETUTV         ,
                        'hqq.watch':            self.pp.parseNETUTV         ,
+                       'hqq.none':             self.pp.parseNETUTV         ,
                        'waaw.tv':              self.pp.parseNETUTV         ,
                        'vshare.io':            self.pp.parseVSHAREIO       ,
                        'vidspot.net':          self.pp.parserVIDSPOT       ,
@@ -8142,11 +8143,9 @@ class pageParser:
         
     def parseNETUTV(self, url):
         printDBG("parseNETUTV url[%s]" % url)
-        # example video: http://netu.tv/watch_video.php?v=WO4OAYA4K758
-    
-        printDBG("parseNETUTV url[%s]\n" % url)
+        if 'hqq.none' in urlparser.getDomain(url):
+            url = strwithmeta(url.replace('hqq.none', 'hqq.watch'), strwithmeta(url).meta)
         
-        #http://netu.tv/watch_video.php?v=ODM4R872W3S9
         match = re.search("=([0-9a-zA-Z]+?)[^0-9^a-z^A-Z]", url + '|' )
         vid = match.group(1)
         
