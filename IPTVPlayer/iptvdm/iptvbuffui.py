@@ -216,6 +216,7 @@ class IPTVPlayerBufferingWidget(Screen):
                 self.setMainTimerSts(True)
             else:
                 # for live streams we will remove old buffer and start downloader once again
+                self.lastSize = 0
                 self.onEnd()
                 self.onStart()
 
@@ -334,10 +335,12 @@ class IPTVPlayerBufferingWidget(Screen):
         percentage = 0
         requestedBuffSize = -1
         if self.downloader.getPlayableFileSize() > 0:
+            printDBG("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
             requestedBuffSize = self.requestedBuffSize
             if tmpBuffSize > requestedBuffSize: percentage = 100
             else: percentage = (100 * tmpBuffSize) / requestedBuffSize
         elif self.downloader.getLocalFileSize() > 0 and self.downloader.getRemoteFileSize() > 0:
+            printDBG("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
             localSize  = self.downloader.getLocalFileSize()
             remoteSize = self.downloader.getRemoteFileSize()
             if localSize > remoteSize: percentage = 100
