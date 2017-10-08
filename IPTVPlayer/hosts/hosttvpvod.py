@@ -265,7 +265,7 @@ class TvpVod(CBaseHostClass):
         if not sts: return
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="button', '</div>', withMarkers=True, caseSensitive=False)
         for item in data:
-            id    = self.cm.ph.getSearchGroups(item, 'data-video_id="([0-9]+?)"')[0]
+            id    = self.cm.ph.getSearchGroups(item, 'data-video[_\-]id="([0-9]+?)"')[0]
             if id != '':
                 desc  = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, 'titlte="([^"]+?)"')[0])
                 icon  = self.cm.ph.getSearchGroups(item, 'src="(http[^"]+?)"')[0]
