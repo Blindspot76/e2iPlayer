@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, CSelOneLink
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
@@ -39,9 +39,19 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.fokustv_format = ConfigSelection(default = "1280", choices = [("0",  "najgorsza"),
+                                                                                        ("480",  "480x270"),
+                                                                                        ("640",  "640x360"),
+                                                                                        ("860",  "852x480"),
+                                                                                        ("1280", "1280x720"),
+                                                                                        ("1920", "1920x1080"),
+                                                                                        ("999999", "najlepsza")])
+config.plugins.iptvplayer.fokustv_df  = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry("Domyślna jakość wideo",          config.plugins.iptvplayer.fokustv_format))
+    optionList.append(getConfigListEntry("Używaj domyślnej jakości wideo", config.plugins.iptvplayer.fokustv_df))
     return optionList
 ###################################################
 
@@ -286,6 +296,18 @@ class FokusTV(CBaseHostClass):
                     tmpTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
                     for idx in range(len(tmpTab)): tmpTab[idx]['url'].meta['iptv_proto'] = 'm3u8'
                     urlTab.extend(tmpTab)
+                    
+        if 1 < len(urlTab):
+            maxQuality = int(config.plugins.iptvplayer.fokustv_format.value) + 20
+            def __getLinkQuality( itemLink ):
+                try: return int(itemLink['with'])
+                except Exception: return 0
+            oneLink = CSelOneLink(urlTab, __getLinkQuality, maxQuality)
+            if config.plugins.iptvplayer.fokustv_df.value:
+                urlTab = oneLink.getOneLink()
+            else:
+                urlTab = oneLink.getSortedLinks()
+                        
         return urlTab
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
