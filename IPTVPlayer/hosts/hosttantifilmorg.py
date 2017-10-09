@@ -183,7 +183,7 @@ class TantiFilmOrg(CBaseHostClass):
             nextPage = False
         
         if '?s=' in url:
-            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'film film-2'), ('<div', '>', 'clearfix'))
+            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'film film-2'), ('<div', '</div>', 'class="descriere"'))
         else:
             if page == 1:
                 tmp = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class="page-title">', '</body>', withMarkers=False)[1]
