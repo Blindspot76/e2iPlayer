@@ -27,7 +27,7 @@ from Screens.VirtualKeyBoard import VirtualKeyBoard
 
 from Components.ActionMap import ActionMap, HelpableActionMap
 from Components.Label import Label
-from Components.config import config, ConfigSubsection, ConfigSelection, ConfigDirectory, ConfigYesNo, ConfigOnOff, Config, ConfigInteger, ConfigSubList, ConfigText, getConfigListEntry, configfile
+from Components.config import config, ConfigSubsection, ConfigSelection, ConfigDirectory, ConfigYesNo, ConfigOnOff, Config, ConfigInteger, ConfigSubList, ConfigText, getConfigListEntry, configfile, NoSave
 from Components.ConfigList import ConfigListScreen
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
@@ -51,6 +51,8 @@ config.plugins.iptvplayer.f4mdumppath     = ConfigText(default = "", fixed_size 
 config.plugins.iptvplayer.uchardetpath    = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.set_curr_title  = ConfigYesNo(default = False)
 config.plugins.iptvplayer.curr_title_file = ConfigText(default = "", fixed_size = False) 
+config.plugins.iptvplayer.curr_host_name = NoSave(ConfigText(default = "", fixed_size = False))
+config.plugins.iptvplayer.curr_host_logo = NoSave(ConfigText(default = "", fixed_size = False))
 config.plugins.iptvplayer.plarform        = ConfigSelection(default = "auto", choices = [("auto", "auto"),("mipsel", _("mipsel")),("sh4", _("sh4")),("i686", _("i686")), ("armv7", _("armv7")), ("armv5t", _("armv5t")), ("unknown", _("unknown"))])
 config.plugins.iptvplayer.plarformfpuabi  = ConfigSelection(default = "", choices = [("", ""),("hard_float", _("Hardware floating point")),("soft_float", _("Software floating point"))])
 
