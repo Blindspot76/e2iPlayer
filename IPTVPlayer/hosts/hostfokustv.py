@@ -195,12 +195,17 @@ class FokusTV(CBaseHostClass):
             data = splitReObj.split(data)
             if len(data): del data[0]
             for item in data:
-                url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
+                tmp = self.cm.ph.getDataBeetwenReMarkers(item, re.compile('''<a[^>]+?cat_vod'''), re.compile('''</a>'''))[1]
+                catUrl   = self.getFullUrl( self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"]''')[0] )
+                catTitle = self.cleanHtmlStr( tmp )
+                
+                tmp = self.cm.ph.getDataBeetwenReMarkers(item, re.compile('''<a[^>]+?video_title'''), re.compile('''</a>'''))[1]
+                url   = self.getFullUrl( self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"]''')[0] )
                 icon  = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0] )
-                title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenReMarkers(item, re.compile('''<a[^>]+?video_title'''), re.compile('''</a>'''))[1] )
+                title = self.cleanHtmlStr( tmp )
                 desc  = self.cleanHtmlStr( item.split('</div>', 1)[0] )
                 params = dict(cItem)
-                params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'desc':desc, 'url':url, 'icon':icon})
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'desc':desc, 'url':url, 'cat_url':catUrl, 'cat_title':catTitle, 'icon':icon})
                 self.addDir(params)
         
     def exploreItem(self, cItem):
@@ -208,6 +213,11 @@ class FokusTV(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        
+        cItem = dict(cItem)
+        
+        catUrl   = cItem.pop('cat_url', '')
+        catTitle = cItem.pop('cat_title', '')
         
         desc = []
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div class="wideo_info', '</div>')[1]
@@ -246,6 +256,10 @@ class FokusTV(CBaseHostClass):
             params = dict(cItem)
             params.update({'desc':desc})
             self.addVideo(params)
+            if self.cm.isValidUrl(catUrl):
+                params = dict(cItem)
+                params.update({'title':catTitle, 'url':catUrl})
+                self.addDir(params)
         
     def getLinksForVideo(self, cItem):
         printDBG("FokusTV.getLinksForVideo [%s]" % cItem)
