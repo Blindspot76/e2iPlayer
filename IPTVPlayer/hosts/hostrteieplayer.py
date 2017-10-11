@@ -265,8 +265,8 @@ class RteIE(CBaseHostClass):
                 printExc()
         
         linksTab.extend(hlsLinksTab)
-        if 0 == len(linksTab):
-            linksTab.extend(hdsLinksTab)
+        #if 0 == len(linksTab):
+        linksTab.extend(hdsLinksTab)
         
         return linksTab
         
