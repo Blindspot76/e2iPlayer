@@ -1857,7 +1857,7 @@ class IPTVPlayerLCDScreen(Screen):
     try:
         summary_screenwidth = getDesktop(1).size().width()
         summary_screenheight = getDesktop(1).size().height()
-    except:
+    except Exception:
         summary_screenwidth = 132
         summary_screenheight = 64
     if summary_screenwidth >= 480 and summary_screenheight >= 320:
