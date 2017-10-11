@@ -26,6 +26,8 @@ def getPage(url, params={}):
         req = urllib2.Request(url)
         if 'Referer' in params:
             req.add_header('Referer', params['Referer'])
+        if 'User-Agent' in params:
+            req.add_header('User-Agent', params['User-Agent'])
         resp = urllib2.urlopen(req)
         data = resp.read()
         sts = True
@@ -34,20 +36,22 @@ def getPage(url, params={}):
     return sts, data
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 5:
         print('Refresh and referer urls are needed', file=sys.stderr)
         sys.exit(1)
     try:
         timeout = 20 # 20s
-        refreshUrl = sys.argv[1]
-        referer    = sys.argv[2]
-        
+        hlsUrl     = sys.argv[1]
+        refreshUrl = sys.argv[2]
+        referer    = sys.argv[3]
+        userAgent  = sys.argv[4]
+        print(hlsUrl, file=sys.stderr)
         while True:
             printDBG("Refreshing....")
             start_time = time.time()
             tm = str(int(start_time * 1000))
             url = refreshUrl + "&_="+tm+"&callback=?"
-            getPage(url, {'Referer':referer})
+            getPage(url, {'Referer':referer, 'User-Agent':userAgent})
             dt = time.time() - start_time
             if dt > 0 and dt < 20:
                 time.sleep(20 - dt)

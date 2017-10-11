@@ -7837,15 +7837,16 @@ class pageParser:
         COOKIEFILE = self.COOKIE_PATH + "live-stream.tv.cookie"
         params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIEFILE}
         
-        def updateStreamStatistics(channel, quality, statserver):
-            upBaseUrl = 'http://'+statserver+'.ucount.in/stats/update/custom/lstv/'+channel+'/'+quality
+        def reloadEpgNow(upBaseUrl):
             tm = str(int(time.time() * 1000))
             upUrl = upBaseUrl + "&_="+tm+"&callback=?"
             std, data = self.cm.getPage(upUrl, params)
-            return upBaseUrl
+            return
         
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return
+        
+        mediaId = self.cm.ph.getSearchGroups(data, '''reloadEpgNow\(\s*['"]([^'^"]+?)['"]''', 1, True)[0]
         
         url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](http[^"^']+?)["']''', 1, True)[0]
         sts, data = self.cm.getPage(url, params)
@@ -7864,10 +7865,17 @@ class pageParser:
         if ret['sts'] and 0 == ret['code']:
             tmp = ret['data'].strip()
             tmp = byteify(json.loads(tmp))
+            
+        refreshUrl = 'http://www.live-stream.tv/php/ajax.php?f=epgNow&cid=' +  mediaId
+        reloadEpgNow(refreshUrl)
+        
         tmp = set(tmp)
+        printDBG(tmp)
         for vidUrl in tmp:
-            vidUrl = strwithmeta(vidUrl, {'iptv_proto':'m3u8', 'iptv_m3u8_skip_seg':2, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
+            vidUrl = strwithmeta(vidUrl, {'iptv_proto':'em3u8', 'Referer':url, 'iptv_livestream': True, 'User-Agent':HTTP_HEADER['User-Agent']}) #'iptv_m3u8_skip_seg':2, 'Referer':'http://static.live-stream.tv/player/player.swf'
             tab = getDirectM3U8Playlist(vidUrl, checkContent=True)
+            for it in tab:
+                it['url'].meta['iptv_refresh_cmd'] = GetPyScriptCmd('livestreamtv') + ' "%s" "%s" "%s" "%s" ' % (it['url'], refreshUrl, baseUrl, HTTP_HEADER['User-Agent'])
             tab.reverse()
             return tab
         return False
