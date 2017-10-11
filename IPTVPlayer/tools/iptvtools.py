@@ -609,6 +609,7 @@ def GetSkinsList():
     skins.sort()
     skins.insert(0,("Auto", "Auto"))
     skins.insert(0,("Default", "Default"))
+    skins.append(("auto", "auto"))
     printDBG('getSkinsList end')
     return skins
     

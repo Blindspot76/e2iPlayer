@@ -134,7 +134,7 @@ class IPTVPlayerWidget(Screen):
         printDBG("IPTVPlayerWidget.__init__ desktop IPTV_VERSION[%s]\n" % (IPTVPlayerWidget.IPTV_VERSION) )
         self.session = session
         selSkin = config.plugins.iptvplayer.skin.value
-        if selSkin == 'Auto':
+        if selSkin in ['Auto', 'auto']:
             screenwidth = getDesktop(0).size().width()
             if screenwidth and screenwidth > 1900:
                 selSkin = 'halidri1080p1'
