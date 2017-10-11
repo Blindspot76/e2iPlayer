@@ -7851,46 +7851,23 @@ class pageParser:
         sts, data = self.cm.getPage(url, params)
         if not sts: return
         
-        def _getUpData(dat):
-            upData = self.cm.ph.getDataBeetwenMarkers(dat, 'updateStreamStatistics', ';', False)[1]
-            upData = re.compile('''['"]([^'^"]+?)['"]''').findall(upData)
-            return upData
-            
-        def _getVidUrl(dat):
-            vidUrl = self.cm.ph.getSearchGroups(dat, r'''movie=['"](http[^'^"]+?hls[^'^"]+?)['"]''')[0]
-            if vidUrl == '': vidUrl = self.cm.ph.getSearchGroups(dat, r'''movie=['"](http[^'^"]+?\.m3u8[^'^"]*?)['"]''')[0]
-            return vidUrl
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')
+        tmp = ''
+        for item in data:
+            if 'eval(' in item:
+                tmp += '\n %s' % self.cm.ph.getDataBeetwenReMarkers(item, re.compile('<script[^>]*?>'), re.compile('</script>'), False)[1].strip()
         
-        tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
-        printDBG(tmpData)
-        upData = None
-        vidUrl = None
-        while 'eval' in tmpData and (upData == None or vidUrl == None):
-            tmp = tmpData.split('eval(')
-            if len(tmp): del tmp[0]
-            tmpData = ''
-            for item in tmp:
-                for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
-                    tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
-                    if '' != tmpData: break
-                printDBG(tmpData)
-                if 'updateStreamStatistics' in tmpData:
-                    upData = _getUpData(tmpData)
-                    if 0 == len(upData): upData = None
-                if 'movie' in tmpData and ('hls' in tmpData or '.m3u8' in tmpData):
-                    vidUrl = _getVidUrl(tmpData)
-                    if '' == vidUrl: vidUrl = None
-        
-        if None == upData:
-            upData = _getUpData(data)
-            
-        if None == vidUrl:
-            vidUrl = _getVidUrl(data)
-        
-        marker = '.m3u8'
-        if marker in vidUrl:
+        jscode = base64.b64decode('''dmFyIGlwdHZfc3JjZXM9W10sZG9jdW1lbnQ9e30sd2luZG93PXRoaXMsTGV2ZWxTZWxlY3Rvcj0iIixDbGFwcHI9e307Q2xhcHByLlBsYXllcj1mdW5jdGlvbihyKXt0cnl7aXB0dl9zcmNlcy5wdXNoKHIuc291cmNlKX1jYXRjaChlKXt9fTt2YXIgJD1mdW5jdGlvbigpe3JldHVybntyZWFkeTpmdW5jdGlvbihyKXtyKCl9fX07''')
+        jscode += tmp + '\nprint(JSON.stringify(iptv_srces));'
+        tmp = []
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            tmp = ret['data'].strip()
+            tmp = byteify(json.loads(tmp))
+        tmp = set(tmp)
+        for vidUrl in tmp:
             vidUrl = strwithmeta(vidUrl, {'iptv_proto':'m3u8', 'iptv_m3u8_skip_seg':2, 'Referer':'http://static.live-stream.tv/player/player.swf', 'User-Agent':HTTP_HEADER['User-Agent']})
-            tab = getDirectM3U8Playlist(vidUrl, False)
+            tab = getDirectM3U8Playlist(vidUrl, checkContent=True)
             tab.reverse()
             return tab
         return False
