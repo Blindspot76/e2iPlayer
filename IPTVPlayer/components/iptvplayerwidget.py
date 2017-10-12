@@ -1207,11 +1207,13 @@ class IPTVPlayerWidget(Screen):
         else: self.loadHostData();
 
     def loadHostData(self):
+        self.session.summary.setText(self.hostName)
         if None != self.activePlayer: self.activePlayer.save()
         self.activePlayer = CMoviePlayerPerHost(self.hostName)
 
         # change logo for player
         self["playerlogo"].hide()
+        self.session.summary.LCD_hide('LCDlogo')
         try:
             hRet= self.host.getLogoPath()
             if hRet.status == RetHost.OK and  len(hRet.value):
@@ -1222,6 +1224,7 @@ class IPTVPlayerWidget(Screen):
                         self["playerlogo"].show()
                     else:
                         self["playerlogo"].decodeCover(logoPath, self.updateCover, "playerlogo")
+                    self.session.summary.LCD_showPic('LCDlogo', logoPath)
         except Exception: printExc()
         
         # get types of items which can be added as favourites
@@ -1851,17 +1854,48 @@ class IPTVPlayerWidget(Screen):
 #class IPTVPlayerWidget
 
 class IPTVPlayerLCDScreen(Screen):
-    skin = """
+    try:
+        summary_screenwidth = getDesktop(1).size().width()
+        summary_screenheight = getDesktop(1).size().height()
+    except Exception:
+        summary_screenwidth = 132
+        summary_screenheight = 64
+    if summary_screenwidth >= 480 and summary_screenheight >= 320:
+        skin = """
+    <screen position="0,0" size="480,320" title="IPTVPlayer">
+        <widget name="text1" position="10,0" size="460,70" font="Regular;50" halign="center" valign="center" foregroundColor="#05F7F3"/>
+        <widget name="text2" position="10,80" size="460,70" font="Regular;40" halign="center" valign="center" foregroundColor="#FFFF00"/>
+        <widget name="LCDlogo" position="0,160" zPosition="4" size="480,160" alphatest="blend" />
+    </screen>"""
+    elif summary_screenwidth >= 220 and summary_screenheight >= 176:
+        skin = """
+    <screen position="0,0" size="220,176" title="IPTVPlayer">
+        <widget name="text1" position="5,0" size="210,26" font="Regular;24" halign="center" valign="center" foregroundColor="#05F7F3"/>
+        <widget name="text2" position="5,30" size="210,65" font="Regular;22" halign="center" valign="center" foregroundColor="#FFFF00"/>
+        <widget name="LCDlogo" position="5,106" size="210,70" zPosition="4" alphatest="blend" />
+    </screen>"""
+    else:
+        skin = """
     <screen position="0,0" size="132,64" title="IPTVPlayer">
         <widget name="text1" position="4,0" size="132,14" font="Regular;12" halign="center" valign="center"/>
-         <widget name="text2" position="4,14" size="132,49" font="Regular;10" halign="center" valign="center"/>
+        <widget name="text2" position="4,14" size="132,49" font="Regular;10" halign="center" valign="center"/>
+        <widget name="LCDlogo" zPosition="4" position="4,70" size="240,80" alphatest="blend" />
     </screen>"""
 
     def __init__(self, session, parent):
         Screen.__init__(self, session)
         self["text1"] =  Label("IPTVPlayer")
         self["text2"] = Label("")
+        self["LCDlogo"] = Pixmap()
 
     def setText(self, text):
         self["text2"].setText(text[0:39])
 
+    def LCD_showPic(self, widgetName, picPath):
+        self[widgetName].instance.setScale(1)
+        self[widgetName].instance.setPixmap(LoadPixmap(picPath))
+        self[widgetName].show()
+
+    def LCD_hide(self, widgetName):
+        self[widgetName].hide()
+      
