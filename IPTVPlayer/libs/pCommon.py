@@ -203,7 +203,7 @@ class CParsingHelper:
         return True, data[idx1:idx2]
     
     @staticmethod
-    def getAllItemsBeetwenNodes(data, node1, node2, withNodes=True):
+    def getAllItemsBeetwenNodes(data, node1, node2, withNodes=True, numNodes=-1):
         if len(node1) < 2 or len(node2) < 2:
             return []
         itemsTab = []
@@ -249,10 +249,12 @@ class CParsingHelper:
                     idx2 = tIdx1
                 search = 1
                 itemsTab.append(sData[idx1:idx2])
+            if numNodes > 0 and len(itemsTab) == numNodes:
+                break
         return itemsTab
         
     @staticmethod
-    def rgetAllItemsBeetwenNodes(data, node1, node2, withNodes=True):
+    def rgetAllItemsBeetwenNodes(data, node1, node2, withNodes=True, numNodes=-1):
         if len(node1) < 2 or len(node2) < 2:
             return []
         itemsTab = []
@@ -295,6 +297,8 @@ class CParsingHelper:
                     s2 = idx1
                 search = 1
                 itemsTab.insert(0, sData[s1:s2])
+            if numNodes > 0 and len(itemsTab) == numNodes:
+                break
         return itemsTab
         
     @staticmethod    

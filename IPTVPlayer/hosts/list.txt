@@ -49,6 +49,7 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
+hostinfoversion
 hostipla
 hostiptvplayerinfo
 hostkabarety
@@ -92,6 +93,7 @@ hostserialnet
 hostserienstreamto
 hostseriesenstreamingcom
 hostseriesonline
+hostshahiidanimenet
 hostskstream
 hostsolarmovie
 hostsovdub
@@ -126,6 +128,7 @@ hostwatchwrestlinguno
 hostwebstream
 hostwgrane
 hostwolnelekturypl
+hostworldfree4u
 hostwptv
 hostwrzuta
 hostxrysoise

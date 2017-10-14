@@ -449,6 +449,8 @@ class urlparser:
                        'polsatsport.pl':       self.pp.parserPOLSATSPORTPL  ,
                        'sharevideo.pl':        self.pp.parserSHAREVIDEOPL   ,
                        'sharing-box.cloud':    self.pp.parserSHAREVIDEOPL   ,
+                       'file-upload.com':      self.pp.parserFILEUPLOADCOM  ,
+                       'mp4upload.com':        self.pp.parserMP4UPLOADCOM   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2664,6 +2666,48 @@ class pageParser:
             
             return data
         return self._parserUNIVERSAL_A(baseUrl, 'http://vidup.me/embed-{0}-640x360.html', self._findLinks, _preProcessing)
+        
+    def parserFILEUPLOADCOM(self, baseUrl):
+        printDBG("parserFILEUPLOADCOM baseUrl[%r]" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        jscode = ''
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item:
+                jscode += item
+        linksTab = []
+        jscode = base64.b64decode('''dmFyIGlwdHZfc3JjZXM9W10sZG9jdW1lbnQ9e30sd2luZG93PXRoaXM7ZG9jdW1lbnQud3JpdGU9ZnVuY3Rpb24oKXt9O3ZhciBqd3BsYXllcj1mdW5jdGlvbigpe3JldHVybntzZXR1cDpmdW5jdGlvbih0KXt0cnl7aXB0dl9zcmNlcy5wdXNoKHQuZmlsZSl9Y2F0Y2gobil7fX19fTsgJXM7cHJpbnQoSlNPTi5zdHJpbmdpZnkoaXB0dl9zcmNlcykpOw==''') % jscode
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = byteify(json.loads(ret['data']))
+            for url in data:
+                if url.split('?', 1)[0].endswith('.mp4'):
+                    linksTab.append({'name':'mp4', 'url':url})
+        return linksTab
+        
+    def parserMP4UPLOADCOM(self, baseUrl):
+        printDBG("parserMP4UPLOADCOM baseUrl[%r]" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        jscode = ''
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item:
+                jscode += item
+        linksTab = []
+        jscode = base64.b64decode('''dmFyIGRvY3VtZW50PXt9LHdpbmRvdz10aGlzO2RvY3VtZW50LndyaXRlPWZ1bmN0aW9uKCl7fTt2YXIgdmlkZW9qcz1mdW5jdGlvbigpe3JldHVybntzcmM6ZnVuY3Rpb24obil7dHJ5e3ByaW50KEpTT04uc3RyaW5naWZ5KG4pKX1jYXRjaCh0KXt9fX19OyQ9ZnVuY3Rpb24oKXtyZXR1cm57Y3NzOmZ1bmN0aW9uKCl7fX19Ow==''') + jscode
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = byteify(json.loads(ret['data']))
+            for item in data:
+                if 'mp4' in item['type']:
+                    linksTab.append({'name':item['type'], 'url':item['src']})
+        return linksTab
         
     def parserSPEEDVIDNET(self, baseUrl):
         printDBG("parserSPEEDVIDNET baseUrl[%r]" % baseUrl)
