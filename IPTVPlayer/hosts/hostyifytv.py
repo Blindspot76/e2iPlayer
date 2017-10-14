@@ -75,17 +75,6 @@ class YifyTV(CBaseHostClass):
         
         self.VIDEO_HOSTINGS_MAP = {"rpd":"https://www.rapidvideo.com/embed/{0}", "vza":"https://vidoza.net/embed-{0}.html", "akv":"https://akvideo.stream/embed-{0}.html", "rpt":"https://www.raptu.com/e/{0}", "lox":"https://vidlox.tv/embed-{0}.html", "vsh":"http://vshare.eu/embed-{0}.html"}
         
-    def getPage(self, url, params={}, post_data=None):
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
-        params.update({'header':HTTP_HEADER})
-        
-        proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote_plus(url))
-        params['header']['Referer'] = proxy
-        url = proxy
-        #sts, data = self.cm.getPage(url, params, post_data)
-        #printDBG(data)
-        return self.cm.getPage(url, params, post_data)
-            
     def fillFiltersCache(self):
         printDBG("YifyTV.fillFiltersCache")
         # Fill genres, years, orderby

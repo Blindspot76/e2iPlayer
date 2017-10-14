@@ -637,8 +637,11 @@ class urlparser:
                 videoUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?bro\.adca\.[^'^"]+?stream\.php\?id=[^'^"]+?)['"]""")[0] 
                 if videoUrl == '':
                     tmpUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?bro\.adca\.[^'^"]+?)['"]""")[0] 
-                    if '' == tmpUrl: tmpUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?bro\.adcast\.[^'^"]+?)['"]""")[0] 
-                    id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"]""")[0]
+                    if '' == tmpUrl: tmpUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?bro\.adcast\.[^'^"]+?)['"]""")[0]
+                    sts, tmpUrl = self.cm.getPage(tmpUrl)
+                    if not sts: return []
+                    tmpUrl = self.cm.ph.getSearchGroups(tmpUrl, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
+                    id = self.cm.ph.getSearchGroups(data, """id=['"]([^'"]+?)['"];""")[0]
                     videoUrl = self.cm.getBaseUrl(tmpUrl) + 'stream.php?id={0}&width=600&height=400'.format(id)
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
@@ -7543,20 +7546,37 @@ class pageParser:
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
         
-        curl = self.cm.ph.getSearchGroups(data, '''curl[^"^']*?=[^"^']*?['"]([^"^']+?)['"]''')[0]
-        curl = base64.b64decode(curl)
-        if not curl.startswith('http'): return False
+        hlsUrls = []
+        tokenUrl = ''
+        base64Obj = re.compile('''=\s*['"]([A-Za-z0-9+/=]+?)['"]''', re.IGNORECASE)
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in data:
+            if tokenUrl == '': tokenUrl = self.cm.ph.getSearchGroups(item, '''=\s*['"]([^"^']*?token[^"^']*?\.php)['"]''', 1, True)[0]
+            item = base64Obj.findall(item)
+            for curl in item:
+                try: 
+                    curl = base64.b64decode(curl)
+                    if '.m3u8' in curl: hlsUrls.append(curl)
+                except Exception:
+                    printExc()
         
         params['header']['Referer'] = baseUrl
         params['header']['X-Requested-With'] = 'XMLHttpRequest'
-        sts, data = self.cm.getPage(self.cm.getBaseUrl(baseUrl) + 'getToken.php', params)
-        if not sts: return False
-        printDBG(data)
-        data = byteify(json.loads(data))
-        Referer = 'http://cdn.allofme.site/jw/jwplayer.flash.swf'
-        hlsUrl = curl + data['token']
-        hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':Referer})
-        return getDirectM3U8Playlist(hlsUrl)
+        
+        vidTab = []
+        for hlsUrl in hlsUrls:
+            sts, data = self.cm.getPage(self.cm.getBaseUrl(baseUrl) + tokenUrl, params)
+            if not sts: continue
+            
+            printDBG(data)
+            
+            data = byteify(json.loads(data))
+            key, token = data.items()[0]
+            
+            hlsUrl = hlsUrl + token
+            hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Origin':self.cm.getBaseUrl(baseUrl), 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
+            vidTab.extend( getDirectM3U8Playlist(hlsUrl, checkContent=True) )
+        return vidTab
     
     def parserGOODRTMP(self, baseUrl):
         printDBG("parserGOODRTMP baseUrl[%r]" % baseUrl)
