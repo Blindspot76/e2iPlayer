@@ -117,6 +117,10 @@ class ShowsportTVApi(CBaseHostClass):
         data = re.split('<td[^>]+?date\-row[^>]+?>', data)
         for dat in data:
             desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(dat, '<i', '</td>')[1])
+            params = dict(cItem)
+            params.update({'type':'marker', 'title':desc})
+            channelsTab.append(params)
+                
             dat = self.cm.ph.getAllItemsBeetwenNodes(dat, ('<tr', '>', 'e_row'), ('</tr', '>'))
             printDBG(dat)
             for item in dat:

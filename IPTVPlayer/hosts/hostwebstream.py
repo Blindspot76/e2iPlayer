@@ -922,7 +922,9 @@ class HasBahCa(CBaseHostClass):
         tmpList = self.showsportTvApi.getChannelsList(cItem)
         for item in tmpList:
             if 'video' == item.get('type', ''):
-                self.addVideo(item) 
+                self.addVideo(item)
+            elif 'marker' == item.get('type', ''):
+                self.addMarker(item)
             else:
                 self.addDir(item)
         
