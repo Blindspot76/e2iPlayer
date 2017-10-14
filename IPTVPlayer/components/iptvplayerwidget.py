@@ -1860,7 +1860,14 @@ class IPTVPlayerLCDScreen(Screen):
     except Exception:
         summary_screenwidth = 132
         summary_screenheight = 64
-    if summary_screenwidth >= 480 and summary_screenheight >= 320:
+    if summary_screenwidth >= 800 and summary_screenheight >= 480:
+        skin = """
+    <screen position="0,0" size="800,480" title="IPTVPlayer">
+        <widget name="text1" position="10,0"  size="800,70" font="Regular;50" halign="center" valign="center" foregroundColor="#05F7F3"/>
+        <widget name="text2" position="10,80" size="800,70" font="Regular;40" halign="center" valign="center" foregroundColor="#FFFF00"/>
+        <widget name="LCDlogo" position="0,210" zPosition="4" size="800,267" alphatest="blend" />
+    </screen>"""
+    elif summary_screenwidth >= 480 and summary_screenheight >= 320:
         skin = """
     <screen position="0,0" size="480,320" title="IPTVPlayer">
         <widget name="text1" position="10,0" size="460,70" font="Regular;50" halign="center" valign="center" foregroundColor="#05F7F3"/>
