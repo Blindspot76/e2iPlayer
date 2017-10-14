@@ -88,8 +88,8 @@ class ShowsportTVApi(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return []
         
-        playerUrl = self.cm.ph.getDataBeetwenMarkers(data, 'function switchServer', '}')[1]
-        playerUrl = self.getFullUrl(self.cm.ph.getSearchGroups(playerUrl, '''['"]src['"][^'^"]*?['"]([^'^"]+?)['"]''')[0])
+        basePlayerUrl = self.cm.ph.getDataBeetwenMarkers(data, 'function switchServer', '}')[1]
+        basePlayerUrl = self.getFullUrl(self.cm.ph.getSearchGroups(basePlayerUrl, '''['"]src['"][^'^"]*?['"]([^'^"]+?)['"]''')[0])
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data,  ('<ul ', '>', 'nav-tabs'), ('</ul', '>'), numNodes=1)
         if len(data): data = data[0]
@@ -97,7 +97,9 @@ class ShowsportTVApi(CBaseHostClass):
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
         for item in data:
             if 'switchServer' not in item: continue
-            url = playerUrl + self.cm.ph.getSearchGroups(item, '''switchServer\(\s*([0-9]+?)\s*\)''')[0]
+            url = self.cm.ph.getSearchGroups(item, '''switchServer\(\s*([0-9]+?)\s*\)''')[0]
+            if url != '': url =  basePlayerUrl + url
+            else: url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''switchServer\(\s*['"]([^'^"]+?)['"]''')[0])
             params = dict(cItem)
             params.update({'type':'video', 'title':'%s [%s]' % (cItem['title'], self.cleanHtmlStr(item)), 'url':url})
             channelsTab.append(params)
@@ -106,27 +108,27 @@ class ShowsportTVApi(CBaseHostClass):
     def _getScheduleList(self, cItem):
         printDBG("ShowsportTVApi._getScheduleList")
         channelsTab = []
-        sts, data = self.cm.getPage(self.MAIN_URL)
+        sts, data = self.cm.getPage(self.getMainUrl())
         if not sts: return []
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="listmatch">', '</ul>', False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li ', '</li>')
-        for item in data:
-            titleTab = []
-            item = item.replace('<div class="versus column">', ' vs ')
-            if '/images/live.gif' in item:
-                titleTab.append(_('[LIVE]'))
-            timestamp = self.cm.ph.getSearchGroups(item, '''class="starttime time"[^>]+?rel="([0-9]+?)"''', 1, True)[0]
-            if timestamp == '': timestamp = self.cm.ph.getSearchGroups(item, '''class="startdate date"[^>]+?rel="([0-9]+?)"''', 1, True)[0]
-            if timestamp != '':
-                titleTab.append('[%s]' % datetime.datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d %H:%M:%S') )
-            url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''', 1, True)[0] )
-            icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src="([^"]+?)"''', 1, True)[0] )
-            titleTab.append( self.cleanHtmlStr( item ) )
-            desc  = ''
-            if not url.startswith('http'): continue
-            params = dict(cItem)
-            params.update({'type':'video', 'title':' '.join(titleTab), 'url':url, 'icon':icon, 'desc':desc})
-            channelsTab.append(params)
+        
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<td', '>', 'date-row'), ('</table', '>'), False, numNodes=1)
+        if len(data): data = data[0]
+        else: data = ''
+        data = re.split('<td[^>]+?date\-row[^>]+?>', data)
+        for dat in data:
+            desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(dat, '<i', '</td>')[1])
+            dat = self.cm.ph.getAllItemsBeetwenNodes(dat, ('<tr', '>', 'e_row'), ('</tr', '>'))
+            printDBG(dat)
+            for item in dat:
+                url   = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a', '>')
+                if len(url): url = self.getFullUrl( self.cm.ph.getSearchGroups(url[-1], '''href="([^"]+?)"''', 1, True)[0] )
+                else: continue
+                icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src="([^"]+?)"''', 1, True)[0] )
+                title = self.cleanHtmlStr(item)
+                if 'blink' in item: title = '[LIVE] ' + title
+                params = dict(cItem)
+                params.update({'abc_cat':'list_videos', 'title':title, 'url':url, 'icon':icon, 'desc':desc})
+                channelsTab.append(params)
         return channelsTab
         
     def getChannelsList(self, cItem):
@@ -135,7 +137,14 @@ class ShowsportTVApi(CBaseHostClass):
         
         category = cItem.get('abc_cat', None)
         if category == None:
+            for item in [{'title':_('Channels'), 'abc_cat':'list_channels'}, {'title':_('Schedule'), 'abc_cat':'list_schedule'}]:
+                params = dict(cItem)
+                params.update(item)
+                channelsTab.append(params)
+        elif category == 'list_channels':
             channelsTab = self._getChannelsList(cItem)
+        elif category == 'list_schedule':
+            channelsTab = self._getScheduleList(cItem)
         elif category == 'list_videos':
             channelsTab = self._getVideoItems(cItem)
 
