@@ -5,9 +5,6 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, remove_html_markup, GetLogoDir, GetCookieDir, byteify
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -68,42 +65,8 @@ class HDFilmeTV(CBaseHostClass):
         self.filtersCache = {'genre':[], 'country':[], 'sort':[]}
         self.seasonCache = {}
         self.cacheLinks = {}
-        self.needProxy = None
-        
-    def isNeedProxy(self):
-        if self.needProxy == None:
-            sts, data = self.cm.getPage(self.MAIN_URL)
-            self.needProxy = not sts
-        return self.needProxy
-    
-    def _getPage(self, url, params={}, post_data=None):
-        HTTP_HEADER= dict(self.HEADER)
-        params.update({'header':HTTP_HEADER})
-        
-        if self.isNeedProxy() and 'hdfilme.tv' in url:
-            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
-            params['header']['Referer'] = proxy
-            params['header']['Cookie'] = 'flags=2e5;'
-            url = proxy
-        sts, data = self.cm.getPage(url, params, post_data)
-        if sts and None == data:
-            sts = False
-        return sts, data
-        
-    def _getIconUrl(self, url):
-        url = self.getFullUrl(url)
-        if 'hdfilme.tv' in url and self.isNeedProxy():
-            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
-            params = {}
-            params['User-Agent'] = self.HEADER['User-Agent'],
-            params['Referer'] = proxy
-            params['Cookie'] = 'flags=2e5;'
-            url = strwithmeta(proxy, params) 
-        return url
         
     def getFullUrl(self, url):
-        if 'proxy-german.de' in url:
-            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
         return CBaseHostClass.getFullUrl(self, url)
         
     def getPage(self, baseUrl, params={}, post_data=None):
