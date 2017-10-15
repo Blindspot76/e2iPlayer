@@ -201,6 +201,12 @@ class CParsingHelper:
         else:
             idx1 = idx1 + len(marker1)
         return True, data[idx1:idx2]
+        
+    @staticmethod
+    def getDataBeetwenNodes(data, node1, node2, withNodes=True):
+        ret = CParsingHelper.getAllItemsBeetwenNodes(data, node1, node2, withNodes, 1)
+        if len(ret): return True, ret[0]
+        else: return False, ''
     
     @staticmethod
     def getAllItemsBeetwenNodes(data, node1, node2, withNodes=True, numNodes=-1):
@@ -252,6 +258,12 @@ class CParsingHelper:
             if numNodes > 0 and len(itemsTab) == numNodes:
                 break
         return itemsTab
+        
+    @staticmethod
+    def rgetDataBeetwenNodes(data, node1, node2, withNodes=True):
+        ret = CParsingHelper.rgetAllItemsBeetwenNodes(data, node1, node2, withNodes, 1)
+        if len(ret): return True, ret[0]
+        else: return False, ''
         
     @staticmethod
     def rgetAllItemsBeetwenNodes(data, node1, node2, withNodes=True, numNodes=-1):
