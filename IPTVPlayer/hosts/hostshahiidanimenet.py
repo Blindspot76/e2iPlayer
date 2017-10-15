@@ -295,51 +295,31 @@ class ShahiidAnime(CBaseHostClass):
         
         otherInfo = {}
         
-        url = self.getFullUrl('/request/entry')
-        post_data = 'ID=%s' % cItem['imdb']
-        
-        sts, data = self.getPage(url, post_data=post_data)
+        sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
-        title = ''
-        desc = ''
-        icon = ''
+        tmp = ''.join(self.cm.ph.getAllItemsBeetwenMarkers(data, '<h5', '</h5>'))
+        try: title = self.cleanHtmlStr(self.cm.ph.getAllItemsBeetwenNodes(data, ('<h3', '>', 'entry-title'), ('</h3', '>'), numNodes=1)[0])
+        except Exception: title = ''
+        desc = self.cleanHtmlStr(tmp)
+        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(tmp, '''src=['"]([^'^"]+?)['"]''')[0])
         
-        try:
-            data = byteify(json.loads(data), noneReplacement='', baseTypesAsString=True)['entry']
-            icon = self.getFullIconUrl(data.get('cover', cItem.get('icon', '')))
-            title = self.cleanHtmlStr(data['title'])
-            
-            lang = cItem.get('f_lang', '')
-            if lang == '': 
-                # move better language at top
-                langKeys = list(data['lang'].keys())
-                defLang = GetDefaultLang()
-                if defLang not in langKeys: defLang = 'en'
-                if defLang in langKeys: lang = defLang
-                else: lang = langKeys[0]
-            
-            desc = self.cleanHtmlStr(data.get('plot_'+lang, ''))
-            
-            tmp = data.get('year', '')
-            if tmp != '': otherInfo['year'] = tmp
-            
-            tmp = data.get('date', '')
-            if tmp != '': otherInfo['released'] = tmp
-            
-            tmp = data.get('duration', '')
-            if tmp != '': otherInfo['duration'] = tmp + ' min.'
-            
-            for item in [('genres', 'genres'), ('producer', 'producers'), ('director', 'directors'), ('actor', 'actors')]:
-                tmp = ', '.join(data.get(item[0], []))
-                if tmp != '': otherInfo[item[1]] = tmp
-            
-            tmp = data['rating']
-            if tmp != '': otherInfo['imdb_rating'] = '%s/10' % (data['rating'])
-            
-        except Exception:
-            printExc()
-            
+        keysMap = {'الأسم بالعربى':'alternate_title',
+                   'عدد الحلقات' :'episodes',
+                   'النوع'       :'type',
+                   'المنتج'      :'production',
+                   'تاريخ الأنتاج':'status',
+                   'التصنيف'     :'genres',}
+        
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<span', '>', 'class="name"'), ('</div', '>'))
+        for item in data:
+            item = item.split('</span>', 1)
+            if len(item) != 2: continue
+            keyMarker = self.cleanHtmlStr(item[0]).replace(':', '').strip()
+            value = self.cleanHtmlStr(item[1]).replace(' , ', ', ')
+            key = keysMap.get(keyMarker, '')
+            if key != '' and value != '': otherInfo[key] = value
+        
         if title == '': title = cItem['title']
         if desc == '':  desc = cItem.get('desc', '')
         if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
@@ -386,7 +366,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, ShahiidAnime(), True, [])
         
     def withArticleContent(self, cItem):
-        if cItem.get('category', '') != 'explore_item':
+        if cItem.get('category', '') == 'explore_item':
             return True
         return False
     
