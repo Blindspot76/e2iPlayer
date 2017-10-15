@@ -308,7 +308,8 @@ class ShahiidAnime(CBaseHostClass):
                    'عدد الحلقات' :'episodes',
                    'النوع'       :'type',
                    'المنتج'      :'production',
-                   'تاريخ الأنتاج':'status',
+                   'تاريخ الأنتاج':'released',
+                   'الحالة'      :'status',
                    'التصنيف'     :'genres',}
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<span', '>', 'class="name"'), ('</div', '>'))
