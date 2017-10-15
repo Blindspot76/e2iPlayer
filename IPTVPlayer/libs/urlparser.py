@@ -451,6 +451,7 @@ class urlparser:
                        'sharing-box.cloud':    self.pp.parserSHAREVIDEOPL   ,
                        'file-upload.com':      self.pp.parserFILEUPLOADCOM  ,
                        'mp4upload.com':        self.pp.parserMP4UPLOADCOM   ,
+                       'megadrive.tv':         self.pp.parserMEGADRIVETV    ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2687,7 +2688,28 @@ class pageParser:
         if ret['sts'] and 0 == ret['code']:
             data = byteify(json.loads(ret['data']))
             for url in data:
-                if url.split('?', 1)[0].endswith('.mp4'):
+                if url.split('?', 1)[0][-3:].lower() == 'mp4':
+                    linksTab.append({'name':'mp4', 'url':url})
+        return linksTab
+        
+    def parserMEGADRIVETV(self, baseUrl):
+        printDBG("parserMEGADRIVETV baseUrl[%r]" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        jscode = ''
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item:
+                jscode += item
+        linksTab = []
+        jscode = base64.b64decode('''dmFyIGlwdHZfc3JjZXM9W10sZG9jdW1lbnQ9e30sd2luZG93PXRoaXM7ZG9jdW1lbnQud3JpdGU9ZnVuY3Rpb24oKXt9O3ZhciBqd3BsYXllcj1mdW5jdGlvbigpe3JldHVybntzZXR1cDpmdW5jdGlvbihlKXt0cnl7aXB0dl9zcmNlcy5wdXNoKGUuZmlsZSl9Y2F0Y2gobil7fX19fSxlbGVtZW50PWZ1bmN0aW9uKGUpe3RoaXMucGFyZW50Tm9kZT17aW5zZXJ0QmVmb3JlOmZ1bmN0aW9uKCl7fX19LCQ9ZnVuY3Rpb24oZSl7cmV0dXJuIG5ldyBlbGVtZW50KGUpfTtkb2N1bWVudC5nZXRFbGVtZW50QnlJZD1mdW5jdGlvbihlKXtyZXR1cm4gbmV3IGVsZW1lbnQoZSl9LGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQ9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQsZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWU9ZnVuY3Rpb24oZSl7cmV0dXJuW25ldyBlbGVtZW50KGUpXX07JXM7cHJpbnQoSlNPTi5zdHJpbmdpZnkoaXB0dl9zcmNlcykpOw==''') % jscode
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = byteify(json.loads(ret['data']))
+            for url in data:
+                if url.split('?', 1)[0][-3:].lower() == 'mp4':
                     linksTab.append({'name':'mp4', 'url':url})
         return linksTab
         
@@ -2708,7 +2730,7 @@ class pageParser:
         if ret['sts'] and 0 == ret['code']:
             data = byteify(json.loads(ret['data']))
             for item in data:
-                if 'mp4' in item['type']:
+                if 'mp4' in item['type'].lower():
                     linksTab.append({'name':item['type'], 'url':item['src']})
         return linksTab
         

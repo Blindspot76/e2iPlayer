@@ -283,6 +283,9 @@ class ShahiidAnime(CBaseHostClass):
         palyerUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
         if 1 == self.up.checkHostSupport(palyerUrl):
             urlTab = self.up.getVideoLinkExt(palyerUrl)
+            if 0 == len(urlTab) and '--' in palyerUrl:
+                # try to fix broken link
+                urlTab = self.up.getVideoLinkExt(palyerUrl.replace('--', '-'))
         
         return urlTab
         

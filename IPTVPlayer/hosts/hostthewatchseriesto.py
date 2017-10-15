@@ -85,7 +85,7 @@ class TheWatchseriesTo(CBaseHostClass):
         params.update({'header':HTTP_HEADER})
         
         if self.isNeedProxy() and ('thewatchseries.to' in url or 'watch-series.to' in url or 'the-watch-series.to' in url or self.DOMAIN in url):
-            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            proxy = 'http://securefor.com/browse.php?u={0}&b=4&f=norefer'.format(urllib.quote(url, ''))
             params['header']['Referer'] = proxy
             params['header']['Cookie'] = 'flags=2e5;'
             url = proxy
@@ -97,7 +97,7 @@ class TheWatchseriesTo(CBaseHostClass):
     def getIconUrl(self, url):
         url = self.getFullUrl(url)
         if self.isNeedProxy() and ('thewatchseries.to' in url or 'watch-series.to' in url or 'the-watch-series.to' in url or self.DOMAIN in url):
-            proxy = 'http://www.proxy-german.de/index.php?q={0}&hl=240'.format(urllib.quote(url, ''))
+            proxy = 'http://securefor.com/browse.php?u={0}&b=4&f=norefer'.format(urllib.quote(url, ''))
             params = {}
             params['User-Agent'] = self.HEADER['User-Agent'],
             params['Referer'] = proxy
@@ -106,8 +106,10 @@ class TheWatchseriesTo(CBaseHostClass):
         return url
         
     def getFullUrl(self, url):
-        if 'proxy-german.de' in url:
-            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?q=(http[^&]+?)&''')[0] )
+        if self.isNeedProxy() and ('securefor.com' in url or '/browse.php' in url):
+            url2 = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?u=(http[^&]+?)&''')[0] ).replace('&amp;', '&')
+            printDBG("[%s] --> [%s]" % (url, url2))
+            url = url2
         return CBaseHostClass.getFullUrl(self, url)
         
     def cleanHtmlStr(self, data):
@@ -251,13 +253,13 @@ class TheWatchseriesTo(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr class="download_link_', '</tr>')
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<tr', '>', 'download_link_'), ('</tr', '>'))
         for item in data:
             host = self.cm.ph.getSearchGroups(item, '''"download_link_([^'^"]+?)['"]''')[0]
             #if self.up.checkHostSupport('http://'+host+'/') != 1: continue
-            #printDBG(item)
-            if True == self.needProxy:
-                url = self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?%3Fr%3D([^'^"]+?)['"][^>]*?buttonlink''')[0]
+            printDBG(item)
+            if self.isNeedProxy():
+                url = urllib.unquote(self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?%3Fr%3D([^'^"^&]+?)['"&][^>]*?buttonlink''')[0])
             else:
                 url = self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?\?r=([^'^"]+?)['"][^>]*?buttonlink''')[0]
             if url == '': continue
