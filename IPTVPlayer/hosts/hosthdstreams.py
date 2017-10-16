@@ -144,7 +144,8 @@ class HDStreams(CBaseHostClass):
             self.cacheFilters[key].insert(0, {'title':_('All')})
             self.cacheFiltersKeys.append(key)
         
-        sts, data = self.getPage(self.getFullUrl('/js/app.js'))
+        url = self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^'^"]*?/js/app\.[^'^"]*?js)['"]''')[0]
+        sts, data = self.getPage(self.getFullUrl(url))
         if not sts: return
         
         # order 
@@ -202,9 +203,8 @@ class HDStreams(CBaseHostClass):
         nextPage = self.cm.ph.getSearchGroups(nextPage, '''page=(%s)[^0-9]''' % (page+1))[0]
         if nextPage != '': nextPage = True
         else: nextPage = False
-
-        data = self.cm.ph.getDataBeetwenMarkers(data, '</v-layout>', '</v-layout>', False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'movie-wrap'), ('</a' , '>'))
         for item in data:
             url = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
             icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''url\(\s*['"]([^'^"]+?)['"]''')[0])
@@ -331,8 +331,8 @@ class HDStreams(CBaseHostClass):
         urlParams['header']['x-requested-with'] = 'XMLHttpRequest'
         
         url = self.getFullUrl('/search')
-        query = {'q':searchPattern}
-        sts, data = self.getPage(url, urlParams, query)
+        query = urllib.urlencode({'q':searchPattern})
+        sts, data = self.getPage(url+'?'+query, urlParams)
         if not sts: return
         
         printDBG(data)
@@ -400,7 +400,7 @@ class HDStreams(CBaseHostClass):
             ciphertext = base64.b64decode(tmp['ct'][::-1])
             iv = unhexlify(tmp['iv'])
             salt = unhexlify(tmp['s'])
-            b = urlParams['header']['User-Agent']
+            b = urlParams['header']['x-csrf-token'] #urlParams['header']['User-Agent']
             tmp = self.cryptoJS_AES_decrypt(ciphertext, base64.b64encode(b), salt)
             printDBG(tmp)
             tmp = byteify(json.loads(tmp))
