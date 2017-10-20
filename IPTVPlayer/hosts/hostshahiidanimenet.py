@@ -181,6 +181,7 @@ class ShahiidAnime(CBaseHostClass):
                         else: descTab.append(val)
                 desc = ' | '.join(descTab) + '[/br]' + desc
                 params = dict(cItem)
+                params.pop('page', None)
                 params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
                 self.addDir(params)
         
@@ -192,19 +193,31 @@ class ShahiidAnime(CBaseHostClass):
     def exploreItem(self, cItem):
         printDBG("ShahiidAnime.exploreItem")
         
-        sts, data = self.getPage(cItem['url'])
+        page = cItem.get('page', 1)
+        
+        url = cItem['url']
+        if page > 1: url += '/page/%s/' % page
+        
+        sts, data = self.getPage(url)
         if not sts: return
         
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data,  ('<div ', '>', 'imgboxsinpost'), ('</div', '>'), False)
-        for item in tmp:
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
-            title = self.cleanHtmlStr(item)
-            if title == '': title = _('Trailer')
-            title = cItem['title'] + (' [%s]' % title)
-            if 1 == self.up.checkHostSupport(url):
-                params = dict(cItem)
-                params.update({'good_for_fav':True, 'title':title, 'url':url})
-                self.addVideo(params)
+        nextPage = self.cm.ph.getDataBeetwenNodes(data,  ('<div ', '>', 'pagination'), ('</div', '>'), False)[1]
+        if ('/page/%s/' % (page + 1)) in nextPage: 
+            nextPage = True
+        else:
+            nextPage = False
+        
+        if page == 1:
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data,  ('<div ', '>', 'imgboxsinpost'), ('</div', '>'), False)
+            for item in tmp:
+                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+                title = self.cleanHtmlStr(item)
+                if title == '': title = _('Trailer')
+                title = cItem['title'] + (' [%s]' % title)
+                if 1 == self.up.checkHostSupport(url):
+                    params = dict(cItem)
+                    params.update({'good_for_fav':True, 'title':title, 'url':url})
+                    self.addVideo(params)
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data,  ('<div ', '>', 'online-block'), ('</a', '>'), False)
         for item in data:
@@ -218,6 +231,11 @@ class ShahiidAnime(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
             self.addVideo(params)
+            
+        if nextPage:
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':_("Next page"), 'page':page+1})
+            self.addDir(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("ShahiidAnime.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
