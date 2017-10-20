@@ -334,6 +334,12 @@ class Spryciarze(CBaseHostClass):
                 post_data['s'] = val_s
                 post_data['yes'] = ''
                 continue
+                
+            player = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'video_container'), ('</div', '>'))[1]
+            player = self.getFullUrl(self.cm.ph.getSearchGroups(player, '''<iframe[^>]+?src=['"]([^"^']*?)['"]''', 1, True)[0])
+            if 1 == self.up.checkHostSupport(player):
+                linkstTab = self.up.getVideoLinkExt(player)
+                if len(linkstTab): break
             
             player =  self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']*?player\.spryciarze\.pl[^"^']+?)['"]''', 1, True)[0])
             if '' != player:
