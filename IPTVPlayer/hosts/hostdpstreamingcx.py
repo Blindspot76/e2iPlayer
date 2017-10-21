@@ -48,20 +48,20 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://streaming-series.cx/'
+    return 'http://dpstreaming.cx/'
 
-class StreamingSeriesXYZ(CBaseHostClass):
+class DPStreamingCX(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0'
     HTTP_HEADER = {'User-Agent': USER_AGENT, 'Accept': 'text/html'}
-    MAIN_URL = 'http://www.streaming-series.cx/'
-    DEFAULT_ICON_URL = 'http://www.siteshotter.com/website-thumbnail/streaming-series.xyz'
+    MAIN_URL = 'http://dpstreaming.cx/'
+    DEFAULT_ICON_URL = 'http://dpstreaming.cx/wp-content/uploads/2017/09/dpstreaming-cx.png'
     MAIN_CAT_TAB = [{'category':'list_items',      'title':_('Last added'),   'url':MAIN_URL},
                     {'category':'categories',      'title':_('Categories'),   'url':MAIN_URL},
                     {'category':'search',          'title': _('Search'), 'search_item':True },
                     {'category':'search_history',  'title': _('Search history'),            } ]
     
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'streaming-series.xyz', 'cookie':'streaming-series.xyz.cookie'})
+        CBaseHostClass.__init__(self, {'history':'dpstreaming.cx', 'cookie':'dpstreaming.cx.cookie'})
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
@@ -84,19 +84,20 @@ class StreamingSeriesXYZ(CBaseHostClass):
         return CBaseHostClass.cleanHtmlStr(data)
             
     def listCategories(self, cItem, category):
-        printDBG("StreamingSeriesXYZ.listCategories")
+        printDBG("DPStreamingCX.listCategories")
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="menu-categories"', '</ul>')[1]
-        data = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)<').findall(data)
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<li', '>', 'cat-item'), ('</li', '>'))
         for item in data:
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            title = self.cleanHtmlStr(item)
             params = dict(cItem)
-            params.update({'category':category, 'url':item[0], 'title':item[1]})
+            params.update({'category':category, 'url':url, 'title':title})
             self.addDir(params)
     
     def listItems(self, cItem, category):
-        printDBG("StreamingSeriesXYZ.listItems")
+        printDBG("DPStreamingCX.listItems")
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
@@ -108,10 +109,11 @@ class StreamingSeriesXYZ(CBaseHostClass):
         for item in data:
             url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
             icon  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            title = self.cleanHtmlStr(item)
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1])
+            desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'content'), ('</div', '>'))[1])
             season = self.cm.ph.getSearchGroups(url, 'saison-([0-9]+?)-' )[0]
             params = dict(cItem)
-            params.update({'good_for_fav': True, 'category':category, 'url':url, 'title':title, 'icon':icon, 'season':season})
+            params.update({'good_for_fav': True, 'category':category, 'url':url, 'title':title, 'desc':desc, 'icon':icon, 'season':season})
             self.addDir(params)
             
         if nextPage != '':
@@ -120,7 +122,7 @@ class StreamingSeriesXYZ(CBaseHostClass):
             self.addDir(params)
         
     def listEpisodes(self, cItem):
-        printDBG("StreamingSeriesXYZ.listEpisodes")
+        printDBG("DPStreamingCX.listEpisodes")
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
@@ -140,13 +142,13 @@ class StreamingSeriesXYZ(CBaseHostClass):
             self.addVideo(params)
     
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("StreamingSeriesXYZ.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG("DPStreamingCX.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
         cItem['url'] = self.MAIN_URL + '?s=' + urllib.quote(searchPattern)
         self.listItems(cItem, 'episodes')
     
     def getLinksForVideo(self, cItem):
-        printDBG("StreamingSeriesXYZ.getLinksForVideo [%s]" % cItem)
+        printDBG("DPStreamingCX.getLinksForVideo [%s]" % cItem)
         urlTab = []
         
         sts, data = self.getPage(cItem['url'])
@@ -169,7 +171,7 @@ class StreamingSeriesXYZ(CBaseHostClass):
         return urlTab
         
     def getVideoLinks(self, url):
-        printDBG("StreamingSeriesXYZ.getVideoLinks [%s]" % url)
+        printDBG("DPStreamingCX.getVideoLinks [%s]" % url)
         urlTab = []
         
         if 'protect-stream.com' not in url: return []
@@ -205,11 +207,11 @@ class StreamingSeriesXYZ(CBaseHostClass):
         return self.up.getVideoLinkExt(videoUrl)
         
     def getFavouriteData(self, cItem):
-        printDBG('StreamingSeriesXYZ.getFavouriteData')
+        printDBG('DPStreamingCX.getFavouriteData')
         return json.dumps(cItem) 
         
     def getLinksForFavourite(self, fav_data):
-        printDBG('StreamingSeriesXYZ.getLinksForFavourite')
+        printDBG('DPStreamingCX.getLinksForFavourite')
         links = []
         try:
             cItem = byteify(json.loads(fav_data))
@@ -218,7 +220,7 @@ class StreamingSeriesXYZ(CBaseHostClass):
         return links
         
     def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('StreamingSeriesXYZ.setInitListFromFavouriteItem')
+        printDBG('DPStreamingCX.setInitListFromFavouriteItem')
         try:
             params = byteify(json.loads(fav_data))
         except Exception: 
@@ -303,4 +305,4 @@ class StreamingSeriesXYZ(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, StreamingSeriesXYZ(), True, [])
+        CHostBase.__init__(self, DPStreamingCX(), True, [])
