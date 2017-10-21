@@ -20,6 +20,7 @@ hostdailymotion
 hostdancetrippin
 hostdardarkomcom
 hostdarshowcom
+hostdpstreamingcx
 hostdrdk
 hostekinotv
 hostekstraklasatv
@@ -99,7 +100,6 @@ hostsovdub
 hostsportdeutschland
 hostspryciarze
 hoststreamcomplet
-hoststreamingseriesxyz
 hoststreamliveto
 hostsvtplayse
 hosttantifilmorg
