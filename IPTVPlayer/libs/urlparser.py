@@ -5323,18 +5323,22 @@ class pageParser:
         def __getJS(data, params):
             tmpUrls = re.compile("""<script[^>]+?src=['"]([^'^"]+?)['"]""", re.IGNORECASE).findall(data)
             printDBG(tmpUrls)
+            codeUrl = 'https://www.flashx.tv/js/code.js'
             for tmpUrl in tmpUrls:
                 if tmpUrl.startswith('.'):
                     tmpUrl = tmpUrl[1:]
                 if tmpUrl.startswith('//'):
-                    tmpUrl = 'http:' + tmpUrl
+                    tmpUrl = 'https:' + tmpUrl
                 if tmpUrl.startswith('/'):
-                    tmpUrl = 'http://www.flashx.tv' + tmpUrl
-                if self.cm.isValidUrl(tmpUrl) and ('flashx' in tmpUrl and 'jquery' not in tmpUrl): 
-                    printDBG('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-                    sts, tmp = self.cm.getPage(tmpUrl.replace('\n', ''), params)
+                    tmpUrl = 'https://www.flashx.tv' + tmpUrl
+                if self.cm.isValidUrl(tmpUrl): 
+                    if ('flashx' in tmpUrl and 'jquery' not in tmpUrl and '/code.js' not in tmpUrl): 
+                        printDBG('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+                        sts, tmp = self.cm.getPage(tmpUrl.replace('\n', ''), params)
+                    elif '/code.js' in tmpUrl:
+                        codeUrl = tmpUrl
             
-            sts, tmp = self.cm.getPage('https://www.flashx.tv/js/code.js', params)
+            sts, tmp = self.cm.getPage(codeUrl, params)
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, 'function', ';');
             for tmpItem in tmp:
                 tmpItem = tmpItem.replace(' ', '')
@@ -5414,7 +5418,7 @@ class pageParser:
                 params = {'name':name, 'url':url}
                 if params not in urls: urls.append(params)
             
-            return urls
+            return urls[::-1]
         
         if '.tv/embed-' not in baseUrl:
             baseUrl = baseUrl.replace('.tv/', '.tv/embed-')
@@ -5510,7 +5514,7 @@ class pageParser:
                             retTab.append({'name':'rtmp', 'url': base + '/' + src + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, redirectUrl)})
                 elif '.mp4' in item:
                     retTab.append({'name':'mp4', 'url': item})
-        return retTab
+        return retTab[::-1]
         
     def parserMYVIDEODE(self, baseUrl):
         printDBG("parserMYVIDEODE baseUrl[%s]" % baseUrl)
