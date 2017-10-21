@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 
 from datetime import timedelta
 ###################################################
@@ -120,10 +121,15 @@ class YouTubeParser():
                             for item in hlsList:
                                 item['format'] = "%sx%s" % (item.get('heigth', 0), item.get('with', 0))
                                 item['ext']  = "m3u8"
+                                item['m3u8'] = True
                                 retList.append(item)
             except Exception:
                 printExc()
-                
+        
+        for idx in range(len(retList)):
+            if retList[idx].get('m3u8', False):
+                retList[idx]['url'] = strwithmeta(retList[idx]['url'], {'iptv_m3u8_live_start_index':-30})
+        
         if dashSepareteList:
             return retList, dashList
         else:
