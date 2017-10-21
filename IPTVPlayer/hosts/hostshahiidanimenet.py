@@ -196,6 +196,7 @@ class ShahiidAnime(CBaseHostClass):
         page = cItem.get('page', 1)
         
         url = cItem['url']
+        if url.endswith('/'): url = url[:-1]
         if page > 1: url += '/page/%s/' % page
         
         sts, data = self.getPage(url)
