@@ -290,12 +290,13 @@ class HDStreams(CBaseHostClass):
                 self.addVideo(params)
         else:
             sNum = self.cm.ph.getSearchGroups(cItem['url'] + '/', 'season/([0-9]+?)[^0-9]')[0]
-            sp = re.compile('''<v-avatar[^>]*?>''')
-            data = self.cm.ph.getDataBeetwenReMarkers(data, sp, re.compile('</v-layout>'), False)[1]
+            sp = re.compile('''<v\-avatar[^>]*?>''')
+            data = self.cm.ph.getDataBeetwenReMarkers(data, sp, re.compile('</v\-layout>'), False)[1]
             data = sp.split(data)
             for episodeItem in data:
-                eIcon = self.getFullIconUrl(self.cm.ph.getSearchGroups(episodeItem, '''src=['"]([^'^"]+?)['"]''')[0])
-                if eIcon == '': eIcon = icon
+                eIcon = self.cm.ph.getSearchGroups(episodeItem, '''src=['"]([^'^"]+?)['"]''')[0]
+                if eIcon == '' or eIcon.startswith('data:image'): eIcon = icon
+                eIcon = self.getFullIconUrl(eIcon)
                 eTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(episodeItem, re.compile('''<p[^>]+?episode\-name'''), re.compile('</p>'))[1])
                 eNum = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(episodeItem, re.compile('''<p[^>]+?episode\-number'''), re.compile('</p>'))[1])
                 eNum = self.cm.ph.getSearchGroups(eNum+'|', '[^0-9]([0-9]+?)[^0-9]')[0]
@@ -305,6 +306,7 @@ class HDStreams(CBaseHostClass):
                 episodeItem = self.cm.ph.getAllItemsBeetwenMarkers(episodeItem, '<v-list-tile ', '</v-list-tile>')
                 for linkItem in episodeItem:
                     tmp = self.cm.ph.getSearchGroups(linkItem, '''loadStream\(\s*['"]([^'^"]+?)['"]\s*,\s*['"]([^'^"]+?)['"]''', 2)
+                    if '' in tmp: tmp = self.cm.ph.getSearchGroups(linkItem, '''loadEpisodeStream\(\s*['"]([^'^"]+?)['"]\s*,\s*['"]([^'^"]+?)['"]''', 2)
                     if '' in tmp: continue
                     name = self.cleanHtmlStr(linkItem)
                     url = strwithmeta(cItem['url'], {'links_key':linksKey, 'post_data':{'e':tmp[0], 'h':tmp[1], 'lang':'de'}}) #langId
