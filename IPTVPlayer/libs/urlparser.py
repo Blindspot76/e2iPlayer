@@ -2539,38 +2539,36 @@ class pageParser:
         return videoUrls
     
     def parserYOUTUBE(self, url):
+        def __getLinkQuality( itemLink ):
+            val = itemLink['format'].split('x', 1)[0].split('p', 1)[0]
+            try: return int(val)
+            except Exception: return 0
+        
         if None != self.getYTParser():
             try:
                 formats = config.plugins.iptvplayer.ytformat.value
-                bitrate = config.plugins.iptvplayer.ytDefaultformat.value
+                height = config.plugins.iptvplayer.ytDefaultformat.value
                 dash    = config.plugins.iptvplayer.ytShowDash.value
             except Exception:
                 printDBG("parserYOUTUBE default ytformat or ytDefaultformat not available here")
                 formats = "mp4"
-                bitrate = "360"
+                height = "360"
                 dash    = False
             
             tmpTab, dashTab = self.getYTParser().getDirectLinks(url, formats, dash, dashSepareteList = True)
-            # move default URL to the TOP of list
-            if 1 < len(tmpTab):
-                def __getLinkQuality( itemLink ):
-                    tab = itemLink['format'].split('x')
-                    return int(tab[0])
-
-                # get default item
-                defItem = CSelOneLink(tmpTab, __getLinkQuality, int(bitrate)).getOneLink()[0]
-                # remove default item
-                tmpTab[:] = [x for x in tmpTab if x['url'] != defItem['url']]
-                # add default item at top
-                tmpTab.insert(0, defItem)
-                    
+            tmpTab = CSelOneLink(tmpTab, __getLinkQuality, int(height)).getSortedLinks()
+            dashTab = CSelOneLink(dashTab, __getLinkQuality, int(height)).getSortedLinks()
+            
             videoUrls = []
             for item in tmpTab:
                 url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
                 videoUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':url})
             for item in dashTab:
                 url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
-                videoUrls.append({'name': _("[For download only] ") + item['format'] + ' | dash', 'url':url})
+                if item.get('ext', '') == 'mpd':
+                    videoUrls.append({'name': 'YouTube | dash: ' + item['name'], 'url':url})
+                else:
+                    videoUrls.append({'name': 'YouTube | custom dash: ' + item['format'], 'url':url})
             return videoUrls
 
         return False

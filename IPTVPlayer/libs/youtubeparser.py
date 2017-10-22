@@ -8,7 +8,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, re
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getMPDLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 
 from datetime import timedelta
@@ -27,7 +27,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.ytformat        = ConfigSelection(default = "mp4", choices = [("flv, mp4", "flv, mp4"),("flv", "flv"),("mp4", "mp4")]) 
-config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "360", choices = [("0", _("the worst")), ("144", "144p"), ("240", "240p"), ("360", "360p"),("720", "720"), ("9999", _("the best"))])
+config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "360", choices = [("0", _("the worst")), ("144", "144p"), ("240", "240p"), ("360", "360p"),("720", "720"), ("1080", "1080"),("9999", _("the best"))])
 config.plugins.iptvplayer.ytUseDF         = ConfigYesNo(default = True)
 config.plugins.iptvplayer.ytShowDash      = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ytSortBy        = ConfigSelection(default = "", choices = [("", _("Relevance")),("video_date_uploaded", _("Upload date")),("video_view_count", _("View count")),("video_avg_rating", _("Rating"))]) 
@@ -40,8 +40,6 @@ class YouTubeParser():
 
     def getDirectLinks(self, url, formats = 'flv, mp4', dash=True, dashSepareteList = False):
         printDBG('YouTubeParser.getDirectLinks')
-        if config.plugins.iptvplayer.ytUseDF.value: # temporary workaround, similar code should be executed after getDirectLinks
-            dash = False
         list = []
         try:
             if self.cm.isValidUrl(url) and '/channel/' in url and url.endswith('/live'):
@@ -113,8 +111,8 @@ class YouTubeParser():
                 sts, data = self.cm.getPage(url, {'header':{'User-agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'}})
                 if sts:
                     data = data.replace('\\"', '"').replace('\\\\\\/', '/')
-                    hlsUrl = self.cm.ph.getSearchGroups(data, '''"hlsvp"\s*:\s*"(http[^"]+?)"''')[0]
-                    if '' != hlsUrl:
+                    hlsUrl = self.cm.ph.getSearchGroups(data, '''"hlsvp"\s*:\s*"(https?://[^"]+?)"''')[0]
+                    if self.cm.isValidUrl(hlsUrl):
                         hlsList = getDirectM3U8Playlist(hlsUrl)
                         if len(hlsList):
                             dashList = []
@@ -125,6 +123,21 @@ class YouTubeParser():
                                 retList.append(item)
             except Exception:
                 printExc()
+            if dash:
+                try:
+                    sts, data = self.cm.getPage(url, {'header':{'User-agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}})
+                    data = data.replace('\\"', '"').replace('\\\\\\/', '/').replace('\\/', '/')
+                    dashUrl = self.cm.ph.getSearchGroups(data, '''"dashmpd"\s*:\s*"(https?://[^"]+?)"''')[0]
+                    printDBG("DASH URL >>>>>>>>>>>>>>>>>>>>>>> [%s]" % dashUrl)
+                    if self.cm.isValidUrl(dashUrl):
+                        dashList = getMPDLinksWithMeta(dashUrl, checkExt=False)
+                        printDBG(dashList)
+                        for idx in range(len(dashList)):
+                            dashList[idx]['format'] = "%sx%s" % (dashList[idx].get('height', 0), dashList[idx].get('width', 0))
+                            dashList[idx]['ext']  = "mpd"
+                            dashList[idx]['dash'] = True
+                except Exception:
+                    printExc()
         
         for idx in range(len(retList)):
             if retList[idx].get('m3u8', False):
