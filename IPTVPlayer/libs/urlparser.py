@@ -3640,17 +3640,24 @@ class pageParser:
         Referer = baseUrl.meta.get('Referer', '')
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', 'Referer' : Referer}
         
+        episode = self.cm.ph.getSearchGroups(baseUrl+'|', '''[&\?]e=([0-9]+?)[^0-9]''')[0]
+        
         vidTab = []
         
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
+        printDBG(data)
+        
         url = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
         HTTP_HEADER['Referer'] = baseUrl
+        
+        if episode != '':
+            if '?' in url: url += '&e=' + episode
+            else: url += '?e=' + episode
+        
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
         if not sts: return
-        
-        printDBG(data)
         
         unique = []
         urls = []
