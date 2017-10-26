@@ -19,7 +19,6 @@ hostcrtankocom
 hostdailymotion
 hostdancetrippin
 hostdardarkomcom
-hostdarshowcom
 hostdpstreamingcx
 hostdrdk
 hostekinotv
