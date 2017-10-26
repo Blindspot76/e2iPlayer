@@ -100,10 +100,19 @@ class IITVPL(CBaseHostClass):
                 if letter.isdigit(): letter = '0-9'
                 if letter not in self.cacheSeries:
                     self.cacheSeries[letter] = []
-                    params = dict(cItem)
-                    params.update({'category':nextCategory, 'title':letter, 'letter':letter, 'url':url})
-                    self.addDir(params)
                 self.cacheSeries[letter].append( {'title':title, 'url':url} )
+        
+        letterTab = ["0-9","a","A","ą","Ą","b","B","c","C","ć","Ć","d","D","e","E","ę","Ę","f","F","g","G","h","H","i","I","j","J","k","K","l","L","ł","Ł","m","M","n","N","ń","Ń","o","O","ó","Ó","p","P","q","Q","r","R","s","S","ś","Ś","t","T","u","U","v","V","w","W","x","X","y","Y","z","Z","ź","Ź","ż","Ż"]
+        for letter in letterTab:
+            if 0 == len(self.cacheSeries.get(letter, [])): continue
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'title':letter, 'letter':letter})
+            self.addDir(params)
+        for letter in self.cacheSeries:
+            if letter in letterTab: continue
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'title':letter, 'letter':letter})
+            self.addDir(params)
         
     def listSeriesByLetter(self, cItem, nextCategory):
         printDBG("IITVPL.listSeriesByLetter")
@@ -179,7 +188,7 @@ class IITVPL(CBaseHostClass):
                 if tmp[0].startswith('http://') or tmp[0].startswith('https://'):
                     links[tabTitle].append({'name':'[{0}] '.format(tabTitle) + self.cleanHtmlStr(tmp[1]), 'url':tmp[0], 'need_resolve':1})
         
-        keys = ['Lektor', 'Napisy PL', 'Orygina�']
+        keys = ['Lektor', 'Napisy PL', 'Oryginał']
         keys.extend(links.keys())
         for key in keys:
             for item in links.get(key, []):
