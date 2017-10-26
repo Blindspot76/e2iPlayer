@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.unshortenit import unshorten
 ###################################################
 
 ###################################################
@@ -219,6 +220,11 @@ class IITVPL(CBaseHostClass):
                     videoUrl = str(data['link'])
             except Exception:
                 printExc()
+        else:
+            uri, sts = unshorten(videoUrl)
+            if sts == 'OK': 
+                uri = self.cm.ph.getSearchGroups(uri, '''/(https?://[^'"]+?)$''')[0]
+                if self.cm.isValidUrl(uri): videoUrl = uri
         
         if 1 != self.up.checkHostSupport(videoUrl):
             try:
