@@ -452,6 +452,7 @@ class urlparser:
                        'file-upload.com':      self.pp.parserFILEUPLOADCOM  ,
                        'mp4upload.com':        self.pp.parserMP4UPLOADCOM   ,
                        'megadrive.tv':         self.pp.parserMEGADRIVETV    ,
+                       'watchvideo17.us':      self.pp.parserWATCHVIDEO17US ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2709,6 +2710,33 @@ class pageParser:
             for url in data:
                 if url.split('?', 1)[0][-3:].lower() == 'mp4':
                     linksTab.append({'name':'mp4', 'url':url})
+        return linksTab
+        
+    def parserWATCHVIDEO17US(self, baseUrl):
+        printDBG("parserWATCHVIDEO17US baseUrl[%r]" % baseUrl)
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        jscode = ''
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if item.startswith('eval('):
+                jscode += item
+        linksTab = []
+        hlsTab = []
+        jscode = base64.b64decode('''dmFyIGlwdHZfc3JjZXM9W10sZG9jdW1lbnQ9e30sd2luZG93PXRoaXM7ZG9jdW1lbnQud3JpdGU9ZnVuY3Rpb24oKXt9O3ZhciBqd3BsYXllcj1mdW5jdGlvbigpe3JldHVybntzZXR1cDpmdW5jdGlvbihlKXt0cnl7aXB0dl9zcmNlcy5wdXNoLmFwcGx5KGlwdHZfc3JjZXMsZS5zb3VyY2VzKX1jYXRjaChuKXt9fSxvblRpbWU6ZG9jdW1lbnQud3JpdGUsb25QbGF5OmRvY3VtZW50LndyaXRlLG9uQ29tcGxldGU6ZG9jdW1lbnQud3JpdGUsb25QYXVzZTpkb2N1bWVudC53cml0ZSxkb1BsYXk6ZG9jdW1lbnQud3JpdGV9fSxlbGVtZW50PWZ1bmN0aW9uKGUpe3RoaXMucGFyZW50Tm9kZT17aW5zZXJ0QmVmb3JlOmZ1bmN0aW9uKCl7fX19LCQ9ZnVuY3Rpb24oZSl7cmV0dXJuIG5ldyBlbGVtZW50KGUpfTtkb2N1bWVudC5nZXRFbGVtZW50QnlJZD1mdW5jdGlvbihlKXtyZXR1cm4gbmV3IGVsZW1lbnQoZSl9LGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQ9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQsZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWU9ZnVuY3Rpb24oZSl7cmV0dXJuW25ldyBlbGVtZW50KGUpXX07JXM7cHJpbnQoSlNPTi5zdHJpbmdpZnkoaXB0dl9zcmNlcykpOw==''') % jscode
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = byteify(json.loads(ret['data']), '', True)
+            for item in data:
+                ext = item['file'].split('?', 1)[0][-4:].lower()
+                printDBG("|>><<| EXT[%s]" % ext)
+                if ext == 'm3u8':
+                    hlsTab = getDirectM3U8Playlist(item['file'], checkExt=False, checkContent=True)
+                elif ext[1:] == 'mp4':
+                    linksTab.append({'name':item['label'], 'url':item['file']})
+        linksTab.extend(hlsTab)
         return linksTab
         
     def parserMP4UPLOADCOM(self, baseUrl):
