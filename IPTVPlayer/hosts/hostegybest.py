@@ -38,12 +38,15 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.egybest_login    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.egybest_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("login")+":",    config.plugins.iptvplayer.egybest_login))
+    optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.egybest_password))
     return optionList
 ###################################################
-
 def gettytul():
     return 'http://egy.best/'
 
@@ -68,6 +71,9 @@ class EgyBest(CBaseHostClass):
                              {'category':'search',                'title': _('Search'),              'search_item':True, }, 
                              {'category':'search_history',        'title': _('Search history'),                          } 
                             ]
+        self.loggedIn = None
+        self.login    = ''
+        self.password = ''
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
@@ -251,6 +257,8 @@ class EgyBest(CBaseHostClass):
         
     def getLinksForVideo(self, cItem):
         printDBG("EgyBest.getLinksForVideo [%s]" % cItem)
+        self.tryTologin()
+        
         retTab = []
         dwnTab = []
         if 1 == self.up.checkHostSupport(cItem.get('url', '')):
@@ -280,7 +288,7 @@ class EgyBest(CBaseHostClass):
                 if url != '': retTab.append({'name':'%s: %s' % (self.cleanHtmlStr(it), name), 'url':self.getFullUrl(url), 'need_resolve':1})
                 if call != '': dwnTab.append({'name':'%s: %s' % (self.cleanHtmlStr(it), name), 'url':strwithmeta(call, {'priv_api_call':True, 'Referer':cItem['url']}), 'need_resolve':1})
         
-        #retTab.extend(dwnTab)
+        retTab.extend(dwnTab)
         if len(retTab): self.cacheLinks[cacheKey] = retTab
         return retTab
         
@@ -307,11 +315,15 @@ class EgyBest(CBaseHostClass):
             if not sts: return []
             try:
                 data = byteify(json.loads(data), '', True)
-                if data.get('action', '') == 'message':
+                if data.get('status', '') == '200':
+                    authUrl = data.get('auth_url', '')
+                    url = data.get('url', '')
+                    if self.cm.isValidUrl(url) and self.cm.isValidUrl(authUrl): 
+                        sts, tmp = self.getPage(authUrl)
+                        if sts: urlTab.append({'name':'direct', 'url':url})
+                elif data.get('action', '') == 'message':
                     SetIPTVPlayerLastHostError(self.cleanHtmlStr(data['message']))
                     printDBG(self.cleanHtmlStr(data['message']))
-                else:
-                    pass
                 printDBG(data)
             except Exception:
                 printExc()
@@ -322,6 +334,8 @@ class EgyBest(CBaseHostClass):
         
     def getArticleContent(self, cItem, data=None):
         printDBG("EgyBest.getArticleContent [%s]" % cItem)
+        self.tryTologin()
+        
         retTab = []
         
         otherInfo = {}
@@ -368,8 +382,58 @@ class EgyBest(CBaseHostClass):
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
+    def tryTologin(self):
+        printDBG('tryTologin start')
+        
+        if None == self.loggedIn or self.login != config.plugins.iptvplayer.egybest_login.value or\
+            self.password != config.plugins.iptvplayer.egybest_password.value:
+        
+            self.login = config.plugins.iptvplayer.egybest_login.value
+            self.password = config.plugins.iptvplayer.egybest_password.value
+            
+            rm(self.COOKIE_FILE)
+            
+            self.loggedIn = False
+            
+            if '' == self.login.strip() or '' == self.password.strip():
+                return False
+            
+            sts, data = self.getPage(self.getMainUrl())
+            if not sts: return False
+            
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>[^<]*?تسجيل الدخول[^<]*?</a>''')[0])
+            
+            sts, data = self.getPage(url)
+            if not sts: return False
+            
+            sts, data = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'login_form'), ('</form', '>'))
+            if not sts: return False
+            actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
+            post_data = {}
+            for item in data:
+                name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+                value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+                post_data[name] = value
+            
+            post_data.update({'username':self.login, 'password':self.password})
+            
+            httpParams = dict(self.defaultParams)
+            httpParams['header'] = dict(httpParams['header'])
+            httpParams['header']['Referer'] = url
+            sts, data = self.cm.getPage(actionUrl, httpParams, post_data)
+            if sts and '/logout' in data and 'تسجيل الدخول' not in data:
+                printDBG('tryTologin OK')
+                self.loggedIn = True
+            else:
+                self.sessionEx.open(MessageBox, _('Login failed.'), type = MessageBox.TYPE_ERROR, timeout = 10)
+                printDBG('tryTologin failed')
+        return self.loggedIn
+    
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
+        
+        self.tryTologin()
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
