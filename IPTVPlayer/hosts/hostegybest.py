@@ -66,10 +66,13 @@ class EgyBest(CBaseHostClass):
         self.cacheFiltersKeys = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_CAT_TAB = [{'category':'list_filters',          'title': _('Movies'),          'url':self.getFullUrl('/movies/'), },
-                             {'category':'list_filters',          'title': _('TV series'),       'url':self.getFullUrl('/tv/'),     },
-                             {'category':'search',                'title': _('Search'),              'search_item':True, }, 
-                             {'category':'search_history',        'title': _('Search history'),                          } 
+        self.MAIN_CAT_TAB = [{'category':'list_filters',   'title': _('Trending'),        'url':self.getFullUrl('/trending/')},
+                             {'category':'list_filters',   'title': _('Movies'),          'url':self.getFullUrl('/movies/')},
+                             {'category':'list_filters',   'title': _('Arabic movies'),   'url':self.getFullUrl('/movies/'),  'f_sort':'arab'},
+                             {'category':'list_filters',   'title': _('With subtitles'),   'url':self.getFullUrl('/movies/'), 'f_sort':'subbed'},
+                             {'category':'list_filters',   'title': _('TV series'),       'url':self.getFullUrl('/tv/')},
+                             {'category':'search',         'title': _('Search'),          'search_item':True}, 
+                             {'category':'search_history', 'title': _('Search history')},
                             ]
         self.loggedIn = None
         self.login    = ''
@@ -108,9 +111,10 @@ class EgyBest(CBaseHostClass):
                 if allTitle != None: self.cacheFilters[key].insert(0, {'title':_('All')})
                 self.cacheFiltersKeys.append(key)
         
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'rs_scroll_parent'), ('</div', '>'), False)[1]
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
-        addFilter(tmp, 'href', 'sort')
+        if '' == cItem.get('f_sort', ''):
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'rs_scroll_parent'), ('</div', '>'), False)[1]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
+            addFilter(tmp, 'href', 'sort')
         
         keyMap = {0:'year', 1:'language', 2:'country', 3:'genre', 4:'category', 5:'quality', 6:'resolution'}
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'dropdown'), ('</div' , '>'))
@@ -303,7 +307,7 @@ class EgyBest(CBaseHostClass):
                 for idx in range(len(self.cacheLinks[key])):
                     if videoUrl in self.cacheLinks[key][idx]['url']:
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
-                            self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
+                            self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name'] + '*'
                         break
         
         if videoUrl.meta.get('priv_api_call', False):
