@@ -228,8 +228,10 @@ class HDFilmeTV(CBaseHostClass):
                     printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                     tmp = byteify( json.loads(tmp) )
                     for item in tmp['playinfo']:
-                        if 'mp4' not in item.get('type', item.get('mine_type')):
-                            continue
+                        try:
+                            if 'mp4' not in item.get('type', item.get('mine_type')): continue
+                        except Exception:
+                            if not str(item['file']).lower().split('?', 1)[0].endswith('.mp4'): continue
                         url = self.getFullUrl(str(item['file'])) 
                         url = strwithmeta(url, {'Referer':self.getMainUrl()})
                         urlTab.append({'name':str(item['label']), 'url':url})
