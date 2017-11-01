@@ -21,6 +21,7 @@ hostdancetrippin
 hostdardarkomcom
 hostdpstreamingcx
 hostdrdk
+hostegybest
 hostekinotv
 hostekstraklasatv
 hosteskago
@@ -52,6 +53,7 @@ hostiitvpl
 hostinfoversion
 hostipla
 hostiptvplayerinfo
+hostitvcom
 hostkabarety
 hostkinomanco
 hostkinopokaz
@@ -114,6 +116,7 @@ hosttvnvod
 hosttvplayercom
 hosttvpvod
 hosttwitchtv
+hostuktvplay
 hosturllist
 hostustreamtv
 hostvevo
