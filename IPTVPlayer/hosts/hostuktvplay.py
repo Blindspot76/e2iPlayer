@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -40,11 +40,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.uktvplay_use_web_proxy = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
-    #optionList.append(getConfigListEntry(_("Use web-proxy (it may be illegal):"), config.plugins.iptvplayer.uktvplay_use_web_proxy))
     return optionList
 ###################################################
 def gettytul():
@@ -66,6 +64,7 @@ class UKTVPlay(CBaseHostClass):
         self.cacheFiltersKeys = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.tmpUrl = 'http://vschedules.uktv.co.uk/mobile/v2/%splatform=android&app_ver=4.3.2'
+        self.isIPChecked = False
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
@@ -76,6 +75,18 @@ class UKTVPlay(CBaseHostClass):
             else: return urlparse.urljoin(baseUrl, url)
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+    
+    def checkIP(self):
+        if self.isIPChecked: return
+        sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
+        if not sts: return
+        try:
+            data = byteify(json.loads(data.strip()[1:-1]), '', True)
+            if data['country'] != 'GB':
+                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the Territory.') 
+                GetIPTVNotify().push(message % self.getMainUrl(), 'info', 5)
+            self.isIPChecked = True
+        except Exception: printExc()
     
     def getChannelUrl(self, channel):
         return 'most_popular?channel=%s&carousel_limit=200&' % channel
@@ -262,13 +273,6 @@ class UKTVPlay(CBaseHostClass):
             except Exception: return 0
         
         retTab = CSelOneLink(retTab, __getLinkQuality, 99999999).getSortedLinks()
-        if config.plugins.iptvplayer.uktvplay_use_web_proxy.value:
-            for idx in range(len(retTab)):
-                url = retTab[idx]['url']
-                meta = strwithmeta(url).meta
-                try: url = 'https://www.englandproxy.co.uk/' + url[url.find('://')+3:]
-                except Exception: printExc()
-                retTab[idx]['url'] = strwithmeta(url, meta)
         
         return retTab
     
@@ -276,7 +280,9 @@ class UKTVPlay(CBaseHostClass):
         printDBG('handleService start')
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
-
+        
+        self.checkIP()
+        
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')

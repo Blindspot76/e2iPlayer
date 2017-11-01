@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -39,9 +39,11 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.itv_use_x_forwarded_for = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Bypass geo-blocking for VODs (it may be illegal):"), config.plugins.iptvplayer.itv_use_x_forwarded_for))
     return optionList
 ###################################################
 def gettytul():
@@ -53,7 +55,7 @@ class ITV(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'itv.com', 'cookie':'itv.com.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
         self.DEFAULT_ICON_URL = 'https://upload.wikimedia.org/wikipedia/en/thumb/9/92/ITV_logo_2013.svg/800px-ITV_logo_2013.svg.png'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25' #'Mozilla/5.0 (iPhone; CPU iPhone OS 9_3_3 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13G34 Safari/601.1'
+        self.MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
         self.MAIN_URL = 'https://www.itv.com/'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HEADER)
@@ -69,6 +71,8 @@ class ITV(CBaseHostClass):
                              {'category':'shows',      'title': _('Shows'),        'url':self.getFullUrl('/hub/shows')},
                              {'category':'categories', 'title': _('Categories'),   'url':self.getFullUrl('/hub/categories')},
                             ]
+        self.isIPChecked = False
+        self.forwardedIP = ''
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
@@ -83,6 +87,27 @@ class ITV(CBaseHostClass):
     def getFullIconUrl(self, icon):
         icon = CBaseHostClass.getFullIconUrl(self, icon)
         return icon.replace('&amp;', '&')
+    
+    def checkIP(self):
+        if self.isIPChecked: return
+        sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
+        if not sts: return
+        try:
+            data = byteify(json.loads(data.strip()[1:-1]), '', True)
+            if data['country'] != 'GB':
+                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the Territory.') 
+                GetIPTVNotify().push(message % self.getMainUrl(), 'info', 5)
+            self.isIPChecked = True
+        except Exception: printExc()
+        
+    def getRandomGBIP(self):
+        if not config.plugins.iptvplayer.itv_use_x_forwarded_for.value: return ''
+        if self.forwardedIP == '':
+            sts, data = self.cm.getPage('http://free-proxy-list.net/uk-proxy.html')
+            if sts:
+                data = re.compile('<tr><td>([^>]+?)</td><td>').findall(data)
+                self.forwardedIP = random.choice(data)
+        return self.forwardedIP
     
     def listMainMenu(self, cItem, nextCategory):
         printDBG("ITV.listMainMenu")
@@ -147,7 +172,7 @@ class ITV(CBaseHostClass):
                 params['category'] = nextCategory
                 self.addDir(params)
         
-    def listItems(self, cItem, nextCategory, addLive=True):
+    def listItems(self, cItem, nextCategory, addLive=False):
         printDBG("ITV.listItems [%s]" % cItem)
         
         sts, data = self.getPage(cItem['url'])
@@ -206,7 +231,7 @@ class ITV(CBaseHostClass):
         printDBG("ITV.getLinksForVideo [%s]" % cItem)
         
         retTab = []
-        
+        forwardedIP = self.getRandomGBIP()
         if cItem.get('is_live', False):
             if self.cacheLive == {}:
                 sts, data = self.getPage('http://textuploader.com/dlr3q')
@@ -219,11 +244,13 @@ class ITV(CBaseHostClass):
                 except Exception:
                     printExc()
             videoUrl = self.cacheLive.get(cItem['url'].split('/')[-1], '')
+            if forwardedIP != '': videoUrl = strwithmeta(videoUrl, {'X-Forwarded-For':forwardedIP})
             retTab = getDirectM3U8Playlist(videoUrl, checkContent=True)
         else:
             params = dict(self.defaultParams)
             params['header'] = dict(params['header'])
             params['header']['User-Agent'] = self.MOBILE_USER_AGENT
+            if forwardedIP != '': params['header']['X-Forwarded-For'] = forwardedIP
             
             sts, data = self.getPage(cItem['url'], params)
             if not sts: return []
@@ -248,62 +275,15 @@ class ITV(CBaseHostClass):
             except Exception: return 0
         
         retTab = CSelOneLink(retTab, __getLinkQuality, 99999999).getSortedLinks()
-        
         return retTab
-        
-    def getArticleContent(self, cItem, data=None):
-        printDBG("ITV.getArticleContent [%s]" % cItem)
-        
-        retTab = []
-        
-        otherInfo = {}
-        
-        if data == None:
-            sts, data = self.getPage(cItem['url'])
-            if not sts: return []
-        
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<strong', '</div>', 'القصة'), ('</div', '>'), False)[1])
-        tmp  = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'full_movie'), ('</table', '>'), False)[1]
-        icon  = self.cm.ph.getDataBeetwenNodes(tmp, ('<div', '>', 'movie_img'), ('</div', '>'), False)[1]
-        icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''src=['"]([^'^"]+?)['"]''')[0])
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp, ('<div', '>', 'movie_title'), ('</div', '>'), False)[1])
-        
-        keysMap = {'اللغة • البلد'            :'country',
-                   'التصنيف'                  :'type',
-                   'النوع'                    :'genres',
-                   'التقييم العالمي'          :'rating',
-                   'المدة'                    :'duration',
-                   'الجودة'                   :'quality',
-                   'الترجمة'                  :'translation'}
-        
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<tr>', '</tr>')
-        for item in tmp:
-            item = item.split('</td>', 1)
-            if len(item) != 2: continue
-            keyMarker = self.cleanHtmlStr(item[0]).replace(':', '').strip()
-            printDBG("+++ keyMarker[%s]" % keyMarker)
-            value = self.cleanHtmlStr(item[1]).replace(' , ', ', ')
-            key = keysMap.get(keyMarker, '')
-            if key != '' and value != '': otherInfo[key] = value
-        
-        # actors
-        tTab = []
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'cast_item'), ('</span', '>'))
-        for t in tmp:
-            t = self.cleanHtmlStr(t)
-            if t != '': tTab.append(t)
-        if len(tTab): otherInfo['actors'] = ', '.join(tTab)
-        
-        if title == '': title = cItem['title']
-        if desc == '':  desc = cItem.get('desc', '')
-        if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
+       
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        
+        self.checkIP()
 
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
@@ -336,10 +316,6 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, ITV(), True, [])
-        
-    def withArticleContent(self, cItem):
-        return False
-        return cItem.get('good_for_fav', False)
     
     
     

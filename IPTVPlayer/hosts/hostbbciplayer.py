@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -73,9 +73,22 @@ class BBCiPlayer(CBaseHostClass):
                              {'category':'search',             'title': _('Search'), 'search_item':True,         'icon':'https://raw.githubusercontent.com/vonH/plugin.video.iplayerwww/master/media/search.png'},
                              {'category':'search_history',     'title': _('Search history'),                     }]
         self.otherIconsTemplate = 'https://raw.githubusercontent.com/vonH/plugin.video.iplayerwww/master/media/%s.png'
+        self.isIPChecked = False
     
     def getFullUrl(self, url):
         return CBaseHostClass.getFullUrl(self, url).replace('&amp;', '&')
+        
+    def checkIP(self):
+        if self.isIPChecked: return
+        sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
+        if not sts: return
+        try:
+            data = byteify(json.loads(data.strip()[1:-1]), '', True)
+            if data['country'] != 'GB':
+                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the Territory.') 
+                GetIPTVNotify().push(message % self.getMainUrl(), 'info', 5)
+            self.isIPChecked = True
+        except Exception: printExc()
 
     def listAZMenu(self, cItem, nextCategory):
         characters = [('A', 'a'), ('B', 'b'), ('C', 'c'), ('D', 'd'), ('E', 'e'), ('F', 'f'),
@@ -478,7 +491,9 @@ class BBCiPlayer(CBaseHostClass):
         printDBG('handleService start')
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
-
+        
+        self.checkIP()
+        
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
