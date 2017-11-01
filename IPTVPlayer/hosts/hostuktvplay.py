@@ -211,7 +211,10 @@ class UKTVPlay(CBaseHostClass):
                 eTitle = self.cleanHtmlStr(item['episode_title'])
                 sNum   = item['series_txt']
                 eNum   = item['episode_txt']
-                title  = '%s - s%se%s %s' % (sTitle, sNum.zfill(2), eNum.zfill(2), eTitle)
+                if 1 == len(data['episodes']) and sTitle == eTitle:
+                    title = sTitle
+                else:
+                    title  = '%s - s%se%s %s' % (sTitle, sNum.zfill(2), eNum.zfill(2), eTitle)
                 url    = self.getFullUrl(item['watch_online_link'])
                 
                 descTab = []
