@@ -44,14 +44,14 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://ewatchseries.to/'
+    return 'http://xwatchseries.to/'
 
 class TheWatchseriesTo(CBaseHostClass):
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
     
-    DOMAIN        = 'ewatchseries.to'
+    DOMAIN        = 'xwatchseries.to'
     MAIN_URL      = 'http://%s/' % DOMAIN
     SEARCH_URL    = MAIN_URL + 'search/'
     DEFAULT_ICON  = "http://%s/templates/default/images/apple-touch-icon.png" % DOMAIN

@@ -16,7 +16,7 @@ from Screens.ChoiceBox import ChoiceBox
 
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIPTVPlayerVerstion, GetIconDir, GetAvailableIconSize, SaveHostsOrderList, GetHostsList
-
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 
 class PlayerSelectorWidget(Screen):
     LAST_SELECTION = 0
