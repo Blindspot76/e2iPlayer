@@ -8687,8 +8687,8 @@ class pageParser:
         if not sts: return []
         
         urlTab = []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
-        for item in data:
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+        for item in tmp:
             url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
             if url.startswith('//'):
                 url = 'http:' + url
@@ -8706,6 +8706,13 @@ class pageParser:
                 url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
                 tmpTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
                 urlTab.extend(tmpTab)
+        if 0 == len(urlTab):
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div ', 'videocontent'), ('</div', '>'))[1]
+            printDBG(tmp)
+            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](https?://[^"^']+?)["']''', 1, True)[0]
+            up =  urlparser()
+            if self.cm.isValidUrl(url) and up.getDomain(url) != up.getDomain(baseUrl):
+                return up.getVideoLinkExt(url)
         return urlTab
         
     def parserVIDEAHU(self, baseUrl):
