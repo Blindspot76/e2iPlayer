@@ -214,7 +214,7 @@ class EgyBest(CBaseHostClass):
             self.addVideo(params)
             num += 1
             
-        url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?/episodes)['"]''')[0])
+        url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''href=['"]([^'^"]+?/episodes)['"]''')[0])
         if self.cm.isValidUrl(url):
             sts, data = self.getPage(url)
             if not sts: return
