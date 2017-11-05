@@ -430,6 +430,7 @@ class urlparser:
                        'speedvid.net':         self.pp.parserSPEEDVIDNET    ,
                        'vsports.pt':           self.pp.parserVSPORTSPT      ,
                        'mycloud.to':           self.pp.parserMYCLOUDTO      ,
+                       'mcloud.to':            self.pp.parserMYCLOUDTO      ,
                        'vod-share.com':        self.pp.parserVODSHARECOM    ,
                        'vidoza.net':           self.pp.parserVIDOZANET      ,
                        'clipwatching.com':     self.pp.parserCLIPWATCHINGCOM,
