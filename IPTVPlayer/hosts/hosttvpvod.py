@@ -112,6 +112,7 @@ class TvpVod(CBaseHostClass):
                           'nasygnale.tvp.pl':      'http://vod.tvp.pl/13883615/na-sygnale'}
         self.FormatBitrateMap = [ ("360000",  "320x180"), ("590000",  "398x224"), ("820000",  "480x270"), ("1250000", "640x360"),
                                   ("1750000", "800x450"), ("2850000", "960x540"), ("5420000", "1280x720"), ("6500000", "1600x900"), ("9100000", "1920x1080") ]
+        self.MAIN_URL = 'https://vod.tvp.pl/'
     
     def getJItemStr(self, item, key, default=''):
         v = item.get(key, None)
@@ -724,6 +725,9 @@ class TvpVod(CBaseHostClass):
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 10 )
 
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        
+        self.informAboutGeoBlockingIfNeeded('PL')
+        
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         printDBG( "TvpVod.handleService: ---------> name[%s], category[%s] " % (name, category) )

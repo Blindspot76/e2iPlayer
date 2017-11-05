@@ -71,7 +71,6 @@ class ITV(CBaseHostClass):
                              {'category':'shows',      'title': _('Shows'),        'url':self.getFullUrl('/hub/shows')},
                              {'category':'categories', 'title': _('Categories'),   'url':self.getFullUrl('/hub/categories')},
                             ]
-        self.isIPChecked = False
         self.forwardedIP = ''
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
@@ -87,19 +86,6 @@ class ITV(CBaseHostClass):
     def getFullIconUrl(self, icon):
         icon = CBaseHostClass.getFullIconUrl(self, icon)
         return icon.replace('&amp;', '&')
-    
-    def checkIP(self):
-        if self.isIPChecked: return
-        lang = 'GB'
-        sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
-        if not sts: return
-        try:
-            data = byteify(json.loads(data.strip()[1:-1]), '', True)
-            if data['country'] != lang:
-                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the %s Territory.') 
-                GetIPTVNotify().push(message % (self.getMainUrl(), lang), 'info', 5)
-            self.isIPChecked = True
-        except Exception: printExc()
         
     def getRandomGBIP(self):
         if not config.plugins.iptvplayer.itv_use_x_forwarded_for.value: return ''
@@ -284,7 +270,7 @@ class ITV(CBaseHostClass):
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
-        self.checkIP()
+        self.informAboutGeoBlockingIfNeeded('GB')
 
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')

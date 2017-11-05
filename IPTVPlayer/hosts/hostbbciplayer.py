@@ -73,23 +73,9 @@ class BBCiPlayer(CBaseHostClass):
                              {'category':'search',             'title': _('Search'), 'search_item':True,         'icon':'https://raw.githubusercontent.com/vonH/plugin.video.iplayerwww/master/media/search.png'},
                              {'category':'search_history',     'title': _('Search history'),                     }]
         self.otherIconsTemplate = 'https://raw.githubusercontent.com/vonH/plugin.video.iplayerwww/master/media/%s.png'
-        self.isIPChecked = False
     
     def getFullUrl(self, url):
         return CBaseHostClass.getFullUrl(self, url).replace('&amp;', '&')
-        
-    def checkIP(self):
-        if self.isIPChecked: return
-        lang = 'GB'
-        sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
-        if not sts: return
-        try:
-            data = byteify(json.loads(data.strip()[1:-1]), '', True)
-            if data['country'] != lang:
-                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the %s Territory.') 
-                GetIPTVNotify().push(message % (self.getMainUrl(), lang), 'info', 5)
-            self.isIPChecked = True
-        except Exception: printExc()
 
     def listAZMenu(self, cItem, nextCategory):
         characters = [('A', 'a'), ('B', 'b'), ('C', 'c'), ('D', 'd'), ('E', 'e'), ('F', 'f'),
@@ -455,7 +441,6 @@ class BBCiPlayer(CBaseHostClass):
         cItem = dict(cItem)
         cItem['url'] = baseUrl
         self.listItems(cItem, 'list_episodes')
-
     
     def getLinksForVideo(self, cItem):
         printDBG("BBCiPlayer.getLinksForVideo [%s]" % cItem)
@@ -493,7 +478,7 @@ class BBCiPlayer(CBaseHostClass):
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
-        self.checkIP()
+        self.informAboutGeoBlockingIfNeeded('GB')
         
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
@@ -547,5 +532,4 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, BBCiPlayer(), True, [])
-
     

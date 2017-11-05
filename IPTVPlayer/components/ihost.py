@@ -4,7 +4,7 @@
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
@@ -631,6 +631,21 @@ class CBaseHostClass:
                     self.sessionEx.waitForFinishOpen(MessageBox, message, type = MessageBox.TYPE_INFO, timeout = 10)
         except Exception:
             printExc()
+        
+    def informAboutGeoBlockingIfNeeded(self, country, onlyOnce=True):
+        try: 
+            if onlyOnce and self.isGeoBlockingChecked: return
+        except Exception: 
+            self.isGeoBlockingChecked = False
+        sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
+        if not sts: return
+        try:
+            data = byteify(json.loads(data.strip()[1:-1]), '', True)
+            if data['country'] != country:
+                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the %s Territory.') 
+                GetIPTVNotify().push(message % (self.getMainUrl(), country), 'info', 5)
+            self.isGeoBlockingChecked = True
+        except Exception: printExc()
     
     def listsTab(self, tab, cItem, type='dir'):
         for item in tab:
