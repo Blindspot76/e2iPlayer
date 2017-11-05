@@ -72,7 +72,7 @@ class YifyTV(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'YifyTV', 'cookie':'alltubetv.cookie'})
         self.filterCache = {}
-        
+        self.cacheLinks = {}
         self.VIDEO_HOSTINGS_MAP = {"rpd":"https://www.rapidvideo.com/embed/{0}", "vza":"https://vidoza.net/embed-{0}.html", "akv":"https://akvideo.stream/embed-{0}.html", "rpt":"https://www.raptu.com/e/{0}", "lox":"https://vidlox.tv/embed-{0}.html", "vsh":"http://vshare.eu/embed-{0}.html"}
         
     def fillFiltersCache(self):
