@@ -6767,16 +6767,19 @@ class pageParser:
             
             #'<font color="red">', '</font>'
             urlTab = []
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
-            for item in data:
+            items = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+            if 0 == len(items): items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''var\s+sources\s*=\s*\['''), re.compile('''\]'''), False)[1].split('},')
+            printDBG(items)
+            for item in items:
+                item = item.replace('\/', '/')
                 if 'video/mp4' not in item: continue
-                type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
-                res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
-                lang = self.cm.ph.getSearchGroups(item, '''lang=['"]([^"^']+?)['"]''')[0]
-                url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                type = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                res  = self.cm.ph.getSearchGroups(item, '''res['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                lang = self.cm.ph.getSearchGroups(item, '''lang['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                url  = self.cm.ph.getSearchGroups(item, '''src['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
                 if url.startswith('//'):
                     url = 'http:' + url
-                if url.startswith('http'):
+                if self.cm.isValidUrl(url):
                     url = strwithmeta(url, {'Referer':baseUrl, 'external_sub_tracks':subTracks})
                     urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
             if len(urlTab):
