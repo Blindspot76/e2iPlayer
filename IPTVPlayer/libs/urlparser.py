@@ -453,6 +453,7 @@ class urlparser:
                        'mp4upload.com':        self.pp.parserMP4UPLOADCOM   ,
                        'megadrive.tv':         self.pp.parserMEGADRIVETV    ,
                        'watchvideo17.us':      self.pp.parserWATCHVIDEO17US ,
+                       'upvid.co':             self.pp.parserWATCHUPVIDCO   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -2738,6 +2739,49 @@ class pageParser:
                     linksTab.append({'name':item['label'], 'url':item['file']})
         linksTab.extend(hlsTab)
         return linksTab
+        
+    def parserWATCHUPVIDCO(self, baseUrl):
+        printDBG("parserMP4UPLOADCOM baseUrl[%r]" % baseUrl)
+        urlParams = {'header':{ 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }}
+        url = baseUrl
+        subFrameNum = 0
+        while subFrameNum < 6:
+            sts, data = self.cm.getPage(url, urlParams)
+            if not sts: return False
+            newUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=['"](https?://[^"^']+?)['"]''', 1, True)[0]
+            if self.cm.isValidUrl(newUrl):
+                urlParams['header']['Referer'] = url
+                url = newUrl
+            else:
+                break
+            subFrameNum += 1
+        elemName = 'iptv_id_elems'
+        jscode = ['%s={};' % elemName]
+        elems = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
+        for elem in elems:
+            id = self.cm.ph.getSearchGroups(elem, '''id=['"]([^'^"]+?)['"]''', 1, True)[0]
+            if id == '': continue
+            val = self.cm.ph.getSearchGroups(elem, '''value=['"]([^'^"]+?)['"]''', 1, True)[0].replace('\n', '').replace('\r', '')
+            jscode.append('%s.%s="%s";' % (elemName, id, val))
+        
+        jscode.append(base64.b64decode('''aXB0dl9kZWNvZGVkX2NvZGU9W107dmFyIGRvY3VtZW50PXt9O3dpbmRvdz10aGlzLHdpbmRvdy5hdG9iPWZ1bmN0aW9uKGUpe2U9RHVrdGFwZS5kZWMoImJhc2U2NCIsZSksZGVjVGV4dD0iIjtmb3IodmFyIG49MDtuPGUuYnl0ZUxlbmd0aDtuKyspZGVjVGV4dCs9U3RyaW5nLmZyb21DaGFyQ29kZShlW25dKTtyZXR1cm4gZGVjVGV4dH07dmFyIGVsZW1lbnQ9ZnVuY3Rpb24oZSl7dGhpcy5fbmFtZT1lLHRoaXMuX2lubmVySFRNTD1pcHR2X2lkX2VsZW1zW2VdLE9iamVjdC5kZWZpbmVQcm9wZXJ0eSh0aGlzLCJpbm5lckhUTUwiLHtnZXQ6ZnVuY3Rpb24oKXtyZXR1cm4gdGhpcy5faW5uZXJIVE1MfSxzZXQ6ZnVuY3Rpb24oZSl7dGhpcy5faW5uZXJIVE1MPWV9fSksT2JqZWN0LmRlZmluZVByb3BlcnR5KHRoaXMsInZhbHVlIix7Z2V0OmZ1bmN0aW9uKCl7cmV0dXJuIHRoaXMuX2lubmVySFRNTH0sc2V0OmZ1bmN0aW9uKGUpe3RoaXMuX2lubmVySFRNTD1lfX0pfTtkb2N1bWVudC5nZXRFbGVtZW50QnlJZD1mdW5jdGlvbihlKXtyZXR1cm4gbmV3IGVsZW1lbnQoZSl9LGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQ9ZnVuY3Rpb24oZSl7cmV0dXJuIG5ldyBlbGVtZW50KGUpfSxkb2N1bWVudC5ib2R5PXt9LGRvY3VtZW50LmJvZHkuYXBwZW5kQ2hpbGQ9ZnVuY3Rpb24oZSl7aXB0dl9kZWNvZGVkX2NvZGUucHVzaChlLmlubmVySFRNTCksd2luZG93LmV2YWwoZS5pbm5lckhUTUwpfSxkb2N1bWVudC5ib2R5LnJlbW92ZUNoaWxkPWZ1bmN0aW9uKCl7fTs='''))
+        marker = 'ﾟωﾟﾉ= /｀ｍ´）'
+        elems = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for elem in elems:
+            if marker in elem:
+                jscode.append(elem)
+                break
+        
+        jscode.append('print(iptv_decoded_code);')
+        
+        ret = iptv_js_execute( '\n'.join(jscode) )
+        videoUrl = self.cm.ph.getSearchGroups(ret['data'], '''['"](https?://[^"^']+?\.mp4(?:\?[^'^"]+?)?)['"]''', 1, True)[0]
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(videoUrl)
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        if self.cm.isValidUrl(videoUrl):
+            return videoUrl
+        return False
         
     def parserMP4UPLOADCOM(self, baseUrl):
         printDBG("parserMP4UPLOADCOM baseUrl[%r]" % baseUrl)
