@@ -231,8 +231,9 @@ class IITVPL(CBaseHostClass):
         else:
             uri, sts = unshorten(videoUrl)
             if sts == 'OK': 
-                uri = self.cm.ph.getSearchGroups(uri, '''/(https?://[^'"]+?)$''')[0]
-                if self.cm.isValidUrl(uri): videoUrl = uri
+                subUri = self.cm.ph.getSearchGroups(uri, '''/(https?://[^'"]+?)$''')[0]
+                if self.cm.isValidUrl(subUri): videoUrl = subUri
+                elif self.up.checkHostSupport(uri): videoUrl = uri
         
         if 1 != self.up.checkHostSupport(videoUrl):
             try:

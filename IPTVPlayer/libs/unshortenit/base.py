@@ -425,6 +425,7 @@ class UnshortenIt(object):
                 params['header'] = HTTP_HEADER_AJAX
                 sts, data = self.cm.getPage(baseUri, params, post_data)
                 data = byteify(json.loads(data))
+                printDBG(">>>%s<<<" % data)
                 uri = self.cm.ph.getSearchGroups(data['visitLink/linker'], '''href="(https?://[^"]+?)"''')[0]
                 retUri, retSts = uri, 'OK'
                 
