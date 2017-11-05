@@ -74,8 +74,8 @@ class TitlovicomProvider(CBaseSubProviderClass):
         if lang in self.LANGUAGE_CACHE:
             self.pageLang = lang
         if self.pageLang == 'hr':
-            return 'http://titlovi.com/'
-        return 'http://%s.titlovi.com/' % self.pageLang
+            return 'https://titlovi.com/'
+        return 'https://%s.titlovi.com/' % self.pageLang
         
     def getMoviesTitles(self, cItem, nextCategory):
         printDBG("TitlovicomProvider.getMoviesTitles")
@@ -181,6 +181,7 @@ class TitlovicomProvider(CBaseSubProviderClass):
             title = self.imdbGetOrginalByTitle(cItem['imdbid'])[1].get('title', cItem['base_title'])
             post_data[searchName] = title
             post_data['sort'] = 4
+            post_data['korisnik'] = ''
             
             if cItem.get('search_lang', '') != '':
                 post_data['jezikSelectedValues'] = cItem['search_lang']
