@@ -78,13 +78,14 @@ class UKTVPlay(CBaseHostClass):
     
     def checkIP(self):
         if self.isIPChecked: return
+        lang = 'GB'
         sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
         if not sts: return
         try:
             data = byteify(json.loads(data.strip()[1:-1]), '', True)
-            if data['country'] != 'GB':
-                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the Territory.') 
-                GetIPTVNotify().push(message % self.getMainUrl(), 'info', 5)
+            if data['country'] != lang:
+                message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the %s Territory.') 
+                GetIPTVNotify().push(message % (self.getMainUrl(), lang), 'info', 5)
             self.isIPChecked = True
         except Exception: printExc()
     

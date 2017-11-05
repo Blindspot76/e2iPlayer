@@ -363,9 +363,10 @@ class CHostBase(IHost):
         if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
         
         urlList = self.host.getLinksForItem(self.host.currList[Index])
-        for item in urlList:
-            need_resolve = item.get("need_resolve", 0)
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+        if urlList != None:
+            for item in urlList:
+                need_resolve = item.get("need_resolve", 0)
+                retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
@@ -374,9 +375,10 @@ class CHostBase(IHost):
         # resolve url to get direct url to video file
         retlist = []
         urlList = self.host.getVideoLinks(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+        if urlList != None:
+            for item in urlList:
+                need_resolve = 0
+                retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
 
         return RetHost(RetHost.OK, value = retlist)
     # end getResolvedURL
