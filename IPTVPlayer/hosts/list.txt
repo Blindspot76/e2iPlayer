@@ -55,6 +55,7 @@ hostipla
 hostiptvplayerinfo
 hostitvcom
 hostkabarety
+hostkijknl
 hostkinomanco
 hostkinopokaz
 hostkinotan
