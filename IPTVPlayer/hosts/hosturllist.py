@@ -35,7 +35,7 @@ import time
 config.plugins.iptvplayer.Sciezkaurllist = ConfigDirectory(default = "/hdd/")
 config.plugins.iptvplayer.grupujurllist  = ConfigYesNo(default = True)
 config.plugins.iptvplayer.sortuj         = ConfigYesNo(default = True)
-config.plugins.iptvplayer.urllist_showrafalcool1 = ConfigYesNo(default = True)
+config.plugins.iptvplayer.urllist_showrafalcool1 = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = [] 

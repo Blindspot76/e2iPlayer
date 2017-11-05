@@ -268,6 +268,7 @@ class HDStreams(CBaseHostClass):
             linksTab = []
             data = self.cm.ph.getDataBeetwenMarkers(data, '<v-tabs-items>', '</v-tabs-items>')[1]
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<v-tabs-content', '</v-tabs-content>')
+            flagsReObj = re.compile('''<i.+?</i>''', flags=re.DOTALL)
             for langItem in data:
                 langId = self.cm.ph.getSearchGroups(langItem, '''id=['"]['"]?([^'^"]+?)['"]''')[0][1:]
                 langItem = self.cm.ph.getAllItemsBeetwenMarkers(langItem, '<v-flex', '</v-flex>')
@@ -278,7 +279,7 @@ class HDStreams(CBaseHostClass):
                     for linkItem in qualityItem:
                         tmp = self.cm.ph.getSearchGroups(linkItem, '''loadStream\(\s*['"]([^'^"]+?)['"]\s*,\s*['"]([^'^"]+?)['"]''', 2)
                         if '' in tmp: continue
-                        name = self.cleanHtmlStr(re.sub('''<i.+?</i>''', '', linkItem, flags=re.DOTALL))
+                        name = self.cleanHtmlStr(flagsReObj.sub('', linkItem))
                         name = '[%s][%s] %s' % (langId, qualityName, name)
                         url = strwithmeta(cItem['url'], {'links_key':linksKey, 'post_data':{'e':tmp[0], 'h':tmp[1], 'lang':langId}})
                         linksTab.append({'name':name, 'url':url, 'need_resolve':1})

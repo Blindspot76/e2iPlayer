@@ -69,6 +69,7 @@ class SeriesOnlineIO(CBaseHostClass):
         self.cacheFilters = {}
         self.cacheLinks = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.MAIN_CAT_TAB = []
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}:

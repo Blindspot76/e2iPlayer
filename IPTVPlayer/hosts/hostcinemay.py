@@ -134,7 +134,7 @@ class Cinemay(CBaseHostClass):
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'class="pagination"', '</div>')[1]
         if ('/page/%s/' % (page + 1)) in nextPage: nextPage = True
-        else: nextPage = Fale
+        else: nextPage = False
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>')[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>')

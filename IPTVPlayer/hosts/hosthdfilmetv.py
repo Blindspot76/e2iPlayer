@@ -186,11 +186,12 @@ class HDFilmeTV(CBaseHostClass):
                     episodesLinks[episodeName] = []
                 episodesLinks[episodeName].append({'name':serverName, 'url':episodeUrl.replace('&amp;', '&'), 'need_resolve':1})
         
+        baseTitleReObj = re.compile('''staffel\s*[0-9]+?$''', flags=re.IGNORECASE)
         baseTitle = cItem['title']
         season = self.cm.ph.getSearchGroups(cItem['url'], '''staf[f]+?el-([0-9]+?)-''')[0]
         if season == '':
             season = self.cm.ph.getSearchGroups(baseTitle, '''staffel\s*([0-9]+?)$''', ignoreCase=True)[0]
-            if season != '': baseTitle = re.sub('''staffel\s*[0-9]+?$''', '', baseTitle, 1, re.IGNORECASE).strip()
+            if season != '': baseTitle = baseTitleReObj.sub('', baseTitle, 1).strip()
         
         try: episodesTab.sort(key=lambda item: int(item))
         except Exception:

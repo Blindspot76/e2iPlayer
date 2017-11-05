@@ -223,9 +223,10 @@ class CineTO(CBaseHostClass):
         except Exception:
             printExc()
 
+        nextPage = False
         try:
-            if int(data['pages']) > (page + 1): nextPage = True
-            else: nextPage = False
+            if int(data['pages']) > (page + 1):
+                nextPage = True
         except Exception:
             printExc()
         
