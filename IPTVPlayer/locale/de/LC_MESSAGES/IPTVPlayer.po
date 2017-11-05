@@ -3635,8 +3635,8 @@ msgstr "Versuche DRM zu umgehen (könnte illegal sein)"
 msgid "Children"
 msgstr "Kinder"
 
-msgid "%s uses \"geo-blocking\" measures to prevent you from accessing the services from outside the Territory."
-msgstr "%s setzt Geoblocking ein, um Sie daran zu hindern diesen Service außerhalb seiner vorgesehenen geographischen Region zu nutzen."
+msgid "%s uses \"geo-blocking\" measures to prevent you from accessing the services from outside the %s Territory."
+msgstr "%s setzt Geoblocking ein, um Sie daran zu hindern diesen Service außerhalb von der %s Region zu nutzen."
 
 msgid "Bypass geo-blocking for VODs (it may be illegal):"
 msgstr "Umgehe Geoblocking für VOD (könnte illegal sein):"
@@ -3646,3 +3646,18 @@ msgstr "Deaktivieren/Aktivieren von Services"
 
 msgid "The color of the current version"
 msgstr "Farbauswahl für derzeitige Version"
+
+msgid "DRM protection detected."
+msgstr "DRM-Schutz festgestellt."
+
+msgid "Unknown file extension \"%s\"."
+msgstr "Unbekannte Dateierweiterung \"%s\"."
+
+msgid "Functionality protected by Google reCAPTCHA!"
+msgstr "Funktionalität ist geschützt mit Google reCAPTCHA!"
+
+msgid "Network connection failed."
+msgstr "Netzwerkverbindung fehlgeschlagen"
+
+msgid "Unknown server response."
+msgstr "Unbekannte Serverantwort."
