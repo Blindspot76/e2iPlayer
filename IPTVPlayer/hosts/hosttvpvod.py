@@ -390,12 +390,6 @@ class TvpVod(CBaseHostClass):
             params.update({'good_for_fav': False, 'category':nextCategory, 'title':self.cleanHtmlStr(item).title(), 'url':url, 'desc':''})
             self.addDir(params)
             
-        url = self._getFullUrl('/category/serwisy,699')
-        params = dict(cItem)
-        params.update({'good_for_fav': False, 'category':nextCategory, 'title':'Serwisy', 'url':url, 'desc':''})
-        self.addDir(params)
-            
-            
     def mapHoeverItem(self, cItem, item, nextCategory):
         try:
             item = byteify(json.loads(item))
@@ -461,7 +455,7 @@ class TvpVod(CBaseHostClass):
         sectionsData = sectionsData.split('<section')
         if len(sectionsData): del sectionsData[0]
         
-        subFiltersData = self.cm.ph.getAllItemsBeetwenMarkers(data.split('</header>', 1)[-1], '"dropdown-menu"', '</ul>')
+        subFiltersData = self.cm.ph.getAllItemsBeetwenMarkers(data[data.rfind('</header>'):], '"dropdown-menu"', '</ul>')
         #subFiltersData.reverse()
         allSubFiltersTab = []
         for idx in range(len(subFiltersData)):
