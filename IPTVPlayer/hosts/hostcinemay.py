@@ -144,8 +144,8 @@ class Cinemay(CBaseHostClass):
             for item in data[0]:
                 headTab.append(self.cleanHtmlStr(item))
             del data[0]
+            printDBG("headTab [%s]" % headTab)
         
-        printDBG("headTab [%s]" % headTab)
         for item in data:
             icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?src=['"]([^'^"]+?)['"]''')[0])
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])

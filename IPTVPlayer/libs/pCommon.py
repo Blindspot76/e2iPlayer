@@ -591,6 +591,7 @@ class common:
                     #try: verData = data.fp.read()
                     #except Exception: verData = data
                     verData = data.fp.read()
+                    if 'sitekey' not in verData and 'challenge' not in verData: break
                     domain = self.getBaseUrl(data.fp.geturl())
                     printDBG("===============================================================")
                     printDBG(verData)

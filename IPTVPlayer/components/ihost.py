@@ -652,8 +652,9 @@ class CBaseHostClass:
             params = dict(cItem)
             params.update(item)
             params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
+            type = item.get('type', 'dir')
+            if type == 'dir': self.addDir(params)
+            elif type == 'marker': self.addMarker(params)
             else: self.addVideo(params)
     
     def getMainUrl(self):
