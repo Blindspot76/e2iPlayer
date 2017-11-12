@@ -51,7 +51,7 @@ class IPTVSetupImpl:
                                        (_('Install into the "%s".') % "/usr/bin/wget", "/usr/bin/wget"),
                                        (_("Do not install (not recommended)"), "")]
         # rtmpdump members
-        self.rtmpdumpVersion = {'sh4':'2015', 'mipsel':'2015', 'armv5t':'2015', 'armv7':'2015', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"} #'K-S-V patch'
+        self.rtmpdumpVersion = 20151215 #{'sh4':'2015', 'mipsel':'2015', 'armv5t':'2015', 'armv7':'2015', 'default':"Compiled by samsamsam@o2.pl 2015-01-11"} #'K-S-V patch'
         self.rtmpdumppaths = ["/usr/bin/rtmpdump", "rtmpdump"]
         
         # f4mdump member
@@ -457,16 +457,40 @@ class IPTVSetupImpl:
     ###################################################
     def rtmpdumpStep(self, ret=None):
         printDBG("IPTVSetupImpl.rtmpdumpStep")
+        self.binaryInstalledSuccessfully = False
+        
         def _detectValidator(code, data):
-            if self.rtmpdumpVersion.get(self.platform, self.rtmpdumpVersion['default']) in data: return True,False
-            else: return False,True
+            try:
+                rawVer = re.search("([0-9]{4})\-([0-9]{2})\-([0-9]{2})", data)
+                ver = int(rawVer.group(1)+rawVer.group(2)+rawVer.group(3))
+                if self.rtmpdumpVersion <= ver:
+                    return True,False
+            except Exception:
+                printExc()
+            return False,True
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
             for idx in range(len(dataTab)):
                 if 'RTMPDump v2.4' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
-            url = server + ('rtmpdump_%s_libssl.so%s.tar.gz' % (platform, openSSLVersion))
+            old = ''
+            versions = {'sh4':2190, 'mipsel':2200}
+            
+            if platform in ['sh4', 'mipsel'] and (self.binaryInstalledSuccessfully or self.glibcVersion < versions[platform] ):
+                old = '_old'
+            
+            if platform in ['armv7'] and self.binaryInstalledSuccessfully:
+                old = '_old'
+            
+            if old == '' and platform == 'mipsel' and not IsFPUAvailable():
+                old = '_softfpu'
+            
+            url = server + ('rtmpdump/rtmpdump_%s%s_libssl.so%s.tar.gz' % (platform, old, openSSLVersion))
+            
+            if self.binaryInstalledSuccessfully:
+                self.binaryInstalledSuccessfully = False
+            
             tmpFile = tmpPath + 'rtmpdump.tar.gz' 
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
