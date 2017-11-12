@@ -558,7 +558,7 @@ class PlusDEDE(CBaseHostClass):
             httpParams['header'] = dict(self.AJAX_HEADER)
             httpParams['header']['Referer'] = url
             httpParams['header']['X-CSRF-TOKEN'] = self.cm.ph.getSearchGroups(data, '''(<meta[^>]+?_token[^>]+?/>)''')[0]
-            httpParams['header']['X-CSRF-TOKEN'] = self.cm.ph.getSearchGroups(httpParams['header']['x-csrf-token'], '''content=['"]([^"^']+?)['"]''')[0]
+            httpParams['header']['X-CSRF-TOKEN'] = self.cm.ph.getSearchGroups(httpParams['header']['X-CSRF-TOKEN'], '''content=['"]([^"^']+?)['"]''')[0]
             error = ''
             sts, data = self.cm.getPage(actionUrl, httpParams, post_data)
             try:
