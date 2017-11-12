@@ -195,7 +195,7 @@ class PlusDEDE(CBaseHostClass):
         cItem['f_idx'] = f_idx
         if f_idx  == len(self.cacheFiltersKeys):
             cItem['category'] = nextCategory
-        self.listsTab(self.cacheFilters.get(filter, []), cItem, '')
+        self.listsTab(self.cacheFilters.get(filter, []), cItem)
     
     def listMainMenu(self, cItem, nextCategory):
         printDBG("PlusDEDE.listMainMenu")

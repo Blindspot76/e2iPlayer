@@ -648,11 +648,12 @@ class CBaseHostClass:
         except Exception: printExc()
     
     def listsTab(self, tab, cItem, type='dir'):
+        defaultType = type
         for item in tab:
             params = dict(cItem)
             params.update(item)
             params['name']  = 'category'
-            type = item.get('type', 'dir')
+            type = item.get('type', defaultType)
             if type == 'dir': self.addDir(params)
             elif type == 'marker': self.addMarker(params)
             else: self.addVideo(params)
