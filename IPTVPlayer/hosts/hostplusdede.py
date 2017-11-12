@@ -304,7 +304,7 @@ class PlusDEDE(CBaseHostClass):
                     params.update({'good_for_fav':False, 'category':nextCategory, 'title':sTitle, 's_num':sNum})
                     self.addDir(params)
         else:
-            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<button', '>', 'data-href'), ('</button', '>'))[1]
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<button', '>', 'show-close'), ('</button', '>'))[1]
             url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''data\-href=['"]([^'^"]+?)['"]''')[0])
             if self.cm.isValidUrl(url):
                 params = dict(cItem)
@@ -367,8 +367,8 @@ class PlusDEDE(CBaseHostClass):
                 for t in tmp:
                     t = self.cleanHtmlStr(t)
                     if t != '': titleTab.append(t)
-                if idx == 0: retTab.append({'name':_('%s') % ('|'.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
-                else: dwnTab.append({'name':_('%s') % ('|'.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
+                if idx == 0: retTab.append({'name':_('%s') % (' | '.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
+                else: dwnTab.append({'name':_('%s') % (' | '.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
         
         #retTab.extend(dwnTab)
         if len(retTab): self.cacheLinks[cacheKey] = retTab
