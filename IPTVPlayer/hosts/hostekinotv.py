@@ -317,6 +317,9 @@ class EkinoTv(CBaseHostClass):
             sts, data = self.cm.getPage(url, {'header':{'Referer':referer}})
             if not sts: return urlTab
             printDBG(data)
+            if 'recaptcha' in data:
+                SetIPTVPlayerLastHostError(_('Link protected with google recaptcha v2.')) 
+            
             url = self._getFullUrl(self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0])
             
             if not self.cm.isValidUrl(url):
