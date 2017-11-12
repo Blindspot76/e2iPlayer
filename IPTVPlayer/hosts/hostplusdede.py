@@ -370,7 +370,7 @@ class PlusDEDE(CBaseHostClass):
                 if idx == 0: retTab.append({'name':_('%s') % ('|'.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
                 else: dwnTab.append({'name':_('%s') % ('|'.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
         
-        retTab.extend(dwnTab)
+        #retTab.extend(dwnTab)
         if len(retTab): self.cacheLinks[cacheKey] = retTab
         return retTab
         
