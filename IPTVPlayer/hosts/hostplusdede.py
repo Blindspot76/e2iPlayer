@@ -202,6 +202,38 @@ class PlusDEDE(CBaseHostClass):
         if not self.loggedIn: return
         self.listsTab(self.MAIN_CAT_TAB, cItem)
         
+    def listLists(self, cItem, nextCategory):
+        printDBG("PlusDEDE.listLists [%s]" % cItem)
+        page = cItem.get('page', 0)
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'load-more'), ('</div', '>'))[1]
+        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''data\-url=['"]([^'^"]+?)['"]''')[0])
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'lista model'), ('<div', '>', 'media-container'))
+        for item in data:
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
+            title = self.cleanHtmlStr(item.split('<button', 1)[0])
+            
+            desc = []
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(item, ('<div', '>', 'lista-stat'), ('</div', '>'))
+            for t in tmp:
+                t = self.cleanHtmlStr(t)
+                if t != '': desc.append(t)
+            desc = ' | '.join(desc)
+            desc += '[/br]' + self.cleanHtmlStr(item.split('</h4>', 1)[-1])
+
+            params = dict(cItem)
+            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
+            self.addDir(params)
+        
+        if self.cm.isValidUrl(nextPage):
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':_("Next page"), 'url':nextPage, 'page':page+1})
+            self.addDir(params)
+        
+        
     def listItems(self, cItem, nextCategory):
         printDBG("PlusDEDE.listItems [%s]" % cItem)
         page = cItem.get('page', 0)
@@ -210,7 +242,9 @@ class PlusDEDE(CBaseHostClass):
         if not url.endswith('/'): url += '/'
         
         if page == 0:
-            if 'f_search_query' not in cItem:
+            if '/lista/' in url:
+                url = url
+            elif 'f_search_query' not in cItem:
                 query = {}
                 for key in self.cacheFiltersKeys:
                     if key in cItem: query[key[2:]] = cItem[key]
@@ -224,13 +258,14 @@ class PlusDEDE(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return
         
-        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''data\-url=['"]([^'^"]+?)['"]''')[0])
+        nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'load-more'), ('</div', '>'))[1]
+        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''data\-url=['"]([^'^"]+?)['"]''')[0])
         data = re.compile('''<div[^>]+?media\-container[^>]+?>''').split(data)
         if len(data): del data[0]
         reSeriesTitle = re.compile('^[0-9]+?x[0-9]+?\s')
         for item in data:
             url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
+            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''[\s\-]src=['"]([^'^"]+?)['"]''')[0])
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'media-title'), ('</div', '>'), False)[1])
             year  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'year'), ('</div', '>'), False)[1])
             val   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<i', '>', 'star'), ('</div', '>'), False)[1])
@@ -606,6 +641,8 @@ class PlusDEDE(CBaseHostClass):
             self.listFilters(self.currItem, 'list_items')
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
+        elif category == 'list_lists':
+            self.listLists(self.currItem, 'list_items')
         elif category == 'explore_item':
             self.exploreItem(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
