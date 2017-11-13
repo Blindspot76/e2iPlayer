@@ -50,7 +50,6 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
-hostinfoversion
 hostipla
 hostiptvplayerinfo
 hostitvcom
