@@ -588,11 +588,9 @@ class common:
                 current += 1
                 doRefresh = False
                 try:
-                    #try: verData = data.fp.read()
-                    #except Exception: verData = data
-                    verData = data.fp.read()
-                    if 'sitekey' not in verData and 'challenge' not in verData: break
                     domain = self.getBaseUrl(data.fp.geturl())
+                    if 'sitekey' not in verData and 'challenge' not in verData: break
+                    
                     printDBG("===============================================================")
                     printDBG(verData)
                     printDBG("===============================================================")
@@ -776,6 +774,7 @@ class common:
         req      = None
         out_data = None
         opener   = None
+        metadata = None
         
         timeout = params.get('timeout', None)
         
@@ -793,6 +792,9 @@ class common:
             
         if 'User-Agent' not in headers:
             headers['User-Agent'] = host
+            
+        if params.get('with_metadata', False):
+            metadata = {}
 
         printDBG('pCommon - getURLRequestData() -> params: ' + str(params))
         printDBG('pCommon - getURLRequestData() -> headers: ' + str(headers)) 
@@ -877,6 +879,8 @@ class common:
                 response = urlOpen(req, customOpeners, timeout)
                 if response.info().get('Content-Encoding') == 'gzip':
                     gzip_encoding = True
+                try: metadata['url'] = response.geturl()
+                except Exception: pass
                 data = response.read()
                 response.close()
             except urllib2.HTTPError, e:
@@ -891,6 +895,8 @@ class common:
                     printDBG('!!!!!!!! %s: getURLRequestData - handled' % e.code)
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
                         gzip_encoding = True
+                    try: metadata['url'] = e.fp.geturl()
+                    except Exception: pass
                     data = e.fp.read()
                     #e.msg
                     #e.headers
@@ -930,6 +936,9 @@ class common:
                 GetIPTVNotify().push('%s\n\n%s\n\n%s' % (msg1, msg2, msg3), 'error', 20)
                 SetTmpCookieDir()
                 raise e
+        
+        if metadata != None:
+            out_data = strwithmeta(out_data, metadata)
 
         return out_data 
 
