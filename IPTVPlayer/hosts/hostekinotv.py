@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, GetCookieDir, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, GetCookieDir, GetDefaultLang, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
 ###################################################
@@ -13,11 +13,12 @@ from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_js_execute
 from Screens.MessageBox import MessageBox
 ###################################################
 # FOREIGN import
 ###################################################
+import base64
 import re
 from Components.config import config, ConfigYesNo, ConfigText, ConfigSelection, getConfigListEntry
 ###################################################
@@ -25,7 +26,7 @@ from Components.config import config, ConfigYesNo, ConfigText, ConfigSelection, 
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.ekinotvPREMIUM = ConfigYesNo(default = False)
+#config.plugins.iptvplayer.ekinotvPREMIUM = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ekinotv_login = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.ekinotv_password = ConfigText(default = "", fixed_size = False)
 
@@ -36,8 +37,8 @@ def GetConfigList():
     optionList = []
     #optionList.append(getConfigListEntry("Użytkownik PREMIUM Ekino TV?", config.plugins.iptvplayer.ekinotvPREMIUM))
     #if config.plugins.iptvplayer.ekinotvPREMIUM.value:
-    #    optionList.append(getConfigListEntry("    Ekino TV login:", config.plugins.iptvplayer.ekinotv_login))
-    #    optionList.append(getConfigListEntry("    Ekino TV hasło:", config.plugins.iptvplayer.ekinotv_password))
+    optionList.append(getConfigListEntry("Ekino TV login:", config.plugins.iptvplayer.ekinotv_login))
+    optionList.append(getConfigListEntry("Ekino TV hasło:", config.plugins.iptvplayer.ekinotv_password))
     optionList.append(getConfigListEntry("Sortuj według:", config.plugins.iptvplayer.ekinotv_sortby))
     optionList.append(getConfigListEntry("Kolejność wyświetlania:", config.plugins.iptvplayer.ekinotv_sortorder))
     return optionList
@@ -76,8 +77,10 @@ class EkinoTv(CBaseHostClass):
                           'alfabetycznie':'alfa',}
         
         self.cacheMovieFilters = {'cats':[], 'vers':[], 'years':[]}
-        self.loggedIn = False
-       
+        self.loggedIn = None
+        self.login    = ''
+        self.password = ''
+        self.loginMessage = ''
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
@@ -136,6 +139,7 @@ class EkinoTv(CBaseHostClass):
             params = dict(cItem)
             if None != category:
                 params['category'] = category
+            params['desc'] = self.loginMessage
             params.update(item)
             self.addDir(params)
             
@@ -257,7 +261,13 @@ class EkinoTv(CBaseHostClass):
 
     def getLinksForVideo(self, cItem):
         printDBG("EkinoTv.getLinksForVideo [%s]" % cItem)
+        self.tryTologin()
+        
         urlTab = []
+        premiumTab = []
+        ultraTab = []
+        
+        if self.loggedIn: self.cm.clearCookie(self.COOKIE_FILE, removeNames=['pplayer'])
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
@@ -270,46 +280,93 @@ class EkinoTv(CBaseHostClass):
             SetIPTVPlayerLastHostError(self.cleanHtmlStr(message))
             return []
         
-        playersData = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="players"', '</ul>', False)[1]
+        reTitleObj = re.compile('''title=['"]([^"^']+?)['"]''')
         
-        playersData = playersData.split('</li>')
-        if len(playersData): del playersData[-1]
-        players = []
-        for pItem in playersData:
-            pItem = self.cm.ph.getDataBeetwenMarkers(pItem, '<li>', '</a>', False)[1]
-            title = self.cleanHtmlStr(pItem)
-            id = self.cm.ph.getSearchGroups(pItem, 'href="#([^"]+?)"')[0]
-            title += ' ' + self.cm.ph.getSearchGroups(pItem, 'title="([^"]+?)"')[0]
-            players.append({'title':title, 'id':id})
+        def _findHostingLinks(data, linkTab, premium):
+            if premium:
+                jscode = [base64.b64decode('''dmFyIGRvY3VtZW50PXt9LHdpbmRvdz10aGlzLGVsZW1lbnQ9ZnVuY3Rpb24obil7dGhpcy5odG1sPWZ1bmN0aW9uKG4pe3ByaW50KG4pfSx0aGlzLmhpZGU9ZnVuY3Rpb24oKXt9fSwkPWZ1bmN0aW9uKG4pe3JldHVybiBuZXcgZWxlbWVudChuKX07''')]
+                tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+                for item in tmp:
+                    if 'function ShowPlayer(' in item:
+                        jscode.append(item)
+                        break
+                jscode = '\n'.join(jscode)
+        
+            playersData = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="players"', '</ul>', False)[1]
             
-        #printDBG(players)
+            playersData = playersData.split('</li>')
+            if len(playersData): del playersData[-1]
+            players = []
+            for item in playersData:
+                item = self.cm.ph.getDataBeetwenMarkers(item, '<li>', '</a>', False)[1]
+                title = self.cleanHtmlStr(item)
+                id = self.cm.ph.getSearchGroups(item, 'href="#([^"]+?)"')[0]
+                tmp = reTitleObj.findall(item)
+                title += ' ' + ' '.join(tmp)
+                players.append({'title':title, 'id':id})
+            
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '<div class="tab-content">', '<script>', False)[1]
+            tmp = tmp.split('</div>')
+            if len(tmp): del tmp[-1]
+            for item in tmp:
+                id  = self.cm.ph.getSearchGroups(item, 'id="([^"]+?)"')[0]
+                playerParams = self.cm.ph.getSearchGroups(item, '''ShowPlayer[^"^']*?['"]([^"^']+?)['"]\s*\,\s*['"]([^"^']+?)['"]''', 2)
+                url = ''
+                if premium and '' not in playerParams:
+                    ret = iptv_js_execute( jscode + ('\nShowPlayer("%s","%s");' % (playerParams[0], playerParams[1])))
+                    if ret['sts'] and 0 == ret['code']:
+                        printDBG(ret['data'])
+                        url = self.getFullUrl(self.cm.ph.getSearchGroups(ret['data'], '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', ignoreCase=True)[0])
+                else:
+                    if '' not in playerParams: url = baseVidUrl + '/'.join(playerParams)
+                    if url == '': url = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+                    
+                url = self.getFullUrl(url)
+                if url == '' or url.split('?', 1)[0].split('.')[-1].lower() in ['jpg', 'jepg', 'gif', 'png']:
+                    continue
+                for p in players:
+                    if p['id'] == id:
+                        if premium: title = '[premium] %s' % p['title']
+                        else: title = p['title']
+                        linkTab.append({'name':title, 'url':strwithmeta(url, {'Referer':cItem['url']}), 'need_resolve':1})
+                        break
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="tab-content">', '<script>', False)[1]
-        data = data.split('</div>')
-        if len(data): del data[-1]
-        #printDBG(data)
-        for item in data:
-            id  = self.cm.ph.getSearchGroups(item, 'id="([^"]+?)"')[0]
-            playerParams = self.cm.ph.getSearchGroups(item, '''ShowPlayer[^"^']*?['"]([^"^']+?)['"]\s*\,\s*['"]([^"^']+?)['"]''', 2)
-            url = ''
-            if playerParams[0] != '' and playerParams[1] != '':
-                url = baseVidUrl + '/'.join(playerParams)
-            if url == '': url = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
-            url = self.getFullUrl(url)
-            if url == '' or url.split('.')[-1] in ['jpg', 'jepg', 'gif']:
-                continue
-            for p in players:
-                if p['id'] == id:
-                    urlTab.append({'name':p['title'], 'url':strwithmeta(url, {'Referer':cItem['url']}), 'need_resolve':1})
-                    break
-        return urlTab
+        _findHostingLinks(data, urlTab, False)
+        if self.loggedIn:
+            setUltra = 'setUltra()' in data
+            baseVidUrl = 'watch/p/'
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'select_premium'), ('</ul', '>'), False)[1]
+            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<li', '>'), ('</li', '>'))
+            for item in data:
+                playerParams = []
+                playerParams.append(self.cm.ph.getSearchGroups(item, '''data\-vhost=['"]([^'^"]+?)['"]''')[0])
+                playerParams.append(self.cm.ph.getSearchGroups(item, '''data\-file=['"]([^'^"]+?)['"]''')[0])
+                if '' in playerParams: continue
+                url = self.getFullUrl(baseVidUrl + '/'.join(playerParams))
+                title = self.cleanHtmlStr(item)
+                tmp   = reTitleObj.findall(item)
+                title += ' ' + ' '.join(tmp)
+                premiumTab.append({'name':'[premium] %s' % title, 'url':strwithmeta(url, {'Referer':cItem['url'], 'is_premium':True}), 'need_resolve':1})
+            
+            if setUltra:
+                urlParams = dict(self.defaultParams)
+                urlParams['cookie_items'] = {'pplayer':'1'}
+                sts, data = self.getPage(cItem['url'], urlParams)
+                if sts and 'setStandard()' in data:
+                    _findHostingLinks(data, ultraTab, True)
+                    
+                    
+        ultraTab.extend(premiumTab)
+        ultraTab.extend(urlTab)
+        return ultraTab
         
     def getVideoLinks(self, baseUrl):
         printDBG("EkinoTv.getVideoLinks [%s]" % baseUrl)
         urlTab = []
+        meta = strwithmeta(baseUrl).meta
         urlParams = dict(self.defaultParams)
         urlParams['header'] = dict(urlParams['header'])
-        urlParams['header']['Referer'] = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
+        urlParams['header']['Referer'] = meta.get('Referer', baseUrl)
         urlParams['handle_recaptcha'] = True
         urlParams['with_metadata'] = True
         
@@ -318,11 +375,10 @@ class EkinoTv(CBaseHostClass):
         while self.up.getDomain(self.getMainUrl()) in self.up.getDomain(url) and tries < 4:
             tries += 1
             
-            sts, data = self.getPage(baseUrl, urlParams)
+            sts, data = self.getPage(url, urlParams)
             if not sts: return []
             
-            baseUrl = baseUrl.meta.get('url', baseUrl)
-            url = baseUrl
+            url = data.meta.get('url', url)
             
             if self.up.getDomain(self.getMainUrl()) not in self.up.getDomain(url):
                 break
@@ -352,20 +408,88 @@ class EkinoTv(CBaseHostClass):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0])
             if not self.cm.isValidUrl(url):
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''var\s+url\s*=\s*['"]([^'^"]+?)['"]''')[0])
+            
+            if not self.cm.isValidUrl(url):
+                url = data.meta.get('url', '')
+                
+            if meta.get('is_premium', False) and 'video-player' in data:
+                vidUrl = self.cm.ph.getSearchGroups(data, '''var\s+[^=]+?\s*=\s*['"](https?://[^'^"]+?\.mp4(:?\?[^'^"]*?)?)['"]''', ignoreCase=True)[0]
+                if self.cm.isValidUrl(vidUrl):
+                    urlTab.append({'name':'direct', 'url':vidUrl})
+                    return urlTab
+            
             printDBG("|||"  + url)
+            printDBG("#################################################################")
+            printDBG(data)
+            printDBG("#################################################################")
         
         if self.cm.isValidUrl(url): 
             urlTab = self.up.getVideoLinkExt(url)
         return urlTab
         
-    def getFavouriteData(self, cItem):
-        return cItem['url']
+    def getLinksForFavourite(self, favData):
+        try:
+            cItem = byteify(json.loads(favData))
+        except Exception:
+            cItem = {'url':favData}
+            printExc()
+        return  self.getLinksForVideo(cItem)
+    
+    def tryTologin(self):
+        printDBG('tryTologin start')
         
-    def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
+        if None == self.loggedIn or self.login != config.plugins.iptvplayer.ekinotv_login.value or\
+            self.password != config.plugins.iptvplayer.ekinotv_password.value:
+        
+            self.login = config.plugins.iptvplayer.ekinotv_login.value
+            self.password = config.plugins.iptvplayer.ekinotv_password.value
+            
+            rm(self.COOKIE_FILE)
+            
+            self.loggedIn = False
+            
+            if '' == self.login.strip() or '' == self.password.strip():
+                return False
+            
+            sts, data = self.getPage(self.getMainUrl())
+            if not sts: return False
+            
+            sts, data = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'login'), ('</form', '>'))
+            if not sts: return False
+            
+            actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
+            post_data = {}
+            for item in data:
+                name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+                value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+                post_data[name] = value
+            
+            post_data.update({'login':self.login, 'password':self.password})
+            
+            httpParams = dict(self.defaultParams)
+            httpParams['header'] = dict(httpParams['header'])
+            httpParams['header']['Referer'] = self.getMainUrl()
+            sts, data = self.cm.getPage(actionUrl, httpParams, post_data)
+            if sts and 'user/logout' in data:
+                self.loggedIn = True
+                data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'menu'), ('</div', '>'))[1]
+                data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>'), ('<br', '>', '/'))
+                self.loginMessage =  []
+                for t in data:
+                    t = self.cleanHtmlStr(t)
+                    if t != '': self.loginMessage.append(t)
+                self.loginMessage = '[/br]'.join(self.loginMessage)
+            else:
+                message = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'alert'), ('</div', '>'))[1])
+                self.sessionEx.open(MessageBox, _('Login failed.') + '\n' + message, type = MessageBox.TYPE_ERROR, timeout = 10)
+                printDBG('tryTologin failed')
+        return self.loggedIn
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
-        printDBG('EkinoTv.handleService start') 
+        printDBG('EkinoTv.handleService start')
+        
+        self.tryTologin()
                 
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
