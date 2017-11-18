@@ -338,7 +338,7 @@ class CartoonHD(CBaseHostClass):
         sts, jsUrl = self.cm.getPage(jsUrl, self.defaultParams)
         if not sts: return []
         
-        jsUrl = self.cm.ph.getSearchGroups(jsUrl, '''['"]([^'^"]*?/ajax/[^'^"]*?embed[^'^"]*?)['"]''')[0]
+        jsUrl = self.cm.ph.getSearchGroups(jsUrl.split('getEpisodeEmb', 1)[-1], '''['"]([^'^"]*?/ajax/[^'^"]+?)['"]''')[0]
         printDBG("jsUrl [%s]" % jsUrl)
         if jsUrl == '': return []
         
