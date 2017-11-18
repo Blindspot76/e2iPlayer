@@ -459,6 +459,7 @@ class urlparser:
                        'powvideo.net':         self.pp.parserPOWVIDEONET    ,
                        'gamovideo.com':        self.pp.parserGAMOVIDEOCOM   ,
                        'streamix.cloud':       self.pp.parserSTREAMIXCLOUD  ,
+                       'veoh.com':             self.pp.parserVEOHCOM        ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -8537,6 +8538,36 @@ class pageParser:
                 url = strwithmeta(url, {'Referer':HTTP_HEADER['Referer'], 'User-Agent':HTTP_HEADER['User-Agent']})
                 linksTab.append({'name':'mp4', 'url':url})
         return linksTab
+        
+    def parserVEOHCOM(self, baseUrl):
+        printDBG("parserVEOHCOM url[%s]\n" % baseUrl)
+        
+        mediaId = self.cm.ph.getSearchGroups(baseUrl, '''permalinkId=([^&]+?)[&$]''')[0]
+        if mediaId == '': mediaId = self.cm.ph.getSearchGroups(baseUrl, '''/watch/([^/]+?)[/$]''')[0]
+        
+        #url = 'http://www.veoh.com/api/findByPermalink?permalink=%s' % id
+        
+        url = 'http://www.veoh.com/iphone/views/watch.php?id=%s&__async=true&__source=waBrowse' % mediaId
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        
+        printDBG(data)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False)
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+            if self.cm.isValidUrl(url): return url
+        
+        url = 'http://www.veoh.com/rest/video/%s/details' % mediaId
+        sts, data = self.cm.getPage(url)
+        if not sts: return False
+        
+        printDBG(data)
+        
+        url = self.cm.ph.getSearchGroups(data, '''fullPreviewHashPath=['"]([^'^"]+?)['"]''')[0]
+        if self.cm.isValidUrl(url): return url
+        return False
         
     def parserSTREAMIXCLOUD(self, baseUrl):
         printDBG("parserSTREAMIXCLOUD url[%s]\n" % baseUrl)
