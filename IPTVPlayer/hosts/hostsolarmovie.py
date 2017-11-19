@@ -56,7 +56,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://solarmovie.st/'
+    return 'https://solarmoviex.to/'
 
 class SolarMovie(CBaseHostClass):
  
@@ -146,18 +146,22 @@ class SolarMovie(CBaseHostClass):
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
     def selectDomain(self):
-        domains = ['https://solarmovie.st/']
+        printDBG("SolarMovie.selectDomain")
+        domains = ['https://solarmoviex.to/']
         domain = config.plugins.iptvplayer.solarmovie_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
             domains.insert(0, domain)
         
+        urlParams = dict(self.defaultParams)
+        urlParams['with_metadata'] = True
         for domain in domains:
             for i in range(2):
-                sts, data = self.getPage(domain)
+                sts, data = self.getPage(domain, urlParams)
                 if sts:
-                    if 'genre/action/' in data:
-                        self.MAIN_URL = domain
+                    if 'genre/action' in data:
+                        self.MAIN_URL = data.meta.get('url')
+                        printDBG(">> meta[%s]" %  data.meta)
                         break
                     else: 
                         continue
@@ -346,7 +350,6 @@ class SolarMovie(CBaseHostClass):
                 tmp = '89aac45129123590486772c958b0efc9074993ad1ffddc7fecfec3755806ca1d51a76813a3fbf891ee09081e10ea4f74681823b1443295b8b4ee2f14d8f209194fe5db528cbbf29117101f346dc7b4dd1474dff6face052de50948157720f1fd9d162c4068f329ca732336edd335ae93e29d3515f32b9c1963255b979da52f52bede1bfa1f505581bd8a92a4d43ce162ebe4efe19303d3a3b141305610bfe8257fa70af3c548003c3b5a216e2e5204568f09abfa0f8448d18aafc79bd7d893f5a182f7529ffbb5678b236ef43a0e33782a50e35650e2f4e2381f7f045b4ac6c6e1af1f2e2d9558a3fd2cdf3339a4ec74cf84049e0e8f82b8072c7d09c1daaf92a66a529c7fa40105d22949770323f8e54d4fbbcdd26e5815c49ba012ff628e186ba5318094b3cc9283e1d3c7ad75b552cb6cf95112020ecd975dee875581013917f16a2961cebd82eb2d2e9dbc4e4e72d4ae86d4a07d5713254e6cf95d59888e102e0562941dfbb7371b431ed9d43f39be000bacd84e06cf1a6429ea58cfc58856b778c4662e515e90d1309b27b00cf642a8ca479fe80a9bc51906bf95bb76b9572bbe32e6b97cc562c0cce8835932117e8f1e95584519257b4707bdbfdf3b7b07f4dcf58b6cf41b651d081d976f0799070bca4fa013b901b4520a41ec008b84748ab9e6226c6502ed06372dfc75a0bbff243c42ff58cbede6c71bdc452753f928f6859e52af6405c29903a2c3c3e3eee95e642f45a7b52e9fa4f51f5ebf46ab94157c90b2965e7d8c85507fb0855959f02190736b6486b8d0cf6c8d0766716384a7155609eebd3e9537195c24262a44b7525db231fc768e84bf40f5d21a0b5375255a82d97c23b732bc72e7f587a0a7e8670b0ed50cb32605e43ec1b7d95bcb9628250537235ea20ee3b2de83f8d439d321969550aa36f92074a85578e659cd48c955ab7040eb851632961e24fe4965448b65b28c76f24edf6c7c9efa0dbaa032f053154217e102844a3f587f592e08f68d3a24dfdf4c1b15ff9826a5d8809faa49faff26467e1d0110ac50e5665e0d5f1c3c6e9895872535a8c2cb840df003c32711d19390fe8f4b04f384010fc58ef10d807201a5dc4656c7f7dfe4e759d4a53af7bc384f532ad55fe65c5dd218d97becf1fc2a368a9da99e18ebf0cd3c0e43406d454fc172ef1dec06da0e945290365d7c96cce5ea9dd65e4b7bd9bef2e287f01f8cf72e5565f63c77d5752511f5924485c058fb889b49ba7628200bd1313624f1a030efaf45069b6a6bff8be70620d8170519895c442994a4786b81e5e76c8b7955784cea2932ea570d024541b851b242fcefd0fabe9e61dd1f975633a40a5033d3f21590f06f4e5224a5a146cad3f9298835495a03b7cb748c485b7ed316ca87b903f3339cdf0a7c597e4ac0bcdfaa8c8cfd05a26a567182584683310cd04baaff41d5105f0813f3e596eb0c7d06a3e4f9f099049077f5a37944a28cafb6841724d1d22fcc06890119357f52148c56740bfe88aa6235ad364f79f75e40ee00af6f13d8d00d43c9505033eaa170abcbb41c83629bee5f9e0687d0d7fade3e17f94f1559954b7a7c1f616246cd7bdd12ed0e6397cdda5b5a03b566301d4c'
                 tmp = self._cryptoJS_AES(unhexlify(tmp), ''.join(GetPluginDir().split('/')[-5:]))
                 tmp = base64.b64decode(tmp.split('\r')[-1]).replace('\r', '')
-                
                 _myFun = compile(tmp, '', 'exec')
                 vGlobals = {"__builtins__": None, 'len': len, 'dict':dict, 'list': list, 'ord':ord, 'range':range, 'str':str, 'max':max, 'hex':hex}
                 vLocals = { 'zaraza': '' }
@@ -382,10 +385,14 @@ class SolarMovie(CBaseHostClass):
         params['header']['Referer'] = str(videoUrl)
         #params['cookie_items'] = cookieItem
         
-        sts, data = self.getPage(videoUrl, params)
-        if not sts: return []
+        sts, data = self.getPage(videoUrl[:videoUrl.rfind('/')], params)
+        if sts: timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+        else: timestamp = ''
         
-        timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+        if timestamp == '': 
+            sts, data = self.getPage(videoUrl, params)
+            if not sts: return []
+            timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
 
         getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'Q':'1'}
         getParams = self._updateParams(getParams)
