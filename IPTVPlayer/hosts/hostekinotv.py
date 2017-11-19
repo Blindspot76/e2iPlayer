@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, GetCookieDir, GetDefaultLang, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, GetCookieDir, GetDefaultLang, rm, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
 ###################################################
@@ -20,6 +20,8 @@ from Screens.MessageBox import MessageBox
 ###################################################
 import base64
 import re
+try:    import json
+except Exception: import simplejson as json
 from Components.config import config, ConfigYesNo, ConfigText, ConfigSelection, getConfigListEntry
 ###################################################
 
@@ -154,7 +156,7 @@ class EkinoTv(CBaseHostClass):
             icon   = self.cm.ph.getSearchGroups(item[0], 'src="([^"]+?jpg)"')[0]
             if url == '': continue
             params = dict(cItem)
-            params.update({'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon': self.getFullIconUrl(icon), 'desc': self.cleanHtmlStr(item[-1])})
+            params.update({'good_for_fav':True, 'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon': self.getFullIconUrl(icon), 'desc': self.cleanHtmlStr(item[-1])})
             if category == 'video':
                 self.addVideo(params)
             else:
@@ -533,4 +535,10 @@ class EkinoTv(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, EkinoTv(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+        CHostBase.__init__(self, EkinoTv(), True)
+        
+    def getSearchTypes(self):
+        searchTypesOptions = []
+        searchTypesOptions.append(("Filmy", "movies"))
+        searchTypesOptions.append(("Seriale", "series"))
+        return searchTypesOptions
