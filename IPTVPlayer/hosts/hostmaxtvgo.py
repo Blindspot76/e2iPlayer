@@ -190,6 +190,46 @@ class MaxtvGO(CBaseHostClass):
                 self.sessionEx.open(MessageBox, _('Login failed.'), type = MessageBox.TYPE_ERROR, timeout = 10)
                 printDBG('tryTologin failed')
         return self.loggedIn
+        
+    def getArticleContent(self, cItem, data=None):
+        printDBG("MaxtvGO.getArticleContent [%s]" % cItem)
+        self.tryTologin()
+        
+        
+        if self.up.getDomain(cItem['url']) not in self.up.getDomain(self.getMainUrl()):
+            return []
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return []
+        
+        otherInfo = {}
+        retTab = []
+        desc = []
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'chat_round'), ('<div', '>', 'modal-dialog'))[1]
+        icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(data, '''poster=['"]([^'^"]+?)['"]''')[0])
+        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'chat-video-title'), ('</div', '>'), False)[1])
+        released = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'chat-video-date'), ('</div', '>'), False)[1])
+        if released != '': otherInfo['released'] = released
+        
+        data = re.compile('<div[^>]+?odswiezchat[^>]+?>').split(data, 1)[-1]
+        data = re.compile('<div[^>]+?chat-comment-block[^>]+?>').split(data)
+        if len(data): del data[0]
+        for item in data:
+            author = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'chat-comment-author'), ('</div', '>'), False)[1])
+            date   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'chat-comment-content-data'), ('</div', '>'), False)[1])
+            text   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'chat-comment-content"'), ('</div', '>'), False)[1])
+            desc.append('%s[/br]%s[/br]%s[/br]' % (author, date, text))
+            printDBG("============================================================================")
+            printDBG('%s\n%s\n%s\n' % (author, date, text))
+        
+        desc = '------------------------------------------------------------------------------[/br]'.join(desc)
+        
+        if title == '': title = cItem['title']
+        if desc == '':  desc = cItem.get('desc', '')
+        if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
+        
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -235,7 +275,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, MaxtvGO(), True, [])
         
     def withArticleContent(self, cItem):
-        return cItem.get('good_for_fav', False)
+        return 'maxtvgo.com' in cItem.get('url', '')
     
     
     
