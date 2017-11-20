@@ -589,6 +589,7 @@ class common:
                 doRefresh = False
                 try:
                     domain = self.getBaseUrl(data.fp.geturl())
+                    verData = data.fp.read() 
                     if 'sitekey' not in verData and 'challenge' not in verData: break
                     
                     printDBG("===============================================================")

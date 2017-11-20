@@ -54,7 +54,7 @@ class DPStreamingCX(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0'
     HTTP_HEADER = {'User-Agent': USER_AGENT, 'Accept': 'text/html'}
     MAIN_URL = 'http://dpstreaming.cx/'
-    DEFAULT_ICON_URL = 'http://dpstreaming.cx/wp-content/uploads/2017/09/dpstreaming-cx.png'
+    DEFAULT_ICON_URL = 'http://reviewme.co.za/wp-content/uploads/2013/06/lista_series_7327_622x.jpg'
     MAIN_CAT_TAB = [{'category':'list_items',      'title':_('Last added'),   'url':MAIN_URL},
                     {'category':'categories',      'title':_('Categories'),   'url':MAIN_URL},
                     {'category':'search',          'title': _('Search'), 'search_item':True },
@@ -77,6 +77,12 @@ class DPStreamingCX(CBaseHostClass):
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         return sts, data
+        
+    def getFullIconUrl(self, url):
+        url = self.getFullUrl(url)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
     
     def cleanHtmlStr(self, data):
         data = data.replace('&nbsp;', ' ')
