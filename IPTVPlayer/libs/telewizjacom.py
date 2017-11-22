@@ -47,7 +47,7 @@ class TeleWizjaComApi(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self)
-        self.MAIN_URL    = 'http://tele-wizja.com/'
+        self.MAIN_URL    = 'http://tele-wizja.is/'
         self.HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
         self.COOKIE_FILE = GetCookieDir('telewizjacom.cookie')
         self.PROXY_URL   = 'http://www.proxy-german.de/index.php?q={0}&hl=2e5'

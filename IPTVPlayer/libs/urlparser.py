@@ -575,7 +575,13 @@ class urlparser:
                 data = None
                 continue
             elif 'srkcast.com' in data:
-                videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](https?://[^"^']*?srkcast.com/[^"^']+?)["']''', 1, True)[0].replace('&amp;', '&')
+                videoUrl = ''
+                fid = self.cm.ph.getSearchGroups(data, '''fid=['"]([^'^"]+?)['"]''')[0]
+                player = self.cm.ph.getSearchGroups(data, '''fid=['"]([^'^"]+?)['"]''')[0]
+                if '' != fid:
+                    videoUrl = 'http://www.srkcast.com/embed.php?player=%s&live=%s&vw=640&vh=480' % (player, fid)
+                else:
+                    videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](https?://[^"^']*?srkcast.com/[^"^']+?)["']''', 1, True)[0].replace('&amp;', '&')
                 videoUrl = strwithmeta(videoUrl, {'Referer':baseUrl})
                 return self.getVideoLinkExt(videoUrl)
             elif 'dotstream.tv' in data:
@@ -818,7 +824,8 @@ class urlparser:
                 swfUrl = self.cm.ph.getSearchGroups(data, """['"](http[^'^"]+?swf)['"]""")[0]
                 r += ' swfUrl=%s pageUrl=%s' % (swfUrl, url)
                 return [{'name':'team-cast', 'url':r}]
-            elif 'abcast.biz' in data or 'abcast.net' in data :
+            elif 'abcast.biz' in data or 'abcast.net' in data:
+                videoUrl = ''
                 file = self.cm.ph.getSearchGroups(data, "file='([^']+?)'")[0]
                 if '' != file:
                     if 'abcast.net' in data:
@@ -826,8 +833,10 @@ class urlparser:
                     else:
                         videoUrl = 'http://abcast.biz/embed.php?file='
                     videoUrl += file+'&width=640&height=480'
-                    videoUrl = strwithmeta(videoUrl, {'Referer':url})
-                    return self.getVideoLinkExt(videoUrl)
+                else:
+                    videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]*?abcast[^'^"]+?/embed\.php\?file=[^'^"]+?)['"]''', ignoreCase=True)[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
             elif 'openlive.org' in data:
                 file = self.cm.ph.getSearchGroups(data, """file=['"]([^'^"]+?)['"];""")[0]
                 videoUrl = 'http://openlive.org/embed.php?file={0}&width=710&height=460'.format(file)
@@ -859,7 +868,11 @@ class urlparser:
                 file = self.cm.ph.getSearchGroups(data, """['"]*(http[^'^"]+?\.m3u8[^'^"]*?)['"]""")[0]
                 if '' != file: 
                     file = file.split('&#038;')[0]
-                    return getDirectM3U8Playlist(urllib.unquote(clean_html(file)), checkExt=False)
+                    file = urllib.unquote(clean_html(file))
+                    printDBG("> file[%s]" % file)
+                    if file.count('://') > 1: file = self.cm.ph.getSearchGroups(file[1:], """(https?://[^'^"]+?\.m3u8[^'^"]*?)$""")[0]
+                    printDBG("> file[%s]" % file)
+                    return getDirectM3U8Playlist(file, checkExt=False)
                 if 'x-vlc-plugin' in data:
                     vlcUrl = self.cm.ph.getSearchGroups(data, """target=['"](http[^'^"]+?)['"]""")[0]
                     if '' != vlcUrl: return [{'name':'vlc', 'url':vlcUrl}]
@@ -4958,10 +4971,16 @@ class pageParser:
         printDBG("parserABCASTBIZ linkUrl[%s]" % linkUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         videoUrl = strwithmeta(linkUrl)
-        if 'Referer' in videoUrl.meta:
-            HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        if 'Referer' in videoUrl.meta: HTTP_HEADER['Referer'] = videoUrl.meta['Referer']
+        
         sts, data = self.cm.getPage(linkUrl, {'header': HTTP_HEADER})
         if not sts: return False
+        
+        streamUrl = self.cm.ph.getSearchGroups(data, '''['"](https?://[^'^"]+?\.m3u8[^'^"]*?)['"]''')[0]
+        streamUrl = strwithmeta(streamUrl, {'Referer':videoUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+        
+        streamsTab = []
+        streamsTab.extend(getDirectM3U8Playlist(streamUrl, checkContent=False))
         
         swfUrl = "http://abcast.net/player.swf"
         file = self.cm.ph.getSearchGroups(data, 'file=([^&]+?)&')[0]
@@ -4971,15 +4990,15 @@ class pageParser:
             url    = "rtmpe://live.abcast.biz/redirect"
             url = streamer
             url += ' playpath=%s swfUrl=%s pageUrl=%s' % (file, swfUrl, linkUrl)
-            printDBG(url)
-            return url
+            streamsTab.append({'name':'rtmp', 'url':url})
+            return streamsTab
         data = self.cm.ph.getDataBeetwenMarkers(data, 'setup({', '});', True)[1]
         url    = self.cm.ph.getSearchGroups(data, 'streamer[^"]+?"(rtmp[^"]+?)"')[0]
         file   = self.cm.ph.getSearchGroups(data, 'file[^"]+?"([^"]+?)"')[0]
         if '' != file and '' != url:
             url += ' playpath=%s swfUrl=%s pageUrl=%s ' % (file, swfUrl, linkUrl)
-            return url
-        return False
+            streamsTab.append({'name':'rtmp', 'url':url})
+        return streamsTab
         
     def parserOPENLIVEORG(self, linkUrl):
         printDBG("parserOPENLIVEORG linkUrl[%s]" % linkUrl)
@@ -7183,25 +7202,23 @@ class pageParser:
         file = self.cm.ph.getSearchGroups(baseUrl, "file=([0-9]+?)[^0-9]")[0]
         if '' == file: file = self.cm.ph.getSearchGroups(baseUrl, "a=([0-9]+?)[^0-9]")[0]
         linkUrl = "http://www.byetv.org/embed.php?a={0}&id=&width=710&height=460&autostart=true&strech=".format(file)
+        
         sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
         if not sts: return False 
-        sts, data = CParsingHelper.getDataBeetwenMarkers(data, '"jwplayer1"', '</script>', False)
-        if not sts: return False 
         
-        def _getParam(name):
-            return self.cm.ph.getSearchGroups(data, "'%s',[ ]*?'([^']+?)'" % name)[0] 
+        jscode = []
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if '.m3u8' in item:
+                jscode.append(item)
         
-        swfUrl  = "http://p.jwpcdn.com/6/8/jwplayer.flash.swf"
-        streamer = _getParam('streamer')
-        file     = _getParam('file')
-        token    = _getParam('token')
-        provider = _getParam('provider')
-        rtmpUrl  = provider + streamer[streamer.find(':'):]
-        if '' != file and '' != rtmpUrl:
-            rtmpUrl += ' playpath=file:%s swfUrl=%s token=%s pageUrl=%s live=1 ' % (file, swfUrl, token, linkUrl)
-            printDBG(rtmpUrl)
-            return rtmpUrl
-        return False
+        streamsTab = []
+        streamUrl = ''
+        jscode = base64.b64decode('''dmFyIGRvY3VtZW50PXt9LHdpbmRvdz10aGlzLGVsZW1lbnQ9ZnVuY3Rpb24obil7dGhpcy5fbmFtZT1uLHRoaXMuc2V0QXR0cmlidXRlPWZ1bmN0aW9uKCl7fSx0aGlzLmF0dGFjaFRvPWZ1bmN0aW9uKCl7fX0sJD1mdW5jdGlvbihuKXtyZXR1cm4gbmV3IGVsZW1lbnQobil9O0NsYXBwcj17fSxDbGFwcHIuUGxheWVyPWZ1bmN0aW9uKG4pe3JldHVybiBwcmludChKU09OLnN0cmluZ2lmeShuKSksbmV3IGVsZW1lbnQoInBsYXllciIpfSxkb2N1bWVudC5nZXRFbGVtZW50QnlJZD1mdW5jdGlvbihuKXtyZXR1cm4gbmV3IGVsZW1lbnQobil9Ow==''') + '\n'.join(jscode)
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            streamUrl = byteify(json.loads(ret['data']))['source']
+        return getDirectM3U8Playlist(streamUrl, checkContent=False)
         
     def paserPUTLIVEIN(self, baseUrl):
         printDBG("paserPUTLIVEIN baseUrl[%r]" % baseUrl )

@@ -27,7 +27,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.ytformat        = ConfigSelection(default = "mp4", choices = [("flv, mp4", "flv, mp4"),("flv", "flv"),("mp4", "mp4")]) 
-config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "360", choices = [("0", _("the worst")), ("144", "144p"), ("240", "240p"), ("360", "360p"),("720", "720"), ("1080", "1080"),("9999", _("the best"))])
+config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "720", choices = [("0", _("the worst")), ("144", "144p"), ("240", "240p"), ("360", "360p"),("720", "720"), ("1080", "1080"),("9999", _("the best"))])
 config.plugins.iptvplayer.ytUseDF         = ConfigYesNo(default = True)
 config.plugins.iptvplayer.ytShowDash      = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ytSortBy        = ConfigSelection(default = "", choices = [("", _("Relevance")),("video_date_uploaded", _("Upload date")),("video_view_count", _("View count")),("video_avg_rating", _("Rating"))]) 
