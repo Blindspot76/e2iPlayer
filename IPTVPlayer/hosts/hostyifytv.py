@@ -186,7 +186,7 @@ class YifyTV(CBaseHostClass):
     def _listItems(self, cItem, data, nextPage):
         printDBG("YifyTV.listItems")
         try:
-            data = byteify(json.loads(data))
+            data = byteify(json.loads(data), noneReplacement='', baseTypesAsString=True)
             for item in data['posts']:
                 item['url']   = self.getFullUrl(item['link'])
                 item['title'] = self.cleanHtmlStr(item['title'])
