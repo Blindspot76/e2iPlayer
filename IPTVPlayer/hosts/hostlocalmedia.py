@@ -110,7 +110,7 @@ class LocalMedia(CBaseHostClass):
         extensions = self.VIDEO_FILE_EXTENSIONS + self.AUDIO_FILES_EXTENSIONS + self.PICTURE_FILES_EXTENSIONS + self.M3U_FILES_EXTENSIONS + self.ISO_FILES_EXTENSIONS
         for ext in extensions:
             if config.plugins.iptvplayer.local_showhiddensfiles.value:
-                wilcard = ''
+                wilcard = '*'
             else: wilcard = '[^.]*'
             insensitiveExt=''
             for l in ext:
