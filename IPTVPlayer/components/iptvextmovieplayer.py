@@ -1142,7 +1142,7 @@ class IPTVExtMoviePlayer(Screen):
                 codec = val['encode'].split('/')[-1]
                 text = "%s %sx%s" % (codec, val['width'], val['height'])
                 if val['progressive']: text += 'p'
-                else: text += 'i'
+                elif False == val['progressive']: text += 'i'
                 fps = val['frame_rate']
                 if fps == floor(fps): fps = int(fps)
                 text += ', %sfps' % fps
@@ -1365,10 +1365,11 @@ class IPTVExtMoviePlayer(Screen):
                 params['frame_rate'] = float(obj['f'])/1000.0
                 params['width']      = int(obj['w'])
                 params['height']     = int(obj['h'])
-                params['progressive']= False
+                params['progressive']= None
                 try:
-                    if int(obj[p]):
-                        params['progressive'] = True
+                    if int(obj['p']): params['progressive'] = True
+                    else: params['progressive'] = False
+                        
                 except Exception: 
                     printExc()
                 try:
