@@ -37,11 +37,13 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.viortv_login    = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.viortv_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.viortv_login              = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.viortv_password           = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.viortv_show_all_channels  = ConfigYesNo(default = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_('Show all channels') + ": ",    config.plugins.iptvplayer.viortv_show_all_channels))
     optionList.append(getConfigListEntry('vior.tv ' + _("e-mail") + ':',   config.plugins.iptvplayer.viortv_login))
     optionList.append(getConfigListEntry('vior.tv ' + _("password") + ':', config.plugins.iptvplayer.viortv_password))
     return optionList
@@ -129,7 +131,7 @@ class ViorTvApi(CBaseHostClass):
         data = self.cm.ph.getDataBeetwenNodes(data, ('<section', '>', 'chanelsSection'), ('</section', '>'))[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
         for item in data:
-            if 'noaccess' in item: continue
+            if not config.plugins.iptvplayer.viortv_show_all_channels.value and 'noaccess' in item: continue
             icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0] )
             url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
             if not self.cm.isValidUrl(url): continue

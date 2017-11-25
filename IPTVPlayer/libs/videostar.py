@@ -30,11 +30,11 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 
-config.plugins.iptvplayer.videostar_streamprotocol = ConfigSelection(default = "2", choices = [("1", "rtmp"),("2", "HLS - m3u8")]) 
-config.plugins.iptvplayer.videostar_defquality     = ConfigSelection(default = "950000", choices = [("400000", _("low")),("950000", _("average")),("1600000", _("high"))])
-config.plugins.iptvplayer.videostar_premium        = ConfigYesNo(default = False)
-config.plugins.iptvplayer.videostar_login          = ConfigText(default = "", fixed_size = False)
-config.plugins.iptvplayer.videostar_password       = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.videostar_streamprotocol     = ConfigSelection(default = "2", choices = [("1", "rtmp"),("2", "HLS - m3u8")]) 
+config.plugins.iptvplayer.videostar_defquality         = ConfigSelection(default = "950000", choices = [("400000", _("low")),("950000", _("average")),("1600000", _("high"))])
+config.plugins.iptvplayer.videostar_show_all_channels  = ConfigYesNo(default = False)
+config.plugins.iptvplayer.videostar_login              = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.videostar_password           = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.videostar_use_proxy_gateway  = ConfigYesNo(default = False)
 config.plugins.iptvplayer.videostar_proxy_gateway_url  = ConfigText(default = "http://darmowe-proxy.pl/browse.php?u={0}&b=192&f=norefer", fixed_size = False)
 
@@ -48,6 +48,7 @@ config.plugins.iptvplayer.videostar_proxy_gateway_url  = ConfigText(default = "h
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_('Show all channels') + ": ", config.plugins.iptvplayer.videostar_show_all_channels))
     optionList.append(getConfigListEntry(_('Preferred streaming protocol') + ": ", config.plugins.iptvplayer.videostar_streamprotocol))
     optionList.append(getConfigListEntry(_('Preferred quality') + ": ", config.plugins.iptvplayer.videostar_defquality))
     optionList.append(getConfigListEntry( _("Login") + ": ", config.plugins.iptvplayer.videostar_login))
@@ -159,7 +160,14 @@ class VideoStarApi:
             return self.channelsList
          
         self._fillChannelsList()
-        return self.channelsList 
+        localChannelsList = []
+        if config.plugins.iptvplayer.videostar_show_all_channels.value:
+            localChannelsList = self.channelsList 
+        else:
+            for item in self.channelsList:
+                if item.get('access_status', '') == 'unsubscribed': continue
+                localChannelsList.append(item)
+        return localChannelsList
         
     def _fillChannelsList(self):
         printDBG("VideoStarApi._fillChannelsList")
