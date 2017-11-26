@@ -96,6 +96,7 @@ hostrteieplayer
 hostserialnet
 hostserienstreamto
 hostseriesonline
+hostserijeonline
 hostshahiidanimenet
 hostskstream
 hostsolarmovie
