@@ -353,8 +353,6 @@ class SerijeOnline(CBaseHostClass):
             self.listLists(self.currItem, 'list_items')
         elif category == 'explore_item':
             self.exploreItem(self.currItem, 'list_items')
-        elif category == 'list_episodes':
-            self.listEpisodes(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)

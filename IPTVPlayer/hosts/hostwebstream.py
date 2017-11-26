@@ -33,8 +33,7 @@ from Plugins.Extensions.IPTVPlayer.libs.livetvhdnet       import LivetvhdNetApi
 from Plugins.Extensions.IPTVPlayer.libs.karwantv          import KarwanTvApi
 from Plugins.Extensions.IPTVPlayer.libs.wizjatv           import WizjaTvApi, GetConfigList as WizjaTV_GetConfigList
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
-
-
+from Plugins.Extensions.IPTVPlayer.libs.djingcom          import DjingComApi
 
 ###################################################
 
@@ -157,9 +156,10 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'yooanime.com',            'name': 'yooanime.com',        'title': 'yooanime.com',                      'url': 'http://yooanime.com/',                                               'icon': 'https://socialtvplayground.files.wordpress.com/2012/11/logo-technicolor2.png?w=960'}, \
                         {'alias_id':'livetvhd.net',            'name': 'livetvhd.net',        'title': 'livetvhd.net',                      'url': 'https://livetvhd.net/',                                              'icon': 'https://livetvhd.net/images/logo.png'}, \
                         {'alias_id':'karwan.tv',               'name': 'karwan.tv',           'title': 'karwan.tv',                         'url': 'http://karwan.tv/',                                                  'icon': 'http://karwan.tv/images/KARWAN_TV_LOGO/www.karwan.tv.png'}, \
-                        {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                              'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
-                        {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'Live-Stream.tv',                    'url': 'http://www.live-stream.tv/',                                          'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
-                        {'alias_id':'edem_tv',                 'name': 'edem.tv',             'title': 'Edem TV',                           'url': 'https://edem.tv/',                                                    'icon': 'https://edem.tv/public/images/logo_edem.png'}, \
+                        {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'WagasWorld',                        'url': 'http://www.wagasworld.com/channels.php',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
+                        {'alias_id':'djing.com',               'name': 'djing.com',           'title': 'https://djing.com/',                'url': 'https://djing.com/',                                                 'icon': 'https://www.djing.com/newimages/content/c01.jpg'}, \
+                        {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'Live-Stream.tv',                    'url': 'http://www.live-stream.tv/',                                         'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
+                        {'alias_id':'edem_tv',                 'name': 'edem.tv',             'title': 'Edem TV',                           'url': 'https://edem.tv/',                                                   'icon': 'https://edem.tv/public/images/logo_edem.png'}, \
                         {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                         {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'http://goldvod.tv/',                'url': '',                                                                   'icon': 'http://goldvod.tv/assets/images/logo.png'}, \
                         {'alias_id':'wizja.tv',                'name': 'wizja.tv',            'title': 'http://wizja.tv/',                  'url': 'http://wizja.tv/',                                                   'icon': 'http://wizja.tv/logo.png'}, \
@@ -198,6 +198,7 @@ class HasBahCa(CBaseHostClass):
         self.wizjaTvApi           = None
         self.viorTvApi            = None
         self.weebTvApi            = None
+        self.djingComApi          = None
         
         self.hasbahcaiptv = {}
         self.webcameraSubCats = {}
@@ -729,6 +730,20 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.viorTvApi.getVideoLink(cItem)
         return urlsTab
         
+    def getDjingComList(self, cItem):
+        printDBG("getDjingComList start")
+        if None == self.djingComApi: self.djingComApi = DjingComApi()
+        tmpList = self.djingComApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
+        
+    def getDjingComLink(self, cItem):
+        printDBG("getDjingComLink start")
+        urlsTab = self.djingComApi.getVideoLink(cItem)
+        return urlsTab
+        
     def getTelewizjaLiveComList(self, cItem):
         printDBG("getTelewizjaLiveComList start")
         if None == self.telewizjaLiveComApi:
@@ -941,6 +956,7 @@ class HasBahCa(CBaseHostClass):
         elif name == "sport365.live":       self.getSport365LiveList(self.currItem)
         elif name == "videostar.pl":        self.getVideostarList()
         elif name == "vior.tv":             self.getViorTvList(self.currItem)
+        elif name == "djing.com":           self.getDjingComList(self.currItem)
         elif name == 'ustvnow':             self.getUstvnowList(self.currItem)
         elif name == 'telewizjada.net':     self.getTelewizjadaNetList(self.currItem)
         elif name == 'yooanime.com':        self.getYooanimeComtList(self.currItem)
@@ -992,54 +1008,31 @@ class IPTVHost(CHostBase):
         if -1 != url.find('teledunet'):
             new_url = TeledunetParser().get_rtmp_params(url)
             if 0 < len(url): retlist.append(CUrlItem("Własny link", new_url))
-        elif url.startswith('http://goldvod.tv/'):
-            urlList = self.host.getGoldVodTvLink(cItem)
-        elif name == 'pierwsza.tv':
-            urlList = self.host.getPierwszaTvLink(cItem)
-        elif "showsport-tv.com" == name:
-            urlList = self.host.getShowsportTvLink(cItem)
-        elif "sport365.live" == name:
-            urlList = self.host.getSport365LiveLink(cItem)
-        elif 'wagasworld.com' == name:
-            urlList = self.host.getWagasWorldLink(cItem)
-        elif 'others' == name:
-            urlList = self.host.getOthersLinks(cItem)
-        elif 'weeb.tv' in name:
-            url = self.host.getWeebTvLink(url)
-        elif "filmon_channel" == name:
-            urlList = self.host.getFilmOnLink(channelID=url)
-        elif "videostar_channels" == name:
-            urlList = self.host.getVideostarLink(channelID=url)
-        elif name == 'vior.tv':
-            urlList = self.host.getViorTvLink(cItem)
-        elif name == 'ustvnow':
-            urlList = self.host.getUstvnowLink(cItem)
-        elif name == 'telewizjada.net':
-            urlList = self.host.getTelewizjadaNetLink(cItem)
-        elif name == 'yooanime.com':
-            urlList = self.host.getYooanimeComLink(cItem)
-        elif name == 'livetvhd.net':
-            urlList = self.host.getLivetvhdNetLink(cItem)
-        elif name == 'karwan.tv':
-            urlList = self.host.getKarwanTvLink(cItem)
-        elif name == 'wizja.tv':
-            urlList = self.host.getWizjaTvLink(cItem)
-        elif name == 'telewizja-live.com':
-            urlList = self.host.getTelewizjaLiveComLink(cItem)
-        elif name == 'tele-wizja.com':
-            urlList = self.host.getTeleWizjaComLink(cItem)
-        elif name == 'meteo.pl':
-            urlList = self.host.getMeteoPLLink(cItem)
-        elif name == 'edem.tv':
-            urlList = self.host.getEdemTvLink(cItem)
-        elif name == 'skylinewebcams.com':
-            urlList = self.host.getWkylinewebcamsComLink(cItem)
-        elif name == 'live-stream.tv':
-            urlList = self.host.getLiveStreamTvLink(cItem)
-        elif name == "webcamera.pl":
-            urlList = self.host.getWebCameraLink(url)
-        elif name == "prognoza.pogody.tv":
-            urlList = self.host.prognozaPogodyLink(url)
+        elif url.startswith('http://goldvod.tv/'): urlList = self.host.getGoldVodTvLink(cItem)
+        elif name == 'pierwsza.tv':                urlList = self.host.getPierwszaTvLink(cItem)
+        elif name == "showsport-tv.com":           urlList = self.host.getShowsportTvLink(cItem)
+        elif name == "sport365.live":              urlList = self.host.getSport365LiveLink(cItem)
+        elif name == 'wagasworld.com':             urlList = self.host.getWagasWorldLink(cItem)
+        elif name == 'others':                     urlList = self.host.getOthersLinks(cItem)
+        elif 'weeb.tv' in name:                    url = self.host.getWeebTvLink(url)
+        elif name == "filmon_channel":             urlList = self.host.getFilmOnLink(channelID=url)
+        elif name == "videostar_channels":         urlList = self.host.getVideostarLink(channelID=url)
+        elif name == 'vior.tv':                    urlList = self.host.getViorTvLink(cItem)
+        elif name == 'djing.com':                  urlList = self.host.getDjingComLink(cItem)
+        elif name == 'ustvnow':                    urlList = self.host.getUstvnowLink(cItem)
+        elif name == 'telewizjada.net':            urlList = self.host.getTelewizjadaNetLink(cItem)
+        elif name == 'yooanime.com':               urlList = self.host.getYooanimeComLink(cItem)
+        elif name == 'livetvhd.net':               urlList = self.host.getLivetvhdNetLink(cItem)
+        elif name == 'karwan.tv':                  urlList = self.host.getKarwanTvLink(cItem)
+        elif name == 'wizja.tv':                   urlList = self.host.getWizjaTvLink(cItem)
+        elif name == 'telewizja-live.com':         urlList = self.host.getTelewizjaLiveComLink(cItem)
+        elif name == 'tele-wizja.com':             urlList = self.host.getTeleWizjaComLink(cItem)
+        elif name == 'meteo.pl':                   urlList = self.host.getMeteoPLLink(cItem)
+        elif name == 'edem.tv':                    urlList = self.host.getEdemTvLink(cItem)
+        elif name == 'skylinewebcams.com':         urlList = self.host.getWkylinewebcamsComLink(cItem)
+        elif name == 'live-stream.tv':             urlList = self.host.getLiveStreamTvLink(cItem)
+        elif name == "webcamera.pl":               urlList = self.host.getWebCameraLink(url)
+        elif name == "prognoza.pogody.tv":         urlList = self.host.prognozaPogodyLink(url)
             
         if isinstance(urlList, list):
             for item in urlList:
