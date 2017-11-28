@@ -261,21 +261,21 @@ class AnimeTo(CBaseHostClass):
             return cipher.encrypt(encrypted, iv)
             
         
-    def _updateParams(self, params):
+    def _updateParams(self, params, params2=True,params3=True):
         if self._myFun == None:
             try:
-                tmp = 'd4dc09ccf50eec3e8ff154e9aaae91d70fd5cb194964f86c2f2b4dda892d816ca7515b17a77760b52b0fa8ada0f4404a51c9485e13b96e508e6630b076d3af9b4915c3fba4c93ea7bf07839938a08243ec03e518960cad35077cdb5060dd677be8f1def1b057dfc86887a4a7f52350fcf9dddbe96b59a2c6e22ec6accb515c95a1d306c5b8bfb6213d553433ed87c8355f1e5cc057d3d79b004b0338d645a20ec0712a5396bde975ffbe5c90a67a1c52cc275f62dd9600d5d482fb74c8e2dbfd9f1e1f27f17aaca3650d1cd025b52eb810bd438f9ea2ababccdf861eefeb932f81370c7a5eb3bbe8679aeb9a96ae923becdde1b010bb16796473feb3750407bc9f794703fda58501ba1a4f20a964dfa2a30f607736342a3fa47e8a0efa3440e33c8ae36b6f9f9740826b52b8a103f176dfe121d49c740a14436294dc5a957ac3057d33693763c3a85535536ac83e1c6faa1251200f324555a6f8c2080f90b2d557e1e08690489bd6e6b684f01eaa39a8aa9e5eb4c587ef4341a5940d4213c0814437cd34c48e6454e6e0cf9307ceb8c439e36f483eee4465eb451e1a83b330158dc55a8aaac8c7955d5c05542de31f8a44164365caf92de8a321dad1b07a5807e75fef0156b503a873b781f4f94886595cb3fadef717b2d0c789c3cf153a206188a2ee844c265c8fa8245cdc91b688b602d3ec514649b6a24709885920a11a065f1a63e4e1d8e69935e3edf8fda397ec4929f05d08c47ea107a2d9b5e556dd3b6f96391c1cfd3e09e7abc0b269a6c6ccb73e960c06f196590677a3c2eb0b79bee0f00983e79cea0f60b18b20f3b2d76044c5582955d27f60a75f12fd90257bd820797a01390ab6e3b0af8745b82eaaa64fabff78fb36f4923d312c7dbe84166dc8fe473fee9c1b03206e648917991497b2b56a427b39a5bf6c37ef76147fc65665932018a6381c960097805c31bc05a35a6d33eaf62cc88ee060669d30684afd0832533fcbf33939a5340b508884fa2fd973a15968b4ba57cec1fffea3584ec6'
-                tmp = self._cryptoJS_AES(unhexlify(tmp), ''.join(GetPluginDir().split('/')[-5:]))
-                tmp = base64.b64decode(tmp.split('\r')[0]).replace('\r', '')
-                
+                if True:
+                    tmp = 'd4dc09ccf50eec3e8ff154e9aaae91d7929c817981b33e845bd0b59ba69cdee3c2d131462159801b5c5f8ca1593cf4340528e8cfd3f924c7bab5ae87f601e1c8f6218fc0901c805980b855bea9f665f31ff0396dadbcd5df601371897d5c156a06dc05b1f50736014a1eda203861858d500b67feca80d937f4108e0a961d399a9668084db2e0bd80af141f2f7b09d390324a25325af7eea4886dd17270e90a73dbec576074ddab2137dc3023607fbc86f549892c4d662c4122dc3b5bac1be0d739e6d2354bbeb8a4110654edb862630424c81d9b37b48be32ce174d90f1a52603af40e2a2bba1c26fc6cf660bed8ecac30e5fc4d479f2978036b9289a762d33f463881537d815d95fffd8d38b8a2f2d5a5ddf7270310eae29b48ac82a6a0c34b244f4c98864c10edcf65af2b9e550356f338fae937c1f502fa301f0c36e7837e9256a6b4e0bda84ecd8d5923a2c8feaa8a197195e93ac52688451b6b95252e26d70b4e79ac22b8445b72d98f796e65e674dcd7309a4f7ee2504856fc06f1c25af2d883a6c20bc3469767a46485b0bd6d1378e68216e1a10df259486fbde7b957165a3b06b70d13ffda13a61b2f2ddb919e302db25efbf7de2b0c1313e6db973707f957e9d624f8c941e4e9032abba3ae964b6b7a386b4ed09d59f2fadbcbaccb47513847b71cd42d6ffb1777d8813e65bd2bb59fb774635015618a0e345e33273d6f49213c90111c9e0a5a235aaa13679df3f38d6bb259e7a17cd3edd942b353cbd1034a69768489332e3719b55e64804c78e9986fa9535f0ee4ccb3521a734dd5695dcc5b9d9bfaa905cbfd952acd1a7f868ef35c1ccd4bff97cf49c0d12b92126e228f51eaf1fb2820698b965cb0466e930c4885712264447bbe4d9059c19f0fce59d61953afa7d7a3663bad90bd605f8cf63a2e41c2e56332966bb74c830e1721eafa02e9ec74beb3ab2219cc7e9d1e77703770370a647bf110aeecf244537ff60c016c49e8eea9ec103337c80bf11a9ea5a1992bfa9c3e116b419ae9f4ea69a764083c265edccfdcb97e20e1c27b03474da65e55ada8274126f5d5e86360446f24189e9cc9b482fbc70ee0522665decc717214bd7f632f2d788a3a85eba8f662ac2c934ffbd794cbc79e295fd8dc75a644972b6cdeb48bd28dddf05c6123e399c9f4891429a21b495b05ae1a7e9b8e2e1a51a2963583e26ed86d769e60ae454133b6a4129e2189cda0a0fdec9b0e96990c709ae888495a42bd2b5d3a88821a7006fbfc387d0ca7436e0dfbab0afce0d3af8c1350410e3017ad889a750c67ab36c153ffbc9a77b9ef707617cb03b0e66c5f354ce3eb04c39624294b23e4cff0eb43f153e5b8aac13e0388cbb689c84aa4c8009a1af593f5ef12d14ba142c886ab8eb56e8210172a1069effc58087d55c8076594359354d1a088c6c261c21dec49ae6f8e8bc2331674a73a37f600d498f08db9dbe781299520f70ae0e19992ee411a0d216b84e050c8372d463073b3f39bef6fda2b776edcbba79573acad6cad1b4ed605ff65fd5ad69bccf78b417b31c8e161a09d32de58662e44a351b4cfbd87d161a0a8037e07487a10107cf92deb61a16726a619d3ce90ff4e08ad31c307abafdf959674e95af39a03a02076a933ed5b435a127385aa2be398e173666204c6cc2b90d336acc08e8f62ed51da2ee458d1ce59f17d6658185839288d9d4d0524e7b03d2109d65085b58f7929f8e3d0db72859df4dfbcd65e05a7dd82ce77d5423d53c072d4b274fa1dc55816c0b8abfd9904120ca5ff8cf3254f606588d3b485fc7c1b56e60c38381c286741dbca0886b3e2225b64ab27421feec5434dadc1254f07786960f600d2a9fd0cede1dc8728202ce1738c9a2ea225a8397f0a3fd84bb42f724dbfafc1cc089c7744e7e85b1765daa153dd65db97c446d7001216218f93a6e40d1cb7f4d335006ba7f232beafc3a416755fdb59c81aea0b8ff0e35b8d03aa4c2efb526e8cf55f83683de213d8666f733a42032217e453981d65b12f58a09abfbb47ac8d3f6f55a66cc35143c03c29b841894807820c502b3a14ba06d4dea9fdeb203b7a74862c4af30c00d42082c8c02f4824f02cec35cefa9814e2ebd93eec3da2beccdc3b644f73768189dbea272146d3f749abf9a4e56e0bbf07c90c0c7be65ca4f9b02e428f598ed44e0ba97d149113fd68325114eb0791c6b868750a07d01af4fc8b9413338577d9cc5c2516009da3c84e8564c449e0a2418edaad147c854b3c3a901427f00e527874ea0fec3ce9b0d7f58724c9c4886cf08723a4da0af7418dfc6462c2b3b7e8dd079f23fd5483f19a029c39fd502118690a428abb4657b00102a36ccf461caffad0de94521a6abce56664b7805b32c77aa58421061c32a569c0f74da69f491865aaaa3e1ce4f1551edf99bb06cced0bc12787da5989497d2566ea8c1a0ab76e32885101b9f2c8f26f0e5fa45acaa042011802146eafe335cf1d0d51f6df18a5b9782f7146829dc9fb2107f977d6f497b92327958e6b666a6ce8636ca2b01c1eb00e896394982903ef0a7725ba5c54b8d90f8ee4e73a7d4c548dd38d3db7f2b8ff4b2c8097d140969d64a064e0566fe298094b143dc14afa6b6425a4224a63b51dfada8a6ad4571dabb91a6f5aa0878a623fed3f861d00172ac9ee9deb3b50a7cd9446bf00aabdc0ed88f9cbd18c764df9c43e8390430e4704c91dd497408c48af7d5117c71a1422fe9712a9b928cf973d1ce47f5f18e934248b4b19095ea82d9facdabd1c6097ed52abbd41c970c48fbb601c37256286719249bda0d009f945b2a0792bd5a70dae6f9a011a26057a4374'
+                    tmp = self._cryptoJS_AES(unhexlify(tmp), ''.join(GetPluginDir().split('/')[-5:]))
+                    tmp = base64.b64decode(tmp.split('\r')[0]).replace('\r', '')
                 _myFun = compile(tmp, '', 'exec')
-                vGlobals = {"__builtins__": None, 'len': len, 'dict':dict, 'list': list, 'ord':ord, 'range':range, 'str':str, 'max':max, 'hex':hex}
+                vGlobals = {"__builtins__": None, 'len': len, 'dict':dict, 'list': list, 'ord':ord, 'range':range, 'str':str, 'max':max, 'hex':hex, 'b64decode': base64.b64decode, 'True':True, 'False':False}
                 vLocals = { 'zaraza': '' }
                 exec _myFun in vGlobals, vLocals
                 self._myFun = vLocals['zaraza']
             except Exception:
                 printExc()
-        try: params = self._myFun(params)
+        try: params = self._myFun(params, params2)
         except Exception: printExc()
         return params
         
@@ -306,10 +306,14 @@ class AnimeTo(CBaseHostClass):
         #sts, data = self.getPage('https://9anime.to/ajax/episode/info?id=%s&update=0' % id, params)
         #if not sts: return []
         
-        sts, data = self.getPage(videoUrl, params)
-        if not sts: return []
+        sts, data = self.getPage(videoUrl[:videoUrl.rfind('/')], params)
+        if sts: timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([^"^']+?)['"]''')[0]
+        else: timestamp = ''
         
-        timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+        if timestamp == '': 
+            sts, data = self.getPage(videoUrl, params)
+            if not sts: return []
+            timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([^"^']+?)['"]''')[0]
 
         getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'Q':'1'}
         getParams = self._updateParams(getParams)
@@ -334,10 +338,13 @@ class AnimeTo(CBaseHostClass):
             printDBG(data)
             subTrack = data.get('subtitle', '')
             if data['type'] == 'iframe':
-                videoUrl = data['target']
+                videoUrl = self._updateParams({'url':data['target']}, False)['url']
                 if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
             elif data['type'] == 'direct':
-                query = dict(data['params'])
+                printDBG("----------------------------------------------")
+                printDBG(data)
+                printDBG("----------------------------------------------")
+                query = self._updateParams(dict(data['params']), False)
                 query.update({'mobile':'0'})
                 url = data['grabber']
                 if '?' in url: url += '&'
