@@ -72,7 +72,6 @@ class TheWatchseriesTo(CBaseHostClass):
         self.needProxy = None
         
     def isNeedProxy(self):
-        return True
         if self.needProxy == None:
             sts, data = self.cm.getPage(self.MAIN_URL)
             if sts and '/series"' in data:
