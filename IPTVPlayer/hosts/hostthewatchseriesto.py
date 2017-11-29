@@ -72,6 +72,7 @@ class TheWatchseriesTo(CBaseHostClass):
         self.needProxy = None
         
     def isNeedProxy(self):
+        return True
         if self.needProxy == None:
             sts, data = self.cm.getPage(self.MAIN_URL)
             if sts and '/series"' in data:
@@ -258,16 +259,22 @@ class TheWatchseriesTo(CBaseHostClass):
             host = self.cm.ph.getSearchGroups(item, '''"download_link_([^'^"]+?)['"]''')[0]
             #if self.up.checkHostSupport('http://'+host+'/') != 1: continue
             printDBG(item)
-            if self.isNeedProxy():
-                url = urllib.unquote(self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?%3Fr%3D([^'^"^&]+?)['"&][^>]*?buttonlink''')[0])
-            else:
-                url = self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]*?\?r=([^'^"]+?)['"][^>]*?buttonlink''')[0]
+            printDBG('-----------------------------------')
+            url = ''
+            item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a', '</a>')
+            for it in item:
+                if self.isNeedProxy():
+                    url = urllib.unquote(self.cm.ph.getSearchGroups(it, '''href=['"][^'^"]*?%3Fr%3D([^'^"^&]+?)['"&]''')[0])
+                else:
+                    url = self.cm.ph.getSearchGroups(it, '''href=['"][^'^"]*?\?r=([^'^"]+?)['"]''')[0]
+                
+                if url == '': continue
+                try:
+                    url = base64.b64decode(url)
+                except Exception:
+                    continue
+                break
             if url == '': continue
-            try:
-                url = base64.b64decode(url)
-            except Exception:
-                printExc()
-                continue
             if self.up.checkHostSupport(url) != 1: continue
             urlTab.append({'name':host, 'url':self.getFullUrl(url), 'need_resolve':1})
         if len(urlTab):
