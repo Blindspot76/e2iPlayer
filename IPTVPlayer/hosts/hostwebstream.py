@@ -160,7 +160,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'djing.com',               'name': 'djing.com',           'title': 'https://djing.com/',                'url': 'https://djing.com/',                                                 'icon': 'https://www.djing.com/newimages/content/c01.jpg'}, \
                         {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'Live-Stream.tv',                    'url': 'http://www.live-stream.tv/',                                         'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
                         {'alias_id':'edem_tv',                 'name': 'edem.tv',             'title': 'Edem TV',                           'url': 'https://edem.tv/',                                                   'icon': 'https://edem.tv/public/images/logo_edem.png'}, \
-                        {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url':'http://matzg2.prv.pl/radio.m3u',                                      'icon': 'http://matzg2.prv.pl/openfm.png'}, \
+                        {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url': 'http://matzg2.prv.pl/radio.m3u',                                     'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                         {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'http://goldvod.tv/',                'url': '',                                                                   'icon': 'http://goldvod.tv/assets/images/logo.png'}, \
                         {'alias_id':'wizja.tv',                'name': 'wizja.tv',            'title': 'http://wizja.tv/',                  'url': 'http://wizja.tv/',                                                   'icon': 'http://wizja.tv/logo.png'}, \
                        ] 
@@ -433,8 +433,12 @@ class HasBahCa(CBaseHostClass):
                         except Exception:
                             printExc()
                     params = {'title': title, 'url': itemUrl, 'icon':icon, 'desc':desc}
-                    
-                    self.addVideo(params)
+                    if listURL.endswith('radio.m3u'):
+                        if icon == '': 
+                            params['icon'] = 'http://www.darmowe-na-telefon.pl/uploads/tapeta_240x320_muzyka_23.jpg'
+                        self.addAudio(params)
+                    else:
+                        self.addVideo(params)
                     title = ''
         
     def getWagasWorldList(self, cItem):
