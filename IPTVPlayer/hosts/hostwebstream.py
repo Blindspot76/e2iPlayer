@@ -847,7 +847,7 @@ class HasBahCa(CBaseHostClass):
             self.pierwszaTvApi = PierwszaTVApi()
         tmpList = self.pierwszaTvApi.getChannelsList(cItem)
         for item in tmpList:
-            self.playVideo(item) 
+            self.addVideo(item) 
         
     def getPierwszaTvLink(self, cItem):
         printDBG("getPierwszaTvLink start")
