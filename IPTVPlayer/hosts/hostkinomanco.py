@@ -532,6 +532,8 @@ class KinomanCO(CBaseHostClass):
         
     def getLinksForVideo(self, cItem):
         printDBG("KinomanCO.getLinksForVideo [%s]" % cItem)
+        self.tryTologin()
+        
         retTab = []
         if 1 == self.up.checkHostSupport(cItem.get('url', '')):
             videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
@@ -578,6 +580,8 @@ class KinomanCO(CBaseHostClass):
         
     def getVideoLinks(self, videoUrl):
         printDBG("KinomanCO.getVideoLinks [%s]" % videoUrl)
+        self.tryTologin()
+        
         videoUrl = strwithmeta(videoUrl)
         urlTab = []
         
@@ -651,6 +655,11 @@ class KinomanCO(CBaseHostClass):
                                 self.defaultParams['header']['x-captcha-challenge'] = KinomanCO.CAPTCHA_CHALLENGE
                                 continue
                             break
+                    elif 'x-user-token' not in httpParams['header'] and '_user_token' in data:
+                        msg = _('The host %s requires registration. \nPlease fill your login and password in the host configuration. Available under blue button.' % self.getMainUrl())
+                        SetIPTVPlayerLastHostError(msg)
+                    else:
+                        SetIPTVPlayerLastHostError(_('Unknown server response: "%s"') % data)
                 else:
                     SetIPTVPlayerLastHostError(_('Network connection failed.'))
                 break
@@ -682,6 +691,7 @@ class KinomanCO(CBaseHostClass):
         
     def getArticleContent(self, cItem):
         printDBG("KinomanCO.getArticleContent [%s]" % cItem)
+        self.tryTologin()
         retTab = []
         
         otherInfo = {}
@@ -740,7 +750,7 @@ class KinomanCO(CBaseHostClass):
         self.login = config.plugins.iptvplayer.kinomanco_login.value
         self.password = config.plugins.iptvplayer.kinomanco_password.value
         
-        self.defaultParams.pop('x-user-token', None)
+        self.defaultParams['header'].pop('x-user-token', None)
         self.logginInfo = ''
         self.isVip = False
         
@@ -762,7 +772,7 @@ class KinomanCO(CBaseHostClass):
             try:
                 data = byteify(json.loads(data), '', True)
                 if not isinstance(data, str):
-                    self.defaultParams['x-user-token'] = data['token']
+                    self.defaultParams['header']['x-user-token'] = data['token']
                     self.loggedIn = True
                     logginInfo = []
                     logginInfo.append(self._('Points') + '\t' + data['points'])
