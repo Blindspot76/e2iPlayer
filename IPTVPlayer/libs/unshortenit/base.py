@@ -415,7 +415,10 @@ class UnshortenIt(object):
                 component = self.cm.ph.getSearchGroups(data, '''data\-component="([^"]+?)"''')[0]
                 if tries > 1: GetIPTVSleep().Sleep(int(time))
                 
-                partials = 'shortcut/link_show'
+                sts, partials = self.cm.getPage('http://iiv.pl/themes/cutso/assets/javascript/shortcut/shortcut.js', params)
+                partials = self.cm.ph.getDataBeetwenMarkers(partials, 'update:', '}')[1]
+                partials = self.cm.ph.getSearchGroups(partials, '''['"]([^'^"]+?)['"]''')[0]
+                if partials == '': partials = 'shortcut/link_show'
                 for header in headers:
                     if 'HANDLER' in header:
                         HTTP_HEADER_AJAX[header] = action
