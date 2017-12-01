@@ -48,7 +48,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
                                                           CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize, \
                                                           GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, ClearTmpCookieDir, \
-                                                          GetEnabledHostsList
+                                                          GetEnabledHostsList, SaveHostsOrderList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
@@ -1088,13 +1088,30 @@ class IPTVPlayerWidget(Screen):
 
     def displayListOfHosts(self, arg = None):
         if config.plugins.iptvplayer.ListaGraficzna.value == False or 0 == GetAvailableIconSize():
+            self.newDisplayHostsList = None
             self.session.openWithCallback(self.selectHostCallback, ChoiceBox, title=_("Select service"), list = self.displayHostsList)
         else:
+            self.newDisplayHostsList = []
             from playerselector import PlayerSelectorWidget
-            self.session.openWithCallback(self.selectHostCallback, PlayerSelectorWidget, list = self.displayHostsList)
+            self.session.openWithCallback(self.selectHostCallback, PlayerSelectorWidget, inList = self.displayHostsList, outList = self.newDisplayHostsList, numOfLockedItems = self.getNumOfSpecialItems(self.displayHostsList) , selMarker='')
         return
     
+    def getNumOfSpecialItems(self, inList, filters=['config', 'update']):
+        numOfSpecialItems = 0
+        for item in inList:
+            if item[1] in filters:
+                numOfSpecialItems += 1
+        return numOfSpecialItems
+    
     def selectHostCallback(self, ret):
+        # save hosts order if user change it at player selection
+        if self.newDisplayHostsList != None and self.newDisplayHostsList != self.displayHostsList:
+            numOfSpecialItems = self.getNumOfSpecialItems(self.newDisplayHostsList)
+            hostsList = []
+            for idx in range(len(self.newDisplayHostsList)-numOfSpecialItems):
+                hostsList.append(self.newDisplayHostsList[idx][1])
+            SaveHostsOrderList(hostsList)
+        
         checkUpdate = True
         try: 
             if 0 < len(ret) and ret[1] == "update": checkUpdate = False

@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, WriteTextFile, ReadTextFile
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -103,6 +103,11 @@ class MaxtvGO(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
             self.addVideo(params)
+            
+        if self.loggedIn != True and 0 == len(self.currList):
+            msg = _('The host %s requires registration. \nPlease fill your login and password in the host configuration. Available under blue button.' % self.getMainUrl())
+            GetIPTVNotify().push(msg, 'error', 10)
+            SetIPTVPlayerLastHostError(msg)
             
     def listYTChannel(self, cItem):
         printDBG('MaxtvGO.getVideos cItem[%s]' % (cItem))
