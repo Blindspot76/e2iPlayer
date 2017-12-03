@@ -597,47 +597,22 @@ class HasBahCa(CBaseHostClass):
         
         return self.up.getVideoLinkExt(videoUrl)
     
-    def getVideostarList(self):
+    #############################################################
+    def getVideostarList(self, cItem):
         printDBG("getVideostarList start")
-        if None == self.videoStarApi:
-            self.videoStarApi = VideoStarApi()
-            
-        tmpList = self.videoStarApi.getChannelsList(True)
+        if None == self.videoStarApi: self.videoStarApi = VideoStarApi()
+        tmpList = self.videoStarApi.getList(cItem)
         for item in tmpList:
-            try:
-                descTab = []
-                if item.get('geoblocked', False):
-                    descTab.append('Kanał zablokowany dla Twojego IP.')
-                    descTab.append('Spróbuj włączyć bramkę proxy w konfiguracji hosta (klawisz niebieski na pilocie) i odświeżyć.')
-                descTab.append(_('Access status: ') + _(item['access_status']))
-                params = { 'name'       : 'videostar_channels', 
-                           'title'      : item['name'], 
-                           'desc'       :  '[/br]'.join(descTab), 
-                           'url'        : item['id'],
-                           'icon'       : item['thumbnail'],
-                           }
-                self.addVideo(params)
-            except Exception:
-                printExc()
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
         
-    def getVideostarLink(self, channelID):
-        urlsTab = self.videoStarApi.getVideoLink(channelID)
-        if 0 < len(urlsTab):
-            if 'hls' == urlsTab[0]['type']:
-                tmpList = getDirectM3U8Playlist(urlsTab[0]['url'], checkExt=False)
-            else:
-                tmpList = urlsTab
-            try:
-                for item in tmpList:
-                    if self.videoStarApi.getDefaultQuality() == item['bitrate']:
-                        return [dict(item)]
-                return [dict(tmpList[0])]
-            except Exception:
-                printExc()
-                urlsTab = []
+    def getVideostarLink(self, cItem):
+        printDBG("getVideostarLink start")
+        urlsTab = self.videoStarApi.getVideoLink(cItem)
         return urlsTab
-        
-        
+    #############################################################
+    
     #############################################################
     def getUstvnowList(self, cItem):
         printDBG("getUstvnowList start")
@@ -958,7 +933,7 @@ class HasBahCa(CBaseHostClass):
         elif name == "goldvod.tv":          self.getGoldVodTvList(url)
         elif name == "showsport-tv.com":    self.getShowsportTvList(self.currItem)
         elif name == "sport365.live":       self.getSport365LiveList(self.currItem)
-        elif name == "videostar.pl":        self.getVideostarList()
+        elif name == "videostar.pl":        self.getVideostarList(self.currItem)
         elif name == "vior.tv":             self.getViorTvList(self.currItem)
         elif name == "djing.com":           self.getDjingComList(self.currItem)
         elif name == 'ustvnow':             self.getUstvnowList(self.currItem)
@@ -1020,7 +995,7 @@ class IPTVHost(CHostBase):
         elif name == 'others':                     urlList = self.host.getOthersLinks(cItem)
         elif 'weeb.tv' in name:                    url = self.host.getWeebTvLink(url)
         elif name == "filmon_channel":             urlList = self.host.getFilmOnLink(channelID=url)
-        elif name == "videostar_channels":         urlList = self.host.getVideostarLink(channelID=url)
+        elif name == "videostar.pl":               urlList = self.host.getVideostarLink(cItem)
         elif name == 'vior.tv':                    urlList = self.host.getViorTvLink(cItem)
         elif name == 'djing.com':                  urlList = self.host.getDjingComLink(cItem)
         elif name == 'ustvnow':                    urlList = self.host.getUstvnowLink(cItem)

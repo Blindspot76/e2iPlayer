@@ -490,11 +490,9 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParam
     try:
         finallM3U8Url = meta.get('iptv_m3u8_custom_base_link', '') 
         if '' == finallM3U8Url:
-            params['return_data'] = False
-            sts, response = cm.getPage(M3U8Url, params, postData)
-            finallM3U8Url = response.geturl()
-            data = response.read().strip()
-            response.close()
+            params['with_metadata'] = True
+            sts, data = cm.getPage(M3U8Url, params, postData)
+            finallM3U8Url = data.meta['url']
         else:
             sts, data = cm.getPage(M3U8Url, params, postData)
             data = data.strip()
@@ -545,12 +543,13 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParam
         printExc()
     return retPlaylists
     
-def getF4MLinksWithMeta(manifestUrl, checkExt=True):
+def getF4MLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}):
     if checkExt and not manifestUrl.split('?')[0].endswith('.f4m'):
         return []
         
     cm = common()
     headerParams, postData = cm.getParamsFromUrlWithMeta(manifestUrl)
+    headerParams.update(cookieParams)
     
     retPlaylists = []
     sts, data = cm.getPage(manifestUrl, headerParams, postData)
@@ -589,7 +588,7 @@ def getF4MLinksWithMeta(manifestUrl, checkExt=True):
             retPlaylists.append({'name':'[f4m/hds]', 'bitrate':0, 'url':link})
     return retPlaylists
     
-def getMPDLinksWithMeta(manifestUrl, checkExt=True):
+def getMPDLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}):
     if checkExt and not manifestUrl.split('?')[0].endswith('.mpd'):
         return []
         
@@ -600,6 +599,7 @@ def getMPDLinksWithMeta(manifestUrl, checkExt=True):
         except Exception: return default
     
     headerParams, postData = cm.getParamsFromUrlWithMeta(manifestUrl)
+    headerParams.update(cookieParams)
     
     retPlaylists = []
     sts, data = cm.getPage(manifestUrl, headerParams, postData)
