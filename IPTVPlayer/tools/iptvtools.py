@@ -616,7 +616,8 @@ def GetSkinsList():
 def IsHostEnabled( hostName ):
     hostEnabled  = False
     try:
-        exec('if config.plugins.iptvplayer.host' + hostName + '.value: hostEnabled = True')
+        if getattr(config.plugins.iptvplayer, 'host' + hostName).value:
+            hostEnabled = True
     except Exception:
         hostEnabled = False
     return hostEnabled

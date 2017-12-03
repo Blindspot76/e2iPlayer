@@ -100,6 +100,9 @@ class IPTVHostsGroups:
         
         self.ADDED_HOSTS = {}
         
+        self.hostListFromFolder = None
+        self.hostListFromList = None
+        
     def _getGroupFile(self, groupName):
         printDBG("IPTVHostsGroups._getGroupFile")
         return GetConfigDir("iptvplayer%sgroup.json" % groupName)
@@ -140,8 +143,10 @@ class IPTVHostsGroups:
         if groupName in self.CACHE_HOSTS:
             return self.CACHE_HOSTS[groupName]
     
-        self.hostListFromFolder = GetHostsList(fromList=False, fromHostFolder=True)
-        self.hostListFromList = GetHostsList(fromList=True, fromHostFolder=False)
+        if self.hostListFromFolder == None:
+            self.hostListFromFolder = GetHostsList(fromList=False, fromHostFolder=True)
+        if self.hostListFromList == None: 
+            self.hostListFromList = GetHostsList(fromList=True, fromHostFolder=False)
         
         groupFile = self._getGroupFile(groupName)
         self._loadHosts(groupFile, groupName, self.hostListFromFolder, self.hostListFromFolder)
