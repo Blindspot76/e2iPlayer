@@ -40,7 +40,7 @@ config.plugins.iptvplayer.sportdeutschland_streamprotocol = ConfigSelection(defa
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry( "SportDeutschland " + _("preferowany protokół strumieniowania" + ": "), config.plugins.iptvplayer.sportdeutschland_streamprotocol))
+    optionList.append(getConfigListEntry(_("Preferred streaming protocol"), config.plugins.iptvplayer.sportdeutschland_streamprotocol))
     return optionList
 ###################################################
 
@@ -48,28 +48,26 @@ def gettytul():
     return 'http://sportdeutschland.tv/'
 
 class SportDeutschland(CBaseHostClass):
-    MAINURL      = 'http://sportdeutschland.tv/'
-    MAIN_API_URL = 'http://proxy.vidibusdynamic.net/sportdeutschland.tv/api/'
-    SEARCH_URL   = ''
-    HTTP_JSON_HEADER  = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:12.0) Gecko/20100101 Firefox/12.0', 
-                         'Accept'    : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                         'Accept-Encoding': 'gzip, deflate',
-                         'Referer'   : MAINURL, 
-                         'Origin'    : MAINURL
-                        }
-    MAIN_MENU = [{'title':'Kategorie', 'category':'categories'},
-                 #{'title':'Program',   'category':'program'},
-                 {'title':'Wyszukaj',  'category':'Wyszukaj'},
-                 {'title':'Historia wyszukiwania', 'category':'Historia wyszukiwania'}]
-                 
+
     def __init__(self):
         printDBG("SportDeutschland.__init__")
+        
         CBaseHostClass.__init__(self, {'history':'SportDeutschland'})       
-        self.cm.HEADER = dict(SportDeutschland.HTTP_JSON_HEADER)
-
-    def _cleanHtmlStr(self, str):
-            str = self.cm.ph.replaceHtmlTags(str, ' ').replace('\n', ' ')
-            return clean_html(self.cm.ph.removeDoubles(str, ' ').replace(' )', ')').strip())
+        
+        self.DEFAULT_ICON_URL = 'https://www.sportdeutschland.de/typo3conf/ext/arx_template/Resources/Public/Images/WebSite/logo.png'
+        self.MAINURL      = 'http://sportdeutschland.tv/'
+        self.MAIN_API_URL = 'http://proxy.vidibusdynamic.net/sportdeutschland.tv/api/'
+        self.HTTP_JSON_HEADER  = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:12.0) Gecko/20100101 Firefox/12.0', 
+                                  'Accept'    : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                                  'Accept-Encoding': 'gzip, deflate',
+                                  'Referer'   : self.MAINURL, 
+                                  'Origin'    : self.MAINURL
+                                 }
+        self.cm.HEADER = dict(self.HTTP_JSON_HEADER)
+        self.MAIN_CAT_TAB = [{'category':'categories',        'title': _('Categories'),},
+                             {'category':'search',            'title': _('Search'), 'search_item':True,},
+                             {'category':'search_history',    'title': _('Search history'),            }]
+                 
             
     def _getJItemStr(self, item, key, default=''):
         v = item.get(key, None)
@@ -105,16 +103,10 @@ class SportDeutschland(CBaseHostClass):
         now_timestamp = time.time()
         offset = datetime.fromtimestamp(now_timestamp) - datetime.utcfromtimestamp(now_timestamp)
         return utc_datetime + offset
-        
-    def listsMainMenu(self):
-        printDBG("SportDeutschland.listsMainMenu")
-        for item in SportDeutschland.MAIN_MENU:
-            params = {'name':'category', 'title':item['title'], 'category':item['category']}
-            self.addDir(params)
             
     def listCategories(self, cItem):
         printDBG("SportDeutschland.listCategories")
-        data = self._getItemsListFromJson(SportDeutschland.MAIN_API_URL + 'sections?access_token=true&per_page=9999')
+        data = self._getItemsListFromJson(self.MAIN_API_URL + 'sections?access_token=true&per_page=9999')
         
         params = {'name':'category', 'title':_('--Wszystkie--'), 'category':'category', 'permalink':'', 'uuid':'', 'page':1}
         self.addDir(params)
@@ -129,7 +121,7 @@ class SportDeutschland(CBaseHostClass):
         
     def listCategory(self, cItem):
         printDBG("SportDeutschland.listCategory cItem[%s]" % cItem)
-        baseUrl     = SportDeutschland.MAIN_API_URL
+        baseUrl     = self.MAIN_API_URL
         page        = self._getJItemNum(cItem, 'page', 1)
         baseUuid    = self._getJItemStr(cItem, 'uuid')
         pattern     = cItem.get('pattern', '')
@@ -146,7 +138,9 @@ class SportDeutschland(CBaseHostClass):
                 if icon == '': icon = (u'%s' % item['images'][0]).encode('utf-8')
             except Exception: pass
             
-            params = {'name':'category', 'title':self._getJItemStr(item, 'title'), 'category':'category', 'icon':icon, 'desc':self._getJItemStr(item, 'teaser'), 'player':self._getJItemStr(item, 'player')}
+            desc = '%s[/br]%s' % (self._getJItemStr(item, 'duration'), self._getJItemStr(item, 'teaser'))
+            
+            params = {'name':'category', 'title':self._getJItemStr(item, 'title'), 'category':'category', 'icon':icon, 'desc':desc, 'player':self._getJItemStr(item, 'player')}
             printDBG(":::::::::::::::::::::::::::::::::::::\n%s\n:::::::::::::::::::::::::::::::" % item)
             planned = False
             #if 'LIVE' == self._getJItemStr(item, 'duration', ''):
@@ -167,7 +161,7 @@ class SportDeutschland(CBaseHostClass):
                 params['url'] = ''
                 
             if '' != params['url'] or '' != params['player']:
-                if not planned or self.cm.isValidUrl(params['player']):
+                if None != item.get('duration', None) or item.get('live', False):
                     self.addVideo(params)
                 else:
                     self.addArticle(params)
@@ -212,11 +206,20 @@ class SportDeutschland(CBaseHostClass):
                                     videoUrls.extend(getDirectM3U8Playlist(videoUrl, checkExt=False))
                         elif 'mp4' in str(item.get('content_type', '')):
                             name = '%sx%s' % (item['width'], item['height'])
-                            videoUrls.append({'name':name, 'url':videoUrl, 'need_resolve':0})
+                            videoUrls.append({'name':name, 'url':videoUrl})
                 except Exception:
                     printExc()
+                    
+        for idx in range(len(videoUrls)):
+            videoUrls[idx]['need_resolve'] = 0
         
         return videoUrls
+        
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("SportDeutschland.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        cItem = dict(cItem)
+        cItem['pattern'] = searchPattern
+        self.listCategory(self.currItem)
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('SportDeutschland.handleService start')
@@ -227,110 +230,24 @@ class SportDeutschland(CBaseHostClass):
         self.currList = []
         
         if None == name:
-            self.listsMainMenu()
+            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif 'categories' == category:
             self.listCategories(self.currItem)
         elif 'category' == category:
             self.listCategory(self.currItem)
-    #WYSZUKAJ
-        elif category == "Wyszukaj":
-            self.listCategory({'pattern':searchPattern, 'category':'category'})
-    #HISTORIA WYSZUKIWANIA
-        elif category == "Historia wyszukiwania":
-            self.listsHistory()
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
 
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, SportDeutschland(), True)
+        CHostBase.__init__(self, SportDeutschland(), True, [])
 
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        listLen = len(self.host.currList)
-        if listLen < Index and listLen > 0:
-            printDBG( "ERROR getLinksForVideo - current list is to short len: %d, Index: %d" % (listLen, Index) )
-            return RetHost(RetHost.ERROR, value = [])
-        
-        if self.host.currList[Index]["type"] != 'video':
-            printDBG( "ERROR getLinksForVideo - current item has wrong type" )
-            return RetHost(RetHost.ERROR, value = [])
-
-        retlist = []
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-
-    def convertList(self, cList):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        #searchTypesOptions.append(("Filmy", "filmy"))
-        #searchTypesOptions.append(("Seriale", "seriale"))
-    
-        for cItem in cList:
-            hostLinks = []
-            type = CDisplayListItem.TYPE_UNKNOWN
-            possibleTypesOfSearch = None
-
-            if cItem['type'] == 'category':
-                if cItem['title'] == 'Wyszukaj':
-                    type = CDisplayListItem.TYPE_SEARCH
-                    possibleTypesOfSearch = searchTypesOptions
-                else:
-                    type = CDisplayListItem.TYPE_CATEGORY
-            elif cItem['type'] == 'video':
-                type = CDisplayListItem.TYPE_VIDEO
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-            elif cItem['type'] == 'article':
-                type = CDisplayListItem.TYPE_ARTICLE
-                url = cItem.get('url', '')
-                if '' != url:
-                    hostLinks.append(CUrlItem("Link", url, 1))
-                
-            title       =  cItem.get('title', '')
-            description =  clean_html(cItem.get('desc', ''))
-            icon        =  cItem.get('icon', '')
-            
-            hostItem = CDisplayListItem(name = title,
-                                        description = description,
-                                        type = type,
-                                        urlItems = hostLinks,
-                                        urlSeparateRequest = 1,
-                                        iconimage = icon,
-                                        possibleTypesOfSearch = possibleTypesOfSearch)
-            hostList.append(hostItem)
-
-        return hostList
-    # end convertList
-
-    def getSearchItemInx(self):
-        # Find 'Wyszukaj' item
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'Wyszukaj':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
