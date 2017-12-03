@@ -60,7 +60,7 @@ config.plugins.iptvplayer.allowedcoverformats= ConfigSelection(default = "jpeg,p
 config.plugins.iptvplayer.showinextensions   = ConfigYesNo(default = True)
 config.plugins.iptvplayer.showinMainMenu     = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ListaGraficzna     = ConfigYesNo(default = True)
-config.plugins.iptvplayer.group_hosts        = ConfigYesNo(default = False)
+config.plugins.iptvplayer.group_hosts        = ConfigYesNo(default = True)
 config.plugins.iptvplayer.NaszaSciezka       = ConfigDirectory(default = "/hdd/movie/") #, fixed_size = False)
 config.plugins.iptvplayer.bufferingPath      = ConfigDirectory(default = config.plugins.iptvplayer.NaszaSciezka.value) #, fixed_size = False)
 config.plugins.iptvplayer.buforowanie        = ConfigYesNo(default = False)
