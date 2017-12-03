@@ -73,7 +73,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['science']          = ['fokustv','dailymotion','ustreamtv']
         
         self.PREDEFINED_HOSTS['polish']           = ['youtube','webstream','filmyto','alltubetv','kinomanco','ekinotv','cdapl','paczamy','iitvpl','videopenny','zalukajcom','naszekinoonline','serialnet','tvpvod','ipla','tvnvod','vodpl', \
-                                                     'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajeczkiorg','animeodcinki','anyfiles','playpuls','meczykipl','fokustv','eskago','wrzuta','filmydokumentalneeu', \
+                                                     'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajeczkiorg','animeodcinki','anyfiles','playpuls','meczykipl','fokustv','eskago','filmydokumentalneeu', \
                                                      'tvjworg','dailymotion', 'kabarety','twitchtv','hitboxtv','tvgrypl','chomikuj','fighttube','plwwecom','spryciarze','wgrane','wolnelekturypl','tvn24','ninateka','maxtvgo','wptv']
         self.PREDEFINED_HOSTS['english']          = ['youtube','webstream','liveleak','bbciplayer','tvplayercom','itvcom','uktvplay','appletrailers','classiccinemaonline','gomovies','seriesonline','mythewatchseries','thewatchseriesto','icefilmsinfo','movienightws','yifytv', \
                                                      'hdpopcornscom','losmovies','solarmovie','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','9cartoonme','kisscartoonme','chiaanimeco','dailymotion', \
@@ -92,7 +92,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['balkans']          = ['youtube','filmativa','filma24hdcom','filmovizijastudio','crtankocom','serijeonline','dailymotion','twitchtv','hitboxtv']
         
         self.PREDEFINED_HOSTS['others']           = ['iptvplayerinfo','localmedia','urllist','youtube','cdapl','wolnelekturypl','chomikuj','freediscpl','kabarety','spryciarze','wgrane','liveleak','dailymotion','ted', \
-                                                     'ororotv','eskago','wrzuta','musicbox','dancetrippin','vevo','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl',]
+                                                     'ororotv','eskago','musicbox','dancetrippin','vevo','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl',]
         
         self.LOADED_HOSTS = {}
         self.LOADED_DISABLED_HOSTS = {}
