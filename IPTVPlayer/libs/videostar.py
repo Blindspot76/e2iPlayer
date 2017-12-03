@@ -171,7 +171,7 @@ class VideoStarApi(CBaseHostClass):
             data = byteify(json.loads(data), '', True)
             for item in data['channels']:
                 guestTimeout = item.get('guest_timeout', '')
-                if not config.plugins.iptvplayer.videostar_show_all_channels.value and (item['access_status'] == 'unsubscribed' or guestTimeout == '0'): continue
+                if not config.plugins.iptvplayer.videostar_show_all_channels.value and (item['access_status'] == 'unsubscribed' or (not self.loggedIn and guestTimeout == '0')): continue
                 title = self.cleanHtmlStr(item['name'])
                 icon  = self.getFullUrl(item.get('thumbnail', '')) 
                 url   = self.getFullUrl(item['slug'])
@@ -179,8 +179,8 @@ class VideoStarApi(CBaseHostClass):
                 desc = []
                 if item.get('hd', False): desc.append('HD')
                 else: desc.append('SD')
-                if guestTimeout == '': desc.append(item['access_status'])
-                if guestTimeout != '': desc.append(_('Guest timeout: %s') % guestTimeout)
+                if self.loggedIn: desc.append(item['access_status'])
+                elif guestTimeout != '': desc.append(_('Guest timeout: %s') % guestTimeout)
                 if item.get('geoblocked', False): desc.append('geoblocked')
                 
                 params = {'name':cItem['name'], 'type':'video', 'title':title, 'url':url, 'icon':icon, 'priv_idx':idx, 'desc':' | '.join(desc)}
