@@ -495,49 +495,77 @@ def printDBG( DBGtxt ):
 #####################################################
 # get host list based on files in /hosts folder
 #####################################################
-def GetHostsList(fromList=True, fromHostFolder=True):
+g_cacheHostsFromList = None
+g_cacheHostsFromFolder = None
+def __isHostNameValid(hostName):
+    BLOCKED_MARKER = '_blocked_'
+    if len(hostName) > 4 and BLOCKED_MARKER not in hostName and hostName.startswith("host"):
+        return True
+    return False
+    
+def __getHostsPath(file=''):
+    return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/hosts/' + file)
+    
+def GetHostsFromList(useCache=True):
+    global g_cacheHostsFromList
+    if useCache and g_cacheHostsFromList != None:
+        return list(g_cacheHostsFromList)
+    
+    lhosts = []
+    try:
+        sts, data = ReadTextFile(__getHostsPath('/list.txt') )
+        if sts:
+            data = data.split('\n')
+            for item in data:
+                line = item.strip()
+                if __isHostNameValid(line):
+                    lhosts.append( line[4:] )
+                    printDBG('getHostsList add host from list.txt hostName: "%s"' % line[4:])
+    except Exception:
+        printExc()
+    
+    g_cacheHostsFromList = list(lhosts)
+    return lhosts
+        
+def GetHostsFromFolder(useCache=True):
+    global g_cacheHostsFromFolder
+    if useCache and g_cacheHostsFromFolder != None:
+        return g_cacheHostsFromFolder
+    
+    lhosts = []
+    try:
+        fileList = os.listdir( __getHostsPath() )
+        for wholeFileName in fileList:
+            # separate file name and file extension
+            fileName, fileExt = os.path.splitext(wholeFileName)
+            nameLen = len( fileName )
+            if fileExt in ['.pyo', '.pyc', '.py'] and nameLen >  4 and __isHostNameValid(fileName):
+                if fileName[4:] not in lhosts:
+                    lhosts.append( fileName[4:] )
+                    printDBG('getHostsList add host with fileName: "%s"' % fileName[4:])
+        printDBG('getHostsList end')
+        lhosts.sort()
+    except Exception:
+        printDBG('GetHostsList EXCEPTION')
+    
+    g_cacheHostsFromFolder = list(lhosts)
+    return lhosts
+
+def GetHostsList(fromList=True, fromHostFolder=True, useCache=True):
     printDBG('getHostsList begin')
-    HOST_PATH = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/hosts/')
-    BLOCKED_MARKER = '_blocked_'  
+    
     lhosts = [] 
-    
-    def __isHostNameValid(hostName):
-        if len(hostName) > 4 and BLOCKED_MARKER not in hostName and hostName.startswith("host"):
-            return True
-        return False
-    
     if fromHostFolder:
-        try:
-            fileList = os.listdir( HOST_PATH )
-            for wholeFileName in fileList:
-                # separate file name and file extension
-                fileName, fileExt = os.path.splitext(wholeFileName)
-                nameLen = len( fileName )
-                if fileExt in ['.pyo', '.pyc', '.py'] and nameLen >  4 and __isHostNameValid(fileName):
-                    if fileName[4:] not in lhosts:
-                        lhosts.append( fileName[4:] )
-                        printDBG('getHostsList add host with fileName: "%s"' % fileName[4:])
-            printDBG('getHostsList end')
-            lhosts.sort()
-        except Exception:
-            printDBG('GetHostsList EXCEPTION')
+        lhosts = GetHostsFromFolder(useCache)
     
     # when new option to remove not enabled host is enabled 
     # on list should be also host which are not normally in 
     # the folder, so we will read first predefined list 
     if fromList:
-        try:
-            sts, data = ReadTextFile(HOST_PATH + '/list.txt')
-            if sts:
-                data = data.split('\n')
-                for item in data:
-                    line = item.strip()
-                    if __isHostNameValid(line):
-                        if line[4:] not in lhosts:
-                            lhosts.append( line[4:] )
-                            printDBG('getHostsList add host from list.txt hostName: "%s"' % line[4:])
-        except Exception:
-            printExc()
+        tmp = GetHostsFromList(useCache)
+        for host in tmp:
+            if host not in lhosts:
+                lhosts.append( host )
     
     return lhosts
 

@@ -1022,6 +1022,7 @@ class IPTVPlayerWidget(Screen):
             self.lastPluginVersion = lastversion
         
     def askUpdateAvailable(self, NoUpdateCallback):
+        printDBG(">> askUpdateAvailable")
         if  config.plugins.iptvplayer.autoCheckForUpdate.value \
             and  0 < GetVersionNum( self.lastPluginVersion ) \
             and GetVersionNum( self.lastPluginVersion ) > GetVersionNum( GetIPTVPlayerVerstion() ) \
