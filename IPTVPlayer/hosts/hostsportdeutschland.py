@@ -5,7 +5,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
@@ -35,7 +35,7 @@ except Exception: import json
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.sportdeutschland_streamprotocol = ConfigSelection(default = "rtmp", choices = [("rtmp", "rtmp"),("hls", "HLS - m3u8")]) 
+config.plugins.iptvplayer.sportdeutschland_streamprotocol = ConfigSelection(default = "hls", choices = [("rtmp", "rtmp"),("hls", "HLS - m3u8")]) 
 
 
 def GetConfigList():
@@ -49,10 +49,11 @@ def gettytul():
 
 class SportDeutschland(CBaseHostClass):
     MAINURL      = 'http://sportdeutschland.tv/'
-    MAIN_API_URL = 'http://splink.tv/api/'
+    MAIN_API_URL = 'http://proxy.vidibusdynamic.net/sportdeutschland.tv/api/'
     SEARCH_URL   = ''
     HTTP_JSON_HEADER  = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:12.0) Gecko/20100101 Firefox/12.0', 
-                         'Accept'    : 'application/vnd.vidibus.v2.html+json',
+                         'Accept'    : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                         'Accept-Encoding': 'gzip, deflate',
                          'Referer'   : MAINURL, 
                          'Origin'    : MAINURL
                         }
@@ -113,13 +114,17 @@ class SportDeutschland(CBaseHostClass):
             
     def listCategories(self, cItem):
         printDBG("SportDeutschland.listCategories")
-        data = self._getItemsListFromJson(SportDeutschland.MAIN_API_URL + 'sections?per_page=9999')
+        data = self._getItemsListFromJson(SportDeutschland.MAIN_API_URL + 'sections?access_token=true&per_page=9999')
         
         params = {'name':'category', 'title':_('--Wszystkie--'), 'category':'category', 'permalink':'', 'uuid':'', 'page':1}
         self.addDir(params)
         
         for item in data:
-            params = {'name':'category', 'title':self._getJItemStr(item, 'title'), 'category':'category', 'permalink':self._getJItemStr(item, 'permalink'), 'uuid':self._getJItemStr(item, 'uuid'), 'page':1}
+            icon = self._getJItemStr(item, 'image')
+            try: 
+                if icon == '': icon = (u'%s' % item['images'][0]).encode('utf-8')
+            except Exception: pass
+            params = {'name':'category', 'title':self._getJItemStr(item, 'title'), 'category':'category', 'icon':icon, 'permalink':self._getJItemStr(item, 'permalink'), 'uuid':self._getJItemStr(item, 'uuid'), 'page':1}
             self.addDir(params)
         
     def listCategory(self, cItem):
@@ -134,32 +139,35 @@ class SportDeutschland(CBaseHostClass):
             baseUrl += '/assets?'
         else:
             baseUrl += 'search?q=%s&' % pattern
-        data = self._getItemsListFromJson(baseUrl + 'page=%d&per_page=100' % page)
+        data = self._getItemsListFromJson(baseUrl + 'access_token=true&page=%d&per_page=100' % page)
         for item in data:
-            params = {'name':'category', 'title':self._getJItemStr(item, 'title'), 'category':'category', 'icon':self._getJItemStr(item, 'image'), 'desc':self._getJItemStr(item, 'teaser'), 'video':self._getJItemStr(item, 'video')}
+            icon = self._getJItemStr(item, 'image')
+            try: 
+                if icon == '': icon = (u'%s' % item['images'][0]).encode('utf-8')
+            except Exception: pass
+            
+            params = {'name':'category', 'title':self._getJItemStr(item, 'title'), 'category':'category', 'icon':icon, 'desc':self._getJItemStr(item, 'teaser'), 'player':self._getJItemStr(item, 'player')}
             printDBG(":::::::::::::::::::::::::::::::::::::\n%s\n:::::::::::::::::::::::::::::::" % item)
-            planowany = False
+            planned = False
             #if 'LIVE' == self._getJItemStr(item, 'duration', ''):
             try:
                 dateUTC = self._getJItemStr(item, 'date').replace('T', ' ').replace('Z', ' UTC')
                 dateUTC = datetime.strptime(dateUTC, "%Y-%m-%d %H:%M:%S %Z")
                 if dateUTC > datetime.utcnow():
-                    params['title'] += _(" (planowany %s)") % self._utc2local(dateUTC).strftime('%Y/%m/%d %H:%M:%S')
-                    planowany = True
+                    params['title'] += _(" (planned %s)") % self._utc2local(dateUTC).strftime('%Y/%m/%d %H:%M:%S')
+                    planned = True
             except Exception:
                 printExc()
             
             sectionPermalink = self._getJItemStr(item.get('section', {}), 'permalink')
             permalink   = self._getJItemStr(item, 'permalink')
             if '' != sectionPermalink and '' != permalink:
-                #https://github.com/rg3/youtube-dl/commit/c00c7c0af0fdcb380aef0ea9e072a61979d17816#diff-dfd8f21b497fa4e74594244026aed662
                 params['url'] = 'http://proxy.vidibusdynamic.net/sportdeutschland.tv/api/permalinks/%s/%s?access_token=true' % (sectionPermalink, permalink)
-                #SportDeutschland.MAIN_API_URL + 
             else:
                 params['url'] = ''
                 
-            if '' != params['url'] or '' != params['video']:
-                if not planowany or params['video'].startswith('http'):
+            if '' != params['url'] or '' != params['player']:
+                if not planned or self.cm.isValidUrl(params['player']):
                     self.addVideo(params)
                 else:
                     self.addArticle(params)
@@ -169,7 +177,7 @@ class SportDeutschland(CBaseHostClass):
         data = self._getItemsListFromJson(baseUrl + 'page=%d&per_page=100' % (page+1))
         if 0 < len(data):
             params = dict(cItem)
-            params.update({'title':'Następna strona', 'page':page+1})
+            params.update({'title':_('Next page'), 'page':page+1})
             self.addDir(params)
             
     def getLinksForVideo(self, cItem):
@@ -177,52 +185,37 @@ class SportDeutschland(CBaseHostClass):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
         videoUrls =[]
-        videoUrl = ''
-        if '' != cItem['video']:
-            videoUrl = cItem['video']
-        else:        
-            if '' != cItem['url']:
-                sts,data = self.cm.getPage(cItem['url'])
-                if sts:
-                    try:
-                        data = json.loads(data)
-                        #printDBG("[%s]" % data)
-                        videoUrl = self._getJItemStr(data['asset'], 'video')
-                        if '' == videoUrl:
-                            assets_info = self._getJItemStr(data['asset'], 'url')
-                            if len(assets_info):
-                                sts,assets_info = self.cm.getPage(assets_info, {'header' : HTTP_HEADER})
-                                if sts:
-                                    try:
-                                        assets_info = json.loads(assets_info)
-                                        videoUrl = self._getJItemStr(assets_info, 'video')
-                                        printDBG('SportDeutschland.getLinksForVideo "video" from "assets_info" |%s|' % videoUrl)
-                                    except Exception: printExc()
-                        if '' == videoUrl:  
-                            player = self._getJItemStr(data['asset'], 'player')
-                            if '' != player:
-                                sts,data = self.cm.getPage(player, {'header' : HTTP_HEADER})
-                                if sts: videoUrl = self.cm.ph.getSearchGroups(data, '<a class="asset"[^>]+?href="([^"]+?)"')[0]
-                    except Exception:
-                        printExc()
         
-        if '.smil?' in videoUrl:
-            if 'rtmp' == config.plugins.iptvplayer.sportdeutschland_streamprotocol.value:
-                sts,data = self.cm.getPage(videoUrl)
-                if sts:
-                    #printDBG("+++++++++++++++++++++++++++++++++\n%s\n+++++++++++++++++++++++++++++++++" % data)
-                    videoUrl = self.cm.ph.getSearchGroups(data, 'meta base="(rtmp[^"]+?)"')[0]
-                    if '' != videoUrl and not videoUrl.startswith('/'):
-                        videoUrl += '/'
-                    videoUrl += self.cm.ph.getSearchGroups(data, 'video src="([^"]+?)"')[0]
-                    if videoUrl.startswith('rtmp'):
-                        videoUrls.append({'name':'SportDeutschland rtmp', 'url':videoUrl.replace('&amp;', '&')})
-            else:
-                videoUrl = videoUrl.replace('.smil?', '.m3u8?')
-                videoUrls = getDirectM3U8Playlist(videoUrl, checkExt=False)
-        elif videoUrl.split('?')[0].endswith('mp4'):
-            videoUrl = self.up.decorateUrl(videoUrl, {"iptv_buffering":"forbidden"})
-            videoUrls.append({'name':'SportDeutschland mp4', 'url':videoUrl})
+        if self.cm.isValidUrl(cItem['url']):
+            sts,data = self.cm.getPage(cItem['url'])
+            if sts:
+                try:
+                    data = byteify(json.loads(data))
+                    printDBG(data['asset']['videos'])
+                    for item in data['asset']['videos']:
+                        videoUrl = item['url']
+                        if not self.cm.isValidUrl(videoUrl): continue
+                        if item.get('livestream', False):
+                            if '.smil?' in videoUrl:
+                                if 'rtmp' == config.plugins.iptvplayer.sportdeutschland_streamprotocol.value:
+                                    sts,data = self.cm.getPage(videoUrl)
+                                    if sts:
+                                        #printDBG("+++++++++++++++++++++++++++++++++\n%s\n+++++++++++++++++++++++++++++++++" % data)
+                                        videoUrl = self.cm.ph.getSearchGroups(data, 'meta base="(rtmp[^"]+?)"')[0]
+                                        if '' != videoUrl and not videoUrl.startswith('/'):
+                                            videoUrl += '/'
+                                        videoUrl += self.cm.ph.getSearchGroups(data, 'video src="([^"]+?)"')[0]
+                                        if videoUrl.startswith('rtmp'):
+                                            videoUrls.append({'name':'SportDeutschland rtmp', 'url':videoUrl.replace('&amp;', '&')})
+                                else:
+                                    videoUrl = videoUrl.replace('.smil?', '.m3u8?')
+                                    videoUrls.extend(getDirectM3U8Playlist(videoUrl, checkExt=False))
+                        elif 'mp4' in str(item.get('content_type', '')):
+                            name = '%sx%s' % (item['width'], item['height'])
+                            videoUrls.append({'name':name, 'url':videoUrl, 'need_resolve':0})
+                except Exception:
+                    printExc()
+        
         return videoUrls
     
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
