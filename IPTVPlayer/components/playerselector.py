@@ -20,7 +20,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 
 class PlayerSelectorWidget(Screen):
     LAST_SELECTION = {}
-    def __init__(self, session, inList, outList, numOfLockedItems=0, selMarker=''):
+    def __init__(self, session, inList, outList, numOfLockedItems=0, groupName='', groupObj=None):
         printDBG("PlayerSelectorWidget.__init__ --------------------------------")
         screenwidth = getDesktop(0).size().width()
         iconSize = GetAvailableIconSize()
@@ -43,12 +43,12 @@ class PlayerSelectorWidget(Screen):
         elif len(inList) > 6:
             numOfRow = 3
             numOfCol = 3
-        elif len(inList) > 4:
+        elif len(inList) > 3:
             numOfRow = 2
             numOfCol = 3
         else:
-            numOfRow = 2
-            numOfCol = 2
+            numOfRow = 1
+            numOfCol = 3
         
         try:
             confNumOfRow = int(config.plugins.iptvplayer.numOfRow.value)
@@ -112,13 +112,14 @@ class PlayerSelectorWidget(Screen):
         self.currList  = self.inList
         self.outList   = outList
 
-        self.selMarker = selMarker
+        self.groupName = groupName
+        self.groupObj  = groupObj
         self.numOfLockedItems = numOfLockedItems
         
         self.IconsSize  = iconSize #do ladowania ikon
         self.MarkerSize = self.IconsSize + 45
         
-        self.lastSelection = PlayerSelectorWidget.LAST_SELECTION.get(self.selMarker, 0)
+        self.lastSelection = PlayerSelectorWidget.LAST_SELECTION.get(self.groupName, 0)
         self.calcDisplayVariables()
         
         # pagination 
@@ -248,7 +249,7 @@ class PlayerSelectorWidget(Screen):
             printExc()
         idx = self.currLine * self.numOfCol +  self.dispX
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>> __onClose idx[%s]" % idx)
-        PlayerSelectorWidget.LAST_SELECTION[self.selMarker] = idx
+        PlayerSelectorWidget.LAST_SELECTION[self.groupName] = idx
     
     #Calculate marker position Y
     def calcMarkerPosY(self):
@@ -422,6 +423,13 @@ class PlayerSelectorWidget(Screen):
         self["marker"].instance.move(ePoint(x,y))
         self["statustext"].setText(self.currList[new_idx][0])
         return
+        
+    def getSelectedItem(self):
+        printDBG(">> PlayerSelectorWidget.getSelectedItem")
+        idx = self.currLine * self.numOfCol +  self.dispX
+        if idx < self.numOfItems:
+            return self.currList[idx]
+        return None
 
     def back_pressed(self):
         self.close(None)
@@ -438,7 +446,7 @@ class PlayerSelectorWidget(Screen):
             return
         
         idx = self.currLine * self.numOfCol +  self.dispX
-        PlayerSelectorWidget.LAST_SELECTION[self.selMarker] = idx
+        PlayerSelectorWidget.LAST_SELECTION[self.groupName] = idx
         
         if idx < self.numOfItems:
             self.close(self.currList[idx])
@@ -449,28 +457,72 @@ class PlayerSelectorWidget(Screen):
     def keyBlue(self):
         self.close((_("IPTV download manager"), "IPTVDM"))
         
-    def keyMenu(self):     
+    def keyMenu(self):
+        printDBG(">> PlayerSelectorWidget.keyMenu")
         options = []
+        selItem = self.getSelectedItem()
+        if self.groupObj != None and selItem != None and len(self.groupObj.getGroupsWithoutHost(selItem[1])):
+            options.append((_("Add host %s to group") % selItem[0], "ADD_HOST_TO_GROUP"))
+        
         if not self.reorderingMode and self.numOfItems - self.numOfLockedItems > 0:
             options.append((_("Enable reordering mode"), "CHANGE_REORDERING_MODE"))
         elif self.reorderingMode:
             options.append((_("Disable reordering mode"), "CHANGE_REORDERING_MODE"))
         options.append((_("IPTV download manager"), "IPTVDM"))
-        options.append((_("Disable/Enable services"), "config_hosts"))
+        if self.groupName in ['selecthost', 'all']:
+            options.append((_("Disable/Enable services"), "config_hosts"))
+        if self.groupName in ['selectgroup']:
+            options.append((_("Disable/Enable groups"), "config_groups"))
+        
+        if self.groupName == 'selecthost':
+            pass        
+        elif self.groupName == 'selectgroup':
+            if selItem[1] not in ['update', 'config', 'all']:
+                options.append((_('Hide "%s" group') % selItem[0], "DEL_ITEM"))
+        elif self.groupName not in ['all']:
+            options.append((_('Remove "%s" item') % selItem[0], "DEL_ITEM"))
+        
         if len(options):
             self.session.openWithCallback(self.selectMenuCallback, ChoiceBox, title=_("Select option"), list=options)
-    
+        
     def selectMenuCallback(self, ret):
+        printDBG(">> PlayerSelectorWidget.selectMenuCallback")
         if ret:
             ret = ret[1] 
             if ret == "CHANGE_REORDERING_MODE": 
                 self.changeReorderingMode()
             elif ret == "IPTVDM":
                 self.keyBlue()
-            elif ret == "config_hosts":
+            elif ret in ["config_hosts", "config_groups"]:
                 self.close((_("Disable not used services"), ret))
+            elif ret == "ADD_HOST_TO_GROUP":
+                self.addHostToGroup()
+            elif ret == 'DEL_ITEM':
+                idx = self.currLine * self.numOfCol +  self.dispX
+                if idx < self.numOfItems:
+                    del self.currList[idx]
+                    del self.pixmapList[idx]
+                    self.reInitDisplayList()
+    
+    def addHostToGroup(self):
+        printDBG(">> PlayerSelectorWidget.addHostToGroup")
+        selItem = self.getSelectedItem()
+        groupsList = self.groupObj.getGroupsWithoutHost(selItem[1])
+        options = []
+        for item in groupsList:
+            options.append((item.title, item.name))
         
+        if len(options):
+            self.session.openWithCallback(self.addHostToGroupCallback, ChoiceBox, title=_("Select group"), list=options)
+            
+    def addHostToGroupCallback(self, ret):
+        if ret:
+            ret = ret[1] 
+            selItem = self.getSelectedItem()
+            self.groupObj.addHostToGroup(ret, selItem[1])
+            
     def changeReorderingMode(self):
+        printDBG(">> PlayerSelectorWidget.changeReorderingMode")
         if not self.reorderingMode and (self.numOfItems - self.numOfLockedItems) > 0:
             self.reorderingMode = True
             if self.numOfLockedItems > 0:

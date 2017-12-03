@@ -198,6 +198,11 @@ class CFavItem:
         
     def getAsDict(self):
         return vars(self)
+        
+class CHostsGroupItem:
+    def __init__( self, name = '', title = ''):
+        self.name = name
+        self.title = title
        
 class RetHost:
     OK = "OK"

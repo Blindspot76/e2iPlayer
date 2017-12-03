@@ -60,6 +60,7 @@ config.plugins.iptvplayer.allowedcoverformats= ConfigSelection(default = "jpeg,p
 config.plugins.iptvplayer.showinextensions   = ConfigYesNo(default = True)
 config.plugins.iptvplayer.showinMainMenu     = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ListaGraficzna     = ConfigYesNo(default = True)
+config.plugins.iptvplayer.group_hosts        = ConfigYesNo(default = False)
 config.plugins.iptvplayer.NaszaSciezka       = ConfigDirectory(default = "/hdd/movie/") #, fixed_size = False)
 config.plugins.iptvplayer.bufferingPath      = ConfigDirectory(default = config.plugins.iptvplayer.NaszaSciezka.value) #, fixed_size = False)
 config.plugins.iptvplayer.buforowanie        = ConfigYesNo(default = False)
@@ -310,6 +311,7 @@ class ConfigMenu(ConfigBaseWidget):
         #list.append(getConfigListEntry("Sortować listy?", config.plugins.iptvplayer.sortuj))            
         list.append(getConfigListEntry(_("Graphic services selector"), config.plugins.iptvplayer.ListaGraficzna))
         if config.plugins.iptvplayer.ListaGraficzna.value == True:
+            list.append(getConfigListEntry(_("    Enable hosts groups"), config.plugins.iptvplayer.group_hosts))
             list.append(getConfigListEntry(_("    Service icon size"), config.plugins.iptvplayer.IconsSize))
             list.append(getConfigListEntry(_("    Number of rows"), config.plugins.iptvplayer.numOfRow))
             list.append(getConfigListEntry(_("    Number of columns"), config.plugins.iptvplayer.numOfCol))

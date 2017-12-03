@@ -34,6 +34,7 @@ from enigma import getDesktop, eTimer
 ####################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu, GetMoviePlayer, GetListOfHostsNames, IsUpdateNeededForHostsChangesCommit
 from Plugins.Extensions.IPTVPlayer.components.confighost import ConfigHostMenu, ConfigHostsMenu
+from Plugins.Extensions.IPTVPlayer.components.configgroups import ConfigGroupsMenu
 
 from Plugins.Extensions.IPTVPlayer.components.iptvfavouriteswidgets import IPTVFavouritesAddItemWidget, IPTVFavouritesMainWidget
  
@@ -49,6 +50,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize, \
                                                           GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, ClearTmpCookieDir, \
                                                           GetEnabledHostsList, SaveHostsOrderList
+from Plugins.Extensions.IPTVPlayer.tools.iptvhostgroups import IPTVHostsGroups
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
@@ -68,6 +70,7 @@ from Plugins.Extensions.IPTVPlayer.components.iconmenager import IconMenager
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover, Cover3
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
+from Plugins.Extensions.IPTVPlayer.components.playerselector import PlayerSelectorWidget
 
 # SULGE TEMP
 #from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
@@ -233,6 +236,8 @@ class IPTVPlayerWidget(Screen):
         self.searchPattern = CSearchHistoryHelper.loadLastPattern()[1]
         self.searchType = None
         self.workThread = None
+        self.group      = None
+        self.groupObj   = None
         self.host       = None
         self.hostName     = ''
         self.hostTitle    = ''
@@ -791,7 +796,10 @@ class IPTVPlayerWidget(Screen):
             else:
                 #There is no prev categories, so exit
                 #self.close()
-                self.askUpdateAvailable(self.selectHost)
+                if self.group == None:
+                    self.askUpdateAvailable(self.selectHost)
+                else:
+                    self.selectHostFromGroup()
         else:
             self.showWindow()
     #end back_pressed(self):
@@ -1034,6 +1042,9 @@ class IPTVPlayerWidget(Screen):
         except Exception: printExc()
         
     def selectHost(self, arg1=None):
+        printDBG(">> selectHost")
+        self.groupObj = None
+        self.group = None
         self.host = None
         self.hostName = ''
         self.nextSelIndex = 0
@@ -1041,7 +1052,126 @@ class IPTVPlayerWidget(Screen):
         self.categoryList = []
         self.currList = []
         self.currItem = CDisplayListItem()
-
+        
+        if (config.plugins.iptvplayer.group_hosts.value == False or 0 == GetAvailableIconSize()):
+            self.selectHostFromSingleList()
+        else:
+            self.selectGroup()
+        
+    def selectGroup(self):
+        printDBG(">> selectGroup")
+        self.groupObj = IPTVHostsGroups()
+        self.displayGroupsList = []
+        groupsList = self.groupObj.getGroupsList()
+        for item in groupsList:
+            self.displayGroupsList.append((item.title, item.name))
+        self.displayGroupsList.append((_('All'), 'all'))
+        self.displayGroupsList.append((_("Configuration"), "config"))
+        
+        if config.plugins.iptvplayer.AktualizacjaWmenu.value == True:
+            self.displayGroupsList.append((_("Update"), "update"))
+        
+        self.newDisplayGroupsList = []
+        self.session.openWithCallback(self.selectGroupCallback, PlayerSelectorWidget, inList = self.displayGroupsList, outList = self.newDisplayGroupsList, numOfLockedItems = self.getNumOfSpecialItems(self.displayGroupsList) , groupName='selectgroup')
+        
+    def selectGroupCallback(self, ret):
+        printDBG(">> selectGroupCallback")
+        # save groups order if user change it at player selection
+        if self.newDisplayGroupsList != self.displayGroupsList:
+            numOfSpecialItems = self.getNumOfSpecialItems(self.newDisplayGroupsList)
+            groupList = []
+            for idx in range(len(self.newDisplayGroupsList)-numOfSpecialItems):
+                groupList.append(self.newDisplayGroupsList[idx][1])
+            self.groupObj.setGroupList(groupList)
+        
+        checkUpdate = True
+        try: 
+            if 0 < len(ret) and ret[1] == "update": checkUpdate = False
+        except Exception: pass
+        if checkUpdate: self.askUpdateAvailable(boundFunction(self.selectGroupCallback2, ret))
+        else: self.selectGroupCallback2(ret)
+        
+    def selectGroupCallback2(self, ret):
+        printDBG(">> selectGroupCallback2")
+        self.selectItemCallback(ret, 'selectgroup')
+        
+    def selectHostFromGroup(self):
+        printDBG(">> selectHostFromGroup")
+        self.host = None
+        self.hostName = ''
+        self.nextSelIndex = 0
+        self.prevSelList = []
+        self.categoryList = []
+        self.currList = []
+        self.currItem = CDisplayListItem()
+        
+        self.displayHostsList = [] 
+        if self.group != 'all':
+            hostsList = self.groupObj.getHostsList(self.group)
+        else:
+            hostsList = []
+            sortedList = SortHostsList( GetHostsList(fromList=False, fromHostFolder=True) )
+            for hostName in sortedList:
+                if IsHostEnabled(hostName):
+                    hostsList.append(hostName)
+        
+        brokenHostList = []
+        for hostName in hostsList:
+            try:
+                _temp = __import__('Plugins.Extensions.IPTVPlayer.hosts.host' + hostName, globals(), locals(), ['gettytul'], -1)
+                title = _temp.gettytul()
+            except Exception:
+                printExc('get host name exception for host "%s"' % hostName)
+                brokenHostList.append('host'+hostName)
+                continue 
+            self.displayHostsList.append((title, hostName))
+            
+        # if there is no order hosts list use old behavior for all group
+        if self.group == 'all' and 0 == len(GetHostsOrderList()):
+            try: self.displayHostsList.sort(key=lambda t : tuple(str(t[0]).lower()))
+            except Exception: self.displayHostsList.sort()
+        
+        # prepare info message when some host or update cannot be used
+        errorMessage = ""
+        if len(brokenHostList) > 0:
+            errorMessage = _("Following host are broken or additional python modules are needed.") + '\n' + '\n'.join(brokenHostList)
+        
+        if "" != errorMessage and True == self.showHostsErrorMessage:
+            self.showHostsErrorMessage = False
+            self.session.openWithCallback(self.displayListOfHostsFromGroup, MessageBox, errorMessage, type = MessageBox.TYPE_INFO, timeout = 10 )
+        else:
+            self.displayListOfHostsFromGroup()
+        return
+        
+    def displayListOfHostsFromGroup(self, arg = None):
+        printDBG(">> displayListOfHostsFromGroup")
+        self.newDisplayHostsList = []
+        if len(self.displayHostsList):
+            self.session.openWithCallback(self.selectHostFromGroupCallback, PlayerSelectorWidget, inList = self.displayHostsList, outList = self.newDisplayHostsList, numOfLockedItems = 0, groupName=self.group, groupObj=self.groupObj)
+        else:
+            msg = _('There is no hosts in this group.')
+            self.session.openWithCallback(self.selectHost, MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 10 )
+        
+    def selectHostFromGroupCallback(self, ret):
+        printDBG(">> selectHostFromGroupCallback")
+        
+        # save hosts order if user change it at player selection
+        if self.newDisplayHostsList != self.displayHostsList:
+            hostsList = []
+            for idx in range(len(self.newDisplayHostsList)):
+                hostsList.append(self.newDisplayHostsList[idx][1])
+            if self.group != 'all':
+                self.groupObj.setHostsList(self.group, hostsList)
+            else:
+                SaveHostsOrderList(hostsList)
+        self.groupObj.flushAddedHosts()
+        self.askUpdateAvailable(boundFunction(self.selectHostFromGroupCallback2, ret))
+        
+    def selectHostFromGroupCallback2(self, ret):
+        printDBG(">> selectHostFromGroupCallback2")
+        self.selectItemCallback(ret, 'selecthostfromgroup')
+        
+    def selectHostFromSingleList(self):
         self.displayHostsList = [] 
         sortedList = SortHostsList( GetHostsList(fromList=False, fromHostFolder=True) )
         brokenHostList = []
@@ -1073,11 +1203,6 @@ class IPTVPlayerWidget(Screen):
      
         if config.plugins.iptvplayer.AktualizacjaWmenu.value == True:
             self.displayHostsList.append((_("Update"), "update"))
-                
-        try:     import json 
-        except Exception:
-            try: import simplejson
-            except Exception: errorMessage = errorMessage + "\n" + _("JSON module not available!")
         
         if "" != errorMessage and True == self.showHostsErrorMessage:
             self.showHostsErrorMessage = False
@@ -1092,11 +1217,10 @@ class IPTVPlayerWidget(Screen):
             self.session.openWithCallback(self.selectHostCallback, ChoiceBox, title=_("Select service"), list = self.displayHostsList)
         else:
             self.newDisplayHostsList = []
-            from playerselector import PlayerSelectorWidget
-            self.session.openWithCallback(self.selectHostCallback, PlayerSelectorWidget, inList = self.displayHostsList, outList = self.newDisplayHostsList, numOfLockedItems = self.getNumOfSpecialItems(self.displayHostsList) , selMarker='')
+            self.session.openWithCallback(self.selectHostCallback, PlayerSelectorWidget, inList = self.displayHostsList, outList = self.newDisplayHostsList, numOfLockedItems = self.getNumOfSpecialItems(self.displayHostsList), groupName='selecthost')
         return
     
-    def getNumOfSpecialItems(self, inList, filters=['config', 'update']):
+    def getNumOfSpecialItems(self, inList, filters=['config', 'update', 'all']):
         numOfSpecialItems = 0
         for item in inList:
             if item[1] in filters:
@@ -1104,6 +1228,7 @@ class IPTVPlayerWidget(Screen):
         return numOfSpecialItems
     
     def selectHostCallback(self, ret):
+        printDBG(">> selectHostCallback")
         # save hosts order if user change it at player selection
         if self.newDisplayHostsList != None and self.newDisplayHostsList != self.displayHostsList:
             numOfSpecialItems = self.getNumOfSpecialItems(self.newDisplayHostsList)
@@ -1118,43 +1243,68 @@ class IPTVPlayerWidget(Screen):
         except Exception: pass
         if checkUpdate: self.askUpdateAvailable(boundFunction(self.selectHostCallback2, ret))
         else: self.selectHostCallback2(ret)
-
+        
     def selectHostCallback2(self, ret):
+        printDBG(">> selectHostCallback2")
+        self.selectItemCallback(ret, 'selecthost')
+
+    def selectItemCallback(self, ret, type):
+        printDBG(">> selectItemCallback ret[%s] type[%s]" % (ret, type))
         hasIcon = False
         nextFunction = None
+        prevFunction = None
         protectedByPin = False 
         if ret:
             if ret[1] == "config":
                 nextFunction = self.runConfig
+                prevFunction = self.selectHost
                 protectedByPin = config.plugins.iptvplayer.configProtectedByPin.value
             elif ret[1] == "config_hosts":
                 nextFunction = self.runConfigHosts
+                if type == 'selecthost':
+                    prevFunction = self.selectHost
+                else:
+                    prevFunction = self.selectHostFromGroup
+                protectedByPin = config.plugins.iptvplayer.configProtectedByPin.value
+            elif ret[1] == "config_groups":
+                nextFunction = self.runConfigGroupsMenu
+                prevFunction = self.selectHost
                 protectedByPin = config.plugins.iptvplayer.configProtectedByPin.value
             elif ret[1] == "noupdate":
                 self.close()
                 return
             elif ret[1] == "update":
-                self.session.openWithCallback(self.displayListOfHosts, IPTVUpdateWindow, UpdateMainAppImpl(self.session))
+                self.session.openWithCallback(self.selectHost, IPTVUpdateWindow, UpdateMainAppImpl(self.session))
                 return
             elif ret[1] == "IPTVDM":
-                self.runIPTVDM(self.selectHost)
+                if type in ['selecthost', 'selectgroup']:
+                    self.runIPTVDM(self.selectHost)
+                elif type == 'selecthostfromgroup':
+                    self.runIPTVDM(self.selectHostFromGroup)
                 return
-            else: # host selected
+            elif type in ['selecthost', 'selecthostfromgroup']:
                 self.hostTitle = ret[0]
                 self.hostName = ret[1] 
                 self.loadHost()
+            elif type == 'selectgroup':
+                self.group = ret[1]
+                self.selectHostFromGroup()
+                return
                 
             if self.showMessageNoFreeSpaceForIcon and hasIcon:
                 self.showMessageNoFreeSpaceForIcon = False
                 self.session.open(MessageBox, (_("There is no free space on the drive [%s].") % config.plugins.iptvplayer.SciezkaCache.value) + "\n" + _("New icons will not be available."), type = MessageBox.TYPE_INFO, timeout=10)
-        else:
+        elif type in ['selecthost', 'selectgroup']:
             self.close()
             return
+        else:
+            self.selectHost()
+            return
             
-        if nextFunction:
+        if nextFunction and prevFunction:
             if True == protectedByPin:
                 from iptvpin import IPTVPinWidget
-                self.session.openWithCallback(boundFunction(self.checkPin, nextFunction, self.selectHost), IPTVPinWidget, title=_("Enter pin"))
+                self.session.openWithCallback(boundFunction(self.checkPin, nextFunction, prevFunction), IPTVPinWidget, title=_("Enter pin"))
             else:
                 nextFunction()
                 
@@ -1166,12 +1316,19 @@ class IPTVPlayerWidget(Screen):
         if IsUpdateNeededForHostsChangesCommit(self.enabledHostsListOld):
             message = _('Some changes will be applied only after plugin update.\nDo you want to perform update now?')
             self.session.openWithCallback(self.askForUpdateCallback, MessageBox, text = message, type = MessageBox.TYPE_YESNO)
+        elif self.group != None:
+            self.selectHostFromGroup()
         else:
             self.selectHost()
+            
+    def runConfigGroupsMenu(self):
+        self.session.openWithCallback(self.selectHost, ConfigGroupsMenu)
         
     def askForUpdateCallback(self, arg1=None):
         if arg1:
             self.session.openWithCallback(self.selectHost, IPTVUpdateWindow,UpdateMainAppImpl(self.session, allowTheSameVersion=True))
+        elif self.group != None:
+            self.selectHostFromGroup()
         else:
             self.selectHost()
 
