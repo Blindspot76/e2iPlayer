@@ -98,11 +98,9 @@ class VideoStarApi(CBaseHostClass):
         printDBG("VideoStarApi.doLogin")
         
         logged = False
-        premium = False
         loginUrl = self.getFullUrl('/login')
         errMessage = _("Get page \"%s\" error.")
         
-        rm(self.COOKIE_FILE)
         sts, data = self.cm.getPage(loginUrl, self.defaultParams)
         if not sts: return False, (errMessage % loginUrl)
         
@@ -141,6 +139,8 @@ class VideoStarApi(CBaseHostClass):
     def getList(self, cItem):
         printDBG("VideoStarApi.getList")
         
+        rm(self.COOKIE_FILE)
+        
         self.informAboutGeoBlockingIfNeeded('PL')
         
         login    = config.plugins.iptvplayer.videostar_login.value
@@ -154,6 +154,8 @@ class VideoStarApi(CBaseHostClass):
             else:
                 self.sessionEx.open(MessageBox, '%s\nProblem z zalogowanie użytkownika "%s". Sprawdź dane do logowania w konfiguracji hosta.' % (msg, login), type = MessageBox.TYPE_INFO, timeout = 10 )
                 self.loggedIn = False
+        else:
+            self.doLogin('guest', 'guest')
         
         self.cacheChannelList = []
         channelsTab = []
@@ -202,8 +204,9 @@ class VideoStarApi(CBaseHostClass):
             
         vidItem = self.cacheChannelList[idx]
         formatId = config.plugins.iptvplayer.videostar_streamprotocol.value
-        
+        tries = 0
         while True:
+            tries += 1
             try:
                 if self.loggedIn:
                     url = 'v1/channel/%s?format_id=%s&device_type=web' % (vidItem['id'], formatId)
@@ -212,6 +215,12 @@ class VideoStarApi(CBaseHostClass):
                 url = self.getFullUrl(url, 'api')
                 sts, data = self.cm.getPage(url, self.defaultParams)
                 printDBG(data)
+                if not sts and not self.loggedIn and tries == 1:
+                    rm(self.COOKIE_FILE)
+                    self.doLogin('guest', 'guest')
+                    sts, data = self.cm.getPage(self.getFullUrl('/static/guest/channels/list/web.json', 'static'), self.defaultParams)
+                    if sts: continue
+                
                 if not sts: break
                 data = byteify(json.loads(data))
                 if data['data'] != None:
@@ -254,7 +263,10 @@ class VideoStarApi(CBaseHostClass):
             maxBitrate = int(config.plugins.iptvplayer.videostar_defquality.value) * 1.3
             def __getLinkQuality( itemLink ):
                 try:
-                    return int(itemLink['bitrate'])
+                    if 'bitrate' in itemLink:
+                        return int(itemLink['bitrate'])
+                    elif 'bandwidth' in itemLink:
+                        return int(itemLink['bandwidth'])
                 except Exception:
                     printExc()
                 return 0
