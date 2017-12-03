@@ -47,7 +47,7 @@ class IPTVHostsGroups:
                                          "italian":          "Italian",
                                          'swedish':          "Swedish",
                                          "balkans":          "Balkans",
-                                         #"others":           "Others",
+                                         "others":           "Others",
                                         }
         
         self.LOADED_GROUPS = []
