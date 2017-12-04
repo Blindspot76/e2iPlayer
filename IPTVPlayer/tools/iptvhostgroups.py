@@ -198,7 +198,7 @@ class IPTVHostsGroups:
         
     def _loadHosts(self, groupFile, groupName, hostListFromFolder, hostListFromList):
         printDBG("IPTVHostsGroups._loadHosts groupName[%s]" % groupName)
-        predefinedHosts = self.PREDEFINED_HOSTS.get(groupFile, [])
+        predefinedHosts = self.PREDEFINED_HOSTS.get(groupName, [])
         hosts = []
         disabledHosts = []
         
