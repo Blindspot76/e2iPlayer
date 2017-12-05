@@ -3661,3 +3661,30 @@ msgstr "Netzwerkverbindung fehlgeschlagen"
 
 msgid "Unknown server response."
 msgstr "Unbekannte Serverantwort."
+
+msgid "Disable/Enable groups"
+msgstr "Deaktivieren/Aktivieren von Gruppen"
+
+msgid "IPTVPlayer enable/disabled groups"
+msgstr "IPTV Player aktivierte/deaktivierte Gruppen"
+
+msgid "Hide \"%s\" group"
+msgstr "Verstecke \"%s\" Gruppe"
+
+msgid "Remove \"%s\" item"
+msgstr "Entferne \"%s\" Eintrag"
+
+msgid "Add host %s to group"
+msgstr "Hinzufügen von %s zur Gruppe"
+
+msgid "    Enable hosts groups"
+msgstr "    Zeige Service-Gruppen"
+
+msgid "User defined"
+msgstr "Benutzerdefiniert"
+
+msgid "Select group"
+msgstr "Wähle Gruppe"
+
+msgid "There is no hosts in this group."
+msgstr "Kein Service in dieser Gruppe vorhanden."
