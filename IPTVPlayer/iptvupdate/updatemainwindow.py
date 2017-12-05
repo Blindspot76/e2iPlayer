@@ -72,7 +72,7 @@ class IPTVUpdateWindow(Screen):
         self.list = []
         self["list"] = IPTVUpdateList( [GetIPTVDMImgDir(x) for x in IPTVUpdateWindow.ICONS] )
         self.currStep = 0
-        self.onLayoutFinish.append(self.layoutFinished)
+        self.onShow.append(self.onStart)
         self.onClose.append(self.__onClose)
         self.status =  None
         
@@ -89,12 +89,12 @@ class IPTVUpdateWindow(Screen):
         self.updateObjImpl.setStepFinishedCallBack(None)
         self.updateObjImpl.terminate()
         self.onClose.remove(self.__onClose)
-        self.onLayoutFinish.remove(self.layoutFinished)
         self.updateObjImpl = None
         self.list = []
         self["list"].setList([])
 
-    def layoutFinished(self):
+    def onStart(self):
+        self.onShow.remove(self.onStart)
         self.setTitle( self.updateObjImpl.getTitle() )
         self["sub_title"].setText( self.updateObjImpl.getSubTitle() )
         self["list"].setSelectionState(enabled = False)
