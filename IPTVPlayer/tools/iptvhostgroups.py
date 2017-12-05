@@ -237,7 +237,7 @@ class IPTVHostsGroups:
             title = self.PREDEFINED_GROUPS_TITLES.get(group, '')
             if title == '': title = self.LOADED_GROUPS_TITLES.get(group, '')
             if title == '': title = group.title()
-            item = CHostsGroupItem(group, title)
+            item = CHostsGroupItem(group, _(title))
             groupList.append(item)
         self.CACHE_GROUPS = groupList
         return groupList
