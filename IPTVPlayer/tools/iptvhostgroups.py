@@ -27,7 +27,7 @@ class IPTVHostsGroups:
         
         # groups
         self.PREDEFINED_GROUPS = ["userdefined", "moviesandseries", "cartoonsandanime", "sport", "live", "documentary", "science", \
-                                  "polish", "english", "german", "french", "russian", "hungarian", "greek", "latino", "italian","swedish","balkans","others"]
+                                  "polish", "english", "german", "french", "russian", "hungarian", "arabic", "greek", "latino", "italian","swedish","balkans","others"]
         self.PREDEFINED_GROUPS_TITLES = {"userdefined":      "User defined", 
                                          "moviesandseries":  "Movies and series",
                                          "cartoonsandanime": "Cartoons and anime",
