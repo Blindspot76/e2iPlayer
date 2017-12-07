@@ -434,7 +434,9 @@ class TVNowDE(CBaseHostClass):
                 printExc()
         
         if self.cm.isValidUrl(urlDashClear):
-            urlHlsClear = urlDashClear.replace('/vodnowusodash.', '/vodnowusohls.')[:-3] + 'm3u8'
+            urlHlsClear = urlDashClear.replace('/vodnowusodash.', '/vodnowusohls.').split('?', 1)
+            urlHlsClear[0] = urlHlsClear[0][:-3] + 'm3u8'
+            urlHlsClear = '?'.join(urlHlsClear)
             hlsTab  = getDirectM3U8Playlist(urlHlsClear, checkContent=True)
             dashTab = getMPDLinksWithMeta(urlDashClear, False)
             try:
