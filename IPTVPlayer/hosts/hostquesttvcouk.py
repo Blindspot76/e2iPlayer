@@ -245,14 +245,7 @@ class QuesttvCoUK(CBaseHostClass):
         if videoId == '': return ''
         
         hlsUrl = 'http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=' + videoId
-        urlTab = getDirectM3U8Playlist(hlsUrl, checkContent=True)
-        def __getLinkQuality( itemLink ):
-            try:
-                return int(itemLink['bitrate'])
-            except Exception:
-                printExc()
-                return 0
-        urlTab = CSelOneLink(urlTab, __getLinkQuality, 999999999).getSortedLinks()
+        urlTab = getDirectM3U8Playlist(hlsUrl, checkContent=True, sortWithMaxBitrate=999999999)
         return urlTab
        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):

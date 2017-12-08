@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import CParsingHelper, common
 from Plugins.Extensions.IPTVPlayer.libs import m3u8
@@ -477,7 +477,7 @@ def decorateUrl(url, metaParams={}):
             retUrl.meta['iptv_proto'] = 'mpd'
     return retUrl
 
-def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParams={}, checkContent=False):
+def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParams={}, checkContent=False, sortWithMaxBitrate=-1):
     if checkExt and not M3U8Url.split('?', 1)[0].endswith('.m3u8'):
         return []
         
@@ -534,6 +534,15 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParam
                                                                 item['height'],  \
                                                                 item['codecs'] )
                 retPlaylists.append(item)
+            
+            if sortWithMaxBitrate > -1:
+                def __getLinkQuality( itemLink ):
+                    try:
+                        return int(itemLink['bitrate'])
+                    except Exception:
+                        printExc()
+                        return 0
+                retPlaylists = CSelOneLink(retPlaylists, __getLinkQuality, sortWithMaxBitrate).getSortedLinks()
         else:
             if checkContent and 0 == len(m3u8Obj.segments):
                 return []

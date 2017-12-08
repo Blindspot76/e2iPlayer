@@ -2898,13 +2898,15 @@ class pageParser:
         
         sts, data = self.cm.getPage(baseUrl, {'header': header})
         if not sts: return False
+        
+        data = data.replace('\\/', '/')
+        
         url = self.cm.ph.getSearchGroups(data, '''['"]((:?https?:)?//[^"^']+\.m3u8[^'^"]*?)['"]''')[0]
         if url.startswith('//'):
             url = 'http:' + url
         
         url = strwithmeta(url, {'User-Agent':header['User-Agent'], 'Origin':urlparser.getDomain(baseUrl), 'Referer':baseUrl})
-        tab =  getDirectM3U8Playlist(url, checkContent=True)[::-1]
-        
+        tab =  getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999)
         printDBG("parserMYCLOUDTO tab[%s]" % tab)
         return tab
         
