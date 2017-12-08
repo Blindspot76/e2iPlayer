@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir, GetPyScriptCmd, IsFPUAvailable
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir, GetPyScriptCmd, IsFPUAvailable, ReadGnuMIPSABIFP
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetuphelper     import CBinaryStepHelper, CCmdValidator, SetupDownloaderCmdCreator
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
@@ -210,6 +210,16 @@ class IPTVSetupImpl:
     ###################################################
     def detectFPU(self):
         printDBG("IPTVSetupImpl.detectFPU")
+        if config.plugins.iptvplayer.plarform.value == 'mipsel':
+            hasAbiFlags, abiFP = ReadGnuMIPSABIFP('/lib/libc.so.6')
+            if abiFP not in [-1, 0]:
+                if abiFP == 3: val = "soft_float"
+                else: val = "hard_float"
+                if config.plugins.iptvplayer.plarformfpuabi.value != val:
+                    config.plugins.iptvplayer.plarformfpuabi.value = val
+                    config.plugins.iptvplayer.plarformfpuabi.save()
+                    configfile.save()
+        
         if config.plugins.iptvplayer.plarform.value != 'mipsel' or IsFPUAvailable() or config.plugins.iptvplayer.plarformfpuabi.value != '':
             self.getOpensslVersion()
         else:

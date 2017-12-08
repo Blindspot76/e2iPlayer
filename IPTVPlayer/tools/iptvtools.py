@@ -1314,3 +1314,142 @@ def GetE2VideoMode():
     
 def SetE2VideoMode(value):
     return SetE2OptionByFile('/proc/stb/video/videomode', value)
+
+def ReadGnuMIPSABIFP(elfFileName):
+    SHT_GNU_ATTRIBUTES=0x6ffffff5
+    SHT_MIPS_ABIFLAGS=0x7000002a
+    Tag_GNU_MIPS_ABI_FP=4
+    Val_GNU_MIPS_ABI_FP_ANY=0
+    Val_GNU_MIPS_ABI_FP_DOUBLE=1
+    Val_GNU_MIPS_ABI_FP_SINGLE=2
+    Val_GNU_MIPS_ABI_FP_SOFT=3
+    Val_GNU_MIPS_ABI_FP_OLD_64=4
+    Val_GNU_MIPS_ABI_FP_XX=5
+    Val_GNU_MIPS_ABI_FP_64=6
+    Val_GNU_MIPS_ABI_FP_64A=7
+    Val_GNU_MIPS_ABI_FP_NAN2008=8
+
+    def _readUint16(tmp):
+        return ord(tmp[1]) << 8 | ord(tmp[0])
+    
+    def _readUint32(tmp):
+        return ord(tmp[3]) << 24 | ord(tmp[2]) << 16 | ord(tmp[1]) << 8 | ord(tmp[0])
+    
+    def _readLeb128(data, start, end):
+        result = 0
+        numRead = 0
+        shift = 0
+        byte = 0
+
+        while start < end:
+            byte = ord(data[start])
+            numRead += 1
+
+            result |= (byte & 0x7f) << shift
+
+            shift += 7
+            if byte < 0x80:
+                break
+        return numRead, result
+    
+    def _getStr(stsTable, idx):
+        val = ''
+        while stsTable[idx] != '\0':
+            val += stsTable[idx]
+            idx += 1
+        return val
+    
+    Val_HAS_MIPS_ABI_FLAGS = False
+    Val_GNU_MIPS_ABI_FP = -1
+    try:
+        with open(elfFileName, "rb") as file:
+            # e_shoff - Start of section headers
+            file.seek(32)
+            shoff = _readUint32(file.read(4))
+        
+            # e_shentsize - Size of section headers
+            file.seek(46)
+            shentsize = _readUint16(file.read(2))
+            
+            # e_shnum -  Number of section headers
+            shnum = _readUint16(file.read(2))
+            
+            # e_shstrndx - Section header string table index
+            shstrndx = _readUint16(file.read(2))
+            
+            # read .shstrtab section header
+            headerOffset = shoff + shstrndx * shentsize
+            
+            file.seek(headerOffset + 16)
+            offset = _readUint32(file.read(4))
+            size = _readUint32(file.read(4))
+            
+            file.seek(offset)
+            secNameStrTable = file.read(size)
+            
+            for idx in range(shnum):
+                offset = shoff + idx * shentsize
+                file.seek(offset)
+                sh_name = _readUint32(file.read(4))
+                sh_type = _readUint32(file.read(4))
+                if sh_type == SHT_GNU_ATTRIBUTES:
+                    file.seek(offset + 16)
+                    sh_offset = _readUint32(file.read(4))
+                    sh_size   = _readUint32(file.read(4))
+                    file.seek(sh_offset)
+                    contents = file.read(sh_size)
+                    p = 0
+                    if contents.startswith('A'):
+                        p += 1
+                        sectionLen = sh_size -1
+                        while sectionLen > 0:
+                            attrLen = _readUint32(contents[p:])
+                            p += 4
+                            
+                            if attrLen > sectionLen:
+                                attrLen = sectionLen
+                            elif attrLen < 5:
+                                break
+                            sectionLen -= attrLen
+                            attrLen -= 4
+                            attrName =  _getStr(contents, p)
+                            
+                            p += len(attrName) + 1
+                            attrLen -= len(attrName) + 1
+                            
+                            while attrLen > 0 and p < len(contents):
+                                if attrLen < 6:
+                                    sectionLen = 0
+                                    break
+                                tag = ord(contents[p])
+                                p += 1
+                                size = _readUint32(contents[p:])
+                                if size > attrLen:
+                                    size = attrLen
+                                if size < 6:
+                                    sectionLen = 0
+                                    break
+                                    
+                                attrLen -= size
+                                end = p + size - 1
+                                p += 4
+                                
+                                if tag == 1 and attrName == "gnu": #File Attributes
+                                    while p < end:
+                                        # display_gnu_attribute
+                                          numRead, tag = _readLeb128(contents, p, end)
+                                          p += numRead
+                                          if tag == Tag_GNU_MIPS_ABI_FP:
+                                            numRead, val = _readLeb128(contents, p, end)
+                                            p += numRead
+                                            Val_GNU_MIPS_ABI_FP = val
+                                            break
+                                elif p < end:
+                                    p = end
+                                else:
+                                    attrLen = 0
+                elif sh_type == SHT_MIPS_ABIFLAGS:
+                    Val_HAS_MIPS_ABI_FLAGS = True
+    except Exception:
+        printExc()
+    return Val_HAS_MIPS_ABI_FLAGS, Val_GNU_MIPS_ABI_FP
