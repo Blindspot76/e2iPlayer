@@ -70,7 +70,7 @@ class IPTVHostsGroups:
                                                      'twitchtv','hitboxtv','pinkbike','sportdeutschland']
         self.PREDEFINED_HOSTS['live']             = ['webstream','streamliveto','ustreamtv','youtube','dailymotion','fokustv','eskago','arconaitvme',]
         self.PREDEFINED_HOSTS['documentary']      = ['fokustv','filmydokumentalneeu','greekdocumentaries3','dailymotion']
-        self.PREDEFINED_HOSTS['science']          = ['fokustv','dailymotion','ustreamtv']
+        self.PREDEFINED_HOSTS['science']          = ['questtvcouk','fokustv','dailymotion','ustreamtv']
         
         self.PREDEFINED_HOSTS['polish']           = ['youtube','webstream','filmyto','alltubetv','kinomanco','ekinotv','cdapl','paczamy','iitvpl','videopenny','zalukajcom','naszekinoonline','serialnet','tvpvod','ipla','tvnvod','vodpl', \
                                                      'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajeczkiorg','animeodcinki','anyfiles','playpuls','meczykipl','fokustv','eskago','filmydokumentalneeu', \
@@ -78,7 +78,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['english']          = ['youtube','webstream','liveleak','bbciplayer','tvplayercom','itvcom','uktvplay','appletrailers','classiccinemaonline','gomovies','seriesonline','mythewatchseries','thewatchseriesto','icefilmsinfo','movienightws','yifytv', \
                                                      'hdpopcornscom','losmovies','solarmovie','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','9cartoonme','kisscartoonme','chiaanimeco','dailymotion', \
                                                      'ourmatchnet','watchwrestlinguno','watchwrestling','laola1tv','hoofootcom','fightvideo','twitchtv','hitboxtv','ted','ororotv','pinkbike','dancetrippin','appletrailers', \
-                                                     'ustreamtv','rteieplayer']
+                                                     'ustreamtv','rteieplayer','questtvcouk']
         self.PREDEFINED_HOSTS['german']           = ['youtube','webstream','ardmediathek','zdfmediathek','tvnowde','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','filmpalast','kinox','video4k','arconaitvme','movie4kto','tata', \
                                                      'dailymotion','laola1tv','sportdeutschland','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['french']           = ['youtube','skstream','filmstreamvkcom','streamcomplet','dpstreamingcx','librestream','cinemay','otakufr','movie4kto','dailymotion','twitchtv','hitboxtv']

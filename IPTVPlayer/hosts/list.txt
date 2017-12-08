@@ -91,6 +91,7 @@ hostpinkbike
 hostplaypuls
 hostplusdede
 hostplwwecom
+hostquesttvcouk
 hostrteieplayer
 hostserialnet
 hostserienstreamto
