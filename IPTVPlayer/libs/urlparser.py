@@ -1079,25 +1079,44 @@ class pageParser:
         printDBG("Data: " + data)
         
         # get JS player script code from confirmation page
-        mrk1 = ">eval("
-        mrk2 = 'eval("'
-        if mrk1  in data:
-            m1 = mrk1
-        elif mrk2 in data :
-            m1 = mrk2
-        else: m1 = "eval(" 
-        tmpDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</script>', False)
-        for tmpData in tmpDataTab:
-            data2 = tmpData
-            tmpData = None
-            # unpack and decode params from JS player script code
-            tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams)
-            if tmpData == '':
-                tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams, 0)
-                
-            if None != tmpData:
-                data = data + tmpData
-        printDBG("Data: " + data)
+        vplayerData = ''
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item and 'vplayer' in item:
+                vplayerData = item
+        
+        if vplayerData != '':
+            jscode = base64.b64decode('''ZnVuY3Rpb24gc3R1Yigpe31mdW5jdGlvbiBqd3BsYXllcigpe3JldHVybntzZXR1cDpmdW5jdGlvbigpe3ByaW50KEpTT04uc3RyaW5naWZ5KGFyZ3VtZW50c1swXSkpfSxvblRpbWU6c3R1YixvblBsYXk6c3R1YixvbkNvbXBsZXRlOnN0dWIsb25SZWFkeTpzdHViLGFkZEJ1dHRvbjpzdHVifX12YXIgZG9jdW1lbnQ9e30sd2luZG93PXRoaXM7''')
+            jscode += vplayerData
+            vplayerData = ''
+            tmp = []
+            ret = iptv_js_execute( jscode )
+            if ret['sts'] and 0 == ret['code']:
+                vplayerData = ret['data'].strip()
+        
+        if vplayerData != '':
+            data += vplayerData
+        else:
+            mrk1 = ">eval("
+            mrk2 = 'eval("'
+            if mrk1  in data:
+                m1 = mrk1
+            elif mrk2 in data :
+                m1 = mrk2
+            else: m1 = "eval(" 
+            tmpDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, m1, '</script>', False)
+            for tmpData in tmpDataTab:
+                data2 = tmpData
+                tmpData = None
+                # unpack and decode params from JS player script code
+                tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams)
+                if tmpData == '':
+                    tmpData = unpackJSPlayerParams(data2, VIDUPME_decryptPlayerParams, 0)
+                    
+                if None != tmpData:
+                    data = data + tmpData
+        
+        printDBG("-*-*-*-*-*-*-*-*-*-*-*-*-*-\nData: %s\n-*-*-*-*-*-*-*-*-*-*-*-*-*-\n" % data)
         return _findLinks(data)
         
     def _parserUNIVERSAL_B(self, url, userAgent='Mozilla/5.0'):
