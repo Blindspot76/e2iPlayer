@@ -460,6 +460,7 @@ class urlparser:
                        'gamovideo.com':        self.pp.parserGAMOVIDEOCOM   ,
                        'streamix.cloud':       self.pp.parserSTREAMIXCLOUD  ,
                        'veoh.com':             self.pp.parserVEOHCOM        ,
+                       'mediafire.com':        self.pp.parserMEDIAFIRECOM   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -9347,3 +9348,20 @@ class pageParser:
             url = strwithmeta(url, {'Referer':baseUrl})
             urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
         return urlTab
+        
+    def parserMEDIAFIRECOM(self, baseUrl):
+        printDBG("parserMEDIAFIRECOM baseUrl[%s]" % baseUrl)
+        HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate'}
+        sts, data = self.cm.getPage(baseUrl, {'header': HEADER})
+        if not sts: return False
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', '"download_link"'), ('</div', '>'))[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)[1]
+        
+        jscode = '''window=this;document={};document.write=function(){print(arguments[0]);}'''
+        ret = iptv_js_execute( jscode + '\n' + data )
+        if ret['sts'] and 0 == ret['code']:
+            videoUrl = self.cm.ph.getSearchGroups(ret['data'], '''href=['"]([^"^']+?)['"]''')[0]
+            if self.cm.isValidUrl(videoUrl):
+                return videoUrl
+        return False
