@@ -62,7 +62,7 @@ class EkinoTv(CBaseHostClass):
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         
-        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'cookie_items':{'prch':'true'}}
         
         self.MAIN_CAT_TAB = [{'category':'list_cats',             'title': 'Filmy',           'url':self.FILMS_CAT_URL},
                              {'category':'series_abc',            'title': 'Seriale',         'url':self.getFullUrl('/serie/')},
