@@ -38,6 +38,7 @@ hostfilmstreamvkcom
 hostfilmydokumentalneeu
 hostfilmyto
 hostfokustv
+hostforjatn
 hostfreediscpl
 hostgamatocom
 hostgamatotvme
