@@ -237,6 +237,7 @@ class QuesttvCoUK(CBaseHostClass):
         
     def getLinksForVideo(self, cItem):
         printDBG("QuesttvCoUK.getLinksForVideo [%s]" % cItem)
+        urlTab = []
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
@@ -244,8 +245,44 @@ class QuesttvCoUK(CBaseHostClass):
         videoId = self.cm.ph.getSearchGroups(data, '''data\-videoid=['"]([^'^"]+?)['"]''')[0]
         if videoId == '': return ''
         
+        getParams = {}
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<object', '</object>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<param', '>')
+        for item in data:
+            name = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+            if name not in ['playerID', '@videoPlayer', 'playerKey']: continue
+            value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+            getParams[name] = value
+        
+        mp4Tab = []
+        url = 'http://c.brightcove.com/services/viewer/htmlFederated?' + urllib.urlencode(getParams)
+        sts, data = self.getPage(url)
+        if sts:
+            data = self.cm.ph.getDataBeetwenMarkers(data, '"renditions":', ']', False)[1]
+            try:
+                printDBG(data)
+                data = byteify(json.loads(data+']'), '', True)
+                for item in data:
+                    if item['videoCodec'] != 'H264': continue
+                    url = item['defaultURL']
+                    if not self.cm.isValidUrl(url): continue
+                    name = '[mp4] bitrate: %s, %sx%s' % (item['encodingRate'], item['frameWidth'], item['frameHeight'])
+                    mp4Tab.append({'name':name, 'url':url, 'bitrate':item['encodingRate']})
+                    
+                    def __getLinkQuality( itemLink ):
+                        try: return int(itemLink['bitrate'])
+                        except Exception: return 0
+                    mp4Tab = CSelOneLink(mp4Tab, __getLinkQuality, 999999999).getSortedLinks()
+            except Exception:
+                printExc()
+        
         hlsUrl = 'http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=' + videoId
-        urlTab = getDirectM3U8Playlist(hlsUrl, checkContent=True, sortWithMaxBitrate=999999999)
+        hlsTab = getDirectM3U8Playlist(hlsUrl, checkContent=True, sortWithMaxBitrate=999999999)
+        for idx in range(len(hlsTab)):
+            hlsTab[idx]['name'] = '[hls] ' + hlsTab[idx]['name'].replace('None', '').strip()
+        
+        urlTab.extend(mp4Tab)
+        urlTab.extend(hlsTab)
         return urlTab
        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
