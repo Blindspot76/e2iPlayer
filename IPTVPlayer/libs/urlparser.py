@@ -1589,18 +1589,37 @@ class pageParser:
         else:
             return False
 
-    def parserRAPIDVIDEO(self, baseUrl):
-        if '/e/' not in baseUrl:
-            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|e|view|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
-            url = 'http://www.rapidvideo.com/e/'+video_id
+    def parserRAPIDVIDEO(self, baseUrl, getQualityLink=False):
+        retTab = []
+        
+        if not getQualityLink:
+            if '/e/' not in baseUrl:
+                video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '(?:embed|e|view|v)[/-]([A-Za-z0-9]+)[^A-Za-z0-9]')[0]
+                url = 'http://www.rapidvideo.com/e/'+video_id
+            else:
+                url = baseUrl
         else:
             url = baseUrl
         
         sts, data = self.cm.getPage(url)
         if not sts: return False
         
-        printDBG(data)
-        retTab = []
+        if not getQualityLink:
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, 'Quality:', '<script')[1]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
+            for item in tmp:
+                url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+                title = clean_html(item).strip()
+                if self.cm.isValidUrl(url):
+                    try:
+                        tmpTab = self.parserRAPIDVIDEO(url, True)
+                        for vidItem in tmpTab:
+                            vidItem['name'] = '%s - %s' % (title, vidItem['name'])
+                            retTab.append(vidItem)
+                    except Exception:
+                        pass
+            if len(retTab): return retTab[::-1]
+        
         try:
             tmp = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
             tmp = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
