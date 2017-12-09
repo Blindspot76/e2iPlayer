@@ -93,11 +93,21 @@ class MaxtvGO(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        article = self.getArticleContent(cItem, data)
+        if len(article):
+            title = article[0]['title']
+            icon = article[0]['images'][0]['url']
+            params = dict(cItem)
+            params.update({'good_for_fav':True, 'title':title, 'icon':icon})
+            self.addVideo(params)
+        
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'slajder_film'), ('<div', '>', 'chat_round'))[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
         for item in data:
             url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
             icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+            icon  = strwithmeta(icon, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT, 'Referer':cItem['url']})
             title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
             # 'category':nextCategory,
             params = dict(cItem)
@@ -140,6 +150,8 @@ class MaxtvGO(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>')
         for item in data:
@@ -147,7 +159,8 @@ class MaxtvGO(CBaseHostClass):
             if not self.cm.isValidUrl(url): continue
             type = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0]).lower()
             if 'mp4' in type:
-                retTab.append({'name':'direct', 'url':self.getFullUrl(url), 'need_resolve':0})
+                url = strwithmeta(self.getFullUrl(url), {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT, 'Referer':cItem['url']})
+                retTab.append({'name':'direct', 'url':url, 'need_resolve':0})
             else:
                 printDBG("Unknown source: [%s]" % item)
         

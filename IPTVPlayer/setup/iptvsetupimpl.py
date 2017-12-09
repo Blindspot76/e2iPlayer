@@ -231,8 +231,8 @@ class IPTVSetupImpl:
                 else: 
                     return False,True
             outCmdTab = []
-            outCmdTab.append('wget -q "http://iptvplayer.pl/resources/bin/mipsel/fputest" -O "%s/fputest" ; chmod 777 "%s/fputest" ; "%s/fputest" ; rm "%s/fputest" 2>/dev/null' % (self.tmpDir, self.tmpDir, self.tmpDir, self.tmpDir))
-            outCmdTab.append('wget -q "http://iptvplayer.vline.pl/resources/bin/mipsel/fputest" -O "%s/fputest" ; chmod 777 "%s/fputest" ; "%s/fputest" ; rm "%s/fputest" 2>/dev/null' % (self.tmpDir, self.tmpDir, self.tmpDir, self.tmpDir))
+            for resourceServer in self.resourceServers:
+                outCmdTab.append('wget -q "%sbin/mipsel/fputest" -O "%s/fputest" ; chmod 777 "%s/fputest" ; "%s/fputest" ; rm "%s/fputest" 2>/dev/null' % (resourceServer, self.tmpDir, self.tmpDir, self.tmpDir, self.tmpDir))
             self.workingObj = CCmdValidator(self.detectFPUFinished, _cmdValidator, outCmdTab)
             self.workingObj.start()
         
