@@ -597,7 +597,7 @@ def getF4MLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}):
             retPlaylists.append({'name':'[f4m/hds]', 'bitrate':0, 'url':link})
     return retPlaylists
     
-def getMPDLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}):
+def getMPDLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}, sortWithMaxBandwidth=-1):
     if checkExt and not manifestUrl.split('?')[0].endswith('.mpd'):
         return []
         
@@ -688,6 +688,15 @@ def getMPDLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}):
                 retPlaylists.append(audioItem)
             
             audioIdx += 1
+            
+    if sortWithMaxBandwidth > -1:
+        def __getLinkQuality( itemLink ):
+            try:
+                return int(itemLink['bandwidth'])
+            except Exception:
+                printExc()
+                return 0
+        retPlaylists = CSelOneLink(retPlaylists, __getLinkQuality, sortWithMaxBandwidth).getSortedLinks()
     
     return retPlaylists
     

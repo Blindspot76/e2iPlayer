@@ -141,38 +141,6 @@ class ForjaTN(CBaseHostClass):
         printDBG("ForjaTN.listMainMenu")
         self.listsTab(self.MAIN_CAT_TAB, cItem)
         
-    def listLists(self, cItem, nextCategory):
-        printDBG("ForjaTN.listLists [%s]" % cItem)
-        page = cItem.get('page', 0)
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        
-        nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'load-more'), ('</div', '>'))[1]
-        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''data\-url=['"]([^'^"]+?)['"]''')[0])
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'lista model'), ('<div', '>', 'media-container'))
-        for item in data:
-            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
-            title = self.cleanHtmlStr(item.split('<button', 1)[0])
-            
-            desc = []
-            tmp = self.cm.ph.getAllItemsBeetwenNodes(item, ('<div', '>', 'lista-stat'), ('</div', '>'))
-            for t in tmp:
-                t = self.cleanHtmlStr(t)
-                if t != '': desc.append(t)
-            desc = ' | '.join(desc)
-            desc += '[/br]' + self.cleanHtmlStr(item.split('</h4>', 1)[-1])
-
-            params = dict(cItem)
-            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
-            self.addDir(params)
-        
-        if self.cm.isValidUrl(nextPage):
-            params = dict(cItem)
-            params.update({'good_for_fav':False, 'title':_("Next page"), 'url':nextPage, 'page':page+1})
-            self.addDir(params)
-        
-        
     def listItems(self, cItem, nextCategory):
         printDBG("ForjaTN.listItems [%s]" % cItem)
         page = cItem.get('page', 1)

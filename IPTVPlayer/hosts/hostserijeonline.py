@@ -280,9 +280,6 @@ class SerijeOnline(CBaseHostClass):
     def tryTologin(self):
         printDBG('tryTologin start')
         
-        config.plugins.iptvplayer.serijeonline_login   
-        config.plugins.iptvplayer.serijeonline_password
-        
         if None == self.loggedIn or self.login != config.plugins.iptvplayer.serijeonline_login.value or\
             self.password != config.plugins.iptvplayer.serijeonline_password.value:
         
