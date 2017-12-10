@@ -131,6 +131,7 @@ class DokumentalneNET(CBaseHostClass):
         for item in data:
             url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
             icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''[\s'"](https?://[^'^"^\s]+?)\s*300w''')[0].strip())
+            if icon == '': icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<h3', '>'), ('</h3', '>'), False)[1])
             desc  = []
             tmp = self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'posted-on '), ('</div', '>'), False)[1]
@@ -165,7 +166,14 @@ class DokumentalneNET(CBaseHostClass):
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'player-embed'), ('</div', '>'))[1]
         videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
-        return self.up.getVideoLinkExt(videoUrl)
+        retTab = self.up.getVideoLinkExt(videoUrl)
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
+        for item in data:
+            if 'video/mp4' in item:
+                url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+                retTab.append({'name':self.up.getDomain(url), 'url':url})
+        return retTab
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
