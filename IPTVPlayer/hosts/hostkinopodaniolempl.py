@@ -94,7 +94,7 @@ class KinoPodAniolemPL(CBaseHostClass):
         printDBG("KinoPodAniolemPL.listMainMenu")
         if self.loggedIn:
             params = dict(cItem)
-            params.update({'category':'list_items', 'title':self.konto, 'url':self.getFullUrl('/konto')})
+            params.update({'category':'list_user_movies', 'title':self.konto, 'url':self.getFullUrl('/konto')})
             self.addDir(params)
         
         self.listsTab(self.MAIN_CAT_TAB, cItem)
@@ -150,8 +150,9 @@ class KinoPodAniolemPL(CBaseHostClass):
             for t in [release, duration, publish, categories, price]:
                 if t != '': desc.append(t)
             desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'description'), ('</div', '>'))[1])
+            otherInfo = {'i_title':title, 'i_price':price, 'i_duration':duration, 'i_release':release, 'i_publish':publish, 'i_categories':categories}
             params = dict(cItem)
-            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
+            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'other_info':otherInfo})
             self.addDir(params)
         
     def listItems(self, cItem, nextCategory):
@@ -170,10 +171,21 @@ class KinoPodAniolemPL(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':False, 'title':_("Next page"), 'url':nextPage, 'page':page+1})
             self.addDir(params)
-            
-            
+    
+    def listUserMovies(self, cItem, nextCategory):
+        printDBG("KinoPodAniolemPL.listUserMovies [%s]" % cItem)
         
-    def exploreItem(self, cItem, nextCategory):
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        data = re.compile('''<section[^>]+?usermovieslist[^>]+?>''').split(data)
+        if len(data): del data[0]
+        for item in data:
+            sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<h2', '>', 'section__title'), ('</h2', '>'))[1])
+            self.addMarker({'title':sectionTitle})
+            self._listItems(cItem, nextCategory, item)
+        
+    def exploreItem(self, cItem):
         printDBG("KinoPodAniolemPL.exploreItem")
         
         self.cacheLinks = []
@@ -233,43 +245,44 @@ class KinoPodAniolemPL(CBaseHostClass):
         self.tryTologin()
         return self.cacheLinks
     
-    def getArticleContent(self, cItem, data=None):
+    def getArticleContent(self, cItem):
         printDBG("KinoPodAniolemPL.getArticleContent [%s]" % cItem)
         
         self.tryTologin()
         
-        retTab = []
+        infoObj = cItem.get('other_info', {})
         
         otherInfo = {}
         
-        if data == None:
-            sts, data = self.getPage(cItem.get('prev_url', cItem['url']))
-            if not sts: return []
-            
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'row desc'), ('<div', '>', 'row'), False)[1]
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<p', '</p>')[1])
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h4', '</h4>')[1])
-        icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(data, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return []
         
-        keysMap = {'runtime':   'duration',
-                   'genre':     'genres',
-                   'actors':    'actors',
-                   'rating':    'rating',
-                   'released':  'released',
-                   'language':  'language',
-                   }
-        data = self.cm.ph.getAllItemsBeetwenNodes(data.split('</h4>', 1)[-1], ('<strong', '</strong'), ('<', '>'))
-        for item in data:
-            item = item.split(':', 1)
-            if len(item) != 2: continue
-            
-            marker = self.cleanHtmlStr(item[0]).lower()
-            if marker not in keysMap: continue
-            
-            if marker == 'rating': value = self.cm.ph.getSearchGroups(item[1], '''stars\-([0-9\-]+?)\.png''')[0].replace('-', '.') + '/5.0'
-            else: value  = self.cleanHtmlStr(item[1])
-            
-            otherInfo[keysMap[marker]] = value
+        title = infoObj.get('i_title', '')
+        desc = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'movie-meta__description'), ('</section', '>'))[1]
+        desc = re.compile('''<[/\s]*br[/\s]*>''').sub('[/br]', desc)
+        desc = self.cleanHtmlStr(desc)
+        icon  = cItem.get('icon', '')
+        
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'meta__duration'), ('</span', '>'))[1])
+        if tmp == '': tmp = infoObj.get('i_duration', '')
+        if tmp != '': otherInfo['duration'] =  tmp
+        
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'meta__year'), ('</span', '>'))[1])
+        if tmp == '': tmp = infoObj.get('i_release', '')
+        if tmp != '': otherInfo['released'] =  tmp
+        
+        tmp = infoObj.get('i_price', '')
+        if tmp != '': otherInfo['price'] =  tmp
+        
+        categories = []
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'elem-gatunek'), ('</ul', '>'), False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
+        for t in tmp:
+            t = self.cleanHtmlStr(t)
+            if t != '': categories.append(t)
+        tmp = ', '.join(categories)
+        if tmp == '': tmp = infoObj.get('i_categories', '')
+        if tmp != '': otherInfo['genres'] =  tmp
         
         if title == '': title = cItem['title']
         if desc == '':  desc = cItem.get('desc', '')
@@ -277,10 +290,8 @@ class KinoPodAniolemPL(CBaseHostClass):
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
         
-        
     def tryTologin(self):
         printDBG('KinoPodAniolemPL.tryTologin start')
-        
         
         if None == self.loggedIn or self.login != config.plugins.iptvplayer.kinopodaniolempl_login.value or\
             self.password != config.plugins.iptvplayer.kinopodaniolempl_password.value:
@@ -346,12 +357,12 @@ class KinoPodAniolemPL(CBaseHostClass):
             self.listCategories(self.currItem, 'list_sort')
         elif category == 'list_sort':
             self.listSort(self.currItem, 'list_items')
+        elif category == 'list_user_movies':
+            self.listUserMovies(self.currItem, 'explore_item')
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
-            self.exploreItem(self.currItem, 'list_episodes')
-        elif category == 'list_episodes':
-            self.listEpisodes(self.currItem)
+            self.exploreItem(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -370,6 +381,9 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, KinoPodAniolemPL(), True, [])
         
-    #def withArticleContent(self, cItem):
-    #    return cItem.get('good_for_fav', False)
+    def withArticleContent(self, cItem):
+        if  cItem.get('good_for_fav', False) or 'explore_item' == cItem.get('category', ''):
+            return True
+        return False
+        
     
