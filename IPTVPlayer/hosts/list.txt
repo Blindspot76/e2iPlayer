@@ -58,6 +58,7 @@ hostitvcom
 hostkabarety
 hostkijknl
 hostkinomanco
+hostkinopodaniolempl
 hostkinopokaz
 hostkinotan
 hostkinox
