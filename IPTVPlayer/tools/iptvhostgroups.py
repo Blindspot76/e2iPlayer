@@ -184,6 +184,10 @@ class IPTVHostsGroups:
                 disabledHosts.append(host)
         
         outObj['disabled_hosts'] = disabledHosts
+        
+        self.LOADED_DISABLED_HOSTS[groupName] = disabledHosts
+        self.CACHE_HOSTS[groupName] = hostsList
+        
         groupFile = self._getGroupFile(groupName)
         return self._saveHosts(outObj, groupFile)
         
