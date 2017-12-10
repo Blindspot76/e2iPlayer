@@ -65,6 +65,9 @@ class DokumentalneNET(CBaseHostClass):
                              {'category':'search_history',    'title': _('Search history')},
                             ]
         
+    def getFullUrl(self, url):
+        return CBaseHostClass.getFullUrl(self, url).replace('&#038;', '&')
+        
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
         origBaseUrl = baseUrl
