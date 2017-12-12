@@ -45,9 +45,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://www.tantifilm.top/'
-    
-    
+    return 'http://tantifilm.uno/'
 
 class TantiFilmOrg(CBaseHostClass):
  
@@ -60,7 +58,7 @@ class TantiFilmOrg(CBaseHostClass):
         self.cm.HEADER = self.HEADER # default header
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'http://www.tantifilm.top/'
+        self.MAIN_URL = 'http://tantifilm.uno/'
         self.DEFAULT_ICON_URL = 'https://raw.githubusercontent.com/Zanzibar82/images/master/posters/tantifilm.png'
         
         self.MAIN_CAT_TAB = [{'category':'list_categories',    'title': _('Categories'),                           'url':self.MAIN_URL  },
@@ -101,6 +99,11 @@ class TantiFilmOrg(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        
+        params = dict(cItem)
+        params.update({'category':nextCategory, 'title':'Film', 'url':self.getFullUrl('/film/')})
+        self.addDir(params)
+        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<nav id="ddmenu">', '</ul>', withMarkers=False)[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, "<li", '</li>', withMarkers=True)
         for item in data:
