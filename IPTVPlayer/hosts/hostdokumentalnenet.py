@@ -168,11 +168,17 @@ class DokumentalneNET(CBaseHostClass):
         videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
         retTab = self.up.getVideoLinkExt(videoUrl)
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
-        for item in data:
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False, False)
+        for item in tmp:
             if 'video/mp4' in item:
                 url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
                 retTab.append({'name':self.up.getDomain(url), 'url':url})
+        
+        if len(retTab) == 0:
+            tmp = re.compile('''['">\s](https?://[^'^"^<^\s]+?\.mp4)''').findall(data)
+            for url in tmp:
+                retTab.append({'name':self.up.getDomain(url), 'url':url})
+            
         return retTab
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
