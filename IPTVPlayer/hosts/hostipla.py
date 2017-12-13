@@ -60,6 +60,7 @@ class IplaTV(CBaseHostClass):
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
+        self.AJAX_URL = 'https://seeker.redefine.pl/ipla/multi.jsonp?callback=angular.callbacks._e&category_ids%5B%5D=&countries%5B%5D=&free=&letter=&page={0}&platform=www_ipla_tv&portal_id=ipla&query={1}&size=15&sort=score&sound=&top_category={2}&with_counters=true&year='
         
         self.cacheLinks    = {}
         self.cacheFilters  = {}
@@ -68,8 +69,8 @@ class IplaTV(CBaseHostClass):
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.MAIN_CAT_TAB = [
-                             #{'category':'search',         'title': _('Search'),          'search_item':True}, 
-                             #{'category':'search_history', 'title': _('Search history')},
+                             {'category':'search',         'title': _('Search'),          'search_item':True}, 
+                             {'category':'search_history', 'title': _('Search history')},
                             ]
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
@@ -96,6 +97,8 @@ class IplaTV(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url})
             self.addDir(params)
+        
+        self.listsTab(self.MAIN_CAT_TAB, cItem)
             
     def listCategories(self, cItem, nextCategory):
         printDBG("IplaTV.listCategories")
@@ -184,11 +187,76 @@ class IplaTV(CBaseHostClass):
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("IplaTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        cItem = dict(cItem)
-        if 0 == cItem.get('page', 0):
-            cItem['f_search_query'] = searchPattern
-            cItem['url'] = self.getFullUrl('/search/')
-        self.listItems(cItem, 'explore_category')
+        
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = self.getMainUrl()
+        
+        topCategory = cItem.get('f_search_category', '')
+        url = self.AJAX_URL.format(1, urllib.quote(searchPattern), topCategory)
+        
+        sts, data = self.getPage(url, params)
+        if not sts: return
+        
+        try:
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'angular.callbacks._e(', ');', False)[1]
+            data = byteify(json.loads(data))
+            
+            totall = 0
+            for item in data['counters']:
+                totall += item['count']
+            if totall > 0:
+                params = {'name':'category', 'category':'list_search_category', 'good_for_fav':False, 'title':'WSZYSTKO (%s)' % totall, 'f_search_pattern':searchPattern, 'f_search_totall':totall, 'f_search_category':''}
+                self.addDir(params)
+                
+            for item in data['counters']:
+                if item['count'] > 0:
+                    params = {'name':'category', 'category':'list_search_category', 'good_for_fav':False, 'title':'%s (%s)' % (item['category'], item['count']), 'f_search_pattern':searchPattern, 'f_search_totall':item['count'], 'f_search_category':item['category']}
+                    self.addDir(params)
+        except Exception:
+            printExc()
+            
+    def listSearchCategory(self, cItem, nextCategory):
+        printDBG("IplaTV.listSearchCategory [%s]" % cItem)
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = self.getMainUrl()
+        
+        searchPattern = cItem.get('f_search_pattern', '')
+        topCategory = cItem.get('f_search_category', '')
+        page = cItem.get('page', 1)
+        url = self.AJAX_URL.format(page, urllib.quote(searchPattern), topCategory)
+        
+        sts, data = self.getPage(url, params)
+        if not sts: return
+        
+        try:
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'angular.callbacks._e(', ');', False)[1]
+            data = byteify(json.loads(data))
+            
+            totall = cItem['f_search_totall']
+            count  = cItem.get('f_search_count', 0) + len(data['results'])
+            
+            for item in data['results']:
+                title = self.cleanHtmlStr(item['title'])
+                desc  = self.cleanHtmlStr(item.get('description', ''))
+                if 'category' == item['_type']:
+                    url = self.getFullUrl('/kategoria/%s' % item['id'])
+                    icon = item.get('image', '')
+                    params = {'good_for_fav':True, 'category':'explore_category', 'title':title, 'url':url, 'icon':icon, 'desc':desc}
+                    self.addDir(params)
+                elif 'vod' == item['_type']:
+                    url = self.getFullUrl('/wideo/vod-%s' % item['id'])
+                    icon = item.get('thumbnail_136x77', '')
+                    params= {'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
+                    self.addVideo(params)
+            
+            if count < totall:
+                params = dict(cItem)
+                params.update({'title':_('Next page'), 'page':page + 1, 'f_search_count':count})
+                self.addDir(params)
+        except Exception:
+            printExc()
         
     def getLinksForVideo(self, cItem):
         printDBG("IplaTV.getLinksForVideo [%s]" % cItem)
@@ -234,56 +302,6 @@ class IplaTV(CBaseHostClass):
         
         return retTab
         
-    def getArticleContent(self, cItem, data=None):
-        printDBG("IplaTV.getArticleContent [%s]" % cItem)
-        
-        retTab = []
-        
-        otherInfo = {}
-        
-        if data == None:
-            sts, data = self.getPage(cItem.get('prev_url', cItem['url']))
-            if not sts: return []
-        
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'plot'), ('</div', '>'), False)[1])
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<h1', '>', 'big-title'), ('</h1', '>'), False)[1])
-        icon  = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'avatar-container'), ('</div', '>'), False)[1]
-        icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
-        
-        otherInfo['rating']   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'item-vote'), ('</div', '>'), False)[1].split('</span>', 1)[-1])
-        otherInfo['released'] = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<strong', '</strong>', 'Fecha'), ('</div', '>'), False)[1])
-        otherInfo['duration'] = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<strong', '</strong>', 'Duración'), ('</div', '>'), False)[1])
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<strong', '</strong>', 'Género'), ('</ul', '>'), False)[1]
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
-        tmpTab = []
-        for t in tmp:
-            t = self.cleanHtmlStr(t)
-            if t != '': tmpTab.append(t)
-        otherInfo['genres'] = ', '.join(tmpTab)
-        
-        objRe = re.compile('<div[^>]+?text\-sub[^>]+?>')
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<li', '>', 'star-container'), ('</li', '>'), False)
-        stars = []
-        directors = []
-        for t in tmp:
-            t = objRe.split(t, 1)
-            t[0] = self.cleanHtmlStr(t[0])
-            if t[0] == '': continue
-            if 2 == len(t):
-                t[1] = self.cleanHtmlStr(t[1])
-                if t[1] == 'Director':
-                    directors.append(t[0])
-                    continue
-            stars.append(t[0])
-        if len(directors): otherInfo['director'] = ', '.join(directors)
-        if len(stars): otherInfo['stars'] = ', '.join(stars)
-        
-        if title == '': title = cItem['title']
-        if desc == '':  desc = cItem.get('desc', '')
-        if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
-    
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -311,6 +329,8 @@ class IplaTV(CBaseHostClass):
             self.exploreItem(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
+        elif category == 'list_search_category':
+            self.listSearchCategory(self.currItem, 'explore_category')
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -328,9 +348,5 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, IplaTV(), True, [])
-        
-    #def withArticleContent(self, cItem):
-    #    return cItem.get('good_for_fav', False)
-    
     
     
