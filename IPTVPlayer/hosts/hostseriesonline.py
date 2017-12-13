@@ -491,9 +491,11 @@ class SeriesOnlineIO(CBaseHostClass):
             sp = '='
         
         for item in tmp:
-            url  = self.cm.ph.getSearchGroups(item, r'''['"]?{0}['"]?\s*{1}\s*['"](https?://[^"^']+)['"]'''.format(urlAttrName, sp))[0]
+            url  = self.cm.ph.getSearchGroups(item, r'''['"]?{0}['"]?\s*{1}\s*['"]((:?https?:)?//[^"^']+)['"]'''.format(urlAttrName, sp))[0]
             name = self.cm.ph.getSearchGroups(item, r'''['"]?label['"]?\s*{0}\s*['"]([^"^']+)['"]'''.format(sp))[0]
-            
+            if url == '' or 'error.com' in url: continue
+            if url.startswith('//'): url = 'https:' + url
+                
             printDBG('---------------------------')
             printDBG('url:  ' + url)
             printDBG('name: ' + name)
@@ -501,7 +503,7 @@ class SeriesOnlineIO(CBaseHostClass):
             printDBG(item)
             
             if 'mp4' in item:
-                urlTab.append({'name':name, 'url':url})
+                urlTab.append({'name':self.up.getDomain(url) + ' ' + name, 'url':url})
             elif 'captions' in item:
                 format = url[-3:]
                 if format in ['srt', 'vtt']:
