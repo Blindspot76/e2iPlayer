@@ -108,6 +108,8 @@ class IPTVSetupImpl:
         
         self.binaryInstalledSuccessfully = False
         self.tries = 0
+        self.hasAbiFlags = None
+        self.abiFP = None
         
     def __del__(self):
         printDBG("IPTVSetupImpl.__del__ -------------------------------")
@@ -219,6 +221,9 @@ class IPTVSetupImpl:
                     config.plugins.iptvplayer.plarformfpuabi.value = val
                     config.plugins.iptvplayer.plarformfpuabi.save()
                     configfile.save()
+                self.hasAbiFlags = hasAbiFlags
+                self.abiFP = abiFP
+            printDBG(">> detectFPU hasAbiFlags[%s] abiFP[%s] -> [%s]" % (self.hasAbiFlags, self.abiFP, IsFPUAvailable()))
         
         if config.plugins.iptvplayer.plarform.value != 'mipsel' or IsFPUAvailable() or config.plugins.iptvplayer.plarformfpuabi.value != '':
             self.getOpensslVersion()
@@ -552,10 +557,14 @@ class IPTVSetupImpl:
                 if 'Author: BYVoid' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            fpuVer = ''
+            if 'mipsel' == self.platform and self.hasAbiFlags and self.abiFP == 'soft_float':
+                fpuVer = '_softfpu'
+            
             if self.binaryInstalledSuccessfully:
-                url = server + 'bin/' + platform + ('/%s' % binName) + '_static_libstdc++'
+                url = server + 'bin/' + platform + ('/%s%s' % (binName, fpuVer)) + '_static_libstdc++'
                 self.binaryInstalledSuccessfully = False
-            else: url = server + 'bin/' + platform + ('/%s' % binName)
+            else: url = server + 'bin/' + platform + ('/%s%s' % (binName, fpuVer))
                 
             tmpFile = tmpPath + binName
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
@@ -783,10 +792,14 @@ class IPTVSetupImpl:
                 if 'F4MDump v' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            fpuVer = ''
+            if 'mipsel' == self.platform and self.hasAbiFlags and self.abiFP == 'soft_float':
+                fpuVer = '_softfpu'
+            
             if self.binaryInstalledSuccessfully:
-                url = server + 'bin/' + platform + ('/%s_openssl' % binName) + openSSLVersion + '_static_libstdc++'
+                url = server + 'bin/' + platform + ('/%s%s_openssl' % (binName, fpuVer)) + openSSLVersion + '_static_libstdc++'
                 self.binaryInstalledSuccessfully = False
-            else: url = server + 'bin/' + platform + ('/%s_openssl' % binName) + openSSLVersion
+            else: url = server + 'bin/' + platform + ('/%s%s_openssl' % (binName, fpuVer)) + openSSLVersion
                 
             tmpFile = tmpPath + binName
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
@@ -884,7 +897,11 @@ class IPTVSetupImpl:
                     if '{"GSTPLAYER_EXTENDED":{"version":' in dataTab[idx]: sts, retPath = True, paths[idx]
                 return sts, retPath
             def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
-                url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + self.gstreamerVersion
+                fpuVer = ''
+                if 'mipsel' == self.platform and self.gstreamerVersion == "1.0" and self.hasAbiFlags and self.abiFP == 'soft_float':
+                    fpuVer = '_softfpu'
+
+                url = server + 'bin/' + platform + ('/%s%s_gstreamer' % (binName, fpuVer)) + self.gstreamerVersion
                 tmpFile = tmpPath + binName
                 cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
                 return cmd
@@ -967,7 +984,10 @@ class IPTVSetupImpl:
             if -1 < currentSize: sts, retPath = True, paths[0]
             return sts, retPath
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
-            url = server + 'bin/' + platform + ('/%s_gstreamer' % binName) + "1.0"
+            fpuVer = ''
+            if 'mipsel' == self.platform and self.hasAbiFlags and self.abiFP == 'soft_float':
+                fpuVer = '_softfpu'
+            url = server + 'bin/' + platform + ('/%s%s_gstreamer' % (binName, fpuVer)) + "1.0"
             tmpFile = tmpPath + binName
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
