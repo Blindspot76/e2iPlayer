@@ -51,7 +51,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://series9.io/'
+    return 'https://series9.co/'
 
 class SeriesOnlineIO(CBaseHostClass):
  
@@ -241,7 +241,7 @@ class SeriesOnlineIO(CBaseHostClass):
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
     def selectDomain(self):
-        domains = ['https://series9.io/'] #'http://123movieshd.us/'
+        domains = ['https://series9.co/'] #'http://123movieshd.us/'
         domain = config.plugins.iptvplayer.seriesonlineio_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -264,7 +264,7 @@ class SeriesOnlineIO(CBaseHostClass):
                 break
         
         if confirmedDomain == None:
-            self.MAIN_URL = 'https://series9.io/'
+            self.MAIN_URL = 'https://series9.co/'
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
         #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'

@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, WriteTextFile, ReadTextFile
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 ###################################################
 
 ###################################################
@@ -199,13 +200,13 @@ class ForjaTN(CBaseHostClass):
         
         if type == 'series':
             seasonsTab = []
-            data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'episodes'), ('</div', '>'))[1]
             data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'episode-container'), ('</div', '>'))
+            printDBG(data)
             for item in data:
                 season = self.cm.ph.getSearchGroups(item, '''season=['"]([^'^"]+?)['"]''')[0]
                 icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''data\-original=['"]([^'^"]+?)['"]''')[0])
                 url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''episode\-url=['"]([^'^"]+?)['"]''')[0])
-                title  = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''episode\-name=['"]([^'^"]+?)['"]''')[0])
+                title  = '%s - %s' % (cItem['title'], self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''episode\-name=['"]([^'^"]+?)['"]''')[0]))
                 if season not in seasonsTab:
                     self.cacheEpisodes[season] = []
                     seasonsTab.append(season)
@@ -213,6 +214,7 @@ class ForjaTN(CBaseHostClass):
             for season in seasonsTab:
                 params = dict(cItem)
                 params.update({'good_for_fav':False, 'category':nextCategory, 'title':season, 's_num':season})
+                self.addDir(params)
         else:
             url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^"^']*?youtube[^"^']+?)['"]''', 1, True)[0])
             if url != '':
@@ -253,31 +255,66 @@ class ForjaTN(CBaseHostClass):
             return self.up.getVideoLinkExt(videoUrl)
         
         retTab = []
+        subTracksTab = []
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.src(', ')')[1]
-        vidType = self.cm.ph.getSearchGroups(tmp, '''type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
-        vidUrl  = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''src['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0])
-        
-        if not self.cm.isValidUrl(vidUrl): return []
-        
-        if 'x-mpegurl' in vidType:
-            retTab = getDirectM3U8Playlist(vidUrl, checkExt=False, checkContent=True, cookieParams=self.defaultParams)
-        elif 'mp4' in vidType:
-            retTab.append({'name':'mp4', 'url':vidUrl})
-
-        subTracksTab = []
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '>')
-        for item in data:
-            if 'caption' not in item: continue
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
-            if not self.cm.isValidUrl(url): continue
-            lang  = self.cm.ph.getSearchGroups(item, '''srclang=['"]([^'^"]+?)['"]''')[0]
-            title = self.cm.ph.getSearchGroups(item, '''label=['"]([^'^"]+?)['"]''')[0]
-            subTracksTab.append({'title':title, 'url':url, 'lang':lang, 'format':'vtt'})
+        if cItem.get('f_type', '') == 'episode':
+            episodeId = cItem['url']
+            if episodeId.endswith('/'): episodeId = episodeId[-1]
+            episodeId = '/'.join(episodeId.split('/')[-2:])
+            
+            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''episodes\s*='''), re.compile('''];'''), False)[1]
+            data = data.strip() + ']'
+            ret = iptv_js_execute( 'print(JSON.stringify(%s));' % data)
+            if ret['sts'] and 0 == ret['code']:
+                try:
+                    data = byteify(json.loads(ret['data']), '', True)
+                    for eItem in data:
+                        if episodeId not in eItem.get('poster', ''): continue
+                        for item in eItem['sources']:
+                            vidType = item['type'].lower()
+                            vidUrl  = self.getFullUrl(item['src']).replace(' ', '%20')
+                            name    = self.cleanHtmlStr(item['label'])
+                            tmpTab = []
+                            if 'x-mpegurl' in vidType:
+                                tmpTab = getDirectM3U8Playlist(vidUrl, checkExt=False, checkContent=True, cookieParams=self.defaultParams)
+                            elif 'mp4' in vidType:
+                                tmpTab.append({'name':'mp4', 'url':vidUrl})
+                            
+                            for idx in range(len(tmpTab)):
+                                tmpTab[idx]['name'] = '[%s] %s' % (name, tmpTab[idx]['name'])
+                            retTab.extend(tmpTab)
+                        
+                        for item in eItem['textTracks']:
+                            if item.get('kind', '') != 'captions': continue
+                            subTracksTab.append({'title':item['label'], 'url':self.getFullUrl(item['src']), 'lang':item['language'], 'format':'vtt'})
+                        
+                        break
+                except Exception:
+                    printExc()
+        else:
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.src(', ')')[1]
+            vidType = self.cm.ph.getSearchGroups(tmp, '''type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
+            vidUrl  = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''src['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0])
+            
+            if not self.cm.isValidUrl(vidUrl): return []
+            
+            if 'x-mpegurl' in vidType:
+                retTab = getDirectM3U8Playlist(vidUrl, checkExt=False, checkContent=True, cookieParams=self.defaultParams)
+            elif 'mp4' in vidType:
+                retTab.append({'name':'mp4', 'url':vidUrl})
+            
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '>')
+            for item in data:
+                if 'caption' not in item: continue
+                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+                if not self.cm.isValidUrl(url): continue
+                lang  = self.cm.ph.getSearchGroups(item, '''srclang=['"]([^'^"]+?)['"]''')[0]
+                title = self.cm.ph.getSearchGroups(item, '''label=['"]([^'^"]+?)['"]''')[0]
+                subTracksTab.append({'title':title, 'url':url, 'lang':lang, 'format':'vtt'})
         
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         for idx in range(len(retTab)):
