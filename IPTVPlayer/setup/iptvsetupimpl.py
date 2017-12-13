@@ -222,7 +222,7 @@ class IPTVSetupImpl:
                     config.plugins.iptvplayer.plarformfpuabi.save()
                     configfile.save()
                 self.hasAbiFlags = hasAbiFlags
-                self.abiFP = abiFP
+                self.abiFP = val
             printDBG(">> detectFPU hasAbiFlags[%s] abiFP[%s] -> [%s]" % (self.hasAbiFlags, self.abiFP, IsFPUAvailable()))
         
         if config.plugins.iptvplayer.plarform.value != 'mipsel' or IsFPUAvailable() or config.plugins.iptvplayer.plarformfpuabi.value != '':
