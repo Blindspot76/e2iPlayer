@@ -58,7 +58,7 @@ class NaszeKinoOnline(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.MAIN_URL = 'https://nasze-kino.online/'
+        self.MAIN_URL = 'https://www.nasze-kino.online/'
         self.DEFAULT_ICON_URL = self.MAIN_URL + 'images/robored/misc/logo.png'
         
         self.MAIN_CAT_TAB = [{'category':'search',            'title': _('Search'), 'search_item':True,         'icon':self.DEFAULT_ICON_URL},
