@@ -150,7 +150,7 @@ class Movs4uCOM(CBaseHostClass):
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="content">', '<div class="fixed-sidebar-blank">')[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'class="content'), ('<div', '>', 'class="fixed-sidebar-blank"'))[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<article', '</article>')
         for item in data:
             url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
