@@ -15,7 +15,7 @@ from Screens.MessageBox  import MessageBox
 from Components.config   import config, configfile
 from Tools.BoundFunction import boundFunction
 from Tools.Directories   import resolveFilename, SCOPE_PLUGINS
-from os                  import path as os_path, chmod as os_chmod, remove as os_remove, listdir as os_listdir, getpid as os_getpid
+from os                  import path as os_path, chmod as os_chmod, remove as os_remove, listdir as os_listdir, getpid as os_getpid, symlink as os_symlink
 import re
 ###################################################
 
@@ -357,6 +357,45 @@ class IPTVSetupImpl:
             #if self.platform != 'mipsel':
             #    self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.TYPE_WARNING, self.getGstreamerVer )
             #    return
+            
+            # check if link for libssl.so.1.0.0 and libcrypto.so.1.0.0 are needed
+            openSSlVerMap = {}
+            for ver in ['.1.0.0', '.1.0.2']:
+                for path in ['/usr/lib/', '/lib/', '/usr/local/lib/', '/local/lib/']:
+                    for library in ['libssl.so', 'libcrypto.so']:
+                        library += ver
+                        fullLibraryPath = os_path.join(path, library)
+                        if os_path.isfile(fullLibraryPath):
+                            openSSlVerMap[library] =  fullLibraryPath
+            
+            linksTab = []
+            for library in ['libssl.so', 'libcrypto.so']:
+                if (library + '.1.0.0') not in openSSlVerMap and (library +'.1.0.2') in openSSlVerMap:
+                    linksTab.append([openSSlVerMap[library + '.1.0.2'], openSSlVerMap[library + '.1.0.2'][:-1] + '0'])
+            
+            # there is need to create symlinks for libssl.so.1.0.0 and libcrypto.so.1.0.0
+            if len(linksTab):
+                symlinksText = []
+                for item in linksTab:
+                    symlinksText.append('%s -> %s' % (item[0], item[1]))
+                msg = _("OpenSSL in your image has different library names then these used by IPTVPlayer.\nThere is need to create following symlinks:\n%s\nto be able to install binary components from IPTVPlayer server.\nDo you want to proceed?" % ('\n'.join(symlinksText)))
+                self.showMessage(msg, MessageBox.TYPE_YESNO, boundFunction(self.createOpenSSLSymlinks, linksTab) )
+                return                
+            
+        self.getGstreamerVer()
+    
+    ###################################################
+    # STEP: OpenSSL create symlinks 1.0.2 -> 1.0.0
+    ###################################################
+    def createOpenSSLSymlinks(self, linksTab=[], arg=None):
+        try:
+            if arg and len(linksTab):
+                for item in linksTab:
+                    os_symlink(item[0], item[1])
+        except Exception as e:
+            self.showMessage(_('Create OpenSSL symlinks failed with following error "%s".\nSome functions may not work correctly.') % e, MessageBox.TYPE_WARNING, self.getGstreamerVer)
+            return
+        
         self.getGstreamerVer()
         
     ###################################################
@@ -854,7 +893,10 @@ class IPTVSetupImpl:
                 if '{"EPLAYER3_EXTENDED":{"version":' in dataTab[idx]: sts, retPath = True, paths[idx]
             return sts, retPath
         def _downloadCmdBuilder(ffmpegVersion, binName, platform, openSSLVersion, server, tmpPath):
-            url = server + 'bin/' + platform + ('/%s_ffmpeg' % binName) + ffmpegVersion
+            fpuVer = ''
+            if 'mipsel' == self.platform and self.hasAbiFlags and self.abiFP == 'soft_float':
+                fpuVer = '_softfpu'
+            url = server + 'bin/' + platform + ('/%s%s_ffmpeg' % (binName, fpuVer)) + ffmpegVersion
             tmpFile = tmpPath + binName
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
