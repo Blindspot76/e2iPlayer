@@ -2932,8 +2932,8 @@ class pageParser:
         
     def parserMYCLOUDTO(self, baseUrl):
         printDBG("parserMYCLOUDTO baseUrl[%r]" % baseUrl)
-        header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36', 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate'}
-        
+        baseUrl = strwithmeta(baseUrl)
+        header = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36', 'Referer':baseUrl.meta.get('Referer', baseUrl), 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate'}
         
         sts, data = self.cm.getPage(baseUrl, {'header': header})
         if not sts: return False

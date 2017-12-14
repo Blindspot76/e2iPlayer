@@ -46,7 +46,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://arconai.tv/'
+    return 'http://arconaitv.us/'
 
 class ArconaitvME(CBaseHostClass):
  
@@ -58,7 +58,7 @@ class ArconaitvME(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.MAIN_URL      = 'http://www.arconai.tv/'
+        self.MAIN_URL      = 'https://www.arconaitv.us/'
         self.DEFAULT_ICON_URL  = "https://raw.githubusercontent.com/piplongrun/arconaitv.bundle/master/Contents/Resources/icon-default.jpg"
 
         self.MAIN_CAT_TAB = [{'category':'list_main',      'title': _('Main'),      'url':self.MAIN_URL},
@@ -179,7 +179,7 @@ class ArconaitvME(CBaseHostClass):
                         playerUrl = decoded
             except Exception:
                 printExc()
-        playerUrl = strwithmeta(playerUrl, {'Referer':cItem['url'], 'Origin':self.getMainUrl()})
+        playerUrl = strwithmeta(playerUrl, {'User-Agent':self.HEADER['User-Agent'], 'Referer':cItem['url'], 'Origin':self.getMainUrl()})
         
         if self.cm.isValidUrl(playerUrl):
             tmp = getDirectM3U8Playlist(playerUrl, checkContent=True)

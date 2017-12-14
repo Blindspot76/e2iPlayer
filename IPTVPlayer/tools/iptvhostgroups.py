@@ -89,7 +89,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['hungarian']        = ['youtube','mooviecc','filmezz','mozicsillag','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['arabic']           = ['youtube','webstream','egybest','dardarkomcom','movs4ucom','movizlandcom','shahiidanimenet','dailymotion','twitchtv','hitboxtv','forjatn']
         self.PREDEFINED_HOSTS['greek']            = ['youtube','gamatotvme','xrysoise','gamatocom','greekdocumentaries3','dailymotion','twitchtv','hitboxtv']
-        self.PREDEFINED_HOSTS['latino']           = ['youtube','plusdede','mrpiracy','dailymotion','twitchtv','hitboxtv']
+        self.PREDEFINED_HOSTS['latino']           = ['youtube','plusdede','mrpiracy','solarmovie','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['italian']          = ['youtube','tantifilmorg','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['swedish']          = ['youtube','dailymotion','svtplayse','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['balkans']          = ['youtube','filmativa','filmovizijastudio','filma24hdcom','crtankocom','serijeonline','dailymotion','twitchtv','hitboxtv']

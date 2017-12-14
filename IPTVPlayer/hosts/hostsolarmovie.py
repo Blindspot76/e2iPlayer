@@ -363,6 +363,7 @@ class SolarMovie(CBaseHostClass):
         
     def getVideoLinks(self, videoUrl):
         printDBG("SolarMovie.getVideoLinks [%s]" % videoUrl)
+        baseUrl = videoUrl
         videoUrl = strwithmeta(videoUrl)
         urlTab = []
         
@@ -443,7 +444,7 @@ class SolarMovie(CBaseHostClass):
             printExc()
 
         if self.cm.isValidUrl(videoUrl) and 0 == len(urlTab):
-            urlTab = self.up.getVideoLinkExt(videoUrl)
+            urlTab = self.up.getVideoLinkExt(strwithmeta(videoUrl, {'Referer':baseUrl}))
         
         if self.cm.isValidUrl(subTrack):
             format = subTrack[-3:]
