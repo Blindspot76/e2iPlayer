@@ -97,6 +97,7 @@ hostplusdede
 hostplwwecom
 hostquesttvcouk
 hostrteieplayer
+hostserialeco
 hostserialnet
 hostserienstreamto
 hostseriesonline
