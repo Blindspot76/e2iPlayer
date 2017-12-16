@@ -74,7 +74,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['science']          = ['questtvcouk','fokustv','dailymotion','ustreamtv','dokumentalnenet']
         
         self.PREDEFINED_HOSTS['polish']           = ['youtube','webstream','filmyto','alltubetv','kinomanco','ekinotv','cdapl','paczamy','iitvpl','videopenny','zalukajcom','naszekinoonline','serialnet','tvpvod','ipla','tvnvod','vodpl', \
-                                                     'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajeczkiorg','animeodcinki','anyfiles','playpuls','meczykipl','fokustv','eskago','filmydokumentalneeu', \
+                                                     'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajkipopolskucom','bajeczkiorg','animeodcinki','anyfiles','playpuls','meczykipl','fokustv','eskago','filmydokumentalneeu', \
                                                      'tvjworg','dailymotion', 'kabarety','twitchtv','hitboxtv','tvgrypl','chomikuj','fighttube','plwwecom','spryciarze','wgrane','wolnelekturypl','tvn24','ninateka', \
                                                      'maxtvgo','wptv', 'kinopodaniolempl', 'dokumentalnenet']
         self.PREDEFINED_HOSTS['english']          = ['youtube','webstream','liveleak','bbciplayer','tvplayercom','itvcom','uktvplay','appletrailers','classiccinemaonline','gomovies','seriesonline','mythewatchseries', \
