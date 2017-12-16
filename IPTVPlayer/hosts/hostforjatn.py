@@ -306,15 +306,16 @@ class ForjaTN(CBaseHostClass):
             elif 'mp4' in vidType:
                 retTab.append({'name':'mp4', 'url':vidUrl})
             
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '>')
-            for item in data:
-                if 'caption' not in item: continue
-                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
-                if not self.cm.isValidUrl(url): continue
-                lang  = self.cm.ph.getSearchGroups(item, '''srclang=['"]([^'^"]+?)['"]''')[0]
-                title = self.cm.ph.getSearchGroups(item, '''label=['"]([^'^"]+?)['"]''')[0]
-                subTracksTab.append({'title':title, 'url':url, 'lang':lang, 'format':'vtt'})
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<video', '</video>')
+            for tmp in data:
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<track', '>')
+                for item in tmp:
+                    if 'caption' not in item: continue
+                    url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+                    if not self.cm.isValidUrl(url): continue
+                    lang  = self.cm.ph.getSearchGroups(item, '''srclang=['"]([^'^"]+?)['"]''')[0]
+                    title = self.cm.ph.getSearchGroups(item, '''label=['"]([^'^"]+?)['"]''')[0]
+                    subTracksTab.append({'title':title, 'url':url, 'lang':lang, 'format':'vtt'})
         
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         for idx in range(len(retTab)):
