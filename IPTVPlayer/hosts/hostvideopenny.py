@@ -92,7 +92,7 @@ class VideoPenny(CBaseHostClass):
                              {'category':'list_programs',       'title': 'Programy online',   'url':self.getFullUrl('category/programy-rozrywkowe/')},
                              {'category':'list_sort_filter',    'title': 'Filmy',             'url':self.getFullUrl('/category/filmy-pl/')},
                              {'category':'list_sort_filter',    'title': 'Bajki',             'url':self.getFullUrl('/category/bajki/')},
-                             {'category':'list_last',           'title': 'Ostatnio dodane',   'url':self.getFullUrl('/new-header/')},
+                             {'category':'list_last',           'title': 'Ostatnio dodane',   'url':self.getFullUrl('/ostatnio-dodane/')},
                              
                              {'category':'search',          'title': _('Search'), 'search_item':True, },
                              {'category':'search_history',  'title': _('Search history'),             } 
@@ -231,7 +231,7 @@ class VideoPenny(CBaseHostClass):
         for section in data:
             sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(section, '<h2', '</h2>')[1])
             if sectionTitle == '': sectionTitle = 'Inne'
-            section = section.split('<div class="video-item format-video">')
+            section = section.split('<div class="video-item format')
             if len(section): del section[0]
             itemsTab = []
             for item in section:
