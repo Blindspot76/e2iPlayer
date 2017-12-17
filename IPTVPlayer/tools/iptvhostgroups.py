@@ -64,7 +64,8 @@ class IPTVHostsGroups:
                                                      'solarmovie','mythewatchseries','thewatchseriesto','classiccinemaonline','gomovies','seriesonline','vumooch','movie4kto','dardarkomcom','movs4ucom','movizlandcom', \
                                                      'sovdub','kinopokaz','cinemay','icefilmsinfo','hdkinomir','kinotan','egybest','dpstreamingcx','librestream','streamcomplet','skstream','filmstreamvkcom', \
                                                      'filmpalast','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','treetv','mozicsillag','filmezz','gamatocom','xrysoise','gamatotvme','mooviecc','mrpiracy', \
-                                                     'plusdede','filmativa','filmovizijastudio','filma24hdcom','serijeonline','kinox','video4k','cartoonhd','worldfree4u','tantifilmorg','forjatn', 'kinopodaniolempl', 'serialeco', 'faselhdcom']
+                                                     'plusdede','filmativa','filmovizijastudio','filma24hdcom','serijeonline','kinox','video4k','cartoonhd','worldfree4u','tantifilmorg','forjatn', 'kinopodaniolempl', 'serialeco', 'faselhdcom', \
+                                                     'darshowcom']
         self.PREDEFINED_HOSTS['cartoonsandanime'] = ['bajeczkiorg','kreskowkazone','kreskoweczki','bajkipopolskucom','animeodcinki','anyfiles','9anime','9cartoonme','kisscartoonme','chiaanimeco','shahiidanimenet', \
                                                      'otakufr','crtankocom',]
         self.PREDEFINED_HOSTS['sport']            = ['webstream','plwwecom','meczykipl','ekstraklasatv','laola1tv','ourmatchnet','hoofootcom','okgoals','ngolos','watchwrestlinguno','watchwrestling','fighttube','fightvideo', \
@@ -87,7 +88,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['french']           = ['youtube','skstream','filmstreamvkcom','streamcomplet','dpstreamingcx','librestream','cinemay','otakufr','movie4kto','dailymotion','twitchtv','hitboxtv','forjatn']
         self.PREDEFINED_HOSTS['russian']          = ['youtube','treetv','kinotan','hdkinomir','sovdub','kinopokaz','movie4kto','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['hungarian']        = ['youtube','mooviecc','filmezz','mozicsillag','dailymotion','twitchtv','hitboxtv']
-        self.PREDEFINED_HOSTS['arabic']           = ['youtube','webstream','egybest','dardarkomcom','movs4ucom','movizlandcom','shahiidanimenet','dailymotion','twitchtv','hitboxtv','forjatn','faselhdcom']
+        self.PREDEFINED_HOSTS['arabic']           = ['youtube','webstream','egybest','dardarkomcom','movs4ucom','movizlandcom','shahiidanimenet','dailymotion','twitchtv','hitboxtv','forjatn','faselhdcom','darshowcom']
         self.PREDEFINED_HOSTS['greek']            = ['youtube','gamatotvme','xrysoise','gamatocom','greekdocumentaries3','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['latino']           = ['youtube','plusdede','mrpiracy','solarmovie','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['italian']          = ['youtube','tantifilmorg','dailymotion','twitchtv','hitboxtv']
