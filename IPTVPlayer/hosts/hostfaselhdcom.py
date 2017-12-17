@@ -256,7 +256,7 @@ class FaselhdCOM(CBaseHostClass):
         for item in tmp:
             marker = self.cm.ph.getSearchGroups(item, '''href=['"]#([^"^']+?)['"]''')[0]
             name   = self.cleanHtmlStr(item)
-            dat = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', marker), ('</div', '>'))[1]
+            dat = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', marker), ('<iframe', '>'))[1]
             url = self.getFullUrl(self.cm.ph.getSearchGroups(dat, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
             retTab.append({'name':name, 'url':self.getFullUrl(url), 'need_resolve':1})
             
