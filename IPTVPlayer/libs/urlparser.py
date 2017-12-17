@@ -3453,8 +3453,9 @@ class pageParser:
             data2 = None
         else:
             data2 = data
-            qualities.append({'title':'default', 'url':baseUrl})
+            qualities.append({'title':'', 'url':baseUrl})
         
+        titlesMap = {0:'SD', 1:'HD'}
         for item in qualities:
             if data2 == None:
                 sts, data2 = self.cm.getPage( item['url'], params)
@@ -3462,18 +3463,19 @@ class pageParser:
                     data2 = None
                     continue
             data2 = self.cm.ph.getDataBeetwenMarkers(data2, '.setup(', '}', False)[1]
-            #printDBG(data2)
             rtmpUrls = re.compile('''(rtmp[^"^']+?)["'&]''').findall(data2)
             for idx in range(len(rtmpUrls)):
                 rtmpUrl = urllib.unquote(rtmpUrls[idx])
                 if len(rtmpUrl):
                     rtmpUrl = rtmpUrl + ' swfUrl=%s live=1 pageUrl=%s' % (SWF_URL, baseUrl)
-                    urlTab.append({'name':'{0}. '.format(idx+1) + item['title'], 'url':rtmpUrl})
+                    title = item['title']
+                    if title == '': title = titlesMap.get(idx, 'default')
+                    urlTab.append({'name':'[rtmp] ' + title, 'url':rtmpUrl})
             data2 = None
         
         if len(urlTab):
             printDBG(urlTab)
-            return urlTab
+            return urlTab[::-1]
         
         # get connector link
         data = self.cm.ph.getSearchGroups(data, "'(http://goldvod.tv/tv-connector/[^']+?\.smil[^']*?)'")[0]
