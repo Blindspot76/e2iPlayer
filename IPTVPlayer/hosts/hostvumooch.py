@@ -15,6 +15,8 @@ from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 ###################################################
 # FOREIGN import
 ###################################################
+import time
+import urlparse
 import re
 import urllib
 import base64
@@ -48,7 +50,6 @@ def gettytul():
 class Vumoo(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
     MAIN_URL    = 'http://vumoo.li/'
-    SRCH_URL    = MAIN_URL + 'videos/vsearch/?search='
     DEFAULT_ICON_URL = 'http://www.matrixable.org/wp-content/uploads/2016/02/vumoo.jpg'
     
     MAIN_CAT_TAB = [{'category':'movies',         'title': _('Movies'),       'url':MAIN_URL                                          },
@@ -82,6 +83,10 @@ class Vumoo(CBaseHostClass):
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
+    def getFullUrl2(self, url, baseUrl):
+        if self.cm.isValidUrl(url): return url
+        elif url.startswith('//'): return baseUrl.split('://', 1)[0] + ':' + url
+        else: return urlparse.urljoin(baseUrl, url)
         
     def listGenres(self, cItem, category):
         printDBG("Vumoo.listGenres")
@@ -167,6 +172,33 @@ class Vumoo(CBaseHostClass):
             params.update( {'title':_('Next page'), 'page':page+1} )
             self.addDir(params)
             
+    def _extractGoogleLinks(self, data):
+        linksTab = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, 'var fileId', '$.get')[1]
+        try:
+            jscode = data[:data.rfind(';')+1]
+            try:
+                jscode = 'function setInterval() {};\nvar APP_PATH="%s";\n%s\nprint(url);' % (self.getMainUrl(), jscode)
+                printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
+                printDBG(jscode)
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                ret = iptv_js_execute( jscode )
+                if ret['sts'] and 0 == ret['code']:
+                    decoded = ret['data'].strip()
+                    printDBG('DECODED DATA -> [%s]' % decoded)
+                sts, data = self.getPage(decoded)
+                data = byteify(json.loads(data), '', True)
+                for item in data:
+                    printDBG(item)
+                    if 'mp4' not in item.get('type', ''): continue
+                    linksTab.append({'type':item.get('label', str(item.get('res'))), 'url':self.getFullUrl(item['src'])})
+            except Exception:
+                printExc()
+        except Exception:
+            printExc()
+        
+        return linksTab
+        
     def exploreItem(self, cItem, category):
         printDBG("Vumoo.exploreItem")
         self.linksCache = {}
@@ -181,33 +213,23 @@ class Vumoo(CBaseHostClass):
             printDBG('Vumoo.exploreItem - MOVIE')
             mov_id = self.cm.ph.getSearchGroups(data, '''mov_id[\s]*=[\s]*["']([0-9]+?)["']''')[0]
             t_id   = self.cm.ph.getSearchGroups(data, '''t_id[\s]*=[\s]*["']([0-9]+?)["']''')[0]
-            openloadLink  = self.cm.ph.getSearchGroups(data, 'openloadLink[\s]*=[\s]*"(http[^"]+?)"')[0].replace('\\/', '/')
+            
             self.linksCache[mov_id] = []
+            
+            # Watch HD
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<li', '>', 'watch_in_hd'), ('</li', '>'))[1]
+            watchinhdLink = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+            if self.cm.isValidUrl(watchinhdLink):
+                self.linksCache[mov_id].append({'type':self.cleanHtmlStr(tmp.split('</p>', 1)[0]), 'url':watchinhdLink})
+            
+            # OpenLoad
+            openloadLink  = self.cm.ph.getSearchGroups(data, 'openloadLink[\s]*=[\s]*"(http[^"]+?)"')[0].replace('\\/', '/')
             if self.cm.isValidUrl(openloadLink):
                 self.linksCache[mov_id].append({'type':'openload', 'url':openloadLink})
-            
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'var fileId', '$.get')[1]
-            try:
-                jscode = data[:data.rfind(';')+1]
-                try:
-                    jscode = 'function setInterval() {};\nvar APP_PATH="%s";\n%s\nprint(url);' % (self.getMainUrl(), jscode)
-                    printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
-                    printDBG(jscode)
-                    printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                    ret = iptv_js_execute( jscode )
-                    if ret['sts'] and 0 == ret['code']:
-                        decoded = ret['data'].strip()
-                        printDBG('DECODED DATA -> [%s]' % decoded)
-                    sts, data = self.getPage(decoded)
-                    data = byteify(json.loads(data))
-                    for item in data:
-                        printDBG(item)
-                        if 'mp4' not in item.get('type', ''): continue
-                        self.linksCache[mov_id].append({'type':item.get('label', str(item.get('res'))), 'url':self.getFullUrl(item['src'])})
-                except Exception:
-                    printExc()
-            except Exception:
-                printExc()
+                
+            # Google links
+            if len(self._extractGoogleLinks(data)):
+                self.linksCache[mov_id].append({'type':'Server 1', 'url':cItem['url']})
             
             params = dict(cItem)
             params.update({'links_id':mov_id, 't_id':t_id})
@@ -254,29 +276,13 @@ class Vumoo(CBaseHostClass):
         cItem = dict(cItem)
         post_data = None
         
-        params = dict(self.defaultParams)
-        params['header'] = {'User-Agent':self.USER_AGENT, 'Referer':self.getMainUrl()}
-        
-        url  = self.SRCH_URL + urllib.quote_plus(searchPattern)
-        sts, data = self.getPage(url, params)
+        sts, data = self.getPage(self.getMainUrl())
         if not sts: return 
         
-        printDBG(data)
-        
-        if 'window.location' in data: 
-            url = self.cm.ph.getSearchGroups(data, '''window\.location[^'^"]+?['"]([^'^"]+?)['"]''')[0]
-            params['header']['Referer'] = url
-            
-            sts, data = self.getPage(url, params)
-            if not sts: return 
-            
-            printDBG(data)
-            
-            tmp = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>', False, False)[1]
-            post_data = dict(re.findall('''<input[^>]*name=['"]([^"^']*)['"][^>]*value=['"]([^"^']*)['"][^>]*>''', tmp))
-            tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<p', '</p>', False, False)[1])
-            post_data['action'] = self.cm.ph.getSearchGroups(tmp, '[^0-9]([0-9]+?)[^0-9]')[0]
-        cItem['url'] = url
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>', False, False)[1]
+        post_data = dict(re.findall('''<input[^>]*name=['"]([^"^']*)['"][^>]*value=['"]([^"^']*)['"][^>]*>''', tmp))
+        post_data['search'] = searchPattern
+        cItem['url'] = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''action=['"]([^'^"]+?)['"]''', ignoreCase=True)[0])
         self.listItems(cItem, 'explore_item', post_data)
         
     def getLinksForVideo(self, cItem):
@@ -293,7 +299,44 @@ class Vumoo(CBaseHostClass):
     def getVideoLinks(self, baseUrl):
         printDBG("Vumoo.getVideoLinks [%s]" % baseUrl)
         urlTab = []
-        urlTab = self.up.getVideoLinkExt(baseUrl)
+        if 1 == self.up.checkHostSupport(baseUrl):
+            urlTab = self.up.getVideoLinkExt(baseUrl)
+        else:
+            domain = self.up.getDomain(baseUrl)
+            
+            params = dict(self.defaultParams)
+            params['with_metadata'] = True
+            sts, data = self.getPage(baseUrl, params)
+            if not sts: return urlTab
+            try: baseUrl = data.meta['url']
+            except Exception: return urlTab
+            
+            if domain == self.up.getDomain(baseUrl):
+                tmpTab = self._extractGoogleLinks(data)
+                for item in tmpTab:
+                    urlTab.append({'name':item['type'], 'url':strwithmeta(item['url'], {'Referer':baseUrl})})
+            else:
+                videoId = self.cm.ph.getSearchGroups(data, '''var\s*videoId\s*=\s*['"]([0-9]+?)['"]''', ignoreCase=True)[0]
+                token = self.cm.ph.getSearchGroups(data, '''var\s*token_key\s*=\s*['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                data  = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('function\s*retryMovie'), re.compile('\}'))[1]
+                url = self.cm.ph.getSearchGroups(data, '''[\s'"]url['"]?\s*:\s*['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                url = self.getFullUrl2(url, baseUrl) + ('?id=%s&token=%s&_=%s' % (videoId, token, int(time.time() * 10000)))
+                params['header'] = dict(params['header'])
+                params['header']['Referer'] = baseUrl
+                
+                sts, data = self.getPage(url, params)
+                if not sts: return urlTab
+                try:
+                    videoUrl = data.meta['url']
+                    data = byteify(json.loads(data), '', False)
+                    for item in data:
+                        if 'mp4' not in item.get('type', ''): continue
+                        url = strwithmeta(self.getFullUrl2(item['file'], videoUrl), {'Referer':baseUrl})
+                        urlTab.append({'name':item.get('label', ''), 'url':url})
+                except Exception:
+                    printExc()
+            
+            printDBG(data)
         return urlTab
         
     def getFavouriteData(self, cItem):
