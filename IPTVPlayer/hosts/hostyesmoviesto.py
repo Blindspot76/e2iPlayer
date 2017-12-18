@@ -311,7 +311,15 @@ class YesMovies(CBaseHostClass):
                 else:
                     name = ''
                 urlTab.append({'name':name, 'title':title, 'server_title':serverTitle, 'url':serverId + '|' + episodeId + '|' + cItem['url'], 'server_id':serverId, 'episode_id':episodeId, 'need_resolve':1})
-            
+        
+        printDBG(urlTab)
+        def _sortKey(item):
+            val = item.get('server_id', '0')
+            if val == '7': return 1
+            elif val == '14': return 0
+            return 1000
+        urlTab.sort( key=_sortKey )
+        
         if len(urlTab) and self.cm.isValidUrl(trailer) and len(trailer) > 10:
             urlTab.insert(0, {'name':'Trailer', 'title':'Trailer', 'server_title':'Trailer', 'url':trailer, 'need_resolve':1})
         
