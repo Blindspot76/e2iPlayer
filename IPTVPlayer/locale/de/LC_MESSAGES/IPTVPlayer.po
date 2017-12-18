@@ -3688,3 +3688,33 @@ msgstr "Wähle Gruppe"
 
 msgid "There is no hosts in this group."
 msgstr "Kein Service in dieser Gruppe vorhanden."
+
+msgid "Movies and series"
+msgstr "Filme und Serien"
+
+msgid "Cartoons and anime"
+msgstr "Cartoons und Anime"
+
+msgid "Documentary"
+msgstr "Dokumentationen"
+
+msgid "Science"
+msgstr "Wissenschaft"
+
+msgid "Russian"
+msgstr "Russisch"
+
+msgid "Hungarian"
+msgstr "Ungarisch"
+
+msgid "Arabic"
+msgstr "Arabisch"
+
+msgid "Greek"
+msgstr "Griechisch"
+
+msgid "Swedish"
+msgstr "Schwedisch"
+
+msgid "Balkans"
+msgstr "Balkanromanisch"
