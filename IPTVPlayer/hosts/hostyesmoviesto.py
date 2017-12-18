@@ -40,30 +40,30 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.gomovies_proxy = ConfigSelection(default = "None", choices = [("None",         _("None")),
+config.plugins.iptvplayer.yesmovies_proxy = ConfigSelection(default = "None", choices = [("None",         _("None")),
                                                                                         ("proxy_1",  _("Alternative proxy server (1)")),
                                                                                         ("proxy_2",  _("Alternative proxy server (2)"))])
-config.plugins.iptvplayer.gomovies_alt_domain = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.yesmovies_alt_domain = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("Use proxy server:"), config.plugins.iptvplayer.gomovies_proxy))
-    if config.plugins.iptvplayer.gomovies_proxy.value == 'None':
-        optionList.append(getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.gomovies_alt_domain))
+    optionList.append(getConfigListEntry(_("Use proxy server:"), config.plugins.iptvplayer.yesmovies_proxy))
+    if config.plugins.iptvplayer.yesmovies_proxy.value == 'None':
+        optionList.append(getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.yesmovies_alt_domain))
     return optionList
 ###################################################
 
 
 def gettytul():
-    return 'https://gostream.is/'
+    return 'https://yesmovies.to/'
 
-class GoMovies(CBaseHostClass):
+class YesMovies(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'GoMovies.tv', 'cookie':'gomovies.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
+        CBaseHostClass.__init__(self, {'history':'yesmovies.to', 'cookie':'yesmovies.to.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'https://cdn2.bestcdnever.ru/images/123movies-logo-light.png' #'https://cdn.unlonecdn.ru/images/gomovies-logo-light.png'
+        self.DEFAULT_ICON_URL = 'https://cdn.yescdn.ru/images/logo.png'
         self.HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -76,7 +76,7 @@ class GoMovies(CBaseHostClass):
         if addParams == {}:
             addParams = dict(self.defaultParams)
             
-        proxy = config.plugins.iptvplayer.gomovies_proxy.value
+        proxy = config.plugins.iptvplayer.yesmovies_proxy.value
         if proxy != 'None':
             if proxy == 'proxy_1':
                 proxy = config.plugins.iptvplayer.alternative_proxy1.value
@@ -89,7 +89,7 @@ class GoMovies(CBaseHostClass):
         
     def getFullIconUrl(self, url):
         url = self.getFullUrl(url)
-        proxy = config.plugins.iptvplayer.gomovies_proxy.value
+        proxy = config.plugins.iptvplayer.yesmovies_proxy.value
         if proxy != 'None':
             if proxy == 'proxy_1':
                 proxy = config.plugins.iptvplayer.alternative_proxy1.value
@@ -99,28 +99,23 @@ class GoMovies(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        domains = ['https://123movieshub.to/', 'https://gomovies.pet/']
-        domain = config.plugins.iptvplayer.gomovies_alt_domain.value.strip()
+        domains = ['https://yesmovies.to/', 'https://yesmovies.org/', 'https://yesmovies.net/']
+        domain = config.plugins.iptvplayer.yesmovies_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
             domains.insert(0, domain)
         
         for domain in domains:
-            for i in range(2):
-                sts, data = self.getPage(domain)
-                if sts:
-                    if 'genre/action/' in data:
-                        self.MAIN_URL = domain
-                        break
-                    else: 
-                        continue
+            sts, data = self.getPage(domain)
+            if sts and 'movie/filter' in data:
+                self.MAIN_URL = domain
                 break
             
             if self.MAIN_URL != None:
                 break
                 
         if self.MAIN_URL == None:
-            self.MAIN_URL = 'https://123movieshub.to/' # first domain is default one
+            self.MAIN_URL = 'https://yesmovies.to/'
             
         try:
             urlParams = dict(self.defaultParams)
@@ -131,11 +126,8 @@ class GoMovies(CBaseHostClass):
         except Exception:
             printExc()
         
-        self.SEARCH_URL = self.MAIN_URL + 'movie/search'
-        #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
-        
-        self.MAIN_CAT_TAB = [{'category':'list_filter_genre', 'title': 'Movies',    'url':self.MAIN_URL+'movie/filter/movie' },
-                             {'category':'list_filter_genre', 'title': 'TV-Series', 'url':self.MAIN_URL+'movie/filter/series'},
+        self.MAIN_CAT_TAB = [{'category':'list_filter_genre', 'title': 'Movies',    'url':self.getFullUrl('movie/filter/movie') },
+                             {'category':'list_filter_genre', 'title': 'TV-Series', 'url':self.getFullUrl('movie/filter/series')},
                              {'category':'search',          'title': _('Search'), 'search_item':True,                        },
                              {'category':'search_history',  'title': _('Search history'),                                    } 
                             ]
@@ -172,7 +164,7 @@ class GoMovies(CBaseHostClass):
         printDBG(self.cacheFilters)
         
     def listFilters(self, cItem, filter, nextCategory):
-        printDBG("GoMovies.listFilters")
+        printDBG("YesMovies.listFilters")
         if {} == self.cacheFilters:
             self.fillCacheFilters()
         
@@ -181,38 +173,35 @@ class GoMovies(CBaseHostClass):
         self.listsTab(self.cacheFilters.get(filter, []), cItem)
         
     def listItems(self, cItem, nextCategory=None):
-        printDBG("GoMovies.listItems")
+        printDBG("YesMovies.listItems")
         url = cItem['url']
         page = cItem.get('page', 1)
         if '/search' not in url:
-            # var url = 'http://123movies.to/movie/filter/' + type + '/' + 'view' + '/' + genres + '/' + countries + '/' + year + '/' + 'all' + '/' + quality;
-            url += '/{0}/{1}/{2}/{3}/all/{4}'.format(cItem['sort_by'], cItem['genre'], cItem['country'], cItem['year'], cItem['quality'])
+            url += '/{0}/{1}/{2}/{3}/{4}/{5}'.format(cItem['sort_by'], cItem['genre'], cItem['country'], cItem['year'],  'all', cItem['quality'])
         
-        if page > 1: url = url + '/{0}'.format(page)
+        if page > 1: url = url + '/page-{0}'.format(page)
+        url += '.html'
         sts, data = self.getPage(url)
         if not sts: return
         
-        if '/search' in url and 'recaptcha-search' in data:
-            SetIPTVPlayerLastHostError(_('Functionality protected by Google reCAPTCHA!'))
-        
-        nextPage = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="pagination">', '</ul>', False)[1]
-        if '>Next &rarr;<' in nextPage:
+        nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', '</ul>', False)[1]
+        if '' != self.cm.ph.getSearchGroups(nextPage, 'page\-(%s)[^0-9]' % (page+1))[0]:
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div data-movie-id=', '</a>', withMarkers=True)
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="ml-item">', '</a>', withMarkers=True)
         for item in data:
             url  = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             icon = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'data-original="([^"]+?)"')[0] )
-            movieId = self.cm.ph.getSearchGroups(item, 'data-movie-id="([^"]+?)"')[0]
+            dataUrl = self.cm.ph.getSearchGroups(item, 'data-url="([^"]+?)"')[0]
             if icon == '': icon = cItem.get('icon', '')
             desc = self.cleanHtmlStr( item )
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1] )
             if title == '': title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0] )
             if title == '': title  = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0] )
             if url.startswith('http'):
-                params = {'good_for_fav': True, 'title':title, 'url':url, 'movie_id':movieId, 'desc':desc, 'info_url':url, 'icon':icon}
-                if '-season-' not in url and 'class="mli-eps"' not in item: #and '/series' not in cItem['url']
+                params = {'good_for_fav': True, 'title':title, 'url':url, 'data_url':dataUrl, 'desc':desc, 'info_url':url, 'icon':icon}
+                if '-season-' not in url and 'class="mli-eps"' not in item:
                     self.addVideo(params)
                 else:
                     params['category'] = nextCategory
@@ -222,11 +211,11 @@ class GoMovies(CBaseHostClass):
         
         if nextPage and len(self.currList) > 0:
             params = dict(cItem)
-            params.update({'title':_("Next page"), 'page':page+1})
+            params.update({'good_for_fav': False, 'title':_("Next page"), 'page':page+1})
             self.addDir(params)
     
     def listEpisodes(self, cItem):
-        printDBG("GoMovies.listEpisodes")
+        printDBG("YesMovies.listEpisodes")
         
         tab = self.getLinksForVideo(cItem, True)
         episodeKeys = []
@@ -256,13 +245,13 @@ class GoMovies(CBaseHostClass):
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("GoMovies.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG("YesMovies.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        cItem['url'] = self.SEARCH_URL + '/' + urllib.quote_plus(searchPattern)
+        cItem['url'] = self.getFullUrl('movie/search/' + urllib.quote_plus(searchPattern))
         self.listItems(cItem, 'list_episodes')
     
     def getLinksForVideo(self, cItem, forEpisodes=False):
-        printDBG("GoMovies.getLinksForVideo [%s]" % cItem)
+        printDBG("YesMovies.getLinksForVideo [%s]" % cItem)
         
         if 'urls' in cItem:
             return cItem['urls']
@@ -282,29 +271,41 @@ class GoMovies(CBaseHostClass):
         
         movieId = cItem.get('movie_id', '')
         if '' == movieId:
-            try: movieId = str(int(cItem['url'].split('-')[-1]))
+            try: movieId = str(int(cItem['url'].split('-')[-1].split('.', 1)[0]))
             except Exception:
                 printExc()
         
         if '' == movieId: return []
-        url = 'ajax/v2_get_episodes/' + movieId
-        url = self.getFullUrl( url )
+        url = self.getFullUrl('ajax/v4_movie_episodes/' + movieId)
         
         params = dict(self.defaultParams)
         params['header'] = self.AJAX_HEADER
         sts, data = self.getPage(url, params)
         if not sts: return []
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div id="server', '<div class="clearfix">', withMarkers=True)
+        try: data = byteify(json.loads(data)['html'], '', True)
+        except Exception: printExc()
+        
+        printDBG("++++++++++++++++++++++++++++++++++++")
+        printDBG(data)
+        printDBG("++++++++++++++++++++++++++++++++++++")
+        
+        serversNameMap = {}
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'servers'), ('</ul', '>'))[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
+        
+        for item in tmp:
+            serverId = self.cm.ph.getSearchGroups(item, '''data\-id=['"]([0-9]+?)['"]''')[0]
+            serversNameMap[serverId] = self.cleanHtmlStr(item)
+        
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<ul', '>', 'episodes'), ('</ul', '>'))
         for item in data:
-            serverTitle = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<div id="server', '</div>', withMarkers=True)[1] )
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a', '</a>', withMarkers=True)
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<li', '</li>')
             for eItem in tmp:
-                tmp = self.cm.ph.getDataBeetwenMarkers(eItem, 'loadEpisode(', ')', False)[1].split(',')
-                if len(tmp) != 2: continue
-                serverId = tmp[0].strip()
-                episodeId = tmp[1].strip()
+                serverId = self.cm.ph.getSearchGroups(item, '''data\-server=['"]([0-9]+?)['"]''')[0]
+                episodeId = self.cm.ph.getSearchGroups(item, '''data\-id=['"]([0-9]+?)['"]''')[0]
                 title = self.cleanHtmlStr( eItem )
+                serverTitle = serversNameMap.get(serverId, serverId)
                 if not forEpisodes:
                     name = serverTitle + ': ' + title
                 else:
@@ -316,21 +317,9 @@ class GoMovies(CBaseHostClass):
         
         self.cacheLinks[cItem['url']] = urlTab
         return urlTab
-
-    def uncensored1(self, data):    
-        xx = ''
-        xy = ''
-        try:
-            data = 'var location="https://gomovies.to/";String.prototype.italics=function(){return "<i></i>";};String.prototype.link=function(){return "<a href=\\"undefined\\"></a>";};String.prototype.fontcolor=function(){return "<font color=\\"undefined\\"></font>";};\n' + data + '\nfor (n in this){print(n+"="+this[n]+";");}'
-            ret = iptv_js_execute( data )
-            xx = data = self.cm.ph.getSearchGroups(ret['data'], '''x=([^;]+?);''')[0]
-            xy = data = self.cm.ph.getSearchGroups(ret['data'], '''y=([^;]+?);''')[0]
-        except Exception:
-            printExc()
-        return xx, xy
         
     def getVideoLinks(self, videoUrl):
-        printDBG("GoMovies.getVideoLinks [%s]" % videoUrl)
+        printDBG("YesMovies.getVideoLinks [%s]" % videoUrl)
         urlTab = []
         
         # mark requested link as used one
@@ -361,38 +350,34 @@ class GoMovies(CBaseHostClass):
         #cookie = self.cm.getCookieHeader(self.COOKIE_FILE)
         
         if serverId in ['12', '13', '14', '15']:
-            url = 'ajax/load_embed/' + episodeId
+            url = 'ajax/movie_embed/' + episodeId
             url = self.getFullUrl( url )
             sts, data = self.getPage(url)
             if not sts: return []
             try:
-                data = byteify(json.loads(data))
+                data = byteify(json.loads(data), '', True)
                 if data['status']:
-                    urlTab = self.up.getVideoLinkExt(data['embed_url'])
+                    urlTab = self.up.getVideoLinkExt(data['src'])
             except Exception:
                 printExc()
                 return []
         else:
-            try: mid = urlparse(referer).path.split('/')[2].split('-')[-1]
+            try: mid = urlparse(referer).path.split('/')[2].split('-')[-1].split('.', 1)[0]
             except Exception:
                 mid = ''
                 printExc()
-            url = self.getFullUrl( 'https://gomovies.to/ajax/movie_token?eid=%s&mid=%s&_=%s' % (episodeId, mid, int(time.time() * 10000)))
+            url = self.getFullUrl( '/ajax/movie_token?eid=%s&mid=%s&_=%s' % (episodeId, mid, int(time.time() * 10000)))
             if not self.cm.isValidUrl(url): return []
             
             params = dict(self.defaultParams)
             params['header'] = dict(self.HEADER)
             params['header']['Referer'] = referer
             
-            tries = 0
-            while tries < 10:
-                sts, data = self.getPage(url, params)
-                if not sts: return []
-                
-                xx, xy = self.uncensored1(data)
-                if xx != '' and xy != '':
-                    break
-                tries += 1
+            sts, data = self.getPage(url, params)
+            if not sts: return []
+            
+            xx = self.cm.ph.getSearchGroups(data, '''x=['"]([^'^"]+?)['"]''')[0]
+            xy = self.cm.ph.getSearchGroups(data, '''y=['"]([^'^"]+?)['"]''')[0]
             
             url = 'ajax/movie_sources/%s?x=%s&y=%s' % (episodeId, xx, xy)
             url = self.getFullUrl( url )
@@ -413,7 +398,7 @@ class GoMovies(CBaseHostClass):
                         urlTab.append({'name':name, 'url':url})
                     elif 'type="m3u8"' in item:
                         url = strwithmeta(url, {'Referer':referer, 'User-Agent':params['header']['User-Agent']})
-                        urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+                        urlTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
                     elif 'kind="captions"' in item:
                         format = url[-3:]
                         if format in ['srt', 'vtt']:
@@ -428,7 +413,7 @@ class GoMovies(CBaseHostClass):
                             urlTab.append({'name':str(item.get('label', 'default')), 'url':item['file']})
                         elif "m3u8" == item['type']:
                             url = strwithmeta(item['file'], {'Referer':referer, 'User-Agent':params['header']['User-Agent']})
-                            urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+                            urlTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
                     if isinstance(tmp['playlist'][0]['tracks'], dict): tmp['playlist'][0]['tracks'] = [tmp['playlist'][0]['tracks']]
                     for item in tmp['playlist'][0]['tracks']:
                         format = item['file'][-3:]
@@ -447,7 +432,7 @@ class GoMovies(CBaseHostClass):
         return urlTab
         
     def getArticleContent(self, cItem):
-        printDBG("GoMovies.getArticleContent [%s]" % cItem)
+        printDBG("YesMovies.getArticleContent [%s]" % cItem)
         retTab = []
         
         sts, data = self.getPage(cItem.get('url', ''))
@@ -537,7 +522,7 @@ class GoMovies(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, GoMovies(), True, [])
+        CHostBase.__init__(self, YesMovies(), True, [])
     
     def withArticleContent(self, cItem):
         if cItem.get('type', 'video') != 'video' and cItem.get('category', 'unk') != 'list_episodes':

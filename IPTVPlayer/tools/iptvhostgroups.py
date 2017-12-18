@@ -65,7 +65,7 @@ class IPTVHostsGroups:
                                                      'sovdub','kinopokaz','cinemay','icefilmsinfo','hdkinomir','kinotan','egybest','dpstreamingcx','librestream','streamcomplet','skstream','filmstreamvkcom', \
                                                      'filmpalast','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','treetv','mozicsillag','filmezz','gamatocom','xrysoise','gamatotvme','mooviecc','mrpiracy', \
                                                      'plusdede','filmativa','filmovizijastudio','filma24hdcom','serijeonline','kinox','video4k','cartoonhd','worldfree4u','tantifilmorg','forjatn', 'kinopodaniolempl', 'serialeco', 'faselhdcom', \
-                                                     'darshowcom']
+                                                     'darshowcom','yesmoviesto']
         self.PREDEFINED_HOSTS['cartoonsandanime'] = ['bajeczkiorg','kreskowkazone','kreskoweczki','bajkipopolskucom','animeodcinki','anyfiles','9anime','9cartoonme','kisscartoonme','chiaanimeco','shahiidanimenet', \
                                                      'otakufr','crtankocom',]
         self.PREDEFINED_HOSTS['sport']            = ['webstream','plwwecom','meczykipl','ekstraklasatv','laola1tv','ourmatchnet','hoofootcom','okgoals','ngolos','watchwrestlinguno','watchwrestling','fighttube','fightvideo', \
@@ -82,7 +82,7 @@ class IPTVHostsGroups:
                                                      'thewatchseriesto','icefilmsinfo','movienightws','yifytv', \
                                                      'hdpopcornscom','losmovies','solarmovie','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','9cartoonme','kisscartoonme','chiaanimeco','dailymotion', \
                                                      'ourmatchnet','watchwrestlinguno','watchwrestling','laola1tv','hoofootcom','fightvideo','twitchtv','hitboxtv','ted','ororotv','pinkbike','dancetrippin','appletrailers', \
-                                                     'ustreamtv','rteieplayer','questtvcouk','forjatn']
+                                                     'ustreamtv','rteieplayer','questtvcouk','forjatn','yesmoviesto']
         self.PREDEFINED_HOSTS['german']           = ['youtube','webstream','ardmediathek','zdfmediathek','tvnowde','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','filmpalast','kinox','video4k','arconaitvme','movie4kto','tata', \
                                                      'dailymotion','laola1tv','sportdeutschland','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['french']           = ['youtube','skstream','filmstreamvkcom','streamcomplet','dpstreamingcx','librestream','cinemay','otakufr','movie4kto','dailymotion','twitchtv','hitboxtv','forjatn']
