@@ -7,11 +7,9 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, \
                                                           GetLogoDir, GetCookieDir, byteify, ReadTextFile, GetBinDir, \
                                                           formatBytes, GetTmpDir, mkdirs
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, MYOBFUSCATECOM_OIO, MYOBFUSCATECOM_0ll, \
-                                                               unpackJS, TEAMCASTPL_decryptPlayerParams, SAWLIVETV_decryptPlayerParams
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.m3uparser import ParseM3u
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
@@ -142,36 +140,86 @@ class LocalMedia(CBaseHostClass):
                 params.update( {'title':item['node'], 'path':item['node']} ) 
                 self.addDir(params)
         
-    def listM3u(self, cItem):
+    def _getM3uIcon(self, item, cItem):
+        icon = item.get('tvg-logo', '')
+        if not self.cm.isValidUrl(icon): icon = item.get('logo', '')
+        if not self.cm.isValidUrl(icon): icon = item.get('art', '')
+        if not self.cm.isValidUrl(icon): icon = cItem.get('icon', '')
+        return icon
+        
+    def _getM3uPlayableUrl(self, baseUrl, url, item):
+        need_resolve = 1
+        if url.startswith('/'):
+            if baseUrl == '':
+                url = 'file://' + url
+                need_resolve = 0
+            elif url.startswith('//'):
+                url = 'http:' + url
+            else:
+                url = self.cm.getBaseUrl(baseUrl) + url[1:]
+        if '' != item.get('program-id', ''): 
+            url = strwithmeta(url, {'PROGRAM-ID': item['program-id']})
+        return need_resolve, url
+        
+    def listM3u(self, cItem, nextCategory):
         printDBG("LocalMedia.listM3u [%s]" % cItem)
-        path = cItem['path']
-        sts, data = ReadTextFile(path)
-        if not sts: return
         baseUrl = ''
-        if '#EXT' not in data:
-            baseUrl = data.strip()
-            if baseUrl.startswith('http') and '://' in baseUrl:
-                baseUrl = self.up.decorateParamsFromUrl(baseUrl) 
-                httpParams, postData = self.cm.getParamsFromUrlWithMeta(baseUrl)
-                sts, data = self.cm.getPage(baseUrl, httpParams, postData)
-                if not sts: return
+        data = ''
+        if not self.cm.isValidUrl(cItem['path']):
+            sts, data = ReadTextFile(cItem['path'])
+            if not sts: return
+            if '#EXT' not in data:
+                baseUrl = data.strip()
+        else: 
+            baseUrl = cItem['path']
+        
+        if self.cm.isValidUrl(baseUrl):
+            baseUrl = self.up.decorateParamsFromUrl(baseUrl) 
+            httpParams, postData = self.cm.getParamsFromUrlWithMeta(baseUrl)
+            sts, data = self.cm.getPage(baseUrl, httpParams, postData)
+            if not sts: return
         
         data = ParseM3u(data)
+        groups = {}
         for item in data:
             params = dict(cItem)
-            need_resolve = 1
+            group = item.get('group-title', '')
             url = item['uri']
-            if url.startswith('/'):
-                if baseUrl == '':
-                    url = 'file://' + url
-                    need_resolve = 0
-                elif url.startswith('//'):
-                    url = 'http:' + url
+            icon = self._getM3uIcon(item, cItem)
+            
+            if item['f_type'] == 'inf':
+                if group == '':
+                    need_resolve, url = self._getM3uPlayableUrl(baseUrl, url, item)
+                    params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'icon':icon, 'need_resolve':need_resolve} )
+                    self.addVideo(params)
                 else:
-                    url = self.cm.getBaseUrl(baseUrl) + url[1:]
-            if '' != item.get('PROGRAM-ID', ''): 
-                url = strwithmeta(url, {'PROGRAM-ID': item['PROGRAM-ID']})
-            params.update( {'title':item['title'], 'category':'m3u_item', 'url':url, 'need_resolve':need_resolve} )
+                    if group not in groups:
+                        groupIcon = item.get('group-logo', '')
+                        if not self.cm.isValidUrl(groupIcon): groupIcon = item.get('group-art', '')
+                        if not self.cm.isValidUrl(groupIcon): groupIcon = icon
+                        groups[group] = []
+                        params.update( {'good_for_fav':False, 'title':group, 'category':nextCategory, 'f_group':group, 'url':baseUrl, 'icon':groupIcon} )
+                        self.addDir(params)
+                    groups[group].append(item)
+            elif item['f_type'] == 'import' and self.cm.isValidUrl(url):
+                params.update( {'good_for_fav':True, 'title':item['title'], 'path':url, 'icon':icon} )
+                self.addDir(params)
+        
+        if groups != {}:
+            for idx in range(len(self.currList)):
+                if 'f_group' in self.currList[idx]:
+                    self.currList[idx]['f_group_items'] = groups.get(self.currList[idx]['f_group'], [])
+        
+    def listM3uGroups(self, cItem):
+        printDBG("LocalMedia.listM3uGroups [%s]" % cItem)
+        baseUrl = cItem['url']
+        data = cItem['f_group_items']
+        for item in data:
+            params = dict(cItem)
+            url = item['uri']
+            icon = self._getM3uIcon(item, cItem)
+            need_resolve, url = self._getM3uPlayableUrl(baseUrl, url, item)
+            params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'icon':icon, 'need_resolve':need_resolve} )
             self.addVideo(params)
             
     def showErrorMessage(self, message):
@@ -264,7 +312,7 @@ class LocalMedia(CBaseHostClass):
         
         if '' != mountPoint:
             params = dict(cItem)
-            params.update( {'path':mountPoint, 'category':'dir'} )
+            params.update( {'next_good_for_fav':False, 'path':mountPoint, 'category':'dir'} )
             self.listDir(params)
         
     def listDir(self, cItem):
@@ -343,6 +391,7 @@ class LocalMedia(CBaseHostClass):
             
             if start > end:
                 params = dict(cItem)
+                params.pop('good_for_fav', None)
                 params.update({'category':'more', 'title':_('More'), 'start':end})
                 self.addMore(params)
 
@@ -358,7 +407,7 @@ class LocalMedia(CBaseHostClass):
                 printExc()
         for item in tab:
             params = dict(params)
-            params.update( {'title':item['title'], 'category':category, 'desc':''} )
+            params.update( {'good_for_fav':params.get('next_good_for_fav', True), 'title':item['title'], 'category':category, 'desc':''} )
             if category in ['m3u', 'dir', 'iso']:
                 fullPath = os_path.join(path, item['raw_name'])
                 params['path']  = fullPath
@@ -427,9 +476,23 @@ class LocalMedia(CBaseHostClass):
         return videoUrls
         
     def getFavouriteData(self, cItem):
-        return cItem['url']
+        try:
+            params = dict(cItem)
+            if 'url' in params:
+                params['fav_url_meta'] = strwithmeta(params['url']).meta
+            data = json.dumps(cItem)
+        except Exception: 
+            printExc()
+            data = ''
+        return data
         
     def getLinksForFavourite(self, fav_data):
+        try:
+            cItem = byteify(json.loads(fav_data))
+            fav_data = strwithmeta(cItem['url'], cItem.get('fav_url_meta', {}))
+        except Exception:
+            printExc()
+        
         need_resolve = 0
         if not fav_data.startswith('file://'):
             need_resolve = 1
@@ -447,27 +510,27 @@ class LocalMedia(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listsMainMenu({'name':'category'})
+            self.listsMainMenu({'name':'category', 'good_for_fav':True})
         elif category == 'm3u':
-            self.listM3u(self.currItem)
+            self.listM3u(self.currItem, 'list_m3u_groups')
+        elif category == 'list_m3u_groups':
+            self.listM3uGroups(self.currItem)
         elif category == 'iso':
             self.listIso(self.currItem)
         else:
             self.listDir(self.currItem)
         
         CBaseHostClass.endHandleService(self, index, refresh)
+
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, LocalMedia(), False, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE])
+        CHostBase.__init__(self, LocalMedia(), False, [])
         self.cFilePath = ''
         self.cType = ''
         self.needRefresh = ''
         self.DEFAULT_ICON='http://www.ngonb.ru/files/res_media.png'
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('localmedialogo.png')])
-        
+    
     def getPrevList(self, refresh = 0):
         self.host.setCurrDir('')
         if(len(self.listOfprevList) > 0):
@@ -637,70 +700,15 @@ class IPTVHost(CHostBase):
             othersInfo = item.get('other_info', '')
             retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
         return RetHost(RetHost.OK, value = retlist)
+        
+    def getFullIconUrl(self, url):
+        return url
+        
+    def getDefaulIcon(self, cItem):
+        return self.DEFAULT_ICON
     
     def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
+        needUrlResolve = cItem.get('need_resolve', 0)
+        needUrlSeparateRequest = 0
+        return CHostBase.converItem(self, cItem, needUrlResolve, needUrlSeparateRequest)
     
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-        elif 'picture' == cItem['type']:
-            type = CDisplayListItem.TYPE_PICTURE
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_PICTURE]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, cItem.get('need_resolve', 0)))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        if icon == '': icon = self.DEFAULT_ICON
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 0,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return

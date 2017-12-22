@@ -153,6 +153,8 @@ class IconMenager:
        
     def getIconPathFromAAueue(self, item):
         printDBG("getIconPathFromAAueue item[%s]" % item)
+        if item.startswith('file://'): return item[7:]
+        
         hashAlg = MD5()
         name = hashAlg(item)
         filename = hexlify(name) + '.jpg'

@@ -527,7 +527,7 @@ class CHostBase(IHost):
     def getFullIconUrl(self, cItem):
         return self.host.getFullIconUrl(cItem)
     
-    def converItem(self, cItem):
+    def converItem(self, cItem, needUrlResolve=1, needUrlSeparateRequest=1):
         hostList = []
         hostLinks = []
         type = CDisplayListItem.TYPE_UNKNOWN
@@ -555,7 +555,7 @@ class CHostBase(IHost):
         if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO, \
                     CDisplayListItem.TYPE_PICTURE, CDisplayListItem.TYPE_ARTICLE]:
             url = cItem.get('url', '')
-            if '' != url: hostLinks.append(CUrlItem("Link", url, 1))
+            if '' != url: hostLinks.append(CUrlItem("Link", url, needUrlResolve))
             
         title       =  cItem.get('title', '')
         description =  cItem.get('desc', '')
@@ -569,7 +569,7 @@ class CHostBase(IHost):
                                     description = description,
                                     type = type,
                                     urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
+                                    urlSeparateRequest = needUrlSeparateRequest,
                                     iconimage = icon,
                                     possibleTypesOfSearch = possibleTypesOfSearch,
                                     pinLocked = pinLocked,
