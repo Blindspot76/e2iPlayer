@@ -108,29 +108,36 @@ class VideoStarApi(CBaseHostClass):
         if not sts: return False, ""
         
         actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
+        if actionUrl == '': actionUrl = self.getFullUrl('/user/login', 'api')
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
         post_data = {}
         for item in data:
             name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+            if name == '': continue
             value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
             post_data[name] = value
         
-        post_data.update({'login': login, 'password': password, 'permanent': '1'})
+        post_data.update({'login': login, 'password': password, 'permanent': '1', 'device':'web'})
         httpParams = dict(self.defaultParams)
         httpParams['header'] = dict(httpParams['header'])
         httpParams['header']['Referer'] = self.getMainUrl()
         sts, data = self.cm.getPage(actionUrl, httpParams, post_data)
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(data)
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         if sts:
-            errMessage = []
-            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'message error'), ('</div', '>'))
-            for t in tmp:
-                t = self.cleanHtmlStr(t)
-                if t != '': errMessage.append(t)
-            errMessage = '\n'.join(errMessage)
+            errMessage = ''
+            try:
+                data = byteify(json.loads(data), '', True)
+                if data['status'] == 'error':
+                    errMessage = 'Błędne dane do logowania.'
+                elif data['status'] == 'ok' and '' != data['user']['token']:
+                    return True, ''
+            except Exception:
+                printExc()
+                errMessage = 'Niezrozumiała odpowiedź serwera.'
             if errMessage != '': 
                 return False, errMessage
-            elif '/logout' in data:
-                return True, ''
         else:
             return False, (errMessage % actionUrl)
         
