@@ -33,6 +33,7 @@ hostfaselhdcom
 hostfavourites
 hostfighttube
 hostfightvideo
+hostfilisertv
 hostfilma24hdcom
 hostfilmativa
 hostfilmezz
