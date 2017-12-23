@@ -55,7 +55,8 @@ class CDisplayListItem:
                 pinLocked = False, \
                 isGoodForFavourites = False, \
                 isWatched = False, \
-                textColor = ''):
+                textColor = '', \
+                pinCode = ''):
                 
         if isinstance(name, basestring): self.name = name
         else: self.name = str(name)
@@ -71,7 +72,9 @@ class CDisplayListItem:
         
         if pinLocked: self.pinLocked = True
         else: self.pinLocked = False
-            
+        
+        self.pinCode = str(pinCode)
+        
         if isGoodForFavourites: self.isGoodForFavourites = True
         else: self.isGoodForFavourites = False
         
@@ -563,6 +566,7 @@ class CHostBase(IHost):
         if icon == '': icon = self.getDefaulIcon(cItem)
         isGoodForFavourites = cItem.get('good_for_fav', False)
         pinLocked = cItem.get('pin_locked', False)
+        pinCode   = cItem.get('pin_code', '')
         textColor = cItem.get('text_color', '')
         
         return CDisplayListItem(name = title,
@@ -574,7 +578,8 @@ class CHostBase(IHost):
                                     possibleTypesOfSearch = possibleTypesOfSearch,
                                     pinLocked = pinLocked,
                                     isGoodForFavourites = isGoodForFavourites,
-                                    textColor = textColor)
+                                    textColor = textColor,
+                                    pinCode = pinCode)
     # end converItem
 
     def getSearchResults(self, searchpattern, searchType = None):

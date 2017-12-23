@@ -900,7 +900,7 @@ class IPTVPlayerWidget(Screen):
                     self.currSelIndex = currSelIndex
                     if item.pinLocked:
                         from iptvpin import IPTVPinWidget
-                        self.session.openWithCallback(boundFunction(self.checkDirPin, self.requestListFromHost, 'ForItem', currSelIndex, ''), IPTVPinWidget, title=_("Enter pin"))
+                        self.session.openWithCallback(boundFunction(self.checkDirPin, self.requestListFromHost, 'ForItem', currSelIndex, '', item.pinCode), IPTVPinWidget, title=_("Enter pin"))
                     else:
                         self.requestListFromHost('ForItem', currSelIndex, '')
                 elif item.type == CDisplayListItem.TYPE_MORE:
@@ -919,9 +919,11 @@ class IPTVPlayerWidget(Screen):
             self.showWindow()
     #end ok_pressed(self):
     
-    def checkDirPin(self, callbackFun, arg1, arg2, arg3, pin=None):
+    def checkDirPin(self, callbackFun, arg1, arg2, arg3, pinCode, pin=None):
         if pin != None:
-            if pin == config.plugins.iptvplayer.pin.value:
+            if 4 != len(pinCode):
+                pinCode = config.plugins.iptvplayer.pin.value # use default pin code if custom has wrong length
+            if pin == pinCode:
                 callbackFun(arg1, arg2, arg3);
             else:
                 self.session.open(MessageBox, _("Pin incorrect!"), type = MessageBox.TYPE_INFO, timeout = 5 )

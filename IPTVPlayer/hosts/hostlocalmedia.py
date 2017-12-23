@@ -190,7 +190,7 @@ class LocalMedia(CBaseHostClass):
             if item['f_type'] == 'inf':
                 if group == '':
                     need_resolve, url = self._getM3uPlayableUrl(baseUrl, url, item)
-                    params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'icon':icon, 'need_resolve':need_resolve} )
+                    params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'desc':item.get('tvg-name', ''), 'icon':icon, 'need_resolve':need_resolve} )
                     self.addVideo(params)
                 else:
                     if group not in groups:
@@ -198,11 +198,12 @@ class LocalMedia(CBaseHostClass):
                         if not self.cm.isValidUrl(groupIcon): groupIcon = item.get('group-art', '')
                         if not self.cm.isValidUrl(groupIcon): groupIcon = icon
                         groups[group] = []
-                        params.update( {'good_for_fav':False, 'title':group, 'category':nextCategory, 'f_group':group, 'url':baseUrl, 'icon':groupIcon} )
+                        params.update( {'good_for_fav':False, 'title':group, 'category':nextCategory, 'f_group':group, 'url':baseUrl, 'desc':'', 'icon':groupIcon} )
+                        if 'parent-code' in item: params.update({'pin_locked':True, 'pin_code':item['parent-code']})
                         self.addDir(params)
                     groups[group].append(item)
             elif item['f_type'] == 'import' and self.cm.isValidUrl(url):
-                params.update( {'good_for_fav':True, 'title':item['title'], 'path':url, 'icon':icon} )
+                params.update( {'good_for_fav':True, 'title':item['title'], 'path':url, 'desc':'', 'icon':icon} )
                 self.addDir(params)
         
         if groups != {}:
@@ -219,7 +220,7 @@ class LocalMedia(CBaseHostClass):
             url = item['uri']
             icon = self._getM3uIcon(item, cItem)
             need_resolve, url = self._getM3uPlayableUrl(baseUrl, url, item)
-            params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'icon':icon, 'need_resolve':need_resolve} )
+            params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'desc':item.get('tvg-name', ''), 'icon':icon, 'need_resolve':need_resolve} )
             self.addVideo(params)
             
     def showErrorMessage(self, message):
