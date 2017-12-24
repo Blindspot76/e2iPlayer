@@ -48,12 +48,12 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://dpstreaming.cx/'
+    return 'http://dpstreaming.xyz/'
 
 class DPStreamingCX(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0'
     HTTP_HEADER = {'User-Agent': USER_AGENT, 'Accept': 'text/html'}
-    MAIN_URL = 'http://dpstreaming.cx/'
+    MAIN_URL = 'http://dpstreaming.xyz/'
     DEFAULT_ICON_URL = 'http://reviewme.co.za/wp-content/uploads/2013/06/lista_series_7327_622x.jpg'
     MAIN_CAT_TAB = [{'category':'list_items',      'title':_('Last added'),   'url':MAIN_URL},
                     {'category':'categories',      'title':_('Categories'),   'url':MAIN_URL},
@@ -116,6 +116,7 @@ class DPStreamingCX(CBaseHostClass):
             url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
             icon  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1])
+            if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
             desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'content'), ('</div', '>'))[1])
             season = self.cm.ph.getSearchGroups(url, 'saison-([0-9]+?)-' )[0]
             params = dict(cItem)
