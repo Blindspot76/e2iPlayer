@@ -47,7 +47,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://cartoonhd.in/'
+    return 'https://cartoonhd.zone/'
 
 class CartoonHD(CBaseHostClass):
  
@@ -56,7 +56,7 @@ class CartoonHD(CBaseHostClass):
         self.cacheFilters = {}
         self.cacheLinks = {}
         self.loggedIn = None
-        self.DEFAULT_ICON_URL = 'https://cartoonhd.in/templates/cartoonhd/assets/images/logochd.png'
+        self.DEFAULT_ICON_URL = 'https://cartoonhd.zone/templates/cartoonhd/assets/images/logochd.png'
         
         self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
@@ -69,7 +69,7 @@ class CartoonHD(CBaseHostClass):
         
 
     def selectDomain(self):
-        domain = 'https://cartoonhd.in/'
+        domain = 'https://cartoonhd.zone/'
         try:
             params = dict(self.defaultParams)
             params['return_data'] = False
@@ -377,7 +377,7 @@ class CartoonHD(CBaseHostClass):
         
         #httpParams['header']['Cookie'] = '%s=%s; PHPSESSID=%s; flixy=%s;'% (elid, urllib.quote(encElid), getCookieItem('PHPSESSID'), getCookieItem('flixy'))
         for url in requestLinks:
-            post_data = {'action':type, 'idEl':elid, 'token':tor, 'elid':urllib.quote(encElid)}
+            post_data = {'action':type, 'idEl':elid, 'token':tor, 'elid':urllib.quote(encElid), 'nopop':''}
             sts, data = self.cm.getPage(url, httpParams, post_data)
             if not sts: continue
             printDBG('===============================================================')
