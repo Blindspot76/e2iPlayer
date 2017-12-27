@@ -1606,10 +1606,15 @@ class IPTVExtMoviePlayer(Screen):
             self.closeWithIframeClear(sts, currentTime)
             
     def closeWithIframeClear(self, sts, currentTime):
-        if self.iframeParams['show_iframe'] and IsExecutable('showiframe')\
-           and fileExists(self.iframeParams['iframe_file_end']):
+        blankIframeFilePath = ''
+        if self.iframeParams['show_iframe']:
+            blankIframeFilePath = self.iframeParams['iframe_file_end']
+        elif self.configObj.clearVideoByIframeInjection():
+            blankIframeFilePath = self.configObj.getBlankIframeFilePath()
+        
+        if blankIframeFilePath != '' and IsExecutable('showiframe') and fileExists(blankIframeFilePath):
             if not self.iframeParams['iframe_continue']:
-                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(self.iframeParams['iframe_file_end']), boundFunction(self.iptvDoClose, sts, currentTime))
+                self.iframeParams['console'] = iptv_system( 'showiframe "{0}"'.format(blankIframeFilePath), boundFunction(self.iptvDoClose, sts, currentTime))
                 return
         self.iptvDoClose(sts, currentTime)
     
