@@ -269,12 +269,12 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         
     def runSetup(self):
         list = []
-        list.append(getConfigListEntry(_("Use clear iframe at normal video playback finish"), config.plugins.iptvplayer.use_clear_iframe))
+        list.append(getConfigListEntry(_("Use black iframe at normal video playback finish"), config.plugins.iptvplayer.use_clear_iframe))
         list.append(getConfigListEntry(_("show iframe for audio item"), config.plugins.iptvplayer.show_iframe))
         if config.plugins.iptvplayer.show_iframe.value:
             list.append(getConfigListEntry("    " + _("Iframe file"), config.plugins.iptvplayer.iframe_file))
         if 'sh4' != config.plugins.iptvplayer.plarform.value and (config.plugins.iptvplayer.show_iframe.value or config.plugins.iptvplayer.use_clear_iframe.value):
-            list.append(getConfigListEntry("    " + _("Clear iframe file"), config.plugins.iptvplayer.clear_iframe_file))
+            list.append(getConfigListEntry("    " + _("Black iframe file"), config.plugins.iptvplayer.clear_iframe_file))
         
         list.append(getConfigListEntry(_("Remember last watched position"), config.plugins.iptvplayer.remember_last_position))
         if 1:#IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):

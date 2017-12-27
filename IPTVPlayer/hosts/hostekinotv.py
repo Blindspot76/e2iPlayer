@@ -20,6 +20,7 @@ from Screens.MessageBox import MessageBox
 ###################################################
 import base64
 import re
+import urlparse
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigYesNo, ConfigText, ConfigSelection, getConfigListEntry
@@ -55,7 +56,7 @@ class EkinoTv(CBaseHostClass):
         printDBG("EkinoTv.__init__")
         CBaseHostClass.__init__(self, {'history':'EkinoTv.tv', 'cookie':'ekinotv.cookie'})
         self.MAIN_URL = 'http://ekino-tv.pl/'
-        self.DEFAULT_ICON_URL = self.getFullUrl('/views/img/logo.png')
+        self.DEFAULT_ICON_URL = 'https://img.cda.pl/obr/oryginalne/c53be9b25636d46fabbb0ec78abe75c8.png'
         self.SEARCH_URL    = self.getFullUrl('/search/')
         self.FILMS_CAT_URL = self.getFullUrl('/movie/cat/')  
         
@@ -93,7 +94,13 @@ class EkinoTv(CBaseHostClass):
             else: return urlparse.urljoin(baseUrl, url)
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
-            
+    
+    def getFullIconUrl(self, url):
+        url = CBaseHostClass.getFullIconUrl(self, url.strip())
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['cf_clearance'])
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+    
     def _checkNexPage(self, data, page):
         if -1 != data.find('strona[%s]' % page):
             return True
@@ -446,7 +453,8 @@ class EkinoTv(CBaseHostClass):
             self.login = config.plugins.iptvplayer.ekinotv_login.value
             self.password = config.plugins.iptvplayer.ekinotv_password.value
             
-            rm(self.COOKIE_FILE)
+            #rm(self.COOKIE_FILE)
+            self.cm.clearCookie(self.COOKIE_FILE, ['__cfduid', 'cf_clearance'])
             
             self.loggedIn = False
             
