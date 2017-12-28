@@ -142,6 +142,9 @@ config.plugins.iptvplayer.vkcom_password = ConfigText(default="", fixed_size = F
 config.plugins.iptvplayer.fichiercom_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.fichiercom_password = ConfigText(default="", fixed_size = False)
 
+config.plugins.iptvplayer.iptvplayer_login    = ConfigText(default="", fixed_size = False)
+config.plugins.iptvplayer.iptvplayer_password = ConfigText(default="", fixed_size = False)
+
 config.plugins.iptvplayer.useSubtitlesParserExtension = ConfigYesNo(default = True)
 config.plugins.iptvplayer.opensuborg_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.opensuborg_password = ConfigText(default="", fixed_size = False)
@@ -289,6 +292,8 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("f4mdumppath", config.plugins.iptvplayer.f4mdumppath))
             list.append(getConfigListEntry("uchardetpath", config.plugins.iptvplayer.uchardetpath))
             list.append(getConfigListEntry("MIPS Floating Point Architecture", config.plugins.iptvplayer.plarformfpuabi))
+            list.append(getConfigListEntry("IPTVPlayer login", config.plugins.iptvplayer.iptvplayer_login))
+            list.append(getConfigListEntry("IPTVPlayer password", config.plugins.iptvplayer.iptvplayer_password))
         
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
