@@ -322,6 +322,19 @@ class HDStreams(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("HDStreams.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
+        if searchType == 'movies':
+            movies = 'true'
+            series = 'false'
+            keys = ['movies']
+        elif searchType == 'series':
+            movies = 'false'
+            series = 'true'
+            keys = ['seasons']
+        else:
+            movies = 'false'
+            series = 'true'
+            keys = ['movies', 'seasons']
+        
         url = self.getFullUrl('/home')
         sts, data = self.getPage(url)
         if not sts: return
@@ -334,21 +347,25 @@ class HDStreams(CBaseHostClass):
         urlParams['header']['x-requested-with'] = 'XMLHttpRequest'
         
         url = self.getFullUrl('/search')
-        query = urllib.urlencode({'q':searchPattern})
+        query = urllib.urlencode({'q':searchPattern, 'movies':movies, 'seasons':series, 'didyoumean':'true', 'actors':'false'})
         sts, data = self.getPage(url+'?'+query, urlParams)
         if not sts: return
         
         printDBG(data)
         
         try:
-            data = byteify(json.loads(data))
-            for item in data:
-                url = self.getFullUrl(item['url'])
-                icon = self.getFullIconUrl(item['src'])
-                title = self.cleanHtmlStr(item['title'])
-                params = dict(cItem)
-                params.update({'good_for_fav':True, 'category':'explore_item', 'title':title, 'url':url, 'icon':icon})
-                self.addDir(params)
+            
+            data = byteify(json.loads(data), '', True)
+            for key in keys:
+                for item in data[key]:
+                    icon  = self.getFullIconUrl(item.get('src', ''))
+                    url = self.getFullUrl(item.get('url', ''))
+                    if url == '': continue
+                    title = self.cleanHtmlStr(item.get('title', ''))
+                    desc = self.cleanHtmlStr(item.get('original_title', ''))
+                    params = dict(cItem)
+                    params.update({'good_for_fav':True, 'category':'explore_item', 'title':title, 'url':url, 'icon':icon, 'desc':desc})
+                    self.addDir(params)
         except Exception:
             printExc()
         
@@ -507,6 +524,12 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, HDStreams(), True, [])
+        
+    def getSearchTypes(self):
+        searchTypesOptions = []
+        searchTypesOptions.append((_("Movies"), "movies"))
+        searchTypesOptions.append((_("Series"), "series"))
+        return searchTypesOptions
     
     def withArticleContent(self, cItem):
         if 'video' == cItem.get('type', '') or 'explore_item' == cItem.get('category', ''):
