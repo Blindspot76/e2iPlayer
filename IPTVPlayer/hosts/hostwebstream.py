@@ -573,18 +573,56 @@ class HasBahCa(CBaseHostClass):
                 self.addDir(params)
         
         if category == 'list_videos':
+            page = cItem.get('page', 1)
             sts, data = self.cm.getPage(cItem['url'])
             if not sts: return
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="inlinecam', '</div>')
+            
+            if page == 1:
+                tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'inline-camera-listing'), ('<', '>'))[1].split('>', 1)[0]
+                tmp = re.compile('''data\-([^=^'^"^\s]+?)\s*=\s*['"]([^'^"]+?)['"]''').findall(tmp)
+                cItem = dict(cItem)
+                cItem['more_params'] = {}
+                for item in tmp:
+                    cItem['more_params'][item[0]] = item[1]
+                cItem['more_url'] = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?/ajax/[^'^"]+?)['"]''')[0]
+            else:
+                try:
+                    data = byteify(json.loads(data), '', True)['html']
+                except Exception:
+                    printExc()
+                    return
+            
+            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'inlinecam'), ('</div', '>'))
+            printDBG(data)
+            vidCount = 0
             for item in data:
                 url = self.cm.ph.getSearchGroups(item, """href=['"]([^'^"]+?)['"]""")[0]
                 if '' != url:
                     title = self._cleanHtmlStr(item)
-                    icon  = self.cm.ph.getSearchGroups(item, """src=['"]([^'^"]+?\.jpg[^'^"]*?)['"]""")[0]
+                    icon  = self.cm.ph.getSearchGroups(item, """data\-src=['"]([^'^"]+?)['"]""")[0]
+                    if icon == '': icon  = self.cm.ph.getSearchGroups(item, """src=['"]([^'^"]+?\.jpg[^'^"]*?)['"]""")[0]
                     params = dict(cItem)
                     params.update({'title':title, 'url':_getFullUrl(url), 'icon':_getFullUrl(icon)})
                     self.addVideo(params)
-                       
+                    vidCount += 1
+            
+            # check if next page is needed
+            if vidCount > 0:
+                urlPrams = dict(cItem['more_params'])
+                urlPrams['page'] = page + 1
+                try: urlPrams['cameras'] = page * int(urlPrams['limit']) - 1
+                except Exception: printExc()
+                try: urlPrams['columns'] = page * (int(urlPrams['limit']) + 1)
+                except Exception: printExc()
+                url = _getFullUrl(cItem['more_url'])
+                url += '?' + urllib.urlencode(urlPrams)
+                sts, data = self.getPage(url)
+                if not sts: return
+                if data.startswith('{') and '"last":true' not in data: 
+                    params = dict(cItem)
+                    params.update({'title':_('Next page'), 'url':url, 'page':page+1})
+                    self.addDir(params)
+            
     def getWebCameraLink(self, videoUrl):
         printDBG("getWebCameraLink start")
         videoUrl = strwithmeta(videoUrl)
