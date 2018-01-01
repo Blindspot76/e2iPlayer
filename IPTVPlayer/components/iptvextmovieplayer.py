@@ -1849,7 +1849,10 @@ class IPTVExtMoviePlayer(Screen):
                 cmd += ' -1 %s ' % tmpUri.meta['iptv_audio_rep_idx']
                 
             if 'iptv_m3u8_live_start_index' in tmpUri.meta:
-                cmd += ' -f %s ' % tmpUri.meta['iptv_m3u8_live_start_index']               
+                cmd += ' -f "live_start_index=%s" ' % tmpUri.meta['iptv_m3u8_live_start_index']
+                
+            if 'iptv_m3u8_key_uri_replace_old' in tmpUri.meta and 'iptv_m3u8_key_uri_replace_new' in tmpUri.meta:
+                cmd += ' -f "key_uri_old=%s" -f "key_uri_new=%s" ' % (tmpUri.meta['iptv_m3u8_key_uri_replace_old'], tmpUri.meta['iptv_m3u8_key_uri_replace_new'])
             
             cmd += (' "%s"' % videoUri) + " > /dev/null"
         

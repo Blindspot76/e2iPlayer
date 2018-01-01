@@ -14,6 +14,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser         import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.filmonapi         import FilmOnComApi, GetConfigList as FilmOn_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.videostar         import VideoStarApi, GetConfigList as VideoStar_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.viortv            import ViorTvApi, GetConfigList as ViortTv_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.livesports        import LiveSportsApi, GetConfigList as LiveSports_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.canlitvliveio     import CanlitvliveIoApi
 from Plugins.Extensions.IPTVPlayer.libs.weebtv            import WeebTvApi, GetConfigList as WeebTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi, GetConfigList as WagasWorld_GetConfigList
@@ -127,6 +128,9 @@ def GetConfigList():
     try:    optionList.extend( WagasWorld_GetConfigList() )
     except Exception: printExc()
     
+    optionList.append(getConfigListEntry("------------------suphd.club-------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( LiveSports_GetConfigList() )
+    except Exception: printExc()
     
     return optionList
 
@@ -154,6 +158,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'ustvnow.com',                       'url': 'https://www.ustvnow.com/',                                           'icon': 'http://2.bp.blogspot.com/-SVJ4uZ2-zPc/UBAZGxREYRI/AAAAAAAAAKo/lpbo8OFLISU/s1600/ustvnow.png'}, \
                         {'alias_id':'showsport-tv.com',        'name': 'showsport-tv.com',    'title': 'showsport-tv.com',                  'url': 'http://showsport-tv.com/',                                           'icon': 'http://showsport-tv.com/images/sstv-logo.png'}, \
                         {'alias_id':'sport365.live',           'name': 'sport365.live',       'title': 'sport365.live',                     'url': 'http://www.sport365.live/',                                          'icon': 'http://s1.medianetworkinternational.com/images/icons/48x48px.png'}, \
+                        {'alias_id':'suphd.club',              'name': 'suphd.club',          'title': 'http://suphd.club/',                'url': '',                                                                   'icon': 'https://i.ytimg.com/vi/_6ymsk8ESrI/hqdefault.jpg'}, \
                         #{'alias_id':'yooanime.com',            'name': 'yooanime.com',        'title': 'yooanime.com',                      'url': 'http://yooanime.com/',                                               'icon': 'https://socialtvplayground.files.wordpress.com/2012/11/logo-technicolor2.png?w=960'}, \
                         {'alias_id':'livetvhd.net',            'name': 'livetvhd.net',        'title': 'https://livetvhd.net/',             'url': 'https://livetvhd.net/',                                              'icon': 'https://livetvhd.net/images/logo.png'}, \
                         {'alias_id':'karwan.tv',               'name': 'karwan.tv',           'title': 'http://karwan.tv/',                 'url': 'http://karwan.tv/',                                                  'icon': 'http://karwan.tv/images/KARWAN_TV_LOGO/www.karwan.tv.png'}, \
@@ -199,6 +204,7 @@ class HasBahCa(CBaseHostClass):
         self.karwanTvApi          = None
         self.wizjaTvApi           = None
         self.viorTvApi            = None
+        self.liveSportsApi        = None
         self.canlitvliveIoApi     = None
         self.weebTvApi            = None
         self.djingComApi          = None
@@ -750,6 +756,26 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.viorTvApi.getVideoLink(cItem)
         return urlsTab
         
+    ########################################################
+    def getLiveSportsList(self, cItem):
+        printDBG("getLiveSportsList start")
+        if None == self.liveSportsApi: self.liveSportsApi = LiveSportsApi()
+        tmpList = self.liveSportsApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
+        
+    def getLiveSportsLink(self, cItem):
+        printDBG("getLiveSportsLink start")
+        urlsTab = self.liveSportsApi.getVideoLink(cItem)
+        return urlsTab
+        
+    def getLiveSportsResolvedLink(self, url):
+        printDBG("getLiveSportsResolvedLink start")
+        return self.liveSportsApi.getResolvedVideoLink(url)
+    ########################################################
+        
     def getCanlitvliveIoList(self, cItem):
         printDBG("getCanlitvliveIoList start")
         if None == self.canlitvliveIoApi: self.canlitvliveIoApi = CanlitvliveIoApi()
@@ -990,6 +1016,7 @@ class HasBahCa(CBaseHostClass):
         elif name == "sport365.live":       self.getSport365LiveList(self.currItem)
         elif name == "videostar.pl":        self.getVideostarList(self.currItem)
         elif name == "vior.tv":             self.getViorTvList(self.currItem)
+        elif name == "suphd.club":          self.getLiveSportsList(self.currItem)
         elif name == "canlitvlive.io":      self.getCanlitvliveIoList(self.currItem)
         elif name == "djing.com":           self.getDjingComList(self.currItem)
         elif name == 'ustvnow':             self.getUstvnowList(self.currItem)
@@ -1053,6 +1080,7 @@ class IPTVHost(CHostBase):
         elif name == "filmon_channel":             urlList = self.host.getFilmOnLink(channelID=url)
         elif name == "videostar.pl":               urlList = self.host.getVideostarLink(cItem)
         elif name == 'vior.tv':                    urlList = self.host.getViorTvLink(cItem)
+        elif name == 'suphd.club':                 urlList = self.host.getLiveSportsLink(cItem)
         elif name == 'canlitvlive.io':             urlList = self.host.getCanlitvliveIoLink(cItem)
         elif name == 'djing.com':                  urlList = self.host.getDjingComLink(cItem)
         elif name == 'ustvnow':                    urlList = self.host.getUstvnowLink(cItem)
@@ -1072,7 +1100,7 @@ class IPTVHost(CHostBase):
             
         if isinstance(urlList, list):
             for item in urlList:
-                retlist.append(CUrlItem(item['name'], item['url']))
+                retlist.append(CUrlItem(item['name'], item['url'], item.get('need_resolve', 0)))
         elif isinstance(url, basestring):
             if url.endswith('.m3u'):
                 tmpList = self.host.getDirectVideoHasBahCa(name, url)
@@ -1108,3 +1136,13 @@ class IPTVHost(CHostBase):
             
         return RetHost(RetHost.OK, value = retlist)
     # end getLinksForVideo
+    
+    def getResolvedURL(self, url):
+        retlist = []
+        urlList = self.host.getLiveSportsResolvedLink(url)
+        if isinstance(urlList, list):
+            for item in urlList:
+                need_resolve = 0
+                retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
+
+        return RetHost(RetHost.OK, value = retlist)

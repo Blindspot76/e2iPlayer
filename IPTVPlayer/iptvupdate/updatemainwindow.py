@@ -512,10 +512,6 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 self.stepFinished(-1, _("Installation has been aborted."))
         
     def stepRemoveOldVersion(self):
-        # if not config.plugins.iptvplayer.cleanup.value:
-            # code = 1
-            # self.stepFinished(1, "Pominięty.\nCzyszczenie w czasie aktualizacji jest wyłączone w ustawieniach pluginu.")
-        # else:
         cmd = 'rm -rf "%s"/*' % ( os_path.join(self.ExtensionPath, 'IPTVPlayer') )
         printDBG('UpdateMainAppImpl.stepRemoveOldVersion cmd[%s]' % cmd)
         self.cmd = iptv_system( cmd, self.__removeOldVersionCmdFinished )
