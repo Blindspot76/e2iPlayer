@@ -1706,24 +1706,25 @@ class pageParser:
             sts, data = self.cm.getPage(familyUrl, {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': False, 'load_cookie': False, 'cookiefile': COOKIE_FILE})
             if not sts: return []
         
+        sub_tracks = []
         vidTab = []
         playerConfig = None
         
         tmp = self.cm.ph.getSearchGroups(data, r'playerV5\s*=\s*dmp\.create\([^,]+?,\s*({.+?})\);')[0]
         try:
-            playerConfig = byteify(json.loads(tmp))['metadata']['qualities']
+            playerConfig = byteify(json.loads(tmp))['metadata']
         except Exception:
             pass
         if playerConfig == None:
             tmp = self.cm.ph.getSearchGroups(data, r'var\s+config\s*=\s*({.+?});')[0]
             try:
-                playerConfig = byteify(json.loads(tmp))['metadata']['qualities']
+                playerConfig = byteify(json.loads(tmp))['metadata']
             except Exception:
                 pass
             
-        if None != playerConfig:
+        if None != playerConfig and 'qualities' in playerConfig:
             hlsTab = []
-            for quality, media_list in playerConfig.items():
+            for quality, media_list in playerConfig['qualities'].items():
                 for media in media_list:
                     media_url = media.get('url')
                     if not media_url:
@@ -1735,6 +1736,14 @@ class pageParser:
                         hlsTab.append(media_url)
                     else:
                         vidTab.append({'name':'dailymotion.com: %sp' % quality, 'url':media_url, 'quality':quality})
+                        
+            try:
+                for lang in playerConfig['subtitles']['data']:
+                    label   = clean_html(playerConfig['subtitles']['data'][lang]['label'])
+                    src     = playerConfig['subtitles']['data'][lang]['urls']
+                    if 0 == len(src) or not self.cm.isValidUrl(src[0]): continue
+                    sub_tracks.append({'title':label, 'url':src[0], 'lang':lang, 'format':'srt'})
+            except Exception: pass
             
             if len(hlsTab) and 0 == len(vidTab):
                 for media_url in hlsTab:
@@ -1752,8 +1761,14 @@ class pageParser:
                 name = match[i][1]
                 try: vidTab.append({'name': 'dailymotion.com: ' + name, 'url':url})
                 except Exception: pass
+        
         try: vidTab = sorted(vidTab, key=lambda item: int(item.get('quality', '0')))
         except Exception: pass
+        
+        if len(sub_tracks):
+            for idx in range(len(vidTab)):
+                vidTab[idx]['url'] = urlparser.decorateUrl(vidTab[idx]['url'], {'external_sub_tracks':sub_tracks})
+            
         return vidTab[::-1]
 
     def parserSIBNET(self, baseUrl):
