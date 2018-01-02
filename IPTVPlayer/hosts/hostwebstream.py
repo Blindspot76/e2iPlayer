@@ -554,6 +554,7 @@ class HasBahCa(CBaseHostClass):
             data = self.cm.ph.rgetAllItemsBeetwenNodes(data, ('</ul', '>'), ('<li', '>', 'has-childre'), False)
             for item in data:
                 catUrl   = _getFullUrl( self.cm.ph.getSearchGroups(item, """href=['"]([^'^"]+?)['"]""")[0] )
+                if catUrl == '' or '#' in catUrl: continue
                 catTitle = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<a', '</a>')[1] )
                 catIcon  = _getFullUrl( 'images/logo_mobile.png' )
                 
