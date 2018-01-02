@@ -5492,8 +5492,9 @@ class pageParser:
                     return getDirectM3U8Playlist(_getFullUrl(tmp[1]), checkContent=True)
             else:
                 for playerUrl in tmp:
-                    if self.cm.isValidUrl(_getFullUrl(playerUrl)):
-                        urlsTab.extend(getDirectM3U8Playlist(playerUrl), checkContent=True)
+                    playerUrl = _getFullUrl(playerUrl)
+                    if self.cm.isValidUrl(playerUrl):
+                        urlsTab.extend(getDirectM3U8Playlist(playerUrl, checkContent=True))
         
         data = self.cm.ph.getSearchGroups(data, """<meta itemprop="embedURL" content=['"]([^'^"]+?)['"]""")[0]
         data = data.split('&')

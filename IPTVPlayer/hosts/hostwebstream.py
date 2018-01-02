@@ -550,7 +550,7 @@ class HasBahCa(CBaseHostClass):
             
             self.webcameraSubCats = {}
             
-            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''<nav[^>]+?>'''), re.compile('</nav>'))[1]
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<nav', '>'), ('</nav', '>'))[1]
             data = self.cm.ph.rgetAllItemsBeetwenNodes(data, ('</ul', '>'), ('<li', '>', 'has-childre'), False)
             for item in data:
                 catUrl   = _getFullUrl( self.cm.ph.getSearchGroups(item, """href=['"]([^'^"]+?)['"]""")[0] )
@@ -561,6 +561,7 @@ class HasBahCa(CBaseHostClass):
                 item = self.cm.ph.getAllItemsBeetwenMarkers(item.split('<ul', 1)[-1], '<li', '</li>')
                 for it in item:
                     url = _getFullUrl( self.cm.ph.getSearchGroups(it, """href=['"]([^'^"]+?)['"]""")[0] )
+                    if 'kategoria' not in url: continue
                     subCats.append({'title':self._cleanHtmlStr(it), 'url':url, 'icon':catIcon, catKey:'list_videos'})
                 
                 params = dict(cItem)
@@ -580,7 +581,9 @@ class HasBahCa(CBaseHostClass):
         
         if category == 'list_videos':
             page = cItem.get('page', 1)
-            sts, data = self.cm.getPage(cItem['url'])
+            getPageParams = {'header': {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Referer':baseUrl}}
+            if page > 1: getPageParams['header']['X-Requested-With'] = 'XMLHttpRequest'
+            sts, data = self.cm.getPage(cItem['url'], getPageParams)
             if not sts: return
             
             if page == 1:
@@ -622,7 +625,8 @@ class HasBahCa(CBaseHostClass):
                 except Exception: printExc()
                 url = _getFullUrl(cItem['more_url'])
                 url += '?' + urllib.urlencode(urlPrams)
-                sts, data = self.getPage(url)
+                getPageParams['header']['X-Requested-With'] = 'XMLHttpRequest'
+                sts, data = self.cm.getPage(url, getPageParams)
                 if not sts: return
                 if data.startswith('{') and '"last":true' not in data: 
                     params = dict(cItem)
