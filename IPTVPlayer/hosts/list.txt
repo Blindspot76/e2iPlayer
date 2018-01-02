@@ -142,6 +142,7 @@ hostwebstream
 hostwgrane
 hostwolnelekturypl
 hostworldfree4u
+hostwpolscepl
 hostwptv
 hostxrysoise
 hostyesmoviesto
