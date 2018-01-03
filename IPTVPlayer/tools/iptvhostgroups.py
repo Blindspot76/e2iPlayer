@@ -96,7 +96,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['balkans']          = ['youtube','filmativa','filmovizijastudio','filma24hdcom','crtankocom','serijeonline','dailymotion','twitchtv','hitboxtv']
         
         self.PREDEFINED_HOSTS['others']           = ['iptvplayerinfo','localmedia','urllist','youtube','cdapl','wolnelekturypl','chomikuj','freediscpl','kabarety','spryciarze','wgrane','liveleak','dailymotion','ted', \
-                                                     'ororotv','eskago','musicbox','dancetrippin','vevo','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl',]
+                                                     'ororotv','eskago','musicbox','dancetrippin','vevo','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl','myfreemp3']
         
         self.LOADED_HOSTS = {}
         self.LOADED_DISABLED_HOSTS = {}
