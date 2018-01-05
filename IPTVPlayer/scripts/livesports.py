@@ -8,6 +8,7 @@ import traceback
 import base64
 import SocketServer
 import SimpleHTTPServer
+import re
 
 def printDBG(strDat):
     #return
@@ -27,6 +28,7 @@ def printExc(msg=''):
 def getPage(url, params={}):
     printDBG('url [%s]' % url)
     sts = False
+    data = None
     try:
         req = urllib2.Request(url)
         if 'Referer' in params:
@@ -43,6 +45,8 @@ def getPage(url, params={}):
 class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_GET(self):
         global mainUrl
+        global userAgent
+        global urlPath
         keyUrl = self.path
         
         if keyUrl.startswith('/https/'): keyUrl = 'https://' + keyUrl[7:]
@@ -50,19 +54,30 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
         
         printDBG("do_GET: " + keyUrl)
         
-        keyurl = mainUrl + 'keys/ma.php?q=' + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
-        sts, data = getPage(keyurl)
+        keyurl = mainUrl + urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
+        sts, data = getPage(keyurl, {'User-Agent':userAgent, 'Referer':mainUrl})
         if sts: self.wfile.write(data)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 6:
         print('Wrong parameters', file=sys.stderr)
         sys.exit(1)
     try:
         port        = int(sys.argv[1])
         hlsUrl      = sys.argv[2]
         mainUrl     = sys.argv[3]
-        userAgent   = sys.argv[4]
+        scriptUrl   = sys.argv[4]
+        userAgent   = sys.argv[5]
+        
+        urlPath     = 'keys/mma.php?q='
+        
+        sts, data = getPage(scriptUrl, {'User-Agent':userAgent, 'Referer':mainUrl})
+        if sts:
+            try:
+                urlPath = re.compile('''['"]([^'^"]*?keys/[^'^"]*?)['"]''').search(data).group(1)
+                if urlPath.startswith('/'): urlPath = urlPath[1:]
+            except Exception:
+                printExc()
         
         SocketServer.TCPServer.allow_reuse_address = True
         #httpd = SocketServer.ForkingTCPServer(('127.0.0.1', port), Proxy)

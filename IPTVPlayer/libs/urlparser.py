@@ -3845,6 +3845,8 @@ class pageParser:
         printDBG(data)
         
         url = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+        if url.startswith('//'):
+            url = 'http:' + url
         HTTP_HEADER['Referer'] = baseUrl
         
         if episode != '':

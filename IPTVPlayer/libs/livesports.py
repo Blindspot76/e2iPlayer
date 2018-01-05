@@ -40,10 +40,12 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.livesports_port = ConfigInteger(8193, (1024,65535))
+config.plugins.iptvplayer.livesports_domain = ConfigText(default = "http://suphd.club/", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_('PORT') + ": ",    config.plugins.iptvplayer.livesports_port))
+    optionList.append(getConfigListEntry(_('PORT') + ": ", config.plugins.iptvplayer.livesports_port))
+    optionList.append(getConfigListEntry(_('Service domain') + ": ", config.plugins.iptvplayer.livesports_domain))
     return optionList
     
 ###################################################
@@ -53,7 +55,7 @@ class LiveSportsApi(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self)
-        self.MAIN_URL =  'http://174.138.49.107/' #'http://suphd.club/'
+        self.MAIN_URL =  'http://suphd.club/' #'http://174.138.49.107/'
         self.DEFAULT_ICON_URL = 'https://i.ytimg.com/vi/_6ymsk8ESrI/hqdefault.jpg'
         self.HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
@@ -65,6 +67,11 @@ class LiveSportsApi(CBaseHostClass):
         self.cacheSections = []
         self.dateReObj = re.compile('''([A-Z][a-z]{2})\s*([0-9]+?)[^0-9]+?([0-9]{4})\s*([0-9][0-9]?:[0-9]{2})\s(AM|PM)''')
         self.ABBREVIATED_MONTH_NAME_TAB = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        
+    def getMainUrl(self):
+        if self.cm.isValidUrl(config.plugins.iptvplayer.livesports_domain.value):
+            return config.plugins.iptvplayer.livesports_domain.value
+        return self.MAIN_URL
         
     def gmt2local(self, txt):
         try:
@@ -158,19 +165,15 @@ class LiveSportsApi(CBaseHostClass):
         replace = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?replace['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
         keyurl  = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?keyurl['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
         
-        # TEST 
-        if False:
-            source = ''
-            replace = ''
-            data += '/js/nhl.js'
-        
         hlsTab = getDirectM3U8Playlist(source, checkContent=True, sortWithMaxBitrate=9000000)
         if replace != '' and keyurl != '':
             for idx in range(len(hlsTab)):
                 hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'iptv_m3u8_key_uri_replace_old':replace, 'iptv_m3u8_key_uri_replace_new':keyurl})
         elif '/js/nhl.js' in data:
+            scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^"^']*?js/nhl\.js)['"]''', 1, True)[0])
             for idx in range(len(hlsTab)):
                 hlsTab[idx]['need_resolve'] = 1
+                hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'Referer':cItem['url'], 'priv_script_url':scriptUrl})
         
         urlsTab = hlsTab
         
@@ -180,15 +183,19 @@ class LiveSportsApi(CBaseHostClass):
         printDBG("ViorTvApi.getResolvedVideoLink [%s]" % videoUrl)
         urlsTab = []
         
+        
+        baseUrl = self.cm.getBaseUrl(videoUrl.meta.get('Referer', ''))
+        scriptUrl = self.cm.getBaseUrl(videoUrl.meta.get('priv_script_url', ''))
+        
         sts, data = self.cm.getPage(videoUrl)
         if not sts or '#EXTM3U' not in data: return urlsTab
         
         keyUrl = set(re.compile('''#EXT\-X\-KEY.*?URI=['"](https?://[^"]+?)['"]''').findall(data))
-        
+        #'http://165.227.219.105/'
         if len(keyUrl):
             keyUrl = keyUrl.pop()
             proto = keyUrl.split('://', 1)[0]
-            pyCmd = GetPyScriptCmd('livesports') + ' "%s" "%s" "%s" "%s" ' % (config.plugins.iptvplayer.livesports_port.value, videoUrl, self.getMainUrl(), self.HTTP_HEADER['User-Agent'])
+            pyCmd = GetPyScriptCmd('livesports') + ' "%s" "%s" "%s" "%s" "%s" ' % (config.plugins.iptvplayer.livesports_port.value, videoUrl, baseUrl, scriptUrl, self.HTTP_HEADER['User-Agent'])
             meta = {'iptv_proto':'em3u8'}
             meta['iptv_m3u8_key_uri_replace_old'] = '%s://' % proto 
             meta['iptv_m3u8_key_uri_replace_new'] = 'http://127.0.0.1:{0}/{1}/'.format(config.plugins.iptvplayer.livesports_port.value, proto)
