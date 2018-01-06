@@ -56,7 +56,11 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
         
         keyurl = mainUrl + urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
         sts, data = getPage(keyurl, {'User-Agent':userAgent, 'Referer':mainUrl})
-        if sts: self.wfile.write(data)
+        printDBG("sts [%s] data[%s]" % (sts, data))
+        if sts:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(data)
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:

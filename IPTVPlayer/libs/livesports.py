@@ -185,7 +185,7 @@ class LiveSportsApi(CBaseHostClass):
         
         
         baseUrl = self.cm.getBaseUrl(videoUrl.meta.get('Referer', ''))
-        scriptUrl = self.cm.getBaseUrl(videoUrl.meta.get('priv_script_url', ''))
+        scriptUrl = videoUrl.meta.get('priv_script_url', '')
         
         sts, data = self.cm.getPage(videoUrl)
         if not sts or '#EXTM3U' not in data: return urlsTab

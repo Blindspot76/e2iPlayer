@@ -44,14 +44,14 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://freedisc.pl/'
+    return 'https://freedisc.pl/'
 
 class FreeDiscPL(CBaseHostClass):
-    HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+    HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
     AJAX_HEADER = dict(HEADER)
-    AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+    AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept':'application/json, text/javascript, */*; q=0.01', 'Content-Type':'application/json; charset=UTF-8'} )
     
-    MAIN_URL      = 'http://freedisc.pl/'
+    MAIN_URL      = 'https://freedisc.pl/'
     SEARCH_URL    = MAIN_URL + 'search/get'
     DEFAULT_ICON  = "http://i.imgur.com/mANjWqL.png"
 
@@ -67,9 +67,11 @@ class FreeDiscPL(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'  FreeDiscPL.tv', 'cookie':'FreeDiscPL.cookie'})
-        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
     def getPage(self, url, params={}, post_data=None):
+        if params == {}:
+            params = dict(self.defaultParams)
         return self.cm.getPage(url, params, post_data)
         
     def _getIconUrl(self, url):
@@ -179,7 +181,7 @@ class FreeDiscPL(CBaseHostClass):
         params = dict(self.defaultParams)
         params['raw_post_data'] = True
         params['header'] = dict(self.AJAX_HEADER)
-        params['header']['Referer']= 'http://freedisc.pl/search/%s/%s' % (searchType, urllib.quote(searchPattern))
+        params['header']['Referer']= self.cm.getBaseUrl(self.getMainUrl()) + 'search/%s/%s' % (searchType, urllib.quote(searchPattern))
         sts, data = self.getPage(self.SEARCH_URL, params, json.dumps(post_data))
         if not sts: return
         printDBG(data)
