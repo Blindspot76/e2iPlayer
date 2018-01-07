@@ -136,10 +136,17 @@ class IPTVPlayerWidget(Screen):
     def __init__(self, session):
         printDBG("IPTVPlayerWidget.__init__ desktop IPTV_VERSION[%s]\n" % (IPTVPlayerWidget.IPTV_VERSION) )
         self.session = session
+        self.skinResolutionType = 'sd'
+        screenwidth = getDesktop(0).size().width()
+        if screenwidth:
+            if screenwidth > 1900:
+                self.skinResolutionType = 'hd'
+            elif screenwidth > 1200:
+                self.skinResolutionType = 'hd_ready'
+        
         selSkin = config.plugins.iptvplayer.skin.value
         if selSkin in ['Auto', 'auto']:
-            screenwidth = getDesktop(0).size().width()
-            if screenwidth and screenwidth > 1900:
+            if self.getSkinResolutionType() == 'hd':
                 selSkin = 'halidri1080p1'
             else:
                 selSkin = 'rafalcoo1'
@@ -322,6 +329,9 @@ class IPTVPlayerWidget(Screen):
         asynccall.SetMainThreadId()
     
     #end def __init__(self, session):
+    
+    def getSkinResolutionType(self):
+        return self.skinResolutionType
     
     def setStatusTex(self, msg):
         self.statusTextValue = msg
@@ -672,7 +682,12 @@ class IPTVPlayerWidget(Screen):
                         options[idx].type = IPTVChoiceBoxItem.TYPE_ON
                     else:
                         options[idx].type = IPTVChoiceBoxItem.TYPE_OFF
-                self.session.openWithCallback(self.setActiveMoviePlayer, IPTVChoiceBoxWidget, {'width':500, 'height':250, 'current_idx':currIdx, 'title': _("Select movie player"), 'options':options})
+                
+                if self.getSkinResolutionType() == 'hd': width = 900
+                elif self.getSkinResolutionType() == 'hd_ready': width = 600
+                else: width = 400
+                
+                self.session.openWithCallback(self.setActiveMoviePlayer, IPTVChoiceBoxWidget, {'width':width, 'height':250, 'current_idx':currIdx, 'title': _("Select movie player"), 'options':options})
             elif ret[1] == 'ADD_FAV':
                 currSelIndex = self.canByAddedToFavourites()[0]
                 self.requestListFromHost('ForFavItem', currSelIndex, '')
