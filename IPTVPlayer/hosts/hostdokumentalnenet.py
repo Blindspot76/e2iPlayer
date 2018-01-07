@@ -48,15 +48,15 @@ def GetConfigList():
     return optionList
 ###################################################
 def gettytul():
-    return 'http://dokumentalne.net/'
+    return 'https://dokumentalne.net/'
 
 class DokumentalneNET(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'dokumentalne.net', 'cookie':'dokumentalne.net.cookie', 'cookie_type':'MozillaCookieJar'})
-        self.DEFAULT_ICON_URL = 'http://dokumentalne.net/wp-content/uploads/2016/11/dokumentalne_logo_1.png'
+        self.DEFAULT_ICON_URL = 'https://dokumentalne.net/wp-content/uploads/2016/11/dokumentalne_logo_1.png'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'http://dokumentalne.net/'
+        self.MAIN_URL = 'https://dokumentalne.net/'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.MAIN_CAT_TAB = [{'category':'list_categories',   'title': 'Kategorie',        'url':self.getMainUrl()},
