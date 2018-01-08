@@ -40,12 +40,16 @@ from Screens.MessageBox import MessageBox
 config.plugins.iptvplayer.viortv_login              = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.viortv_password           = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.viortv_show_all_channels  = ConfigYesNo(default = False)
+config.plugins.iptvplayer.viortv_defquality         = ConfigSelection(default = "9999999999", choices = [("0", _("the worst")),("400000", _("low")),("950000", _("average")),("1600000", _("high")), ("9999999999", _("the best"))])
+config.plugins.iptvplayer.viortv_use_defquality     = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_('Show all channels') + ": ",    config.plugins.iptvplayer.viortv_show_all_channels))
-    optionList.append(getConfigListEntry('vior.tv ' + _("e-mail") + ':',   config.plugins.iptvplayer.viortv_login))
-    optionList.append(getConfigListEntry('vior.tv ' + _("password") + ':', config.plugins.iptvplayer.viortv_password))
+    optionList.append(getConfigListEntry(_('Show all channels') + ": ",     config.plugins.iptvplayer.viortv_show_all_channels))
+    optionList.append(getConfigListEntry('vior.tv ' + _("e-mail") + ':',    config.plugins.iptvplayer.viortv_login))
+    optionList.append(getConfigListEntry('vior.tv ' + _("password") + ':',  config.plugins.iptvplayer.viortv_password))
+    optionList.append(getConfigListEntry(_('Preferred quality') + ": ",     config.plugins.iptvplayer.viortv_defquality))
+    optionList.append(getConfigListEntry(_('Use preferred quality') + ": ", config.plugins.iptvplayer.viortv_use_defquality))
     return optionList
     
 ###################################################
@@ -148,11 +152,14 @@ class ViorTvApi(CBaseHostClass):
         urlsTab = []
         
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
-        if not sts: return urlsTab
+        if not sts: return []
         
         hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0].replace('.com//', '.com/')
         printDBG("hlsUrl||||||||||||||||| " + hlsUrl)
         if hlsUrl != '':
             hlsUrl = strwithmeta(hlsUrl, {'User-Agent':self.defaultParams['header']['User-Agent'], 'Referer':cItem['url']})
-            return getDirectM3U8Playlist(hlsUrl, checkContent=True)
+            maxBitrate = int(config.plugins.iptvplayer.viortv_defquality.value) * 1.3
+            urlsTab = getDirectM3U8Playlist(hlsUrl, checkContent=True, sortWithMaxBitrate=maxBitrate)
+            if len(urlsTab) > 1 and config.plugins.iptvplayer.viortv_use_defquality.value:
+                urlsTab = urlsTab[0:1]
         return urlsTab

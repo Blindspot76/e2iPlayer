@@ -107,8 +107,7 @@ class VideoStarApi(CBaseHostClass):
         sts, data = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'login'), ('</form', '>'))
         if not sts: return False, ""
         
-        actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
-        if actionUrl == '': actionUrl = self.getFullUrl('/user/login', 'api')
+        actionUrl = self.getFullUrl('/user/login', 'api')
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
         post_data = {}
         for item in data:
