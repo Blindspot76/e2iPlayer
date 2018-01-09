@@ -75,9 +75,10 @@ class WRealu24TV(CBaseHostClass):
         sts, data = self.getPage(self.getMainUrl())
         if not sts: return
         
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', '/film/'), ('</a', '>'))
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>',), ('</a', '>'))
         for item in data:
             url  = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            if '/na-zywo/' not in url and '/film/' not in url: continue
             icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
             title = self.cleanHtmlStr(item)
             if title == '': title = self.cleanHtmlStr(url.split('/')[-1].replace('-', ' '))
