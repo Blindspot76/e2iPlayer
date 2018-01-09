@@ -49,7 +49,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://9anime.to/'
+    return 'https://9anime.is/'
 
 class AnimeTo(CBaseHostClass):
  
@@ -60,17 +60,17 @@ class AnimeTo(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://9anime.to/'
+        self.MAIN_URL = 'https://9anime.is/'
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
-        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Home'),        'url':self.getFullUrl('filter')        },
-                             {'category':'list_items',      'title': _('Newest'),      'url':self.getFullUrl('newest')        },
-                             {'category':'list_items',      'title': _('Last update'), 'url':self.getFullUrl('updated')       },
-                             {'category':'list_items',      'title': _('Most watched'),'url':self.getFullUrl('most-watched')  },
-                             #{'category':'list_items2',     'title': _('Upcoming'),   'url':self.getFullUrl('upcoming') },
+        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Home'),        'url':self.getFullUrl('/filter')      },
+                             {'category':'list_items',      'title': _('Newest'),      'url':self.getFullUrl('/newest')      },
+                             {'category':'list_items',      'title': _('Last update'), 'url':self.getFullUrl('/updated')     },
+                             {'category':'list_items',      'title': _('Most watched'),'url':self.getFullUrl('/most-watched')},
+                             {'category':'list_letters',    'title': _('A-Z List'),    'url':self.getFullUrl('/az-list')     },
                              
                              {'category':'search',            'title': _('Search'), 'search_item':True,},
                              {'category':'search_history',    'title': _('Search history'),            } 
@@ -95,12 +95,27 @@ class AnimeTo(CBaseHostClass):
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         return sts, data
     
+    def listLetters(self, cItem, nextCategory):
+        printDBG("AnimeTo.listLetters")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'letters'), ('</ul', '>'))[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        for item in data:
+            url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
+            title = self.cleanHtmlStr( item )
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'url':url})
+            self.addDir(params)
+    
     def fillCacheFilters(self, cItem):
         printDBG("AnimeTo.listCategories")
         self.cacheFilters = {}
         self.cacheFiltersKeys = []
         
-        sts, data = self.getPage(cItem['url'])
+        sts, data = self.getPage(self.getFullUrl('ongoing'))
         if not sts: return
         
         def addFilter(data, marker, baseKey, addAll=True, titleBase=''):
@@ -121,7 +136,7 @@ class AnimeTo(CBaseHostClass):
                 if addAll: self.cacheFilters[key].insert(0, {'title':_('All')})
                 self.cacheFiltersKeys.append(key)
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="filter dropdown">', '</ul>')
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'filter dropdown'), ('</ul', '>'))
         for tmp in data:
             key = self.cm.ph.getSearchGroups(tmp, '''name="([^"]+?)"''')[0]
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
@@ -155,7 +170,7 @@ class AnimeTo(CBaseHostClass):
         
         for key in self.cacheFiltersKeys:
             baseKey = key[2:] # "f_"
-            if key in cItem: query[baseKey] = urllib.quote(cItem[key])
+            if key in cItem: query[baseKey] = cItem[key]
         
         query = urllib.urlencode(query)
         if '?' in url: url += '&' + query
@@ -167,18 +182,29 @@ class AnimeTo(CBaseHostClass):
         if  '>Next<' in data: nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="item">', '</div>')
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'item'), ('<script', '>'))[1]
+        data = self.cm.ph.rgetAllItemsBeetwenNodes(data, ('</div', '>'), ('<div', '>', 'item'))
+        if nextPage and len(data): data[-1] = re.compile('<div[^>]+?paging\-wrapper[^>]+?>').split(data[-1], 1)[0]
         for item in data:
             url = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             tip = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'data-tip="([^"]+?)"')[0] )
             if not self.cm.isValidUrl(url): continue
             icon = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
-            title = self.cleanHtmlStr( item )
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<a', '>', 'name'), ('</a', '>'))[1])
+            if title == '': title = self.cleanHtmlStr( item )
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
 
+            desc = []
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<div', '</div>')
+            for t in tmp:
+                t = self.cleanHtmlStr(t)
+                if t != '': desc.append(t)
+            desc = ' | '.join(desc) 
+            desc += '[/br]' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<p', '</p>')[1])
+            
             params = dict(cItem)
-            params = {'good_for_fav': True, 'title':title, 'url':url, 'tip_url':tip, 'icon':icon}
+            params = {'good_for_fav': True, 'title':title, 'url':url, 'tip_url':tip, 'icon':icon, 'desc':desc}
             params['category'] = nextCategory
             self.addDir(params)
         
@@ -193,17 +219,27 @@ class AnimeTo(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        serverNamesMap = {}
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'servers'), ('</div', '>'))[1]
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<span', '>', 'data-name'), ('</span', '>'))
+        for item in tmp:
+            serverName = self.cleanHtmlStr(item)
+            serverKey  = self.cm.ph.getSearchGroups(item, '''\sdata\-name=['"]([^'^"]+?)['"]''')[0]
+            serverNamesMap[serverKey] = serverName
+        
         titlesTab = []
         self.cacheLinks  = {}
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="servers">', '<div class="widget')[1]
-        data = data.split('<div class="server row"')
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'data-name'), ('</ul', '>'))
         for tmp in data:
-            serverName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<label', '</label>')[1])
+            if 'episodes' not in tmp: continue
+            serverKey  = self.cm.ph.getSearchGroups(tmp, '''\sdata\-name=['"]([^'^"]+?)['"]''')[0]
+            serverName = serverNamesMap.get(serverKey, serverKey)
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
             for item in tmp:
                 title = self.cleanHtmlStr(item)
                 id    = self.cm.ph.getSearchGroups(item, '''data-id=['"]([^'^"]+?)['"]''')[0]
                 url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+                if id == '' or url == '': continue 
                 if title not in titlesTab:
                     titlesTab.append(title)
                     self.cacheLinks[title] = []
@@ -467,6 +503,8 @@ class AnimeTo(CBaseHostClass):
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif category == 'list_filters':
             self.listFilters(self.currItem, 'list_items')
+        elif category == 'list_letters':
+            self.listLetters(self.currItem, 'list_items')
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
