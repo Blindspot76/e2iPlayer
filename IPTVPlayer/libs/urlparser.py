@@ -1643,8 +1643,7 @@ class pageParser:
         try:
             tmp = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
             tmp = self.cm.ph.getDataBeetwenMarkers(data, '"sources":', ']', False)[1].strip()
-            tmp = byteify(json.loads(data+']'))
-            printDBG(tmp)
+            if tmp != '': tmp = byteify(json.loads(data+']'))
         except Exception:
             printExc()
         

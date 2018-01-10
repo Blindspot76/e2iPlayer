@@ -426,10 +426,12 @@ class AnimeTo(CBaseHostClass):
         sts, data = self.getPage(cItem['url'], params)
         if not sts: return []
         
-        id = self.cm.ph.getSearchGroups(data, '''<([^>]+?class="watchpage"[^>]*?)>''')[0]
+        id = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'film-report'), ('<', '>'))[1]
         id = self.cm.ph.getSearchGroups(id, '''data-id=['"]([^'^"]+?)['"]''')[0]
         
         timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+        
+        printDBG("++++++++++++> timestamp[%s], id[%s]" % (timestamp, id))
 
         getParams = {'ts':timestamp}
         getParams = self._updateParams(getParams)
