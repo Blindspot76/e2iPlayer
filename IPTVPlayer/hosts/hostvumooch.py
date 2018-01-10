@@ -311,6 +311,12 @@ class Vumoo(CBaseHostClass):
             try: baseUrl = data.meta['url']
             except Exception: return urlTab
             
+            tmp = self.cm.ph.getSearchGroups(data, '''<meta[^>]+?content=['"]\s*[0-9]+?\s*;\s*URL=([^'^"]+?)['"]''', 1, True)[0]
+            if self.cm.isValidUrl(tmp): 
+                baseUrl = tmp
+                sts, data = self.getPage(baseUrl, params)
+                if not sts: return urlTab
+            
             if domain == self.up.getDomain(baseUrl):
                 tmpTab = self._extractGoogleLinks(data)
                 for item in tmpTab:
@@ -336,7 +342,7 @@ class Vumoo(CBaseHostClass):
                 except Exception:
                     printExc()
             
-            printDBG(data)
+            #printDBG(data)
         return urlTab
         
     def getFavouriteData(self, cItem):
