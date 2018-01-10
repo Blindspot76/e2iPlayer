@@ -14,7 +14,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import IsExecutable, IsWebInt
 # FOREIGN import
 ###################################################
 from enigma import getDesktop
-
+from Screens.Screen import Screen
 from Plugins.Plugin import PluginDescriptor
 from Screens.MessageBox import MessageBox
 from Tools.BoundFunction import boundFunction
@@ -30,7 +30,10 @@ def Plugins(**kwargs):
     if screenwidth and screenwidth == 1920: iconFile = "icons/iptvlogohd.png"
     else: iconFile = "icons/iptvlogo.png"
     desc = _("Watch video materials from IPTV services")
-    list = [PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_PLUGINMENU], icon=iconFile, fnc=main)] # always show in plugin menu
+    list = []
+    if config.plugins.iptvplayer.plugin_autostart.value:
+        list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_WIZARD], fnc=(9, pluginAutostart), needsRestart=False))
+    list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_PLUGINMENU], icon=iconFile, fnc=main)) # always show in plugin menu
     list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = PluginDescriptor.WHERE_MENU, fnc=startIPTVfromMenu))
     if config.plugins.iptvplayer.showinextensions.value:
         list.append (PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main))
@@ -63,31 +66,43 @@ def mainSetup(session,**kwargs):
     
 def runSetup(session):
     session.open(ConfigMenu) 
-    
+
 def main(session,**kwargs):
     if config.plugins.iptvplayer.pluginProtectedByPin.value:
         session.openWithCallback(boundFunction(pinCallback, session, runMain), IPTVPinWidget, title =_("Enter pin")) 
     else:
         runMain(session)
         
-def runMain(session):
+class pluginAutostart(Screen):
+    def __init__(self, session):
+        self.session = session
+        Screen.__init__(self, session)
+        self.onShow.append(self.onStart)
+    
+    def onStart(self):
+        self.onShow.remove(self.onStart)
+        runMain(self.session, self.iptvDoRunMain)
+        
+    def iptvDoRunMain(self, session):
+        session.openWithCallback(self.iptvDoClose, IPTVPlayerWidget)
+        
+    def iptvDoClose(self, **kwargs):
+        self.close()
+    
+def doRunMain(session):
+    session.open(IPTVPlayerWidget)
+
+def runMain(session, nextFunction=doRunMain):
     wgetpath     = IsExecutable(config.plugins.iptvplayer.wgetpath.value)
     rtmpdumppath = IsExecutable(config.plugins.iptvplayer.rtmpdumppath.value)
     f4mdumppath  = IsExecutable(config.plugins.iptvplayer.f4mdumppath.value)
-    #print "//////////////////////////////////////////////////////////////////////////////////////"
-    #print config.plugins.iptvplayer.wgetpath.value
-    #print config.plugins.iptvplayer.rtmpdumppath.value
-    #print config.plugins.iptvplayer.f4mdumppath.value
     platform     = config.plugins.iptvplayer.plarform.value
     if platform in ["auto", "unknown"] or not wgetpath or not rtmpdumppath or not f4mdumppath:
-        session.openWithCallback(boundFunction(doRunMain, session), IPTVSetupMainWidget)
+        session.openWithCallback(boundFunction(nextFunction, session), IPTVSetupMainWidget)
     elif IPTVPlayerNeedInit():
-        session.openWithCallback(boundFunction(doRunMain, session), IPTVSetupMainWidget, True)
+        session.openWithCallback(boundFunction(nextFunction, session), IPTVSetupMainWidget, True)
     else:
-        doRunMain(session)
-        
-def doRunMain(session):
-    session.open(IPTVPlayerWidget)
+        nextFunction(session)
         
 def pinCallback(session, callbackFun, pin=None):
     if None == pin: return

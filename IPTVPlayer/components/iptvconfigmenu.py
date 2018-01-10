@@ -77,6 +77,7 @@ config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = True)
 config.plugins.iptvplayer.sortuj = ConfigYesNo(default = True)
 config.plugins.iptvplayer.remove_diabled_hosts = ConfigYesNo(default = False)
 config.plugins.iptvplayer.IPTVWebIterface = ConfigYesNo(default = False)
+config.plugins.iptvplayer.plugin_autostart = ConfigYesNo(default = False)
 
 def GetMoviePlayerName(player):
     map = {"auto":_("auto"), "mini": _("internal"), "standard":_("standard"), 'exteplayer': _("external eplayer3"), 'extgstplayer': _("external gstplayer")}
@@ -294,6 +295,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("MIPS Floating Point Architecture", config.plugins.iptvplayer.plarformfpuabi))
             list.append(getConfigListEntry("IPTVPlayer login", config.plugins.iptvplayer.iptvplayer_login))
             list.append(getConfigListEntry("IPTVPlayer password", config.plugins.iptvplayer.iptvplayer_password))
+            list.append(getConfigListEntry("IPTVPlayer auto start at Enigma2 start", config.plugins.iptvplayer.plugin_autostart))
         
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )

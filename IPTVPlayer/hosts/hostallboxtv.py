@@ -247,7 +247,7 @@ class AllBoxTV(CBaseHostClass):
         icon = self.cm.ph.getSearchGroups(icon, '<img[^>]+?src="([^"]+?\.(:?jpe?g|png)(:?\?[^"]+?)?)"')[0]
         seriesTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'movie-name'), ('<', '>'))[1])
         if seriesTitle == '': seriesTitle = cItem['title']
-        tmp = self.cm.ph.rgetAllItemsBeetwenNodes(data, ('</div', '>'), ('<div', '>', 'modal-trailer'))
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'modal-trailer'), ('<div', '>', 'row'))
         printDBG(tmp)
         num = 1
         for item in tmp:
