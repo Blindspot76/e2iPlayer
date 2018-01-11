@@ -61,6 +61,7 @@ class AnimeTo(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = 'https://9anime.is/'
+        self.cacheEpisodes = {}
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
@@ -213,11 +214,13 @@ class AnimeTo(CBaseHostClass):
             params.update({'title':_("Next page"), 'page':page+1})
             self.addDir(params)
             
-    def exploreItem(self, cItem):
+    def exploreItem(self, cItem, nextCategory):
         printDBG("AnimeTo.exploreItem")
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'desc'), ('</div', '>'))[1])
         
         serverNamesMap = {}
         tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'servers'), ('</div', '>'))[1]
@@ -227,28 +230,58 @@ class AnimeTo(CBaseHostClass):
             serverKey  = self.cm.ph.getSearchGroups(item, '''\sdata\-name=['"]([^'^"]+?)['"]''')[0]
             serverNamesMap[serverKey] = serverName
         
-        titlesTab = []
+        rangesTab = []
+        self.cacheEpisodes = {}
         self.cacheLinks  = {}
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'data-name'), ('</ul', '>'))
-        for tmp in data:
-            if 'episodes' not in tmp: continue
-            serverKey  = self.cm.ph.getSearchGroups(tmp, '''\sdata\-name=['"]([^'^"]+?)['"]''')[0]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'data-name'), ('<script', '>'))[1]
+        data = re.compile('''(<div[^>]+?server[^>]+?>)''').split(data)
+        for idx in range(1, len(data), 2):  
+            if 'episodes' not in data[idx+1]: continue
+            serverKey  = self.cm.ph.getSearchGroups(data[idx], '''\sdata\-name=['"]([^'^"]+?)['"]''')[0]
             serverName = serverNamesMap.get(serverKey, serverKey)
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
+            
+            rangeNameMap = {}
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data[idx+1], ('<span', '>', 'data-range-id'), ('</span', '>'))
             for item in tmp:
-                title = self.cleanHtmlStr(item)
-                id    = self.cm.ph.getSearchGroups(item, '''data-id=['"]([^'^"]+?)['"]''')[0]
-                url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-                if id == '' or url == '': continue 
-                if title not in titlesTab:
-                    titlesTab.append(title)
-                    self.cacheLinks[title] = []
-                url = strwithmeta(url, {'id':id})
-                self.cacheLinks[title].append({'name':serverName, 'url':url, 'need_resolve':1})
+                rangeName = self.cleanHtmlStr(item)
+                rangeKey  = self.cm.ph.getSearchGroups(item, '''\sdata\-range\-id=['"]([^'^"]+?)['"]''')[0]
+                rangeNameMap[rangeKey] = rangeName
+            
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data[idx+1], '<ul', '</ul>')
+            for rangeSection in tmp:
+                rangeKey  = self.cm.ph.getSearchGroups(rangeSection, '''\sdata\-range\-id=['"]([^'^"]+?)['"]''')[0]
+                rangeName = rangeNameMap.get(rangeKey, rangeKey)
+                
+                if rangeName not in rangesTab:
+                    rangesTab.append(rangeName)
+                    self.cacheEpisodes[rangeName] = []
+                
+                rangeSection = self.cm.ph.getAllItemsBeetwenMarkers(rangeSection, '<li', '</li>')
+                for item in rangeSection:
+                    title = self.cleanHtmlStr(item)
+                    id    = self.cm.ph.getSearchGroups(item, '''data-id=['"]([^'^"]+?)['"]''')[0]
+                    url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+                    if id == '' or url == '': continue 
+                    if title not in self.cacheEpisodes[rangeName]:
+                        self.cacheEpisodes[rangeName].append(title)
+                        self.cacheLinks[title] = []
+                    url = strwithmeta(url, {'id':id})
+                    self.cacheLinks[title].append({'name':serverName, 'url':url, 'need_resolve':1})
         
-        for item in titlesTab:
+        for item in rangesTab:
             params = dict(cItem)
-            params.update({'good_for_fav': False, 'title':'%s : %s' % (cItem['title'], item), 'links_key':item})
+            params.update({'good_for_fav': False, 'category':nextCategory, 'series_title':cItem['title'], 'title':item, 'desc':desc, 'range_key':item})
+            if 1 == len(rangesTab):
+                self.listEpisodes(params)
+                break
+            self.addDir(params)
+                
+    def listEpisodes(self, cItem):
+        printDBG("AnimeTo.listEpisodes")
+        episodesTab = self.cacheEpisodes[cItem['range_key']]
+        for item in episodesTab:
+            params = dict(cItem)
+            params.update({'good_for_fav': False, 'title':'%s : %s' % (cItem['series_title'], item), 'links_key':item})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -510,7 +543,9 @@ class AnimeTo(CBaseHostClass):
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
-            self.exploreItem(self.currItem)
+            self.exploreItem(self.currItem, 'list_episodes')
+        elif category == 'list_episodes':
+            self.listEpisodes(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
