@@ -100,14 +100,17 @@ class SKStream(CBaseHostClass):
             printExc()
         printDBG("selectDomain [%s]" % self.MAIN_URL)
         
-        self.MAIN_CAT_TAB = [{'category':'list_categories',         'title': 'Films',                    'url':self.getFullUrl('/films')},
-                             {'category':'list_categories',         'title': 'Séries',                   'url':self.getFullUrl('/series')},
-                             {'category':'list_categories',         'title': 'Mangas',                   'url':self.getFullUrl('/mangas')},
-                             
-                             {'category':'search',          'title': _('Search'), 'search_item':True, },
-                             {'category':'search_history',  'title': _('Search history'),             } 
-                            ]
-                            
+    def listMainMenu(self, cItem):
+        if self.MAIN_URL == None: return
+        MAIN_CAT_TAB = [{'category':'list_categories',         'title': 'Films',                    'url':self.getFullUrl('/films')},
+                        {'category':'list_categories',         'title': 'Séries',                   'url':self.getFullUrl('/series')},
+                        {'category':'list_categories',         'title': 'Mangas',                   'url':self.getFullUrl('/mangas')},
+                        
+                        {'category':'search',          'title': _('Search'), 'search_item':True, },
+                        {'category':'search_history',  'title': _('Search history'),             } 
+                       ]
+        self.listsTab(MAIN_CAT_TAB, cItem)
+        
     def listCategories(self, cItem, nextCategory):
         printDBG("SKStream.listCategories")
         self.cacheCategories = []
@@ -429,7 +432,7 @@ class SKStream(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.listMainMenu({'name':'category'})
         elif category == 'list_categories':
             self.listCategories(self.currItem, 'list_cats_items')
         elif category == 'list_cats_items':

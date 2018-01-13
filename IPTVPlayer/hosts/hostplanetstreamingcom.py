@@ -131,11 +131,6 @@ class PlanetStreaming(CBaseHostClass):
         except Exception:
             printExc()
         
-        self.MAIN_CAT_TAB = [
-                             {'category':'search',          'title': _('Search'), 'search_item':True,                        },
-                             {'category':'search_history',  'title': _('Search history'),                                    } 
-                            ]
-                            
     def _listToDir(self, cList, idx):
         cTree = {'dat':''}
         deep = 0 
@@ -160,6 +155,11 @@ class PlanetStreaming(CBaseHostClass):
     
     def listMainMenu(self, cItem):
         printDBG("PlanetStreaming.listMainMenu")
+        MAIN_CAT_TAB = [
+                        {'category':'search',          'title': _('Search'), 'search_item':True,                        },
+                        {'category':'search_history',  'title': _('Search history'),                                    } 
+                       ]
+        
         sts, data = self.getPage(self.getMainUrl())
         if sts:
             data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'menu'), ('<li', '>', 'right'))[1]
@@ -174,7 +174,7 @@ class PlanetStreaming(CBaseHostClass):
                     self.listCategories(params, 'list_sort_filter')
                 except Exception:
                     printExc()
-        self.listsTab(self.MAIN_CAT_TAB, cItem)
+        self.listsTab(MAIN_CAT_TAB, cItem)
         
     def listCategories(self, cItem, nextCategory):
         printDBG("PlanetStreaming.listCategories")

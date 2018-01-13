@@ -126,11 +126,14 @@ class YesMovies(CBaseHostClass):
         except Exception:
             printExc()
         
-        self.MAIN_CAT_TAB = [{'category':'list_filter_genre', 'title': 'Movies',    'url':self.getFullUrl('movie/filter/movie') },
-                             {'category':'list_filter_genre', 'title': 'TV-Series', 'url':self.getFullUrl('movie/filter/series')},
-                             {'category':'search',          'title': _('Search'), 'search_item':True,                        },
-                             {'category':'search_history',  'title': _('Search history'),                                    } 
-                            ]
+    def listMainMenu(self, cItem):
+        if self.MAIN_URL == None: return
+        MAIN_CAT_TAB = [{'category':'list_filter_genre', 'title': 'Movies',    'url':self.getFullUrl('movie/filter/movie') },
+                        {'category':'list_filter_genre', 'title': 'TV-Series', 'url':self.getFullUrl('movie/filter/series')},
+                        {'category':'search',          'title': _('Search'), 'search_item':True,                        },
+                        {'category':'search_history',  'title': _('Search history'),                                    } 
+                       ]
+        self.listsTab(MAIN_CAT_TAB, cItem)
         
     def fillCacheFilters(self):
         self.cacheFilters = {}
@@ -502,7 +505,7 @@ class YesMovies(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.fillCacheFilters()
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.listMainMenu({'name':'category'})
         elif category.startswith('list_filter_'):
             filter = category.replace('list_filter_', '')
             if filter == 'genre':     self.listFilters(self.currItem, filter, 'list_filter_country')
