@@ -55,10 +55,12 @@ class HdgoccParser():
         refUrl = strwithmeta(pageUrl).meta.get('Referer', pageUrl)
         params = copy.deepcopy(self.defaultParams)
         params['header']['Referer'] = refUrl
+        params['with_metadata'] = True
         sts, data = self.cm.getPage( pageUrl, params)
         if not sts: return []
         
         urlNext = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+        urlNext = self.getFullUrl(data.meta['url'], urlNext)
         if self.cm.isValidUrl(urlNext):
             params['header']['Referer'] = pageUrl
             sts, data = self.cm.getPage(urlNext, params)
@@ -85,10 +87,12 @@ class HdgoccParser():
         refUrl = strwithmeta(seasonUrl).meta.get('Referer', seasonUrl)
         params = copy.deepcopy(self.defaultParams)
         params['header']['Referer'] = refUrl
+        params['with_metadata'] = True
         sts, data = self.cm.getPage( seasonUrl, params)
         if not sts: return []
         
         urlNext = self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"', 1, True)[0]
+        urlNext = self.getFullUrl(data.meta['url'], urlNext)
         if self.cm.isValidUrl(urlNext):
             params['header']['Referer'] = seasonUrl
             sts, data = self.cm.getPage(urlNext, params)
