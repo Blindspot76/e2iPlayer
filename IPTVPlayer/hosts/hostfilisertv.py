@@ -174,19 +174,19 @@ class FiliserTv(CBaseHostClass):
             baseUrl += 'page={0}&'.format(page)
         
         if cItem.get('genres', '') not in ['-', '']:
-            baseUrl += 'kat={0}&'.format(cItem['genres'])
+            baseUrl += 'kat={0}&'.format(urllib.quote(cItem['genres']))
         
         if cItem.get('language', '') not in ['-', '']:
-            baseUrl += 'ver={0}&'.format(cItem['language'])
+            baseUrl += 'ver={0}&'.format(urllib.quote(cItem['language']))
         
         if cItem.get('year', '0') not in ['0', '-', '']:
             baseUrl += 'start_year={0}&end_year={1}&'.format(cItem['year'], cItem['year'])
         
         if cItem.get('sort_by', '0') not in ['0', '-', '']:
-            baseUrl += 'sort_by={0}&'.format(cItem['sort_by'])
+            baseUrl += 'sort_by={0}&'.format(urllib.quote(cItem['sort_by']))
             
         if cItem.get('order', '0') not in ['0', '-', '']:
-            baseUrl += 'type={0}&'.format(cItem['order'])
+            baseUrl += 'type={0}&'.format(urllib.quote(cItem['order']))
             
         sts, data = self.getPage(self.getFullUrl(baseUrl), self.defaultParams)
         if not sts: return
