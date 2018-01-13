@@ -173,7 +173,7 @@ class LiveSportsApi(CBaseHostClass):
             scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^"^']*?js/nhl\.js)['"]''', 1, True)[0])
             for idx in range(len(hlsTab)):
                 hlsTab[idx]['need_resolve'] = 1
-                hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'Referer':cItem['url'], 'priv_script_url':scriptUrl})
+                hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'name':cItem['name'], 'Referer':cItem['url'], 'priv_script_url':scriptUrl})
         
         urlsTab = hlsTab
         

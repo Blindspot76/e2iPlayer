@@ -9,9 +9,12 @@ import base64
 import SocketServer
 import SimpleHTTPServer
 import re
+import ssl
+from urlparse import urlparse
 
 def printDBG(strDat):
-    #return
+    return
+    strDat = str(strDat)
     f = open('/tmp/iptv.dbg', 'a')
     f.write(strDat + '\n')
     f.close
@@ -27,6 +30,17 @@ def printExc(msg=''):
 
 def getPage(url, params={}):
     printDBG('url [%s]' % url)
+    customOpeners = []
+    
+    try:
+        if params.get('ssl_protocol', None) != None:
+            ctx = ssl._create_unverified_context(params['ssl_protocol'])
+        else:
+            ctx = ssl._create_unverified_context()
+        customOpeners.append(urllib2.HTTPSHandler(context=ctx))
+    except Exception:
+        pass
+    
     sts = False
     data = None
     try:
@@ -35,7 +49,15 @@ def getPage(url, params={}):
             req.add_header('Referer', params['Referer'])
         if 'User-Agent' in params:
             req.add_header('User-Agent', params['User-Agent'])
-        resp = urllib2.urlopen(req)
+        if 'Origin' in params:
+            req.add_header('Origin', params['Origin'])
+        
+        printDBG("++++HEADERS START++++")
+        printDBG(req.headers)
+        printDBG("++++HEADERS END++++")
+        
+        opener = urllib2.build_opener( *customOpeners )
+        resp = opener.open(req)
         data = resp.read()
         sts = True
     except Exception:
@@ -54,8 +76,10 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
         
         printDBG("do_GET: " + keyUrl)
         
-        keyurl = mainUrl + urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
-        sts, data = getPage(keyurl, {'User-Agent':userAgent, 'Referer':mainUrl})
+        keyurl = urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
+        if not keyurl.startswith('https://') and not keyurl.startswith('http://'): keyUrl = mainUrl + keyUrl
+        parsedUri = urlparse( mainUrl )
+        sts, data = getPage(keyurl, {'User-Agent':userAgent, 'Referer':mainUrl, 'Origin':'{uri.scheme}://{uri.netloc}'.format(uri=parsedUri)})
         printDBG("sts [%s] data[%s]" % (sts, data))
         if sts:
             self.send_response(200)
@@ -78,7 +102,9 @@ if __name__ == "__main__":
         sts, data = getPage(scriptUrl, {'User-Agent':userAgent, 'Referer':mainUrl})
         if sts:
             try:
-                urlPath = re.compile('''['"]([^'^"]*?keys/[^'^"]*?)['"]''').search(data).group(1)
+                urlPath = re.compile('''['"]([^'^"]*?keys/[^'^"]*?)['"]''').search(data)
+                if urlPath == None: urlPath = re.compile('''['"]([^'^"]*?/live/[^'^"]*?)['"]''').search(data)
+                urlPath = urlPath.group(1)
                 if urlPath.startswith('/'): urlPath = urlPath[1:]
             except Exception:
                 printExc()
