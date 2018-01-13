@@ -93,7 +93,7 @@ class ITV(CBaseHostClass):
             sts, data = self.cm.getPage('http://free-proxy-list.net/uk-proxy.html')
             if sts:
                 data = re.compile('<tr><td>([^>]+?)</td><td>').findall(data)
-                self.forwardedIP = random.choice(data)
+                if len(data): self.forwardedIP = random.choice(data)
         return self.forwardedIP
     
     def listMainMenu(self, cItem, nextCategory):
@@ -203,7 +203,7 @@ class ITV(CBaseHostClass):
                 if 'Series' in sTtile: title = '%s - %s %s' % (cItem['title'], sTtile, self.cleanHtmlStr(item[0]))
                 elif 'pisodes' in sTtile: title = '%s - %s' % (cItem['title'], self.cleanHtmlStr(item[0]))
                 else: title = self.cleanHtmlStr(item[0])
-                desc  = self.cleanHtmlStr(item[1])
+                desc  = self.cleanHtmlStr(item[-1])
                 
                 params = dict(cItem)
                 params.update({'title':title, 'url':url, 'icon':icon, 'desc':desc})

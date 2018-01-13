@@ -35,7 +35,7 @@ def GetM3uAttribs(txt, firstKeyAsLength=False):
             elif txt[idx] == '"':
                 type = 2
             else:
-                printDBG("ERROR parsing VALUE txt[%s]\n", txt)
+                printDBG("ERROR parsing VALUE txt[%s]\n" % txt)
                 break
         elif type == 2:
             if txt[idx] != '"':
