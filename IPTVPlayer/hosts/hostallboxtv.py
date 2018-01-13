@@ -488,10 +488,13 @@ class AllBoxTV(CBaseHostClass):
                     self.loginMessage.append(item)
                 self.loginMessage = '[/br]'.join(self.loginMessage)
             else:
-                errMsg = []
-                tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<span', '>', 'required'), ('</span', '>'), False)
-                for it in tmp:
-                    errMsg.append(self.cleanHtmlStr(it))
+                if sts:
+                    errMsg = []
+                    tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<span', '>', 'required'), ('</span', '>'), False)
+                    for it in tmp:
+                        errMsg.append(self.cleanHtmlStr(it))
+                else:
+                    errMsg = _('Connection error.')
                 self.sessionEx.open(MessageBox, _('Login failed.') + '\n' + '\n'.join(errMsg), type = MessageBox.TYPE_ERROR, timeout = 10)
                 printDBG('tryTologin failed')
         return self.loggedIn
