@@ -18,6 +18,7 @@ import re
 import base64
 import copy
 import urllib
+from urlparse import urlparse, parse_qsl
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 try: import json
 except Exception: import simplejson as json
@@ -182,8 +183,14 @@ class MoonwalkParser():
             self._setBaseUrl(url)
             params = copy.deepcopy(self.defaultParams)
             params['header']['Referer'] = url
+            params['with_metadata'] = True
             sts, data = self.cm.getPage( url, params)
             if not sts: return []
+            
+            url = data.meta['url']
+            parsedUri = urlparse( url )
+            baseUrl = '{uri.scheme}://{uri.netloc}{uri.path}'.format(uri=parsedUri)
+            query = dict(parse_qsl(parsedUri.query))
             
             printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             printDBG(data)
@@ -191,12 +198,18 @@ class MoonwalkParser():
             
             seasonData = self.cm.ph.getSearchGroups(data, '''seasons\s*:\s*\[([^\]]+?)\]''')[0]
             ref = self.cm.ph.getSearchGroups(data, '''ref\s*:[^'^"]*?['"]([^'^"]+?)['"]''')[0]
+            if 'ref' != '': query['ref'] = ref
+            query.pop('episode', None)
+            
             printDBG(seasonData)
             
             seasonData = seasonData.split(',')
             for item in seasonData:
                 item = item.strip()
-                seasonsTab.append({'title':_('Season') + ' ' + item, 'id':int(item), 'url': '%s?season=%s&ref=%s' % (url, item, urllib.quote(ref))})
+                if item[0] in ['"', "'"]: item = item[1:-1]
+                query['season'] = item
+                seasonsTab.append({'title':_('Season') + ' ' + item, 'id':int(item), 'url': '%s?%s' % (baseUrl, urllib.urlencode(query))})
+            seasonsTab.sort(key=lambda item: item['id'])
         except Exception:
             printExc()
         return seasonsTab
@@ -208,20 +221,36 @@ class MoonwalkParser():
             self._setBaseUrl(url)
             params = copy.deepcopy(self.defaultParams)
             params['header']['Referer'] = url
+            params['with_metadata'] = True
             sts, data = self.cm.getPage( url, params)
             if not sts: return []
+            
+            url = data.meta['url']
+            parsedUri = urlparse( url )
+            baseUrl = '{uri.scheme}://{uri.netloc}{uri.path}'.format(uri=parsedUri)
+            query = dict(parse_qsl(parsedUri.query))
             
             printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             printDBG(data)
             printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             
             episodeData = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''episodes\s*:'''), re.compile(']]'))[1]
-            printDBG(episodeData)
-            
-            episodeData = re.compile('''\[\s*[0-9]+?\s*\,\s*([0-9]+?)[^0-9]''').findall(episodeData)
-            for item in episodeData:
-                item = item.strip()
-                episodesTab.append({'title':_('Episode') + ' ' + item, 'id':int(item), 'url': '%s&episode=%s' % (url, item)})
+            if episodeData != '': 
+                episodeData = re.compile('''\[\s*[0-9]+?\s*\,\s*([0-9]+?)[^0-9]''').findall(episodeData)
+                for item in episodeData:
+                    item = item.strip()
+                    query['episode'] = item
+                    episodesTab.append({'title':_('Episode') + ' ' + item, 'id':int(item), 'url': '%s?%s' % (baseUrl, urllib.urlencode(query))})
+                    
+            else:
+                episodeData = self.cm.ph.getSearchGroups(data, '''episodes\s*:\s*\[([^\]]+?)\]''')[0]
+                episodeData = episodeData.split(',')
+                for item in episodeData:
+                    item = item.strip()
+                    if item[0] in ['"', "'"]: item = item[1:-1]
+                    query['episode'] = item
+                    episodesTab.append({'title':_('Episode') + ' ' + item, 'id':int(item), 'url': '%s?%s' % (baseUrl, urllib.urlencode(query))})
+            episodesTab.sort(key=lambda item: item['id'])
         except Exception:
             printExc()
         return episodesTab

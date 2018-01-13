@@ -75,7 +75,7 @@ class HdgoccParser():
         
         for item in seasonData:
             seasonsTab.append({'title':item[1], 'id':int(item[0]), 'url': strwithmeta(seasonMainUrl + item[0], {'Referer':refUrl})})
-                
+        seasonsTab.sort(key=lambda item: item['id'])
         return seasonsTab
         
     def getEpiodesList(self, seasonUrl, seasonIdx):
@@ -114,6 +114,11 @@ class HdgoccParser():
             #int(item[0])
             idx = 1
             for item in episodeData:
-                episodesTab.append({'title':item[1], 'id':idx, 'url': strwithmeta(episodeMainUrl + item[0], {'Referer':refUrl})})
+                try: id = int(self.cm.ph.getSearchGroups(' %s ' % item, '''[^0-9]([0-9]+?)[^0-9]''')[0])
+                except Exception: 
+                    printExc()
+                    id = idx
+                episodesTab.append({'title':item[1], 'id':id, 'url': strwithmeta(episodeMainUrl + item[0], {'Referer':refUrl})})
                 idx += 1
+        episodesTab.sort(key=lambda item: item['id'])
         return episodesTab

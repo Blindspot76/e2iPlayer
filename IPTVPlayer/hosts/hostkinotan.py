@@ -214,13 +214,17 @@ class Kinotan(CBaseHostClass):
                     tabs = []
                     sTitle = self.cleanHtmlStr(tmp[sKey]['name'])
                     sId = self.cleanHtmlStr(tmp[sKey]['id'])
+                    
                     for eKey in tmp[sKey]['items']:
                         title = self.cleanHtmlStr(tmp[sKey]['items'][eKey]['sname'])
                         url = self.cm.ph.getSearchGroups(tmp[sKey]['items'][eKey]['scode'], 'src="([^"]*?)"')[0]
                         if url.startswith('//'): url = 'http:' + url
-                        tabs.append({'title':title, 'url':url})
+                        try: sortVal = int(self.cm.ph.getSearchGroups(' %s ' % title, '''[^0-9]([0-9]+?)[^0-9]''')[0])
+                        except Exception: sortVal = 0
+                        tabs.append({'title':title, 'sort_value':sortVal, 'url':url})
                     
                     if len(tabs):
+                        tabs.sort(key=lambda item: item['sort_value'])
                         params = dict(cItem)
                         params.update({'category':'list_tab_content', 'title':sTitle, 'tab_id':sId})
                         self.addDir(params)
