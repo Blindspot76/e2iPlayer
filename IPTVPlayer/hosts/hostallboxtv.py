@@ -66,16 +66,21 @@ class AllBoxTV(CBaseHostClass):
         self.cacheEpisodes = {}
         self.cacheSeriesLetter = []
         self.cacheSetiesByLetter = {}
+        
+        self.cacheCartoonsLetter = []
+        self.cacheCartoonsByLetter = {}
+        
         self.cacheLinks    = {}
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_CAT_TAB = [{'category':'list_filters',   'title': _('Movies'),          'url':self.getFullUrl('/filmy-online') },
-                             {'category':'list_items',     'title': _('Premieres'),       'url':self.getFullUrl('/premiery') },
-                             {'category':'list_series_az', 'title': _('TV series'),       'url':self.getFullUrl('/seriale-online')},
-                             {'category':'list_filters',   'title': _('Ranking'),         'url':self.getFullUrl('/filmy-online,wszystkie,top')},
+        self.MAIN_CAT_TAB = [{'category':'list_filters',     'title': _('Movies'),          'url':self.getFullUrl('/filmy-online') },
+                             {'category':'list_items',       'title': _('Premieres'),       'url':self.getFullUrl('/premiery') },
+                             {'category':'list_series_az',   'title': _('TV series'),       'url':self.getFullUrl('/seriale-online')},
+                             {'category':'list_cartoons_az', 'title': _('Cartoons'),        'url':self.getFullUrl('/bajki-online')},
+                             {'category':'list_filters',     'title': _('Ranking'),         'url':self.getFullUrl('/filmy-online,wszystkie,top')},
                              
-                             {'category':'search',         'title': _('Search'),          'search_item':True}, 
-                             {'category':'search_history', 'title': _('Search history')},
+                             {'category':'search',           'title': _('Search'),          'search_item':True}, 
+                             {'category':'search_history',   'title': _('Search history')},
                             ]
         self.loggedIn = None
         self.login    = ''
@@ -107,12 +112,12 @@ class AllBoxTV(CBaseHostClass):
         cItem['desc'] = self.loginMessage
         self.listsTab(self.MAIN_CAT_TAB, cItem)
         
-    def listSeriesLetters(self, cItem, nextCategory):
-        printDBG("AllBoxTV.listSeriesLetters")
+    def listLetters(self, cItem, nextCategory, cacheLetter, cacheByLetter):
+        printDBG("AllBoxTV.listLetters")
         
-        if 0 == len(self.cacheSeriesLetter):
-            self.cacheSeriesLetter = []
-            self.cacheSetiesByLetter = {}
+        if 0 == len(cacheLetter):
+            del cacheLetter[:]
+            cacheByLetter.clear()
             
             sts, data = self.getPage(cItem['url'])
             if not sts: return
@@ -124,21 +129,21 @@ class AllBoxTV(CBaseHostClass):
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
                 if url == '': continue
                 title = self.cleanHtmlStr( item )
-                if letter not in self.cacheSeriesLetter:
-                    self.cacheSeriesLetter.append(letter)
-                    self.cacheSetiesByLetter[letter] = []
-                self.cacheSetiesByLetter[letter].append({'title':title, 'url':url, 'desc':'', 'icon':url + '?fake=need_resolve.jpeg'})
+                if letter not in cacheLetter:
+                    cacheLetter.append(letter)
+                    cacheByLetter[letter] = []
+                cacheByLetter[letter].append({'title':title, 'url':url, 'desc':'', 'icon':url + '?fake=need_resolve.jpeg'})
             
-        for letter in self.cacheSeriesLetter:
+        for letter in cacheLetter:
             params = dict(cItem)
             params.update({'good_for_fav':False, 'category':nextCategory, 'title':letter, 'desc':'', 'f_letter':letter})
             self.addDir(params)
             
-    def listSeriesLetter(self, cItem, nextCategory):
-        printDBG("AllBoxTV.listSeriesLetter")
+    def listByLetter(self, cItem, nextCategory, cacheByLetter):
+        printDBG("AllBoxTV.listByLetter")
         
         letter = cItem['f_letter']
-        tab = self.cacheSetiesByLetter[letter]
+        tab = cacheByLetter[letter]
         cItem = dict(cItem)
         cItem.update({'good_for_fav':True, 'category':nextCategory, 'desc':''})
         self.listsTab(tab, cItem)
@@ -234,6 +239,26 @@ class AllBoxTV(CBaseHostClass):
             
         except Exception:
             printExc()
+            
+    def listItems2(self, cItem, nextCategory):
+        printDBG("AllBoxTV.listItems2 [%s]" % cItem)
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'box_fable'), ('</a', '>'))
+        for item in data:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0])
+            if not self.cm.isValidUrl(url): continue
+            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, 'url\(([^"^\)]+?\.(:?jpe?g|png)(:?\?[^"^\)]+?)?)\);')[0].strip())
+            title = self.cleanHtmlStr(item)
+            params = dict(cItem)
+            params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
+            if nextCategory == 'video':
+                self.addVideo(params)
+            else:
+                params['category'] = nextCategory
+                self.addDir(params)
             
     def exploreItem(self, cItem, nextCategory):
         printDBG("AllBoxTV.exploreItem")
@@ -384,23 +409,28 @@ class AllBoxTV(CBaseHostClass):
             tmp = self.cm.ph.getDataBeetwenNodes(data, ('<iframe', '>', 'video-player'), ('</iframe', '>'))[1]
             videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]).replace('&amp;', '&')
             if videoUrl == '':
-                data = self.cm.ph.getSearchGroups(data, '''data\-key=['"]([^'^"]+?)['"]''')[0]
-                try:
-                    data = byteify(json.loads(self.base64Decode(data[2:])))
-                    printDBG("++++++++++++++++++++++++++> %s" % data )
-                    params = dict(self.defaultParams)
-                    params['header'] = dict(params['header'])
-                    params['header']['Referer'] = baseUrl
-                    params['return_data'] = False
-                    sts, response = self.getPage(data['url'], params)
-                    url = response.geturl()
-                    response.close()
-                    printDBG("++++++++++++++++++++++++++> " + url)
+                dataKey = self.cm.ph.getSearchGroups(data, '''data\-key=['"]([^'^"]+?)['"]''')[0]
+                if dataKey != '':
+                    try:
+                        dataKey = byteify(json.loads(self.base64Decode(dataKey[2:])))
+                        printDBG("++++++++++++++++++++++++++> %s" % dataKey )
+                        params = dict(self.defaultParams)
+                        params['header'] = dict(params['header'])
+                        params['header']['Referer'] = baseUrl
+                        params['return_data'] = False
+                        sts, response = self.getPage(self.getFullUrl(dataKey['url']), params)
+                        url = response.geturl()
+                        response.close()
+                        printDBG("++++++++++++++++++++++++++> " + url)
+                        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+                        return [{'name':'', 'url':strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT}), 'need_resolve':0}]
+                    except Exception:
+                        printExc()
+                tmp = self.cm.ph.getDataBeetwenMarkers(data, 'setup(', '});')[1]
+                url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''['"]?file['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0])
+                if 'mp4' in tmp and self.cm.isValidUrl(url):
                     cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
-                    return [{'name':'', 'url':strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT}), 'need_resolve':0}]
-                except Exception:
-                    printExc()
-                
+                    return [{'name':'', 'url':strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT}), 'Referer':baseUrl, 'need_resolve':0}]
         return self.up.getVideoLinkExt(videoUrl)
     
     def tryTologin(self):
@@ -487,10 +517,16 @@ class AllBoxTV(CBaseHostClass):
             self.listFilters(self.currItem, 'list_items', 'explore_item')
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
+        elif category == 'list_items_2':
+            self.listItems2(self.currItem, 'video')
         elif category == 'list_series_az':
-            self.listSeriesLetters(self.currItem, 'list_series_letter')
+            self.listLetters(self.currItem, 'list_series_letter', self.cacheSeriesLetter, self.cacheSetiesByLetter)
         elif category == 'list_series_letter':
-            self.listSeriesLetter(self.currItem, 'explore_item')
+            self.listByLetter(self.currItem, 'explore_item', self.cacheSetiesByLetter)
+        elif category == 'list_cartoons_az':
+            self.listLetters(self.currItem, 'list_cartoons_letter', self.cacheCartoonsLetter, self.cacheCartoonsByLetter)
+        elif category == 'list_cartoons_letter':
+            self.listByLetter(self.currItem, 'list_items_2', self.cacheCartoonsByLetter)
         elif category == 'explore_item':
             self.exploreItem(self.currItem, 'list_episodes')
         elif category == 'list_episodes':

@@ -3442,6 +3442,7 @@ class pageParser:
         return movieUrls
         
     def parserGOLDVODTV(self, baseUrl):
+        printDBG("parserGOLDVODTV baseUrl[%s]" % baseUrl)
         COOKIE_FILE = GetCookieDir('goldvodtv.cookie')
         HTTP_HEADER = { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
         SWF_URL = 'http://p.jwpcdn.com/6/9/jwplayer.flash.swf'
@@ -3478,7 +3479,8 @@ class pageParser:
                     data2 = None
                     continue
             data2 = self.cm.ph.getDataBeetwenMarkers(data2, '.setup(', '}', False)[1]
-            rtmpUrls = re.compile('''(rtmp[^"^']+?)["'&]''').findall(data2)
+            rtmpUrls = re.compile('''=(rtmp[^"^']+?)["'&]''').findall(data2)
+            if 0 == len(rtmpUrls): rtmpUrls = re.compile('''['"](rtmp[^"^']+?)["']''').findall(data2)
             for idx in range(len(rtmpUrls)):
                 rtmpUrl = urllib.unquote(rtmpUrls[idx])
                 if len(rtmpUrl):

@@ -285,7 +285,8 @@ class IconMenager:
             elif 'allbox.' in domain:
                 baseUrl = img_url
                 img_url = self.cm.ph.getDataBeetwenNodes(data, ('<img', '>', '"image"'), ('<', '>'))[1]
-                img_url = self.cm.ph.getSearchGroups(img_url, '<img[^>]+?src="([^"]+?\.(:?jpe?g|png)(:?\?[^"]+?)?)"')[0]
+                if img_url != '': img_url = self.cm.ph.getSearchGroups(img_url, '<img[^>]+?src="([^"]+?\.(:?jpe?g|png)(:?\?[^"]+?)?)"')[0]
+                else: img_url = self.cm.ph.getSearchGroups(data, 'url\(([^"^\)]+?\.(:?jpe?g|png)(:?\?[^"^\)]+?)?)\);')[0].strip()
                 if img_url.startswith('/'): img_url = urljoin(baseUrl, img_url)
             if not self.cm.isValidUrl(img_url): return False
         else:
