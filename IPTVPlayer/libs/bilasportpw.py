@@ -95,9 +95,17 @@ class BilaSportPwApi(CBaseHostClass):
         sts, data = self.cm.getPage(url)
         if not sts: return urlsTab
         
+        replaceTab = self.cm.ph.getDataBeetwenMarkers(data, 'prototype.open', '};', False)[1]
+        printDBG(replaceTab)
+        replaceTab = re.compile('''\.replace\(['"](\s*[^'^"]+?)['"]\s*\,\s*['"]([^'^"]+?)['"]''').findall(replaceTab)
+        printDBG(replaceTab)
+        if len(replaceTab):
+            scriptUrl = '|' + base64.b64encode(json.dumps(replaceTab).encode('utf-8'))
+        else:
+            scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^"^']*?\.js)['"]''', 1, True)[0])
+        
         hlsUrl = re.compile('''(https?://[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(data)[-1]
         hlsTab = getDirectM3U8Playlist(hlsUrl, checkContent=True, sortWithMaxBitrate=9000000)
-        scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^"^']*?\.js)['"]''', 1, True)[0])
         for idx in range(len(hlsTab)):
             hlsTab[idx]['need_resolve'] = 1
             hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'name':cItem['name'], 'Referer':url, 'priv_script_url':scriptUrl})

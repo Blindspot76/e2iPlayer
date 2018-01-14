@@ -1055,7 +1055,7 @@ class IPTVPlayerWidget(Screen):
         
     def answerUpdateAvailable(self, NoUpdateCallback, ret):
         try:
-            if ret: self.session.openWithCallback(self.displayListOfHosts, IPTVUpdateWindow, UpdateMainAppImpl(self.session), True)
+            if ret: self.session.openWithCallback(NoUpdateCallback, IPTVUpdateWindow, UpdateMainAppImpl(self.session), True)
             else: NoUpdateCallback()
         except Exception: printExc()
         
