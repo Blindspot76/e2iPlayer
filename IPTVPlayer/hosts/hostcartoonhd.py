@@ -83,12 +83,15 @@ class CartoonHD(CBaseHostClass):
             printExc()
         if self.MAIN_URL == None:
             self.MAIN_URL = domain
-            
-        self.MAIN_CAT_TAB = [{'category':'new',             'title': 'New',       'url':self.getMainUrl()},
-                             {'category':'list_genres',     'title': 'Movies',    'url':self.getFullUrl('/full-movies')},
-                             {'category':'list_genres',     'title': 'TV shows',  'url':self.getFullUrl('/tv-shows')},
-                             {'category':'search',          'title': _('Search'), 'search_item':True},
-                             {'category':'search_history',  'title': _('Search history')} ]
+        
+    def listMainMenu(self, cItem):
+        if self.MAIN_URL == None: return
+        MAIN_CAT_TAB = [{'category':'new',             'title': 'New',       'url':self.getMainUrl()},
+                        {'category':'list_genres',     'title': 'Movies',    'url':self.getFullUrl('/full-movies')},
+                        {'category':'list_genres',     'title': 'TV shows',  'url':self.getFullUrl('/tv-shows')},
+                        {'category':'search',          'title': _('Search'), 'search_item':True},
+                        {'category':'search_history',  'title': _('Search history')} ]
+        self.listsTab(MAIN_CAT_TAB, cItem)
     
     def _getToken(self, data):
         torName = self.cm.ph.getSearchGroups(data, "var token[\s]*=([^;]+?);")[0].strip()
@@ -485,7 +488,7 @@ class CartoonHD(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.selectDomain()
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.listMainMenu({'name':'category'})
         elif category == 'new':
             self.listNewCategory(self.currItem, 'list_items')
         elif category == 'list_genres':

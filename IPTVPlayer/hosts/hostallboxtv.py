@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.libs.m3uparser import ParseM3u
 ###################################################
 
 ###################################################
@@ -73,11 +74,12 @@ class AllBoxTV(CBaseHostClass):
         self.cacheLinks    = {}
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_CAT_TAB = [{'category':'list_filters',     'title': _('Movies'),          'url':self.getFullUrl('/filmy-online') },
-                             {'category':'list_items',       'title': _('Premieres'),       'url':self.getFullUrl('/premiery') },
-                             {'category':'list_series_az',   'title': _('TV series'),       'url':self.getFullUrl('/seriale-online')},
-                             {'category':'list_cartoons_az', 'title': _('Cartoons'),        'url':self.getFullUrl('/bajki-online')},
-                             {'category':'list_filters',     'title': _('Ranking'),         'url':self.getFullUrl('/filmy-online,wszystkie,top')},
+        self.MAIN_CAT_TAB = [{'category':'list_filters',       'title': _('Movies'),          'url':self.getFullUrl('/filmy-online') },
+                             {'category':'list_items',         'title': _('Premieres'),       'url':self.getFullUrl('/premiery') },
+                             {'category':'list_series_az',     'title': _('TV series'),       'url':self.getFullUrl('/seriale-online')},
+                             {'category':'list_cartoons_az',   'title': _('Cartoons'),        'url':self.getFullUrl('/bajki-online')},
+                             {'category':'list_filters',       'title': _('Ranking'),         'url':self.getFullUrl('/filmy-online,wszystkie,top')},
+                             {'category':'list_live_channels', 'title': _('Live TV'),         'url':self.getFullUrl('/get_tv')},
                              
                              {'category':'search',           'title': _('Search'),          'search_item':True}, 
                              {'category':'search_history',   'title': _('Search history')},
@@ -315,12 +317,101 @@ class AllBoxTV(CBaseHostClass):
             self.addVideo(params)
             
     def listEpisodes(self, cItem):
-        printDBG("EgyBest.listEpisodes")
+        printDBG("AllBoxTV.listEpisodes")
         
         episodesTable = self.cacheEpisodes[cItem['s_num']]
         params = dict(cItem)
         params.update({'good_for_fav':False})
         self.listsTab(episodesTable, params, 'video')
+        
+    def _getM3uIcon(self, item, cItem):
+        icon = item.get('tvg-logo', '')
+        if not self.cm.isValidUrl(icon): icon = item.get('logo', '')
+        if not self.cm.isValidUrl(icon): icon = item.get('art', '')
+        if not self.cm.isValidUrl(icon): icon = cItem.get('icon', '')
+        return icon
+        
+    def _getM3uPlayableUrl(self, baseUrl, url, item):
+        need_resolve = 1
+        if url.startswith('/'):
+            if baseUrl == '':
+                url = 'file://' + url
+                need_resolve = 0
+            elif url.startswith('//'):
+                url = 'http:' + url
+            else:
+                url = self.cm.getBaseUrl(baseUrl) + url[1:]
+        if '' != item.get('program-id', ''): 
+            url = strwithmeta(url, {'PROGRAM-ID': item['program-id']})
+        return need_resolve, url
+        
+    def listM3u(self, cItem, nextCategory):
+        printDBG("AllBoxTV.listM3u [%s]" % cItem)
+        baseUrl = cItem['url']
+        
+        if not self.cm.isValidUrl(baseUrl): return
+        
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return
+        
+        printDBG(data)
+    
+        data = ParseM3u(data)
+        groups = {}
+        for item in data:
+            params = dict(cItem)
+            group = item.get('group-title', '')
+            url = item['uri']
+            icon = self._getM3uIcon(item, cItem)
+            
+            if item['f_type'] == 'inf':
+                if group == '':
+                    need_resolve, url = self._getM3uPlayableUrl(baseUrl, url, item)
+                    params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'desc':item.get('tvg-name', ''), 'icon':icon, 'need_resolve':need_resolve} )
+                    self.addVideo(params)
+                else:
+                    if group not in groups:
+                        groupIcon = item.get('group-logo', '')
+                        if not self.cm.isValidUrl(groupIcon): groupIcon = item.get('group-art', '')
+                        if not self.cm.isValidUrl(groupIcon): groupIcon = icon
+                        groups[group] = []
+                        params.update( {'good_for_fav':False, 'title':group, 'category':nextCategory, 'f_group':group, 'url':baseUrl, 'desc':'', 'icon':groupIcon} )
+                        if 'parent-code' in item: params.update({'pin_locked':True, 'pin_code':item['parent-code']})
+                        self.addDir(params)
+                    groups[group].append(item)
+            elif item['f_type'] == 'import' and self.cm.isValidUrl(url):
+                params.update( {'good_for_fav':True, 'title':item['title'], 'path':url, 'desc':'', 'icon':icon} )
+                self.addDir(params)
+        
+        if groups != {}:
+            for idx in range(len(self.currList)):
+                if 'f_group' in self.currList[idx]:
+                    self.currList[idx]['f_group_items'] = groups.get(self.currList[idx]['f_group'], [])
+        
+    def listM3uGroups(self, cItem):
+        printDBG("AllBoxTV.listM3uGroups [%s]" % cItem)
+        baseUrl = cItem['url']
+        data = cItem['f_group_items']
+        for item in data:
+            params = dict(cItem)
+            url = item['uri']
+            icon = self._getM3uIcon(item, cItem)
+            need_resolve, url = self._getM3uPlayableUrl(baseUrl, url, item)
+            params.update( {'good_for_fav':True, 'title':item['title'], 'category':'m3u_item', 'url':url, 'desc':item.get('tvg-name', ''), 'icon':icon, 'need_resolve':need_resolve} )
+            self.addVideo(params)
+    
+    def listChannels(self, cItem):
+        printDBG("AllBoxTV.listChannels")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'your_url'), ('<div', '>'))[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<textarea', '>'), ('</textarea', '>'), False)[1].strip()
+        
+        cItem = dict(cItem)
+        cItem['url'] = data
+        self.listM3u(cItem, 'list_m3u_groups')
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("AllBoxTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -358,6 +449,12 @@ class AllBoxTV(CBaseHostClass):
             return self.up.getVideoLinkExt(videoUrl)
         elif cItem.get('direct_link') == True:
             return [{'name':'trailer', 'url':cItem['url'], 'need_resolve':0}]
+            
+        if 'm3u_item' == cItem.get('category', ''):
+            videoUrl = cItem['url']
+            if videoUrl.split('?')[0].endswith('.m3u8'):
+                return getDirectM3U8Playlist(videoUrl)
+            return [{'name':'direct', 'url':videoUrl, 'need_resolve':0}]
         
         cacheKey = cItem['url']
         cacheTab = self.cacheLinks.get(cacheKey, [])
@@ -534,6 +631,12 @@ class AllBoxTV(CBaseHostClass):
             self.exploreItem(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
+        elif category == 'list_live_channels':
+            self.listChannels(self.currItem)
+        elif category == 'm3u':
+            self.listM3u(self.currItem, 'list_m3u_groups')
+        elif category == 'list_m3u_groups':
+            self.listM3uGroups(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)

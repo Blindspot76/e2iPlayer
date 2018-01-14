@@ -11,6 +11,8 @@ import SimpleHTTPServer
 import re
 import ssl
 from urlparse import urlparse
+try:    import json
+except Exception: import simplejson as json
 
 def printDBG(strDat):
     return
@@ -69,6 +71,7 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
         global mainUrl
         global userAgent
         global urlPath
+        global scriptUrl
         keyUrl = self.path
         
         if keyUrl.startswith('/https/'): keyUrl = 'https://' + keyUrl[7:]
@@ -76,10 +79,14 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
         
         printDBG("do_GET: " + keyUrl)
         
-        keyurl = urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
-        if not keyurl.startswith('https://') and not keyurl.startswith('http://'): keyUrl = mainUrl + keyUrl
+        if isinstance(scriptUrl, list):
+            for item in scriptUrl:
+                keyUrl = keyUrl.replace(item[0], item[1])
+        else:
+            keyUrl = urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
+        if not keyUrl.startswith('https://') and not keyUrl.startswith('http://'): keyUrl = mainUrl + keyUrl
         parsedUri = urlparse( mainUrl )
-        sts, data = getPage(keyurl, {'User-Agent':userAgent, 'Referer':mainUrl, 'Origin':'{uri.scheme}://{uri.netloc}'.format(uri=parsedUri)})
+        sts, data = getPage(keyUrl, {'User-Agent':userAgent, 'Referer':mainUrl, 'Origin':'{uri.scheme}://{uri.netloc}'.format(uri=parsedUri)})
         printDBG("sts [%s] data[%s]" % (sts, data))
         if sts:
             self.send_response(200)
@@ -97,17 +104,20 @@ if __name__ == "__main__":
         scriptUrl   = sys.argv[4]
         userAgent   = sys.argv[5]
         
-        urlPath     = 'keys/mma.php?q='
-        
-        sts, data = getPage(scriptUrl, {'User-Agent':userAgent, 'Referer':mainUrl})
-        if sts:
-            try:
-                urlPath = re.compile('''['"]([^'^"]*?keys/[^'^"]*?)['"]''').search(data)
-                if urlPath == None: urlPath = re.compile('''['"]([^'^"]*?/live/[^'^"]*?)['"]''').search(data)
-                urlPath = urlPath.group(1)
-                if urlPath.startswith('/'): urlPath = urlPath[1:]
-            except Exception:
-                printExc()
+        if scriptUrl.startswith('|'):
+            scriptUrl = json.loads(base64.b64decode(scriptUrl))
+        else:
+            urlPath     = 'keys/mma.php?q='
+            
+            sts, data = getPage(scriptUrl, {'User-Agent':userAgent, 'Referer':mainUrl})
+            if sts:
+                try:
+                    urlPath = re.compile('''['"]([^'^"]*?keys/[^'^"]*?)['"]''').search(data)
+                    if urlPath == None: urlPath = re.compile('''['"]([^'^"]*?/live/[^'^"]*?)['"]''').search(data)
+                    urlPath = urlPath.group(1)
+                    if urlPath.startswith('/'): urlPath = urlPath[1:]
+                except Exception:
+                    printExc()
         
         SocketServer.TCPServer.allow_reuse_address = True
         #httpd = SocketServer.ForkingTCPServer(('127.0.0.1', port), Proxy)

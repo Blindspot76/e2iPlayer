@@ -165,12 +165,21 @@ class LiveSportsApi(CBaseHostClass):
         replace = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?replace['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
         keyurl  = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?keyurl['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
         
+        replaceTab = self.cm.ph.getDataBeetwenMarkers(data, 'prototype.open', '};', False)[1]
+        printDBG(replaceTab)
+        replaceTab = re.compile('''\.replace\(['"](\s*[^'^"]+?)['"]\s*\,\s*['"]([^'^"]+?)['"]''').findall(replaceTab)
+        printDBG(replaceTab)
+        scriptUrl = ''
         hlsTab = getDirectM3U8Playlist(source, checkContent=True, sortWithMaxBitrate=9000000)
         if replace != '' and keyurl != '':
             for idx in range(len(hlsTab)):
                 hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'iptv_m3u8_key_uri_replace_old':replace, 'iptv_m3u8_key_uri_replace_new':keyurl})
+        elif len(replaceTab):
+            scriptUrl = '|' + base64.b64encode(json.dumps(replaceTab).encode('utf-8'))
         elif '/js/nhl.js' in data:
             scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^"^']*?js/nhl\.js)['"]''', 1, True)[0])
+        
+        if scriptUrl != '':
             for idx in range(len(hlsTab)):
                 hlsTab[idx]['need_resolve'] = 1
                 hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'name':cItem['name'], 'Referer':cItem['url'], 'priv_script_url':scriptUrl})
