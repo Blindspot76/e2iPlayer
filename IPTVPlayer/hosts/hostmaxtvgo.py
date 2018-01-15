@@ -87,6 +87,12 @@ class MaxtvGO(CBaseHostClass):
         printDBG("MaxtvGO.listMainMenu")
         self.listsTab(self.MAIN_CAT_TAB, cItem)
         
+    def getFullIconUrl(self, url):
+        url = CBaseHostClass.getFullIconUrl(self, url.strip())
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT, 'Referer':self.getMainUrl()})
+        
     def listItems(self, cItem, nextCategory):
         printDBG("MaxtvGO.listItems [%s]" % cItem)
         
@@ -220,26 +226,43 @@ class MaxtvGO(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
+        videoID = self.cm.ph.getSearchGroups(data, '''(<input[^>]+?videoID[^>]+?>)''', 1, True)[0]
+        videoID = self.cm.ph.getSearchGroups(videoID, '''\sid=['"]([^'^"]+?)['"]''', 1, True)[0]
+        
+        if videoID == '':
+            return []
+        
         otherInfo = {}
         retTab = []
         desc = []
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'chat_round'), ('<div', '>', 'modal-dialog'))[1]
-        icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(data, '''poster=['"]([^'^"]+?)['"]''')[0])
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'chat-video-title'), ('</div', '>'), False)[1])
-        released = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'chat-video-date'), ('</div', '>'), False)[1])
-        if released != '': otherInfo['released'] = released
+        desc = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'chat_round'), ('<div', '>', 'CommentsSection'))[1]
+        desc = [self.cleanHtmlStr(desc.replace('</p>', '[/br]')) + '[/br][/br]']
         
-        data = re.compile('<div[^>]+?odswiezchat[^>]+?>').split(data, 1)[-1]
-        data = re.compile('<div[^>]+?chat-comment-block[^>]+?>').split(data)
-        if len(data): del data[0]
-        for item in data:
-            author = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'chat-comment-author'), ('</div', '>'), False)[1])
-            date   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'chat-comment-content-data'), ('</div', '>'), False)[1])
-            text   = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'chat-comment-content"'), ('</div', '>'), False)[1])
-            desc.append('%s[/br]%s[/br]%s[/br]' % (author, date, text))
-            printDBG("============================================================================")
-            printDBG('%s\n%s\n%s\n' % (author, date, text))
+        icon = self.cm.ph.getDataBeetwenNodes(data, ('<video', '>'), ('</video', '>'))[1]
+        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''poster=['"]([^'^"]+?)['"]''')[0])
+        #icon = ''
+        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'video-title'), ('</p', '>'), False)[1])
+        
+        urlBase = self.getFullUrl('/api/comments.php?action=get&videoID=%s' % videoID)
+        try:
+            for page in range(4):
+                url = urlBase
+                if page > 0:
+                    url += '&page=%s' % page
+                
+                sts, data = self.getPage(url)
+                if sts:
+                    data = byteify(json.loads(data))
+                    for item in data['data']:
+                        author = self.cleanHtmlStr(item['nick'])
+                        date   = self.cleanHtmlStr(item['date'])
+                        text   = self.cleanHtmlStr(item['text'])
+                        desc.append('%s | %s[/br]%s[/br]' % (date, author, text))
+                        printDBG("============================================================================")
+                        printDBG('%s\t%s\n%s\n' % (author, date, text))
+        except Exception:
+            printExc()
         
         desc = '------------------------------------------------------------------------------[/br]'.join(desc)
         
@@ -247,7 +270,7 @@ class MaxtvGO(CBaseHostClass):
         if desc == '':  desc = cItem.get('desc', '')
         if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
         
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullIconUrl(icon)}], 'other_info':otherInfo}]
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
