@@ -136,7 +136,6 @@ hostuktvplay
 hosturllist
 hostustreamtv
 hostvevo
-hostvideo4k
 hostvideopenny
 hostvodpl
 hostvumooch
