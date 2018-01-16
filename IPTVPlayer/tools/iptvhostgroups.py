@@ -26,11 +26,12 @@ class IPTVHostsGroups:
         self.GROUPS_FILE = GetConfigDir('iptvplayerhostsgroups.json')
         
         # groups
-        self.PREDEFINED_GROUPS = ["userdefined", "moviesandseries", "cartoonsandanime", "sport", "live", "documentary", "science", \
+        self.PREDEFINED_GROUPS = ["userdefined", "moviesandseries", "cartoonsandanime", "music", "sport", "live", "documentary", "science", \
                                   "polish", "english", "german", "french", "russian", "hungarian", "arabic", "greek", "latino", "italian","swedish","balkans","others"]
         self.PREDEFINED_GROUPS_TITLES = {"userdefined":      "User defined", 
                                          "moviesandseries":  "Movies and series",
                                          "cartoonsandanime": "Cartoons and anime",
+                                         "music":            "Music",
                                          "sport":            "Sport",
                                          "live":             "Live",
                                          "documentary":      "Documentary",
@@ -94,9 +95,10 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['italian']          = ['youtube','tantifilmorg','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['swedish']          = ['youtube','dailymotion','svtplayse','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['balkans']          = ['youtube','filmativa','filmovizijastudio','filma24hdcom','crtankocom','serijeonline','dailymotion','twitchtv','hitboxtv']
+        self.PREDEFINED_HOSTS['music']            = ['youtube','vevo','myfreemp3','dancetrippin','musicbox']
         
         self.PREDEFINED_HOSTS['others']           = ['iptvplayerinfo','localmedia','urllist','youtube','cdapl','wolnelekturypl','chomikuj','freediscpl','kabarety','spryciarze','wgrane','liveleak','dailymotion','ted', \
-                                                     'ororotv','eskago','musicbox','dancetrippin','vevo','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl','myfreemp3']
+                                                     'ororotv','eskago','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl','myfreemp3']
         
         self.LOADED_HOSTS = {}
         self.LOADED_DISABLED_HOSTS = {}
