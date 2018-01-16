@@ -390,15 +390,19 @@ class TvpVod(CBaseHostClass):
             params.update({'good_for_fav': False, 'category':nextCategory, 'title':self.cleanHtmlStr(item).title(), 'url':url, 'desc':''})
             self.addDir(params)
             
-    def mapHoeverItem(self, cItem, item, nextCategory):
+    def mapHoeverItem(self, cItem, item, rawItem, nextCategory):
         try:
             item = byteify(json.loads(item))
             title = self.getJItemStr(item, 'title')
             icon = self._getFullUrl(self.getJItemStr(item, 'image'))
             tmp = []
+            labelMap = {'age':'Wiek: %s'}
             for key in ['transmision', 'antena', 'age']:
                 val = self.getJItemStr(item, key)
-                if val != '': tmp.append(val)
+                if val != '': tmp.append(labelMap.get(key, '%s') % val)
+                
+            paymentTag = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(rawItem, ('<div', '>', 'showPaymentTag'), ('</div', '>'))[1])
+            if paymentTag != '': tmp.append(paymentTag)
             desc = ' | '.join(tmp)
             desc += '[/br]' + self.getJItemStr(item, 'description')
             
@@ -501,8 +505,8 @@ class TvpVod(CBaseHostClass):
                 data = data.split('<div class="col-md') #re.split('<div class="col-md[^>]+?>', data)
                 if len(data): del data[0]
             for item in data:
-                item = clean_html(self.cm.ph.getSearchGroups(item, '''data-hover\s*=\s*['"]([^'^"]+?)['"]''')[0])
-                self.mapHoeverItem(cItem, item, nextCategory)
+                jsItem = clean_html(self.cm.ph.getSearchGroups(item, '''data-hover\s*=\s*['"]([^'^"]+?)['"]''')[0])
+                self.mapHoeverItem(cItem, jsItem, item, nextCategory)
         else:
             for section in sectionsData:
                 sectionHeader = self.cm.ph.getDataBeetwenMarkers(section, '<h1', '</h1>')[1]
@@ -586,6 +590,8 @@ class TvpVod(CBaseHostClass):
         if not sts: return ''
         asset_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
         if asset_id == '': asset_id = self.cm.ph.getSearchGroups(data, 'class="playerContainer"[^>]+?data-id="([0-9]+?)"')[0]
+        if '' == asset_id: asset_id = self.cm.ph.getSearchGroups(data, 'data-video-id="([0-9]+?)"')[0]
+        if '' == asset_id: asset_id = self.cm.ph.getSearchGroups(data, "object_id:'([0-9]+?)'")[0]
         return asset_id
                 
     def getLinksForVideo(self, cItem):
@@ -602,8 +608,8 @@ class TvpVod(CBaseHostClass):
                 if 1 < len(videoTab):
                     max_bitrate = int(config.plugins.iptvplayer.tvpVodDefaultformat.value)
                     def __getLinkQuality( itemLink ):
-                        if 'with' in itemLink and 'heigth' in itemLink:
-                            bitrate = self.getBitrateFromFormat('%sx%s' % (itemLink['with'], itemLink['heigth']))
+                        if 'width' in itemLink and 'height' in itemLink:
+                            bitrate = self.getBitrateFromFormat('%sx%s' % (itemLink['width'], itemLink['height']))
                             if bitrate != 0: return bitrate
                         return int(itemLink['bitrate'])
                     oneLink = CSelOneLink(videoTab, __getLinkQuality, max_bitrate)
@@ -627,54 +633,109 @@ class TvpVod(CBaseHostClass):
         
     def getVideoLink(self, asset_id):
         printDBG("getVideoLink asset_id [%s]" % asset_id)
-        sts, data = self.cm.getPage( 'http://www.tvp.pl/shared/cdn/tokenizer_v2.php?mime_type=video%2Fmp4&object_id=' + asset_id, self.defaultParams)
-        if False == sts:
-            printDBG("getVideoLink problem")
-        
         videoTab = []
-        try:
-            data = json.loads( data )
+        
+        if '' == asset_id: return  videoTab
+        
+        def _sortVideoLinks(videoTab):
+            if 1 < len(videoTab):
+                max_bitrate = int(config.plugins.iptvplayer.tvpVodDefaultformat.value)
+                def __getLinkQuality( itemLink ):
+                    if 'width' in itemLink and 'height' in itemLink:
+                        bitrate = self.getBitrateFromFormat('%sx%s' % (itemLink['width'], itemLink['height']))
+                        if bitrate != 0: return bitrate
+                    try: return int(itemLink['bitrate'])
+                    except Exception: return 0
+                oneLink = CSelOneLink(videoTab, __getLinkQuality, max_bitrate)
+                videoTab = oneLink.getSortedLinks()
+            return videoTab
+        
+        # main routine
+        if len(videoTab) == 0: 
+            sts, data = self.cm.getPage( 'http://www.tvp.pl/shared/cdn/tokenizer_v2.php?mime_type=video%2Fmp4&object_id=' + asset_id, self.defaultParams)
+            printDBG("%s -> [%s]" % (sts, data))
+            try:
+                data = json.loads( data )
+                
+                def _getVideoLink(data, FORMATS):
+                    videoTab = []
+                    for item in data['formats']:
+                        if item['mimeType'] in FORMATS.keys():
+                            formatType = FORMATS[item['mimeType']].encode('utf-8')
+                            format = self.REAL_FORMATS.get(formatType, '')
+                            name = self.getFormatFromBitrate( str(item['totalBitrate']) ) + '\t ' + formatType
+                            url = item['url'].encode('utf-8')
+                            if 'm3u8' == formatType:
+                                videoTab.extend( getDirectM3U8Playlist(url, checkExt=False, variantCheck=False) )
+                            else:
+                                meta = {'iptv_format':format}
+                                if config.plugins.iptvplayer.tvpVodProxyEnable.value:
+                                    meta['http_proxy'] = config.plugins.iptvplayer.proxyurl.value
+                                videoTab.append( {'name' : name, 'bitrate': str(item['totalBitrate']), 'url' : self.up.decorateUrl(url, meta) })
+                    return videoTab
+                
+                preferedFormats  = []
+                if config.plugins.iptvplayer.tvpVodPreferedformat.value == 'm3u8':
+                    preferedFormats = [TvpVod.ALL_FORMATS[1], TvpVod.ALL_FORMATS[0], TvpVod.ALL_FORMATS[2]]
+                else:
+                    preferedFormats = TvpVod.ALL_FORMATS
+                
+                for item in preferedFormats:
+                    videoTab.extend(_sortVideoLinks(_getVideoLink(data, item )))
+                
+            except Exception:
+                printExc("getVideoLink exception")
+        
+        # fallback routine
+        if len(videoTab) == 0: 
+            formatMap = {'1':("320x180", 360000), '2':('398x224', 590000), '3':('480x270', 820000), '4':('640x360', 1250000), '5':('800x450', 1750000), '6':('960x540', 2850000), '7':('1280x720', 5420000), '8':("1600x900", 6500000), '9':('1920x1080', 9100000)}
             
-            def _getVideoLink(data, FORMATS):
-                videoTab = []
+            params = dict(self.defaultParams)
+            params['header'] = {'User-Agent':'okhttp/3.8.1', 'Authorization':'Basic YXBpOnZvZA==', 'Accept-Encoding':'gzip'}
+            sts, data = self.cm.getPage( 'https://apivod.tvp.pl/tv/video/%s/default/default?device=android' % asset_id, params)
+            printDBG("%s -> [%s]" % (sts, data))
+            try:
+                data = byteify(json.loads( data ), '', True)
+                for item in data['data']:
+                    if 'formats' in item:
+                        data = item
+                        break
+                hlsTab = []
+                mp4Tab = []
                 for item in data['formats']:
-                    if item['mimeType'] in FORMATS.keys():
-                        formatType = FORMATS[item['mimeType']].encode('utf-8')
-                        format = self.REAL_FORMATS.get(formatType, '')
-                        name = self.getFormatFromBitrate( str(item['totalBitrate']) ) + '\t ' + formatType
-                        url = item['url'].encode('utf-8')
-                        if 'm3u8' == formatType:
-                            videoTab.extend( getDirectM3U8Playlist(url, checkExt=False, variantCheck=False) )
-                        else:
-                            meta = {'iptv_format':format}
-                            if config.plugins.iptvplayer.tvpVodProxyEnable.value:
-                                meta['http_proxy'] = config.plugins.iptvplayer.proxyurl.value
-                            videoTab.append( {'name' : name, 'bitrate': str(item['totalBitrate']), 'url' : self.up.decorateUrl(url, meta) })
-                if 1 < len(videoTab):
-                    max_bitrate = int(config.plugins.iptvplayer.tvpVodDefaultformat.value)
-                    def __getLinkQuality( itemLink ):
-                        if 'with' in itemLink and 'heigth' in itemLink:
-                            bitrate = self.getBitrateFromFormat('%sx%s' % (itemLink['with'], itemLink['heigth']))
-                            if bitrate != 0: return bitrate
-                        return int(itemLink['bitrate'])
-                    oneLink = CSelOneLink(videoTab, __getLinkQuality, max_bitrate)
-                    if config.plugins.iptvplayer.tvpVodUseDF.value:
-                        videoTab = oneLink.getOneLink()
-                    else:
-                        videoTab = oneLink.getSortedLinks()
-                return videoTab
-            
-            preferedFormats  = []
-            if config.plugins.iptvplayer.tvpVodPreferedformat.value == 'm3u8':
-                preferedFormats = [TvpVod.ALL_FORMATS[1], TvpVod.ALL_FORMATS[0], TvpVod.ALL_FORMATS[2]]
-            else:
-                preferedFormats = TvpVod.ALL_FORMATS
-            for item in preferedFormats:
-                videoTab = _getVideoLink(data, item )
-                if len(videoTab):
-                    break
-        except Exception:
-            printExc("getVideoLink exception") 
+                    if not self.cm.isValidUrl(item.get('url', '')):
+                        continue
+                    if item.get('mimeType', '').lower() == "application/x-mpegurl":
+                        hlsTab = getDirectM3U8Playlist(item['url'])
+                    elif item.get('mimeType', '').lower() == "video/mp4":
+                        id = self.cm.ph.getSearchGroups(item['url'], '''/video\-([1-9])\.mp4$''')[0]
+                        fItem = formatMap.get(id, ('0x0', 0))
+                        mp4Tab.append({'name':'%s \t mp4' % fItem[0], 'url':item['url'], 'bitrate':fItem[1], 'id':id})
+                
+                if len(hlsTab) > 0 and 1 == len(mp4Tab) and mp4Tab[0]['id'] != '':
+                    for item in hlsTab:
+                        res = '%sx%s' % (item['width'], item['height'])
+                        for key in formatMap.keys():
+                            if key == mp4Tab[0]['id']: continue
+                            if formatMap[key][0] != res: continue
+                            url = mp4Tab[0]['url']
+                            url = url[:url.rfind('/')] + ('/video-%s.mp4' % key)
+                            mp4Tab.append({'name':'%s \t mp4' % formatMap[key][0], 'url':url, 'bitrate':formatMap[key][1], 'id':key})
+               
+                hlsTab = _sortVideoLinks(hlsTab)
+                mp4Tab = _sortVideoLinks(mp4Tab)
+                if config.plugins.iptvplayer.tvpVodPreferedformat.value == 'm3u8':
+                    videoTab.extend(hlsTab)
+                    videoTab.extend(mp4Tab)
+                else:
+                    videoTab.extend(mp4Tab)
+                    videoTab.extend(hlsTab)
+            except Exception:
+                printExc("getVideoLink exception")
+        
+        if config.plugins.iptvplayer.tvpVodUseDF.value and len(videoTab):
+            videoTab = [videoTab[0]]
+        
         return videoTab
         
     def getLinksForFavourite(self, fav_data):
