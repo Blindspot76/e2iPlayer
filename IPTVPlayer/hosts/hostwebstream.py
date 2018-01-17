@@ -77,9 +77,9 @@ def GetConfigList():
     try:    optionList.extend( VideoStar_GetConfigList() )
     except Exception: printExc()
     
-    optionList.append(getConfigListEntry("------------------vior.tv-------------------", config.plugins.iptvplayer.fake_separator))
-    try:    optionList.extend( ViortTv_GetConfigList() )
-    except Exception: printExc()
+    #optionList.append(getConfigListEntry("------------------vior.tv-------------------", config.plugins.iptvplayer.fake_separator))
+    #try:    optionList.extend( ViortTv_GetConfigList() )
+    #except Exception: printExc()
     
     optionList.append(getConfigListEntry("----------------pierwsza.tv-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( PierwszaTV_GetConfigList() )
@@ -149,7 +149,7 @@ class HasBahCa(CBaseHostClass):
     HTTP_HEADER= { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
     MAIN_GROUPED_TAB = [{'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://xmtvplayer.com/wp-content/uploads/2014/07/weebtv.png'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'https://pilot.wp.pl/',              'url': '',                                                                   'icon': 'http://satkurier.pl/uploads/53612.jpg'}, \
-                        {'alias_id':'vior.tv',                 'name': 'vior.tv',             'title': 'https://vior.tv/',                  'url': 'https://vior.tv/',                                                   'icon': 'https://vior.tv/theme/public/assets/img/logotype.png'}, \
+                        #{'alias_id':'vior.tv',                 'name': 'vior.tv',             'title': 'https://vior.tv/',                  'url': 'https://vior.tv/',                                                   'icon': 'https://vior.tv/theme/public/assets/img/logotype.png'}, \
                         {'alias_id':'tele-wizja.com',          'name': 'tele-wizja.com',      'title': 'http://tele-wizja.is/',             'url': '',                                                                   'icon': 'http://htk.net.pl/wp-content/uploads/2016/07/cache_2422349465.jpg'}, \
                         {'alias_id':'pierwsza.tv',             'name': 'pierwsza.tv',         'title': 'http://pierwsza.tv/',               'url': '',                                                                   'icon': 'http://pierwsza.tv/img/logo.png'}, \
                         #{'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
