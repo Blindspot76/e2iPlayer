@@ -33,7 +33,7 @@ class IPTVSetupImpl:
         self.termination  = False
         
         self.tmpDir = GetTmpDir()
-        self.resourceServers = ["http://iptvplayer.pl/resources/", "http://iptvplayer.vline.pl/resources/"]
+        self.resourceServers = ["http://iptvplayer.vline.pl/resources/"] #"http://iptvplayer.pl/resources/"
         
         self.ffmpegVersion = ""
         self.gstreamerVersion = ""

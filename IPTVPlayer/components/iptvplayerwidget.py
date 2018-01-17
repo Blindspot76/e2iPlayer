@@ -651,7 +651,7 @@ class IPTVPlayerWidget(Screen):
                     TextMSG += "\n\t- {0}, ".format(item['nick'])
                 TextMSG += "\n"
                 TextMSG += _("Testers: ") + "\n\t- ??\n"
-                TextMSG += _("Webpages: ") + "\n\t- http://iptvplayer.vline.pl/, \n\t- http://iptvplayer.pl/\n"
+                TextMSG += _("Webpages: ") + "\n\t- http://iptvplayer.vline.pl/\n" #, \n\t- http://iptvplayer.pl/
                 self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO )
             elif ret[1] == "IPTVDM":
                 self.runIPTVDM()
@@ -1024,7 +1024,7 @@ class IPTVPlayerWidget(Screen):
         self.askUpdateAvailable(self.selectHost)
     
     def __requestCheckUpdate(self):
-        lastVerUrl = 'http://iptvplayer.pl/download/update/lastversion.php'
+        lastVerUrl = 'http://iptvplayer.vline.pl/download/update/lastversion.php' #'http://iptvplayer.pl/download/update/lastversion.php'
         if config.plugins.iptvplayer.autoCheckForUpdate.value:
             self.checkUpdateTimer.start(self.checkUpdateTimer_interval, True)
             if IsExecutable( DMHelper.GET_WGET_PATH() ):

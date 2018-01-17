@@ -239,7 +239,7 @@ class IUpdateObjectInterface():
         return sts, msg
     
 class UpdateMainAppImpl(IUpdateObjectInterface):
-    SERVERS_LIST_URLS = ["http://iptvplayer.pl/download/update/serwerslist.json", "http://iptvplayer.vline.pl/download/update/serwerslist.json"]
+    SERVERS_LIST_URLS = ["http://iptvplayer.vline.pl/download/update/serwerslist.json"] #"http://iptvplayer.pl/download/update/serwerslist.json"
     VERSION_PATTERN   = 'IPTV_VERSION="([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"'
     
     def __init__(self, session, allowTheSameVersion=False):
