@@ -50,44 +50,53 @@ def gettytul():
     return 'http://wolnelektury.pl/'
 
 class WolnelekturyPL(CBaseHostClass):
-    ITEMS_PER_PAGE = 50
-    HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
-    MAIN_URL = 'http://wolnelektury.pl/'
-    DEFAULT_ICON = 'http://m.img.brothersoft.com/android/598/1352446551_icon.png'
-    MAIN_CAT_TAB = [{'category':'categories',  'key':'author', 'title':'Autorzy',  'icon':DEFAULT_ICON},
-                    {'category':'categories',  'key':'epoch',  'title':'Epoki',    'icon':DEFAULT_ICON},
-                    {'category':'categories',  'key':'genre',  'title':'Gatunki',  'icon':DEFAULT_ICON},
-                    {'category':'categories',  'key':'kind',   'title':'Rodzaje',  'icon':DEFAULT_ICON}]
+
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'wolnelektury.pl', 'cookie':'WolnelekturyPL.cookie'})
+        self.HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        self.MAIN_URL = 'http://wolnelektury.pl/'
+        self.DEFAULT_ICON_URL = 'http://m.img.brothersoft.com/android/598/1352446551_icon.png'
+        MAIN_CAT_TAB = [{'category':'categories',  'key':'author', 'title':'Autorzy'},
+                        {'category':'categories',  'key':'epoch',  'title':'Epoki'  },
+                        {'category':'categories',  'key':'genre',  'title':'Gatunki'},
+                        {'category':'categories',  'key':'kind',   'title':'Rodzaje'}]
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        self.cache = []
+        self.cacheFilters = {}
         
-    def cleanHtmlStr(self, data):
-        data = data.replace('&nbsp;', ' ')
-        data = data.replace('&nbsp', ' ')
-        return CBaseHostClass.cleanHtmlStr(data)
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("WolnelekturyPL.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
-            
-    def fillCache(self):
-        printDBG("WolnelekturyPL.fillCache")
-        self.cache = []
-        sts, data = self.cm.getPage('http://iptvplayer.pl/resources/wolnelektury3.db')
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        if addParams == {}: addParams = dict(self.defaultParams)
+        baseUrl = self.cm.iriToUri(baseUrl)
+        return self.cm.getPage(baseUrl, addParams, post_data)
+        
+    def listFilters(self, cItem, nextCategory):
+        printDBG("WolnelekturyPL.listFilters")
+        self.cacheFilters = {}
+        
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
-        try:
-            self.cache = byteify(json.loads(data))
-        except Exception:
-            printExc()
+        
+        titlesMap = {}
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'tabbed-filter'), ('</div', '>'))[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
+        for item in tmp:
+            id = self.cm.ph.getSearchGroups(item, '''\sdata\-id=['"]([^"^']+?)['"]''')[0]
+            titlesMap[id] = self.cleanHtmlStr(item)
+        
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div ', '>', 'tab-content'), ('</ul', '>'))
+        for section in data:
+            id = self.cm.ph.getSearchGroups(section, '''\sid=['"]([^"^']+?)['"]''')[0]
+            sTitle = titlesMap.get(id, id)
+            itemsTab = []
+            section = self.cm.ph.getAllItemsBeetwenMarkers(section, '<a', '</a>')
+            for item in section:
+                title = self.cleanHtmlStr(item)
+                url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^"^']+?)['"]''')[0] )
+                itemsTab.append({'title':title, 'url':url})
+            if len(itemsTab):
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'category':nextCategory, 'title':sTitle, 'items_tab':itemsTab})
+                self.addDir(params)
     
     def listCategories(self, cItem, category):
         printDBG("WolnelekturyPL.listCategories")
@@ -107,53 +116,87 @@ class WolnelekturyPL(CBaseHostClass):
             params.update({'title':item, 'cat':item, 'category':category})
             self.addDir(params)
     
-    def listItems(self, cItem):
+    def listItems(self, cItem, nextCategory1, nextCategory2):
         printDBG("WolnelekturyPL.listItems")
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
         
-        try:
-            key = cItem['key']
-            cat = cItem['cat']
-            max = len(self.cache)
-            idx = cItem.get('idx', 0)
-            items = 0
-            while idx < max and items < self.ITEMS_PER_PAGE:
-                if cat in self.cache[idx][key]:
-                    params = dict(cItem)
-                    title = self.cache[idx]['title']
-                    icon  = self.cache[idx]['cover']
-                    url   = self.cache[idx]['href']
-                    
-                    desc = []
-                    for dKey in ['kind', 'author', 'epoch', 'genre']:
-                        desc.append(self.cache[idx][dKey])
-                    params.update({'title':title, 'icon':icon, 'url':url, 'desc':'[/br]'.join(desc)}) 
-                    self.addAudio(params)
-                    items += 1
-                idx += 1
+        data2 = self.cm.ph.getDataBeetwenNodes(data, ('<ol', '>', 'work-list'), ('</ol', '>'))[1]
+        data2 = re.compile('''<li[^>]+?Book-item[^>]+?>''', re.IGNORECASE).split(data2)
+        if len(data2): del data2[0]
+        for item in data2:
+            tmp = self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1]
+            title = self.cleanHtmlStr(tmp)
+            url = self.getFullUrl( self.cm.ph.getSearchGroups(tmp, '''\shref=['"]([^"^']+?)['"]''')[0] )
+            icon = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^"^']+?)['"]''')[0] )
             
-            if idx < max:
+            desc = []
+            tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'book-box-head'), ('</div', '>'))[1]).replace(' , ', ', ')
+            if tmp != '': desc.append(tmp)
+            tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'tags'), ('</div', '>'))[1].replace('</span></span>', '[/br]'))
+            if tmp != '': desc.append(' ' + tmp)
+            
+            params = dict(cItem)
+            params.update({'good_for_fav':True, 'category':nextCategory2, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
+            self.addDir(params)
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<h2', '</div>', 'plain-list'), ('<div', '>', 'clearboth'))[1].split('<h2>')
+        if len(data): del data[0]
+        for section in data:
+            section = section.split('</h2>', 1)
+            sTitle = self.cleanHtmlStr(section[0])
+            section = self.cm.ph.getAllItemsBeetwenMarkers(section[1], '<p', '</p>')
+            itemsTab = []
+            author   = ''
+            for item in section:
+                if 'header' in item:
+                    author = self.cleanHtmlStr(item)
+                    continue
+                url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^"^']+?)['"]''')[0] )
+                if url.endswith('/'): icon = url[:-1].split('/')
+                else: icon = icon.split('/')
+                icon = self.getFullIconUrl('/media/book/cover_thumb/%s.jpg' % icon[-1])
+                title = self.cleanHtmlStr(item)
+                itemsTab.append({'title':title, 'url':url, 'icon':icon, 'desc':author})
+            
+            if len(itemsTab):
                 params = dict(cItem)
-                params.update({'title':_("Next page"), 'idx':idx})
+                params.update({'good_for_fav':False, 'category':nextCategory1, 'title':sTitle, 'items_tab':itemsTab})
                 self.addDir(params)
-        except Exception:
-            printExc()
+            
+    def listSubItems(self, cItem, nextCategory):
+        printDBG("WolnelekturyPL.listSubItems [%s]" % cItem)
+        cItem = dict(cItem)
+        itemsTab = cItem.pop('items_tab', [])
+        cItem['category'] = nextCategory
+        self.listsTab(itemsTab, cItem)
+    
+    def exploreItem(self, cItem):
+        printDBG("WolnelekturyPL.exploreItem")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'jp-playlist'), ('</ul', '>'))[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        objReDesc = re.compile('''<div[^>]+?extra\-info[^>]+?>''')
+        for item in data:
+            
+            tmp = objReDesc.split(item)
+            title = self.cleanHtmlStr(tmp[0])
+            desc  = self.cleanHtmlStr(tmp[1])
+            urlTab = []
+            mp3Url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\sdata\-mp3=['"]([^"^']+?)['"]''')[0] )
+            oggUrl = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\sdata\-ogg=['"]([^"^']+?)['"]''')[0] )
+            if mp3Url != '': urlTab.append({'name': 'mp3', 'url':mp3Url, 'need_resolve':0})
+            if oggUrl != '': urlTab.append({'name': 'ogg', 'url':mp3Url, 'need_resolve':0})
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':title, 'urls':urlTab, 'desc':desc})
+            self.addAudio(params)
     
     def getLinksForVideo(self, cItem):
         printDBG("WolnelekturyPL.getLinksForVideo [%s]" % cItem)
-        urlTab = []
-        
-        sts, data = self.cm.getPage(cItem['url'])
-        if not sts: return []
-        
-        try:
-            data = byteify(json.loads(data))
-            for item in data['media']:
-                if item['type'] not in ['mp3', 'ogg']: continue
-                urlTab.append({'name': '{0} | {1}, {2}'.format(item['type'], item['artist'], item['director']), 'url':item['url'], 'need_resolve':0})
-        except Exception:
-            printExc()
-        
-        return urlTab
+        return cItem.get('urls', [])
         
     def getArticleContent(self, cItem):
         printDBG("WolnelekturyPL.getArticleContent [%s]" % cItem)
@@ -192,12 +235,6 @@ class WolnelekturyPL(CBaseHostClass):
             otherInfo['duration'] = str(datetime.timedelta(seconds=data['runtime']))
         except Exception:
             printExc()
-        
-    def getFavouriteData(self, cItem):
-        return cItem['url']
-        
-    def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -213,113 +250,18 @@ class WolnelekturyPL(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.fillCache()
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
-        elif category == 'categories':
-            self.listCategories(self.currItem, 'list_items')
+            self.listFilters({'name':'category', 'url':self.getFullUrl('/katalog/audiobooki/')}, 'list_sub_items_1')
+        elif category == 'list_sub_items_1':
+            self.listSubItems(self.currItem, 'list_items')
         elif category == 'list_items':
-            self.listItems(self.currItem)
+            self.listItems(self.currItem, 'list_sub_items_2', 'explore_item')
+        elif category == 'list_sub_items_2':
+            self.listSubItems(self.currItem, 'explore_item')
+        elif category == 'explore_item':
+            self.exploreItem(self.currItem)
         
         CBaseHostClass.endHandleService(self, index, refresh)
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, WolnelekturyPL(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
-
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('wolnelekturypllogo.png')])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getArticleContent(self, Index = 0):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        cItem = self.host.currList[Index]
-        if cItem['type'] != 'audio':
-            return RetHost(retCode, value=retlist)
-        
-        hList = self.host.getArticleContent(cItem)
-        if 0 == len(hList):
-            return RetHost(retCode, value=retlist)
-        for item in hList:
-            title      = item.get('title', '')
-            text       = item.get('text', '')
-            images     = item.get("images", [])
-            othersInfo = item.get('other_info', '')
-            retlist.append( ArticleContent(title = title, text = text, images =  images, richDescParams = othersInfo) )
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
-        
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-            
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, 1))
-            
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = 1,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
+        CHostBase.__init__(self, WolnelekturyPL(), True, [])
