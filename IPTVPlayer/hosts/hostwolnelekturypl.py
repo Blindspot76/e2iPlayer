@@ -97,6 +97,11 @@ class WolnelekturyPL(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'good_for_fav':False, 'category':nextCategory, 'title':sTitle, 'items_tab':itemsTab})
                 self.addDir(params)
+        
+        MAIN_CAT_TAB = [{'category':'search',         'title': _('Search'),          'search_item':True}, 
+                        {'category':'search_history', 'title': _('Search history')},]
+        
+        self.listsTab(MAIN_CAT_TAB, cItem)
     
     def listCategories(self, cItem, category):
         printDBG("WolnelekturyPL.listCategories")
@@ -116,15 +121,17 @@ class WolnelekturyPL(CBaseHostClass):
             params.update({'title':item, 'cat':item, 'category':category})
             self.addDir(params)
     
-    def listItems(self, cItem, nextCategory1, nextCategory2):
+    def listItems(self, cItem, nextCategory1, nextCategory2, checkPlayable=False):
         printDBG("WolnelekturyPL.listItems")
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
-        data2 = self.cm.ph.getDataBeetwenNodes(data, ('<ol', '>', 'work-list'), ('</ol', '>'))[1]
+        if '/szukaj/' in cItem['url']: data2 = self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'work-list'), ('<footer', '>'))[1]
+        else: data2 = self.cm.ph.getDataBeetwenNodes(data, ('<ol', '>', 'work-list'), ('</ol', '>'))[1]
         data2 = re.compile('''<li[^>]+?Book-item[^>]+?>''', re.IGNORECASE).split(data2)
         if len(data2): del data2[0]
         for item in data2:
+            if checkPlayable and 'jp-play' not in item: continue
             tmp = self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1]
             title = self.cleanHtmlStr(tmp)
             url = self.getFullUrl( self.cm.ph.getSearchGroups(tmp, '''\shref=['"]([^"^']+?)['"]''')[0] )
@@ -140,6 +147,8 @@ class WolnelekturyPL(CBaseHostClass):
             params.update({'good_for_fav':True, 'category':nextCategory2, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
             self.addDir(params)
         
+        if nextCategory1 == '': return
+        
         data = self.cm.ph.getDataBeetwenNodes(data, ('<h2', '</div>', 'plain-list'), ('<div', '>', 'clearboth'))[1].split('<h2>')
         if len(data): del data[0]
         for section in data:
@@ -153,6 +162,7 @@ class WolnelekturyPL(CBaseHostClass):
                     author = self.cleanHtmlStr(item)
                     continue
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^"^']+?)['"]''')[0] )
+                if url == '': continue
                 if url.endswith('/'): icon = url[:-1].split('/')
                 else: icon = icon.split('/')
                 icon = self.getFullIconUrl('/media/book/cover_thumb/%s.jpg' % icon[-1])
@@ -193,6 +203,12 @@ class WolnelekturyPL(CBaseHostClass):
             params = dict(cItem)
             params.update({'good_for_fav':False, 'title':title, 'urls':urlTab, 'desc':desc})
             self.addAudio(params)
+            
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("WolnelekturyPL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        cItem = dict(cItem)
+        cItem['url'] = self.getFullUrl('/szukaj/?q=%s' % urllib.quote_plus(searchPattern))
+        self.listItems(cItem, '', 'explore_item', True)
     
     def getLinksForVideo(self, cItem):
         printDBG("WolnelekturyPL.getLinksForVideo [%s]" % cItem)
@@ -259,6 +275,16 @@ class WolnelekturyPL(CBaseHostClass):
             self.listSubItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
             self.exploreItem(self.currItem)
+    #SEARCH
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+        else:
+            printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
 class IPTVHost(CHostBase):

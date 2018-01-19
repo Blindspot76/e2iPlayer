@@ -239,14 +239,12 @@ class cda(CBaseHostClass):
                 nextPage = False
             
             if search:
-                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="block-media', '<div class="block-media-inline-separator">')[1]
-                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="block-media', '</label>', withMarkers=True)
+                data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'video-clip-wrapper'), ('</label', '>'))
             elif 'poczekalnia' in url:
                 data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="videoInfo">', '<span class="next-wrapper">', False)[1]
                 data = data.split('<div class="videoInfo">')                
             else:
-                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="rowElem">', '<div class="clear"></div>', False)[1]
-                data = data.split('</label>')
+                data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'video-clip-wrapper'), ('</label', '>'))
                 
             for item in data:
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
