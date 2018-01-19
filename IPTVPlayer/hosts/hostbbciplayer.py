@@ -497,6 +497,7 @@ class BBCiPlayer(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
+            rm(self.COOKIE_FILE)
             self.listMainMenu({'name':'category', 'url':self.MAIN_URL}, 'list_items')
         elif 'live_streams' == category:
             self.listLive(self.currItem)
