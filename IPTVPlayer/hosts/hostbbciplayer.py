@@ -396,14 +396,14 @@ class BBCiPlayer(CBaseHostClass):
                 else: nextPage = False
                 endTag = mTag
         
-        startTag = re.compile('''<li[^>]+?class=['"]list-item[^>]*?>''')
+        startTag = re.compile('''<li[^>]+?(?:class=['"]list-item|list__grid__item)[^>]*?>''')
         data = self.cm.ph.getDataBeetwenReMarkers(data, startTag, re.compile(endTag), withMarkers=False)[1]
         data = startTag.split(data)
         
         subTitleReOb1 = re.compile('<h2[^>]+?class="[^"]*?subtitle[^"]*?"')
         subTitleReOb2 = re.compile('</h2>')
         for item in data:
-            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<div class="title', '</div>')[1])
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1])
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h1 class="list-item__title', '</h1>')[1])
             icon  = self.cm.ph.getSearchGroups(item, '''<source[^>]+?srcset=['"]([^'^"]+?)['"]''')[0]
             descTab = []
@@ -424,7 +424,9 @@ class BBCiPlayer(CBaseHostClass):
                 if subtitle != '': title += ' ' + subtitle
             
             if 'data-timeliness-type="unavailable"' in item:
-                title = '[' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<span class="signpost editorial">', '</span>')[1]) + '] ' + title 
+                title = '[' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<span class="signpost editorial">', '</span>')[1]) + '] ' + title
+            
+            if title.lower().startswith('episode '): title = '%s - %s' % (cItem['title'], title)
             if url == '' or title == '': 
                 printDBG("+++++++++++++++ NO TITLE url[%s], title[%s]" % (url, title))
                 continue
