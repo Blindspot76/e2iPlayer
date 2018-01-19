@@ -373,6 +373,10 @@ class BBCiPlayer(CBaseHostClass):
         sts, data = self.cm.getPage(url, self.defaultParams)
         if not sts: return
         
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG(data)
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        
         t1 = '<div id="tvip-footer-wrap">'
         t2 = '<div class="footer js-footer">'
         if t1 in data: endTag = t1
@@ -392,7 +396,7 @@ class BBCiPlayer(CBaseHostClass):
                 else: nextPage = False
                 endTag = mTag
         
-        startTag = re.compile('<li class="list-item[^>]*?>')
+        startTag = re.compile('''<li[^>]+?class=['"]list-item[^>]*?>''')
         data = self.cm.ph.getDataBeetwenReMarkers(data, startTag, re.compile(endTag), withMarkers=False)[1]
         data = startTag.split(data)
         
@@ -421,7 +425,9 @@ class BBCiPlayer(CBaseHostClass):
             
             if 'data-timeliness-type="unavailable"' in item:
                 title = '[' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<span class="signpost editorial">', '</span>')[1]) + '] ' + title 
-            if url == '' or title == '': continue
+            if url == '' or title == '': 
+                printDBG("+++++++++++++++ NO TITLE url[%s], title[%s]" % (url, title))
+                continue
             params = {'good_for_fav': True, 'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullIconUrl(icon), 'desc':'[/br]'.join(descTab)}
             if type == 'video':
                 self.addVideo(params)
