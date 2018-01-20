@@ -44,7 +44,7 @@ class IPTVSetupImpl:
         self.glibcVersion = -1
         
         # wget members
-        self.wgetVersion = 19 # 1.15 
+        self.wgetVersion = 1902 # 1.15 
         self.wgetpaths = ["wget", "/usr/bin/wget", "/usr/bin/fullwget", GetBinDir("wget", "")]
         self._wgetInstallChoiseList = [(_('Install into the "%s".') % ("/usr/bin/fullwget " + _("recommended")), "/usr/bin/fullwget"),
                                        (_('Install into the "%s".') % "IPTVPlayer/bin/wget", GetBinDir("wget", "")),
@@ -463,7 +463,10 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.wgetStep")
         def _detectValidator(code, data):
             if 'BusyBox' not in data and '+https' in data: 
-                try: ver = int(re.search("GNU Wget 1\.([0-9]+?)[^0-9]", data).group(1))
+                try: 
+                    obj = re.search("GNU Wget 1\.([0-9]+?)\.([0-9]+?)[^0-9]", data)
+                    if obj != None: ver = int(obj.group(1)) * 100 + int(obj.group(2))
+                    else: ver = int(re.search("GNU Wget 1\.([0-9]+?)[^0-9]", data).group(1)) * 100
                 except Exception: ver = 0
                 if ver >= self.wgetVersion: return True,False
             return False,True
