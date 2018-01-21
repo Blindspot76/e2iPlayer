@@ -137,6 +137,7 @@ hosturllist
 hostustreamtv
 hostvevo
 hostvideopenny
+hostvimeo
 hostvodpl
 hostvumooch
 hostwatchwrestling
