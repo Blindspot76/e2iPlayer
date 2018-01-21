@@ -6916,9 +6916,15 @@ class pageParser:
         
         if 'player' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([0-9]+?)[/.]')[0]
-            url = 'https://player.vimeo.com/video/' + video_id
+            if video_id != '': 
+                url = 'https://player.vimeo.com/video/' + video_id
+            else:
+                sts, data = self.cm.getPage(baseUrl)
+                if not sts: return False
+                url = self.cm.ph.getSearchGroups(data, '''['"]embedUrl['"]\s*?:\s*?['"]([^'^"]+?)['"]''')[0]
         else:
             url = baseUrl
+        
         sts, data = self.cm.getPage(url)
         if not sts: return False
 
