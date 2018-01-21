@@ -95,10 +95,10 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['italian']          = ['youtube','tantifilmorg','dailymotion','vimeo','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['swedish']          = ['youtube','dailymotion','vimeo','svtplayse','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['balkans']          = ['youtube','filmativa','filmovizijastudio','filma24hdcom','crtankocom','serijeonline','dailymotion','vimeo','twitchtv','hitboxtv']
-        self.PREDEFINED_HOSTS['music']            = ['youtube','vevo','myfreemp3','dancetrippin','musicbox','vimeo','dailymotion']
+        self.PREDEFINED_HOSTS['music']            = ['youtube','vevo','myfreemp3','dancetrippin','musicbox','vimeo','dailymotion','shoutcast','eskago']
         
         self.PREDEFINED_HOSTS['others']           = ['iptvplayerinfo','localmedia','urllist','youtube','cdapl','wolnelekturypl','chomikuj','freediscpl','kabarety','spryciarze','wgrane','liveleak','dailymotion','vimeo','ted', \
-                                                     'ororotv','eskago','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl','myfreemp3']
+                                                     'ororotv','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl']
         
         self.LOADED_HOSTS = {}
         self.LOADED_DISABLED_HOSTS = {}

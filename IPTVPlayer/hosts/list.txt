@@ -111,6 +111,7 @@ hostserienstreamto
 hostseriesonline
 hostserijeonline
 hostshahiidanimenet
+hostshoutcast
 hostskstream
 hostsolarmovie
 hostsovdub
