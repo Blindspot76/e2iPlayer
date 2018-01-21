@@ -297,7 +297,11 @@ class MuziCsillangCC(CBaseHostClass):
             return
         
         sts, data = self.getPage(sourcesLink)
-        if not sts: return []
+        if not sts: return
+        
+        sourcesLink = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?)['"][^>]*?>Lejatszas''')[0]
+        sts, data = self.getPage(sourcesLink)
+        if not sts: return
         
         self.cacheLinks  = {}
         
@@ -305,7 +309,7 @@ class MuziCsillangCC(CBaseHostClass):
         data = data.split('accordion-episodes')
         episodesTab = []
         for tmp in data:
-            episodeName = self.cleanHtmlStr(self.cm.ph.getSearchGroups(tmp, '''<div[^>]+?textHolder[^>]*?>([^<]+?)<''')[0])
+            episodeName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<h3', '</h3>')[1])
             
             tmp = tmp.split('panel')
             for item in tmp:
@@ -375,7 +379,7 @@ class MuziCsillangCC(CBaseHostClass):
             printExc()
             return []
         
-        if self.up.getDomain(self.getMainUrl()) in videoUrl:
+        if 1 != self.up.checkHostSupport(videoUrl):
             sts, data = self.getPage(videoUrl)
             if not sts: return []
             
