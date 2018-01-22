@@ -15,7 +15,7 @@ from Screens.MessageBox  import MessageBox
 from Components.config   import config, configfile
 from Tools.BoundFunction import boundFunction
 from Tools.Directories   import resolveFilename, SCOPE_PLUGINS
-from os                  import path as os_path, chmod as os_chmod, remove as os_remove, listdir as os_listdir, getpid as os_getpid, symlink as os_symlink
+from os                  import path as os_path, chmod as os_chmod, remove as os_remove, listdir as os_listdir, getpid as os_getpid, symlink as os_symlink, unlink as os_unlink
 import re
 ###################################################
 
@@ -290,13 +290,15 @@ class IPTVSetupImpl:
         if self.openSSLVersion == '':
             # use old detection manner
             self.setOpenSSLVersion()
+        elif self.openSSLVersion == '.1.0.2':
+            self.getOpenssl2Finished()
         else:
             self.getGstreamerVer()
     
     def setOpenSSLVersion(self, ret=None):
         printDBG('Check opennSSL version')
         self.setInfo(_("Detection of the OpenSSL version."), _("OpenSSL lib is needed by wget and rtmpdump utilities."))
-        for ver in ['.0.9.8', '.1.0.0']:
+        for ver in ['.0.9.8', '.1.0.0', '.1.0.2']:
             libsslExist = False
             libcryptoExist = False
             libSSLPath = ''
@@ -319,7 +321,9 @@ class IPTVSetupImpl:
         if libsslExist and libcryptoExist:
             self.openSSLVersion = ver
             self.libSSLPath = libSSLPath
-            if '.1.0.0' != ver:
+            if '.1.0.2' == ver:
+                self.getOpenssl2Finished()
+            elif '.0.9.8' == ver:
                 # old ssl version 0.9.8
                 self.getGstreamerVer()
             else:
@@ -350,37 +354,38 @@ class IPTVSetupImpl:
     def getOpenssl1Finished(self, stsTab, dataTab):
         printDBG("IPTVSetupImpl.getOpenssl1Finished")
         if len(stsTab) == 0 or False == stsTab[-1]:
-            # we detect new version OpenSSL without symbol OPENSSL_1.0.0
-            self.openSSLVersion = '.1.0.2'
-            self.libSSLPath = ""
-            # we already we have packages for OpenSSL 1.0.2 for all supported platforms
-            #if self.platform != 'mipsel':
-            #    self.showMessage(_("OpenSSL in your image is not supported.\nSome functions may not work correctly."), MessageBox.TYPE_WARNING, self.getGstreamerVer )
-            #    return
-            
-            # check if link for libssl.so.1.0.0 and libcrypto.so.1.0.0 are needed
-            openSSlVerMap = {}
-            for ver in ['.1.0.0', '.1.0.2']:
-                for path in ['/usr/lib/', '/lib/', '/usr/local/lib/', '/local/lib/']:
-                    for library in ['libssl.so', 'libcrypto.so']:
-                        library += ver
-                        fullLibraryPath = os_path.join(path, library)
-                        if os_path.isfile(fullLibraryPath):
-                            openSSlVerMap[library] =  fullLibraryPath
-            
-            linksTab = []
-            for library in ['libssl.so', 'libcrypto.so']:
-                if (library + '.1.0.0') not in openSSlVerMap and (library +'.1.0.2') in openSSlVerMap:
-                    linksTab.append([openSSlVerMap[library + '.1.0.2'], openSSlVerMap[library + '.1.0.2'][:-1] + '0'])
-            
-            # there is need to create symlinks for libssl.so.1.0.0 and libcrypto.so.1.0.0
-            if len(linksTab):
-                symlinksText = []
-                for item in linksTab:
-                    symlinksText.append('%s -> %s' % (item[0], item[1]))
-                msg = _("OpenSSL in your image has different library names then these used by IPTVPlayer.\nThere is need to create following symlinks:\n%s\nto be able to install binary components from IPTVPlayer server.\nDo you want to proceed?" % ('\n'.join(symlinksText)))
-                self.showMessage(msg, MessageBox.TYPE_YESNO, boundFunction(self.createOpenSSLSymlinks, linksTab) )
-                return                
+            self.getOpenssl2Finished()
+        self.getGstreamerVer()
+        
+    def getOpenssl2Finished(self):
+        printDBG("IPTVSetupImpl.getOpenssl2Finished")
+        # we detect new version OpenSSL without symbol OPENSSL_1.0.0
+        self.openSSLVersion = '.1.0.2'
+        self.libSSLPath = ""
+        
+        # check if link for libssl.so.1.0.0 and libcrypto.so.1.0.0 are needed
+        openSSlVerMap = {}
+        for ver in ['.1.0.0', '.1.0.2']:
+            for path in ['/usr/lib/', '/lib/', '/usr/local/lib/', '/local/lib/']:
+                for library in ['libssl.so', 'libcrypto.so']:
+                    library += ver
+                    fullLibraryPath = os_path.join(path, library)
+                    if os_path.isfile(fullLibraryPath):
+                        openSSlVerMap[library] =  fullLibraryPath
+        
+        linksTab = []
+        for library in ['libssl.so', 'libcrypto.so']:
+            if (library + '.1.0.0') not in openSSlVerMap and (library +'.1.0.2') in openSSlVerMap:
+                linksTab.append([openSSlVerMap[library + '.1.0.2'], openSSlVerMap[library + '.1.0.2'][:-1] + '0'])
+        
+        # there is need to create symlinks for libssl.so.1.0.0 and libcrypto.so.1.0.0
+        if len(linksTab):
+            symlinksText = []
+            for item in linksTab:
+                symlinksText.append('%s -> %s' % (item[0], item[1]))
+            msg = _("OpenSSL in your image has different library names then these used by IPTVPlayer.\nThere is need to create following symlinks:\n%s\nto be able to install binary components from IPTVPlayer server.\nDo you want to proceed?" % ('\n'.join(symlinksText)))
+            self.showMessage(msg, MessageBox.TYPE_YESNO, boundFunction(self.createOpenSSLSymlinks, linksTab) )
+            return                
             
         self.getGstreamerVer()
     
@@ -391,6 +396,11 @@ class IPTVSetupImpl:
         try:
             if arg and len(linksTab):
                 for item in linksTab:
+                    try: 
+                        if os_path.islink(item[1]):
+                            os_unlink(item[1])
+                    except Exception:
+                        printExc()
                     os_symlink(item[0], item[1])
         except Exception as e:
             self.showMessage(_('Create OpenSSL symlinks failed with following error "%s".\nSome functions may not work correctly.') % e, MessageBox.TYPE_WARNING, self.getGstreamerVer)
