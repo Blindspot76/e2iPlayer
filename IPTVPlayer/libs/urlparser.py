@@ -462,6 +462,7 @@ class urlparser:
                        'streamix.cloud':       self.pp.parserSTREAMIXCLOUD  ,
                        'veoh.com':             self.pp.parserVEOHCOM        ,
                        'mediafire.com':        self.pp.parserMEDIAFIRECOM   ,
+                       'nadaje.com':           self.pp.parserNADAJECOM      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -589,6 +590,12 @@ class urlparser:
             elif 'dotstream.tv' in data:
                 streampage = self.cm.ph.getSearchGroups(data, """streampage=([^&]+?)&""")[0]
                 videoUrl = 'http://dotstream.tv/player.php?streampage={0}&height=490&width=730'.format(streampage)
+                videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
+                return self.getVideoLinkExt(videoUrl)
+            elif 'player.nadaje.com' in data:
+                tmpUrl = self.cm.ph.getDataBeetwenNodes(data, ('<script', '>', 'player.nadaje.com'), ('</script', '>'))[1]
+                tmpUrl = self.cm.ph.getSearchGroups(tmpUrl, """player\-id=['"]([^'^"]+?)['"]""")[0]
+                videoUrl = 'https://nadaje.com/api/1.0/services/video/%s/' % tmpUrl
                 videoUrl = strwithmeta(videoUrl, {'Referer':strwithmeta(baseUrl).meta.get('Referer', baseUrl)})
                 return self.getVideoLinkExt(videoUrl)
             elif 'allcast.is' in data:
@@ -9422,3 +9429,28 @@ class pageParser:
             if self.cm.isValidUrl(videoUrl):
                 return videoUrl
         return False
+        
+    def parserNADAJECOM(self, baseUrl):
+        printDBG("parserNADAJECOM baseUrl[%s]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        origin = self.cm.getBaseUrl(referer)[:-1]
+        USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        HEADER = {'User-Agent':USER_AGENT, 'Accept':'*/*', 'Content-Type':'application/json', 'Accept-Encoding':'gzip, deflate', 'Referer':referer, 'Origin':origin}
+        
+        videoId = self.cm.ph.getSearchGroups(baseUrl + '/', '''/video/([0-9]+?)/''')[0]
+        
+        sts, data = self.cm.getPage('https://nadaje.com/api/1.0/services/video/%s/' % videoId, {'header': HEADER})
+        if not sts: return False
+        
+        linksTab = []
+        data = byteify(json.loads(data))['transmission-info']['data']['streams'][0]['urls']
+        for key in ['hls', 'rtmp', 'hds']:
+            if key not in data: continue
+            url = data[key]
+            url = urlparser.decorateUrl(url, {'iptv_livestream':True, 'Referer':referer, 'User-Agent':USER_AGENT, 'Origin':origin})
+            if key == 'hls': linksTab.extend( getDirectM3U8Playlist(url, checkExt=False, checkContent=True) )
+            #elif key == 'hds': linksTab.extend( getF4MLinksWithMeta(url) )
+            #elif key == 'rtmp': linksTab.append( {'name':key, 'url':url} )
+        return linksTab
+        
