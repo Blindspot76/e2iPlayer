@@ -75,14 +75,18 @@ class RadiostacjaPl(CBaseHostClass):
         
         self.listsTab(MAIN_CAT_TAB, cItem)
         
-    def listLive(self, cItem, nextCategory):
+    def listLive(self, cItem, nextCategory1, nextCategory2):
         printDBG("RadiostacjaPl.listGenres [%s]" % cItem)
+        
+        params = dict(cItem)
+        params.update({'good_for_fav':True, 'title': _('Radia RMFON'), 'category':nextCategory2, 'f_cache':'rmfon', 'url':'http://rmfon.pl/json/app.txt', 'icon':'http://www.programosy.pl/download/screens/13748/android-rmfon-1_s.png'})
+        self.addDir(params)
         
         CAT_TAB = [{'good_for_fav':True, 'title': _('Radia ZET'),      'f_key':'eurozet'},
                    {'good_for_fav':True, 'title': _('Radia Lokalne'),  'f_key':'lokalne'}]
         
         cItem = dict(cItem)
-        cItem['category'] = nextCategory
+        cItem['category'] = nextCategory1
         self.listsTab(CAT_TAB, cItem)
         
     def _fillCache(self, cItem):
@@ -188,10 +192,67 @@ class RadiostacjaPl(CBaseHostClass):
                 self.addAudio(params)
         except Exception:
             printExc()
+            
+    ############################################################
+    def listRMF(self, cItem, nextCategory):
+        printDBG("RadiostacjaPl.listRMF [%s]" % cItem)
+        self._fillCache(cItem)
+        
+        try:
+            cacheKey = cItem['f_cache']
+            for item in self.cache[cacheKey]['categories']:
+                if 0 == len(item['ids']): continue
+                title = self.cleanHtmlStr(item['name'])
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'f_id':item['id']})
+                self.addDir(params)
+        except Exception:
+            printExc()
+            
+    def listRMFItems(self, cItem):
+        printDBG("RadiostacjaPl.listRMFItems [%s]" % cItem)
+        self._fillCache(cItem)
+        
+        try:
+            cacheKey = cItem['f_cache']
+            ids = None
+            if 'f_id' in cItem:
+                for item in self.cache[cacheKey]['categories']:
+                    if item['id'] == cItem['f_id']:
+                        ids = item['ids']
+            
+            for item in self.cache[cacheKey]['stations']:
+                if ids != None and item['id'] not in ids: continue
+                title = self.cleanHtmlStr(item['name'])
+                icon = item['defaultart']
+                params = {'good_for_fav':True, 'title':title, 'url':'http://www.rmfon.pl/play,%s' % item['id'], 'icon':icon}
+                self.addAudio(params)
+        except Exception:
+            printExc()
         
     def getLinksForVideo(self, cItem):
         printDBG("RadiostacjaPl.getLinksForVideo [%s]" % cItem)
-        return [{'name':'stream', 'url':cItem['url'], 'need_resolve':0}]
+        linksTab = []
+        if 'rmfon.pl' in cItem['url']:
+            url = 'http://www.rmfon.pl/stacje/flash_aac_%s.xml.txt' % cItem['url'].split(',')[-1]
+            sts, data = self.getPage(url)
+            if not sts: return []
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<playlist', '</playlist')
+            for playlistItem in data:
+                if 'playlistMp3' in playlistItem: title = 'MP3'
+                else: title = 'AAC'
+                tmp = []
+                playlistItem = self.cm.ph.getAllItemsBeetwenNodes(playlistItem, ('<item', '>'), ('</item', '>'), False)
+                for item in playlistItem:
+                    url = item.strip()
+                    if not self.cm.isValidUrl(url): continue
+                    tmp.append({'name':title, 'url':url, 'need_resolve':0})
+                if len(tmp):
+                    linksTab.append(random.choice(tmp))
+                    
+        else:
+            linksTab = [{'name':'stream', 'url':cItem['url'], 'need_resolve':0}]
+        return linksTab
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -211,7 +272,7 @@ class RadiostacjaPl(CBaseHostClass):
             self.listMainMenu({'name':'category'})
     # LIVE
         elif category == 'live':
-            self.listLive(self.currItem, 'list_items')
+            self.listLive(self.currItem, 'list_items', 'list_rmf')
         elif category == 'list_items':
             self.listItemsFromCache(self.currItem)
     # CHANNELS
@@ -226,7 +287,11 @@ class RadiostacjaPl(CBaseHostClass):
             self.listDJSety(self.currItem, 'list_dj')
         elif category == 'list_dj':
             self.listDJ(self.currItem)
-        
+    # RMFON
+        elif category == 'list_rmf':
+            self.listRMF(self.currItem, 'list_rmf_items')
+        elif category == 'list_rmf_items':
+            self.listRMFItems(self.currItem)
         
         CBaseHostClass.endHandleService(self, index, refresh)
 
