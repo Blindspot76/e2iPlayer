@@ -31,7 +31,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_js_execute
 from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
 from Screens.MessageBox import MessageBox
 ###################################################
@@ -72,19 +72,51 @@ class WRealu24TV(CBaseHostClass):
         
     def listMainMenu(self, cItem):
         printDBG("WRealu24TV.listMainMenu")
-        sts, data = self.getPage(self.getMainUrl())
+        
+        MAIN_CAT_TAB = [{'category':'list_items',     'title': _('Main'),      'url':self.getMainUrl()}, 
+                        {'category':'list_items',     'title': _('Videos'),    'url':self.getFullUrl('/filmy')}, 
+                       ]
+        
+        self.listsTab(MAIN_CAT_TAB, cItem)
+        
+    def listItems(self, cItem):
+        url = cItem['url']
+        
+        page = cItem.get('page', 1)
+        if page > 1: url += '/%s' % page
+        
+        sts, data = self.getPage(url)
         if not sts: return
+        
+        nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<nav', '>', 'pagination'), ('</nav', '>'))[1]
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ " + nextPage)
+        nextPage = self.cm.ph.getSearchGroups(nextPage, '''href=['"][^'^"]+?/(%s)[^0-9]''' % (page + 1))[0]
+        if nextPage != '': nextPage = True
+        else: nextPage = False
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>',), ('</a', '>'))
         for item in data:
             url  = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
             if '/na-zywo/' not in url and '/film/' not in url: continue
             icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
-            title = self.cleanHtmlStr(item)
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1])
+            if title == '': title = self.cleanHtmlStr(item)
             if title == '': title = self.cleanHtmlStr(url.split('/')[-1].replace('-', ' '))
+            if title == '': continue
+            desc = []
+            for marker in ['released', 'views', 'length']:
+                t = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', marker), ('</div', '>'))[1])
+                desc.append(t)
+            
             params = dict(cItem)
-            params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
+            params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':' | '.join(desc)})
             self.addVideo(params)
+        
+        if nextPage:
+            params = dict(cItem)
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page + 1})
+            self.addDir(params)
         
     def getLinksForVideo(self, cItem):
         printDBG("WRealu24TV.getLinksForVideo [%s]" % cItem)
@@ -98,6 +130,16 @@ class WRealu24TV(CBaseHostClass):
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        if 'document.write(' in data:
+            jscode = ['var document = {};document.write=function(txt){print(txt);}']
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+            for item in tmp:
+                jscode.append(item)
+            jscode = '\n'.join(jscode)
+            ret = iptv_js_execute( jscode )
+            if ret['sts'] and 0 == ret['code']:
+                data = ret['data'].strip()
+        
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>')
         printDBG(data)
         for item in data:
@@ -181,6 +223,8 @@ class WRealu24TV(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listMainMenu({'name':'category'})
+        elif category == 'list_items':
+            self.listItems(self.currItem)
         else:
             printExc()
         
