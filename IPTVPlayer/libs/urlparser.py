@@ -4093,10 +4093,22 @@ class pageParser:
         if not sts: return False
         
         videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"][^>]+?video/mp4''')[0]
+        if videoUrl == '':
+            tmp = re.compile('''sourceTag\.src\s*?=\s*?['"]([^'^"]+?)['"]''').findall(data)
+            for item in tmp:
+                if 'mobile' not in item:
+                    videoUrl = item
+                    break
+            if videoUrl == '' and len(tmp):
+                videoUrl = tmp[-1]
+            
         if videoUrl.startswith('//'):
-            videoUrl = 'http:' + videoUrl
+            videoUrl = 'https:' + videoUrl
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
+        msg = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'content'), ('</div', '>'))[1])
+        SetIPTVPlayerLastHostError(msg)
+        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++ " + msg)
         return False
         
     def parserPLAYPANDANET(self, baseUrl):
@@ -4108,7 +4120,7 @@ class pageParser:
             videoUrl = 'http:' + videoUrl
         videoUrl = urllib.unquote(videoUrl)
         if self.cm.isValidUrl(videoUrl):
-            return videoUrl        
+            return videoUrl
         return False
         
     def parserAKVIDEOSTREAM(self, baseUrl):
