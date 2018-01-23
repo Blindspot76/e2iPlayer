@@ -51,7 +51,7 @@ class WRealu24TV(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'wrealu24.tv', 'cookie':'wrealu24.tv.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
-        self.DEFAULT_ICON_URL = 'https://wrealu24.tv/static/logo.png'
+        self.DEFAULT_ICON_URL = 'https://wrealu24.tv/images/screen_stream2.jpg'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.MAIN_URL = 'https://wrealu24.tv/'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
