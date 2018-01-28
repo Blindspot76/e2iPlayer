@@ -205,15 +205,11 @@ class VimeoCom(CBaseHostClass):
         if not sts: return
         self._fillApiData(data)
         
-        if 'asc' in cItem.get('f_sort', ''):
-            direction = 'asc'
-        else:
-            direction = 'desc'
-        
-        url = self.api.get('url', '') + 'search?_video_override=true&direction=%s&filter_type=%s&page=%s&per_page=%s&sizes=250x115&fields=search_web' % (direction, cItem.get('f_type', ''), page, ITEMS_PER_PAGE)
+        url = self.api.get('url', '') + 'search?_video_override=true&filter_type=%s&page=%s&per_page=%s&sizes=250x115&fields=search_web' % (cItem.get('f_type', ''), page, ITEMS_PER_PAGE)
+        sortMap = {'shortest':'duration&direction=asc', 'longest':'duration&direction=desc', 'alphabetical_desc':'alphabetical&direction=desc', 'alphabetical_asc':'alphabetical&direction=asc'}
         if cItem.get('f_type') == 'clip': url += '&filter_price=free'
         if cItem.get('f_query', '') != '': url += '&query=%s' % urllib.quote(cItem['f_query'])
-        if cItem.get('f_sort', '') != '': url += '&sort=%s' % cItem['f_sort']
+        if cItem.get('f_sort', '') != '': url += '&sort=%s' % sortMap.get(cItem['f_sort'], cItem['f_sort'])
         if cItem.get('f_cat', '') != '': url += '&filter_category=%s' % cItem['f_cat']
         url += '&c=%s' % cItem.get('f_c', 'b')
         
