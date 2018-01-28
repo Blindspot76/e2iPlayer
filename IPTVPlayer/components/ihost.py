@@ -529,7 +529,8 @@ class CHostBase(IHost):
         return self.host.getDefaulIcon(cItem)
         
     def getFullIconUrl(self, url, currUrl=None):
-        return self.host.getFullIconUrl(url, currUrl)
+        if currUrl != None: return self.host.getFullIconUrl(url, currUrl)
+        else: return self.host.getFullIconUrl(url)
     
     def converItem(self, cItem, needUrlResolve=1, needUrlSeparateRequest=1):
         hostList = []
@@ -699,7 +700,8 @@ class CBaseHostClass:
         return url
         
     def getFullIconUrl(self, url, currUrl=None):
-        return self.getFullUrl(url, currUrl)
+        if currUrl != None: return self.getFullUrl(url, currUrl)
+        else: return self.getFullUrl(url)
         
     def getDefaulIcon(self, cItem=None):
         try: return self.DEFAULT_ICON_URL
