@@ -16,6 +16,7 @@ from skin import parseColor
 
 try:    import json
 except Exception: import simplejson as json
+from urlparse import urljoin
 
 class CUrlItem:
     def __init__(self, name = "", url = "", urlNeedsResolve = 0):
@@ -527,8 +528,8 @@ class CHostBase(IHost):
     def getDefaulIcon(self, cItem):
         return self.host.getDefaulIcon(cItem)
         
-    def getFullIconUrl(self, cItem):
-        return self.host.getFullIconUrl(cItem)
+    def getFullIconUrl(self, url, currUrl=None):
+        return self.host.getFullIconUrl(url, currUrl)
     
     def converItem(self, cItem, needUrlResolve=1, needUrlSeparateRequest=1):
         hostList = []
@@ -672,21 +673,33 @@ class CBaseHostClass:
     def getMainUrl(self):
         return self.MAIN_URL
     
-    def getFullUrl(self, url):
+    def getFullUrl(self, url, currUrl=None):
         if url.startswith('./'):
             url = url[1:]
+        
+        if currUrl == None or not self.cm.isValidUrl(currUrl):
+            try: mainUrl = self.getMainUrl()
+            except Exception: mainUrl = 'http://fake'
+        else:
+            mainUrl = self.cm.getBaseUrl(currUrl)
+        
         if url.startswith('//'):
-            url = 'http:' + url
+            proto = mainUrl.split('://', 1)[0]
+            url = proto + ':' + url
         elif url.startswith('://'):
-            url = 'http' + url
+            proto = mainUrl.split('://', 1)[0]
+            url = proto + url
         elif url.startswith('/'):
-            url = self.getMainUrl() + url[1:]
+            url = mainUrl + url[1:]
         elif 0 < len(url) and '://' not in url:
-            url =  self.getMainUrl() + url
+            if currUrl == None or not self.cm.isValidUrl(currUrl):
+                url =  mainUrl + url
+            else:
+                url = urljoin(currUrl, url)
         return url
         
-    def getFullIconUrl(self, url):
-        return self.getFullUrl(url)
+    def getFullIconUrl(self, url, currUrl=None):
+        return self.getFullUrl(url, currUrl)
         
     def getDefaulIcon(self, cItem=None):
         try: return self.DEFAULT_ICON_URL

@@ -463,6 +463,7 @@ class urlparser:
                        'veoh.com':             self.pp.parserVEOHCOM        ,
                        'mediafire.com':        self.pp.parserMEDIAFIRECOM   ,
                        'nadaje.com':           self.pp.parserNADAJECOM      ,
+                       'vidshare.tv':          self.pp.parserVIDSHARETV     ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -9466,3 +9467,57 @@ class pageParser:
             #elif key == 'rtmp': linksTab.append( {'name':key, 'url':url} )
         return linksTab
         
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return []
+        
+    def parserVIDSHARETV(self, baseUrl):
+        printDBG("parserVIDSHARETV baseUrl[%s]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
+                       'Referer':baseUrl.meta.get('Referer', ''),
+                     }
+        COOKIE_FILE = GetCookieDir("vidshare.tv.cookie")
+        rm (COOKIE_FILE)
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return
+        
+        printDBG(data)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1]
+        jscode = 'var iptv_srces = %s; \nprint(JSON.stringify(iptv_srces));' % data
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = ret['data'].strip()
+            data = byteify(json.loads(data))
+        
+        cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
+        dashTab = []
+        hlsTab = []
+        mp4Tab = []
+        for item in data['sources']:
+            url = item['file']
+            type = item.get('type', url.split('?', 1)[0].split('.')[-1]).lower()
+            label = item.get('label', type)
+            
+            if url.startswith('//'): url = 'http:' + url
+            if not self.cm.isValidUrl(url): continue
+        
+            url = strwithmeta(url, {'Cookie':cookieHeader, 'Referer':HTTP_HEADER['Referer'], 'User-Agent':HTTP_HEADER['User-Agent']})
+            if 'dash' in type:
+                dashTab.extend(getMPDLinksWithMeta(url, False, sortWithMaxBandwidth=999999999))
+            elif 'hls' in type or 'm3u8' in type:
+                hlsTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
+            elif 'mp4' in type or 'mpegurl' in type:
+                try: sortKey = int(self.cm.ph.getSearchGroups(label, '''([0-9]+)''')[0])
+                except Exception: sortKey = -1
+                mp4Tab.append({'name':'[%s] %s' % (type, label), 'url':url, 'sort_key':sortKey})
+        
+        videoTab = []
+        mp4Tab.sort(key=lambda item: item['sort_key'], reverse=True)
+        videoTab.extend(mp4Tab)
+        videoTab.extend(hlsTab)
+        videoTab.extend(dashTab)
+        return videoTab

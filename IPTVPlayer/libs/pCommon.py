@@ -793,9 +793,8 @@ class common:
             
         if 'User-Agent' not in headers:
             headers['User-Agent'] = host
-            
-        if params.get('with_metadata', False):
-            metadata = {}
+        
+        metadata = {}
 
         printDBG('pCommon - getURLRequestData() -> params: ' + str(params))
         printDBG('pCommon - getURLRequestData() -> headers: ' + str(headers)) 
@@ -880,8 +879,11 @@ class common:
                 response = urlOpen(req, customOpeners, timeout)
                 if response.info().get('Content-Encoding') == 'gzip':
                     gzip_encoding = True
-                try: metadata['url'] = response.geturl()
+                try: 
+                    metadata['url'] = response.geturl()
+                    if 'Content-Type' in response.info(): metadata['content-type'] = response.info()['Content-Type']
                 except Exception: pass
+                
                 data = response.read()
                 response.close()
             except urllib2.HTTPError, e:
@@ -896,7 +898,9 @@ class common:
                     printDBG('!!!!!!!! %s: getURLRequestData - handled' % e.code)
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
                         gzip_encoding = True
-                    try: metadata['url'] = e.fp.geturl()
+                    try: 
+                        metadata['url'] = e.fp.geturl()
+                        if 'Content-Type' in e.fp.info(): metadata['content-type'] = e.fp.info()['Content-Type']
                     except Exception: pass
                     data = e.fp.read()
                     #e.msg
@@ -937,8 +941,16 @@ class common:
                 GetIPTVNotify().push('%s\n\n%s\n\n%s' % (msg1, msg2, msg3), 'error', 20)
                 SetTmpCookieDir()
                 raise e
+                
+        if 'content-type' in metadata and params.get('return_data', False):
+            encoding = self.ph.getSearchGroups(metadata['content-type'], '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
+            if encoding not in ['', 'UTF-8']:
+                try:
+                    out_data = out_data.decode(encoding).encode('UTF-8')
+                except Exception:
+                    printExc()
         
-        if metadata != None:
+        if params.get('with_metadata', False):
             out_data = strwithmeta(out_data, metadata)
 
         return out_data 
