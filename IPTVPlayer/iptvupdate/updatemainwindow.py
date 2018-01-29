@@ -239,7 +239,7 @@ class IUpdateObjectInterface():
         return sts, msg
     
 class UpdateMainAppImpl(IUpdateObjectInterface):
-    SERVERS_LIST_URLS = ["http://iptvplayer.vline.pl/download/update/serwerslist.json"] #"http://iptvplayer.pl/download/update/serwerslist.json"
+    SERVERS_LIST_URLS = ["http://iptvplayer.vline.pl/download/update2/serwerslist.json"] #"http://iptvplayer.pl/download/update2/serwerslist.json"
     VERSION_PATTERN   = 'IPTV_VERSION="([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"'
     
     def __init__(self, session, allowTheSameVersion=False):
@@ -262,6 +262,9 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.currServIdx = 0
         
         self.sourceArchive      = None
+        self.graphicsSourceArchive = None
+        self.iconsSourceArchive = None
+        
         self.destinationArchive = None
         self.serverIdx          = 0
         
@@ -355,6 +358,10 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         list.append( __getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
         list.append( __getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
         list.append( __getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
+        list.append( __getStepDesc(title = _("Downloading graphics package."),   execFunction = self.stepGetGraphicsArchive ) )
+        list.append( __getStepDesc(title = _("Extracting graphics package."),    execFunction = self.stepUnpackGraphicsArchive ) )
+        list.append( __getStepDesc(title = _("Downloading icons package."),      execFunction = self.stepGetIconsArchive ) )
+        list.append( __getStepDesc(title = _("Extracting icons package."),       execFunction = self.stepUnpackIconsArchive ) )
         list.append( __getStepDesc(title = _("Copy post installed binaries."),   execFunction = self.stepCopyPostInatalledBinaries, breakable=True, ignoreError=True ) )
         list.append( __getStepDesc(title = _("Executing user scripts."),         execFunction = self.stepExecuteUserScripts ) )
         list.append( __getStepDesc(title = _("Checking version."),               execFunction = self.stepCheckFiles ) )
@@ -383,13 +390,13 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         serverUrl = UpdateMainAppImpl.SERVERS_LIST_URLS[self.serverIdx]
         self.downloader = UpdateDownloaderCreator(serverUrl)
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__serversListDownloadFinished, None))
-        self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'serwerslist.json'))
+        self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'serwerslist2.json'))
         
     def stepGetArchive(self):
         self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['url'])
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__archiveDownloadFinished, None))
         self.sourceArchive = os_path.join(self.tmpDir, 'iptvplayer_archive.tar.gz')
-        self.downloader.start(self.serversList[self.currServIdx]['url'], self.sourceArchive) #+("?ver=%s&type=%s" % (self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['pyver']))
+        self.downloader.start(self.serversList[self.currServIdx]['url'], self.sourceArchive)
         
     def stepUnpackArchive(self):
         self.destinationArchive  = os_path.join(self.tmpDir , 'iptv_archive')
@@ -399,8 +406,48 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         if not sts:
             self.stepFinished(-1, msg)
             return
-
-        cmd = 'tar -xzf "%s" -C "%s" 2>&1' % (self.sourceArchive, self.destinationArchive)
+        
+        cmd = 'rm -f "%s/*" > /dev/null 2>&1; tar -xzf "%s" -C "%s" 2>&1; PREV_RET=$?; rm -f "%s" > /dev/null 2>&1; (exit $PREV_RET)' % (self.destinationArchive, self.sourceArchive, self.destinationArchive, self.sourceArchive)
+        self.cmd = iptv_system( cmd, self.__unpackCmdFinished )
+        
+    def stepGetGraphicsArchive(self):
+        if '' == self.serversList[self.currServIdx]['graphics_url']:
+            self.stepFinished(0, _('Skipped.'))
+            return
+        
+        packageName = 'graphics.tar.gz'
+        self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['graphics_url'])
+        self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__archiveDownloadFinished, None))
+        self.graphicsSourceArchive = os_path.join(self.tmpDir, 'iptvplayer_graphics_archive.tar.gz')
+        self.downloader.start(self.serversList[self.currServIdx]['graphics_url'] + packageName, self.graphicsSourceArchive)
+    
+    def stepUnpackGraphicsArchive(self):
+        if '' == self.serversList[self.currServIdx]['graphics_url']:
+            self.stepFinished(0, _('Skipped.'))
+            return
+        
+        cmd = 'tar -xzf "%s" -C "%s" 2>&1; PREV_RET=$?; rm -f "%s" > /dev/null 2>&1; (exit $PREV_RET)' % (self.graphicsSourceArchive, os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/'), self.graphicsSourceArchive)
+        self.cmd = iptv_system( cmd, self.__unpackCmdFinished )
+        
+    def stepGetIconsArchive(self):
+        if '' == self.serversList[self.currServIdx]['icons_url'] or \
+            not config.plugins.iptvplayer.ListaGraficzna.value:
+            self.stepFinished(0, _('Skipped.'))
+            return
+        
+        packageName = 'icons%s.tar.gz' % config.plugins.iptvplayer.IconsSize.value
+        self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['icons_url'])
+        self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__archiveDownloadFinished, None))
+        self.iconsSourceArchive = os_path.join(self.tmpDir, 'iptvplayer_icons_archive.tar.gz')
+        self.downloader.start(self.serversList[self.currServIdx]['icons_url'] + packageName, self.iconsSourceArchive)
+    
+    def stepUnpackIconsArchive(self):
+        if '' == self.serversList[self.currServIdx]['icons_url'] or \
+            not config.plugins.iptvplayer.ListaGraficzna.value:
+            self.stepFinished(0, _('Skipped.'))
+            return
+        
+        cmd = 'tar -xzf "%s" -C "%s" 2>&1; PREV_RET=$?; rm -f "%s" > /dev/null 2>&1; (exit $PREV_RET)' % (self.iconsSourceArchive, os_path.join(self.ExtensionTmpPath, 'IPTVPlayer/'), self.iconsSourceArchive)
         self.cmd = iptv_system( cmd, self.__unpackCmdFinished )
         
     def stepCheckFiles(self):
@@ -517,7 +564,14 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.cmd = iptv_system( cmd, self.__removeOldVersionCmdFinished )
 
     def stepInstallNewVersion(self):
-        cmd = 'cp -rf "%s"/* "%s"/ 2>&1' % (os_path.join(self.ExtensionTmpPath, 'IPTVPlayer'), os_path.join(self.ExtensionPath, 'IPTVPlayer'))
+        cmd = ''
+        try: 
+            url = "http://iptvplayer.vline.pl/check.php?ver=%s&type=%s" % (self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['pyver'])
+            cmd = '%s "%s" -O - > /dev/null 2>&1; ' % (config.plugins.iptvplayer.wgetpath.value, url)
+        except Exception: 
+            printExc()
+        
+        cmd += 'cp -rf "%s"/* "%s"/ 2>&1' % (os_path.join(self.ExtensionTmpPath, 'IPTVPlayer'), os_path.join(self.ExtensionPath, 'IPTVPlayer'))
         printDBG('UpdateMainAppImpl.stepInstallNewVersion cmd[%s]' % cmd)
         self.cmd = iptv_system( cmd, self.__installNewVersionCmdFinished )
 
@@ -592,7 +646,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 for server in jsonData['servers']:
                     serverOK = True
                     extServer = {}
-                    for key in ['name', 'version', 'url', 'subdir', 'pyver', 'packagetype']:
+                    for key in ['name', 'version', 'url', 'subdir', 'pyver', 'packagetype', 'graphics_url', 'icons_url']:
                         if key not in server.iterkeys():
                             serverOK = False
                             break

@@ -1024,7 +1024,7 @@ class IPTVPlayerWidget(Screen):
         self.askUpdateAvailable(self.selectHost)
     
     def __requestCheckUpdate(self):
-        lastVerUrl = 'http://iptvplayer.vline.pl/download/update/lastversion.php' #'http://iptvplayer.pl/download/update/lastversion.php'
+        lastVerUrl = 'http://iptvplayer.vline.pl/download/update2/lastversion.php' #'http://iptvplayer.pl/download/update2/lastversion.php'
         if config.plugins.iptvplayer.autoCheckForUpdate.value:
             self.checkUpdateTimer.start(self.checkUpdateTimer_interval, True)
             if IsExecutable( DMHelper.GET_WGET_PATH() ):
