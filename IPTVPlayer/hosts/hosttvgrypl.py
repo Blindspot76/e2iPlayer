@@ -63,7 +63,7 @@ class TvGryPL(CBaseHostClass):
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.DEFAULT_ICON_URL = 'http://www.gry-online.pl/apple-touch-icon-120x120.png'
-        self.MAIN_URL = 'http://tvgry.pl/'
+        self.MAIN_URL = 'https://tvgry.pl/'
         self.SEARCH_URL = self.getFullUrl('wyszukiwanie.asp')
         self.MAIN_CAT_TAB = [{'category':'list_tabs',          'title':'Materiały',            'url': self.getFullUrl('/wideo-tvgry.asp')},
                              {'category':'list_items',         'title':'Tematy',               'url': self.getFullUrl('/tematy.asp')},
@@ -71,15 +71,9 @@ class TvGryPL(CBaseHostClass):
                              {'category':'list_tabs',          'title':'Zwiastuny filmów',     'url': self.getFullUrl('/trailery-filmowe.asp')},
                              {'category':'search',         'title':_('Search'), 'search_item':True},
                              {'category':'search_history', 'title':_('Search history')} ]
-        
-    def _decodeData(self, data):
-        try: return data.decode('cp1250').encode('utf-8')
-        except Exception: return data
-
+    
     def getPage(self, url, params={}, post_data=None):
-        sts,data = self.cm.getPage(url, params, post_data)
-        if sts: data = self._decodeData(data)
-        return sts,data
+        return self.cm.getPage(url, params, post_data)
     
     def listTabs(self, cItem, post_data=None):
         printDBG("TvGryPL.listTabs")
