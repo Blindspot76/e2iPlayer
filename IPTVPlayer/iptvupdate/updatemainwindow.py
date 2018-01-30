@@ -566,7 +566,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     def stepInstallNewVersion(self):
         cmd = ''
         try: 
-            url = "http://iptvplayer.vline.pl/check.php?ver=%s&type=%s" % (self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['pyver'])
+            url = "http://iptvplayer.vline.pl/check.php?ver=%s&type=%s" % (self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['pyver'])
             cmd = '%s "%s" -O - > /dev/null 2>&1; ' % (config.plugins.iptvplayer.wgetpath.value, url)
         except Exception: 
             printExc()
