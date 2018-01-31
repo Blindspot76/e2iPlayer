@@ -170,6 +170,7 @@ class StreamLiveTo(CBaseHostClass):
         else: keys = []
         keys.extend(self.cacheFiltersKeys)
         for item in keys:
+            if item not in cItem: continue
             key = keysMap.get(item[2:], item[2:])
             post_data[key] = cItem[item]
         
@@ -192,7 +193,10 @@ class StreamLiveTo(CBaseHostClass):
             icon = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<strong>', '</strong>', False)[1] )
             if '' == title: title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, 'title="([^"]+?)"')[0] )
-            if 'class="premium_only"' in item or 'Premium Only' in item or 'glyphicon-king' in item: title += ' [PREMIUM ONLY]'
+            if 'class="premium_only"' in item or 'Premium Only' in item: postfix = 'PREMIUM ONLY'
+            elif 'glyphicon-king' in item: postfix = 'KING'
+            else: postfix = ''
+            if postfix != '': title += ' [%s]' % postfix
             desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h4', '</h4>')[1] )
             if self.cm.isValidUrl(url):
                 params = {'title':title, 'url':url, 'desc':desc, 'icon':icon}
