@@ -100,8 +100,21 @@ class MyFreeMp3(CBaseHostClass):
                     title = '%s - %s' % (self.cleanHtmlStr(item.get('artist', '')), self.cleanHtmlStr(item.get('title', '')))
                     desc = str(timedelta(seconds=item['duration']))
                     if desc.startswith('0:'): desc = desc[2:]
+                    icon = ''
+                    try:
+                        desc += ' | ' + item['album']['title']
+                        icons = []
+                        for key in item['album']['thumb']:
+                            val = item['album']['thumb'][key]
+                            if not self.cm.isValidUrl(str(val)): continue
+                            key = int(key.split('_')[-1])
+                            icons.append((key, val))
+                        icons.sort(reverse=True)
+                        icon = icons[0][1]
+                    except Exception:
+                        printExc()
                     params = dict(cItem)
-                    params.update({'good_for_fav':True, 'title':title, 'desc':desc, 'priv_data':item})
+                    params.update({'good_for_fav':True, 'title':title, 'desc':desc, 'icon':icon, 'priv_data':item})
                     self.addAudio(params)
                 except Exception:
                     printExc()
@@ -127,7 +140,11 @@ class MyFreeMp3(CBaseHostClass):
         
         try:
             item = cItem['priv_data']
-            url  = 'http://streams.my-free-mp3.net/stream/%s:%s' % (encode(item['owner_id']), encode(item['aid']))
+            if 'aid' in item: id = item['aid']
+            else: id = item['id']
+            
+            url  = 'https://newtab.stream/stream/%s:%s' % (encode(item['owner_id']), encode(id))
+            #url  = 'http://streams.my-free-mp3.net/stream/%s:%s' % (encode(item['owner_id']), encode(item['aid']))
             return [{'name':'direct', 'url':strwithmeta(url, {'User-Agent':self.USER_AGENT, 'Referer':self.getMainUrl()})}]
         except Exception:
             printExc()
