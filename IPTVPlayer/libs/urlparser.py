@@ -1076,7 +1076,9 @@ class pageParser:
         if not sts: sts, data = self.cm.getPageWithWget(url, params, post_data)
         if not sts: return False
         
-        printDBG(data)
+        #printDBG(data)
+        data = re.sub("<!--[\s\S]*?-->", "", data)
+        #data = re.sub("/\*[\s\S]*?\*/", "", data)
         
         errMarkers = ['File was deleted', 'File Removed', 'File Deleted.', 'File Not Found']
         for errMarker in errMarkers:
@@ -2933,7 +2935,7 @@ class pageParser:
     def parserSPEEDVIDNET(self, baseUrl):
         printDBG("parserSPEEDVIDNET baseUrl[%r]" % baseUrl)
         def _findLinks(data):
-            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''jwplayer\(\s*['"]vplayer['"]\s*\)\.setup'''), re.compile(';'))[1]
+            data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''jwplayer\([^\)]+?player[^\)]+?\)\.setup'''), re.compile(';'))[1]
             return self._findLinks(data, 'speedvid.net')
         defaultParams = {'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
         return self._parserUNIVERSAL_A(baseUrl, 'http://www.speedvid.net/embed-{0}-540x360.html', _findLinks, params=defaultParams)
@@ -5854,19 +5856,25 @@ class pageParser:
         msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, 'The file was deleted', '<')[1]).strip()
         if msg != '': SetIPTVPlayerLastHostError(msg)
         
-        # get JS player script code from confirmation page
-        sts, tmp = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
-        if sts:
-            try:
-                tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams)
-                data = tmp + data
-            except Exception: printExc()
+        #######################################################
+        tmpData = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        tmp = []
+        for item in tmpData:
+            if 'eval(' in item:
+                tmp.append(item)
         
-        data = CParsingHelper.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
-        data = re.findall('file:[ ]*"([^"]+?)"', data)
+        jscode = base64.b64decode('''ZnVuY3Rpb24gc3R1Yigpe31mdW5jdGlvbiBqd3BsYXllcigpe3JldHVybntzZXR1cDpmdW5jdGlvbigpe3ByaW50KEpTT04uc3RyaW5naWZ5KGFyZ3VtZW50c1swXSkpfSxvblRpbWU6c3R1YixvblBsYXk6c3R1YixvbkNvbXBsZXRlOnN0dWIsb25SZWFkeTpzdHViLGFkZEJ1dHRvbjpzdHVifX12YXIgZG9jdW1lbnQ9e30sd2luZG93PXRoaXM7''')
+        jscode += '\n'.join(tmp)
+        ret = iptv_js_execute( jscode )
+        try: data = ret['data'].strip() + data
+        except Exception: printExc()
+        #######################################################
+        
+        data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''sources['"]?\s*:'''), re.compile('\]'), False)[1]
+        data = re.findall('''['"]?file['"]?\s*:\s*['"]([^"^']+?)['"]''', data)
         for item in data:
             if item.split('?')[0].endswith('m3u8'):
-                tmp = getDirectM3U8Playlist(item)
+                tmp = getDirectM3U8Playlist(item, checkContent=True, sortWithMaxBitrate=999999999)
                 videoTab.extend(tmp)
             else:
                 videoTab.append({'name':'vidzi.tv mp4', 'url':item})
@@ -6016,12 +6024,30 @@ class pageParser:
         
     def parserFASTVIDEOIN(self, baseUrl):
         printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
+        
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0',
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
+                        'Accept-Encoding':'gzip, deflate',
+                        'DNT':1,
+                        'Connection':'keep-alive',
+                      }
+        COOKIE_FILE = GetCookieDir('FASTVIDEOIN.cookie')
+        defaultParams = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':True}
+        
+        rm(COOKIE_FILE)
+        
+        sts, data = self.cm.getPage(baseUrl, defaultParams)
+        if not sts: return
+        
+        defaultParams['cookie_items'] = self.cm.getCookieItems(COOKIE_FILE)
+        
         #http://fastvideo.in/nr4kzevlbuws
         host = self.cm.ph.getDataBeetwenMarkers(baseUrl, "://", '/', False)[1]
         video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
         url = ''
         if video_id == '':
-            sts, data = self.cm.getPage(baseUrl)
+            sts, data = self.cm.getPage(baseUrl, defaultParams)
             if not sts: url = baseUrl
             url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]+?)['"]''', ignoreCase=True)[0]
             host = self.cm.ph.getDataBeetwenMarkers(url, "://", '/', False)[1]
@@ -6030,14 +6056,11 @@ class pageParser:
         if video_id != '' and host != '':
             url = 'http://%s/embed-%s-960x480.html' % (host, video_id)
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.cm.getPage(url, defaultParams)
         if not sts and data != None:
-            #USER_AGENT = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
             url = 'http://%s/%s' % (host, video_id)
-            HTTP_HEADER = dict(self.HTTP_HEADER)
-            #HTTP_HEADER['User-Agent'] = USER_AGENT
-            HTTP_HEADER['Referer'] = url
-            sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+            defaultParams['header']['Referer'] = url
+            sts, data = self.cm.getPage(url, defaultParams)
             if not sts: return False
             
             try:
@@ -6051,9 +6074,8 @@ class pageParser:
             if sts:
                 post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
                 post_data.pop('method_premium', None)
-                HTTP_HEADER['Referer'] = url
-                sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER}, post_data)
-            
+                defaultParams['header']['Referer'] = url
+                sts, data = self.cm.getPage(url, defaultParams, post_data)
         return self._findLinks(data, host, linkMarker=r'''['"](https?://[^"^']+(?:\.mp4|\.flv)[^'^"]*?)['"]''')
 
         
@@ -6895,6 +6917,9 @@ class pageParser:
             
             sts, data = self.cm.getPage(url)
             if not sts: return False
+            
+            errMsg = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'errorBox'), ('</div', '>'))[1]
+            SetIPTVPlayerLastHostError(clean_html(errMsg))
         
             subTracks = []
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '</track>', False, False)
@@ -8738,7 +8763,8 @@ class pageParser:
         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts: return videoTab
         
-        printDBG(data)
+        errMsg = self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'important'), ('<', '>', 'div'))[1]
+        SetIPTVPlayerLastHostError(clean_html(errMsg))
         
         # select valid section
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')

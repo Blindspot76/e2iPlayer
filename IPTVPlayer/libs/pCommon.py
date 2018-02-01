@@ -438,15 +438,19 @@ class common:
         return True
         
     def getCookieItem(self, cookiefile, item):
-        ret = ''
+        ret = self.getCookieItems(cookiefile)
+        return ret.get(item, '')
+        
+    def getCookieItems(self, cookiefile, ignoreDiscard=True):
+        ret = {}
         try:
             if not self.useMozillaCookieJar:
                 cj = cookielib.LWPCookieJar()
             else:
                 cj = cookielib.MozillaCookieJar()
-            cj.load(cookiefile, ignore_discard = True)
+            cj.load(cookiefile, ignore_discard = ignoreDiscard)
             for cookie in cj:
-                if cookie.name == item: ret = cookie.value
+                ret[cookie.name] = cookie.value
         except Exception:
             printExc()
         return ret

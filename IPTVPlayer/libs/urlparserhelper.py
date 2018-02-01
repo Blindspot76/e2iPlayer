@@ -284,7 +284,9 @@ def getParamsTouple(code, type=1, r1=False, r2=False ):
 def unpackJSPlayerParams(code, decryptionFun, type=1, r1=False, r2=False):
     printDBG('unpackJSPlayerParams')
     code = getParamsTouple(code, type, r1, r2)
-    return unpackJS(code, decryptionFun)
+    data = unpackJS(code, decryptionFun)
+    if data == '' and data.endswith('))'): data = unpackJS(code[:-1], decryptionFun)
+    return data
     
 def unpackJS(data, decryptionFun, addCode=''):
     paramsCode = addCode

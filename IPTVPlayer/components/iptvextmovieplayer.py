@@ -77,8 +77,10 @@ class ExtPlayerCommandsDispatcher():
     def doAddTriggers(self, arg): self.extPlayerSendCommand('ADD_TRIGGERS', arg)
         
     def stop(self):
-        self.extPlayerSendCommand('PLAYBACK_STOP')
-        self.owner = None
+        if self.extPlayerSendCommand('PLAYBACK_STOP'):
+            self.owner = None
+            return True
+        return False
         
     def play(self): 
         self.extPlayerSendCommand('PLAYBACK_CONTINUE')
@@ -140,11 +142,14 @@ class ExtPlayerCommandsDispatcher():
         else: self.doSlowMotion(str(int(1.0 / val)))
     
     def extPlayerSendCommand(self, cmd, arg='', getStatus=True):
+        ret = False
         if None != self.owner: 
-            self.owner.extPlayerSendCommand(cmd, arg)
+            ret = self.owner.extPlayerSendCommand(cmd, arg)
             if getStatus: 
                 self.owner.extPlayerSendCommand("PLAYBACK_INFO", '')
-
+        else:
+            printDBG(">> extPlayerSendCommand owner NONE")
+        return ret
 
 class IPTVExtMoviePlayer(Screen):
     Y_CROPPING_GUARD = 0
@@ -1204,8 +1209,11 @@ class IPTVExtMoviePlayer(Screen):
         self['pleaseWait'].setText(_("Closing. Please wait..."))
         self['pleaseWait'].show()
         self.isCloseRequestedByUser = requestedByUser
-        self.extPlayerCmddDispatcher.stop()
-        self.saveLastPlaybackTime()
+        if self.console != None:
+            if self.extPlayerCmddDispatcher.stop():
+                self.saveLastPlaybackTime()
+        else:
+            self.isClosing = True
     
     def key_play(self):         self.extPlayerCmddDispatcher.play()
     def key_pause(self):        self.extPlayerCmddDispatcher.pause()  
@@ -1307,7 +1315,7 @@ class IPTVExtMoviePlayer(Screen):
         elif self.playbackInfoBar['visible']:
             self.playbackInfoBar['blocked'] = False
             self.hidePlaybackInfoBar()
-        elif not self.isClosing:
+        else:
             self.key_stop(False)
             
     def doInfo(self):
@@ -1512,6 +1520,7 @@ class IPTVExtMoviePlayer(Screen):
                 self.extPlayerCmddDispatcher.setProgressiveDownload(0)
 
     def __onClose(self):
+        printDBG(">>>>>>>>>>>>>>>>>>>>>> __onClose")
         self.isClosing = True
         if None != self.workconsole:
             self.workconsole.kill()
@@ -1573,8 +1582,10 @@ class IPTVExtMoviePlayer(Screen):
         for opt in audioOptions:
             if playerDefOptions[opt] != None and playerDefOptions[opt] != self.defAudioOptions[opt]:
                 SetE2AudioCodecMixOption(opt, self.defAudioOptions[opt])
-        
         self.metaHandler.save()
+        
+        try: self.extPlayerCmddDispatcher.owner = None
+        except Exception: printExc()
         
     def onStartPlayer(self):
         self.isStarted = True
@@ -1677,6 +1688,10 @@ class IPTVExtMoviePlayer(Screen):
         self.iptvGetUrlStart()
         
     def iptvGetUrlStart(self, code=None, data=None):
+        if self.isClosing: 
+            self.onLeavePlayer()
+            return
+        
         if self.downloader == None and self.refreshCmd != '' and self.fileSRC.startswith('ext://'):
             self.extLinkProv['console']    = eConsoleAppContainer()
             self.extLinkProv['close_conn'] = eConnectCallback(self.extLinkProv['console'].appClosed, self._updateGetUrlFinished)
@@ -1708,6 +1723,10 @@ class IPTVExtMoviePlayer(Screen):
                 self.extLinkProv['data'] = ''
             
     def iptvDoStart(self):
+        if self.isClosing: 
+            self.onLeavePlayer()
+            return
+        
         self['progressBar'].value = 0
         self['bufferingBar'].range = (0, 100000)
         self['bufferingBar'].value = 0
@@ -2018,7 +2037,7 @@ class IPTVExtMoviePlayer(Screen):
         #printDBG("IPTVExtMoviePlayer.extPlayerSendCommand command[%s] arg1[%s]" % (command, arg1))
         if None == self.console: 
             printExc("IPTVExtMoviePlayer.extPlayerSendCommand console not available")
-            return
+            return False
         
         if 'ADD_TRIGGERS' == command:
             self.consoleWrite( "t{0}\n".format(arg1) )
@@ -2061,6 +2080,7 @@ class IPTVExtMoviePlayer(Screen):
             elif 'PLAYBACK_SLOWMOTION'    == command: 
                 self.consoleWrite( "m%s\n" % arg1 )
             elif 'PLAYBACK_STOP'          == command: 
+                printDBG("IPTVExtMoviePlayer.extPlayerSendCommand PLAYBACK_STOP")
                 if not self.waitCloseFix['waiting']:
                     self.waitCloseFix['waiting'] = True
                     self.waitCloseFix['timer'].start(5000, True) # singleshot
@@ -2076,3 +2096,5 @@ class IPTVExtMoviePlayer(Screen):
                 self.consoleWrite( "q\n" )
             else:
                 printDBG("IPTVExtMoviePlayer.extPlayerSendCommand unknown command[%s]" % command)
+                return False
+        return True
