@@ -909,6 +909,15 @@ class pageParser:
         #self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
         
+    def getDefaultHeader(self):
+        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0',
+                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
+                        'Accept-Encoding':'gzip, deflate',
+                        'DNT':1 
+                      }
+        return dict(HTTP_HEADER)
+        
     def getPageCF(self, baseUrl, addParams = {}, post_data = None):
         def _getFullUrl(url):
             if self.cm.isValidUrl(url):
@@ -1060,7 +1069,7 @@ class pageParser:
         HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':refUrl }
         HTTP_HEADER.update(httpHeader)
         
-        if 'embed' not in baseUrl:
+        if 'embed' not in baseUrl and '{0}' in embedUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.-]')[0]
             url = embedUrl.format(video_id)
         else:
@@ -2934,10 +2943,34 @@ class pageParser:
         
     def parserSPEEDVIDNET(self, baseUrl):
         printDBG("parserSPEEDVIDNET baseUrl[%r]" % baseUrl)
-        def _findLinks(data):
+        retTab = None
+        defaultParams = {'header':self.getDefaultHeader(), 'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
+        def _findLinks2(data):
+            return _findLinks(data, 1)
+            
+        def _findLinks(data, lvl=0):
+            if lvl == 0:
+                jscode = ['var url,iptvRetObj={cookies:{},href:"",sources:{}},primary=!1,window=this;location={};var document={};iptvobj={},iptvobj.setup=function(){iptvRetObj.sources=arguments[0]},jwplayer=function(){return iptvobj},Object.defineProperty(document,"cookie",{get:function(){return""},set:function(t){t=t.split(";",1)[0].split("=",2),iptvRetObj.cookies[t[0]]=t[1];}}),Object.defineProperty(location,"href",{set:function(t){iptvRetObj.href=t}}),window.location=location;']
+                tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), withNodes=False, caseSensitive=False)
+                for item in tmp:
+                    if 'ﾟωﾟﾉ =/｀ｍ´ ）' in item or 'eval(' in item:
+                        jscode.append(item)
+                jscode.append(';print(JSON.stringify(iptvRetObj));')
+                if len(jscode) > 2:
+                    ret = iptv_js_execute( '\n'.join(jscode) )
+                    if ret['sts'] and 0 == ret['code']:
+                        data = byteify(json.loads(ret['data'].strip()))
+                        defaultParams['cookie_items'] = data['cookies']
+                        defaultParams['header']['Referer'] = baseUrl
+                        url = data['href']
+                        if url.startswith('//'): url = 'http:' + url
+                        if self.cm.isValidUrl(url):
+                            return self._parserUNIVERSAL_A(url, '', _findLinks2, httpHeader=defaultParams['header'], params=defaultParams)
             data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''jwplayer\([^\)]+?player[^\)]+?\)\.setup'''), re.compile(';'))[1]
-            return self._findLinks(data, 'speedvid.net')
-        defaultParams = {'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
+            url = self.cm.ph.getSearchGroups(data, '''['"]?file['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+            if '.mp4' in url.lower(): 
+                return [{'url':url, 'name':'speedvid.net'}]
+            return False
         return self._parserUNIVERSAL_A(baseUrl, 'http://www.speedvid.net/embed-{0}-540x360.html', _findLinks, params=defaultParams)
         
     def parserVIDLOXTV(self, baseUrl):
@@ -5535,13 +5568,8 @@ class pageParser:
     def parserFLASHXTV(self, baseUrl):
         printDBG("parserFLASHXTV baseUrl[%s]" % baseUrl)
         
-        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0',
-                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
-                        'Accept-Encoding':'gzip, deflate',
-                        'DNT':1,
-                        'Connection':'keep-alive',
-                      }
+        HTTP_HEADER = self.getDefaultHeader()
+        
         COOKIE_FILE = GetCookieDir('flashxtv.cookie')
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':True}
         
@@ -6025,13 +6053,8 @@ class pageParser:
     def parserFASTVIDEOIN(self, baseUrl):
         printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
         
-        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0',
-                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
-                        'Accept-Encoding':'gzip, deflate',
-                        'DNT':1,
-                        'Connection':'keep-alive',
-                      }
+        HTTP_HEADER = self.getDefaultHeader()
+        
         COOKIE_FILE = GetCookieDir('FASTVIDEOIN.cookie')
         defaultParams = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'return_data':True}
         
