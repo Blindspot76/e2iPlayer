@@ -4137,6 +4137,10 @@ class pageParser:
                     break
             if videoUrl == '' and len(tmp):
                 videoUrl = tmp[-1]
+        if videoUrl == '':
+            videoUrl = self.cm.ph.getSearchGroups(data, '''<video[^>]+?src=['"]([^'^"]+?)['"]''')[0]
+            if videoUrl.split('?', 1)[0].split('.')[-1].lower() != 'mp4':
+                videoUrl = ''
             
         if videoUrl.startswith('//'):
             videoUrl = 'https:' + videoUrl
