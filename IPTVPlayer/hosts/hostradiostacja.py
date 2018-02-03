@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, NextDay, PrevDay, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.m3uparser import ParseM3u
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
 ###################################################
@@ -74,7 +75,10 @@ class RadiostacjaPl(CBaseHostClass):
                        ]
         
         self.listsTab(MAIN_CAT_TAB, cItem)
-        
+        params = dict(cItem)
+        params.update({'good_for_fav':True, 'url':'https://zapinamypasy.pl/', 'title':'https://zapinamypasy.pl/', 'icon':'https://satkurier.pl/uploads/60160.jpg', 'desc':'https://zapinamypasy.pl/[/br]SPORT RADIO'})
+        self.addAudio(params)
+    
     def listLive(self, cItem, nextCategory1, nextCategory2):
         printDBG("RadiostacjaPl.listGenres [%s]" % cItem)
         
@@ -233,7 +237,33 @@ class RadiostacjaPl(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("RadiostacjaPl.getLinksForVideo [%s]" % cItem)
         linksTab = []
-        if 'rmfon.pl' in cItem['url']:
+        if 'zapinamypasy.pl' in cItem['url']:
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return []
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<meta', '>', 'environment'), ('<', '>'))[1]
+            data = urllib.unquote(self.cm.ph.getSearchGroups(data, '''content="([^"]+?)"''')[0])
+            try:
+                data = byteify(json.loads(data))
+                url = data['APP']['API_BASE_URL'] + '/' + data['APP']['API_NAMESPACE']
+                token = data['APP']['API_MASTER_TOKEN']
+                lUrl = data['APP']['IP_LOCALIZATOR_URL']
+                sts, data = self.getPage(lUrl)
+                if not sts: return []
+                data = byteify(json.loads(data))
+                post_data = '{"variables":{"location":{"lat":%s,"lng":%s},"type":"AUDIO"},"query":"query streamLookup($location: LocationParams, $type: StreamTypeEnum) {\n  streamLookup(location: $location, type: $type) {\n    id\n    type\n    versions {\n      protocol\n      type\n      url\n      __typename\n}    \n    region {\n      id\n      name\n      __typename\n}\n    __typename\n}\n  __typename\n}","operationName":"streamLookup"}'
+                post_data = post_data % (data['latitude'], data['longitude'])
+                params = dict(self.defaultParams)
+                params['raw_post_data'] = True
+                params['header'] = dict(params['header'])
+                params['header'].update({'Authorization-Master-Token':token, 'Origin':cItem['url'], 'Referer':cItem['url'], 'Content-Type':'application/json; charset=utf-8'})
+                sts, data = self.getPage(url, params, post_data)
+                if not sts: return []
+                data = byteify(json.loads(data))
+                return getDirectM3U8Playlist(data['data']['streamLookup']['versions'][0]['url'], checkContent=True, sortWithMaxBitrate=999999999)
+            except Exception:
+                printExc()
+            return []
+        elif 'rmfon.pl' in cItem['url']:
             url = 'http://www.rmfon.pl/stacje/flash_aac_%s.xml.txt' % cItem['url'].split(',')[-1]
             sts, data = self.getPage(url)
             if not sts: return []
