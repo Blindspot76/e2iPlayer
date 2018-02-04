@@ -7395,7 +7395,8 @@ class pageParser:
         HTTP_HEADER = dict(HTTP_HEADER)
         HTTP_HEADER['Referer'] = baseUrl
         params.update({'header':{'header':HTTP_HEADER}})
-        sts, data = self.cm.getPage(baseUrl, params)
+        url = baseUrl.replace('/info/', '/view/')
+        sts, data = self.cm.getPage(url, params)
         if not sts: return False 
         
         associativeArray = ['var associativeArray = {};']

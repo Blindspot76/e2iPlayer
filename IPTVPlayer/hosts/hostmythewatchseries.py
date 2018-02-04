@@ -53,7 +53,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://watchseriesmovie.com/'
+    return 'https://gowatchseries.io/'
 
 class MyTheWatchseries(CBaseHostClass):
  
@@ -66,14 +66,19 @@ class MyTheWatchseries(CBaseHostClass):
         
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.DEFAULT_ICON_URL = 'http://watchseriesmovie.com/img/icon/logo.png'
+        self.DEFAULT_ICON_URL = 'https://gowatchseries.io/img/icon/logo.png'
         self.MAIN_URL = None
         self.cacheLinks = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         
     def selectDomain(self):
-        self.MAIN_URL = 'http://watchseriesmovie.com/'
+        self.MAIN_URL = 'https://gowatchseries.io/'
+        params = dict(self.defaultParams)
+        params['with_metadata'] = True
+        sts, data = self.getPage(self.getMainUrl(), params)
+        if sts: self.MAIN_URL = self.cm.getBaseUrl(data.meta['url'])
+        
         self.MAIN_CAT_TAB = [{'category':'list_filters',     'title': _("LIST"),                       'url':self.getFullUrl('/list')},
                              {'category':'list_items',       'title': _("MOVIES"),                     'url':self.getFullUrl('/movies')},
                              {'category':'list_items',       'title': _("CINEMA MOVIES"),              'url':self.getFullUrl('/cinema-movies')},

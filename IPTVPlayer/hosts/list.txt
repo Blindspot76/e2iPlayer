@@ -32,6 +32,7 @@ hostegybest
 hostekinotv
 hostekstraklasatv
 hosteskago
+hosteurosportplayer
 hostfaselhdcom
 hostfavourites
 hostfighttube
@@ -61,6 +62,7 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
+hostinfoversion
 hostipla
 hostiptvplayerinfo
 hostitvcom

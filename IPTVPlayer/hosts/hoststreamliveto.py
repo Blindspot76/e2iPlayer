@@ -140,6 +140,9 @@ class StreamLiveTo(CBaseHostClass):
             val = self.cm.ph.getSearchGroups(item, '''[\?&]list=([^'^"^&]+?)['"&]''')[0]
             title = self.cleanHtmlStr(item)
             tmpTab.append({'title':title, 'f_type':val})
+        if len(tmpTab) == 0:
+            for item in [(_('Any'), ''), (_('Free'), 'free'), (_('Premium'), 'premium')]:
+                tmpTab.append({'title':item[0], 'f_type':item[1]})
         if len(tmpTab): 
             self.cacheFilters['f_type'] = tmpTab
             self.cacheFiltersKeys.insert(0, 'f_type')
@@ -179,15 +182,11 @@ class StreamLiveTo(CBaseHostClass):
         sts, data = self.getPage(url, self.defaultParams, post_data)
         if not sts: return
         
-        #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        #printDBG(data)
-        #printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        
         if 'data-page="{0}"'.format(page+1) in data:
             nextPage = True
         else: nextPage = False
         
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'card card'), ('</a', '>'))
+        data = self.cm.ph.rgetAllItemsBeetwenNodes(data.split('<nav>', 1)[0], ('</div', '>'), ('<div', '>', 'item'))
         for item in data:
             url  = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
             icon = self._getFullUrl( self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0] )
@@ -197,7 +196,17 @@ class StreamLiveTo(CBaseHostClass):
             elif 'glyphicon-king' in item: postfix = 'KING'
             else: postfix = ''
             if postfix != '': title += ' [%s]' % postfix
-            desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h4', '</h4>')[1] )
+            desc = []
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(item, ('<div', '>', '"jt'), ('</div', '>'))
+            for t in tmp:
+                if 'bottom' in t: continue
+                t = self.cleanHtmlStr(t)
+                if t != '': desc.append(t)
+            desc = ' | '.join(desc)
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(item, ('<div', '>', 'block'), ('</div', '>'), False)
+            for t in tmp:
+                t = self.cleanHtmlStr(t)
+                if t != '': desc += '[/br]' + t
             if self.cm.isValidUrl(url):
                 params = {'title':title, 'url':url, 'desc':desc, 'icon':icon}
                 self.addVideo(params)
