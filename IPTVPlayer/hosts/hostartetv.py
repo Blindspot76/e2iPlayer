@@ -136,6 +136,17 @@ class ArteTV(CBaseHostClass):
         sts, data = self.getPage(baseUrl)
         if not sts: return
         
+        videosIconsMap = {}
+        
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('__INITIAL_STATE__', '='), ('</script', '>'), False)[1].strip()[:-1]
+        try:
+            tmp = byteify(json.loads(tmp))
+            for item in tmp['videos']['videos']:
+                try: videosIconsMap[item['url']] = item['images'][0]['url']
+                except Exception: pass
+        except Exception:
+            printExc()
+        
         idx = 0
         sectionTitle = ''
         sectionUrl = ''
@@ -144,7 +155,7 @@ class ArteTV(CBaseHostClass):
             if '<article' not in tmp[idx]:
                 sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp[idx], '<h2', '</h2>')[1])
                 sectionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp[idx], '''\shref=['"]([^'^"]+?)['"]''')[0])
-                if sectionUrl != '': 
+                if 'arte.tv' in sectionUrl: 
                     if sectionTitle == '': sectionTitle = sectionUrl.split('/')[-2].replace('-', ' ').upper()
                     params = dict(baseParams)
                     params.update({'good_for_fav':True, 'title':sectionTitle, 'url':sectionUrl})
@@ -164,6 +175,7 @@ class ArteTV(CBaseHostClass):
                 title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1])
                 if title == '': title = url.split('/')[-2].replace('-', ' ').upper()
                 desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<p', '</p>')[1])
+                if icon == '': icon = videosIconsMap.get(url, icon)
                 params = {'title':title, 'url':url, 'icon':icon, 'desc':desc}
                 if 'next-playlist' in item: params['type'] = 'dir_2'
                 elif ('next-collection' in item or 'reportage/' in tmp[idx] or '/RC-' in url) and '_duration' not in item: params['type'] = 'dir_1'
