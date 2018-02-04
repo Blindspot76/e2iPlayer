@@ -76,9 +76,11 @@ class DMHelper:
                      {'marker':'X-Playback-Session-Id=',           'name':'X-Playback-Session-Id'},
                      {'marker':'If-Modified-Since=','name':'If-Modified-Since'},
                      {'marker':'If-None-Match=',    'name':'If-None-Match'},
-                     {'marker':'X-Forwarded-For=',  'name':'X-Forwarded-For'}]
+                     {'marker':'X-Forwarded-For=',  'name':'X-Forwarded-For'},
+                     {'marker':'Authorization=',    'name':'Authorization'},
+                     ]
                      
-    HANDLED_HTTP_HEADER_PARAMS = ['Host', 'Accept', 'Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'Origin', 'X-Playback-Session-Id', 'If-Modified-Since', 'If-None-Match', 'X-Forwarded-For']
+    HANDLED_HTTP_HEADER_PARAMS = ['Host', 'Accept', 'Cookie', 'Referer', 'User-Agent', 'Range', 'Orgin', 'Origin', 'X-Playback-Session-Id', 'If-Modified-Since', 'If-None-Match', 'X-Forwarded-For', 'Authorization']
     IPTV_DOWNLOADER_PARAMS = ['iptv_wget_continue', 'iptv_wget_timeout', 'iptv_wget_waitretry']
     
     @staticmethod

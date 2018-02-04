@@ -70,8 +70,8 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['cartoonsandanime'] = ['bajeczkiorg','kreskowkazone','kreskoweczki','bajkipopolskucom','animeodcinki','anyfiles','9anime','9cartoonme','kisscartoonme','chiaanimeco','shahiidanimenet', \
                                                      'otakufr','crtankocom',]
         self.PREDEFINED_HOSTS['sport']            = ['webstream','plwwecom','meczykipl','ekstraklasatv','laola1tv','ourmatchnet','hoofootcom','okgoals','ngolos','watchwrestlinguno','watchwrestling','fighttube','fightvideo', \
-                                                     'twitchtv','hitboxtv','pinkbike','sportdeutschland']
-        self.PREDEFINED_HOSTS['live']             = ['webstream','streamliveto','ustreamtv','youtube','dailymotion','fokustv','eskago','arconaitvme',]
+                                                     'twitchtv','hitboxtv','pinkbike','sportdeutschland','eurosportplayer']
+        self.PREDEFINED_HOSTS['live']             = ['webstream','streamliveto','ustreamtv','youtube','dailymotion','fokustv','eskago','arconaitvme','eurosportplayer']
         self.PREDEFINED_HOSTS['documentary']      = ['fokustv','dokumentalnenet','filmydokumentalneeu','greekdocumentaries3','dailymotion']
         self.PREDEFINED_HOSTS['science']          = ['questtvcouk','fokustv','dailymotion','ustreamtv','dokumentalnenet']
         
