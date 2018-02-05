@@ -103,7 +103,8 @@ class EuroSportPlayer(CBaseHostClass):
         self.listsTab(MAIN_CAT_TAB, cItem)
         
     def _str2date(self, txt):
-        return datetime.strptime(txt, '%Y-%m-%dT%H:%M:%SZ')
+        txt = self.cm.ph.getSearchGroups(txt, '([0-9]+\-[0-9]+\-[0-9]+T[0-9]+\:[0-9]+:[0-9]+)')[0]
+        return datetime.strptime(txt, '%Y-%m-%dT%H:%M:%S')
         
     def _gmt2local(self, txt):
         if self.OFFSET == None: self.OFFSET = datetime.now() - datetime.utcnow()
@@ -251,39 +252,53 @@ class EuroSportPlayer(CBaseHostClass):
             for item in data['hits']:
                 item = item['hit']
                 title = self.cleanHtmlStr(item['titles'][0]['title'])
-                try: icon  = item['photos'][0]['uri']
+                try: 
+                    icon = item['photos'][0].get('uri', None)
+                    if icon == None: icon = item['photos'][0]['rawImage'] + ''
                 except Exception: icon = ''
                 duration =  self.cleanHtmlStr(item['runTime'])
-                startDate = self._gmt2local(item['startDate'])
-                endDate = self._gmt2local(item['endDate'])
+                
+                startDate = item.get('startDate', None)
+                if startDate == None: startDate = item.get('releaseDate', None)
+                if startDate == None: startDate = item.get('appears', None)
+                if startDate != None: startDate = self._gmt2local(startDate)
+                
+                endDate = item.get('endDate', None) 
+                if endDate != None: endDate = self._gmt2local(endDate)
+                
                 language = self._getLanguageDisplayName(item['titles'][0]['language'])
                 categories = self._getCatsDisplay(item['genres'])
-                episodeName = self.cleanHtmlStr(item['titles'][0]['episodeName'])
+                episodeName = item['titles'][0].get('episodeName', None)
+                
                 desc = []
                 desc.insert(0, categories)
                 desc.insert(0, language)
-                desc.insert(0, episodeName)
+                if episodeName != None: episodeName = desc.insert(0, self.cleanHtmlStr(episodeName))
                 
-                if NOW < startDate: 
+                if startDate != None and  NOW < startDate: 
                     prefix = self.serverApiData['i18n_dictionary']['Header_Upcoming']
-                elif item['liveBroadcast'] and \
+                elif startDate != None and item.get('liveBroadcast', False) and \
                     startDate.day == NOW.day and \
                     startDate.month == NOW.month and \
                     startDate.year == NOW.year: 
                     prefix = self.serverApiData['i18n_dictionary']['Live']
                 else: 
-                    prefix = item['mediaConfig']['type']
+                    try: prefix = item['mediaConfig']['type'].upper()
+                    except Exception: prefix = item['type'].upper()
                 title = '[%s] %s' % (prefix, title)
                 
-                if prefix.lower() == 'video': dateStr = str(item['runTime'])
+                if prefix.lower() == 'video' or startDate == None or endDate == None: dateStr = str(item['runTime'])
                 else: dateStr = '%s - %s' % (startDate.strftime('%H:%M'), endDate.strftime('%H:%M'))
                 
-                month = self.ABBREVIATED_MONTH_NAME_TAB[startDate.month-1]
-                if startDate.year == NOW.year: dateStr += ' | %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month))
-                else: dateStr += ' | %s %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month), startDate.year)
-                    
+                if startDate != None: 
+                    month = self.ABBREVIATED_MONTH_NAME_TAB[startDate.month-1]
+                    if startDate.year == NOW.year: dateStr += ' | %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month))
+                    else: dateStr += ' | %s %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month), startDate.year)
+                
+                try: language = item['titles'][0]['descriptionLong']
+                except Exception: language = item['titles'][0]['language']
                 desc.insert(0, dateStr)
-                desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(item['titles'][0]['descriptionLong'])
+                desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(language)
                 
                 params = dict(cItem)
                 params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'icon':icon, 'desc':desc, 'priv_item':item})
@@ -305,7 +320,12 @@ class EuroSportPlayer(CBaseHostClass):
         try:
             privItem = cItem['priv_item']
             title = self.cleanHtmlStr(privItem['titles'][0]['title'])
-            for item in privItem['playbackUrls']:
+            if 'playbackUrls' in privItem:
+                data = privItem['playbackUrls']
+            else:
+                data = privItem['media'][0]['playbackUrls']
+            
+            for item in data:
                 rel = item['rel']
                 url = item['href']
                 params = dict(cItem)
