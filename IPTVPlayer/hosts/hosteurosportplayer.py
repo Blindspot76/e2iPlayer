@@ -70,8 +70,15 @@ class EuroSportPlayer(CBaseHostClass):
         self.serverApiData = {}
         self.tokenData = {}
         self.langsMap = {}
-        self.OFFSET = None
+        
+        self.OFFSET = datetime.now() - datetime.utcnow()
+        seconds = self.OFFSET.seconds + self.OFFSET.days * 24 * 3600
+        if ((seconds + 1) % 10) == 0: seconds += 1  
+        elif ((seconds - 1) % 10) == 0: seconds -= 1 
+        self.OFFSET = timedelta(seconds=seconds)
+        
         self.ABBREVIATED_MONTH_NAME_TAB = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        self.ABBREVIATED_DAYS_NAME_TAB = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
@@ -96,7 +103,8 @@ class EuroSportPlayer(CBaseHostClass):
     def listMainMenu(self, cItem):
         printDBG("EuroSportPlayer.listMainMenu")
         
-        MAIN_CAT_TAB = [{'category':'on_air',         'title': _('On Air'),     }, 
+        MAIN_CAT_TAB = [{'category':'on_air',         'title': _('On Air'),       }, 
+                        {'category':'schedule',       'title': _('Schedule'),     }, 
                         {'category':'search',         'title': _('Search'),          'search_item':True}, 
                         {'category':'search_history', 'title': _('Search history')},]
         
@@ -107,12 +115,16 @@ class EuroSportPlayer(CBaseHostClass):
         return datetime.strptime(txt, '%Y-%m-%dT%H:%M:%S')
         
     def _gmt2local(self, txt):
-        if self.OFFSET == None: self.OFFSET = datetime.now() - datetime.utcnow()
         utc_date = self._str2date(txt)
         utc_date = utc_date + self.OFFSET
         if utc_date.time().second == 59:
             utc_date = utc_date + timedelta(0,1)
         return utc_date
+        
+    def _absTimeDelta(self, d1, d2, div=60):
+        if d1 > d2: td = d1 - d2
+        else: td = d2 - d1
+        return (td.seconds + td.days * 24 * 3600) / div
         
     def _getLanguageDisplayName(self, key):
         langName = key
@@ -198,9 +210,87 @@ class EuroSportPlayer(CBaseHostClass):
         printDBG('EuroSportPlayer.getToken end bRet[%s]' % bRet)
         return bRet
         
+    def _addItem(self, cItem, nextCategory, item, NOW, sData=None, eData=None):
+        try:
+            printDBG("*********************************************************")
+            printDBG(item)
+            printDBG("*********************************************************")
+            title = self.cleanHtmlStr(item['titles'][0]['title'])
+            try: 
+                icon = item['photos'][0].get('uri', None)
+                if icon == None: icon = item['photos'][0]['rawImage'] + ''
+            except Exception: icon = ''
+            duration =  self.cleanHtmlStr(item['runTime'])
+            
+            startDate = item.get('startDate', None)
+            if startDate == None: startDate = item.get('releaseDate', None)
+            if startDate == None: startDate = item.get('appears', None)
+            if startDate != None: startDate = self._gmt2local(startDate)
+            
+            if startDate != None and sData != None and eData != None and \
+               (startDate < sData or startDate > eData):
+                return
+            
+            endDate = item.get('endDate', None) 
+            if endDate != None: endDate = self._gmt2local(endDate)
+            
+            language = self._getLanguageDisplayName(item['titles'][0]['language'])
+            categories = self._getCatsDisplay(item['genres'])
+            try: channel = item['channel']['callsign']
+            except Exception: channel = None
+            
+            episodeName = item['titles'][0].get('episodeName', None)
+            
+            desc = []
+            desc.insert(0, categories)
+            desc.insert(0, language)
+            if channel != None: desc.insert(0, self.cleanHtmlStr(channel))
+            if episodeName != None: desc.insert(0, self.cleanHtmlStr(episodeName))
+            
+            try: prefix = item['mediaConfig']['productType'].lower()
+            except Exception: prefix = ''
+            
+            type = item.get('type', '').lower()
+            if type == 'airing' and prefix != 'vod':
+                try: state = item['mediaConfig']['state'].lower()
+                except Exception: state = ''
+                
+                if item.get('liveBroadcast', True) and state != 'off' and (None == startDate or startDate <= NOW ):
+                    prefix = self.serverApiData['i18n_dictionary']['Live']
+                elif startDate != None and  NOW < startDate and self._absTimeDelta(NOW, startDate, 60) > 5: 
+                    prefix = self.serverApiData['i18n_dictionary']['Header_Upcoming']
+                else:
+                    prefix = ''
+            else:
+                try: prefix = item['mediaConfig']['type'].upper()
+                except Exception: prefix = item['type'].upper()
+                
+            if prefix != '': title = '[%s] %s' % (prefix, title)
+            
+            printDBG("+++++++++++++++++++++++++++++++++++++++++++ [%s]" % prefix)
+            if prefix.lower() == 'video' or startDate == None or endDate == None: dateStr = str(item['runTime'])
+            else: dateStr = '%s - %s' % (startDate.strftime('%H:%M'), endDate.strftime('%H:%M'))
+            
+            if startDate != None: 
+                month = self.ABBREVIATED_MONTH_NAME_TAB[startDate.month-1]
+                if startDate.year == NOW.year: dateStr += ' | %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month))
+                else: dateStr += ' | %s %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month), startDate.year)
+            
+            try: language = item['titles'][0]['descriptionLong']
+            except Exception: language = item['titles'][0]['language']
+            desc.insert(0, dateStr)
+            desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(language)
+            
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'icon':icon, 'desc':desc, 'priv_item':item})
+            self.addDir(params)
+        except Exception:
+            printExc()
+        
     def listOnAir(self, cItem, nextCategory):
         printDBG("EuroSportPlayer.listOnAir [%s]" % cItem)
         try:
+            NOW = datetime.now()
             variables = {"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
             url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/web/Airings/onAir?variables=' + urllib.quote(json.dumps(variables, separators=(',', ':')))
             
@@ -209,31 +299,71 @@ class EuroSportPlayer(CBaseHostClass):
             
             data = byteify(json.loads(data))
             for item in data['data']['Airings']:
-                title = self.cleanHtmlStr(item['titles'][0]['title'])
-                try: icon  = item['photos'][0]['uri']
-                except Exception: icon = ''
-                duration =  self.cleanHtmlStr(item['runTime'])
-                startDate = self._gmt2local(item['startDate'])
-                endDate = self._gmt2local(item['endDate'])
-                language = self._getLanguageDisplayName(item['titles'][0]['language'])
-                categories = self._getCatsDisplay(item['genres'])
-                episodeName = self.cleanHtmlStr(item['titles'][0]['episodeName'])
-                
-                desc = []
-                desc.insert(0, categories)
-                desc.insert(0, language)
-                desc.insert(0, episodeName)
-                desc.insert(0, '%s - %s' % (startDate.strftime('%H:%M'), endDate.strftime('%H:%M')))
-                
-                desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(item['titles'][0]['descriptionLong'])
-                
-                if item['liveBroadcast']:
-                    title = '[%s] %s' % (self.serverApiData['i18n_dictionary']['Live'], title)
-                
-                params = dict(cItem)
-                params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'icon':icon, 'desc':desc, 'priv_item':item})
-                self.addDir(params)
-                
+                self._addItem(cItem, nextCategory, item, NOW)
+        except Exception:
+            printExc()
+        
+    def listDays(self, cItem, nextCategory):
+        printDBG("EuroSportPlayer.listDays [%s]" % cItem)
+        NOW = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        
+        def _dataLabel(d):
+            weekday = self.ABBREVIATED_DAYS_NAME_TAB[d.weekday()]
+            return '%s %s' % (d.day, self.serverApiData['i18n_dictionary'].get(weekday, weekday))
+        
+        itemsList = []
+        #NextDay, PrevDay
+        day = NOW
+        for idx in range(7):
+            day = PrevDay(day)
+            itemsList.append(day)
+        
+        itemsList.reverse()
+        itemsList.append(NOW)
+        
+        day = NOW
+        for idx in range(7):
+            day = NextDay(day)
+            itemsList.append(day)
+        
+        for item in itemsList:
+            title = _dataLabel(item)
+            sData = item
+            eData = item.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=None)
+            
+            if item == NOW: 
+                title = 'Today'
+                title = self.serverApiData['i18n_dictionary'].get(title, title)
+            
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'f_sdate':sData, 'f_edate':eData})
+            self.addDir(params)
+        
+    def listSchedule(self, cItem, nextCategory):
+        printDBG("EuroSportPlayer.listSchedule [%s]" % cItem)
+        
+        def _dateStr(d):
+            return d.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+        
+        try:
+            cItem = dict(cItem)
+            sData = cItem.pop('f_sdate')
+            eData = cItem.pop('f_edate')
+            NOW = datetime.now()
+            variables = {"startDate":_dateStr(sData - self.OFFSET),"endDate":_dateStr(eData - self.OFFSET),"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
+            url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/web/Airings/DateRange?variables=' + urllib.quote(json.dumps(variables, separators=(',', ':')))
+            
+            sts, data = self.getJSPage(url)
+            if not sts: return
+            
+            data = byteify(json.loads(data))
+            
+            data['data']['Airings'].sort(key=lambda item: item['startDate']) #, reverse=True)
+            
+            for item in data['data']['Airings']:
+                if item.get('playbackUrls', []) in (None, []):
+                    continue 
+                self._addItem(cItem, nextCategory, item, NOW, sData+self.OFFSET-timedelta(days=1), eData+self.OFFSET+timedelta(days=1))
         except Exception:
             printExc()
             
@@ -250,68 +380,13 @@ class EuroSportPlayer(CBaseHostClass):
             
             data = byteify(json.loads(data))['data']['sitesearch']
             for item in data['hits']:
-                item = item['hit']
-                title = self.cleanHtmlStr(item['titles'][0]['title'])
-                try: 
-                    icon = item['photos'][0].get('uri', None)
-                    if icon == None: icon = item['photos'][0]['rawImage'] + ''
-                except Exception: icon = ''
-                duration =  self.cleanHtmlStr(item['runTime'])
-                
-                startDate = item.get('startDate', None)
-                if startDate == None: startDate = item.get('releaseDate', None)
-                if startDate == None: startDate = item.get('appears', None)
-                if startDate != None: startDate = self._gmt2local(startDate)
-                
-                endDate = item.get('endDate', None) 
-                if endDate != None: endDate = self._gmt2local(endDate)
-                
-                language = self._getLanguageDisplayName(item['titles'][0]['language'])
-                categories = self._getCatsDisplay(item['genres'])
-                episodeName = item['titles'][0].get('episodeName', None)
-                
-                desc = []
-                desc.insert(0, categories)
-                desc.insert(0, language)
-                if episodeName != None: episodeName = desc.insert(0, self.cleanHtmlStr(episodeName))
-                
-                if startDate != None and  NOW < startDate: 
-                    prefix = self.serverApiData['i18n_dictionary']['Header_Upcoming']
-                elif startDate != None and item.get('liveBroadcast', False) and \
-                    startDate.day == NOW.day and \
-                    startDate.month == NOW.month and \
-                    startDate.year == NOW.year: 
-                    prefix = self.serverApiData['i18n_dictionary']['Live']
-                else: 
-                    try: prefix = item['mediaConfig']['type'].upper()
-                    except Exception: prefix = item['type'].upper()
-                title = '[%s] %s' % (prefix, title)
-                
-                if prefix.lower() == 'video' or startDate == None or endDate == None: dateStr = str(item['runTime'])
-                else: dateStr = '%s - %s' % (startDate.strftime('%H:%M'), endDate.strftime('%H:%M'))
-                
-                if startDate != None: 
-                    month = self.ABBREVIATED_MONTH_NAME_TAB[startDate.month-1]
-                    if startDate.year == NOW.year: dateStr += ' | %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month))
-                    else: dateStr += ' | %s %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month), startDate.year)
-                
-                try: language = item['titles'][0]['descriptionLong']
-                except Exception: language = item['titles'][0]['language']
-                desc.insert(0, dateStr)
-                desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(language)
-                
-                params = dict(cItem)
-                params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'icon':icon, 'desc':desc, 'priv_item':item})
-                self.addDir(params)
+                self._addItem(cItem, nextCategory, item['hit'], NOW)
             
             if page*20 < data['meta']['hits']:
                 params = dict(cItem)
                 params.pop('priv_item', None)
                 params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
                 self.addDir(params)
-                
-                self.ABBREVIATED_MONTH_NAME_TAB = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-                
         except Exception:
             printExc()
             
@@ -379,7 +454,7 @@ class EuroSportPlayer(CBaseHostClass):
                 post_data = '{"type":"email-password","email":{"address":"%s"},"password":{"value":"%s"}}' % (self.login, self.password)
                 
                 sts, data = self.getPage(url, getParams, post_data)
-                if '401' in str(data):
+                if not sts and '401' in str(data):
                     msg =  _('Login failed. Invalid email or password.')
                     GetIPTVNotify().push(msg, 'error', 10)
                     return False
@@ -468,6 +543,10 @@ class EuroSportPlayer(CBaseHostClass):
             self.listMainMenu({'name':'category'})
         elif category == 'on_air':
             self.listOnAir(self.currItem, 'list_links_types')
+        elif category == 'schedule':
+            self.listDays(self.currItem, 'list_schedule')
+        elif category == 'list_schedule':
+            self.listSchedule(self.currItem, 'list_links_types')
         elif category == 'list_links_types':
             self.listLinksTypeItems(self.currItem)
         elif category == 'list_search_items':
