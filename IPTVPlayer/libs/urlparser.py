@@ -7429,8 +7429,9 @@ class pageParser:
             if streamHlsUrl.startswith('//'):
                 streamHlsUrl = 'http:' + streamHlsUrl
             if self.cm.isValidUrl(streamHlsUrl):
-                for repItem in [('', ''), ('streaming1.', 'dacache.')]:
-                    url = streamHlsUrl.replace(repItem[0], repItem[1])
+                for idx in range(2):
+                    if idx == 1:
+                        url = urlparse( streamHlsUrl )._replace(netloc="dacache.streamlive.to").geturl()
                     url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
                     urlsTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
                     if len(urlsTab):
