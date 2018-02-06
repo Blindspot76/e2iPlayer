@@ -103,8 +103,9 @@ class EuroSportPlayer(CBaseHostClass):
     def listMainMenu(self, cItem):
         printDBG("EuroSportPlayer.listMainMenu")
         
-        MAIN_CAT_TAB = [{'category':'on_air',         'title': _('On Air'),       }, 
-                        {'category':'schedule',       'title': _('Schedule'),     }, 
+        MAIN_CAT_TAB = [{'category':'on_air',         'title': _('On Air'),   }, 
+                        {'category':'schedule',       'title': _('Schedule'), },
+                        {'category':'vod_sport_filters',  'title': _('VOD'),      }, 
                         {'category':'search',         'title': _('Search'),          'search_item':True}, 
                         {'category':'search_history', 'title': _('Search history')},]
         
@@ -210,7 +211,7 @@ class EuroSportPlayer(CBaseHostClass):
         printDBG('EuroSportPlayer.getToken end bRet[%s]' % bRet)
         return bRet
         
-    def _addItem(self, cItem, nextCategory, item, NOW, sData=None, eData=None):
+    def _addItem(self, cItem, item, NOW, sData=None, eData=None):
         try:
             printDBG("*********************************************************")
             printDBG(item)
@@ -234,7 +235,14 @@ class EuroSportPlayer(CBaseHostClass):
             endDate = item.get('endDate', None) 
             if endDate != None: endDate = self._gmt2local(endDate)
             
-            language = self._getLanguageDisplayName(item['titles'][0]['language'])
+            try: 
+                language = item['titles'][0].get('language', None)
+                for tmp in item['titles'][0]['tags']:
+                    if tmp.get('type', '') == 'language':
+                        language = tmp['value']
+                language = self._getLanguageDisplayName(language)
+            except Exception: language = None
+                
             categories = self._getCatsDisplay(item['genres'])
             try: channel = item['channel']['callsign']
             except Exception: channel = None
@@ -243,13 +251,13 @@ class EuroSportPlayer(CBaseHostClass):
             
             desc = []
             desc.insert(0, categories)
-            desc.insert(0, language)
+            if language != None: desc.insert(0, str(language))
             if channel != None: desc.insert(0, self.cleanHtmlStr(channel))
-            if episodeName != None: desc.insert(0, self.cleanHtmlStr(episodeName))
             
             try: prefix = item['mediaConfig']['productType'].lower()
             except Exception: prefix = ''
             
+            upcoming = False
             type = item.get('type', '').lower()
             if type == 'airing' and prefix != 'vod':
                 try: state = item['mediaConfig']['state'].lower()
@@ -259,6 +267,7 @@ class EuroSportPlayer(CBaseHostClass):
                     prefix = self.serverApiData['i18n_dictionary']['Live']
                 elif startDate != None and  NOW < startDate and self._absTimeDelta(NOW, startDate, 60) > 5: 
                     prefix = self.serverApiData['i18n_dictionary']['Header_Upcoming']
+                    upcoming = True
                 else:
                     prefix = ''
             else:
@@ -266,6 +275,7 @@ class EuroSportPlayer(CBaseHostClass):
                 except Exception: prefix = item['type'].upper()
                 
             if prefix != '': title = '[%s] %s' % (prefix, title)
+            if episodeName != None: title = '%s - %s' % (title, self.cleanHtmlStr(episodeName))
             
             printDBG("+++++++++++++++++++++++++++++++++++++++++++ [%s]" % prefix)
             if prefix.lower() == 'video' or startDate == None or endDate == None: dateStr = str(item['runTime'])
@@ -276,21 +286,116 @@ class EuroSportPlayer(CBaseHostClass):
                 if startDate.year == NOW.year: dateStr += ' | %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month))
                 else: dateStr += ' | %s %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month), startDate.year)
             
-            try: language = item['titles'][0]['descriptionLong']
-            except Exception: language = item['titles'][0]['language']
+            summary = ''
+            try: summary = item['titles'][0]['descriptionLong']
+            except Exception: summary = item['titles'][0]['summaryLong']
             desc.insert(0, dateStr)
-            desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(language)
+            desc = ' | '.join(desc) + '[/br]' + self.cleanHtmlStr(str(summary))
             
             params = dict(cItem)
-            params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'icon':icon, 'desc':desc, 'priv_item':item})
-            self.addDir(params)
+            params.update({'good_for_fav':False, 'title':title, 'icon':icon, 'desc':desc, 'priv_item':item})
+            if upcoming: self.addArticle(params)
+            else: self.addVideo(params)
+            
+        except Exception:
+            printExc()
+    
+    def listSportFilters(self, cItem, nextCategory):
+        printDBG("EuroSportPlayer.listSportFilters [%s]" % cItem)
+        try:
+            url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/ListByTitle/sports_filter'
+            
+            sts, data = self.getJSPage(url)
+            if not sts: return
+            
+            data = byteify(json.loads(data))
+            for item in data['data']['sports_filter']['list']:
+                sportId = item['sport']
+                icon = item['logoImage'][-1]['rawImage']
+                title = self.serverApiData['i18n_dictionary']['sport_%s' % sportId]
+                
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'icon':icon, 'f_sport_id':sportId})
+                self.addDir(params)
+        except Exception:
+            printExc()
+            
+    def listVodTypesFilters(self, cItem, nextCategory):
+        printDBG("EuroSportPlayer.listVodTypesFilters [%s]" % cItem)
+        try:
+            sportId = cItem['f_sport_id']
+            variables = {"must":[{"attributeName":"category","values":["%s" % sportId]}],"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
+            url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/web/ondemand/counts/bycategory?variables=' + urllib.quote(json.dumps(variables, separators=(',', ':')))
+            
+            sts, data = self.getJSPage(url)
+            if not sts: return
+            
+            totall = 0
+            data = byteify(json.loads(data))
+            for item in [('replays', 'Ondemand_Subnav_Replay'), ('highlights', 'Ondemand_Subnav_Highlights'), ('news', 'Ondemand_Subnav_News')]:
+                try:
+                    vodType = item[0]
+                    count = int(data['data'][vodType]['meta']['hits'])
+                    if count <= 0: continue
+                    totall += count
+                    title = '%s (%s)' % (self.serverApiData['i18n_dictionary'][item[1]], count)
+                    params = dict(cItem)
+                    params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'f_vod_type':vodType})
+                    self.addDir(params)
+                except Exception:
+                    printExc()
+            
+            if totall > 0 and len(self.currList) > 1:
+                title = '%s (%s)' % (self.serverApiData['i18n_dictionary']['Ondemand_Subnav_All'], totall)
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'category':nextCategory, 'title':title})
+                self.currList.insert(0, params)
         except Exception:
             printExc()
         
-    def listOnAir(self, cItem, nextCategory):
+    def listVodItems(self, cItem):
+        printDBG("EuroSportPlayer.listVodItems [%s]" % cItem)
+        try:
+            page = cItem.get('page', 1)
+            sportId = cItem['f_sport_id']
+            vodType = cItem.get('f_vod_type', 'all')
+            
+            variables = {"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
+            url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/web/ondemand/' + vodType
+            if vodType == 'all':
+                variables = {"pageSize":30,"page":page,"uiLang":self.serverApiData['locale'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder'],"must":{"termsFilters":[{"attributeName":"category","values":["%s" % sportId]}]}}
+                url += '?variables='
+            else:
+                variables = {"pageSize":30,"page":page,"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder'],"category":"%s" % sportId}
+                url += '/category?variables='
+            url += urllib.quote(json.dumps(variables, separators=(',', ':')))
+            
+            sts, data = self.getJSPage(url)
+            if not sts: return
+            
+            if vodType == 'all':
+                data = byteify(json.loads(data))['data']['bucket']
+                all  = data['meta']['hits']
+                data = data['aggs'][0]['buckets'][0]
+            else:
+                data = byteify(json.loads(data))['data']['query']
+                all  = data['meta']['hits']
+            
+            NOW = datetime.now()
+            for item in data['hits']:
+                self._addItem(cItem, item['hit'], NOW)
+            
+            if page*30 < all:
+                params = dict(cItem)
+                params.pop('priv_item', None)
+                params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
+                self.addDir(params)
+        except Exception:
+            printExc()
+        
+    def listOnAir(self, cItem):
         printDBG("EuroSportPlayer.listOnAir [%s]" % cItem)
         try:
-            NOW = datetime.now()
             variables = {"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
             url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/web/Airings/onAir?variables=' + urllib.quote(json.dumps(variables, separators=(',', ':')))
             
@@ -298,8 +403,9 @@ class EuroSportPlayer(CBaseHostClass):
             if not sts: return
             
             data = byteify(json.loads(data))
+            NOW = datetime.now()
             for item in data['data']['Airings']:
-                self._addItem(cItem, nextCategory, item, NOW)
+                self._addItem(cItem, item, NOW)
         except Exception:
             printExc()
         
@@ -339,7 +445,7 @@ class EuroSportPlayer(CBaseHostClass):
             params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'f_sdate':sData, 'f_edate':eData})
             self.addDir(params)
         
-    def listSchedule(self, cItem, nextCategory):
+    def listSchedule(self, cItem):
         printDBG("EuroSportPlayer.listSchedule [%s]" % cItem)
         
         def _dateStr(d):
@@ -349,7 +455,6 @@ class EuroSportPlayer(CBaseHostClass):
             cItem = dict(cItem)
             sData = cItem.pop('f_sdate')
             eData = cItem.pop('f_edate')
-            NOW = datetime.now()
             variables = {"startDate":_dateStr(sData - self.OFFSET),"endDate":_dateStr(eData - self.OFFSET),"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
             url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/web/Airings/DateRange?variables=' + urllib.quote(json.dumps(variables, separators=(',', ':')))
             
@@ -360,17 +465,17 @@ class EuroSportPlayer(CBaseHostClass):
             
             data['data']['Airings'].sort(key=lambda item: item['startDate']) #, reverse=True)
             
+            NOW = datetime.now()
             for item in data['data']['Airings']:
                 if item.get('playbackUrls', []) in (None, []):
                     continue 
-                self._addItem(cItem, nextCategory, item, NOW, sData+self.OFFSET-timedelta(days=1), eData+self.OFFSET+timedelta(days=1))
+                self._addItem(cItem, item, NOW, sData+self.OFFSET-timedelta(days=1), eData+self.OFFSET+timedelta(days=1))
         except Exception:
             printExc()
             
-    def listSearchItems(self, cItem, nextCategory):
+    def listSearchItems(self, cItem):
         printDBG("EuroSportPlayer.listSearchItems [%s]" % cItem)
         try:
-            NOW = datetime.now()
             page = cItem.get('page', 1)
             variables = {"index":"eurosport_global","preferredLanguages":["pl","en"],"uiLang":"pl","mediaRights":["GeoMediaRight"],"page":page,"pageSize":20,"q":cItem['f_query'],"type":["Video","Airing","EventPage"],"include_images":True}
             url = self.serverApiData['server_path']['search'] + '/persisted/query/core/sitesearch?variables=' + urllib.quote(json.dumps(variables, separators=(',', ':')))
@@ -379,34 +484,15 @@ class EuroSportPlayer(CBaseHostClass):
             if not sts: return
             
             data = byteify(json.loads(data))['data']['sitesearch']
+            NOW = datetime.now()
             for item in data['hits']:
-                self._addItem(cItem, nextCategory, item['hit'], NOW)
+                self._addItem(cItem, item['hit'], NOW)
             
             if page*20 < data['meta']['hits']:
                 params = dict(cItem)
                 params.pop('priv_item', None)
                 params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
                 self.addDir(params)
-        except Exception:
-            printExc()
-            
-    def listLinksTypeItems(self, cItem):
-        printDBG("EuroSportPlayer.listLinksTypeItems [%s]" % cItem)
-        try:
-            privItem = cItem['priv_item']
-            title = self.cleanHtmlStr(privItem['titles'][0]['title'])
-            if 'playbackUrls' in privItem:
-                data = privItem['playbackUrls']
-            else:
-                data = privItem['media'][0]['playbackUrls']
-            
-            for item in data:
-                rel = item['rel']
-                url = item['href']
-                params = dict(cItem)
-                params.pop('priv_item', None)
-                params.update({'good_for_fav':False, 'title':title, 'url':url, 'desc':rel})
-                self.addVideo(params)
         except Exception:
             printExc()
     
@@ -480,7 +566,7 @@ class EuroSportPlayer(CBaseHostClass):
         
         params = dict(cItem)
         params.update({'category':'list_search_items', 'f_query':searchPattern})
-        self.listSearchItems(params, 'list_links_types')
+        self.listSearchItems(params)
         
     def getLinksForVideo(self, cItem):
         printDBG("EuroSportPlayer.getLinksForVideo [%s]" % cItem)
@@ -489,14 +575,20 @@ class EuroSportPlayer(CBaseHostClass):
         
         linksTab = []
         try:
-            url = cItem['url'].replace('{scenario}', 'browser~unlimited')
-            sts, data = self.getJSPage(url)
-            data = byteify(json.loads(data))['stream']
-            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++")
-            printDBG(data)
-            for item in [('slide', 'slide'), ('complete', 'complete')]:
-                if item[0] not in data: continue
-                linksTab.append({'url':data[item[0]], 'name':item[1], 'need_resolve':1})
+            privItem = cItem['priv_item']
+            
+            if 'playbackUrls' in privItem: playbackUrls = privItem['playbackUrls']
+            else: playbackUrls = privItem['media'][0]['playbackUrls']
+            
+            for urlItem in  playbackUrls:
+                url = urlItem['href'].replace('{scenario}', 'browser~unlimited')
+                sts, data = self.getJSPage(url)
+                data = byteify(json.loads(data))['stream']
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG(data)
+                for item in [('slide', 'slide'), ('complete', 'complete')]:
+                    if item[0] not in data: continue
+                    linksTab.append({'url':data[item[0]], 'name':'%s - %s' % (urlItem['rel'], item[1]), 'need_resolve':1})
         except Exception:
             printExc()
         
@@ -541,17 +633,28 @@ class EuroSportPlayer(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listMainMenu({'name':'category'})
+        
+    # ON AIR
         elif category == 'on_air':
-            self.listOnAir(self.currItem, 'list_links_types')
+            self.listOnAir(self.currItem)
+        
+    # SCHEDULE
         elif category == 'schedule':
             self.listDays(self.currItem, 'list_schedule')
         elif category == 'list_schedule':
-            self.listSchedule(self.currItem, 'list_links_types')
-        elif category == 'list_links_types':
-            self.listLinksTypeItems(self.currItem)
-        elif category == 'list_search_items':
-            self.listSearchItems(self.currItem, 'list_links_types')
+            self.listSchedule(self.currItem)
+        
+    # VOD
+        elif category == 'vod_sport_filters':
+            self.listSportFilters(self.currItem, 'vod_types_filters')
+        elif category == 'vod_types_filters':
+            self.listVodTypesFilters(self.currItem, 'list_vod_items')
+        elif category == 'list_vod_items':
+            self.listVodItems(self.currItem)
+        
     #SEARCH
+        elif category == 'list_search_items':
+            self.listSearchItems(self.currItem)
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
             cItem.update({'search_item':False, 'name':'category'}) 
@@ -568,8 +671,4 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, EuroSportPlayer(), True, [])
-        
-    #def getSearchTypes(self):
-    #    searchTypesOptions = []
-    #    return searchTypesOptions
     
