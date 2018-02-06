@@ -11,7 +11,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 # FOREIGN import
 ###################################################
-import urlparse
+from urlparse import urlparse
 import time
 import re
 import urllib
@@ -62,7 +62,7 @@ class VevoCom(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
         
-        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'ignore_http_code_ranges':[], 'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.translations = {}
         self.webDataCache = {}
@@ -175,7 +175,12 @@ class VevoCom(CBaseHostClass):
         printDBG("VevoCom.listContainers [%s]" % cItem)
         
         sts, data = self.getPage(cItem['url'])
+        if not sts and '404' in str(data):
+            url = urlparse( cItem['url'] )
+            url = url._replace(path= '/'.join(url.path.split('/')[2:])).geturl()
+            sts, data = self.getPage(url)
         if not sts: return
+        
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'containers'), ('<div', '>', 'footer'))[1]
         containers = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'feedV2-title'), ('</ul', '>'))
