@@ -103,13 +103,18 @@ class EuroSportPlayer(CBaseHostClass):
     def listMainMenu(self, cItem):
         printDBG("EuroSportPlayer.listMainMenu")
         
-        MAIN_CAT_TAB = [{'category':'on_air',         'title': _('On Air'),   }, 
-                        {'category':'schedule',       'title': _('Schedule'), },
-                        {'category':'vod_sport_filters',  'title': _('VOD'),      }, 
-                        {'category':'search',         'title': _('Search'),          'search_item':True}, 
-                        {'category':'search_history', 'title': _('Search history')},]
-        
-        self.listsTab(MAIN_CAT_TAB, cItem)
+        try:
+            CAT_TAB = [{'category':'on_air',             'title': _('On Air'),        }, 
+                       {'category':'schedule',           'title': self.serverApiData['i18n_dictionary'].get('Web_Title_Schedule', _('Schedule')),},
+                       {'category':'vod_sport_filters',  'title': self.serverApiData['i18n_dictionary'].get('Nav_On_Demand', _('VOD')),},
+                       {'category':'events',             'title': self.serverApiData['i18n_dictionary'].get('Nav_Events', _('Events')), 'f_type':'nonolympics'}, 
+                       {'category':'events',             'title': self.serverApiData['i18n_dictionary'].get('Olympics', _('Olympics')), 'f_type':'olympics'   }, 
+                       {'category':'search',             'title': _('Search'),          'search_item':True    }, 
+                       {'category':'search_history',     'title': _('Search history')},]
+            
+            self.listsTab(CAT_TAB, cItem)
+        except Exception:
+            printExc()
         
     def _str2date(self, txt):
         txt = self.cm.ph.getSearchGroups(txt, '([0-9]+\-[0-9]+\-[0-9]+T[0-9]+\:[0-9]+:[0-9]+)')[0]
@@ -284,7 +289,7 @@ class EuroSportPlayer(CBaseHostClass):
             if startDate != None: 
                 month = self.ABBREVIATED_MONTH_NAME_TAB[startDate.month-1]
                 if startDate.year == NOW.year: dateStr += ' | %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month))
-                else: dateStr += ' | %s %s %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month), startDate.year)
+                else: dateStr += ' | %s %s, %s' % (startDate.day, self.serverApiData['i18n_dictionary'].get(month, month), startDate.year)
             
             summary = ''
             try: summary = item['titles'][0]['descriptionLong']
@@ -405,6 +410,75 @@ class EuroSportPlayer(CBaseHostClass):
             data = byteify(json.loads(data))
             NOW = datetime.now()
             for item in data['data']['Airings']:
+                self._addItem(cItem, item, NOW)
+        except Exception:
+            printExc()
+        
+    def listEventsCategories(self, cItem, nextCategory):
+        printDBG("EuroSportPlayer.listEventsCategories [%s]" % cItem)
+        
+        def _str2dateShort(txt):
+            date = self._str2date(txt)
+            month = self.ABBREVIATED_MONTH_NAME_TAB[date.month-1]
+            return ' %s %s, %s' % (date.day, self.serverApiData['i18n_dictionary'].get(month, month), date.year)
+                
+        try:
+            if cItem['f_type'] == 'nonolympics': type = 'Non'
+            else: type = ''
+            
+            variables = {"include_images":True,"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
+            url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/%sOlympicsEventPageAll?variables=%s' % (type, urllib.quote(json.dumps(variables, separators=(',', ':'))))
+            
+            sts, data = self.getJSPage(url)
+            if not sts: return
+            
+            data = byteify(json.loads(data))
+            data['data']['EventPageAll'].sort(key=lambda item: item['eventDetails'][0]['title'])
+            for item in data['data']['EventPageAll']:
+                title = self.cleanHtmlStr(item['eventDetails'][0]['title'])
+                desc = '%s - %s' % (_str2dateShort(item['startDate']), _str2dateShort(item['endDate']))
+                icon = item['heroImage'][0]['photos'][0]['imageLocation']
+                
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'desc':desc, 'icon':icon, 'f_content_id':item['contentId']})
+                self.addDir(params)
+                
+        except Exception:
+            printExc()
+        
+    def listEventsMenu(self, cItem):
+        printDBG("EuroSportPlayer.listEventsMenu")
+        try:
+            thisWeek = "This_Week"
+            onDemand = "Nav_On_Demand"
+            CAT_TAB = [{'category':'events_airings', 'title': self.serverApiData['i18n_dictionary'].get(thisWeek, thisWeek),}, 
+                       {'category':'events_videos',  'title': self.serverApiData['i18n_dictionary'].get(onDemand, onDemand),}]
+            self.listsTab(CAT_TAB, cItem)
+        except Exception:
+            printExc()
+        
+    def listEventsItems(self, cItem):
+        printDBG("EuroSportPlayer.listEventsItems [%s]" % cItem)
+        try:
+            contentId = cItem['f_content_id']
+            variables = {"contentId":contentId,"include_media":True,"include_images":True,"uiLang":self.serverApiData['locale']['language'],"mediaRights":["GeoMediaRight"],"preferredLanguages":self.serverApiData['locale']['languageOrder']}
+            url = self.serverApiData['server_path']['search'] + '/persisted/query/eurosport/web/EventPageByContentId?variables=' + urllib.quote(json.dumps(variables, separators=(',', ':')))
+            
+            sts, data = self.getJSPage(url)
+            if not sts: return
+            
+            data = byteify(json.loads(data))
+            name = cItem['category'].split('_', 1)[-1]
+            for item in data['data']['EventPageByContentId']['media']:
+                if item['name'] == name:
+                    tmp = item
+                    break
+            
+            data = tmp['videos']
+            if name == 'airings': data.reverse()
+            
+            NOW = datetime.now()
+            for item in data:
                 self._addItem(cItem, item, NOW)
         except Exception:
             printExc()
@@ -651,7 +725,14 @@ class EuroSportPlayer(CBaseHostClass):
             self.listVodTypesFilters(self.currItem, 'list_vod_items')
         elif category == 'list_vod_items':
             self.listVodItems(self.currItem)
-        
+            
+    # EVENTS
+        elif category == 'events':
+            self.listEventsCategories(self.currItem, 'events_types')
+        elif category == 'events_types':
+            self.listEventsMenu(self.currItem)
+        elif category in ['events_airings', 'events_videos']:
+            self.listEventsItems(self.currItem)
     #SEARCH
         elif category == 'list_search_items':
             self.listSearchItems(self.currItem)
