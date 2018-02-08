@@ -7392,11 +7392,14 @@ class pageParser:
         
         #----------------------------------------
         params = dict(defaultParams)
-        HTTP_HEADER = dict(HTTP_HEADER)
-        HTTP_HEADER['Referer'] = baseUrl
-        params.update({'header':{'header':HTTP_HEADER}})
         url = baseUrl.replace('/info/', '/view/')
-        sts, data = self.cm.getPage(url, params)
+        videoId = self.cm.ph.getSearchGroups(baseUrl, '/([0-9]+?)/')[0]
+        videoUrl = 'http://m.rocketmediaworld.com/view/' + videoId
+        
+        HTTP_HEADER = dict(HTTP_HEADER)
+        HTTP_HEADER['Referer'] = videoUrl
+        params.update({'header':{'header':HTTP_HEADER}})
+        sts, data = self.cm.getPage(videoUrl, params)
         if not sts: return False 
         
         associativeArray = ['var associativeArray = {};']
@@ -7413,6 +7416,7 @@ class pageParser:
             if 'sources' in item:
                 tmp = item
                 break
+        tmp = str(tmp)
         
         jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCg0KJXMNCg0KdmFyIGVsZW1lbnQgPSBmdW5jdGlvbiAoaW5uZXJIVE1MKQ0Kew0KICAgIHRoaXMuX2lubmVySFRNTCA9IGlubmVySFRNTDsNCiAgICANCiAgICBPYmplY3QuZGVmaW5lUHJvcGVydHkodGhpcywgImlubmVySFRNTCIsIHsNCiAgICAgICAgZ2V0IDogZnVuY3Rpb24gKCkgew0KICAgICAgICAgICAgcmV0dXJuIHRoaXMuX2lubmVySFRNTDsNCiAgICAgICAgfSwNCiAgICAgICAgc2V0IDogZnVuY3Rpb24gKHZhbCkgew0KICAgICAgICAgICAgdGhpcy5faW5uZXJIVE1MID0gdmFsOw0KICAgICAgICB9DQogICAgfSk7DQp9Ow0KDQpkb2N1bWVudC5nZXRFbGVtZW50QnlJZCA9IGZ1bmN0aW9uKGlkKXsNCiAgICByZXR1cm4gbmV3IGVsZW1lbnQoYXNzb2NpYXRpdmVBcnJheVtpZF0pOw0KfQ0KDQpmdW5jdGlvbiBqd3BsYXllcigpIHsNCiAgICByZXR1cm4gandwbGF5ZXI7DQp9DQoNCmp3cGxheWVyLnNldHVwID0gZnVuY3Rpb24oc3JjZXMpew0KICAgIHByaW50KEpTT04uc3RyaW5naWZ5KHNyY2VzKSk7DQp9''')
         jscode = jscode % ('\n'.join(associativeArray))
@@ -7424,18 +7428,18 @@ class pageParser:
             #tmp = byteify(json.loads(tmp))
             #print(tmp)
         
-        streamHlsUrls = re.compile('"((?:https:)?//[^"]+?\.m3u8[^"]*?)"').findall(data)
+        printDBG(data)
+        streamHlsUrls = re.compile('"((?:https?:)?//[^"]+?\.m3u8[^"]*?)"').findall(data)
+        printDBG(streamHlsUrls)
         for streamHlsUrl in streamHlsUrls:
             if streamHlsUrl.startswith('//'):
                 streamHlsUrl = 'http:' + streamHlsUrl
             if self.cm.isValidUrl(streamHlsUrl):
-                for idx in range(2):
-                    if idx == 1:
-                        url = urlparse( streamHlsUrl )._replace(netloc="dacache.streamlive.to").geturl()
-                    url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
-                    urlsTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
-                    if len(urlsTab):
-                        return urlsTab
+                url = streamHlsUrl
+                url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':videoUrl, 'Origin':urlparser.getDomain(videoUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                urlsTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
+                if len(urlsTab):
+                    return urlsTab
         return False
         #----------------------------------------
         
