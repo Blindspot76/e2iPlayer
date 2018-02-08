@@ -7387,14 +7387,28 @@ class pageParser:
         
     def paserSTREAMLIVETO(self, baseUrl):
         printDBG("paserSTREAMLIVETO baseUrl[%r]" % baseUrl )
-        HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl.meta.get('Referer', baseUrl) }
-        defaultParams = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('streamliveto.cookie')}
+        COOKIE_FILE = GetCookieDir('rocketmediaworld.com.cookie')
+        rm(COOKIE_FILE)
         
+        HTTP_HEADER= {'User-Agent':"Mozilla/5.0"}
+        defaultParams = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+        baseDomain = 'http://m.rocketmediaworld.com/' 
+        try:
+            url = baseDomain + 'login'
+            login  = config.plugins.iptvplayer.streamliveto_login.value.strip()
+            passwd = config.plugins.iptvplayer.streamliveto_password.value.strip()
+            if '' not in [login, passwd]:
+                sts, data = self.cm.getPage(url, defaultParams)
+                if sts:
+                    HTTP_HEADER['Referer'] = url
+                    sts, data = self.cm.getPage(baseDomain + 'login.php', defaultParams, {'username':login, 'password':passwd, 'accessed_by':'web', 'submit':'Login'})
+        except Exception:
+            printExc()
         #----------------------------------------
         params = dict(defaultParams)
         url = baseUrl.replace('/info/', '/view/')
         videoId = self.cm.ph.getSearchGroups(baseUrl, '/([0-9]+?)/')[0]
-        videoUrl = 'http://m.rocketmediaworld.com/view/' + videoId
+        videoUrl = baseDomain + 'view/' + videoId
         
         HTTP_HEADER = dict(HTTP_HEADER)
         HTTP_HEADER['Referer'] = videoUrl
@@ -7428,7 +7442,6 @@ class pageParser:
             #tmp = byteify(json.loads(tmp))
             #print(tmp)
         
-        printDBG(data)
         streamHlsUrls = re.compile('"((?:https?:)?//[^"]+?\.m3u8[^"]*?)"').findall(data)
         printDBG(streamHlsUrls)
         for streamHlsUrl in streamHlsUrls:

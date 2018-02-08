@@ -413,7 +413,7 @@ class StreamLiveTo(CBaseHostClass):
     #MAIN MENU
         if name == None:
             login  = config.plugins.iptvplayer.streamliveto_login.value
-            passwd = config.plugins.iptvplayer.streamliveto_password .value
+            passwd = config.plugins.iptvplayer.streamliveto_password.value
             logged = False
             if '' != login.strip() and '' != passwd.strip():
                 logged = self.doLogin(login, passwd)
