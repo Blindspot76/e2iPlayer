@@ -216,7 +216,7 @@ class EuroSportPlayer(CBaseHostClass):
         printDBG('EuroSportPlayer.getToken end bRet[%s]' % bRet)
         return bRet
         
-    def _addItem(self, cItem, item, NOW, sData=None, eData=None):
+    def _addItem(self, cItem, item, NOW, sData=None, eData=None, fType=None):
         try:
             printDBG("*********************************************************")
             printDBG(item)
@@ -278,6 +278,10 @@ class EuroSportPlayer(CBaseHostClass):
             else:
                 try: prefix = item['mediaConfig']['type'].upper()
                 except Exception: prefix = item['type'].upper()
+            
+            if fType != None:
+                if fType == 'VIDEO' and prefix != 'VIDEO': return
+                elif fType != 'VIDEO' and prefix == 'VIDEO': return
                 
             if prefix != '': title = '[%s] %s' % (prefix, title)
             if episodeName != None: title = '%s - %s' % (title, self.cleanHtmlStr(episodeName))
@@ -469,17 +473,15 @@ class EuroSportPlayer(CBaseHostClass):
             
             data = byteify(json.loads(data))
             name = cItem['category'].split('_', 1)[-1]
-            for item in data['data']['EventPageByContentId']['media']:
-                if item['name'] == name:
-                    tmp = item
-                    break
-            
-            data = tmp['videos']
-            if name == 'airings': data.reverse()
-            
-            NOW = datetime.now()
-            for item in data:
-                self._addItem(cItem, item, NOW)
+            if name == 'airings': fType = ''
+            else: fType = 'VIDEO'
+            for tmp in data['data']['EventPageByContentId']['media']:
+                tmp = tmp['videos']
+                if name == 'airings': tmp.reverse()
+                
+                NOW = datetime.now()
+                for item in tmp:
+                    self._addItem(cItem, item, NOW, fType=fType)
         except Exception:
             printExc()
         
