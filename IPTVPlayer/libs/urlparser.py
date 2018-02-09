@@ -464,6 +464,7 @@ class urlparser:
                        'mediafire.com':        self.pp.parserMEDIAFIRECOM   ,
                        'nadaje.com':           self.pp.parserNADAJECOM      ,
                        'vidshare.tv':          self.pp.parserVIDSHARETV     ,
+                       'widestream.io':        self.pp.parserWIDESTREAMIO   ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -751,6 +752,10 @@ class urlparser:
                     videoUrl = 'http://pxstream.tv/embed.php?file=' + id
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
                 return self.getVideoLinkExt(videoUrl)
+            elif 'widestream.io' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]*?widestream\.io[^'^"]+?)['"]''', ignoreCase=True)[0]
+                videoUrl = strwithmeta(videoUrl, {'Referer':url})
+                return self.getVideoLinkExt(videoUrl)
             elif 'kabab.lima-city.de' in data:
                 videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]+?)['"]''', ignoreCase=True)[0]
                 videoUrl = strwithmeta(videoUrl, {'Referer':url})
@@ -909,10 +914,12 @@ class pageParser:
         #self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
         
-    def getDefaultHeader(self):
-        HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0',
+    def getDefaultHeader(self, browser='firefox'):
+        if browser == 'firefox': ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0'
+        else: ua = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+        
+        HTTP_HEADER = { 'User-Agent':ua,
                         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
                         'Accept-Encoding':'gzip, deflate',
                         'DNT':1 
                       }
@@ -9498,6 +9505,29 @@ class pageParser:
             lang = self.cm.ph.getSearchGroups(item, '''lang['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
             url = strwithmeta(url, {'Referer':baseUrl})
             urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
+        return urlTab
+        
+    def parserWIDESTREAMIO(self, baseUrl):
+        printDBG("parserWIDESTREAMIO baseUrl[%s]" % baseUrl)
+        domain = urlparser.getDomain(baseUrl) 
+        
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
+        
+        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        if referer != '': HTTP_HEADER['Referer'] = referer
+        HTTP_HEADER['Cookie'] = 'userRunnedAliexpress=1;'
+        params = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        
+        urlTab = []
+        data = set(re.compile('''['"](https?://[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''').findall(data))
+        for url in data:
+            url = urlparser.decorateUrl(url, {'Cookie':'userRunnedAliexpress=1;', 'User-Agent':params['header']['User-Agent'], 'Referer':baseUrl, 'Origin':self.cm.getBaseUrl(baseUrl)[:-1]})
+            urlTab.extend( getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999) )
+        
         return urlTab
         
     def parserMEDIAFIRECOM(self, baseUrl):
