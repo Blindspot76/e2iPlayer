@@ -75,9 +75,12 @@ class RadiostacjaPl(CBaseHostClass):
                        ]
         
         self.listsTab(MAIN_CAT_TAB, cItem)
-        params = dict(cItem)
-        params.update({'good_for_fav':True, 'url':'https://zapinamypasy.pl/', 'title':'https://zapinamypasy.pl/', 'icon':'https://satkurier.pl/uploads/60160.jpg', 'desc':'https://zapinamypasy.pl/[/br]SPORT RADIO'})
-        self.addAudio(params)
+        TAB = [{'good_for_fav':True, 'url':'https://zapinamypasy.pl/', 'title':'https://zapinamypasy.pl/', 'icon':'https://satkurier.pl/uploads/60160.jpg', 'desc':'https://zapinamypasy.pl/[/br]SPORT RADIO'},
+               {'good_for_fav':True, 'url':'http://weszlo.fm/audycja-na-zywo/', 'title':'http://weszlo.fm/', 'icon':'https://images.radio.co/station_logos/s7d70a7895.20180131023319.jpg', 'desc':'http://weszlo.fm/audycja-na-zywo/'}, ]
+        for item in TAB:
+            params = dict(cItem)
+            params.update(item)
+            self.addAudio(params)
     
     def listLive(self, cItem, nextCategory1, nextCategory2):
         printDBG("RadiostacjaPl.listGenres [%s]" % cItem)
@@ -237,7 +240,13 @@ class RadiostacjaPl(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("RadiostacjaPl.getLinksForVideo [%s]" % cItem)
         linksTab = []
-        if 'zapinamypasy.pl' in cItem['url']:
+        if 'weszlo.fm' in cItem['url']:
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return []
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<div ', '>', 'radioplayer'), ('<', '>'))[1]
+            url = self.cm.ph.getSearchGroups(data, '''\sdata\-src=['"](https?://[^'^"]+?)['"]''')[0]
+            linksTab.append({'name':'direct', 'url':url, 'need_resolve':0})
+        elif 'zapinamypasy.pl' in cItem['url']:
             sts, data = self.getPage(cItem['url'])
             if not sts: return []
             data = self.cm.ph.getDataBeetwenNodes(data, ('<meta', '>', 'environment'), ('<', '>'))[1]
