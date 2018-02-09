@@ -588,7 +588,10 @@ class EuroSportPlayer(CBaseHostClass):
             self.loginMessage = ''
             
             if '' == self.login.strip() or '' == self.password.strip():
-                msg = _('The host %s requires subscription.\nPlease fill your login and password in the host configuration - available under blue button.' % self.getMainUrl())
+                msg = ''
+                sts, data = self.getPage(self.getMainUrl())
+                if sts and '/subscribe' not in data: msg = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', '"message"'), ('</div', '>'))[1])
+                if msg == '': msg = _('The host %s requires subscription.\nPlease fill your login and password in the host configuration - available under blue button.' % self.getMainUrl())
                 GetIPTVNotify().push(msg, 'info', 10)
                 return False
             
