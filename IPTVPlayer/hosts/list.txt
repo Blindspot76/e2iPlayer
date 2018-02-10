@@ -46,7 +46,6 @@ hostfilmovizijastudio
 hostfilmpalast
 hostfilmstreamvkcom
 hostfilmydokumentalneeu
-hostfilmyto
 hostfokustv
 hostforjatn
 hostfreediscpl
@@ -62,7 +61,6 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
-hostinfoversion
 hostipla
 hostiptvplayerinfo
 hostitvcom
