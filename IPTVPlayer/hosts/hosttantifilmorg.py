@@ -5,7 +5,6 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify, rm
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -29,7 +28,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
+from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_js_execute
 from Screens.MessageBox import MessageBox
 ###################################################
 
@@ -391,8 +390,24 @@ class TantiFilmOrg(CBaseHostClass):
                     if not self.cacheLinks[key][idx]['name'].startswith('*'):
                         self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                     break
-                    
-        if 'hostvid.xyz' == self.up.getDomain(videoUrl):
+        
+        if 1 != self.up.checkHostSupport(videoUrl):
+            addParams = dict(self.defaultParams)
+            addParams['with_metadata'] = True
+            sts, data = self.getPage(videoUrl, addParams)
+            if sts:
+                videoUrl = data.meta['url']
+                jscode = ['var document={},window=this;function typeOf(r){return{}.toString.call(r).match(/\s(\w+)/)[1].toLowerCase()}function jQuery(){return"function"==typeOf(arguments[0])&&arguments[0](),jQuery}jQuery.ready=jQuery,jQuery.attr=function(r,t){"src"==r&&print(t)},$=jQuery;']
+                tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+                for item in tmp:
+                    jscode.append(item)
+                ret = iptv_js_execute( '\n'.join(jscode) )
+                if ret['sts'] and 0 == ret['code']:
+                    data = ret['data'].strip()
+                    if self.cm.isValidUrl(data):
+                        videoUrl = data
+        
+        if 'hostvid.xyz' in self.up.getDomain(videoUrl):
             sts, data = self.getPage(videoUrl)
             if not sts: return []
             videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
