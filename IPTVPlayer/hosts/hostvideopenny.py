@@ -162,7 +162,8 @@ class VideoPenny(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'meta-cat'), ('</div', '>'))[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'breadcrumbs'), ('</div', '>'))[1]
+        data = self.cm.ph.rgetDataBeetwenNodes(data, ('</a', '>'), ('<a', '>'))[1]
         url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''\shref=['"]([^'^"]+?)['"]''')[0])
         title = self.cleanHtmlStr(data)
         if url != '':
@@ -226,7 +227,9 @@ class VideoPenny(CBaseHostClass):
         if not sts: return []
         
         urlTab = []
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'player-embed', '</div>')[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player-embed', '</div>')[1]
+        tmp += '\n'.join(self.cm.ph.getAllItemsBeetwenNodes(data, ('<', '>', 'multilink'), ('</a', '>')))
+        data = tmp
         printDBG(data)
         tmp = re.compile('''['"](\s*https?://[^"^']+?)\s*['"]''').findall(data)
         printDBG(tmp)

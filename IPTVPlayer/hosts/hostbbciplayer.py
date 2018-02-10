@@ -285,7 +285,7 @@ class BBCiPlayer(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="channel-panel">', '<div class="endpanel js-stat" role="complementary">', withMarkers=False)[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'channel-page'), ('<div', '>', 'endpanel js-stat'), withNodes=False)[1]
         data = data.split('</div><div class="gel-layout__item')
         for item in data:
             if 'grouped-items' in item:
@@ -405,7 +405,10 @@ class BBCiPlayer(CBaseHostClass):
         for item in data:
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1])
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h1 class="list-item__title', '</h1>')[1])
-            icon  = self.cm.ph.getSearchGroups(item, '''<source[^>]+?srcset=['"]([^'^"]+?)['"]''')[0]
+            icon  = self.cm.ph.getSearchGroups(item, '''<source[^>]+?srcset=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            printDBG(item)
             descTab = []
             descTab.append(self.cleanHtmlStr(item.split('<div class="primary">')[-1]))
             
