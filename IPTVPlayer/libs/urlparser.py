@@ -465,6 +465,7 @@ class urlparser:
                        'nadaje.com':           self.pp.parserNADAJECOM      ,
                        'vidshare.tv':          self.pp.parserVIDSHARETV     ,
                        'widestream.io':        self.pp.parserWIDESTREAMIO   ,
+                       'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -9546,6 +9547,34 @@ class pageParser:
             if self.cm.isValidUrl(videoUrl):
                 return videoUrl
         return False
+    
+    def parserGOUNLIMITEDTO(self, baseUrl):
+        printDBG("parserGOUNLIMITEDTO baseUrl[%s]" % baseUrl)
+        domain = urlparser.getDomain(baseUrl) 
+        
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
+        
+        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        if referer != '': HTTP_HEADER['Referer'] = referer
+        
+        sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
+        if not sts: return False
+        
+        jscode = ['var element=function(n){print(JSON.stringify(n)),this.on=function(){}},Clappr={};Clappr.Player=element,Clappr.Events={PLAYER_READY:1,PLAYER_TIMEUPDATE:1,PLAYER_PLAY:1,PLAYER_ENDED:1};']
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item: jscode.append(item)
+        urlTab = []
+        ret = iptv_js_execute( '\n'.join(jscode) )
+        if ret['sts'] and 0 == ret['code']:
+            data = byteify(json.loads(ret['data'].strip()))
+            for url in data['sources']:
+                if self.cm.isValidUrl(url):
+                    url = strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
+                    urlTab.append({'name':'direct', 'url':url})
+        printDBG(urlTab)
+        return urlTab
         
     def parserNADAJECOM(self, baseUrl):
         printDBG("parserNADAJECOM baseUrl[%s]" % baseUrl)

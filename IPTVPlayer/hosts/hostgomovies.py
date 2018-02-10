@@ -429,7 +429,11 @@ class GoMovies(CBaseHostClass):
             else:
                 try:
                     tmp = byteify(json.loads(data))
-                    printDBG("------------------------------------------------\n%s+++++++++++++++++++++++++++++++++++++++++++++\n" % tmp)
+                    printDBG("----\n%s+++++\n" % tmp)
+                    if 'src' in tmp and tmp.get('embed', False):
+                        url = strwithmeta(tmp['src'], {'Referer':referer, 'User-Agent':params['header']['User-Agent']})
+                        urlTab = self.up.getVideoLinkExt(url)
+                    
                     if isinstance(tmp['playlist'][0]['sources'], dict): tmp['playlist'][0]['sources'] = [tmp['playlist'][0]['sources']]
                     for item in tmp['playlist'][0]['sources']:
                         if "mp4" == item['type']:
