@@ -355,7 +355,8 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.getOpenssl1Finished")
         if len(stsTab) == 0 or False == stsTab[-1]:
             self.getOpenssl2Finished()
-        self.getGstreamerVer()
+        else:
+            self.getGstreamerVer()
         
     def getOpenssl2Finished(self):
         printDBG("IPTVSetupImpl.getOpenssl2Finished")
@@ -480,6 +481,7 @@ class IPTVSetupImpl:
                 except Exception: ver = 0
                 if ver >= self.wgetVersion: return True,False
             return False,True
+        
         def _deprecatedHandler(paths, stsTab, dataTab):
             sts, retPath = False, ""
             for idx in range(len(dataTab)):
