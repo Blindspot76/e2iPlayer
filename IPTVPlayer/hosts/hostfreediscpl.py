@@ -3,22 +3,16 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, GetCookieDir, byteify
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from datetime import timedelta
-import time
 import re
 import urllib
-import unicodedata
-import base64
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
@@ -35,9 +29,13 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.freediscpl_login    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.freediscpl_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("e-mail")+":", config.plugins.iptvplayer.freediscpl_login))
+    optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.freediscpl_password))
     return optionList
 ###################################################
 
@@ -67,7 +65,11 @@ class FreeDiscPL(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'  FreeDiscPL.tv', 'cookie':'FreeDiscPL.cookie'})
         self.defaultParams = {'with_metadata':True, 'ignore_http_code_ranges':[(410,410)], 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-    
+        self.loggedIn = None
+        self.login    = ''
+        self.password = ''
+        self.loginMessage = ''
+        
     def getPage(self, url, params={}, post_data=None):
         if params == {}: params = dict(self.defaultParams)
         sts, data = self.cm.getPage(url, params, post_data)
@@ -243,6 +245,8 @@ class FreeDiscPL(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         printDBG('FreeDiscPL.getLinksForFavourite')
+        self.tryTologin()
+        
         links = []
         if self.cm.ph.isVaildUrl(fav_data):
             links = self.getLinksForVideo({'url':fav_data})
@@ -253,6 +257,48 @@ class FreeDiscPL(CBaseHostClass):
             except Exception: printExc()
         return links
         
+    def tryTologin(self):
+        printDBG('tryTologin start')
+        errMsg = []
+        if None == self.loggedIn or self.login != config.plugins.iptvplayer.freediscpl_login.value or\
+            self.password != config.plugins.iptvplayer.freediscpl_password.value:
+        
+            self.login = config.plugins.iptvplayer.freediscpl_login.value
+            self.password = config.plugins.iptvplayer.freediscpl_password.value
+            
+            sts, data = self.getPage(self.getMainUrl())
+            if not sts: return None
+            
+            if 200 != data.meta.get('status_code', 0):
+                return None
+            
+            self.loggedIn = False
+            self.loginMessage = ''
+            
+            if '' == self.login.strip() or '' == self.password.strip():
+                if 'btnLogout' in data: rm(self.COOKIE_FILE)
+                return False
+            
+            params = dict(self.defaultParams)
+            params['raw_post_data'] = True
+            params['header'] = dict(self.AJAX_HEADER)
+            params['header']['Referer']= self.getMainUrl()
+            
+            post_data = {"email_login":self.login,"password_login":self.password,"remember_login":1,"provider_login":""}
+            sts, data = self.getPage(self.getFullUrl('/account/signin_set'), params, json.dumps(post_data))
+            if not sts: return None
+            
+            try:
+                data = byteify(json.loads(data))
+                if data['success'] == True: self.loggedIn = True
+                else: errMsg = [self.cleanHtmlStr(data['response']['info'])]
+            except Exception:
+                printExc()
+            
+            if self.loggedIn != True:
+                self.sessionEx.open(MessageBox, _('Login failed.') + '\n' + '\n'.join(errMsg), type = MessageBox.TYPE_ERROR, timeout = 10)
+            return self.loggedIn
+        
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FreeDiscPL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
@@ -261,6 +307,7 @@ class FreeDiscPL(CBaseHostClass):
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
+        self.tryTologin()
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
