@@ -2,12 +2,11 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, remove_html_markup, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -51,14 +50,14 @@ class FreeDiscPL(CBaseHostClass):
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept':'application/json, text/javascript, */*; q=0.01', 'Content-Type':'application/json; charset=UTF-8'} )
     
-    MAIN_URL      = 'https://freedisc.pl/'
-    SEARCH_URL    = MAIN_URL + 'search/get'
-    DEFAULT_ICON  = "http://i.imgur.com/mANjWqL.png"
+    MAIN_URL = 'https://freedisc.pl/'
+    SEARCH_URL = MAIN_URL + 'search/get'
+    DEFAULT_ICON_URL = "http://i.imgur.com/mANjWqL.png"
 
-    MAIN_CAT_TAB = [{'icon':DEFAULT_ICON, 'category':'list_filters',  'title': 'Najnowsze publiczne pliki użytkowników',  'url':MAIN_URL+'explore/start/get_tabs_pages_data/%s/newest/'},
-                    {'icon':DEFAULT_ICON, 'category':'list_filters',  'title': 'Ostatnio przeglądane pliki',              'url':MAIN_URL+'explore/start/get_tabs_pages_data/%s/visited/'},
-                    {'icon':DEFAULT_ICON, 'category':'search',        'title': _('Search'), 'search_item':True},
-                    {'icon':DEFAULT_ICON, 'category':'search_history','title': _('Search history')} ]
+    MAIN_CAT_TAB = [{'category':'list_filters',  'title': 'Najnowsze publiczne pliki użytkowników',  'url':MAIN_URL+'explore/start/get_tabs_pages_data/%s/newest/'},
+                    {'category':'list_filters',  'title': 'Ostatnio przeglądane pliki',              'url':MAIN_URL+'explore/start/get_tabs_pages_data/%s/visited/'},
+                    {'category':'search',        'title': _('Search'), 'search_item':True},
+                    {'category':'search_history','title': _('Search history')} ]
     
     FILTERS_TAB = [{'title':_('Movies'),    'filter':'movies'},
                    {'title':_('Music'),     'filter':'music'}]
@@ -67,39 +66,18 @@ class FreeDiscPL(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'  FreeDiscPL.tv', 'cookie':'FreeDiscPL.cookie'})
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'with_metadata':True, 'ignore_http_code_ranges':[(410,410)], 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
     def getPage(self, url, params={}, post_data=None):
-        if params == {}:
-            params = dict(self.defaultParams)
-        return self.cm.getPage(url, params, post_data)
-        
-    def _getIconUrl(self, url):
-        url = self._getFullUrl(url)
-        return url
-        
-    def _getFullUrl(self, url):
-        if url.startswith('//'):
-            url = 'http:' + url
-        elif url.startswith('/'):
-            url = self.MAIN_URL + url[1:]
-        elif 0 < len(url) and not url.startswith('http'):
-            url =  self.MAIN_URL + url
-        url = self.cleanHtmlStr(url)
-        url = self.replacewhitespace(url)
-        return url
-        
-    def getDefaultIcon(self):
-        return self.DEFAULT_ICON
-        
-    def cleanHtmlStr(self, data):
-        data = data.replace('&nbsp;', ' ')
-        data = data.replace('&nbsp', ' ')
-        return CBaseHostClass.cleanHtmlStr(data)
-        
-    def replacewhitespace(self, data):
-        data = data.replace(' ', '%20')
-        return CBaseHostClass.cleanHtmlStr(data)
+        if params == {}: params = dict(self.defaultParams)
+        sts, data = self.cm.getPage(url, params, post_data)
+        if sts and 410 == data.meta.get('status_code', 0) and 'captcha' in data:
+            errorMsg = [_('Link protected with google recaptcha v2.')]
+            errorMsg.append(_("Please visit \"%s\" and confirm that you are human." % self.getMainUrl()))
+            errorMsg = '\n'.join(errorMsg)
+            GetIPTVNotify().push(errorMsg, 'info', 10)
+            SetIPTVPlayerLastHostError(errorMsg)
+        return sts, data
 
     def listsTab(self, tab, cItem, type='dir'):
         printDBG("FreeDiscPL.listsTab")
@@ -139,7 +117,7 @@ class FreeDiscPL(CBaseHostClass):
                 title = self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0]
                 
                 params = dict(cItem)
-                params.update({'title':self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'icon':self._getIconUrl(icon), 'desc': self.cleanHtmlStr(item)})
+                params.update({'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon':self.getFullIconUrl(icon), 'desc': self.cleanHtmlStr(item)})
                 
                 if 'file_icon_7' in item:
                     self.addVideo(params)
@@ -154,61 +132,132 @@ class FreeDiscPL(CBaseHostClass):
         params.update({'title':_('Next page'), 'page':page+1})
         self.addDir(params)
         
+    def listItems2(self, cItem, nextCategory):
+        printDBG("FreeDiscPL.listItems2 cItem[%s]" % (cItem))
+        page = cItem.get('page', 0)
+        
+        post_data = {"search_phrase":cItem.get('f_search_pattern', ''), "search_type":cItem.get('f_search_type', ''), "search_saved":0, "pages":0, "limit":0}
+        if page > 0: post_data['search_page'] = page
+        
+        params = dict(self.defaultParams)
+        params['raw_post_data'] = True
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer']= self.cm.getBaseUrl(self.getMainUrl()) + 'search/%s/%s' % (cItem.get('f_search_type', ''), urllib.quote(cItem.get('f_search_pattern', '')))
+        
+        sts, data = self.getPage(cItem['url'], params, json.dumps(post_data))
+        if not sts: return
+        
+        printDBG(data)
+        
+        try:
+            data = byteify(json.loads(data))['response']
+            logins = data['logins_translated']
+            translated = data['directories_translated']
+            for item in data['data_files']['data']:
+                userItem = logins[str(item['user_id'])]
+                dirItem = translated[str(item['parent_id'])]
+                icon = 'http://img.freedisc.pl/photo/%s/7/2/%s.png' % (item['id'], item['name_url'])
+                url = '/%s,f-%s,%s' % (userItem['url'], item['id'], item['name_url'])
+                title = item['name']
+                desc = ' | '.join( [item['date_add_format'], item['size_format']] )
+                desc += '[/br]' + (_('Added by: %s, directory: %s') % (userItem['display'], dirItem['name']))
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'f_user_item':userItem, 'f_dir_item':dirItem, 'category':nextCategory, 'title':self.cleanHtmlStr(title), 'url':self.getFullUrl(url), 'icon':self.getFullIconUrl(icon), 'desc':desc, 'f_type':item.get('type_fk', '')})
+                if params['f_type'] in ['7', '6']: self.addDir(params)
+            if data['pages'] > page:
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
+                self.addDir(params)
+        except Exception:
+            printExc()
+            
+    def listExploreItem(self, cItem, nextCategory):
+        printDBG("FreeDiscPL.listExploreItem cItem[%s]" % (cItem))
+        cItem = dict(cItem)
+        userItem = cItem.pop('f_user_item', {})
+        dirItem = cItem.pop('f_dir_item', {})
+        cItem.pop('page', None)
+        
+        type = cItem.get('f_type', '')
+        
+        if type == '7': self.addVideo(cItem)
+        elif type == '6': self.addAudio(cItem)
+        
+        try:
+            if userItem != {}:
+                url = '/%s,d-%s,%s' % (userItem['url'], userItem['userRootDirID'], userItem['url'])
+                desc = ['Ilość plików: %s' % userItem['filesCount']]
+                desc.append('Ilość odsłon: %s' % userItem['viewsCount'])
+                desc.append('Rozmiar plików: %s' % userItem['files_size_format'])
+                desc.append('Ilość pobrań: %s' % userItem['filesCount'])
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':userItem['display'], 'url':self.getFullUrl(url), 'icon':'', 'desc':'[/br]'.join(desc)})
+                self.addDir(params)
+            if dirItem != {}:
+                url = '/%s,d-%s,%s' % (userItem['url'], dirItem['id'], dirItem['name_url'])
+                desc = ['Katalogów: %s' % dirItem['dir_count']]
+                desc.append('Plików: %s' % dirItem['file_count'])
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':dirItem['name'], 'url':self.getFullUrl(url), 'icon':'', 'desc':'[/br]'.join(desc)})
+                self.addDir(params)
+        except Exception:
+            printExc()
+            
+    def listDir(self, cItem):
+        printDBG("FreeDiscPL.listDir cItem[%s]" % (cItem))
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        #printDBG(data)
+        prevDir = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'dir-previous'), ('</div', '>'))[1]
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'dir-item'), ('<div', '>', 'ifacebook'))
+        
+        for item in data:
+            icon = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<a', '</a>')[1])
+            desc = [self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'info'), ('</div', '>'))[1])]
+            desc.append(self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'float-r'), ('</span', '>'))[1]))
+            
+            params = dict(cItem)
+            params.update({'good_for_fav':True, 'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullIconUrl(icon), 'prev_url':cItem['url'], 'desc':'[/br]'.join(desc)})
+            if ',f-' in url: 
+                if 'muzyka.png' in icon:
+                    self.addAudio(params)
+                elif title.split('.')[-1].lower() in ['avi','flv','mp4','ts','mov','wmv','mpeg','mpg','mkv','vob','divx','m2ts','evo']:
+                    self.addVideo(params)
+            elif ',d-' in url:
+                self.addDir(params)
+        
+        url = self.getFullUrl(self.cm.ph.getSearchGroups(prevDir, '''href=['"]([^'^"]+?)['"]''')[0])
+        if url != '' and url != cItem.get('prev_url', ''):
+            title = self.cm.ph.getSearchGroups(prevDir, '''title=['"]([^'^"]+?)['"]''')[0]
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'url':url, 'title':self.cleanHtmlStr(prevDir), 'icon':'', 'desc':title})
+            self.addDir(params)
+        
     def getLinksForVideo(self, cItem):
         printDBG("FreeDiscPL.getLinksForVideo [%s]" % cItem)
         urlTab = []
-        tab = self.up.getVideoLinkExt(cItem['url'])
-        for item in tab:
-            item['need_resolve'] = 0
-            urlTab.append(item)
-        return urlTab
-        
-    def getResolvedURL(self, videoUrl):
-        printDBG("FreeDiscPL.getVideoLinks [%s]" % videoUrl)
-        urlTab = []
-        return urlTab
-        
-    def getFavouriteData(self, cItem):
-        return cItem['url']
+        return self.up.getVideoLinkExt(cItem['url'])
         
     def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
+        printDBG('FreeDiscPL.getLinksForFavourite')
+        links = []
+        if self.cm.ph.isVaildUrl(fav_data):
+            links = self.getLinksForVideo({'url':fav_data})
+        else:
+            try:
+                cItem = byteify(json.loads(fav_data))
+                links = self.getLinksForVideo(cItem)
+            except Exception: printExc()
+        return links
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FreeDiscPL.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
-        post_data = {"search_phrase":searchPattern,"search_type":searchType,"search_saved":0,"pages":0,"limit":0}
-        params = dict(self.defaultParams)
-        params['raw_post_data'] = True
-        params['header'] = dict(self.AJAX_HEADER)
-        params['header']['Referer']= self.cm.getBaseUrl(self.getMainUrl()) + 'search/%s/%s' % (searchType, urllib.quote(searchPattern))
-        sts, data = self.getPage(self.SEARCH_URL, params, json.dumps(post_data))
-        if not sts: return
-        printDBG(data)
-        
-        try:
-            data   = byteify(json.loads(data))['response']
-            logins = data['logins_translated']
-            data   = data['data_files']['data']
-            for item in data:
-                icon  = 'http://img.freedisc.pl/photo/%s/7/2/%s.png' % (item['id'], item['name_url'])
-                url   = 'http://freedisc.pl/%s,f-%s,%s' % (logins[str(item['user_id'])]['url'], item['id'], item['name_url'])
-                if url == '': continue
-                title = item['name']
-                desc = '| '.join( [item['date_add_format'], item['size_format']] )
-                
-                params = dict(cItem)
-                params.update({'title':self.cleanHtmlStr(title), 'url':self._getFullUrl(url), 'icon':self._getIconUrl(icon), 'desc':desc})
-                
-                type = item.get('type_fk', '')
-                if '7' in type:
-                    self.addVideo(params)
-                elif '6' in type:
-                    self.addAudio(params)
-                #elif '2' in type:
-                #    self.addPicture(params)
-        except Exception:
-            printExc()
+        cItem.update({'url':self.SEARCH_URL, 'category':'list_items2', 'f_search_pattern':searchPattern, 'f_search_type':searchType})
+        self.listItems2(cItem, 'explore_item')
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -232,6 +281,12 @@ class FreeDiscPL(CBaseHostClass):
             self.listsTab(self.FILTERS_TAB, cItem)
         elif category == 'list_items':
             self.listItems(self.currItem)
+        elif category == 'list_items2':
+            self.listItems2(self.currItem, 'explore_item')
+        elif category == 'explore_item':
+            self.listExploreItem(self.currItem, 'list_dir')
+        elif category == 'list_dir':
+            self.listDir(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -250,97 +305,8 @@ class IPTVHost(CHostBase):
         # for now we must disable favourites due to problem with links extraction for types other than movie
         CHostBase.__init__(self, FreeDiscPL(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
-    def getLogoPath(self):
-        return RetHost(RetHost.OK, value = [GetLogoDir('freediscpllogo.png')])
-    
-    def getLinksForVideo(self, Index = 0, selItem = None):
-        retCode = RetHost.ERROR
-        retlist = []
-        if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
-        
-        urlList = self.host.getLinksForVideo(self.host.currList[Index])
-        for item in urlList:
-            retlist.append(CUrlItem(item["name"], item["url"], item['need_resolve']))
-
-        return RetHost(RetHost.OK, value = retlist)
-    # end getLinksForVideo
-    
-    def getResolvedURL(self, url):
-        # resolve url to get direct url to video file
-        retlist = []
-        urlList = self.host.getResolvedURL(url)
-        for item in urlList:
-            need_resolve = 0
-            retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
-
-        return RetHost(RetHost.OK, value = retlist)
-    
-    def converItem(self, cItem):
-        hostList = []
-        searchTypesOptions = [] # ustawione alfabetycznie
+    def getSearchTypes(self):
+        searchTypesOptions = []
         searchTypesOptions.append((_("Movies"), "movies"))
         searchTypesOptions.append((_("Music"), "music"))
-    
-        hostLinks = []
-        type = CDisplayListItem.TYPE_UNKNOWN
-        possibleTypesOfSearch = None
-
-        if 'category' == cItem['type']:
-            if cItem.get('search_item', False):
-                type = CDisplayListItem.TYPE_SEARCH
-                possibleTypesOfSearch = searchTypesOptions
-            else:
-                type = CDisplayListItem.TYPE_CATEGORY
-        elif cItem['type'] == 'video':
-            type = CDisplayListItem.TYPE_VIDEO
-        elif 'more' == cItem['type']:
-            type = CDisplayListItem.TYPE_MORE
-        elif 'audio' == cItem['type']:
-            type = CDisplayListItem.TYPE_AUDIO
-        elif 'picture' == cItem['type']:
-            type = CDisplayListItem.TYPE_PICTURE
-        urlSeparateRequest = 1
-        if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_PICTURE]:
-            url = cItem.get('url', '')
-            if '' != url:
-                hostLinks.append(CUrlItem("Link", url, cItem.get('need_resolve', 0)))
-        if type == CDisplayListItem.TYPE_PICTURE:
-            urlSeparateRequest = 0
-        title       =  cItem.get('title', '')
-        description =  cItem.get('desc', '')
-        icon        =  cItem.get('icon', '')
-        if icon == '': icon = self.host.getDefaultIcon()
-        
-        return CDisplayListItem(name = title,
-                                    description = description,
-                                    type = type,
-                                    urlItems = hostLinks,
-                                    urlSeparateRequest = urlSeparateRequest,
-                                    iconimage = icon,
-                                    possibleTypesOfSearch = possibleTypesOfSearch)
-    # end converItem
-
-    def getSearchItemInx(self):
-        try:
-            list = self.host.getCurrList()
-            for i in range( len(list) ):
-                if list[i]['category'] == 'search':
-                    return i
-        except Exception:
-            printDBG('getSearchItemInx EXCEPTION')
-            return -1
-
-    def setSearchPattern(self):
-        try:
-            list = self.host.getCurrList()
-            if 'history' == list[self.currIndex]['name']:
-                pattern = list[self.currIndex]['title']
-                search_type = list[self.currIndex]['search_type']
-                self.host.history.addHistoryItem( pattern, search_type)
-                self.searchPattern = pattern
-                self.searchType = search_type
-        except Exception:
-            printDBG('setSearchPattern EXCEPTION')
-            self.searchPattern = ''
-            self.searchType = ''
-        return
+        return searchTypesOptions

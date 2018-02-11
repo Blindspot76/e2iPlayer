@@ -905,6 +905,7 @@ class common:
                     gzip_encoding = True
                 try: 
                     metadata['url'] = response.geturl()
+                    metadata['status_code'] = response.getcode()
                     if 'Content-Type' in response.info(): metadata['content-type'] = response.info()['Content-Type']
                 except Exception: pass
                 
@@ -913,6 +914,7 @@ class common:
             except urllib2.HTTPError, e:
                 ignoreCodeRanges = params.get('ignore_http_code_ranges', [(404, 404), (500, 500)])
                 ignoreCode = False
+                metadata['status_code'] = e.code
                 for ignoreCodeRange in ignoreCodeRanges:
                     if e.code >= ignoreCodeRange[0] and e.code <= ignoreCodeRange[1]:
                         ignoreCode = True
