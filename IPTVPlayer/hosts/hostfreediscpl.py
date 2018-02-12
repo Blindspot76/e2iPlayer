@@ -69,6 +69,7 @@ class FreeDiscPL(CBaseHostClass):
         self.login    = ''
         self.password = ''
         self.loginMessage = ''
+        self.treeCache = {}
         
     def getPage(self, url, params={}, post_data=None):
         if params == {}: params = dict(self.defaultParams)
@@ -193,14 +194,14 @@ class FreeDiscPL(CBaseHostClass):
                 desc.append('Rozmiar plików: %s' % userItem['files_size_format'])
                 desc.append('Ilość pobrań: %s' % userItem['filesCount'])
                 params = dict(cItem)
-                params.update({'good_for_fav':True, 'category':nextCategory, 'title':userItem['display'], 'url':self.getFullUrl(url), 'icon':'', 'desc':'[/br]'.join(desc)})
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':userItem['display'], 'url':self.getFullUrl(url), 'f_user_id':userItem['url'], 'f_dir_id':userItem['userRootDirID'], 'icon':'', 'desc':'[/br]'.join(desc)})
                 self.addDir(params)
             if dirItem != {}:
                 url = '/%s,d-%s,%s' % (userItem['url'], dirItem['id'], dirItem['name_url'])
                 desc = ['Katalogów: %s' % dirItem['dir_count']]
                 desc.append('Plików: %s' % dirItem['file_count'])
                 params = dict(cItem)
-                params.update({'good_for_fav':True, 'category':nextCategory, 'title':dirItem['name'], 'url':self.getFullUrl(url), 'icon':'', 'desc':'[/br]'.join(desc)})
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':dirItem['name'], 'url':self.getFullUrl(url), 'f_user_id':userItem['url'], 'f_dir_id':dirItem['id'], 'icon':'', 'desc':'[/br]'.join(desc)})
                 self.addDir(params)
         except Exception:
             printExc()
@@ -208,35 +209,102 @@ class FreeDiscPL(CBaseHostClass):
     def listDir(self, cItem):
         printDBG("FreeDiscPL.listDir cItem[%s]" % (cItem))
         
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        #printDBG(data)
-        prevDir = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'dir-previous'), ('</div', '>'))[1]
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'dir-item'), ('<div', '>', 'ifacebook'))
+        #sts, data = self.getPage(cItem['url'])
+        #if not sts: return
         
-        for item in data:
-            icon = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
-            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<a', '</a>')[1])
-            desc = [self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'info'), ('</div', '>'))[1])]
-            desc.append(self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'float-r'), ('</span', '>'))[1]))
+        userId = cItem.get('f_user_id', '')
+        dirId = cItem.get('f_dir_id', '')
+        
+        urlParams = dict(self.defaultParams)
+        urlParams['raw_post_data'] = True
+        urlParams['header'] = dict(self.AJAX_HEADER)
+        urlParams['header']['Referer']= cItem['url']
+        
+        try:
+            dirIcon = self.getFullIconUrl('/static/img/icons/big_dir.png')
             
-            params = dict(cItem)
-            params.update({'good_for_fav':True, 'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullIconUrl(icon), 'prev_url':cItem['url'], 'desc':'[/br]'.join(desc)})
-            if ',f-' in url: 
-                if 'muzyka.png' in icon:
-                    self.addAudio(params)
-                elif title.split('.')[-1].lower() in ['avi','flv','mp4','ts','mov','wmv','mpeg','mpg','mkv','vob','divx','m2ts','evo']:
-                    self.addVideo(params)
-            elif ',d-' in url:
-                self.addDir(params)
-        
-        url = self.getFullUrl(self.cm.ph.getSearchGroups(prevDir, '''href=['"]([^'^"]+?)['"]''')[0])
-        if url != '' and url != cItem.get('prev_url', ''):
-            title = self.cm.ph.getSearchGroups(prevDir, '''title=['"]([^'^"]+?)['"]''')[0]
-            params = dict(cItem)
-            params.update({'good_for_fav':False, 'url':url, 'title':self.cleanHtmlStr(prevDir), 'icon':'', 'desc':title})
-            self.addDir(params)
+            if userId not in self.treeCache:
+                self.treeCache = {}
+                url = self.getFullUrl('/directory/directory_data/get_tree/%s' % (userId))
+                sts, data = self.getPage(url, urlParams)
+                if not sts: return
+                
+                self.treeCache[userId] = byteify(json.loads(data), '', True)['response']['data']
+            
+            # sub dirs at first
+            if dirId in self.treeCache[userId]:
+                dirsTab = []
+                for key in self.treeCache[userId][dirId]:
+                    if self.treeCache[userId][dirId][key]['type'] == 'd':
+                        dirsTab.append(self.treeCache[userId][dirId][key])
+                dirsTab.sort(key=lambda item: item['name']) #, reverse=True)
+                
+                for item in dirsTab:
+                    if item['id'] in ['0', dirId]: continue
+                    url = '/%s,d-%s,%s' % (userId, item['id'], item['name_url'])
+                    title = self.cleanHtmlStr(item['name'])
+                    desc = ['Katalogów: %s' % item['dir_count']]
+                    desc.append('Plików: %s' % item['file_count'])
+                    params = dict(cItem)
+                    params.update({'good_for_fav':True, 'title':title, 'url':self.getFullUrl(url), 'icon':dirIcon, 'f_dir_id':item['id'], 'f_prev_dir_id':dirId, 'prev_url':cItem['url'], 'desc':'[/br]'.join(desc)})
+                    self.addDir(params)
+            
+            # now files data
+            url = self.getFullUrl('/directory/directory_data/get/%s/%s' % (userId, dirId))
+            sts, data = self.getPage(url, urlParams)
+            if not sts: return
+
+            data = byteify(json.loads(data), '', True)['response']['data']
+            if 'data' in data:
+                filesTab = []
+                for key in data['data']:
+                    if data['data'][key]['type'] == 'f' and data['data'][key]['type_fk'] in ['7', '6']:
+                        filesTab.append(data['data'][key])
+                filesTab.sort(key=lambda item: item['name']) #, reverse=True)
+                url = self.getFullIconUrl('/static/img/icons/big_dir.png')
+                for item in filesTab:
+                    if '7' == item['type_fk']: icon = 'http://img.freedisc.pl/photo/%s/7/2/%s.png' % (item['id'], item['name_url'])
+                    else: icon = ''
+                    
+                    url = '/%s,f-%s,%s' % (userId, item['id'], item['name_url'])
+                    title = self.cleanHtmlStr(item['name'])
+                    desc = ' | '.join( [item['date_add_format'], item['size_format']] )
+                    params = dict(cItem)
+                    params.update({'good_for_fav':True, 'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullIconUrl(icon), 'desc':desc, 'f_type':item.get('type_fk', '')})
+                    if params['f_type'] == '7':
+                        self.addVideo(params)
+                    else:
+                        self.addAudio(params)
+            
+            # find parent id data
+            parentId = None
+            tmpId = 'd-%s' % dirId
+            for key in self.treeCache[userId]:
+                printDBG(">>> %s" % key)
+                if tmpId in self.treeCache[userId][key]:
+                    parentId = self.treeCache[userId][key][tmpId]['parent_id']
+                    break
+            if parentId == None: return
+            
+            item = None
+            # find parent id item
+            tmpId = 'd-%s' % parentId
+            for key in self.treeCache[userId]:
+                if tmpId in self.treeCache[userId][key]:
+                    item = self.treeCache[userId][key][tmpId]
+                    break
+            if item == None: return
+            
+            if item['id'] not in ['0', dirId, cItem.get('f_prev_dir_id', '')]:
+                url = '/%s,d-%s,%s' % (userId, item['id'], item['name_url'])
+                title = self.cleanHtmlStr(item['name'])
+                desc = ['Katalogów: %s' % item['dir_count']]
+                desc.append('Plików: %s' % item['file_count'])
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'title':title, 'url':self.getFullUrl(url), 'icon':dirIcon, 'f_dir_id':item['id'], 'f_prev_dir_id':dirId, 'prev_url':cItem['url'], 'desc':'[/br]'.join(desc)})
+                self.currList.insert(0, params)
+        except Exception:
+            printExc()
         
     def getLinksForVideo(self, cItem):
         printDBG("FreeDiscPL.getLinksForVideo [%s]" % cItem)

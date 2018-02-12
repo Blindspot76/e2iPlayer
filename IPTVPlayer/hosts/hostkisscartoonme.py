@@ -51,7 +51,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://kisscartoon.es/'
+    return 'https://kisscartoon.ac/'
 
 class KissCartoonMe(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
@@ -59,8 +59,8 @@ class KissCartoonMe(CBaseHostClass):
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'} )
     
-    MAIN_URL = 'https://kisscartoon.es/'
-    DEFAULT_ICON_URL = "http://kisscartoon.so/image/logo.png"
+    MAIN_URL = 'https://kisscartoon.ac/'
+    DEFAULT_ICON_URL = "http://kisscartoon.bz/image/logo.png"
     
     MAIN_CAT_TAB = [{'category':'home',            'title': _('Home'),              'url':MAIN_URL,               },
                     {'category':'list_cats',       'title': _('Catrtoon list'),     'url':MAIN_URL+'CartoonList', },
@@ -276,10 +276,10 @@ class KissCartoonMe(CBaseHostClass):
         if ('page=%d"' % (page+1)) in data:
             nextPage = True
         
-        if '/Search/' in cItem['url']:
-            m1 = '<div class="list-cartoon"'
-        else:
-            m1 = '<div class="listing full"'
+        #if '/Search/' in cItem['url']:
+        #    m1 = '<div class="list-cartoon"'
+        #else:
+        m1 = '<div class="listing full"'
         
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, '<script type', False)[1]
         data = self._getItems(data, '<div class="item_movies')
