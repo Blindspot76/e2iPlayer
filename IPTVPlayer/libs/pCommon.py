@@ -475,7 +475,7 @@ class common:
             printExc()
         return ret
         
-    def getCookieHeader(self, cookiefile, allowedNames=[]):
+    def getCookieHeader(self, cookiefile, allowedNames=[], unquote=True):
         ret = ''
         try:
             if not self.useMozillaCookieJar:
@@ -485,7 +485,9 @@ class common:
             cj.load(cookiefile, ignore_discard = True)
             for cookie in cj:
                 if 0 < len(allowedNames) and cookie.name not in allowedNames: continue
-                ret += '%s=%s; ' % (cookie.name, urllib.unquote(cookie.value))
+                value = cookie.value
+                if unquote: value = urllib.unquote(value)
+                ret += '%s=%s; ' % (cookie.name, value)
         except Exception:
             printExc()
         return ret

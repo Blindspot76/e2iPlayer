@@ -2048,10 +2048,30 @@ class pageParser:
         
     def parserFREEDISC(self, baseUrl):
         linksTab = []
+        COOKIE_FILE = GetCookieDir('FreeDiscPL.cookie')
+        HTTP_HEADER= {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0 ', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
+        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True, 'return_data':False}
         
-        COOKIE_FILE = GetCookieDir('freedicpl.cookie')
-        HTTP_HEADER= { 'User-Agent':'Mozilla/5.0'}
-        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':False}
+        videoId = self.cm.ph.getSearchGroups(baseUrl, '''\,f\-([0-9]+?)[^0-9]''')[0]
+        if videoId == '': videoId = self.cm.ph.getSearchGroups(baseUrl, '''/video/([0-9]+?)[^0-9]''')[0]
+        rest = baseUrl.split('/')[-1].split(',')[-1]
+        idx  = rest.rfind('-')
+        if idx != -1:
+            rest = rest[:idx] + '.mp4'
+            videoUrl = 'https://stream.freedisc.pl/video/%s/%s' % (videoId, rest)
+            try:
+                params2 = dict(params)
+                params2['header'] = dict(HTTP_HEADER)
+                params2['header'].update({'Referer':'https://freedisc.pl/static/player/v612/jwplayer.flash.swf'})
+                sts, response = self.cm.getPage(videoUrl, params2)
+                if 200 == response.getcode():
+                    cookieHeader = self.cm.getCookieHeader(COOKIE_FILE, unquote=False)
+                    linksTab.append({'name':'[prepared] freedisc.pl', 'url': urlparser.decorateUrl(response.geturl(), {'Cookie':cookieHeader, 'Referer':params2['header']['Referer'], 'User-Agent':params2['header']['User-Agent']})}) 
+                response.close()
+            except Exception:
+                printExc()
+        
+        params.update({'return_data':True, 'load_cookie':False, 'cookiefile':GetCookieDir('FreeDiscPL_2.cookie')})
         
         tmpUrls = []
         if '/embed/' not in baseUrl:
@@ -2071,18 +2091,16 @@ class pageParser:
         else:
             videoUrl = baseUrl
         
-        if '' == videoUrl: return linksTab
-        params['load_cookie'] = True
-        params['header']['Referer'] = baseUrl
-        
-        sts, data = self.cm.getPage(videoUrl, params)
-        if not sts: return linksTab
-        
-        videoUrl = self.cm.ph.getSearchGroups(data, '''data-video-url=["'](http[^"^']+?)["']''', 1, True)[0]
-        if videoUrl == '': videoUrl = self.cm.ph.getSearchGroups(data, '''player.swf\?file=(http[^"^']+?)["']''', 1, True)[0]
-        if videoUrl.startswith('http') and  videoUrl not in tmpUrls:
-            linksTab.append({'name':'freedisc.pl', 'url': urlparser.decorateUrl(videoUrl, {'Referer':'http://freedisc.pl/static/player/v612/jwplayer.flash.swf', 'User-Agent':HTTP_HEADER['User-Agent']})})
-        
+        if '' != videoUrl:
+            params['load_cookie'] = True
+            params['header']['Referer'] = baseUrl
+            
+            sts, data = self.cm.getPage(videoUrl, params)
+            if sts:
+                videoUrl = self.cm.ph.getSearchGroups(data, '''data-video-url=["'](http[^"^']+?)["']''', 1, True)[0]
+                if videoUrl == '': videoUrl = self.cm.ph.getSearchGroups(data, '''player.swf\?file=(http[^"^']+?)["']''', 1, True)[0]
+                if videoUrl.startswith('http') and  videoUrl not in tmpUrls:
+                    linksTab.append({'name':'freedisc.pl', 'url': urlparser.decorateUrl(videoUrl, {'Referer':'http://freedisc.pl/static/player/v612/jwplayer.flash.swf', 'User-Agent':HTTP_HEADER['User-Agent']})}) 
         return linksTab
 
     def parserGINBIG(self,url):
