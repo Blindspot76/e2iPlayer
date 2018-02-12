@@ -77,6 +77,7 @@ class FreeDiscPL(CBaseHostClass):
         if sts and 410 == data.meta.get('status_code', 0) and 'captcha' in data:
             errorMsg = [_('Link protected with google recaptcha v2.')]
             errorMsg.append(_("Please visit \"%s\" and confirm that you are human." % self.getMainUrl()))
+            if not self.loggedIn: errorMsg.append(_('Please register and set login and password in the host configuration, to solve this problems permanently.'))
             errorMsg = '\n'.join(errorMsg)
             GetIPTVNotify().push(errorMsg, 'info', 10)
             SetIPTVPlayerLastHostError(errorMsg)
