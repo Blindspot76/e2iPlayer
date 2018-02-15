@@ -213,11 +213,13 @@ class SerialeCO(CBaseHostClass):
         urlTab = []
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'host'), ('</div', '>'))
         for item in data:
-            url  = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''url=['"]([^'^"]+?)['"]''')[0])
+            url = self.cm.ph.getSearchGroups(item, '''url=['"]([^'^"]+?)['"]''')[0]
+            if not self.cm.isValidUrl(url) and '?' not in url:
+                url = '/frame.php?src=' + url
             name = self.cm.ph.getSearchGroups(item, '''host=['"]([^'^"]+?)['"]''')[0]
             ver  = self.cm.ph.getSearchGroups(item, '''wersja=['"]([^'^"]+?)['"]''')[0]
             name = '[%s] %s' % (verMap.get(ver, ver), self.up.getDomain(url))
-            urlTab.append({'name':name, 'url':url, 'need_resolve':1})
+            urlTab.append({'name':name, 'url':strwithmeta(self.getFullUrl(url), {'Referer':cItem['url']}), 'need_resolve':1})
         
         if len(urlTab):
             self.cacheLinks[cacheKey] = urlTab
@@ -234,7 +236,17 @@ class SerialeCO(CBaseHostClass):
                         self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                     break
         
-        return self.up.getVideoLinkExt(baseUrl)
+        if 1 != self.up.checkHostSupport(baseUrl):
+            referer = strwithmeta(baseUrl).meta.get('Referer', '')
+            httpParams = dict(self.defaultParams)
+            httpParams['header'] = dict(httpParams['header'])
+            httpParams['header']['Referer'] = referer
+            httpParams['header']['Origin']  = self.getMainUrl()[:-1]
+            sts, data = self.getPage(baseUrl, httpParams)
+            if not sts: return []
+            baseUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            
+        return self.up.getVideoLinkExt(self.getFullUrl(baseUrl))
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
