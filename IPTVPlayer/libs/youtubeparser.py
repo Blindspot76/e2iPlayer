@@ -55,6 +55,7 @@ class YouTubeParser():
                 return [], []
             else: return []
         
+        retHLSList = []
         retList = []
         # filter dash
         dashAudioLists = []
@@ -87,7 +88,7 @@ class YouTubeParser():
                         item['format'] = format.group(1) + "x"
                         item['ext']  = item['ext'] + "_M3U8"
                         item['url']  = decorateUrl(item['url'], {"iptv_proto":"m3u8"})
-                        retList.append(item)
+                        retHLSList.append(item)
                 else:
                     format = re.search('([0-9]+?x[0-9]+?$)', item['format'])
                     if format != None:
@@ -124,6 +125,9 @@ class YouTubeParser():
                                 retList.append(item)
             except Exception:
                 printExc()
+            if 0 == len(retList):
+                retList = retHLSList
+            
             if dash:
                 try:
                     sts, data = self.cm.getPage(url, {'header':{'User-agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}})

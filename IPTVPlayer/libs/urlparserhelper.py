@@ -636,6 +636,8 @@ def getMPDLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}, sortWithMax
                 if '' == repParam['codecs']: repParam['codecs'] = cm.ph.getSearchGroups(item, '''codecs=['"]([^'^"]+?)['"]''')[0]
                 
                 repParam['codecs'] = repParam['codecs'].split('.')[0]
+                if 'vp9' in repParam['codecs']:
+                    continue
                 
                 if type == 'video':
                     repParam['width']  = _getNumAttrib(rep, 'width')
