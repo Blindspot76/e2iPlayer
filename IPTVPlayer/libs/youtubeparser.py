@@ -112,6 +112,7 @@ class YouTubeParser():
                 if sts:
                     data = data.replace('\\"', '"').replace('\\\\\\/', '/')
                     hlsUrl = self.cm.ph.getSearchGroups(data, '''"hlsvp"\s*:\s*"(https?://[^"]+?)"''')[0]
+                    hlsUrl= byteify(json.loads('"%s"' % hlsUrl))
                     if self.cm.isValidUrl(hlsUrl):
                         hlsList = getDirectM3U8Playlist(hlsUrl)
                         if len(hlsList):
@@ -128,6 +129,9 @@ class YouTubeParser():
                     sts, data = self.cm.getPage(url, {'header':{'User-agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'}})
                     data = data.replace('\\"', '"').replace('\\\\\\/', '/').replace('\\/', '/')
                     dashUrl = self.cm.ph.getSearchGroups(data, '''"dashmpd"\s*:\s*"(https?://[^"]+?)"''')[0]
+                    dashUrl = byteify(json.loads('"%s"' % dashUrl))
+                    if '?' not in dashUrl: dashUrl += '?mpd_version=5'
+                    else: dashUrl += '&mpd_version=5'
                     printDBG("DASH URL >>>>>>>>>>>>>>>>>>>>>>> [%s]" % dashUrl)
                     if self.cm.isValidUrl(dashUrl):
                         dashList = getMPDLinksWithMeta(dashUrl, checkExt=False)
