@@ -21,6 +21,7 @@ from Screens.MessageBox import MessageBox
 import base64
 import re
 import urlparse
+import urllib
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigYesNo, ConfigText, ConfigSelection, getConfigListEntry
@@ -57,7 +58,6 @@ class EkinoTv(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'EkinoTv.tv', 'cookie':'ekinotv.cookie'})
         self.MAIN_URL = 'http://ekino-tv.pl/'
         self.DEFAULT_ICON_URL = 'https://img.cda.pl/obr/oryginalne/c53be9b25636d46fabbb0ec78abe75c8.png'
-        self.SEARCH_URL    = self.getFullUrl('/search/')
         self.FILMS_CAT_URL = self.getFullUrl('/movie/cat/')  
         
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
@@ -253,7 +253,9 @@ class EkinoTv(CBaseHostClass):
         printDBG("EkinoTv.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         searchPattern = searchPattern.replace(' ', '+')
         
-        sts, data = self.getPage(self.SEARCH_URL, {}, {'search_field':searchPattern})
+        url = self.getFullUrl('http://ekino-tv.pl/s/search?q=') + urllib.quote_plus(searchPattern)
+        
+        sts, data = self.getPage(url)
         if not sts: return
         
         if 'movies' == searchType:
