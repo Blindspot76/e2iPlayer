@@ -2970,7 +2970,7 @@ class pageParser:
     def parserSPEEDVIDNET(self, baseUrl):
         printDBG("parserSPEEDVIDNET baseUrl[%r]" % baseUrl)
         retTab = None
-        defaultParams = {'header':self.getDefaultHeader(), 'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
+        defaultParams = {'header':self.getDefaultHeader(), 'with_metadata':True, 'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
         def _findLinks2(data):
             return _findLinks(data, 1)
             
@@ -2989,6 +2989,7 @@ class pageParser:
                         defaultParams['cookie_items'] = data['cookies']
                         defaultParams['header']['Referer'] = baseUrl
                         url = data['href']
+                        if url.startswith('/') and not url.startswith('//'): url = self.cm.getBaseUrl(data['sources']['sharing']['link'])[:-1] + url
                         if url.startswith('//'): url = 'http:' + url
                         if self.cm.isValidUrl(url):
                             return self._parserUNIVERSAL_A(url, '', _findLinks2, httpHeader=defaultParams['header'], params=defaultParams)
@@ -7899,6 +7900,9 @@ class pageParser:
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
         
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(data)
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         hlsUrls = []
         tokenUrl = ''
         base64Obj = re.compile('''=\s*['"]([A-Za-z0-9+/=]+?)['"]''', re.IGNORECASE)

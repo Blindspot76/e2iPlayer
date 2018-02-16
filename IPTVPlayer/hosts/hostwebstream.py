@@ -13,14 +13,12 @@ from Plugins.Extensions.IPTVPlayer.libs.teledunet         import  TeledunetParse
 from Plugins.Extensions.IPTVPlayer.libs.urlparser         import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.filmonapi         import FilmOnComApi, GetConfigList as FilmOn_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.videostar         import VideoStarApi, GetConfigList as VideoStar_GetConfigList
-from Plugins.Extensions.IPTVPlayer.libs.viortv            import ViorTvApi, GetConfigList as ViortTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.livesports        import LiveSportsApi, GetConfigList as LiveSports_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.bilasportpw       import BilaSportPwApi, GetConfigList as BilaSportPw_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.canlitvliveio     import CanlitvliveIoApi
 from Plugins.Extensions.IPTVPlayer.libs.weebtv            import WeebTvApi, GetConfigList as WeebTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.wagasworld        import WagasWorldApi, GetConfigList as WagasWorld_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.ustvnow           import UstvnowApi, GetConfigList as Ustvnow_GetConfigList
-#from Plugins.Extensions.IPTVPlayer.libs.telewizjadanet    import TelewizjadaNetApi, GetConfigList as TelewizjadaNet_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.telewizjacom      import TeleWizjaComApi
 from Plugins.Extensions.IPTVPlayer.libs.meteopl           import MeteoPLApi, GetConfigList as MeteoPL_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.edemtv            import EdemTvApi, GetConfigList as EdemTv_GetConfigList
@@ -30,7 +28,7 @@ from Plugins.Extensions.IPTVPlayer.libs.livespottingtv    import LivespottingTvA
 from Plugins.Extensions.IPTVPlayer.libs.goldvodtv         import GoldVodTVApi, GetConfigList as GoldVodTV_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.showsporttvcom    import ShowsportTVApi
 from Plugins.Extensions.IPTVPlayer.libs.sport365live      import Sport365LiveApi
-from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, GetConfigList as PierwszaTV_GetConfigList
+#from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, GetConfigList as PierwszaTV_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.yooanimecom       import YooanimeComApi
 from Plugins.Extensions.IPTVPlayer.libs.livetvhdnet       import LivetvhdNetApi
 from Plugins.Extensions.IPTVPlayer.libs.karwantv          import KarwanTvApi
@@ -77,13 +75,9 @@ def GetConfigList():
     try:    optionList.extend( VideoStar_GetConfigList() )
     except Exception: printExc()
     
-    #optionList.append(getConfigListEntry("------------------vior.tv-------------------", config.plugins.iptvplayer.fake_separator))
-    #try:    optionList.extend( ViortTv_GetConfigList() )
+    #optionList.append(getConfigListEntry("----------------pierwsza.tv-----------------", config.plugins.iptvplayer.fake_separator))
+    #try:    optionList.extend( PierwszaTV_GetConfigList() )
     #except Exception: printExc()
-    
-    optionList.append(getConfigListEntry("----------------pierwsza.tv-----------------", config.plugins.iptvplayer.fake_separator))
-    try:    optionList.extend( PierwszaTV_GetConfigList() )
-    except Exception: printExc()
     
     optionList.append(getConfigListEntry("------------------meteo.pl------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( MeteoPL_GetConfigList() )
@@ -100,10 +94,6 @@ def GetConfigList():
     optionList.append(getConfigListEntry("----------------ustvnow.com-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( Ustvnow_GetConfigList() )
     except Exception: printExc()
-    
-    #optionList.append(getConfigListEntry("--------------telewizjada.net---------------", config.plugins.iptvplayer.fake_separator))
-    #try:    optionList.extend( TelewizjadaNet_GetConfigList() )
-    #except Exception: printExc()
    
     optionList.append(getConfigListEntry("-------------------edem.tv------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( EdemTv_GetConfigList() )
@@ -149,10 +139,8 @@ class HasBahCa(CBaseHostClass):
     HTTP_HEADER= { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
     MAIN_GROUPED_TAB = [{'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://xmtvplayer.com/wp-content/uploads/2014/07/weebtv.png'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'https://pilot.wp.pl/',              'url': '',                                                                   'icon': 'http://satkurier.pl/uploads/53612.jpg'}, \
-                        #{'alias_id':'vior.tv',                 'name': 'vior.tv',             'title': 'https://vior.tv/',                  'url': 'https://vior.tv/',                                                   'icon': 'https://vior.tv/theme/public/assets/img/logotype.png'}, \
-                        {'alias_id':'tele-wizja.com',          'name': 'tele-wizja.com',      'title': 'http://tele-wizja.is/',             'url': '',                                                                   'icon': 'http://htk.net.pl/wp-content/uploads/2016/07/cache_2422349465.jpg'}, \
-                        {'alias_id':'pierwsza.tv',             'name': 'pierwsza.tv',         'title': 'http://pierwsza.tv/',               'url': '',                                                                   'icon': 'http://pierwsza.tv/img/logo.png'}, \
-                        #{'alias_id':'telewizjada.net',         'name': 'telewizjada.net',     'title': 'Telewizjada.net',                   'url': '',                                                                   'icon': 'http://www.btv.co/newdev/images/rokquickcart/samples/internet-tv.png'}, \
+                        {'alias_id':'tele-wizja.com',          'name': 'tele-wizja.com',      'title': 'http://tele-wizja.ru/',             'url': '',                                                                   'icon': 'http://htk.net.pl/wp-content/uploads/2016/07/cache_2422349465.jpg'}, \
+                        #{'alias_id':'pierwsza.tv',             'name': 'pierwsza.tv',         'title': 'http://pierwsza.tv/',               'url': '',                                                                   'icon': 'http://pierwsza.tv/img/logo.png'}, \
                         {'alias_id':'iptv_matzgpl',            'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.prv.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.prv.pl/Iptv_matzgPL.png'}, \
                         {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',                'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
                         {'alias_id':'meteo.pl',                'name': 'meteo.pl',            'title': 'Pogoda PL - meteorogramy',          'url': 'http://meteo.pl/',                                                   'icon': 'http://matzg2.prv.pl/pogoda_logo.png'}, \
@@ -194,14 +182,12 @@ class HasBahCa(CBaseHostClass):
         self.videoStarApi         = None
         self.wagasWorldApi        = None
         self.ustvnowApi           = None
-        self.telewizjadaNetApi    = None
         self.yooanimeComApi       = None
         self.livetvhdNetApi       = None
         self.teleWizjaComApi      = None
-        self.telewizjaLiveComApi  = None
         self.meteoPLApi           = None
         self.liveStreamTvApi      = None
-        self.pierwszaTvApi        = None
+        #self.pierwszaTvApi        = None
         self.goldvodTvApi         = None
         self.showsportTvApi       = None
         self.sport365LiveApi      = None
@@ -210,7 +196,6 @@ class HasBahCa(CBaseHostClass):
         self.livespottingTvApi    = None
         self.karwanTvApi          = None
         self.wizjaTvApi           = None
-        self.viorTvApi            = None
         self.liveSportsApi        = None
         self.bilaSportPwApi       = None
         self.canlitvliveIoApi     = None
@@ -687,19 +672,6 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.ustvnowApi.getVideoLink(cItem)
         return urlsTab
     #############################################################
-    
-    def getTelewizjadaNetList(self, cItem):
-        printDBG("getTelewizjadaNetList start")
-        if None == self.telewizjadaNetApi: self.telewizjadaNetApi = TelewizjadaNetApi()
-        tmpList = self.telewizjadaNetApi.getChannelsList(cItem)
-        for item in tmpList:
-            if 'video' == item['type']: self.addVideo(item) 
-            else: self.addDir(item)
-        
-    def getTelewizjadaNetLink(self, cItem):
-        printDBG("getTelewizjadaNetLink start")
-        urlsTab = self.telewizjadaNetApi.getVideoLink(cItem)
-        return urlsTab
         
     def getYooanimeComtList(self, cItem):
         printDBG("getYooanimeComtList start")
@@ -754,21 +726,6 @@ class HasBahCa(CBaseHostClass):
         printDBG("getWizjaTvLink start")
         urlsTab = self.wizjaTvApi.getVideoLink(cItem)
         return urlsTab
-        
-    def getViorTvList(self, cItem):
-        printDBG("getViorTvList start")
-        if None == self.viorTvApi: self.viorTvApi = ViorTvApi()
-        tmpList = self.viorTvApi.getList(cItem)
-        for item in tmpList:
-            if 'video' == item['type']: self.addVideo(item) 
-            elif 'audio' == item['type']: self.addAudio(item) 
-            else: self.addDir(item)
-        
-    def getViorTvLink(self, cItem):
-        printDBG("getViorTvLink start")
-        urlsTab = self.viorTvApi.getVideoLink(cItem)
-        return urlsTab
-        
     ########################################################
     def getLiveSportsList(self, cItem):
         printDBG("getLiveSportsList start")
@@ -834,21 +791,6 @@ class HasBahCa(CBaseHostClass):
     def getDjingComLink(self, cItem):
         printDBG("getDjingComLink start")
         urlsTab = self.djingComApi.getVideoLink(cItem)
-        return urlsTab
-        
-    def getTelewizjaLiveComList(self, cItem):
-        printDBG("getTelewizjaLiveComList start")
-        if None == self.telewizjaLiveComApi:
-            from Plugins.Extensions.IPTVPlayer.libs.telewizjalivecom  import TelewizjaLiveComApi
-            self.telewizjaLiveComApi = TelewizjaLiveComApi()
-        tmpList = self.telewizjaLiveComApi.getList(cItem)
-        for item in tmpList:
-            if 'video' == item['type']: self.addVideo(item) 
-            else: self.addDir(item)
-        
-    def getTelewizjaLiveComLink(self, cItem):
-        printDBG("getTelewizjaLiveComLink start")
-        urlsTab = self.telewizjaLiveComApi.getVideoLink(cItem)
         return urlsTab
     
     def getTeleWizjaComList(self, cItem):
@@ -933,18 +875,18 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.liveStreamTvApi.getVideoLink(cItem)
         return urlsTab
         
-    def getPierwszaTvList(self, cItem):
-        printDBG("getPierwszaTvList start")
-        if None == self.pierwszaTvApi:
-            self.pierwszaTvApi = PierwszaTVApi()
-        tmpList = self.pierwszaTvApi.getChannelsList(cItem)
-        for item in tmpList:
-            self.addVideo(item) 
+    #def getPierwszaTvList(self, cItem):
+    #    printDBG("getPierwszaTvList start")
+    #    if None == self.pierwszaTvApi:
+    #        self.pierwszaTvApi = PierwszaTVApi()
+    #    tmpList = self.pierwszaTvApi.getChannelsList(cItem)
+    #    for item in tmpList:
+    #        self.addVideo(item) 
         
-    def getPierwszaTvLink(self, cItem):
-        printDBG("getPierwszaTvLink start")
-        urlsTab = self.pierwszaTvApi.getVideoLink(cItem)
-        return urlsTab
+    #def getPierwszaTvLink(self, cItem):
+    #    printDBG("getPierwszaTvLink start")
+    #    urlsTab = self.pierwszaTvApi.getVideoLink(cItem)
+    #    return urlsTab
         
     def getGoldVodTvList(self, cItem):
         printDBG("getGoldVodTvList start")
@@ -1042,23 +984,20 @@ class HasBahCa(CBaseHostClass):
         elif name == "HasBahCa":            self.listHasBahCa(self.currItem)
         elif name == "m3u":                 self.m3uList(url)
         elif name == "prognoza.pogody.tv":  self.prognozaPogodyList(url)
-        elif name == 'pierwsza.tv':         self.getPierwszaTvList(self.currItem)
+        #elif name == 'pierwsza.tv':         self.getPierwszaTvList(self.currItem)
         elif name == "goldvod.tv":          self.getGoldVodTvList(url)
         elif name == "showsport-tv.com":    self.getShowsportTvList(self.currItem)
         elif name == "sport365.live":       self.getSport365LiveList(self.currItem)
         elif name == "videostar.pl":        self.getVideostarList(self.currItem)
-        elif name == "vior.tv":             self.getViorTvList(self.currItem)
         elif name == "suphd.club":          self.getLiveSportsList(self.currItem)
         elif name == "bilasport.com":       self.getBilaSportPwList(self.currItem)
         elif name == "canlitvlive.io":      self.getCanlitvliveIoList(self.currItem)
         elif name == "djing.com":           self.getDjingComList(self.currItem)
         elif name == 'ustvnow':             self.getUstvnowList(self.currItem)
-        elif name == 'telewizjada.net':     self.getTelewizjadaNetList(self.currItem)
         elif name == 'yooanime.com':        self.getYooanimeComtList(self.currItem)
         elif name == 'livetvhd.net':        self.geLivetvhdNetList(self.currItem)
         elif name == 'karwan.tv':           self.getKarwanTvList(self.currItem)
         elif name == 'wizja.tv':            self.getWizjaTvList(self.currItem)
-        elif name == 'telewizja-live.com':  self.getTelewizjaLiveComList(self.currItem)
         elif name == 'tele-wizja.com':      self.getTeleWizjaComList(self.currItem)
         elif name == 'meteo.pl':            self.getMeteoPLList(self.currItem)
         elif name == 'edem.tv':             self.getEdemTvList(self.currItem)
@@ -1104,7 +1043,7 @@ class IPTVHost(CHostBase):
             new_url = TeledunetParser().get_rtmp_params(url)
             if 0 < len(url): retlist.append(CUrlItem("Własny link", new_url))
         elif url.startswith('http://goldvod.tv/'): urlList = self.host.getGoldVodTvLink(cItem)
-        elif name == 'pierwsza.tv':                urlList = self.host.getPierwszaTvLink(cItem)
+        #elif name == 'pierwsza.tv':                urlList = self.host.getPierwszaTvLink(cItem)
         elif name == "showsport-tv.com":           urlList = self.host.getShowsportTvLink(cItem)
         elif name == "sport365.live":              urlList = self.host.getSport365LiveLink(cItem)
         elif name == 'wagasworld.com':             urlList = self.host.getWagasWorldLink(cItem)
@@ -1112,18 +1051,15 @@ class IPTVHost(CHostBase):
         elif 'weeb.tv' in name:                    url = self.host.getWeebTvLink(url)
         elif name == "filmon_channel":             urlList = self.host.getFilmOnLink(channelID=url)
         elif name == "videostar.pl":               urlList = self.host.getVideostarLink(cItem)
-        elif name == 'vior.tv':                    urlList = self.host.getViorTvLink(cItem)
         elif name == 'suphd.club':                 urlList = self.host.getLiveSportsLink(cItem)
         elif name == 'bilasport.com':              urlList = self.host.getBilaSportPwLink(cItem)
         elif name == 'canlitvlive.io':             urlList = self.host.getCanlitvliveIoLink(cItem)
         elif name == 'djing.com':                  urlList = self.host.getDjingComLink(cItem)
         elif name == 'ustvnow':                    urlList = self.host.getUstvnowLink(cItem)
-        elif name == 'telewizjada.net':            urlList = self.host.getTelewizjadaNetLink(cItem)
         elif name == 'yooanime.com':               urlList = self.host.getYooanimeComLink(cItem)
         elif name == 'livetvhd.net':               urlList = self.host.getLivetvhdNetLink(cItem)
         elif name == 'karwan.tv':                  urlList = self.host.getKarwanTvLink(cItem)
         elif name == 'wizja.tv':                   urlList = self.host.getWizjaTvLink(cItem)
-        elif name == 'telewizja-live.com':         urlList = self.host.getTelewizjaLiveComLink(cItem)
         elif name == 'tele-wizja.com':             urlList = self.host.getTeleWizjaComLink(cItem)
         elif name == 'meteo.pl':                   urlList = self.host.getMeteoPLLink(cItem)
         elif name == 'edem.tv':                    urlList = self.host.getEdemTvLink(cItem)
