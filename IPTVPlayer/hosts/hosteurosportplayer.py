@@ -574,7 +574,7 @@ class EuroSportPlayer(CBaseHostClass):
     
     def tryTologin(self):
         printDBG('EuroSportPlayer.tryTologin start')
-        errorMsg = 'Error communicating with the server.'
+        errorMsg = _('Error communicating with the server.')
         
         if None == self.loggedIn or self.login != config.plugins.iptvplayer.eurosportplayer_login.value or\
             self.password != config.plugins.iptvplayer.eurosportplayer_password.value:
@@ -591,12 +591,12 @@ class EuroSportPlayer(CBaseHostClass):
                 msg = ''
                 sts, data = self.getPage(self.getMainUrl())
                 if sts and '/subscribe' not in data: msg = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', '"message"'), ('</div', '>'))[1])
-                if msg == '': msg = _('The host %s requires subscription.\nPlease fill your login and password in the host configuration - available under blue button.' % self.getMainUrl())
+                if msg == '': msg = _('The host %s requires subscription.\nPlease fill your login and password in the host configuration - available under blue button.') % self.getMainUrl()
                 GetIPTVNotify().push(msg, 'info', 10)
                 return False
             
             if not self.getToken('init'):
-                msg = _(errorMsg + '\nError[1].')
+                msg = _(errorMsg) + _('\nError[1].')
                 GetIPTVNotify().push(msg, 'error', 10)
                 return False
             
@@ -630,7 +630,7 @@ class EuroSportPlayer(CBaseHostClass):
                     self.tokenData['access_timeout'] = time.time() + (data['exp'] - data['iat']) / 1000.0
                     
                     if not self.getToken('code'):
-                        msg = _(errorMsg + '\nError[2].')
+                        msg = _(errorMsg) + _('\nError[2].')
                         GetIPTVNotify().push(msg, 'error', 10)
                         return False
                     self.loggedIn = True
