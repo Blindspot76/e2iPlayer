@@ -91,6 +91,7 @@ hostmovs4ucom
 hostmozicsillag
 hostmrpiracy
 hostmusicbox
+hostmusicmp3ru
 hostmyfreemp3
 hostmythewatchseries
 hostnaszekinoonline
