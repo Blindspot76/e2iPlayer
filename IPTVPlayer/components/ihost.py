@@ -373,7 +373,7 @@ class CHostBase(IHost):
         if not self.isValidIndex(Index): return RetHost(retCode, value=retlist)
         
         urlList = self.host.getLinksForItem(self.host.currList[Index])
-        if urlList != None:
+        if isinstance(urlList, list):
             for item in urlList:
                 need_resolve = item.get("need_resolve", 0)
                 retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
@@ -385,7 +385,7 @@ class CHostBase(IHost):
         # resolve url to get direct url to video file
         retlist = []
         urlList = self.host.getVideoLinks(url)
-        if urlList != None:
+        if isinstance(urlList, list):
             for item in urlList:
                 need_resolve = 0
                 retlist.append(CUrlItem(item["name"], item["url"], need_resolve))
@@ -413,11 +413,12 @@ class CHostBase(IHost):
     def getLinksForFavourite(self, favItem):
         retlist = []
         urlList = self.host.getLinksForFavourite(favItem.data)
-        for item in urlList:
-            need_resolve = item.get("need_resolve", 0)
-            name = self.host.cleanHtmlStr( item["name"] )
-            url  = item["url"]
-            retlist.append(CUrlItem(name, url, need_resolve))
+        if isinstance(urlList, list):
+            for item in urlList:
+                need_resolve = item.get("need_resolve", 0)
+                name = self.host.cleanHtmlStr( item["name"] )
+                url  = item["url"]
+                retlist.append(CUrlItem(name, url, need_resolve))
         return RetHost(RetHost.OK, value = retlist)
         
     def setInitFavouriteItem(self, favItem):
