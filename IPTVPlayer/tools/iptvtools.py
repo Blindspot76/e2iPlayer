@@ -1153,6 +1153,7 @@ class CMoviePlayerPerHost():
         
     def set(self, activePlayer):
         self.activePlayer = activePlayer
+        self.save()
         
 def byteify(input, noneReplacement=None, baseTypesAsString=False):
     if isinstance(input, dict):

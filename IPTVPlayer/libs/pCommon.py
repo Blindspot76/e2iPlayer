@@ -31,6 +31,7 @@ try:
     import gzip
 except Exception: pass
 from Tools.Directories import fileExists
+from urlparse import urljoin, urlparse, urlunparse
 ###################################################
 
 class NoRedirection(urllib2.HTTPRedirectHandler):
@@ -417,10 +418,27 @@ class common:
         
     @staticmethod
     def getBaseUrl(url):
-        from urlparse import urlparse
         parsed_uri = urlparse( url )
         domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
         return domain
+        
+    @staticmethod
+    def getFullUrl(url, mainUrl='http://fake'):
+        if url.startswith('//'):
+            proto = mainUrl.split('://', 1)[0]
+            url = proto + ':' + url
+        elif url.startswith('://'):
+            proto = mainUrl.split('://', 1)[0]
+            url = proto + url
+        elif url.startswith('/'):
+            url = mainUrl + url[1:]
+        elif 0 < len(url) and not common.isValidUrl(url):
+            url = urljoin(mainUrl, url)
+        return url
+        
+    @staticmethod
+    def isValidUrl(url):
+        return url.startswith('http://') or url.startswith('https://')
     
     def __init__(self, proxyURL= '', useProxy = False, useMozillaCookieJar=True):
         self.proxyURL = proxyURL
@@ -508,9 +526,6 @@ class common:
         string = string.decode('UTF-8')
         s = re.compile("&#?(\w+?);").sub(self.html_entity_decode_char, string)
         return s.encode('UTF-8')
-        
-    def isValidUrl(self, url):
-        return url.startswith('http://') or url.startswith('https://')
     
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
@@ -764,11 +779,14 @@ class common:
                 if fileHandler != None:
                     fileHandler.close()
                 downHandler.close()
-                if None != contentLength and contentLength == downDataSize:
+                if None != contentLength:
+                    if contentLength == downDataSize:
+                        bRet = True
+                elif downDataSize > 0:
                     bRet = True
         except Exception:
             printExc("common.getFile download file exception")
-        dictRet.update( {'sts': True, 'fsize': downDataSize} )
+        dictRet.update( {'sts': bRet, 'fsize': downDataSize} )
         return dictRet
     
     def getURLRequestData(self, params = {}, post_data = None):
@@ -978,18 +996,17 @@ class common:
                 except Exception:
                     printExc()
         
-        if params.get('with_metadata', False):
-            out_data = strwithmeta(out_data, metadata)
-
+        if params.get('with_metadata', False) and params.get('return_data', False):
+                out_data = strwithmeta(out_data, metadata)
+        
         return out_data 
 
     def urlEncodeNonAscii(self, b):
         return re.sub('[\x80-\xFF]', lambda c: '%%%02x' % ord(c.group(0)), b)
 
     def iriToUri(self, iri):
-        import urlparse
-        parts = urlparse.urlparse(iri.decode('utf-8'))
-        return urlparse.urlunparse(
+        parts = urlparse(iri.decode('utf-8'))
+        return urlunparse(
             part.encode('idna') if parti==1 else self.urlEncodeNonAscii(part.encode('utf-8'))
             for parti, part in enumerate(parts)
         )

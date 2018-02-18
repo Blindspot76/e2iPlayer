@@ -1400,7 +1400,6 @@ class IPTVPlayerWidget(Screen):
 
     def loadHostData(self):
         self.session.summary.setText(self.hostName)
-        if None != self.activePlayer: self.activePlayer.save()
         self.activePlayer = CMoviePlayerPerHost(self.hostName)
 
         # change logo for player
