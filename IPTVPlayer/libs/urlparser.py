@@ -1647,8 +1647,15 @@ class pageParser:
                 url = baseUrl
         else:
             url = baseUrl
+            
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
         
-        sts, data = self.cm.getPage(url)
+        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        if referer != '': HTTP_HEADER['Referer'] = referer
+        paramsUrl = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(url, paramsUrl)
         if not sts: return False
         
         if not getQualityLink:
