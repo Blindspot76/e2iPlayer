@@ -70,6 +70,7 @@ class EFilmyTv(CBaseHostClass):
         self.loggedIn = None
         self.loginMessage = ''
         
+        self.cacheSeries = {}
         self.cacheMovies = {}
         self.cacheSort = []
         self.cacheABC = {}
@@ -213,6 +214,26 @@ class EFilmyTv(CBaseHostClass):
             params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1, 'desc':''})
             self.addDir(params)
             
+    def fillSeriesCache(self, url):
+        printDBG("EFilmyTv.fillSeriesCache")
+        self.cacheSeries = {}
+        sts, data = self.getPage(url)
+        if not sts: return
+        cUrl = self.cm.getBaseUrl(data.meta['url'])
+        url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^'^"]+?menu\.js[^'^"]*?)['"]''')[0], cUrl)
+        sts, data = self.getPage(url)
+        if not sts: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'var serials_', '];', False)
+        try:
+            parseObj = {}
+            for item in data:
+                item = item.split('=', 1)
+                key = item[0].strip()
+                parseObj[key] = byteify(json.loads(item[1].strip() + ']'))
+            self.cacheSeries = parseObj
+        except Exception:
+            printExc()
+            
     def listSeriesAbc(self, cItem, nextCategory):
         printDBG("EFilmyTv.listSeriesAbc")
         letters = self.cacheABC.get('f_keys', [])
@@ -226,19 +247,16 @@ class EFilmyTv(CBaseHostClass):
             if not sts: return
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'var serials_', '];', False)
             try:
-                parseObj = {}
-                for item in data:
-                    item = item.split('=', 1)
-                    key = item[0].strip()
-                    parseObj[key] = byteify(json.loads(item[1].strip() + ']'))
+                if self.cacheSeries == {}:
+                    self.fillSeriesCache(cItem['url'])
                 keysTab = []
-                for idx in range(len(parseObj['seo'])):
-                    tmp = parseObj['seo'][idx].split(',', 1)[-1]
+                for idx in range(len(self.cacheSeries['seo'])):
+                    tmp = self.cacheSeries['seo'][idx].split(',', 1)[-1]
                     letter = tmp[0].upper()
                     if letter == '-' and len(tmp) > 1: letter = tmp[1].upper()
                     if letter in "0123456789*?#-!": letter = '#'
-                    title = self.cleanHtmlStr(parseObj['pl'][idx])
-                    url = self.getFullUrl('/serial,%s.html' % parseObj['seo'][idx], cUrl)
+                    title = self.cleanHtmlStr(self.cacheSeries['pl'][idx])
+                    url = self.getFullUrl('/serial,%s.html' % self.cacheSeries['seo'][idx], cUrl)
                     if letter not in keysTab:
                         keysTab.append(letter)
                         self.cacheABC[letter] = []
@@ -428,11 +446,25 @@ class EFilmyTv(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("EFilmyTv.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        cItem = dict(cItem)
-        cItem['url'] = self.getFullUrl('/szukaj.html')
-        cItem['category'] = 'list_movies'
-        cItem['post_data'] = {'word':searchPattern, 'as_values_movie_title':'hidden'}
-        self.listMovies(cItem)
+        if searchType == 'movies':
+            cItem = dict(cItem)
+            cItem['url'] = self.getFullUrl('/szukaj.html')
+            cItem['category'] = 'list_movies'
+            cItem['post_data'] = {'word':searchPattern, 'as_values_movie_title':'hidden'}
+            self.listMovies(cItem)
+        else:
+            try:
+                if self.cacheSeries == {}:
+                    self.fillSeriesCache(self.getFullUrl('/seriale.html'))
+                for idx in range(len(self.cacheSeries['pl'])):
+                    if searchPattern.decode('utf-8').lower() in self.cacheSeries['pl'][idx].decode('utf-8').lower():
+                        title = self.cleanHtmlStr(self.cacheSeries['pl'][idx])
+                        url = self.getFullUrl('/serial,%s.html' % self.cacheSeries['seo'][idx])
+                        params = dict(cItem)
+                        params.update({'good_for_fav':True, 'category':'list_seasons', 'title':title, 'url':url, 'icon':url + '?fake=need_resolve.jpeg', 'desc':''})
+                        self.addDir(params)
+            except Exception:
+                printExc()
         
     def getLinksForVideo(self, cItem):
         printDBG("EFilmyTv.getLinksForVideo [%s]" % cItem)
@@ -581,6 +613,39 @@ class EFilmyTv(CBaseHostClass):
         
         return urlTab
         
+    def getArticleContent(self, cItem):
+        printDBG("EFilmyTv.getArticleContent [%s]" % cItem)
+        self.tryTologin()
+        retTab = []
+        
+        url = cItem.get('url', '')
+        if ',odcinek' in url: type = 'episode'
+        elif 'serial,' in url: type = 'series'
+        elif 'film,' in url: type = 'movie'  
+        else: return []
+        
+        sts, data = self.getPage(url)
+        if not sts: return []
+        
+        otherInfo = {}
+        retTab = []
+        desc = []
+        
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<p', '</p>')[1])
+        icon = self.cm.ph.getDataBeetwenNodes(data, ('<meta', '>', 'image'), ('<', '>'))[1]
+        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''content=['"]([^'^"]+?)['"]''')[0])
+        
+        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'prawo-kontener'), ('</div', '>'), False)[1].replace('&laquo;', '').replace('&raquo;', ''))
+        if type == 'episode':
+            sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'movieinfo'), ('</h', '>'), False)[1])
+            title = '%s - %s' % (sTitle, title)
+        
+        if title == '': title = cItem['title']
+        if desc == '':  desc = cItem.get('desc', '')
+        if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
+        
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullIconUrl(icon)}], 'other_info':otherInfo}]
+        
     def tryTologin(self):
         printDBG('EFilmyTv.tryTologin start')
         
@@ -708,4 +773,11 @@ class IPTVHost(CHostBase):
     def getSearchTypes(self):
         searchTypesOptions = []
         searchTypesOptions.append((_("Movies"), "movies"))
+        searchTypesOptions.append((_("Series"), "series"))
         return searchTypesOptions
+        
+    def withArticleContent(self, cItem):
+        url = cItem.get('url', '')
+        if 'serial,' in url or ',odcinek' in url or 'film,' in url:
+            return True
+        return False
