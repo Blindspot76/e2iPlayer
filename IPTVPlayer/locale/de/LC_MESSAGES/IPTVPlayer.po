@@ -167,7 +167,7 @@ msgid "ABORTED"
 msgstr "ABGEBROCHEN"
 
 msgid "AC3 mix mode"
-msgstr "AC3 mix Modus"
+msgstr "AC3 Mix Modus"
 
 msgid "ARTICLE"
 msgstr "ARTIKEL"
@@ -3046,13 +3046,10 @@ msgid "Use proxy gateway"
 msgstr "Benutze Proxy Gateway"
 
 msgid "show iframe for audio item"
-msgstr "Logo beim Abspielen von Audiodateien"
+msgstr "Iframe beim Abspielen von Audiodateien"
 
 msgid "Iframe file"
-msgstr "Audio Logo"
-
-msgid "Clear iframe file"
-msgstr "Leeres Logo"
+msgstr "Audio Iframe"
 
 msgid "Total size: "
 msgstr "Gesamtgröße: "
@@ -3718,3 +3715,28 @@ msgstr "Schwedisch"
 
 msgid "Balkans"
 msgstr "Balkanromanisch"
+
+msgid "Downloading graphics package."
+msgstr "Lade Grafik-Paket herunter."
+
+msgid "Extracting graphics package."
+msgstr "Entpacke Grafik-Paket."
+
+msgid "Downloading icons package."
+msgstr "Lade Icons-Paket herunter."
+
+msgid "Extracting icons package."
+msgstr "Entpacke Icons-Paket."
+
+msgid ""
+"The host %s requires subscription.\n"
+"Please fill your login and password in the host configuration - available under blue button."
+msgstr ""
+"Der Service %s benötigt ein Abonnement.\n"
+"Bitte füllen Sie Ihr Login und Passwort in der Host Konfiguration aus - zugänglich über die blaue Taste."
+
+msgid "Use black iframe at normal video playback finish"
+msgstr "Zeige schwarzes Iframe am Ende von Videowiedergabe"
+
+msgid "Black iframe file"
+msgstr "Schwarzes Iframe"
