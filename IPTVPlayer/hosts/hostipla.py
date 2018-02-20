@@ -1,352 +1,384 @@
 # -*- coding: utf-8 -*-
+
+####################################################################
+# IPLA privacy policy
+# Pobieranie i udostępnianie danych ze źródła ipla przez 
+# podmioty nieuprawnione grozi sankcjami karnymi na 
+# podstawie obowiązujących przepisów karnych (grzywna, 
+# kara ograniczenia wolności albo kara pozbawienia wolności) 
+# oraz konsekwencjami przewidzianymi w przepisach prawa 
+# cywilnego (odszkodowanie w wysokości zasądzonej przez sąd).
+# Zabronione jest pobieranie danych i udostępniania ich na 
+# urządzeniach lub aplikacjach innych niż przygotowane i 
+# wspierane oficjalnie przez Redefine Sp. z o.o.
+####################################################################
+
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, CSelOneLink
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, CFavItem
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetLogoDir, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import urlparse
-import time
-import re
+# from xml.etree import cElementTree - I would not recommend this XML parser or any other from python
+# XML will be parser using regular expressions due to problem with memory leak, if we use
+# cElementTree event if memory is free using clear method and removing instances by del, 
+# the memory using still grows with each parsing, probably due to fragmentation of memory.
+# The XML is devil's invention :)
+    
+from Components.config import config, ConfigYesNo, ConfigSelection, getConfigListEntry
+from time import time
+from os import path as os_path
 import urllib
-import string
-import random
-import base64
-from datetime import datetime
-from hashlib import md5
-from copy import deepcopy
-try:    import json
+import re
+
+try: import json
 except Exception: import simplejson as json
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
-from Screens.MessageBox import MessageBox
-###################################################
 
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.iplacachexml      = ConfigSelection(default = "12", choices = [("0", "nigdy"), ("6", "przez 6 godzin"), ("12", "przez 12 godzin"),("24", "przez dzień")])
 config.plugins.iptvplayer.iplaDefaultformat = ConfigSelection(default = "1900", choices = [("200", "bitrate: 200"),("400", "bitrate: 400"),("900", "bitrate: 900"),("1900", "bitrate: 1900")])
 config.plugins.iptvplayer.iplaUseDF         = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Używaj danych z pamięci podręcznej:"), config.plugins.iptvplayer.iplacachexml))
     optionList.append(getConfigListEntry(_("Domyślny format video:"), config.plugins.iptvplayer.iplaDefaultformat))
     optionList.append(getConfigListEntry(_("Używaj domyślnego format video:"), config.plugins.iptvplayer.iplaUseDF))
     return optionList
 ###################################################
+
 def gettytul():
     return 'https://ipla.tv/'
 
-class IplaTV(CBaseHostClass):
+class Ipla(CBaseHostClass):
+    HOST       = 'mipla/23'
+    IDENTITY   = 'ver=600&login=common_user&cuid=-11033141'
+    MAIN_URL   = 'http://getmedia.redefine.pl'
+    CAT_URL    = MAIN_URL + '/r/l_x_35_ipla/categories/list/?' + IDENTITY
+    MOV_URL    = MAIN_URL + '/action/2.0/vod/list/?' + IDENTITY + '&category='
+    SEARCH_URL = MAIN_URL + '/vods/search/?vod_limit=150&' + IDENTITY + '&page=0&keywords='
     
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'ipla', 'cookie':'ipla.tv.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
-        self.DEFAULT_ICON_URL = 'http://www.conowego.pl/uploads/pics/ipla-logo.jpg'
-        self.USER_AGENT = 'mipla/23'
-        self.MAIN_URL = 'https://www.ipla.tv/'
-        self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
-        self.AJAX_HEADER = dict(self.HTTP_HEADER)
-        self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
-        self.AJAX_URL = 'https://seeker.redefine.pl/ipla/multi.jsonp?callback=angular.callbacks._e&category_ids%5B%5D=&countries%5B%5D=&free=&letter=&page={0}&platform=www_ipla_tv&portal_id=ipla&query={1}&size=15&sort=score&sound=&top_category={2}&with_counters=true&year='
+        CBaseHostClass.__init__(self, {'history':'ipla'})
+        self.categoryXMLTree = None
+        self.cacheFilePath   = os_path.join(config.plugins.iptvplayer.SciezkaCache.value, "iplaxml.cache")
+        self.cm.HEADER = {'User-Agent': self.HOST, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         
-        self.cacheLinks    = {}
-        self.cacheFilters  = {}
-        self.cacheFiltersKeys = []
-        self.cacheEpisodes = {}
-        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        
-        self.MAIN_CAT_TAB = [
-                             {'category':'search',         'title': _('Search'),          'search_item':True}, 
-                             {'category':'search_history', 'title': _('Search history')},
-                            ]
-        
-    def getPage(self, baseUrl, addParams = {}, post_data = None):
-        if addParams == {}: addParams = dict(self.defaultParams)
-        origBaseUrl = baseUrl
-        baseUrl = self.cm.iriToUri(baseUrl)
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urlparse.urljoin(baseUrl, url)
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
-        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+    def getStr(self, v, default=''):
+        if None == v:
+            return default
+        elif type(v) == type(u''):
+            return v.encode('utf-8')
+        elif type(v) == type(''):
+            return v
+
+    def __getAttribs(self, data):
+        re_compile = re.compile('([^= ]+?)="([^"]+?)"')
+        item={}
+        attribs = re_compile.findall(data)
+        for attrib in  attribs:
+            item[attrib[0]] = attrib[1]
+        return item
     
-    def listMainMenu(self, cItem, nextCategory):
-        printDBG("IplaTV.listMainMenu")
-        
-        sts, data = self.getPage(self.getMainUrl())
-        if not sts: return
-        
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', '"mainmenu"'), ('<li', '>', '"separate"'))[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
-        for item in data:
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            title = self.cleanHtmlStr(item)
-            params = dict(cItem)
-            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url})
-            self.addDir(params)
-        
-        self.listsTab(self.MAIN_CAT_TAB, cItem)
+    def getVideosList(self, url):
+        printDBG("Ipla.getVideosList url[%s]" % url)
             
-    def listCategories(self, cItem, nextCategory):
-        printDBG("IplaTV.listCategories")
-        
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', '"side_menu"'), ('</ul', '>'))[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
-        for item in data:
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            title = self.cleanHtmlStr(item)
-            params = dict(cItem)
-            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url})
-            self.addDir(params)
-            
-    def exploreCategory(self, cItem, nextCategory):
-        printDBG("IplaTV.exploreCategory")
-        
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        
-        # check for seasons
-        if 'f_season' not in cItem:
-            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'itemprop="title"'), ('</ul', '>'))[1]
-            if '-Sezon-' in tmp:
-                tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
-                for item in tmp:
-                    url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-                    title = self.cleanHtmlStr(item)
-                    params = dict(cItem)
-                    params.pop('f_sort', None)
-                    params.update({'good_for_fav':True, 'title':title, 'url':url, 'f_season':True})
-                    self.addDir(params)
-                
-        # check for sort
-        if 'f_sort' not in cItem and 0 == len(self.currList):
-            url = cItem['url']
-            if not url.endswith('/'): url += '/'
-            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sort_select'), ('</select', '>'))[1]
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
-            for item in tmp:
-                val = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
-                title = self.cleanHtmlStr(item)
-                params = dict(cItem)
-                params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'url':url + val, 'f_sort':val})
-                self.addDir(params)
-        
-        if 0 == len(self.currList):
-            self.listItems(cItem, cItem['category'], data)
-        
-    def listItems(self, cItem, nextCategory, data=None):
-        printDBG("IplaTV.listItems [%s]" % cItem)
-        page = cItem.get('page', 1)
-        
-        if data == None:
-            sts, data = self.getPage(cItem['url'])
-            if not sts: return
-        
-        nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'class="next_page"'), ('</a', '>'))[1]
-        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''href=['"]([^'^"]+?)['"]''')[0])
-        
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', '"box_items"'), ('</ul', '>'))[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
-        for item in data:
-            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''[\s\-]src=['"]([^'^"]+?)['"]''')[0])
-            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<p', '>', 'title'), ('</p', '>'), False)[1])
-            desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<p', '>', 'description'), ('</p', '>'), False)[1])
-            
-            params = dict(cItem)
-            params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
-            
-            if '/vod-' in url:
-                item = self.cm.ph.getDataBeetwenNodes(item, ('<i', '>', '"free'), ('</i', '>'))[1]
-                if 'no_show' in item: continue
-                self.addVideo(params)
-            else:
-                params['category'] = nextCategory
-                self.addDir(params)
-        
-        if self.cm.isValidUrl(nextPage):
-            params = dict(cItem)
-            params.update({'good_for_fav':False, 'title':_("Next page"), 'url':nextPage, 'page':page+1})
-            self.addDir(params)
-        
-    def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("IplaTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        
-        params = dict(self.defaultParams)
-        params['header'] = dict(self.AJAX_HEADER)
-        params['header']['Referer'] = self.getMainUrl()
-        
-        topCategory = cItem.get('f_search_category', '')
-        url = self.AJAX_URL.format(1, urllib.quote(searchPattern), topCategory)
-        
-        sts, data = self.getPage(url, params)
-        if not sts: return
-        
-        try:
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'angular.callbacks._e(', ');', False)[1]
-            data = byteify(json.loads(data))
-            
-            totall = 0
-            for item in data['counters']:
-                totall += item['count']
-            if totall > 0:
-                params = {'name':'category', 'category':'list_search_category', 'good_for_fav':False, 'title':'WSZYSTKO (%s)' % totall, 'f_search_pattern':searchPattern, 'f_search_totall':totall, 'f_search_category':''}
-                self.addDir(params)
-                
-            for item in data['counters']:
-                if item['count'] > 0:
-                    params = {'name':'category', 'category':'list_search_category', 'good_for_fav':False, 'title':'%s (%s)' % (item['category'], item['count']), 'f_search_pattern':searchPattern, 'f_search_totall':item['count'], 'f_search_category':item['category']}
-                    self.addDir(params)
-        except Exception:
-            printExc()
-            
-    def listSearchCategory(self, cItem, nextCategory):
-        printDBG("IplaTV.listSearchCategory [%s]" % cItem)
-        params = dict(self.defaultParams)
-        params['header'] = dict(self.AJAX_HEADER)
-        params['header']['Referer'] = self.getMainUrl()
-        
-        searchPattern = cItem.get('f_search_pattern', '')
-        topCategory = cItem.get('f_search_category', '')
-        page = cItem.get('page', 1)
-        url = self.AJAX_URL.format(page, urllib.quote(searchPattern), topCategory)
-        
-        sts, data = self.getPage(url, params)
-        if not sts: return
-        
-        try:
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'angular.callbacks._e(', ');', False)[1]
-            data = byteify(json.loads(data))
-            
-            totall = cItem['f_search_totall']
-            count  = cItem.get('f_search_count', 0) + len(data['results'])
-            
-            for item in data['results']:
-                title = self.cleanHtmlStr(item['title'])
-                desc  = self.cleanHtmlStr(item.get('description', ''))
-                if 'category' == item['_type']:
-                    url = self.getFullUrl('/kategoria/%s' % item['id'])
-                    icon = item.get('image', '')
-                    params = {'good_for_fav':True, 'category':'explore_category', 'title':title, 'url':url, 'icon':icon, 'desc':desc}
-                    self.addDir(params)
-                elif 'vod' == item['_type']:
-                    url = self.getFullUrl('/wideo/vod-%s' % item['id'])
-                    icon = item.get('thumbnail_136x77', '')
-                    params= {'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
-                    self.addVideo(params)
-            
-            if count < totall:
-                params = dict(cItem)
-                params.update({'title':_('Next page'), 'page':page + 1, 'f_search_count':count})
-                self.addDir(params)
-        except Exception:
-            printExc()
-        
-    def getLinksForVideo(self, cItem):
-        printDBG("IplaTV.getLinksForVideo [%s]" % cItem)
-        retTab = []
-        
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return []
-        
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'start-watch-wrapper'), ('</div', '>'))[1]
-        videoId = self.cm.ph.getSearchGroups(data, '''href=['"](ipla://[^'^"]+?)['"]''')[0].split('|', 1)[-1]
-        videoUrl = 'http://getmedia.redefine.pl/vods/get_vod/?cpid=1&ua=mipla/23&media_id=%s' % videoId
-        
-        sts, data = self.getPage(videoUrl)
-        if not sts: return []
-        
-        try:
-            data = byteify(json.loads(data), '', True)
-            protectedByDRM = False
-            for item in data['vod']['copies']:
-                if item['drmtype'] != '0': 
-                    protectedByDRM = True
-                    continue
-                url = item['url']
-                bitrate = item['bitrate']
-                quality = item['quality_p']
-                retTab.append({'name':'%s\t%s' % (quality, bitrate), 'url':url, 'bitrate':bitrate})
-            if protectedByDRM and 0 == len(retTab):
-                SetIPTVPlayerLastHostError(_('Video protected by DRM.'))
-        except Exception:
-            printExc()
-            
-        def __getLinkQuality( itemLink ):
+        sts, videosXMLTree = self.cm.getPage(url, {'host' : Ipla.HOST})
+        if sts:
+            videosXMLTree = self.getStr(videosXMLTree).split('</vod>')
+            del videosXMLTree[-1]
+            re_compile_vod    = re.compile('<vod ([^>]+?)>')
+            re_compile_thumbs = re.compile('<thumb ([^>]+?)>')
             try:
-                return int(itemLink['bitrate'])
+                vodList = []
+                for vod in videosXMLTree:
+                    try:
+                        val = re_compile_vod.search(vod)
+                        if not val: continue
+                        val = self.__getAttribs(val.group(1))
+                        title = val.get('title', '')
+                        plot  = val.get('descr', '')
+                        icon  = val.get('thumbnail', '')
+                        try:
+                            thumbs = re_compile_thumbs.findall(vod)
+                            thumbSizePrev = 9999
+                            for thumb in thumbs:
+                                attrib = self.__getAttribs(thumb)
+                                thumbSize = int(attrib['size'].split('x')[0])
+                                if thumbSizePrev > thumbSize:
+                                    thumbSizePrev = thumbSize
+                                    icon = attrib['url']
+                        except Exception: printExc()
+                        urls = self._getVideoUrls(vod)
+                        sortNum = self.cm.ph.getSearchGroups(title, '''odcinek\s*?([0-9]+?)(?:^0-9|$)''', 1, True)[0]
+                        if sortNum != '': sortNum = int(sortNum) 
+                        params = {'category': 'video', 'sort_num':sortNum, 'title': self.cleanHtmlStr(title), 'plot': plot, 'icon':icon, 'urls': urls, 'fav_item':{'url':url, 'vod_id':val.get('id', '')}}
+                        vodList.append(params)
+                    except Exception: printExc()
+                vodList.sort(key=lambda item: item['sort_num'])
+                for params in vodList:
+                    self.addVideo(params)
+            except Exception: printExc()
+    # end getVideosList
+    
+    def _getVideoUrls(self, vodData):
+        urls = []
+        re_compile_srcreq = re.compile('<srcreq ([^>]+?)>')
+        max_bitrate = int(config.plugins.iptvplayer.iplaDefaultformat.value)
+        def __getLinkQuality( itemLink ):
+            return int(itemLink['bitrate'])
+        try:
+            links = re_compile_srcreq.findall(vodData)
+            for link in links:
+                attrib = self.__getAttribs(link)
+                drm = attrib['drmtype']
+                if drm == '0':
+                    if config.plugins.iptvplayer.ZablokujWMV.value and attrib['format'] == '0':
+                        continue
+                    name = "Jakość: %s\t format: %s\t  bitrate: %s" % (attrib['quality'], attrib['format'], attrib['bitrate'])
+                    urls.append( {'name':name, 'url':attrib['url'], 'bitrate':attrib['bitrate']} )
+        except Exception: printExc()
+        urls = CSelOneLink(urls, __getLinkQuality, max_bitrate).getSortedLinks()
+        if config.plugins.iptvplayer.iplaUseDF.value:
+            urls = [urls[0]]
+        return urls
+    
+    def __writeCategoryCache(self, data):
+        printDBG("__writeCategoryCache ")
+        try:
+            if "0" == config.plugins.iptvplayer.iplacachexml.value: return
+            data = str({"timestamp" : int(time()), "data":data})
+            with open(self.cacheFilePath, 'w') as f:
+                f.write(str(data))            
+        except Exception:
+            printExc()
+    
+    def __readCategoryCache(self):
+        printDBG("__readCategoryCache ")
+        try:
+            data = None
+            if "0" == config.plugins.iptvplayer.iplacachexml.value: return
+            from ast import literal_eval
+            with open(self.cacheFilePath, 'r') as f:
+                data = f.read()
+            data = literal_eval(data)
+            currTimestamp = int(time())
+            saveTimestamp = data["timestamp"]
+            
+            if (currTimestamp - saveTimestamp) / 3600 < int(config.plugins.iptvplayer.iplacachexml.value):
+                data = data["data"]
+                printDBG("__readCategoryCache data from cache valid")
+            else:
+                data = None
+        except Exception:
+            printExc()
+            data = None
+        return data
+        
+    def getCatXmlTree(self, refresh=False):
+        printDBG("setCatXmlTree refresh[%r]" %  refresh)
+        
+        def _fromUrl():
+            sts,data = self.cm.getPage(Ipla.CAT_URL, {'host' : Ipla.HOST})
+            if not sts: data = ''
+            return data
+            
+        if None == self.categoryXMLTree or refresh:
+            try:
+                bFromCache = True
+                data = None
+                if not refresh:
+                    data = self.__readCategoryCache()
+                if None == data:
+                    bFromCache = False
+                    data = _fromUrl()
+                self.categoryXMLTree = self.__simpleCategoryParser(data)
+                if bFromCache and 100 > len(self.categoryXMLTree):
+                    data = _fromUrl()
+                    self.categoryXMLTree = self.__simpleCategoryParser(data)
+                    bFromCache = False
+                if not bFromCache:
+                    self.__writeCategoryCache(data)
             except Exception:
                 printExc()
-                return 0
-        if len(retTab):
-            maxBitrate = int(int(config.plugins.iptvplayer.iplaDefaultformat.value)*1.1)
-            retTab = CSelOneLink(retTab, __getLinkQuality, int(maxBitrate)).getSortedLinks()
-            if config.plugins.iptvplayer.iplaUseDF.value:
-                retTab = [retTab[0]]
+                self.categoryXMLTree = None
+        return self.categoryXMLTree
         
-        return retTab
+    def __simpleCategoryParser(self, data):
+        printDBG("__simpleCategoryParser start")
+        data = re.compile('<cat ([^>]+?)>').findall(data)
+        printDBG("__simpleCategoryParser step 1 finished")
+        for idx in range(len(data)):
+            data[idx] = self.__getAttribs(data[idx])
+        printDBG("__simpleCategoryParser step 2 finished")
+        return data
         
+    def getCategories(self, parentCatId, refresh):
+        printDBG( "getCategories parentCatId[%s]" % parentCatId )
+        xmlTree = self.getCatXmlTree(refresh)
+        if xmlTree:
+            try:
+                #cats = xmlTree.findall("cat")
+                cats = xmlTree
+                listVideo = False
+                numOfSubCat = 0
+                for cat in cats:
+                    #val = cat.attrib
+                    val = cat
+                    try:
+                        listVideo = True
+                        pid = self.getStr(val.get('pid', ''), '')
+                        catId = self.getStr(val.get('id', ''), '')
+                        if '' in [pid, catId]:
+                            continue
+                        if pid == parentCatId:
+                            numOfSubCat += 1
+                            title = self.getStr(val.get('title', ''), '')
+                            plot  = self.getStr(val.get('descr', ''), '')
+                            icon  = self.getStr(val.get('thumbnail', ''), '')
+                            #check if this is only link to diffrent category
+                            try:
+                                link = self.getStr(val.get('action', ''), '')
+                                linkMarker = "ipla://cmd-cmd=gotocat&catid="
+                                if linkMarker  in link:
+                                    # if this is only linkt to another category, update category id
+                                    catId = link.replace(linkMarker, "")
+                            except Exception: pass
+                            params = {'category': 'category', 'title': self.cleanHtmlStr(title), 'plot': plot, 'icon':icon, 'catId': catId, 'pCatId': pid}
+                            self.addDir(params)
+                        #printDBG("||||||||||||||||: %s" %pid)
+                    except Exception:
+                        printDBG( "getCategories except" )
+                        printExc()
+                if listVideo and numOfSubCat < 2:
+                    self.getVideosList(Ipla.MOV_URL + parentCatId)
+            except Exception: printExc()
+        return
+        
+    def listsMainMenu(self, refresh=False):
+        printDBG('listsMainMenu')
+        self.getCategories('0', refresh)
+        self.addDir( {'category': 'Wyszukaj',  'title': 'Wyszukaj'} )
+        self.addDir( {'category': 'search_history',   'title': 'Historia wyszukiwania'} )
+        
+    def getFavouriteData(self, cItem):
+        return json.dumps(cItem['fav_item'])
+        
+    def getLinksForFavourite(self, fav_data):
+        links = []
+        try: 
+            favItem = byteify( json.loads(fav_data) )
+            printDBG(favItem)
+            sts, data = self.cm.getPage(favItem['url'], {'host' : Ipla.HOST})
+            if sts:
+                sts, data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<vod[^>]+?id="%s"[^>]*?>'% favItem['vod_id']), re.compile('</vod>' ), False)
+                if sts: links = self._getVideoUrls(data)
+        except Exception: printExc()
+        return links
+
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
-        
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
-        name     = self.currItem.get("name", '')
-        category = self.currItem.get("category", '')
-        mode     = self.currItem.get("mode", '')
-        
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        if 0 == refresh: refresh = False
+        else: refresh = True
+
+        title      = self.currItem.get("title", '')
+        category   = self.currItem.get("category", None)
+        catId      = self.currItem.get("catId", '')
+        pCatId     = self.currItem.get("pCatId", '')
+        icon       = self.currItem.get("icon", '')
+        url        = self.currItem.get("url", '')
+        plot       = self.currItem.get("plot", '')
+        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| category[%r] " % (category) )
         self.currList = []
         
     #MAIN MENU
-        if name == None:
-            self.listMainMenu({'name':'category'}, 'list_categories')
-        elif category == 'list_categories':
-            self.listCategories(self.currItem, 'explore_category')
-        elif category == 'explore_category':
-            self.exploreCategory(self.currItem, 'list_items')
-        elif category == 'list_items':
-            self.listItems(self.currItem, 'explore_category')
-        elif category == 'list_lists':
-            self.listLists(self.currItem, 'list_items')
-        elif category == 'explore_item':
-            self.exploreItem(self.currItem, 'list_episodes')
-        elif category == 'list_episodes':
-            self.listEpisodes(self.currItem)
-        elif category == 'list_search_category':
-            self.listSearchCategory(self.currItem, 'explore_category')
-    #SEARCH
-        elif category in ["search", "search_next_page"]:
-            cItem = dict(self.currItem)
-            cItem.update({'search_item':False, 'name':'category'}) 
-            self.listSearchResult(cItem, searchPattern, searchType)
-    #HISTORIA SEARCH
+        if category == None:
+            self.listsMainMenu(refresh)
+    #GET SUB CATEGORY
+        elif category == 'category':
+            self.getCategories(catId, refresh)
+    #WYSZUKAJ
+        elif category == 'Wyszukaj':
+            pattern = urllib.quote_plus(searchPattern)
+            self.getVideosList(Ipla.SEARCH_URL + pattern)
+    #HISTORIA WYSZUKIWANIA
         elif category == "search_history":
-            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
-        else:
-            printExc()
-        
-        CBaseHostClass.endHandleService(self, index, refresh)
+            self.listsHistory()
 
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, IplaTV(), True, [])
+        CHostBase.__init__(self, Ipla(), True, [CDisplayListItem.TYPE_VIDEO]) # with search history, can generate favorite item
+
+    def getLogoPath(self):
+        return RetHost(RetHost.OK, value = [GetLogoDir('iplalogo.png')])
     
+    def converItem(self, cItem):
+        searchTypesOptions = [] # ustawione alfabetycznie
+        hostLinks = []
+        type = CDisplayListItem.TYPE_UNKNOWN
+        possibleTypesOfSearch = None
+
+        if cItem['type'] == 'category':
+            if cItem['title'] == 'Wyszukaj':
+                type = CDisplayListItem.TYPE_SEARCH
+                possibleTypesOfSearch = searchTypesOptions
+            else:
+                type = CDisplayListItem.TYPE_CATEGORY
+        elif cItem['type'] == 'video':
+            type = CDisplayListItem.TYPE_VIDEO
+            urls = cItem.get('urls', [])
+            for urlItem in urls:
+                hostLinks.append(CUrlItem(urlItem['name'], urlItem['url'], 0))
+            
+        title       =  clean_html( cItem.get('title', '') )
+        description =  clean_html( cItem.get('plot', '') )
+        icon        =  cItem.get('icon', '')
+        hostItem = CDisplayListItem(name = title,
+                                    description = description,
+                                    type = type,
+                                    urlItems = hostLinks,
+                                    urlSeparateRequest = 0,
+                                    iconimage = icon,
+                                    possibleTypesOfSearch = possibleTypesOfSearch)
+        return hostItem
     
+    def getSearchItemInx(self):
+        # Find 'Wyszukaj' item
+        try:
+            list = self.host.getCurrList()
+            for i in range( len(list) ):
+                if list[i]['category'] == 'Wyszukaj':
+                    return i
+        except Exception:
+            printDBG('getSearchItemInx EXCEPTION')
+            return -1
+
+    def setSearchPattern(self):
+        try:
+            list = self.host.getCurrList()
+            if 'history' == list[self.currIndex].get('name'):
+                pattern = list[self.currIndex]['title']
+                search_type = None
+                self.host.history.addHistoryItem( pattern, search_type)
+                self.searchPattern = pattern
+                self.searchType = search_type
+        except Exception:
+            printDBG('setSearchPattern EXCEPTION')
+            self.searchPattern = ''
+            self.searchType = ''
+        return
+
