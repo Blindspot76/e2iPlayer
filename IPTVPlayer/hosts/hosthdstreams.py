@@ -266,18 +266,18 @@ class HDStreams(CBaseHostClass):
             linksKey = cItem['url']
             
             linksTab = []
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<v-tabs-items>', '</v-tabs-items>')[1]
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<v-tabs-content', '</v-tabs-content>')
-            flagsReObj = re.compile('''<i.+?</i>''', flags=re.DOTALL)
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<v-tab-item', '</v-tab-item>')
+            flagsReObj = re.compile('''<i[\s>].+?</i>''', flags=re.DOTALL)
             for langItem in data:
-                langId = self.cm.ph.getSearchGroups(langItem, '''id=['"]['"]?([^'^"]+?)['"]''')[0][1:]
+                langId = self.cm.ph.getSearchGroups(langItem, '''key=["']*?([^'^"]+?)["']''')[0][1:]
                 langItem = self.cm.ph.getAllItemsBeetwenMarkers(langItem, '<v-flex', '</v-flex>')
                 for qualityItem in langItem:
-                    qualityItem = self.cm.ph.getAllItemsBeetwenMarkers(qualityItem, '<v-btn', '</v-btn>')
-                    if len(qualityItem) and 'loadStream' not in qualityItem[0]: qualityName = self.cleanHtmlStr(qualityItem[0])
+                    qualityName = self.cm.ph.getDataBeetwenMarkers(qualityItem, '<v-btn', '</v-btn>')[1]
+                    qualityItem = self.cm.ph.getAllItemsBeetwenMarkers(qualityItem, '<v-tooltip', '</v-tooltip>')
+                    if 'recaptcha' not in qualityName: qualityName = self.cleanHtmlStr(qualityName)
                     else: qualityName = ''
                     for linkItem in qualityItem:
-                        tmp = self.cm.ph.getSearchGroups(linkItem, '''loadStream\(\s*['"]([^'^"]+?)['"]\s*,\s*['"]([^'^"]+?)['"]''', 2)
+                        tmp = self.cm.ph.getSearchGroups(linkItem, '''recaptcha\(\s*['"]([^'^"]+?)['"]\s*,\s*['"]([^'^"]+?)['"],\s*['"]([^'^"]+?)['"]''', 3)
                         if '' in tmp: continue
                         name = self.cleanHtmlStr(flagsReObj.sub('', linkItem))
                         name = '[%s][%s] %s' % (langId, qualityName, name)
@@ -407,9 +407,13 @@ class HDStreams(CBaseHostClass):
         urlParams['header']['x-csrf-token'] = self.cm.ph.getSearchGroups(data, '''<[^>]+?csrf-token[^>]+?content=['"]([^'^"]+?)['"]''')[0]
         urlParams['header']['x-xsrf-token'] = self.cm.getCookieItem(self.COOKIE_FILE, 'XSRF-TOKEN')
         urlParams['header']['x-requested-with'] = 'XMLHttpRequest'
+        urlParams['ignore_http_code_ranges'] = [(401, 401)]
         
         sts, data = self.getPage(videoUrl + '/stream', urlParams, post_data)
         if not sts: return []
+        
+        if 'captcha' in data.lower():
+            SetIPTVPlayerLastHostError(_('Link protected with google recaptcha v2.')) 
         
         try:
             printDBG(data)
