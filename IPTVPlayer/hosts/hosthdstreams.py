@@ -291,8 +291,8 @@ class HDStreams(CBaseHostClass):
                 self.addVideo(params)
         else:
             sNum = self.cm.ph.getSearchGroups(cItem['url'] + '/', 'season/([0-9]+?)[^0-9]')[0]
-            sp = re.compile('''<v\-avatar[^>]*?>''')
-            data = self.cm.ph.getDataBeetwenReMarkers(data, sp, re.compile('</v\-layout>'), False)[1]
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<v-layout', '>', 'episode'), ('</v-layout', '>'))[1]
+            sp = re.compile('''<div[^>]+?avatar[^>]*?>''')
             data = sp.split(data)
             for episodeItem in data:
                 eIcon = self.cm.ph.getSearchGroups(episodeItem, '''src=['"]([^'^"]+?)['"]''')[0]
