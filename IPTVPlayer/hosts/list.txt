@@ -120,6 +120,7 @@ hostshoutcast
 hostskstream
 hostsolarmovie
 hostsovdub
+hostspiegeltv
 hostsportdeutschland
 hostspryciarze
 hoststreamcomplet

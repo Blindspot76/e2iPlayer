@@ -84,7 +84,7 @@ class IPTVHostsGroups:
                                                      'hdpopcornscom','losmovies','solarmovie','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','9cartoonme','kisscartoonme','chiaanimeco','dailymotion', \
                                                      'ourmatchnet','watchwrestlinguno','watchwrestling','laola1tv','hoofootcom','fightvideo','twitchtv','hitboxtv','ted','ororotv','pinkbike','dancetrippin','appletrailers', \
                                                      'ustreamtv','rteieplayer','questtvcouk','forjatn','yesmoviesto','movierulzsx','filmeonlineto']
-        self.PREDEFINED_HOSTS['german']           = ['youtube','webstream','ardmediathek','zdfmediathek','artetv','tvnowde','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','filmpalast','kinox','arconaitvme','movie4kto','tata', \
+        self.PREDEFINED_HOSTS['german']           = ['youtube','webstream','ardmediathek','zdfmediathek','artetv','tvnowde','spiegeltv','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','filmpalast','kinox','arconaitvme','movie4kto','tata', \
                                                      'dailymotion','vimeo','laola1tv','sportdeutschland','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['french']           = ['youtube','skstream','filmstreamvkcom','streamcomplet','dpstreamingcx','librestream','cinemay','otakufr','artetv','movie4kto','dailymotion','vimeo','twitchtv','hitboxtv','forjatn','planetstreamingcom']
         self.PREDEFINED_HOSTS['russian']          = ['youtube','treetv','kinotan','hdkinomir','sovdub','kinopokaz','movie4kto','dailymotion','vimeo','twitchtv','hitboxtv']
