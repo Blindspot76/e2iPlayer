@@ -139,6 +139,7 @@ class SpiegelTv(CBaseHostClass):
         printDBG("SpiegelTv.listMainItems [%s]" % cItem)
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<h2', '>', 'h1'), ('<div', '>', 'cleared'))
         for item in data:
             icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''', 1, True)[0])
@@ -168,11 +169,98 @@ class SpiegelTv(CBaseHostClass):
                 self.oneconfig.update(byteify(json.loads(ret['data'].strip()), '', True))
             except Exception:
                 printExc()
+                
+    def _initiSession(self, cItem):
+        try:
+            deviceId = '%d:%d:%d%d' % (random.randint(1, 4), int(time.time()), random.randint(1e4, 99999), random.randint(1, 9))
+            
+            urlParams = dict(self.defaultParams)
+            urlParams['header'] = dict(self.AJAX_HEADER)
+            urlParams['header'].update({'Referer':cItem['url'], 'X-Request-Enable-Auth-Fallback':'1'})
+            
+            post_data = {'nxp_devh': deviceId,
+                         'nxp_userh': '',
+                         'precid': '0',
+                         'playlicense': '0',
+                         'screenx': '1920',
+                         'screeny': '1080',
+                         'playerversion': '6.0.00',
+                         'gateway': self.oneconfig['gw'],
+                         'adGateway': '',
+                         'explicitlanguage': self.oneconfig['language'],
+                         'addTextTemplates': '1',
+                         'addDomainData': '1',
+                         'addAdModel': '1',
+                        }
+            url = 'https://api.nexx.cloud/v3/%s/session/init' % (self.oneconfig['client_id'], )
+            sts, data = self.getPage(url, urlParams, post_data)
+            if not sts: return
+            
+            self.oneconfig['session_data'] = byteify(json.loads(data), '', True)['result']
+            self.oneconfig['session_data']['device_id'] = deviceId
+        except Exception:
+            printExc()
+            
+    def listLiveVideos(self, cItem):
+        playlistId = cItem['url'].split('/livestreams/', 1)[-1].split('-')[0]
+        
+        self._fillOneConfig(cItem)
+        self._initiSession(cItem)
+        
+        if playlistId == '':
+            return
+        
+        try:
+            cid = self.oneconfig['session_data']['general']['cid']
+            clientToken = self.oneconfig['session_data']['device']['clienttoken']
+            clientId = self.oneconfig['session_data']['general']['clid']
+            deviceId = self.oneconfig['session_data']['device_id']
+            
+            secret = clientToken[int(deviceId[0]):]
+            secret = secret[0:len(secret) - int(deviceId[-1])]
+            op = 'byid'
+            requestToken = hashlib.md5(''.join((op, clientId, secret))).hexdigest()
+            
+            urlParams = dict(self.defaultParams)
+            urlParams['header'] = dict(self.AJAX_HEADER)
+            urlParams['header'].update({'Referer':cItem['url'], 'X-Request-Enable-Auth-Fallback':'1', 'X-Request-CID':cid, 'X-Request-Token':requestToken})
+            post_data = {'additionalfields': 'language,channel,actors,studio,licenseby,slug,fileversion,subtitle,teaser,description,releasedate',
+                         'addInteractionOptions': '1',
+                         'addStatusDetails': '1',
+                         'addStreamDetails': '1',
+                         'addFeatures': '1',
+                         'addCaptions': '1',
+                         'addScenes': '1',
+                         'addHotSpots': '1',
+                         'addBumpers': '1',
+                         'captionFormat': 'data',
+                         'addItemData': '1',}
+            
+            url = 'https://api.nexx.cloud/v3/%s/playlists/%s/%s' % (self.oneconfig['client_id'], op, playlistId)
+            sts, data = self.getPage(url, urlParams, post_data)
+            data = byteify(json.loads(data))
+            for item in data['result']['itemdata']:
+                icon = item['imagedata']['thumb']
+                url = self.getFullUrl('/videos/%s-%s' % (item['general']['ID'], item['general']['slug']))
+                title = self.cleanHtmlStr(item['general']['title'])
+                # item['general']['year']
+                date = datetime.fromtimestamp(int(item['general']['releasedate'])).strftime('%d.%m.%Y')
+                desc = ['%s | %s | %s' % (item['general']['runtime'], item['general']['studio'], date)]
+                desc.append(self.cleanHtmlStr(item['general']['subtitle']))
+                desc.append(self.cleanHtmlStr(item['general']['teaser']))
+                desc.append(self.cleanHtmlStr(item['general']['description']))
+                params = {'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)}
+                self.addVideo(params)
+        except Exception:
+            printExc()
         
     def listItems(self, cItem):
         printDBG("SpiegelTv.listItems [%s]" % cItem)
+        
         page = cItem.get('page', 0)
         if page == 0:
+            if cItem.get('url', '').endswith('-livestream'):
+                self.listLiveVideos(cItem)
             self._fillOneConfig(cItem)
             urlPath = urlparse.urlparse(cItem['url']).path[1:].split('/')
             method = cItem.get('f_method', urlPath[0])
@@ -242,52 +330,25 @@ class SpiegelTv(CBaseHostClass):
         if not sts: return
         
         self._fillOneConfig(cItem, data)
+        self._initiSession(cItem)
         
-        videoId = self.cm.ph.getDataBeetwenMarkers(data, 'video.start(', ')', False)[1].strip()
+        videoId = self.cm.ph.getDataBeetwenMarkers(data, 'video.start(', ')', False)[1].split(',')[0].strip()
         if videoId == '': videoId = cItem['url'].split('/videos/', 1)[-1].split('-')[0]
         
-        deviceId = '%d:%d:%d%d' % (random.randint(1, 4), int(time.time()), random.randint(1e4, 99999), random.randint(1, 9))
-        
-        urlParams = dict(self.defaultParams)
-        urlParams['header'] = dict(self.AJAX_HEADER)
-        urlParams['header'].update({'Referer':cItem['url'], 'X-Request-Enable-Auth-Fallback':'1'})
-        
         try:
-            if True:
-                post_data = {'nxp_devh': deviceId,
-                             'nxp_userh': '',
-                             'precid': '0',
-                             'playlicense': '0',
-                             'screenx': '1920',
-                             'screeny': '1080',
-                             'playerversion': '6.0.00',
-                             'gateway': self.oneconfig['gw'],
-                             'adGateway': '',
-                             'explicitlanguage': self.oneconfig['language'],
-                             'addTextTemplates': '1',
-                             'addDomainData': '1',
-                             'addAdModel': '1',
-                            }
-                url = 'https://api.nexx.cloud/v3/%s/session/init' % (self.oneconfig['client_id'], )
-                sts, data = self.getPage(url, urlParams, post_data)
-                if not sts: return
-                
-                data = byteify(json.loads(data), '', True)['result']
-                
-                cid = data['general']['cid']
-                clientToken = data['device']['clienttoken']
-                clientId = data['general']['clid']
-            else:
-                cid = self.oneconfig['cid']
-                clientToken = self.oneconfig['token']
-                clientId = self.oneconfig['client_id']
+            cid = self.oneconfig['session_data']['general']['cid']
+            clientToken = self.oneconfig['session_data']['device']['clienttoken']
+            clientId = self.oneconfig['session_data']['general']['clid']
+            deviceId = self.oneconfig['session_data']['device_id']
             
             secret = clientToken[int(deviceId[0]):]
             secret = secret[0:len(secret) - int(deviceId[-1])]
             op = 'byid'
             requestToken = hashlib.md5(''.join((op, clientId, secret))).hexdigest()
             
-            urlParams['header'].update({'X-Request-CID':cid, 'X-Request-Token':requestToken})
+            urlParams = dict(self.defaultParams)
+            urlParams['header'] = dict(self.AJAX_HEADER)
+            urlParams['header'].update({'Referer':cItem['url'], 'X-Request-Enable-Auth-Fallback':'1', 'X-Request-CID':cid, 'X-Request-Token':requestToken})
             post_data = {'additionalfields': 'language,channel,actors,studio,licenseby,slug,subtitle,teaser,description',
                          'addInteractionOptions': '1',
                          'addStatusDetails': '1',
