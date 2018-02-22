@@ -290,7 +290,7 @@ class IPTVPlayerBufferingWidget(Screen):
         self.downloader.updateStatistic()
         tmpBuffSize = self.downloader.getLocalFileSize() - self.lastSize + 1 # simple when getLocalFileSize() returns -1
         
-        if None != self.downloader and "m3u8" in self.downloader.getName() \
+        if None != self.downloader and self.downloader.hasDurationInfo() \
            and self.downloader.getTotalFileDuration() > 0:
             totalDuration = self.downloader.getTotalFileDuration()
             downloadDuration = self.downloader.getDownloadedFileDuration()

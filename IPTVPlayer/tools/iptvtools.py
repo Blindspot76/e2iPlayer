@@ -266,6 +266,9 @@ def GetPyScriptCmd(name):
     
 def GetUchardetPath():
     return config.plugins.iptvplayer.uchardetpath.value
+
+def GetCmdwrapPath():
+    return config.plugins.iptvplayer.cmdwrappath.value
     
 def GetDukPath():
     return config.plugins.iptvplayer.dukpath.value

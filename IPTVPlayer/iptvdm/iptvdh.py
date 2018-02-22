@@ -98,6 +98,10 @@ class DMHelper:
     @staticmethod
     def GET_HLSDL_PATH():
         return config.plugins.iptvplayer.hlsdlpath.value
+        
+    @staticmethod
+    def GET_FFMPEG_PATH():
+        return "ffmpeg"
     
     @staticmethod
     def GET_RTMPDUMP_PATH():

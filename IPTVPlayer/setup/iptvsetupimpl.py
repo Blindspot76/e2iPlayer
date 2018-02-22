@@ -102,6 +102,10 @@ class IPTVSetupImpl:
         self.hlsdlVersion = 0.14
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl'), "/usr/bin/hlsdl"]
         
+        # cmdwrap
+        self.cmdwrapVersion = 1
+        self.cmdwrapPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/cmdwrap'), "/usr/bin/cmdwrap"]
+        
         # duk
         self.dukVersion = 5 # "2.1.99 [experimental]" # real version
         self.dukPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/duk'), "/usr/bin/duk"]
@@ -757,6 +761,66 @@ class IPTVSetupImpl:
     
     def hlsdlStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.hlsdlStepFinished sts[%r]" % sts)
+        self.cmdwrapStep()
+        
+    ###################################################
+    # STEP: cmdwrap
+    ###################################################
+    def cmdwrapStep(self, ret=None):
+        printDBG("IPTVSetupImpl.cmdwrapStep")
+            
+        def _detectValidator(code, data):
+            if 'cmdwrap input_file' in data:
+                try:
+                    tmp = re.search("Version\:\s*?([0-9.]+?)[^0-9^.]", data).group(1)
+                    if float(tmp) >= self.cmdwrapVersion:
+                        return True,False
+                except Exception:
+                    printExc()
+            return False,True
+        
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            sts, retPath = False, ""
+            for idx in range(len(dataTab)):
+                if 'cmdwrap input_file' in dataTab[idx]: sts, retPath = True, paths[idx]
+            return sts, retPath
+        
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            old = ''
+            versions = {'sh4':2190, 'mipsel':2200}
+            
+            if platform in ['sh4', 'mipsel'] and self.glibcVersion < versions[platform]:
+                old = '_old'
+            
+            if old == '' and platform == 'mipsel' and not IsFPUAvailable():
+                old = '_softfpu'
+            
+            url = server + 'bin/' + platform + ('/%s%s' % (binName, old))
+            
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+        
+        self.stepHelper = CBinaryStepHelper("cmdwrap", self.platform, self.openSSLVersion, config.plugins.iptvplayer.cmdwrappath)
+        msg1 = _("cmdwrap tool")
+        msg2 = _("\nFor more info please ask samsamsam@o2.pl")
+        msg3 = _('It improves commands execution with very long arguments.\n')
+        self.stepHelper.updateMessage('detection', msg1, 0)
+        self.stepHelper.updateMessage('detection', msg2, 1)
+        self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+        self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+        
+        self.stepHelper.setInstallChoiseList( [('cmdwrap', self.cmdwrapPaths[0])] )
+        self.stepHelper.setPaths( self.cmdwrapPaths )
+        self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
+        self.stepHelper.setDetectValidator( _detectValidator )
+        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+        self.stepHelper.setFinishHandler( self.cmdwrapStepFinished )
+        self.binaryDetect()
+    
+    def cmdwrapStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.cmdwrapStepFinished sts[%r]" % sts)
         self.dukStep()
         
     ###################################################

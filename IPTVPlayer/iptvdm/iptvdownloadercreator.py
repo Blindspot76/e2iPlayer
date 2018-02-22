@@ -10,7 +10,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsExecutable
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.libs.urlparser  import urlparser
 from Plugins.Extensions.IPTVPlayer.iptvdm.wgetdownloader    import WgetDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.pwgetdownloader   import PwgetDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.busyboxdownloader import BuxyboxWgetDownloader
@@ -21,6 +21,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.ehlsdownloader    import EHLSDownloade
 from Plugins.Extensions.IPTVPlayer.iptvdm.rtmpdownloader    import RtmpDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.f4mdownloader     import F4mDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.mergedownloader   import MergeDownloader
+from Plugins.Extensions.IPTVPlayer.iptvdm.ffmpegdownloader  import FFMPEGDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh            import DMHelper
 ###################################################
 
@@ -61,7 +62,12 @@ def DownloaderCreator(url):
     elif 'http' == iptv_proto:
         downloader = WgetDownloader()
     elif 'merge' == iptv_proto:
-        downloader = MergeDownloader()
+        if IsExecutable('ffmpeg') and config.plugins.iptvplayer.cmdwrappath.value != '':
+            downloader = FFMPEGDownloader()
+        else:
+            downloader = MergeDownloader()
+    elif 'mpd' == iptv_proto and IsExecutable('ffmpeg') and config.plugins.iptvplayer.cmdwrappath.value != '':
+        downloader = FFMPEGDownloader()
     
     return downloader
 

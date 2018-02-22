@@ -1043,7 +1043,7 @@ class IPTVExtMoviePlayer(Screen):
     def updateInfo(self):
         self.extPlayerCmddDispatcher.doUpdateInfo()
         if None != self.downloader:
-            if "m3u8" in self.downloader.getName() and self.downloader.getTotalFileDuration() > 0:
+            if self.downloader.hasDurationInfo() and self.downloader.getTotalFileDuration() > 0:
                 totalDuration = self.downloader.getTotalFileDuration()
                 downloadDuration = self.downloader.getDownloadedFileDuration()
                 if 0 < totalDuration and 0 < downloadDuration:
@@ -1237,7 +1237,7 @@ class IPTVExtMoviePlayer(Screen):
     def key_down_repeat(self):  self.goSubSynchroKey(1, 'repeat')
     
     def doSeek(self, val):
-        if None != self.downloader and "m3u8" in self.downloader.getName() \
+        if None != self.downloader and self.downloader.hasDurationInfo() \
            and self.playback['CurrentTime'] >= 0 and self.playback['Length'] > 10:
             val += self.playback['CurrentTime']
             if val < 0: val = 0
