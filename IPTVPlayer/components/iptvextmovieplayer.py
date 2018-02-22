@@ -1094,8 +1094,12 @@ class IPTVExtMoviePlayer(Screen):
         self['lengthTimeLabel'].setText( str(timedelta(seconds=newLength)) )
         
     def playbackUpdateInfo(self, stsObj):
+        # workaround for missing playback length info for under muxing MKV
+        if self.playback['Length'] > 0 and self.downloader != None and self.downloader.getName() == 'ffmpeg':
+            stsObj['Length'] = self.playback['Length']
+        
         for key, val in stsObj.iteritems():
-            if 'Length' == key: 
+            if 'Length' == key:
                 if 0 > val:
                     printDBG('IPTVExtMoviePlayer.playbackUpdateInfo Length[%d] - live stream?' % val )
                     val = 0

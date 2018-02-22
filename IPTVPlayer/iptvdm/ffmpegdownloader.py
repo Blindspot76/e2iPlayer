@@ -8,7 +8,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, eConnectCallback, E2PrioFix, rm, GetCmdwrapPath, WriteTextFile
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, iptv_system, eConnectCallback, E2PrioFix, rm, GetCmdwrapPath, WriteTextFile, GetNice, getDebugMode
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import enum, strwithmeta
 from Plugins.Extensions.IPTVPlayer.iptvdm.basedownloader import BaseDownloader
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
@@ -88,10 +88,10 @@ class FFMPEGDownloader(BaseDownloader):
         tmpUri = strwithmeta(url)
         
         if 'iptv_video_rep_idx' in tmpUri.meta:
-            cmdTab.extend(['-iptv_video_rep_index', str(tmpUri.meta['iptv_video_rep_idx'])])
+            cmdTab.extend(['-video_rep_index', str(tmpUri.meta['iptv_video_rep_idx'])])
         
         if 'iptv_audio_rep_idx' in tmpUri.meta:
-            cmdTab.extend(['-iptv_audio_rep_index', str(tmpUri.meta['iptv_audio_rep_idx'])])
+            cmdTab.extend(['-audio_rep_index', str(tmpUri.meta['iptv_audio_rep_idx'])])
             
         if 'iptv_m3u8_live_start_index' in tmpUri.meta:
             cmdTab.extend(['-live_start_index', str(tmpUri.meta['iptv_m3u8_live_start_index'])])
@@ -129,7 +129,7 @@ class FFMPEGDownloader(BaseDownloader):
         rm(self.fileCmdPath)
         WriteTextFile(self.fileCmdPath, '|'.join(cmdTab))
         
-        cmd = GetCmdwrapPath() + (' "%s" "|" 15 ' % self.fileCmdPath)
+        cmd = GetCmdwrapPath() + (' "%s" "|" %s ' % (self.fileCmdPath, GetNice()+2))
 
         printDBG("FFMPEGDownloader::start cmd[%s]" % cmd)
         
@@ -209,7 +209,8 @@ class FFMPEGDownloader(BaseDownloader):
     def _cmdFinished(self, code, terminated=False):
         printDBG("FFMPEGDownloader._cmdFinished code[%r] terminated[%r]" % (code, terminated))
         
-        rm(self.fileCmdPath)
+        if '' == getDebugMode():
+            rm(self.fileCmdPath)
         
         # break circular references
         if None != self.console:
