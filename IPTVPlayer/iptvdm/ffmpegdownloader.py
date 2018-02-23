@@ -49,6 +49,10 @@ class FFMPEGDownloader(BaseDownloader):
         self.parseReObj = {}
         self.parseReObj['start_time'] = re.compile('\sstart\:\s*?([0-9]+?)\.')
         self.parseReObj['duration'] = re.compile('[\s=]([0-9]+?)\:([0-9]+?)\:([0-9]+?)\.')
+        self.parseReObj['size'] = re.compile('size=\s*?([0-9]+?)kB')
+        self.parseReObj['bitrate'] = re.compile('bitrate=\s*?([0-9]+?(?:\.[0-9]+?)?)kbits')
+        self.parseReObj['speed'] = re.compile('speed=\s*?([0-9]+?(?:\.[0-9]+?)?)x')
+        
         self.ffmpegOutputContener = 'matroska'
         self.fileCmdPath = ''
         
@@ -159,7 +163,20 @@ class FFMPEGDownloader(BaseDownloader):
             printExc()
         return 0
         
-
+    def _getFileSize(self, data):
+        try:
+            return int(self.parseReObj['size'].search(data).group(1)) * 1024
+        except Exception:
+            printExc()
+        return 0
+        
+    def _getDownloadSpeed(self, data):
+        try:
+            return int(float(self.parseReObj['bitrate'].search(data).group(1)) * float(self.parseReObj['speed'].search(data).group(1)) * 1024 / 8)
+        except Exception:
+            printExc()
+        return 0
+    
     def _dataAvail(self, data):
         if None == data:
             return
@@ -187,13 +204,21 @@ class FFMPEGDownloader(BaseDownloader):
                         self.liveStream = True
             
             if 'frame=' in item: 
-                duration = self._getDuration(item)
-                if duration > self.downloadDuration:
-                    self.downloadDuration = duration
-                self.localFileSize = DMHelper.getFileSize(self.filePath)
-                printDBG("UPDATA STATS localFileSize[%s] filePath[%s]" % (self.localFileSize, self.filePath))
-                BaseDownloader._updateStatistic(self)
-                        
+                self.lastUpadateTime = datetime.datetime.now()
+                
+                self.downloadSpeed = self._getDownloadSpeed(item)
+                
+                fileSize = self._getFileSize(item)
+                if fileSize > self.localFileSize:
+                    self.localFileSize = fileSize
+                    
+                    # update duration only when file size changed
+                    # to make sure that this duration is ready to 
+                    # for reading
+                    duration = self._getDuration(item)
+                    if duration > self.downloadDuration:
+                        self.downloadDuration = duration
+        
     def _terminate(self):
         printDBG("FFMPEGDownloader._terminate")
         if None != self.iptv_sys:
@@ -201,6 +226,7 @@ class FFMPEGDownloader(BaseDownloader):
             self.iptv_sys = None
         if DMHelper.STS.DOWNLOADING == self.status:
             if self.console:
+                self.console.sendCtrlC()
                 self.console.sendCtrlC() # kill # produce zombies
                 self._cmdFinished(-1, True)
                 return BaseDownloader.CODE_OK
@@ -233,8 +259,11 @@ class FFMPEGDownloader(BaseDownloader):
         return self.liveStream
 
     def updateStatistic(self):
-        #BaseDownloader.updateStatistic(self)
-        return
+        if self.lastUpadateTime != None: 
+            d = datetime.datetime.now() - self.lastUpadateTime
+            if d.seconds > 3:
+                # if we not get new stats update this mean that we do not download any data
+                self.downloadSpeed = 0;
         
     def hasDurationInfo(self):
         return True
