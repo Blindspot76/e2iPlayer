@@ -62,7 +62,7 @@ class ForjaTN(CBaseHostClass):
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         self.cacheEpisodes = {}
-        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HTTP_HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.MAIN_CAT_TAB = [{'category':'list_filters',   'title': _('Movies'),  'f_type':'movies',      'url':self.getFullUrl('/movies')},
                              {'category':'list_filters',   'title': _('Series'),  'f_type':'series',      'url':self.getFullUrl('/series')},
@@ -223,7 +223,7 @@ class ForjaTN(CBaseHostClass):
                 params.update({'good_for_fav':True, 'title':title, 'url':url, 'prev_url':cItem['url']})
                 self.addVideo(params)
             
-            if 'player.src' in data:
+            if 'player.src' in data or 'streamSources' in data:
                 params = dict(cItem)
                 params.update({'good_for_fav':True, 'url':cItem['url']})
                 self.addVideo(params)
@@ -260,6 +260,8 @@ class ForjaTN(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
         
+        cUrl = data.meta['url']
+        
         if cItem.get('f_type', '') == 'episode':
             episodeId = cItem['url']
             if episodeId.endswith('/'): episodeId = episodeId[-1]
@@ -275,7 +277,7 @@ class ForjaTN(CBaseHostClass):
                         if episodeId not in eItem.get('poster', ''): continue
                         for item in eItem['sources']:
                             vidType = item['type'].lower()
-                            vidUrl  = self.getFullUrl(item['src']).replace(' ', '%20')
+                            vidUrl  = self.getFullUrl(item['src'], cUrl).replace(' ', '%20')
                             name    = self.cleanHtmlStr(item['label'])
                             tmpTab = []
                             if 'x-mpegurl' in vidType:
@@ -296,15 +298,19 @@ class ForjaTN(CBaseHostClass):
                     printExc()
         else:
             tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player.src(', ')')[1]
-            vidType = self.cm.ph.getSearchGroups(tmp, '''type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
-            vidUrl  = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''src['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0])
-            
-            if not self.cm.isValidUrl(vidUrl): return []
-            
-            if 'x-mpegurl' in vidType:
-                retTab = getDirectM3U8Playlist(vidUrl, checkExt=False, checkContent=True, cookieParams=self.defaultParams)
-            elif 'mp4' in vidType:
-                retTab.append({'name':'mp4', 'url':vidUrl})
+            if tmp == '': tmp = self.cm.ph.getDataBeetwenNodes(data, ('[', ']', '.m3u8'), (';', ' '))[1]
+            tmpTab = tmp.split('},')
+            for tmp in tmpTab:
+                vidType = self.cm.ph.getSearchGroups(tmp, '''type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
+                vidLabel = self.cm.ph.getSearchGroups(tmp, '''label['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                vidUrl  = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''src['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0], cUrl)
+                
+                if not self.cm.isValidUrl(vidUrl): return []
+                
+                if 'x-mpegurl' in vidType:
+                    retTab = getDirectM3U8Playlist(vidUrl, checkExt=False, checkContent=True, cookieParams=self.defaultParams)
+                elif 'mp4' in vidType:
+                    retTab.append({'name':'mp4 %s' % vidLabel, 'url':vidUrl})
             
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<video', '</video>')
             for tmp in data:
