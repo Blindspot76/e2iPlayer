@@ -103,7 +103,7 @@ class IPTVSetupImpl:
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl'), "/usr/bin/hlsdl"]
         
         # cmdwrap
-        self.cmdwrapVersion = 1
+        self.cmdwrapVersion = 2
         self.cmdwrapPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/cmdwrap'), "/usr/bin/cmdwrap"]
         
         # duk
