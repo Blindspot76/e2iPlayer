@@ -57,10 +57,11 @@ def DownloaderCreator(url):
         downloader = F4mDownloader()
     elif 'rtmp' == iptv_proto:
         downloader = RtmpDownloader()
-    elif 'https' == iptv_proto:
-        downloader = WgetDownloader()
-    elif 'http' == iptv_proto:
-        downloader = WgetDownloader()
+    elif iptv_proto in ['https', 'http']:
+        if url.meta.get('mp4_moov_atom_eof', None) and IsExecutable('ffmpeg') and config.plugins.iptvplayer.cmdwrappath.value != '':
+            downloader = FFMPEGDownloader()
+        else:
+            downloader = WgetDownloader()
     elif 'merge' == iptv_proto:
         if IsExecutable('ffmpeg') and config.plugins.iptvplayer.cmdwrappath.value != '':
             downloader = FFMPEGDownloader()

@@ -103,7 +103,7 @@ class FFMPEGDownloader(BaseDownloader):
         if 'iptv_m3u8_key_uri_replace_old' in tmpUri.meta and 'iptv_m3u8_key_uri_replace_new' in tmpUri.meta:
             cmdTab.extend(['-key_uri_old', str(tmpUri.meta['iptv_m3u8_key_uri_replace_old']), '-key_uri_new', str(tmpUri.meta['iptv_m3u8_key_uri_replace_new'])])
         
-        if "://" in self.filePath: 
+        if "://" in self.url: 
             url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta(tmpUri, True)
             headers = []
             for key in httpParams:

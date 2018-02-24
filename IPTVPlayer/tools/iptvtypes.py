@@ -27,6 +27,7 @@ def enum(**enums):
 #   "iptv_wget_waitretry"   in second, default 1s when iptv_wget_continue == True
 #   "iptv_audio_rep_idx"    audio representation index in mpd
 #   "iptv_video_rep_idx"    video representation index in mpd
+#   "mp4_moov_atom_eof"     mp4 video not prepared for progressive download
 
 # Force buffering settings, generally this field should 
 # be used only to materials that we know that they do 

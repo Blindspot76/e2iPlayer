@@ -683,7 +683,7 @@ class KinomanCO(CBaseHostClass):
                 except Exception:
                     printExc()
             if directLink:
-                urlTab.append({'name':'direct_link', 'url':videoUrl})
+                urlTab.append({'name':'direct_link', 'url':strwithmeta(videoUrl, {'mp4_moov_atom_eof':True})})
             else:
                 urlTab = self.up.getVideoLinkExt(videoUrl)
         

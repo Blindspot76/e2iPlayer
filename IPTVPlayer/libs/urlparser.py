@@ -7054,26 +7054,45 @@ class pageParser:
         
     def parserDARKOMPLAYER(self, baseUrl):
         printDBG("parserDARKOMPLAYER baseUrl[%s]" % baseUrl)
-        sts, data = self.cm.getPage(baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        COOKIE_FILE = GetCookieDir('darkomplayer.cookie')
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        rm(COOKIE_FILE)
+        sts, data = self.cm.getPage(baseUrl, urlParams)
         if not sts: return False
         
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>')[1]
-        tmp = unpackJSPlayerParams(tmp, TEAMCASTPL_decryptPlayerParams, type=0)
-        data += tmp
+        cUrl = self.cm.getBaseUrl(data.meta['url'])
+        
+        jscode = ['window=this; function stub() {}; function jwplayer() {return {setup:function(){print(JSON.stringify(arguments[0]))}, onTime:stub, onPlay:stub, onComplete:stub, onReady:stub, addButton:stub}}; window.jwplayer=jwplayer;']
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')
+        for item in tmp:
+            if 'src=' in item:
+                scriptUrl = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+                if scriptUrl != '' and 'jwplayer.js' not in scriptUrl:
+                    scriptUrl = self.cm.getFullUrl(scriptUrl, self.cm.getBaseUrl(data.meta['url']))
+                    sts, scriptData = self.cm.getPage(scriptUrl, urlParams)
+                    if not sts: continue
+                    jscode.append(scriptData)
+            else:
+                jscode.append(self.cm.ph.getDataBeetwenNodes(item, ('<script', '>'), ('</script', '>'), False)[1])
         
         urlTab = []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
-        for item in data:
-            type  = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
-            res   = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
-            label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
-            url   = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
-            if 'mp4' not in type: continue
-            if url.startswith('//'):
-                url = 'http:' + url
-            if self.cm.isValidUrl(url):
-                url = urlparser.decorateUrl(url, {'Referer':baseUrl, 'User-Agent':'Mozilla/5.0'})
-                urlTab.append({'name':'darkomplayer {0}: {1}'.format(label, res), 'url':url})
+        ret = iptv_js_execute( '\n'.join(jscode) )
+        if ret['sts'] and 0 == ret['code']:
+            data = ret['data']
+            data = byteify(json.loads(data))
+            PHPSESSID = self.cm.getCookieItem(COOKIE_FILE, 'PHPSESSID')
+            for item in data['sources']:
+                url = item['file']
+                type  = item['type'].lower()
+                label = item['label']
+                if 'mp4' not in type: continue
+                if url == '': continue
+                url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'Cookie':'PHPSESSID=%s' % PHPSESSID})
+                urlTab.append({'name':'darkomplayer {0}'.format(label), 'url':url})
         return urlTab
         
     def parseJACVIDEOCOM(self, baseUrl):

@@ -253,8 +253,14 @@ class DardarkomCom(CBaseHostClass):
         if m1 in videoUrl:
             videoUrl = videoUrl[videoUrl.find(m1)+3:]
         
-        if 'dardarkom.com' in videoUrl or 'darkom.me' in videoUrl or 'jacvideo.com' in videoUrl:
-            sts, data = self.cm.getPage(videoUrl)
+        referer = ''
+        urlParams = dict(self.defaultParams)
+        urlParams['header'] = dict(self.HEADER)
+        urlParams['header']['Referer'] = self.getMainUrl()
+        tries = 0
+        while 1 != self.up.checkHostSupport(videoUrl) and tries < 5:
+            tries += 1
+            sts, data = self.cm.getPage(videoUrl, urlParams)
             if not sts: return []
             url = ''
             urlTmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '</iframe>', False, True)
@@ -267,7 +273,8 @@ class DardarkomCom(CBaseHostClass):
             if url == '': url = self.cm.ph.getSearchGroups(data, '''window\.open\(\s*['"](https?://[^"^']+?)['"]''', 1, True)[0]
             printDBG(url)
             url = self._getFullUrl( url )
-            videoUrl = url
+            urlParams['header']['Referer'] = videoUrl
+            videoUrl = strwithmeta(url, {'Referer':videoUrl})
         
         urlTab = []
         if self.cm.isValidUrl(videoUrl):
