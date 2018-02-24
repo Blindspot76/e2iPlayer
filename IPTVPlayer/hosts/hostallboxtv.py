@@ -184,7 +184,7 @@ class AllBoxTV(CBaseHostClass):
             if len(title): title = self.cleanHtmlStr(title)
             else: title = ''
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''\stitle=['"]([^'^"]+?)['"]''')[0])
-            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
+            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\sdata\-src=['"]([^'^"]+?)['"]''')[0])
             if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\surl\(([^\)]+?)\)''')[0].strip())
             
             desc = []
