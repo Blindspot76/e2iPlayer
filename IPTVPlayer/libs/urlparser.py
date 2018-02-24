@@ -466,6 +466,7 @@ class urlparser:
                        'vidshare.tv':          self.pp.parserVIDSHARETV     ,
                        'widestream.io':        self.pp.parserWIDESTREAMIO   ,
                        'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
+                       'vidbom.com':           self.pp.parserVIDBOMCOM      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -914,6 +915,8 @@ class pageParser:
         self.COOKIE_PATH = GetCookieDir('')
         #self.hd3d_login = config.plugins.iptvplayer.hd3d_login.value
         #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
+        self.jscode = {}
+        self.jscode['jwplayer'] = 'window=this; function stub() {}; function jwplayer() {return {setup:function(){print(JSON.stringify(arguments[0]))}, onTime:stub, onPlay:stub, onComplete:stub, onReady:stub, addButton:stub}}; window.jwplayer=jwplayer;'
         
     def getDefaultHeader(self, browser='firefox'):
         if browser == 'firefox': ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0'
@@ -2816,6 +2819,42 @@ class pageParser:
                 if url.split('?', 1)[0][-3:].lower() == 'mp4':
                     linksTab.append({'name':'mp4', 'url':url})
         return linksTab
+        
+    def parserVIDBOMCOM(self, baseUrl):
+        printDBG("parserVIDBOMCOM baseUrl[%r]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        
+        cUrl = self.cm.getBaseUrl(data.meta['url'])
+        domain = urlparser.getDomain(cUrl)
+        
+        jscode = [self.jscode['jwplayer']]
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item and 'setup' in item:
+                jscode.append(item)
+        urlTab = []
+        jscode = '\n'.join(jscode)
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = byteify(json.loads(ret['data']))
+            for item in data['sources']:
+                url = item['file']
+                type = item.get('type', '')
+                if type == '': type = url.split('.')[-1].split('?', 1)[0]
+                type = type.lower()
+                label = item['label']
+                if 'mp4' not in type: continue
+                if url == '': continue
+                url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+                urlTab.append({'name':'{0} {1}'.format(domain, label), 'url':url})
+        return urlTab
         
     def parserMEGADRIVETV(self, baseUrl):
         printDBG("parserMEGADRIVETV baseUrl[%r]" % baseUrl)
@@ -7066,7 +7105,7 @@ class pageParser:
         
         cUrl = self.cm.getBaseUrl(data.meta['url'])
         
-        jscode = ['window=this; function stub() {}; function jwplayer() {return {setup:function(){print(JSON.stringify(arguments[0]))}, onTime:stub, onPlay:stub, onComplete:stub, onReady:stub, addButton:stub}}; window.jwplayer=jwplayer;']
+        jscode = [self.jscode['jwplayer']]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')
         for item in tmp:
             if 'src=' in item:

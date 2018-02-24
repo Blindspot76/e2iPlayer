@@ -17,6 +17,7 @@ hostcartoonhd
 hostcdapl
 hostchiaanimeco
 hostchomikuj
+hostcimaclubcom
 hostcinemay
 hostcineto
 hostclassiccinemaonline
