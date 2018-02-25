@@ -174,7 +174,7 @@ class DardarkomCom(CBaseHostClass):
             url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?online\.html[^"^']*?)['"]''')[0] )
             if not self.cm.isValidUrl(url): continue
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<div class="main-news-title">', '</a>', False)[1])
-            icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0] )
+            icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?(:?\.jpe?g|\.png)(:?\?[^'^"]*?)?)['"]''')[0] )
             desc  = self.cleanHtmlStr(item)
             
             params = dict(cItem)
