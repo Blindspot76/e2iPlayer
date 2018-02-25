@@ -7130,7 +7130,7 @@ class pageParser:
                 label = item['label']
                 if 'mp4' not in type: continue
                 if url == '': continue
-                url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'Cookie':'PHPSESSID=%s' % PHPSESSID})
+                url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'Range':'bytes=0-', 'Cookie':'PHPSESSID=%s' % PHPSESSID})
                 urlTab.append({'name':'darkomplayer {0}'.format(label), 'url':url})
         return urlTab
         
