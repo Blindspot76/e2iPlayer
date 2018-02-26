@@ -366,6 +366,10 @@ class RTBFBE(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
+                        
+        if 1 == self.up.checkHostSupport(videoUrl):
+            videoUrl = videoUrl.replace('youtu.be/', 'youtube.com/watch?v=')
+            return self.up.getVideoLinkExt(videoUrl)
         
         return [{'name':'direct', 'url':videoUrl}]
         
