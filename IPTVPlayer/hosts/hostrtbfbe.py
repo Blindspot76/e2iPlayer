@@ -44,8 +44,8 @@ config.plugins.iptvplayer.rtbfbe_password = ConfigText(default = "", fixed_size 
 
 def GetConfigList():
     optionList = []
-    #optionList.append(getConfigListEntry(_("login")+":", config.plugins.iptvplayer.rtbfbe_login))
-    #optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.rtbfbe_password))
+    optionList.append(getConfigListEntry(_("e-mail")+":", config.plugins.iptvplayer.rtbfbe_login))
+    optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.rtbfbe_password))
     return optionList
 ###################################################
 
@@ -53,7 +53,7 @@ def gettytul():
     return 'https://www.rtbf.be/'
 
 class RTBFBE(CBaseHostClass):
-    
+    CHECK_GEO_LOCK=True
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'rtbf.be', 'cookie':'rtbf.be.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
@@ -72,6 +72,18 @@ class RTBFBE(CBaseHostClass):
         
         self.cacheChannels = []
         
+        self.OFFSET = datetime.now() - datetime.utcnow()
+        seconds = self.OFFSET.seconds + self.OFFSET.days * 24 * 3600
+        if ((seconds + 1) % 10) == 0: seconds += 1  
+        elif ((seconds - 1) % 10) == 0: seconds -= 1 
+        self.OFFSET = timedelta(seconds=seconds)
+        
+        self.partnerKey = ''
+        self.partnerToken = ''
+        self.dataKey = ''
+        self.csrfToken = ''
+        self.loginData = {}
+        
     def setMainUrl(self, url):
         if self.cm.isValidUrl(url):
             self.MAIN_URL = self.cm.getBaseUrl(url)
@@ -85,8 +97,8 @@ class RTBFBE(CBaseHostClass):
         printDBG("RTBFBE.listMainMenu")
         
         CAT_TAB = [{'category':'sections',       'title': _('Main'),       'url':self.getFullUrl('/auvio/')},
-                   #{'category':'live',           'title': 'En Direct',     'url':self.getFullUrl('/auvio/direct#/')},
-                   #{'category':'channels',       'title': 'Chaînes',       'url':self.getFullUrl('/auvio/')},
+                   {'category':'live_categories','title': 'En Direct',     'url':self.getFullUrl('/auvio/direct')},
+                   {'category':'channels',       'title': 'Chaînes',       'url':self.getFullUrl('/news/api/menu?site=media')},
                    {'category':'sections',       'title': 'Émissions',     'url':self.getFullUrl('/auvio/emissions')},
                    {'category':'categories',     'title': 'Catégories',    'url':self.getFullUrl('/news/api/menu?site=media')},
                    {'category':'search',         'title': _('Search'),          'search_item':True}, 
@@ -96,8 +108,113 @@ class RTBFBE(CBaseHostClass):
         params['desc'] = self.loginMessage
         self.listsTab(CAT_TAB, params)
         
-    def listCategories(self, cItem, nextCategory):
-        printDBG("RTBFBE.listCategories")
+    def getPartnerKey(self, data=None):
+        if '' in [self.csrfToken, self.partnerKey]:
+            if data == None:
+                sts, data = self.getPage(self.getMainUrl())
+                if not sts: return ''
+            tmp = re.compile('''<script[^>]+?src=['"]([^'^"]+?_ssl\.js)['"]''').findall(data)
+            data = ''
+            for item in tmp:
+                sts, item = self.getPage(self.getFullUrl(item))
+                if sts: data += item
+            self.partnerKey = self.cm.ph.getSearchGroups(data, '''partner_key\s*?:\s*?['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            self.csrfToken = self.cm.ph.getSearchGroups(data, '''['"]?X-CSRF-Token['"]?\s*?:\s*?['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+        return self.partnerKey
+        
+    def getPartnerToken(self):
+        if self.partnerToken == '':
+            url = 'https://www.rtbf.be/api/partner/generic/live/planninglist?target_site=media&origin_site=media&category_id=0&start_date&offset=0&limit=1&partner_key=' + self.getPartnerKey()
+            sts, data = self.getPage(url)
+            if not sts: return ''
+            self.partnerToken = self.cm.ph.getSearchGroups(data, '''\.m3u8\?token=([0-9A-Za-z]+?)[^0-9^A-Z^a-z]''')[0]
+        return self.partnerToken
+        
+    def listLiveCategories(self, cItem, nextCategory):
+        printDBG("RTBFBE.listLiveCategories")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        cUrl = data.meta['url']
+        self.setMainUrl(cUrl)
+        
+        partnerKey = self.getPartnerKey(data)
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<router-gateway', '</router-gateway>')[1]
+        data = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, 'config="', '"', False)[1])
+        try:
+            data = byteify(json.loads(data))
+            baseUrl = data['api']['planninglist']
+            if not self.cm.isValidUrl(baseUrl): return
+            for item in data['categories']:
+                url = baseUrl + '?target_site=media&origin_site=media&category_id=' + item['id'] + '&start_date&offset={0}&limit={1}&partner_key=' + partnerKey
+                title = self.cleanHtmlStr(item['label'])
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url})
+                self.addDir(params)
+        except Exception:
+            printExc()
+            
+    def listLiveItems(self, cItem):
+        printDBG("RTBFBE.listLiveItems")
+        
+        def _parseDate(dateStr):
+            date = datetime.strptime(dateStr[:-7], "%Y-%m-%dT%H:%M:%S")
+            offsetDir = dateStr[-6]
+            offsetHours = int(dateStr[-5:-3])
+            offsetMins = int(dateStr[-2:])
+            if offsetDir == "+":
+                offsetHours = -offsetHours
+                offsetMins = -offsetMins
+            utc_date = date + timedelta(hours=offsetHours, minutes=offsetMins) + self.OFFSET
+            return utc_date
+        
+        currDate = datetime.now()
+        NUM_ITEMS = 20
+        page = cItem.get('page', 0)
+        
+        sts, data = self.getPage(cItem['url'].format(page * NUM_ITEMS, NUM_ITEMS))
+        if not sts: return
+        try:
+            data = byteify(json.loads(data))
+            for item in data:
+                title = self.cleanHtmlStr(item['title'])
+                subtitle = self.cleanHtmlStr(item['subtitle'])
+                if subtitle != '': title = '%s - %s' % (title, subtitle)
+                url = self.getFullUrl(item['url_share'])
+                try: streamUrl = self.getFullUrl(item['url_streaming']['url_hls'])
+                except Exception: streamUrl = ''
+                if not self.cm.isValidUrl(streamUrl): continue
+                desc = [self.cleanHtmlStr(item['geolock']['title'])]
+                if item.get('drm', False): 
+                    desc.append('DRM')
+                try:
+                    icon = self.getFullIconUrl(item['images']['illustration']['16x9']['370x208'])
+                    for k in ['channel', 'program', 'category', 'live']:
+                        desc.append(item[k]['label'])
+                except Exception: icon = ''
+                desc = [' | '.join(desc)] 
+                desc.append(self.cleanHtmlStr(item['description']))
+                
+                date = _parseDate(item['start_date'])
+                if date.day == currDate.day: timeHeader = date.strftime('%Hh%M')
+                else:  timeHeader = date.strftime('%Y-%m-%d %Hh%M')
+                timeHeader += ' - ' + _parseDate(item['end_date']).strftime('%Hh%M')
+                desc.insert(0, timeHeader)
+                
+                params = {'good_for_fav':False, 'title':title, 'url':url, 'stream_url':streamUrl, 'icon':icon, 'desc':'[/br]'.join(desc)}
+                self.addVideo(params)
+            
+            if NUM_ITEMS == len(self.currList):
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1})
+                self.addDir(params)
+        except Exception:
+            printExc()
+        
+    def listSubMenuItems(self, cItem, nextCategory, key):
+        printDBG("RTBFBE.listSubMenuItems")
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
@@ -108,7 +225,7 @@ class RTBFBE(CBaseHostClass):
         try:
             data = byteify(json.loads(data))['item']
             for item in data:
-                if item['@attributes']['id'] == 'category':
+                if item['@attributes']['id'] == key:
                     for it in item['item']:
                         it = it['@attributes']
                         if it['url'].startswith('.'): continue
@@ -196,6 +313,7 @@ class RTBFBE(CBaseHostClass):
             sectionItem = self.cm.ph.getAllItemsBeetwenMarkers(sectionItem, '<article', '</article>')
             for item in sectionItem:
                 icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''data\-srcset=['"]([^'^"^\s]+?)[\s'"]''')[0])
+                if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"^\s]+?(:?\.jpe?g|\.png)(:?\?[^'^"^\s]*?)?)[\s'"]''')[0])
                 header = self.cm.ph.getDataBeetwenMarkers(item, '<header', '</header>')[1]
                 url = self.cm.ph.getSearchGroups(header, '''href=['"]([^'^"]+?)['"]''')[0]
                 if url == '' or url[0] in ['{', '[']: continue
@@ -212,7 +330,8 @@ class RTBFBE(CBaseHostClass):
                 if duration != '': desc.append(duration)
                 desc.append(self.cleanHtmlStr(item.split('</header>', 1)[-1]))
                 params = {'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)}
-                if 'ico-volume' in item: params['type'] = 'audio'
+                if 'ico-playlist' in item: params.update({'type':'category', 'category':'list_playlist_items'})
+                elif 'ico-volume' in item: params['type'] = 'audio'
                 elif 'ico-play' in item: params['type'] = 'video'
                 elif '/emissions/' in url: params['type'] = 'video'
                 else: params['type'] = defaultMediaType
@@ -246,6 +365,29 @@ class RTBFBE(CBaseHostClass):
     def listSubItems(self, cItem):
         printDBG("RTBFBE.listSubItems")
         self.currList = cItem['sub_items']
+        
+    def listPlaylistItems(self, cItem):
+        printDBG("RTBFBE.listPlaylistItems")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        
+        cItem = dict(cItem)
+        
+        cUrl = data.meta['url']
+        self.setMainUrl(cUrl)
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'chapter-list'), ('<div', '>', 'media-nav'))[1]
+        data = re.compile('''<li[^>]+?js\-chapter\-entry[^>]+?>''').split(data)
+        for item in data:
+            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''data\-srcset=['"]([^'^"^\s]+?)[\s'"]''')[0])
+            if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"^\s]+?(:?\.jpe?g|\.png)(:?\?[^'^"^\s]*?)?)[\s'"]''')[0])
+            title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''\stitle=['"]([^'^"]+?)['"]''')[0])
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', '-subtitle'), ('</span', '>'))[1])
+            if '/auvio/' not in url: continue
+            params = {'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
+            self.addVideo(params)
     
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("RTBFBE.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -298,16 +440,17 @@ class RTBFBE(CBaseHostClass):
             geoLocRestriction = data.get('geoLocRestriction', '')
             
             # HLS LINKS
-            hslUrls = [data.get('streamUrlHls', '')]
+            hslUrls = [data.get('streamUrlHls', ''), cItem.get('stream_url', '')]
             hslUrls.append(data.get('urlHls', ''))
             for hslUrl in hslUrls:
                 if not self.cm.isValidUrl(hslUrl): continue
-                hlsTab = getDirectM3U8Playlist(hslUrl, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999)
+                hlsTab.append({'name':'[HLS/m3u8]', 'url':hslUrl, 'iptv_proto':'m3u8'})
+                if len(hlsTab): break
             
             # DASH LINKS
             dashUrl = data.get('urlDash', '')
             if self.cm.isValidUrl(dashUrl):
-                dashTab = getMPDLinksWithMeta(dashUrl, checkExt=False, sortWithMaxBandwidth=999999999)
+                dashTab = [{'name':'[DASH/mpd]', 'url':dashUrl, 'iptv_proto':'mpd'}] 
             
             # MP4 LINKS
             if 'sources' in data:
@@ -336,19 +479,19 @@ class RTBFBE(CBaseHostClass):
         except Exception:
             printExc()
         
-        if len(hlsTab) or len(dashTab) or geoLocRestriction == 'open' or \
-           geoLocRestriction == self.getUserGeoLoc():
-            retTab.extend(mp4Tab)
         retTab.extend(hlsTab)
+        retTab.extend(mp4Tab)
         retTab.extend(dashTab)
         
+        namePrefix = ''
+        if geoLocRestriction != 'open' and geoLocRestriction == self.getUserGeoLoc():
+            namePrefix = '!geo-blocked! '
         for idx in range(len(retTab)):
-            retTab[idx]['url'] = strwithmeta(retTab[idx]['url'], {'external_sub_tracks':subsTab})
+            meta = {'Referer':cItem['url'], 'external_sub_tracks':subsTab}
+            if 'iptv_proto' in retTab[idx]: meta['iptv_proto'] = retTab[idx]['iptv_proto']
+            retTab[idx]['url'] = strwithmeta(retTab[idx]['url'], meta)
             retTab[idx]['need_resolve'] = 1
-        
-        if 0 == len(retTab) and geoLocRestriction != 'open':
-            errorMessage = self.cleanHtmlStr('Media geo-blocked.')
-            SetIPTVPlayerLastHostError(errorMessage)
+            retTab[idx]['name'] = namePrefix + retTab[idx]['name']
         
         if len(retTab):
             self.cacheLinks[cacheKey] = retTab
@@ -371,43 +514,46 @@ class RTBFBE(CBaseHostClass):
             videoUrl = videoUrl.replace('youtu.be/', 'youtube.com/watch?v=')
             return self.up.getVideoLinkExt(videoUrl)
         
-        return [{'name':'direct', 'url':videoUrl}]
-        
-    def getArticleContent(self, cItem):
-        printDBG("RTBFBE.getArticleContent [%s]" % cItem)
-        self.tryTologin()
         retTab = []
+        meta = dict(videoUrl.meta)
+        type = meta.pop('iptv_proto', 'mp4')
+        printDBG("++++++++++++++++++++++++ type[%s]" % type)
+        if self.loggedIn:
+            urlParams = dict(self.defaultParams)
+            urlParams['header'] = dict(urlParams['header'])
+            urlParams['header']['Referer'] = videoUrl.meta['Referer']
+            urlParams['raw_post_data'] = True
+            
+            url = 'https://token.rtbf.be/'
+            sts, data = self.getPage(url, urlParams, self.serParams({type:videoUrl}, 'streams'))
+            if not sts: return []
+            
+            try:
+                data = byteify(json.loads(data))
+                videoUrl = data['streams'][type]
+                printDBG("+++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG(videoUrl)
+            except Exception:
+                printExc()
+        elif 'token=' not in videoUrl and '?' not in videoUrl:
+            videoUrl += '?token=' + self.getPartnerToken()
         
-        url = cItem.get('url', '')
-        if ',odcinek' in url: type = 'episode'
-        elif 'serial,' in url: type = 'series'
-        elif 'film,' in url: type = 'movie'  
-        else: return []
+        if type == 'm3u8':
+            retTab = getDirectM3U8Playlist(videoUrl, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999)
+        elif type == 'mpd':
+            retTab = getMPDLinksWithMeta(videoUrl, checkExt=False, sortWithMaxBandwidth=999999999)
+        else:
+            retTab = [{'name':'mp4', 'url':videoUrl}]
         
-        sts, data = self.getPage(url)
-        if not sts: return []
+        for idx in range(len(retTab)):
+            retTab[idx]['url'] = strwithmeta(retTab[idx]['url'], meta)
         
-        otherInfo = {}
-        retTab = []
-        desc = []
-        
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<p', '</p>')[1])
-        icon = self.cm.ph.getDataBeetwenNodes(data, ('<meta', '>', 'image'), ('<', '>'))[1]
-        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''content=['"]([^'^"]+?)['"]''')[0])
-        
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'prawo-kontener'), ('</div', '>'), False)[1].replace('&laquo;', '').replace('&raquo;', ''))
-        if type == 'episode':
-            sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'movieinfo'), ('</h', '>'), False)[1])
-            title = '%s - %s' % (sTitle, title)
-        
-        if title == '': title = cItem['title']
-        if desc == '':  desc = cItem.get('desc', '')
-        if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullIconUrl(icon)}], 'other_info':otherInfo}]
+        return retTab
         
     def tryTologin(self):
         printDBG('RTBFBE.tryTologin start')
+        serverUnkResponse = _('Unknown server response.')
+        message = serverUnkResponse
         
         if self.login == config.plugins.iptvplayer.rtbfbe_login.value and \
            self.password == config.plugins.iptvplayer.rtbfbe_password.value:
@@ -416,6 +562,7 @@ class RTBFBE(CBaseHostClass):
         self.login = config.plugins.iptvplayer.rtbfbe_login.value
         self.password = config.plugins.iptvplayer.rtbfbe_password.value
         
+        self.loginData = {}
         rm(self.COOKIE_FILE)
         self.loggedIn = False
         
@@ -423,42 +570,64 @@ class RTBFBE(CBaseHostClass):
             return False
         
         sts, data = self.getPage(self.getMainUrl())
-        if not sts: return False
-        
-        nick = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'nick'), ('</a', '>'))[1])
-        loginMarker = 'logout.html'
-        if loginMarker not in data or nick != self.login:
-            self.cm.clearCookie(self.COOKIE_FILE, ['__cfduid', 'cf_clearance'])
-            sts, data = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'user'), ('</form', '>'))
-            if not sts: return False
+        if sts:
+            self.getPartnerKey(data)
+            self.dataKey = self.cm.ph.getSearchGroups(data, '''data\-key=['"]([^'^"]+?)['"]''')[0]
+            sts, data = self.getPage(self.getFullUrl('/api/sso/screenset?set=authentication'))
+        if sts: 
+            requestId = 'R%s' % random.randint(1000000000, 9999999999)
+            url = 'https://login.rtbf.be/accounts.login?context=%s&&saveResponseID=%s' % (requestId, requestId)
+            post_data = {'loginID':            self.login,
+                         'password':           self.password,
+                         'sessionExpiration':  '-2',
+                         'targetEnv':          'jssdk',
+                         'include':            'profile,data,emails,subscriptions,preferences,',
+                         'includeUserInfo':    'true',
+                         'loginMode':          'standard',
+                         'APIKey':             self.dataKey,
+                         'source':             'showScreenSet',
+                         'sdk':                'js_8.1.20',
+                         'authMode':           'cookie',
+                         'pageURL':            self.getFullUrl('/auvio/'),
+                         'format'              'json'
+                         'context':            requestId
+                         }
+            sts, data = self.getPage(url, post_data=post_data)
+        if sts: 
+            url = 'https://login.rtbf.be/socialize.getSavedResponse?APIKey=%s&saveResponseID=%s&noAuth=true&sdk=js_8.1.20&format=jsonp&callback=gigya.callback&context=%s'
+            sts, data = self.getPage(url % (self.dataKey, requestId, requestId), post_data=post_data)
+        if sts:
+            try:
+                data = self.cm.ph.getDataBeetwenMarkers(data, 'gigya.callback(', ');', False)[1]
+                data = byteify(json.loads(data))
+                printDBG(data)
+                printDBG("++++++++++++++++++++++++++++++++++++")
+                if 200 == data['statusCode']:
+                    self.loginData = data
+                    url = 'https://www.rtbf.be/api/sso/login'
+                    post_data = {'gigyaId':   data['UID'], 
+                                 'signature': data['UIDSignature'], 
+                                 'timestamp': data['signatureTimestamp']}
+                    urlParams = dict(self.defaultParams)
+                    urlParams['header'] = dict(urlParams['header'])
+                    urlParams['header']['X-CSRF-Token'] = self.csrfToken
+                    sts, data = self.getPage(url, urlParams, post_data=post_data)
+                else:
+                    sts = False
+                    message = self.cleanHtmlStr(data['errorMessage'])
+            except Exception:
+                printExc()
+        if sts:
+            url = 'https://www.rtbf.be/api/sso/fetch'
+            sts, data = self.getPage(url, urlParams)
+            printDBG(data)
+            printDBG("++++++++++++++++++++++++++++++++++++")
             
-            actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
-            post_data = {}
-            for item in data:
-                name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
-                value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
-                post_data[name] = value
-            
-            post_data.update({'ga10':self.login, 'gb10':self.password, 'gautolog':'t'})
-            
-            httpParams = dict(self.defaultParams)
-            httpParams['header'] = dict(httpParams['header'])
-            httpParams['header']['Referer'] = self.getMainUrl()
-            sts, data = self.cm.getPage(actionUrl, httpParams, post_data)
-        if sts and loginMarker in data:
+        if sts:
             self.loggedIn = True
-            data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'po-zalogowaniu'), ('<a', '>', 'logout.html'))[1]
-            data = data.split('</a>')
-            self.loginMessage =  []
-            for t in data:
-                t = self.cleanHtmlStr(t)
-                if t not in ['', '>']: self.loginMessage.append(t)
-            self.loginMessage = '[/br]'.join(self.loginMessage)
         else:
-            message = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'warn'), ('</div', '>'))[1])
+            self.loggedIn = False
             self.sessionEx.open(MessageBox, _('Login failed.') + '\n' + message, type = MessageBox.TYPE_ERROR, timeout = 10)
-            printDBG('tryTologin failed')
         return self.loggedIn
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
@@ -468,7 +637,9 @@ class RTBFBE(CBaseHostClass):
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
-        self.informAboutGeoBlockingIfNeeded('BE')
+        if RTBFBE.CHECK_GEO_LOCK:
+            RTBFBE.CHECK_GEO_LOCK = False
+            self.informAboutGeoBlockingIfNeeded('BE')
 
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
@@ -481,14 +652,24 @@ class RTBFBE(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listMainMenu({'name':'category'}, 'sub_menu')
+    #LIVE
+        elif category == 'live_categories':
+            self.listLiveCategories(self.currItem, 'list_live_items')
+        elif category == 'list_live_items':
+            self.listLiveItems(self.currItem)
     #CATEGORIES
         elif category == 'categories':
-            self.listCategories(self.currItem, 'sections')
+            self.listSubMenuItems(self.currItem, 'sections', 'category')
+    #CHANNELS
+        elif category == 'channels':
+            self.listSubMenuItems(self.currItem, 'sections', 'channel')
     #SECTIONS
         elif category == 'sections':
             self.listSections(self.currItem, 'list_sub_items', 'sections')
         elif category == 'list_sub_items':
             self.listSubItems(self.currItem)
+        elif category == 'list_playlist_items':
+            self.listPlaylistItems(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
@@ -512,9 +693,4 @@ class IPTVHost(CHostBase):
         searchTypesOptions.append((_("Video"), "video"))
         searchTypesOptions.append((_("Audio"), "audio"))
         return searchTypesOptions
-        
-    #def withArticleContent(self, cItem):
-    #    url = cItem.get('url', '')
-    #    if 'serial,' in url or ',odcinek' in url or 'film,' in url:
-    #        return True
-    #    return False
+    
