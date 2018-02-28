@@ -321,8 +321,8 @@ class NaszeKinoTv(CBaseHostClass):
             
         if '/film/' in cUrl:
             params = dict(cItem)
-            params.update({'icon':icon, 'desc':desc})
-            self.addVideo(params)
+            params.update({'type':'video', 'icon':icon, 'desc':desc})
+            self.currList.insert(0, params)
         else:
             if 'episode-list' not in data:
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(posterData, '''href=['"]([^'^"]*?serial\-online[^'^"]+?)['"]''')[0])
@@ -511,51 +511,79 @@ class NaszeKinoTv(CBaseHostClass):
         videoUrl = strwithmeta(videoUrl, {'Referer':urlParams['header']['Referer']})
         return self.up.getVideoLinkExt(videoUrl)
         
-    def getArticleContent(self, cItem, data=None):
+    def getArticleContent(self, cItem, data=None, cUrl=''):
         printDBG("NaszeKinoTv.getArticleContent [%s]" % cItem)
         
         retTab = []
         
         otherInfo = {}
         
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return []
+        if data == None:
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return []
+            cUrl = data.meta['url']
+            self.setMainUrl(cUrl)
+            
+        if '/odcinek' in cUrl and cItem['type'] == 'category':
+            posterData = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'single-poster'), ('<img', '>'))[1]
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(posterData, '''href=['"]([^'^"]*?serial\-online[^'^"]+?)['"]''')[0])
+            
+            sts, data = self.getPage(url)
+            if not sts: return []
+            cUrl = data.meta['url']
+            self.setMainUrl(cUrl)
         
-        cUrl = data.meta['url']
-        self.setMainUrl(cUrl)
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'item-headline'), ('<footer', '>'))[1] #, 'clearfix'
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'description'), ('</p', '>'))[1])
+        icon = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'single-poster'), ('<img', '>'))[1]
+        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '<img[^>]+?src="([^"]+?\.(:?jpe?g|png)(:?\?[^"]+?)?)"')[0], cUrl)
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'item-headline'), ('</div', '>'))[1]
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(tmp, ('<h', '>'), ('</h', ''), False)
+        title = []
+        for t in tmp:
+            t = self.cleanHtmlStr(t)
+            if t != '': title.append(t)
+        title = ' '.join(title)
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'CoverIntroMovie'), ('<script', '>'))[1]
+        keysMap = {'Odsłony:':          'views',
+                   'Kategoria:':        'genre',
+                   'Kraj:':             'country',
+                   'Dodał:':            'added',
+                   'director':          'director',
+                   'productionCompany': 'writer',
+                   'actors':            'actors',}
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'info'), ('</div', '>'))[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<ul', '</ul>')
+        for item in tmp:
+            item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<li', '</li>')
+            tab = []
+            for it in item:
+                it = self.cleanHtmlStr(it)
+                tab.append(it)
+            if len(tab) > 1:
+                key = keysMap.get(tab[0], '')
+                otherInfo[key] = ', '.join(tab[1:])
         
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'contentFilm'), ('</div', '>'))[1])
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<h1', '>', 'entry-title'), ('</h1', '>'))[1])
-        icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(data, '''\ssrc=['"]([^'^"]+?(:?\.jpe?g|\.png)(:?\?[^'^"]*?)?)['"]''')[0])
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data.split('</p>', 1)[-1], ('<h4', '</h4>'), ('</ul', '>'))
+        for item in tmp:
+            key = self.cm.ph.getSearchGroups(item, '''itemprop=['"]([^'^"]+?)['"]''')[0]
+            key = keysMap.get(key, '')
+            if key == '': continue
+            item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<li', '</li>')
+            tab = []
+            for it in item:
+                it = self.cleanHtmlStr(it)
+                tab.append(it)
+            if len(tab): otherInfo[key] = ', '.join(tab)
         
-        item = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'views'), ('</div', '>'))[1])
+        item = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'ratingValue'), ('</div', '>'))[1])
         if item != '': otherInfo['rating'] = item
-        
-        keysMap = {'quality':        'quality',
-                   'category':       'category',
-                   'genre':          'genre',
-                   'year':           'year',
-                   'runtime':        'duration',
-                   'datePublished':  'released',}
-        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<span', '>', 'class='), ('</span', '>'))
-        printDBG(data)
-        for item in data:
-            marker = self.cm.ph.getSearchGroups(item, '''\sitemprop=['"]([^'^"]+?)['"]''')[0]
-            if marker == '': marker = self.cm.ph.getSearchGroups(item, '''\sclass=['"]([^'^"]+?)['"]''')[0]
-            printDBG(">>> %s" % marker)
-            if marker not in keysMap: continue
-            value  = self.cleanHtmlStr(item)
-            printDBG(">>>>> %s" % value)
-            if value == '': continue
-            if marker == 'genre' and '' != self.cm.ph.getSearchGroups(value, '''([0-9]{4})''')[0]:
-                marker = 'year'
-            otherInfo[keysMap[marker]] = value
+        item = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<sup', '</sup>')[1])
+        if item != '': otherInfo['year'] = item
         
         if title == '': title = cItem['title']
-        if desc == '':  desc = cItem.get('desc', '')
         if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
+        #if desc == '':  desc = cItem.get('desc', '')
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
@@ -625,9 +653,10 @@ class IPTVHost(CHostBase):
         searchTypesOptions.append((_("Series"), "serie"))
         return searchTypesOptions
         
-    #def withArticleContent(self, cItem):
-    #    if 'video' == cItem.get('type', '') or 'explore_item' == cItem.get('category', ''):
-    #        return True
-    #    else:
-    #        return False
+    def withArticleContent(self, cItem):
+        if '.nasze-kino.' in cItem.get('url', '') and \
+           ('video' == cItem.get('type', '') or \
+            'explore_item' == cItem.get('category', '')):
+            return True
+        else: return False
     
