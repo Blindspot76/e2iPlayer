@@ -237,7 +237,6 @@ class PlayerSelectorWidget(Screen):
     def __onClose(self):
         self.session.nav.event.remove(self.__event)
         self.onClose.remove(self.__onClose)
-        self.onLayoutFinish.remove(self.onStart)
         try:
             if self.reorderingMode and self.numOfLockedItems > 0:
                 self.currList.extend(self.inList[len(self.inList)-self.numOfLockedItems:])
@@ -293,6 +292,7 @@ class PlayerSelectorWidget(Screen):
         return
         
     def onStart(self):
+        self.onLayoutFinish.remove(self.onStart)
         self["marker"].setPixmap( self.markerPixmap )
         self["page_marker"].setPixmap( self.pageMarkerPixmap )
         self["menu"].setPixmap( self.menuPixmap )
@@ -305,6 +305,8 @@ class PlayerSelectorWidget(Screen):
         self.initDisplayList()
         
     def initDisplayList(self):
+        self.offsetCoverX = self['marker'].position[0]
+        self.offsetCoverY = self['marker'].position[1]
         self.updateIcons()
         self.setIdx(self.lastSelection)
         
