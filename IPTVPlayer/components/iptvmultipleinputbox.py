@@ -68,7 +68,7 @@ class IPTVMultipleInputBox(Screen):
         self.list = params['list']
         self.withAcceptButton = params.get('with_accept_button', False)
         self.statusText = params.get('status_text', '')
-        
+        statusTextHight = params.get('status_text_hight', 80)
         # calcl maxWidth size
         for idx in range(len(self.list)):
             item = self.list[idx]
@@ -77,8 +77,8 @@ class IPTVMultipleInputBox(Screen):
         maxWidth += pX*2
         
         if len(self.statusText):
-            skinItems = '<widget name="statustext"   position="10,%d"  zPosition="2" size="%d,80"  valign="center" halign="center" font="Regular;22" transparent="1" />' % (pY+dY, maxWidth-20)
-            pY += 80 + dY*2
+            skinItems = '<widget name="statustext"   position="10,%d"  zPosition="2" size="%d,%d"  valign="center" halign="center" font="Regular;22" transparent="1" />' % (pY+dY, maxWidth-20, statusTextHight)
+            pY += statusTextHight + dY*2
             
         
         for idx in range(len(self.list)):
