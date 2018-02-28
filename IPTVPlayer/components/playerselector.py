@@ -296,6 +296,10 @@ class PlayerSelectorWidget(Screen):
         self["marker"].setPixmap( self.markerPixmap )
         self["page_marker"].setPixmap( self.pageMarkerPixmap )
         self["menu"].setPixmap( self.menuPixmap )
+        self.offsetCoverX = self['marker'].position[0] + (self.markerWidth - self.coverWidth)/2
+        self.offsetCoverY = self['marker'].position[1] + (self.markerHeight - self.coverHeight)/2
+        self.pageItemStartX = self['page_marker'].position[0]
+        self.pageItemStartY = self['page_marker'].position[1]
         self.initDisplayList()
         return
         
@@ -305,8 +309,6 @@ class PlayerSelectorWidget(Screen):
         self.initDisplayList()
         
     def initDisplayList(self):
-        self.offsetCoverX = self['marker'].position[0]
-        self.offsetCoverY = self['marker'].position[1]
         self.updateIcons()
         self.setIdx(self.lastSelection)
         
