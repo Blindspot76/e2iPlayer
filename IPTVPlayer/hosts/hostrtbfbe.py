@@ -313,7 +313,7 @@ class RTBFBE(CBaseHostClass):
             sectionItem = self.cm.ph.getAllItemsBeetwenMarkers(sectionItem, '<article', '</article>')
             for item in sectionItem:
                 icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''data\-srcset=['"]([^'^"^\s]+?)[\s'"]''')[0])
-                if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"^\s]+?(:?\.jpe?g|\.png)(:?\?[^'^"^\s]*?)?)[\s'"]''')[0])
+                if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"^\s]+?(?:\.jpe?g|\.png)(?:\?[^'^"^\s]*?)?)[\s'"]''')[0])
                 header = self.cm.ph.getDataBeetwenMarkers(item, '<header', '</header>')[1]
                 url = self.cm.ph.getSearchGroups(header, '''href=['"]([^'^"]+?)['"]''')[0]
                 if url == '' or url[0] in ['{', '[']: continue
@@ -381,7 +381,7 @@ class RTBFBE(CBaseHostClass):
         data = re.compile('''<li[^>]+?js\-chapter\-entry[^>]+?>''').split(data)
         for item in data:
             icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''data\-srcset=['"]([^'^"^\s]+?)[\s'"]''')[0])
-            if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"^\s]+?(:?\.jpe?g|\.png)(:?\?[^'^"^\s]*?)?)[\s'"]''')[0])
+            if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"^\s]+?(?:\.jpe?g|\.png)(?:\?[^'^"^\s]*?)?)[\s'"]''')[0])
             title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''\stitle=['"]([^'^"]+?)['"]''')[0])
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
             desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', '-subtitle'), ('</span', '>'))[1])

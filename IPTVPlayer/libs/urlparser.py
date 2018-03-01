@@ -467,6 +467,7 @@ class urlparser:
                        'widestream.io':        self.pp.parserWIDESTREAMIO   ,
                        'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
                        'vidbom.com':           self.pp.parserVIDBOMCOM      ,
+                       'interia.tv':           self.pp.parserINTERIATV      ,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -1496,7 +1497,7 @@ class pageParser:
             if 1 < len(data) and data[1].startswith('http'): __appendVideoUrl( {'name': urlItem['name'] + ' mp4', 'url':_decorateUrl(data[1], 'cda.pl', urlItem['url']) } )
             if 0 == len(data):
                 data = self.cm.ph.getDataBeetwenReMarkers(tmpData, re.compile('video:[\s]*{'), re.compile('}'), False)[1]
-                data = self.cm.ph.getSearchGroups(data, "'(http[^']+?(:?\.mp4|\.flv)[^']*?)'")[0]
+                data = self.cm.ph.getSearchGroups(data, "'(http[^']+?(?:\.mp4|\.flv)[^']*?)'")[0]
                 if '' != data:
                     type = ' flv '
                     if '.mp4' in data:
@@ -2856,6 +2857,57 @@ class pageParser:
                 urlTab.append({'name':'{0} {1}'.format(domain, label), 'url':url})
         return urlTab
         
+    def parserINTERIATV(self, baseUrl):
+        printDBG("parserINTERIATV baseUrl[%r]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        
+        cUrl = self.cm.getBaseUrl(data.meta['url'])
+        domain = urlparser.getDomain(cUrl)
+        
+        urlTab = []
+        embededLink = self.cm.ph.getSearchGroups(data, '''['"]data\-url['"]\s*?\,\s*?['"]([^'^"]+?)['"]''')[0]
+        if embededLink.startswith('//'): embededLink = 'http:' + embededLink
+        if self.cm.isValidUrl(embededLink):
+            urlParams['header']['Referer'] = baseUrl
+            sts, tmp = self.cm.getPage(embededLink, urlParams)
+            printDBG(tmp)
+            if sts:
+                embededLink = self.cm.ph.getSearchGroups(tmp, '''['"]?src['"]?\s*?:\s*?['"]([^'^"]+?\.mp4(?:\?[^'^"]+?)?)['"]''')[0]
+                if embededLink.startswith('//'): embededLink = 'http:' + embededLink
+                if self.cm.isValidUrl(embededLink):
+                    urlTab.append({'name':'{0} {1}'.format(domain, 'external'), 'url':embededLink})
+        
+        jscode = ['var window=this,document={};function jQuery(){return document}document.ready=function(n){n()};var element=function(n){this._name=n,this.setAttribute=function(){},this.attachTo=function(){}};document.getElementById=function(n){return new element(n)};var Inpl={Video:{}};Inpl.Video.createInstance=function(n){print(JSON.stringify(n))};']
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'Video.createInstance' in item:
+                jscode.append(item)
+        
+        jscode = '\n'.join(jscode)
+        ret = iptv_js_execute( jscode )
+        try:
+            data = byteify(json.loads(ret['data']))['tracks']
+            for tmp in data:
+                printDBG(tmp)
+                for key in ['hi', 'lo']:
+                    if not isinstance(tmp['src'][key], list):
+                        tmp['src'][key] = [tmp['src'][key]]
+                    for item in tmp['src'][key]:
+                        if 'mp4' not in item['type'].lower(): continue
+                        if item['src'] == '': continue
+                        url = urlparser.decorateUrl(self.cm.getFullUrl(item['src'], cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+                        urlTab.append({'name':'{0} {1}'.format(domain, key), 'url':url})
+        except Exception:
+            printExc()
+        return urlTab
+        
     def parserMEGADRIVETV(self, baseUrl):
         printDBG("parserMEGADRIVETV baseUrl[%r]" % baseUrl)
         
@@ -3071,7 +3123,7 @@ class pageParser:
         
         data = data.replace('\\/', '/')
         
-        url = self.cm.ph.getSearchGroups(data, '''['"]((:?https?:)?//[^"^']+\.m3u8[^'^"]*?)['"]''')[0]
+        url = self.cm.ph.getSearchGroups(data, '''['"]((?:https?:)?//[^"^']+\.m3u8[^'^"]*?)['"]''')[0]
         if url.startswith('//'):
             url = 'http:' + url
         
@@ -8775,7 +8827,7 @@ class pageParser:
         # unpack and decode params from JS player script code
         tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams, 0, r2=True)
         printDBG(tmp)
-        urls = re.compile('''(https?://[^'^"]+?\.mp4(:?\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(tmp)
+        urls = re.compile('''(https?://[^'^"]+?\.mp4(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(tmp)
         tab = []
         for url in urls:
             tab.append(url[0])
@@ -9112,7 +9164,7 @@ class pageParser:
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '.setup(', ');', False)[1].strip()
         printDBG(data)
-        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((:?https?:)?//[^"^']+\.mp4)['"]''')[0]
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((?:https?:)?//[^"^']+\.mp4)['"]''')[0]
         if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
         if self.cm.isValidUrl(videoUrl):
             urlsTab.append({'name':'direct', 'url':videoUrl})
@@ -9126,7 +9178,7 @@ class pageParser:
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'playlist:', ']', False)[1].strip()
         printDBG(data)
-        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((:?https?:)?//[^"^']+(:?\.mp4|\.flv))['"]''')[0]
+        videoUrl = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?\s*:\s*['"]((?:https?:)?//[^"^']+(?:\.mp4|\.flv))['"]''')[0]
         if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
         if self.cm.isValidUrl(videoUrl):
             return videoUrl

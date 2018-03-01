@@ -45,7 +45,7 @@ def GetConfigList():
     return optionList
 ###################################################
 def gettytul():
-    return 'https://www.nasze-kino.tv/'
+    return 'https://nasze-kino.tv/'
 
 class NaszeKinoTv(CBaseHostClass):
     
