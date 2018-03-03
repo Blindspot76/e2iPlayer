@@ -53,6 +53,7 @@ hostforjatn
 hostfreediscpl
 hostgamatocom
 hostgamatotvme
+hostgledalica
 hostgomovies
 hostgreekdocumentaries3
 hosthdfilmetv

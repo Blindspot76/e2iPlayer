@@ -1990,7 +1990,7 @@ class IPTVPlayerWidget(Screen):
                     printExc()
                     item = None
                 if None != item:
-                    currSelIndex = self["list"].getCurrentIndex()
+                    currSelIndex = item.itemIdx #self["list"].getCurrentIndex()
                 else:
                     currSelIndex = -1
                 hRet= self.host.getCustomActions(currSelIndex)
