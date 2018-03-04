@@ -1287,7 +1287,7 @@ class IPTVExtMoviePlayer(Screen):
         else:
             if 'orig_pos' not in self.subConfig:
                 self.subConfig['orig_pos'] = self.subConfig['pos']
-            self.subConfig['pos'] += direction
+            self.subConfig['pos'] += (-5 * direction)
             self.setSubOffsetFromInfoBar()
             if -1 != self.subHandler['current_sub_time_ms']:
                 self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
