@@ -185,6 +185,15 @@ class ConfigExtMoviePlayerBase():
         settings['box_height'] = config.plugins.iptvplayer.extplayer_subtitle_box_height.value
         return settings
         
+    def setSubtitleFontSettings(self, objConfig):
+        try:
+            if config.plugins.iptvplayer.extplayer_subtitle_pos.value != objConfig['pos']:
+                config.plugins.iptvplayer.extplayer_subtitle_pos.value = objConfig['pos']
+                config.plugins.iptvplayer.extplayer_subtitle_pos.save()
+                configfile.save()
+        except Exception:
+            printExc()
+        
     def getDefaultPlayerVideoOptions(self):
         defVideoOptions  = {'aspect':  config.plugins.iptvplayer.extplayer_aspect.value, 
                             'policy':  config.plugins.iptvplayer.extplayer_policy.value, 

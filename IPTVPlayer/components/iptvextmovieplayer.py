@@ -472,12 +472,12 @@ class IPTVExtMoviePlayer(Screen):
     def showMenuOptions(self):
         printDBG("showMenuOptions")
         options = []
-        options.append(IPTVChoiceBoxItem(_("External movie player config"), "", "menu"))
+        options.append(IPTVChoiceBoxItem(_("Configuration"), "", "menu"))
         options.append(IPTVChoiceBoxItem(_("Subtitles"), "", "subtitles"))
+        if len(self.playback['AudioTracks']): options.append(IPTVChoiceBoxItem(_("Audio tracks"), "", "audio_tracks"))
         options.append(IPTVChoiceBoxItem(_("Video options"), "", "video_options"))
         
-        if len(options):
-            self.openChild(boundFunction(self.childClosed, self.showMenuOptionsCallback), IPTVChoiceBoxWidget, {'width':400, 'height':240, 'current_idx':0, 'title':_("Menu"), 'options':options})
+        self.openChild(boundFunction(self.childClosed, self.showMenuOptionsCallback), IPTVChoiceBoxWidget, {'width':500, 'height':340, 'current_idx':0, 'title':_("Menu"), 'options':options})
         
     def showMenuOptionsCallback(self, ret=None):
         printDBG("showMenuOptionsCallback ret[%r]" % [ret])
@@ -487,6 +487,8 @@ class IPTVExtMoviePlayer(Screen):
             self.runConfigMoviePlayer()
         elif "subtitles" == ret.privateData:
             self.selectSubtitle()
+        elif "audio_tracks" == ret.privateData:
+            self.selectAudioTrack()
         elif "video_options" == ret.privateData:
             self.selectVideoOptions()
         
@@ -1235,10 +1237,10 @@ class IPTVExtMoviePlayer(Screen):
     def key_left_repeat(self):  self.goToSeekKey(-1, 'repeat')
     def key_rigth_press(self):  self.goToSeekKey(1, 'press')
     def key_rigth_repeat(self): self.goToSeekKey(1, 'repeat')
-    def key_up_press(self):     self.goSubSynchroKey(-1, 'press')
-    def key_up_repeat(self):    self.goSubSynchroKey(-1, 'repeat') 
-    def key_down_press(self):   self.goSubSynchroKey(1, 'press')
-    def key_down_repeat(self):  self.goSubSynchroKey(1, 'repeat')
+    def key_up_press(self):     self.goSubKey(-1, 'press')
+    def key_up_repeat(self):    self.goSubKey(-1, 'repeat') 
+    def key_down_press(self):   self.goSubKey(1, 'press')
+    def key_down_repeat(self):  self.goSubKey(1, 'repeat')
     
     def doSeek(self, val):
         if None != self.downloader and self.downloader.hasDurationInfo() \
@@ -1273,14 +1275,22 @@ class IPTVExtMoviePlayer(Screen):
     def key_menu(self):
         self.showMenuOptions()
         
-    def goSubSynchroKey(self, direction, state='press'):
-        if not self.subHandler['synchro']['visible'] or not self.subHandler['enabled'] or None == self.metaHandler.getSubtitleTrack():
+    def goSubKey(self, direction, state='press'):
+        if not self.subHandler['enabled'] or None == self.metaHandler.getSubtitleTrack():
             self.hideSubSynchroControl()
             return
-        currentDelay = self.metaHandler.getSubtitleTrackDelay()
-        currentDelay += direction * 500 # in MS
-        self.metaHandler.setSubtitleTrackDelay(currentDelay)
-        self.updateSubSynchroControl()
+        if self.subHandler['synchro']['visible']:
+            currentDelay = self.metaHandler.getSubtitleTrackDelay()
+            currentDelay += direction * 500 # in MS
+            self.metaHandler.setSubtitleTrackDelay(currentDelay)
+            self.updateSubSynchroControl()
+        else:
+            if 'orig_pos' not in self.subConfig:
+                self.subConfig['orig_pos'] = self.subConfig['pos']
+            self.subConfig['pos'] += direction
+            self.setSubOffsetFromInfoBar()
+            if -1 != self.subHandler['current_sub_time_ms']:
+                self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
         
     def updateSubSynchroControl(self):
         if not self.subHandler['synchro']['visible'] or not self.subHandler['enabled'] or None == self.metaHandler.getSubtitleTrack():
@@ -1587,6 +1597,10 @@ class IPTVExtMoviePlayer(Screen):
             if playerDefOptions[opt] != None and playerDefOptions[opt] != self.defAudioOptions[opt]:
                 SetE2AudioCodecMixOption(opt, self.defAudioOptions[opt])
         self.metaHandler.save()
+        
+        # SAVE SUBTITLES POSITION IF CHANGED
+        if 'orig_pos' in self.subConfig and self.subConfig['orig_pos'] != self.subConfig['pos']:
+            self.configObj.setSubtitleFontSettings(self.subConfig)
         
         try: self.extPlayerCmddDispatcher.owner = None
         except Exception: printExc()
