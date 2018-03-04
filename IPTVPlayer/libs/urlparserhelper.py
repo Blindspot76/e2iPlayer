@@ -618,9 +618,10 @@ def getMPDLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}, sortWithMax
             liveStreamDetected = True
         
         representation = {'audio':[], 'video':[]}
-        data = cm.ph.getAllItemsBeetwenMarkers(data, "<Period", '</Period>', withMarkers=True)
+        tmp = cm.ph.getAllItemsBeetwenMarkers(data, "<Period", '</Period>', withMarkers=True)
+        if len(tmp): data = tmp[-1]
         # TODO!!! select period based on duration
-        data = cm.ph.getAllItemsBeetwenMarkers(data[-1], "<AdaptationSet", '</AdaptationSet>', withMarkers=True)
+        data = cm.ph.getAllItemsBeetwenMarkers(data, "<AdaptationSet", '</AdaptationSet>', withMarkers=True)
         for item in data:
             type = ''
             if re.compile('''=['"]audio['"/]''').search(item):

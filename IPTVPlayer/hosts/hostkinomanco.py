@@ -696,6 +696,9 @@ class KinomanCO(CBaseHostClass):
         
         otherInfo = {}
         
+        title = ''
+        desc = ''
+        icon = ''
         try:
             type = cItem.get('f_type', '')
             printDBG('> > > > type[%s]' % type)
@@ -732,11 +735,12 @@ class KinomanCO(CBaseHostClass):
             tmp = data['media_rate']['imdb_rate']
             if tmp != '': otherInfo['imdb_rating'] = '%s/10' % (data['media_rate']['imdb_rate'])
             
-            if title == '': title = cItem['title']
-            if desc == '':  desc = cItem.get('desc', '')
-            if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
         except Exception:
             printExc()
+            
+        if title == '': title = cItem['title']
+        if desc == '':  desc = cItem.get('desc', '')
+        if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     

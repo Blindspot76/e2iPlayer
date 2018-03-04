@@ -317,7 +317,7 @@ class FreeDiscPL(CBaseHostClass):
         self.tryTologin()
         
         links = []
-        if self.cm.ph.isVaildUrl(fav_data):
+        if self.cm.isVaildUrl(fav_data):
             links = self.getLinksForVideo({'url':fav_data})
         else:
             try:

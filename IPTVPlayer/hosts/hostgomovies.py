@@ -132,13 +132,17 @@ class GoMovies(CBaseHostClass):
             printExc()
         
         self.SEARCH_URL = self.MAIN_URL + 'movie/search'
-        #self.DEFAULT_ICON_URL = self.MAIN_URL + 'assets/images/logo-light.png'
         
-        self.MAIN_CAT_TAB = [{'category':'list_filter_genre', 'title': 'Movies',    'url':self.MAIN_URL+'movie/filter/movie' },
-                             {'category':'list_filter_genre', 'title': 'TV-Series', 'url':self.MAIN_URL+'movie/filter/series'},
-                             {'category':'search',          'title': _('Search'), 'search_item':True,                        },
-                             {'category':'search_history',  'title': _('Search history'),                                    } 
-                            ]
+    def listMain(self, cItem):
+        printDBG("MyTheWatchseries.listMain")
+        if self.MAIN_URL == None:
+            self.selectDomain()
+        MAIN_CAT_TAB = [{'category':'list_filter_genre', 'title': 'Movies',    'url':self.MAIN_URL+'movie/filter/movie' },
+                        {'category':'list_filter_genre', 'title': 'TV-Series', 'url':self.MAIN_URL+'movie/filter/series'},
+                        {'category':'search',          'title': _('Search'), 'search_item':True,                        },
+                        {'category':'search_history',  'title': _('Search history'),                                    } 
+                       ]
+        self.listsTab(MAIN_CAT_TAB, cItem)
         
     def fillCacheFilters(self):
         self.cacheFilters = {}
@@ -521,7 +525,7 @@ class GoMovies(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.fillCacheFilters()
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.listMain({'name':'category'})
         elif category.startswith('list_filter_'):
             filter = category.replace('list_filter_', '')
             if filter == 'genre':     self.listFilters(self.currItem, filter, 'list_filter_country')
