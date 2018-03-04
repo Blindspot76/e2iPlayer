@@ -1034,6 +1034,19 @@ class pageParser:
                         return base + '/' + src + ' swfUrl=%s pageUrl=%s' % (SWF_URL, url)
             return ''
         
+        subTracks = []
+        subData = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''['"]?tracks['"]?\s*?:'''), re.compile(']'), False)[1].split('}')
+        for item in subData:
+            kind = self.cm.ph.getSearchGroups(item, r'''['"]?kind['"]?\s*?:\s*?['"]([^"^']+?)['"]''')[0].lower()
+            if kind != 'captions': continue
+            src = self.cm.ph.getSearchGroups(item, r'''['"]?file['"]?\s*?:\s*?['"](https?://[^"^']+?)['"]''')[0]
+            if src == '': continue
+            label = self.cm.ph.getSearchGroups(item, r'''label['"]?\s*?:\s*?['"]([^"^']+?)['"]''')[0]
+            format = src.split('?', 1)[0].split('.')[-1].lower()
+            if format not in ['srt', 'vtt']: continue
+            if 'empty' in src.lower(): continue
+            subTracks.append({'title':label, 'url':src, 'lang':'unk', 'format':'srt'})
+        
         srcData = self.cm.ph.getDataBeetwenMarkers(data, m1, m2, False)[1].split('},')
         for item in srcData:
             item += '},'
@@ -1067,6 +1080,11 @@ class pageParser:
                 if link.startswith('rtmp'):
                     proto = 'rtmp'
                 linksTab.append({'name':proto + ' ' +serverName, 'url':link})
+        
+        if len(subTracks):
+            for idx in range(len(linksTab)):
+                linksTab[idx]['url'] = urlparser.decorateUrl(linksTab[idx]['url'], {'external_sub_tracks':subTracks})
+        
         return linksTab
         
     def _findLinks2(self, data, baseUrl):
