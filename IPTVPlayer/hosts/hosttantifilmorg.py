@@ -390,30 +390,36 @@ class TantiFilmOrg(CBaseHostClass):
                     if not self.cacheLinks[key][idx]['name'].startswith('*'):
                         self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                     break
-        
-        if 1 != self.up.checkHostSupport(videoUrl):
-            addParams = dict(self.defaultParams)
-            addParams['with_metadata'] = True
-            sts, data = self.getPage(videoUrl, addParams)
-            if sts:
-                videoUrl = data.meta['url']
-                jscode = ['var document={},window=this;function typeOf(r){return{}.toString.call(r).match(/\s(\w+)/)[1].toLowerCase()}function jQuery(){return"function"==typeOf(arguments[0])&&arguments[0](),jQuery}jQuery.ready=jQuery,jQuery.attr=function(r,t){"src"==r&&print(t)},$=jQuery;']
-                tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
-                for item in tmp:
-                    jscode.append(item)
-                ret = iptv_js_execute( '\n'.join(jscode) )
-                if ret['sts'] and 0 == ret['code']:
-                    data = ret['data'].strip()
-                    if self.cm.isValidUrl(data):
-                        videoUrl = data
-        
-        if 'hostvid.xyz' in self.up.getDomain(videoUrl):
-            sts, data = self.getPage(videoUrl)
-            if not sts: return []
+        tries = 0
+        while tries < 4:
+            tries += 1
+            if not self.cm.isValidUrl(videoUrl):
+                break
+            if 1 != self.up.checkHostSupport(videoUrl):
+                addParams = dict(self.defaultParams)
+                addParams['with_metadata'] = True
+                sts, data = self.getPage(videoUrl, addParams)
+                if sts:
+                    videoUrl = data.meta['url']
+                    jscode = ['var document={},window=this;function typeOf(r){return{}.toString.call(r).match(/\s(\w+)/)[1].toLowerCase()}function jQuery(){return"function"==typeOf(arguments[0])&&arguments[0](),jQuery}jQuery.ready=jQuery,jQuery.attr=function(r,t){"src"==r&&print(t)},$=jQuery;']
+                    tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+                    for item in tmp:
+                        jscode.append(item)
+                    ret = iptv_js_execute( '\n'.join(jscode) )
+                    if ret['sts'] and 0 == ret['code']:
+                        data = ret['data'].strip()
+                        if self.cm.isValidUrl(data):
+                            videoUrl = data
+            
+            if 'hostvid.xyz' in self.up.getDomain(videoUrl):
+                sts, data = self.getPage(videoUrl)
+                if not sts: return []
+                videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            if self.cm.isValidUrl(videoUrl):
+                urlTab = self.up.getVideoLinkExt(videoUrl)
+                if len(urlTab):
+                    break
             videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
-        
-        if self.cm.isValidUrl(videoUrl):
-            return self.up.getVideoLinkExt(videoUrl)
         return urlTab
         
     def getFavouriteData(self, cItem):
