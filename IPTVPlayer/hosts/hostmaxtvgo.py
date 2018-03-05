@@ -108,17 +108,22 @@ class MaxtvGO(CBaseHostClass):
             self.addVideo(params)
         
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        catsTitle = '' 
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'slajder_film'), ('<div', '>', 'chat_round'))[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
-        for item in data:
-            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
-            icon  = strwithmeta(icon, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT, 'Referer':cItem['url']})
-            title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
-            # 'category':nextCategory,
-            params = dict(cItem)
-            params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
-            self.addVideo(params)
+        data = re.compile('(<h3[^>]*?>[^>]*?</[^>]*?>)').split(data)
+        for catData in data:
+            if catData.startswith('<h3'): catsTitle = self.cleanHtmlStr(catData)
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(catData, '<a', '</a>')
+            for item in tmp:
+                url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+                icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+                icon  = strwithmeta(icon, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT, 'Referer':cItem['url']})
+                title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
+                if title == '': title = catsTitle + ' ' + self.cleanHtmlStr(icon.split('/')[-1].split('.', 1)[0].replace('small', ''))
+                # 'category':nextCategory,
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
+                self.addVideo(params)
             
         if self.loggedIn != True and 0 == len(self.currList):
             msg = _('The host %s requires registration. \nPlease fill your login and password in the host configuration. Available under blue button.' % self.getMainUrl())
