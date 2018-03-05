@@ -7258,16 +7258,14 @@ class pageParser:
         sts, data = self.cm.getPage(url)
         if not sts: return False
         
+        printDBG(data)
+        
         urlTab = []
         tmp = []
         for item in [('linkfile', 'normal'), ('linkfileBackup', 'backup'), ('linkfileBackupLq', 'low')]:
             try:
-                a = re.compile('var\s+linkfile *= *"(.+?)"').findall(data)[0]
-                b = re.compile('var\s+linkfile *= *base64_decode\(.+?\s+(.+?)\)').findall(data)[0]
-                c = re.compile('var\s+%s *= *(\d*)' % b).findall(data)[0]
-                vidUrl = a[:int(c)] + a[(int(c) + 10):]
-                vidUrl = base64.b64decode(vidUrl)
-                if vidUrl not in tmp:
+                vidUrl = self.cm.ph.getSearchGroups(data, 'var\s+?' + item[0] + '''\s*?=\s*?['"]([^"^']+?)['"]''')[0]
+                if vidUrl not in tmp and self.cm.isValidUrl(vidUrl):
                     tmp.append(vidUrl)
                     if vidUrl.split('?')[0].endswith('.m3u8'):
                         tab = getDirectM3U8Playlist(vidUrl)

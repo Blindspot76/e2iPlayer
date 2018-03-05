@@ -419,7 +419,8 @@ class TantiFilmOrg(CBaseHostClass):
                 urlTab = self.up.getVideoLinkExt(videoUrl)
                 if len(urlTab):
                     break
-            videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            try: videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            except Exception: break
         return urlTab
         
     def getFavouriteData(self, cItem):
