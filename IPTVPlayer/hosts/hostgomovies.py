@@ -261,6 +261,8 @@ class GoMovies(CBaseHostClass):
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("GoMovies.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        if self.MAIN_URL == None:
+            self.selectDomain()
         cItem = dict(cItem)
         cItem['url'] = self.SEARCH_URL + '/' + urllib.quote_plus(searchPattern)
         self.listItems(cItem, 'list_episodes')
