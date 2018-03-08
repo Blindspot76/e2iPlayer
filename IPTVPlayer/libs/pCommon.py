@@ -973,7 +973,11 @@ class common:
                     out_data = f.read()
                 else:
                     out_data = data
-            except Exception:
+            except Exception as e:
+                printExc()
+                msg1 = _("Critical Error – Content-Encoding gzip cannot be handled!")
+                msg2 = _("Last error:\n%s" % str(e))
+                GetIPTVNotify().push('%s\n\n%s' % (msg1, msg2), 'error', 20)
                 out_data = data
  
         if params.get('use_cookie', False) and params.get('save_cookie', False):
