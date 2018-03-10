@@ -29,6 +29,7 @@ from Plugins.Extensions.IPTVPlayer.libs.goldvodtv         import GoldVodTVApi, G
 from Plugins.Extensions.IPTVPlayer.libs.showsporttvcom    import ShowsportTVApi
 from Plugins.Extensions.IPTVPlayer.libs.sport365live      import Sport365LiveApi
 #from Plugins.Extensions.IPTVPlayer.libs.pierwszatv        import PierwszaTVApi, GetConfigList as PierwszaTV_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.livemassnet       import LivemassNetApi
 from Plugins.Extensions.IPTVPlayer.libs.yooanimecom       import YooanimeComApi
 from Plugins.Extensions.IPTVPlayer.libs.livetvhdnet       import LivetvhdNetApi
 from Plugins.Extensions.IPTVPlayer.libs.karwantv          import KarwanTvApi
@@ -127,7 +128,6 @@ def GetConfigList():
     try:    optionList.extend( BilaSportPw_GetConfigList() )
     except Exception: printExc()
     
-    
     return optionList
 
 ###################################################
@@ -164,6 +164,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'edem_tv',                 'name': 'edem.tv',             'title': 'Edem TV',                           'url': 'https://edem.tv/',                                                   'icon': 'https://edem.tv/public/images/logo_edem.png'}, \
                         {'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url': 'http://matzg2.prv.pl/radio.m3u',                                     'icon': 'http://matzg2.prv.pl/openfm.png'}, \
                         {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'http://goldvod.tv/',                'url': '',                                                                   'icon': 'http://goldvod.tv/assets/images/logo.png'}, \
+                        {'alias_id':'livemass.net',            'name': 'livemass.net',        'title': 'http://livemass.net/',              'url': 'http://www.livemass.net/',                                           'icon': 'http://s3.amazonaws.com/livemass/warrington/images/warrington/iconclr.png'}, \
                         {'alias_id':'wizja.tv',                'name': 'wizja.tv',            'title': 'http://wizja.tv/',                  'url': 'http://wizja.tv/',                                                   'icon': 'http://wizja.tv/logo.png'}, \
                        ] 
     
@@ -188,6 +189,7 @@ class HasBahCa(CBaseHostClass):
         self.meteoPLApi           = None
         self.liveStreamTvApi      = None
         #self.pierwszaTvApi        = None
+        self.livemassNetApi       = None
         self.goldvodTvApi         = None
         self.showsportTvApi       = None
         self.sport365LiveApi      = None
@@ -887,7 +889,22 @@ class HasBahCa(CBaseHostClass):
     #    printDBG("getPierwszaTvLink start")
     #    urlsTab = self.pierwszaTvApi.getVideoLink(cItem)
     #    return urlsTab
-        
+    
+    def getLivemassNetList(self, cItem):
+        printDBG("getLivemassNetList start")
+        if None == self.livemassNetApi:
+            self.livemassNetApi = LivemassNetApi()
+        tmpList = self.livemassNetApi.getList(cItem)
+        for item in tmpList:
+            if item['type'] == 'video': self.addVideo(item) 
+            elif item['type'] == 'marker': self.addMarker(item)
+            else: self.addDir(item)
+    
+    def getLivemassNetLink(self, cItem):
+        printDBG("getLivemassNetLink start")
+        urlsTab = self.livemassNetApi.getVideoLink(cItem)
+        return urlsTab
+    
     def getGoldVodTvList(self, cItem):
         printDBG("getGoldVodTvList start")
         if None == self.goldvodTvApi:
@@ -985,6 +1002,7 @@ class HasBahCa(CBaseHostClass):
         elif name == "m3u":                 self.m3uList(url)
         elif name == "prognoza.pogody.tv":  self.prognozaPogodyList(url)
         #elif name == 'pierwsza.tv':         self.getPierwszaTvList(self.currItem)
+        elif name == 'livemass.net':        self.getLivemassNetList(self.currItem)
         elif name == "goldvod.tv":          self.getGoldVodTvList(url)
         elif name == "showsport-tv.com":    self.getShowsportTvList(self.currItem)
         elif name == "sport365.live":       self.getSport365LiveList(self.currItem)
@@ -1044,6 +1062,7 @@ class IPTVHost(CHostBase):
             if 0 < len(url): retlist.append(CUrlItem("Własny link", new_url))
         elif url.startswith('http://goldvod.tv/'): urlList = self.host.getGoldVodTvLink(cItem)
         #elif name == 'pierwsza.tv':                urlList = self.host.getPierwszaTvLink(cItem)
+        elif name == 'livemass.net':                urlList = self.host.getLivemassNetLink(cItem)
         elif name == "showsport-tv.com":           urlList = self.host.getShowsportTvLink(cItem)
         elif name == "sport365.live":              urlList = self.host.getSport365LiveLink(cItem)
         elif name == 'wagasworld.com':             urlList = self.host.getWagasWorldLink(cItem)
