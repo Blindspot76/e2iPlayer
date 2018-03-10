@@ -45,7 +45,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://anime-odcinki.pl/'
+    return 'https://a-o.ninja/'
 
 class AnimeOdcinkiPL(CBaseHostClass):
  
@@ -57,8 +57,8 @@ class AnimeOdcinkiPL(CBaseHostClass):
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'http://anime-odcinki.pl/'
-        self.DEFAULT_ICON_URL = 'http://www.vanger.net/u_c.jpg'
+        self.MAIN_URL = 'https://a-o.ninja/'
+        self.DEFAULT_ICON_URL = 'https://a-o.ninja/wp-content/uploads/2017/07/A-O_logo.png'
         
         self.MAIN_CAT_TAB = [{'category':'new',               'title': _('New'),                          'url':self.MAIN_URL                    },
                              {'category':'list_emitowane',    'title': 'Emitowane',                       'url':self.MAIN_URL                    },
@@ -311,7 +311,7 @@ class AnimeOdcinkiPL(CBaseHostClass):
                 continue
             if not self.cm.isValidUrl(url): continue
             name = self.cleanHtmlStr(item)
-            urlTab.append({'name':name, 'url':url, 'need_resolve':1})
+            urlTab.append({'name':name, 'url':strwithmeta(url, {'Referer':cItem['url']}), 'need_resolve':1})
         
         self.cacheLinks[cItem['url']] = urlTab
         return urlTab
@@ -328,6 +328,14 @@ class AnimeOdcinkiPL(CBaseHostClass):
                     if not self.cacheLinks[key][idx]['name'].startswith('*'):
                         self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                     break
+        
+        if 1 != self.up.checkHostSupport(videoUrl):
+            paramsUrl = dict(self.defaultParams)
+            paramsUrl['header'] = dict(paramsUrl['header'])
+            paramsUrl['header']['Referer'] = strwithmeta(videoUrl).meta.get('Referer', self.getMainUrl())
+            sts, data = self.cm.getPage(videoUrl, paramsUrl)
+            if not sts: return []
+            videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;', '&')
         
         if self.cm.isValidUrl(videoUrl):
             return self.up.getVideoLinkExt(videoUrl)
