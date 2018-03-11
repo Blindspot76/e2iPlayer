@@ -427,8 +427,3 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, C3player(), True, [])
     
-    def withArticleContent(self, cItem):
-        if '/show/' not in cItem.get('url', '') and '/live/' not in cItem.get('url', ''):
-            return False
-        return True
-    
