@@ -552,7 +552,7 @@ def getDirectM3U8Playlist(M3U8Url, checkExt=True, variantCheck=True, cookieParam
         printExc()
     return retPlaylists
     
-def getF4MLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}):
+def getF4MLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}, sortWithMaxBitrate=-1):
     if checkExt and not manifestUrl.split('?')[0].endswith('.f4m'):
         return []
         
@@ -595,6 +595,15 @@ def getF4MLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}):
             if liveStreamDetected:
                 link.meta['iptv_livestream'] = True
             retPlaylists.append({'name':'[f4m/hds]', 'bitrate':0, 'url':link})
+        
+        if sortWithMaxBitrate > -1:
+            def __getLinkQuality( itemLink ):
+                try:
+                    return int(itemLink['bitrate'])
+                except Exception:
+                    printExc()
+                    return 0
+            retPlaylists = CSelOneLink(retPlaylists, __getLinkQuality, sortWithMaxBitrate).getSortedLinks()
     return retPlaylists
     
 def getMPDLinksWithMeta(manifestUrl, checkExt=True, cookieParams={}, sortWithMaxBandwidth=-1):
