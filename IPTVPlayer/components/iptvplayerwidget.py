@@ -327,6 +327,8 @@ class IPTVPlayerWidget(Screen):
         self.statusTextValue = ""
         self.enabledHostsListOld = []
         asynccall.SetMainThreadId()
+        
+        self.checkWrongImage = True
     
     #end def __init__(self, session):
     
@@ -1021,6 +1023,7 @@ class IPTVPlayerWidget(Screen):
         #self.onLayoutFinish.remove(self.onStart)
         self.loadSpinner()
         self.hideSpinner()
+        self.checkBlacklistedImage()
         self.askUpdateAvailable(self.selectHost)
     
     def __requestCheckUpdate(self):
@@ -2042,6 +2045,21 @@ class IPTVPlayerWidget(Screen):
            self.session.open(MessageBox, ret.value[0], type = MessageBox.TYPE_ERROR)
         else:
             self.checkAutoPlaySequencer()
+            
+    def checkBlacklistedImage(self):
+        if self.checkWrongImage:
+            self.checkWrongImage = False
+            try:
+                if os_path.isfile('/etc/bpversion'):
+                    with open("/etc/bpversion") as file:  
+                        data = file.read(256) 
+                        if 'opendonki' in data.lower():
+                            message = ["WARNING (phase 1/3)"]
+                            message.append("Because of very bad behaviour of user @DirtyDonki your image is blacklisted.")
+                            message.append("Please be also informed that users of https://vuplus-images.co.uk/ forum will NOT get support, due to same reason.")
+                            GetIPTVNotify().push('\n'.join(message), 'error', 120)
+            except:
+                printExc()
 #class IPTVPlayerWidget
 
 class IPTVPlayerLCDScreen(Screen):
