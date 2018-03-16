@@ -34,7 +34,7 @@ except Exception: import json
 ###################################################
 config.plugins.iptvplayer.playpuls_defaultformat = ConfigSelection(default = "999999", choices = [("0", "najgorsza"), ("600", "średnia"), ("800", "dobra"), ("999999", "najlepsza")])
 config.plugins.iptvplayer.playpuls_usedf = ConfigYesNo(default = False)
-config.plugins.iptvplayer.playpuls_defaultproto = ConfigSelection(default = "hls", choices = [("rtmp", "rtmp"), ("hls", "hls (m3u8)")])
+config.plugins.iptvplayer.playpuls_defaultproto = ConfigSelection(default = "hls", choices = [("rtmp", "dash (mpd)"), ("hls", "hls (m3u8)")])
 config.plugins.iptvplayer.playpuls_proxy = ConfigYesNo(default = False)
 
 def GetConfigList():
@@ -238,10 +238,13 @@ class Playpuls(CBaseHostClass):
         if len(sources):
             qualityMap = {'M1':'400', 'M2':'600', 'D1':'600', 'D2':'800', 'D3':'1000'}
             for item in sources:
+                servers = ["http://vod1.playpuls.pl:1716/Edge/_definst_/amlst:", "http://vod6.playpuls.pl:1935/Edge/_definst_/amlst:"]
+                server = servers[random.randrange(len(servers))]
+                url = server + item['src'].replace("videos/converted/", "X").replace(".mp4", "")
                 if 'hls' == proto:
-                    url = "http://193.187.64.119:1935/Edge/_definst_/mp4:s3%s/playlist.m3u8" % item['src']
+                    url += '/playlist.m3u8'
                 else:
-                    url = 'rtmp://193.187.64.119:1935/Edge/_definst_ playpath=mp4:s3%s swfUrl=http://vjs.zencdn.net/4.12/video-js.swf pageUrl=%s' % (item['src'], cItem['url'])
+                    url += '/manifest.mpd'
                 videoUrls.append({'bitrate':qualityMap.get(item['quality'], '0'), 'name':'%s - %s' % (item['quality'], qualityMap.get(item['quality'], '0')), 'url':url})
             
         if 0 < len(videoUrls):
