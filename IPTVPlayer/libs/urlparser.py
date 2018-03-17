@@ -402,6 +402,7 @@ class urlparser:
                        'auroravid.to':         self.pp.parserAURORAVIDTO    ,
                        'playpanda.net':        self.pp.parserPLAYPANDANET   ,
                        'vidlox.tv':            self.pp.parserVIDLOXTV       ,
+                       'vidlox.me':            self.pp.parserVIDLOXTV       ,
                        'embeducaster.com':     self.pp.parserUCASTERCOM     ,
                        'darkomplayer.com':     self.pp.parserDARKOMPLAYER   ,
                        'vivo.sx':              self.pp.parserVIVOSX         ,
@@ -468,6 +469,7 @@ class urlparser:
                        'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
                        'vidbom.com':           self.pp.parserVIDBOMCOM      ,
                        'interia.tv':           self.pp.parserINTERIATV      ,
+                       'cloudyfiles.org':      self.pp.parserCLOUDYFILESORG,
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                     }
         return
@@ -9816,3 +9818,50 @@ class pageParser:
         videoTab.extend(hlsTab)
         videoTab.extend(dashTab)
         return videoTab
+        
+    def parserCLOUDYFILESORG(self, baseUrl):
+        printDBG("parserCLOUDYFILESORG baseUrl[%r]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        cUrl = baseUrl
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
+        COOKIE_FILE = GetCookieDir("cloudyfiles.org.cookie")
+        rm (COOKIE_FILE)
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        post_data = None
+        tries = 0
+        while tries < 3:
+            tries += 1
+            
+            sts, data = self.cm.getPage(cUrl, urlParams, post_data)
+            if not sts: return False
+            
+            cUrl = self.cm.getBaseUrl(data.meta['url'])
+            domain = urlparser.getDomain(cUrl)
+            
+            tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
+            if tmp != '':
+                action = self.cm.ph.getSearchGroups(tmp, '''action=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                if action == '':
+                    action = cUrl
+                elif not self.cm.isValidUrl(action):
+                    action = urljoin(cUrl, action)
+                urlParams['header']['Referer'] = cUrl
+                cUrl = action
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<input', '>', False, False)
+                post_data = {}
+                for item in tmp:
+                    name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                    value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                    if name != '' and value != '': post_data[name] = value
+                if post_data != {}: continue
+            break
+        
+        urlTab = []
+        printDBG(data)
+        url = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?\.(?:mkv|mp4|avi)(?:\?[^'^"]*?)?)['"]''', ignoreCase=True)[0]
+        if url != '': urlTab.append({'name':domain, 'url':url})
+        return urlTab
