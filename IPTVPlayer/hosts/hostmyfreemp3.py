@@ -143,7 +143,7 @@ class MyFreeMp3(CBaseHostClass):
             if 'aid' in item: id = item['aid']
             else: id = item['id']
             
-            url  = 'https://newtab.stream/stream/%s:%s' % (encode(item['owner_id']), encode(id))
+            url  = 'https://newtabs.stream/stream/%s:%s' % (encode(item['owner_id']), encode(id))
             #url  = 'http://streams.my-free-mp3.net/stream/%s:%s' % (encode(item['owner_id']), encode(item['aid']))
             return [{'name':'direct', 'url':strwithmeta(url, {'User-Agent':self.USER_AGENT, 'Referer':self.getMainUrl()})}]
         except Exception:
