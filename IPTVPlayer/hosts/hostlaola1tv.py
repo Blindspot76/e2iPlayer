@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, CSelOneLink
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, CSelOneLink, rm
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -370,10 +370,17 @@ class Laola1TV(CBaseHostClass):
                 
                 if myip != '':
                     url = strwithmeta(url, {'X-Forwarded-For':myip})
-                tmp = getDirectM3U8Playlist(url, checkExt=False)
-                for item in tmp:
-                    item['need_resolve'] = 0
-                    urlTab.append(item)
+                
+                COOKIE_FILE = GetCookieDir('m3u8_laola1.tv')
+                rm(COOKIE_FILE)
+                cookieParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+                tmp = getDirectM3U8Playlist(url, checkExt=False, cookieParams=cookieParams, checkContent=True)
+                if len(tmp):
+                    urlMeta = {'iptv_proto':'m3u8', 'Origin':self.up.getDomain(baseUrl, False), 'Cookie':self.cm.getCookieHeader(COOKIE_FILE), 'User-Agent':self.cm.HOST, 'Referer':baseUrl}
+                for idx in range(len(tmp)):
+                    tmp[idx]['need_resolve'] = 0
+                    tmp[idx]['url'] = strwithmeta(tmp[idx]['url'], urlMeta)
+                    urlTab.append(tmp[idx])
                 break
             if 0 < len(urlTab):
                 break
