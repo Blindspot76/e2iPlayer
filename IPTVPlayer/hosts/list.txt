@@ -110,6 +110,7 @@ hostourmatchnet
 hostpinkbike
 hostplanetstreamingcom
 hostplaypuls
+hostplayrtsiw
 hostplusdede
 hostplwwecom
 hostquesttvcouk

@@ -45,14 +45,14 @@ def GetConfigList():
     return optionList
 ###################################################
 def gettytul():
-    return 'http://movierulz.sx/'
+    return 'http://movierulz.tw/'
 
 class MovieRulzSX(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'movierulz.sx', 'cookie':'movierulz.sx.cookie', 'cookie_type':'MozillaCookieJar'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'http://www.movierulz.sx/'
+        self.MAIN_URL = 'http://www.movierulz.tw/'
         self.DEFAULT_ICON_URL = 'https://superrepo.org/static/images/icons/original/xplugin.video.movierulz.png.pagespeed.ic.em3U-ZIgpV.png'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
@@ -227,7 +227,14 @@ class MovieRulzSX(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'entry-content'), ('</div', '>'))[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '>')
+        for item in tmp:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            if url != '':
+                name = self.up.getDomain(url)
+                retTab.append({'name':name, 'url':url, 'need_resolve':1})
+        
+        data = self.cm.ph.rgetDataBeetwenNodes(data, ('<', '>', 'post-nav'), ('<div', '>', 'entry-content'))[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<p', '</a>')
         for item in tmp:
             url = self.cm.ph.getSearchGroups(item, '''href=['"](https?://[^"^']+?)['"]''')[0].replace('&amp;', '&')
@@ -253,13 +260,19 @@ class MovieRulzSX(CBaseHostClass):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name'] + '*'
                         break
         
-        if '//embed' in videoUrl and '/?p=' in videoUrl or self.up.getDomain(videoUrl) in self.getMainUrl():
+        if 1 != self.up.checkHostSupport(baseUrl):
             sts, data = self.getPage(videoUrl)
             if not sts: return []
-            data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'entry-content'), ('</div', '>'))[1]
-            videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]).replace('&amp;', '&')
-            if videoUrl == '': videoUrl = self.cm.ph.getSearchGroups(data, '''href=['"](https?://[^"^']+?)['"]''')[0].replace('&amp;', '&')
-                
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'entry-content'), ('</div', '>'))[1]
+            videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]).replace('&amp;', '&')
+            if videoUrl == '': videoUrl = self.cm.ph.getSearchGroups(tmp, '''href=['"](https?://[^"^']+?)['"]''')[0].replace('&amp;', '&')
+            if videoUrl == '':
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '>')
+                for item in tmp:
+                    url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+                    if 1 == self.up.checkHostSupport(url):
+                        videoUrl = strwithmeta(url, {'Referer':baseUrl})
+            
         return self.up.getVideoLinkExt(videoUrl)
         
     def getArticleContent(self, cItem, data=None):
