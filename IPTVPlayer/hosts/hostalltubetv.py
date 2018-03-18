@@ -41,13 +41,13 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://alltube.tv/'
+    return 'http://alltube.pl/'
 
 class AlltubeTV(CBaseHostClass):
     USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-    MAIN_URL    = 'http://alltube.tv/'
+    MAIN_URL    = 'http://alltube.pl/'
     SRCH_URL    = MAIN_URL + 'szukaj'
-    DEFAULT_ICON_URL = 'http://alltube.tv/static/main/newlogoall.png'
+    DEFAULT_ICON_URL = 'http://alltube.pl/static/main/newlogoall.png'
     #{'category':'latest_added',       'title': _('Latest added'),  'url':MAIN_URL,                   'icon':DEFAULT_ICON},
     MAIN_CAT_TAB = [{'category':'genres_movies',      'title': _('Movies'),        'url':MAIN_URL+'filmy-online/',   },
                     {'category':'cat_series',         'title': _('Series'),        'url':MAIN_URL+'seriale-online/', },
@@ -72,7 +72,7 @@ class AlltubeTV(CBaseHostClass):
         
     def getPage(self, baseUrl, params={}, post_data=None):
         if params == {}: params = dict(self.defaultParams)
-        params['cloudflare_params'] = {'domain':'alltube.tv', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
+        params['cloudflare_params'] = {'domain':'alltube.pl', 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, params, post_data)
         
     def getFullIconUrl(self, url):
