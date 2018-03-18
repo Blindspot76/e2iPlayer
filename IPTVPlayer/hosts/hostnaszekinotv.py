@@ -39,11 +39,16 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.naszekinotv_login    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.naszekinotv_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("login")+":",   config.plugins.iptvplayer.naszekinotv_login))
+    optionList.append(getConfigListEntry(_("password")+":", config.plugins.iptvplayer.naszekinotv_password))
     return optionList
 ###################################################
+
 def gettytul():
     return 'https://nasze-kino.tv/'
 
@@ -66,6 +71,10 @@ class NaszeKinoTv(CBaseHostClass):
         self.cacheFilters = {}
         self.cacheFiltersKeys = []
         
+        self.loggedIn = None
+        self.login    = ''
+        self.password = ''
+        
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
         origBaseUrl = baseUrl
@@ -75,12 +84,6 @@ class NaszeKinoTv(CBaseHostClass):
             else: return urlparse.urljoin(baseUrl, url)
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
-        
-    #def getFullIconUrl(self, url):
-    #    url = CBaseHostClass.getFullIconUrl(self, url.strip())
-    #    if url == '': return ''
-    #    cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
-    #    return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
     def setMainUrl(self, url):
         if self.cm.isValidUrl(url):
@@ -373,6 +376,7 @@ class NaszeKinoTv(CBaseHostClass):
         
     def getLinksForVideo(self, cItem):
         printDBG("NaszeKinoTv.getLinksForVideo [%s]" % cItem)
+        self.tryTologin()
         
         if 1 == self.up.checkHostSupport(cItem.get('url', '')):
             videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
@@ -587,8 +591,75 @@ class NaszeKinoTv(CBaseHostClass):
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
+    def tryTologin(self):
+        printDBG('tryTologin start')
+        
+        if None == self.loggedIn or self.login != config.plugins.iptvplayer.naszekinotv_login.value or\
+            self.password != config.plugins.iptvplayer.naszekinotv_password.value:
+        
+            self.login = config.plugins.iptvplayer.naszekinotv_login.value
+            self.password = config.plugins.iptvplayer.naszekinotv_password.value
+            
+            sts, data = self.getPage(self.getFullUrl('/profil'))
+            if not sts: return False
+            
+            login = self.cm.ph.getSearchGroups(data, '''alogowany jako:([^<]+?)<''')[0].strip()
+
+            self.loggedIn = False
+            if '' == self.login.strip() or '' == self.password.strip():
+                if login != '':
+                    rm(self.COOKIE_FILE)
+                return False
+            elif self.login.strip() == login:
+                self.loggedIn = True
+                return True
+            
+            rm(self.COOKIE_FILE)
+            
+            url = self.getFullUrl('/logowanie')
+            sts, data = self.getPage(url)
+            if not sts: return False
+            
+            sts, data = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'post'), ('</form', '>'))
+            if not sts: return False
+            
+            actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
+            if actionUrl == '': actionUrl = url
+            
+            post_data = {}
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
+            tmp.extend(self.cm.ph.getAllItemsBeetwenMarkers(data, '<button', '>'))
+            for item in tmp:
+                name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+                value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+                post_data[name] = value
+            
+            post_data.update({'login':self.login, 'password':self.password, 'remember':'on'})
+            
+            httpParams = dict(self.defaultParams)
+            httpParams['header'] = dict(httpParams['header'])
+            httpParams['header']['Referer'] = url
+            sts, data = self.cm.getPage(actionUrl, httpParams, post_data)
+            printDBG(data)
+            if sts and '/wylogowanie' in data:
+                printDBG('tryTologin OK')
+                self.loggedIn = True
+            else:
+                if sts:
+                    errMsg = []
+                    tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'alert-danger'), ('</div', '>'), False)
+                    for it in tmp:
+                        errMsg.append(self.cleanHtmlStr(it))
+                else:
+                    errMsg = [_('Connection error.')]
+                self.sessionEx.open(MessageBox, _('Login failed.') + '\n' + '\n'.join(errMsg), type = MessageBox.TYPE_ERROR, timeout = 10)
+                printDBG('tryTologin failed')
+        return self.loggedIn
+    
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
+        
+        self.tryTologin()
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 

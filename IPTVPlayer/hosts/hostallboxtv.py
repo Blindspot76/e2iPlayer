@@ -560,6 +560,7 @@ class AllBoxTV(CBaseHostClass):
             sts, data = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'loginForm'), ('</form', '>'))
             if not sts: return False
             actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''')[0])
+            if actionUrl == '': actionUrl = url
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>')
             post_data = {}
             for item in data:
@@ -591,7 +592,7 @@ class AllBoxTV(CBaseHostClass):
                     for it in tmp:
                         errMsg.append(self.cleanHtmlStr(it))
                 else:
-                    errMsg = _('Connection error.')
+                    errMsg = [_('Connection error.')]
                 self.sessionEx.open(MessageBox, _('Login failed.') + '\n' + '\n'.join(errMsg), type = MessageBox.TYPE_ERROR, timeout = 10)
                 printDBG('tryTologin failed')
         return self.loggedIn
