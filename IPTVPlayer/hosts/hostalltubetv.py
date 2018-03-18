@@ -427,7 +427,7 @@ class AlltubeTV(CBaseHostClass):
         
         urlTab = []
         url = ''
-        if self.MAIN_URL in baseUrl:
+        if 'alltube' in self.up.getDomain(baseUrl):
             sts, data = self.getPage(baseUrl, params)
             if not sts: return []
             url = self.cm.ph.getDataBeetwenMarkers(data, 'src="', '"', False, False)[1]
