@@ -79,11 +79,16 @@ class C3skTv(CBaseHostClass):
                 if url == '' or 'pdep43.' in url: continue
                 
                 parsedUri = urlparse(url)
+                if parsedUri.path == '' and self.cm.isValidUrl(url):
+                    url += '/'
+                    parsedUri = urlparse(url)
+                
                 if 'forumdisplay.php' in url or (parsedUri.path == '/vb' and parsedUri.query == ''):
                     nextCategory = 'list_threads'
                 elif '/pdep' in url or (parsedUri.path == '/' and parsedUri.query == ''):
                     nextCategory = 'list_items'
                 title = self.cleanHtmlStr(item)
+                printDBG(">>>>>>>>>>>>>>>>> title[%s] url[%s] path[%s] query[%s]" % (title, url, parsedUri.path, parsedUri.query ))
                 params = dict(cItem)
                 params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'url':url})
                 self.addDir(params)
@@ -100,7 +105,7 @@ class C3skTv(CBaseHostClass):
         currentUrl = data.meta['url']
         
         nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'pagination'), ('</table', '>'))[1]
-        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''\shref=['"]([^'^"]*?\-p%s\.html)['"]''' % (page + 1))[0], currentUrl)
+        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''\shref=['"]([^'^"]*?p%s\.html)['"]''' % (page + 1))[0], currentUrl)
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', '"article"'), ('</div', '>'))
         for item in data:
@@ -160,14 +165,16 @@ class C3skTv(CBaseHostClass):
         currentUrl = data.meta['url']
         domain = self.up.getDomain(currentUrl)
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'post_message_'), ('</div', '>'))[1]
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'post_message_'), ('<script', '>'), False)[1]
         data = re.compile('''</?br[^>]*?>''').split(data)
+        
         for tmp in data:
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<font', '</a>')
             for item in tmp:
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0], currentUrl)
+                printDBG(">>>>>>>>>>>>>>> " + url)
                 tmp = self.cm.getBaseUrl(url)
-                if domain in tmp and '/vid/' not in tmp and '/show/' not in tmp: continue
+                if domain in tmp and '/vid/' not in url and '/show/' not in url: continue
                 title = self.cleanHtmlStr(item)
                 params = dict(cItem)
                 params.update({'good_for_fav':False, 'title':'%s - %s' % (cItem['title'], title), 'url':url})
