@@ -98,17 +98,53 @@ class PlayRTSIW(CBaseHostClass):
             url += '/scale/width/344'
         return url
         
-    def listMainMenu(self, cItem):
+    def listMainMenu(self, cItem, nextCategory1, nextCategory2):
         printDBG("PlayRTSIW.listMainMenu")
         for portal in ['rtr', 'rsi', 'srf', 'rts', 'swi']:
             params = dict(cItem)
             params.update(self.PORTALS_MAP[portal])
-            params.update({'category':'portal', 'portal':portal, 'desc':params['url']})
+            params.update({'portal':portal, 'desc':params['url']})
+            if portal == 'swi': params.update({'f_type':'tv', 'category':nextCategory2})
+            else: params.update({'category':nextCategory1})
             self.addDir(params)
         
         MAIN_CAT_TAB = [{'category':'search',          'title': _('Search'), 'search_item':True, 'icon':self.SEARCH_ICON_URL},
                         {'category':'search_history',  'title': _('Search history'),             'icon':self.SEARCH_ICON_URL}]
         self.listsTab(MAIN_CAT_TAB, cItem)
+        
+    def listType(self, cItem):
+        printDBG("PlayRTSIW.listType")
+        self.setMainUrl(cItem['url'])
+        self.DEFAULT_ICON_URL = cItem['icon']
+        
+        for item in [('tv', _('TV')), ('radio', _('Radio'))]:
+            params = dict(cItem)
+            params.update({'f_type':item[0], 'title':item[1], 'desc':self.getFullUrl('/play/' + item[0])})
+            if item[0] == 'tv': params.update({'category':'portal'})
+            else: params.update({'category':'radio_channels'})
+            self.addDir(params)
+            
+    def listRadioChannels(self, cItem, nextCategory):
+        printDBG("PlayRTSIW.listPortalMain")
+        
+        url = self.getFullUrl('/play/radio/page/channel/navigation')
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+        
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        for item in data:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            title = self.cleanHtmlStr(item)
+            if title == '': title = self.cm.ph.getSearchGroups(item, '''channelNavigationLogo__([^'^"]+?)['"]''')[0].upper()
+            params = dict(cItem)
+            params.update({'title':title, 'url':url})
+            if 'station=' in url:
+                channelId = self.cm.ph.getSearchGroups(item, '''station=([^'^"]+?)['"]''')[0]
+                params.update({'category':nextCategory, 'f_channel_id':channelId})
+                self.addDir(params)
+            else:
+                params.update({'good_for_fav':True, 'desc':url})
+                self.addAudio(params)
         
     def listPortalMain(self, cItem):
         printDBG("PlayRTSIW.listPortalMain")
@@ -117,14 +153,20 @@ class PlayRTSIW(CBaseHostClass):
         
         self.setMainUrl(cItem['url'])
         self.DEFAULT_ICON_URL = cItem['icon']
-        portal = cItem['portal']
         
+        portal = cItem['portal']
+        type = cItem['f_type']
+        
+        if type == 'tv': url = '/play/tv/videos/latest?numberOfVideos=100&moduleContext=homepage'
+        else: url = '/play/radio/latest/audios?numberOfAudios=100&moduleContext=homepage&channelId=' + cItem['f_channel_id']
         params = dict(cItem)
-        params.update({'category':'list_teaser_items', 'title':_('Latest'), 'url':self.getFullUrl('/play/tv/videos/latest?numberOfVideos=100&moduleContext=homepage')})
+        params.update({'category':'list_teaser_items', 'title':_('Latest'), 'url':self.getFullUrl(url)})
         self.addDir(params)
         
+        if type == 'tv': url = '/play/tv/videos/trending?numberOfVideos=23&onlyEpisodes=true&includeEditorialPicks=true'
+        else: url = '/play/radio/mostclicked/audios?numberOfAudios=23&moduleContext=homepage&channelId=' + cItem['f_channel_id']
         params = dict(cItem)
-        params.update({'category':'list_teaser_items', 'title':_('Most popular'), 'url':self.getFullUrl('/play/tv/videos/trending?numberOfVideos=23&onlyEpisodes=true&includeEditorialPicks=true')})
+        params.update({'category':'list_teaser_items', 'title':_('Most popular'), 'url':self.getFullUrl(url)})
         self.addDir(params)
         
         if portal != 'swi':
@@ -133,7 +175,8 @@ class PlayRTSIW(CBaseHostClass):
             self.addDir(params)
         
         # chek if categories are available
-        url = self.getFullUrl('/play/v2/tv/topicList?numberOfMostClicked=1&numberOfLatest=1&moduleContext=topicpaget')
+        # '/play/v2/tv/topicList?numberOfMostClicked=1&numberOfLatest=1&moduleContext=topicpaget')
+        url = self.getFullUrl('/play/v2/%s/topicList?numberOfMostClicked=1&numberOfLatest=1&moduleContext=topicpaget' % type)
         sts, data = self.cm.getPage(url)
         if not sts: return
         try:
@@ -146,7 +189,9 @@ class PlayRTSIW(CBaseHostClass):
             
         # check AZ
         if portal != 'swi':
-            url = self.getFullUrl('/play/v2/tv/shows/atoz/index')
+            # '/play/v2/tv/shows/atoz/index'
+            if type == 'tv': url = self.getFullUrl('/play/v2/tv/shows/atoz/index')
+            else: url = self.getFullUrl('/play/v2/radio/channel/%s/shows/atoz/index' % cItem['f_channel_id'])
             sts, data = self.cm.getPage(url)
             if not sts: return
             try:
@@ -164,7 +209,8 @@ class PlayRTSIW(CBaseHostClass):
     
     def listCats(self, cItem, nextCategory1, nextCategory2):
         printDBG("PlayRTSIW.listCats")
-        url = self.getFullUrl('/play/v2/tv/topicList?numberOfMostClicked=100&numberOfLatest=100&moduleContext=topicpaget')
+        type = cItem['f_type']
+        url = self.getFullUrl('/play/v2/%s/topicList?numberOfMostClicked=100&numberOfLatest=100&moduleContext=topicpaget' % type)
         
         sts, data = self.cm.getPage(url)
         if not sts: return
@@ -233,12 +279,14 @@ class PlayRTSIW(CBaseHostClass):
             
     def listDays(self, cItem, nextCategory):
         printDBG("PlayRTSIW.listDays [%s]" % cItem)
+        type = cItem['f_type']
+        channelId = cItem.get('f_channel_id', '')
         if 'f_date' not in cItem: dt = datetime.now()
         else: dt = datetime.strptime(cItem['f_date'], '%d-%m-%Y').date()
-        baseUrl = self.getFullUrl('/play/v2/tv/programDay/')
+        baseUrl = self.getFullUrl('/play/v2/{0}/programDay/%s/{1}'.format(type, channelId))
         for item in range(31):
             title = dt.strftime('%d-%m-%Y')
-            url = baseUrl + title
+            url = baseUrl % title
             params = dict(cItem)
             params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'url':url})
             self.addDir(params)
@@ -250,7 +298,7 @@ class PlayRTSIW(CBaseHostClass):
         
     def _listItems(self, cItem, data):
         printDBG("PlayRTSIW._listItems")
-        type = cItem.get('f_type', 'tv')
+        type = cItem['f_type']
         try:
             for item in data:
                 title = item['title']
@@ -274,7 +322,7 @@ class PlayRTSIW(CBaseHostClass):
             
     def _listShows(self, cItem, data):
         printDBG("PlayRTSIW._listShows")
-        type = cItem.get('f_type', 'tv')
+        type = cItem['f_type']
         for item in data:
             title = self.cleanHtmlStr(item['title'])
             icon = self.getFullIconUrl(item['imageUrl'])
@@ -323,9 +371,10 @@ class PlayRTSIW(CBaseHostClass):
             
     def listAZItems(self, cItem, nextCategory):
         printDBG("PlayRTSIW.listAZItems cItem[%s]" % (cItem))
+        type = cItem['f_type']
         if self.cacheShowsMap == []:
-            url = self.getFullUrl('/play/v2/tv/shows')
-            
+            if type == 'tv': url = self.getFullUrl('/play/v2/%s/shows' % type)
+            else: url = self.getFullUrl('/play/radio/shows/alphabetical-sections?channelId=' + cItem['f_channel_id'])
             sts, data = self.cm.getPage(url)
             if not sts: return
             
@@ -479,6 +528,13 @@ class PlayRTSIW(CBaseHostClass):
         printDBG("PlayRTSIW.getLinksForVideo [%s]" % cItem)
         linksTab = []
         
+        if 'popup_url' not in cItem:
+            sts, data = self.cm.getPage(cItem['url'])
+            if not sts: return []
+            url = self.cm.ph.getSearchGroups(data, '''ATR\.stream\s*?=\s*?\{[^\}]*?['"](https?://[^'^"]+?)['"]''')[0]
+            if url != '': linksTab.append({'name':'stream', 'url':url, 'need_resolve':0})
+            return linksTab
+        
         if 'download_sd_url' in cItem: linksTab.append({'url':cItem['download_sd_url'], 'name':_('Download %s') % 'SD', 'need_resolve':0})
         if 'download_hd_url' in cItem: linksTab.append({'url':cItem['download_hd_url'], 'name':_('Download %s') % 'HD', 'need_resolve':0})
         
@@ -556,7 +612,11 @@ class PlayRTSIW(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
-            self.listMainMenu({'name':'category'})
+            self.listMainMenu({'name':'category'}, 'type', 'portal')
+        elif category == 'type':
+            self.listType(self.currItem)
+        elif category == 'radio_channels':
+            self.listRadioChannels(self.currItem, 'portal')
         elif category == 'portal':
             self.listPortalMain(self.currItem)
         elif category == 'list_cats':
