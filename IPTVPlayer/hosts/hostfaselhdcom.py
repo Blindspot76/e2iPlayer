@@ -258,6 +258,10 @@ class FaselhdCOM(CBaseHostClass):
             name   = self.cleanHtmlStr(item)
             dat = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', marker), ('<iframe', '>'))[1]
             url = self.getFullUrl(self.cm.ph.getSearchGroups(dat, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            if url == '': 
+                url = self.cm.ph.getSearchGroups(item, '''href\s*?=\s*?['"]([^'^"]+?)['"]''')[0]
+                tmp = url.split('embed.php?url=', 1)
+                if 2 == len(tmp): url = urllib.unquote(tmp[-1])
             retTab.append({'name':name, 'url':self.getFullUrl(url), 'need_resolve':1})
             
         if self.cm.isValidUrl(dwnLink):

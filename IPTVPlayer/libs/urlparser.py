@@ -53,7 +53,7 @@ import math
 
 from xml.etree import cElementTree
 from random import random, randint, randrange
-from urlparse import urlparse, parse_qs
+from urlparse import urlparse, urlunparse, parse_qs
 from binascii import hexlify, unhexlify, a2b_hex
 from hashlib import md5, sha256
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
@@ -269,6 +269,7 @@ class urlparser:
                        'facebook.com':         self.pp.parserFACEBOOK      ,
                        'cloudyvideos.com':     self.pp.parserCLOUDYVIDEOS  ,
                        'thevideo.me':          self.pp.parserTHEVIDEOME    ,
+                       'thevideo.cc':          self.pp.parserTHEVIDEOME    ,
                        'tvad.me':              self.pp.parserTHEVIDEOME    ,
                        'xage.pl':              self.pp.parserXAGEPL        ,
                        'castamp.com':          self.pp.parserCASTAMPCOM    ,
@@ -6256,29 +6257,38 @@ class pageParser:
     def parserTHEVIDEOME(self, baseUrl):
         printDBG("parserTHEVIDEOME baseUrl[%s]" % baseUrl)
         #http://thevideo.me/embed-l03p7if0va9a-682x500.html
-        if 'embed' in baseUrl: url = baseUrl
-        else: url = baseUrl.replace('.me/', '.me/embed-') + '-640x360.html'
-
         HTTP_HEADER = {'User-Agent':'Mozilla/5.0'}
         COOKIE_FILE = GetCookieDir('thvideome.cookie')
         rm(COOKIE_FILE)
-        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        params = {'header':HTTP_HEADER, 'with_metadata':True, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         
-        sts, pageData = self.cm.getPage(url, params)
+        sts, pageData = self.cm.getPage(baseUrl, params)
         if not sts: return False
+        baseUrl = pageData.meta['url']
+        
+        if 'embed-' in baseUrl: 
+            url = baseUrl
+        else:
+            parsedUri = urlparse( baseUrl )
+            path = '/embed-' + parsedUri.path[1:]
+            if not path.endswith('.htm'): path += '-640x360.html'
+            parsedUri = parsedUri._replace(path=path)
+            url = urlunparse(parsedUri)
+            sts, pageData = self.cm.getPage(url, params)
+            if not sts: return False
         
         varName = self.cm.ph.getSearchGroups(pageData, '''concat\(\s*['"]/["']\s*\+([^\+]+?)\+''')[0].strip()
         authKey = self.cm.ph.getSearchGroups(pageData, varName + r"""\s*=\s*['"]([^'^"]+?)['"]""")[0]
         
         params['header']['Referer'] = url
-        sts, authKey = self.cm.getPage('https://thevideo.me/vsign/player/' + authKey, params)
+        sts, authKey = self.cm.getPage(self.cm.getBaseUrl(baseUrl) + 'vsign/player/' + authKey, params)
         if not sts: return False
         printDBG(authKey)
         authKey = self.cm.ph.getSearchGroups(authKey, r"""\|([a-z0-9]{40}[a-z0-9]+?)\|""")[0]
         
         def decorateUrls(urlsTab):
             for idx in range(len(urlsTab)):
-                urlsTab[idx]['url'] = urlparser.decorateUrl(urlsTab[idx]['url'] + '?direct=false&ua=1&vt=' + authKey, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':'http://thevideo.me/player/jw/7/jwplayer.flash.swf'})
+                urlsTab[idx]['url'] = urlparser.decorateUrl(urlsTab[idx]['url'] + '?direct=false&ua=1&vt=' + authKey, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':self.cm.getBaseUrl(baseUrl) + '/player/jw/7/jwplayer.flash.swf'})
             return urlsTab[::-1]
         
         videoLinks = self._findLinks(pageData, 'thevideo.me', r'''['"]?file['"]?[ ]*:[ ]*['"](http[^"^']+)['"][,} ]''')
