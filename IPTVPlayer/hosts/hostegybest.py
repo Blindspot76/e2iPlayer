@@ -284,12 +284,14 @@ class EgyBest(CBaseHostClass):
         for item in data:
             item = self.cm.ph.getAllItemsBeetwenMarkers(item,  '<td', '</td>')[::-1]
             if len(item) < 2: continue
+            
             name = '|'.join([self.cleanHtmlStr(t) for t in item[1:]])
             item = self.cm.ph.getAllItemsBeetwenMarkers(item[0],  '<a', '</a>')
             for it in item:
                 url = self.cm.ph.getSearchGroups(it, '''href=['"]([^'^"]+?)['"]''')[0]
+                if url == '': url = self.cm.ph.getSearchGroups(it, '''url=['"]([^'^"]+?)['"]''')[0]
                 call = self.cm.ph.getSearchGroups(it, '''data\-call=['"]([^'^"]+?)['"]''')[0]
-                if url != '': retTab.append({'name':'%s: %s' % (self.cleanHtmlStr(it), name), 'url':self.getFullUrl(url), 'need_resolve':1})
+                if url != '': retTab.append({'name':'%s: %s' % (self.cleanHtmlStr(it), name), 'url':strwithmeta(self.getFullUrl(url), {'Referer':cItem['url']}), 'need_resolve':1})
                 if call != '': dwnTab.append({'name':'%s: %s' % (self.cleanHtmlStr(it), name), 'url':strwithmeta(call, {'priv_api_call':True, 'Referer':cItem['url']}), 'need_resolve':1})
         
         retTab.extend(dwnTab)
@@ -310,28 +312,37 @@ class EgyBest(CBaseHostClass):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name'] + '*'
                         break
         
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = videoUrl.meta.get('Referer', '')
+        params['with_metadata'] = True
+        
         if videoUrl.meta.get('priv_api_call', False):
-            params = dict(self.defaultParams)
-            params['header'] = dict(self.AJAX_HEADER)
-            params['header']['Referer'] = videoUrl.meta.get('Referer', '')
             url = self.getFullUrl('/api?call=' + videoUrl)
+        else:
+            url = videoUrl
+        
+        if 'api?call=' in url:
             sts, data = self.getPage(url, params)
             if not sts: return []
-            try:
-                data = byteify(json.loads(data), '', True)
-                if data.get('status', '') == '200':
-                    authUrl = data.get('auth_url', '')
-                    url = data.get('url', '')
-                    if self.cm.isValidUrl(url) and self.cm.isValidUrl(authUrl): 
-                        sts, tmp = self.getPage(authUrl)
-                        if sts: urlTab.append({'name':'direct', 'url':url})
-                elif data.get('action', '') == 'message':
-                    SetIPTVPlayerLastHostError(self.cleanHtmlStr(data['message']))
-                    printDBG(self.cleanHtmlStr(data['message']))
-                printDBG(data)
-            except Exception:
-                printExc()
-        else:
+            videoUrl = strwithmeta(data.meta['url'], videoUrl.meta)
+            if 1 != self.up.checkHostSupport(videoUrl): 
+                try:
+                    data = byteify(json.loads(data), '', True)
+                    if data.get('status', '') == '200':
+                        authUrl = data.get('auth_url', '')
+                        url = data.get('url', '')
+                        if self.cm.isValidUrl(url) and self.cm.isValidUrl(authUrl): 
+                            sts, tmp = self.getPage(authUrl)
+                            if sts: urlTab.append({'name':'direct', 'url':url})
+                    elif data.get('action', '') == 'message':
+                        SetIPTVPlayerLastHostError(self.cleanHtmlStr(data['message']))
+                        printDBG(self.cleanHtmlStr(data['message']))
+                    printDBG(data)
+                except Exception:
+                    printExc()
+        
+        if 1 == self.up.checkHostSupport(videoUrl): 
             urlTab = self.up.getVideoLinkExt(videoUrl)
         
         return urlTab
