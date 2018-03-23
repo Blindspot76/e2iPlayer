@@ -52,17 +52,17 @@ class MuziCsillangCC(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'mozicsillag.cc', 'cookie':'mozicsillag.cc.cookie', 'cookie_type':'MozillaCookieJar'})
-        self.DEFAULT_ICON_URL = 'http://mozicsillag.cc/img/logo.png'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = 'http://mozicsillag.cc/'
+        self.DEFAULT_ICON_URL =  strwithmeta('http://mozicsillag.cc/img/logo.png', {'Referer':self.getMainUrl()})
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         self.cacheSortOrder = []
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
         self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Catalog'), 'url':self.getMainUrl(), 'use_query':True },
                              {'category':'list_movies',     'title': _('Movies'),  'url':self.getMainUrl()  },
@@ -73,8 +73,10 @@ class MuziCsillangCC(CBaseHostClass):
                             ]
                             
     def getFullIconUrl(self, url):
+        if url == '': return url
         url = url.replace('&amp;', '&')
-        return CBaseHostClass.getFullIconUrl(self, url)
+        url = CBaseHostClass.getFullIconUrl(self, url)
+        return strwithmeta(url, {'Referer':self.getMainUrl()})
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}:
@@ -274,6 +276,7 @@ class MuziCsillangCC(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        lastUrl = data.meta['url']
         
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<p>', '</p>')[1])
         
@@ -296,12 +299,16 @@ class MuziCsillangCC(CBaseHostClass):
             printDBG("MuziCsillangCC.exploreItem - missing link for sources")
             return
         
-        sts, data = self.getPage(sourcesLink)
-        if not sts: return
+        if sourcesLink != '':
+            sts, data = self.getPage(sourcesLink)
+            if not sts: return
+            lastUrl = data.meta['url']
         
         sourcesLink = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?)['"][^>]*?>Lejatszas''')[0]
-        sts, data = self.getPage(sourcesLink)
-        if not sts: return
+        if sourcesLink != '':
+            sts, data = self.getPage(sourcesLink)
+            if not sts: return
+            lastUrl = data.meta['url']
         
         self.cacheLinks  = {}
         
@@ -313,9 +320,10 @@ class MuziCsillangCC(CBaseHostClass):
             
             tmp = tmp.split('panel')
             for item in tmp:
+                printDBG(">>>>>>>>>>>> [%s]" % item)
                 url = self.cm.ph.getSearchGroups(item, '''<a[^>]+?href=['"]([^'^"]*?watch[^'^"]*?)['"]''')[0]
                 
-                if url != '': url = urlparse.urljoin(sourcesLink, url)
+                if url != '': url = self.getFullUrl(url, lastUrl)
                 if not self.cm.isValidUrl(url): continue
                 serverName = []
                 item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<div', '</div>')
