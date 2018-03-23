@@ -440,16 +440,17 @@ class NaszeKinoTv(CBaseHostClass):
             params['accep_label'] = sendLabel
             params['title'] = captchaLabel
             params['status_text'] = captchaTitle
-            params['status_text_hight'] = 240
+            params['status_text_hight'] = 200
             params['with_accept_button'] = True
             params['list'] = []
             item = deepcopy(IPTVMultipleInputBox.DEF_INPUT_PARAMS)
-            item['label_size'] = (160,75)
+            item['label_size'] = (660,110)
             item['input_size'] = (680,25)
             item['icon_path'] = filePath
             item['title'] = _('Answer')
             item['input']['text'] = ''
             params['list'].append(item)
+            params['vk_params'] = {'invert_letters_case':True}
 
             ret = 0
             retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleInputBox, params)
