@@ -371,9 +371,9 @@ class TainieskaiSeiresTv(CBaseHostClass):
                      }
         
         otherInfo = {}
-        for idx in range(0, len(descData), 2):
-            key = self.cleanHtmlStr( descData[idx] )
-            val = self.cleanHtmlStr( descData[idx+1] )
+        for idx in range(1, len(descData), 2):
+            key = self.cleanHtmlStr( descData[idx-1] )
+            val = self.cleanHtmlStr( descData[idx] )
             if val.endswith(','): val = val[:-1]
             if key in descTabMap:
                 try: otherInfo[descTabMap[key]] = val
