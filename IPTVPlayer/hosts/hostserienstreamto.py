@@ -68,8 +68,8 @@ class SerienStreamTo(CBaseHostClass):
         
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'https://serienstream.to/'
-        self.DEFAULT_ICON_URL = 'https://serienstream.to/public/img/facebook.jpg'
+        self.MAIN_URL = 'https://s.to/'
+        self.DEFAULT_ICON_URL = 'https://s.to/public/img/facebook.jpg'
         
         self.MAIN_CAT_TAB = [{'category':'list_abc',          'title': _('A-Z'),                          'url':self.MAIN_URL                       },
                              {'category':'list_genres',       'title': _('Genres'),                       'url':self.MAIN_URL                       },
