@@ -344,6 +344,8 @@ def GetBinDir(file = '', platform=None):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/') + platform + '/' + file
 def GetPluginDir(file = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/') + file
+def GetExtensionsDir(file = ''):
+    return resolveFilename(SCOPE_PLUGINS, 'Extensions/') + file
 def GetSkinsDir(path = ''):
     return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/skins/') + path
 def GetConfigDir(path = ''):

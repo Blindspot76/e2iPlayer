@@ -45,7 +45,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools_FreeSpace, \
                                                           mkdirs as iptvtools_mkdirs, GetIPTVPlayerVerstion, GetVersionNum, \
                                                           printDBG, printExc, iptv_system, GetHostsList, IsHostEnabled, \
-                                                          eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir,\
+                                                          eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir, GetExtensionsDir, \
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
                                                           CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize, \
                                                           GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, ClearTmpCookieDir, \
@@ -2050,12 +2050,17 @@ class IPTVPlayerWidget(Screen):
         if self.checkWrongImage:
             self.checkWrongImage = False
             try:
-                if os_path.isfile('/etc/bpversion'):
+                if os_path.isfile(GetExtensionsDir('/iPabUpdater/__init__.pyo')):
+                    message = ["WARNING (phase 1/3)"]
+                    message.append("Because of blocking part of functionality of the IPTVPlayer by http://ipab.tv/ developer your image was blacklisted.")
+                    message.append("Please be also informed that users of http://ipab.tv/ will NOT get support, due to same reason.")
+                    GetIPTVNotify().push('\n'.join(message), 'error', 120)
+                elif os_path.isfile('/etc/bpversion'):
                     with open("/etc/bpversion") as file:  
                         data = file.read(256) 
                         if 'opendonki' in data.lower():
                             message = ["WARNING (phase 1/3)"]
-                            message.append("Because of very bad behaviour of user @DirtyDonki your image is blacklisted.")
+                            message.append("Because of very bad behaviour of user @DirtyDonki your image was blacklisted.")
                             message.append("Please be also informed that users of https://vuplus-images.co.uk/ forum will NOT get support, due to same reason.")
                             GetIPTVNotify().push('\n'.join(message), 'error', 120)
             except:
