@@ -633,9 +633,9 @@ class common:
                     verData = data.fp.read() 
                     if 'sitekey' not in verData and 'challenge' not in verData: break
                     
-                    printDBG("===============================================================")
+                    printDBG(">>")
                     printDBG(verData)
-                    printDBG("===============================================================")
+                    printDBG("<<")
                     
                     sitekey = self.ph.getSearchGroups(verData, 'data-sitekey="([^"]+?)"')[0]
                     id = self.ph.getSearchGroups(verData, 'data-ray="([^"]+?)"')[0]
@@ -679,16 +679,16 @@ class common:
                         decoded = ''
                         jscode = base64.b64decode('''ZnVuY3Rpb24gc2V0VGltZW91dCh0LGUpe2lwdHZfcmV0LnRpbWVvdXQ9ZSx0KCl9dmFyIGlwdHZfcmV0PXt9LGlwdHZfZnVuPW51bGwsZG9jdW1lbnQ9e30sd2luZG93PXRoaXMsZWxlbWVudD1mdW5jdGlvbih0KXt0aGlzLl9uYW1lPXQsdGhpcy5fc3JjPSIiLHRoaXMuX2lubmVySFRNTD0iIix0aGlzLl9wYXJlbnRFbGVtZW50PSIiLHRoaXMuc2hvdz1mdW5jdGlvbigpe30sdGhpcy5hdHRyPWZ1bmN0aW9uKHQsZSl7cmV0dXJuInNyYyI9PXQmJiIjdmlkZW8iPT10aGlzLl9uYW1lJiZpcHR2X3NyY2VzLnB1c2goZSksdGhpc30sdGhpcy5maXJzdENoaWxkPXtocmVmOmlwdHZfZG9tYWlufSx0aGlzLnN0eWxlPXtkaXNwbGF5OiIifSx0aGlzLnN1Ym1pdD1mdW5jdGlvbigpe3ByaW50KEpTT04uc3RyaW5naWZ5KGlwdHZfcmV0KSl9LE9iamVjdC5kZWZpbmVQcm9wZXJ0eSh0aGlzLCJzcmMiLHtnZXQ6ZnVuY3Rpb24oKXtyZXR1cm4gdGhpcy5fc3JjfSxzZXQ6ZnVuY3Rpb24odCl7dGhpcy5fc3JjPXR9fSksT2JqZWN0LmRlZmluZVByb3BlcnR5KHRoaXMsImlubmVySFRNTCIse2dldDpmdW5jdGlvbigpe3JldHVybiB0aGlzLl9pbm5lckhUTUx9LHNldDpmdW5jdGlvbih0KXt0aGlzLl9pbm5lckhUTUw9dH19KSxPYmplY3QuZGVmaW5lUHJvcGVydHkodGhpcywidmFsdWUiLHtnZXQ6ZnVuY3Rpb24oKXtyZXR1cm4iIn0sc2V0OmZ1bmN0aW9uKHQpe2lwdHZfcmV0LmFuc3dlcj10fX0pfSwkPWZ1bmN0aW9uKHQpe3JldHVybiBuZXcgZWxlbWVudCh0KX07ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQ9ZnVuY3Rpb24odCl7cmV0dXJuIG5ldyBlbGVtZW50KHQpfSxkb2N1bWVudC5jcmVhdGVFbGVtZW50PWZ1bmN0aW9uKHQpe3JldHVybiBuZXcgZWxlbWVudCh0KX0sZG9jdW1lbnQuYXR0YWNoRXZlbnQ9ZnVuY3Rpb24oKXtpcHR2X2Z1bj1hcmd1bWVudHNbMV19Ow==''')
                         jscode = "var location = {hash:''}; var iptv_domain='%s';\n%s\n%s\niptv_fun();" % (domain, jscode, dat) #cfParams['domain']
-                        printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
+                        printDBG("+ CODE +")
                         printDBG(jscode)
-                        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                        printDBG("++++++++")
                         ret = iptv_js_execute( jscode )
                         decoded = byteify(json.loads(ret['data'].strip()))
                         
                         verData = self.ph.getDataBeetwenReMarkers(verData, re.compile('<form[^>]+?id="challenge-form"'), re.compile('</form>'), False)[1]
-                        printDBG("===============================================================")
+                        printDBG(">>")
                         printDBG(verData)
-                        printDBG("===============================================================")
+                        printDBG("<<")
                         verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
                         get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
                         get_data['jschl_answer'] = decoded['answer']
@@ -954,13 +954,13 @@ class common:
                 elif e.code == 503:
                     if params.get('use_cookie', False):
                         new_cookie = e.fp.info().get('Set-Cookie', '')
-                        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> new_cookie[%s]" % new_cookie)
+                        printDBG("> new_cookie[%s]" % new_cookie)
                         cj.save(params['cookiefile'], ignore_discard = True)
                     raise e
                 else:
                     if e.code in [300, 302, 303, 307] and params.get('use_cookie', False) and params.get('save_cookie', False):
                         new_cookie = e.fp.info().get('Set-Cookie', '')
-                        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> new_cookie[%s]" % new_cookie)
+                        printDBG("> new_cookie[%s]" % new_cookie)
                         #for cookieKey in params.get('cookie_items', {}).keys():
                         #    cj.clear('', '/', cookieKey)
                         cj.save(params['cookiefile'], ignore_discard = True)
@@ -991,17 +991,26 @@ class common:
                 GetIPTVNotify().push('%s\n\n%s\n\n%s' % (msg1, msg2, msg3), 'error', 20)
                 SetTmpCookieDir()
                 raise e
-                
-        if 'content-type' in metadata and params.get('return_data', False):
-            encoding = self.ph.getSearchGroups(metadata['content-type'], '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
+        
+        if params.get('return_data', False) and params.get('convert_charset', True) :
+            encoding = ''
+            if 'content-type' in metadata:
+                encoding = self.ph.getSearchGroups(metadata['content-type'], '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
+            
+            if encoding == '' and params.get('search_charset', False):
+                encoding = self.ph.getSearchGroups(out_data, '''(<meta[^>]+?Content-Type[^>]+?>)''', ignoreCase=True)[0]
+                encoding = self.ph.getSearchGroups(encoding, '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
+            
             if encoding not in ['', 'UTF-8']:
+                printDBG(">> encoding[%s]" % encoding)
                 try:
                     out_data = out_data.decode(encoding).encode('UTF-8')
                 except Exception:
                     printExc()
+                metadata['orig_charset'] = encoding
         
         if params.get('with_metadata', False) and params.get('return_data', False):
-                out_data = strwithmeta(out_data, metadata)
+            out_data = strwithmeta(out_data, metadata)
         
         return out_data 
 
@@ -1020,39 +1029,3 @@ class common:
         for i in range(65,91):
             strTab.append(str(unichr(i)))    
         return strTab
-
-    def isNumeric(self,s):
-        try:
-            float(s)
-            return True
-        #except ValueError:
-        except Exception:
-            return False
-        
-    def setLinkTable(self, url, host):
-        strTab = []
-        strTab.append(url)
-        strTab.append(host)
-        return strTab
-    
-class Chars:
-    def __init__(self):
-        pass
-    
-    def setCHARS(self):
-        return CHARS
-    
-    def replaceString(self, array, string):
-        out = string
-        for i in range(len(array)):
-            out = string.replace(array[i][0], array[i][1])
-            string = out
-        return out    
-    
-    def replaceChars(self, string):
-        out = string
-        for i in range(len(CHARS)):
-            out = string.replace(CHARS[i][0], CHARS[i][1])
-            string = out
-        return out
-

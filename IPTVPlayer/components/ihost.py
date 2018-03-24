@@ -675,6 +675,12 @@ class CBaseHostClass:
     def getMainUrl(self):
         return self.MAIN_URL
     
+    def setMainUrl(self, url):
+        if self.cm.isValidUrl(url):
+            self.MAIN_URL = self.cm.getBaseUrl(url)
+            return True
+        return False
+    
     def getFullUrl(self, url, currUrl=None):
         if url.startswith('./'):
             url = url[1:]

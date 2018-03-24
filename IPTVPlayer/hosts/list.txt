@@ -71,6 +71,7 @@ hostiptvplayerinfo
 hostitvcom
 hostkabarety
 hostkijknl
+hostkinogo
 hostkinomanco
 hostkinopodaniolempl
 hostkinopokaz
