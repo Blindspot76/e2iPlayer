@@ -66,12 +66,14 @@ class IPTVPlayerInfo(CBaseHostClass):
                              {'category':'tutorial',       'title': _('Tutorials'),     } 
                             ]
                             
-        self.TUTORIALS_TAB = [
+        self.TUTORIALS_TAB = [{'title': _('Services management'),                               'url':'https://www.youtube.com/watch?v=pG-_csh2TDk'},
                              {'title': _('http://rte.ie/player serivce overview'),              'url':'https://www.youtube.com/watch?v=IhC8m8K1jkg'},
                              {'title': _('[en] External subtitles download - how to'),          'url':'https://www.youtube.com/watch?v=ZO6w6Pr5z_4'},
                              {'title': _('[pl] External subtitles download - how to'),          'url':'https://www.youtube.com/watch?v=3onH5vxlDcg'},
                              {'title': _('http://prijevodi-online.org/ subtitles provider'),    'url':'https://www.youtube.com/watch?v=lb8QvViUYq4'},
                             ]
+                            
+                            
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)

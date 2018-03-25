@@ -266,12 +266,16 @@ class SubsceneComProvider(CBaseSubProviderClass):
     def getSubtitlesList(self, cItem, nextCategory):
         printDBG("SubsceneComProvider.getSubtitlesList")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(cItem['url'], {'with_metadata':True})
         if not sts: return
+        cUrl = data.meta['url']
         
         imdbid = self.cm.ph.getSearchGroups(data, '/title/(tt[0-9]+?)[^0-9]')[0]
         subId  = self.cm.ph.getSearchGroups(data, 'SubtitleId[^0-9]*?([0-9]+?)[^0-9]')[0]
-        url    = self.getFullUrl( self.cm.ph.getSearchGroups(data, 'href="([^"]*?/subtitle/download[^"]+?)"')[0] )
+        url    = self.getFullUrl( self.cm.ph.getSearchGroups(data, 'href="([^"]*?/subtitle/download[^"]+?)"')[0], cUrl)
+        if url == '':
+            url = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'downloadButton'), ('</a', '>'))[1]
+            url = self.getFullUrl( self.cm.ph.getSearchGroups(url, 'href="([^"]+?)"')[0], cUrl)
         
         urlParams = dict(self.defaultParams)
         tmpDIR = self.downloadAndUnpack(url, urlParams)

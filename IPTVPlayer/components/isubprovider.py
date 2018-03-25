@@ -276,15 +276,40 @@ class CBaseSubProviderClass:
     def getMainUrl(self):
         return self.MAIN_URL
         
-    def getFullUrl(self, url):
+    #def getFullUrl(self, url):
+    #    if url.startswith('//'):
+    #        url = 'http:' + url
+    #    elif url.startswith('://'):
+    #        url = 'http' + url
+    #    elif url.startswith('/'):
+    #        url = self.getMainUrl() + url[1:]
+    #    elif 0 < len(url) and '://' not in url:
+    #        url =  self.getMainUrl() + url
+    #    return url
+        
+    def getFullUrl(self, url, currUrl=None):
+        if url.startswith('./'):
+            url = url[1:]
+        
+        if currUrl == None or not self.cm.isValidUrl(currUrl):
+            try: mainUrl = self.getMainUrl()
+            except Exception: mainUrl = 'http://fake'
+        else:
+            mainUrl = self.cm.getBaseUrl(currUrl)
+        
         if url.startswith('//'):
-            url = 'http:' + url
+            proto = mainUrl.split('://', 1)[0]
+            url = proto + ':' + url
         elif url.startswith('://'):
-            url = 'http' + url
+            proto = mainUrl.split('://', 1)[0]
+            url = proto + url
         elif url.startswith('/'):
-            url = self.getMainUrl() + url[1:]
+            url = mainUrl + url[1:]
         elif 0 < len(url) and '://' not in url:
-            url =  self.getMainUrl() + url
+            if currUrl == None or not self.cm.isValidUrl(currUrl):
+                url =  mainUrl + url
+            else:
+                url = urljoin(currUrl, url)
         return url
     
     def handleService(self, index, refresh=0):
