@@ -67,16 +67,19 @@ class OpenSubtitles(CBaseSubProviderClass):
         if not sts: return
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="lang-selector"', '</ul>')[1]
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(tmp)
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         lang = GetDefaultLang()
         url  = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, 'href="([^"]+?setlang\-%s[^"]*?)"' % lang)[0])
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>> LANG URL: " + url)
+        printDBG(">> LANG URL: " + url)
         if self.cm.isValidUrl(url):
             sts, data = self.getPage(url)
             if not sts: return
         
         printDBG(self.cm.ph.getAllItemsBeetwenMarkers(data, '<form', '>'))
         self.searchURL = self.cm.ph.getSearchGroups(data, '<form[^>]+?"searchform"[^>]+?action="([^"]+?)"')[0]
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>> SEARCH URL: " + self.searchURL)
+        printDBG(">> SEARCH URL: " + self.searchURL)
         
         # fill language cache
         self.languages = []
@@ -114,7 +117,21 @@ class OpenSubtitles(CBaseSubProviderClass):
                 self.sessionEx.open(MessageBox, _('Failed to log in user "%s". Please check your login and password.') % login, type = MessageBox.TYPE_INFO, timeout = 5)
                 self.logedIn = False
             else:
+                if self.searchURL == '':
+                    self.searchURL = self.cm.ph.getSearchGroups(data, '<form[^>]+?"searchform"[^>]+?action="([^"]+?)"')[0]
+                    printDBG(">> SEARCH URL: " + self.searchURL)
+                if self.cm.ph.getSearchGroups(data, '(<form[^>]+?recaptcha2[^>]+?>)')[0] != '':
+                    protectedByRecaptcha = True
+                else:
+                    protectedByRecaptcha = False
                 self.logedIn = True
+        else:
+            if self.cm.ph.getSearchGroups(data, '(<form[^>]+?recaptcha2[^>]+?>)')[0] != '':
+                protectedByRecaptcha = True
+            else:
+                protectedByRecaptcha = False
+        if protectedByRecaptcha: 
+            self.sessionEx.open(MessageBox, _('%s has been protected with google recaptcha v2. You can try to use API version.') % ('https://www.opensubtitles.org/'), type=MessageBox.TYPE_INFO, timeout=10)
         
     def listLanguages(self, cItem, nextCategory):
         printDBG("OpenSubtitles.listLanguages")
