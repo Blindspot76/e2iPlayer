@@ -189,7 +189,8 @@ class IPTVExtMoviePlayer(Screen):
                     
                     <widget name="logoIcon"           position="0,0"           size="160,40"    zPosition="4" transparent="1" alphatest="blend" />
                     <widget name="playbackInfoBaner"  position="0,30"          size="650,112"   zPosition="2" pixmap="%s" />
-                    <widget name="progressBar"        position="94,54"         size="544,7"     zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
+                    <widget name="progressBar"        position="94,54"         size="544,7"     zPosition="5" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
+                    <widget name="bufferingCBar"      position="94,54"         size="544,7"     zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
                     <widget name="bufferingBar"       position="94,54"         size="544,7"     zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
                     <widget name="statusIcon"         position="20,45"         size="40,40"     zPosition="4"             transparent="1" alphatest="blend" />
                     <widget name="loopIcon"           position="43,30"         size="40,40"     zPosition="4"             transparent="1" alphatest="blend" />
@@ -215,7 +216,8 @@ class IPTVExtMoviePlayer(Screen):
                     
                     <widget name="logoIcon"           position="140,30"        size="160,40"    zPosition="4"             transparent="1" alphatest="blend" />
                     <widget name="playbackInfoBaner"  position="0,0"           size="1280,177"  zPosition="2" pixmap="%s" />
-                    <widget name="progressBar"        position="220,86"        size="840,7"     zPosition="4" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
+                    <widget name="progressBar"        position="220,86"        size="840,7"     zPosition="5" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
+                    <widget name="bufferingCBar"      position="220,86"        size="840,7"     zPosition="5" pixmap="%s" transparent="1" borderWidth="1" borderColor="#888888" />
                     <widget name="bufferingBar"       position="220,86"        size="840,7"     zPosition="3" pixmap="%s" borderWidth="1" borderColor="#888888" />
                     <widget name="statusIcon"         position="150,70"        size="40,40"     zPosition="4"             transparent="1" alphatest="blend" />
                     <widget name="loopIcon"           position="150,110"       size="40,40"     zPosition="4"             transparent="1" alphatest="blend" />
@@ -239,6 +241,7 @@ class IPTVExtMoviePlayer(Screen):
                          getDesktop(0).size().height(),
                          GetIPTVDMImgDir(playbackBannerFile),
                          GetIPTVDMImgDir("playback_progress.png"),
+                         GetIPTVDMImgDir("playback_cbuff_progress.png"),
                          GetIPTVDMImgDir("playback_buff_progress.png"),
                          GetIPTVDMImgDir('playback_pointer.png'),
                          subSkin
@@ -350,6 +353,7 @@ class IPTVExtMoviePlayer(Screen):
         self['statusIcon']        = Cover3()
         self['loopIcon']          = Cover3()
         self['progressBar']       = ProgressBar()
+        self['bufferingCBar']     = ProgressBar()
         self['bufferingBar']      = ProgressBar()
         self['goToSeekPointer']   = Cover3() 
         self['infoBarTitle']      = Label(self.title)
@@ -402,6 +406,7 @@ class IPTVExtMoviePlayer(Screen):
         self.playback['GoToSeekTimer_conn'] = eConnectCallback(self.playback['GoToSeekTimer'].timeout, self.doGoToSeek)
         
         self.playback.update( {'CurrentTime':    0,
+                               'BufferCTime':    0,
                                'Length':         0,
                                'LengthFromPlayerReceived': False,
                                'GoToSeekTime':      0,
@@ -435,7 +440,7 @@ class IPTVExtMoviePlayer(Screen):
         # show hide info bar functionality
         self.goToSeekRepeatCount = 0
         self.goToSeekStep = 0
-        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'videoInfo', 'statusIcon', 'loopIcon', 'logoIcon'] }
+        self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingCBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'videoInfo', 'statusIcon', 'loopIcon', 'logoIcon'] }
         self.playbackInfoBar['timer'] = eTimer()
         self.playbackInfoBar['timer_conn'] = eConnectCallback(self.playbackInfoBar['timer'].timeout, self.hidePlaybackInfoBar)
         
@@ -1060,7 +1065,7 @@ class IPTVExtMoviePlayer(Screen):
                 localFileSize = self.downloader.getLocalFileSize(True) 
                 if 0 < localFileSize:
                     self['bufferingBar'].value = (localFileSize * 100000) / remoteFileSize
-                    
+        
     def showMessage(self, message, type, callback=None):
         printDBG("IPTVExtMoviePlayer.showMessage")
         if self.isClosing and type != None: return
@@ -1093,6 +1098,7 @@ class IPTVExtMoviePlayer(Screen):
     def setPlaybackLength(self, newLength):
         self.playback['Length'] = newLength
         self['progressBar'].range = (0, newLength)
+        self['bufferingCBar'].range = (0, newLength)
         self['lengthTimeLabel'].setText( str(timedelta(seconds=newLength)) )
         
     def playbackUpdateInfo(self, stsObj):
@@ -1114,8 +1120,10 @@ class IPTVExtMoviePlayer(Screen):
                         self.showPlaybackInfoBar()
                         self.extPlayerCmddDispatcher.doGoToSeek(str(self.lastPosition-5))
                         self.lastPosition = 0
-                    tmpLength = self.playback['CurrentTime']
-                    if val > self.playback['CurrentTime']: 
+                    tmpLength = self.playback['BufferCTime']
+                    if self.playback['CurrentTime'] > tmpLength:
+                        tmpLength = self.playback['CurrentTime']
+                    if val > tmpLength: 
                         tmpLength = val
                         self.clipLength = val
                     if self.playback['Length'] < tmpLength:
@@ -1123,7 +1131,7 @@ class IPTVExtMoviePlayer(Screen):
                             self.setPlaybackLength(tmpLength)
                     self.playback['LengthFromPlayerReceived'] = True
             elif 'CurrentTime' == key:
-                if self.playback['Length'] < val:
+                if self.playback['Length'] < val and val > self.playback['BufferCTime']:
                     self.setPlaybackLength(val)
                 self['progressBar'].value = val
                 self.playback['CurrentTime'] = stsObj['CurrentTime']
@@ -1131,6 +1139,11 @@ class IPTVExtMoviePlayer(Screen):
                 self['currTimeLabel'].setText( str(timedelta(seconds=self.playback['CurrentTime'])) )
                 self['remainedLabel'].setText( '-' + str(timedelta(seconds=self.playback['Length']-self.playback['CurrentTime'])) )
                 self['pleaseWait'].hide()
+            elif 'BufferCTime' == key:
+                if self.playback['Length'] < val:
+                    self.setPlaybackLength(val)
+                self.playback['BufferCTime'] = val
+                self['bufferingCBar'].value = val
             elif 'Status' == key:
                 curSts = self.playback['Status']
                 if self.playback['Status'] != val[0]:
@@ -1454,7 +1467,9 @@ class IPTVExtMoviePlayer(Screen):
                 elif "PLAYBACK_CURRENT_TIME" == key and 0 == obj['sts']:
                     self.playbackUpdateInfo({'CurrentTime':int(obj['sec'])})
                 elif "J" == key and obj['ms'] > 0:
-                    self.playbackUpdateInfo({'CurrentTime':int(obj['ms']/1000)})
+                    updateInfoParams = {'CurrentTime':int(obj['ms']/1000)}
+                    if 'lms' in obj: updateInfoParams['BufferCTime'] = int(obj['lms']/1000)
+                    self.playbackUpdateInfo(updateInfoParams)
                     self.latchSubtitlesTime(obj['ms'])
                 # CURRENT VIDEO TRACK
                 elif "v_c" == key:
@@ -1746,6 +1761,7 @@ class IPTVExtMoviePlayer(Screen):
             return
         
         self['progressBar'].value = 0
+        self['bufferingCBar'].value = 0
         self['bufferingBar'].range = (0, 100000)
         self['bufferingBar'].value = 0
         self.initGuiComponentsPos()
