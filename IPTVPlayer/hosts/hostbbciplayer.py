@@ -87,20 +87,25 @@ class BBCiPlayer(CBaseHostClass):
             params = {'good_for_fav': True, 'category':nextCategory, 'title':title, 'url':cItem['url'] + url}
             self.addDir(params)
     
-    def listAZ(self, cItem):
+    def listAZ(self, cItem, nextCategory):
         
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<ol class="tleo-list', '</ol>', withMarkers=True)
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<ol', '>',  'tleo-list'), ('</ol', '>'))
         for col in data:
-            col = self.cm.ph.getAllItemsBeetwenMarkers(col, '<li', '</li>', withMarkers=True)
+            col = self.cm.ph.getAllItemsBeetwenMarkers(col, '<li', '</li>')
             for item in col:
                 title = self.cleanHtmlStr(item)
                 url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+                if '/brand/' in url: url = url.replace('/brand/', '/episodes/')
                 params = dict(cItem)
                 params.update({'good_for_fav': True, 'title':title, 'url':self.getFullUrl(url)})
-                self.addVideo(params)
+                if '/episodes/' in url:
+                    params['category'] = nextCategory
+                    self.addDir(params)
+                else:
+                    self.addVideo(params)
         
     def listLive(self, cItem):
         channel_list = [
@@ -382,21 +387,28 @@ class BBCiPlayer(CBaseHostClass):
         if t1 in data: endTag = t1
         else: endTag = t2
         
-        mTag = '<div class="paginate">'
-        nextPage = self.cm.ph.getDataBeetwenMarkers(data, mTag, '</div>', withMarkers=False)[1]
-        if '' != nextPage: 
-            if '' != self.cm.ph.getSearchGroups(nextPage, '''page=(%s)[^0-9]''' % (page+1))[0]: nextPage = True
+        nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<ol', '>', 'pagination'), ('</ol', '>'))[1]
+        if nextPage != '':
+            nextPage = self.cm.ph.getSearchGroups(nextPage, '''page=(%s)[^0-9]''' % (page+1))[0]
+            if '' != nextPage: nextPage = True
             else: nextPage = False
-            endTag = mTag
+            endTag = '<ol[^>]+?pagination[^>]+?>'
         else:
-            mTag = '<ul class="pagination'
-            nextPage = self.cm.ph.getDataBeetwenMarkers(data, mTag, '</ul>', withMarkers=False)[1]
+            mTag = '<div class="paginate">'
+            nextPage = self.cm.ph.getDataBeetwenMarkers(data, mTag, '</div>', withMarkers=False)[1]
             if '' != nextPage: 
-                if '' != self.cm.ph.getSearchGroups(nextPage, '''page&#x3D;(%s)[^0-9]''' % (page+1))[0]: nextPage = True
+                if '' != self.cm.ph.getSearchGroups(nextPage, '''page=(%s)[^0-9]''' % (page+1))[0]: nextPage = True
                 else: nextPage = False
                 endTag = mTag
+            else:
+                mTag = '<ul class="pagination'
+                nextPage = self.cm.ph.getDataBeetwenMarkers(data, mTag, '</ul>', withMarkers=False)[1]
+                if '' != nextPage: 
+                    if '' != self.cm.ph.getSearchGroups(nextPage, '''page&#x3D;(%s)[^0-9]''' % (page+1))[0]: nextPage = True
+                    else: nextPage = False
+                    endTag = mTag
         
-        startTag = re.compile('''<li[^>]+?(?:class=['"]list-item|list__grid__item)[^>]*?>''')
+        startTag = re.compile('''<li[^>]+?(?:class=['"]list-item|list__grid__item|layout__item)[^>]*?>''')
         data = self.cm.ph.getDataBeetwenReMarkers(data, startTag, re.compile(endTag), withMarkers=False)[1]
         data = startTag.split(data)
         
@@ -407,12 +419,11 @@ class BBCiPlayer(CBaseHostClass):
             if title == '': title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h1 class="list-item__title', '</h1>')[1])
             icon  = self.cm.ph.getSearchGroups(item, '''<source[^>]+?srcset=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
             
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             printDBG(item)
             descTab = []
             descTab.append(self.cleanHtmlStr(item.split('<div class="primary">')[-1]))
             
-            tmp = self.cm.ph.getDataBeetwenMarkers(item, '<div class="view-more-grid">', '</div>', withMarkers=False)[1]
+            tmp = self.cm.ph.getDataBeetwenNodes(item, ('<a', '>', 'content-item__secondary'), ('</a', '>'))[1]
             if tmp != '': 
                 url = self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"]''')[0]
                 #title += ' | ' + self.cleanHtmlStr(tmp)
@@ -430,9 +441,15 @@ class BBCiPlayer(CBaseHostClass):
                 title = '[' + self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<span class="signpost editorial">', '</span>')[1]) + '] ' + title
             
             if title.lower().startswith('episode '): title = '%s - %s' % (cItem['title'], title)
+            elif cItem['category'] == 'list_episodes': title = cItem['title'] + ' ' + title
+            
             if url == '' or title == '': 
                 printDBG("+++++++++++++++ NO TITLE url[%s], title[%s]" % (url, title))
                 continue
+            if '/iplayer' not in url:
+                printDBG("+++++++++++++++ URL NOT SUPPORTED AT NOW url[%s], title[%s]" % (url, title))
+                continue
+                
             params = {'good_for_fav': True, 'title':title, 'url':self.getFullUrl(url), 'icon':self.getFullIconUrl(icon), 'desc':'[/br]'.join(descTab)}
             if type == 'video':
                 self.addVideo(params)
@@ -511,7 +528,7 @@ class BBCiPlayer(CBaseHostClass):
         elif 'list_az_menu' == category:
             self.listAZMenu(self.currItem, 'list_az')
         elif 'list_az' == category:
-            self.listAZ(self.currItem)
+            self.listAZ(self.currItem, 'list_episodes')
         elif 'list_categories' == category:
             self.listCategories(self.currItem, 'list_cat_filters')
         elif category in 'list_cat_filters':
