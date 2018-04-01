@@ -30,6 +30,8 @@ config.plugins.iptvplayer.clear_iframe_file = ConfigIPTVFileSelection(fileMatch 
 
 config.plugins.iptvplayer.remember_last_position = ConfigYesNo(default = False)
 config.plugins.iptvplayer.fakeExtePlayer3 = ConfigSelection(default = "fake", choices = [("fake", " ")])
+config.plugins.iptvplayer.rambuffer_sizemb_network_proto = ConfigInteger(0, (0, 999))
+config.plugins.iptvplayer.rambuffer_sizemb_files = ConfigInteger(0, (0, 999))
 config.plugins.iptvplayer.aac_software_decode = ConfigYesNo(default = False)
 config.plugins.iptvplayer.ac3_software_decode = ConfigYesNo(default = False)
 config.plugins.iptvplayer.eac3_software_decode = ConfigYesNo(default = False)
@@ -265,6 +267,8 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         
     def getRuntimeOptionsValues(self):
         valTab = []
+        valTab.append(config.plugins.iptvplayer.rambuffer_sizemb_network_proto.value)
+        valTab.append(config.plugins.iptvplayer.rambuffer_sizemb_files.value)
         valTab.append(config.plugins.iptvplayer.aac_software_decode.value)
         valTab.append(config.plugins.iptvplayer.dts_software_decode.value)
         valTab.append(config.plugins.iptvplayer.wma_software_decode.value)
@@ -288,6 +292,8 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         list.append(getConfigListEntry(_("Remember last watched position"), config.plugins.iptvplayer.remember_last_position))
         if 1:#IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
             list.append(getConfigListEntry(_("----------------- External exteplayer3 options -----------------"), config.plugins.iptvplayer.fakeExtePlayer3))
+            list.append(getConfigListEntry("    " + _("RAM buffer size [MB] for network protocols"), config.plugins.iptvplayer.rambuffer_sizemb_network_proto))
+            list.append(getConfigListEntry("    " + _("RAM buffer size [MB] for local files"), config.plugins.iptvplayer.rambuffer_sizemb_files))
             list.append(getConfigListEntry("    " + _("External player use software decoder for the AAC"), config.plugins.iptvplayer.aac_software_decode))
             list.append(getConfigListEntry("    " + _("External player use software decoder for the AC3"), config.plugins.iptvplayer.ac3_software_decode))
             list.append(getConfigListEntry("    " + _("External player use software decoder for the EAC3"), config.plugins.iptvplayer.eac3_software_decode))

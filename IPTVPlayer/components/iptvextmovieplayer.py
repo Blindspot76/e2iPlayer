@@ -1835,7 +1835,8 @@ class IPTVExtMoviePlayer(Screen):
                 if not sts: 
                     msg = _("An error occurred while writing into: %s") % GetTmpDir()
                     self.showMessage(msg, MessageBox.TYPE_ERROR)
-            if "://" in self.fileSRC: 
+            if "://" in self.fileSRC:
+                ramBufferSizeMB = config.plugins.iptvplayer.rambuffer_sizemb_network_proto.value
                 url,httpParams = DMHelper.getDownloaderParamFromUrlWithMeta(tmpUri, True)
                 #cmd += ' ""' # cookies for now will be send in headers
                 headers = ''
@@ -1855,7 +1856,12 @@ class IPTVExtMoviePlayer(Screen):
                 programId = url.meta.get('PROGRAM-ID', '')
                 if programId != '':
                     cmd += ' -P "%s" ' % programId
-                    
+            else:
+                ramBufferSizeMB = config.plugins.iptvplayer.rambuffer_sizemb_files.value
+                
+            if ramBufferSizeMB > 0:
+                cmd += ' -b %s ' % ramBufferSizeMB
+            
             if config.plugins.iptvplayer.stereo_software_decode.value:
                 cmd += ' -s '
             
