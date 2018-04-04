@@ -149,10 +149,10 @@ class YesMovies(CBaseHostClass):
             value = self.cm.ph.getSearchGroups(item, 'href="[^"]+?/filter/all/([^"^/]+?)/')[0]
             self.cacheFilters['sort_by'].append({'sort_by':value, 'title':self.cleanHtmlStr(item)})
             
-        for filter in [{'key':'quality', 'marker':'Quality</span>'},
-                       {'key':'genre',   'marker':'Genre</span>'  },
-                       {'key':'country', 'marker':'Country</span>'},
-                       {'key':'year',    'marker':'Release</span>'}]:
+        for filter in [{'key':'quality', 'marker':'quality-list'},
+                       {'key':'genre',   'marker':'genre-list'  },
+                       {'key':'country', 'marker':'country-list'},
+                       {'key':'year',    'marker':'release-list'}]:
             self.cacheFilters[filter['key']] = []
             tmp = self.cm.ph.getDataBeetwenMarkers(data, filter['marker'], '</ul>', False)[1]
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>', withMarkers=True, caseSensitive=False)
