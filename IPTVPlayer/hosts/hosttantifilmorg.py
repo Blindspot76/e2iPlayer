@@ -393,6 +393,7 @@ class TantiFilmOrg(CBaseHostClass):
         tries = 0
         while tries < 4:
             tries += 1
+            printDBG(">> tries [%d]" % tries)
             if not self.cm.isValidUrl(videoUrl):
                 break
             if 1 != self.up.checkHostSupport(videoUrl):
@@ -419,8 +420,13 @@ class TantiFilmOrg(CBaseHostClass):
                 urlTab = self.up.getVideoLinkExt(videoUrl)
                 if len(urlTab):
                     break
-            try: videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
-            except Exception: break
+            try:
+                data = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                if self.cm.isValidUrl(data):
+                    videoUrl = data
+            except Exception: 
+                printExc()
+                break
         return urlTab
         
     def getFavouriteData(self, cItem):
