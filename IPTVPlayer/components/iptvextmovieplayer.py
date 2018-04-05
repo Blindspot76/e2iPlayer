@@ -268,6 +268,11 @@ class IPTVExtMoviePlayer(Screen):
             self.gstAdditionalParams['file-download-timeout']= additionalParams.get('file-download-timeout', 0) # in MS
             self.gstAdditionalParams['file-download-live']   = additionalParams.get('file-download-live', False) # True or False
         else: self.playerName = _("external eplayer3")
+        
+        if 'moov_atom_info' in additionalParams and additionalParams['moov_atom_info']['offset'] == 0:
+            self.dataSizeCorrection = additionalParams['moov_atom_info']['size']
+        else: 
+            self.dataSizeCorrection = 0
 
         self.session.nav.playService(None) # current service must be None to give free access to DVB Audio and Video Sinks
         self.fileSRC      = strwithmeta(filesrcLocation)
@@ -1059,10 +1064,10 @@ class IPTVExtMoviePlayer(Screen):
                         self.setPlaybackLength(totalDuration)
                         self.clipLength = totalDuration
                 return
-        
-            remoteFileSize = self.downloader.getRemoteFileSize()
+            
+            remoteFileSize = self.downloader.getRemoteFileSize() - self.dataSizeCorrection
             if 0 < remoteFileSize:
-                localFileSize = self.downloader.getLocalFileSize(True) 
+                localFileSize = self.downloader.getLocalFileSize(True) - self.dataSizeCorrection
                 if 0 < localFileSize:
                     self['bufferingBar'].value = (localFileSize * 100000) / remoteFileSize
         

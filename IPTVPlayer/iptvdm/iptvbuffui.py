@@ -271,6 +271,9 @@ class IPTVPlayerBufferingWidget(Screen):
         printDBG('IPTVPlayerBufferingWidget.runMovePlayer [%r]' % player)
         playerAdditionalParams = dict(self.playerAdditionalParams)
         playerAdditionalParams['downloader'] = self.downloader
+        if self.isMOOVAtomAtTheBeginning:
+            playerAdditionalParams['moov_atom_info'] = {'offset':0, 'size':self.moovAtomOffset + self.moovAtomSize}
+        
         if strwithmeta(self.url).meta.get('iptv_proto', '') in ['f4m', 'uds', 'm3u8']:
             playerAdditionalParams['file-download-timeout'] = 90000 # 90s
         else:
@@ -411,7 +414,7 @@ class IPTVPlayerBufferingWidget(Screen):
                 if tmpBuffSize > requestedBuffSize: percentage = 100
                 else: percentage = (100 * tmpBuffSize) / requestedBuffSize
                 if self.moovAtomStatus != self.MOOV_STS.DOWNLOADED:
-                    self["addinfo"].setText(_(""))
+                    self["addinfo"].setText("")
                     self.moovAtomStatus = self.MOOV_STS.DOWNLOADED
             handled = True
         elif self.isMOOVAtomAtTheBeginning == False:
