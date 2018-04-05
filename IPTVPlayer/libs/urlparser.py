@@ -3097,7 +3097,7 @@ class pageParser:
             
         def _findLinks(data, lvl=0):
             if lvl == 0:
-                jscode = ['var url,iptvRetObj={cookies:{},href:"",sources:{}},primary=!1,window=this;location={};var document={};iptvobj={},iptvobj.setup=function(){iptvRetObj.sources=arguments[0]},jwplayer=function(){return iptvobj},Object.defineProperty(document,"cookie",{get:function(){return""},set:function(t){t=t.split(";",1)[0].split("=",2),iptvRetObj.cookies[t[0]]=t[1];}}),Object.defineProperty(location,"href",{set:function(t){iptvRetObj.href=t}}),window.location=location;']
+                jscode = ['var url,iptvRetObj={cookies:{},href:"",sources:{}},primary=!1,window=this;location={assign:function(t){iptvRetObj.href=t;}};var document={};iptvobj={},iptvobj.setup=function(){iptvRetObj.sources=arguments[0]},jwplayer=function(){return iptvobj},Object.defineProperty(document,"cookie",{get:function(){return""},set:function(t){t=t.split(";",1)[0].split("=",2),iptvRetObj.cookies[t[0]]=t[1];}}),Object.defineProperty(location,"href",{set:function(t){iptvRetObj.href=t}}),window.location=location;']
                 tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), withNodes=False, caseSensitive=False)
                 for item in tmp:
                     if 'ﾟωﾟﾉ =/｀ｍ´ ）' in item or 'eval(' in item:

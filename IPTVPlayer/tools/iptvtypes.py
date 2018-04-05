@@ -13,7 +13,6 @@ def enum(**enums):
 #   "iptv_livestream":      True | False
 #   "iptv_bitrate":         number
 #   "iptv_chank_url":       "http... link"
-#   "iptv_block_exteplayer" True | False - default False 
 #   "iptv_audio_url"        "http... link"
 #   "iptv_m3u8_custom_base_link" "http... link"
 #   "iptv_m3u8_skip_seg"    0, 2, 3 - defaul 0 (sip first num of seg from first list)

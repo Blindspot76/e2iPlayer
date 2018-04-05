@@ -40,7 +40,7 @@ class WgetDownloader(BaseDownloader):
                  FROM_DOTS   = 'INFO_FROM_DOTS')
                      
     def __init__(self):
-        printDBG('WgetDownloader.__init__ ----------------------------------')
+        printDBG('WgetDownloader.__init__ ')
         BaseDownloader.__init__(self)
         
         self.wgetStatus = self.WGET_STS.NONE
@@ -50,15 +50,19 @@ class WgetDownloader(BaseDownloader):
         self.curContinueRetry = 0
         self.maxContinueRetry = 0
         self.downloadCmd = ''
+        self.remoteContentType = None
         
     def __del__(self):
-        printDBG("WgetDownloader.__del__ ----------------------------------")
+        printDBG("WgetDownloader.__del__ ")
         
     def getName(self):
         return "wget"
 
     def isWorkingCorrectly(self, callBackFun):
         self.iptv_sys = iptv_system( DMHelper.GET_WGET_PATH() + " -V 2>&1 ", boundFunction(self._checkWorkingCallBack, callBackFun) )
+    
+    def getMimeType(self):
+        return self.remoteContentType
         
     def _checkWorkingCallBack(self, callBackFun, code, data):
         reason = ''

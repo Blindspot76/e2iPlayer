@@ -1321,6 +1321,14 @@ def GetE2VideoMode():
 def SetE2VideoMode(value):
     return SetE2OptionByFile('/proc/stb/video/videomode', value)
 
+def ReadUint16(tmp, le=True):
+    if le: return ord(tmp[1]) << 8 | ord(tmp[0])
+    else: return ord(tmp[0]) << 8 | ord(tmp[1])
+
+def ReadUint32(tmp, le=True):
+    if le: return ord(tmp[3]) << 24 | ord(tmp[2]) << 16 | ord(tmp[1]) << 8 | ord(tmp[0])
+    else: return ord(tmp[0]) << 24 | ord(tmp[1]) << 16 | ord(tmp[2]) << 8 | ord(tmp[3])
+
 def ReadGnuMIPSABIFP(elfFileName):
     SHT_GNU_ATTRIBUTES=0x6ffffff5
     SHT_MIPS_ABIFLAGS=0x7000002a
@@ -1334,12 +1342,6 @@ def ReadGnuMIPSABIFP(elfFileName):
     Val_GNU_MIPS_ABI_FP_64=6
     Val_GNU_MIPS_ABI_FP_64A=7
     Val_GNU_MIPS_ABI_FP_NAN2008=8
-
-    def _readUint16(tmp):
-        return ord(tmp[1]) << 8 | ord(tmp[0])
-    
-    def _readUint32(tmp):
-        return ord(tmp[3]) << 24 | ord(tmp[2]) << 16 | ord(tmp[1]) << 8 | ord(tmp[0])
     
     def _readLeb128(data, start, end):
         result = 0
@@ -1371,24 +1373,24 @@ def ReadGnuMIPSABIFP(elfFileName):
         with open(elfFileName, "rb") as file:
             # e_shoff - Start of section headers
             file.seek(32)
-            shoff = _readUint32(file.read(4))
+            shoff = ReadUint32(file.read(4))
         
             # e_shentsize - Size of section headers
             file.seek(46)
-            shentsize = _readUint16(file.read(2))
+            shentsize = ReadUint16(file.read(2))
             
             # e_shnum -  Number of section headers
-            shnum = _readUint16(file.read(2))
+            shnum = ReadUint16(file.read(2))
             
             # e_shstrndx - Section header string table index
-            shstrndx = _readUint16(file.read(2))
+            shstrndx = ReadUint16(file.read(2))
             
             # read .shstrtab section header
             headerOffset = shoff + shstrndx * shentsize
             
             file.seek(headerOffset + 16)
-            offset = _readUint32(file.read(4))
-            size = _readUint32(file.read(4))
+            offset = ReadUint32(file.read(4))
+            size = ReadUint32(file.read(4))
             
             file.seek(offset)
             secNameStrTable = file.read(size)
@@ -1396,12 +1398,12 @@ def ReadGnuMIPSABIFP(elfFileName):
             for idx in range(shnum):
                 offset = shoff + idx * shentsize
                 file.seek(offset)
-                sh_name = _readUint32(file.read(4))
-                sh_type = _readUint32(file.read(4))
+                sh_name = ReadUint32(file.read(4))
+                sh_type = ReadUint32(file.read(4))
                 if sh_type == SHT_GNU_ATTRIBUTES:
                     file.seek(offset + 16)
-                    sh_offset = _readUint32(file.read(4))
-                    sh_size   = _readUint32(file.read(4))
+                    sh_offset = ReadUint32(file.read(4))
+                    sh_size   = ReadUint32(file.read(4))
                     file.seek(sh_offset)
                     contents = file.read(sh_size)
                     p = 0
@@ -1409,7 +1411,7 @@ def ReadGnuMIPSABIFP(elfFileName):
                         p += 1
                         sectionLen = sh_size -1
                         while sectionLen > 0:
-                            attrLen = _readUint32(contents[p:])
+                            attrLen = ReadUint32(contents[p:])
                             p += 4
                             
                             if attrLen > sectionLen:
@@ -1429,7 +1431,7 @@ def ReadGnuMIPSABIFP(elfFileName):
                                     break
                                 tag = ord(contents[p])
                                 p += 1
-                                size = _readUint32(contents[p:])
+                                size = ReadUint32(contents[p:])
                                 if size > attrLen:
                                     size = attrLen
                                 if size < 6:
