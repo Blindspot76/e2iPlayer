@@ -7757,12 +7757,13 @@ class pageParser:
                 subTracks.append({'title':subLabel + '_' + subLang, 'url':subUrl, 'lang':subLang, 'format':'srt'})
         
         videoUrl = ''
-        encTab = re.compile('''<span[^>]+?id="[^"]*?"[^>]*?>([^<]+?)<\/span>''').findall(data)
-        
-        for e in encTab:
-            if len(e) > 40:
-                encTab.insert(0, e)
-                break
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'display:none'), ('</div', '>'))
+        for item in tmp:
+            encTab = re.compile('''<[^>]+?id="[^"]*?"[^>]*?>([^<]+?)<''').findall(data)
+            for e in encTab:
+                if len(e) > 40:
+                    encTab.insert(0, e)
+                    break
         
         def __decode_k(enc, jscode):
             decoded = ''
