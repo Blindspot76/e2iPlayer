@@ -645,6 +645,7 @@ class KinomanCO(CBaseHostClass):
                             item['title'] = _('Answer')
                             item['input']['text'] = ''
                             params['list'].append(item)
+                            params['vk_params'] = {'invert_letters_case':True}
                 
                             ret = 0
                             retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleInputBox, params)
@@ -683,7 +684,7 @@ class KinomanCO(CBaseHostClass):
                 except Exception:
                     printExc()
             if directLink:
-                urlTab.append({'name':'direct_link', 'url':strwithmeta(videoUrl, {'mp4_moov_atom_eof':True})})
+                urlTab.append({'name':'direct_link', 'url':strwithmeta(videoUrl, {})})
             else:
                 urlTab = self.up.getVideoLinkExt(videoUrl)
         

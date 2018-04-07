@@ -426,7 +426,7 @@ class IPTVPlayerBufferingWidget(Screen):
             handled = True
         elif self.isMOOVAtomAtTheBeginning == False and self.moovAtomStatus not in [self.MOOV_STS.WAITING, self.MOOV_STS.ERROR, self.MOOV_STS.DOWNLOADED]:
             # At now only exteplayer3 is able to use moov atom in separate file
-            if False and self.activMoviePlayer == 'exteplayer' and self.moovAtomStatus == self.MOOV_STS.UNKNOWN:
+            if self.activMoviePlayer == 'exteplayer' and self.moovAtomStatus == self.MOOV_STS.UNKNOWN:
                 url, downloaderParams = DMHelper.getDownloaderParamFromUrl(self.url)
                 downloaderParams['start_pos'] = self.moovAtomOffset
                 self.moovAtomDownloader = DownloaderCreator(self.url)
@@ -452,9 +452,9 @@ class IPTVPlayerBufferingWidget(Screen):
             if self.moovAtomStatus in [self.MOOV_STS.UNKNOWN, self.MOOV_STS.ERROR]:
                 printDBG(">> [%s] [%s]" % (self.activMoviePlayer, self.moovAtomStatus))
                 msg = [_("Whole file must be downloaded to start playback!")]
-                if False and self.moovAtomStatus == self.MOOV_STS.UNKNOWN and self.activMoviePlayer == 'exteplayer':
+                if self.moovAtomStatus == self.MOOV_STS.UNKNOWN and self.activMoviePlayer != 'exteplayer':
                     msg.append(_("You can use external eplayer to start playback faster."))
-                self["addinfo"].setText(' '.join(msg))
+                self["addinfo"].setText('\n'.join(msg))
                 self.moovAtomStatus = self.MOOV_STS.WAITING
                 handled = False
         
