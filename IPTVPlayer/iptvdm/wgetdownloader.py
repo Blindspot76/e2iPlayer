@@ -162,8 +162,10 @@ class WgetDownloader(BaseDownloader):
     def _cmdFinished(self, code, terminated=False):
         printDBG("WgetDownloader._cmdFinished code[%r] terminated[%r]" % (code, terminated))
         
-        # When finished updateStatistic based on file sie on disk
+        # When finished updateStatistic based on file size on disk
         BaseDownloader.updateStatistic(self)
+        
+        printDBG("WgetDownloader._cmdFinished remoteFileSize[%r] localFileSize[%r]" % (self.remoteFileSize, self.localFileSize))
         
         if not terminated and self.remoteFileSize > 0 \
            and self.remoteFileSize > self.localFileSize \
@@ -187,6 +189,8 @@ class WgetDownloader(BaseDownloader):
             self.status = DMHelper.STS.INTERRUPTED
         else:
             self.status = DMHelper.STS.DOWNLOADED
+            
+        printDBG("WgetDownloader._cmdFinished status [%s]" % (self.status))
         if not terminated:
             self.onFinish()
 

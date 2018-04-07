@@ -135,8 +135,6 @@ class IPTVPlayerBufferingWidget(Screen):
         self.lastPosition = None
         self.lastSize = 0
         
-        self.downloaderDict = {}
-        
         # Some MP4 files are not prepared for streaming
         # MOOV atom is needed to start playback
         # if it is located at the end of file, then 
@@ -155,6 +153,8 @@ class IPTVPlayerBufferingWidget(Screen):
                               DOWNLOADED  = 3,
                               ERROR       = 4)
         self.moovAtomStatus = self.MOOV_STS.UNKNOWN
+        self.moovAtomDownloader = None
+        self.moovAtomPath  = pathForRecordings + '/.iptv_buffering_moov.flv'
         
         printDBG(">> activMoviePlayer[%s]" % self.activMoviePlayer)
         
@@ -177,7 +177,6 @@ class IPTVPlayerBufferingWidget(Screen):
             url,downloaderParams = DMHelper.getDownloaderParamFromUrl(self.url)
             if url.split('?', 1)[0].lower().endswith('.mp4'):
                 self.clouldBeMP4 = True
-            self.downloaderDict.update({'url':url, 'params':downloaderParams})
             self.downloader.start(url, self.filePath, downloaderParams)
             self.setMainTimerSts(True)
             self.canRunMoviePlayer = True
@@ -200,6 +199,10 @@ class IPTVPlayerBufferingWidget(Screen):
         self.setMainTimerSts(False)
         if self.downloader:
             self.downloader.terminate()
+            self.downloader = None
+        
+        if self.downloader:
+            self.moovAtomDownloader.terminate()
             self.downloader = None
         self._cleanedUp()
 
@@ -272,7 +275,10 @@ class IPTVPlayerBufferingWidget(Screen):
         playerAdditionalParams = dict(self.playerAdditionalParams)
         playerAdditionalParams['downloader'] = self.downloader
         if self.isMOOVAtomAtTheBeginning:
-            playerAdditionalParams['moov_atom_info'] = {'offset':0, 'size':self.moovAtomOffset + self.moovAtomSize}
+            playerAdditionalParams['moov_atom_info'] = {'offset':0, 'size':self.moovAtomOffset + self.moovAtomSize, 'file':''}
+        elif self.moovAtomStatus == self.MOOV_STS.DOWNLOADED and \
+             DMHelper.STS.DOWNLOADED != self.downloader.getStatus(): 
+            playerAdditionalParams['moov_atom_info'] = {'offset':self.moovAtomOffset, 'size': self.moovAtomSize, 'file':self.moovAtomPath}
         
         if strwithmeta(self.url).meta.get('iptv_proto', '') in ['f4m', 'uds', 'm3u8']:
             playerAdditionalParams['file-download-timeout'] = 90000 # 90s
@@ -307,11 +313,11 @@ class IPTVPlayerBufferingWidget(Screen):
         if not self.mainTimerEnabled:
             printDBG("updateDisplay aborted - timer stoped")
             return
-            
-        localSize  = self.downloader.getLocalFileSize()
-        remoteSize = self.downloader.getRemoteFileSize()
 
         self.downloader.updateStatistic()
+        localSize  = self.downloader.getLocalFileSize()
+        remoteSize = self.downloader.getRemoteFileSize()
+        
         if self.checkMOOVAtom and \
            localSize > 10240:
             self.checkMOOVAtom = False
@@ -398,8 +404,9 @@ class IPTVPlayerBufferingWidget(Screen):
         handled = False
         percentage = 0
         requestedBuffSize = -1
-        moovAtomDataSize = self.moovAtomOffset + self.moovAtomSize
+        tmpBuffSize = 0
         if self.isMOOVAtomAtTheBeginning == True:
+            moovAtomDataSize = self.moovAtomOffset + self.moovAtomSize
             if moovAtomDataSize > localSize:
                 if self.moovAtomStatus != self.MOOV_STS.DOWNLOADING:
                     self["addinfo"].setText(_("Please wait for initialization data."))
@@ -417,12 +424,41 @@ class IPTVPlayerBufferingWidget(Screen):
                     self["addinfo"].setText("")
                     self.moovAtomStatus = self.MOOV_STS.DOWNLOADED
             handled = True
-        elif self.isMOOVAtomAtTheBeginning == False:
-            #if self.activMoviePlayer != 'exteplayer': # or download ATOM data failed
-            if self.moovAtomStatus != self.MOOV_STS.WAITING:
-                self["addinfo"].setText(_("Whole file must be downloaded to start playback!"))
+        elif self.isMOOVAtomAtTheBeginning == False and self.moovAtomStatus not in [self.MOOV_STS.WAITING, self.MOOV_STS.ERROR, self.MOOV_STS.DOWNLOADED]:
+            # At now only exteplayer3 is able to use moov atom in separate file
+            if False and self.activMoviePlayer == 'exteplayer' and self.moovAtomStatus == self.MOOV_STS.UNKNOWN:
+                url, downloaderParams = DMHelper.getDownloaderParamFromUrl(self.url)
+                downloaderParams['start_pos'] = self.moovAtomOffset
+                self.moovAtomDownloader = DownloaderCreator(self.url)
+                self.moovAtomDownloader.start(url, self.moovAtomPath, downloaderParams)
+                self.moovAtomStatus = self.MOOV_STS.DOWNLOADING
+                self["addinfo"].setText(_("Please wait - downloading initialization data."))
+            elif self.moovAtomStatus == self.MOOV_STS.DOWNLOADING:
+                self.moovAtomDownloader.updateStatistic()
+                status = self.moovAtomDownloader.getStatus()
+                moovLocalSize  = self.moovAtomDownloader.getLocalFileSize()
+                moovRemoteSize = self.moovAtomDownloader.getRemoteFileSize()
+                if status == DMHelper.STS.DOWNLOADING:
+                    if moovLocalSize > 0 and self.moovAtomSize > 0:
+                        if moovLocalSize > self.moovAtomSize: percentage = 100
+                        else: percentage = (100 * moovLocalSize) / self.moovAtomSize
+                elif status == DMHelper.STS.DOWNLOADED or (status == DMHelper.STS.INTERRUPTED and moovLocalSize == self.moovAtomSize):
+                    self.moovAtomStatus = self.MOOV_STS.DOWNLOADED
+                    self["addinfo"].setText("")
+                else:
+                    self.moovAtomStatus = self.MOOV_STS.ERROR
+            
+            handled = True
+            if self.moovAtomStatus in [self.MOOV_STS.UNKNOWN, self.MOOV_STS.ERROR]:
+                printDBG(">> [%s] [%s]" % (self.activMoviePlayer, self.moovAtomStatus))
+                msg = [_("Whole file must be downloaded to start playback!")]
+                if False and self.moovAtomStatus == self.MOOV_STS.UNKNOWN and self.activMoviePlayer == 'exteplayer':
+                    msg.append(_("You can use external eplayer to start playback faster."))
+                self["addinfo"].setText(' '.join(msg))
                 self.moovAtomStatus = self.MOOV_STS.WAITING
-        else:
+                handled = False
+        
+        if not handled and self.moovAtomStatus != self.MOOV_STS.WAITING:
             tmpBuffSize = localSize - self.lastSize + 1 # simple when getLocalFileSize() returns -1
             if self.downloader.getPlayableFileSize() > 0:
                 requestedBuffSize = self.requestedBuffSize
@@ -438,8 +474,9 @@ class IPTVPlayerBufferingWidget(Screen):
         self["icon"].nextFrame()
         
         # check if we start movie player
-        if self.canRunMoviePlayer and requestedBuffSize > -1:
-            if tmpBuffSize >= requestedBuffSize or (self.downloader.getStatus() == DMHelper.STS.DOWNLOADED and 0 < localSize):
+        if self.canRunMoviePlayer:
+            if (requestedBuffSize > -1 and tmpBuffSize >= requestedBuffSize) or \
+               (self.downloader.getStatus() == DMHelper.STS.DOWNLOADED and 0 < localSize):
                 self.runMovePlayer()
                 return
         
@@ -472,7 +509,11 @@ class IPTVPlayerBufferingWidget(Screen):
     def _cleanedUp(self):
         if fileExists(self.filePath):
             try: os_remove(self.filePath)
-            except Exception: printDBG('Problem with removing old buffering file')
+            except Exception: printDBG('Problem with removing old buffering file (%s)' % self.filePath)
+        
+        if fileExists(self.moovAtomPath):
+            try: os_remove(self.moovAtomPath)
+            except Exception: printDBG('Problem with removing old buffering file (%s)' % self.moovAtomPath)
     '''
     def doStart(self):
         if not self.onStartCalled:

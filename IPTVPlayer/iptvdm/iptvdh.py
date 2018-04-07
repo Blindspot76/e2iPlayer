@@ -263,6 +263,9 @@ class DMHelper:
         wgetContinue = ''
         if downloaderParams.get('iptv_wget_continue', False):
             wgetContinue = ' -c --timeout=%s --waitretry=%s ' % (downloaderParams.get('iptv_wget_timeout', 30), downloaderParams.get('iptv_wget_waitretry', 1))
+        
+        if 'start_pos' in downloaderParams:
+            wgetContinue = ' --start-pos=%s ' % downloaderParams['start_pos']
             
         cmd = DMHelper.GET_WGET_PATH() + wgetContinue + defaultHeader + ' --no-check-certificate ' + headerOptions + proxyOptions
         printDBG("getBaseWgetCmd return cmd[%s]" % cmd)

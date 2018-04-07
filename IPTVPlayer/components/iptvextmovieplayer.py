@@ -267,12 +267,21 @@ class IPTVExtMoviePlayer(Screen):
             self.gstAdditionalParams['buffer-size']          = additionalParams.get('buffer-size', 0) # in KB
             self.gstAdditionalParams['file-download-timeout']= additionalParams.get('file-download-timeout', 0) # in MS
             self.gstAdditionalParams['file-download-live']   = additionalParams.get('file-download-live', False) # True or False
-        else: self.playerName = _("external eplayer3")
-        
-        if 'moov_atom_info' in additionalParams and additionalParams['moov_atom_info']['offset'] == 0:
-            self.dataSizeCorrection = additionalParams['moov_atom_info']['size']
         else: 
-            self.dataSizeCorrection = 0
+            self.playerName = _("external eplayer3")
+        
+        self.extAdditionalParams = {}
+        self.availableDataSizeCorrection = 0
+        self.totalDataSizeCorrection = 0
+        if 'moov_atom_info' in additionalParams:
+            if additionalParams['moov_atom_info']['offset'] == 0:
+                self.availableDataSizeCorrection = additionalParams['moov_atom_info']['size']
+                self.totalDataSizeCorrection = self.availableDataSizeCorrection
+            else: 
+                self.extAdditionalParams['moov_atom_offset'] = additionalParams['moov_atom_info']['offset']
+                self.extAdditionalParams['moov_atom_size'] = additionalParams['moov_atom_info']['size']
+                self.extAdditionalParams['moov_atom_file'] = additionalParams['moov_atom_info']['file']
+                self.totalDataSizeCorrection = self.extAdditionalParams['moov_atom_size']
 
         self.session.nav.playService(None) # current service must be None to give free access to DVB Audio and Video Sinks
         self.fileSRC      = strwithmeta(filesrcLocation)
@@ -1065,9 +1074,9 @@ class IPTVExtMoviePlayer(Screen):
                         self.clipLength = totalDuration
                 return
             
-            remoteFileSize = self.downloader.getRemoteFileSize() - self.dataSizeCorrection
+            remoteFileSize = self.downloader.getRemoteFileSize() - self.totalDataSizeCorrection
             if 0 < remoteFileSize:
-                localFileSize = self.downloader.getLocalFileSize(True) - self.dataSizeCorrection
+                localFileSize = self.downloader.getLocalFileSize(True) - self.availableDataSizeCorrection
                 if 0 < localFileSize:
                     self['bufferingBar'].value = (localFileSize * 100000) / remoteFileSize
         
@@ -1917,6 +1926,9 @@ class IPTVExtMoviePlayer(Screen):
                 
             if 'iptv_m3u8_key_uri_replace_old' in tmpUri.meta and 'iptv_m3u8_key_uri_replace_new' in tmpUri.meta:
                 cmd += ' -f "key_uri_old=%s" -f "key_uri_new=%s" ' % (tmpUri.meta['iptv_m3u8_key_uri_replace_old'], tmpUri.meta['iptv_m3u8_key_uri_replace_new'])
+            
+            if self.extAdditionalParams.get('moov_atom_file', '') != '':
+                 cmd += ' -F "%s" -S %s -O %s' % (self.extAdditionalParams['moov_atom_file'], self.extAdditionalParams['moov_atom_offset'] + self.extAdditionalParams['moov_atom_size'], self.extAdditionalParams['moov_atom_offset'])
             
             cmd += (' "%s"' % videoUri) + " > /dev/null"
         
