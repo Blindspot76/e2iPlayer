@@ -45,7 +45,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://fili.tv/'
+    return 'https://fili.cc/'
 
 class FiliserTv(CBaseHostClass):
  
@@ -58,8 +58,8 @@ class FiliserTv(CBaseHostClass):
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'https://fili.tv/'
-        self.DEFAULT_ICON_URL = 'https://fili.tv/assets/img/logo2.png'
+        self.MAIN_URL = 'https://fili.cc/'
+        self.DEFAULT_ICON_URL = 'https://fili.cc/assets/img/logo2.png'
         
         self.MAIN_CAT_TAB = [{'category':'list_items',        'title': _('Movies'),                       'url':self.getFullUrl('filmy')   },
                              {'category':'list_items',        'title': _('Series'),                       'url':self.getFullUrl('seriale') },
@@ -295,6 +295,12 @@ class FiliserTv(CBaseHostClass):
         errorMessage = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h2 class="title_block">', '</section>')[1])
         if '' != errorMessage:  SetIPTVPlayerLastHostError(errorMessage)
         
+        lParams = {}
+        tmp = self.cm.ph.getSearchGroups(data, '''(<div[^>]+?['"]box['"][^>]*?>)''')[0]
+        lParams['code'] = self.cm.ph.getSearchGroups(tmp, '''data\-code=['"]([^'^"]+?)['"]''')[0]
+        lParams['code2'] = self.cm.ph.getSearchGroups(tmp, '''data\-code2=['"]([^'^"]+?)['"]''')[0]
+        lParams['type'] =  self.cm.ph.getSearchGroups(tmp, '''id=['"]([^'^"^_]+?)['"_]''')[0]
+        
         data = data.split('<div id="links">')
         if 2 != len(data): return []
         
@@ -310,7 +316,7 @@ class FiliserTv(CBaseHostClass):
             tmp = self.cm.ph.getDataBeetwenMarkers(data[0], 'data-type="%s"' % tab['key'], '</ul>')[1]
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>', withMarkers=True)
             for item in tmp:
-                url    = self.cm.ph.getSearchGroups(item, '''data-ref=['"]([^'^"]+?)['"]''')[0]
+                url    = strwithmeta(self.cm.ph.getSearchGroups(item, '''data-ref=['"]([^'^"]+?)['"]''')[0], {'link_params':lParams})
                 title  = self.cleanHtmlStr(item.split('<div class="rightSide">')[0])
                 urlTab.append({'name': '%s: %s' % (tab['title'], title), 'url':url, 'need_resolve':1})
         
@@ -427,7 +433,9 @@ class FiliserTv(CBaseHostClass):
         
         reCaptcha = False
         if not self.cm.isValidUrl(videoUrl):
-            salt = videoUrl
+            linkParams = videoUrl.meta['link_params']
+            url = self.getFullUrl('/embed?type=%s&code=%s&code2=%s&salt=%s' % (linkParams['type'], linkParams['code'], linkParams['code2'], videoUrl))
+            salt = '%s|%s' % (videoUrl, linkParams)
             if salt not in FiliserTv.SALT_CACHE:
                 httpParams = dict(self.defaultParams)
                 tries = 0
@@ -439,7 +447,6 @@ class FiliserTv(CBaseHostClass):
                     #if tries > 3:
                     #    rm(self.COOKIE_FILE)
                     
-                    url = 'http://filiser.tv/embed?salt=' + videoUrl
                     if tries > 1 and googleCaptcha: httpParams['header'] = self.getHeaders(tries)
                     sts, data = self.getPage(url, httpParams)
                     if not sts: return urlTab
