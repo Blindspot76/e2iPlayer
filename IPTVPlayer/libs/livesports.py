@@ -164,6 +164,7 @@ class LiveSportsApi(CBaseHostClass):
         source  = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?source['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
         replace = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?replace['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
         keyurl  = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?keyurl['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
+        rewrittenUrl = self.cm.ph.getSearchGroups(data, '''\=\s*?['"]([^'^"]+?)['"]\s*?\+\s*?btoa''', 1, True)[0]
         
         replaceTab = self.cm.ph.getDataBeetwenMarkers(data, 'prototype.open', '};', False)[1]
         printDBG(replaceTab)
@@ -176,6 +177,8 @@ class LiveSportsApi(CBaseHostClass):
                 hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'iptv_m3u8_key_uri_replace_old':replace, 'iptv_m3u8_key_uri_replace_new':keyurl})
         elif len(replaceTab):
             scriptUrl = '|' + base64.b64encode(json.dumps(replaceTab).encode('utf-8'))
+        elif rewrittenUrl != '':
+            scriptUrl = '<proxy>' + rewrittenUrl
         elif '/js/nhl.js' in data:
             scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^"^']*?js/nhl\.js)['"]''', 1, True)[0])
         

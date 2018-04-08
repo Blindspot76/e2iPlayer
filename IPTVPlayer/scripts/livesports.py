@@ -83,7 +83,8 @@ class Proxy(SimpleHTTPServer.SimpleHTTPRequestHandler):
             for item in scriptUrl:
                 keyUrl = keyUrl.replace(item[0], item[1])
         else:
-            keyUrl = urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
+            #keyUrl = urlPath + base64.b64encode('l=' + 'nhl' + '&g=' + 'OTT-COL-20171110' + '&f=' + 'home' + '&u=' + base64.b64encode(keyUrl))
+            keyUrl = urlPath + base64.b64encode(keyUrl)
         if not keyUrl.startswith('https://') and not keyUrl.startswith('http://'): keyUrl = mainUrl + keyUrl
         parsedUri = urlparse( mainUrl )
         sts, data = getPage(keyUrl, {'User-Agent':userAgent, 'Referer':mainUrl, 'Origin':'{uri.scheme}://{uri.netloc}'.format(uri=parsedUri)})
@@ -104,10 +105,12 @@ if __name__ == "__main__":
         scriptUrl   = sys.argv[4]
         userAgent   = sys.argv[5]
         
-        if scriptUrl.startswith('|'):
+        if scriptUrl.startswith('<proxy>'):
+            urlPath = scriptUrl[7:]
+        elif scriptUrl.startswith('|'):
             scriptUrl = json.loads(base64.b64decode(scriptUrl))
         else:
-            urlPath     = 'keys/mma.php?q='
+            urlPath = 'keys/mma.php?q='
             
             sts, data = getPage(scriptUrl, {'User-Agent':userAgent, 'Referer':mainUrl})
             if sts:
