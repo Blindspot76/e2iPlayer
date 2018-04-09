@@ -794,6 +794,12 @@ def rmtree(path, ignore_errors=False, onerror=None):
         os.rmdir(path)
     except os.error:
         onerror(os.rmdir, path) 
+        
+def GetFileSize(filepath):
+    try:
+        return os.stat(filepath).st_size
+    except Exception:
+        return -1
        
 def DownloadFile(url, filePath):
     printDBG('DownloadFile [%s] from [%s]' % (filePath, url) )

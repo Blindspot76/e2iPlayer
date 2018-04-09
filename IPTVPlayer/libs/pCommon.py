@@ -34,6 +34,11 @@ from Tools.Directories import fileExists
 from urlparse import urljoin, urlparse, urlunparse
 ###################################################
 
+def DecodeGzipped(data):
+    buf = StringIO(data)
+    f = gzip.GzipFile(fileobj=buf)
+    return f.read()
+
 class NoRedirection(urllib2.HTTPRedirectHandler):
     def http_error_302(self, req, fp, code, msg, headers):
         infourl = urllib.addinfourl(fp, headers, req.get_full_url())
@@ -631,6 +636,11 @@ class common:
                 try:
                     domain = self.getBaseUrl(data.fp.geturl())
                     verData = data.fp.read() 
+                    if data.fp.info().get('Content-Encoding', '') == 'gzip':
+                        verData = DecodeGzipped(verData)
+                    printDBG("------------------")
+                    printDBG(verData)
+                    printDBG("------------------")
                     if 'sitekey' not in verData and 'challenge' not in verData: break
                     
                     printDBG(">>")

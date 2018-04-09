@@ -42,6 +42,7 @@ hostfighttube
 hostfightvideo
 hostfilisertv
 hostfilma24hdcom
+hostfilmaoncom
 hostfilmativa
 hostfilmeonlineto
 hostfilmezz
@@ -55,7 +56,6 @@ hostfreediscpl
 hostgamatocom
 hostgamatotvme
 hostgledalica
-hostgomovies
 hostgreekdocumentaries3
 hosthdfilmetv
 hosthdkinomir
