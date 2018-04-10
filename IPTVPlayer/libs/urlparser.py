@@ -9376,24 +9376,35 @@ class pageParser:
         
         urlTab = []
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+        items = re.compile('''\ssources\s*[=:]\s*\[([^\]]+?)\]''').findall(data)
+        items.extend(re.compile('''\.load\(([^\)]+?mp4[^\)]+?)\)''').findall(data))
+        for item in items:
+            tmp.extend(item.split('},'))
+        
+        uniqueUrls = []
         for item in tmp:
-            url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
-            if url.startswith('//'):
-                url = 'http:' + url
-            if not url.startswith('http'):
-                continue
-            
-            if 'video/mp4' in item:
-                type = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
-                res  = self.cm.ph.getSearchGroups(item, '''res=['"]([^"^']+?)['"]''')[0]
-                label = self.cm.ph.getSearchGroups(item, '''label=['"]([^"^']+?)['"]''')[0]
+            url  = self.cm.ph.getSearchGroups(item, '''src['"]?\s*[:=]\s*?['"]([^"^']+?)['"]''')[0]
+            if url == '': url = self.cm.ph.getSearchGroups(item, '''file['"]?\s*[:=]\s*?['"]([^"^']+?)['"]''')[0]
+            if 'errpr' in url: continue
+            if url.startswith('//'): url = 'http:' + url
+            if not self.cm.isValidUrl(url): continue
+                
+            type = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[:=]\s*?['"]([^"^']+?)['"]''')[0].lower()
+            if 'video/mp4' in item or 'mp4' in type:
+                res  = self.cm.ph.getSearchGroups(item, '''res['"]?\s*[:=]\s*?['"]([^"^']+?)['"]''')[0]
+                label = self.cm.ph.getSearchGroups(item, '''label['"]?\s*[:=]\s*?['"]([^"^']+?)['"]''')[0]
                 if label == '': label = res
-                url = urlparser.decorateUrl(url, {'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
-                urlTab.append({'name':'{0}'.format(label), 'url':url})
-            elif 'mpegurl' in item:
-                url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
-                tmpTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
-                urlTab.extend(tmpTab)
+                if url not in uniqueUrls:
+                    url = urlparser.decorateUrl(url, {'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
+                    urlTab.append({'name':'{0}'.format(label), 'url':url})
+                    uniqueUrls.append(url)
+            elif 'mpegurl' in item or 'mpegurl' in type:
+                if url not in uniqueUrls:
+                    url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                    tmpTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True)
+                    urlTab.extend(tmpTab)
+                    uniqueUrls.append(url)
+        
         if 0 == len(urlTab):
             tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div ', 'videocontent'), ('</div', '>'))[1]
             printDBG(tmp)
