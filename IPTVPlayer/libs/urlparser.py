@@ -9385,7 +9385,7 @@ class pageParser:
         for item in tmp:
             url  = self.cm.ph.getSearchGroups(item, '''src['"]?\s*[:=]\s*?['"]([^"^']+?)['"]''')[0]
             if url == '': url = self.cm.ph.getSearchGroups(item, '''file['"]?\s*[:=]\s*?['"]([^"^']+?)['"]''')[0]
-            if 'errpr' in url: continue
+            if 'error' in url: continue
             if url.startswith('//'): url = 'http:' + url
             if not self.cm.isValidUrl(url): continue
                 
