@@ -180,7 +180,7 @@ class FilmaonCom(CBaseHostClass):
                 rating = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'rating'), ('</div', '>'))[1])
                 descTab.append(number)
                 descTab.append('%s/10' % (rating))
-                params =  {'name':'category', 'type':'category', 'category':nextCategory2, 'title':title, 'url':url, 'desc':' '.join(descTab), 'icon':icon}
+                params =  {'good_for_fav':True, 'priv_has_art':True, 'name':'category', 'type':'category', 'category':nextCategory2, 'title':title, 'url':url, 'desc':' '.join(descTab), 'icon':icon}
                 subItems.append(params)
             
             if len(subItems):
@@ -236,7 +236,7 @@ class FilmaonCom(CBaseHostClass):
                 sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(season, ('<span', '>', 'title'), ('</span', '>'))[1])
                 episodesTab = self.getEpisodes(season, iTitle, iIcon)
                 if len(episodesTab):
-                    params = {'good_for_fav':False, 'priv_has_art':True, 'category':nextCategory, 'title':sTitle, 'sub_items':episodesTab, 'desc':'', 'icon':iIcon}
+                    params = {'good_for_fav':False, 'category':nextCategory, 'title':sTitle, 'sub_items':episodesTab, 'desc':'', 'icon':iIcon}
                     self.addDir(params)
         elif '/seasons/' in cUrl:
             data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'episodios'), ('</ul', '>'))[1]
@@ -336,32 +336,59 @@ class FilmaonCom(CBaseHostClass):
         cUrl = data.meta['url']
         self.setMainUrl(cUrl)
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'bdetail'), ('<div', '>', 'row'))[1]
+        if '/episodes/' in cUrl: m1 = 'info'
+        else: m1 = 'sheader'
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', m1), ('<script', '>'), False)[1]
+        
         title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h1', '</h1>')[1])
-        icon = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'dmovie'), ('</div', '>'))[1]
+        icon = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'poster'), ('</div', '>'))[1]
         icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''<img[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'vtext'), ('</p', '>'))[1])
+        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'wp-content'), ('</div', '>'))[1])
         
-        keysMap = {'genre:':               'genre',
-                   'imdb:':                'imdb_rating',
-                   'durée:':               'duration',
-                   'créée par:':           'writer',
-                   'acteurs:':             'actors',
-                   'année de production:': 'year',
-                   'date de production:':  'production',
-                   'qualité:':             'quality',
-                   'langue:':              'language'}
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'starstruck-rating'), ('</div', '>'), False)[1])
+        if tmp != '': otherInfo['rating'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<b', '</b>', 'Vleresimi IMDb'), ('</div', '>'), False)[1])
+        if tmp != '': otherInfo['imdb_rating'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<b', '</b>', 'Vleresimi TMDb'), ('</div', '>'), False)[1])
+        if tmp != '': otherInfo['tmdb_rating'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<b', '</b>', 'Titulli origjinal'), ('</div', '>'), False)[1])
+        if tmp != '': otherInfo['original_title'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<b', '</b>', 'Statusi'), ('</div', '>'), False)[1]) 
+        if tmp != '': otherInfo['status'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<b', '</b>', 'Sezonet'), ('</div', '>'), False)[1]) 
+        if tmp != '': otherInfo['seasons'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<b', '</b>', 'Episodat'), ('</div', '>'), False)[1]) 
+        if tmp != '': otherInfo['episodes'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'date'), ('</span', '>'), False)[1])
+        if tmp != '': otherInfo['released'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'country'), ('</span', '>'), False)[1])
+        if tmp != '': otherInfo['country'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'runtime'), ('</span', '>'), False)[1])
+        if tmp != '': otherInfo['duration'] = tmp
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', '/network/'), ('</a', '>'), False)[1])
+        if tmp != '': otherInfo['station'] = tmp
         
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<h5', '>'), ('</h5', '>'))
-        reObj = re.compile('<span[^>]*?>')
-        printDBG(tmp)
-        for item in tmp:
-            item = reObj.split(item, 1)
-            val = self.cleanHtmlStr(item[-1]).replace(' ,', ',')
-            if val == '' or val.lower() == 'n/a': continue
-            key = self.cleanHtmlStr(item[0]).decode('utf-8').lower().encode('utf-8')
-            if key not in keysMap: continue
-            otherInfo[keysMap[key]] = val
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sgeneros'), ('</div', '>'), False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(tmp, ('<a', '>'), ('</a', '>'), False)
+        if len(tmp): otherInfo['genres'] = self.cleanHtmlStr(', '.join(tmp))
+        
+        creators = []
+        actors = []
+        directors = []
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'persons'), ('<div', '>', 'info'), False)[1].split('class="person"')
+        for item in data:
+            name = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'name'), ('</div', '>'), False)[1])
+            caracter = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'caracter'), ('</div', '>'), False)[1]).lower() 
+            if caracter == 'director': directors.append(name)
+            elif caracter == 'creator': creators.append(name)
+            elif name != '': actors.append(name)
+        
+        if 1 == len(directors): otherInfo['director'] = self.cleanHtmlStr(', '.join(directors))
+        elif 1 < len(directors): otherInfo['directors'] = self.cleanHtmlStr(', '.join(directors))
+        if 1 == len(creators): otherInfo['creator'] = self.cleanHtmlStr(', '.join(creators))
+        elif 1 < len(creators): otherInfo['creators'] = self.cleanHtmlStr(', '.join(creators))
+        if len(actors): otherInfo['actors'] = self.cleanHtmlStr(', '.join(actors))
         
         if title == '': title = cItem['title']
         if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
@@ -411,7 +438,7 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, FilmaonCom(), True, [])
         
-    #def withArticleContent(self, cItem):
-    #    if cItem.get('priv_has_art', False): return True
-    #    else: return False
+    def withArticleContent(self, cItem):
+        if cItem.get('priv_has_art', False): return True
+        else: return False
     
