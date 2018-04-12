@@ -106,7 +106,8 @@ class FilmaonCom(CBaseHostClass):
                 params =  {'name':'category', 'type':'category', 'category':nextCategory1, 'title':sTitle, 'sub_items':subItems}
                 self.addDir(params)
         
-        MAIN_CAT_TAB = [{'category':'search',         'title': _('Search'),        'search_item':True}, 
+        MAIN_CAT_TAB = [{'category':'top',            'title': 'TOP IMDb 50',      'url':self.getFullUrl('/top-imdb/')}, 
+                        {'category':'search',         'title': _('Search'),        'search_item':True}, 
                         {'category':'search_history', 'title': _('Search history')},]
         self.listsTab(MAIN_CAT_TAB, cItem)
         
@@ -131,6 +132,10 @@ class FilmaonCom(CBaseHostClass):
             icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0])
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1])
             if title  == '': title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1])
+            if cItem['url'].endswith('/seasons/'): title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''')[0])
+            sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'serie'), ('</span', '>'))[1])
+            if sTitle != '': title = '%s %s' % (sTitle, title)
+            
             desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<p', '</p>')[1])
             descTab = []
             rating = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'rating'), ('</div', '>'))[1])
@@ -150,6 +155,37 @@ class FilmaonCom(CBaseHostClass):
             params = dict(cItem)
             params.update({'title':_('Next page'), 'url':nextPage, 'page':page + 1})
             self.addDir(params)
+        
+    def listTop(self, cItem, nextCategory1, nextCategory2):
+        printDBG("InteriaTv.listTop")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        self.setMainUrl(data.meta['url'])
+        
+        reObj = re.compile('''<div[^>]+?top\-imdb\-item[^>]*>''', re.IGNORECASE)
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'top-imdb-list'), ('<script', '>'), False)[1]
+        data = re.compile('''<div[^>]+?top\-imdb\-list[^>]*>''', re.IGNORECASE).split(data)
+        for section in data:
+            sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(section, '<h3', '</h3>')[1])
+            section = reObj.split(section)
+            if len(section): del section[0]
+            subItems = []
+            for item in section:
+                url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0])
+                icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0])
+                title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'title'), ('</div', '>'))[1])
+                descTab = []
+                number = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'puesto'), ('</div', '>'))[1])
+                rating = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'rating'), ('</div', '>'))[1])
+                descTab.append(number)
+                descTab.append('%s/10' % (rating))
+                params =  {'name':'category', 'type':'category', 'category':nextCategory2, 'title':title, 'url':url, 'desc':' '.join(descTab), 'icon':icon}
+                subItems.append(params)
+            
+            if len(subItems):
+                params =  {'name':'category', 'type':'category', 'category':nextCategory1, 'title':sTitle, 'sub_items':subItems}
+                self.addDir(params)
     
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("FilmaonCom.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -187,7 +223,7 @@ class FilmaonCom(CBaseHostClass):
         iTrailer = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?youtube[^"^']+?)['"]''', 1, True)[0])
         
         iTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h1', '</h1>')[1])
-        iIcon = self.cm.ph.getDataBeetwenNodes(tmp, ('<div', '>', 'poster'), ('</div', '>'))[1]
+        iIcon = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'poster'), ('</div', '>'))[1]
         iIcon = self.getFullIconUrl(self.cm.ph.getSearchGroups(iIcon, '''<img[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
           
         if '/filma/' in cUrl or '/episodes/' in cUrl:
@@ -349,11 +385,12 @@ class FilmaonCom(CBaseHostClass):
         if name == None and category == '':
             rm(self.COOKIE_FILE)
             self.listMainMenu({'name':'category'}, 'sub_items', 'list_items')
-        elif category == 'sub_items':
-            self.listSubItems(self.currItem)
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
-        
+        elif category == 'sub_items':
+            self.listSubItems(self.currItem)
+        elif category == 'top':
+            self.listTop(self.currItem, 'sub_items', 'explore_item')
         elif category == 'explore_item':
             self.exploreItem(self.currItem, 'sub_items')
     #SEARCH
@@ -375,7 +412,6 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, FilmaonCom(), True, [])
         
     #def withArticleContent(self, cItem):
-    #    if cItem.get('priv_has_art', False):
-    #    return True
+    #    if cItem.get('priv_has_art', False): return True
     #    else: return False
     
