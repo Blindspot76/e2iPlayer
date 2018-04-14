@@ -309,6 +309,7 @@ class ItflixStream(CBaseHostClass):
             printDBG(data)
             try:
                 videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''location\.href=['"]([^"^']+?)['"]''', 1, True)[0])
+                if videoUrl == '': videoUrl = data.meta['url']
                 urlTab = self.up.getVideoLinkExt(videoUrl)
             except Exception:
                 printExc()

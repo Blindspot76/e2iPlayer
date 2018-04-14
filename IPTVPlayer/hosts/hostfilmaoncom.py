@@ -227,12 +227,15 @@ class FilmaonCom(CBaseHostClass):
                 self.addVideo(params)
         elif '/seriale/' in cUrl:
             data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'seasons'), ('<', '>', 'script'))
-            for season in data:
-                sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(season, ('<span', '>', 'title'), ('</span', '>'))[1])
-                episodesTab = self.getEpisodes(season, iTitle, iIcon)
-                if len(episodesTab):
-                    params = {'good_for_fav':False, 'category':nextCategory, 'title':sTitle, 'sub_items':episodesTab, 'desc':'', 'icon':iIcon}
-                    self.addDir(params)
+            for seasonData in data:
+                seasonData = seasonData.split('</ul>')
+                for season in seasonData:
+                    sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(season, ('<div', '>', '"se-'), ('</div', '>'))[1])
+                    if sTitle == '': sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(season, ('<span', '>', 'title'), ('</span', '>'))[1])
+                    episodesTab = self.getEpisodes(season, iTitle, iIcon)
+                    if len(episodesTab):
+                        params = {'good_for_fav':False, 'category':nextCategory, 'title':sTitle, 'sub_items':episodesTab, 'desc':'', 'icon':iIcon}
+                        self.addDir(params)
         elif '/seasons/' in cUrl:
             data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'episodios'), ('</ul', '>'))[1]
             self.currList = self.getEpisodes(data, iTitle, iIcon)
