@@ -344,7 +344,6 @@ class ItflixStream(CBaseHostClass):
         if tmp != '': otherInfo['tmdb_rating'] = tmp
         tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<b', '</b>', 'Titolo originale'), ('</div', '>'), False)[1])
         if tmp != '': otherInfo['original_title'] = tmp
-        if tmp != '': otherInfo['episodes'] = tmp
         tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'date'), ('</span', '>'), False)[1])
         if tmp != '': otherInfo['released'] = tmp
         tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'country'), ('</span', '>'), False)[1])
