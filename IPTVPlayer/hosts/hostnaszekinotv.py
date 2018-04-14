@@ -85,8 +85,8 @@ class NaszeKinoTv(CBaseHostClass):
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
-    def getFullIconUrl(self, url):
-        url = CBaseHostClass.getFullIconUrl(self, url.strip())
+    def getFullIconUrl(self, url, currUrl=None):
+        url = CBaseHostClass.getFullIconUrl(self, url.strip(), currUrl)
         if url == '': return ''
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', "cf_clearance"])
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
