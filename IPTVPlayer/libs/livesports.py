@@ -202,8 +202,8 @@ class LiveSportsApi(CBaseHostClass):
         sts, data = self.cm.getPage(videoUrl)
         if not sts or '#EXTM3U' not in data: return urlsTab
         
+        meta = {}
         keyUrl = set(re.compile('''#EXT\-X\-KEY.*?URI=['"](https?://[^"]+?)['"]''').findall(data))
-        #'http://165.227.219.105/'
         if len(keyUrl):
             keyUrl = keyUrl.pop()
             proto = keyUrl.split('://', 1)[0]
