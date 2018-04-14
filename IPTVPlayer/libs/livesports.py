@@ -132,18 +132,18 @@ class LiveSportsApi(CBaseHostClass):
             sts, data = self.cm.getPage(cItem['url'])
             if not sts: return mainItemsTab
             
-            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'pplayer'), ('</a', '>'))
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', '/stream/'), ('</a', '>'))
             for item in tmp:
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0] )
                 title = '%s - %s' % (cItem['title'], self.cleanHtmlStr(item))
                 params = dict(cItem)
-                params.update({'type':'video', 'title':title, 'url':url})
+                params.update({'type':'video', 'title':title, 'url':url, 'get_iframe':True})
                 mainItemsTab.append(params)
-            if 0 == len(mainItemsTab):
-                url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
-                params = dict(cItem)
-                params.update({'type':'video', 'url':url})
-                mainItemsTab.append(params)
+            
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            params = dict(cItem)
+            params.update({'type':'video', 'url':url})
+            mainItemsTab.insert(0, params)
         
         return mainItemsTab
         
@@ -151,9 +151,16 @@ class LiveSportsApi(CBaseHostClass):
         printDBG("ViorTvApi.getVideoLink")
         urlsTab = []
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.cm.getPage(cItem['url'], {'with_metadata':True})
         if not sts: return urlsTab
         
+        if cItem.get('get_iframe', False):
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            if url != '':
+                sts, data = self.cm.getPage(url, {'with_metadata':True})
+                if not sts: return urlsTab
+        
+        cUrl = data.meta['url']
         data = self.cm.ph.getDataBeetwenMarkers(data, 'unescape(', ')', False)[1].strip()
         data = urllib.unquote(data[1:-1])
         
@@ -185,7 +192,7 @@ class LiveSportsApi(CBaseHostClass):
         if scriptUrl != '':
             for idx in range(len(hlsTab)):
                 hlsTab[idx]['need_resolve'] = 1
-                hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'name':cItem['name'], 'Referer':cItem['url'], 'priv_script_url':scriptUrl})
+                hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'name':cItem['name'], 'Referer':cUrl, 'priv_script_url':scriptUrl})
         
         urlsTab = hlsTab
         
