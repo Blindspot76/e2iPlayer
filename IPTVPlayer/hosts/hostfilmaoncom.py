@@ -61,11 +61,6 @@ class FilmaonCom(CBaseHostClass):
         self.cacheLinks    = {}
         self.defaultParams = {'header':self.HTTP_HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.cacheSeriesLetter = []
-        self.cacheSetiesByLetter = {}
-        self.cacheFilters = {}
-        self.cacheFiltersKeys = []
-        
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}: addParams = dict(self.defaultParams)
         origBaseUrl = baseUrl
@@ -267,10 +262,21 @@ class FilmaonCom(CBaseHostClass):
         
         retTab = []
         
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'play-box'), ('</div', '>'))[1]
-        url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
-        if 1 == self.up.checkHostSupport(url):
-            retTab.append({'name':self.up.getHostName(url), 'url':strwithmeta(url, {'Referer':cUrl}), 'need_resolve':1})
+        namesData = {}
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'options'), ('</a', '>'))
+        for item in tmp:
+            name = self.cleanHtmlStr(item)
+            id = self.cm.ph.getSearchGroups(item, '''href=['"]#([^"^']+?)['"]''', 1, True)[0]
+            namesData[id] = name
+            
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'play-box'), ('</div', '>'))
+        for item in tmp:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            if 1 != self.up.checkHostSupport(url): continue
+            id = self.cm.ph.getSearchGroups(item, '''id=['"]([^"^']+?)['"]''', 1, True)[0]
+            name = namesData.get(id, '')
+            if name == '': name = self.up.getHostName(url)
+            retTab.append({'name':name, 'url':strwithmeta(url, {'Referer':cUrl}), 'need_resolve':1})
             
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'links_table'), ('</table', '>'))[1].split('<tbody', 1)[-1]
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<tr', '>'), ('</tr', '>'))

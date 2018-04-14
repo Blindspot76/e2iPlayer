@@ -69,6 +69,7 @@ hostiitvpl
 hostinteriatv
 hostipla
 hostiptvplayerinfo
+hostitflixstream
 hostitvcom
 hostkabarety
 hostkijknl
