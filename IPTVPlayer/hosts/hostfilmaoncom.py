@@ -45,7 +45,7 @@ def GetConfigList():
     return optionList
 ###################################################
 def gettytul():
-    return 'http://www.filmaon.com/'
+    return 'http://filmaon.com/'
 
 class FilmaonCom(CBaseHostClass):
     
