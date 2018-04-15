@@ -2,6 +2,7 @@ host3player
 host3sktv
 host9anime
 host9cartoonme
+hostakoam
 hostallboxtv
 hostalltubetv
 hostanimeodcinki
