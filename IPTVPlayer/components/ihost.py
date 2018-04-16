@@ -39,6 +39,7 @@ class CDisplayListItem:
     TYPE_SEARCH    = "SEARCH"
     TYPE_ARTICLE   = "ARTICLE"
     TYPE_PICTURE   = "PICTURE"
+    TYPE_DATA      = "DATA"
     TYPE_MORE      = "MORE"
     TYPE_MARKER    = "MARKER"
     
@@ -558,9 +559,12 @@ class CHostBase(IHost):
             type = CDisplayListItem.TYPE_MORE
         elif 'marker' == cItem['type']:
             type = CDisplayListItem.TYPE_MARKER
+        elif 'data' == cItem['type']:
+            type = CDisplayListItem.TYPE_DATA
         
         if type in [CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_VIDEO, \
-                    CDisplayListItem.TYPE_PICTURE, CDisplayListItem.TYPE_ARTICLE]:
+                    CDisplayListItem.TYPE_PICTURE, CDisplayListItem.TYPE_ARTICLE, \
+                    CDisplayListItem.TYPE_DATA]:
             url = cItem.get('url', '')
             if '' != url: hostLinks.append(CUrlItem("Link", url, needUrlResolve))
             
@@ -766,6 +770,11 @@ class CBaseHostClass:
     
     def addPicture(self, params):
         params['type'] = 'picture'
+        self.currList.append(params)
+        return
+        
+    def addData(self, params):
+        params['type'] = 'data'
         self.currList.append(params)
         return
   

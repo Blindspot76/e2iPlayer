@@ -152,6 +152,7 @@ class AkoAm(CBaseHostClass):
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', m1), ('</a', '>'))
         for item in data:
+            if 'next_prev' in item: continue
             url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0])
             icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0])
             if icon == '': icon  = self.getFullIconUrl(self.cm.ph.getDataBeetwenMarkers(item, 'url(', ');', False)[1].strip())
@@ -177,6 +178,7 @@ class AkoAm(CBaseHostClass):
         printDBG("AkoAm._getLinksTab")
         hostMap = {'1458117295':'openload.co', '1477487601':'estream.to', '1505328404':'streamango', '1423080015':'flashx.tv', '1430052371':'ok.ru'}
         
+        playable = False
         urlsTab = []
         for linksSection in data:
             baseLinkName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(linksSection, '<h5', '</h5>')[1])
@@ -186,13 +188,20 @@ class AkoAm(CBaseHostClass):
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(link, '''href=['"]([^"^']+?)['"]''')[0])
                 if url == '': continue
                 nameTab = []
-                if baseFileName != '': nameTab.append(baseFileName)
+                if baseFileName != '': 
+                    nameTab.append(baseFileName)
+                    if not playable:
+                        ext = baseFileName.split(' - ', 1)[0].strip().split('.')[-1].lower()
+                        if ext not in ['pdf', 'rar', 'zip', '7zip']:
+                            playable = True
+                else:
+                    playable = True
                 name = self.cleanHtmlStr(link)
                 if name != '': nameTab.append(name)
                 hostId = self.cm.ph.getSearchGroups(link, '/files/([0-9]+?)\.')[0]
                 if hostId in hostMap: nameTab.append(hostMap[hostId])
                 urlsTab.append({'name':' '.join(nameTab), 'url':url, 'need_resolve':1})
-        return urlsTab
+        return playable, urlsTab
     
     def exploreItem(self, cItem, nextCategory):
         printDBG("AkoAm.listItems")
@@ -221,10 +230,11 @@ class AkoAm(CBaseHostClass):
                 title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<h2', '>', 'sub_epsiode_title'), ('</h2', '>'))[1])
                 desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'sub_create_date'), ('</span', '>'))[1])
                 item = reObj.split(item, 1)
-                urlsTab = self._getLinksTab(item)
+                playable, urlsTab = self._getLinksTab(item)
                 if len(urlsTab):
                     params = {'title':'%s - %s' % (iTitle, title), 'url':cItem['url'] + '#iptvplayer=' + title, 'icon':iIcon, 'desc':desc + '[/br]' + iDesc, 'iptv_urls':urlsTab}
-                    self.addVideo(params)
+                    if playable: self.addVideo(params)
+                    else: self.addData(params)
                     
             data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>'), ('</a', '>'))
             for item in data:
@@ -237,10 +247,11 @@ class AkoAm(CBaseHostClass):
         else:
             urlsTab = []
             data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'sub_direct_links'), ('</div></div></div', '>'))
-            urlsTab = self._getLinksTab(data)
+            playable, urlsTab = self._getLinksTab(data)
             if len(urlsTab):
                 params = {'title':iTitle, 'url':cItem['url'], 'icon':iIcon, 'desc':iDesc, 'iptv_urls':urlsTab}
-                self.addVideo(params)
+                if playable: self.addVideo(params)
+                else: self.addData(params)
         
     def getLinksForVideo(self, cItem):
         printDBG("AkoAm.getLinksForVideo [%s]" % cItem)
@@ -316,6 +327,69 @@ class AkoAm(CBaseHostClass):
         
         urlTab.extend(self.up.getVideoLinkExt(baseUrl))
         return urlTab
+        
+    def getArticleContent(self, cItem):
+        printDBG("AkoAm.getVideoLinks [%s]" % cItem)
+        retTab = []
+        otherInfo = {}
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        cUrl = data.meta['url']
+        self.setMainUrl(cUrl)
+        
+        icon  = self.cm.ph.getDataBeetwenNodes(data, ('<img', '>', 'main_img'), ('<', '>'))[1]
+        icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''src=['"]([^"^']+?)['"]''', 1, True)[0])
+        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'sub_title'), ('</h', '>'))[1])
+        desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sub_desc'), ('</div', '>'))[1])
+        
+        descData = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sub_mainInfo'), ('<div', '>', 'sub_socialMedia'), False)[1]
+        
+        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(descData, ('<li', '>', 'imdb'), ('</li', '>'), False)[1])
+        if tmp != '': otherInfo['imdb_rating'] = tmp.replace(' ', '')
+
+        descTabMap = {"المدة الزمنية":     "duration",
+                      "سنة الانتاج":        "year",
+                      "محتوى الفيلم":      "genre",
+                      "اللغة":             "language",
+                      "جودة الصورة":       "quality"}
+        
+        reObj = re.compile('''<i[^>]*?>''', re.I)
+        descData = self.cm.ph.getAllItemsBeetwenNodes(descData, ('<li', '>'), ('</li', '>'), False)
+        for item in descData:
+            item = reObj.split(item)
+            if len(item) < 2: continue
+            key = self.cleanHtmlStr( item[0] ).replace(':', '').strip()
+            val = self.cleanHtmlStr( item[1] )
+            if key in descTabMap:
+                try: otherInfo[descTabMap[key]] = val
+                except Exception: continue
+        
+        reObj = re.compile('''<[\s\\/]*?br[\s\\/]*?>''', re.I)
+        descTabMap = {"بطولة الفيلم":     "actors",
+                      "ﺇﺧﺮاﺝ":            "director",
+                      "ﺗﺄﻟﻴﻒ":            "writers",
+                      "التصنيف":          "categories",
+                      }
+        descData = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sub_desc'), ('<div', '>', 'clear'), False)[1]
+        descData = re.compile('''<span[^>]+?color\:[^>]+?>''').split(descData)
+        for item in descData:
+            item = item.split('</span>', 1)
+            if len(item) < 2: continue
+            key = self.cleanHtmlStr( item[0] ).replace(':', '').strip()
+            vals = []
+            tmp = reObj.split(item[1])
+            for val in tmp:
+                val = self.cleanHtmlStr(val)
+                if val != '': vals.append(val)
+            if key in descTabMap and len(vals):
+                try: otherInfo[descTabMap[key]] = ', '.join(vals)
+                except Exception: continue
+        
+        if title == '': title = cItem['title']
+        if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
+        
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -362,7 +436,7 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, AkoAm(), True, [])
         
-    #def withArticleContent(self, cItem):
-    #    if cItem.get('priv_has_art', False): return True
-    #    else: return False
+    def withArticleContent(self, cItem):
+        if cItem.get('priv_has_art', False): return True
+        else: return False
     

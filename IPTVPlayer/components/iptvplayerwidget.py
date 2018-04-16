@@ -900,7 +900,7 @@ class IPTVPlayerWidget(Screen):
                 #Get current selection
                 currSelIndex = self["list"].getCurrentIndex()
                 #remember only prev categories
-                if item.type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE]:
+                if item.type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE, CDisplayListItem.TYPE_DATA]:
                     if CDisplayListItem.TYPE_AUDIO == item.type: 
                         self.bufferSize = config.plugins.iptvplayer.requestedAudioBuffSize.value * 1024
                     else: self.bufferSize = config.plugins.iptvplayer.requestedBuffSize.value * 1024 * 1024
@@ -1438,8 +1438,9 @@ class IPTVPlayerWidget(Screen):
             self.showWindow()
         
         item = self.getSelItem()
-        if item.type not in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE]:
-            printDBG("Incorrect icon type[%s]" % item.type)
+        if item.type not in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, \
+                             CDisplayListItem.TYPE_PICTURE, CDisplayListItem.TYPE_DATA]:
+            printDBG("Incorrect item type[%s]" % item.type)
             return
         
         if None == customUrlItems: links = item.urlItems
@@ -1584,8 +1585,12 @@ class IPTVPlayerWidget(Screen):
         
         if url != '' and CDisplayListItem.TYPE_PICTURE == self.currItem.type:
             self.session.openWithCallback(self.leavePicturePlayer, IPTVPicturePlayerWidget, url, config.plugins.iptvplayer.bufferingPath.value, self.currItem.name, {'seq_mode':self.autoPlaySeqStarted})
-        elif url != '' and self.currItem.type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]:
+        elif url != '' and self.currItem.type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_DATA]:
             printDBG( "playVideo url[%s]" % url)
+            if self.currItem.type == CDisplayListItem.TYPE_DATA:
+                recorderMode = True
+            else:
+                recorderMode = self.recorderMode
             url = urlparser.decorateUrl(url)
             titleOfMovie = self.currItem.name.replace('/','-').replace(':','-').replace('*','-').replace('?','-').replace('"','-').replace('<','-').replace('>','-').replace('|','-')
             fileExtension = self.getFileExt(url, self.currItem.type)            
@@ -1600,16 +1605,16 @@ class IPTVPlayerWidget(Screen):
             else:
                 isBufferingMode = self.activePlayer.get('buffering', self.checkBuffering(url))
             
-            if not self.recorderMode:
+            if not recorderMode:
                 pathForRecordings = config.plugins.iptvplayer.bufferingPath.value
             else:
                 pathForRecordings = config.plugins.iptvplayer.NaszaSciezka.value
             fullFilePath = pathForRecordings + '/' + titleOfMovie + fileExtension
              
-            if (self.recorderMode or isBufferingMode) and not iptvtools_FreeSpace(pathForRecordings, 500):
+            if (recorderMode or isBufferingMode) and not iptvtools_FreeSpace(pathForRecordings, 500):
                 self.stopAutoPlaySequencer()
                 self.session.open(MessageBox, _("There is no free space on the drive [%s].") % pathForRecordings, type=MessageBox.TYPE_INFO, timeout=10)
-            elif self.recorderMode:
+            elif recorderMode:
                 global gDownloadManager
                 if None != gDownloadManager:
                     if IsUrlDownloadable(url):
