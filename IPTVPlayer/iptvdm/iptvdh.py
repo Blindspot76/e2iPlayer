@@ -9,7 +9,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetPluginDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetPluginDir, IsExecutable
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import enum
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 ###################################################
@@ -101,6 +101,9 @@ class DMHelper:
         
     @staticmethod
     def GET_FFMPEG_PATH():
+        altFFMPEGPath = '/iptvplayer_rootfs/usr/bin/ffmpeg'
+        if IsExecutable(altFFMPEGPath):
+            return altFFMPEGPath
         return "ffmpeg"
     
     @staticmethod
