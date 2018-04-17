@@ -365,7 +365,9 @@ def Which(program):
             if is_exe(program):
                 return program
         else:
-            for path in os.environ["PATH"].split(os.pathsep):
+            pathTab = ['/iptvplayer_rootfs']
+            pathTab.extend(os.environ["PATH"].split(os.pathsep))
+            for path in pathTab:
                 path = path.strip('"')
                 exe_file = os.path.join(path, program)
                 if is_exe(exe_file):

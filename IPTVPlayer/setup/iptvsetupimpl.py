@@ -458,7 +458,7 @@ class IPTVSetupImpl:
         def _verValidator(code, data):
             if 0 == code: return True,False
             else: return False,True
-        self.workingObj = CCmdValidator(self.getFFmpegVerFinished, _verValidator, ['ffmpeg -version'])
+        self.workingObj = CCmdValidator(self.getFFmpegVerFinished, _verValidator, ['/iptvplayer_rootfs/usr/bin/ffmpeg -version', 'ffmpeg -version'])
         self.workingObj.start()
         
     def getFFmpegVerFinished(self, stsTab, dataTab):
