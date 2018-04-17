@@ -68,39 +68,6 @@ class DardarkomCom(CBaseHostClass):
         self.cacheFilters = {'main':[], 'movies':[], 'rankings':[]}
         self.cacheLinks = {}
         
-    def _getFullUrl(self, url):
-        if url.startswith('//'):
-            url = 'http:' + url
-        else:
-            if 0 < len(url) and not url.startswith('http'):
-                url =  self.MAIN_URL + url
-            if not self.MAIN_URL.startswith('https://'):
-                url = url.replace('https://', 'http://')
-                
-        url = self.cleanHtmlStr(url)
-        url = self.replacewhitespace(url)
-
-        return url
-        
-    def cleanHtmlStr(self, data):
-        data = data.replace('&nbsp;', ' ')
-        data = data.replace('&nbsp', ' ')
-        return CBaseHostClass.cleanHtmlStr(data)
-        
-    def replacewhitespace(self, data):
-        data = data.replace(' ', '%20')
-        return CBaseHostClass.cleanHtmlStr(data)
-
-    def listsTab(self, tab, cItem, type='dir'):
-        printDBG("DardarkomCom.listsTab")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            if type == 'dir':
-                self.addDir(params)
-            else: self.addVideo(params)
-            
     def fillCategories(self, url):
         printDBG("DardarkomCom.fillCategories")
         self.cacheFilters = {'main':[], 'movies':[], 'rankings':[]}
@@ -131,7 +98,7 @@ class DardarkomCom(CBaseHostClass):
                 printDBG(url)
                 if 'dardarkom.com' in url and 'series-online' not in url:
                     desc  = self.cm.ph.getSearchGroups(cat, '''title=['"]([^"^']+?)['"]''')[0]
-                    self.cacheFilters[key].append({'title':title, 'url':self._getFullUrl(url), 'desc':desc})
+                    self.cacheFilters[key].append({'title':title, 'url':self.getFullUrl(url), 'desc':desc})
         
     def listCategories(self, cItem, nextCategory):
         printDBG("DardarkomCom.listCategories")
@@ -151,8 +118,18 @@ class DardarkomCom(CBaseHostClass):
         post_data = cItem.get('post_data', None) 
         url       = cItem['url'] 
         
-        sts, data = self.cm.getPage(url, {}, post_data)
-        if not sts: return
+        attempt = 0
+        while attempt < 3:
+            attempt += 1
+            sts, data = self.cm.getPage(url, {'with_metadata':True, 'ignore_http_code_ranges':[(404, 404), (500, 500)]}, post_data)
+            if not sts: return
+            if sts and 404 == data.meta.get('status_code', 200):
+                newUrl = url.replace('/page/%s/' % page, '/page/%s/' % (page + 1))
+                if newUrl != url:
+                    url = newUrl
+                    page += 1
+                    continue
+            break
         
         pagnationMarker = '<div class="navigation-center">'
         tmp = self.cm.ph.getDataBeetwenMarkers(data, pagnationMarker, '</div>', False)[1]
@@ -171,10 +148,10 @@ class DardarkomCom(CBaseHostClass):
         
         data = re.split('<div class="main-news"[^>]*>', data)
         for item in data:
-            url   = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?online\.html[^"^']*?)['"]''')[0] )
+            url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?online\.html[^"^']*?)['"]''')[0] )
             if not self.cm.isValidUrl(url): continue
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<div class="main-news-title">', '</a>', False)[1])
-            icon  = self._getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?(:?\.jpe?g|\.png)(:?\?[^'^"]*?)?)['"]''')[0] )
+            icon  = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?(:?\.jpe?g|\.png)(:?\?[^'^"]*?)?)['"]''')[0] )
             desc  = self.cleanHtmlStr(item)
             
             params = dict(cItem)
@@ -183,7 +160,7 @@ class DardarkomCom(CBaseHostClass):
         
         if nextPageUrl.startswith('http'):
             params = dict(cItem)
-            params.update({'title':_('Next page'), 'page':cItem.get('page', 1)+1, 'url':self._getFullUrl(nextPageUrl)})
+            params.update({'title':_('Next page'), 'page':page + 1, 'url':self.getFullUrl(nextPageUrl)})
             self.addDir(params)
             
     
@@ -226,7 +203,7 @@ class DardarkomCom(CBaseHostClass):
                 # diffrents servers
                 servers   = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a ', '</a>')
                 for server in servers:
-                    url   = self._getFullUrl( self.cm.ph.getSearchGroups(server, '''href=['"]([^'^"]+?)['"]''')[0] )
+                    url   = self.getFullUrl( self.cm.ph.getSearchGroups(server, '''href=['"]([^'^"]+?)['"]''')[0] )
                     title = tabName + ' ' + self.cleanHtmlStr( server )
                     if self.cm.isValidUrl(url):
                         urlTab.append({'name':title, 'url':url, 'need_resolve':1})
@@ -235,7 +212,7 @@ class DardarkomCom(CBaseHostClass):
                 url = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
                 title = tabName
             
-            url = self._getFullUrl( url )
+            url = self.getFullUrl( url )
             if url.startswith('http'):
                 params = {'name':title, 'url':url, 'need_resolve':1}
                 if 'الإفتراضي' in title:
@@ -272,7 +249,7 @@ class DardarkomCom(CBaseHostClass):
             if url == '': url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0]
             if url == '': url = self.cm.ph.getSearchGroups(data, '''window\.open\(\s*['"](https?://[^"^']+?)['"]''', 1, True)[0]
             printDBG(url)
-            url = self._getFullUrl( url )
+            url = self.getFullUrl( url )
             urlParams['header']['Referer'] = videoUrl
             videoUrl = strwithmeta(url, {'Referer':videoUrl})
         
