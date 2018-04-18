@@ -92,7 +92,7 @@ class PodnapisiNetProvider(CBaseSubProviderClass):
         sts, data = self.getPage(self.getFullUrl(baseUrl))
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'id=advanced_search_panel', '</form>')[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'advanced_search_panel'), ('</form', '>'))[1]
         for filter in [{'key':'movie_type',   'marker':'movie_type'},
                        {'key':'episode_type', 'marker':'episode_type'  },
                        {'key':'flags',        'marker':'flags'},

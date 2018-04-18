@@ -72,7 +72,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
     def listMenuABC(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listMenuABC")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         promItem = None
@@ -94,7 +94,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
     def listSeries(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listSeries")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         promItems = []
@@ -131,7 +131,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
         
         printDBG(self.dInfo)
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         self.episodesCache['imdbid'] = self.cm.ph.getSearchGroups(data, '''/tt([0-9]+?)[^0-9]''')[0]
@@ -198,7 +198,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
         imdbid = self.episodesCache['imdbid']
         key = self.episodesCache['key']
         
-        sts, data = self.cm.getPage(cItem['url'], post_data={'key':key})
+        sts, data = self.getPage(cItem['url'], post_data={'key':key})
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<table', '</table>')[1]
@@ -226,8 +226,12 @@ class PrijevodiOnline(CBaseSubProviderClass):
     def listMoviesItems(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listMoviesItems")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
+        
+        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG(data)
+        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++")
         
         promItems = []
         if cItem['url'].endswith('izdvojeno'):
@@ -238,7 +242,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
                 if title == '': title = self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0]
                 desc = self.cleanHtmlStr(item)
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0] )
-                if not self.cm.isValidUrl(url): continue
+                if url == '': continue
                 
                 params = dict(cItem)
                 params.update({'category':nextCategory, 'title':title, 'url':url, 'desc':desc})
@@ -254,7 +258,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
                 title = self.cleanHtmlStr(tmp)
                 if title == '': title = self.cm.ph.getSearchGroups(tmp, '''title=['"]([^'^"]+?)['"]''')[0]
                 url   = self.getFullUrl( self.cm.ph.getSearchGroups(tmp, 'href="([^"]+?)"')[0] )
-                if not self.cm.isValidUrl(url): continue
+                if '' == url: continue
                 descTab = []
                 tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<td', '</td>')
                 for t in tmp:
@@ -276,7 +280,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
     def listTopicDownloadItems(self, cItem, nextCategory):
         printDBG("PrijevodiOnline.listTopicDownloadItems")
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         imdbid = '0'
