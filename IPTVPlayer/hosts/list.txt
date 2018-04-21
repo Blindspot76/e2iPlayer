@@ -5,6 +5,7 @@ host9cartoonme
 hostakoam
 hostallboxtv
 hostalltubetv
+hostanimehub
 hostanimeodcinki
 hostanyfiles
 hostappletrailers
