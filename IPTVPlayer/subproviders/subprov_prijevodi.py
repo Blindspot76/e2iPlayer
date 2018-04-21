@@ -38,7 +38,7 @@ class PrijevodiOnline(CBaseSubProviderClass):
         self.USER_AGENT    = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0'
         self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         
-        params['cookie'] = 'opensubtitlesorg2.cookie'
+        params['cookie'] = 'prijevodionlineorg.cookie'
         params['min_py_ver'] = (2,7,9)
         CBaseSubProviderClass.__init__(self, params)
         

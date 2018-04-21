@@ -310,7 +310,6 @@ class IPTVSubDownloaderWidget(Screen):
             self.showWindow()
     #end ok_pressed(self):
     
-
     def loadHost(self):
         try:
             _temp = __import__('Plugins.Extensions.IPTVPlayer.subproviders.subprov_' + self.hostName, globals(), locals(), ['IPTVSubProvider'], -1)
@@ -576,6 +575,7 @@ class IPTVSubDownloaderWidget(Screen):
         napisy24pl       = {'title':"Napisy24.pl",                'sub_provider':'napisy24pl'        }
         openSubtitles    = {'title':"OpenSubtitles.org API",      'sub_provider':'opensubtitlesorg'  }
         openSubtitles2   = {'title':"OpenSubtitles.org WWW",      'sub_provider':'opensubtitlesorg2' }
+        openSubtitles3   = {'title':"OpenSubtitles.org REST",     'sub_provider':'opensubtitlesorg3' }
         napiprojektpl    = {'title':"Napiprojekt.pl",             'sub_provider':'napiprojektpl'     }
         podnapisinet     = {'title':"Podnapisi.net",              'sub_provider':'podnapisinet'      }
         titlovi          = {'title':"Titlovi.com",                'sub_provider':'titlovicom'        }
@@ -603,6 +603,7 @@ class IPTVSubDownloaderWidget(Screen):
             if IsSubtitlesParserExtensionCanBeUsed():
                 subProvidersList.append(napiprojektpl)
         
+        subProvidersList.append(openSubtitles3)
         subProvidersList.append(openSubtitles2)
         subProvidersList.append(openSubtitles)
         subProvidersList.append(podnapisinet)
