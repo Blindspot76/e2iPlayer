@@ -459,7 +459,7 @@ class TvpVod(CBaseHostClass):
         sectionsData = sectionsData.split('<section')
         if len(sectionsData): del sectionsData[0]
         
-        subFiltersData = self.cm.ph.getAllItemsBeetwenMarkers(data[data.rfind('</header>'):], '"dropdown-menu"', '</ul>')
+        subFiltersData = self.cm.ph.getAllItemsBeetwenNodes(data[data.rfind('</header>'):], ('<ul', '>', '"dropdown-menu'), ('</ul', '>'))
         #subFiltersData.reverse()
         allSubFiltersTab = []
         for idx in range(len(subFiltersData)):
@@ -508,6 +508,7 @@ class TvpVod(CBaseHostClass):
                 jsItem = clean_html(self.cm.ph.getSearchGroups(item, '''data-hover\s*=\s*['"]([^'^"]+?)['"]''')[0])
                 self.mapHoeverItem(cItem, jsItem, item, nextCategory)
         else:
+            sectionItems = []
             for section in sectionsData:
                 sectionHeader = self.cm.ph.getDataBeetwenMarkers(section, '<h1', '</h1>')[1]
                 if sectionHeader == '': sectionHeader = self.cm.ph.getDataBeetwenMarkers(section, '<h2>', '</h2>')[1]
@@ -518,29 +519,50 @@ class TvpVod(CBaseHostClass):
                 if self.cm.isValidUrl(sectionUrl):
                     if '>Oglądaj<' in section: continue
                     if sectionTitle.startswith('Zobacz także:'): continue
+                
+                itemsTab = []
+                tmp = self.cm.ph.getAllItemsBeetwenNodes(section, ('<div', '>', 'item'), ('</a', '>'))
+                for item in tmp:
+                    icon = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?data-lazy\s*=\s*['"]([^'^"]+?)['"]''')[0])
+                    if icon == '': icon = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?src\s*=\s*['"]([^'^"]+?\.jpg)['"]''')[0])
+                    url  = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''<a[^>]+?href\s*=\s*['"]([^'^"]+?)['"]''')[0])
+                    
+                    title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<h', '>', 'title'), ('</h', '>'))[1])
+                    desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<h', '>', 'sub-title'), ('</h', '>'))[1])
+                    if '/' not in desc: 
+                        title += ' ' + desc
+                        desc = ''
+                    if title == '': title = self.cleanHtmlStr(item)
+                    title = title.strip()
+                    if self.cm.isValidUrl(url) and title != '':
+                        if title.startswith('odc.'): 
+                            title = cItem['title'] + ' ' + title
+                        params = dict(cItem)
+                        params.update({'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':''})
+                        if '/video/' in url:
+                            params.update({'good_for_fav':True, 'type':'video'})
+                            itemsTab.append(params)
+                        else:
+                            params.update({'category':nextCategory,})
+                            itemsTab.append(params)
+                            
+                if self.cm.isValidUrl(sectionUrl) and (len(itemsTab) > 1 or 0 == len(itemsTab)):
                     params = dict(cItem)
                     params.update({'good_for_fav': False, 'category':nextCategory, 'title':sectionTitle, 'url':sectionUrl, 'icon':sectionIcon, 'desc':''})
-                    self.addDir(params)
-                elif (len(self.currList) == 0 and sectionTitle in ['Przeglądaj', 'Wideo', 'Oglądaj']) or isSearch:
-                    tmp = self.cm.ph.getAllItemsBeetwenMarkers(section, '<div class="item', '</a>')
-                    for item in tmp:
-                        icon = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?data-lazy\s*=\s*['"]([^'^"]+?)['"]''')[0])
-                        if icon == '': icon = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?src\s*=\s*['"]([^'^"]+?\.jpg)['"]''')[0])
-                        url  = self._getFullUrl(self.cm.ph.getSearchGroups(item, '''<a[^>]+?href\s*=\s*['"]([^'^"]+?)['"]''')[0])
-                        
-                        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h3>')[1])
-                        if title == '': title = self.cleanHtmlStr(item)
-                        if self.cm.isValidUrl(url):
-                            params = dict(cItem)
-                            params.update({'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':''})
-                            if '/video/' in url:
-                                params['good_for_fav'] = True
-                                self.addVideo(params)
-                            else:
-                                params.update({'category':nextCategory,})
-                                self.addDir(params)
-                    if len(self.currList) and not isSearch:
-                        break
+                    sectionItems.append({'title':sectionTitle, 'items':[params]})
+                elif len(itemsTab):
+                    sectionItems.append({'title':sectionTitle, 'items':itemsTab})
+            
+            allItems = []
+            for sectionItem in sectionItems:
+                if sectionItem['title'] in ['Przeglądaj', 'Wideo', 'Oglądaj'] and not isSearch:
+                    self.currList = sectionItem['items']
+                    break
+                else:
+                    allItems.extend(sectionItem['items'])
+            
+            if 0 == len(self.currList):
+                self.currList = allItems
         
         if self.cm.isValidUrl(nextPageUrl):
             params = dict(cItem)
