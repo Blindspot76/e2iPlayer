@@ -8861,18 +8861,21 @@ class pageParser:
         sts, data = self.cm.getPage(playerUrl, params)
         
         def _getEvalData(data):
-            tmpData = self.cm.ph.getDataBeetwenMarkers(data, "eval(", '</script>', True)[1]
-            printDBG(tmpData)
-            while 'eval' in tmpData:
-                tmp = tmpData.split('eval(')
-                if len(tmp): del tmp[0]
-                tmpData = ''
-                for item in tmp:
-                    for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
-                        tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
-                        if '' != tmpData:   
-                            break
-            return tmpData
+            retData = ''
+            tmpDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>', True)
+            printDBG(tmpDataTab)
+            for tmpData in tmpDataTab:
+                while 'eval' in tmpData:
+                    tmp = tmpData.split('eval(')
+                    if len(tmp): del tmp[0]
+                    tmpData = ''
+                    for item in tmp:
+                        for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
+                            tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
+                            if '' != tmpData:   
+                                break
+                retData += tmpData
+            return retData
             
         tmpData = _getEvalData(data)
                 
