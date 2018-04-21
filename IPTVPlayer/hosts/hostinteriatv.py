@@ -81,10 +81,8 @@ class InteriaTv(CBaseHostClass):
             else:
                 cTree['dat'] += cList[idx]
                 idx += 1
-                
             if deep < 0:
                 break
-        
         return cTree, idx, deep
     
     def listMainMenu(self, cItem, nextCategory1, nextCategory2):
