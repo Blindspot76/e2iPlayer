@@ -113,6 +113,7 @@ class TvpVod(CBaseHostClass):
         self.FormatBitrateMap = [ ("360000",  "320x180"), ("590000",  "398x224"), ("820000",  "480x270"), ("1250000", "640x360"),
                                   ("1750000", "800x450"), ("2850000", "960x540"), ("5420000", "1280x720"), ("6500000", "1600x900"), ("9100000", "1920x1080") ]
         self.MAIN_URL = 'https://vod.tvp.pl/'
+        self.loginMessage = ''
     
     def getJItemStr(self, item, key, default=''):
         v = item.get(key, None)
@@ -193,6 +194,7 @@ class TvpVod(CBaseHostClass):
         return ret
      
     def tryTologin(self):
+        self.loginMessage = ''
         email = config.plugins.iptvplayer.tvpvod_login.value
         password = config.plugins.iptvplayer.tvpvod_password.value
         msg = 'Wystąpił problem z zalogowaniem użytkownika "%s"!' % email
@@ -205,23 +207,18 @@ class TvpVod(CBaseHostClass):
             login = self.cm.ph.getSearchGroups(data, 'name="login".+?value="([^"]+?)"')[0]
             post_data = {'ref':ref, 'email':email, 'password':password, 'login':login, 'action':'login'}
             sts, data = self._getPage(TvpVod.LOGIN_URL + ref, self.defaultParams, post_data)
-            if sts and '"/sess/passwordreset.php"' not in data:
-                if "Strefa Widza nieaktywna" in data:
-                    msg = "Strefa Widza nieaktywna."
-                    sts = False
-                else:
-                    msg = 'Użytkownik "%s" zalogowany poprawnie!' % email
-            else: sts = False
+            if sts and 'action=sign-out' in data:
+                printDBG(">>>\n%s\n<<<" % data)
+                data = self.cm.ph.getDataBeetwenNodes(data, ('<section', '>', 'abo__section'), ('</section', '>'), False)[1]
+                data = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<p', '>'), ('</p', '>'), False)[1] )
+                msg = ['Użytkownik "%s"' % email]
+                msg.append('Strefa Abo %s' % data)
+                self.loginMessage = '[/br]'.join(msg)
+                msg = self.loginMessage.replace('[/br]', '\n')
+            else: 
+                sts = False
         return sts, msg
-       
-    def listsTab(self, tab, cItem):
-        printDBG("TvpVod.listsMainMenu")
-        for item in tab:
-            params = dict(cItem)
-            params.update(item)
-            params['name']  = 'category'
-            self.addDir(params)
-            
+        
     def _addNavCategories(self, data, cItem, category):
         data = re.findall('href="([^"]+?)"[^>]*?>([^<]+?)<', data)
         for item in data:
@@ -799,7 +796,7 @@ class TvpVod(CBaseHostClass):
             premium = config.plugins.iptvplayer.tvpvod_premium.value
             if premium:
                 self.loggedIn, msg = self.tryTologin()
-                self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 10 )
+                if self.loggedIn != True: self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 10 )
 
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         
@@ -811,35 +808,39 @@ class TvpVod(CBaseHostClass):
         searchPattern = self.currItem.get("search_pattern", searchPattern)
         self.currList = [] 
         self.currItem.pop('good_for_fav', None)
-
+        currItem = dict(self.currItem)
+        
+        if None != name and  self.currItem.get('desc', '').startswith('Użytkownik'):
+            currItem.pop('desc', None)
+        
         if None == name:
-            self.listsTab(TvpVod.VOD_CAT_TAB, {'name':'category'})
+            self.listsTab(TvpVod.VOD_CAT_TAB, {'name':'category', 'desc':self.loginMessage})
     # STREAMS
         elif category == 'streams':
-            self.listsTab(TvpVod.STREAMS_CAT_TAB, self.currItem)
+            self.listsTab(TvpVod.STREAMS_CAT_TAB, currItem)
         elif category == 'tvp3_streams':
-            self.listTVP3Streams(self.currItem)
+            self.listTVP3Streams(currItem)
         elif category == 'week_epg':
-            self.listWeekEPG(self.currItem, 'epg_items')
+            self.listWeekEPG(currItem, 'epg_items')
         elif category == 'epg_items':
-            self.listEPGItems(self.currItem)
+            self.listEPGItems(currItem)
     # TVP SPORT
         elif category == 'tvp_sport':    
-            self.listTVPSportCategories(self.currItem, 'tvp_sport_list_items')
+            self.listTVPSportCategories(currItem, 'tvp_sport_list_items')
     # LIST TVP SPORT VIDEOS
         elif category == 'tvp_sport_list_items':
-            self.listTVPSportVideos(self.currItem)
+            self.listTVPSportVideos(currItem)
         elif category == 'vods_list_cats':
-            self.listCatalog(self.currItem, 'vods_explore_item')
+            self.listCatalog(currItem, 'vods_explore_item')
         elif category == 'vods_explore_item':
-            self.exploreVODItem(self.currItem, 'vods_explore_item')
+            self.exploreVODItem(currItem, 'vods_explore_item')
     #WYSZUKAJ
         elif category == "search":
-            cItem = dict(self.currItem)
+            cItem = dict(currItem)
             cItem.update({'category':'list_search', 'searchPattern':searchPattern, 'searchType':searchType, 'search_item':False})            
             self.listSearchResult(cItem, searchPattern, searchType)
         elif category == "list_search":
-            cItem = dict(self.currItem)
+            cItem = dict(currItem)
             searchPattern = cItem.get('searchPattern', '')
             searchType    = cItem.get('searchType', '')
             self.listSearchResult(cItem, searchPattern, searchType)
