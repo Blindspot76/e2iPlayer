@@ -11,6 +11,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 # FOREIGN import
 ###################################################
+import urlparse
 import re
 import urllib
 import string
@@ -53,7 +54,8 @@ class NaszeKinoOnline(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'NaszeKinoOnline.tv', 'cookie':'naszekinoonline.cookie', 'min_py_ver':(2,7,9)})
-        self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.defaultParams = {'header': self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -69,6 +71,22 @@ class NaszeKinoOnline(CBaseHostClass):
         self.cacheLinks = {}
         self.cacheSeries = {}
         
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        if addParams == {}: addParams = dict(self.defaultParams)
+        origBaseUrl = baseUrl
+        baseUrl = self.cm.iriToUri(baseUrl)
+        def _getFullUrl(url):
+            if self.cm.isValidUrl(url): return url
+            else: return urlparse.urljoin(baseUrl, url)
+        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+    
+    def getFullIconUrl(self, url, currUrl=None):
+        url = CBaseHostClass.getFullIconUrl(self, url.strip(), currUrl)
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', "cf_clearance"])
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+        
     def getStr(self, item, key):
         if key not in item: return ''
         if item[key] == None: return ''
@@ -76,7 +94,7 @@ class NaszeKinoOnline(CBaseHostClass):
     
     def fillFilters(self, cItem):
         self.cacheFilters = {}
-        sts, data = self.cm.getPage(self.getFullUrl('forumdisplay.php/57-Filmy-Online')) # it seems that all sub-forums have same filters
+        sts, data = self.getPage(self.getFullUrl('forumdisplay.php/57-Filmy-Online')) # it seems that all sub-forums have same filters
         if not sts: return
         
         def addFilter(data, key, addAny, titleBase):
@@ -128,7 +146,7 @@ class NaszeKinoOnline(CBaseHostClass):
         
     def listCategories(self, cItem, nextCategory):
         printDBG("NaszeKinoOnline.listCategories")
-        sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
+        sts, data = self.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<table class="vbs_forumrow table">', '</table>', withMarkers=True)
         for item in data:
@@ -140,7 +158,7 @@ class NaszeKinoOnline(CBaseHostClass):
             if 'forum_link-48.png' in item:
                 category = 'list_threads2'
             else: category = nextCategory
-            icon   = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''src=['"]([^'^"]+?)['"]''')[0])
+            icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(tmp, '''src=['"]([^'^"]+?)['"]''')[0])
             title  = self.cleanHtmlStr(tmp)
             desc   = self.cleanHtmlStr(item.replace('</td>', '[/br]').replace('<br />', '[/br]'))
             params = dict(cItem)
@@ -173,7 +191,7 @@ class NaszeKinoOnline(CBaseHostClass):
         if 'order' in cItem:
             baseUrl += 'order={0}&'.format(cItem['order'])
         
-        sts, data = self.cm.getPage(baseUrl, self.defaultParams)
+        sts, data = self.getPage(baseUrl, self.defaultParams)
         if not sts: return
         
         if None != re.search('<a[^>]+rel="next"', data):
@@ -185,7 +203,7 @@ class NaszeKinoOnline(CBaseHostClass):
             item = '<table ' + item
             if page > 1 and 'sticky.gif' in item: continue
             url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            icon   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<img\s*class="preview"\s*src=['"]([^'^"]+?)['"]''')[0])
+            icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''<img\s*class="preview"\s*src=['"]([^'^"]+?)['"]''')[0])
             title  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1])
             desc   = self.cleanHtmlStr(item.replace('</td>', '[/br]').replace('<br />', '[/br]'))
             prefix = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''<img\s+src=['"][^'^"]+?/prefix/[^'^"]+?['"][^>]+?alt=['"]([^'^"]+?)['"]''')[0])
@@ -202,14 +220,14 @@ class NaszeKinoOnline(CBaseHostClass):
         printDBG("NaszeKinoOnline.listThreads2")
         
         baseUrl = cItem['url']
-        sts, data = self.cm.getPage(baseUrl, self.defaultParams)
+        sts, data = self.getPage(baseUrl, self.defaultParams)
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="blockrow"', '</div>', withMarkers=False)[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>', withMarkers=True)
         for item in data:
             url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            icon   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+            icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
             title  = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
             params = dict(cItem)
             params.update({'good_for_fav': True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon})
@@ -226,7 +244,7 @@ class NaszeKinoOnline(CBaseHostClass):
         if len(tmp) == 2:
             baseUrl += '?' + tmp[1]
         
-        sts, data = self.cm.getPage(baseUrl, self.defaultParams)
+        sts, data = self.getPage(baseUrl, self.defaultParams)
         if not sts: return
        
         if None != re.search('<a[^>]+rel="next"', data):
@@ -301,7 +319,7 @@ class NaszeKinoOnline(CBaseHostClass):
             baseUrl = self.getFullUrl('search.php?do=process')
             post_data = {'do':'process', 'query': searchPattern, 'titleonly':'1'}
             
-            sts, data = self.cm.getPage(self.MAIN_URL, params)
+            sts, data = self.getPage(self.MAIN_URL, params)
             if not sts: return
             
             if self.login != '' and self.password != '':
@@ -309,7 +327,7 @@ class NaszeKinoOnline(CBaseHostClass):
                 post_data['securitytoken'] = securitytoken
             
             params.update({'return_data':False})
-            sts, response = self.cm.getPage(baseUrl, params, post_data)
+            sts, response = self.getPage(baseUrl, params, post_data)
             if not sts: return
             try:
                 newUrl = response.geturl()
@@ -326,7 +344,7 @@ class NaszeKinoOnline(CBaseHostClass):
         baseUrl = cItem['url']
         if page > 1: baseUrl += '&pp=&page={0}'.format(page)
         
-        sts, data = self.cm.getPage(baseUrl, self.defaultParams)
+        sts, data = self.getPage(baseUrl, self.defaultParams)
         if not sts: return
         
         if None != re.search('<a[^>]+rel="next"', data):
@@ -340,7 +358,7 @@ class NaszeKinoOnline(CBaseHostClass):
             item = '<li ' + item
             url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0].split('?')[0])
             if not self.cm.isValidUrl(url): continue
-            icon   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<img\s*class="preview"\s*src=['"]([^'^"]+?)['"]''')[0])
+            icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''<img\s*class="preview"\s*src=['"]([^'^"]+?)['"]''')[0])
             title  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1])
             desc   = self.cleanHtmlStr(item.replace('</td>', '[/br]').replace('<br />', '[/br]'))
             prefix = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''<img\s+src=['"][^'^"]+?/prefix/[^'^"]+?['"][^>]+?alt=['"]([^'^"]+?)['"]''')[0])
@@ -409,8 +427,8 @@ class NaszeKinoOnline(CBaseHostClass):
         printDBG('tryTologin start')
         connFailed = _('Connection to server failed!')
         
-        rm(self.COOKIE_FILE)
-        sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
+        self.cm.clearCookie(self.COOKIE_FILE, ['__cfduid', 'cf_clearance'])
+        sts, data = self.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return False, connFailed 
         
         md5Password = md5(password).hexdigest()
@@ -419,11 +437,11 @@ class NaszeKinoOnline(CBaseHostClass):
         params.update({'header':self.AJAX_HEADER}) #, 'raw_post_data':True
         
         # login
-        sts, data = self.cm.getPage(self.getFullUrl('login.php?s=&do=login'), params, post_data)
+        sts, data = self.getPage(self.getFullUrl('login.php?s=&do=login'), params, post_data)
         if not sts: return False, connFailed
         
         # check if logged
-        sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
+        sts, data = self.getPage(self.MAIN_URL, self.defaultParams)
         if not sts: return False, connFailed 
         
         if 'do=logout' in data:
@@ -462,7 +480,7 @@ class NaszeKinoOnline(CBaseHostClass):
     #MAIN MENU
         if name == None:
             if self.login == '' or self.password == '':
-                rm(self.COOKIE_FILE)
+                self.cm.clearCookie(self.COOKIE_FILE, ['__cfduid', 'cf_clearance'])
             self.listCategories({'name':'category'}, 'list_threads')
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif 'list_threads' == category:
