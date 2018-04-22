@@ -627,7 +627,7 @@ class common:
         sts, data = self.getPage(url, params, post_data)
         
         current = 0
-        while current < 3:
+        while current < 5:
             #if True:
             if not sts and None != data:
                 start_time = time.time()
@@ -680,6 +680,11 @@ class common:
                             url += urllib.urlencode(post_data2)
                             post_data2 = None
                         sts, data = self.getPage(url, params2)
+                        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                        printDBG(sts)
+                        printDBG("------------------------------------------------------------------")
+                        printDBG(data)
+                        printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                     else:
                         dat = self.ph.getAllItemsBeetwenNodes(verData, ('<script', '>'), ('</script', '>'), False)
                         for item in dat:

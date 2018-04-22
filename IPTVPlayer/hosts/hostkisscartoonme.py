@@ -376,8 +376,13 @@ class KissCartoonMe(CBaseHostClass):
             
             for item in data['playlist']:
                 url = item.get('file', '')
+                type = url.split('?', 1)[0].rsplit('.', 1)[-1].lower()
                 if self.cm.isValidUrl(url):
-                    urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+                    if type == 'mp4':
+                        name = item.get('label', 'mp4')
+                        urlTab.append({'name':name, 'url':url, 'need_resolve':0})
+                    else:
+                        urlTab.extend(getDirectM3U8Playlist(url, checkContent=True))
         except Exception:
             printExc()
             
