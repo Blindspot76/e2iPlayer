@@ -76,7 +76,7 @@ class TvpVod(CBaseHostClass):
     ALL_FORMATS = [{"video/mp4":"mp4"}, {"application/x-mpegurl":"m3u8"}, {"video/x-ms-wmv":"wmv"}] 
     REAL_FORMATS = {'m3u8':'ts', 'mp4':'mp4', 'wmv':'wmv'}
     MAIN_VOD_URL = "https://vod.tvp.pl/"
-    LOGIN_URL = "https://www.tvp.pl/sess/ssologin.php"
+    LOGIN_URL = "https://www.tvp.pl/sess/user-2.0/login.php?ref="
     STREAMS_URL_TEMPLATE = 'http://www.api.v3.tvp.pl/shared/tvpstream/listing.php?parent_id=13010508&type=epg_item&direct=false&filter={%22release_date_dt%22:%22[iptv_date]%22,%22epg_play_mode%22:{%22$in%22:[0,1,3]}}&count=-1&dump=json'
     SEARCH_VOD_URL = MAIN_VOD_URL + 'szukaj?query=%s'
     IMAGE_URL = 'http://s.v3.tvp.pl/images/%s/%s/%s/uid_%s_width_500_gs_0.%s'
@@ -204,7 +204,7 @@ class TvpVod(CBaseHostClass):
             ref = self.cm.ph.getSearchGroups(data, 'name="ref".+?value="([^"]+?)"')[0]
             login = self.cm.ph.getSearchGroups(data, 'name="login".+?value="([^"]+?)"')[0]
             post_data = {'ref':ref, 'email':email, 'password':password, 'login':login, 'action':'login'}
-            sts, data = self._getPage(TvpVod.LOGIN_URL, self.defaultParams, post_data)
+            sts, data = self._getPage(TvpVod.LOGIN_URL + ref, self.defaultParams, post_data)
             if sts and '"/sess/passwordreset.php"' not in data:
                 if "Strefa Widza nieaktywna" in data:
                     msg = "Strefa Widza nieaktywna."
