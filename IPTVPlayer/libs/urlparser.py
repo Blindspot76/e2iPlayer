@@ -7,7 +7,8 @@
 from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, GetDefaultLang, GetDukPath, CreateTmpFile, GetFileSize
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, \
+                                                          GetDefaultLang, GetDukPath, CreateTmpFile, GetFileSize, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
@@ -9846,20 +9847,27 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', '')
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = {} #self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['User-Agent'] = 'Mozilla/5.0'
         if referer != '': HTTP_HEADER['Referer'] = referer
-        HTTP_HEADER['Cookie'] = 'userRunnedAliexpress=1;'
         params = {'header':HTTP_HEADER}
         
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
-        
+
+        libsPath = GetPluginDir('libs/')
+        HTTP_HEADER['Referer'] = baseUrl
         urlTab = []
         data = set(re.compile('''['"](https?://[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''').findall(data))
-        for url in data:
-            url = urlparser.decorateUrl(url, {'Cookie':'userRunnedAliexpress=1;', 'User-Agent':params['header']['User-Agent'], 'Referer':baseUrl, 'Origin':self.cm.getBaseUrl(baseUrl)[:-1]})
-            urlTab.extend( getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999) )
-        
+        for streamUrl in data:
+            streamUrl = urlparser.decorateUrl(streamUrl, HTTP_HEADER)
+            tmp = getDirectM3U8Playlist(streamUrl, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999)
+            if len(tmp):
+                pyCmd = GetPyScriptCmd('keepalive_proxy') + ' "%s" "%s" "%s" "%s" "%s" ' % (config.plugins.iptvplayer.livesports_port.value, libsPath, HTTP_HEADER['User-Agent'], HTTP_HEADER['Referer'], str(streamUrl))
+                meta = {'iptv_proto':'em3u8'}
+                meta['iptv_refresh_cmd'] = pyCmd
+                streamUrl = urlparser.decorateUrl("ext://url/" + streamUrl, meta)
+                urlTab.append({'name':'em3u8', 'url':streamUrl})
         return urlTab
         
     def parserMEDIAFIRECOM(self, baseUrl):
