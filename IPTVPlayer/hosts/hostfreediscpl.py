@@ -64,7 +64,7 @@ class FreeDiscPL(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'  FreeDiscPL.tv', 'cookie':'FreeDiscPL.cookie'})
-        self.defaultParams = {'with_metadata':True, 'ignore_http_code_ranges':[(410,410)], 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'with_metadata':True, 'ignore_http_code_ranges':[(410,410),(404,404)], 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.loggedIn = None
         self.login    = ''
         self.password = ''
@@ -74,7 +74,7 @@ class FreeDiscPL(CBaseHostClass):
     def getPage(self, url, params={}, post_data=None):
         if params == {}: params = dict(self.defaultParams)
         sts, data = self.cm.getPage(url, params, post_data)
-        if sts and 410 == data.meta.get('status_code', 0) and 'captcha' in data:
+        if sts and data.meta.get('status_code', 0) in [410, 404] and 'captcha' in data:
             errorMsg = [_('Link protected with google recaptcha v2.')]
             errorMsg.append(_("Please visit \"%s\" and confirm that you are human." % self.getMainUrl()))
             if not self.loggedIn: errorMsg.append(_('Please register and set login and password in the host configuration, to solve this problems permanently.'))
