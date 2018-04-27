@@ -7689,33 +7689,39 @@ class pageParser:
         
     def paserSTREAMLIVETO(self, baseUrl):
         printDBG("paserSTREAMLIVETO baseUrl[%r]" % baseUrl )
-        COOKIE_FILE = GetCookieDir('rocketmediaworld.com.cookie')
-        rm(COOKIE_FILE)
+        #COOKIE_FILE = GetCookieDir('rocketmediaworld.com.cookie')
+        #rm(COOKIE_FILE)
+        COOKIE_FILE = GetCookieDir('streamliveto.cookie')
         
-        HTTP_HEADER= {'User-Agent':"Mozilla/5.0"}
+        HTTP_HEADER= {'User-Agent':"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0"}
         defaultParams = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
-        baseDomain = 'http://m.rocketmediaworld.com/' 
-        try:
-            url = baseDomain + 'login'
-            login  = config.plugins.iptvplayer.streamliveto_login.value.strip()
-            passwd = config.plugins.iptvplayer.streamliveto_password.value.strip()
-            if '' not in [login, passwd]:
-                sts, data = self.cm.getPage(url, defaultParams)
-                if sts:
-                    HTTP_HEADER['Referer'] = url
-                    sts, data = self.cm.getPage(baseDomain + 'login.php', defaultParams, {'username':login, 'password':passwd, 'accessed_by':'web', 'submit':'Login'})
-        except Exception:
-            printExc()
-        #----------------------------------------
-        params = dict(defaultParams)
-        url = baseUrl.replace('/info/', '/view/')
-        videoId = self.cm.ph.getSearchGroups(baseUrl, '/([0-9]+?)/')[0]
-        videoUrl = baseDomain + 'view/' + videoId
+        
+        if False:
+            baseDomain = 'http://m.rocketmediaworld.com/' 
+            try:
+                url = baseDomain + 'login'
+                login  = config.plugins.iptvplayer.streamliveto_login.value.strip()
+                passwd = config.plugins.iptvplayer.streamliveto_password.value.strip()
+                if '' not in [login, passwd]:
+                    sts, data = self.cm.getPage(url, defaultParams)
+                    if sts:
+                        HTTP_HEADER['Referer'] = url
+                        sts, data = self.cm.getPage(baseDomain + 'login.php', defaultParams, {'username':login, 'password':passwd, 'accessed_by':'web', 'submit':'Login'})
+            except Exception:
+                printExc()
+            #----------------------------------------
+            params = dict(defaultParams)
+            url = baseUrl.replace('/info/', '/view/')
+            videoId = self.cm.ph.getSearchGroups(baseUrl, '/([0-9]+?)/')[0]
+            videoUrl = baseDomain + 'view/' + videoId
+        else:
+            params = dict(defaultParams)
+            videoUrl = baseUrl
         
         HTTP_HEADER = dict(HTTP_HEADER)
         HTTP_HEADER['Referer'] = videoUrl
         params.update({'header':{'header':HTTP_HEADER}})
-        sts, data = self.cm.getPage(videoUrl, params)
+        sts, data = self.cm.getPage(videoUrl.replace('/info/', '/view/'), params)
         if not sts: return False 
         
         associativeArray = ['var associativeArray = {};']
@@ -7727,16 +7733,19 @@ class pageParser:
             value = clean_html(item).strip()
             associativeArray.append('associativeArray["%s"] = "%s";' % (id, value))
         
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
         for item in tmp:
             if 'sources' in item:
                 tmp = item
                 break
         tmp = str(tmp)
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(tmp)
+        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         
         jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCg0KJXMNCg0KdmFyIGVsZW1lbnQgPSBmdW5jdGlvbiAoaW5uZXJIVE1MKQ0Kew0KICAgIHRoaXMuX2lubmVySFRNTCA9IGlubmVySFRNTDsNCiAgICANCiAgICBPYmplY3QuZGVmaW5lUHJvcGVydHkodGhpcywgImlubmVySFRNTCIsIHsNCiAgICAgICAgZ2V0IDogZnVuY3Rpb24gKCkgew0KICAgICAgICAgICAgcmV0dXJuIHRoaXMuX2lubmVySFRNTDsNCiAgICAgICAgfSwNCiAgICAgICAgc2V0IDogZnVuY3Rpb24gKHZhbCkgew0KICAgICAgICAgICAgdGhpcy5faW5uZXJIVE1MID0gdmFsOw0KICAgICAgICB9DQogICAgfSk7DQp9Ow0KDQpkb2N1bWVudC5nZXRFbGVtZW50QnlJZCA9IGZ1bmN0aW9uKGlkKXsNCiAgICByZXR1cm4gbmV3IGVsZW1lbnQoYXNzb2NpYXRpdmVBcnJheVtpZF0pOw0KfQ0KDQpmdW5jdGlvbiBqd3BsYXllcigpIHsNCiAgICByZXR1cm4gandwbGF5ZXI7DQp9DQoNCmp3cGxheWVyLnNldHVwID0gZnVuY3Rpb24oc3JjZXMpew0KICAgIHByaW50KEpTT04uc3RyaW5naWZ5KHNyY2VzKSk7DQp9''')
         jscode = jscode % ('\n'.join(associativeArray))
-        jscode += self.cm.ph.getDataBeetwenReMarkers(tmp, re.compile('<script[^>]*?>'), re.compile('</script>'), False)[1]
+        jscode += tmp
         ret = iptv_js_execute( jscode )
         if ret['sts'] and 0 == ret['code']:
             tmp = ret['data'].strip()
