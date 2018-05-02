@@ -8837,8 +8837,9 @@ class pageParser:
         if 'hqq.none' in urlparser.getDomain(url):
             url = strwithmeta(url.replace('hqq.none', 'hqq.watch'), strwithmeta(url).meta)
         
-        match = re.search("=([0-9a-zA-Z]+?)[^0-9^a-z^A-Z]", url + '|' )
-        vid = match.group(1)
+        url += '&'
+        vid = self.cm.ph.getSearchGroups(url, '''vid=([0-9a-zA-Z]+?)[^0-9^a-z^A-Z]''')[0]
+        hashFrom = self.cm.ph.getSearchGroups(url, '''hash_from=([0-9a-zA-Z]+?)[^0-9^a-z^A-Z]''')[0]
         
         # User-Agent - is important!!!
         HTTP_HEADER = { 'User-Agent':'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10', #'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
@@ -8862,9 +8863,15 @@ class pageParser:
             sts, data = self.cm.getPage(url, params)
             if not sts: return False
             data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
-            vid = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % 'vid', data).group(1)
+            vid = self.cm.ph.getSearchGroups(data, '''var\s+?vid\s*?=\s*?['"]([^'^"]+?)['"]''')[0]
+            hashFrom = self.cm.ph.getSearchGroups(data, '''var\s+?hash_from\s*?=\s*?['"]([^'^"]+?)['"]''')[0]
         
-        playerUrl = "http://hqq.watch/player/embed_player.php?vid=%s&autoplay=no" % vid
+        if vid == '':
+            printDBG('Lack of video id.')
+            return False
+        
+        playerUrl = "https://hqq.watch/player/embed_player.php?vid=%s&autoplay=no" % vid
+        if hashFrom != '': playerUrl += '&hash_from=' + hashFrom
         referer = strwithmeta(url).meta.get('Referer', playerUrl)
         
         #HTTP_HEADER['Referer'] = url
@@ -8873,7 +8880,7 @@ class pageParser:
         def _getEvalData(data):
             retData = ''
             tmpDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>', True)
-            printDBG(tmpDataTab)
+            #printDBG(tmpDataTab)
             for tmpData in tmpDataTab:
                 while 'eval' in tmpData:
                     tmp = tmpData.split('eval(')
@@ -8902,8 +8909,9 @@ class pageParser:
         passwd       = _getVar(tmpData, 'pass')
         embed_from   = _getVar(tmpData, 'embed_from')
         http_referer = _getVar(tmpData, 'http_referer')
+        hash_from    = _getVar(tmpData, 'hash_from')
                 
-        secPlayerUrl = "http://hqq.watch/sec/player/embed_player.php?iss="+iss+"&vid="+vid+"&at="+at+"&autoplayed="+autoplayed+"&referer="+referer+"&http_referer="+http_referer+"&pass="+passwd+"&embed_from="+embed_from+"&need_captcha="+need_captcha
+        secPlayerUrl = "https://hqq.watch/sec/player/embed_player.php?iss="+iss+"&vid="+vid+"&at="+at+"&autoplayed="+autoplayed+"&referer="+referer+"&http_referer="+http_referer+"&pass="+passwd+"&embed_from="+embed_from+"&need_captcha="+need_captcha+'&hash_from='+hash_from
         HTTP_HEADER['Referer'] = referer
         sts, data = self.cm.getPage(secPlayerUrl, params)
         
@@ -8937,7 +8945,7 @@ class pageParser:
             if key == 'adb':
                 val = val.replace('1', '0')
             getParams[key] = val.replace('"', '').strip()
-        playerUrl = 'http://hqq.watch/player/get_md5.php?' + urllib.urlencode(getParams)
+        playerUrl = 'https://hqq.watch/player/get_md5.php?' + urllib.urlencode(getParams)
         #params.pop('use_cookie')
         #strTime = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % 'time', data).group(1)
         #params['header']['Cookie'] = self.cm.getCookieHeader(COOKIE_FILE) + 'adc1=opened; user_ad=1; user_ad_time={0}; '.format(strTime)

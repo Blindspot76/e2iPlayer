@@ -46,6 +46,7 @@ hostfilisertv
 hostfilma24hdcom
 hostfilmaoncom
 hostfilmativa
+hostfilmehdnet
 hostfilmeonlineto
 hostfilmezz
 hostfilmovizijastudio
