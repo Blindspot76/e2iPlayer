@@ -78,7 +78,7 @@ class IPTVSubDownloaderWidget(Screen):
                             <widget name="headertext" position="5,47" zPosition="1" size="1080,23" font="Regular;20" transparent="1" backgroundColor="#00000000" />
                             <widget name="statustext" position="5,140" zPosition="1" size="1080,180" font="Regular;20" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
                             <widget name="list" position="5,100" zPosition="2" size="1080,280" enableWrapAround="1" scrollbarMode="showOnDemand" transparent="1" backgroundColor="#00000000" />
-                            <widget name="console" position="5,430" zPosition="1" size="1080,140" font="Regular;20" transparent="1" backgroundColor="#00000000" />
+                            <widget name="console" position="5,400" zPosition="1" size="1080,170" font="Regular;20" transparent="1" backgroundColor="#00000000" />
                             <ePixmap zPosition="4" position="5,395" size="1080,5" pixmap="%s" transparent="1" />
                             <widget name="spinner"   zPosition="2" position="508,240" size="16,16" transparent="1" alphatest="blend" />
                             <widget name="spinner_1" zPosition="1" position="508,240" size="16,16" transparent="1" alphatest="blend" />
@@ -584,7 +584,9 @@ class IPTVSubDownloaderWidget(Screen):
         popcornsubtitles = {'title':"PopcornSubtitles.com",       'sub_provider':'popcornsubtitles'  }
         subtitlesgr      = {'title':"Subtitles.gr",               'sub_provider':'subtitlesgr'       }
         prijevodi        = {'title':"Prijevodi-Online.org",       'sub_provider':'prijevodi'         }
+        subsro           = {'title':"Subs.ro",                    'sub_provider':'subsro'            }
         
+        defaultLang = GetDefaultLang()
         
         if 'youtube_id' in self.params['url_params'] and '' != self.params['url_params']['youtube_id']:
             subProvidersList.append(youtube)
@@ -592,13 +594,16 @@ class IPTVSubDownloaderWidget(Screen):
         if 'popcornsubtitles_url' in self.params['url_params'] and '' != self.params['url_params']['popcornsubtitles_url']:
             subProvidersList.append(popcornsubtitles)
             
-        if 'hr' == GetDefaultLang(): 
+        if 'hr' == defaultLang: 
             subProvidersList.append(prijevodi)
         
-        if 'el' == GetDefaultLang(): 
+        if 'el' == defaultLang: 
             subProvidersList.append(subtitlesgr)
         
-        if 'pl' == GetDefaultLang(): 
+        if 'ro' == defaultLang: 
+            subProvidersList.append(subsro)
+        
+        if 'pl' == defaultLang: 
             subProvidersList.append(napisy24pl)
             if IsSubtitlesParserExtensionCanBeUsed():
                 subProvidersList.append(napiprojektpl)
@@ -610,16 +615,19 @@ class IPTVSubDownloaderWidget(Screen):
         subProvidersList.append(titlovi)
         subProvidersList.append(subscene)
         
-        if 'pl' != GetDefaultLang(): 
+        if 'pl' != defaultLang: 
             subProvidersList.append(napisy24pl)
             if IsSubtitlesParserExtensionCanBeUsed():
                 subProvidersList.append(napiprojektpl)
                 
-        if 'el' != GetDefaultLang(): 
+        if 'el' != defaultLang: 
             subProvidersList.append(subtitlesgr)
         
-        if 'hr' != GetDefaultLang(): 
+        if 'hr' != defaultLang: 
             subProvidersList.append(prijevodi)
+        
+        if 'ro' != defaultLang: 
+            subProvidersList.append(subsro)
         
         self.currList = []
         for item in subProvidersList:
