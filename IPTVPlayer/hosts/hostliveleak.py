@@ -97,7 +97,12 @@ class LiveLeak(CBaseHostClass):
     def _listItems(self, cItem, data, nextPage, nextCategory='video'):
         printDBG('_listItems start')
 
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</span>')
+        data = re.compile('''<div[^>]+?items_outer[^>]+?>''', re.I).split(data)
+        if len(data): del data[0]
+        if len(data):
+            data[-1] = data[-1].split('<nav', 1)[0]
+            data[-1] = data[-1].split('<script', 1)[0]
+        
         for item in data:
             params = dict(cItem)
             params['name']  = 'category'
