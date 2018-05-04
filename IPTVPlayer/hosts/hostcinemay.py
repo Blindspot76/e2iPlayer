@@ -85,7 +85,13 @@ class Cinemay(CBaseHostClass):
                 return urlparse.urljoin(baseUrl, url)
             
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
-        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        printDBG("++++++++++++++++++++++++++++++++++++++++")
+        printDBG("url: %s" % baseUrl)
+        printDBG("sts: %s" % sts)
+        printDBG(data)
+        printDBG("++++++++++++++++++++++++++++++++++++++++")
+        return sts, data
     
     def listMainMenu(self, cItem):
         self.listsTab(self.MAIN_CAT_TAB, cItem)
