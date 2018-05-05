@@ -46,18 +46,18 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'http://mozicsillag.cc/'
+    return 'https://mozicsillag.me/'
 
 class MuziCsillangCC(CBaseHostClass):
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'mozicsillag.cc', 'cookie':'mozicsillag.cc.cookie', 'cookie_type':'MozillaCookieJar'})
+        CBaseHostClass.__init__(self, {'history':'mozicsillag.cc', 'cookie':'mozicsillag.cc.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'http://mozicsillag.cc/'
-        self.DEFAULT_ICON_URL =  strwithmeta('http://mozicsillag.cc/img/logo.png', {'Referer':self.getMainUrl()})
+        self.MAIN_URL = 'https://mozicsillag.me/'
+        self.DEFAULT_ICON_URL =  strwithmeta('https://mozicsillag.me/img/logo.png', {'Referer':self.getMainUrl()})
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
@@ -77,6 +77,10 @@ class MuziCsillangCC(CBaseHostClass):
         url = url.replace('&amp;', '&')
         url = CBaseHostClass.getFullIconUrl(self, url)
         return strwithmeta(url, {'Referer':self.getMainUrl()})
+        
+    def setMainUrl(self, url):
+        if self.cm.isValidUrl(url):
+            self.MAIN_URL = self.cm.getBaseUrl(url)
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}:
@@ -99,6 +103,7 @@ class MuziCsillangCC(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(data.meta['url'])
         
         def addFilter(data, marker, baseKey, allTitle='', titleBase=''):
             key = 'f_' + baseKey
