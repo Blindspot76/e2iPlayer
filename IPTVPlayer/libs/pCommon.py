@@ -422,9 +422,12 @@ class common:
         return outParams, postData
         
     @staticmethod
-    def getBaseUrl(url):
+    def getBaseUrl(url, domainOnly=False):
         parsed_uri = urlparse( url )
-        domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+        if domainOnly:
+            domain = '{uri.netloc}'.format(uri=parsed_uri)
+        else:
+            domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
         return domain
         
     @staticmethod
@@ -623,7 +626,7 @@ class common:
         url = baseUrl
         header = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
         header.update(params.get('header', {}))
-        params.update({'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
+        params.update({'with_metadata':True, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
         sts, data = self.getPage(url, params, post_data)
         
         current = 0
@@ -657,11 +660,13 @@ class common:
                         if '' != cfParams.get('User-Agent', ''): recaptcha.HTTP_HEADER['User-Agent'] = cfParams['User-Agent']
                         token = recaptcha.processCaptcha(sitekey)
                         if token == '': return False, None
-                    
+                        
                         sts, tmp = self.ph.getDataBeetwenMarkers(verData, '<form', '</form>', caseSensitive=False)
                         if not sts: return False, None
                         
-                        url = _getFullUrl( self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0] )
+                        url = self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0]
+                        if url != '': url = _getFullUrl( url )
+                        else: url = data.fp.geturl()
                         actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
                         post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
                         #post_data2['id'] = id
@@ -679,7 +684,8 @@ class common:
                                 url += '?'
                             url += urllib.urlencode(post_data2)
                             post_data2 = None
-                        sts, data = self.getPage(url, params2)
+                            
+                        sts, data = self.getPage(url, params2, post_data2)
                         printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                         printDBG(sts)
                         printDBG("------------------------------------------------------------------")

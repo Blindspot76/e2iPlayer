@@ -10,8 +10,12 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Ge
 ###################################################
 # FOREIGN import
 ###################################################
+import urlparse
 import re
 import urllib
+try: import json
+except Exception: import simplejson as json
+from hashlib import md5
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -35,13 +39,13 @@ class OpenSubtitles(CBaseSubProviderClass):
     
     def __init__(self, params={}):
         self.MAIN_URL      = 'https://www.opensubtitles.org/'
-        self.USER_AGENT    = 'curl' #'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0'
+        self.USER_AGENT    = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36'
         self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
         
         params['cookie'] = 'opensubtitlesorg2.cookie'
         CBaseSubProviderClass.__init__(self, params)
         
-        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HTTP_HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.languages = []
         
         self.dInfo = params['discover_info']
@@ -50,26 +54,61 @@ class OpenSubtitles(CBaseSubProviderClass):
         self.logedIn = None
         self.searchURL = ""
         
-    def getPage(self, url, params={}, post_data=None):
-        if params == {}:
-            params = dict(self.defaultParams)
-        sts, data = self.cm.getPage(url, params, post_data)
+        self.wasInformedAboutReCaptcha = False
+        
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        if addParams == {}:
+            addParams = dict(self.defaultParams)
+        
+        def _getFullUrl(url):
+            if self.cm.isValidUrl(url):
+                return url
+            else:
+                return urlparse.urljoin(baseUrl, url)
+        
+        addParams['cloudflare_params'] = {'domain':self.cm.getBaseUrl(baseUrl, domainOnly=True), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        try:
+            if not sts and not self.wasInformedAboutReCaptcha and addParams.get('return_data', True) and data.code == 429:
+                self.sessionEx.open(MessageBox, _('%s has been protected with google recaptcha v2. You can try to use API version.') % ('https://www.opensubtitles.org/'), type=MessageBox.TYPE_INFO, timeout=10)
+                self.wasInformedAboutReCaptcha = True
+        except Exception:
+            printExc()
         return sts, data
         
     def initSubProvider(self, cItem):
         printDBG("OpenSubtitles.initSubProvider")
         self.logedIn = False
         
-        rm(self.COOKIE_FILE)
+        login  = config.plugins.iptvplayer.opensuborg_login.value
+        passwd = config.plugins.iptvplayer.opensuborg_password.value
+        currentHash = md5('\n\n--\n\n'.join((login, passwd))).hexdigest()
+        cokieFile = self.COOKIE_FILE + '.hash'
+        try:
+            with open(cokieFile, 'r') as f:
+                prevHash = f.read()
+        except Exception:
+            prevHash = ''
+            printExc()
+        
+        #if currentHash != prevHash:
+        #    rm(self.COOKIE_FILE)
+        
+        try:
+            with open(cokieFile, 'w') as f:
+                f.write(currentHash)
+        except Exception:
+            prevHash = ''
+            printExc()
         
         # select site language 
         sts, data = self.getPage(self.getMainUrl())
         if not sts: return
         
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="lang-selector"', '</ul>')[1]
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        printDBG(tmp)
-        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        logoutUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"]([^"^']+?logout)['"]''')[0])
+        
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'lang-selector'), ('</ul', '>'))[1]
+        printDBG(">>>\n%s\n<<" % tmp)
         lang = GetDefaultLang()
         url  = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, 'href="([^"]+?setlang\-%s[^"]*?)"' % lang)[0])
         printDBG(">> LANG URL: " + url)
@@ -87,51 +126,50 @@ class OpenSubtitles(CBaseSubProviderClass):
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<option', '</option>')
         for item in tmp:
             title = self.cleanHtmlStr(item)
-            subLanguageID = self.cm.ph.getSearchGroups(item, 'value="([^"]+?)"')[0]
+            subLanguageID = self.cm.ph.getSearchGroups(item, '''value=['"]([^"^']+?)['"]''')[0]
             self.languages.append({'title':title, 'sub_language_id':subLanguageID})
         
-        # login user 
-        login  = config.plugins.iptvplayer.opensuborg_login.value
-        passwd = config.plugins.iptvplayer.opensuborg_password.value
+        # login user
         if login != '' and passwd != '':
-            errMsg = _('Failed to connect to server "%s".') % self.getMainUrl()
-            
-            url  = self.getFullUrl(self.cm.ph.getSearchGroups(data, '<form[^>]+?name="loginform"[^>]+?action="([^"]+?)"')[0])
-            sts, data = self.getPage(url)
+            if currentHash != prevHash:
+                errMsg = _('Failed to connect to server "%s".') % self.getMainUrl()
+                
+                if logoutUrl != '':
+                    sts, data = self.getPage(logoutUrl)
+                    if not sts:
+                        self.sessionEx.open(MessageBox, errMsg, type = MessageBox.TYPE_INFO, timeout = 5)
+                        return
+                
+                url  = self.getFullUrl(self.cm.ph.getSearchGroups(data, '<form[^>]+?name="loginform"[^>]+?action="([^"]+?)"')[0])
+                sts, data = self.getPage(url)
+                if not sts:
+                    self.sessionEx.open(MessageBox, errMsg, type = MessageBox.TYPE_INFO, timeout = 5)
+                    return
+                
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>')[1]
+                loginUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, 'action="([^"]+?)"')[0])
+                data = re.compile('<input[^>]+?name="([^"]+?)"[^>]+?value="([^"]+?)"').findall(data)
+                post_data = {}
+                for item in data:
+                    post_data[item[0]] = item[1]
+                post_data.update({'user':login, 'password':passwd, 'remember':'on'})
+                
+                sts, data = self.getPage(loginUrl, post_data=post_data)
+                if not sts:
+                    self.sessionEx.open(MessageBox, errMsg, type = MessageBox.TYPE_INFO, timeout = 5)
+                elif 'logout' not in data:
+                    self.sessionEx.open(MessageBox, _('Failed to log in user "%s". Please check your login and password.') % login, type = MessageBox.TYPE_INFO, timeout = 5)
+                    self.logedIn = False
+                else:
+                    if self.searchURL == '':
+                        self.searchURL = self.cm.ph.getSearchGroups(data, '<form[^>]+?"searchform"[^>]+?action="([^"]+?)"')[0]
+                        printDBG(">> SEARCH URL: " + self.searchURL)
+                    self.logedIn = True
+        elif logoutUrl != '':
+            sts, data = self.getPage(logoutUrl)
             if not sts:
                 self.sessionEx.open(MessageBox, errMsg, type = MessageBox.TYPE_INFO, timeout = 5)
                 return
-            
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<form', '</form>')[1]
-            loginUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, 'action="([^"]+?)"')[0])
-            data = re.compile('<input[^>]+?name="([^"]+?)"[^>]+?value="([^"]+?)"').findall(data)
-            post_data = {}
-            for item in data:
-                post_data[item[0]] = item[1]
-            post_data.update({'user':login, 'password':passwd, 'remember':'on'})
-            
-            sts, data = self.getPage(loginUrl, post_data=post_data)
-            if not sts:
-                self.sessionEx.open(MessageBox, errMsg, type = MessageBox.TYPE_INFO, timeout = 5)
-            elif 'logout' not in data:
-                self.sessionEx.open(MessageBox, _('Failed to log in user "%s". Please check your login and password.') % login, type = MessageBox.TYPE_INFO, timeout = 5)
-                self.logedIn = False
-            else:
-                if self.searchURL == '':
-                    self.searchURL = self.cm.ph.getSearchGroups(data, '<form[^>]+?"searchform"[^>]+?action="([^"]+?)"')[0]
-                    printDBG(">> SEARCH URL: " + self.searchURL)
-                if self.cm.ph.getSearchGroups(data, '(<form[^>]+?recaptcha2[^>]+?>)')[0] != '':
-                    protectedByRecaptcha = True
-                else:
-                    protectedByRecaptcha = False
-                self.logedIn = True
-        else:
-            if self.cm.ph.getSearchGroups(data, '(<form[^>]+?recaptcha2[^>]+?>)')[0] != '':
-                protectedByRecaptcha = True
-            else:
-                protectedByRecaptcha = False
-        if protectedByRecaptcha: 
-            self.sessionEx.open(MessageBox, _('%s has been protected with google recaptcha v2. You can try to use API version.') % ('https://www.opensubtitles.org/'), type=MessageBox.TYPE_INFO, timeout=10)
         
     def listLanguages(self, cItem, nextCategory):
         printDBG("OpenSubtitles.listLanguages")
@@ -180,7 +218,7 @@ class OpenSubtitles(CBaseSubProviderClass):
         else:
             url = cItem['url']
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<table id="search_results"', '</tbody>')[1]
@@ -203,7 +241,7 @@ class OpenSubtitles(CBaseSubProviderClass):
     def listSearchItems(self, cItem, nextCategory, data=None):
         printDBG("OpenSubtitles.listSearchItems")
         if data == None:
-            sts, data = self.cm.getPage(cItem['url'])
+            sts, data = self.getPage(cItem['url'])
             if not sts: return
         page = cItem.get('page', 1)
         nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(data, '<link[^>]+?rel="next"[^>]+?href="([^"]+?)"')[0])
@@ -233,7 +271,7 @@ class OpenSubtitles(CBaseSubProviderClass):
     def listDownloadItems(self, cItem, nextCategory, data=None):
         printDBG("OpenSubtitles.listDownloadItems")
         if data == None:
-            sts, data = self.cm.getPage(cItem['url'])
+            sts, data = self.getPage(cItem['url'])
             if not sts: return
         page = cItem.get('page', 1)
         nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(data, '<link[^>]+?rel="next"[^>]+?href="([^"]+?)"')[0])
@@ -271,7 +309,7 @@ class OpenSubtitles(CBaseSubProviderClass):
         self.episodesCache = {}
         
         if data == None:
-            sts, data = self.cm.getPage(cItem['url'])
+            sts, data = self.getPage(cItem['url'])
             if not sts: return
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<table id="search_results"', '</tbody>')[1]
@@ -320,7 +358,7 @@ class OpenSubtitles(CBaseSubProviderClass):
             urlParams = dict(self.defaultParams)
             urlParams['return_data'] = False
             try:
-                sts, response = self.cm.getPage(url, urlParams)
+                sts, response = self.getPage(url, urlParams)
                 if not sts: return ''
                 fileName = response.info().get('Content-Disposition', '')
                 fileName = self.cm.ph.getSearchGroups(fileName.lower(), '''filename=['"]([^'^"]+?)['"]''')[0]
