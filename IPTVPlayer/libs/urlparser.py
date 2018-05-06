@@ -476,6 +476,7 @@ class urlparser:
                        'filecloud.io':         self.pp.parserFILECLOUDIO    ,
                        'megadrive.co':         self.pp.parserMEGADRIVECO    ,
                        'upfile.mobi':          self.pp.parserUPFILEMOBI     ,
+                       'cloudstream.us':       self.pp.parserCLOUDSTREAMUS  ,
                        #https://oneload.co/4gdkrp4hieoe TODO
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                        
@@ -5510,7 +5511,7 @@ class pageParser:
         printDBG("parserGOOGLE baseUrl[%s]" % baseUrl)
         
         videoTab = []
-        _VALID_URL = r'https?://(?:(?:docs|drive)\.google\.com/(?:uc\?.*?id=|file/d/)|video\.google\.com/get_player\?.*?docid=)(?P<id>[a-zA-Z0-9_-]{28})'
+        _VALID_URL = r'https?://(?:(?:docs|drive)\.google\.com/(?:uc\?.*?id=|file/d/)|video\.google\.com/get_player\?.*?docid=)(?P<id>[a-zA-Z0-9_-]{28,})'
         mobj = re.match(_VALID_URL, baseUrl)
         try:
             video_id = mobj.group('id')
@@ -5529,8 +5530,7 @@ class pageParser:
             '46': 'webm', '59': 'mp4',
         }
         
-        HTTP_HEADER = dict(self.HTTP_HEADER) 
-        HTTP_HEADER['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36"
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = linkUrl
         
         COOKIE_FILE = GetCookieDir('google.cookie')
@@ -5551,9 +5551,12 @@ class pageParser:
         data = data.split(',')
         for item in data:
             item = item.split('|')
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> type[%s]" % item[0])
+            printDBG(">> type[%s]" % item[0])
             if 'mp4' in _FORMATS_EXT.get(item[0], ''):
-                videoTab.append({'name':'google.com: %s' % fmtDict.get(item[0], '').split('x')[1] + 'p', 'url':strwithmeta(unicode_escape(item[1]), {'Cookie':cookieHeader, 'Referer':'https://youtube.googleapis.com/', 'User-Agent':HTTP_HEADER['User-Agent']})})
+                try: quality = int(fmtDict.get(item[0], '').split('x', 1)[-1])
+                except Exception: quality = 0
+                videoTab.append({'name':'drive.google.com: %s' % fmtDict.get(item[0], '').split('x', 1)[-1] + 'p', 'quality':quality, 'url':strwithmeta(unicode_escape(item[1]), {'Cookie':cookieHeader, 'Referer':'https://youtube.googleapis.com/', 'User-Agent':HTTP_HEADER['User-Agent']})})
+        videoTab.sort(key=lambda item: item['quality'], reverse=True)
         return videoTab
         
     def parserPICASAWEB(self, baseUrl):
@@ -10017,6 +10020,50 @@ class pageParser:
         videoTab.extend(hlsTab)
         videoTab.extend(dashTab)
         return videoTab
+        
+    def parserCLOUDSTREAMUS(self, baseUrl):
+        printDBG("parserCLOUDSTREAMUS baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        cUrl = baseUrl
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
+        jscode = ['eval=function(t){return function(){print(arguments[0]);try{return t.apply(this,arguments)}catch(t){}}}(eval);']
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in data:
+            if 'eval(' in item:
+                jscode.append(item)
+        ret = iptv_js_execute( '\n'.join(jscode) )
+        if ret['sts'] and 0 == ret['code']:
+            data = ret['data']
+        
+        urlsTab = []
+        googleDriveFiles = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'sources:', '],', False)
+        for sourceData in data:
+            sourceData = self.cm.ph.getAllItemsBeetwenMarkers(sourceData, '{', '}')
+            for item in sourceData:
+                type = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
+                if type != 'mp4': continue
+                url = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]file['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                if 'googleapis.com/drive' in url  and'/files/' in url:
+                    fileId = url.split('/files/', 1)[-1].split('?', 1)[0]
+                    if fileId != '':
+                        if fileId in googleDriveFiles: continue
+                        googleDriveFiles.append(fileId)
+                        continue
+                name = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]label['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                if name == '': name = urlparser.getDomain(url)
+                urlsTab.append({'name':name, 'url':url})
+        printDBG(googleDriveFiles)
+        for fileId in googleDriveFiles:
+            tmp = urlparser().getVideoLinkExt('https://drive.google.com/file/d/%s/view' % fileId)
+            if len(tmp):
+                tmp.extend( urlsTab )
+                urlsTab = tmp
+        return urlsTab
         
     def parserCLOUDYFILESORG(self, baseUrl):
         printDBG("parserCLOUDYFILESORG baseUrl[%r]" % baseUrl)

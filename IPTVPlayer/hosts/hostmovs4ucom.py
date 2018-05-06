@@ -46,18 +46,18 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'http://movs4u.com/'
+    return 'https://movs4u.com/'
 
 class Movs4uCOM(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'movs4u.com', 'cookie':'movs4u.com.cookie', 'cookie_type':'MozillaCookieJar'})
-        self.DEFAULT_ICON_URL = 'http://www.movs4u.com/wp-content/uploads/2017/06/1IMG_1930.png'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'http://www.movs4u.com/'
+        self.MAIN_URL = 'https://www.movs4u.com/'
+        self.DEFAULT_ICON_URL = self.getFullIconUrl('/wp-content/uploads/2018/03/TcCsO2w.png')
         self.cacheLinks    = {}
         self.cacheSeasons = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -84,7 +84,7 @@ class Movs4uCOM(CBaseHostClass):
         
         origBaseUrl = baseUrl
         baseUrl = self.cm.iriToUri(baseUrl)
-        printDBG('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++> [%s] - > [%s]' % (origBaseUrl, baseUrl) )
+        printDBG('+++> [%s] - > [%s]' % (origBaseUrl, baseUrl) )
         
         def _getFullUrl(url):
             if self.cm.isValidUrl(url):
