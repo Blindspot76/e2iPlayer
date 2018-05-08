@@ -232,7 +232,7 @@ class EgyBest(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon})
                 self.addDir(params)
-        elif 'watch_video' in data:
+        elif 'watch_video' in data or 'data-call' in data:
             params = dict(cItem)
             self.addVideo(params)
             
