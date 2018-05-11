@@ -271,6 +271,7 @@ class SerienStreamTo(CBaseHostClass):
                     langId = self.cm.ph.getSearchGroups(item, '''data-lang-key=['"]([^'^"]+?)['"]''')[0]
                     title  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h4>', '</h4>', withMarkers=False)[1])
                     url    = strwithmeta(self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]), {'base_url':cItem['url']})
+                    if url == '': url = strwithmeta(self.getFullUrl(self.cm.ph.getSearchGroups(item, '''data\-link\-target=['"]([^'^"]+?)['"]''')[0]), {'base_url':cItem['url']})
                     urlTab.append({'name': '[{0}] {1}'.format(langMap.get(langId, _('Unknown')), title), 'lang_id':langId, 'url':url, 'need_resolve':1})
                 
                 if len(urlTab):
