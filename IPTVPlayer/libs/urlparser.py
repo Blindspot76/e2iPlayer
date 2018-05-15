@@ -8959,15 +8959,17 @@ class pageParser:
         printDBG(data)
         if not sts: return False
         data = byteify( json.loads(data) )
-        file_url = data['html5_file']
+        file_url = data['obf_link']
         
         printDBG(">> file: ")
-        printDBG(data['file'])
+        printDBG(data['obf_link'])
         if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
+        if file_url.startswith('//'): file_url = 'https:' + file_url
         if self.cm.isValidUrl(file_url): 
             file_url = urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
-            if file_url.split('?')[0].endswith('.m3u8'):
-                return getDirectM3U8Playlist(file_url, False)
+            if file_url.split('?')[0].endswith('.m3u8') or '/hls-' in file_url:
+                file_url = strwithmeta(file_url, {'iptv_proto':'m3u8'})
+                return getDirectM3U8Playlist(file_url, False, checkContent=True)
         return file_url
         
     def parserSTREAMPLAYTO(self, baseUrl):

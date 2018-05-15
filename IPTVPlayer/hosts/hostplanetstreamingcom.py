@@ -205,6 +205,8 @@ class PlanetStreaming(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        pageUrl = data.meta['url']
+        self.MAIN_URL = self.cm.getBaseUrl(pageUrl)
         
         directionsTitle = {'asc':'\xe2\x86\x91', 'desc':'\xe2\x86\x93'}
         
@@ -220,7 +222,7 @@ class PlanetStreaming(CBaseHostClass):
                 
                 title = '%s %s' % (directionsTitle.get(direction, ''), item[2])
                 post_data = {'dlenewssortby':item[0], 'dledirection':direction, 'set_new_sort':'dle_sort_cat', 'set_direction_sort':'dle_direction_cat'}
-                params = {'title':title, 'post_data':post_data}
+                params = {'url':pageUrl, 'title':title, 'post_data':post_data}
                 items[idx].append(params)
         
         for idx in range(len(items)):
