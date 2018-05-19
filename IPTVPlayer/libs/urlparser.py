@@ -199,6 +199,7 @@ class urlparser:
                        'rutube.ru':            self.pp.parserRUTUBE        ,
                        'youtube.com':          self.pp.parserYOUTUBE       ,
                        'youtu.be':             self.pp.parserYOUTUBE       ,
+                       'youtube-nocookie.com': self.pp.parserYOUTUBE       ,
                        'google.com':           self.pp.parserGOOGLE        ,
                        'tinymov.net':          self.pp.parserTINYMOV       ,
                        'topupload.tv':         self.pp.parserTOPUPLOAD     ,
