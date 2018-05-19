@@ -57,7 +57,7 @@ class SeriesOnlineIO(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'SeriesOnlineIO.tv', 'cookie':'seriesonlineio.cookie', 'cookie_type':'MozillaCookieJar', 'min_py_ver':(2,7,9)})
-        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.DEFAULT_ICON_URL = 'https://series9.io/images/gomovies-logo-light.png'
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
@@ -218,6 +218,10 @@ class SeriesOnlineIO(CBaseHostClass):
         
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
+    def setMainUrl(self, url):
+        if self.cm.isValidUrl(url):
+            self.MAIN_URL = self.cm.getBaseUrl(url)
+        
     def getDefaulIcon(self, cItem):
         return self.getFullIconUrl(self.DEFAULT_ICON_URL)
     
@@ -253,8 +257,10 @@ class SeriesOnlineIO(CBaseHostClass):
             for i in range(2):
                 sts, data = self.getPage(domain)
                 if sts:
+                    cUrl = data.meta['url']
+                    self.setMainUrl(cUrl)
                     if 'genre/action/' in data:
-                        confirmedDomain = domain
+                        confirmedDomain = self.MAIN_URL
                         break
                     else: 
                         continue
@@ -396,9 +402,36 @@ class SeriesOnlineIO(CBaseHostClass):
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("SeriesOnlineIO.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        cItem = dict(cItem)
-        cItem['url'] = self.SEARCH_URL + '/' + urllib.quote_plus(searchPattern).replace('+', '-')
-        self.listItems(cItem, 'list_episodes')
+        if self.MAIN_URL == None:
+            self.selectDomain()
+        
+        url = self.SEARCH_URL + '/' + urllib.quote_plus(searchPattern).replace('+', '-')
+        sts, data = self.getPage(url)
+        if not sts: return
+        cUrl = data.meta['url']
+        tmp = ''
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script>', '</script>', False)
+        for item in data:
+            if '$.ajax(' in item:
+                tmp = item
+                break
+        if tmp == '': return
+        ret = iptv_js_execute( '$={}; $.ajax=function(setup){print(JSON.stringify(setup));}\n' + tmp)
+        if ret['sts'] and 0 == ret['code']:
+            decoded = ret['data'].strip()
+            printDBG('DECODED DATA -> \n[%s]\n' % decoded)
+            try:
+                decoded = byteify(json.loads(decoded))
+                searchUrl = self.getFullUrl(decoded.get('url', cUrl))
+                if '?' not in searchUrl: searchUrl += '?'
+                if 'data' in decoded:
+                    searchUrl += urllib.urlencode(decoded['data'])
+                printDBG('searchUrl [%s]\n' % searchUrl)
+                cItem = dict(cItem)
+                cItem['url'] = searchUrl
+                self.listItems(cItem, 'list_episodes')
+            except Exception:
+                printExc()
         
     def getLinksForVideo(self, cItem, forEpisodes=False):
         printDBG("SeriesOnlineIO.getLinksForVideo [%s]" % cItem)
