@@ -4,8 +4,10 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+
+from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 ###################################################
 
 ###################################################
@@ -39,7 +41,7 @@ class SerialeCO(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
         
-        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HTTP_HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.MAIN_CAT_TAB = [{'category':'list_items',     'title': 'START',             'url':self.getMainUrl()},
                              {'category':'list_series',    'title': 'SPIS ALFABETYCZNY', 'url':self.getMainUrl()},
@@ -115,6 +117,7 @@ class SerialeCO(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        cUrl = data.meta['url']
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('<script', '>', 'player.js'), ('<header', '>'))[1]
         playerUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''src=['"]([^'^"]+?)['"]''')[0])
@@ -128,6 +131,13 @@ class SerialeCO(CBaseHostClass):
         
         sts, data = self.getPage(playerUrl)
         if not sts: return
+        
+        # function pobierz_info_o_odcinkach
+        ajaxInfoData = self.cm.ph.getDataBeetwenMarkers(data, 'function pobierz_info_o_odcinkach', '});')[1]
+        ajaxInfoVarName = self.cm.ph.getSearchGroups(ajaxInfoData, '''var\s+?([A-Za-z0-9]+?)\s*?=''')[0]
+        ajaxInfoData = self.cm.ph.getDataBeetwenMarkers(ajaxInfoData, '$.ajax(', ').', False)[1]
+        printDBG('ajaxInfoData: [%s]' % ajaxInfoData)
+        printDBG('ajaxInfoVarName: [%s]' % ajaxInfoVarName)
         
         playerUrl = self.cm.ph.getDataBeetwenMarkers(data, 'function seriale_search', 'function')[1]
         playerUrl = self.cm.ph.getSearchGroups(playerUrl, '''['"]?url['"]?\s*:\s*['"](http[^'^"]+?)['"]''')[0]
@@ -155,10 +165,45 @@ class SerialeCO(CBaseHostClass):
         
         seasons = self.playerData.get('odc', '').split(',')
         for idx in range(len(seasons)):
+            if seasons[idx] == '' : continue
             sNum = str(idx + 1)
             params = dict(cItem)
             params.update({'good_for_fav':False, 'category':nextCategory, 'title': _('Season %s') % sNum.zfill(2), 's_title':cItem['title'], 's_num':sNum, 'e_count':seasons[idx]})
             self.addDir(params)
+        
+        if 0 == len(self.currList) and ajaxInfoVarName != '' and ajaxInfoData != '':
+            ret = iptv_js_execute( '{0}="{1}";\n'.format(ajaxInfoVarName, self.playerData.get(ajaxInfoVarName, '')) + 'print(JSON.stringify({0}));\n'.format(ajaxInfoData) )
+            if ret['sts'] and 0 == ret['code']:
+                data = ret['data'].strip()
+                printDBG('DECODED DATA -> \n[%s]\n' % data)
+                try:
+                    data = byteify(json.loads(data))
+                    searchUrl = self.getFullUrl(data['url'], cUrl)
+                    post_data = data['data']
+                    
+                    sts, data = self.getPage(searchUrl, httpParams, post_data)
+                    if not sts: return
+                    
+                    printDBG('DATA -> \n[%s]\n' % data)
+                    
+                    data = byteify(json.loads(data))
+                    for sKey in data:
+                        sNum = sKey.strip()
+                        eItems = []
+                        for eKey in data[sKey]:
+                            eNum = eKey.strip()
+                            title = _('%s s%se%s') % (cItem['title'], sNum.zfill(2), eNum.zfill(2))
+                            if data[sKey][eKey].get('title', '') != '':
+                                title += ' ' + data[sKey][eKey]['title']
+                            desc = data[sKey][eKey].get('data', '')
+                            params = {'good_for_fav':False,  'title': title, 'desc':desc, 's_num':sNum, 'e_num':eNum}
+                            eItems.append(params)
+                        if len(eItems):
+                            params = dict(cItem)
+                            params.update({'good_for_fav':False, 'category':nextCategory, 'title': _('Season %s') % sNum.zfill(2), 's_title':cItem['title'], 's_num':sNum, 'e_items':eItems})
+                            self.addDir(params)
+                except Exception:
+                    printExc()
             
         if len(self.currList) == 1:
             cItem = self.currList[0]
@@ -169,14 +214,20 @@ class SerialeCO(CBaseHostClass):
         printDBG("SerialeCO.listEpisodes [%s]" % cItem)
         self.cacheLinks = {}
         
-        sNum = cItem.get('s_num', '')
-        try: eCount = int(cItem.get('e_count', '0'))
-        except Exception: eCount = 0
-        for idx in range(eCount):
-            eNum = str(idx + 1)
-            params = dict(cItem)
-            params.update({'good_for_fav':False,  'title': _('%s s%se%s') % (cItem['s_title'], sNum.zfill(2), eNum.zfill(2)), 's_num':sNum, 'e_num':eNum})
-            self.addVideo(params)
+        if 'e_items' in cItem:
+            for item in cItem['e_items']:
+                params = dict(cItem)
+                params.update(item)
+                self.addVideo(params)
+        else:
+            sNum = cItem.get('s_num', '')
+            try: eCount = int(cItem.get('e_count', '0'))
+            except Exception: eCount = 0
+            for idx in range(eCount):
+                eNum = str(idx + 1)
+                params = dict(cItem)
+                params.update({'good_for_fav':False,  'title': _('%s s%se%s') % (cItem['s_title'], sNum.zfill(2), eNum.zfill(2)), 's_num':sNum, 'e_num':eNum})
+                self.addVideo(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("SerialeCO.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
@@ -218,7 +269,7 @@ class SerialeCO(CBaseHostClass):
                 url = '/frame.php?src=' + url
             name = self.cm.ph.getSearchGroups(item, '''host=['"]([^'^"]+?)['"]''')[0]
             ver  = self.cm.ph.getSearchGroups(item, '''wersja=['"]([^'^"]+?)['"]''')[0]
-            name = '[%s] %s' % (verMap.get(ver, ver), self.up.getDomain(url))
+            name = '[%s] %s' % (verMap.get(ver, ver), name)
             urlTab.append({'name':name, 'url':strwithmeta(self.getFullUrl(url), {'Referer':cItem['url']}), 'need_resolve':1})
         
         if len(urlTab):
