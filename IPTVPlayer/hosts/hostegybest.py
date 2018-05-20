@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
 ###################################################
@@ -264,6 +265,7 @@ class EgyBest(CBaseHostClass):
         self.tryTologin()
         
         retTab = []
+        playTab = []
         dwnTab = []
         if 1 == self.up.checkHostSupport(cItem.get('url', '')):
             videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
@@ -277,6 +279,25 @@ class EgyBest(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        cUrl = data.meta['url']
+        
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False, False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>', caseSensitive=False)
+        for item in tmp:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
+            type = self.cm.ph.getSearchGroups(item, '''\stype=['"]([^'^"]+?)['"]''')[0].lower()
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ]]]]]]]]]]]]]]]]]]]]]]]] >>>>>>>>> " + url)
+            printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ]]]]]]]]]]]]]]]]]]]]]]]] >>>>>>>>> " + type)
+            if url == '': continue
+            if 'application/x-mpegurl' == type:
+                name = '[HLS/m3u8]'
+                meta = {'iptv_proto':'m3u8'}
+            elif 'video/mp4' == type:
+                name = '[mp4]'
+                meta = {'direct':True}
+            else: continue
+            meta.update({'Referer':cUrl})
+            playTab.append({'name':name, 'url':strwithmeta(self.getFullUrl(url, cUrl), meta), 'need_resolve':1})
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('<table', '>', 'dls_table'), ('</table', '>'), False)[1]
         data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>')[1]
@@ -294,6 +315,7 @@ class EgyBest(CBaseHostClass):
                 if url != '': retTab.append({'name':'%s: %s' % (self.cleanHtmlStr(it), name), 'url':strwithmeta(self.getFullUrl(url), {'Referer':cItem['url']}), 'need_resolve':1})
                 if call != '': dwnTab.append({'name':'%s: %s' % (self.cleanHtmlStr(it), name), 'url':strwithmeta(call, {'priv_api_call':True, 'Referer':cItem['url']}), 'need_resolve':1})
         
+        retTab.extend(playTab)
         retTab.extend(dwnTab)
         if len(retTab): self.cacheLinks[cacheKey] = retTab
         return retTab
@@ -311,6 +333,11 @@ class EgyBest(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name'] + '*'
                         break
+                        
+        if videoUrl.meta.get('iptv_proto', '') == 'm3u8':
+            return getDirectM3U8Playlist(videoUrl, False, checkContent=True, sortWithMaxBitrate=999999999)
+        elif videoUrl.meta.get('direct', False):
+            return [{'name':'direct', 'url':videoUrl}]
         
         params = dict(self.defaultParams)
         params['header'] = dict(self.AJAX_HEADER)
