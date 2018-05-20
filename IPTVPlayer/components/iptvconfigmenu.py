@@ -180,6 +180,9 @@ config.plugins.iptvplayer.ukrainian_proxyurl = ConfigText(default = "http://user
 config.plugins.iptvplayer.alternative_proxy1 = ConfigText(default = "http://user:pass@ip:port", fixed_size = False)
 config.plugins.iptvplayer.alternative_proxy2 = ConfigText(default = "http://user:pass@ip:port", fixed_size = False)
 
+config.plugins.iptvplayer.api_key_9kweu = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.api_key_2captcha = ConfigText(default = "", fixed_size = False)
+
 # Update
 config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = True)
 config.plugins.iptvplayer.updateLastCheckedVersion = ConfigText(default = "00.00.00.00", fixed_size = False)
@@ -362,6 +365,10 @@ class ConfigMenu(ConfigBaseWidget):
         
         list.append(getConfigListEntry("http://1fichier.com/ " + _("e-mail"), config.plugins.iptvplayer.fichiercom_login))
         list.append(getConfigListEntry("http://1fichier.com/ " + _("password"), config.plugins.iptvplayer.fichiercom_password))
+        
+        list.append(getConfigListEntry(_("%s API KEY") % 'https://9kw.eu/', config.plugins.iptvplayer.api_key_9kweu))
+        list.append(getConfigListEntry(_("%s API KEY") % 'http://2captcha.com/', config.plugins.iptvplayer.api_key_2captcha))
+        
         
         players = []
         bufferingMode = config.plugins.iptvplayer.buforowanie.value or config.plugins.iptvplayer.buforowanie_m3u8.value or config.plugins.iptvplayer.buforowanie_rtmp.value

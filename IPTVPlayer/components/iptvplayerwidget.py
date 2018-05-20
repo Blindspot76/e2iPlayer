@@ -72,9 +72,6 @@ from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBox
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
 from Plugins.Extensions.IPTVPlayer.components.playerselector import PlayerSelectorWidget
 
-# SULGE TEMP
-#from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
-
 ######################################################
 gDownloadManager = None
 
@@ -543,9 +540,11 @@ class IPTVPlayerWidget(Screen):
         return
      
     def blue_pressed(self):
-        # SULGE TEMP
-        #self.session.open(IPTVSubDownloaderWidget, params={'movie_title':'shrek'})
-        #return
+        # For subtitles test
+        if False:
+            from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
+            self.session.open(IPTVSubDownloaderWidget, params={'movie_title':'elementary s02e03'})
+            return
         
         self.stopAutoPlaySequencer()
         options = []
@@ -1708,6 +1707,7 @@ class IPTVPlayerWidget(Screen):
         
         if not self.isInWorkThread():
             self["list"].hide()
+            GetIPTVSleep().Reset()
             
             if type not in ['ForVideoLinks', 'ResolveURL', 'ForArticleContent', 'ForFavItem', 'PerformCustomAction']:
                 #hide bottom panel
