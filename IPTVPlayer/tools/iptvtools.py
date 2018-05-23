@@ -365,7 +365,7 @@ def Which(program):
             if is_exe(program):
                 return program
         else:
-            pathTab = ['/iptvplayer_rootfs']
+            pathTab = ['/iptvplayer_rootfs/bin', '/iptvplayer_rootfs/usr/bin', '/iptvplayer_rootfs/sbin', '/iptvplayer_rootfs/usr/sbin']
             pathTab.extend(os.environ["PATH"].split(os.pathsep))
             for path in pathTab:
                 path = path.strip('"')

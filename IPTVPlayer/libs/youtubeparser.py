@@ -195,6 +195,7 @@ class YouTubeParser():
                 
             img   = self.getAttributes('data-thumb="([^"]+?\.jpg[^"]*?)"', data[i])
             if '' == img:  img = self.getAttributes('src="([^"]+?\.jpg[^"]*?)"', data[i])
+            if '' == img:  img = self.getAttributes('<img\s+?src="([^"]+?)"', data[i])
             time  = self.getAttributes('data-context-item-time="([^"]+?)"', data[i])
             if '' == time: time  = self.getAttributes('class="video-time">([^<]+?)</span>', data[i])
             if '' == time: sts, time = CParsingHelper.getDataBeetwenReMarkers(data[i], re.compile('pl-video-time"[^>]*?>'), re.compile('<'), False)
