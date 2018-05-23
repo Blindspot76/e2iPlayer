@@ -75,7 +75,7 @@ class VideoStarApi(CBaseHostClass):
         self.COOKIE_FILE = GetCookieDir('pilot.wp.pl.cookie')
         
         self.defaultParams = {}
-        self.defaultParams.update({'header':self.HTTP_HEADER, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
+        self.defaultParams.update({'header':self.HTTP_HEADER, 'ignore_http_code_ranges':[(422, 422), (404, 404), (500, 500)], 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
         self.loggedIn = False
         self.accountInfo = ''
         
@@ -131,6 +131,7 @@ class VideoStarApi(CBaseHostClass):
                 if data['status'] == 'error':
                     errMessage = 'Błędne dane do logowania.'
                 elif data['status'] == 'ok' and '' != data['user']['token']:
+                    self.userToken = data['user']['token']
                     return True, ''
             except Exception:
                 printExc()
@@ -242,18 +243,22 @@ class VideoStarApi(CBaseHostClass):
                 elif data['_meta'] != None:
                     info = data['_meta']['error']['info']
                     message = []
-                    message.append('Oglądasz już kanał %s na urządeniu %s o adresie: %s.' % (info['channel_name'], info['device'], info['ip']))
+                    message.append('Oglądasz już kanał %s na urządeniu %s o adresie: %s.' % (info['channel_name'], info['device'], info['user_ip']))
                     message.append('W WP Pilocie nie możesz oglądać większej liczby kanałów jednocześnie.')
                     message.append('Czy chcesz kontynować tutaj?')
-                    arg1 = self.sessionEx.waitForFinishOpen(MessageBox, message, type = MessageBox.TYPE_YESNO)
+                    arg1 = self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(message), type = MessageBox.TYPE_YESNO)
                     if arg1:
                         url = self.getFullUrl('v1/channels/close', 'api')
                         paramsUrl = dict(self.defaultParams)
                         paramsUrl['header'] = dict(paramsUrl['header'])
                         paramsUrl['header']['Referer'] = self.getFullUrl('tv')
                         paramsUrl['header']['Origin'] = self.MAIN_URL[:-1]
+                        paramsUrl['header']['content-type'] = 'application/json;charset=UTF-8'
                         paramsUrl['raw_post_data'] = True
-                        sts, data = self.cm.getPage(url, paramsUrl, '{"channelId":"%s","t":"%s"}' % (info['channel_id'], info['stream_token']))
+                        sts, data = self.cm.getPage(url, paramsUrl, '{"channelId":"%s","t":"%s"}' % (info['channel_id'], self.userToken))
+                        printDBG("==================== token1[%s] token2[%s]" % (self.userToken, info['stream_token']))
+                        printDBG(data)
+                        printDBG("====================")
                         continue
 
             except Exception:
