@@ -192,10 +192,14 @@ class YouTubeParser():
                         title = self.cm.ph.getDataBeetwenMarkers(data[i],  titleMarker, '</%s>' % tmarker)[1]
             
             if '' != title: title = CParsingHelper.removeDoubles(remove_html_markup(title, ' '), ' ')
+            if i == 0:
+                printDBG(data[i])
                 
             img   = self.getAttributes('data-thumb="([^"]+?\.jpg[^"]*?)"', data[i])
             if '' == img:  img = self.getAttributes('src="([^"]+?\.jpg[^"]*?)"', data[i])
-            if '' == img:  img = self.getAttributes('<img\s+?src="([^"]+?)"', data[i])
+            if '' == img:  img = self.getAttributes('<img[^>]+?data\-thumb="([^"]+?)"', data[i])
+            if '' == img:  img = self.getAttributes('<img[^>]+?src="([^"]+?)"', data[i])
+            if '.gif' in img: img = ''
             time  = self.getAttributes('data-context-item-time="([^"]+?)"', data[i])
             if '' == time: time  = self.getAttributes('class="video-time">([^<]+?)</span>', data[i])
             if '' == time: sts, time = CParsingHelper.getDataBeetwenReMarkers(data[i], re.compile('pl-video-time"[^>]*?>'), re.compile('<'), False)
@@ -215,7 +219,7 @@ class YouTubeParser():
             if desc != '': descTab.append(desc)
             
             newDescTab = []
-            for desc in descTab:            
+            for desc in descTab:
                 desc = self.cm.ph.removeDoubles(remove_html_markup(desc, ' '), ' ')
                 desc = clean_html(desc).strip()
                 if desc != '':
@@ -238,9 +242,9 @@ class YouTubeParser():
                             correctUrlTab[i] = 'http:' + correctUrlTab[i]
                         else:
                             correctUrlTab[i] = 'http://www.youtube.com' + correctUrlTab[i]
-                    else:
-                        if correctUrlTab[i].startswith('https:'):
-                            correctUrlTab[i] = "http:" + correctUrlTab[i][6:]
+                    #else:
+                    #    if correctUrlTab[i].startswith('https:'):
+                    #        correctUrlTab[i] = "http:" + correctUrlTab[i][6:]
 
                 title = clean_html(title)
                 params = {'type': urlPatterns[type][0], 'category': type, 'title': title, 'url': correctUrlTab[0], 'icon': correctUrlTab[1].replace('&amp;', '&'), 'time': time, 'desc': '[/br]'.join(newDescTab)}
