@@ -367,13 +367,14 @@ class AlltubeTV(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return urlTab
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<tbody>', '</tbody>', False)[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<table', '>'), ('</table', '>'), False)[1]
         data = data.split('</tr>')
         if len(data): del data[-1]
         for item in data:
             try:
-                url  = self.cm.ph.getSearchGroups(item, 'data-iframe="([^"]+?)"')[0]
-                url  = base64.b64decode(url)
+                url  = self.cm.ph.getSearchGroups(item, '''data\-iframe=['"]([^"^']+?)['"]''')[0]
+                if url != '': url  = base64.b64decode(url)
+                else: url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']*?link/[^"^']+?)['"]''')[0]
                 name = self.cleanHtmlStr(item)
                 urlTab.append({'name':name, 'url':strwithmeta(url, {'cache_key':cacheKey}), 'need_resolve':1})
             except Exception:
@@ -394,7 +395,6 @@ class AlltubeTV(CBaseHostClass):
                     if not self.cacheLinks[key][idx]['name'].startswith('*'):
                         self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                     break
-        
         
         if self._myFun == None:
             try:
@@ -430,7 +430,9 @@ class AlltubeTV(CBaseHostClass):
         if 'alltube' in self.up.getDomain(baseUrl):
             sts, data = self.getPage(baseUrl, params)
             if not sts: return []
-            url = self.cm.ph.getDataBeetwenMarkers(data, 'src="', '"', False, False)[1]
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<section', '>', 'player'), ('</section', '>'), False)[1]
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            #url = self.cm.ph.getDataBeetwenMarkers(data, 'src="', '"', False, False)[1]
         else:
             url = baseUrl
         
