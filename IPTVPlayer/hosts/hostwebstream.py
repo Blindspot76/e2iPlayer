@@ -206,6 +206,7 @@ class HasBahCa(CBaseHostClass):
         
         self.hasbahcaiptv = {}
         self.webcameraSubCats = {}
+        self.webCameraParams = {}
         
     def getPage(self, url, params={}, post_data=None):
         HTTP_HEADER= { 'User-Agent':'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'}
@@ -504,6 +505,11 @@ class HasBahCa(CBaseHostClass):
         printDBG("getWebCamera start cItem[%s]" % cItem)
         baseMobileUrl = 'https://www.webcamera.mobi/'
         baseUrl = 'https://www.webcamera.pl/'
+        self.webCameraParams = {'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('webcamerapl')}
+        self.webCameraParams['header'] = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Referer':baseUrl}
+        
+        getPageParams = dict(self.webCameraParams)
+        getPageParams['header'] = dict(self.webCameraParams['header'])
         
         def _getFullUrl(url, mobile=False):
             if mobile: 
@@ -529,9 +535,29 @@ class HasBahCa(CBaseHostClass):
         category = cItem.get(catKey, '')
             
         if category == '':
-            sts, data = self.cm.getPage(baseUrl)
+            sts, data = self.cm.getPage(baseUrl, getPageParams)
             if not sts: return
-
+            cUrl = data.meta['url']
+            
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'rodo'), ('</body', '>'), False)[1]
+            if tmp != '':
+                msg = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp, ('<div', '>', 'text'), ('</div', '>'))[1])
+                ret = self.sessionEx.waitForFinishOpen(MessageBox, text=msg, type=MessageBox.TYPE_YESNO, default=True)
+                if ret[0]:
+                    sts, tmp = self.cm.ph.getDataBeetwenNodes(tmp, ('<form', '>', 'post'), ('</form', '>'))
+                    if not sts: return False
+                    actionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''action=['"]([^'^"]+?)['"]''')[0], cUrl)
+                    if actionUrl == '': actionUrl = cUrl
+                    tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<input', '>')
+                    tmpTab.extend(self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<button', '>'))
+                    post_data = {}
+                    for item in tmpTab:
+                        name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+                        value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+                        post_data[name] = value
+                    sts, data = self.cm.getPage(actionUrl, getPageParams, post_data)
+                    if not sts: return
+            
             params = dict(cItem)
             params.update({'title':'TV', 'url':strwithmeta(_getFullUrl('tv'), {'iframe':True})})
             self.addVideo(params)
@@ -577,13 +603,13 @@ class HasBahCa(CBaseHostClass):
         
         if category == 'list_videos':
             page = cItem.get('page', 1)
-            getPageParams = {'header': {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0', 'Referer':baseUrl}}
             if page > 1: getPageParams['header']['X-Requested-With'] = 'XMLHttpRequest'
             sts, data = self.cm.getPage(cItem['url'], getPageParams)
             if not sts: return
             
             if page == 1:
-                tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'inline-camera-listing'), ('<', '>'))[1].split('>', 1)[0]
+                tmp = self.cm.ph.getSearchGroups(data, '''(<div[^>]+?inline\-camera\-listing[^>]+?>)''')[0]
+                printDBG(">>-- %s" % tmp)
                 tmp = re.compile('''data\-([^=^'^"^\s]+?)\s*=\s*['"]([^'^"]+?)['"]''').findall(tmp)
                 cItem = dict(cItem)
                 cItem['more_params'] = {}
@@ -598,7 +624,7 @@ class HasBahCa(CBaseHostClass):
                     return
             
             data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'inlinecam'), ('</div', '>'))
-            printDBG(data)
+            #printDBG(data)
             vidCount = 0
             for item in data:
                 url = self.cm.ph.getSearchGroups(item, """href=['"]([^'^"]+?)['"]""")[0]
@@ -619,11 +645,16 @@ class HasBahCa(CBaseHostClass):
                 except Exception: printExc()
                 try: urlPrams['columns'] = page * (int(urlPrams['limit']) + 1)
                 except Exception: printExc()
+                
+                #urlPrams['cameras'] = '14'
+                #urlPrams['columns'] = '12'
+                
                 url = _getFullUrl(cItem['more_url'])
                 url += '?' + urllib.urlencode(urlPrams)
                 getPageParams['header']['X-Requested-With'] = 'XMLHttpRequest'
                 sts, data = self.cm.getPage(url, getPageParams)
                 if not sts: return
+                printDBG(data)
                 if data.startswith('{') and '"last":true' not in data: 
                     params = dict(cItem)
                     params.update({'title':_('Next page'), 'url':url, 'page':page+1})
@@ -633,12 +664,12 @@ class HasBahCa(CBaseHostClass):
         printDBG("getWebCameraLink start")
         videoUrl = strwithmeta(videoUrl)
         if videoUrl.meta.get('iframe', False):
-            sts, data = self.cm.getPage(videoUrl)
+            sts, data = self.cm.getPage(videoUrl, self.webCameraParams)
             if not sts: return []
             videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?embed[^"^']+?)['"]''', 1, True)[0]
         
         if 'youtube' in videoUrl and 'v=' not in videoUrl:
-            sts, data = self.cm.getPage(videoUrl)
+            sts, data = self.cm.getPage(videoUrl, self.webCameraParams)
             if not sts: return []
             videoUrl = self.cm.ph.getSearchGroups(data, '''<link[^>]+?rel=['"]canonical['"][^>]+?href=['"]([^'^"]+?)['"]''')[0]
         
