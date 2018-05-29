@@ -80,6 +80,27 @@ class MultipartPostHandler(urllib2.BaseHandler):
 
 class CParsingHelper:
     @staticmethod
+    def listToDir(cList, idx):
+        cTree = {'dat':''}
+        deep = 0 
+        while (idx+1) < len(cList):
+            if cList[idx].startswith('<ul') or cList[idx].startswith('<li'):
+                deep += 1
+                nTree, idx, nDeep = CParsingHelper.listToDir(cList, idx+1)
+                if 'list' not in cTree: cTree['list'] = []
+                cTree['list'].append(nTree)
+                deep += nDeep
+            elif cList[idx].startswith('</ul>') or cList[idx].startswith('</li>'):
+                deep -= 1
+                idx += 1
+            else:
+                cTree['dat'] += cList[idx]
+                idx += 1
+            if deep < 0:
+                break
+        return cTree, idx, deep
+    
+    @staticmethod
     def getSearchGroups(data, pattern, grupsNum=1, ignoreCase=False):
         tab = []
         if ignoreCase:

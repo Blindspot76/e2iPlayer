@@ -677,6 +677,9 @@ class CBaseHostClass:
             elif type == 'marker': self.addMarker(params)
             else: self.addVideo(params)
     
+    def listToDir(self, cList, idx):
+        return self.cm.ph.listToDir(cList, idx)
+    
     def getMainUrl(self):
         return self.MAIN_URL
     

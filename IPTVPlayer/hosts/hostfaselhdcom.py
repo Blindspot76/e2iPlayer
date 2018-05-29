@@ -81,28 +81,6 @@ class FaselhdCOM(CBaseHostClass):
         if url != '' and self.up.getDomain(url) in self.getMainUrl():
             url = 'https://i2.wp.com/' + url.split('://', 1)[-1]
         return url
-        
-    def _listToDir(self, cList, idx):
-        cTree = {'dat':''}
-        deep = 0 
-        while (idx+1) < len(cList):
-            if cList[idx].startswith('<ul') or cList[idx].startswith('<li'):
-                deep += 1
-                nTree, idx, nDeep = self._listToDir(cList, idx+1)
-                if 'list' not in cTree: cTree['list'] = []
-                cTree['list'].append(nTree)
-                deep += nDeep
-            elif cList[idx].startswith('</ul>') or cList[idx].startswith('</li>'):
-                deep -= 1
-                idx += 1
-            else:
-                cTree['dat'] += cList[idx]
-                idx += 1
-                
-            if deep < 0:
-                break
-        
-        return cTree, idx, deep
     
     def listMainMenu(self, cItem):
         printDBG("FaselhdCOM.listMainMenu")
@@ -112,7 +90,7 @@ class FaselhdCOM(CBaseHostClass):
             data = re.compile('(<li[^>]*?>|</li>|<ul[^>]*?>|</ul>)').split(data)
             if len(data) > 1:
                 try:
-                    cTree = self._listToDir(data[1:-1], 0)[0]
+                    cTree = self.listToDir(data[1:-1], 0)[0]
                     params = dict(cItem)
                     params['c_tree'] = cTree['list'][0]
                     params['category'] = 'list_categories'

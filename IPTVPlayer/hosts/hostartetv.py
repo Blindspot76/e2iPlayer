@@ -53,7 +53,7 @@ class ArteTV(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'arte.tv', 'cookie':'arte.tv.cookie', 'cookie_type':'MozillaCookieJar'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.MAIN_URL = 'https://www.arte.tv/'
-        self.DEFAULT_ICON_URL = 'https://pbs.twimg.com/profile_images/846275542324334592/DmfQqjMJ.jpg'
+        self.DEFAULT_ICON_URL = 'https://i.pinimg.com/originals/3c/e6/54/3ce6543cf583480fa6d0e233384f336e.jpg'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -136,14 +136,26 @@ class ArteTV(CBaseHostClass):
         sts, data = self.getPage(baseUrl)
         if not sts: return
         
-        videosIconsMap = {}
+        iconsMap = {}
         
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('__INITIAL_STATE__', '='), ('</script', '>'), False)[1].strip()[:-1]
+        jsonData = self.cm.ph.getDataBeetwenNodes(data, ('__INITIAL_STATE__', '='), ('</script', '>'), False)[1].strip()
         try:
-            tmp = byteify(json.loads(tmp))
-            for item in tmp['videos']['videos']:
-                try: videosIconsMap[item['url']] = item['images'][0]['url']
-                except Exception: pass
+            jsonData = byteify(json.loads(jsonData[:jsonData.find('};')+1]))
+            try:
+                for item in jsonData['videos']['videos']:
+                    try: iconsMap[item['url']] = item['images'][0]['url']
+                    except Exception: pass
+            except Exception:
+                printExc()
+            
+            try:
+                currentCode = jsonData['pages']['currentCode']
+                for zone in jsonData['pages']['list'][currentCode]['zones']:
+                    for item in zone['data']:
+                        try: iconsMap[item['url']] = item['images']['landscape']['resolutions'][0]['url']
+                        except Exception: printExc()
+            except Exception:
+                printExc()
         except Exception:
             printExc()
         
@@ -152,30 +164,34 @@ class ArteTV(CBaseHostClass):
         sectionUrl = ''
         tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<section', '>'), ('</section', '>'))
         while idx < len(tmp):
-            if '<article' not in tmp[idx]:
+            if 'next-teaser__link' not in tmp[idx]:
                 sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp[idx], '<h2', '</h2>')[1])
+                if sectionTitle == '': sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp[idx], ('<li', '>', 'is-highlighted'), ('</li', '>'))[1])
                 sectionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp[idx], '''\shref=['"]([^'^"]+?)['"]''')[0])
                 if 'arte.tv' in sectionUrl: 
-                    if sectionTitle == '': sectionTitle = sectionUrl.split('/')[-2].replace('-', ' ').upper()
-                    params = dict(baseParams)
-                    params.update({'good_for_fav':True, 'title':sectionTitle, 'url':sectionUrl})
-                    self.addDir(params)
+                    if not sectionUrl.endswith('/search/'):
+                        if sectionTitle == '':
+                            sectionTitle = sectionUrl.split('/')[-2].replace('-', ' ').upper()
+                        params = dict(baseParams)
+                        params.update({'good_for_fav':True, 'title':sectionTitle, 'url':sectionUrl})
+                        self.addDir(params)
                     idx += 2
                     sectionTitle = ''
                     sectionUrl = ''
                     continue
             
             itemsTab = []
-            itemsData = self.cm.ph.getAllItemsBeetwenNodes(tmp[idx], ('<article', '>'), ('</article', '>'))
+            itemsData = self.cm.ph.getAllItemsBeetwenNodes(tmp[idx], ('<a', '>', 'next-teaser__link'), ('</a', '>'))
             for item in itemsData:
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0])
                 if url == '': continue
                 if self.up.getDomain(self.getMainUrl(), True) != self.up.getDomain(url, True): continue
                 icon  = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
                 title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1])
+                if title == '': title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'teaser__title'), ('</div', '>'))[1])
                 if title == '': title = url.split('/')[-2].replace('-', ' ').upper()
                 desc  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<p', '</p>')[1])
-                if icon == '': icon = videosIconsMap.get(url, icon)
+                icon = iconsMap.get(url, icon)
                 params = {'title':title, 'url':url, 'icon':icon, 'desc':desc}
                 if 'next-playlist' in item: params['type'] = 'dir_2'
                 elif ('next-collection' in item or 'reportage/' in tmp[idx] or '/RC-' in url) and '_duration' not in item: params['type'] = 'dir_1'
@@ -204,32 +220,31 @@ class ArteTV(CBaseHostClass):
                 params.update({'good_for_fav':False, 'title':_("Next page"), 'page':page+1})
                 self.addDir(params)
             else:
-                data = self.cm.ph.getDataBeetwenNodes(data, ('__INITIAL_STATE__', '='), ('</script', '>'), False)[1].strip()[:-1]
                 try:
-                    printDBG('+++++++++++++++++++++++++++++++++')
-                    printDBG(data)
-                    printDBG('+++++++++++++++++++++++++++++++++')
-                    data = byteify(json.loads(data))
-                    
-                    if 'page' in data and data['page'] != None:
-                        found = False
-                        for zone in data['page']['zones']:
-                            if zone['nextPage'] != None and 'code' in zone and zone['code'] != None and zone['code'].split('_', 1)[-1] in cItem['url']:
-                                found = True
+                    if None != jsonData.get('pages'):
+                        nextPage = ''
+                        currentCode = jsonData['pages']['currentCode']
+                        for zone in jsonData['pages']['list'][currentCode]['zones']:
+                            if zone['nextPage'] != None and 'code' in zone and zone['code'] != None: # and zone['code'].split('_', 1)[-1] in cItem['url']:
+                                nextPage = zone['nextPage']
                                 break
                         
-                        if not found: return
+                        if nextPage == '': return
                         
-                        lang = data['page']['language']
-                        web  = data['page']['support']
+                        lang = jsonData['pages']['list'][currentCode]['language']
+                        web  = jsonData['pages']['list'][currentCode]['support']
                         code = zone['code']
-                        url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s' % (lang, web, code))
+                        nextPage = nextPage.rsplit('/', 1)[-1]
+                        if code in nextPage:
+                            url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s' % (lang, web, re.compile('''page=[0-9]+''').sub('page={0}', nextPage)))
+                        else:
+                            url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s?limit=20' % (lang, web, code))
                         params = dict(cItem)
                         params.update({'good_for_fav':False, 'category':'list_json_items', 'title':_("Next page"), 'page':page+1, 'url':url})
                         self.addDir(params)
-                    elif 'videos' in data and data['videos'] != None and len(self.currList) < data['videos']['total']:
-                        lang = data['videos']['locale']
-                        code = data['videos']['type']
+                    elif 'videos' in jsonData and jsonData['videos'] != None and len(self.currList) < jsonData['videos']['total']:
+                        lang = jsonData['videos']['locale']
+                        code = jsonData['videos']['type']
                         url = self.getFullUrl('/guide/api/api/videos/%s/%s/' % (lang, code))
                         params = dict(cItem)
                         params.update({'good_for_fav':False, 'category':'list_json_items', 'title':_("Next page"), 'page':page+1, 'url':url})
@@ -243,7 +258,15 @@ class ArteTV(CBaseHostClass):
         baseParams = dict(cItem)
         page = baseParams.pop('page', 1)
         
-        sts, data = self.getPage(cItem['url'] + '?page=' + str(page))
+        url = cItem['url']
+        if '{0}' in url:
+            url = url.format(str(page))
+        else:
+            if '?' in url: url += '&'
+            else: url += '?'
+            url += 'page=' + str(page)
+        
+        sts, data = self.getPage(url)
         if not sts: return
         
         printDBG('+++++++++++++++++++++++++++++++++')
@@ -333,7 +356,7 @@ class ArteTV(CBaseHostClass):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("ArteTV.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         
-        url = self.getFullUrl('/%s/search/?query=%s' % (searchType, urllib.quote_plus(searchPattern)))
+        url = self.getFullUrl('/%s/search/?q=%s' % (searchType, urllib.quote_plus(searchPattern)))
         params = dict(cItem)
         params.update({'url':url, 'category':'list_items', 'f_lang':searchType})
         self.listItems(params, 'list_section_items')
@@ -351,13 +374,13 @@ class ArteTV(CBaseHostClass):
         if not sts: return
         
         linksTab = []
-        data = self.cm.ph.getDataBeetwenNodes(data, ('var', '=', 'js_json'), ('var', ';', '='), False)[1].strip()[:-1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('var', '=', 'js_json'), ('</script', '>'), False)[1]
         try:
             langsMap = {'FR':'fr', 'ESP':'es', 'DE':'de', 'POL':'pl', 'ANG':'en'}
             self.cacheLinks = {}
             cacheLabels = {}
             
-            data = byteify(json.loads(data))
+            data = byteify(json.loads(data[:data.find('};')+1]))
             for key in data['videoJsonPlayer']['VSR']:
                 item = data['videoJsonPlayer']['VSR'][key]
                 if item['mediaType'] not in ['mp4', 'hls']: continue
