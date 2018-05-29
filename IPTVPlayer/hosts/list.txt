@@ -77,7 +77,6 @@ hostitvcom
 hostkabarety
 hostkijknl
 hostkinogo
-hostkinomanco
 hostkinopodaniolempl
 hostkinopokaz
 hostkinotan
@@ -105,7 +104,6 @@ hostmusicbox
 hostmusicmp3ru
 hostmyfreemp3
 hostmythewatchseries
-hostnaszekinoonline
 hostnaszekinotv
 hostngolos
 hostninateka
