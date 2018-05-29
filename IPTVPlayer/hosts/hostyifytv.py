@@ -158,30 +158,31 @@ class YifyTV(CBaseHostClass):
             sts, data = self.getPage(self.MAIN_URL + 'files/movies/')
             if sts:
                 # genres
-                genres = self.cm.ph.getDataBeetwenMarkers(data, '<select name="genre', '</select>', False)[1]
-                genres = re.compile('<option[^>]+?value="([^"]+?)"[^>]*?>([^<]+?)</option>').findall(genres)
-                self.filterCache['genres'] = []
+                genres = self.cm.ph.getDataBeetwenNodes(data, ('<div', '</div>', '"genres"'), ('</div', '>'), False)[1]
+                genres = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(genres)
+                self.filterCache['genres'] = [{'title': _('Any')}]
                 for item in genres:
-                    value = item[0]
-                    if value == 'Genre':
-                        value = ''
+                    value = self.cm.ph.getSearchGroups(item[0], '''genre=([^'^"^\?^&]+?)$''')[0]
+                    if value == '': continue
                     self.filterCache['genres'].append({'title': self.cleanHtmlStr(item[1]), 'genre':value})
-               
+                
                 # orderby
-                orderby = self.cm.ph.getDataBeetwenMarkers(data, '<select id="orderby"', '</select>', False)[1]
-                orderby = re.compile('<option[^>]+?value="([^"]+?)"[^>]*?>([^<]+?)</option>').findall(orderby)
+                orderby = self.cm.ph.getDataBeetwenNodes(data, ('<div', '</div>', '"orderby"'), ('</div', '>'), False)[1]
+                orderby = re.compile('<a[^>]+?href="([^"]+?)"[^>]*?>([^<]+?)</a>').findall(orderby)
                 self.filterCache['orderby'] = []
                 for item in orderby:
-                    for val in [(_('descending'), '&order=desc'), (_('ascending'), '&order=asc')]:
-                        self.filterCache['orderby'].append({'title': self.cleanHtmlStr(item[1]) + ' [%s]' % val[0], 'orderby':item[0]+val[1]})
+                    value = item[0].split('?', 1)[-1].replace('&#038;', '&')
+                    self.filterCache['orderby'].append({'title': self.cleanHtmlStr(item[1]), 'orderby':value})
                 
                 # years
+                years = self.cm.ph.getDataBeetwenNodes(data, ('<select', '>', 'years_min'), ('</select', '>'), False)[1]
+                years = re.compile('<option[^>]+?value="([^"]+?)"[^>]*?>([^<]+?)</option>').findall(years)
                 self.filterCache['years'] = [{'title': _('Any')}]
-                year = datetime.now().year
-                while year >= 1920:
-                    self.filterCache['years'].append({'title': str(year), 'year':year})
-                    year -= 1
-                    
+                for item in years:
+                    value = self.cm.ph.getSearchGroups(item[0], '''years=([0-9]{4})''')[0]
+                    if value == '': continue
+                    self.filterCache['years'].append({'title': self.cleanHtmlStr(item[1]), 'year':value})
+                
         if 0 == len(self.filterCache.get('languages', [])):
             sts, data = self.getPage(self.MAIN_URL + 'languages/')
             if sts:
@@ -242,7 +243,7 @@ class YifyTV(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return 
         
-        printDBG(data)
+        #printDBG(data)
         
         if ('/page/%s/' % (page + 1)) in data:
             nextPage = True
@@ -265,7 +266,7 @@ class YifyTV(CBaseHostClass):
         printDBG("YifyTV.listItems")
         try:
             data = byteify(json.loads(data), noneReplacement='', baseTypesAsString=True)
-            printDBG(data)
+            #printDBG(data)
             for item in data['posts']:
                 item['url']   = self.getFullUrl(item['link'])
                 item['title'] = self.cleanHtmlStr(item['title'])
