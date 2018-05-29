@@ -402,6 +402,7 @@ class urlparser:
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
                        'streamable.com':       self.pp.parserSTREAMABLECOM  ,
+                       'matchat.online':       self.pp.parserMATCHATONLINE  ,
                        'auroravid.to':         self.pp.parserAURORAVIDTO    ,
                        'playpanda.net':        self.pp.parserPLAYPANDANET   ,
                        'vidlox.tv':            self.pp.parserVIDLOXTV       ,
@@ -4299,10 +4300,22 @@ class pageParser:
         if videoUrl.startswith('//'):
             videoUrl = 'https:' + videoUrl
         if self.cm.isValidUrl(videoUrl):
-            return videoUrl
+            return videoUrl.replace('&amp;', '&')
         msg = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'content'), ('</div', '>'))[1])
         SetIPTVPlayerLastHostError(msg)
         printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++ " + msg)
+        return False
+        
+    def parserMATCHATONLINE(self, baseUrl):
+        printDBG("parserMATCHATONLINE baseUrl[%r]" % baseUrl)
+        sts, data = self.cm.getPage(baseUrl)
+        if not sts: return False
+        
+        hlsUrl = self.cm.ph.getSearchGroups(data, '''['"]?hls['"]?\s*?:\s*?['"]([^'^"]+?)['"]''')[0]
+        if hlsUrl.startswith('//'): hlsUrl = 'http:' + hlsUrl
+        if self.cm.isValidUrl(hlsUrl):
+            hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False)})
+            return getDirectM3U8Playlist(hlsUrl, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999)
         return False
         
     def parserPLAYPANDANET(self, baseUrl):
