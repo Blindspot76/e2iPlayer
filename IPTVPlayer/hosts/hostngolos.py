@@ -155,7 +155,7 @@ class NGolosCOM(CBaseHostClass):
         nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'pagination'), ('</ul', '>'))[1]
         nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>%s<''' % (page + 1))[0])
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'match row'), ('<div', '>', 'float-right'))[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'match row'), ('<', '>', 'reportlink_before'))[1]
         data = self.cm.ph.rgetAllItemsBeetwenNodes(data, ('</div', '>'), ('<div', '>', 'match row'))
         for item in data:
             item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a', '</a>')
