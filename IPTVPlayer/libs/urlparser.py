@@ -4023,10 +4023,10 @@ class pageParser:
         url = baseUrl.replace('show/player', 'v')
         sts, data = self.cm.getPage(url)
         if not sts: return False
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'setup({', '});', True)[1]
-        url  = self.cm.ph.getSearchGroups(data, '''file[^"^']+?["'](http[^"^']+?)['"]''')[0]
-        if '://' in url:
-            return url
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, 'setup({', '});', True)[1]
+        videoUrl  = self.cm.ph.getSearchGroups(tmp, '''file[^"^']+?["'](https?://[^"^']+?)['"]''')[0]
+        if videoUrl == '': videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"](https?://[^'^"]+?)['"][^>]+?["']video/mp4''')[0]
+        if self.cm.isValidUrl(videoUrl): return videoUrl
         return False
         
     def parserHDGOCC(self, baseUrl):
