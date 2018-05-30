@@ -47,7 +47,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://cartoonhd.zone/'
+    return 'https://cartoonhd.io/'
 
 class CartoonHD(CBaseHostClass):
  
@@ -56,7 +56,7 @@ class CartoonHD(CBaseHostClass):
         self.cacheFilters = {}
         self.cacheLinks = {}
         self.loggedIn = None
-        self.DEFAULT_ICON_URL = 'https://cartoonhd.zone/templates/cartoonhd/assets/images/logochd.png'
+        self.DEFAULT_ICON_URL = 'https://cartoonhd.io/templates/cartoonhd/assets/images/logochd.png'
         
         self.HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
@@ -69,7 +69,7 @@ class CartoonHD(CBaseHostClass):
         
 
     def selectDomain(self):
-        domain = 'https://cartoonhd.zone/'
+        domain = 'https://cartoonhd.io/'
         try:
             params = dict(self.defaultParams)
             params['return_data'] = False
@@ -86,7 +86,7 @@ class CartoonHD(CBaseHostClass):
         
     def listMainMenu(self, cItem):
         if self.MAIN_URL == None: return
-        MAIN_CAT_TAB = [{'category':'new',             'title': 'New',       'url':self.getMainUrl()},
+        MAIN_CAT_TAB = [{'category':'new',             'title': 'Featured',  'url':self.getMainUrl()},
                         {'category':'list_genres',     'title': 'Movies',    'url':self.getFullUrl('/full-movies')},
                         {'category':'list_genres',     'title': 'TV shows',  'url':self.getFullUrl('/tv-shows')},
                         {'category':'search',          'title': _('Search'), 'search_item':True},
@@ -130,7 +130,7 @@ class CartoonHD(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<a>New</a>', '</ul>')[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<a>Featured</a>', '</ul>')[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
         for item in data:
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
@@ -171,7 +171,7 @@ class CartoonHD(CBaseHostClass):
                 if title != '': break
             if url.startswith('http'):
                 params = {'title':title, 'url':url, 'desc':desc, 'icon':icon}
-                if '/show/' in url and '/episode/' not in url:
+                if '/series/' in url and '/episode/' not in url:
                     params['category'] = nextCategory
                     params2 = dict(cItem)
                     params2.update(params)
