@@ -479,6 +479,7 @@ class urlparser:
                        'megadrive.co':         self.pp.parserMEGADRIVECO    ,
                        'upfile.mobi':          self.pp.parserUPFILEMOBI     ,
                        'cloudstream.us':       self.pp.parserCLOUDSTREAMUS  ,
+                       'soundcloud.com':       self.pp.parserSOUNDCLOUDCOM  ,
                        #https://oneload.co/4gdkrp4hieoe TODO
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                        
@@ -10036,6 +10037,45 @@ class pageParser:
         videoTab.extend(hlsTab)
         videoTab.extend(dashTab)
         return videoTab
+        
+    def parserSOUNDCLOUDCOM(self, baseUrl):
+        printDBG("parserCLOUDSTREAMUS baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        cUrl = baseUrl
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = data.meta['url']
+        
+        tarckId = self.cm.ph.getSearchGroups(data, '''tracks\:([0-9]+)''')[0]
+        
+        url = self.cm.ph.getSearchGroups(data, '''['"](https?://[^'^"]+?/widget\-[^'^"]+?\.js)''')[0]
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts: return False
+        
+        clinetIds = self.cm.ph.getSearchGroups(data, '''client_id\:[A-Za-z]+?\?"([^"]+?)"\:"([^"]+?)"''', 2)
+        baseUrl = 'https://api.soundcloud.com/i1/tracks/%s/streams?client_id=' % tarckId
+        jsData = None
+        for clientId in clinetIds:
+            url = baseUrl + clientId
+            sts, data = self.cm.getPage(url, urlParams)
+            if not sts: continue
+            try:
+                jsData = byteify(json.loads(data))
+            except Exception:
+                printExc()
+        
+        urls = []
+        baseName = urlparser.getDomain(cUrl)
+        for key in jsData:
+            if 'preview' in key: continue
+            url = jsData[key]
+            if self.cm.isValidUrl(url):
+                urls.append({'name':baseName + ' ' + key, 'url':url})
+        return urls
         
     def parserCLOUDSTREAMUS(self, baseUrl):
         printDBG("parserCLOUDSTREAMUS baseUrl[%r]" % baseUrl)
