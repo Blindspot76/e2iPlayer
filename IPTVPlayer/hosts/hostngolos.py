@@ -172,7 +172,7 @@ class NGolosCOM(CBaseHostClass):
                 try:
                     for item in self.cacheTeams['data'][team]:
                         title = self.cleanHtmlStr(item['name'])
-                        url   = self.getFullUrl(item['url'])
+                        url   = self.getFullUrl('/team/' + item['url'])
                         desc  = [self.cleanHtmlStr(item['location'])]
                         desc.append(self.cleanHtmlStr(item['alias']))
                         icon  = self.getFullIconUrl('/assets/images/logos/' + item['logo']) 
