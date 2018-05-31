@@ -56,8 +56,14 @@ class DancetrippinTV(CBaseHostClass):
         
         self.MAIN_CAT_TAB = [{'category':'fill_items',      'title': _('LATEST CONTENT'), 'url':self.getMainUrl()},
                              {'category':'channels',        'title': _('CHANNELS '),      'url':self.getMainUrl()},
+                             {'category':'artists',         'title': _('ARTISTS'),        'url':self.getMainUrl()},
+                             {'category':'fill_items',      'title': _('PARTIES'),        'url':self.getFullUrl('/parties')},
+                             {'category':'fill_items',      'title': _('VENUES'),        'url':self.getFullUrl('/venues')},
                              {'category':'search',          'title': _('Search'),         'search_item':True},
                              {'category':'search_history',  'title': _('Search history') } ]
+        
+        self.ARTISTS_CAT_TAB = [{'category':'fill_items',    'title': _('Most featured'), 'url':self.getFullUrl('/artists')},
+                                {'category':'fill_items',    'title': _('Alphabetical '), 'url':self.getFullUrl('/artists/sort/alphabetical')}]
         
         self.cacheItems = []
         self.cacheFilters = []
@@ -218,6 +224,8 @@ class DancetrippinTV(CBaseHostClass):
             elif '/video' in url:
                 type = 'video'
                 hasVideos = True
+            elif '/artists/' in url or '/parties/' in url or '/venues/' in url:
+                type = cItem['type']
             else: 
                 printDBG('>>> unknown url tyle for url[%s]' % url)
                 continue
@@ -318,6 +326,8 @@ class DancetrippinTV(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+        elif category == 'artists':
+            self.listsTab(self.ARTISTS_CAT_TAB, self.currItem)
         elif category == 'channels':
             self.listsChannels(self.currItem, 'channel_menu')
         elif category == 'channel_menu':
