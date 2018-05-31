@@ -66,11 +66,16 @@ class NGolosCOM(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.defaultParams = {'with_meta':True, 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'with_metadata':True, 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.MAIN_URL = None
         self.cacheCategories = []
-        
+        self.cacheTeams = {}
+    
+    def setMainUrl(self, url):
+        if self.cm.isValidUrl(url):
+            self.MAIN_URL = self.cm.getBaseUrl(url)
+    
     def selectDomain(self):
         self.MAIN_URL   = 'https://www.ngolos.com/'
         self.DEFAULT_ICON_URL = self.getFullIconUrl('/assets/images/thumbnail.png')
@@ -89,6 +94,7 @@ class NGolosCOM(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(data.meta['url'])
         
         tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'competitions_sidebar'), ('</div', '>'))[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
@@ -148,9 +154,53 @@ class NGolosCOM(CBaseHostClass):
         page = cItem.get('page', 1)
         
         params = dict(self.defaultParams)
-        #params['cookie_items'] = {'orderby':'latest'}
+        params['cookie_items'] = {'orderby':cItem.get('orderby', '')} #'latest'
         sts, data = self.getPage(cItem['url'], params)
         if not sts: return
+        self.setMainUrl(data.meta['url'])
+        
+        if page == 1:
+            if 'team' not in cItem:
+                team = self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'competition'), ('</p', '>'), False)[1].strip()
+                if self.cacheTeams == {}:
+                    url = self.getFullUrl('/assets/json/clubs.json')
+                    sts, tmp = self.getPage(url, params)
+                    try:
+                        self.cacheTeams = byteify(json.loads(tmp))
+                    except Exception:
+                        printExc()
+                try:
+                    for item in self.cacheTeams['data'][team]:
+                        title = self.cleanHtmlStr(item['name'])
+                        url   = self.getFullUrl(item['url'])
+                        desc  = [self.cleanHtmlStr(item['location'])]
+                        desc.append(self.cleanHtmlStr(item['alias']))
+                        icon  = self.getFullIconUrl('/assets/images/logos/' + item['logo']) 
+                        params = dict(cItem)
+                        params.update({'good_for_fav':True, 'title':title, 'url':url, 'team':team, 'icon':icon, 'desc':' | '.join(desc)})
+                        self.addDir(params)
+                except Exception:
+                    printExc()
+                
+                if len(self.currList):
+                    params = dict(cItem)
+                    params.update({'title':_('--All--'), 'team':''})
+                    self.currList.insert(0, params)
+                    return
+            
+            if 'orderby' not in cItem:
+                tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<input', '>', 'orderby_sidebar'), ('</label', '>'))
+                for item in tmp:
+                    title = self.cleanHtmlStr(item)
+                    value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+                    if '0' == value: value = 'latest'
+                    else: value = ''
+                    params = dict(cItem)
+                    params.update({'good_for_fav':False, 'title':title, 'orderby':value})
+                    self.addDir(params)
+                
+                if len(self.currList):
+                    return
         
         nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'pagination'), ('</ul', '>'))[1]
         nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>%s<''' % (page + 1))[0])
