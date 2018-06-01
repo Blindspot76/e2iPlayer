@@ -1242,7 +1242,11 @@ def IsBrokenDriver(filePath):
     # root@mbtwinplus:~# cat /proc/stb/video/policy2
     # Segmentation fault
     try:
-        return 'video/policy' in filePath and not fileExists('/proc/stb/video/aspect_choices')
+        if 'video/policy' in filePath and not fileExists('/proc/stb/video/aspect_choices'):
+            with open('/etc/hostname', 'r') as f:
+                data = f.read().strip()
+            if 'mbtwinplus' in data:
+                return True
     except Exception:
         printExc()
     return False
