@@ -292,17 +292,26 @@ class DancetrippinTV(CBaseHostClass):
         if 1 == self.up.checkHostSupport(url):
             return  self.up.getVideoLinkExt(url)
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>')
-        for item in data:
-            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0].lower()
-            name = self.cm.ph.getSearchGroups(item, '''label=['"]([^'^"]+?)['"]''')[0]
-            url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            
-            if 'video/mp4' == type: 
-                urlTab.append({'name':name, 'url':self.getFullUrl(url), 'need_resolve':0})
-            elif 'application/x-mpegurl' == type:
+        tmp = self.cm.ph.getDataBeetwenMarkers(tmp, '<video', '</video>', False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>')
+        if len(tmp):
+            for item in tmp:
+                type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0].lower()
+                name = self.cm.ph.getSearchGroups(item, '''label=['"]([^'^"]+?)['"]''')[0]
+                url  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+                
+                if 'video/mp4' == type: 
+                    urlTab.append({'name':name, 'url':self.getFullUrl(url), 'need_resolve':0})
+                elif 'application/x-mpegurl' == type:
+                    urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
+        else:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+            sts, data = self.cm.getPage(url)
+            if not sts: return urlTab
+            hlsUrls = re.compile('''(https?://[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(data)
+            for url in hlsUrls:
                 urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
+            
         return urlTab
         
     def getVideoLinks(self, videoUrl):
