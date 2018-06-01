@@ -292,7 +292,7 @@ class DancetrippinTV(CBaseHostClass):
         if 1 == self.up.checkHostSupport(url):
             return  self.up.getVideoLinkExt(url)
         
-        tmp = self.cm.ph.getDataBeetwenMarkers(tmp, '<video', '</video>', False)[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>')
         if len(tmp):
             for item in tmp:
