@@ -149,71 +149,6 @@ class TVRepublkaPL(CBaseHostClass):
                     urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
         return urlTab
         
-    def getArticleContent(self, cItem, data=None):
-        printDBG("SolarMovie.getArticleContent [%s]" % cItem)
-        retTab = []
-        
-        if data == None:
-            url = strwithmeta(cItem['url']).meta.get('Referer', cItem['url'])
-            sts, data = self.getPage(url)
-            if not sts: return []
-            
-        descData = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'tv-content-custom'), ('<div', '>', 'content-bottom'), True)[1]
-        icon = self.cm.ph.getDataBeetwenMarkers(descData, 'url(', ')', False)[1].strip()
-        if not self.cm.isValidUrl(icon): icon = ''
-        
-        desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(descData, '<p', '</p>')[1])
-        if desc == '':
-            desc = self.cm.ph.getSearchGroups(data, '''(<meta[^>]+?description['"][^>]*?>)''')[0]
-            desc = self.cleanHtmlStr( self.cm.ph.getSearchGroups(desc, '''content=['"]([^'^"]+?)['"]''')[0] )
-        
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(descData, '<h1', '</h1>')[1])
-        if title == '': 
-            title = self.cm.ph.getSearchGroups(data, '''(<meta[^>]+?title['"][^>]*?>)''')[0]
-            title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(title, '''content=['"]([^'^"]+?)['"]''')[0] )
-        
-        if title == '': title = cItem['title']
-        if desc == '':  desc = cItem['desc']
-        if icon == '':  icon = cItem['icon']
-        
-        otherInfo = {}
-        
-        # raiting
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(descData, ('<div', '>', 'rating-circle'), ('</div', '>'), True)
-        for item in tmp:
-            t = self.cleanHtmlStr(item)
-            if t == '': continue
-            if 'imbd' in item: otherInfo['imdb_rating'] = t
-            else: otherInfo['rating'] = t
-        
-        # stars
-        t = []
-        tmp = self.cm.ph.getDataBeetwenNodes(descData, ('<div', '>', '"cast"'), ('</div', '>'), False)[1].split(':', 1)[-1]
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
-        for item in tmp:
-            item = self.cleanHtmlStr(item)
-            if item == '': continue
-            t.append(item)
-        if len(t): otherInfo['stars'] = ', '.join(t)
-        
-        # genres
-        tmp = self.cm.ph.getDataBeetwenNodes(descData, ('<span', '>', 'genre'), ('</span', '>'), False)[1]
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
-        tmp = ', '.join([self.cleanHtmlStr(item) for item in tmp])
-        if tmp != '': otherInfo['genres'] = tmp
-        
-        # director
-        tmp = self.cm.ph.getDataBeetwenNodes(descData, ('<div', '>', 'director'), ('</div', '>'), False)[1].split(':', 1)[-1]
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
-        tmp = ', '.join([self.cleanHtmlStr(item) for item in tmp])
-        if tmp != '': otherInfo['director'] = tmp
-        
-        # year
-        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(descData, ('<div', '>', 'year'), ('</div', '>'), False)[1].split(':', 1)[-1])
-        if tmp != '': otherInfo['year'] = tmp
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
-        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -242,9 +177,4 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, TVRepublkaPL(), True, [])
-    
-    def withArticleContent(self, cItem):
-        if cItem.get('type', 'video') != 'video' and cItem.get('category', 'unk') != 'explore_item':
-            return False
-        return True
     
