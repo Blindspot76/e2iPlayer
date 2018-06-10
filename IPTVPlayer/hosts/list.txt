@@ -121,6 +121,7 @@ hostquesttvcouk
 hostradiostacja
 hostrtbfbe
 hostrteieplayer
+hostsalvetvpl
 hostserialeco
 hostserialnet
 hostserienstreamto
@@ -152,6 +153,7 @@ hosttvnowde
 hosttvnvod
 hosttvplayercom
 hosttvpvod
+hosttvrepublika
 hosttwitchtv
 hostuktvplay
 hosturllist
