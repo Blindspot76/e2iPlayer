@@ -236,9 +236,11 @@ class ArteTV(CBaseHostClass):
                         code = zone['code']
                         nextPage = nextPage.rsplit('/', 1)[-1]
                         if code in nextPage:
-                            url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s' % (lang, web, re.compile('''page=[0-9]+''').sub('page={0}', nextPage)))
+                            #url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s' % (lang, web, re.compile('''page=[0-9]+''').sub('page={0}', nextPage)))
+                            url = self.getFullUrl('/guide/api/api/zones/%s/%s' % (lang, re.compile('''page=[0-9]+''').sub('page={0}', nextPage)))
                         else:
-                            url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s?limit=20' % (lang, web, code))
+                            #url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s?limit=20' % (lang, web, code))\
+                            url = self.getFullUrl('/guide/api/api/zones/%s/%s?limit=20' % (lang, code))
                         params = dict(cItem)
                         params.update({'good_for_fav':False, 'category':'list_json_items', 'title':_("Next page"), 'page':page+1, 'url':url})
                         self.addDir(params)

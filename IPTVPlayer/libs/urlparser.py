@@ -3649,11 +3649,16 @@ class pageParser:
         url = strwithmeta(baseUrl)
         baseParams = url.meta.get('params', {})
         
-        params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        params = {'header':HTTP_HEADER, 'with_metadata':True, 'cookie_items':{}, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         params.update(baseParams)
-        sts, data = self.cm.getPage( baseUrl, params)
         
-        msg = 'Dostęp wyłącznie dla użytkowników z kontem premium.' 
+        sts, data = self.cm.getPage('http://185.35.139.177/myip.php', params)
+        params['cookie_items'].update({'my-ip':data.strip()})
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        cUrl = data.meta['url']
+        
+        msg = 'Dostęp wyłącznie dla użytkowników z kontem premium' 
         if msg in data:
             SetIPTVPlayerLastHostError(msg)
         
@@ -3694,12 +3699,17 @@ class pageParser:
             return urlTab[::-1]
         
         # get connector link
-        data = self.cm.ph.getSearchGroups(data, "'(http://goldvod.tv/tv-connector/[^']+?\.smil[^']*?)'")[0]
+        url = self.cm.ph.getSearchGroups(data, "'(http://goldvod.tv/tv-connector/[^']+?\.smil[^']*?)'")[0]
+        if '.smil' in data:
+            printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<EEE")
+        if url == '': url = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?\.smil\?[^'^"]+?)['"]''')[0]
+        if url != '' and not self.cm.isValidUrl(url): url = self.cm.getFullUrl(url, cUrl)
+        
         params['load_cookie'] = True
         params['header']['Referer'] = SWF_URL
         
         # get stream link
-        sts, data = self.cm.getPage(data, params)
+        sts, data = self.cm.getPage(url, params)
         if sts:
             base = self.cm.ph.getSearchGroups(data, 'base="([^"]+?)"')[0]
             src = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
