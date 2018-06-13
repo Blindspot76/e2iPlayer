@@ -311,7 +311,8 @@ class SpiegelTv(CBaseHostClass):
         self._initiSession(cItem)
         
         videoId = self.cm.ph.getDataBeetwenMarkers(data, 'video.start(', ')', False)[1].split(',')[0].strip()
-        if videoId == '': videoId = cItem['url'].split('/videos/', 1)[-1].split('-')[0]
+        if videoId == '': 
+            videoId = cItem['url'].split('/videos/', 1)[-1].split('-')[0]
         
         try:
             cid = self.oneconfig['session_data']['general']['cid']
@@ -345,47 +346,97 @@ class SpiegelTv(CBaseHostClass):
             try: protectionToken = data['protectiondata']['token']
             except Exception: protectionToken = None
             language = data['general'].get('language_raw') or ''
-            data = data['streamdata']
             printDBG(data)
             
-            cdn = data['cdnType']
-            azureLocator = data['azureLocator']
-            AZURE_URL = 'http://nx%s%02d.akamaized.net/'
-            def getCdnShieldBase(shieldType='', prefix='-p'):
-                for secure in ('', 's'):
-                    cdnShield = data.get('cdnShield%sHTTP%s' % (shieldType, secure.upper()))
-                    if cdnShield:
-                        return 'http%s://%s' % (secure, cdnShield)
-                else:
-                    return AZURE_URL % (prefix, int(data['azureAccount'].replace('nexxplayplus', '')))
-            azureStreamBase = getCdnShieldBase()
-            isML = ',' in language
-            azureManifestUrl = '%s%s/%s_src%s.ism/Manifest' % (azureStreamBase, azureLocator, videoId, ('_manifest' if isML else '')) + '%s'
-
-            if protectionToken:
-                azureManifestUrl += '?hdnts=%s' % protectionToken
+            cdn = data['streamdata']['cdnType']
             
-            try:
-                azureProgressiveBase = getCdnShieldBase('Prog', '-d')
-                azureFileDistribution = data.get('azureFileDistribution')
-                if azureFileDistribution:
-                    fds = azureFileDistribution.split(',')
-                    if fds:
-                        for fd in fds:
-                            ss = fd.split(':')
-                            if len(ss) != 2: continue
-                            tbr = int(ss[0] or 0)
-                            if not tbr: continue
-                            retTab.append({'name':'[%s] %s' % (tbr, ss[1]), 'tbr':tbr, 'url': '%s%s/%s_src_%s_%d.mp4' % (azureProgressiveBase, azureLocator, videoId, ss[1], tbr)})
-            except Exception:
-                printExc()
-            retTab.sort(key=lambda item: item['tbr'], reverse=True)
-            if len(retTab) == 0: 
-                retTab = getMPDLinksWithMeta(azureManifestUrl % '(format=mpd-time-csf)', checkExt=False, sortWithMaxBandwidth=999999999)
-            if len(retTab) == 0: 
-                retTab = getDirectM3U8Playlist(azureManifestUrl % '(format=m3u8-aapl)', checkExt=False, checkContent=True, sortWithMaxBitrate=999999999)
+            if cdn == 'azure':
+                data = data['streamdata']
+                azureLocator = data['azureLocator']
+                AZURE_URL = 'http://nx%s%02d.akamaized.net/'
+                def getCdnShieldBase(shieldType='', prefix='-p'):
+                    for secure in ('', 's'):
+                        cdnShield = data.get('cdnShield%sHTTP%s' % (shieldType, secure.upper()))
+                        if cdnShield:
+                            return 'http%s://%s' % (secure, cdnShield)
+                    else:
+                        return AZURE_URL % (prefix, int(data['azureAccount'].replace('nexxplayplus', '')))
+                azureStreamBase = getCdnShieldBase()
+                isML = ',' in language
+                azureManifestUrl = '%s%s/%s_src%s.ism/Manifest' % (azureStreamBase, azureLocator, videoId, ('_manifest' if isML else '')) + '%s'
+
+                if protectionToken:
+                    azureManifestUrl += '?hdnts=%s' % protectionToken
+                
+                try:
+                    azureProgressiveBase = getCdnShieldBase('Prog', '-d')
+                    azureFileDistribution = data.get('azureFileDistribution')
+                    if azureFileDistribution:
+                        fds = azureFileDistribution.split(',')
+                        if fds:
+                            for fd in fds:
+                                ss = fd.split(':')
+                                if len(ss) != 2: continue
+                                tbr = int(ss[0] or 0)
+                                if not tbr: continue
+                                retTab.append({'name':'[%s] %s' % (tbr, ss[1]), 'tbr':tbr, 'url': '%s%s/%s_src_%s_%d.mp4' % (azureProgressiveBase, azureLocator, videoId, ss[1], tbr)})
+                except Exception:
+                    printExc()
+                retTab.sort(key=lambda item: item['tbr'], reverse=True)
+                if len(retTab) == 0: 
+                    retTab = getMPDLinksWithMeta(azureManifestUrl % '(format=mpd-time-csf)', checkExt=False, sortWithMaxBandwidth=999999999)
+                if len(retTab) == 0: 
+                    retTab = getDirectM3U8Playlist(azureManifestUrl % '(format=m3u8-aapl)', checkExt=False, checkContent=True, sortWithMaxBitrate=999999999)
+            else:
+                streamData = data['streamdata']
+                hash = data['general']['hash']
+                
+                ps = streamData['originalDomain']
+                if streamData['applyFolderHierarchy'] == '1':
+                    s = ('%04d' % int(videoId))[::-1]
+                    ps += '/%s/%s' % (s[0:2], s[2:4])
+                ps += '/%s/%s_' % (videoId, hash)
+                t = 'http://%s' + ps
+                azureFileDistribution = streamData['azureFileDistribution'].split(',')
+                cdnProvider = streamData['cdnProvider']
+                
+                def p0(p):
+                    return '_%s' % p if streamData['applyAzureStructure'] == '1' else ''
+
+                formats = []
+                if cdnProvider == 'ak':
+                    t += ','
+                    for i in azureFileDistribution:
+                        p = i.split(':')
+                        t += p[1] + p0(int(p[0])) + ','
+                    t += '.mp4.csmil/master.%s'
+                elif cdnProvider == 'ce':
+                    k = t.split('/')
+                    h = k.pop()
+                    httpBase = t = '/'.join(k)
+                    httpBase = httpBase % streamData['cdnPathHTTP']
+                    t += '/asset.ism/manifest.%s?dcp_ver=aos4&videostream='
+                    for i in azureFileDistribution:
+                        p = i.split(':')
+                        tbr = int(p[0])
+                        filename = '%s%s%s.mp4' % (h, p[1], p0(tbr))
+                        retTab.append({'name':'[%s] %s' % (tbr, p[1]), 'tbr':tbr, 'url': httpBase + '/' + filename})
+                        a = filename + ':%s' % (tbr * 1000)
+                        t += a + ','
+                    t = t[:-1] + '&audiostream=' + a.split(':')[0]
+                else:
+                    printDBG("Unknwon cdnProvider [%s]" % cdnProvider)
+                    assert False
+
+                retTab.sort(key=lambda item: item['tbr'], reverse=True)
+                if len(retTab) == 0:
+                    retTab.extend( getMPDLinksWithMeta(t % (streamData['cdnPathDASH'], 'mpd'), checkExt=False, sortWithMaxBandwidth=999999999) )
+                if len(retTab) == 0: 
+                    retTab.extend( getDirectM3U8Playlist(t % (streamData['cdnPathHLS'], 'm3u8'), checkExt=False, checkContent=True, sortWithMaxBitrate=999999999) )
+        
         except Exception:
             printExc()
+
         if len(retTab):
             self.cacheLinks[cacheKey] = retTab
         for idx in range(len(retTab)):
