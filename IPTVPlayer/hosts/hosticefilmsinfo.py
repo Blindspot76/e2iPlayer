@@ -329,7 +329,7 @@ class IceFilms(CBaseHostClass):
         sts, data = self.getPage(frameUrl, self.defaultParams)
         if not sts: return []
         
-        baseUrl = '/membersonly/components/com_iceplayer/video.phpAjaxResp.php?s=%s&t=%s'
+        baseUrl = '/membersonly/components/com_iceplayer/video.php-link.php?s=%s&t=%s'
         secret  = self.cm.ph.getSearchGroups(data, '<input[^>]+?name="secret"[^>]+?value="([^"]+?)"')[0]
         
         try:
@@ -366,9 +366,15 @@ class IceFilms(CBaseHostClass):
         params['header'] = dict(params['header'])
         params['header']['Referer'] = frameUrl
         
-        sts, data = self.getPage(url, params, post_data={'id':sourceId, 's':s, 'iqs':iqs, 'url':uri, 'm':m, 'cap':' ', 'sec':secret, 't':t})
+        sts, data = self.getPage(url, params, post_data={'id':sourceId, 's':s, 'iqs':iqs, 'url':uri, 'm':m, 'captcha':' ', 'secret':secret, 't':t})
         if not sts: return []
         printDBG(data)
+        
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', '_blank'), ('</a', '>'))
+        for item in tmp:
+            videoUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            if 1 == self.up.checkHostSupport(videoUrl):
+                urlTab.extend(self.up.getVideoLinkExt(videoUrl))
         
         videoUrl = urllib.unquote(data.split('?url=')[-1].strip())
         if self.cm.isValidUrl(videoUrl):

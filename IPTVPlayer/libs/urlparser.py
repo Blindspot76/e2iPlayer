@@ -7946,10 +7946,15 @@ class pageParser:
             return decoded
         
         marker = 'ﾟωﾟﾉ= /｀ｍ´）ﾉ'
-        orgData = marker + self.cm.ph.getDataBeetwenMarkers(orgData, marker, marker, False)[1]
+        tmp = self.cm.ph.getDataBeetwenMarkers(orgData, marker, marker, False)[1]
+        if tmp == '': tmp = self.cm.ph.getDataBeetwenMarkers(orgData, marker, '</script>', False)[1]
+        orgData = marker + tmp
         orgData = re.sub('''if\s*\([^\}]+?typeof[^\}]+?\}''', '', orgData)
         orgData = re.sub('''if\s*\([^\}]+?document[^\}]+?\}''', '', orgData)
         dec = __decode_k(encTab[0], orgData)
+        if dec == '':
+            SetIPTVPlayerLastHostError(_('https://openload.co/ link extractor error.'))
+            return False
         
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
         params = dict(HTTP_HEADER)
