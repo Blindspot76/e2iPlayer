@@ -32,7 +32,11 @@ def Plugins(**kwargs):
     desc = _("Watch video materials from IPTV services")
     list = []
     if config.plugins.iptvplayer.plugin_autostart.value:
-        list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_WIZARD], fnc=(9, pluginAutostart), needsRestart=False))
+        if config.plugins.iptvplayer.plugin_autostart_method.value == 'wizard':
+            list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_WIZARD], fnc=(9, pluginAutostart), needsRestart=False))
+        elif config.plugins.iptvplayer.plugin_autostart_method.value == 'infobar':
+            list.append(PluginDescriptor(where=[PluginDescriptor.WHERE_SESSIONSTART, PluginDescriptor.WHERE_AUTOSTART], fnc=pluginAutostartSetup))
+    
     list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_PLUGINMENU], icon=iconFile, fnc=main)) # always show in plugin menu
     list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = PluginDescriptor.WHERE_MENU, fnc=startIPTVfromMenu))
     if config.plugins.iptvplayer.showinextensions.value:
@@ -43,6 +47,28 @@ def Plugins(**kwargs):
         except Exception:
             print "IPTVplayer Exception appending PluginDescriptor.WHERE_SESSIONSTART descriptor."
     return list
+
+######################################################
+# Autostart from InfoBar - trick
+######################################################
+gInfoBar__init__ = None
+def InfoBar__init__wrapper(self, *args, **kwargs):
+    global gInfoBar__init__
+    gInfoBar__init__(self, *args, **kwargs)
+    self.onShow.append(doPluginAutostart)
+
+def pluginAutostartSetup(reason, **kwargs):
+    if reason == 0 and gInfoBar__init__ == None:
+        from Screens.InfoBar import InfoBar
+        global gInfoBar__init__
+        gInfoBar__init__ = InfoBar.__init__
+        InfoBar.__init__ = InfoBar__init__wrapper
+
+def doPluginAutostart():
+    from Screens.InfoBar import InfoBar
+    InfoBar.instance.onShow.remove(doPluginAutostart)
+    runMain(InfoBar.instance.session)
+######################################################
 
 ####################################################
 # Konfiguracja wtyczki
@@ -58,7 +84,7 @@ def startIPTVfromMenu(menuid, **kwargs):
     else:
         return []
     
-def mainSetup(session,**kwargs):
+def mainSetup(session, **kwargs):
     if config.plugins.iptvplayer.configProtectedByPin.value:
         session.openWithCallback(boundFunction(pinCallback, session, runSetup), IPTVPinWidget, title=_("Enter pin")) 
     else:
@@ -67,12 +93,12 @@ def mainSetup(session,**kwargs):
 def runSetup(session):
     session.open(ConfigMenu) 
 
-def main(session,**kwargs):
+def main(session, **kwargs):
     if config.plugins.iptvplayer.pluginProtectedByPin.value:
         session.openWithCallback(boundFunction(pinCallback, session, runMain), IPTVPinWidget, title =_("Enter pin")) 
     else:
         runMain(session)
-        
+    
 class pluginAutostart(Screen):
     def __init__(self, session):
         self.session = session
@@ -117,3 +143,4 @@ def sessionstart(reason, **kwargs):
             import Plugins.Extensions.IPTVPlayer.Web.initiator
         except Exception, e:
             print "EXCEPTION initiating IPTVplayer WebComponent:", str(e)
+        
