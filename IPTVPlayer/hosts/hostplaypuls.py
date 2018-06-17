@@ -170,7 +170,8 @@ class Playpuls(CBaseHostClass):
         if (source1Data + source3Data + quality) == '' and 0 == len(source2Data) and 0 == len(source4Data):
             url = 'http://playpuls.pl/sites/all/modules/vod/player.php'
             id  = self.cm.ph.getSearchGroups(data, 'id\s*=\s*([0-9]+?);')[0]
-            post_data = {'id':id}
+            post_data = None #{'id':id}
+            url += '?id=%s' % id
             header['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
             sts, source3Data = self.cm.getPage(url, {'use_cookie': True, 'load_cookie': True, 'save_cookie': False, 'cookiefile': self.COOKIE_FILE, 'header':header, 'cookie_items':{'has_js':'1'}}, post_data=post_data)
             if not sts: return videoUrls
@@ -238,9 +239,10 @@ class Playpuls(CBaseHostClass):
         if len(sources):
             qualityMap = {'M1':'400', 'M2':'600', 'D1':'600', 'D2':'800', 'D3':'1000'}
             for item in sources:
-                servers = ["http://vod1.playpuls.pl:1716/Edge/_definst_/amlst:", "http://vod6.playpuls.pl:1935/Edge/_definst_/amlst:"]
+                # ["http://vod1.playpuls.pl:1716/Edge/_definst_/amlst:", "http://vod6.playpuls.pl:1935/Edge/_definst_/amlst:"]
+                servers = ["http://vod1.playpuls.pl:1716/Edge/_definst_/mp4:s3", "http://vod6.playpuls.pl:1716/Edge/_definst_/mp4:s3"]
                 server = servers[random.randrange(len(servers))]
-                url = server + item['src'].replace("videos/converted/", "X").replace(".mp4", "")
+                url = server + item['src'] #.replace("videos/converted/", "X").replace(".mp4", "")
                 if 'hls' == proto:
                     url += '/playlist.m3u8'
                 else:

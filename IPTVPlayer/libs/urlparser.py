@@ -8022,12 +8022,15 @@ class pageParser:
         videoUrls = []
         hlsLinks = []
         mpdLinks = []
+        
+        printDBG(">>>>>>>>>>>%s<<<<<<<<<<<<<<" % data['formats'])
         for vidItem in data['formats']:
-            url = self.getBBCIE().getFullUrl(vidItem['url'].replace('&amp;', '&'))
-            if vidItem['ext'] == 'hls' and 0 == len(hlsLinks):
-                hlsLinks.extend(getDirectM3U8Playlist(url, False, checkContent=True))
-            elif vidItem['ext'] == 'mpd' and 0 == len(mpdLinks):
-                mpdLinks.extend(getMPDLinksWithMeta(url, False))
+            if 'url' in vidItem:
+                url = self.getBBCIE().getFullUrl(vidItem['url'].replace('&amp;', '&'))
+                if vidItem.get('ext', '') == 'hls' and 0 == len(hlsLinks):
+                    hlsLinks.extend(getDirectM3U8Playlist(url, False, checkContent=True))
+                elif vidItem.get('ext', '') == 'mpd' and 0 == len(mpdLinks):
+                    mpdLinks.extend(getMPDLinksWithMeta(url, False))
         
         tmpTab = [hlsLinks, mpdLinks]
         
