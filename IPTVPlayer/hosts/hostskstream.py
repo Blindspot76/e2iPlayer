@@ -50,7 +50,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://skstream.biz/'
+    return 'http://skstream.info/'
 
 class SKStream(CBaseHostClass):
  
@@ -61,7 +61,7 @@ class SKStream(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.DEFAULT_ICON_URL = 'http://www.skstream.biz/apple-touch-icon.png'
+        self.DEFAULT_ICON_URL = 'http://www.skstream.info/apple-touch-icon.png'
         self.MAIN_URL = None
         self.cacheCategories = []
         self.episodesCache = []
@@ -89,7 +89,7 @@ class SKStream(CBaseHostClass):
         return url
         
     def selectDomain(self):
-        self.MAIN_URL = 'http://www.skstream.biz/'
+        self.MAIN_URL = 'http://www.skstream.info/'
         params = dict(self.defaultParams)
         params['return_data'] = False
         try:
