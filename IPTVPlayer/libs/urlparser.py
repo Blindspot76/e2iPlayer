@@ -8886,7 +8886,7 @@ class pageParser:
         COOKIE_FILE = self.COOKIE_PATH + "netu.tv.cookie"
         # remove old cookie file
         rm(COOKIE_FILE)
-        params = {'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
+        params = {'with_metadata':True, 'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
         sts, ipData = self.cm.getPage('http://hqq.watch/player/ip.php?type=json', params)
         ipData = byteify(json.loads(ipData)) #{"ip":"MTc4LjIzNS40My4zNw==","ip_blacklist":0}
 
@@ -8912,47 +8912,30 @@ class pageParser:
         
         #HTTP_HEADER['Referer'] = url
         sts, data = self.cm.getPage(playerUrl, params)
+        if not sts: return False
+        cUrl = data.meta['url']
         
         def _getEvalData(data):
-            retData = ''
-            tmpDataTab = self.cm.ph.getAllItemsBeetwenMarkers(data, "eval(", '</script>', True)
-            #printDBG(tmpDataTab)
-            for tmpData in tmpDataTab:
-                while 'eval' in tmpData:
-                    tmp = tmpData.split('eval(')
-                    if len(tmp): del tmp[0]
-                    tmpData = ''
-                    for item in tmp:
-                        for decFun in [VIDEOWEED_decryptPlayerParams, SAWLIVETV_decryptPlayerParams]:
-                            tmpData = unpackJSPlayerParams('eval('+item, decFun, 0)
-                            if '' != tmpData:   
-                                break
-                retData += tmpData
-            return retData
-            
-        tmpData = _getEvalData(data)
-                
-        iss = '' #ipData['ip']
-        need_captcha = '0' #str(ipData['ip_blacklist'])
+            jscode = ['eval=function(t){return function(){print(arguments[0]);try{return t.apply(this,arguments)}catch(t){}}}(eval);']
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+            for item in tmp:
+                if 'eval(' in item and 'check(' not in item:
+                    jscode.append(item)
+            ret = iptv_js_execute( '\n'.join(jscode) )
+            return ret['data']
         
-        def _getVar(tmp, varName):
-            val = self.cm.ph.getSearchGroups(tmp, 'var\s*%s\s*=([^;]+?);' % varName, ignoreCase=True)[0].strip()
-            return val.replace('"', '').replace("'", '')
-        vid          = _getVar(tmpData, 'vid')
-        at           = _getVar(tmpData, 'at')
-        autoplayed   = _getVar(tmpData, 'autoplayed')
-        referer      = _getVar(tmpData, 'referer')
-        passwd       = _getVar(tmpData, 'pass')
-        embed_from   = _getVar(tmpData, 'embed_from')
-        http_referer = _getVar(tmpData, 'http_referer')
-        hash_from    = _getVar(tmpData, 'hash_from')
-                
-        secPlayerUrl = "https://hqq.watch/sec/player/embed_player.php?iss="+iss+"&vid="+vid+"&at="+at+"&autoplayed="+autoplayed+"&referer="+referer+"&http_referer="+http_referer+"&pass="+passwd+"&embed_from="+embed_from+"&need_captcha="+need_captcha+'&hash_from='+hash_from
+        tmp = _getEvalData(data)
+        jscode = self.cm.ph.getDataBeetwenMarkers(tmp, 'location.replace(', ')', False)[1]
+        jscode = 'var need_captcha = "0"; var rand = Math.random().toString().substring(2); var data = {ip:""};print(' + jscode + ');'
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            secPlayerUrl = self.cm.getFullUrl(ret['data'].strip(), self.cm.getBaseUrl(cUrl))
+        
         HTTP_HEADER['Referer'] = referer
         sts, data = self.cm.getPage(secPlayerUrl, params)
         
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
-        data += str(_getEvalData(data))
+        data += _getEvalData(data)
         
         def getUtf8Str(st):
             idx = 0
@@ -8961,9 +8944,6 @@ class pageParser:
                 st2 += '\\u0' + st[idx:idx + 3]
                 idx += 3
             return st2.decode('unicode-escape').encode('UTF-8')
-        
-        data += str(tmpData)
-        #self.cm.ph.writeToFile('/mnt/new2/test.html', data)
         
         playerData = self.cm.ph.getDataBeetwenMarkers(data, 'get_md5.php', '})')[1]
         playerData = self.cm.ph.getDataBeetwenMarkers(playerData, '{', '}', False)[1]
@@ -8982,9 +8962,6 @@ class pageParser:
                 val = val.replace('1', '0')
             getParams[key] = val.replace('"', '').strip()
         playerUrl = 'https://hqq.watch/player/get_md5.php?' + urllib.urlencode(getParams)
-        #params.pop('use_cookie')
-        #strTime = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % 'time', data).group(1)
-        #params['header']['Cookie'] = self.cm.getCookieHeader(COOKIE_FILE) + 'adc1=opened; user_ad=1; user_ad_time={0}; '.format(strTime)
         params['header']['X-Requested-With'] = 'XMLHttpRequest'
         params['header']['Referer'] = secPlayerUrl
         sts, data = self.cm.getPage(playerUrl, params)
