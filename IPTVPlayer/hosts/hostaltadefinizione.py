@@ -128,37 +128,6 @@ class Altadefinizione(CBaseHostClass):
         printDBG("Altadefinizione.listSubItems")
         self.currList = cItem['sub_items']
     
-    def listSort(self, cItem, nextCategory1, nextCategory2):
-        printDBG("Altadefinizione.listSort")
-        
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'category-list'), ('</ul', '>'), False)
-        for section in tmp:
-            if 'sortby=' not in section: continue
-            section = self.cm.ph.getAllItemsBeetwenMarkers(section, '<li', '</li>')
-            for item in section:
-                url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
-                title = self.cleanHtmlStr(item)
-                params = dict(cItem)
-                params.update({'good_for_fav':False, 'category':nextCategory1, 'title':title, 'url':url})
-                self.addDir(params)
-            break
-        
-        if 0 == len(self.currList):
-            cItem = dict(cItem)
-            cItem['category'] = nextCategory1
-            self.listItems(cItem, nextCategory2, data)
-        else:
-            params = dict(cItem)
-            params.update({'good_for_fav':False, 'category':nextCategory1, 'title':_('Default')})
-            self.currList.insert(0, params)
-        
-    def listCategories(self, cItem, nextCategory, m1):
-        printDBG("Altadefinizione.listCategories")
-        self.currList = self.cacheCategories 
-
     def listItems(self, cItem, nextCategory, data=None):
         printDBG("Altadefinizione.listItems")
         page = cItem.get('page', 1)
@@ -425,12 +394,6 @@ class Altadefinizione(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listMainMenu({'name':'category', 'type':'category'})
-        elif category == 'list_categories':
-            self.listCategories(self.currItem, 'list_sort', '-categorys')
-        elif category == 'list_years':
-            self.listCategories(self.currItem, 'list_sort', 'labelledby')
-        elif category == 'list_sort':
-            self.listSort(self.currItem, 'list_items', 'explore_item')
         elif category == 'sub_items':
             self.listSubItems(self.currItem)
         elif category == 'list_items':

@@ -164,14 +164,14 @@ class iptv_system:
     please use iptv_system instead, this should be used as follow:
     self.handle = iptv_system("cmd", callBackFun)
     there is need to have reference to the obj created by iptv_system, 
-    other ways behaviour is undefined
+    without reference to return obj behavior is undefined
     
     iptv_system must be used only inside MainThread context, please see 
     iptv_execute class from asynccall module which is dedicated to be
     used inside other threads
     '''
     def __init__(self, cmd, callBackFun=None):
-        printDBG("iptv_system.__init__ ---------------------------------")
+        printDBG("iptv_system.__init__")
         self.callBackFun = callBackFun
         
         self.console = eConsoleAppContainer()
@@ -202,7 +202,7 @@ class iptv_system:
             self.outData += data
 
     def _cmdFinished(self, code):
-        printDBG("iptv_system._cmdFinished code[%r]---------------------------------" % code)
+        printDBG("iptv_system._cmdFinished code[%r]" % code)
         self.console_appClosed_conn = None
         self.console_stdoutAvail_conn = None
         self.console = None
@@ -210,7 +210,7 @@ class iptv_system:
         self.callBackFun = None
 
     def __del__(self):
-        printDBG("iptv_system.__del__ ---------------------------------")
+        printDBG("iptv_system.__del__")
 
 def IsHttpsCertValidationEnabled():
     return config.plugins.iptvplayer.httpssslcertvalidation.value
