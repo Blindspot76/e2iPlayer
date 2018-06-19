@@ -3207,7 +3207,21 @@ class pageParser:
         printDBG("parserVIDOZANET baseUrl[%r]" % baseUrl)
         referer = strwithmeta(baseUrl).meta.get('Referer', '')
         baseUrl = strwithmeta(baseUrl, {'Referer':referer})
-        return self._parserUNIVERSAL_A(baseUrl, 'https://vidoza.net/embed-{0}.html', self._findLinks)
+        domain = urlparser.getDomain(baseUrl)
+        
+        def _findLinks(data):
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>', False)
+            videoTab = []
+            for item in tmp:
+                if 'video/mp4' not in item and 'video/x-flv' not in item: continue
+                tType = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0].replace('video/', '')
+                tUrl  = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+                printDBG(tUrl)
+                if self.cm.isValidUrl(tUrl): videoTab.append({'name':'[%s] %s' % (tType, domain), 'url':strwithmeta(tUrl)})
+            return videoTab
+        
+        return self._parserUNIVERSAL_A(baseUrl, 'https://vidoza.net/embed-{0}.html', _findLinks)
         
     def parserCLIPWATCHINGCOM(self, baseUrl):
         printDBG("parserCLIPWATCHINGCOM baseUrl[%r]" % baseUrl)
