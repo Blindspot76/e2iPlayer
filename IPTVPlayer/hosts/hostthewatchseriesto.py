@@ -44,10 +44,10 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://dwatchseries.to/'
+    return 'https://www1.swatchseries.to/'
 
 class TheWatchseriesTo(CBaseHostClass):
-    DOMAIN        = 'dwatchseries.to'
+    DOMAIN        = 'www1.swatchseries.to'
     MAIN_URL      = 'http://%s/' % DOMAIN
     SEARCH_URL    = MAIN_URL + 'search/'
     DEFAULT_ICON  = "http://%s/templates/default/images/apple-touch-icon.png" % DOMAIN
