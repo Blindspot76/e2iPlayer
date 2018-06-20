@@ -60,12 +60,12 @@ class AnimeTo(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://9anime.is/'
+        self.MAIN_URL = 'https://www6.9anime.is/'
         self.cacheEpisodes = {}
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
         self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Home'),        'url':self.getFullUrl('/filter')      },
                              {'category':'list_items',      'title': _('Newest'),      'url':self.getFullUrl('/newest')      },
@@ -77,7 +77,11 @@ class AnimeTo(CBaseHostClass):
                              {'category':'search_history',    'title': _('Search history'),            } 
                             ]
         self._myFun = None
-                            
+    
+    def setMainUrl(self, url):
+        if self.cm.isValidUrl(url):
+            self.MAIN_URL = self.cm.getBaseUrl(url)
+    
     def getFullIconUrl(self, url):
         url = url.replace('&amp;', '&')
         return CBaseHostClass.getFullIconUrl(self, url)
@@ -101,6 +105,7 @@ class AnimeTo(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(data.meta['url'])
 
         data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'letters'), ('</ul', '>'))[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
@@ -118,6 +123,7 @@ class AnimeTo(CBaseHostClass):
         
         sts, data = self.getPage(self.getFullUrl('ongoing'))
         if not sts: return
+        self.setMainUrl(data.meta['url'])
         
         def addFilter(data, marker, baseKey, addAll=True, titleBase=''):
             key = 'f_' + baseKey
@@ -179,6 +185,7 @@ class AnimeTo(CBaseHostClass):
         
         sts, data = self.getPage(url)
         if not sts: return
+        self.setMainUrl(data.meta['url'])
         
         if  '>Next<' in data: nextPage = True
         else: nextPage = False
@@ -219,6 +226,7 @@ class AnimeTo(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(data.meta['url'])
         
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'desc'), ('</div', '>'))[1])
         
@@ -333,8 +341,13 @@ class AnimeTo(CBaseHostClass):
     def _updateParams(self, params, params2=True,params3=True):
         if self._myFun == None:
             try:
-                if True:
-                    tmp = 'd4dc09ccf50eec3e8ff154e9aaae91d7929c817981b33e845bd0b59ba69cdee3c2d131462159801b5c5f8ca1593cf43406422ee379fc634b29045ebb16c59b296711085334eb391754d0da0059462a8b182e895aaf125160dfbfe09b7397a3f7819d232803b32af8a933a20eafcdf6f2a308fd314479089998bad79964c1d2d3b92480dbc42d5418565fdac3faac40615af34a52d8a6db7fe8851e43a148fae4678f949fe0b70a201807bd8f7d093468ebb63905b54812f6f5a4ff820337e641fb0252b2744123f871c3e76076359b7eea77d6b8207a8af9e360403df67a5f31bb31377f3b3e8cc3a118ce3c35e512313374b16526a28b6e315b587e746c2bf48b118a82a788bd849c852859abc7ab86a13e2d8756c6338749ecc878f6ee0244618bd3e38067879ce449e49b22b6e94d59e64334e28eeb89fcfd05e167f79d8c923b58bb9561aabd8b362fb2278c2bae46f1bebfcd4416580f44102d4def7fcd33e5f6021cde372582f21e75123ff0ea9e4c008cb87c64b225daff9968952a75edc7479d3fb66d886921ae2290a60fd7e13081336040ae44906c25b91e7e72efc37466e13d6d31279536effdbdea310cc9af66224f56244588943867c0b0f2acffc6200c3b4aed323f18a5a247739589749caae7b7bad38e2bc667f1a0f439b58df21bda6f35f54833254af0a35421c3e1a1090f169926f5d630e6e3e4bfe5a641c1a0696390caea942a5b4d46a939e2936c523f5e9532ac9fd5d112bd9c6d5099164edc930b0b307812cf77611d3f31f976c711422ee77aa0603c221bb7042c0d3cb5d7becb58df5a4ee229832a56e7c297f3df8f38155cad424c296e1ff0ff8e88141d6a7dffde1ffae467155c316ca423b95a320efd17ad2a0e44434c1f3d54ab5f31167fcb9764ca795c2d743551727d2eb9b923e4c55f0094d8585d7ea78cf0a75f22d09038b64fa4de7c28e670b2a1b8dc6c032771ae465c1ebaeac76c7c02a98fbe00f985b634d2985b35e298d1fe79db36577dd0194d65945c137fe3c863d50f4573d8db495b1b736debdd8b'
+                if False:
+                    tmp = 'base64_encoded'
+                    tmp = self._cryptoJS_AES(tmp, ''.join(GetPluginDir().split('/')[-5:]), False)
+                    tmp = hexlify(tmp)
+                    printDBG("$$$: " + tmp)
+                else:
+                    tmp = 'd4dc09ccf50eec3e8ff154e9aaae91d7929c817981b33e845bd0b59ba69cdee3c2d131462159801b5c5f8ca1593cf4346977abe70c39237ccc7504fd3ecd357adac8dab4558cf2eb188ec5fc94e9c1de6e479a7dee4676b727f6a840bbe10cecb6425f7d8caad68c35c737368dc5f5215b3c6fb9582bb3ced0129243ea2fef2d663607f58b3ab9f954797ad7ebbca7a402c857828f14e48fbb73662d4381223c86a9f18ca6878632b603e10fa08652f997ea4ed4dd9b509f0111a6874fba801e58376eb4dd0cadd8b45609c6595f0e1f63593dccd4b7dd52ea785caa55a72725c7e28097e1950ba814075113d4189c17cf6c2c58bd0bb40f78923997a1c94f7e4f42b0048b29dd6939050b923766718d5613339cc0bb994aac579fda62ddc09877ab90597a03cebaf540c8436c55114f43e9835e7001fd5f6b04eeb1993f22843603975572e6e44f926c6343ffde4638eee41072da4d97674cd8884e4a3150085b18e6e6de6e3f83ea2a8b59b08b7dcc3f9afefd1e292616b10926cff7eb5e1b82891a26367681998052b908fa6e4a52c18e83c5a85484fa0b628c190f7d1a8f4e5da7902438ed5e656a6c2643a81fb05f2aa3190dacd0029be9e758d7dd119151433f5ad12b7833845077f12a5b2e3a48c1081c9e56ea92e8fe8022e2150c0d6e533cd344aea076a1841273839f1185295fad44e776255ae0829cd74569b88bebc3741a485203813e544c37e652b6f4f2fcf8255e015ee13462788b5290db64ac16ba831e092722bb32aa5a8e72fcaa56300391793a8aff8b5d38e3d6b6a33177209cccf5b1cf41ad15c4a59937ba34886dadc9c336e83ab90357419a2b5b31eb71726875d12aa800b2e6e29c89f22a0de6f82caba2e5d9a46e84c0de0310e388341d61467d048cb568df856fec7af9de0e72ff966c42cdb820f76a614c1389a78c6acf1c41057ce8ddf8bc0553f860b6ac658c033c300beeb2bbf01391ae5b4a1b1fcea4f3d8c40d4383325fe06d102603a2a5f48b3e03b0e22f71509cea5de671677504564ed2f4d3d5100d25eb35b3d6fea31e4e074c2b1b6522b65aacf9f7de277706b906e4debd321c9e7106b29b567f04d69187d06a01220c17bc3b2a0ad9b89982baa43320e2614497169453a214938234b99e0b8b63d4f300cd9e5064e74c5a4c80de7f771daa393a160dcfff29a62789656695c038eefdcc85e651d49974d1e6bc72505ec9f925375d9b27ec044a82311c21377602207db84f74e24760ab6ed486eab4edf9347056f5ffd3863329e28be008d28df20eeebeb170c874df0dc91b06ece4dd99750255cf57ec69433bebf387321ed6a16780b424cc3e1eac4db6a7c6b0d20163b7407d73601f6ded017c9c4885c04d55c901f8d1ed3100ce494d8da0d03a0fdc36dc540d9464a2adc71ad5cc34c944864bde73319cd61e3d3eb8cfed07ea62a00972007c0ffbd7b7feb222e6b9751b4d984c0724bc6f7c40b10bb66cb1810a8a45cb6436121e2d41bee2d2e011c73a1f77a86af3f6b65221b7254f97a138627a8312eb2f11b8'
                     tmp = self._cryptoJS_AES(unhexlify(tmp), ''.join(GetPluginDir().split('/')[-5:]))
                     tmp = base64.b64decode(tmp.split('\r')[0]).replace('\r', '')
                 _myFun = compile(tmp, '', 'exec')
@@ -394,7 +407,7 @@ class AnimeTo(CBaseHostClass):
         m = "++++++++++++++++++++++++++++++++"
         printDBG('%s\n%s\n%s' % (m, data, m))
         
-        getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'update':'0'}
+        getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'random':'0'}
         getParams = self._updateParams(getParams)
         printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> timestamp[%s]" % timestamp)
         url = self.getFullUrl('/ajax/episode/info?' + urllib.urlencode(getParams))
