@@ -48,9 +48,9 @@ def gettytul():
 
 class TheWatchseriesTo(CBaseHostClass):
     DOMAIN        = 'www1.swatchseries.to'
-    MAIN_URL      = 'http://%s/' % DOMAIN
+    MAIN_URL      = 'https://%s/' % DOMAIN
     SEARCH_URL    = MAIN_URL + 'search/'
-    DEFAULT_ICON  = "http://%s/templates/default/images/apple-touch-icon.png" % DOMAIN
+    DEFAULT_ICON  = "https://%s/templates/default/images/apple-touch-icon.png" % DOMAIN
     
     HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':MAIN_URL}
     AJAX_HEADER = dict(HEADER)
@@ -65,13 +65,14 @@ class TheWatchseriesTo(CBaseHostClass):
                     {'icon':DEFAULT_ICON, 'category':'search_history',  'title': _('Search history')} ]
  
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'  TheWatchseriesTo.tv', 'cookie':'thewatchseriesto.cookie'})
+        CBaseHostClass.__init__(self, {'history':'  TheWatchseriesTo.tv', 'cookie':'thewatchseriesto.cookie', 'min_py_ver':(2,7,9)})
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.seasonCache = {}
         self.cacheLinks = {}
         self.needProxy = None
         
     def isNeedProxy(self):
+        return True
         if self.needProxy == None:
             sts, data = self.cm.getPage(self.MAIN_URL)
             if sts and '/series"' in data:
