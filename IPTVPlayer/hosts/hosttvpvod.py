@@ -806,9 +806,9 @@ class TvpVod(CBaseHostClass):
         category = self.currItem.get("category", '')
         printDBG( "TvpVod.handleService: ---------> name[%s], category[%s] " % (name, category) )
         searchPattern = self.currItem.get("search_pattern", searchPattern)
-        self.currList = [] 
-        self.currItem.pop('good_for_fav', None)
+        self.currList = []
         currItem = dict(self.currItem)
+        currItem.pop('good_for_fav', None)
         
         if None != name and  self.currItem.get('desc', '').startswith('Użytkownik'):
             currItem.pop('desc', None)
