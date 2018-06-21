@@ -3158,7 +3158,7 @@ class pageParser:
         if url.startswith('//'):
             url = 'http:' + url
         
-        url = strwithmeta(url, {'User-Agent':header['User-Agent'], 'Origin':urlparser.getDomain(baseUrl), 'Referer':baseUrl})
+        url = strwithmeta(url, {'User-Agent':header['User-Agent'], 'Origin':"https://" + urlparser.getDomain(baseUrl), 'Referer':baseUrl})
         tab =  getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999)
         printDBG("parserMYCLOUDTO tab[%s]" % tab)
         return tab
