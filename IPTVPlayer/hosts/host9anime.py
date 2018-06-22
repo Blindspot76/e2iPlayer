@@ -5,7 +5,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm, GetPluginDir
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import DecodeGzipped, EncodeGzipped
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -28,6 +28,11 @@ from binascii import hexlify, unhexlify
 from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
+
+try: from cStringIO import StringIO
+except Exception: from StringIO import StringIO 
+import gzip
+
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -76,7 +81,7 @@ class AnimeTo(CBaseHostClass):
                              {'category':'search',            'title': _('Search'), 'search_item':True,},
                              {'category':'search_history',    'title': _('Search history'),            } 
                             ]
-        self._myFun = None
+        self.scriptCache = {}
     
     def setMainUrl(self, url):
         if self.cm.isValidUrl(url):
@@ -303,25 +308,6 @@ class AnimeTo(CBaseHostClass):
         key = cItem.get('links_key', '')
         return self.cacheLinks.get(key, [])
         
-    def uncensored(self, data):    
-        cookieItems = {}
-        try:
-            jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCnZhciBsb2NhdGlvbiA9ICJodHRwczovLzlhbmltZS50by8iOw0KU3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQpBcnJheS5wcm90b3R5cGUuZmluZD0iZnVuY3Rpb24gZmluZCgpIHsgW25hdGl2ZSBjb2RlXSB9IjsNCkFycmF5LnByb3RvdHlwZS5maWxsPSJmdW5jdGlvbiBmaWxsKCkgeyBbbmF0aXZlIGNvZGVdIH0iOw0KZnVuY3Rpb24gZmlsdGVyKCkNCnsNCiAgICBmdW4gPSBhcmd1bWVudHNbMF07DQogICAgdmFyIGxlbiA9IHRoaXMubGVuZ3RoOw0KICAgIGlmICh0eXBlb2YgZnVuICE9ICJmdW5jdGlvbiIpDQogICAgICAgIHRocm93IG5ldyBUeXBlRXJyb3IoKTsNCiAgICB2YXIgcmVzID0gbmV3IEFycmF5KCk7DQogICAgdmFyIHRoaXNwID0gYXJndW1lbnRzWzFdOw0KICAgIGZvciAodmFyIGkgPSAwOyBpIDwgbGVuOyBpKyspDQogICAgew0KICAgICAgICBpZiAoaSBpbiB0aGlzKQ0KICAgICAgICB7DQogICAgICAgICAgICB2YXIgdmFsID0gdGhpc1tpXTsNCiAgICAgICAgICAgIGlmIChmdW4uY2FsbCh0aGlzcCwgdmFsLCBpLCB0aGlzKSkNCiAgICAgICAgICAgICAgICByZXMucHVzaCh2YWwpOw0KICAgICAgICB9DQogICAgfQ0KICAgIHJldHVybiByZXM7DQp9Ow0KT2JqZWN0LmRlZmluZVByb3BlcnR5KGRvY3VtZW50LCAiY29va2llIiwgew0KICAgIGdldCA6IGZ1bmN0aW9uICgpIHsNCiAgICAgICAgcmV0dXJuIHRoaXMuX2Nvb2tpZTsNCiAgICB9LA0KICAgIHNldCA6IGZ1bmN0aW9uICh2YWwpIHsNCiAgICAgICAgcHJpbnQodmFsKTsNCiAgICAgICAgdGhpcy5fY29va2llID0gdmFsOw0KICAgIH0NCn0pOw0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZpbHRlcjsNCiVzDQoNCg==''') % (data)                     
-            ret = iptv_js_execute( jscode )
-            if ret['sts'] and 0 == ret['code']:
-                printDBG(ret['data'])
-                data = ret['data'].split('\n')
-                for line in data:
-                    line = line.strip()
-                    if not line.endswith('=/'): continue
-                    line = line.split(';')[0]
-                    line = line.replace(' ', '').split('=')
-                    if 2 != len(line): continue
-                    cookieItems[line[0]] = line[1].split(';')[0]
-        except Exception:
-            printExc()
-        return cookieItems
-        
     def _cryptoJS_AES(self, encrypted, password, decrypt=True):
         def derive_key_and_iv(password, key_length, iv_length):
             d = d_i = ''
@@ -336,30 +322,33 @@ class AnimeTo(CBaseHostClass):
             return cipher.decrypt(encrypted, iv)
         else:
             return cipher.encrypt(encrypted, iv)
-            
-        
-    def _updateParams(self, params, params2=True,params3=True):
-        if self._myFun == None:
+    
+    def _getUrl(self, jsCode, url='', data='', timestamp=''):
+        printDBG("AnimeTo._getUrl url[%s], data[%s], timestamp[%s]" % (url, data, timestamp))
+        try:
+            if False:
+                tmp = EncodeGzipped('code')
+                tmp = self._cryptoJS_AES(tmp, ''.join(GetPluginDir().split('/')[-5:]), False)
+                tmp = hexlify(tmp)
+                printDBG("$$$: " + tmp)
+            else:
+                tmp = '98ab1f3c676b9a8fb7b3a5595b0380e0bcbfa30415c262ebb0340b646ad6ab07f7ead7e8fec96b6f4dc251b97c9834a6c8c185eb9ad1f512a0f860d7448e2ebc711c0aa8fb19e7b979b264be904dd11cec89f98b5027c9d0b74d78cf7f63a5c7d48a73a136655bb6a5087210ec8ba1cb1e06fa933e3699124f6f9a23bfb320aa6300070a342b8a6f29189225e889fff2f322ae3e0277f189c28e0f88382d0c85144c28bdcd482c0b953b0cba88da4266e7d0a384b39b5c33cecf389f56d9fe27963acc417422d90cd3caee835d252156118576124024d8af4fd4bb230253013ea24bf19b59d4938b2a7ddd6a4aed5f9fb2806a36e5903869633e4834679bcfc7b892dad8b4f031a99be6389efc68c11a9de723dec354fc8b37a5989e787e20c16f928c5354958bd49cadf0f4f7deb9981f4b4e13587ecd6667d8dfbbd53e49848bbf1acfd45e304f03ea86fe9a3b2c482327b1672f3616e1a9a3ce443b471ce4524e5083f3eb22a9bf774770672d6fdc9d65f95cd78cac48562ca2b4574948d2924938569b7bf5be821be01331f545cd629f76fbd7e923569336a4cac2e2e0470f85dd9f41489fbff05c1ef37c4dc3779625136481ef4672b8b4aeb59116c203bd44a92484c71084fdb64b5d21ad3a758ddbff649aee9e9716223803b7aadb511c3bd34073d014a77533890aa02a764875b97934c4fd6a98199bc2d05de9232e9a1d4777667110e582feab7e4cf87a5a550225a5a7d8f61727f1fe1f03b5a90a8e5d2050e99abb8aa359ee6f6b5cfe1e204cace50ebe0c63f9e0216aab56f46359000cbb1e7cdd3f9223067f0075b1ccf1a8b1e93a82566966c5dfa1f9d0d4e29c8064b0a0f812f76d8628fd6af3fd00f9077006d17c076f23def58ad081971bf580963b06027602cb23d6e2217738c3efe3b51a057a5ff3234ee6c953334ca7a13fa89899e228f6587f2b749f1d51b7c664567451bdb23db6b265ce83414f42'
+                tmp = self._cryptoJS_AES(unhexlify(tmp), ''.join(GetPluginDir().split('/')[-5:]))
+                tmp = DecodeGzipped(tmp)
+        except Exception:
+            printExc()
+
+        retUrl = ''
+        jscode = ['iptv_ts=%s;' % timestamp, tmp, jsCode, 'iptv_arg = {url:"%s", "data":"%s"}; iptv_call(iptv_arg); print(JSON.stringify(iptv_arg));' % (url, data)]
+        ret = iptv_js_execute('\n'.join(jscode))
+        if ret['sts'] and 0 == ret['code']:
+            data = ret['data'].strip()
             try:
-                if False:
-                    tmp = 'base64_encoded'
-                    tmp = self._cryptoJS_AES(tmp, ''.join(GetPluginDir().split('/')[-5:]), False)
-                    tmp = hexlify(tmp)
-                    printDBG("$$$: " + tmp)
-                else:
-                    tmp = 'd4dc09ccf50eec3e8ff154e9aaae91d7929c817981b33e845bd0b59ba69cdee3c2d131462159801b5c5f8ca1593cf434269fb17dc98aa045b8d37adee8d22d94b3d1cc515986a6e17dba4d58e67cb88c79b13bd519351cb0714c32acff1a2ffcd7a929801b8df88864c86736e4d7fd792608cde6535dd155dac34d00e5569ec2721921e9183a0c8b8f4046d58e64f2bb63e9d54f578af64a91bfc9934eaa49ff19d3bfdf999b58049cdac82e87717e9ce5757fd415b4bb0770f552742bbf36e5f0033f4280c56fd6fdc384944dc7aaa9cd3dca9da49004893f0ba20917259f0ff823a8562092351c481e1705423b656b498a9edc7ab48a91153a0b6ac24c52dc2e487b1398af5ffe20787abe398f51a4bd526bca86748f784979cec801f9534a7441fb8c103b10268258581c95ed6f41b5754ff2ceb6c29218bc80e0ffffcc33c64af4b2531818f2f5a36b051b81720e38723e37f1da7c3a0037ea920c77f3d58d5174ae5380191f2ab705f9583144d3f232e44a16de46ffd005f996752529ec3e8785fc782881d702c155a651974db0f2530006bec842f105d5992009b625d9f36ba6153d018913cffb108e3444616f9c443a524ff559463be500a86b3f493a764dfa563f4c78ec9ef914bfcfe5fdfc75da47f4c7d7b814fcc9c7fae3fb02385638dc04a6f4d61b3e16cf5bc859d9f54d210ecdcafa0bea3b94b7db634c87ac974c34027cb22e5c79f827e34cecc574d1495fac8d18541fd9b20866f470cf904ed936b4f0f555fc98ca197c637a79ce6fc174caed723bc9b603664927b334673bef2ab3f5df9858060a6371a15de8e3d5d9081e3b97963a5d5a239fc9de62f6064544d117b352346aab964673b8a2287898a393b51c7761be96c7cc75414a9ded405df8bf975eb1c68aa0fff78cfabbf5f4fee28d884bb52fdfcf07aa17e7e950cf92f60b8e7eea2b3c69bf499186ffa8985e50d6c5e5afe155c5294564f2dcada3bddb3f06bf3a25c195058bbaac55c7529b02629027ced9546481316ce15802b63d6055255d79a5db2f012f2a9d40b5b2c9eafda8ce7dd40e61234883e739e44e1f422baa9ad1619981beabcbfc2e2f2fc02c1f056a72726e3421cc667b3b6b0dc2569d9be787a5399530f0ec2003bdfb61378e55cebe46dd9a8dd7d8f873efc48167cdd02a518c1f57a573891b3ebf454807482b1c41cc4867b0420f9d4f09073b2242362392dfbb670b4825fabaa89380336ce1ceb3cb45e37fadb53297e20d5bec26738f5e67afc36862a0597bdcc6558c385af035628f398c05a6d69e120f6eace51bd6d2d92a2f5ce67d4108a6b90ccd618e659c84b7e9ec2661ff2c4d894d5e027fa1793f62932681f8c2d45ae8c4cdff696825b931304ba355550fa3173f39468b9cf1251d954a7f33b3fdee3f96c3781881143870bf40b435eeda186adf9c604dd4248f0c57575317c167cb047e7b6a6ff81c56aa7900006010e4a73d7d79866bda5018715f9dd514cbd2baa32453c1ebe908204a5b0bc878631578584587aaf2edd4f76d2f5d1f95d80a'
-                    tmp = self._cryptoJS_AES(unhexlify(tmp), ''.join(GetPluginDir().split('/')[-5:]))
-                    tmp = base64.b64decode(tmp.split('\r')[0]).replace('\r', '')
-                _myFun = compile(tmp, '', 'exec')
-                vGlobals = {"__builtins__": None, 'len': len, 'dict':dict, 'list': list, 'ord':ord, 'range':range, 'str':str, 'max':max, 'hex':hex, 'b64decode': base64.b64decode, 'True':True, 'False':False}
-                vLocals = { 'zaraza': '' }
-                exec _myFun in vGlobals, vLocals
-                self._myFun = vLocals['zaraza']
+                data = byteify(json.loads(data))
+                retUrl = data['url'] + '&' + data['data']
             except Exception:
                 printExc()
-        try: params = self._myFun(params, params2)
-        except Exception: printExc()
-        return params
+        return retUrl
         
     def getVideoLinks(self, videoUrl):
         printDBG("AnimeTo.getVideoLinks [%s]" % videoUrl)
@@ -375,10 +364,6 @@ class AnimeTo(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
-                        
-        #sts, data = self.getPage(self.getFullUrl('token'))
-        #if not sts: return []
-        #cookieItem = self.uncensored(data)
         
         id = videoUrl.meta.get('id', '')
         params = dict(self.defaultParams)
@@ -397,23 +382,44 @@ class AnimeTo(CBaseHostClass):
             sts, data = self.getPage(videoUrl, params)
             if not sts: return []
             timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([^"^']+?)['"]''')[0]
+        
+        cUrl = data.meta['url']
+        allJsScripts = []
+        jsCode = ''
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>', 'all.js'), ('</script', '>'))
+        for item in tmp:
+            jsUrl = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?all\.js(?:\?[^'^"]*?)?)['"]''')[0] )
+            if jsUrl in self.scriptCache:
+                jsCode = self.scriptCache[jsUrl]
+                break
+            allJsScripts.append(jsUrl)
+        
+        if jsCode == '':
+            for item in allJsScripts:
+                sts, tmp = self.getPage(item, params)
+                if not sts: continue
+                if '(window)' in tmp:
+                    jsCode = tmp
+                    self.scriptCache[jsCode] = jsCode
+                    break
 
-        getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'Q':'1'}
-        getParams = self._updateParams(getParams)
-        url = self.getFullUrl('/ajax/film/update-views?' + urllib.urlencode(getParams))
+        getParams = {'id':videoUrl.meta.get('id', ''), 'Q':'1'}
+        url = self.getFullUrl('/ajax/film/update-views')
+        url = self._getUrl(jsCode, url, urllib.urlencode(getParams), timestamp)
         sts, data = self.getPage(url, params)
         if not sts: return []
         
         m = "++++++++++++++++++++++++++++++++"
         printDBG('%s\n%s\n%s' % (m, data, m))
         
-        getParams = {'ts':timestamp, 'id':videoUrl.meta.get('id', ''), 'random':'0'}
-        getParams = self._updateParams(getParams)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> timestamp[%s]" % timestamp)
-        url = self.getFullUrl('/ajax/episode/info?' + urllib.urlencode(getParams))
+        getParams = {'id':videoUrl.meta.get('id', ''), 'random':'0'}
+        url = self.getFullUrl('/ajax/episode/info')
+        url = self._getUrl(jsCode, url, urllib.urlencode(getParams), timestamp)
         sts, data = self.getPage(url, params)
         if not sts: return []
         
+        domain = self.up.getDomain(baseUrl)
+        printDBG(">> domain: " + domain)
         videoUrl = ''
         subTrack = ''
         try:
@@ -421,18 +427,16 @@ class AnimeTo(CBaseHostClass):
             printDBG(data)
             subTrack = data.get('subtitle', '')
             if data['type'] == 'iframe':
-                videoUrl = self._updateParams({'url':data['target']}, False)['url']
+                videoUrl = data['target']
+                if domain in videoUrl:
+                    videoUrl = self._getUrl(jsCode, videoUrl, "", timestamp)
                 if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
             elif data['type'] == 'direct':
                 printDBG("----------------------------------------------")
                 printDBG(data)
                 printDBG("----------------------------------------------")
-                query = self._updateParams(dict(data['params']), False)
-                query.update({'mobile':'0'})
-                url = data['grabber']
-                if '?' in url: url += '&'
-                else: url += '?'
-                url += urllib.urlencode(query)
+                if domain in data['grabber']:
+                    url = self._getUrl(jsCode, data['grabber'], urllib.urlencode(dict(data['params'])), timestamp) + '&mobile=0'
                 sts, data = self.getPage(url, params)
                 if not sts: return []
                 data = byteify(json.loads(data))
