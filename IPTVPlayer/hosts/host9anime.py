@@ -340,7 +340,7 @@ class AnimeTo(CBaseHostClass):
 
         retUrl = ''
         jscode = ['iptv_ts=%s;' % timestamp, tmp, jsCode, 'iptv_arg = {url:"%s", "data":"%s"}; iptv_call(iptv_arg); print(JSON.stringify(iptv_arg));' % (url, data)]
-        ret = iptv_js_execute('\n'.join(jscode))
+        ret = iptv_js_execute('\n'.join(jscode), {'timeout_sec':15})
         if ret['sts'] and 0 == ret['code']:
             data = ret['data'].strip()
             try:
@@ -403,14 +403,12 @@ class AnimeTo(CBaseHostClass):
                     self.scriptCache[jsCode] = jsCode
                     break
 
-        getParams = {'id':videoUrl.meta.get('id', ''), 'Q':'1'}
-        url = self.getFullUrl('/ajax/film/update-views')
-        url = self._getUrl(jsCode, url, urllib.urlencode(getParams), timestamp)
-        sts, data = self.getPage(url, params)
-        if not sts: return []
-        
-        m = "++++++++++++++++++++++++++++++++"
-        printDBG('%s\n%s\n%s' % (m, data, m))
+        if False:
+            getParams = {'id':videoUrl.meta.get('id', ''), 'Q':'1'}
+            url = self.getFullUrl('/ajax/film/update-views')
+            url = self._getUrl(jsCode, url, urllib.urlencode(getParams), timestamp)
+            sts, data = self.getPage(url, params)
+            if not sts: return []
         
         getParams = {'id':videoUrl.meta.get('id', ''), 'random':'0'}
         url = self.getFullUrl('/ajax/episode/info')
