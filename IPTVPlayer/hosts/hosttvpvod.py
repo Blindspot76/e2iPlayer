@@ -609,8 +609,10 @@ class TvpVod(CBaseHostClass):
         if not sts: return ''
         asset_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
         if asset_id == '': asset_id = self.cm.ph.getSearchGroups(data, 'class="playerContainer"[^>]+?data-id="([0-9]+?)"')[0]
-        if '' == asset_id: asset_id = self.cm.ph.getSearchGroups(data, 'data-video-id="([0-9]+?)"')[0]
+        if '' == asset_id: asset_id = self.cm.ph.getSearchGroups(data, 'data\-video-id="([0-9]+?)"')[0]
         if '' == asset_id: asset_id = self.cm.ph.getSearchGroups(data, "object_id:'([0-9]+?)'")[0]
+        if '' == asset_id: asset_id = self.cm.ph.getSearchGroups(data, 'data\-object\-id="([0-9]+?)"')[0]
+        
         return asset_id
                 
     def getLinksForVideo(self, cItem):
