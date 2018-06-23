@@ -481,6 +481,8 @@ class urlparser:
                        'upfile.mobi':          self.pp.parserUPFILEMOBI     ,
                        'cloudstream.us':       self.pp.parserCLOUDSTREAMUS  ,
                        'soundcloud.com':       self.pp.parserSOUNDCLOUDCOM  ,
+                       'vcstream.to':          self.pp.parserVCSTREAMTO     ,
+                       'vidcloud.icu':         self.pp.parserVIDCLOUDICU    ,
                        #https://oneload.co/4gdkrp4hieoe TODO
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                        
@@ -10028,6 +10030,68 @@ class pageParser:
         videoTab.extend(hlsTab)
         videoTab.extend(dashTab)
         return videoTab
+        
+    def parserVCSTREAMTO(self, baseUrl):
+        printDBG("parserVCSTREAMTO baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        cUrl = baseUrl
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = data.meta['url']
+        
+        playerUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?/player[^'^"]*?)['"]''')[0], self.cm.getBaseUrl(cUrl))
+        urlParams['header']['Referer'] = cUrl
+        
+        sts, data = self.cm.getPage(playerUrl, urlParams)
+        if not sts: return False
+        
+        urlsTab = []
+        data = byteify(json.loads(data))['html']
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'sources', ']', False)
+        printDBG(data)
+        for sourceData in data:
+            sourceData = self.cm.ph.getAllItemsBeetwenMarkers(sourceData, '{', '}')
+            for item in sourceData:
+                type = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
+                if 'mp4' not in type: continue
+                url = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]src['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                if url == '': url = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]file['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                name = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]label['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                if name == '': name = urlparser.getDomain(url) + ' ' + name
+                urlsTab.append({'name':name, 'url':url.replace('\\/', '/')})
+        return urlsTab
+        
+    def parserVIDCLOUDICU(self, baseUrl):
+        printDBG("parserVIDCLOUDICU baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        cUrl = baseUrl
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = data.meta['url']
+        
+        urlsTab = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'sources', ']', False)
+        printDBG(data)
+        for sourceData in data:
+            sourceData = self.cm.ph.getAllItemsBeetwenMarkers(sourceData, '{', '}')
+            for item in sourceData:
+                type = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
+                if 'mp4' not in type: continue
+                url = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]src['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                if url == '': url = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]file['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                name = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]label['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
+                if name == '': name = urlparser.getDomain(url) + ' ' + name
+                url = strwithmeta(url.replace('\\/', '/'), {'Referer':cUrl})
+                urlsTab.append({'name':name, 'url':url})
+        return urlsTab
         
     def parserSOUNDCLOUDCOM(self, baseUrl):
         printDBG("parserCLOUDSTREAMUS baseUrl[%r]" % baseUrl)
