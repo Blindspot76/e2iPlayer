@@ -1369,7 +1369,10 @@ class pageParser:
 
     def parserWGRANE(self,url):
         # extract video hash from given url
-        sts, data = self.cm.getPage(url)
+        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        paramsUrl = {'with_metadata':True, 'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(url, paramsUrl)
         if not sts: return False
         agree = ''
         if 'controversial_content_agree' in data: agree = 'controversial_content_agree'
@@ -1377,10 +1380,27 @@ class pageParser:
         if '' != agree:
             vidHash = re.search("([0-9a-fA-F]{32})$", url)
             if not vidHash: return False
-            params = {'use_cookie': True, 'load_cookie':False, 'save_cookie':False} 
+            paramsUrl.update( {'use_cookie': True, 'load_cookie':False, 'save_cookie':False} )
             url = "http://www.wgrane.pl/index.html?%s=%s" % (agree, vidHash.group(1))
-            sts, data = self.cm.getPage(url, params)
+            sts, data = self.cm.getPage(url, paramsUrl)
             if not sts: return False
+        
+        cUrl = data.meta['url']
+        videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]*?embedlocal[^'^"]*?)['"]''', ignoreCase=True)[0]
+        if videoUrl != '':
+            videoUrl = self.cm.getFullUrl(videoUrl, self.cm.getBaseUrl(cUrl))
+            paramsUrl['header']['Referer'] = cUrl
+            sts, tmp = self.cm.getPage(videoUrl, paramsUrl)
+            if sts: 
+                urlTab = []
+                tmp = self.cm.ph.getDataBeetwenReMarkers(tmp, re.compile('''['"]?urls['"]?\s*\:\s*\['''), re.compile('\]'))[1].split('}')
+                for item in tmp:
+                    name = self.cm.ph.getSearchGroups(item, '''['"]?name['"]?\s*\:\s*['"]([^'^"]+?)['"]''')[0]
+                    url = self.cm.ph.getSearchGroups(item, '''['"]?url['"]?\s*\:\s*['"]([^'^"]+?)['"]''')[0]
+                    if url == '': continue 
+                    url = self.cm.getFullUrl(url, self.cm.getBaseUrl(cUrl)) 
+                    urlTab.append({'name':name, 'url':url})
+                if len(urlTab): return urlTab
 
         tmp = re.search('''["'](http[^"^']+?/video/[^"^']+?\.mp4[^"^']*?)["']''', data)
         if tmp: return tmp.group(1)
