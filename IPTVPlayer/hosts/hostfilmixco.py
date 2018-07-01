@@ -109,10 +109,37 @@ class FilmixCO(CBaseHostClass):
                     if len(values):
                         self.cacheFilters.append({'scope':scope, 'values':values})
        
-        MAIN_CAT_TAB = [{'category':'filters',         'title': _('Filters')},
+        MAIN_CAT_TAB = [{'category':'top250',          'title':'ТОП 250', 'url':self.getFullUrl('/top250') },
+                        {'category':'filters',         'title': _('Filters')},
                         {'category':'search',          'title': _('Search'), 'search_item':True},
                         {'category':'search_history',  'title': _('Search history')} ]
         self.listsTab(MAIN_CAT_TAB, cItem)
+        
+    def top250Type(self, cItem, nextCategory):
+        printDBG("FilmixCO.listMainMenu")
+        
+        for item in [('Фильмы', ''), ('Сериалы', 's'), ('Мультфильмы', 'm')]:
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'title':item[0], 'url':cItem['url'] + item[1]})
+            self.addDir(params)
+    
+    def listTop250(self, cItem, nextCategory):
+        printDBG("FilmixCO.listTop250")
+        
+        for item in [('Топ 250 filmix.me', ''), ('Топ 250 Кинопоиск', '/kp'), ('Топ 250 IMDB', '/imdb')]:
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'title':item[0], 'url':cItem['url'] + item[1]})
+            self.addDir(params)
+            
+    def listTop250Sort(self, cItem, nextCategory):
+        printDBG("FilmixCO.listTop250Sort")
+        
+        asc = '\xe2\x86\x91 '
+        desc = '\xe2\x86\x93 '
+        for item in [(desc + 'По убыванию', ''), (asc + 'По возрастанию', '/sup'), (desc + 'По годам', '/ydown'), (asc + 'По годам', '/yup')]:
+            params = dict(cItem)
+            params.update({'category':nextCategory, 'title':item[0], 'url':cItem['url'] + item[1]})
+            self.addDir(params)
         
     def getFilterUrl(self, cItem):
         linkComp = []
@@ -373,6 +400,13 @@ class FilmixCO(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listMainMenu({'name':'category'})
+            
+        elif category == 'top250':
+            self.top250Type(self.currItem, 'list_top250')
+        elif category == 'list_top250':
+            self.listTop250(self.currItem, 'list_top250_sort')
+        elif category == 'list_top250_sort':
+            self.listTop250Sort(self.currItem, 'list_items')
         elif category == 'filters':
             self.listFilters(self.currItem, 'list_sort')
         elif category == 'list_sort':
