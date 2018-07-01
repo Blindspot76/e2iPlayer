@@ -69,6 +69,8 @@ class HDKinoMir(CBaseHostClass):
                             ]
         
         self.encoding = ''
+        
+
     
     def getPage(self, url, params={}, post_data=None):
         sts,data = self.cm.getPage(url, params, post_data)

@@ -50,6 +50,7 @@ hostfilmativa
 hostfilmehdnet
 hostfilmeonlineto
 hostfilmezz
+hostfilmixco
 hostfilmovizijastudio
 hostfilmpalast
 hostfilmstreamhdit
