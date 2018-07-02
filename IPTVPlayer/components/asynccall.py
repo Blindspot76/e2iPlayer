@@ -31,7 +31,7 @@ gMainFunctionsQueueTab = [None, None]
 
 class AsyncCall(object):
     def __init__(self, fnc, callback=None, callbackWithThreadID=False):
-        printDBG("AsyncCall.__init__ [%s]--------------------------------------------" % fnc.__name__)
+        printDBG("AsyncCall.__init__ [%s]---" % fnc.__name__)
         self.Callable = fnc
         self.Callback = callback
         self.CallbackWithThreadID = callbackWithThreadID
@@ -42,11 +42,12 @@ class AsyncCall(object):
         self.exceptStack = ''
 
     def __del__(self):
-        printDBG("AsyncCall.__del__  --------------------------------------------")
+        printDBG("AsyncCall.__del__ ---")
 
     def __call__(self, *args, **kwargs):
         SetIPTVPlayerLastHostError()
         self.Thread = threading.Thread(target = self.run, name = self.Callable.__name__, args = args, kwargs = kwargs)
+        self.Thread._iptvplayer_ext = {'killed':False, 'iptv_execute':None}
         self.Thread.start()
         return self
         
@@ -71,20 +72,30 @@ class AsyncCall(object):
                 if None != thread_id:
                     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), ctypes.py_object(SystemExit))
                     if res == 0:
-                        printDBG("AsyncCall._kill ********************************* invalid thread id")
+                        printDBG("AsyncCall._kill *** invalid thread id")
                     elif res != 1:
                         # "if it returns a number greater than one, you're in trouble,
                         # and you should call it again with exc=NULL to revert the effect"
                         ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), None)
-                        printDBG("AsyncCall._kill ********************************* PyThreadState_SetAsyncExc failed")
+                        printDBG("AsyncCall._kill *** PyThreadState_SetAsyncExc failed")
                     else:
-                        printDBG("AsyncCall._kill ********************************* KILL OK")
+                        printDBG("AsyncCall._kill *** KILL OK")
             except Exception:
-                printDBG("AsyncCall._kill ********************************* exception")
+                printDBG("AsyncCall._kill *** exception")
 
     def kill(self):
         bRet = False
         self.mainLock.acquire()
+        
+        # we will kill this thread, so we need clear 
+        # resource which it allocated
+        self.Thread._iptvplayer_ext['killed'] = True
+        if self.Thread._iptvplayer_ext['iptv_execute'] != None:
+            try:
+                self.Thread._iptvplayer_ext['iptv_execute'].terminate()
+                self.Thread._iptvplayer_ext['iptv_execute'] = None
+            except Exception:
+                printExc()
 
         self.Callback = None
         if self.finished == False:
@@ -110,7 +121,7 @@ class AsyncCall(object):
             self.mainLock.acquire()
             self.exceptStack = traceback.format_exc()
             self.mainLock.release()
-            printDBG(">>>>>>>>>>>>>>>>>>>>>>>]]]]]]]]]]]]]]]]]]]]]]]] %s" % self.exceptStack)
+            printDBG(">> %s" % self.exceptStack)
             return
             
         self.mainLock.acquire()
@@ -118,7 +129,7 @@ class AsyncCall(object):
         self.finished = True
         if self.Callback:
             if self.CallbackWithThreadID:
-                printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> self[%r] [%r]" % (self, self.CallbackWithThreadID))
+                printDBG(">> self[%r] [%r]" % (self, self.CallbackWithThreadID))
                 self.Callback(self, result)
             else:
                 self.Callback(result)
@@ -132,13 +143,13 @@ class AsyncCall(object):
 
 class AsyncMethod(object):
     def __init__(self, fnc, callback=None, callbackWithThreadID=False):
-        printDBG("AsyncMethod.__init__ --------------------------------------------")
+        printDBG("AsyncMethod.__init__ ---")
         self.Callable = fnc
         self.Callback = callback
         self.CallbackWithThreadID = callbackWithThreadID
         
     def __del__(self):
-        printDBG("AsyncMethod.__del__  --------------------------------------------")
+        printDBG("AsyncMethod.__del__ ---")
 
     def __call__(self, *args, **kwargs):
         fnc      = self.Callable
@@ -176,7 +187,7 @@ class Delegate(object):
         self.event.set()
         
     #def __del__(self):
-    #    printDBG("Delegate.__del__ ---------------------------------")
+    #    printDBG("Delegate.__del__ ---")
 
 class DelegateToMainThread(Delegate):
     def __init__(self, fnc, mainThreadIdx=0):
@@ -184,7 +195,7 @@ class DelegateToMainThread(Delegate):
         Delegate.__init__(self, gMainFunctionsQueueTab[mainThreadIdx], fnc)
         
     #def __del__(self):
-    #    printDBG("DelegateToMainThread.__del__ ---------------------------------")
+    #    printDBG("DelegateToMainThread.__del__ ---")
 
 class MainSessionWrapper(object):
     '''
@@ -236,6 +247,7 @@ class iptv_execute(object):
         self.retVal = None
         self.event = threading.Event()
         self.mainThreadIdx = mainThreadIdx
+        self.Thread = threading.current_thread()
 
     def __call__(self, cmd):
         printDBG("iptv_execute.__call__: Here we must not be in main thread context: [%s]" % threading.current_thread());
@@ -251,17 +263,37 @@ class iptv_execute(object):
 
     def _system(self, session, cmd):
         printDBG("iptv_execute._system: Here we must be in main thread context: [%s]" % threading.current_thread());
-        self.iptv_system = iptv_system(cmd, self._callBack)
-        return iptv_execute.WAIT_RET
+        
+        try: killed = self.Thread._iptvplayer_ext['killed']
+        except Exception:
+            printExc()
+            killed = False
+        
+        if not killed and self.Thread.isAlive():
+            try: self.Thread._iptvplayer_ext['iptv_execute'] = self
+            except Exception: printExc()
+            self.iptv_system = iptv_system(cmd, self._callBack)
+            
+            return iptv_execute.WAIT_RET
+        return
 
     def _callBack(self, code, outData):
         printDBG("iptv_execute._callBack: Here we must be in main thread context: [%s]" % threading.current_thread());
         self.iptv_system = None
         self.retVal = {'sts':True, 'code':code, 'data':outData}
         self.event.set()
+        
+        try: self.Thread._iptvplayer_ext['iptv_execute'] = None
+        except Exception: printExc()
+        self.Thread = None
+    
+    def terminate(self):
+        printDBG("iptv_execute.terminate: Here we must be in main thread context: [%s]" % threading.current_thread());
+        self.iptv_system.kill()
+        self._callBack(-1, "terminated")
 
     #def __del__(self):
-    #    printDBG("iptv_execute.__del__ ---------------------------------")
+    #    printDBG("iptv_execute.__del__ ---")
 
 def iptv_js_execute(jscode, params={}):
     sts, tmpPath = CreateTmpFile('.iptv_js.js', jscode)
@@ -283,7 +315,7 @@ def iptv_js_execute(jscode, params={}):
 
 ###############################################################################
 #                          Proxy function Queue
-#           can be used to run call back function from MainThread
+#           can be used to run callback function from MainThread
 ###############################################################################
 class CPQItemBase:
     def __init__(self):
