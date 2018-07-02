@@ -30,9 +30,11 @@ from Screens.MessageBox import MessageBox
 
 ###################################################
 # Config options for HOST
+config.plugins.iptvplayer.filmixco_alt_domain = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.filmixco_alt_domain))
     return optionList
 ###################################################
 
@@ -85,11 +87,25 @@ class FilmixCO(CBaseHostClass):
     
     def listMainMenu(self, cItem):
         printDBG("FilmixCO.listMainMenu")
-        self.cacheFilters = []
         
-        sts, data = self.getPage(self.getFullUrl('/films'))
+        domains = ['http://filmix.cc/films', 'https://filmix.co/films']
+        domain = config.plugins.iptvplayer.filmixco_alt_domain.value.strip()
+        if self.cm.isValidUrl(domain):
+            if domain[-1] != '/': domain += '/'
+            domains.insert(0, domain + 'films')
+        
+        sts = False
+        for domain in domains:
+            sts, data = self.getPage(domain)
+            if not sts: continue
+            if '/films' in data:
+                self.setMainUrl(data.meta['url'])
+                break
+            else:
+                sts = False
+        
+        self.cacheFilters = []
         if sts:
-            self.setMainUrl(data.meta['url'])
             tmp = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'filtersForm'), ('</form', '>'))[1]
             tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'filter-category'), ('</div', '>'))
             for item in tmp:
@@ -286,6 +302,7 @@ class FilmixCO(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         cUrl = data.meta['url']
+        self.setMainUrl(cUrl)
         
         trailerVideo = self.getUtf8Str(self.cm.ph.getSearchGroups(data, '''trailerVideoLink5\s*?=\s*?['"]#([^'^"]+?)['"]''')[0])
         if self.cm.isValidUrl(trailerVideo):
