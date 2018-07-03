@@ -574,9 +574,26 @@ class common:
             response = self.getURLRequestData(addParams, post_data)
             status = True
         except urllib2.HTTPError, e:
-            printExc()
-            response = e
-            status = False
+            try:
+                printExc()
+                status = False
+                response = e
+                if addParams.get('return_data', False):
+                    metadata = {}
+                    metadata['url'] = e.fp.geturl()
+                    metadata['status_code'] = e.code
+                    if 'Content-Type' in e.fp.info():
+                        metadata['content-type'] = e.fp.info()['Content-Type']
+                    
+                    data = e.fp.read()
+                    if e.fp.info().get('Content-Encoding', '') == 'gzip':
+                        data = DecodeGzipped(data)
+                    
+                    data, metadata = self.handleCharset(addParams, data, metadata)
+                    response = strwithmeta(data, metadata)
+                    e.fp.close()
+            except Exception:
+                printExc()
         except urllib2.URLError, e:
             if 'TLSV1_ALERT_PROTOCOL_VERSION' in str(e) and 'ssl_protocol' not in addParams:
                 try:
@@ -667,10 +684,8 @@ class common:
                 current += 1
                 doRefresh = False
                 try:
-                    domain = self.getBaseUrl(data.fp.geturl())
-                    verData = data.fp.read() 
-                    if data.fp.info().get('Content-Encoding', '') == 'gzip':
-                        verData = DecodeGzipped(verData)
+                    domain = self.getBaseUrl(data.meta['url'])
+                    verData = data
                     printDBG("------------------")
                     printDBG(verData)
                     printDBG("------------------")
@@ -696,7 +711,7 @@ class common:
                         
                         url = self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0]
                         if url != '': url = _getFullUrl( url )
-                        else: url = data.fp.geturl()
+                        else: url = data.meta['url']
                         actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
                         post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
                         #post_data2['id'] = id
@@ -1043,27 +1058,34 @@ class common:
                 SetTmpCookieDir()
                 raise e
         
-        if params.get('return_data', False) and params.get('convert_charset', True) :
-            encoding = ''
-            if 'content-type' in metadata:
-                encoding = self.ph.getSearchGroups(metadata['content-type'], '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
-            
-            if encoding == '' and params.get('search_charset', False):
-                encoding = self.ph.getSearchGroups(out_data, '''(<meta[^>]+?Content-Type[^>]+?>)''', ignoreCase=True)[0]
-                encoding = self.ph.getSearchGroups(encoding, '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
-            
-            if encoding not in ['', 'UTF-8']:
-                printDBG(">> encoding[%s]" % encoding)
-                try:
-                    out_data = out_data.decode(encoding).encode('UTF-8')
-                except Exception:
-                    printExc()
-                metadata['orig_charset'] = encoding
-        
+        out_data, metadata = self.handleCharset(params, out_data, metadata)
         if params.get('with_metadata', False) and params.get('return_data', False):
             out_data = strwithmeta(out_data, metadata)
         
         return out_data 
+        
+    def handleCharset(self, params, data, metadata):
+        try:
+            if params.get('return_data', False) and params.get('convert_charset', True) :
+                encoding = ''
+                if 'content-type' in metadata:
+                    encoding = self.ph.getSearchGroups(metadata['content-type'], '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
+                
+                if encoding == '' and params.get('search_charset', False):
+                    encoding = self.ph.getSearchGroups(data, '''(<meta[^>]+?Content-Type[^>]+?>)''', ignoreCase=True)[0]
+                    encoding = self.ph.getSearchGroups(encoding, '''charset=([A-Za-z0-9\-]+)''', 1, True)[0].strip().upper()
+                
+                if encoding not in ['', 'UTF-8']:
+                    printDBG(">> encoding[%s]" % encoding)
+                    try:
+                        data = data.decode(encoding).encode('UTF-8')
+                    except Exception:
+                        printExc()
+                    metadata['orig_charset'] = encoding
+        except Exception:
+            printExc()
+        return data, metadata
+
 
     def urlEncodeNonAscii(self, b):
         return re.sub('[\x80-\xFF]', lambda c: '%%%02x' % ord(c.group(0)), b)
