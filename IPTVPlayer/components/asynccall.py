@@ -12,7 +12,6 @@ import threading
 import traceback
 try: import ctypes
 except Exception: pass
-import time
 ###################################################
 
 gMainThreadId = None
