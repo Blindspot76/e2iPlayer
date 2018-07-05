@@ -12,6 +12,7 @@ import threading
 import traceback
 try: import ctypes
 except Exception: pass
+import time
 ###################################################
 
 gMainThreadId = None
@@ -26,6 +27,39 @@ def SetMainThreadId(mainThreadId=None):
         gMainThreadId = threading.current_thread()
     else:
         gMainThreadId = mainThreadId
+
+def IsThreadTerminated():
+    # this function shall be called only from working thread
+    # NOT from main thread
+    terminated = True
+    try:
+        thread = threading.current_thread()
+        with thread._iptvplayer_ext['kill_lock']:
+            terminated = thread._iptvplayer_ext['terminated']
+    except Exception:
+        printExc()
+    return terminated
+
+def SetThreadKillable(killable):
+    # this function shall be called only from working thread
+    # NOT from main thread
+    terminated = False
+    try:
+        thread = threading.current_thread()
+        with thread._iptvplayer_ext['kill_lock']:
+            if not killable:
+                thread._iptvplayer_ext['killable'] = killable
+            terminated = thread._iptvplayer_ext['terminated']
+            thread._iptvplayer_ext['killable'] = killable
+    except Exception:
+        # This is used to catch exceptions like:
+        # thread do not have member _iptvplayer_ext 
+        printExc()
+    
+    if terminated:
+        # there was request to terminate this 
+        # thread as soon as possible
+        raise SystemExit(-1)
 
 gMainFunctionsQueueTab = [None, None]
 
@@ -47,7 +81,7 @@ class AsyncCall(object):
     def __call__(self, *args, **kwargs):
         SetIPTVPlayerLastHostError()
         self.Thread = threading.Thread(target = self.run, name = self.Callable.__name__, args = args, kwargs = kwargs)
-        self.Thread._iptvplayer_ext = {'killed':False, 'iptv_execute':None}
+        self.Thread._iptvplayer_ext = {'kill_lock':threading.Lock(), 'killable':True, 'terminated':False, 'iptv_execute':None}
         self.Thread.start()
         return self
         
@@ -58,6 +92,7 @@ class AsyncCall(object):
         return None != self.Thread and self.Thread.isAlive()
         
     def _kill(self):
+        bRet = False
         if None != self.Thread:
             try:
                 thread_id = None
@@ -79,17 +114,34 @@ class AsyncCall(object):
                         ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread_id), None)
                         printDBG("AsyncCall._kill *** PyThreadState_SetAsyncExc failed")
                     else:
+                        bRet = True
                         printDBG("AsyncCall._kill *** KILL OK")
             except Exception:
                 printDBG("AsyncCall._kill *** exception")
-
+        return bRet
+    
     def kill(self):
-        bRet = False
-        self.mainLock.acquire()
+        bRet = True
         
+        printDBG("THREAD KILL >>>")
+        
+        killable = True
+        try:
+            with self.Thread._iptvplayer_ext['kill_lock']:
+                killable = self.Thread._iptvplayer_ext['killable']
+                self.Thread._iptvplayer_ext['terminated'] = True
+                
+            if not killable:
+                # if thread was marked as not killable then thread will 
+                # finish it self, after exist from not killable block
+                return True
+        except Exception:
+            printExc()
+
         # we will kill this thread, so we need clear 
         # resource which it allocated
-        self.Thread._iptvplayer_ext['killed'] = True
+        self.mainLock.acquire()
+        
         if self.Thread._iptvplayer_ext['iptv_execute'] != None:
             try:
                 self.Thread._iptvplayer_ext['iptv_execute'].terminate()
@@ -100,10 +152,9 @@ class AsyncCall(object):
         self.Callback = None
         if self.finished == False:
             if self.Thread.isAlive():
-                self._kill()
+                bRet = self._kill()
                 self.Thread._Thread__stop()
-            bRet = True
-
+        
         self.mainLock.release()
 
         return bRet
@@ -264,12 +315,12 @@ class iptv_execute(object):
     def _system(self, session, cmd):
         printDBG("iptv_execute._system: Here we must be in main thread context: [%s]" % threading.current_thread());
         
-        try: killed = self.Thread._iptvplayer_ext['killed']
+        try: terminated = self.Thread._iptvplayer_ext['terminated']
         except Exception:
             printExc()
-            killed = False
+            terminated = False
         
-        if not killed and self.Thread.isAlive():
+        if not terminated and self.Thread.isAlive():
             try: self.Thread._iptvplayer_ext['iptv_execute'] = self
             except Exception: printExc()
             self.iptv_system = iptv_system(cmd, self._callBack)

@@ -206,6 +206,7 @@ config.plugins.iptvplayer.search_history_size  = ConfigInteger(50, (0, 1000000))
 config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (1, 1000000))
 
 config.plugins.iptvplayer.watched_item_color = ConfigSelection(default = "#808080", choices = COLORS_DEFINITONS)
+config.plugins.iptvplayer.usepycurl = ConfigYesNo(default = False)
 
 ###################################################
 
@@ -283,6 +284,7 @@ class ConfigMenu(ConfigBaseWidget):
     @staticmethod
     def fillConfigList(list, hiddenOptions=False):
         if hiddenOptions:
+            list.append( getConfigListEntry(_("Use PyCurl"), config.plugins.iptvplayer.usepycurl) )
             list.append( getConfigListEntry(_("Last checked version"), config.plugins.iptvplayer.updateLastCheckedVersion) )
             list.append( getConfigListEntry(_("Show all version in the update menu"), config.plugins.iptvplayer.hiddenAllVersionInUpdate) )
             list.append(getConfigListEntry(_("VFD set current title:"), config.plugins.iptvplayer.set_curr_title))

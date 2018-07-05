@@ -32,6 +32,9 @@ try:    import json
 except Exception: import simplejson as json
 import datetime
 
+def UsePyCurl():
+    return config.plugins.iptvplayer.usepycurl.value
+
 ###################################################
 def DaysInMonth(dt):
     return (datetime.date(dt.year+(dt.month / 12), (dt.month % 12) + 1, 1) - dt).days + dt.day - 1
