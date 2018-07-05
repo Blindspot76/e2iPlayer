@@ -482,7 +482,7 @@ class AnimeTo(CBaseHostClass):
         printDBG("++++++++++++> timestamp[%s], id[%s]" % (timestamp, id))
 
         getParams = {'ts':timestamp}
-        getParams = self._updateParams(getParams)
+        #getParams = self._updateParams(getParams)
         url = self.getFullUrl('/ajax/film/tooltip/' + id + '?' + urllib.urlencode(getParams))
         sts, data = self.getPage(url, params)
         if not sts: return []

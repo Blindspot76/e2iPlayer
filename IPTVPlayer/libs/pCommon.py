@@ -494,6 +494,7 @@ class common:
             if self.pyCurlAvailable == None:
                 try:
                     import pycurl
+                    #test = pycurl.SSLVERSION_TLSv1_3
                     verInfo = pycurl.version_info()
                     printDBG("usePyCurl VERSION: %s" % [verInfo])
                     # #define CURL_VERSION_ASYNCHDNS    (1<<7)
@@ -734,6 +735,7 @@ class common:
                 curlSession.setopt(pycurl.HTTPHEADER, customHeaders)
             
             curlSession.setopt(pycurl.ACCEPT_ENCODING, "") # enable all supported built-in compressions
+            #curlSession.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_TLSv1_0) # TLS v1.0 or later 
             
             if 'use_cookie' not in params and 'cookiefile' in params and ('load_cookie' in params or 'save_cookie' in params):
                 params['use_cookie'] = True
