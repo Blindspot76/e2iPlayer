@@ -2249,8 +2249,8 @@ class pageParser:
             RAND = re.search('name="rand" value="(.+?)">', link)
             table = self.captcha.textCaptcha(link)
             value = table[0][0] + table [1][0] + table [2][0] + table [3][0]
-            code = self.cm.html_entity_decode(value)
-            print ('captcha-code :' + code)
+            code = clean_html(value)
+            printDBG('captcha-code :' + code)
             if ID and RAND > 0:
                 postdata = {'rand' : RAND.group(1), 'id' : ID.group(1), 'method_free' : 'Continue to Video', 'op' : 'download2', 'referer' : url, 'down_direct' : '1', 'code' : code, 'method_premium' : '' }
                 query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': True, 'return_data': True }
@@ -2260,14 +2260,9 @@ class pageParser:
                 HS = re.search('image<>(.+?)<>(.+?)<>(.+?)<>file<>', data)
                 if PL and HS > 0:
                     linkVideo = 'http://' + PL.group(4) + '.' + PL.group(3) + '.' + PL.group(2) + '.' + PL.group(1) + ':' + HS.group(3) + '/d/' + HS.group(2) + '/video.' + HS.group(1)
-                    print ('linkVideo :' + linkVideo)
+                    printDBG('linkVideo :' + linkVideo)
                     return linkVideo
-                else:
-                    return False
-            else:
-                return False
-        else:
-            return False
+        return False
 
     def parserSCS(self,url):
         query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }

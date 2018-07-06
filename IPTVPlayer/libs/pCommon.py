@@ -368,8 +368,8 @@ class CParsingHelper:
             if numNodes > 0 and len(itemsTab) == numNodes:
                 break
         return itemsTab
-        
-    @staticmethod    
+
+    @staticmethod
     def removeDoubles(data, pattern):
         while -1 < data.find(pattern+pattern) and '' != pattern:
             data = data.replace(pattern+pattern, pattern)
@@ -483,11 +483,16 @@ class common:
         self.useProxy = useProxy
         self.geolocation = {}
         self.useMozillaCookieJar = useMozillaCookieJar
+        self.metadataFromLastRequest = {}
         
         self.curlSession = None
         self.pyCurlAvailable = None
         self.pyCurl = None
-        
+    
+    @property
+    def meta(self):
+        return self.metadataFromLastRequest
+    
     def usePyCurl(self):
         bRet = False
         if UsePyCurl():
@@ -575,23 +580,6 @@ class common:
             printExc()
         return ret
 
-    def html_entity_decode_char(self, m):
-        ent = m.group(1)
-        if ent.startswith('x'):
-            return unichr(int(ent[1:],16))
-        try:
-            return unichr(int(ent))
-        except Exception:
-            if ent in htmlentitydefs.name2codepoint:
-                return unichr(htmlentitydefs.name2codepoint[ent])
-            else:
-                return ent
-
-    def html_entity_decode(self, string):
-        string = string.decode('UTF-8')
-        s = re.compile("&#?(\w+?);").sub(self.html_entity_decode_char, string)
-        return s.encode('UTF-8')
-    
     def getPageWithPyCurl(self, url, params = {}, post_data = None):
         if IsMainThread():
             msg1 = _('It is not allowed to call getURLRequestData from main thread.')
@@ -600,9 +588,12 @@ class common:
             raise Exception("Wrong usage!")
         
         pycurl = self.pyCurl
+        # by default we will work in return_data mode
         if 'return_data' not in params:
             params['return_data'] = True
-        metadata = {}
+        
+        self.metadataFromLastRequest = {}
+        metadata = self.metadataFromLastRequest
         out_data = None
         sts = False
         
@@ -735,21 +726,27 @@ class common:
                 curlSession.setopt(pycurl.HTTPHEADER, customHeaders)
             
             curlSession.setopt(pycurl.ACCEPT_ENCODING, "") # enable all supported built-in compressions
+            #sslProto = params.get('ssl_protocol', None)
+            #ssl.PROTOCOL_TLSv1_2
             #curlSession.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_TLSv1_0) # TLS v1.0 or later 
             
             if 'use_cookie' not in params and 'cookiefile' in params and ('load_cookie' in params or 'save_cookie' in params):
                 params['use_cookie'] = True
                 
             if params.get('use_cookie', False):
-                cookieStr = ''
-                if cookieStr != '':
-                    curlSession.setopt(pycurl.COOKIE, cookieStr) #'Set-Cookie: foo=baar') #
+                cookiesStr = ''
+                for cookieKey in params.get('cookie_items', {}).keys():
+                    printDBG("cookie_item[%s=%s]" % (cookieKey, params['cookie_items'][cookieKey]))
+                    cookiesStr += '%s=%s; ' % (cookieKey, params['cookie_items'][cookieKey])
+                
+                if cookiesStr != '':
+                    curlSession.setopt(pycurl.COOKIE, cookiesStr) #'Set-Cookie: foo=baar') #
             
                 if params.get('load_cookie', False):
-                    curlSession.setopt(pycurl.COOKIEFILE, params['cookiefile'])
+                    curlSession.setopt(pycurl.COOKIEFILE, params.get('cookiefile', ''))
                 
                 if params.get('save_cookie', False):
-                    curlSession.setopt(pycurl.COOKIEJAR, params['cookiefile'])
+                    curlSession.setopt(pycurl.COOKIEJAR, params.get('cookiefile', ''))
                     
             if timeout != None:
                 curlSession.setopt(pycurl.CONNECTTIMEOUT, timeout) # in seconds - connection timeout
@@ -794,13 +791,14 @@ class common:
             if None != post_data:
                 printDBG('pCommon - getPageWithPyCurl() -> post data: ' + str(post_data))
                 if params.get('raw_post_data', False):
-                    dataPost = post_data
+                    curlSession.setopt(pycurl.POSTFIELDS, post_data)
                 elif params.get('multipart_post_data', False):
                     printDBG("multipart_post_data NOT SUPPORTED")
                     dataPost = post_data
+                    curlSession.setopt(pycurl.HTTPPOST, post_data)
+                    #curlSession.setopt(pycurl.CUSTOMREQUEST, "PUT")
                 else:
-                    dataPost = urllib.urlencode(post_data)
-                curlSession.setopt(pycurl.POSTFIELDS, dataPost)
+                    curlSession.setopt(pycurl.POSTFIELDS, urllib.urlencode(post_data))
             
             curlSession.setopt(pycurl.WRITEDATA, buffer)
             curlSession.setopt(pycurl.HEADERFUNCTION, _headerFunction)
@@ -818,6 +816,10 @@ class common:
                 metadata['status_code'] = curlSession.getinfo(pycurl.HTTP_CODE)
                 metadata['size_download'] = curlSession.getinfo(pycurl.SIZE_DOWNLOAD)
                 
+                # reset will cause lost all cookies, so we force to saved them in the file
+                if params.get('use_cookie', False) and params.get('save_cookie', False):
+                    curlSession.setopt(pycurl.COOKIELIST , 'FLUSH')
+                
                 curlSession.reset()
                 # to be re-used in next request
                 self.curlSession = curlSession 
@@ -834,7 +836,6 @@ class common:
                     out_data = ""
                 
                 out_data, metadata = self.handleCharset(params, out_data, metadata)
-                out_data = strwithmeta(out_data, metadata)
                 if metadata['status_code'] != 200:
                     ignoreCodeRanges = params.get('ignore_http_code_ranges', [(404, 404), (500, 500)])
                     for ignoreCodeRange in ignoreCodeRanges:
@@ -852,6 +853,9 @@ class common:
         SetThreadKillable(True)
         
         printDBG('pCommon - getPageWithPyCurl() return -> \nsts: %s\nmetadata: %s\n' % (sts, metadata))
+        if params.get('with_metadata', False):
+            out_data = strwithmeta(out_data, metadata)
+            
         return sts, out_data
     
     def getPage(self, url, addParams = {}, post_data = None):
@@ -873,7 +877,8 @@ class common:
                 status = False
                 response = e
                 if addParams.get('return_data', False):
-                    metadata = {}
+                    self.metadataFromLastRequest = {}
+                    metadata = self.metadataFromLastRequest
                     metadata['url'] = e.fp.geturl()
                     metadata['status_code'] = e.code
                     if 'Content-Type' in e.fp.info():
@@ -1081,6 +1086,7 @@ class common:
         bRet = False
         downDataSize = 0
         
+        add_params['with_metadata'] = True
         add_params['save_to_file'] = file_path
         if 'maintype' in add_params:
             add_params['check_maintype'] = add_params.pop('maintype')
@@ -1203,7 +1209,8 @@ class common:
         req      = None
         out_data = None
         opener   = None
-        metadata = None
+        self.metadataFromLastRequest = {}
+        metadata = self.metadataFromLastRequest
         
         timeout = params.get('timeout', None)
         
@@ -1222,8 +1229,6 @@ class common:
         if 'User-Agent' not in headers:
             headers['User-Agent'] = host
         
-        metadata = {}
-
         printDBG('pCommon - getURLRequestData() -> params: ' + str(params))
         printDBG('pCommon - getURLRequestData() -> headers: ' + str(headers)) 
 
