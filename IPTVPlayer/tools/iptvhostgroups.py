@@ -79,7 +79,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['polish']           = ['youtube','webstream','efilmytv','alltubetv','allboxtv','filisertv','ekinotv','cdapl','kinomanco','iitvpl','videopenny','zalukajcom','serialnet','tvpvod','ipla','tvnvod','vodpl', \
                                                      'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajkipopolskucom','bajeczkiorg','animeodcinki','playpuls','meczykipl','fokustv','eskago','filmydokumentalneeu', \
                                                      'tvjworg','artetv','dailymotion', 'vimeo', 'kabarety','twitchtv','hitboxtv','tvgrypl','chomikuj','fighttube','spryciarze','wgrane','wolnelekturypl','tvn24','ninateka', \
-                                                     'maxtvgo','wpolscepl','wrealu24tv','wptv','interiatv','kinopodaniolempl', 'dokumentalnenet', 'serialeco','radiostacja','luxveritatis','naszekinotv','salvetvpl','tvrepublika']
+                                                     'maxtvgo','wpolscepl','wrealu24tv','wptv','interiatv','kinopodaniolempl', 'dokumentalnenet', 'serialeco','radiostacja','nuteczki','luxveritatis','naszekinotv','salvetvpl','tvrepublika']
         self.PREDEFINED_HOSTS['english']          = ['youtube','webstream','liveleak','bbciplayer','bbcsport','tvplayercom','itvcom','uktvplay','appletrailers','classiccinemaonline','seriesonline','mythewatchseries', \
                                                      'thewatchseriesto','icefilmsinfo','movienightws','yifytv', 'artetv',\
                                                      'hdpopcornscom','losmovies','solarmovie','putlockertvto','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','9cartoonme','kisscartoonme','chiaanimeco','dailymotion', \
@@ -97,7 +97,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['italian']          = ['youtube','tantifilmorg','filmstreamhdit','dailymotion','vimeo','twitchtv','hitboxtv','playrtsiw','altadefinizione','streaminghdfun']
         self.PREDEFINED_HOSTS['swedish']          = ['youtube','dailymotion','vimeo','svtplayse','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['balkans']          = ['youtube','filmehdnet','gledalica','filmativa','filmovizijastudio','filma24hdcom','filmaoncom','crtankocom','serijeonline','filmeonlineto','dailymotion','vimeo','twitchtv','hitboxtv']
-        self.PREDEFINED_HOSTS['music']            = ['youtube','vevo','myfreemp3','musicmp3ru','dancetrippin','musicbox','vimeo','dailymotion','shoutcast','eskago','radiostacja']
+        self.PREDEFINED_HOSTS['music']            = ['youtube','vevo','myfreemp3','musicmp3ru','dancetrippin','musicbox','vimeo','dailymotion','shoutcast','eskago','radiostacja','nuteczki']
         
         self.PREDEFINED_HOSTS['others']           = ['iptvplayerinfo','localmedia','urllist','youtube','cdapl','wolnelekturypl','chomikuj','freediscpl','kabarety','spryciarze','wgrane','liveleak','dailymotion','vimeo','ted', \
                                                      'ororotv','tvjworg','twitchtv','hitboxtv','drdk','pinkbike','kijknl','rtbfbe','playrtsiw']

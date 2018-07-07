@@ -53,7 +53,7 @@ import base64
 import math
 
 from xml.etree import cElementTree
-from random import random, randint, randrange
+from random import random, randint, randrange, choice as random_choice
 from urlparse import urlparse, urlunparse, parse_qs
 from binascii import hexlify, unhexlify, a2b_hex
 from hashlib import md5, sha256
@@ -483,6 +483,7 @@ class urlparser:
                        'soundcloud.com':       self.pp.parserSOUNDCLOUDCOM  ,
                        'vcstream.to':          self.pp.parserVCSTREAMTO     ,
                        'vidcloud.icu':         self.pp.parserVIDCLOUDICU    ,
+                       'uploaduj.net':         self.pp.parserUPLOADUJNET    ,
                        #https://oneload.co/4gdkrp4hieoe TODO
                        #'billionuploads.com':   self.pp.parserBILLIONUPLOADS ,
                        
@@ -10107,6 +10108,31 @@ class pageParser:
                 url = strwithmeta(url.replace('\\/', '/'), {'Referer':cUrl})
                 urlsTab.append({'name':name, 'url':url})
         return urlsTab
+        
+    def parserUPLOADUJNET(self, baseUrl):
+        printDBG("parserUPLOADUJNET baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        cUrl = baseUrl
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = data.meta['url']
+        
+        url = self.cm.getFullUrl('/api/preview/request/', self.cm.getBaseUrl(cUrl))
+        HTTP_HEADER['Referer'] = cUrl
+        
+        hash = ''.join([random_choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") for i in range(20)])
+        sts, data = self.cm.getPage(url, urlParams, {'hash':hash, 'url':cUrl})
+        if not sts: return False
+        
+        printDBG(data)
+        data = byteify(json.loads(data))
+        if self.cm.isValidUrl( data['clientUrl'] ):
+            return strwithmeta(data['clientUrl'], {'Referer':cUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+        return False
         
     def parserSOUNDCLOUDCOM(self, baseUrl):
         printDBG("parserCLOUDSTREAMUS baseUrl[%r]" % baseUrl)
