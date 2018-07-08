@@ -303,7 +303,7 @@ class NuteczkiEU(CBaseHostClass):
         printDBG("NuteczkiEU.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         cItem = dict(cItem)
         cItem['url'] = self.getFullUrl('/index.php?do=search')
-        cItem['post_data'] = {'do':'search', 'subaction':'search', 'story':'jack'}
+        cItem['post_data'] = {'do':'search', 'subaction':'search', 'story':searchPattern}
         cItem['category'] = 'list_items'
         self.listItems(cItem)
     
