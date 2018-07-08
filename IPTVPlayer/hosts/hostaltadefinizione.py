@@ -396,6 +396,8 @@ class Altadefinizione(CBaseHostClass):
             self.listMainMenu({'name':'category', 'type':'category'})
         elif category == 'sub_items':
             self.listSubItems(self.currItem)
+        elif category == 'list_categories':
+            self.currList = self.cacheCategories
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
