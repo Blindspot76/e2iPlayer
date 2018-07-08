@@ -546,36 +546,39 @@ class common:
         return True
         
     def getCookieItem(self, cookiefile, item):
-        ret = self.getCookieItems(cookiefile)
-        return ret.get(item, '')
+        cookiesDict = self.getCookieItems(cookiefile)
+        return cookiesDict.get(item, '')
         
-    def getCookieItems(self, cookiefile, ignoreDiscard=True):
-        ret = {}
+    def getCookieItems(self, cookiefile, ignoreDiscard=True, ignoreExpires=False):
+        cookiesDict = {}
         try:
-            if not self.useMozillaCookieJar:
+            if self.usePyCurl():
+                cj = cookielib.MozillaCookieJar()
+                tmp = open(cookiefile)
+                f = StringIO(tmp.read().replace('#HttpOnly_', ''))
+                tmp.close()
+                cj._really_load(f, cookiefile, ignore_discard=ignoreDiscard, ignore_expires=ignoreExpires)
+            elif not self.useMozillaCookieJar:
                 cj = cookielib.LWPCookieJar()
+                cj.load(cookiefile, ignore_discard = ignoreDiscard)
             else:
                 cj = cookielib.MozillaCookieJar()
-            cj.load(cookiefile, ignore_discard = ignoreDiscard)
+                cj.load(cookiefile, ignore_discard = ignoreDiscard)
             for cookie in cj:
-                ret[cookie.name] = cookie.value
+                cookiesDict[cookie.name] = cookie.value
         except Exception:
             printExc()
-        return ret
+        return cookiesDict
         
-    def getCookieHeader(self, cookiefile, allowedNames=[], unquote=True):
+    def getCookieHeader(self, cookiefile, allowedNames=[], unquote=True, ignoreDiscard=True, ignoreExpires=False):
         ret = ''
         try:
-            if not self.useMozillaCookieJar:
-                cj = cookielib.LWPCookieJar()
-            else:
-                cj = cookielib.MozillaCookieJar()
-            cj.load(cookiefile, ignore_discard = True)
-            for cookie in cj:
-                if 0 < len(allowedNames) and cookie.name not in allowedNames: continue
-                value = cookie.value
+            cookiesDict = self.getCookieItems(cookiefile, ignoreDiscard, ignoreExpires)
+            for name in cookiesDict:
+                if 0 < len(allowedNames) and name not in allowedNames: continue
+                value = cookiesDict[name]
                 if unquote: value = urllib.unquote(value)
-                ret += '%s=%s; ' % (cookie.name, value)
+                ret += '%s=%s; ' % (name, value)
         except Exception:
             printExc()
         return ret
