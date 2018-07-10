@@ -526,10 +526,32 @@ class common:
                     printExc()
         return self.geolocation.get('countryCode', '').lower()
         
+    def _pyCurlLoadCookie(self, cookiefile, ignoreDiscard=True, ignoreExpires=False):
+        cj = cookielib.MozillaCookieJar()
+        f = open(cookiefile)
+        lines = f.readlines()
+        f.close()
+        for idx in range(len(lines)):
+            lineNeedFix = False
+            fields = lines[idx].split('\t')
+            if len(fields) < 5: continue
+            if fields[0].endswith('#HttpOnly_'):
+                fields[0] = fields[0].replace('#HttpOnly_', '')
+                lineNeedFix = True
+            if fields[4] == '0':
+                fields[4] = ''
+                lineNeedFix = True
+            if lineNeedFix: 
+                lines[idx] = '\t'.join(fields)
+        cj._really_load(StringIO(''.join(lines)), cookiefile, ignore_discard=ignoreDiscard, ignore_expires=ignoreExpires)
+        return cj
+        
     def clearCookie(self, cookiefile, leaveNames=[], removeNames=None, ignore_discard = True):
         try:
             toRemove = []
-            if not self.useMozillaCookieJar:
+            if self.usePyCurl():
+                cj = self._pyCurlLoadCookie(cookiefile, ignoreDiscard, ignoreExpires)
+            elif not self.useMozillaCookieJar:
                 cj = cookielib.LWPCookieJar()
             else:
                 cj = cookielib.MozillaCookieJar()
@@ -553,11 +575,7 @@ class common:
         cookiesDict = {}
         try:
             if self.usePyCurl():
-                cj = cookielib.MozillaCookieJar()
-                tmp = open(cookiefile)
-                f = StringIO(tmp.read().replace('#HttpOnly_', ''))
-                tmp.close()
-                cj._really_load(f, cookiefile, ignore_discard=ignoreDiscard, ignore_expires=ignoreExpires)
+                cj = self._pyCurlLoadCookie(cookiefile, ignoreDiscard, ignoreExpires)
             elif not self.useMozillaCookieJar:
                 cj = cookielib.LWPCookieJar()
                 cj.load(cookiefile, ignore_discard = ignoreDiscard)
