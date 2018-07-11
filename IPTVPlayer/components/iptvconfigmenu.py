@@ -81,6 +81,8 @@ config.plugins.iptvplayer.IPTVWebIterface = ConfigYesNo(default = False)
 config.plugins.iptvplayer.plugin_autostart = ConfigYesNo(default = False)
 config.plugins.iptvplayer.plugin_autostart_method = ConfigSelection(default = "wizard", choices = [("wizard", "wizard"),("infobar", "infobar")])
 
+config.plugins.iptvplayer.preferredupdateserver = ConfigSelection(default = "", choices = [("", _("Default")),("1", "http://iptvplayer.vline.pl/"), ("2", _("http://www.iptvplayer.gitlab.io/"))])
+
 def GetMoviePlayerName(player):
     map = {"auto":_("auto"), "mini": _("internal"), "standard":_("standard"), 'exteplayer': _("external eplayer3"), 'extgstplayer': _("external gstplayer")}
     return map.get(player, _('unknown'))
@@ -307,6 +309,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("Auto start method", config.plugins.iptvplayer.plugin_autostart_method))
         
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
+        list.append( getConfigListEntry(_("The preferred update server"), config.plugins.iptvplayer.preferredupdateserver) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
         list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
         list.append( getConfigListEntry(_("Services configuration"), config.plugins.iptvplayer.fakeHostsList) )

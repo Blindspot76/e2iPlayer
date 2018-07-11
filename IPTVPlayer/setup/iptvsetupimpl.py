@@ -3,7 +3,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir, GetPyScriptCmd, IsFPUAvailable, ReadGnuMIPSABIFP
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools           import printDBG, printExc, GetBinDir, GetTmpDir, GetPyScriptCmd, IsFPUAvailable, ReadGnuMIPSABIFP, GetResourcesServerUri
 from Plugins.Extensions.IPTVPlayer.setup.iptvsetuphelper     import CBinaryStepHelper, CCmdValidator, SetupDownloaderCmdCreator
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 ###################################################
@@ -33,7 +33,7 @@ class IPTVSetupImpl:
         self.termination  = False
         
         self.tmpDir = GetTmpDir()
-        self.resourceServers = ["http://iptvplayer.vline.pl/resources/"] #"http://iptvplayer.pl/resources/"
+        self.resourceServers = [GetResourcesServerUri()]
         
         self.ffmpegVersion = ""
         self.gstreamerVersion = ""

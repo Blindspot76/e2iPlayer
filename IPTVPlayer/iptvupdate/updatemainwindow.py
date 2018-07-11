@@ -9,7 +9,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, \
                                                                    GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir, \
-                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile, IsExecutable
+                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile, IsExecutable, GetUpdateServerUri
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes          import enum
 from Plugins.Extensions.IPTVPlayer.iptvupdate.iptvlist      import IPTVUpdateList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import UpdateDownloaderCreator
@@ -239,11 +239,12 @@ class IUpdateObjectInterface():
         return sts, msg
     
 class UpdateMainAppImpl(IUpdateObjectInterface):
-    SERVERS_LIST_URLS = ["http://iptvplayer.vline.pl/download/update2/serwerslist.json"] #"http://iptvplayer.pl/download/update2/serwerslist.json"
     VERSION_PATTERN   = 'IPTV_VERSION="([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"'
     
     def __init__(self, session, allowTheSameVersion=False):
         printDBG("UpdateMainAppImpl.__init__ -------------------------------")
+        self.SERVERS_LIST_URLS = [GetUpdateServerUri('serwerslist.json')]
+
         self.session = session
         IUpdateObjectInterface.__init__(self, session)
         self.cm = common()
@@ -387,7 +388,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         if not sts:
             self.stepFinished(-1, msg)
             return
-        serverUrl = UpdateMainAppImpl.SERVERS_LIST_URLS[self.serverIdx]
+        serverUrl = self.SERVERS_LIST_URLS[self.serverIdx]
         self.downloader = UpdateDownloaderCreator(serverUrl)
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__serversListDownloadFinished, None))
         self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'serwerslist2.json'))
@@ -568,7 +569,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         cmd = ''
         try: 
             url = "http://iptvplayer.vline.pl/check.php?ver=%s&type=%s" % (self.serversList[self.currServIdx]['version'], self.serversList[self.currServIdx]['pyver'])
-            cmd = '%s "%s" -O - > /dev/null 2>&1; ' % (config.plugins.iptvplayer.wgetpath.value, url)
+            cmd = '%s "%s" -t 1 -T 10 -O - > /dev/null 2>&1; ' % (config.plugins.iptvplayer.wgetpath.value, url)
         except Exception: 
             printExc()
         
@@ -630,11 +631,11 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader = None
         if DMHelper.STS.DOWNLOADED != status:
             self.serverIdx += 1
-            if self.serverIdx <  len(UpdateMainAppImpl.SERVERS_LIST_URLS): self.stepGetServerLists()
+            if self.serverIdx <  len(self.SERVERS_LIST_URLS): self.stepGetServerLists()
             else:
                 urls = ""
                 for idx in range(self.serverIdx):
-                    urls += "%s, " % (UpdateMainAppImpl.SERVERS_LIST_URLS[idx])
+                    urls += "%s, " % (self.SERVERS_LIST_URLS[idx])
                 if 1 < len(urls): urls = urls[:-2]
                 self.stepFinished(-1, _("Problem with downloading the server list from [%s].") % urls)
         else:

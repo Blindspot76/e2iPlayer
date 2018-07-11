@@ -32,6 +32,32 @@ try:    import json
 except Exception: import simplejson as json
 import datetime
 
+SERVER_DOMAINS = {'vline':'http://iptvplayer.vline.pl/', 'gitlab':'http://www.iptvplayer.gitlab.io/'}
+SERVER_UPDATE_PATH = {'vline':'download/update2/', 'gitlab':'update2/'}
+
+def GetServerKey(serverNum=None):
+    if serverNum == None:
+        serverNum = config.plugins.iptvplayer.preferredupdateserver.value
+
+    if serverNum == '2':
+        serverKey = 'gitlab'
+    else:
+        serverKey = 'vline'
+
+    return serverKey
+
+def GetUpdateServerUri(file='', serverNum=None):
+    serverKey = GetServerKey(serverNum)
+    uri = SERVER_DOMAINS[serverKey] + SERVER_UPDATE_PATH[serverKey] + file
+    printDBG("GetUpdateServerUri -> %s" % uri)
+    return uri
+
+def GetResourcesServerUri(file='', serverNum=None):
+    serverKey = GetServerKey(serverNum)
+    uri = SERVER_DOMAINS[serverKey] + 'resources/' + file
+    printDBG("GetResourcesServerUri -> %s" % uri)
+    return uri
+
 def UsePyCurl():
     return config.plugins.iptvplayer.usepycurl.value
 
