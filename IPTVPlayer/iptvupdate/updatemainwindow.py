@@ -9,7 +9,8 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, \
                                                                    GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir, \
-                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile, IsExecutable, GetUpdateServerUri
+                                                                   GetHostsList, GetEnabledHostsList, WriteTextFile, IsExecutable, GetUpdateServerUri, \
+                                                                   GetIconsHash, SetIconsHash, GetGraphicsHash, SetGraphicsHash
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes          import enum
 from Plugins.Extensions.IPTVPlayer.iptvupdate.iptvlist      import IPTVUpdateList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import UpdateDownloaderCreator
@@ -135,8 +136,6 @@ class IPTVUpdateWindow(Screen):
 
     def preparUpdateStepsList(self):
         self.list = self.updateObjImpl.getStepsList()
-        for item in self.list:
-            item.update( {'icon': self.ICON.WAITING} )
         self.reloadList()
         
     def stepExecute(self):
@@ -260,6 +259,11 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader  = None
         self.cmd         = None
         self.serversList = []
+
+        self.serverGraphicsHash = ''
+        self.serverIconsHash = ''
+        self.localGraphicsHash = ''
+        self.localIconsHash = ''
         self.currServIdx = 0
         
         self.sourceArchive      = None
@@ -273,6 +277,9 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.messages['completed']       = _("Completed.")
         self.messages['problem_removal'] = _("Problem with the removal of the previous version.\nStatus[%d], outData[%s].")
         self.messages['problem_install'] = _("Problem with installing the new version.\nStatus[%d], outData[%s]")
+        self.messages['problem_copy']    = _("Problem with copy files.\nStatus[%d], outData[%s]")
+        
+        self.list = []
         
     def checkVersionFile(self, newVerPath):
         code = 0
@@ -352,25 +359,22 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             self.cmd.kill()
         self.clearTmpData()
     
+    def __getStepDesc(self, title, execFunction, breakable=True, ignoreError=False, repeatCount=0):
+        return  { 'title': title, 'execFunction': execFunction, 'breakable': breakable, 'ignoreError': ignoreError, 'info': _("Pending"), 'progressFun': None, 'repeatCount': repeatCount, 'icon': IPTVUpdateWindow.ICON.WAITING }
+    
     def getStepsList(self):
-        list = []
-        def __getStepDesc(title, execFunction, breakable=True, ignoreError=False, repeatCount=0):
-            return  { 'title': title, 'execFunction': execFunction, 'breakable': breakable, 'ignoreError': ignoreError, 'info': _("Pending"), 'progressFun': None, 'repeatCount': repeatCount }
-        list.append( __getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
-        list.append( __getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
-        list.append( __getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
-        list.append( __getStepDesc(title = _("Downloading graphics package."),   execFunction = self.stepGetGraphicsArchive ) )
-        list.append( __getStepDesc(title = _("Extracting graphics package."),    execFunction = self.stepUnpackGraphicsArchive ) )
-        list.append( __getStepDesc(title = _("Downloading icons package."),      execFunction = self.stepGetIconsArchive ) )
-        list.append( __getStepDesc(title = _("Extracting icons package."),       execFunction = self.stepUnpackIconsArchive ) )
-        list.append( __getStepDesc(title = _("Copy post installed binaries."),   execFunction = self.stepCopyPostInatalledBinaries, breakable=True, ignoreError=True ) )
-        list.append( __getStepDesc(title = _("Executing user scripts."),         execFunction = self.stepExecuteUserScripts ) )
-        list.append( __getStepDesc(title = _("Checking version."),               execFunction = self.stepCheckFiles ) )
-        list.append( __getStepDesc(title = _("Removing unnecessary files."),     execFunction = self.stepRemoveUnnecessaryFiles, breakable=True, ignoreError=True) )
-        list.append( __getStepDesc(title = _("Confirmation of installation."),   execFunction = self.stepConfirmInstalation) )
-        list.append( __getStepDesc(title = _("Removing the old version."),       execFunction = self.stepRemoveOldVersion, breakable=False, ignoreError=True, repeatCount=2) )
-        list.append( __getStepDesc(title = _("Installing new version."),         execFunction = self.stepInstallNewVersion,   breakable=False, ignoreError=False, repeatCount=3) )
-        return list
+        self.list = []
+        self.list.append( self.__getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
+        self.list.append( self.__getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
+        self.list.append( self.__getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
+        self.list.append( self.__getStepDesc(title = _("Copy post installed binaries."),   execFunction = self.stepCopyPostInatalledBinaries, breakable=True, ignoreError=True ) )
+        self.list.append( self.__getStepDesc(title = _("Executing user scripts."),         execFunction = self.stepExecuteUserScripts ) )
+        self.list.append( self.__getStepDesc(title = _("Checking version."),               execFunction = self.stepCheckFiles ) )
+        self.list.append( self.__getStepDesc(title = _("Removing unnecessary files."),     execFunction = self.stepRemoveUnnecessaryFiles, breakable=True, ignoreError=True) )
+        self.list.append( self.__getStepDesc(title = _("Confirmation of installation."),   execFunction = self.stepConfirmInstalation) )
+        self.list.append( self.__getStepDesc(title = _("Removing the old version."),       execFunction = self.stepRemoveOldVersion, breakable=False, ignoreError=True, repeatCount=2) )
+        self.list.append( self.__getStepDesc(title = _("Installing new version."),         execFunction = self.stepInstallNewVersion,   breakable=False, ignoreError=False, repeatCount=3) )
+        return self.list
         
     def isReadyToExecuteStep(self, currStepIdx):
         if not self.downloader and not self.cmd:
@@ -498,7 +502,34 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             cmd = ' && '.join(cmds)
         printDBG("stepRemoveUnnecessaryFiles cmdp[%s]" % cmd)
         self.cmd = iptv_system( cmd, self.__removeUnnecessaryFilesCmdFinished )
-        
+    
+    def stepCopyGraphicsWithoutIcons(self):
+        # copy whole old icon directory
+        # remove IPTVPlayer/icons/PlayerSelector dir, it will be replaced by new one
+        oldIconsDir = os_path.join(self.ExtensionPath, 'IPTVPlayer', 'icons')
+        newIconsDir = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer', 'icons')
+        newPlayerSelectorDir = os_path.join(newIconsDir, 'PlayerSelector')
+        cmd = 'mkdir -p "%s" && cp -rf "%s"/* "%s"/ && rm -rf "%s"' % (newIconsDir, oldIconsDir, newIconsDir, newPlayerSelectorDir)
+        printDBG('UpdateMainAppImpl.stepCopyGraphicsWithoutIcons cmd[%s]' % cmd)
+        self.cmd = iptv_system( cmd, self.__copyOldCmdFinished )
+    
+    def stepCopyAllGraphics(self):
+        # copy whole old icon directory
+        oldIconsDir = os_path.join(self.ExtensionPath, 'IPTVPlayer', 'icons')
+        newIconsDir = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer', 'icons')
+        cmd = 'mkdir -p "%s" && cp -rf "%s"/* "%s"/' % (newIconsDir, oldIconsDir, newIconsDir)
+        printDBG('UpdateMainAppImpl.stepCopyAllGraphics cmd[%s]' % cmd)
+        self.cmd = iptv_system( cmd, self.__copyOldCmdFinished )
+    
+    def stepCopyOnlyIcons(self):
+        # create subdir IPTVPlayer/icons/ and copy only PlayerSelector dir to it
+        cmd = 'rm -rf "%s"/*' % ( os_path.join(self.ExtensionPath, 'IPTVPlayer') )
+        oldPlayerSelectorDir = os_path.join(self.ExtensionPath, 'IPTVPlayer', 'icons', 'PlayerSelector')
+        newPlayerSelectorDir = os_path.join(self.ExtensionTmpPath, 'IPTVPlayer', 'icons', 'PlayerSelector')
+        cmd = 'mkdir -p "%s" && cp -rf "%s"/* "%s"/' % (newPlayerSelectorDir, oldPlayerSelectorDir, newPlayerSelectorDir)
+        printDBG('UpdateMainAppImpl.stepCopyOnlyIcons cmd[%s]' % cmd)
+        self.cmd = iptv_system( cmd, self.__copyOldCmdFinished )
+    
     def stepCopyPostInatalledBinaries(self, init=True, code=0, msg=''):
         # get users scripts
         if init:
@@ -631,7 +662,8 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader = None
         if DMHelper.STS.DOWNLOADED != status:
             self.serverIdx += 1
-            if self.serverIdx <  len(self.SERVERS_LIST_URLS): self.stepGetServerLists()
+            if self.serverIdx <  len(self.SERVERS_LIST_URLS):
+                self.stepGetServerLists()
             else:
                 urls = ""
                 for idx in range(self.serverIdx):
@@ -640,6 +672,8 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 self.stepFinished(-1, _("Problem with downloading the server list from [%s].") % urls)
         else:
             # process servers list
+            serverGraphicsHash = ''
+            serverIconsHash = ''
             serversList = []
             try:
                 with open(filePath) as fileHandle:    
@@ -659,14 +693,22 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                     if not serverOK: continue
                     newServer = dict(extServer)
                     serversList.append(newServer)
+                serverGraphicsHash = str(jsonData.get('graphics_hash', ''))
+                serverIconsHash = str(jsonData.get('icons_hash', ''))
             except Exception:
                 printExc()
-                self.stepFinished(-1, _("Problem with downloading the server list."))
+                self.serverIdx += 1
+                if self.serverIdx <  len(self.SERVERS_LIST_URLS):
+                    self.stepGetServerLists()
+                else:
+                    self.stepFinished(-1, _("Problem with parsing the server list."))
                 return
             if config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
                 self.__addLastVersion(serversList) # get last version from gitlab.com only for developers
 
             self.serversList = serversList
+            self.serverGraphicsHash = serverGraphicsHash
+            self.serverIconsHash = serverIconsHash
             if 0 < len(serversList):
                 options = []
                 self.serversList.sort(cmp=ServerComparator, reverse=True)
@@ -699,10 +741,37 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         
     def __selServerCallBack(self, retArg):
         if retArg and len(retArg) == 2:
+            self.localIconsHash = GetIconsHash()
+            self.localGraphicsHash = GetGraphicsHash()
+            
             self.currServIdx = retArg[1]
-            # if GetIPTVPlayerVerstion() == self.serversList[self.currServIdx]['version']:
-                # self.stepFinished(-1, 'Wybrano wersję [%s]. Wybrana wersja jest wersją aktualną' % retArg[0])
-            # else:
+            list = []
+            if  self.localGraphicsHash == '' or self.serverGraphicsHash == '' or \
+                self.localGraphicsHash != self.serverGraphicsHash:
+                list.append( self.__getStepDesc(title = _("Downloading graphics package."),   execFunction = self.stepGetGraphicsArchive ) )
+                list.append( self.__getStepDesc(title = _("Extracting graphics package."),    execFunction = self.stepUnpackGraphicsArchive ) )
+                oldGraphics = False
+            else:
+                oldGraphics = True
+            
+            if self.localIconsHash == '' or self.serverIconsHash == '' or \
+               self.localIconsHash != self.serverIconsHash:
+                if oldGraphics:
+                    list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
+                
+                if config.plugins.iptvplayer.ListaGraficzna.value:
+                    list.append( self.__getStepDesc(title = _("Downloading icons package."),      execFunction = self.stepGetIconsArchive ) )
+                    list.append( self.__getStepDesc(title = _("Extracting icons package."),       execFunction = self.stepUnpackIconsArchive ) )
+            else:
+                if oldGraphics:
+                    if config.plugins.iptvplayer.ListaGraficzna.value:
+                        list.append( self.__getStepDesc(title = _("Copy all graphics."),    execFunction = self.stepCopyAllGraphics ) )
+                    else:
+                        list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
+                elif config.plugins.iptvplayer.ListaGraficzna.value:
+                    list.append( self.__getStepDesc(title = _("Copy icons."),    execFunction = self.stepCopyOnlyIcons ) )
+            
+            self.list[3:3] = list
             self.stepFinished(0, _("Selected version [%s].") % retArg[0])
         else:
             self.stepFinished(-1, _("Update server not selected."))
@@ -808,6 +877,16 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     ##############################################################################
     # Instalation new version STEP'S PRIVATES METHODS
     ##############################################################################
+    def __copyOldCmdFinished(self, status, outData):
+        self.cmd = None
+        if 0 != status:
+            code = -1
+            msg = self.messages['problem_copy'] % (status, outData)
+        else:
+            code = 0
+            msg = self.messages['completed']
+        self.stepFinished(code, msg)
+    
     def __removeOldVersionCmdFinished(self, status, outData):
         self.cmd = None
         if 0 != status:
@@ -824,6 +903,12 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             msg = self.messages['problem_install'] % (status, outData)
             self.stepFinished(-1, msg)
         else:
+            if self.localIconsHash != self.serverIconsHash:
+                SetIconsHash(self.serverIconsHash)
+
+            if self.localGraphicsHash != self.serverGraphicsHash:
+                SetGraphicsHash(self.serverGraphicsHash)
+
             self.cmd = iptv_system( 'rm -rf ' + self.tmpDir + " && sync" , self.__doSyncCallBack )
         return
         

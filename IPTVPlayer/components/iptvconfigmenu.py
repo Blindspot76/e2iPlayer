@@ -9,7 +9,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetSkinsList, GetHostsList, GetEnabledHostsList, \
                                                           IsHostEnabled, IsExecutable, CFakeMoviePlayerOption, GetAvailableIconSize, \
-                                                          IsWebInterfaceModuleAvailable
+                                                          IsWebInterfaceModuleAvailable, SetIconsHash, SetGraphicsHash
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
 from Plugins.Extensions.IPTVPlayer.components.configbase import ConfigBaseWidget, COLORS_DEFINITONS
@@ -241,6 +241,7 @@ def IsUpdateNeededForHostsChangesCommit(enabledHostsListOld, enabledHostsList=No
     if hostsFromFolder == None: 
         hostsFromFolder = GetHostsList(fromList=False, fromHostFolder=True)
 
+    bRet = False
     if config.plugins.iptvplayer.remove_diabled_hosts.value and enabledHostsList != enabledHostsListOld:
         hostsFromList = GetHostsList(fromList=True, fromHostFolder=False)
         diffDisabledHostsList = set(enabledHostsListOld).difference(set(enabledHostsList))
@@ -250,12 +251,17 @@ def IsUpdateNeededForHostsChangesCommit(enabledHostsListOld, enabledHostsList=No
                 if hostItem in diffDisabledHostsList:
                     if hostItem in hostsFromFolder:
                         # standard host has been disabled but it is still in folder
-                        return True
+                        bRet = True
+                        break
                 else:
                     if hostItem not in hostsFromFolder:
                         # standard host has been enabled but it is not in folder
-                        return True
-    return False
+                        bRet = True
+                        break
+    if bRet:
+        SetGraphicsHash("")
+        SetIconsHash("")
+    return bRet
 
 ###################################################
 
@@ -515,6 +521,10 @@ class ConfigMenu(ConfigBaseWidget):
                         needPluginUpdate = True
             elif IsUpdateNeededForHostsChangesCommit(self.enabledHostsListOld, enabledHostsList, hostsFromFolder):
                 needPluginUpdate = True
+        
+        if needPluginUpdate:
+            SetGraphicsHash("")
+            SetIconsHash("")
         
         if not needPluginUpdate and config.plugins.iptvplayer.IPTVWebIterface.value != IsWebInterfaceModuleAvailable(True):
             needPluginUpdate = True

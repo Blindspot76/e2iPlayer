@@ -61,6 +61,26 @@ def GetResourcesServerUri(file='', serverNum=None):
 def UsePyCurl():
     return config.plugins.iptvplayer.usepycurl.value
 
+def GetIconsHash():
+    iconsHashFile = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/PlayerSelector/hash.txt')
+    sts, data = ReadTextFile(iconsHashFile)
+    if sts: return data.strip()
+    else: return ''
+
+def SetIconsHash(value):
+    iconsHashFile = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/PlayerSelector/hash.txt')
+    return WriteTextFile(iconsHashFile, value)
+
+def GetGraphicsHash():
+    graphicsHashFile = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/hash.txt')
+    sts, data = ReadTextFile(graphicsHashFile)
+    if sts: return data.strip()
+    else: return ''
+
+def SetGraphicsHash(value):
+    graphicsHashFile = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/icons/hash.txt')
+    return WriteTextFile(graphicsHashFile, value)
+
 ###################################################
 def DaysInMonth(dt):
     return (datetime.date(dt.year+(dt.month / 12), (dt.month % 12) + 1, 1) - dt).days + dt.day - 1
