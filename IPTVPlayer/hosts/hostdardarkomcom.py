@@ -60,10 +60,26 @@ class DardarkomCom(CBaseHostClass):
         
     def listMainMenu(self, cItem, nextCategory1, nextCategory2):
         printDBG("DardarkomCom.listFooterMenu")
+        
+        mobileSection = ''
+        sts, data = self.cm.getPage(self.getMainUrl(), {'header':{'User-Agent': 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16', 'Accept': 'text/html'}})
+        if sts:
+            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'collapsible-header'), ('</ul', '>'))
+            if len(data) > 1:
+                mobileSection = data[1]
+                sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(mobileSection, ('</i', '>'), ('</div', '>'), False)[1])
+                mobileSection += '<p>%s</p>' % sTitle
+        
         sts, data = self.cm.getPage(self.getMainUrl())
         if not sts: return
         
+        section = self.cm.ph.getDataBeetwenNodes(data, ('<li', '>', 'submenu'), ('</div', '>'))[1]
+        sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(section, ('<li', '>'), ('<div', '>'), False)[1])
+        section += '<p>%s</p>' % sTitle
+        
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'ft-col'), ('</div', '>'))
+        data.insert(0, section)
+        data.insert(0, mobileSection)
         for section in data:
             tabItems = []
             sTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(section, '<p', '</p>')[1])
@@ -74,8 +90,8 @@ class DardarkomCom(CBaseHostClass):
                 if 'howtowatch.' in url:
                     tabItems = []
                     break
-                if 'series-online' in url:
-                    continue
+                #if 'series-online' in url:
+                #    continue
                 if url.endswith('#'):
                     continue
                 title = self.cleanHtmlStr(item)
@@ -119,11 +135,11 @@ class DardarkomCom(CBaseHostClass):
             elif post_data != None:
                 nextPage = url
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'short-poster'), ('<div', '>', 'bottom-nav'))[1]
-        if data == '': data = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'short-poster'), ('<h1', '>'))[1]
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'short-poster'), ('<div', '>', 'bottom-nav'))[1]
+        if tmp == '': tmp = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'short-poster'), ('<h1', '>'))[1]
         
-        #printDBG(data)
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        #printDBG(tmp)
+        data = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
         for item in data:
             url   = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
             if not self.cm.isValidUrl(url): continue
@@ -138,9 +154,9 @@ class DardarkomCom(CBaseHostClass):
                 else: desc.append(t)
             
             params = dict(cItem)
-            params.update({'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
-            self.addVideo(params)
-        
+            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
+            self.addDir(params)
+
         if self.cm.isValidUrl(nextPage):
             params = dict(cItem)
             params.update({'title':_('Next page'), 'page':page + 1, 'url':self.getFullUrl(nextPage)})
@@ -174,17 +190,56 @@ class DardarkomCom(CBaseHostClass):
             if tmp != '': desc.append(tmp)
             
             params = dict(cItem)
-            params.update({'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
-            self.addVideo(params)
+            params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
+            self.addDir(params)
         
         if '' != nextPage:
             params = dict(cItem)
             params.update({'title':_('Next page'), 'page':page + 1})
             self.addDir(params)
         
+    def exploreItem(self, cItem):
+        printDBG("DardarkomCom.exploreItem")
+        
+        sts, data = self.cm.getPage(cItem['url'])
+        if not sts: return
+        
+        trailers = []
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
+        for server in tmp:
+            url = self.getFullUrl( self.cm.ph.getSearchGroups(server, '''src=['"]([^'^"]+?)['"]''')[0] )
+            if 'youtube' in url and url not in trailers:
+                trailers.append(url)
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'title':_('Trailer - %s') % cItem['title'], 'url':url, 'trailer':True})
+                self.addVideo(params)
+        
+        if 'featurelist' in data:
+            params = dict(cItem)
+            self.addVideo(params)
+        else:
+            if 'insidelinks' not in data:
+                tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'aboveposbut'), ('</div', '>'), False)[1]
+                sUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<a[^>]+?href=['"]([^"^']+?)['"]''')[0])
+                if sUrl != '':
+                    sts, tmp = self.cm.getPage(sUrl)
+                    if sts: data = tmp
+            
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'insidelinks'), ('</ul', '>'), False)[1]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
+            for item in tmp:
+                title = self.cleanHtmlStr(item)
+                url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<a[^>]+?href=['"](https?://[^"^']+?)['"]''')[0])
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'title':title, 'episode': True, 'url':url})
+                self.addVideo(params)
+        
     def getLinksForVideo(self, cItem):
         printDBG("DardarkomCom.getLinksForVideo [%s]" % cItem)
         urlTab = []
+        
+        if cItem.get('trailer', False):
+            return  self.up.getVideoLinkExt(cItem['url'])
         
         cacheKey = cItem['url']
         urlTab = self.cacheLinks.get(cacheKey, [])
@@ -204,7 +259,10 @@ class DardarkomCom(CBaseHostClass):
         printDBG(tabsNames)
         uniqueUrls = []
         
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'fplay tabs-b'), ('<div', '>', 'featurelist'), False)[1]
+        if cItem.get('episode', False):
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'fplay tabs-b'), ('<div', '>', 'tabs-sel'), False)[1]
+        else:
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'fplay tabs-b'), ('<div', '>', 'featurelist'), False)[1]
         data = re.compile('<div[^>]+?fplay tabs\-b[^>]+?>').split(data)
         printDBG(data)
         for idx in range(len(data)):
@@ -237,6 +295,7 @@ class DardarkomCom(CBaseHostClass):
                 if url == '' or url in uniqueUrls or '/templates/' in url: continue
                 if 'youtube' in url:
                     name = '[TRAILER]'
+                    continue
                 else:
                     name = tabName
                 urlTab.append({'name':name, 'url':url, 'need_resolve':1})
@@ -324,6 +383,8 @@ class DardarkomCom(CBaseHostClass):
             self.listCategories(self.currItem, 'list_items')
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
+        elif category == 'explore_item':
+            self.exploreItem(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
