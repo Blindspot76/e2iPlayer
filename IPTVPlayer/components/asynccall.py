@@ -120,7 +120,7 @@ class AsyncCall(object):
         return bRet
     
     def kill(self):
-        bRet = True
+        bRet = False
         
         printDBG("THREAD KILL >>>")
         
@@ -151,8 +151,9 @@ class AsyncCall(object):
         self.Callback = None
         if self.finished == False:
             if self.Thread.isAlive():
-                bRet = self._kill()
+                self._kill()
                 self.Thread._Thread__stop()
+            bRet = True
         
         self.mainLock.release()
 

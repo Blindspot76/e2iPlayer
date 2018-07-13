@@ -1433,11 +1433,21 @@ class common:
         return re.sub('[\x80-\xFF]', lambda c: '%%%02x' % ord(c.group(0)), b)
 
     def iriToUri(self, iri):
-        parts = urlparse(iri.decode('utf-8'))
-        return urlunparse(
-            part.encode('idna') if parti==1 else self.urlEncodeNonAscii(part.encode('utf-8'))
-            for parti, part in enumerate(parts)
-        )
+        try:
+            parts = urlparse(iri.decode('utf-8'))
+            encodedParts = []
+            for parti, part in enumerate(parts):
+                newPart = part
+                try:
+                    if parti == 1: newPart = part.encode('idna')
+                    else: newPart = self.urlEncodeNonAscii(part.encode('utf-8'))
+                except Exception:
+                    printExc()
+                encodedParts.append(newPart)
+            return urlunparse(encodedParts)
+        except Exception:
+            printExc()
+        return iri
 
     def makeABCList(self, tab = ['0 - 9']):
         strTab = list(tab)

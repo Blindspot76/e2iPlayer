@@ -248,6 +248,7 @@ class NuteczkiEU(CBaseHostClass):
         sts, data = self.getPage(cItem['url'], post_data = postData)
         if not sts: return
 
+        nextPage = ''
         tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'pagination'), ('</div', '>'), False)
         for item in tmp:
             nextPage = self.cm.ph.getSearchGroups(item, '''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>%s</a>''' % (page + 1))[0]

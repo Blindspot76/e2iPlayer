@@ -154,6 +154,7 @@ class DardarkomCom(CBaseHostClass):
         
         post_data.update({'search_start':page, 'result_from':12 * (page-1) + 1})
         sts, data = self.cm.getPage(url, post_data=post_data)
+        if not sts: return
         
         nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'pagi-nav'), ('</div', '>'), False)[1]
         nextPage = self.cm.ph.getSearchGroups(nextPage, '''<a[^>]+?href=['"]([^"^']+?)['"][^>]*?>{0}</a>'''.format(page+1))[0]

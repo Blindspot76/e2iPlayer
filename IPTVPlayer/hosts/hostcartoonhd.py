@@ -336,6 +336,7 @@ class CartoonHD(CBaseHostClass):
         if not sts: return []
         printDBG(">> url: %s" % self.cm.meta['url'])
         
+        jsUrl = ''
         tmp = re.compile('''<script[^>]+?src=['"]([^'^"]*?videojs[^'^"^/]*?\.js(?:\?v=[0-9\.]+?)?)['"]''', re.I).findall(data)
         printDBG("TMP JS: %s" % tmp)
         for item in tmp:
