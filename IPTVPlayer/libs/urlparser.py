@@ -1112,8 +1112,9 @@ class pageParser:
         return False
         
     def _parserUNIVERSAL_A(self, baseUrl, embedUrl, _findLinks, _preProcessing=None, httpHeader={}, params={}):
-        refUrl = strwithmeta(baseUrl).meta.get('Referer', baseUrl)
-        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0", 'Referer':refUrl }
+        HTTP_HEADER = { 'User-Agent':"Mozilla/5.0"}
+        if 'Referer' in strwithmeta(baseUrl).meta:
+            HTTP_HEADER['Referer'] = strwithmeta(baseUrl).meta['Referer']
         HTTP_HEADER.update(httpHeader)
         
         if 'embed' not in baseUrl and '{0}' in embedUrl:
