@@ -535,8 +535,8 @@ class common:
             lineNeedFix = False
             fields = lines[idx].split('\t')
             if len(fields) < 5: continue
-            if fields[0].endswith('#HttpOnly_'):
-                fields[0] = fields[0].replace('#HttpOnly_', '')
+            if fields[0].startswith('#HttpOnly_'):
+                fields[0] = fields[0][10:]
                 lineNeedFix = True
             if fields[4] == '0':
                 fields[4] = ''
