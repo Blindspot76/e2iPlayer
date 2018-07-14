@@ -520,7 +520,7 @@ class urlparser:
         host  = self.getHostName(url)
         
         # quick fix
-        if host == 'facebook.com' and 'likebox.php' in url:
+        if host == 'facebook.com' and 'likebox.php' in url or 'like.php' in url:
             return 0
         
         ret = 0
