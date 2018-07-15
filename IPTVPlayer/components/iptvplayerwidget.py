@@ -951,7 +951,7 @@ class IPTVPlayerWidget(Screen):
     
     def showArticleContent(self, ret):
         printDBG("showArticleContent")
-        self.setStatusTex("")            
+        self.setStatusTex("")
         self["list"].show()
 
         artItem = None

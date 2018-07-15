@@ -204,6 +204,9 @@ class DardarkomCom(CBaseHostClass):
         sts, data = self.cm.getPage(cItem['url'])
         if not sts: return
         
+        cItem = dict(cItem)
+        cItem['prev_url'] = cItem['url']
+        
         trailers = []
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
         for server in tmp:
@@ -359,6 +362,39 @@ class DardarkomCom(CBaseHostClass):
             cItem['post_data']['search_start'] = cItem['page']
         cItem['category'] = 'list_search_items'
         self.listSearchItems(cItem, 'explore_item')
+        
+    def getArticleContent(self, cItem):
+        printDBG("DardarkomCom.getVideoLinks [%s]" % cItem)
+        retTab = []
+        itemsList = []
+
+        if 'prev_url' in cItem: url = cItem['prev_url']
+        else: url = cItem['url']
+
+        sts, data = self.cm.getPage(url)
+        if not sts: return
+
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<article', '</article>', False)[1]
+        icon = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'fposter'), ('</div', '>'), False)[1]
+        icon = self.getFullUrl( self.cm.ph.getSearchGroups(icon, '''<img[^>]+?src=['"]([^'^"]+?)['"]''')[0] )
+        title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<h', '>', 's-title'), ('</h', '>'), False)[1] )
+        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 's-desc'), ('</div', '>'), False)[1] )
+
+        tmpTab = self.cm.ph.getAllItemsBeetwenNodes(data, ('<ul', '>', 'flist-col'), ('</ul', '>'), False)
+        for tmp in tmpTab:
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
+            for item in tmp:
+                if 'data-label' in item:
+                    item = [self.cm.ph.getSearchGroups(item, '''data\-label=['"]([^'^"]+?)['"]''')[0], item]
+                else:
+                    item = item.split('</span>', 1)
+                    if len(item) < 2: continue
+                key = self.cleanHtmlStr(item[0])
+                val = self.cleanHtmlStr(item[1])
+                if key == '' or val == '': continue
+                itemsList.append((key, val))
+
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':{'custom_items_list':itemsList}}]
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -403,3 +439,7 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, DardarkomCom(), True, favouriteTypes=[])
+    
+    def withArticleContent(self, cItem):
+        if 'prev_url' in cItem or cItem.get('category', '') == 'explore_item': return True
+        else: return False
