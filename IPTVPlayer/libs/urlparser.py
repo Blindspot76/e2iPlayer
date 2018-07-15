@@ -7292,7 +7292,11 @@ class pageParser:
             #'<font color="red">', '</font>'
             urlTab = []
             items = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
-            if 0 == len(items): items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''var\s+sources\s*=\s*\['''), re.compile('''\]'''), False)[1].split('},')
+            if 0 == len(items):
+                sts, items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''var\s+sources\s*=\s*\['''), re.compile('''\]'''), False)
+                if not sts: sts, items = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']', False)
+                items = items.split('},')
+            
             printDBG(items)
             for item in items:
                 item = item.replace('\/', '/')
