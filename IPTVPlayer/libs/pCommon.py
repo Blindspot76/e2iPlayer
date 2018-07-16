@@ -601,7 +601,7 @@ class common:
             printExc()
         return ret
 
-    def getPageWithPyCurl(self, url, params = {}, post_data = None):
+    def _getPageWithPyCurl(self, url, params = {}, post_data = None):
         if IsMainThread():
             msg1 = _('It is not allowed to call getURLRequestData from main thread.')
             msg2 = _('You should never perform block I/O operations in the __init__.')
@@ -868,6 +868,9 @@ class common:
 
             if fileHandler:
                 fileHandler.close()
+        except pycurl.error as e:
+            metadata['pycurl_error'] = (int(e[0]), str(e[1]))
+            printExc()
         except Exception:
             printExc()
         
@@ -879,6 +882,32 @@ class common:
             
         return sts, out_data
     
+    def getPageWithPyCurl(self, url, params = {}, post_data = None):
+        # some error can be caused because of session reuse 
+        # if we use old curlSession and fail we should
+        # re-try with fresh curlSession
+        if self.curlSession != None:
+            maxTries = 2
+        else:
+            maxTries = 1
+        
+        sts, data = False, None
+        try:
+            tries = 0
+            while tries < maxTries:
+                tries += 1
+                sts, data = self._getPageWithPyCurl(url, params, post_data)
+                if not sts and 'pycurl_error' in self.meta and \
+                   self.pyCurl.E_SSL_CONNECT_ERROR == self.meta['pycurl_error'][0] and \
+                   'SSL_set_session failed' in self.meta['pycurl_error'][1]:
+                    printDBG("pCommon - getPageWithPyCurl() - retry with fresh session")
+                    continue
+                else:
+                    break
+        except Exception:
+            printExc()
+        return sts, data
+            
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
         
