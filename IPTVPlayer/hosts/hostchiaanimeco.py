@@ -314,15 +314,13 @@ class ChiaanimeCO(CBaseHostClass):
         
         if '/vload/' in videoUrl or 'redirector.googlevideo.com' in videoUrl or 'token=' in videoUrl:
             header = {'Referer':videoUrl, 'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'pl,en-US;q=0.7,en;q=0.3', 'Accept-Encoding':'gzip, deflate'}
-            params = {'return_data':False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':header}
-            try:
-                sts, response = self.cm.getPage(videoUrl, params)
-                url = response.geturl()
-                response.close()
+            params = {'max_data_size':0, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE, 'header':header}
+            self.cm.getPage(videoUrl, params)
+            url = self.cm.meta.get('url', '')
+            if url != '':
                 cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
                 urlTab.append({'name':'', 'url':strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT}), 'need_resolve':0})
-            except Exception:
-                printExc()
+
         elif videoUrl.startswith('http'):
             urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab

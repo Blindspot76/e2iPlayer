@@ -3,26 +3,17 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, RetHost
 from Plugins.Extensions.IPTVPlayer.components.isubprovider import CSubProviderBase, CBaseSubProviderClass
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetCookieDir, byteify, \
-                                                          RemoveDisallowedFilenameChars, GetSubtitlesDir, GetTmpDir, rm, \
-                                                          MapUcharEncoding, GetPolishSubEncoding, rmtree, mkdirs
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify, \
+                                                          RemoveDisallowedFilenameChars, GetSubtitlesDir
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from datetime import timedelta
-import time
 import re
 import urllib
-import unicodedata
-import base64
-from os import listdir as os_listdir, path as os_path
 try:    import json
 except Exception: import simplejson as json
 try:
@@ -56,7 +47,6 @@ class OpenSubtitlesRest(CBaseSubProviderClass):
     def __init__(self, params={}):
         self.USER_AGENT   = 'IPTVPlayer v1'
         #self.USER_AGENT    = 'Subliminal v0.3'
-        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Accept':'gzip'}
         self.MAIN_URL      = 'https://rest.opensubtitles.org/'
         self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
         
@@ -227,7 +217,7 @@ class OpenSubtitlesRest(CBaseSubProviderClass):
         fps      = cItem.get('fps', 0)
         
         urlParams = dict(self.defaultParams)
-        urlParams['return_data'] = False
+        urlParams['max_data_size'] = self.getMaxFileSize()
         
         login = config.plugins.iptvplayer.opensuborg_login.value
         password = config.plugins.iptvplayer.opensuborg_password.value
@@ -257,15 +247,7 @@ class OpenSubtitlesRest(CBaseSubProviderClass):
         attempt = 0
         while attempt < 3:
             attempt += 1
-            try:
-                fileSize = self.getMaxFileSize()
-                sts, response = self.cm.getPage(url, urlParams)
-                if sts: data = response.read(fileSize)
-                response.close()
-            except Exception:
-                printExc()
-                sts = False
-            
+            sts, data = self.cm.getPage(url, urlParams)
             if not sts:
                 params = dict(self.defaultParams)
                 params['raw_post_data'] = True
@@ -305,7 +287,7 @@ class OpenSubtitlesRest(CBaseSubProviderClass):
         filePath = GetSubtitlesDir(fileName)
         if self.writeFile(filePath, data):
             if encoding != '':
-                retData = {'title':title, 'path':fileName, 'lang':lang, 'imdbid':imdbid, 'fps':fps}
+                retData = {'title':title, 'path':filePath, 'lang':lang, 'imdbid':imdbid, 'fps':fps}
             elif self.converFileToUtf8(filePath, filePath, lang):
                 retData = {'title':title, 'path':filePath, 'lang':lang, 'imdbid':imdbid, 'fps':fps}
             
@@ -319,7 +301,7 @@ class OpenSubtitlesRest(CBaseSubProviderClass):
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU

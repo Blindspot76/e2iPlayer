@@ -69,7 +69,7 @@ class OpenSubtitles(CBaseSubProviderClass):
         addParams['cloudflare_params'] = {'domain':self.cm.getBaseUrl(baseUrl, domainOnly=True), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         try:
-            if not sts and not self.wasInformedAboutReCaptcha and addParams.get('return_data', True) and data.code == 429:
+            if not self.wasInformedAboutReCaptcha and self.cm.meta['status_code'] == 429:
                 self.sessionEx.open(MessageBox, _('%s has been protected with google recaptcha v2. You can try to use API version.') % ('https://www.opensubtitles.org/'), type=MessageBox.TYPE_INFO, timeout=10)
                 self.wasInformedAboutReCaptcha = True
         except Exception:
@@ -90,9 +90,6 @@ class OpenSubtitles(CBaseSubProviderClass):
         except Exception:
             prevHash = ''
             printExc()
-        
-        #if currentHash != prevHash:
-        #    rm(self.COOKIE_FILE)
         
         try:
             with open(cokieFile, 'w') as f:
@@ -356,17 +353,15 @@ class OpenSubtitles(CBaseSubProviderClass):
         
         def _getDownloadUrl(url):
             urlParams = dict(self.defaultParams)
-            urlParams['return_data'] = False
-            try:
-                sts, response = self.getPage(url, urlParams)
-                if not sts: return ''
-                fileName = response.info().get('Content-Disposition', '')
-                fileName = self.cm.ph.getSearchGroups(fileName.lower(), '''filename=['"]([^'^"]+?)['"]''')[0]
-                response.close()
-                if fileName.endswith('.zip') or fileName.endswith('.rar'):
-                    return url
-            except Exception:
-                printExc()
+            urlParams['max_data_size'] = 0
+            
+            sts = self.getPage(url, urlParams)[0]
+            if not sts: return ''
+            fileName = self.cm.meta.get('content-disposition', '')
+            fileName = self.cm.ph.getSearchGroups(fileName.lower(), '''filename=['"]([^'^"]+?)['"]''')[0]
+            if fileName.endswith('.zip') or fileName.endswith('.rar'):
+                return url
+
             return ''
         
         downloadUrl = _getDownloadUrl(url)
@@ -435,10 +430,10 @@ class OpenSubtitles(CBaseSubProviderClass):
         outFileName = self._getFileName(title, lang, subId, imdbid, fps, ext)
         outFileName = GetSubtitlesDir(outFileName)
         
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(">>")
         printDBG(inFilePath)
         printDBG(outFileName)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG("<<")
         
         if self.converFileToUtf8(inFilePath, outFileName, lang):
             retData = {'title':title, 'path':outFileName, 'lang':lang, 'imdbid':imdbid, 'sub_id':subId, 'fps':fps}
@@ -453,7 +448,7 @@ class OpenSubtitles(CBaseSubProviderClass):
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU

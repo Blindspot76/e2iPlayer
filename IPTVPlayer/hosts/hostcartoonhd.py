@@ -70,17 +70,11 @@ class CartoonHD(CBaseHostClass):
 
     def selectDomain(self):
         domain = 'https://cartoonhd.io/'
-        try:
-            params = dict(self.defaultParams)
-            params['return_data'] = False
-            sts, response = self.cm.getPage(domain, params)
-            url = response.geturl()
-            domain = self.up.getDomain(url, False)
-            self.MAIN_URL  = domain
-            domain = self.up.getDomain(url, True)
-            if not sts: return
-        except Exception:
-            printExc()
+        params = dict(self.defaultParams)
+        params['max_data_size'] = False
+        self.cm.getPage(domain, params)
+        if 'url' in self.cm.meta: self.setMainUrl(self.cm.meta['url'])
+
         if self.MAIN_URL == None:
             self.MAIN_URL = domain
         
@@ -337,7 +331,7 @@ class CartoonHD(CBaseHostClass):
         printDBG(">> url: %s" % self.cm.meta['url'])
         
         jsUrl = ''
-        tmp = re.compile('''<script[^>]+?src=['"]([^'^"]*?videojs[^'^"^/]*?\.js(?:\?v=[0-9\.]+?)?)['"]''', re.I).findall(data)
+        tmp = re.compile('''<script[^>]+?src=['"]([^'^"]*?videojs[^'^"^/]*?\.js(?:\?[^'^"]*?v=[0-9\.]+?)?)['"]''', re.I).findall(data)
         printDBG("TMP JS: %s" % tmp)
         for item in tmp:
             if '.min.' in item.rsplit('/', 1)[-1]: continue

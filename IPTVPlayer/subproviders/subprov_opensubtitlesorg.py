@@ -3,31 +3,18 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, RetHost
 from Plugins.Extensions.IPTVPlayer.components.isubprovider import CSubProviderBase, CBaseSubProviderClass
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import DecodeGzipped
 
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetCookieDir, byteify, \
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, \
                                                           RemoveDisallowedFilenameChars, GetSubtitlesDir, rm
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from datetime import timedelta
-import time
 import re
-import urllib
-import unicodedata
-import base64
-try:    import json
-except Exception: import simplejson as json
-try:
-    try: from cStringIO import StringIO
-    except Exception: from StringIO import StringIO 
-    import gzip
-except Exception: pass
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -37,7 +24,6 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Screens.MessageBox import MessageBox
-from Screens.VirtualKeyBoard import VirtualKeyBoard
 ###################################################
 
 ###################################################
@@ -54,8 +40,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
     
     def __init__(self, params={}):
         self.USER_AGENT   = 'IPTVPlayer v1'
-        #self.USER_AGENT    = 'Subliminal v0.3' #'OSTestUserAgent'
-        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Accept':'gzip'}#, 'Accept-Language':'pl'}
+        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
         self.MAIN_URL      = 'http://api.opensubtitles.org/xml-rpc'
         
         params['cookie'] = 'opensubtitlesorg.cookie'
@@ -366,25 +351,15 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
         imdbid   = cItem['imdbid']
         
         urlParams = dict(self.defaultParams)
-        urlParams['return_data'] = False
+        urlParams['max_data_size'] = self.getMaxFileSize()
         
-        try:
-            fileSize = self.getMaxFileSize()
-            sts, response = self.cm.getPage(url, urlParams)
-            data = response.read(fileSize)
-            response.close()
-        except Exception:
-            printExc()
-            sts = False
-                    
+        sts, data = self.cm.getPage(url, urlParams)
         if not sts:
             SetIPTVPlayerLastHostError(_('Failed to download subtitle.'))
             return retData
         
         try:
-            buf = StringIO(data)
-            f = gzip.GzipFile(fileobj=buf)
-            data = f.read()
+            data = DecodeGzipped(data)
         except Exception:
             printExc()
             SetIPTVPlayerLastHostError(_('Failed to gzip.'))
@@ -398,9 +373,9 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
             return retData
         
         fileName = GetSubtitlesDir(fileName)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(">>")
         printDBG(fileName)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG("<<")
         try:
             with open(fileName, 'w') as f:
                 f.write(data)
@@ -418,7 +393,7 @@ class OpenSubOrgProvider(CBaseSubProviderClass):
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU

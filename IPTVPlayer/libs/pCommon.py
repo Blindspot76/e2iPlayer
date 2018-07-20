@@ -22,7 +22,6 @@ import time
 import htmlentitydefs
 import cookielib
 import unicodedata
-#import urllib2_ssl
 try:    import json
 except Exception: import simplejson as json
 try:
@@ -546,7 +545,7 @@ class common:
         cj._really_load(StringIO(''.join(lines)), cookiefile, ignore_discard=ignoreDiscard, ignore_expires=ignoreExpires)
         return cj
         
-    def clearCookie(self, cookiefile, leaveNames=[], removeNames=None, ignore_discard = True):
+    def clearCookie(self, cookiefile, leaveNames=[], removeNames=None, ignoreDiscard=True, ignoreExpires=False):
         try:
             toRemove = []
             if self.usePyCurl():
@@ -555,13 +554,13 @@ class common:
                 cj = cookielib.LWPCookieJar()
             else:
                 cj = cookielib.MozillaCookieJar()
-            cj.load(cookiefile, ignore_discard = ignore_discard)
+            cj.load(cookiefile, ignore_discard = ignoreDiscard)
             for cookie in cj:
                 if cookie.name not in leaveNames and (None == removeNames or cookie.name in removeNames):
                     toRemove.append(cookie)
             for cookie in toRemove:
                 cj.clear(cookie.domain, cookie.path, cookie.name)
-            cj.save(cookiefile, ignore_discard = ignore_discard)
+            cj.save(cookiefile, ignore_discard = ignoreDiscard)
         except Exception:
             printExc()
             return False
@@ -622,10 +621,18 @@ class common:
         checkFromFirstBytes = params.get('check_first_bytes', [])
         fileHandler = None
         firstAttempt = [True]
+        maxDataSize = params.get('max_data_size', -1)
         
         responseHeaders = {}
         def _headerFunction(headerLine):
             if ':' not in headerLine:
+                if 0 == maxDataSize:
+                    if headerLine in ['\r\n', '\n']:
+                        if 'n' not in responseHeaders:
+                            return 0
+                        responseHeaders.pop('n', None)
+                    elif headerLine.startswith('HTTP/') and headerLine.split(' 30', 1)[-1][0:1] in ['1', '2', '3', '7']: # new location with 301, 302, 303, 307
+                        responseHeaders['n'] = True
                 return
 
             name, value = headerLine.split(':', 1)
@@ -635,6 +642,11 @@ class common:
 
             name = name.lower()
             responseHeaders[name] = value
+            
+        def _breakConnection(toWriteData):
+            buffer.write(toWriteData)
+            if maxDataSize <= buffer.tell():
+                return 0
 
         def _bodyFunction(toWriteData):
             # we started receiving body data so all headers are available
@@ -820,18 +832,29 @@ class common:
                     #curlSession.setopt(pycurl.CUSTOMREQUEST, "PUT")
                 else:
                     curlSession.setopt(pycurl.POSTFIELDS, urllib.urlencode(post_data))
-            
-            curlSession.setopt(pycurl.WRITEDATA, buffer)
+
             curlSession.setopt(pycurl.HEADERFUNCTION, _headerFunction)
-            if fileHandler:
-                curlSession.setopt(pycurl.WRITEFUNCTION, _bodyFunction)
+
+            if fileHandler: curlSession.setopt(pycurl.WRITEFUNCTION, _bodyFunction)
+            elif maxDataSize >= 0: curlSession.setopt(pycurl.WRITEFUNCTION, _breakConnection)
+            else: curlSession.setopt(pycurl.WRITEDATA, buffer)
 
             curlSession.setopt(pycurl.NOPROGRESS, False)
             curlSession.setopt(pycurl.PROGRESSFUNCTION, _terminateFunction)
             curlSession.setopt(pycurl.NOSIGNAL, 1)
+            #if 0 == maxDataSize:
+            #    curlSession.setopt(pycurl.NOBODY, True);
 
             if not IsThreadTerminated():
-                curlSession.perform()
+                if maxDataSize >= 0:
+                    try:
+                        curlSession.perform()
+                    except pycurl.error as e:
+                        if e[0] != self.pyCurl.E_WRITE_ERROR:
+                            raise e
+                        else: printExc()
+                else:
+                    curlSession.perform()
                 
                 metadata['url'] = curlSession.getinfo(pycurl.EFFECTIVE_URL)
                 metadata['status_code'] = curlSession.getinfo(pycurl.HTTP_CODE)
@@ -848,8 +871,7 @@ class common:
                 # we should not use pycurl anymore
                 SetThreadKillable(True)
                 
-                if 'content-type' in responseHeaders:
-                    metadata['content-type'] = responseHeaders['content-type']
+                self.fillHeaderItems(metadata, responseHeaders)
                 
                 if params['return_data']:
                     out_data = buffer.getvalue()
@@ -869,7 +891,7 @@ class common:
             if fileHandler:
                 fileHandler.close()
         except pycurl.error as e:
-            metadata['pycurl_error'] = (int(e[0]), str(e[1]))
+            metadata['pycurl_error'] = (e[0], str(e[1]))
             printExc()
         except Exception:
             printExc()
@@ -907,7 +929,15 @@ class common:
         except Exception:
             printExc()
         return sts, data
-            
+
+    def fillHeaderItems(self, metadata, responseHeaders, camelCase=False):
+        returnKeys = ['content-type', 'content-disposition', 'content-length', 'location']
+        if camelCase: sourceKeys = ['Content-Type', 'Content-Disposition', 'Content-Length', 'Location']
+        else: sourceKeys = returnKeys
+        for idx in range(len(returnKeys)):
+            if sourceKeys[idx] in responseHeaders:
+                metadata[returnKeys[idx]] = responseHeaders[sourceKeys[idx]]
+        
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
         
@@ -931,10 +961,9 @@ class common:
                     metadata = self.metadataFromLastRequest
                     metadata['url'] = e.fp.geturl()
                     metadata['status_code'] = e.code
-                    if 'Content-Type' in e.fp.info():
-                        metadata['content-type'] = e.fp.info()['Content-Type']
+                    self.fillHeaderItems(metadata, e.fp.info(), True)
                     
-                    data = e.fp.read()
+                    data = e.fp.read(params.get('max_data_size', -1))
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
                         data = DecodeGzipped(data)
                     
@@ -1250,6 +1279,9 @@ class common:
             msg2 = _('You should never perform block I/O operations in the __init__.')
             GetIPTVNotify().push('\s'.join([msg1, msg2]), 'error', 40)
             raise Exception("Wrong usage!")
+            
+        if 'max_data_size' in params and not params.get('return_data', False):
+            raise Exception("return_data == False is not accepted with max_data_size.\nPlease also note that return_data == False is deprecated and not supported with PyCurl HTTP backend!")
         
         if not self.useMozillaCookieJar:
             cj = cookielib.LWPCookieJar()
@@ -1365,10 +1397,10 @@ class common:
                 try: 
                     metadata['url'] = response.geturl()
                     metadata['status_code'] = response.getcode()
-                    if 'Content-Type' in response.info(): metadata['content-type'] = response.info()['Content-Type']
+                    self.fillHeaderItems(metadata, response.info(), True)
                 except Exception: pass
                 
-                data = response.read()
+                data = response.read(params.get('max_data_size', -1))
                 response.close()
             except urllib2.HTTPError, e:
                 ignoreCodeRanges = params.get('ignore_http_code_ranges', [(404, 404), (500, 500)])
@@ -1385,9 +1417,9 @@ class common:
                         gzip_encoding = True
                     try: 
                         metadata['url'] = e.fp.geturl()
-                        if 'Content-Type' in e.fp.info(): metadata['content-type'] = e.fp.info()['Content-Type']
+                        self.fillHeaderItems(metadata, e.fp.info(), True)
                     except Exception: pass
-                    data = e.fp.read()
+                    data = e.fp.read(params.get('max_data_size', -1))
                     #e.msg
                     #e.headers
                 elif e.code == 503:
@@ -1407,9 +1439,7 @@ class common:
             try:
                 if gzip_encoding:
                     printDBG('Content-Encoding == gzip')
-                    buf = StringIO(data)
-                    f = gzip.GzipFile(fileobj=buf)
-                    out_data = f.read()
+                    out_data = DecodeGzipped(data)
                 else:
                     out_data = data
             except Exception as e:

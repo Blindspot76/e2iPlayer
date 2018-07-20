@@ -106,7 +106,7 @@ class SubsceneComProvider(CBaseSubProviderClass):
     def __init__(self, params={}):
         self.MAIN_URL      = 'https://subscene.com/'
         self.USER_AGENT    = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
-        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'gzip'}
+        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
 
         params['cookie'] = 'subscenecom.cookie'
         CBaseSubProviderClass.__init__(self, params)

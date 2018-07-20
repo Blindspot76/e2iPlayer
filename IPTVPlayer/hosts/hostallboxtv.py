@@ -514,10 +514,9 @@ class AllBoxTV(CBaseHostClass):
                         params = dict(self.defaultParams)
                         params['header'] = dict(params['header'])
                         params['header']['Referer'] = baseUrl
-                        params['return_data'] = False
-                        sts, response = self.getPage(self.getFullUrl(dataKey['url']), params)
-                        url = response.geturl()
-                        response.close()
+                        params['max_data_size'] = 0
+                        self.getPage(self.getFullUrl(dataKey['url']), params)
+                        url = self.cm.meta['url']
                         printDBG("++++++++++++++++++++++++++> " + url)
                         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
                         return [{'name':'', 'url':strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT}), 'need_resolve':0}]

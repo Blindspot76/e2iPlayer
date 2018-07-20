@@ -61,7 +61,7 @@ class TitlovicomProvider(CBaseSubProviderClass):
         self.BASE_URL_CACHE = {'hr':'titlovi', 'ba':'prijevodi', 'mk':'prevodi', 'si':'podnapisi', 'rs':'prevodi'}
         self.pageLang = 'hr'
         self.USER_AGENT    = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.168 Safari/537.36'
-        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.getMainUrl(), 'Accept':'gzip'}
+        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.getMainUrl(), 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
         
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self.dInfo = params['discover_info']

@@ -126,9 +126,9 @@ class SeriesOnlineIO(CBaseHostClass):
                         break
                 
                 printDBG("try %s: >>> ReCAPTCHA less check" % tries)
-                printDBG("========================================================================")
+                printDBG("==")
                 printDBG(data)
-                printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG("++")
                 
                 data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>', withMarkers=True, caseSensitive=False)
                 jscode = ''
@@ -137,7 +137,6 @@ class SeriesOnlineIO(CBaseHostClass):
                     if self.cm.isValidUrl(src):
                         tmpParams = deepcopy(urlParams)
                         tmpParams['header']['Referer'] = baseUrl
-                        tmpParams['return_data'] = True
                         sts, tmp = self.cm.getPageCFProtection(src, urlParams)
                         
                     else:
@@ -145,21 +144,21 @@ class SeriesOnlineIO(CBaseHostClass):
                     if sts: jscode += '\n' + tmp
                 
                 printDBG("try %s: >>> ReCAPTCHA less check js code" % tries)
-                printDBG("========================================================================")
+                printDBG("=======")
                 printDBG(jscode)
-                printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG("+++++++")
                 cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE).replace('; ', ';')
                 printDBG("try %s: >>> ReCAPTCHA less check cookies" % tries)
-                printDBG("========================================================================")
+                printDBG("=======")
                 printDBG(cookieHeader)
-                printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                printDBG("+++++++")
                 
                 try:
                     alljscode = base64.b64decode('''dmFyIHdpbmRvdyA9IHRoaXM7DQp2YXIgZG9jdW1lbnQgPSB7fTsNCnZhciBwYXJlbnQgPSB7bG9jYXRpb24gOiB7IHJlbG9hZCA6IGZ1bmN0aW9uICgpew0KICAgIGlwdHZVbmxvYWQgPSB0cnVlOw0KICAgIHRyeSB7DQogICAgICAgIHdpbmRvdy5vbnVubG9hZCgpOw0KICAgIH0gY2F0Y2ggKGMpIHsNCiAgICAgICAgcHJpbnQoYyk7DQogICAgfQ0KICAgIH0NCn0NCn07DQoNCnZhciBpcHR2VW5sb2FkID0gZmFsc2U7DQoNCnZhciBfaXB0dkxvZyA9IHsNCiAgICBlbGVtcyA6IFtdDQp9Ow0KDQp2YXIgWE1MSHR0cFJlcXVlc3QgPSBmdW5jdGlvbiAoKXsNCiAgICB0aGlzLm9wZW4gPSBmdW5jdGlvbiAobWV0aG9kLCB1cmwsIGFzeW5jLCB1c2VyLCBwYXNzd29yZCl7DQogICAgICAgIHRoaXMucGFyYW1zID0ge3R5cGUgOiAneGhyJywgbWV0aG9kIDogbWV0aG9kLCB1cmwgOiB1cmwsIGFzeW5jIDogYXN5bmMsIHVzZXIgOiB1c2VyLCBwYXNzd29yZCA6IHBhc3N3b3JkLCBjb29raWUgOiBkb2N1bWVudC5jb29raWV9Ow0KICAgIH07DQogICAgdGhpcy5zZW5kID0gZnVuY3Rpb24gKHBvc3Qpew0KICAgICAgICB0aGlzLnBhcmFtc1sncG9zdCddID0gcG9zdDsNCiAgICAgICAgdGhpcy5wYXJhbXNbJ3VubG9hZCddID0gaXB0dlVubG9hZDsNCiAgICAgICAgX2lwdHZMb2cuZWxlbXNbX2lwdHZMb2cuZWxlbXMubGVuZ3RoXSA9IHRoaXMucGFyYW1zOw0KICAgICAgICB0cnkgew0KICAgICAgICAgICAgdGhpcy5zdGF0dXMgPSAyMDA7DQogICAgICAgICAgICB0aGlzLnJlYWR5U3RhdGUgPSA0Ow0KICAgICAgICAgICAgdGhpcy5vbnJlYWR5c3RhdGVjaGFuZ2UoKTsNCiAgICAgICAgfSBjYXRjaCAoYykgew0KICAgICAgICAgICAgcHJpbnQoYyk7DQogICAgICAgIH0NCiAgICB9Ow0KfTsNCg0KdmFyIGVsZW1lbnQgPSBmdW5jdGlvbiAodHlwZSkNCnsNCiAgICB0aGlzLl90eXBlID0gdHlwZTsNCiAgICANCiAgICBPYmplY3QuZGVmaW5lUHJvcGVydHkodGhpcywgInNyYyIsIHsNCiAgICAgICAgZ2V0IDogZnVuY3Rpb24gKCkgew0KICAgICAgICAgICAgcmV0dXJuIHRoaXMuX3NyYzsNCiAgICAgICAgfSwNCiAgICAgICAgc2V0IDogZnVuY3Rpb24gKHZhbCkgew0KICAgICAgICAgICAgdGhpcy5fc3JjID0gdmFsOw0KICAgICAgICAgICAgX2lwdHZMb2cuZWxlbXNbX2lwdHZMb2cuZWxlbXMubGVuZ3RoXSA9IHt0eXBlIDogdGhpcy5fdHlwZSwgIHNyYyA6IHRoaXMuX3NyYywgdW5sb2FkIDogaXB0dlVubG9hZCwgY29va2llIDogZG9jdW1lbnQuY29va2llfQ0KICAgICAgICB9DQogICAgfSk7DQp9Ow0KDQpkb2N1bWVudC5jcmVhdGVFbGVtZW50ID0gZnVuY3Rpb24gKHR5cGUpIHsNCiAgICByZXR1cm4gbmV3IGVsZW1lbnQodHlwZSk7IA0KfTsNCg0KdmFyIG5hdmlnYXRvciA9IHt9Ow0KdmFyIGNocm9tZSA9IHt9Ow0KdmFyIHdlYmtpdFVSTCA9IHt9Ow0KDQpuYXZpZ2F0b3IudmVuZG9yID0gIkdvb2dsZSBJbmMuIjsNCm5hdmlnYXRvci5hcHBOYW1lID0gIk5ldHNjYXBlIjsNCm5hdmlnYXRvci5wbHVnaW5zID0gW107DQpuYXZpZ2F0b3IucGxhdGZvcm0gPSAiTGludXggeDg2XzY0IjsNCndpbmRvdy5XZWJHTFJlbmRlcmluZ0NvbnRleHQgPSB7fTsNCg0K''')
                     alljscode += '\ndocument.cookie = "%s";\n%s\nprint(JSON.stringify(_iptvLog));' % (cookieHeader, jscode)
-                    printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
+                    printDBG("++  CODE  ++")
                     printDBG(alljscode)
-                    printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                    printDBG("++++++++++++")
                     ret = iptv_js_execute( alljscode )
                     if ret['sts'] and 0 == ret['code']:
                         decoded = ret['data'].strip()
@@ -174,7 +173,6 @@ class SeriesOnlineIO(CBaseHostClass):
                         if not item.get('unload', False):
                             tmpParams = deepcopy(urlParams)
                             tmpParams['header']['Referer'] = baseUrl
-                            tmpParams['return_data'] = True
                             
                             if item['type'] == 'img':
                                 tmpParams['header']['Accept'] = 'image/png,image/*;q=0.8,*/*;q=0.5'
@@ -486,17 +484,13 @@ class SeriesOnlineIO(CBaseHostClass):
             return []
         
         params = dict(self.defaultParams)
-        params['return_data'] = False
-        try:
-            sts, response = self.getPage(videoUrl, params)
-            maintype = response.info().maintype.lower()
-            response.close()
-            if maintype != 'text':
-                if maintype != 'video': return [{'name':self.up.getDomain(videoUrl), 'url':videoUrl}]
-                else: return []
-        except Exception:
-            printExc()
-            return []
+        params['max_data_size'] = 0
+        sts = self.getPage(videoUrl, params)[0]
+        if not sts: return []
+        contentType = self.cm.meta['content-type']
+        if 'text' not in contentType:
+            if 'video' in contentType: return [{'name':self.up.getDomain(videoUrl), 'url':videoUrl}]
+            else: return []
         
         tab = self.up.getVideoLinkExt(videoUrl)
         if len(tab): return tab
@@ -508,7 +502,6 @@ class SeriesOnlineIO(CBaseHostClass):
         if self.cm.isValidUrl(tmpVideoUrl):
             tab = self.up.getVideoLinkExt(tmpVideoUrl)
             if len(tab): return tab
-        
         
         subTracks = []
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'sources', ']')[1]

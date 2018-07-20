@@ -3,32 +3,20 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, RetHost
 from Plugins.Extensions.IPTVPlayer.components.isubprovider import CSubProviderBase, CBaseSubProviderClass
 
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetCookieDir, byteify, \
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify, \
                                                           RemoveDisallowedFilenameChars, GetSubtitlesDir, GetTmpDir, rm, \
                                                           MapUcharEncoding, GetPolishSubEncoding
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from datetime import timedelta
-import time
 import re
 import urllib
-import unicodedata
-import base64
 try:    import json
 except Exception: import simplejson as json
-try:
-    try: from cStringIO import StringIO
-    except Exception: from StringIO import StringIO 
-    import gzip
-except Exception: pass
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -38,7 +26,6 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Screens.MessageBox import MessageBox
-from Screens.VirtualKeyBoard import VirtualKeyBoard
 ###################################################
 
 ###################################################
@@ -55,7 +42,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
     def __init__(self, params={}):
         self.MAIN_URL      = 'http://napisy24.pl/'
         self.USER_AGENT    = 'DMnapi 13.1.30'
-        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'gzip'}#, 'Accept-Language':'pl'}
+        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
 
         params['cookie'] = 'napisy24pl.cookie'
         CBaseSubProviderClass.__init__(self, params)
@@ -70,9 +57,10 @@ class Napisy24plProvider(CBaseSubProviderClass):
         if params == {}:
             params = dict(self.defaultParams)
         sts, data = self.cm.getPage(url, params, post_data)
-        if sts and params.get('return_data', False):
+        if sts:
             error = self.cm.ph.getDataBeetwenMarkers(data, '<div class="alert-message"', '</div>')[1]
-            if error != '': SetIPTVPlayerLastHostError(self.cleanHtmlStr(error))
+            if error != '':
+                SetIPTVPlayerLastHostError(self.cleanHtmlStr(error))
         return sts, data
         
     def initSubProvider(self, cItem):
@@ -307,17 +295,9 @@ class Napisy24plProvider(CBaseSubProviderClass):
         tmpFileZip = tmpFile + '.zip'
         
         urlParams = dict(self.defaultParams)
-        urlParams['return_data'] = False
+        urlParams['max_data_size'] = self.getMaxFileSize()
         
-        try:
-            fileSize = self.getMaxFileSize()
-            sts, response = self.getPage(url, urlParams)
-            data = response.read(fileSize)
-            response.close()
-        except Exception:
-            printExc()
-            sts = False
-                    
+        sts, data = self.getPage(url, urlParams)
         if not sts:
             SetIPTVPlayerLastHostError(_('Failed to download subtitle.'))
             return retData
@@ -330,11 +310,12 @@ class Napisy24plProvider(CBaseSubProviderClass):
             SetIPTVPlayerLastHostError(_('Failed to write file "%s".') % tmpFileZip)
             return retData
         
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(">>")
         printDBG(tmpFile)
         printDBG(tmpFileZip)
         printDBG(fileName)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG("<<")
+        
         def __cleanFiles(all=False):
             if all: rm(fileName)
             rm(tmpFile)
@@ -398,7 +379,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU

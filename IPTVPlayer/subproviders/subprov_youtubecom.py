@@ -3,31 +3,15 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CDisplayListItem, RetHost
 from Plugins.Extensions.IPTVPlayer.components.isubprovider import CSubProviderBase, CBaseSubProviderClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, GetCookieDir, byteify, \
-                                                          RemoveDisallowedFilenameChars, GetSubtitlesDir, GetTmpDir, rm, \
-                                                          MapUcharEncoding, GetPolishSubEncoding
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import hex_md5
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, \
+                                                          RemoveDisallowedFilenameChars, GetSubtitlesDir, rm
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from datetime import timedelta
-import time
 import re
-import urllib
-import unicodedata
-import base64
-try:    import json
-except Exception: import simplejson as json
-try:
-    try: from cStringIO import StringIO
-    except Exception: from StringIO import StringIO 
-    import gzip
-except Exception: pass
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -54,7 +38,7 @@ class YoutubeComProvider(CBaseSubProviderClass):
     def __init__(self, params={}):
         self.MAIN_URL      = 'http://youtube.com/'
         self.USER_AGENT    = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
-        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'gzip'}
+        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
 
         params['cookie'] = 'youtubecom.cookie'
         CBaseSubProviderClass.__init__(self, params)
@@ -107,20 +91,9 @@ class YoutubeComProvider(CBaseSubProviderClass):
         fileName = self._getFileName(title, lang, subId, self.youtubeId)
         fileName = GetSubtitlesDir(fileName)
         
-        url = cItem['url']
-        
         urlParams = dict(self.defaultParams)
-        urlParams['return_data'] = False
-        
-        try:
-            fileSize = self.getMaxFileSize()
-            sts, response = self.cm.getPage(url, urlParams)
-            data = response.read(fileSize)
-            response.close()
-        except Exception:
-            printExc()
-            sts = False
-                    
+        urlParams['max_data_size'] = self.getMaxFileSize()
+        sts, data = self.cm.getPage(cItem['url'], urlParams)
         if not sts:
             SetIPTVPlayerLastHostError(_('Failed to download subtitle.'))
             return retData
@@ -134,9 +107,9 @@ class YoutubeComProvider(CBaseSubProviderClass):
             rm(fileName)
             return retData
         
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(">>")
         printDBG(fileName)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG("<<")
         retData = {'title':title, 'path':fileName, 'lang':lang, 'ytid':self.youtubeId, 'sub_id':subId}
         
         return retData
@@ -149,7 +122,7 @@ class YoutubeComProvider(CBaseSubProviderClass):
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU

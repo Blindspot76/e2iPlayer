@@ -56,7 +56,7 @@ class PodnapisiNetProvider(CBaseSubProviderClass):
     def __init__(self, params={}):
         self.MAIN_URL      = 'https://www.podnapisi.net/'
         self.USER_AGENT    = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
-        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'gzip'}
+        self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate'}
         
         params['cookie'] = 'podnapisinet.cookie'
         CBaseSubProviderClass.__init__(self, params)
@@ -71,7 +71,7 @@ class PodnapisiNetProvider(CBaseSubProviderClass):
             params = dict(self.defaultParams)
         
         sts, data = self.cm.getPage(url, params, post_data)
-        if sts and params.get('return_data', True) and params.get('use_cookie', True) and params.get('load_cookie', True) and params.get('save_cookie', True):
+        if sts and params.get('use_cookie', True) and params.get('load_cookie', True) and params.get('save_cookie', True):
             session = self.cm.ph.getSearchGroups(data, '''var\s+phpbb3_session\s+=\s+['"]([^'^"]+?)['"]''')
             tmp = urlsplit(url)
             checkUrl = self.getFullUrl('/forum/app.php/track?path=') + tmp.path + urllib.quote('?' + tmp.query)
