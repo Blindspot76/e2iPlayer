@@ -292,7 +292,6 @@ class ConfigMenu(ConfigBaseWidget):
     @staticmethod
     def fillConfigList(list, hiddenOptions=False):
         if hiddenOptions:
-            list.append( getConfigListEntry(_("Use PyCurl"), config.plugins.iptvplayer.usepycurl) )
             list.append( getConfigListEntry(_("Last checked version"), config.plugins.iptvplayer.updateLastCheckedVersion) )
             list.append( getConfigListEntry(_("Show all version in the update menu"), config.plugins.iptvplayer.hiddenAllVersionInUpdate) )
             list.append(getConfigListEntry(_("VFD set current title:"), config.plugins.iptvplayer.set_curr_title))
@@ -341,6 +340,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry(_("    Number of rows"), config.plugins.iptvplayer.numOfRow))
             list.append(getConfigListEntry(_("    Number of columns"), config.plugins.iptvplayer.numOfCol))
         
+        list.append(getConfigListEntry(_("Use the PyCurl for HTTP requests"), config.plugins.iptvplayer.usepycurl))
         list.append(getConfigListEntry(_("https - validate SSL certificates"), config.plugins.iptvplayer.httpssslcertvalidation))
         list.append(getConfigListEntry(_("Alternative proxy server (1)"), config.plugins.iptvplayer.alternative_proxy1))
         list.append(getConfigListEntry(_("Alternative proxy server (2)"), config.plugins.iptvplayer.alternative_proxy2))
