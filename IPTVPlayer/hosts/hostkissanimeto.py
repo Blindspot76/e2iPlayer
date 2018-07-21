@@ -342,9 +342,6 @@ class KissAnimeTo(CBaseHostClass):
             except Exception: printExc()
             
             printDBG('keySeed: ' + keySeed)
-            # "nhasasdbasdtene7230asb"
-            # keySeed = "nhasasdbasdtene7230asb"
-            # "nhcscsdbcsdtene7230csb6n23nccsdln213"
             
             tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'asp.wrap(', ')', False)
             for tmp in tmpTab:
