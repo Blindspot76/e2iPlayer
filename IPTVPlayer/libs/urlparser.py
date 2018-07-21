@@ -3041,6 +3041,7 @@ class pageParser:
                         if url.startswith('//'): url = 'http:' + url
                         if self.cm.isValidUrl(url):
                             return self._parserUNIVERSAL_A(url, '', _findLinks2, httpHeader=defaultParams['header'], params=defaultParams)
+            
             data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''jwplayer\([^\)]+?player[^\)]+?\)\.setup'''), re.compile(';'))[1]
             url = self.cm.ph.getSearchGroups(data, '''['"]?file['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
             if '.mp4' in url.lower(): 
@@ -6286,45 +6287,34 @@ class pageParser:
         
         sts, data = self.cm.getPage(baseUrl, defaultParams)
         if not sts: return
+        url = self.cm.meta['url']
         
         defaultParams['cookie_items'] = self.cm.getCookieItems(COOKIE_FILE)
         
         #http://fastvideo.in/nr4kzevlbuws
-        host = self.cm.ph.getDataBeetwenMarkers(baseUrl, "://", '/', False)[1]
-        video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
-        url = ''
-        if video_id == '':
-            sts, data = self.cm.getPage(baseUrl, defaultParams)
-            if not sts: url = baseUrl
-            url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https?://[^'^"]+?)['"]''', ignoreCase=True)[0]
-            host = self.cm.ph.getDataBeetwenMarkers(url, "://", '/', False)[1]
-            video_id = self.cm.ph.getSearchGroups(url+'/', '[/-]([A-Za-z0-9]{12})[/-]')[0]
-        
-        if video_id != '' and host != '':
-            url = 'http://%s/embed-%s-960x480.html' % (host, video_id)
-        
-        sts, data = self.cm.getPage(url, defaultParams)
-        if not sts and data != None:
-            url = 'http://%s/%s' % (host, video_id)
-            defaultParams['header']['Referer'] = url
-            sts, data = self.cm.getPage(url, defaultParams)
-            if not sts: return False
-            
-            try:
-                sleep_time =  self.cm.ph.getDataBeetwenMarkers(data, '<div class="btn-box"', '</div>')[1]
-                sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>([0-9]+?)<')[0]
-                GetIPTVSleep().Sleep(int(sleep_time))
-            except Exception:
-                printExc()
-                
-            sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST" action', '</Form>', False, False)
-            if sts:
-                post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
-                post_data.pop('method_premium', None)
-                defaultParams['header']['Referer'] = url
-                sts, data = self.cm.getPage(url, defaultParams, post_data)
-        return self._findLinks(data, host, linkMarker=r'''['"](https?://[^"^']+(?:\.mp4|\.flv)[^'^"]*?)['"]''')
+        host = self.cm.ph.getDataBeetwenMarkers(url, "://", '/', False)[1]
 
+        defaultParams['header']['Referer'] = url
+        sts, data = self.cm.getPage(url, defaultParams)
+        if not sts: return False
+        
+        try:
+            sleep_time =  self.cm.ph.getDataBeetwenMarkers(data, '<div class="btn-box"', '</div>')[1]
+            sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>([0-9]+?)<')[0]
+            GetIPTVSleep().Sleep(int(sleep_time))
+        except Exception:
+            printExc()
+            
+        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST" action', '</Form>', False, False)
+        if sts:
+            post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+            post_data.pop('method_premium', None)
+            defaultParams['header']['Referer'] = url
+            sts, data = self.cm.getPage(url, defaultParams, post_data)
+        linksTab = self._findLinks(data, host, linkMarker=r'''['"](https?://[^"^']+(?:\.mp4|\.flv)[^'^"]*?)['"]''')
+        for idx in range(len(linksTab)):
+            linksTab[idx]['url'] = strwithmeta(linksTab[idx]['url'], {'Referer':url, 'User-Agent':['User-Agent']})
+        return linksTab
         
     def parserTHEVIDEOME(self, baseUrl):
         printDBG("parserTHEVIDEOME baseUrl[%s]" % baseUrl)
@@ -8209,14 +8199,16 @@ class pageParser:
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':Referer }
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'window.onload', '</script>', False)[1]
-        qualities = self.cm.ph.getSearchGroups(data, 'qualities:[ ]*?\[([^\]]+?)\]')[0]
+        
+        onloadData = self.cm.ph.getDataBeetwenMarkers(data, 'window.onload', '</script>', False)[1]
+        qualities = self.cm.ph.getSearchGroups(onloadData, 'qualities:[ ]*?\[([^\]]+?)\]')[0]
         qualities = self.cm.ph.getAllItemsBeetwenMarkers(qualities, '"', '"', False)
-        defaultQuality = self.cm.ph.getSearchGroups(data, 'defaultQuality:[ ]*?"([^"]+?)"')[0]
-        qualities.remove(defaultQuality)
+        
+        defaultQuality = self.cm.ph.getSearchGroups(onloadData, 'defaultQuality:[ ]*?"([^"]+?)"')[0]
+        if defaultQuality in qualities: qualities.remove(defaultQuality)
         
         sub_tracks = []
-        subData = self.cm.ph.getDataBeetwenMarkers(data, 'subtitles:', ']', False)[1].split('}')
+        subData = self.cm.ph.getDataBeetwenMarkers(onloadData, 'subtitles:', ']', False)[1].split('}')
         for item in subData:
             if '"subtitles"' in item:
                 label   = self.cm.ph.getSearchGroups(item, 'label:[ ]*?"([^"]+?)"')[0]
@@ -8225,16 +8217,32 @@ class pageParser:
                 if not src.startswith('http'): continue
                 sub_tracks.append({'title':label, 'url':src, 'lang':srclang, 'format':'srt'})
         
-        printDBG(">>>>>>>>>>>>>>>>> sub_tracks[%s]\n[%s]" % (sub_tracks, subData))
+        printDBG(">> sub_tracks[%s]\n[%s]" % (sub_tracks, subData))
         
         linksTab = []
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
-        defaultUrl = self.cm.ph.getSearchGroups(data, '"(http[^"]+?)"')[0]
-        linksTab.append({'name':defaultQuality, 'url': strwithmeta(defaultUrl, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl, 'external_sub_tracks':sub_tracks})})
-        for item in qualities:
-            if '.mp4' in defaultUrl:
-                url = defaultUrl.replace('.mp4', '-%s.mp4' % item)
-                linksTab.append({'name':item, 'url': strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl, 'external_sub_tracks':sub_tracks})})
+        onloadData = self.cm.ph.getDataBeetwenMarkers(onloadData, 'sources:', ']', False)[1]
+        defaultUrl = self.cm.ph.getSearchGroups(onloadData, '"(https?://[^"]+?)"')[0]
+        if defaultUrl != '':
+            linksTab.append({'name':defaultQuality, 'url': strwithmeta(defaultUrl, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl, 'external_sub_tracks':sub_tracks})})
+            for item in qualities:
+                if '.mp4' in defaultUrl:
+                    url = defaultUrl.replace('.mp4', '-%s.mp4' % item)
+                    linksTab.append({'name':item, 'url': strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl, 'external_sub_tracks':sub_tracks})})
+        
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False)
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
+            if self.cm.isValidUrl(url):
+                url = strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl, 'external_sub_tracks':sub_tracks})
+                linksTab.append({'name':self.cm.getBaseUrl(baseUrl, True) + ' %s' % (len(linksTab) + 1), 'url':url})
+        
+        if len(linksTab) == 1:
+            linksTab[0]['name'] = linksTab[0]['name'][:-1] + 'default'
+        
+        printDBG('++++++++')
+        printDBG(linksTab)
+        printDBG('--------')
         return linksTab
         
     def parserHDFILMSTREAMING(self, baseUrl):
