@@ -742,11 +742,19 @@ class common:
             
             if None == self.curlSession:
                 curlSession = pycurl.Curl()
+            elif params.get('use_new_session', False):
+                curlSession = self.curlSession
+                self.curlSession = None
+                curlSession.close()
+                curlSession = pycurl.Curl()
             else:
                 # use previous session to be able to reuse connection
                 curlSession = self.curlSession
                 self.curlSession = None
                 curlSession.reset()
+            
+            if params.get('use_fresh_connect', False):
+                curlSession.setopt(pycurl.FRESH_CONNECT, 1);
             
             customHeaders = []
             for key in headers:
