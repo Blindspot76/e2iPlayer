@@ -149,7 +149,14 @@ class KissAnimeTo(CBaseHostClass):
                     printDBG('post_data: %s' % post_data2)
                     printDBG('images:    %s' % images)
                     printDBG("++++++++++++++++++++++++++++++++++")
-                    retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleImageSelectorWidget, title='Captcha', message='\n'.join(messages[1:]), message_height=100, images=images, image_width=160, image_height=160, accep_label=_('-- OK --'))
+                    message = '\n'.join(messages[1:])
+                    if ' TWO ' in message: 
+                        maxSelItems = 2
+                        acceptLabel = None
+                    else: 
+                        maxSelItems = None
+                        acceptLabel = _('-- OK --')
+                    retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleImageSelectorWidget, title='Captcha', message=message, message_height=100, images=images, image_width=160, image_height=160, accep_label=acceptLabel, max_sel_items=maxSelItems)
                     printDBG(retArg)
                     if retArg and len(retArg) and isinstance(retArg[0], list):
                         printDBG(retArg[0])

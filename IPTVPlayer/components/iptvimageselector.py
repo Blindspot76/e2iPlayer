@@ -108,7 +108,7 @@ class IPTVMultipleImageSelectorWidget(Screen):
         printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
         return skin
         
-    def __init__(self, session, title=None, width=None, height=None, message=None, message_height=None, accep_label=None, accep_height=None, col_num=4, images=[], image_width=160, image_height=160):
+    def __init__(self, session, title=None, width=None, height=None, message=None, message_height=None, accep_label=None, accep_height=None, col_num=4, images=[], image_width=160, image_height=160, max_sel_items=None):
         self.iptv_title = title
         self.iptv_width = width
         self.iptv_height = height
@@ -126,6 +126,8 @@ class IPTVMultipleImageSelectorWidget(Screen):
         self.iptv_images = images
         self.iptv_image_width = image_width
         self.iptv_image_height = image_width
+        self.iptv_max_sel_items = max_sel_items
+        self.iptv_num_sel_items = 0
         self.iptv_images_data = None
         
         self.iptv_grid = []
@@ -229,18 +231,29 @@ class IPTVMultipleImageSelectorWidget(Screen):
             else: item.instance.setSelectionEnable(1)
     
     def key_ok(self):
+        maxItemsSelected = False
         if self.row_index < self.iptv_row_num:
             try:
                 item = self["col_%d" % self.column_index]
                 itemContent = item.l.getCurrentSelection()[0]
+                if itemContent['id'] == None: # do not allow to select empty cell
+                    return
+                if itemContent['selected']:
+                    self.iptv_num_sel_items -= 1
+                else:
+                    self.iptv_num_sel_items += 1
                 itemContent['selected'] = not itemContent['selected'] 
                 item.instance.setSelectionEnable(0)
                 item.instance.setSelectionEnable(1)
             except Exception:
                 printExc()
-            return 
+            
+            if self.iptv_num_sel_items != None and self.iptv_num_sel_items >= self.iptv_max_sel_items:
+                maxItemsSelected = True
+            else:
+                return 
         
-        if self.iptv_accep_label != None:
+        if self.iptv_accep_label != None or maxItemsSelected:
             ret = []
             for y in range(self.iptv_row_num):
                 for x in range(self.iptv_col_num):
