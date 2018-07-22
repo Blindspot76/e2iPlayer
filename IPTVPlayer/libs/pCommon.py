@@ -971,7 +971,7 @@ class common:
                     metadata['status_code'] = e.code
                     self.fillHeaderItems(metadata, e.fp.info(), True)
                     
-                    data = e.fp.read(params.get('max_data_size', -1))
+                    data = e.fp.read(addParams.get('max_data_size', -1))
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
                         data = DecodeGzipped(data)
                     
