@@ -465,6 +465,9 @@ class KissAnimeTo(CBaseHostClass):
                     return int(self.cm.ph.getSearchGroups('|'+itemLink['name']+'|', '[^0-9]([0-9]+?)[^0-9]')[0])
                 except Exception: return 0
             urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getBestSortedList()
+            for idx in range(len(urlTab)):
+                urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'], {'iptv_wget_retry_on_http_error':'429', 'iptv_wget_waitretry':'0.1', 'iptv_wget_tries':'1000'})
+                
             
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '>', withMarkers=True, caseSensitive=False)
         for item in data:
