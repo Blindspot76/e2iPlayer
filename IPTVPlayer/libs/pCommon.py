@@ -482,15 +482,11 @@ class common:
         self.useProxy = useProxy
         self.geolocation = {}
         self.useMozillaCookieJar = useMozillaCookieJar
-        self.metadataFromLastRequest = {}
+        self.meta = {} # metadata from previus request
         
         self.curlSession = None
         self.pyCurlAvailable = None
         self.pyCurl = None
-    
-    @property
-    def meta(self):
-        return self.metadataFromLastRequest
     
     def usePyCurl(self):
         bRet = False
@@ -612,8 +608,8 @@ class common:
         if 'return_data' not in params:
             params['return_data'] = True
         
-        self.metadataFromLastRequest = {}
-        metadata = self.metadataFromLastRequest
+        self.meta = {}
+        metadata = self.meta
         out_data = None
         sts = False
         
@@ -965,8 +961,8 @@ class common:
                 status = False
                 response = e
                 if addParams.get('return_data', False):
-                    self.metadataFromLastRequest = {}
-                    metadata = self.metadataFromLastRequest
+                    self.meta = {}
+                    metadata = self.meta
                     metadata['url'] = e.fp.geturl()
                     metadata['status_code'] = e.code
                     self.fillHeaderItems(metadata, e.fp.info(), True)
@@ -1299,8 +1295,8 @@ class common:
         req      = None
         out_data = None
         opener   = None
-        self.metadataFromLastRequest = {}
-        metadata = self.metadataFromLastRequest
+        self.meta = {}
+        metadata = self.meta
         
         timeout = params.get('timeout', None)
         

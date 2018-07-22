@@ -2,41 +2,28 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, remove_html_markup, GetLogoDir, GetCookieDir, byteify, CSelOneLink, rm
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getF4MLinksWithMeta, getDirectM3U8Playlist
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html, _unquote
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetTmpDir, CSelOneLink, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from datetime import timedelta
-import time
-import re
-import urllib
-import unicodedata
-import string
 import base64
-try:    import json
-except Exception: import simplejson as json
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
-from Plugins.Extensions.IPTVPlayer.libs.crypto.keyedHash.pbkdf2 import pbkdf2
 from binascii import a2b_hex
 from hashlib import sha256
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
 ###################################################
-
 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Screens.MessageBox import MessageBox
+from Plugins.Extensions.IPTVPlayer.components.iptvimageselector import IPTVMultipleImageSelectorWidget
 ###################################################
 
 ###################################################
@@ -61,12 +48,12 @@ class KissAnimeTo(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'kissanime.to', 'cookie':'kissanimeto.cookie'})
-        self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
-        self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
-        self.AJAX_HEADER = dict(self.HEADER)
+        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0'
+        self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
+        self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.MAIN_URL = 'http://kissanime.ru/'
         self.DEFAULT_ICON_URL = "https://ausanimecons.files.wordpress.com/2015/01/kissanime-logo.jpg"
@@ -84,6 +71,8 @@ class KissAnimeTo(CBaseHostClass):
         self.cache = {}
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
+        images = []
+        errorMessages = []
         if addParams == {}:
             addParams = dict(self.defaultParams)
         
@@ -99,7 +88,100 @@ class KissAnimeTo(CBaseHostClass):
             addParams.update({'http_proxy':proxy})
         
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':self.getFullUrl}
-        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        while True:
+            sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+            if sts and 'areyouhuman' in self.cm.meta['url'].lower():
+                errorMessages = []
+                formData = ''
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<form', '</form>', withMarkers=False, caseSensitive=False)
+                for item in tmp:
+                    if 'answerCap' in item:
+                        formData = item
+                        break
+                
+                messages = []
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(formData, '<p', '</p>')
+                for item in tmp:
+                    item = self.cleanHtmlStr(item)
+                    if item != '': messages.append(item)
+                
+                if len(messages) < 2:
+                    errorMessages.append(_('Unknown captcha form! Data: "%s"') % messages)
+                    break
+                
+                action = self.cm.ph.getSearchGroups(formData, '''action=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                if action == '': action = '/'
+                action = self.getFullUrl(action)
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(formData, '<input', '>', False, False)
+                post_data2 = {}
+                for item in tmp:
+                    name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                    value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                    if name != '': post_data2[name] = value
+                
+                header = dict(self.HTTP_HEADER)
+                header['Accept'] = 'image/png,image/*;q=0.8,*/*;q=0.5'
+                params = dict(self.defaultParams)
+                params.update( {'maintype': 'image', 'subtypes':['jpeg', 'jpg', 'png'], 'check_first_bytes':['\xFF\xD8','\xFF\xD9','\x89\x50\x4E\x47'], 'header':header} )
+                
+                prevMeta = self.cm.meta
+                images = []
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(formData, '<img', '>', False, False)
+                for item in tmp:
+                    index = self.cm.ph.getSearchGroups(item, '''indexValue=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                    imgUrl = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''', ignoreCase=True)[0])
+                    if index != '' and imgUrl != '':
+                        filePath = GetTmpDir('.iptvplayer_captcha_picture_%s.jpg' % index)
+                        rm(filePath)
+                        ret = self.cm.saveWebFile(filePath, imgUrl.replace('&amp;', '&'), params)
+                        if ret.get('sts'):
+                            images.append({'path':filePath, 'id':index})
+                            continue
+                        errorMessages.append(_('Download "%s" in to "%s" failed!') % (imgUrl, filePath))
+                    else:
+                        errorMessages.append(_('Unknow data in the captcha item!'))
+                        errorMessages.append('item: "%s"' % item)
+                    break
+                self.cm.meta = prevMeta
+                if 0 == len(errorMessages):
+                    printDBG("++++++++++++++++++++++++++++++++++")
+                    printDBG('action:    %s' % action)
+                    printDBG('post_data: %s' % post_data2)
+                    printDBG('images:    %s' % images)
+                    printDBG("++++++++++++++++++++++++++++++++++")
+                    retArg = self.sessionEx.waitForFinishOpen(IPTVMultipleImageSelectorWidget, title='Captcha', message='\n'.join(messages[1:]), message_height=100, images=images, image_width=160, image_height=160, accep_label=_('-- OK --'))
+                    printDBG(retArg)
+                    if retArg and len(retArg) and isinstance(retArg[0], list):
+                        printDBG(retArg[0])
+                        post_data2['answerCap'] = ','.join(retArg[0]) + ','
+                        addParams2 = dict(addParams)
+                        addParams2['header'] = dict(addParams2['header'])
+                        addParams2['header']['Referer'] = prevMeta['url']
+                        sts2, data2 = self.cm.getPageCFProtection(action, addParams, post_data2)
+                        #printDBG("++++++++++++++++++++++++++++++++++")
+                        #printDBG(data2)
+                        #printDBG("++++++++++++++++++++++++++++++++++")
+                        if sts2:
+                            if 'areyouhuman' in self.cm.meta['url'].lower():
+                                printDBG(">>> TRY AGAIN")
+                                continue
+                            else:
+                                sts, data = sts2, data2
+                    else:
+                        self.cm.meta = prevMeta
+            break
+        
+        if len(errorMessages):
+            GetIPTVNotify().push('\n'.join(errorMessages), 'error', 10)
+        
+        #printDBG("++++++++++++++++++++++++++++++++++")
+        #printDBG(data)
+        #printDBG("++++++++++++++++++++++++++++++++++")
+        
+        for item in images:
+            rm(item['path'])
+        
+        return sts, data
         
     def getFullIconUrl(self, url):
         url = CBaseHostClass.getFullIconUrl(self, url.strip())
@@ -289,10 +371,13 @@ class KissAnimeTo(CBaseHostClass):
             
             sts, data = self.getPage(url) 
             if not sts: return urlTab
-            if 'AreYouHuman' in self.cm.meta['url']:
-                url = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'specialButton'), ('</a', '>'))[1]
-                url = self.getFullUrl(self.cm.ph.getSearchGroups(url, '''href=["']([^"^']+?)['"]''')[0])
-                continue
+            
+            if 'areyouhuman' in self.cm.meta['url'].lower():
+                tmp = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'specialButton'), ('</a', '>'))[1]
+                tmp = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''href=["']([^"^']+?)['"]''')[0])
+                if tmp != '':
+                    url = tmp
+                    continue
             
             # get server list
             data = self.cm.ph.getDataBeetwenMarkers(data, 'id="selectServer"', '</select>')[1]
@@ -304,9 +389,6 @@ class KissAnimeTo(CBaseHostClass):
                     urlTab.append({'name':serverTitle, 'url':serverUrl, 'need_resolve':1})
             
             if 0 == len(urlTab):
-                if tries < 2:
-                    rm(self.COOKIE_FILE)
-                    continue
                 urlTab.append({'name':'default', 'url':cItem['url'], 'need_resolve':1})
             break
         return urlTab
@@ -319,87 +401,78 @@ class KissAnimeTo(CBaseHostClass):
             return self.up.getVideoLinkExt(videoUrl)
         #if '&s=' in videoUrl:
         
-        tries = 0
-        while tries < 2:
-            tries += 1
+        def _decUrl(data, password):
+            printDBG('PASSWORD 2: ' + sha256(password).hexdigest())
+            key = a2b_hex( sha256(password).hexdigest() )
+            printDBG("key: [%s]" % key)
+            iv = a2b_hex("a5e8d2e9c1721ae0e84ad660c472c1f3")
+            encrypted = base64.b64decode(data)
+            cipher = AES_CBC(key=key, keySize=32)
+            return cipher.decrypt(encrypted, iv)
             
-            def _decUrl(data, password):
-                printDBG('PASSWORD 2: ' + sha256(password).hexdigest())
-                key = a2b_hex( sha256(password).hexdigest() )
-                printDBG("key: [%s]" % key)
-                iv = a2b_hex("a5e8d2e9c1721ae0e84ad660c472c1f3")
-                encrypted = base64.b64decode(data)
-                cipher = AES_CBC(key=key, keySize=32)
-                return cipher.decrypt(encrypted, iv)
-                
-            sts, data = self.getPage(videoUrl) 
-            if not sts: return urlTab
-            if 'AreYouHuman' in self.cm.meta['url']:
-                SetIPTVPlayerLastHostError('This link require resolve captcha.\nThis is not supported at now. Use the RapidVideo hosting if available.')
+        sts, data = self.getPage(videoUrl) 
+        if not sts: return urlTab
+        if 'AreYouHuman' in self.cm.meta['url']:
+            SetIPTVPlayerLastHostError('Captcha failed! Try to use the RapidVideo hosting if available.')
+        
+        keySeed = self.cm.ph.getSearchGroups(data, r'"(\\x[^"]+?)"')[0]
+        try: keySeed = keySeed.decode('string-escape')
+        except Exception: printExc()
+        
+        printDBG('keySeed: ' + keySeed)
+        
+        tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'asp.wrap(', ')', False)
+        for tmp in tmpTab:
+            tmp = tmp.strip()
+            if tmp.startswith('"'):
+                tmp = tmp[1:-1]
+            else:
+                tmp = self.cm.ph.getSearchGroups(data, '''var %s =[^'^"]*?["']([^"^']+?)["']''')[0]
+            if tmp == '': continue
+            try:
+                tmp = base64.b64decode(tmp)
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a ', '</a>')
+                for item in tmp:
+                    url  = self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''')[0]
+                    if 'googlevideo.com' not in url: continue
+                    name = self.cleanHtmlStr(item)
+                    urlTab.append({'name':name, 'url':url, 'need_resolve':0})
+            except Exception:
+                printExc()
+                continue
+               
+        tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="slcQualix">', '</select>', False)[1]
+        tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
+        for item in tmpTab:
+            url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
+            if '' == url: continue
+            try:
+                printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
+                url = _decUrl(url, base64.b64decode('bmhjc2NzZGJjc2R0ZW5lNzIzMGNzYjZuMjNuY2NzZGxuMjEzem5zZGJjc2QwMTI5MzM0NzM='))
+                printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
+                url = strwithmeta(url, {'Referer':'http://kissanime.ru/Scripts/jwplayer/jwplayer.flash.swf'})
+            except Exception:
+                printExc()
+                continue
+            if not self.cm.isValidUrl(url): continue
+            name = self.cleanHtmlStr(item)
+            urlTab.append({'name':name, 'url':url, 'need_resolve':0})
             
-            keySeed = self.cm.ph.getSearchGroups(data, r'"(\\x[^"]+?)"')[0]
-            try: keySeed = keySeed.decode('string-escape')
-            except Exception: printExc()
-            
-            printDBG('keySeed: ' + keySeed)
-            
-            tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(data, 'asp.wrap(', ')', False)
-            for tmp in tmpTab:
-                tmp = tmp.strip()
-                if tmp.startswith('"'):
-                    tmp = tmp[1:-1]
-                else:
-                    tmp = self.cm.ph.getSearchGroups(data, '''var %s =[^'^"]*?["']([^"^']+?)["']''')[0]
-                if tmp == '': continue
+        if 0 < len(urlTab):
+            max_bitrate = int(config.plugins.iptvplayer.kissanime_defaultformat.value)
+            def __getLinkQuality( itemLink ):
                 try:
-                    tmp = base64.b64decode(tmp)
-                    tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a ', '</a>')
-                    for item in tmp:
-                        url  = self.cm.ph.getSearchGroups(item, '''href="([^"]+?)"''')[0]
-                        if 'googlevideo.com' not in url: continue
-                        name = self.cleanHtmlStr(item)
-                        urlTab.append({'name':name, 'url':url, 'need_resolve':0})
-                except Exception:
-                    printExc()
-                    continue
-                   
-            tmpTab = self.cm.ph.getDataBeetwenMarkers(data, '<select id="slcQualix">', '</select>', False)[1]
-            tmpTab = self.cm.ph.getAllItemsBeetwenMarkers(tmpTab, '<option', '</option>')
-            for item in tmpTab:
-                url  = self.cm.ph.getSearchGroups(item, '''value="([^"]+?)"''')[0]
-                if '' == url: continue
-                try:
-                    printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> url[%s]" % url)
-                    url = _decUrl(url, keySeed)
-                    printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< url[%s]" % url)
-                    url = strwithmeta(url, {'Referer':'http://kissanime.ru/Scripts/jwplayer/jwplayer.flash.swf'})
-                except Exception:
-                    printExc()
-                    continue
-                if not self.cm.isValidUrl(url): continue
-                name = self.cleanHtmlStr(item)
-                urlTab.append({'name':name, 'url':url, 'need_resolve':0})
-                
-            if 0 < len(urlTab):
-                max_bitrate = int(config.plugins.iptvplayer.kissanime_defaultformat.value)
-                def __getLinkQuality( itemLink ):
-                    try:
-                        return int(self.cm.ph.getSearchGroups('|'+itemLink['name']+'|', '[^0-9]([0-9]+?)[^0-9]')[0])
-                    except Exception: return 0
-                urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getBestSortedList()         
-                
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '>', withMarkers=True, caseSensitive=False)
-            for item in data:
-                url  = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''',  grupsNum=1, ignoreCase=True)[0]
-                url = self.getFullUrl(url)
-                if url.startswith('http') and 'facebook.com' not in url and 1 == self.up.checkHostSupport(url):
-                    urlTab.extend(self.up.getVideoLinkExt(url))
+                    return int(self.cm.ph.getSearchGroups('|'+itemLink['name']+'|', '[^0-9]([0-9]+?)[^0-9]')[0])
+                except Exception: return 0
+            urlTab = CSelOneLink(urlTab, __getLinkQuality, max_bitrate).getBestSortedList()
             
-            if 0 == len(urlTab):
-                if tries < 2:
-                    rm(self.COOKIE_FILE)
-                    continue
-            break
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe ', '>', withMarkers=True, caseSensitive=False)
+        for item in data:
+            url  = self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''',  grupsNum=1, ignoreCase=True)[0]
+            url = self.getFullUrl(url)
+            if url.startswith('http') and 'facebook.com' not in url and 1 == self.up.checkHostSupport(url):
+                urlTab.extend(self.up.getVideoLinkExt(url))
+        
         return urlTab
         
     def listSearchResult(self, cItem, searchPattern, searchType):

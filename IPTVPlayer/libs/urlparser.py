@@ -242,7 +242,6 @@ class urlparser:
                        'videowood.tv':         self.pp.parserVIDEOWOODTV   ,
                        'movreel.com':          self.pp.parserMOVRELLCOM    ,
                        'vidfile.net':          self.pp.parserVIDFILENET    ,
-                       'mp4upload.com':        self.pp.parserMP4UPLOAD     ,
                        'yukons.net':           self.pp.parserYUKONS        ,
                        'ustream.tv':           self.pp.parserUSTREAMTV     ,
                        'privatestream.tv':     self.pp.parserPRIVATESTREAM ,
@@ -460,7 +459,7 @@ class urlparser:
                        'sharevideo.pl':        self.pp.parserSHAREVIDEOPL   ,
                        'sharing-box.cloud':    self.pp.parserSHAREVIDEOPL   ,
                        'file-upload.com':      self.pp.parserFILEUPLOADCOM  ,
-                       'mp4upload.com':        self.pp.parserMP4UPLOADCOM   ,
+                       'mp4upload.com':        self.pp.parserMP4UPLOAD      ,
                        'megadrive.tv':         self.pp.parserMEGADRIVETV    ,
                        'watchvideo17.us':      self.pp.parserWATCHVIDEO17US ,
                        'upvid.co':             self.pp.parserWATCHUPVIDCO   ,
@@ -2907,7 +2906,7 @@ class pageParser:
         return linksTab
         
     def parserWATCHUPVIDCO(self, baseUrl):
-        printDBG("parserMP4UPLOADCOM baseUrl[%r]" % baseUrl)
+        printDBG("parserWATCHUPVIDCO baseUrl[%r]" % baseUrl)
         urlParams = {'header':{ 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }}
         url = baseUrl
         subFrameNum = 0
@@ -2948,27 +2947,6 @@ class pageParser:
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         return False
-        
-    def parserMP4UPLOADCOM(self, baseUrl):
-        printDBG("parserMP4UPLOADCOM baseUrl[%r]" % baseUrl)
-        
-        sts, data = self.cm.getPage(baseUrl)
-        if not sts: return False
-        
-        jscode = ''
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
-        for item in tmp:
-            if 'eval(' in item:
-                jscode += item
-        linksTab = []
-        jscode = base64.b64decode('''dmFyIGRvY3VtZW50PXt9LHdpbmRvdz10aGlzO2RvY3VtZW50LndyaXRlPWZ1bmN0aW9uKCl7fTt2YXIgdmlkZW9qcz1mdW5jdGlvbigpe3JldHVybntzcmM6ZnVuY3Rpb24obil7dHJ5e3ByaW50KEpTT04uc3RyaW5naWZ5KG4pKX1jYXRjaCh0KXt9fX19OyQ9ZnVuY3Rpb24oKXtyZXR1cm57Y3NzOmZ1bmN0aW9uKCl7fX19Ow==''') + jscode
-        ret = iptv_js_execute( jscode )
-        if ret['sts'] and 0 == ret['code']:
-            data = byteify(json.loads(ret['data']))
-            for item in data:
-                if 'mp4' in item['type'].lower():
-                    linksTab.append({'name':item['type'], 'url':item['src']})
-        return linksTab
         
     def parserPOWVIDEONET(self, videoUrl):
         printDBG("parserPOWVIDEONET baseUrl[%r]" % videoUrl)
@@ -4556,15 +4534,41 @@ class pageParser:
         
     def parserMP4UPLOAD(self, baseUrl):
         printDBG("parserMP4UPLOAD baseUrl[%s]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', baseUrl)
+        
+        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        if referer != '': HTTP_HEADER['Referer'] = referer
+        paramsUrl = {'header':HTTP_HEADER}
         videoUrls = []
-        sts, data = self.cm.getPage(baseUrl)
-        #printDBG(data)
-        if sts:
-            data = CParsingHelper.getDataBeetwenMarkers(data, "'modes':", ']', False)[1]
-            data = re.compile("""['"]file['"]: ['"]([^'^"]+?)['"]""").findall(data)
-            if 1 < len(data) and data[1].startswith('http'): videoUrls.append( {'name': 'mp4upload.com: html5',    'url':data[1] } )
-            if 0 < len(data) and data[0].startswith('http'): videoUrls.append( {'name': 'mp4upload.com: download', 'url':data[0] } )
-        return videoUrls
+        
+        sts, data = self.cm.getPage(baseUrl, paramsUrl)
+        
+        cUrl = self.cm.getBaseUrl(self.cm.meta['url'])
+        domain = urlparser.getDomain(cUrl)
+        
+        jscode = [self.jscode['jwplayer']]
+        printDBG(jscode)
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item and 'setup' in item:
+                jscode.append(item)
+        urlTab = []
+        jscode = '\n'.join(jscode)
+        ret = iptv_js_execute( jscode )
+        #if ret['sts'] and 0 == ret['code']:
+        data = byteify(json.loads(ret['data']))
+        if 'sources' in data: data = data['sources']
+        else: data = [data]
+        for item in data:
+            url = item['file']
+            type = item.get('type', url.rsplit('.', 1)[-1].split('?', 1)[0]).lower()
+            label = item.get('label', domain)
+            if 'mp4' not in type: continue
+            if url == '': continue
+            url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            urlTab.append({'name':'{0} {1}'.format(domain, label), 'url':url})
+        return urlTab
         
     def parserYUKONS(self, baseUrl):
         printDBG("parserYUKONS url[%s]" % baseUrl)
