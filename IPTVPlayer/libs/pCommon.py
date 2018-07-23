@@ -481,12 +481,13 @@ class common:
         self.proxyURL = proxyURL
         self.useProxy = useProxy
         self.geolocation = {}
-        self.useMozillaCookieJar = useMozillaCookieJar
         self.meta = {} # metadata from previus request
         
         self.curlSession = None
         self.pyCurlAvailable = None
         self.pyCurl = None
+        if not useMozillaCookieJar:
+            raise Exception("You should stop use parameter useMozillaCookieJar it change nothing, because from only MozillaCookieJar can be used")
     
     def usePyCurl(self):
         bRet = False
@@ -546,8 +547,6 @@ class common:
             toRemove = []
             if self.usePyCurl():
                 cj = self._pyCurlLoadCookie(cookiefile, ignoreDiscard, ignoreExpires)
-            elif not self.useMozillaCookieJar:
-                cj = cookielib.LWPCookieJar()
             else:
                 cj = cookielib.MozillaCookieJar()
             cj.load(cookiefile, ignore_discard = ignoreDiscard)
@@ -571,9 +570,6 @@ class common:
         try:
             if self.usePyCurl():
                 cj = self._pyCurlLoadCookie(cookiefile, ignoreDiscard, ignoreExpires)
-            elif not self.useMozillaCookieJar:
-                cj = cookielib.LWPCookieJar()
-                cj.load(cookiefile, ignore_discard = ignoreDiscard)
             else:
                 cj = cookielib.MozillaCookieJar()
                 cj.load(cookiefile, ignore_discard = ignoreDiscard)
@@ -1287,10 +1283,7 @@ class common:
         if 'max_data_size' in params and not params.get('return_data', False):
             raise Exception("return_data == False is not accepted with max_data_size.\nPlease also note that return_data == False is deprecated and not supported with PyCurl HTTP backend!")
         
-        if not self.useMozillaCookieJar:
-            cj = cookielib.LWPCookieJar()
-        else:
-            cj = cookielib.MozillaCookieJar()
+        cj = cookielib.MozillaCookieJar()
         response = None
         req      = None
         out_data = None

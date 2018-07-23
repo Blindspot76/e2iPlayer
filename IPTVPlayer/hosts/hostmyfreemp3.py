@@ -50,7 +50,7 @@ def gettytul():
 class MyFreeMp3(CBaseHostClass):
     
     def __init__(self):
-        CBaseHostClass.__init__(self, {'history':'my-free-mp3.net', 'cookie':'my-free-mp3.net.cookie', 'cookie_type':'MozillaCookieJar'})
+        CBaseHostClass.__init__(self, {'history':'my-free-mp3.net', 'cookie':'my-free-mp3.net.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.MAIN_URL = 'https://my-free-mp3.net/'
         self.DEFAULT_ICON_URL = 'https://my-free-mp3.net/img/logo.png'

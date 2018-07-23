@@ -39,7 +39,6 @@ class PrijevodiOnline(CBaseSubProviderClass):
         self.HTTP_HEADER   = {'User-Agent':self.USER_AGENT, 'Referer':self.MAIN_URL, 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
         
         params['cookie'] = 'prijevodionlineorg.cookie'
-        params['min_py_ver'] = (2,7,9)
         CBaseSubProviderClass.__init__(self, params)
         
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}

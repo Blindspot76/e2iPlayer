@@ -95,7 +95,7 @@ class ZalukajCOM(CBaseHostClass):
     
     def __init__(self):
         printDBG("ZalukajCOM.__init__")
-        CBaseHostClass.__init__(self, {'history':'ZalukajCOM', 'cookie':'zalukajtv.cookie', 'min_py_ver':(2,7,9)})
+        CBaseHostClass.__init__(self, {'history':'ZalukajCOM', 'cookie':'zalukajtv.cookie'})
         self.loggedIn = None
         self.login    = ''
         self.password = ''
