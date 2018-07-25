@@ -55,7 +55,6 @@ class WatchCartoonOnline(CBaseHostClass):
         self.setMainUrl(self.cm.meta['url'])
         
         data = data[data.find('<body'):]
-        printDBG("BODY: " + data)
         
         tmp = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'nav-bar'), ('</ul', '>'), False)[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
@@ -71,8 +70,12 @@ class WatchCartoonOnline(CBaseHostClass):
         def _fillItems(data):
             data = data.split('</div>', 1)
             tabTitle = self.cleanHtmlStr(data[0].split(' - ', 1)[0])
-            if 'genre' in tabTitle: node='a'
-            else: node = 'li'
+            if 'genre' in tabTitle.lower(): 
+                node='a'
+                genre = True
+            else: 
+                node = 'li'
+                genre = False
             data = self.cm.ph.getAllItemsBeetwenMarkers(data[-1], '<' + node, '</%s>' % node)
             
             tabItems = []
@@ -83,7 +86,7 @@ class WatchCartoonOnline(CBaseHostClass):
                 
                 params = dict(cItem)
                 params.update({'title':title, 'url':url, 'icon':icon})
-                if url.endswith('-list'):
+                if url.endswith('-list') or genre:
                     params.update({'category':'list_abc'})
                 else:
                     params.update({'good_for_fav':True, 'category':'explore_item'})
@@ -96,7 +99,7 @@ class WatchCartoonOnline(CBaseHostClass):
         
         tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'recent-release-main'), ('<div', '>', 'sidebar-'), False)[1]
         tmp = re.compile('<div[^>]+?recent\-release\-main[^>]+?>').split(tmp)
-        tmp.extend(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sidebar-all'), ('</ul', '>'), False)[1])
+        tmp.append(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sidebar-all'), ('</ul', '>'), False)[1])
         for item in tmp:
             _fillItems(item)
 
@@ -111,10 +114,10 @@ class WatchCartoonOnline(CBaseHostClass):
         self.setMainUrl(self.cm.meta['url'])
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'ddmcc_container'), ('</div', '>'), False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<p', '</ul>')
-        for tabData in data:
-            tabTitle = self.cleanHtmlStr( tabData[:tabData.find('</p>')] )
-            tabData = self.cm.ph.getAllItemsBeetwenMarkers(tabData, '<li', '</li>')
+        data = data.split('<p')
+        for idx in range(len(data)):
+            tabTitle = self.cleanHtmlStr( self.cm.ph.rgetDataBeetwenMarkers2(data[idx], '</p>', '>', False)[1] )
+            tabData = self.cm.ph.getAllItemsBeetwenMarkers(data[idx], '<li', '</li>')
             tabItems = []
             for item  in tabData:
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
@@ -156,7 +159,7 @@ class WatchCartoonOnline(CBaseHostClass):
         cItem.update({'desc':desc, 'icon':icon})
         
         # main item
-        if '-video-' in data:
+        if '-video-0' in data or 'video too slow' in data:
             self.addVideo(cItem)
             
         # category
