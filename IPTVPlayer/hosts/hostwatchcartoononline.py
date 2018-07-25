@@ -83,12 +83,6 @@ class WatchCartoonOnline(CBaseHostClass):
                 
                 params = dict(cItem)
                 params.update({'title':title, 'url':url, 'icon':icon})
-                #if '-episode-' in url:
-                #    params.update({'good_for_fav':True, 'type':'video'})
-                #elif '/anime/' in url:
-                #    params.update({'good_for_fav':True, 'category':'explore_item'})
-                #else:
-                #    params.update({'category':'list_abc'})
                 if url.endswith('-list'):
                     params.update({'category':'list_abc'})
                 else:
@@ -129,10 +123,6 @@ class WatchCartoonOnline(CBaseHostClass):
                 
                 params = dict(cItem)
                 params.update({'good_for_fav':True, 'category':'explore_item', 'title':title, 'url':url, 'icon':icon})
-                #if cItem['url'].rsplit('/', 1)[-1] in ['movie-list', 'ova-list']:
-                #    params.update({'good_for_fav':True, 'type':'video'})
-                #else:
-                #    params.update({'good_for_fav':True, 'category':'explore_item'})
                 tabItems.append(params)
             
             if len(tabItems):
@@ -183,8 +173,8 @@ class WatchCartoonOnline(CBaseHostClass):
             self.addDir(params)
         
         # episodes
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'sidebar-titles'), ('</ul', '>'), False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'cat-eps'), ('<div', '>', 'sidebar'))[1]
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'cat-eps'), ('</div', '>'))
         for item in data:
             url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
             title = self.cleanHtmlStr(item)
@@ -307,50 +297,6 @@ class WatchCartoonOnline(CBaseHostClass):
         
         return  urlTab
 
-    def getArticleContent(self, cItem):
-        printDBG("WatchCartoonOnline.getVideoLinks [%s]" % cItem)
-        retTab = []
-        itemsList = []
-        
-        if 'prev_url' in cItem: url = cItem['prev_url']
-        else: url = cItem['url']
-
-        sts, data = self.cm.getPage(url)
-        if not sts: return
-
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 's_left'), ('<div', '>', 'comment'), False)[1]
-        
-        icon = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'imagen'), ('</div', '>'), False)[1]
-        icon = self.getFullUrl( self.cm.ph.getSearchGroups(icon, '''<img[^>]+?src=['"]([^'^"]+?)['"]''')[0] )
-        title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'title'), ('</p', '>'), False)[1] )
-        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'entry-content'), ('</div', '>'), False)[1] )
-
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<p', '>', 'meta_dd'), ('</p', '>'), False)
-        for item in tmp:
-            if 'title' in item:
-                item = [self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0], item]
-            else:
-                item = item.split('</b>', 1)
-                if len(item) < 2: continue
-            key = self.cleanHtmlStr(item[0])
-            val = self.cleanHtmlStr(item[1])
-            if key == '' or val == '': continue
-            itemsList.append((key, val))
-
-        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'dato'), ('</span', '>'), False)[1])
-        if tmp != '': itemsList.append((_('Rating'), tmp))
-
-        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'views'), ('</p', '>'), False)[1])
-        if tmp != '': itemsList.append((_('Views'), tmp))
-        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'date'), ('</p', '>'), False)[1])
-        if tmp != '': itemsList.append((_('Relese'), tmp))
-
-        if title == '': title = cItem['title']
-        if icon == '':  icon  = cItem.get('icon', self.DEFAULT_ICON_URL)
-        if desc == '':  desc  = cItem.get('desc', '')
-        
-        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':{'custom_items_list':itemsList}}]
-
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -400,6 +346,3 @@ class IPTVHost(CHostBase):
         searchTypesOptions.append((_("Episode Search"), "episodes"))
         return searchTypesOptions
 
-    #def withArticleContent(self, cItem):
-    #    if 'prev_url' in cItem or cItem.get('category', '') == 'explore_item': return True
-    #    else: return False
