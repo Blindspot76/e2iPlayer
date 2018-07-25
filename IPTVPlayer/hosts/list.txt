@@ -165,6 +165,7 @@ hostvevo
 hostvideopenny
 hostvimeo
 hostvodpl
+hostwatchcartoononline
 hostwatchwrestling
 hostwatchwrestlinguno
 hostwebstream
