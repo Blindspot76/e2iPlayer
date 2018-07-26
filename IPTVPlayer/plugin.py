@@ -58,9 +58,9 @@ def InfoBar__init__wrapper(self, *args, **kwargs):
     self.onShow.append(doPluginAutostart)
 
 def pluginAutostartSetup(reason, **kwargs):
+    global gInfoBar__init__
     if reason == 0 and gInfoBar__init__ == None:
         from Screens.InfoBar import InfoBar
-        global gInfoBar__init__
         gInfoBar__init__ = InfoBar.__init__
         InfoBar.__init__ = InfoBar__init__wrapper
 
