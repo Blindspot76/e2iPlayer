@@ -3,25 +3,17 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir, byteify, rm
-from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigInteger, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
-from Tools.Directories import fileExists
-from datetime import timedelta
-from binascii import hexlify
+from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
-import urllib
-import time
-import random
 try:    import simplejson as json
 except Exception: import json
 ###################################################
@@ -124,10 +116,13 @@ class ZalukajCOM(CBaseHostClass):
             addParams.update({'http_proxy':proxy})
         
         sts, data = self.cm.getPage(url, addParams, post_data)
-        if sts and None == data:
-            sts = False
-        if sts and 'Duze obciazenie!' in data:
-            SetIPTVPlayerLastHostError(self.cleanHtmlStr(re.compile('''<script.+?</script>''', re.DOTALL).sub("", data)))
+        try:
+            if 'Duze obciazenie!' in data:
+                message = self.cleanHtmlStr(re.compile('<script.+?</script>', re.DOTALL).sub("", data))
+                GetIPTVNotify().push(message, 'info', 5)
+                SetIPTVPlayerLastHostError(message)
+        except Exception:
+            pass
         return sts, data
         
     def getFullIconUrl(self, url):
