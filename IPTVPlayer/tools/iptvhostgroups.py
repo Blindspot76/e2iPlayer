@@ -83,7 +83,7 @@ class IPTVHostsGroups:
                                                      'maxtvgo','wpolscepl','wrealu24tv','wptv','interiatv','kinopodaniolempl', 'dokumentalnenet', 'serialeco','radiostacja','nuteczki','luxveritatis','naszekinotv','salvetvpl','tvrepublika']
         self.PREDEFINED_HOSTS['english']          = ['youtube','webstream','liveleak','bbciplayer','bbcsport','tvplayercom','itvcom','uktvplay','appletrailers','classiccinemaonline','seriesonline','mythewatchseries', \
                                                      'thewatchseriesto','icefilmsinfo','movienightws','yifytv', 'artetv',\
-                                                     'hdpopcornscom','losmovies','solarmovie','putlockertvto','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','kisscartoonme','kissanimeto','watchcartoononline''dailymotion', \
+                                                     'hdpopcornscom','losmovies','solarmovie','putlockertvto','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','kisscartoonme','kissanimeto','watchcartoononline','dailymotion', \
                                                      'ourmatchnet','watchwrestlinguno','watchwrestling','laola1tv','hoofootcom','fightvideo','twitchtv','hitboxtv','ted','ororotv','pinkbike','dancetrippin','appletrailers', \
                                                      'ustreamtv','rteieplayer','3player','questtvcouk','forjatn','yesmoviesto','movierulzsx','filmeonlineto','playrtsiw']
         self.PREDEFINED_HOSTS['german']           = ['youtube','webstream','ardmediathek','zdfmediathek','artetv','tvnowde','spiegeltv','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','filmpalast','kinox','arconaitvme','movie4kto','tata', \
