@@ -489,6 +489,18 @@ class common:
         if not useMozillaCookieJar:
             raise Exception("You should stop use parameter useMozillaCookieJar it change nothing, because from only MozillaCookieJar can be used")
     
+    def reportHttpsError(self, type, url, msg):
+        domain = self.getBaseUrl(url, True)
+        messages = []
+        messages.append(_('HTTPS connection error "%s"\n') % msg)
+        messages.append(_('It looks like your current configuration do not allow to connect to the https://%s/.\n') % domain)
+        
+        if type == 'verify' and IsHttpsCertValidationEnabled():
+            messages.append(_('You can disable HTTPS certificates validation in the IPTVPlayer configuration to suppress this problem.'))
+        else:
+            messages.append(_('You can install PyCurl package from http://www.iptvplayer.gitlab.io/ to fix this problem.'))
+        GetIPTVNotify().push('\n'.join(messages), 'error', 40, type + domain, 40)
+    
     def usePyCurl(self):
         bRet = False
         if UsePyCurl():
@@ -926,6 +938,14 @@ class common:
                     continue
                 else:
                     break
+            
+            if not sts and 'pycurl_error' in self.meta:
+                if self.meta['pycurl_error'][0] == self.pyCurl.E_SSL_CONNECT_ERROR:
+                    self.reportHttpsError('other', url, self.meta['pycurl_error'][1])
+                elif self.meta['pycurl_error'][0] in [self.pyCurl.E_SSL_CACERT, self.pyCurl.E_SSL_ISSUER_ERROR, self.pyCurl.E_SSL_PEER_CERTIFICATE]:
+                    self.reportHttpsError('verify', url, self.meta['pycurl_error'][1])
+                elif self.meta['pycurl_error'][0] == self.pyCurl.E_SSL_INVALIDCERTSTATUS:
+                    self.reportHttpsError('verify', url, self.meta['pycurl_error'][1])
         except Exception:
             printExc()
         return sts, data
@@ -973,14 +993,22 @@ class common:
             except Exception:
                 printExc()
         except urllib2.URLError, e:
-            if 'TLSV1_ALERT_PROTOCOL_VERSION' in str(e) and 'ssl_protocol' not in addParams:
-                try:
-                    newParams = dict(addParams)
-                    newParams['ssl_protocol'] = ssl.PROTOCOL_TLSv1_2
-                    return self.getPage(url, newParams, post_data)
-                except Exception: 
-                    pass
             printExc()
+            errorMsg = str(e) 
+            if 'ssl_protocol' not in addParams and 'TLSV1_ALERT_PROTOCOL_VERSION' in errorMsg:
+                    try:
+                        newParams = dict(addParams)
+                        newParams['ssl_protocol'] = ssl.PROTOCOL_TLSv1_2
+                        return self.getPage(url, newParams, post_data)
+                    except Exception: 
+                        pass
+            if 'VERSION' in errorMsg:
+                self.reportHttpsError('version', url, errorMsg)
+            elif 'VERIFY_FAILED' in errorMsg:
+                self.reportHttpsError('verify', url, errorMsg)
+            elif 'SSL' in errorMsg: #GET_SERVER_HELLO
+                self.reportHttpsError('other', url, errorMsg)
+            
             response = None
             status = False
                 
@@ -993,53 +1021,7 @@ class common:
             status = False
             
         return (status, response)
-        
-    def getPageWithWget(self, url, params={}, post_data=None):
-        from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
-        cmd = DMHelper.getBaseWgetCmd(params.get('header', {})) +  (" --timeout=20 --tries=1 '%s' " % url)
-        if post_data != None:
-            if params.get('raw_post_data', False):
-                post_data_str = post_data
-            else:
-                post_data_str = urllib.urlencode(post_data)
-            cmd += " --post-data '{0}' ".format(post_data_str)
-        
-        if params.get('use_cookie', False):
-            cmd += " --keep-session-cookies "
-            cookieFile = str(params.get('cookiefile', ''))
-            if params.get('load_cookie', False) and fileExists(cookieFile):
-                cmd += "  --load-cookies '%s' " %  cookieFile
-            if params.get('save_cookie', False):
-                cmd += "  --save-cookies '%s' " %  cookieFile
-        cmd += ' -O - 2> /dev/null'
-        
-        printDBG('_getPageWget request: [%s]' % cmd)
-        from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
-        
-        data = iptv_execute()( cmd )
-        
-        if params.get('use_cookie', False) and params.get('save_cookie', False) and fileExists(cookieFile):
-            # fix cookie 
-            
-            try:
-                f = open(cookieFile, "r")
-                cookieStr = f.read()
-                f.close()
-                
-                marker = '# HTTP cookie file.'
-                if cookieStr.startswith(marker):
-                    cookieStr = cookieStr.replace(marker, '# HTTP Cookie File.')
-                    f = open(cookieFile, "w")
-                    f.write(cookieStr)
-                    f.close()
-            except Exception:
-                printExc()
-        
-        if not data['sts'] or 0 != data['code']: 
-            return False, None
-        else:
-            return True, data['data']
-        
+    
     def getPageCFProtection(self, baseUrl, params={}, post_data=None):
         cfParams = params.get('cloudflare_params', {})
         

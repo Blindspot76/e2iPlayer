@@ -1128,8 +1128,6 @@ class pageParser:
         
         if params.get('cfused', False): sts, data = self.getPageCF(url, params, post_data)
         else: sts, data = self.cm.getPage(url, params, post_data)
-        
-        if not sts: sts, data = self.cm.getPageWithWget(url, params, post_data)
         if not sts: return False
         
         #printDBG(data)
@@ -3242,7 +3240,6 @@ class pageParser:
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         url = baseUrl
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts: sts, data = self.cm.getPageWithWget(url, {'header':HTTP_HEADER})
         if not sts: return False
         
         data = re.sub('''atob\(["']([^"^']+?)['"]\)''', lambda m: base64.b64decode(m.group(1)), data)
@@ -3819,8 +3816,7 @@ class pageParser:
         
         vidTab = []
         
-        sts, data = self.cm.getPageWithWget(url, {'header' : HTTP_HEADER})
-        if not sts: sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
+        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts: return []
         
         tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<div[^>]+?class="xxx-error"[^>]*>'), re.compile('</div>'), False)[1]
@@ -4517,7 +4513,6 @@ class pageParser:
         rm(HTTP_HEADER)
         
         sts, data = self.cm.getPage(baseUrl, params)
-        if not sts: sts, data = self.cm.getPageWithWget(baseUrl, params)
         if not sts: return False
         
         #cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
@@ -4832,7 +4827,6 @@ class pageParser:
         printDBG("parserVIVOSX baseUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
-        if not sts: sts, data = self.cm.getPageWithWget(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         
         data = self.cm.ph.getDataBeetwenMarkers(data, 'InitializeStream', ';', False)[1]
@@ -4858,7 +4852,6 @@ class pageParser:
         
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl }
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
-        if not sts: sts, data = self.cm.getPageWithWget(url, {'header':HTTP_HEADER})
         if not sts: return False
         
         videoUrl = self.cm.ph.getSearchGroups(data, 'type="video[^>]*?src="([^"]+?)"')[0]
@@ -5038,7 +5031,7 @@ class pageParser:
             baseUrl = 'https' + baseUrl[4:]
         
         def _getPage(url, params={}, post_data=None):
-            return self.cm.getPageWithWget(url, params, post_data)
+            return self.cm.getPage(url, params, post_data)
 
         sts, data = _getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
