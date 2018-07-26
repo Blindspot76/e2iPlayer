@@ -9948,22 +9948,31 @@ class pageParser:
         
         sts, data = self.cm.getPage(playerUrl, urlParams)
         if not sts: return False
+        cUrl = self.cm.meta['url']
         
-        urlsTab = []
+        domain = self.cm.getBaseUrl(cUrl, True)
+        
+        videoTab = []
         data = byteify(json.loads(data))['html']
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'sources', ']', False)
         printDBG(data)
         for sourceData in data:
             sourceData = self.cm.ph.getAllItemsBeetwenMarkers(sourceData, '{', '}')
             for item in sourceData:
-                type = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]type['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0].lower()
-                if 'mp4' not in type: continue
-                url = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]src['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
-                if url == '': url = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]file['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
-                name = self.cm.ph.getSearchGroups(item, '''['"\{\,\s]label['"]?\s*:\s*['"]([^'^"]+?)['"]''')[0]
-                if name == '': name = urlparser.getDomain(url) + ' ' + name
-                urlsTab.append({'name':name, 'url':url.replace('\\/', '/')})
-        return urlsTab
+                marker = item.lower()
+                if 'video/mp4' not in marker and 'video/x-flv' not in marker and 'x-mpeg' not in marker: continue
+                item = item.replace('\\/', '/')
+                url  = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''(?:src|file)['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0], self.cm.getBaseUrl(cUrl))
+                type = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                label = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                printDBG(url)
+                if url == '': continue
+                url = strwithmeta(url, {'User-Agent': HTTP_HEADER['User-Agent'], 'Referer':cUrl})
+                if 'x-mpeg' in marker:
+                    videoTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+                else:
+                    videoTab.append({'name':'[%s] %s %s' % (type, domain, label), 'url':url})
+        return videoTab
         
     def parserVIDCLOUDICU(self, baseUrl):
         printDBG("parserVIDCLOUDICU baseUrl[%r]" % baseUrl)
@@ -10061,33 +10070,26 @@ class pageParser:
         
         domain = self.cm.getBaseUrl(cUrl, True)
         
-        tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''[\{\s]sources\s*[=:]\s*\['''), re.compile('''\]'''), False)[1].split('},')
         videoTab = []
-        for item in tmp:
-            marker = item.lower()
-            if 'video/mp4' not in marker and 'video/x-flv' not in marker and 'x-mpeg' not in marker: continue
-            item = item.replace('\/', '/')
-            url  = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''(?:src|file)['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0], self.cm.getBaseUrl(cUrl))
-            type = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
-            label = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
-            printDBG(url)
-            if url == '': continue
-            url = strwithmeta(url, {'User-Agent': HTTP_HEADER['User-Agent'], 'Referer':cUrl})
-            if 'x-mpeg' in marker:
-                videoTab.extend(getDirectM3U8Playlist(url, checkContent=True))
-            else:
-                videoTab.append({'name':'[%s] %s %s' % (type, domain, label), 'url':url})
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'sources', ']', False)
+        printDBG(data)
+        for sourceData in data:
+            sourceData = self.cm.ph.getAllItemsBeetwenMarkers(sourceData, '{', '}')
+            for item in sourceData:
+                marker = item.lower()
+                if 'video/mp4' not in marker and 'video/x-flv' not in marker and 'x-mpeg' not in marker: continue
+                item = item.replace('\\/', '/')
+                url  = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''(?:src|file)['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0], self.cm.getBaseUrl(cUrl))
+                type = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                label = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                printDBG(url)
+                if url == '': continue
+                url = strwithmeta(url, {'User-Agent': HTTP_HEADER['User-Agent'], 'Referer':cUrl})
+                if 'x-mpeg' in marker:
+                    videoTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+                else:
+                    videoTab.append({'name':'[%s] %s %s' % (type, domain, label), 'url':url})
             
-            url = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0] 
-            if 'video' not in type and 'x-mpeg' not in type: continue
-            if url.startswith('/'):
-                url = domain + url[1:]
-            if self.cm.isValidUrl(url):
-                if 'video' in type:
-                    retTab.append({'name':'[%s]' % type, 'url':url})
-                elif 'x-mpeg' in type:
-                    retTab.extend(getDirectM3U8Playlist(url, checkContent=True))
         return videoTab
     
     def parserSOUNDCLOUDCOM(self, baseUrl):

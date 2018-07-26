@@ -2,40 +2,21 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVSleep
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
-import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, ArticleContent
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import time
 import re
 import urllib
-import string
-import random
-import base64
-from urlparse import urlparse, urljoin
-from hashlib import md5
-try:    import json
-except Exception: import simplejson as json
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from urlparse import urljoin
+from Components.config import config, ConfigSelection, ConfigText, getConfigListEntry
 ###################################################
 
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
-###################################################
 
 ###################################################
 # Config options for HOST
@@ -236,7 +217,7 @@ class GoMovies(CBaseHostClass):
         
         # trailer
         trailerUrl = self.cm.ph.getSearchGroups(data, '''trailer['"]?\s*?:\s*?['"](https?://[^'^"]+?youtube[^'^"]+?)['"]''')[0]
-        if trailerUrl != '':
+        if trailerUrl != '' and not trailerUrl.endswith('/'):
             params = dict(cItem)
             params.update({'good_for_fav': False, 'title':'%s : %s' % (cItem['title'], _('trailer')), 'url':trailerUrl})
             self.addVideo(params)
@@ -372,7 +353,7 @@ class GoMovies(CBaseHostClass):
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: || name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU
