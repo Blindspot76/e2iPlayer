@@ -942,7 +942,8 @@ class common:
             if not sts and 'pycurl_error' in self.meta:
                 if self.meta['pycurl_error'][0] == self.pyCurl.E_SSL_CONNECT_ERROR:
                     self.reportHttpsError('other', url, self.meta['pycurl_error'][1])
-                elif self.meta['pycurl_error'][0] in [self.pyCurl.E_SSL_CACERT, self.pyCurl.E_SSL_ISSUER_ERROR, self.pyCurl.E_SSL_PEER_CERTIFICATE]:
+                elif self.meta['pycurl_error'][0] in [self.pyCurl.E_SSL_CACERT, self.pyCurl.E_SSL_ISSUER_ERROR, \
+                                                      self.pyCurl.E_SSL_PEER_CERTIFICATE, self.pyCurl.E_SSL_CACERT_BADFILE]:
                     self.reportHttpsError('verify', url, self.meta['pycurl_error'][1])
                 elif self.meta['pycurl_error'][0] == self.pyCurl.E_SSL_INVALIDCERTSTATUS:
                     self.reportHttpsError('verify', url, self.meta['pycurl_error'][1])
