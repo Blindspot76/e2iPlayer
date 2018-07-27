@@ -162,7 +162,7 @@ class GoMovies(CBaseHostClass):
     def listFilters(self, cItem, filter, nextCategory):
         printDBG("GoMovies.listFilters")
         if {} == self.cacheFilters:
-            self.fillCacheFilters(cItem)
+            self.fillCacheFilters()
         
         cItem = dict(cItem)
         cItem['category'] = nextCategory
