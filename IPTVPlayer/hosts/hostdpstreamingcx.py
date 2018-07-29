@@ -188,6 +188,7 @@ class StreamingSeriesWatch(CBaseHostClass):
             
         sts, data = self.getPage(url, self.defaultParams)
         if not sts: return []
+        cUrl = self.cm.meta['url']
         
         k = self.cm.ph.getSearchGroups(data, 'var\s+?k[^"]*?=[^"]*?"([^"]+?)"')[0]
         secure = self.cm.ph.getSearchGroups(data, '''['"/](secur[^\.]*?)\.js''')[0]
@@ -203,7 +204,7 @@ class StreamingSeriesWatch(CBaseHostClass):
         
         header = dict(self.defaultParams['header'])
         params = dict(self.defaultParams)
-        header['Referer'] = url
+        header['Referer'] = cUrl
         header['Content-Type'] = "application/x-www-form-urlencoded"
         header['Accept-Encoding'] = 'gzip, deflate'
         params['header'] = header
@@ -215,10 +216,12 @@ class StreamingSeriesWatch(CBaseHostClass):
         printDBG(data)
         printDBG('==========================================')
         
-        videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^'^"]+?)['"]''')[0]
-        if not self.cm.isValidUrl(videoUrl):
-            videoUrl = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"]([^'^"]+?)['"]''')[0]
-        return self.up.getVideoLinkExt(videoUrl)
+        tmp = re.compile('''<iframe[^>]+?src=['"]([^'^"]+?)['"]''').findall(data)
+        tmp.extend(re.compile('''<a[^>]+?href=['"]([^'^"]+?)['"]''').findall(data))
+        for videoUrl in tmp:
+            videoUrl = self.getFullUrl(videoUrl)
+            urlTab.extend(self.up.getVideoLinkExt(videoUrl))
+        return urlTab
         
     def getFavouriteData(self, cItem):
         printDBG('StreamingSeriesWatch.getFavouriteData')

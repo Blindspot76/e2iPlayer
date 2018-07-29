@@ -45,15 +45,15 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'http://streaming.cinemay.com/'
+    return 'http://film2018.cinemay.com/'
 
 class Cinemay(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'Cinemay', 'cookie':'Cinemay.cookie'})
-        self.DEFAULT_ICON_URL = 'http://streaming.cinemay.com/image/logo.png' 
+        self.DEFAULT_ICON_URL = 'http://film2018.cinemay.com/image/logo.png' 
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'http://streaming.cinemay.com/'
+        self.MAIN_URL = 'http://film2018.cinemay.com/'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -94,6 +94,9 @@ class Cinemay(CBaseHostClass):
         return sts, data
     
     def listMainMenu(self, cItem):
+        sts, data = self.getPage(self.getMainUrl())
+        if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         self.listsTab(self.MAIN_CAT_TAB, cItem)
         
     def listItems1(self, cItem, nextCategory):
@@ -105,6 +108,7 @@ class Cinemay(CBaseHostClass):
             
         sts, data = self.getPage(url)
         if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'class="pagination"', '</div>')[1]
         if ('/page/%s/' % (page + 1)) in nextPage: nextPage = True
@@ -138,6 +142,7 @@ class Cinemay(CBaseHostClass):
             
             sts, data = self.getPage(cItem['url'])
             if not sts: return
+            self.setMainUrl(self.cm.meta['url'])
             
             data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'list-series'), ('</ul', '>'))[1]
             data = re.compile('''<li[^>]+?class=['"]alpha\-title['"][^>]*?>''').split(data)
@@ -174,6 +179,7 @@ class Cinemay(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         
         descTab = ['']
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="extradsbottom', '</div>')
