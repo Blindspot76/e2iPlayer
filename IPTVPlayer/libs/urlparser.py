@@ -318,6 +318,7 @@ class urlparser:
                        'oload.co':             self.pp.parserOPENLOADIO    ,
                        'oload.tv':             self.pp.parserOPENLOADIO    ,
                        'oload.stream':         self.pp.parserOPENLOADIO    ,
+                       'oload.site':           self.pp.parserOPENLOADIO    ,
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        'vevo.com':             self.pp.parserVEVO          ,
                        'bbc.co.uk':            self.pp.parserBBC           ,
