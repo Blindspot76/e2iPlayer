@@ -22,6 +22,8 @@ import time
 import htmlentitydefs
 import cookielib
 import unicodedata
+try: import pycurl
+except Exception: pass
 try:    import json
 except Exception: import simplejson as json
 try:
@@ -485,7 +487,6 @@ class common:
         
         self.curlSession = None
         self.pyCurlAvailable = None
-        self.pyCurl = None
         if not useMozillaCookieJar:
             raise Exception("You should stop use parameter useMozillaCookieJar it change nothing, because from only MozillaCookieJar can be used")
     
@@ -498,7 +499,18 @@ class common:
         if type == 'verify' and IsHttpsCertValidationEnabled():
             messages.append(_('You can disable HTTPS certificates validation in the IPTVPlayer configuration to suppress this problem.'))
         else:
-            messages.append(_('You can install PyCurl package from http://www.iptvplayer.gitlab.io/ to fix this problem.'))
+            pyCurlInstalled = False
+            try:
+                verInfo = pycurl.version_info()
+                printDBG("usePyCurl VERSION: %s" % [verInfo])
+                if verInfo[4] & (1<<7) and verInfo[1].startswith('7.6') and verInfo[5] == 'wolfSSL/3.15.3':
+                    pyCurlInstalled = True
+            except Exception:
+                printExc()
+            if pyCurlInstalled and not UsePyCurl():
+                messages.append(_('You can enable PyCurl in the IPTVPlayer configuration to fix this problem.'))
+            else:
+                messages.append(_('You can install PyCurl package from http://www.iptvplayer.gitlab.io/ to fix this problem.'))
         GetIPTVNotify().push('\n'.join(messages), 'error', 40, type + domain, 40)
     
     def usePyCurl(self):
@@ -506,7 +518,7 @@ class common:
         if UsePyCurl():
             if self.pyCurlAvailable == None:
                 try:
-                    import pycurl
+                    #import pycurl as pycurl
                     #test = pycurl.SSLVERSION_TLSv1_3
                     verInfo = pycurl.version_info()
                     printDBG("usePyCurl VERSION: %s" % [verInfo])
@@ -515,7 +527,6 @@ class common:
                     # request
                     if verInfo[4] & (1<<7):
                         self.pyCurlAvailable = True
-                        self.pyCurl = pycurl
                     else:
                         self.pyCurlAvailable = False
                 except Exception:
@@ -611,7 +622,6 @@ class common:
             GetIPTVNotify().push('\s'.join([msg1, msg2]), 'error', 40)
             raise Exception("Wrong usage!")
         
-        pycurl = self.pyCurl
         # by default we will work in return_data mode
         if 'return_data' not in params:
             params['return_data'] = True
@@ -812,6 +822,11 @@ class common:
             if not IsHttpsCertValidationEnabled():
                 curlSession.setopt(pycurl.SSL_VERIFYHOST, 0)
                 curlSession.setopt(pycurl.SSL_VERIFYPEER, 0)
+                curlSession.setopt(pycurl.PROXY_SSL_VERIFYHOST, 0)
+                curlSession.setopt(pycurl.PROXY_SSL_VERIFYPEER, 0)
+            else:
+                curlSession.setopt(pycurl.CAINFO, "/etc/ssl/certs/ca-certificates.crt")
+                curlSession.setopt(pycurl.PROXY_CAINFO, "/etc/ssl/certs/ca-certificates.crt")
             
             #proxy support
             if self.useProxy:
@@ -862,7 +877,7 @@ class common:
                     try:
                         curlSession.perform()
                     except pycurl.error as e:
-                        if e[0] != self.pyCurl.E_WRITE_ERROR:
+                        if e[0] != pycurl.E_WRITE_ERROR:
                             raise e
                         else: printExc()
                 else:
@@ -932,7 +947,7 @@ class common:
                 tries += 1
                 sts, data = self._getPageWithPyCurl(url, params, post_data)
                 if not sts and 'pycurl_error' in self.meta and \
-                   self.pyCurl.E_SSL_CONNECT_ERROR == self.meta['pycurl_error'][0] and \
+                   pycurl.E_SSL_CONNECT_ERROR == self.meta['pycurl_error'][0] and \
                    'SSL_set_session failed' in self.meta['pycurl_error'][1]:
                     printDBG("pCommon - getPageWithPyCurl() - retry with fresh session")
                     continue
@@ -940,12 +955,12 @@ class common:
                     break
             
             if not sts and 'pycurl_error' in self.meta:
-                if self.meta['pycurl_error'][0] == self.pyCurl.E_SSL_CONNECT_ERROR:
+                if self.meta['pycurl_error'][0] == pycurl.E_SSL_CONNECT_ERROR:
                     self.reportHttpsError('other', url, self.meta['pycurl_error'][1])
-                elif self.meta['pycurl_error'][0] in [self.pyCurl.E_SSL_CACERT, self.pyCurl.E_SSL_ISSUER_ERROR, \
-                                                      self.pyCurl.E_SSL_PEER_CERTIFICATE, self.pyCurl.E_SSL_CACERT_BADFILE]:
+                elif self.meta['pycurl_error'][0] in [pycurl.E_SSL_CACERT, pycurl.E_SSL_ISSUER_ERROR, \
+                                                      pycurl.E_SSL_PEER_CERTIFICATE, pycurl.E_SSL_CACERT_BADFILE]:
                     self.reportHttpsError('verify', url, self.meta['pycurl_error'][1])
-                elif self.meta['pycurl_error'][0] == self.pyCurl.E_SSL_INVALIDCERTSTATUS:
+                elif self.meta['pycurl_error'][0] == pycurl.E_SSL_INVALIDCERTSTATUS:
                     self.reportHttpsError('verify', url, self.meta['pycurl_error'][1])
         except Exception:
             printExc()
