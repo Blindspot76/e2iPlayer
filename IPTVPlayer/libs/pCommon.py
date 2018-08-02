@@ -822,7 +822,7 @@ class common:
             if not IsHttpsCertValidationEnabled():
                 curlSession.setopt(pycurl.SSL_VERIFYHOST, 0)
                 curlSession.setopt(pycurl.SSL_VERIFYPEER, 0)
-                curlSession.setopt(pycurl.PROXY_SSL_VERIFYHOST, 0)
+                #curlSession.setopt(pycurl.PROXY_SSL_VERIFYHOST, 0)
                 curlSession.setopt(pycurl.PROXY_SSL_VERIFYPEER, 0)
             else:
                 curlSession.setopt(pycurl.CAINFO, "/etc/ssl/certs/ca-certificates.crt")
