@@ -39,8 +39,8 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.losmovies_proxy = ConfigSelection(default = "None", choices = [("None",         _("None")),
-                                                                                            ("proxy_1",  _("Alternative proxy server (1)")),
-                                                                                            ("proxy_2",  _("Alternative proxy server (2)"))])
+                                                                                         ("proxy_1",  _("Alternative proxy server (1)")),
+                                                                                         ("proxy_2",  _("Alternative proxy server (2)"))])
 
 def GetConfigList():
     optionList = []
@@ -50,7 +50,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'https://los-movies.com/'
+    return 'http://losmovies.cx/'
 
 class LosMovies(CBaseHostClass):
  
@@ -63,7 +63,7 @@ class LosMovies(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://los-movies.com/'
+        self.MAIN_URL = 'http://losmovies.cx/'
         self.cacheEpisodes = {}
         self.cacheLinks = {}
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -109,6 +109,7 @@ class LosMovies(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="btn-group">', '</div>')[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>', withMarkers=True)
@@ -136,6 +137,7 @@ class LosMovies(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<h1 class="centerHeader">', '<footer>')[1]
         data = data.split('showEntityTeaser ')
@@ -163,6 +165,7 @@ class LosMovies(CBaseHostClass):
         
         sts, data = self.getPage(url)
         if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         
         nextPage = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', '</div>', False)[1]
         if '' != self.cm.ph.getSearchGroups(nextPage, 'page=(%s)[^0-9]' % (page+1))[0]: nextPage = True
@@ -202,6 +205,7 @@ class LosMovies(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         
         seasonsTitlesTab = {}
         seasonsData = self.cm.ph.getDataBeetwenMarkers(data, '<div id="seasons">', '</ul>')[1]
@@ -255,7 +259,7 @@ class LosMovies(CBaseHostClass):
             urlTab = self.cacheLinks.get(cItem['url'],  [])
             if len(urlTab): return urlTab
             
-            url = cItem['url']        
+            url = cItem['url']
             sts, data = self.getPage(url, self.defaultParams)
             if not sts: return urlTab
         else:
