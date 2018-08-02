@@ -47,12 +47,12 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://voir.filmstreamvk.la/'
+    return 'http://filmstreamvk.pw/'
 
 class FilmstreamvkCom(CBaseHostClass):
     HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
-    MAIN_URL = 'http://voir.filmstreamvk.la/'
-    DEFAULT_ICON_URL = 'http://voir.filmstreamvk.la/wp-content/themes/keremiyav4/logo/logo.png'
+    MAIN_URL = 'http://filmstreamvk.pw/'
+    DEFAULT_ICON_URL = 'http://filmstreamvk.pw/wp-content/themes/keremiyav4/logo/logo.png'
     MAIN_CAT_TAB = [{'category':'main',            'title':_('Main'),         'url':MAIN_URL,         },
                     {'category':'categories',      'title':_('Categories'),   'url':MAIN_URL,         },
                     {'category':'list_items',      'title':_('Series'),       'url':MAIN_URL+'serie', },
