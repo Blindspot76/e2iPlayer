@@ -7197,7 +7197,11 @@ class pageParser:
         else:
             url = baseUrl
         
-        sts, data = self.cm.getPage(url)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        if 'Referer' in baseUrl.meta: HTTP_HEADER['Referer'] = baseUrl.meta['Referer']
+        
+        sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
         if not sts: return False
 
         urlTab = []

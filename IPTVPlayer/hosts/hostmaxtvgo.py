@@ -230,7 +230,6 @@ class MaxtvGO(CBaseHostClass):
         printDBG("MaxtvGO.getArticleContent [%s]" % cItem)
         self.tryTologin()
         
-        
         if self.up.getDomain(cItem['url']) not in self.up.getDomain(self.getMainUrl()):
             return []
         
@@ -294,7 +293,7 @@ class MaxtvGO(CBaseHostClass):
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: || name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU
