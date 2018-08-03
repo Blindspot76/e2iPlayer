@@ -940,23 +940,29 @@ class common:
         # if we use old curlSession and fail we should
         # re-try with fresh curlSession
         if self.curlSession != None:
-            maxTries = 2
+            sessionReused = True
         else:
-            maxTries = 1
+            sessionReused = False
         
         sts, data = False, None
         try:
+            maxTries = 3
             tries = 0
             while tries < maxTries:
                 tries += 1
                 sts, data = self._getPageWithPyCurl(url, params, post_data)
                 if not sts and 'pycurl_error' in self.meta and \
-                   pycurl.E_SSL_CONNECT_ERROR == self.meta['pycurl_error'][0] and \
-                   'SSL_set_session failed' in self.meta['pycurl_error'][1]:
-                    printDBG("pCommon - getPageWithPyCurl() - retry with fresh session")
-                    continue
-                else:
-                    break
+                   pycurl.E_SSL_CONNECT_ERROR == self.meta['pycurl_error'][0]:
+                    if 'SSL_set_session failed' in self.meta['pycurl_error'][1]:
+                        printDBG("pCommon - getPageWithPyCurl() - retry with fresh session")
+                        if sessionReused:
+                            sessionReused = False
+                            continue
+                    elif '-313' in self.meta['pycurl_error'][1] and 'ssl_protocol' not in params:
+                        params = dict(params)
+                        params['ssl_protocol'] = 'TLSv1_2'
+                        continue
+                break
             
             if not sts and 'pycurl_error' in self.meta:
                 if self.meta['pycurl_error'][0] == pycurl.E_SSL_CONNECT_ERROR:
@@ -1261,8 +1267,7 @@ class common:
         return dictRet
         
     def getUrllibSSLProtocolVersion(self, protocolName):
-        if isinstance(protocolName, basestring):
-            printExc()
+        if not isinstance(protocolName, basestring):
             GetIPTVNotify().push('getUrllibSSLProtocolVersion error. Please report this problem to iptvplayere2@gmail.com', 'error', 40)
             return protocolName
         if protocolName == 'TLSv1_2':
@@ -1272,8 +1277,7 @@ class common:
         return None
         
     def getPyCurlSSLProtocolVersion(self, protocolName):
-        if isinstance(protocolName, basestring):
-            printExc()
+        if not isinstance(protocolName, basestring):
             GetIPTVNotify().push('getPyCurlSSLProtocolVersion error. Please report this problem to iptvplayere2@gmail.com', 'error', 40)
             return protocolName
         if protocolName == 'TLSv1_2':
