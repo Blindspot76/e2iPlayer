@@ -507,8 +507,11 @@ class common:
                     pyCurlInstalled = True
             except Exception:
                 printExc()
-            if pyCurlInstalled and not UsePyCurl():
-                messages.append(_('You can enable PyCurl in the IPTVPlayer configuration to fix this problem.'))
+            if pyCurlInstalled:
+                if not UsePyCurl():
+                    messages.append(_('You can enable PyCurl in the IPTVPlayer configuration to fix this problem.'))
+                else:
+                    messages.append(_('Please report this problem to the developer iptvplayere2@gmail.com.'))
             else:
                 messages.append(_('You can install PyCurl package from http://www.iptvplayer.gitlab.io/ to fix this problem.'))
         GetIPTVNotify().push('\n'.join(messages), 'error', 40, type + domain, 40)
@@ -781,9 +784,10 @@ class common:
                 curlSession.setopt(pycurl.HTTPHEADER, customHeaders)
             
             curlSession.setopt(pycurl.ACCEPT_ENCODING, "") # enable all supported built-in compressions
-            #sslProto = params.get('ssl_protocol', None)
-            #ssl.PROTOCOL_TLSv1_2
-            #curlSession.setopt(pycurl.SSLVERSION, pycurl.SSLVERSION_TLSv1_0) # TLS v1.0 or later 
+            if None != params.get('ssl_protocol', None):
+                sslProtoVer = self.getPyCurlSSLProtocolVersion(params['ssl_protocol'])
+                if None != sslProtoVer:
+                    curlSession.setopt(pycurl.SSLVERSION, sslProtoVer)
             
             if 'use_cookie' not in params and 'cookiefile' in params and ('load_cookie' in params or 'save_cookie' in params):
                 params['use_cookie'] = True
@@ -1014,7 +1018,7 @@ class common:
             if 'ssl_protocol' not in addParams and 'TLSV1_ALERT_PROTOCOL_VERSION' in errorMsg:
                     try:
                         newParams = dict(addParams)
-                        newParams['ssl_protocol'] = ssl.PROTOCOL_TLSv1_2
+                        newParams['ssl_protocol'] = 'TLSv1_2'
                         return self.getPage(url, newParams, post_data)
                     except Exception: 
                         pass
@@ -1255,6 +1259,28 @@ class common:
             printExc("common.getFile download file exception")
         dictRet.update( {'sts': bRet, 'fsize': downDataSize} )
         return dictRet
+        
+    def getUrllibSSLProtocolVersion(self, protocolName):
+        if isinstance(protocolName, basestring):
+            printExc()
+            GetIPTVNotify().push('getUrllibSSLProtocolVersion error. Please report this problem to iptvplayere2@gmail.com', 'error', 40)
+            return protocolName
+        if protocolName == 'TLSv1_2':
+            return ssl.PROTOCOL_TLSv1_2
+        elif protocolName == 'TLSv1_1':
+            return ssl.PROTOCOL_TLSv1_1
+        return None
+        
+    def getPyCurlSSLProtocolVersion(self, protocolName):
+        if isinstance(protocolName, basestring):
+            printExc()
+            GetIPTVNotify().push('getPyCurlSSLProtocolVersion error. Please report this problem to iptvplayere2@gmail.com', 'error', 40)
+            return protocolName
+        if protocolName == 'TLSv1_2':
+            return pycurl.SSLVERSION_TLSv1_2
+        elif protocolName == 'TLSv1_1':
+            return pycurl.SSLVERSION_TLSv1_1
+        return None
     
     def getURLRequestData(self, params = {}, post_data = None):
         
@@ -1334,19 +1360,23 @@ class common:
         if params.get('no_redirection', False):
             customOpeners.append( NoRedirection() )
         
+        if None != params.get('ssl_protocol', None):
+            sslProtoVer = self.getUrllibSSLProtocolVersion(params['ssl_protocol'])
+        else:
+            sslProtoVer = None
         # debug 
         #customOpeners.append(urllib2.HTTPSHandler(debuglevel=1))
         #customOpeners.append(urllib2.HTTPHandler(debuglevel=1))
         if not IsHttpsCertValidationEnabled():
             try:
-                if params.get('ssl_protocol', None) != None:
-                    ctx = ssl._create_unverified_context(params['ssl_protocol'])
+                if sslProtoVer != None:
+                    ctx = ssl._create_unverified_context( sslProtoVer )
                 else:
                     ctx = ssl._create_unverified_context()
                 customOpeners.append(urllib2.HTTPSHandler(context=ctx))
             except Exception: pass
-        elif params.get('ssl_protocol', None) != None:
-            ctx = ssl.SSLContext(params['ssl_protocol'])
+        elif sslProtoVer != None:
+            ctx = ssl.SSLContext( sslProtoVer )
             customOpeners.append(urllib2.HTTPSHandler(context=ctx))
         
         #proxy support
