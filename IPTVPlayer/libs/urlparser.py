@@ -8,7 +8,7 @@ from pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, \
-                                                          GetDefaultLang, GetDukPath, CreateTmpFile, GetFileSize, GetPluginDir
+                                                          GetDefaultLang, GetDukPath, CreateTmpFile, GetFileSize, GetPluginDir, MergeDicts
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
@@ -486,6 +486,7 @@ class urlparser:
                        'uploaduj.net':         self.pp.parserUPLOADUJNET    ,
                        'mystream.to':          self.pp.parserMYSTREAMTO     ,
                        'vidload.co':           self.pp.parserVIDLOADCO      ,
+                       'sportstream365.com':   self.pp.parserSPORTSTREAM365 ,
                        
                     }
         return
@@ -928,6 +929,7 @@ class pageParser:
         self.moonwalkParser = None
         self.vevoIE = None
         self.bbcIE = None
+        self.sportStream365ServIP = None
         
         #config
         self.COOKIE_PATH = GetCookieDir('')
@@ -935,17 +937,6 @@ class pageParser:
         #self.hd3d_password = config.plugins.iptvplayer.hd3d_password.value
         self.jscode = {}
         self.jscode['jwplayer'] = 'window=this; function stub() {}; function jwplayer() {return {setup:function(){print(JSON.stringify(arguments[0]))}, onTime:stub, onPlay:stub, onComplete:stub, onReady:stub, addButton:stub}}; window.jwplayer=jwplayer;'
-        
-    def getDefaultHeader(self, browser='firefox'):
-        if browser == 'firefox': ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0'
-        else: ua = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
-        
-        HTTP_HEADER = { 'User-Agent':ua,
-                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Encoding':'gzip, deflate',
-                        'DNT':1 
-                      }
-        return dict(HTTP_HEADER)
         
     def getPageCF(self, baseUrl, addParams = {}, post_data = None):
         def _getFullUrl(url):
@@ -1365,7 +1356,7 @@ class pageParser:
 
     def parserWGRANE(self, url):
         # extract video hash from given url
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         paramsUrl = {'with_metadata':True, 'header':HTTP_HEADER}
         
         sts, data = self.cm.getPage(url, paramsUrl)
@@ -1668,7 +1659,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', '')
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         paramsUrl = {'header':HTTP_HEADER}
         
@@ -2773,7 +2764,7 @@ class pageParser:
         printDBG("parserVIDBOMCOM baseUrl[%r]" % baseUrl)
         
         baseUrl = strwithmeta(baseUrl)
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
         
@@ -2809,7 +2800,7 @@ class pageParser:
         printDBG("parserINTERIATV baseUrl[%r]" % baseUrl)
         
         baseUrl = strwithmeta(baseUrl)
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
         
@@ -2995,7 +2986,7 @@ class pageParser:
     def parserSPEEDVIDNET(self, baseUrl):
         printDBG("parserSPEEDVIDNET baseUrl[%r]" % baseUrl)
         retTab = None
-        defaultParams = {'header':self.getDefaultHeader(), 'with_metadata':True, 'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
+        defaultParams = {'header':self.cm.getDefaultHeader(), 'with_metadata':True, 'cfused':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': GetCookieDir('speedvidnet.cookie')}
         def _findLinks2(data):
             return _findLinks(data, 1)
             
@@ -4246,7 +4237,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         paramsUrl = {'header':HTTP_HEADER, 'with_metadata':True}
         
@@ -4533,7 +4524,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         paramsUrl = {'header':HTTP_HEADER}
         videoUrls = []
@@ -5094,7 +5085,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         paramsUrl = {'header':HTTP_HEADER, 'with_metadata':True}
         
@@ -5133,7 +5124,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         paramsUrl = {'header':HTTP_HEADER, 'with_metadata':True}
         
@@ -5152,7 +5143,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         paramsUrl = {'header':HTTP_HEADER, 'with_metadata':True}
         
@@ -5471,7 +5462,7 @@ class pageParser:
             '46': 'webm', '59': 'mp4',
         }
         
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = linkUrl
         
         COOKIE_FILE = GetCookieDir('google.cookie')
@@ -5792,7 +5783,7 @@ class pageParser:
     def parserFLASHXTV(self, baseUrl):
         printDBG("parserFLASHXTV baseUrl[%s]" % baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader()
+        HTTP_HEADER = self.cm.getDefaultHeader()
         
         COOKIE_FILE = GetCookieDir('flashxtv.cookie')
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
@@ -6276,7 +6267,7 @@ class pageParser:
     def parserFASTVIDEOIN(self, baseUrl):
         printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader()
+        HTTP_HEADER = self.cm.getDefaultHeader()
         
         COOKIE_FILE = GetCookieDir('FASTVIDEOIN.cookie')
         defaultParams = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
@@ -7198,7 +7189,7 @@ class pageParser:
             url = baseUrl
         
         baseUrl = strwithmeta(baseUrl)
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         if 'Referer' in baseUrl.meta: HTTP_HEADER['Referer'] = baseUrl.meta['Referer']
         
         sts, data = self.cm.getPage(url, {'header':HTTP_HEADER})
@@ -7226,7 +7217,7 @@ class pageParser:
         printDBG("parserDARKOMPLAYER baseUrl[%s]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         COOKIE_FILE = GetCookieDir('darkomplayer.cookie')
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         urlParams = {'with_metadata':True, 'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
         
@@ -8892,7 +8883,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         paramsUrl = {'header':HTTP_HEADER, 'with_metadata':True}
         
@@ -9782,7 +9773,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', '')
         
-        HTTP_HEADER = {} #self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = {} #self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['User-Agent'] = 'Mozilla/5.0'
         if referer != '': HTTP_HEADER['Referer'] = referer
         params = {'header':HTTP_HEADER}
@@ -9829,7 +9820,7 @@ class pageParser:
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', '')
         
-        HTTP_HEADER = self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         if referer != '': HTTP_HEADER['Referer'] = referer
         
         sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
@@ -9940,7 +9931,7 @@ class pageParser:
         printDBG("parserVCSTREAMTO baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
@@ -9983,7 +9974,7 @@ class pageParser:
         printDBG("parserVIDCLOUDICU baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
@@ -10011,7 +10002,7 @@ class pageParser:
         printDBG("parserUPLOADUJNET baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
@@ -10036,7 +10027,7 @@ class pageParser:
         printDBG("parserMYSTREAMTO baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         urlParams = {'header':HTTP_HEADER}
@@ -10065,7 +10056,7 @@ class pageParser:
         printDBG("parserVIDLOADCO baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         urlParams = {'header':HTTP_HEADER}
@@ -10101,7 +10092,7 @@ class pageParser:
         printDBG("parserCLOUDSTREAMUS baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
@@ -10140,7 +10131,7 @@ class pageParser:
         printDBG("parserCLOUDSTREAMUS baseUrl[%r]" % baseUrl)
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         jscode = ['eval=function(t){return function(){print(arguments[0]);try{return t.apply(this,arguments)}catch(t){}}}(eval);']
@@ -10185,7 +10176,7 @@ class pageParser:
         
         baseUrl = strwithmeta(baseUrl)
         cUrl = baseUrl
-        HTTP_HEADER= self.getDefaultHeader(browser='chrome')
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
         
         COOKIE_FILE = GetCookieDir("cloudyfiles.org.cookie")
@@ -10226,3 +10217,61 @@ class pageParser:
         url = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?\.(?:mkv|mp4|avi)(?:\?[^'^"]*?)?)['"]''', ignoreCase=True)[0]
         if url != '': urlTab.append({'name':domain, 'url':url})
         return urlTab
+    
+    def parserSPORTSTREAM365(self, baseUrl):
+        printDBG("parserSPORTSTREAM365 baseUrl[%r]" % baseUrl)
+        if self.sportStream365ServIP == None: retry = False
+        else: retry = True
+        
+        COOKIE_FILE = GetCookieDir('sportstream365.com.cookie')
+        lang = self.cm.getCookieItem(COOKIE_FILE, 'lng')
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='iphone_3_0')
+        if 'Referer' in baseUrl.meta: HTTP_HEADER['Referer'] = baseUrl.meta['Referer']
+        
+        defaultParams = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+        if 'cookie_items' in baseUrl.meta: defaultParams['cookie_items'] = baseUrl.meta['cookie_items']
+        
+        sts, data = self.cm.getPage(baseUrl, defaultParams)
+        if not sts: return
+        
+        vi = self.cm.ph.getSearchGroups(baseUrl, '''data\-vi=['"]([0-9]+)['"]''')[0]
+        
+        cUrl = self.cm.meta['url']
+        if 'Referer' not in HTTP_HEADER:  HTTP_HEADER['Referer'] = cUrl
+        mainUrl = self.cm.getBaseUrl(cUrl)
+        if None == self.sportStream365ServIP:
+            url = self.cm.getFullUrl('/cinema', mainUrl)
+            sts, data = self.cm.getPage(url, MergeDicts(defaultParams, {'raw_post_data':True}), post_data='')
+            if not sts: return False
+            vServIP = data.strip()
+            printDBG('vServIP: "%s"' % vServIP)
+            if len(vServIP):
+                self.sportStream365ServIP = vServIP
+            else:
+                return
+        
+        if vi == '':
+            game = self.cm.ph.getSearchGroups(baseUrl, '''game=([0-9]+)''')[0]
+            if game == '':
+                printDBG("Unknown game id!")
+                return False
+
+            url = self.cm.getFullUrl('/LiveFeed/GetGame?id=%s&partner=24' % game, mainUrl)
+            if lang != '': url += '&lng=' + lang
+            sts, data = self.cm.getPage(url, defaultParams)
+            if not sts: return False
+            
+            data = byteify(json.loads(data))
+            printDBG(data)
+            vi = data['Value']['VI']
+        
+        url = '//' + self.sportStream365ServIP + '/hls-live/xmlive/_definst_/' + vi + '/' + vi + '.m3u8?whence=1001'
+        url = strwithmeta(self.cm.getFullUrl(url, mainUrl), {'User-Agent': HTTP_HEADER['User-Agent'], 'Referer':cUrl})
+        linksTab = getDirectM3U8Playlist(url, checkContent=True)
+        if 0 == len(linksTab) and retry:
+            self.sportStream365ServIP = None
+            return self.parserSPORTSTREAM365(baseUrl)
+        
+        return linksTab

@@ -1522,3 +1522,9 @@ def ReadGnuMIPSABIFP(elfFileName):
     except Exception:
         printExc()
     return Val_HAS_MIPS_ABI_FLAGS, Val_GNU_MIPS_ABI_FP
+
+def MergeDicts(*dict_args):
+    result = {}
+    for dictionary in dict_args:
+        result.update(dictionary)
+    return result
