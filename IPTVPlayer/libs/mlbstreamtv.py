@@ -63,6 +63,17 @@ class MLBStreamTVApi(CBaseHostClass):
             if not sts: return []
             self.setMainUrl(self.cm.meta['url'])
             
+            tmp = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'menu-menu'), ('</ul', '>'), False)[1]
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<a', '</a>')
+            if len(tmp):
+                url = self.getFullUrl( self.cm.ph.getSearchGroups(tmp[-1], '''href=['"]([^'^"]+?)['"]''')[0] )
+                title = self.cleanHtmlStr(tmp[-1])
+                sts, tmp = self.cm.getPage(url, self.defaultParams)
+                if '<iframe' in tmp:
+                    title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<title', '</title>')[1])
+                    url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+                    channelsList.append({'name':'mlbstream.tv', 'type':'video', 'url':url, 'title':title, 'Referer':self.cm.meta['url'], 'icon':self.DEFAULT_ICON_URL})
+            
             sDesc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'entry-content'), ('</', '>'), False)[1] )
             data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('var\s+?timezoneJSON\s*?=\s*?\['), re.compile('\];'), False)[1]
             try:
