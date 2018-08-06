@@ -185,6 +185,7 @@ class TainieskaiSeiresTv(CBaseHostClass):
     def exploreItem(self, cItem, nextCategory):
         printDBG("TainieskaiSeiresTv.exploreItem")
         self.cacheLinks = {}
+        linksTab = []
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
@@ -194,7 +195,7 @@ class TainieskaiSeiresTv(CBaseHostClass):
         if baseTitle == '': baseTitle = cItem['title']
         
         tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'player-embed'), ('', '</div>'))[1]
-        url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
+        url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<(?:iframe|embed)[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
         if self.cm.isValidUrl(url):
             params = dict(cItem)
             params.update({'good_for_fav':False, 'title':'%s %s' %(_('[trailer]'), cItem['title']), 'url':url})
@@ -209,9 +210,13 @@ class TainieskaiSeiresTv(CBaseHostClass):
             seasonsData = self.cm.ph.getAllItemsBeetwenMarkers(seasonsData, '<td', '</td>')
         
         if 0 == len(seasonsData):
-            return []
-        
-        if 'SEASON' in self.cleanHtmlStr(seasonsData[0]).upper():
+            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'href'), ('</a', '>'))
+            for item in data:
+                name = self.cleanHtmlStr(item)
+                url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^"^']+?)['"]''')[0] )
+                if 1 == self.up.checkHostSupport(url):
+                    linksTab.append({'name':name, 'url':url, 'need_resolve':1})
+        elif 'SEASON' in self.cleanHtmlStr(seasonsData[0]).upper():
             seasonsKeys = []
             self.seasonsCache = {}
             domain = self.up.getDomain(self.getMainUrl())
@@ -259,7 +264,6 @@ class TainieskaiSeiresTv(CBaseHostClass):
                 cItem = self.currList.pop()
                 self.listEpisodes(cItem)
         else:
-            linksTab = []
             for idx in range(0, len(seasonsData), 2):
                 quality = self.cleanHtmlStr(seasonsData[idx])
                 tmp = self.cm.ph.getAllItemsBeetwenMarkers(seasonsData[idx+1], '<a', '</a>')
@@ -268,11 +272,11 @@ class TainieskaiSeiresTv(CBaseHostClass):
                     url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^"^']+?)['"]''')[0] )
                     linksTab.append({'name':'%s - %s' % (quality, name), 'url':url, 'need_resolve':1})
             
-            if len(linksTab):
-                self.cacheLinks[cItem['url']] = linksTab
-                params = dict(cItem)
-                params.update({'good_for_fav':False, 'title':baseTitle})
-                self.addVideo(params)
+        if len(linksTab):
+            self.cacheLinks[cItem['url']] = linksTab
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':baseTitle})
+            self.addVideo(params)
         
     def listEpisodes(self, cItem):
         printDBG("TainieskaiSeiresTv.listEpisodes")

@@ -350,8 +350,7 @@ def iptv_js_execute(jscode, params={}):
     sts, tmpPath = CreateTmpFile('.iptv_js.js', jscode)
     if sts:
         cmd =  GetDukPath()
-        if 'timeout_sec' in params:
-            cmd += ' -t %s ' % params['timeout_sec']
+        cmd += ' -t %s ' % params.get('timeout_sec', 20)
         cmd += ' ' + tmpPath + ' 2> /dev/null'
         printDBG("iptv_js_execute cmd[%s]" % cmd)
         ret = iptv_execute()( cmd )
