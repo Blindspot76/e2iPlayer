@@ -140,7 +140,9 @@ class KarwanTvApi(CBaseHostClass):
         if not sts: return urlsTab
         
         hlsUrl  = self.cm.ph.getSearchGroups(data, '''['"]?hls['"]?\s*:\s*['"]([^"^']+?)['"]''')[0]
+        if not self.cm.isValidUrl(hlsUrl) == '': hlsUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''['"]([^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''')[0], self.cm.getBaseUrl(self.cm.meta['url']))
         dashUrl = self.cm.ph.getSearchGroups(data, '''['"]?dash['"]?\s*:\s*['"]([^"^']+?)['"]''')[0]
+        if self.cm.isValidUrl(dashUrl): dashUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''['"]([^'^"]+?\.mpd(?:\?[^'^"]+?)?)['"]''')[0], self.cm.getBaseUrl(self.cm.meta['url']))
         
         if self.cm.isValidUrl(hlsUrl):
             urlsTab.extend( getDirectM3U8Playlist(hlsUrl, checkContent=True) )
