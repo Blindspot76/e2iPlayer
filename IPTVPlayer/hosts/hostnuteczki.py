@@ -165,7 +165,13 @@ class NuteczkiEU(CBaseHostClass):
                 tmp = self.cm.ph.rgetAllItemsBeetwenNodes(subData[subIdx+1], ('</div', '>'), ('<div', '>', 'row'), False)
                 for item in tmp:
                     icon = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, '''<img[^>]+?src=['"]([^"^']+?)['"]''')[0] )
-                    url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
+                    url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0]
+                    if url == '#': 
+                        url = self.cm.ph.getSearchGroups(item, '''(<div[^>]+?getPlayer[^>]+?>)''')[0]
+                        url = self.cm.ph.getSearchGroups(url, '''\sid=['"]([^"^']+?)['"]''')[0]
+                        if url != '': url = '/getPlayer.php?id=' + url
+                    url = self.getFullUrl( url )
+                    
                     title = self.cleanHtmlStr( self.cm.ph.getSearchGroups(item, '''alt="([^"]+?)"''')[0] )
                     desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'news-meta'), ('</div', '>'), False)[1] )
                     params = dict(cItem)
@@ -266,7 +272,12 @@ class NuteczkiEU(CBaseHostClass):
             else:
                 title = self.cleanHtmlStr( tmp )
             
-            url = self.getFullUrl( self.cm.ph.getSearchGroups(tmp, '''href=['"]([^"^']+?)['"]''')[0] )
+            url = self.cm.ph.getSearchGroups(tmp, '''href=['"]([^"^']+?)['"]''')[0]
+            if url == '#': 
+                url = self.cm.ph.getSearchGroups(item, '''(<div[^>]+?getPlayer[^>]+?>)''')[0]
+                url = self.cm.ph.getSearchGroups(url, '''\sid=['"]([^"^']+?)['"]''')[0]
+                if url != '': url = '/getPlayer.php?id=' + url
+            url = self.getFullUrl( url )
             
             desc = []
             tmp = self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'news-meta'), ('</div', '>'))[1]

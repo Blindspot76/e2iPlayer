@@ -1045,7 +1045,7 @@ class common:
                 self.reportHttpsError('version', url, errorMsg)
             elif 'VERIFY_FAILED' in errorMsg:
                 self.reportHttpsError('verify', url, errorMsg)
-            elif 'SSL' in errorMsg: #GET_SERVER_HELLO
+            elif 'SSL' in errorMsg or 'unknown url type: https' in errorMsg: #GET_SERVER_HELLO
                 self.reportHttpsError('other', url, errorMsg)
             
             response = None
