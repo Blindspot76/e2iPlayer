@@ -53,7 +53,7 @@ class BilaSportPwApi(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self)
         self.MAIN_URL =  'http://www.bilasport.com/'
-        self.DEFAULT_ICON_URL = 'https://turtleboysports.com/wp-content/uploads/2017/10/nhl-logo.jpg'
+        self.DEFAULT_ICON_URL = 'https://projects.fivethirtyeight.com/2016-mlb-predictions/images/logos.png'
         self.HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -69,17 +69,22 @@ class BilaSportPwApi(CBaseHostClass):
         sts, data = self.cm.getPage(self.getMainUrl())
         if not sts: return mainItemsTab
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<table', '</table>')[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<td', '</td>')
-        printDBG(data)
-        for item in data:
-            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
-            url  = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0])
-            if url == '': continue
-            title = url.split('/')[-1].replace('.html', '').upper()
-            params = dict(cItem)
-            params.update({'type':'video', 'title':title, 'url':url, 'icon':icon})
-            mainItemsTab.append(params)
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<table', '</table>')
+        for idx in range(len(data)-1, -1, -1):
+            sData = self.cm.ph.getAllItemsBeetwenMarkers(data[idx], '<td', '</td>')
+            printDBG(sData)
+            for item in sData:
+                icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^'^"]+?)['"]''')[0])
+                url  = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0])
+                if url == '': continue
+                title = url.split('/')[-1].replace('.html', '').upper()
+                params = dict(cItem)
+                params.update({'type':'video', 'title':title, 'url':url, 'icon':icon})
+                mainItemsTab.append(params)
+            if idx > 0:
+                params = dict(cItem)
+                params.update({'type':'marker', 'title':'\xE2\x9E\xA2', 'icon':self.DEFAULT_ICON_URL})
+                mainItemsTab.append(params)
         
         return mainItemsTab
         
