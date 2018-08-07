@@ -2155,3 +2155,26 @@ class IPTVExtMoviePlayer(Screen):
                 printDBG("IPTVExtMoviePlayer.extPlayerSendCommand unknown command[%s]" % command)
                 return False
         return True
+
+    def createSummary(self):
+      return IPTVExtMoviePlayerSummary
+
+class IPTVExtMoviePlayerSummary(Screen):
+    try:
+        summary_screenwidth = getDesktop(1).size().width()
+        summary_screenheight = getDesktop(1).size().height()
+    except Exception:
+        summary_screenwidth = 132
+        summary_screenheight = 64
+    if summary_screenwidth > 132 and summary_screenheight > 64:
+        skin = """
+            <screen position="0,0" size="%s,%s">
+                <widget source="parent.Title" render="Label" position="6,4" size="%s,%s" font="Regular;42" />
+            </screen>""" % (summary_screenwidth,summary_screenheight,summary_screenwidth-12,summary_screenheight-8)
+    else:
+        skin = """
+            <screen position="0,0" size="132,64">
+                <widget source="parent.Title" render="Label" position="6,4" size="120,42" font="Regular;18" />
+            </screen>"""
+        def __init__(self, session, parent):
+                Screen.__init__(self, session, parent = parent)
