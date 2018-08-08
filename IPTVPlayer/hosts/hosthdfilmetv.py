@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetDefaultLang, remove_html_markup, GetLogoDir, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
 ###################################################
@@ -45,7 +46,7 @@ def gettytul():
     return 'http://hdfilme.tv/'
 
 class HDFilmeTV(CBaseHostClass):
-    USER_AGENT = 'curl/7' #'Mozilla/5.0'
+    USER_AGENT = 'Mozilla / 5.0 (SMART-TV; Linux; Tizen 2.4.0) AppleWebkit / 538.1 (KHTML, podobnie jak Gecko) SamsungBrowser / 1.1 TV Safari / 538.1'
     HEADER = {'User-Agent': USER_AGENT, 'Accept': 'text/html'}
     AJAX_HEADER = dict(HEADER)
     AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -240,12 +241,17 @@ class HDFilmeTV(CBaseHostClass):
                     tmp = byteify( json.loads(tmp) )
                     for item in tmp['playinfo']:
                         try:
-                            if 'mp4' not in item.get('type', item.get('mine_type')): continue
+                            type = item.get('type', item.get('mine_type')).lower()
                         except Exception:
-                            if not str(item['file']).lower().split('?', 1)[0].endswith('.mp4'): continue
+                            type = str(item['file']).split('?', 1)[0].rsplit('.', 1)[-1].lower()
+                            
                         url = self.getFullUrl(str(item['file'])) 
-                        url = strwithmeta(url, {'Referer':self.getMainUrl()})
-                        urlTab.append({'name':str(item['label']), 'url':url})
+                        url = strwithmeta(url, {'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()[:-1], 'User-Agent':self.defaultParams['header']['User-Agent']})
+                        printDBG(">>>>>>>>>>>>>>>>>>>>>> TYPE: " + type)
+                        if 'mp4' in type or 'flv' in type:
+                            urlTab.append({'name':str(item['label']), 'url':url})
+                        elif 'hls' in type or 'm3u8' in type:
+                            urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
                 except Exception:
                     printExc()
             if len(urlTab):

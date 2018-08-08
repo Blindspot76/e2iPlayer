@@ -192,11 +192,11 @@ class HDStreams(CBaseHostClass):
         
     def listItems(self, cItem, nextCategory='', searchPattern=''):
         printDBG("HDStreams.listItems |%s|" % cItem)
-        NUM = 48
+        #NUM = 48
         url = cItem['url']
         page = cItem.get('page', 1)
         
-        query = {'perPage':NUM, 'page':page}
+        query = {'page':page} #'perPage':NUM, 
         keys = [('f_genre', 'genre[]'), ('f_year', 'year[]'), ('f_order', 'order'), ('f_order_by', 'orderBy')]
         for item in keys:
             if item[0] in cItem:
