@@ -235,9 +235,9 @@ class HDFilmeTV(CBaseHostClass):
             if sts:
                 try:
                     tmp = base64.b64decode(tmp)
-                    printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                    printDBG("+++")
                     printDBG(tmp)
-                    printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+                    printDBG("+++")
                     tmp = byteify( json.loads(tmp) )
                     for item in tmp['playinfo']:
                         try:
@@ -246,8 +246,8 @@ class HDFilmeTV(CBaseHostClass):
                             type = str(item['file']).split('?', 1)[0].rsplit('.', 1)[-1].lower()
                             
                         url = self.getFullUrl(str(item['file'])) 
-                        url = strwithmeta(url, {'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()[:-1], 'User-Agent':self.defaultParams['header']['User-Agent']})
-                        printDBG(">>>>>>>>>>>>>>>>>>>>>> TYPE: " + type)
+                        url = strwithmeta(url, {'Accept':'*/*', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()[:-1], 'User-Agent':self.defaultParams['header']['User-Agent']})
+                        printDBG(">> TYPE: " + type)
                         if 'mp4' in type or 'flv' in type:
                             urlTab.append({'name':str(item['label']), 'url':url})
                         elif 'hls' in type or 'm3u8' in type:
@@ -259,9 +259,9 @@ class HDFilmeTV(CBaseHostClass):
             
             googleUrls = self.cm.ph.getSearchGroups(data, '''var hdfilme[^=]*?=[^[]*?(\[[^;]+?);''')[0].strip()
             if '' == googleUrls: googleUrls = self.cm.ph.getSearchGroups(data, '''[\s]['"]?sources['"]?[^=^:]*?[=:][\s]*[^[]*?(\[[^]]+?\])''')[0].strip()
-            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            printDBG("+++")
             printDBG(googleUrls)
-            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            printDBG("+++")
             
             if googleUrls != '':
                 try:

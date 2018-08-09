@@ -487,7 +487,7 @@ class urlparser:
                        'mystream.to':          self.pp.parserMYSTREAMTO     ,
                        'vidload.co':           self.pp.parserVIDLOADCO      ,
                        'sportstream365.com':   self.pp.parserSPORTSTREAM365 ,
-                       
+                       'nxload.com':           self.pp.parserNXLOADCOM      ,
                     }
         return
     
@@ -10275,3 +10275,52 @@ class pageParser:
             return self.parserSPORTSTREAM365(baseUrl)
         
         return linksTab
+        
+    def parserNXLOADCOM(self, baseUrl):
+        printDBG('parserNXLOADCOM baseUrl[%s]' % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader()
+        if 'Referer' in baseUrl.meta: HTTP_HEADER['Referer'] = baseUrl.meta['Referer']
+        params = {'header' : HTTP_HEADER}
+        
+        if 'embed' not in baseUrl:
+            sts, data = self.cm.getPage(baseUrl, params)
+            if not sts: return False
+            videoId = self.cm.ph.getSearchGroups(baseUrl+'/', '[/\-\.]([A-Za-z0-9]{12})[/\-\.]')[0]
+            url = self.cm.getBaseUrl(self.cm.meta['url']) + 'embed-{0}.html'.format(videoId)
+        else:
+            url = baseUrl 
+        
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return False
+        
+        tmp = self.cm.ph.getSearchGroups(data, '''externalTracks['":\s]*?\[([^\]]+?)\]''')[0]
+        printDBG(tmp)
+        tmp = re.compile('''\{([^\}]+?)\}''', re.I).findall(tmp)
+        subTracks = []
+        for item in tmp:
+            lang = self.cm.ph.getSearchGroups(item, r'''['"]?lang['"]?\s*?:\s*?['"]([^"^']+?)['"]''')[0].lower()
+            src = self.cm.ph.getSearchGroups(item, r'''['"]?src['"]?\s*?:\s*?['"](https?://[^"^']+?)['"]''')[0]
+            label = self.cm.ph.getSearchGroups(item, r'''label['"]?\s*?:\s*?['"]([^"^']+?)['"]''')[0]
+            format = src.split('?', 1)[0].split('.')[-1].lower()
+            if format not in ['srt', 'vtt']: continue
+            if 'empty' in src.lower(): continue
+            subTracks.append({'title':label, 'url':src, 'lang':lang.lower()[:3], 'format':'srt'})
+        
+        urlTab = []
+        tmp = self.cm.ph.getSearchGroups(data, '''sources['":\s]*?\[([^\]]+?)\]''')[0]
+        printDBG(tmp)
+        tmp = re.compile('''['"]([^'^"]+?\.(?:m3u8|mp4|flv)(?:\?[^'^"]*?)?)['"]''', re.I).findall(tmp)
+        for url in tmp:
+            type = url.split('?', 1)[0].rsplit('.', 1)[-1].lower()
+            url = self.cm.getFullUrl(url, self.cm.getBaseUrl(self.cm.meta['url']))
+            if type in ['mp4', 'flv']:
+                urlTab.append({'name':'mp4', 'url':url})
+            elif type == 'm3u8':
+                urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
+        
+        if len(subTracks):
+            for idx in range(len(urlTab)):
+                urlTab[idx]['url'] = urlparser.decorateUrl(urlTab[idx]['url'], {'external_sub_tracks':subTracks})
+        
+        return urlTab
