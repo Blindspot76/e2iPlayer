@@ -251,6 +251,7 @@ class HDFilmeTV(CBaseHostClass):
                         if 'mp4' in type or 'flv' in type:
                             urlTab.append({'name':str(item['label']), 'url':url})
                         elif 'hls' in type or 'm3u8' in type:
+                            url.meta['iptv_m3u8_seg_download_retry'] = 10
                             urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
                 except Exception:
                     printExc()
