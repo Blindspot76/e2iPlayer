@@ -110,8 +110,12 @@ class MoonwalkParser():
                 printExc()
             item = "iptv.call = %s;iptv['call']();" % self._getFunctionCode(data.split('getVideoManifests:', 1)[-1])
             jscode.append(item)
-            
-        ret = iptv_js_execute( '\n'.join(jscode), {'timeout_sec':10} )
+        
+        jscode = '\n'.join(jscode)
+        printDBG('Code start:')
+        printDBG(jscode)
+        printDBG('Code end:')
+        ret = iptv_js_execute( jscode, {'timeout_sec':30} )
         if ret['sts'] and 0 == ret['code']:
             printDBG(ret['data'])
             try:
