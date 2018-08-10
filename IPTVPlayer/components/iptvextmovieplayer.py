@@ -2156,8 +2156,8 @@ class IPTVExtMoviePlayer(Screen):
                 return False
         return True
 
-    def createSummary(self):
-      return IPTVExtMoviePlayerSummary
+    #def createSummary(self):
+    #  return IPTVExtMoviePlayerSummary
 
 class IPTVExtMoviePlayerSummary(Screen):
     try:
