@@ -99,7 +99,7 @@ class IPTVSetupImpl:
         self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/_subparser.so')]
         
         # hlsdl
-        self.hlsdlVersion = 0.14
+        self.hlsdlVersion = 0.15
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl'), "/usr/bin/hlsdl"]
         
         # cmdwrap
