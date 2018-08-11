@@ -72,7 +72,7 @@ class PutlockerTvTo(CBaseHostClass):
         self.defaultParams = {'with_metadata':True, 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self._myFun = None
         
-    def uncensored(self, data):    
+    def uncensored(self, data):
         cookieItems = {}
         try:
             jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCnZhciBsb2NhdGlvbiA9ICJodHRwczovLzlhbmltZS50by8iOw0KU3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQpBcnJheS5wcm90b3R5cGUuZmluZD0iZnVuY3Rpb24gZmluZCgpIHsgW25hdGl2ZSBjb2RlXSB9IjsNCkFycmF5LnByb3RvdHlwZS5maWxsPSJmdW5jdGlvbiBmaWxsKCkgeyBbbmF0aXZlIGNvZGVdIH0iOw0KZnVuY3Rpb24gZmlsdGVyKCkNCnsNCiAgICBmdW4gPSBhcmd1bWVudHNbMF07DQogICAgdmFyIGxlbiA9IHRoaXMubGVuZ3RoOw0KICAgIGlmICh0eXBlb2YgZnVuICE9ICJmdW5jdGlvbiIpDQogICAgICAgIHRocm93IG5ldyBUeXBlRXJyb3IoKTsNCiAgICB2YXIgcmVzID0gbmV3IEFycmF5KCk7DQogICAgdmFyIHRoaXNwID0gYXJndW1lbnRzWzFdOw0KICAgIGZvciAodmFyIGkgPSAwOyBpIDwgbGVuOyBpKyspDQogICAgew0KICAgICAgICBpZiAoaSBpbiB0aGlzKQ0KICAgICAgICB7DQogICAgICAgICAgICB2YXIgdmFsID0gdGhpc1tpXTsNCiAgICAgICAgICAgIGlmIChmdW4uY2FsbCh0aGlzcCwgdmFsLCBpLCB0aGlzKSkNCiAgICAgICAgICAgICAgICByZXMucHVzaCh2YWwpOw0KICAgICAgICB9DQogICAgfQ0KICAgIHJldHVybiByZXM7DQp9Ow0KT2JqZWN0LmRlZmluZVByb3BlcnR5KGRvY3VtZW50LCAiY29va2llIiwgew0KICAgIGdldCA6IGZ1bmN0aW9uICgpIHsNCiAgICAgICAgcmV0dXJuIHRoaXMuX2Nvb2tpZTsNCiAgICB9LA0KICAgIHNldCA6IGZ1bmN0aW9uICh2YWwpIHsNCiAgICAgICAgcHJpbnQodmFsKTsNCiAgICAgICAgdGhpcy5fY29va2llID0gdmFsOw0KICAgIH0NCn0pOw0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZpbHRlcjsNCiVzDQoNCg==''') % (data)                     
@@ -104,7 +104,8 @@ class PutlockerTvTo(CBaseHostClass):
             addParams = dict(addParams)
             addParams.update({'http_proxy':proxy})
         
-        return self.cm.getPage(url, addParams, post_data)
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.HEADER['User-Agent']}
+        return self.cm.getPageCFProtection(url, addParams, post_data)
         
     def getFullIconUrl(self, url):
         url = url.split('url=')[-1]
@@ -116,10 +117,13 @@ class PutlockerTvTo(CBaseHostClass):
             else:
                 proxy = config.plugins.iptvplayer.alternative_proxy2.value
             url = strwithmeta(url, {'iptv_http_proxy':proxy})
+        if url != '':
+            cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance'])
+            url = strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.HEADER['User-Agent']})
         return url
         
     def selectDomain(self):
-        domains = ['https://www2.putlockertv.to/']
+        domains = ['https://www5.putlockertv.to/']
         domain = config.plugins.iptvplayer.putlockertv_alt_domain.value.strip()
         if self.cm.isValidUrl(domain):
             if domain[-1] != '/': domain += '/'
@@ -266,9 +270,29 @@ class PutlockerTvTo(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = self.cm.meta['url']
+        
+        timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+        id = self.cm.ph.getDataBeetwenNodes(data, ('<', 'watch-page', '>'), ('<', '>'))[1]
+        id = self.cm.ph.getSearchGroups(id, '''data-id=['"]([^'^"]+?)['"]''')[0]
+        getParams = {'ts':timestamp}
+        getParams = self._updateParams(getParams)
+        url = self.getFullUrl('/ajax/film/servers/{0}?'.format(id) + urllib.urlencode(getParams))
+        
+        sts, data = self.getPage(url, params)
+        if not sts: return []
+        
+        try:
+            data = byteify(json.loads(data))['html']
+            printDBG(data)
+        except Exception:
+            printExc()
+        
         titlesTab = []
         self.cacheLinks  = {}
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="servers">', '<div class="widget')[1]
+        #data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="servers">', '<div class="widget')[1]
         data = data.split('<div class="server row"')
         for tmp in data:
             serverName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<label', '</label>')[1])
@@ -426,6 +450,8 @@ class PutlockerTvTo(CBaseHostClass):
             urlTab = self.up.getVideoLinkExt(strwithmeta(videoUrl, {'Referer':baseUrl}))
         
         if self.cm.isValidUrl(subTrack):
+            cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance'])
+            subTrack = strwithmeta(subTrack, {'Cookie':cookieHeader, 'User-Agent':self.HEADER['User-Agent']})
             format = subTrack[-3:]
             for idx in range(len(urlTab)):
                 urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'])

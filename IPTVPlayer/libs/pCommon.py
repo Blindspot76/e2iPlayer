@@ -1064,9 +1064,10 @@ class common:
     def getPageCFProtection(self, baseUrl, params={}, post_data=None):
         cfParams = params.get('cloudflare_params', {})
         
-        def _getFullUrlEmpty(url):
+        def _getFullUrlEmpty(url, baseUrl):
             return url
-        _getFullUrl  = cfParams.get('full_url_handle', _getFullUrlEmpty)
+        
+        _getFullUrl  = cfParams.get('full_url_handle', self.getFullUrl)
         _getFullUrl2 = cfParams.get('full_url_handle2', _getFullUrlEmpty)
         
         url = baseUrl
@@ -1154,14 +1155,14 @@ class common:
                         printDBG(">>")
                         printDBG(verData)
                         printDBG("<<")
-                        verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] )
+                        verUrl =  _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0], domain)
                         get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
                         get_data['jschl_answer'] = decoded['answer']
                         verUrl += '?'
                         for key in get_data:
                             verUrl += '%s=%s&' % (key, get_data[key])
-                        verUrl = _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0] ) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
-                        verUrl = _getFullUrl2( verUrl )
+                        verUrl = _getFullUrl( self.ph.getSearchGroups(verData, 'action="([^"]+?)"')[0], domain) + '?jschl_vc=%s&pass=%s&jschl_answer=%s' % (get_data['jschl_vc'], get_data['pass'], get_data['jschl_answer'])
+                        verUrl = _getFullUrl2( verUrl, domain)
                         params2 = dict(params)
                         params2['load_cookie'] = True
                         params2['save_cookie'] = True

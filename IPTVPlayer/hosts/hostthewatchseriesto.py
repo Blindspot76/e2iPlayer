@@ -36,9 +36,11 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.swatchseries_web_proxy_gateway = ConfigSelection(default = "auto", choices = [("auto", _("Auto")), ("always", _("Always")), ("never",  _("Never"))])
 
 def GetConfigList():
     optionList = []
+    optionList.append(getConfigListEntry(_("Use web proxy gateway"), config.plugins.iptvplayer.swatchseries_web_proxy_gateway))
     return optionList
 ###################################################
 
@@ -72,6 +74,12 @@ class TheWatchseriesTo(CBaseHostClass):
         self.needProxy = None
         
     def isNeedProxy(self):
+        val = config.plugins.iptvplayer.swatchseries_web_proxy_gateway.value
+        if val == 'always':
+            return True
+        elif val == 'never':
+            return False
+        
         if self.needProxy == None:
             sts, data = self.cm.getPage(self.MAIN_URL)
             if sts and '/series"' in data:
