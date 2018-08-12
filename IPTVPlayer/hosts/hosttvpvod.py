@@ -642,6 +642,12 @@ class TvpVod(CBaseHostClass):
     def getObjectID(self, url):
         sts, data = self.cm.getPage(url, self.defaultParams)
         if not sts: return ''
+        
+        sess_player_url = self.cm.ph.getSearchGroups(data, '''(https?://[^'^"]+?/sess/player/video/[^'^"]+?)['"]''')[0]
+        if sess_player_url != '':
+            sts, tmp = self.cm.getPage(sess_player_url, self.defaultParams)
+            if sts: data = tmp
+        
         asset_id = self.cm.ph.getSearchGroups(data, '''id=['"]tvplayer\-[0-9]+\-([0-9]+)''')[0]
         
         if asset_id == '': asset_id = self.cm.ph.getSearchGroups(data, 'object_id=([0-9]+?)[^0-9]')[0]
