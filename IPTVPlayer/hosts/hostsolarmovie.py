@@ -108,14 +108,8 @@ class SolarMovie(CBaseHostClass):
                 proxy = config.plugins.iptvplayer.alternative_proxy2.value
             addParams = dict(addParams)
             addParams.update({'http_proxy':proxy})
-            
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url):
-                return url
-            else:
-                return urljoin(baseUrl, url)
-            
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         return sts, data
         if sts:
@@ -128,7 +122,6 @@ class SolarMovie(CBaseHostClass):
             except Exception:
                 printExc()
         return sts, data
-            
         
     def getFullIconUrl(self, url):
         m1 = 'amp;url='
@@ -142,8 +135,10 @@ class SolarMovie(CBaseHostClass):
                 proxy = config.plugins.iptvplayer.alternative_proxy2.value
             url = strwithmeta(url, {'iptv_http_proxy':proxy})
             
-        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
-        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+        if url != '':
+            cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance'])
+            url = strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.HEADER['User-Agent']})
+        return url
         
     def selectDomain(self):
         printDBG("SolarMovie.selectDomain")
@@ -296,9 +291,29 @@ class SolarMovie(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = self.cm.meta['url']
+        
+        timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+        id = self.cm.ph.getDataBeetwenNodes(data, ('<', 'watch-page', '>'), ('<', '>'))[1]
+        id = self.cm.ph.getSearchGroups(id, '''data-id=['"]([^'^"]+?)['"]''')[0]
+        getParams = {'ts':timestamp}
+        getParams = self._updateParams(getParams)
+        url = self.getFullUrl('/ajax/film/servers/{0}?'.format(id) + urllib.urlencode(getParams))
+        
+        sts, data = self.getPage(url, params)
+        if not sts: return []
+        
+        try:
+            data = byteify(json.loads(data))['html']
+            printDBG(data)
+        except Exception:
+            printExc()
+        
         titlesTab = []
         self.cacheLinks  = {}
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="servers">', '<div class="widget')[1]
+        #data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="servers">', '<div class="widget')[1]
         data = data.split('<div class="server row"')
         for tmp in data:
             serverName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<label', '</label>')[1])
@@ -447,6 +462,8 @@ class SolarMovie(CBaseHostClass):
             urlTab = self.up.getVideoLinkExt(strwithmeta(videoUrl, {'Referer':baseUrl}))
         
         if self.cm.isValidUrl(subTrack):
+            cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance'])
+            subTrack = strwithmeta(subTrack, {'Cookie':cookieHeader, 'User-Agent':self.HEADER['User-Agent']})
             format = subTrack[-3:]
             for idx in range(len(urlTab)):
                 urlTab[idx]['url'] = strwithmeta(urlTab[idx]['url'])
