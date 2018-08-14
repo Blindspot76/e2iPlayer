@@ -1064,11 +1064,15 @@ class common:
     def getPageCFProtection(self, baseUrl, params={}, post_data=None):
         cfParams = params.get('cloudflare_params', {})
         
-        def _getFullUrlEmpty(url, baseUrl):
-            return url
+        def _getFullUrl(url, baseUrl):
+            if 'full_url_handle' in cfParams:
+                return cfParams['full_url_handle'](url)
+            return self.getFullUrl(url, baseUrl)
         
-        _getFullUrl  = cfParams.get('full_url_handle', self.getFullUrl)
-        _getFullUrl2 = cfParams.get('full_url_handle2', _getFullUrlEmpty)
+        def _getFullUrl2(url, baseUrl):
+            if 'full_url_handle2' in cfParams:
+                return cfParams['full_url_handle2'](url)
+            return url
         
         url = baseUrl
         header = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
