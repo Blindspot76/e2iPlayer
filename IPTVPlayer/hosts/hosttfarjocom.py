@@ -45,15 +45,15 @@ def GetConfigList():
     return optionList
 ###################################################
 def gettytul():
-    return 'http://tfarjo.com/'
+    return 'http://tfarjo.ws/'
 
 class TfarjoCom(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'tfarjo.com', 'cookie':'tfarjo.com.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'http://www.tfarjo.com/'
-        self.DEFAULT_ICON_URL = 'http://www.tfarjo.com/assets/theme/img/tfarjo-logo.png'
+        self.MAIN_URL = 'https://www1.tfarjo.ws/'
+        self.DEFAULT_ICON_URL = 'https://www1.tfarjo.ws/assets/theme/img/tfarjo-logo.png'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -70,20 +70,27 @@ class TfarjoCom(CBaseHostClass):
         if addParams == {}: addParams = dict(self.defaultParams)
         origBaseUrl = baseUrl
         baseUrl = self.cm.iriToUri(baseUrl)
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urlparse.urljoin(baseUrl, url)
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
     def setMainUrl(self, url):
         if self.cm.isValidUrl(url):
             self.MAIN_URL = self.cm.getBaseUrl(url)
     
+    def getFullIconUrl(self, url):
+        url = CBaseHostClass.getFullIconUrl(self, url.strip())
+        if url == '': return ''
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance'])
+        return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+    
+    def getDefaulIcon(self, cItem=None):
+        return self.getFullIconUrl(self.DEFAULT_ICON_URL)
+    
     def listMainMenu(self, cItem):
         printDBG("InteriaTv.listMainMenu")
         sts, data = self.getPage(self.getMainUrl())
         if not sts: return
+        
         self.setMainUrl(data.meta['url'])
         MAIN_CAT_TAB = [{'category':'movies',         'title': 'Films',            'url':self.getFullUrl('/films')},
                         {'category':'series',         'title': 'Series',           'url':self.getFullUrl('/series')},
@@ -397,7 +404,7 @@ class TfarjoCom(CBaseHostClass):
         
     #MAIN MENU
         if name == None and category == '':
-            rm(self.COOKIE_FILE)
+            self.cm.clearCookie(self.COOKIE_FILE, ['PHPSESSID', '__cfduid', 'cf_clearance'])
             self.listMainMenu({'name':'category'})
         elif category == 'movies':
             self.listMovies(self.currItem, 'sub_items', 'list_items')

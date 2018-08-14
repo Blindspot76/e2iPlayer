@@ -93,20 +93,14 @@ class HDStreams(CBaseHostClass):
                             ]
     
     def getPage(self, baseUrl, addParams = {}, post_data = None):
-        if addParams == {}:
-            addParams = dict(self.defaultParams)
-        
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urljoin(baseUrl, url)
-        
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        if addParams == {}: addParams = dict(self.defaultParams)
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
     def getFullIconUrl(self, url):
-        url = self.getFullUrl(url)
+        url = CBaseHostClass.getFullIconUrl(self, url.strip())
         if url == '': return ''
-        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance'])
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
         
     def cryptoJS_AES_decrypt(self, encrypted, password, salt):
