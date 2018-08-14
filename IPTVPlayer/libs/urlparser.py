@@ -7303,7 +7303,7 @@ class pageParser:
         
         if 'embed' not in baseUrl:
             video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
-            url = 'http://speedvideo.net/embed-{0}-600x360.html'.format(video_id)
+            url = 'http://speedvideo.net/embed-{0}.html'.format(video_id)
         else:
             url = baseUrl
         
@@ -7314,7 +7314,7 @@ class pageParser:
         
         urlTab = []
         tmp = []
-        for item in [('linkfile', 'normal'), ('linkfileBackup', 'backup'), ('linkfileBackupLq', 'low')]:
+        for item in [('linkfile', 'normal'), ('linkfileBackupLq', 'low'), ('linkfileBackupH', 'high'), ('linkfileBackup', 'backup'), ('linkfileBackupN', 'backup N')]:
             try:
                 vidUrl = self.cm.ph.getSearchGroups(data, 'var\s+?' + item[0] + '''\s*?=\s*?['"]([^"^']+?)['"]''')[0]
                 if vidUrl not in tmp and self.cm.isValidUrl(vidUrl):
