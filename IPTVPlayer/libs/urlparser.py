@@ -479,6 +479,7 @@ class urlparser:
                        'filecloud.io':         self.pp.parserFILECLOUDIO    ,
                        'megadrive.co':         self.pp.parserMEGADRIVECO    ,
                        'upfile.mobi':          self.pp.parserUPFILEMOBI     ,
+                       'upvid.mobi':           self.pp.parserUPFILEMOBI     ,
                        'cloudstream.us':       self.pp.parserCLOUDSTREAMUS  ,
                        'soundcloud.com':       self.pp.parserSOUNDCLOUDCOM  ,
                        'vcstream.to':          self.pp.parserVCSTREAMTO     ,
@@ -2903,7 +2904,12 @@ class pageParser:
         while subFrameNum < 6:
             sts, data = self.cm.getPage(url, urlParams)
             if not sts: return False
-            newUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=['"](https?://[^"^']+?)['"]''', 1, True)[0]
+            newUrl = ''
+            if '<iframe' in data:
+                newUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]*?src=['"](https?://[^"^']+?)['"]''', 1, True)[0]
+                if newUrl == '':
+                    newUrl = self.cm.ph.getSearchGroups(data, ''' <input([^>]+?link[^>]+?)>''')[0]
+                    newUrl = self.cm.ph.getSearchGroups(data, '''\svalue=['"](https?://[^"^']+?)['"]''', 1, True)[0]
             if self.cm.isValidUrl(newUrl):
                 urlParams['header']['Referer'] = url
                 url = newUrl
@@ -5162,7 +5168,7 @@ class pageParser:
             if 'download_button' not in item: continue
             url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0]
             if not self.cm.isValidUrl(url): url = self.cm.getFullUrl(url, self.cm.getBaseUrl(cUrl))
-            if 'page=file' in url: downloadUrl = url
+            if 'page=file' in url or 'page=download' in url: downloadUrl = url
             else: playUrl = url
         
         urls = []
@@ -5171,6 +5177,7 @@ class pageParser:
             if sts:
                 url = data.meta['url']
                 downloadUrl = self.cm.ph.getSearchGroups(data, '''href=['"]([^"^']*?page=download[^"^']*?)['"]''')[0]
+                if downloadUrl == '': downloadUrl = self.cm.ph.getSearchGroups(data, '''href=['"]([^"^']*?page=dl[^"^']*?)['"]''')[0]
                 if downloadUrl != '':
                     if not self.cm.isValidUrl(downloadUrl): downloadUrl = self.cm.getFullUrl(downloadUrl, self.cm.getBaseUrl(url))
                     urls.append({'name':'Download URL', 'url':strwithmeta(downloadUrl, {'Referer':url, 'User-Agent':HTTP_HEADER['User-Agent']})})
@@ -5180,6 +5187,7 @@ class pageParser:
             if sts:
                 playUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^'^"]+?)['"][^>]+?video/mp4''', ignoreCase=True)[0]
                 if playUrl != '':
+                    printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s' % playUrl)
                     if not self.cm.isValidUrl(playUrl): playUrl = self.cm.getFullUrl(playUrl, self.cm.getBaseUrl(data.meta['url']))
                     urls.append({'name':'Watch URL', 'url':strwithmeta(playUrl, {'Referer':data.meta['url'], 'User-Agent':HTTP_HEADER['User-Agent']})})
         

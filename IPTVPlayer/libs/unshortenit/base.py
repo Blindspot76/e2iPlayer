@@ -52,6 +52,7 @@ class UnshortenIt(object):
     _hrefli_regex = r'href\.li'
     _anonymz_regex = r'anonymz\.com'
     _iitvpl_regex = r'iiv\.pl'
+    _short24_regex = r'short24\.pw'
     
     _maxretries = 5
 
@@ -89,6 +90,9 @@ class UnshortenIt(object):
             return self._unshorten_anonymz(uri)
         if re.search(self._iitvpl_regex, domain, re.IGNORECASE):
             return self._unshorten_iivpl(uri)
+        if re.search(self._short24_regex, domain, re.IGNORECASE):
+            return self._unshorten_short24(uri)
+            
         return uri, 200
 
     def unwrap_30x(self, uri, timeout=10):
@@ -465,6 +469,15 @@ class UnshortenIt(object):
             
             return uri, 'OK'
 
+        except Exception as e:
+            printExc()
+            return uri, str(e)
+
+    def _unshorten_short24(self, uri):
+        try:
+            sts, data = self.cm.getPage(uri, {'header':HTTP_HEADER})
+            uri = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''window\.location\s*?=\s*?['"]([^'^"]+?)['"]''')[0], self.cm.getBaseUrl(self.cm.meta['url']))
+            return uri, 'OK'
         except Exception as e:
             printExc()
             return uri, str(e)
