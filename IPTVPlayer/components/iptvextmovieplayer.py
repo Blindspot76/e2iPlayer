@@ -2157,7 +2157,17 @@ class IPTVExtMoviePlayer(Screen):
         return True
 
     def createSummary(self):
-        if config.plugins.iptvplayer.external_player_summary.value:
+        summary = config.plugins.iptvplayer.extplayer_summary.value 
+        create = False
+        if summary == 'yes':
+            create = True
+        elif summary == 'auto':
+            try:
+                if getDesktop(1).size().width() > 0:
+                    create = True
+            except Exception:
+                pass
+        if create:
             return IPTVExtMoviePlayerSummary
         return None
 
