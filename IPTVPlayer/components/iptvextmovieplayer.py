@@ -2156,8 +2156,10 @@ class IPTVExtMoviePlayer(Screen):
                 return False
         return True
 
-    #def createSummary(self):
-    #  return IPTVExtMoviePlayerSummary
+    def createSummary(self):
+        if config.plugins.iptvplayer.external_player_summary.value:
+            return IPTVExtMoviePlayerSummary
+        return None
 
 class IPTVExtMoviePlayerSummary(Screen):
     try:

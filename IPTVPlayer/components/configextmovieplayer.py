@@ -23,6 +23,7 @@ from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 from Components.config import config, ConfigSubsection, ConfigSelection, ConfigDirectory, ConfigYesNo, ConfigOnOff, Config, ConfigInteger, ConfigSubList, ConfigText, getConfigListEntry, configfile
 ###################################################
+config.plugins.iptvplayer.external_player_summary = ConfigYesNo(default = False)
 config.plugins.iptvplayer.use_clear_iframe = ConfigYesNo(default = False)
 config.plugins.iptvplayer.show_iframe = ConfigYesNo(default = True)
 config.plugins.iptvplayer.iframe_file = ConfigIPTVFileSelection(fileMatch = "^.*\.mvi$", default = "/usr/share/enigma2/radio.mvi")
@@ -278,10 +279,12 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
         valTab.append(config.plugins.iptvplayer.aac_mix.value)
         valTab.append(config.plugins.iptvplayer.extplayer_subtitle_wrapping_enabled.value)
         valTab.append(config.plugins.iptvplayer.show_iframe.value)
+        valTab.append(config.plugins.iptvplayer.external_player_summary.value)
         return valTab
         
     def runSetup(self):
         list = []
+        
         list.append(getConfigListEntry(_("Use black iframe at normal video playback finish"), config.plugins.iptvplayer.use_clear_iframe))
         list.append(getConfigListEntry(_("show iframe for audio item"), config.plugins.iptvplayer.show_iframe))
         if config.plugins.iptvplayer.show_iframe.value:
@@ -290,6 +293,7 @@ class ConfigExtMoviePlayer(ConfigBaseWidget, ConfigExtMoviePlayerBase):
             list.append(getConfigListEntry("    " + _("Black iframe file"), config.plugins.iptvplayer.clear_iframe_file))
         
         list.append(getConfigListEntry(_("Remember last watched position"), config.plugins.iptvplayer.remember_last_position))
+        list.append(getConfigListEntry(_("Create summary screen"), config.plugins.iptvplayer.external_player_summary))
         if 1:#IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
             list.append(getConfigListEntry(_("----------------- External exteplayer3 options -----------------"), config.plugins.iptvplayer.fakeExtePlayer3))
             list.append(getConfigListEntry("    " + _("RAM buffer size [MB] for network protocols"), config.plugins.iptvplayer.rambuffer_sizemb_network_proto))
