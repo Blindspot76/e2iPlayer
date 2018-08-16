@@ -33,6 +33,7 @@ try:
 except Exception: pass
 from Tools.Directories import fileExists
 from urlparse import urljoin, urlparse, urlunparse
+from binascii import hexlify
 ###################################################
 
 def DecodeGzipped(data):
@@ -720,7 +721,7 @@ class common:
                         # it could be valid - we need to wait for more data
                         valid = True
                 if not valid:
-                    printDBG('wrong body')
+                    printDBG('wrong body: %s' % hexlify(value))
                     return 0
             
             if fileHandler != None and 0 == len(checkFromFirstBytes):
@@ -1114,7 +1115,7 @@ class common:
                         if not sts: return False, None
                         
                         url = self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0]
-                        if url != '': url = _getFullUrl( url )
+                        if url != '': url = _getFullUrl( url, domain )
                         else: url = data.meta['url']
                         actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
                         post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))

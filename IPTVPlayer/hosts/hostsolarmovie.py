@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetPluginDir, byteify, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, GetPluginDir, byteify, rm, MergeDicts
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
@@ -49,8 +49,7 @@ config.plugins.iptvplayer.solarmovie_alt_domain = ConfigText(default = "", fixed
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Use proxy server:"), config.plugins.iptvplayer.solarmovie_proxy))
-    if config.plugins.iptvplayer.solarmovie_proxy.value == 'None':
-        optionList.append(getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.solarmovie_alt_domain))
+    optionList.append(getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.solarmovie_alt_domain))
     return optionList
 ###################################################
 
@@ -62,7 +61,7 @@ class SolarMovie(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'SolarMovie.tv', 'cookie':'solarmovie.cookie'})
-        self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.USER_AGENT = self.cm.getDefaultHeader()['User-Agent']
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -77,67 +76,30 @@ class SolarMovie(CBaseHostClass):
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         self._myFun = None
         
-    def uncensored(self, data):    
-        cookieItems = {}
-        try:
-            jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCnZhciBsb2NhdGlvbiA9ICJodHRwczovLzlhbmltZS50by8iOw0KU3RyaW5nLnByb3RvdHlwZS5pdGFsaWNzPWZ1bmN0aW9uKCl7cmV0dXJuICI8aT48L2k+Ijt9Ow0KU3RyaW5nLnByb3RvdHlwZS5saW5rPWZ1bmN0aW9uKCl7cmV0dXJuICI8YSBocmVmPVwidW5kZWZpbmVkXCI+PC9hPiI7fTsNClN0cmluZy5wcm90b3R5cGUuZm9udGNvbG9yPWZ1bmN0aW9uKCl7cmV0dXJuICI8Zm9udCBjb2xvcj1cInVuZGVmaW5lZFwiPjwvZm9udD4iO307DQpBcnJheS5wcm90b3R5cGUuZmluZD0iZnVuY3Rpb24gZmluZCgpIHsgW25hdGl2ZSBjb2RlXSB9IjsNCkFycmF5LnByb3RvdHlwZS5maWxsPSJmdW5jdGlvbiBmaWxsKCkgeyBbbmF0aXZlIGNvZGVdIH0iOw0KZnVuY3Rpb24gZmlsdGVyKCkNCnsNCiAgICBmdW4gPSBhcmd1bWVudHNbMF07DQogICAgdmFyIGxlbiA9IHRoaXMubGVuZ3RoOw0KICAgIGlmICh0eXBlb2YgZnVuICE9ICJmdW5jdGlvbiIpDQogICAgICAgIHRocm93IG5ldyBUeXBlRXJyb3IoKTsNCiAgICB2YXIgcmVzID0gbmV3IEFycmF5KCk7DQogICAgdmFyIHRoaXNwID0gYXJndW1lbnRzWzFdOw0KICAgIGZvciAodmFyIGkgPSAwOyBpIDwgbGVuOyBpKyspDQogICAgew0KICAgICAgICBpZiAoaSBpbiB0aGlzKQ0KICAgICAgICB7DQogICAgICAgICAgICB2YXIgdmFsID0gdGhpc1tpXTsNCiAgICAgICAgICAgIGlmIChmdW4uY2FsbCh0aGlzcCwgdmFsLCBpLCB0aGlzKSkNCiAgICAgICAgICAgICAgICByZXMucHVzaCh2YWwpOw0KICAgICAgICB9DQogICAgfQ0KICAgIHJldHVybiByZXM7DQp9Ow0KT2JqZWN0LmRlZmluZVByb3BlcnR5KGRvY3VtZW50LCAiY29va2llIiwgew0KICAgIGdldCA6IGZ1bmN0aW9uICgpIHsNCiAgICAgICAgcmV0dXJuIHRoaXMuX2Nvb2tpZTsNCiAgICB9LA0KICAgIHNldCA6IGZ1bmN0aW9uICh2YWwpIHsNCiAgICAgICAgcHJpbnQodmFsKTsNCiAgICAgICAgdGhpcy5fY29va2llID0gdmFsOw0KICAgIH0NCn0pOw0KQXJyYXkucHJvdG90eXBlLmZpbHRlciA9IGZpbHRlcjsNCiVzDQoNCg==''') % (data)                     
-            ret = iptv_js_execute( jscode )
-            if ret['sts'] and 0 == ret['code']:
-                printDBG(ret['data'])
-                data = ret['data'].split('\n')
-                for line in data:
-                    line = line.strip()
-                    if not line.endswith('=/'): continue
-                    line = line.split(';')[0]
-                    line = line.replace(' ', '').split('=')
-                    if 2 != len(line): continue
-                    cookieItems[line[0]] = line[1].split(';')[0]
-        except Exception:
-            printExc()
-        return cookieItems
-        
-    def getPage(self, baseUrl, addParams = {}, post_data = None):
-        if addParams == {}:
-            addParams = dict(self.defaultParams)
-            
+    def getProxy(self):
         proxy = config.plugins.iptvplayer.solarmovie_proxy.value
         if proxy != 'None':
-            if proxy == 'proxy_1':
-                proxy = config.plugins.iptvplayer.alternative_proxy1.value
-            else:
-                proxy = config.plugins.iptvplayer.alternative_proxy2.value
-            addParams = dict(addParams)
-            addParams.update({'http_proxy':proxy})
+            if proxy == 'proxy_1': proxy = config.plugins.iptvplayer.alternative_proxy1.value
+            else: proxy = config.plugins.iptvplayer.alternative_proxy2.value
+        else: proxy = None
+        return proxy
         
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        if addParams == {}: addParams = dict(self.defaultParams)
+        proxy = self.getProxy()
+        if proxy != None: addParams = MergeDicts(addParams, {'http_proxy':proxy})
         addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
-        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
-        return sts, data
-        if sts:
-            try:
-                tmpUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script src=['"]([^'^"]*?/token[^'^"]*?)['"]''')[0])
-                if self.cm.isValidUrl(tmpUrl):
-                    tmpSts, tmpData = self.cm.getPageCFProtection(tmpUrl, addParams)
-                    cookieItems = self.uncensored(tmpData);
-                    self.defaultParams['cookie_items'] = cookieItems
-            except Exception:
-                printExc()
-        return sts, data
+        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
     def getFullIconUrl(self, url):
         m1 = 'amp;url='
         if m1 in url: url = url.split(m1)[-1]
         url = self.getFullUrl(url)
-        proxy = config.plugins.iptvplayer.solarmovie_proxy.value
-        if proxy != 'None':
-            if proxy == 'proxy_1':
-                proxy = config.plugins.iptvplayer.alternative_proxy1.value
-            else:
-                proxy = config.plugins.iptvplayer.alternative_proxy2.value
-            url = strwithmeta(url, {'iptv_http_proxy':proxy})
-            
-        if url != '':
-            cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance'])
-            url = strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.HEADER['User-Agent']})
+        if url == '': return url
+        proxy = self.getProxy()
+        if proxy != None: url = strwithmeta(url, {'iptv_http_proxy':proxy})
+        cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE, ['PHPSESSID', 'cf_clearance', '__cfduid'])
+        url = strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.HEADER['User-Agent']})
         return url
         
     def selectDomain(self):
@@ -391,15 +353,10 @@ class SolarMovie(CBaseHostClass):
                         if not self.cacheLinks[key][idx]['name'].startswith('*'):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
-                        
-        #sts, data = self.getPage(self.getFullUrl('token'))
-        #if not sts: return []
-        #cookieItem = self.uncensored(data)
         
         params = dict(self.defaultParams)
         params['header'] = dict(self.AJAX_HEADER)
         params['header']['Referer'] = str(videoUrl)
-        #params['cookie_items'] = cookieItem
         
         sts, data = self.getPage(videoUrl[:videoUrl.rfind('/')], params)
         if sts: timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
