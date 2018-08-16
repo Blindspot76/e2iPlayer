@@ -26,6 +26,9 @@ class OfficialFilmIllimite(CBaseHostClass):
         self.DEFAULT_ICON_URL = self.getFullIconUrl('/wp-content/uploads/2016/10/official-film-illimite.png')
         self.cacheLinks = {}
     
+    def getFullUrl(self, url, baseUrl=None):
+        return CBaseHostClass.getFullUrl(self, url.replace('&#038;', '&'), baseUrl)
+    
     def getPage(self, baseUrl, addParams={}, post_data=None):
         return self.cm.getPage(baseUrl, addParams, post_data)
     
