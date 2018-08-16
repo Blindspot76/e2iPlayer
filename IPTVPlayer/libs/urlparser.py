@@ -489,6 +489,10 @@ class urlparser:
                        'vidload.co':           self.pp.parserVIDLOADCO      ,
                        'sportstream365.com':   self.pp.parserSPORTSTREAM365 ,
                        'nxload.com':           self.pp.parserNXLOADCOM      ,
+                       'clickopen.win':        self.pp.parserCLICKOPENWIN   ,
+                       'cloudcartel.net':      self.pp.parserCLOUDCARTELNET ,
+                       'haxhits.com':          self.pp.parserHAXHITSCOM     ,
+                       'jawcloud.co':          self.pp.parserJAWCLOUDCO     ,
                     }
         return
     
@@ -940,12 +944,7 @@ class pageParser:
         self.jscode['jwplayer'] = 'window=this; function stub() {}; function jwplayer() {return {setup:function(){print(JSON.stringify(arguments[0]))}, onTime:stub, onPlay:stub, onComplete:stub, onReady:stub, addButton:stub}}; window.jwplayer=jwplayer;'
         
     def getPageCF(self, baseUrl, addParams = {}, post_data = None):
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url):
-                return url
-            else:
-                return urljoin(baseUrl, url)
-        addParams['cloudflare_params'] = {'domain':urlparser.getDomain(baseUrl), 'cookie_file':addParams['cookiefile'], 'User-Agent':addParams['header']['User-Agent'], 'full_url_handle':_getFullUrl}
+        addParams['cloudflare_params'] = {'cookie_file':addParams['cookiefile'], 'User-Agent':addParams['header']['User-Agent']}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         return sts, data
     
@@ -2317,7 +2316,7 @@ class pageParser:
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>', False)
         for item in tmp:
             url = self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0]
-            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0] 
+            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0]
             if 'video' not in type and 'x-mpeg' not in type: continue
             if url.startswith('/'):
                 url = domain + url[1:]
@@ -10332,3 +10331,135 @@ class pageParser:
                 urlTab[idx]['url'] = urlparser.decorateUrl(urlTab[idx]['url'], {'external_sub_tracks':subTracks})
         
         return urlTab
+        
+    def parserCLICKOPENWIN(self, baseUrl):
+        printDBG('parserCLICKOPENWIN baseUrl[%s]' % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader()
+        if 'Referer' in baseUrl.meta: HTTP_HEADER['Referer'] = baseUrl.meta['Referer']
+        params = {'header' : HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        if str(self.cm.meta['status_code'])[0] == '5':
+            SetIPTVPlayerLastHostError(_('Internal Server Error. Server response code: %s') % self.cm.meta['status_code'])
+        
+        domain = self.cm.getBaseUrl(cUrl)
+        
+        jscode = [self.jscode['jwplayer']]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>')
+        for item in tmp:
+            scriptUrl =  self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''<script[^>]+?src=['"]([^'^"]+?\.js[^'^"]*?)['"]''')[0], domain)
+            if scriptUrl == '':
+                jscode.append(self.cm.ph.getDataBeetwenNodes(item, ('<script', '>'), ('</script', '>'), False)[1])
+            elif 'codes' in scriptUrl:
+                params['header']['Referer'] = cUrl
+                sts, item = self.cm.getPage(scriptUrl, params)
+                if sts: jscode.append(item)
+        
+        urlTab = []
+        jscode = '\n'.join(jscode)
+        ret = iptv_js_execute( jscode )
+        if ret['sts'] and 0 == ret['code']:
+            data = byteify(json.loads(ret['data']))
+            for item in data['sources']:
+                url = item['file']
+                type = item.get('type', '')
+                if type == '': type = url.split('.')[-1].split('?', 1)[0]
+                type = type.lower()
+                label = item['label']
+                if 'mp4' not in type: continue
+                if url == '': continue
+                url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Range':'bytes=0-', 'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+                urlTab.append({'name':'{0} {1}'.format(domain, label), 'url':url})
+        
+        return urlTab
+        
+    def parserCLOUDCARTELNET(self, baseUrl):
+        printDBG('parserCLOUDCARTELNET baseUrl[%s]' % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader()
+        if 'Referer' in baseUrl.meta: HTTP_HEADER['Referer'] = baseUrl.meta['Referer']
+        params = {'header' : HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, params)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        domain = self.cm.getBaseUrl(cUrl)
+        videoId = self.cm.ph.getSearchGroups(baseUrl + '/', '''(?:/video/|/link/)([^/]+?)/''')[0]
+        apiUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''<video[^>]+?poster=['"]([^'^"]+?)['"]''')[0], domain)
+        apiDomain = self.cm.getBaseUrl(apiUrl)
+        
+        url = self.cm.getFullUrl('/download/link/' + videoId, apiDomain)
+        sts, data = self.cm.getPage(url, params)
+        if not sts: return False
+        
+        data = byteify(json.loads(data))
+        if 'mp4' in data['content_type']:
+            return self.cm.getFullUrl(data['url'], apiDomain)
+        
+        return False
+        
+    def parserHAXHITSCOM(self, baseUrl):
+        printDBG("parserHAXHITSCOM baseUrl[%r]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        
+        cUrl = self.cm.getBaseUrl(data.meta['url'])
+        domain = urlparser.getDomain(cUrl)
+        
+        jscode = [self.jscode['jwplayer']]
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item and 'setup' in item:
+                jscode.append(item)
+        urlTab = []
+        jscode = '\n'.join(jscode)
+        ret = iptv_js_execute( jscode )
+        data = byteify(json.loads(ret['data']))
+        for item in data['sources']:
+            url = item['file']
+            type = item.get('type', '')
+            if type == '': type = url.split('.')[-1].split('?', 1)[0]
+            type = type.lower()
+            label = item['label']
+            if 'mp4' not in type: continue
+            if url == '': continue
+            url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            urlTab.append({'name':'{0} {1}'.format(domain, label), 'url':url})
+        return urlTab
+        
+    def parserJAWCLOUDCO(self, baseUrl):
+        printDBG("parserJAWCLOUDCO baseUrl[%r]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'with_metadata':True, 'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        domain = urlparser.getDomain(cUrl)
+        
+        linksTab = []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>', False)
+        for item in data:
+            url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0], domain)
+            type = self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0].lower()
+            if 'video' not in type and 'x-mpeg' not in type: continue
+            if url == '': continue
+            if 'video' in type:
+                linksTab.append({'name':'[%s]' % type, 'url':url})
+            elif 'x-mpeg' in type:
+                linksTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+        return linksTab
+        

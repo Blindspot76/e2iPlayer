@@ -2163,7 +2163,7 @@ class IPTVExtMoviePlayer(Screen):
             create = True
         elif summary == 'auto':
             try:
-                if getDesktop(1).size().width() > 0:
+                if getDesktop(1).size().width() > 132:
                     create = True
             except Exception:
                 pass
