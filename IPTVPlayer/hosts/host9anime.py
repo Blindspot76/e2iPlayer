@@ -2,12 +2,10 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, GetLogoDir, GetCookieDir, byteify, rm, GetPluginDir
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import DecodeGzipped, EncodeGzipped
-import Plugins.Extensions.IPTVPlayer.libs.urlparser as urlparser
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
@@ -17,40 +15,13 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 # FOREIGN import
 ###################################################
 import urlparse
-import time
 import re
 import urllib
-import string
 import random
-import base64
-from copy import deepcopy
 from binascii import hexlify, unhexlify
 from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
-
-try: from cStringIO import StringIO
-except Exception: from StringIO import StringIO 
-import gzip
-
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
-###################################################
-
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
-###################################################
-
-###################################################
-# Config options for HOST
-###################################################
-
-def GetConfigList():
-    optionList = []
-    return optionList
 ###################################################
 
 def gettytul():
@@ -65,7 +36,7 @@ class AnimeTo(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://www6.9anime.is/'
+        self.MAIN_URL = 'https://www8.9anime.is/'
         self.cacheEpisodes = {}
         self.cacheLinks    = {}
         self.cacheFilters  = {}
@@ -234,9 +205,31 @@ class AnimeTo(CBaseHostClass):
         self.setMainUrl(data.meta['url'])
         
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'desc'), ('</div', '>'))[1])
+        jsCode = self._getJsCode(data, data.meta['url'])
+        timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([0-9]+?)['"]''')[0]
+        
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = self.cm.meta['url']
+        
+        id = self.cm.ph.getDataBeetwenNodes(data, ('<', '"player"', '>'), ('<', '>'))[1]
+        id = self.cm.ph.getSearchGroups(id, '''data-id=['"]([^'^"]+?)['"]''')[0]
+        getParams = {}
+        
+        url = self.getFullUrl('/ajax/film/servers/{0}'.format(id))
+        url = self._getUrl(jsCode, url, urllib.urlencode(getParams), timestamp)
+        
+        sts, data = self.getPage(url, params)
+        if not sts: return []
+        
+        try:
+            data = byteify(json.loads(data))['html']
+            printDBG(data)
+        except Exception:
+            printExc()
         
         serverNamesMap = {}
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'servers'), ('</div', '>'))[1]
+        #tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'servers'), ('</div', '>'))[1]
         tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<span', '>', 'data-name'), ('</span', '>'))
         for item in tmp:
             serverName = self.cleanHtmlStr(item)
@@ -246,7 +239,6 @@ class AnimeTo(CBaseHostClass):
         rangesTab = []
         self.cacheEpisodes = {}
         self.cacheLinks  = {}
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'data-name'), ('<script', '>'))[1]
         data = re.compile('''(<div[^>]+?server[^>]+?>)''').split(data)
         for idx in range(1, len(data), 2):  
             if 'episodes' not in data[idx+1]: continue
@@ -345,11 +337,37 @@ class AnimeTo(CBaseHostClass):
             data = ret['data'].strip()
             try:
                 data = byteify(json.loads(data))
-                retUrl = data['url'] + '&' + data['data']
+                retUrl = data['url']
+                if data['data'] != '': retUrl += '&' + data['data']
             except Exception:
                 printExc()
         return retUrl
         
+    def _getJsCode(self, data, cUrl):
+        params = dict(self.defaultParams)
+        params['header'] = dict(self.AJAX_HEADER)
+        params['header']['Referer'] = cUrl
+        
+        allJsScripts = []
+        jsCode = ''
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>', 'all.js'), ('</script', '>'))
+        for item in tmp:
+            jsUrl = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?all\.js(?:\?[^'^"]*?)?)['"]''')[0] )
+            if jsUrl in self.scriptCache:
+                jsCode = self.scriptCache[jsUrl]
+                break
+            allJsScripts.append(jsUrl)
+        
+        if jsCode == '':
+            for item in allJsScripts:
+                sts, tmp = self.getPage(item, params)
+                if not sts: continue
+                if '(window' in tmp:
+                    jsCode = tmp
+                    self.scriptCache[jsCode] = jsCode
+                    break
+        return jsCode
+    
     def getVideoLinks(self, videoUrl):
         printDBG("AnimeTo.getVideoLinks [%s]" % videoUrl)
         baseUrl  = str(videoUrl)
@@ -384,24 +402,7 @@ class AnimeTo(CBaseHostClass):
             timestamp = self.cm.ph.getSearchGroups(data, '''data-ts=['"]([^"^']+?)['"]''')[0]
         
         cUrl = data.meta['url']
-        allJsScripts = []
-        jsCode = ''
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>', 'all.js'), ('</script', '>'))
-        for item in tmp:
-            jsUrl = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?all\.js(?:\?[^'^"]*?)?)['"]''')[0] )
-            if jsUrl in self.scriptCache:
-                jsCode = self.scriptCache[jsUrl]
-                break
-            allJsScripts.append(jsUrl)
-        
-        if jsCode == '':
-            for item in allJsScripts:
-                sts, tmp = self.getPage(item, params)
-                if not sts: continue
-                if '(window' in tmp:
-                    jsCode = tmp
-                    self.scriptCache[jsCode] = jsCode
-                    break
+        jsCode = self._getJsCode(data, cUrl)
 
         if False:
             getParams = {'id':videoUrl.meta.get('id', ''), 'Q':'1'}
