@@ -12,6 +12,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 try:    import json
 except Exception: import simplejson as json
 from binascii import hexlify
+import threading
 
 LAST_HTTP_ERROR_CODE =  -1
 LAST_HTTP_ERROR_DATA =  ''
@@ -92,6 +93,25 @@ class Jddevice:
     def __action_url(self):
         return "/t_"+self.myjd.get_session_token()+"_"+self.device_id
 
+def decrypt(secret_token, data):
+    iv = secret_token[:len(secret_token)//2]
+    key = secret_token[len(secret_token)//2:]
+    
+    cipher = AES_CBC(key=key, keySize=16)
+    decrypted_data = cipher.decrypt(base64.b64decode(data), iv).strip()
+    
+    return decrypted_data
+
+def encrypt(secret_token, data):
+    data = data.encode('utf-8')
+    iv = secret_token[:len(secret_token)//2]
+    key = secret_token[len(secret_token)//2:]
+    
+    cipher = AES_CBC(key=key, keySize=16)
+    encrypted_data = base64.b64encode(cipher.encrypt(data, iv)) 
+    
+    return encrypted_data
+
 class Myjdapi:
     def __init__(self):
         self._request_id = int(time.time()*1000)
@@ -148,23 +168,10 @@ class Myjdapi:
         return signature.hexdigest()
     
     def _decrypt(self, secret_token, data):
-        iv = secret_token[:len(secret_token)//2]
-        key = secret_token[len(secret_token)//2:]
-        
-        cipher = AES_CBC(key=key, keySize=16)
-        decrypted_data = cipher.decrypt(base64.b64decode(data), iv).strip()
-        
-        return decrypted_data
+        return decrypt(secret_token, data)
 
-    def _encrypt(self,secret_token,data):
-        data = data.encode('utf-8')
-        iv = secret_token[:len(secret_token)//2]
-        key = secret_token[len(secret_token)//2:]
-        
-        cipher = AES_CBC(key=key, keySize=16)
-        encrypted_data = base64.b64encode(cipher.encrypt(data, iv)) 
-        
-        return encrypted_data
+    def _encrypt(self, secret_token, data):
+        return encrypt(secret_token, data)
 
     def update_request_id(self):
         self._request_id = int(time.time())
@@ -285,7 +292,9 @@ class MyjdRequestHandler(BaseHTTPRequestHandler):
         if idx > 0:
             self.raw_requestline =  self.raw_requestline[idx:]
         if idx == -1:
-            raise Exception("Wrong request %s..." % self.raw_requestline[:256])
+            printDBG("Wrong request %s..." % self.raw_requestline[:256])
+            #sys.exit(-1)
+            #raise Exception("Wrong request %s..." % self.raw_requestline[:256])
         return BaseHTTPRequestHandler.parse_request(self)
     
     def _set_headers(self, returnCode=200, addHeaders=[]):
@@ -317,7 +326,7 @@ class MyjdRequestHandler(BaseHTTPRequestHandler):
         encryption_token = new_token.digest()
         
         printDBG("SESSION TOKEN: %s" % session_token)
-        data = jd._decrypt(encryption_token, self.data_string)
+        data = decrypt(encryption_token, self.data_string)
 
         printDBG("ENCRYPTED_DATA [%s]: %s" % (len(self.data_string), self.data_string))
         printDBG("DECRYPTED_DATA [%s]: %s" % (len(data), data))
@@ -343,10 +352,11 @@ class MyjdRequestHandler(BaseHTTPRequestHandler):
             else:
                 return_data = []
         elif data['url'] == '/events/subscribe':
-            return_data = {"subscriptionid" : int(time.time()*1000), "subscribed" : True, "subscriptions" : None,  "exclusions" : None,  "maxPolltimeout" : 25000, "maxKeepalive" : 120000}
+            return_data = {"subscriptionid" : jd.subscription_id, "subscribed" : True, "subscriptions" : None,  "exclusions" : None,  "maxPolltimeout" : 25000, "maxKeepalive" : 120000}
             jd.captcha_notified = False
         elif data['url'] == '/events/setsubscription':
-            return_data = {'maxKeepalive': 120000, 'subscribed': True, 'subscriptions': ['^downloads', '^extraction', '^linkcrawler', '^dialogs', '^captchas', '^downloadwatchdog'], 'maxPolltimeout': 25000, 'subscriptionid': data['params'][0], 'exclusions': ['REFRESH_CONTENT']}
+            #'^downloads', '^extraction', '^linkcrawler', '^dialogs', '^downloadwatchdog'
+            return_data = {'maxKeepalive': 120000, 'subscribed': True, 'subscriptions': ['^captchas'], 'maxPolltimeout': 25000, 'subscriptionid': data['params'][0], 'exclusions': ['REFRESH_CONTENT']}
             jd.captcha_notified = False
         elif data['url'] == '/linkcrawler/isCrawling':
             return_data = False
@@ -357,11 +367,13 @@ class MyjdRequestHandler(BaseHTTPRequestHandler):
         elif data['url'] == '/polling/poll':
             return_data = [{'eventName': 'jdState', 'eventData': {'data': 'IDLE'}}, {'eventName': 'aggregatedNumbers', 'eventData': {'data': {'crawledPackageCount': 0, 'downloadSpeed': 0, 'crawledStatusUnknown': 0, 'crawledStatusOnline': 0, 'crawledLinksCount': 0, 'packageCount': 0, 'linksCount': 0, 'connections': 0, 'running': 0, 'eta': 0, 'crawledStatusOffline': 0, 'totalBytes': 0, 'totalCrawledBytes': 0, 'loadedBytes': 0}}}]
         elif data['url'] == '/events/listen':
-            return_data = []
-            if jd.captcha_result == None and jd.captcha_notified == False:
+            return_data = ''
+            #if jd.captcha_result == None and jd.captcha_notified == False:
+            if jd.captcha_result == None:
                 return_data = [{'eventid': 'NEW', 'eventData': jd.captcha_data['id'], 'publisher': 'captchas'}]
                 jd.captcha_notified = True
-            elif jd.captcha_result !=  None:
+            #elif jd.captcha_result !=  None:
+            else:
                 return_data = [{"eventid" : "DONE", "eventData" : jd.captcha_data['id'], "publisher" : "captchas"}]
                 jd.captcha_finished = True
 
@@ -411,10 +423,29 @@ class MyjdRequestHandler(BaseHTTPRequestHandler):
         return_data = '''{"data" : %s, "rid" : %s}''' % (json.dumps(return_data), data['rid'])
 
         printDBG('RETURN DATA: %s' % return_data)
-        self.wfile.write(jd._encrypt(encryption_token, return_data))
+        self.wfile.write(encrypt(encryption_token, return_data))
         return
 
 ##################################
+def PoolConnection(*args, **kwargs):
+    parameters = kwargs['params']
+    printDBG("START THREAD")
+    while not parameters.captcha_finished:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(('api.jdownloader.org', 80))
+            s.send("DEVICE%s" % parameters.session_token)
+            
+            tmp = MyjdRequestHandler(s, (None, None), parameters)
+            s.close()
+        except Exception:
+            printExc()
+
+class Params:
+    def get_device_secret(self):
+        return self.device_secret
+    pass
+
 if __name__ == "__main__":
     if len(sys.argv) != 7:
         sys.stderr.write('Wrong parameters\n')
@@ -434,52 +465,70 @@ if __name__ == "__main__":
     hash = hashlib.sha256()
     hash.update(LOGIN + JDNAME)
     DEVICEID = hexlify(hash.digest()[:16])
-    
+    SUBSCRIPTION_ID = int(time.time()*1000)
     DEBUGE = int(sys.argv[6])
     returnCode = 0
+    
+    parameters = Params()
+    parameters.captcha_finished = False
+    parameters.captcha_result = None
+    parameters.captcha_notified = False
+    parameters.captcha_data = CAPTCHA_DATA
+    parameters.subscription_id = SUBSCRIPTION_ID
+    
+    
     try:
-        while True:
-            updateStatus('status', "Connecting to server")
+        jd = None
 
-            jd = Myjdapi()
-            jd.set_app_key(APP_KEY)
-            jd.connect(LOGIN, PASSWORD)
+        updateStatus('status', "Connecting to server")
 
-            response = jd.request_api("/my/binddevice", "GET", [("sessiontoken", jd.get_session_token()), ("deviceID", DEVICEID), ("type", "jd"), ("name", JDNAME)])
+        jd = Myjdapi()
+        jd.set_app_key(APP_KEY)
+        jd.connect(LOGIN, PASSWORD)
+
+        response = jd.request_api("/my/binddevice", "GET", [("sessiontoken", jd.get_session_token()), ("deviceID", DEVICEID), ("type", "jd"), ("name", JDNAME)])
+        printDBG(response)
+        jd.update_request_id()
+
+        response = jd.request_api("/my/captchas/isEnabled", "GET",[("sessiontoken", jd.get_session_token())])
+        printDBG(response)
+        jd.update_request_id()
+
+        response = jd.request_api("/notify/list", "GET",[("sessiontoken", jd.get_session_token())])
+        printDBG(response)
+        jd.update_request_id()
+        parameters.device_secret = jd.get_device_secret()
+        parameters.session_token = jd.get_session_token()
+        
+        updateStatus('status', "Waiting for client connection")
+        if True:
+            threads = [None, None, None] #None, None, None
+            for i in range(len(threads)):
+                threads[i] = threading.Thread(target = PoolConnection, name = 'PoolConnection %d' % i, kwargs = {'params':parameters})
+                threads[i].daemon = True 
+                threads[i].start()
+        
+        while not parameters.captcha_finished:
+            # send keep alive to server
+            time.sleep(2)
+            response = jd.request_api("/my/keepalive", "GET",[("sessiontoken", jd.get_session_token())])
             printDBG(response)
+            printDBG(response['rid'])
             jd.update_request_id()
 
-            #response = jd.request_api("/my/captchas/isEnabled", "GET",[("sessiontoken", jd.get_session_token())])
-            #printDBG(response)
-            #jd.update_request_id()
-
-            #response = jd.request_api("/notify/list", "GET",[("sessiontoken", jd.get_session_token())])
-            #printDBG(response)
-            #jd.update_request_id()
-
-            jd.captcha_finished = False
-            jd.captcha_result = None
-            jd.captcha_notified = False
-            jd.captcha_data = CAPTCHA_DATA
-
-            try:
-                updateStatus('status', "Waiting for client connection")
-                while jd.captcha_finished == False:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    s.connect(('api.jdownloader.org', 80)) # 88.99.115.46
-                    s.send("DEVICE%s" % jd.get_session_token())
-                    tmp = MyjdRequestHandler(s, (None, None), jd)
-                    s.close()
-            except Exception as e:
-                printExc(str(e))
-                continue
-
-            updateStatus('captcha_result', jd.captcha_result)
-            break
+        updateStatus('captcha_result', parameters.captcha_result)
+        
+        try:
+            if jd:
+                jd.disconnect()
+        except Exception:
+            pass
     except MYJDException as e:
         updateStatus('error', str(e), LAST_HTTP_ERROR_CODE)
         printExc()
         returnCode = -1
+    except KeyboardInterrupt as e:
+        raise e
     except Exception:
         updateStatus('error', '', LAST_HTTP_ERROR_CODE)
         printExc()
