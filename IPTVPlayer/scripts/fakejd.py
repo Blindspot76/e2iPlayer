@@ -275,11 +275,15 @@ class MyjdRequestHandler(BaseHTTPRequestHandler):
     
     def parse_request(self):
         idx = -1
-        for i in range(0, len(self.raw_requestline)):
-            if self.raw_requestline[i] in "GPH":
+        for i in range(len(self.raw_requestline)):
+            if self.raw_requestline[i:i+4] == 'POST':
                 idx = i
-                self.raw_requestline =  self.raw_requestline[idx:]
                 break
+            elif self.raw_requestline[i:i+3] == 'GET':
+                idx = i
+                break
+        if idx > 0:
+            self.raw_requestline =  self.raw_requestline[idx:]
         if idx == -1:
             raise Exception("Wrong request %s..." % self.raw_requestline[:256])
         return BaseHTTPRequestHandler.parse_request(self)

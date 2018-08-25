@@ -98,7 +98,7 @@ class UnCaptchaReCaptchaMyJDWidget(Screen):
             self["console"].setText(_('JDownloader script finished.'))
             self.close(self.result)
         elif not self.errorCodeSet:
-            self["console"].setText(_("JDownloader script execution failed.\nError code: %s\n") % (line['code']))
+            self["console"].setText(_("JDownloader script execution failed.\nError code: %s\n") % (code))
             
     def _scriptStderrAvail(self, data):
         self.workconsole['stderr'] += data
@@ -161,7 +161,7 @@ class UnCaptchaReCaptchaMyJDWidget(Screen):
         self.workconsole['close_conn'] = eConnectCallback(self.workconsole['console'].appClosed, self._scriptClosed)
         self.workconsole['stderr_conn']  = eConnectCallback(self.workconsole['console'].stderrAvail, self._scriptStderrAvail)
         self.workconsole['stdout_conn']  = eConnectCallback(self.workconsole['console'].stdoutAvail, self._scriptStdoutAvail)
-        self.workconsole["console"].execute( E2PrioFix( cmd, 1 ) )
+        self.workconsole["console"].execute( E2PrioFix( cmd, 0 ) )
         printDBG(">>> EXEC CMD [%s]" % cmd)
     
     def onStart(self):
