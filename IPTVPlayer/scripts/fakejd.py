@@ -8,13 +8,12 @@ import urllib2
 import base64
 import sys
 import traceback
-from Crypto.Cipher import AES
 from BaseHTTPServer import BaseHTTPRequestHandler
 try:    import json
 except Exception: import simplejson as json
 from binascii import hexlify
 
-LAST_HTTP_ERROR_CODE =  0
+LAST_HTTP_ERROR_CODE =  -1
 LAST_HTTP_ERROR_DATA =  ''
 
 def updateStatus(type, data, code=None):
@@ -75,13 +74,6 @@ def getPage(url, headers={}, post_data=None):
 
 class MYJDException(BaseException):
     pass
-
-def PAD(s):
-    BS = 16
-    return s + (BS - len(s) % BS) * chr(BS - len(s) % BS)
-
-def UNPAD(s):
-    return s[0:-ord(s[-1])]
 
 class Jddevice:
     def __init__(self, jd, device_dict):
@@ -155,20 +147,24 @@ class Myjdapi:
         signature = hmac.new(key, data.encode('utf-8'), hashlib.sha256)
         return signature.hexdigest()
     
-    def _decrypt(self,secret_token,data):
-        init_vector = secret_token[:len(secret_token)//2]
+    def _decrypt(self, secret_token, data):
+        iv = secret_token[:len(secret_token)//2]
         key = secret_token[len(secret_token)//2:]
-        decryptor = AES.new(key, AES.MODE_CBC, init_vector)
-        decrypted_data = UNPAD(decryptor.decrypt(base64.b64decode(data)))
+        
+        cipher = AES_CBC(key=key, keySize=16)
+        decrypted_data = cipher.decrypt(base64.b64decode(data), iv).strip()
+        
         return decrypted_data
 
     def _encrypt(self,secret_token,data):
-        data = PAD(data.encode('utf-8'))
-        init_vector = secret_token[:len(secret_token)//2]
+        data = data.encode('utf-8')
+        iv = secret_token[:len(secret_token)//2]
         key = secret_token[len(secret_token)//2:]
-        encryptor = AES.new(key, AES.MODE_CBC, init_vector)
-        encrypted_data = base64.b64encode(encryptor.encrypt(data))
-        return encrypted_data.decode('utf-8')
+        
+        cipher = AES_CBC(key=key, keySize=16)
+        encrypted_data = base64.b64encode(cipher.encrypt(data, iv)) 
+        
+        return encrypted_data
 
     def update_request_id(self):
         self._request_id = int(time.time())
@@ -416,22 +412,26 @@ class MyjdRequestHandler(BaseHTTPRequestHandler):
 
 ##################################
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
+    if len(sys.argv) != 7:
         sys.stderr.write('Wrong parameters\n')
         sys.exit(1)
-
+        
+    libsPath   = sys.argv[1]
+    sys.path.insert(1, libsPath)
+    from crypto.cipher.aes_cbc import AES_CBC
+        
     APP_KEY = "JD_api_39100"
-    LOGIN = sys.argv[1]
-    PASSWORD = sys.argv[2]
-    JDNAME = "IPTVPlayer@" + sys.argv[3]
-    CAPTCHA_DATA = json.loads(base64.b64decode(sys.argv[4]))
+    LOGIN = sys.argv[2]
+    PASSWORD = sys.argv[3]
+    JDNAME = "IPTVPlayer@" + sys.argv[4]
+    CAPTCHA_DATA = json.loads(base64.b64decode(sys.argv[5]))
     CAPTCHA_DATA['id'] = int(time.time()*1000)
 
     hash = hashlib.sha256()
     hash.update(LOGIN + JDNAME)
     DEVICEID = hexlify(hash.digest()[:16])
     
-    DEBUGE = int(sys.argv[5])
+    DEBUGE = int(sys.argv[6])
     returnCode = 0
     try:
         while True:

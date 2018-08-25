@@ -4,7 +4,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIconDir, eConnectCallback, byteify, E2PrioFix, GetPyScriptCmd, getDebugMode
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIconDir, eConnectCallback, byteify, E2PrioFix, GetPyScriptCmd, getDebugMode, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
 ###################################################
@@ -74,8 +74,7 @@ class UnCaptchaReCaptchaMyJDWidget(Screen):
         
         self.timer = {'timer':eTimer(), 'is_started':False}
         self.timer['callback_conn'] = eConnectCallback(self.timer['timer'].timeout, self._timoutCallback)
-        
-        
+        self.errorCodeSet = False
         
     def _timoutCallback(self):
         self.timer['is_started'] = False
@@ -96,9 +95,11 @@ class UnCaptchaReCaptchaMyJDWidget(Screen):
     
     def _scriptClosed(self, code=0):
         if code == 0:
-            self["console"].setText(_('Script finished.'))
+            self["console"].setText(_('JDownloader script finished.'))
             self.close(self.result)
-    
+        elif not self.errorCodeSet:
+            self["console"].setText(_("JDownloader script execution failed.\nError code: %s\n") % (line['code']))
+            
     def _scriptStderrAvail(self, data):
         self.workconsole['stderr'] += data
         self.workconsole['stderr'] = self.workconsole['stderr'].split('\n')
@@ -127,6 +128,7 @@ class UnCaptchaReCaptchaMyJDWidget(Screen):
                         self["console"].setText(_('Access denied. Please check password.'))
                     else:
                         self["console"].setText(_("Error code: %s\nError message: %s") % (line['code'], line['data']))
+                    self.errorCodeSet = True
             except Exception:
                 printExc()
         self.workconsole['stderr'] = data
@@ -151,15 +153,16 @@ class UnCaptchaReCaptchaMyJDWidget(Screen):
         if getDebugMode() == '': debug = 0
         else: debug = 1
         
-        cmd = GetPyScriptCmd('fakejd') + ' "%s" "%s" "%s" "%s" %d' % (login, password, jdname, captcha, debug)
+        cmd = GetPyScriptCmd('fakejd') + ' "%s" "%s" "%s" "%s" "%s" %d' % (GetPluginDir('libs/'), login, password, jdname, captcha, debug)
         
-        self["console"].setText(_('My JDownloader execution'))
+        self["console"].setText(_('JDownloader script execution'))
         
         self.workconsole['console']    = eConsoleAppContainer()
         self.workconsole['close_conn'] = eConnectCallback(self.workconsole['console'].appClosed, self._scriptClosed)
         self.workconsole['stderr_conn']  = eConnectCallback(self.workconsole['console'].stderrAvail, self._scriptStderrAvail)
         self.workconsole['stdout_conn']  = eConnectCallback(self.workconsole['console'].stdoutAvail, self._scriptStdoutAvail)
         self.workconsole["console"].execute( E2PrioFix( cmd, 1 ) )
+        printDBG(">>> EXEC CMD [%s]" % cmd)
     
     def onStart(self):
         self.onShown.remove(self.onStart)
