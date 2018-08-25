@@ -186,6 +186,10 @@ config.plugins.iptvplayer.alternative_proxy2 = ConfigText(default = "http://user
 config.plugins.iptvplayer.api_key_9kweu = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.api_key_2captcha = ConfigText(default = "", fixed_size = False)
 
+config.plugins.iptvplayer.myjd_login = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.myjd_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.myjd_jdname = ConfigText(default = "", fixed_size = False)
+
 # Update
 config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = True)
 config.plugins.iptvplayer.updateLastCheckedVersion = ConfigText(default = "00.00.00.00", fixed_size = False)
@@ -362,10 +366,17 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry(_("    Audio buffer size [KB]"), config.plugins.iptvplayer.requestedAudioBuffSize))
             list.append(getConfigListEntry(_("Buffer path"), config.plugins.iptvplayer.bufferingPath))
             
-        list.append(getConfigListEntry(_("Records path"), config.plugins.iptvplayer.NaszaSciezka))           
+        list.append(getConfigListEntry(_("Records path"), config.plugins.iptvplayer.NaszaSciezka))
         list.append(getConfigListEntry(_("Start download manager per default"), config.plugins.iptvplayer.IPTVDMRunAtStart))
         list.append(getConfigListEntry(_("Show download manager after adding new item"), config.plugins.iptvplayer.IPTVDMShowAfterAdd))
         list.append(getConfigListEntry(_("Number of downloaded files simultaneously"), config.plugins.iptvplayer.IPTVDMMaxDownloadItem))
+        
+        list.append(getConfigListEntry(_("My JDownloader e-mail"), config.plugins.iptvplayer.myjd_login))
+        list.append(getConfigListEntry(_("My JDownloader password"), config.plugins.iptvplayer.myjd_password))
+        list.append(getConfigListEntry(_("My JDownloader device name"), config.plugins.iptvplayer.myjd_jdname))
+        
+        list.append(getConfigListEntry(_("%s API KEY") % 'https://9kw.eu/', config.plugins.iptvplayer.api_key_9kweu))
+        list.append(getConfigListEntry(_("%s API KEY") % 'http://2captcha.com/', config.plugins.iptvplayer.api_key_2captcha))
         
         list.append(getConfigListEntry(_("Use subtitles parser extension if available"), config.plugins.iptvplayer.useSubtitlesParserExtension))
         list.append(getConfigListEntry("http://opensubtitles.org/ " + _("login"), config.plugins.iptvplayer.opensuborg_login))
@@ -378,10 +389,6 @@ class ConfigMenu(ConfigBaseWidget):
         
         list.append(getConfigListEntry("http://1fichier.com/ " + _("e-mail"), config.plugins.iptvplayer.fichiercom_login))
         list.append(getConfigListEntry("http://1fichier.com/ " + _("password"), config.plugins.iptvplayer.fichiercom_password))
-        
-        list.append(getConfigListEntry(_("%s API KEY") % 'https://9kw.eu/', config.plugins.iptvplayer.api_key_9kweu))
-        list.append(getConfigListEntry(_("%s API KEY") % 'http://2captcha.com/', config.plugins.iptvplayer.api_key_2captcha))
-        
         
         players = []
         bufferingMode = config.plugins.iptvplayer.buforowanie.value or config.plugins.iptvplayer.buforowanie_m3u8.value or config.plugins.iptvplayer.buforowanie_rtmp.value

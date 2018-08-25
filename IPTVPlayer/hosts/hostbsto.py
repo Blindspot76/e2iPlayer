@@ -14,6 +14,7 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_9kw import UnCaptchaReCaptcha as UnCaptchaReCaptcha_9kw
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_2captcha import UnCaptchaReCaptcha as UnCaptchaReCaptcha_2captcha
+from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_myjd import UnCaptchaReCaptcha as UnCaptchaReCaptcha_myjd
 ###################################################
 
 ###################################################
@@ -182,6 +183,7 @@ class BSTO(CBaseHostClass):
             for link in item:
                 name = self.cleanHtmlStr(link)
                 url  = self.getFullUrl(self.cm.ph.getSearchGroups(link, '''href=['"]([^'^"]+?)['"]''')[0])
+                if name == '': name = url.rsplit('/', 1)[-1]
                 self.cacheLinks[key].append({'name':name, 'url':strwithmeta(url, {'links_key':key}), 'need_resolve':1})
             if len(self.cacheLinks[key]):
                 params = dict(cItem)
@@ -293,6 +295,15 @@ class BSTO(CBaseHostClass):
             url = data.meta['url']
             
             if url == prevUrl:
+                query = {}
+                tmp = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>'), ('</form', '>'), False)[1]
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<input', '>', False)
+                for item in tmp:
+                    name = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''')[0]
+                    value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''')[0]
+                    if name != '':
+                        query[name] = value
+                
                 sitekey = self.cm.ph.getSearchGroups(data, '''['"]sitekey['"]\s*?:\s*?['"]([^'^"]+?)['"]''')[0]
                 if sitekey != '' and 'bitte das Captcha' in data:
                     errorMsgTab = [_('Link protected with google recaptcha v2.')]
@@ -301,11 +312,16 @@ class BSTO(CBaseHostClass):
                         recaptcha = UnCaptchaReCaptcha_9kw()
                     elif config.plugins.iptvplayer.bsto_bypassrecaptcha.value == '2captcha.com':
                         recaptcha = UnCaptchaReCaptcha_2captcha()
+                    elif config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
+                        recaptcha = UnCaptchaReCaptcha_myjd()
                     
-                    if recaptcha != None:
+                    if recaptcha == None:
+                        errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to workaround this.'))
+                        self.sessionEx.open(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
+                    else:
                         token = recaptcha.processCaptcha(sitekey, prevUrl)
                         if token != '':
-                            sts, data = self.cm.getPage(url + '?token=' + token, self.defaultParams)
+                            sts, data = self.cm.getPage(url + '?t=%s&s=%s' % (token, query.get('s', '')), self.defaultParams)
                             if not sts: return []
                             url = data.meta['url']
             
