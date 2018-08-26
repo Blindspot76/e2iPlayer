@@ -24,10 +24,12 @@ class UnCaptchaReCaptcha:
         self.sessionEx = MainSessionWrapper() 
         self.COOKIE_FILE = GetCookieDir('google.cookie')
         
-    def processCaptcha(self, key):
+    def processCaptcha(self, key, referer=None):
         post_data = None
         token = ''
         iteration = 0
+        if referer != None:
+            self.HTTP_HEADER['Referer'] = referer
         reCaptchaUrl = 'http://www.google.com/recaptcha/api/fallback?k=%s' % (key)
         while iteration < 20:
             #,'cookiefile':self.COOKIE_FILE, 'use_cookie': True, 'load_cookie': True, 'save_cookie':True

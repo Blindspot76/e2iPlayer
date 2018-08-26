@@ -4,8 +4,10 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_myjd import UnCaptchaReCaptcha as UnCaptchaReCaptcha_myjd
+from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha as  UnCaptchaReCaptcha_fallback
 ###################################################
 
 ###################################################
@@ -52,9 +54,9 @@ class CineTO(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'cine.to', 'cookie':'cine.to.cookie'})
         self.DEFAULT_ICON_URL = 'https://cine.to/opengraph.jpg'
-        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.USER_AGENT = 'Mozilla / 5.0 (SMART-TV; Linux; Tizen 2.4.0) AppleWebkit / 538.1 (KHTML, podobnie jak Gecko) SamsungBrowser / 1.1 TV Safari / 538.1'
         self.MAIN_URL = 'https://cine.to/'
-        self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
+        self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
         
@@ -359,14 +361,48 @@ class CineTO(CBaseHostClass):
                             self.cacheLinks[key][idx]['name'] = '*' + self.cacheLinks[key][idx]['name']
                         break
         
+        returnCode = 200
+        errorMsgTab = []
         sts, data = self.getPage(videoUrl)
         if sts: 
             videoUrl = data.meta['url']
+            
+            if 1 != self.up.checkHostSupport(videoUrl) and 'gcaptchaSetup' in data:
+                sitekey = self.cm.ph.getSearchGroups(data, '''gcaptchaSetup\s*?\(\s*?['"]([^'^"]+?)['"]''')[0]
+                if sitekey != '':
+                    errorMsgTab = [_('Link protected with google recaptcha v2.')]
+                    
+                    recaptcha = UnCaptchaReCaptcha_fallback()
+                    token = recaptcha.processCaptcha(sitekey, self.cm.meta['url'])
+                    token = ''
+                    if token == '':
+                        recaptcha = None
+                        if config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
+                            recaptcha = UnCaptchaReCaptcha_myjd()
+                        token = recaptcha.processCaptcha(sitekey, self.cm.meta['url'])
+                    
+                    if recaptcha == None and token == '':
+                        errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to workaround this.'))
+                        self.sessionEx.open(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
+                    
+                    if token != '':
+                        params = MergeDicts(self.defaultParams, {'max_data_size':0})
+                        params['header'] = MergeDicts(params['header'] , {'Referer':self.cm.meta['url']})
+                        sts, data = self.getPage(videoUrl + '?token=' + token, params)
+                        if sts: videoUrl = self.cm.meta['url']
+            returnCode = self.cm.meta.get('status_code', 200)
             urlTab = self.up.getVideoLinkExt(videoUrl)
-            if 0 == len(urlTab) and 'gcaptchaSetup' in data:
-                SetIPTVPlayerLastHostError(_('Link protected with google recaptcha v2.'))
         else:
+            returnCode = self.cm.meta.get('status_code', 200)
             urlTab = self.up.getVideoLinkExt(videoUrl)
+        
+        if 0 == len(urlTab):
+            if returnCode == 404:
+                errorMsgTab= [_("Server return 404 - Not Found.")]
+                errorMsgTab.append(_("It looks like some kind of protection. Try again later."))
+            
+            if len(errorMsgTab):
+                SetIPTVPlayerLastHostError('\n'.join(errorMsgTab)) 
         
         return urlTab
         
