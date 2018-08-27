@@ -379,7 +379,8 @@ class CineTO(CBaseHostClass):
                         recaptcha = None
                         if config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
                             recaptcha = UnCaptchaReCaptcha_myjd()
-                        token = recaptcha.processCaptcha(sitekey, self.cm.meta['url'])
+                        if recaptcha != None:
+                            token = recaptcha.processCaptcha(sitekey, self.cm.meta['url'])
                     
                     if recaptcha == None and token == '':
                         errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to workaround this.'))
