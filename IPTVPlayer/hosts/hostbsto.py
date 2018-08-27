@@ -15,6 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_9kw import UnCaptchaReCaptcha as UnCaptchaReCaptcha_9kw
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_2captcha import UnCaptchaReCaptcha as UnCaptchaReCaptcha_2captcha
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_myjd import UnCaptchaReCaptcha as UnCaptchaReCaptcha_myjd
+from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha as  UnCaptchaReCaptcha_fallback
 ###################################################
 
 ###################################################
@@ -49,8 +50,8 @@ config.plugins.iptvplayer.api_key_9kweu = ConfigText(default = "", fixed_size = 
 config.plugins.iptvplayer.api_key_2captcha = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.bsto_linkcache = ConfigYesNo(default = True)
 config.plugins.iptvplayer.bsto_bypassrecaptcha = ConfigSelection(default = "None", choices = [("None",        _("None")),
-                                                                                             ("9kw.eu",       "https://9kw.eu/"),
-                                                                                             ("2captcha.com", "http://2captcha.com/")])
+                                                                                              ("9kw.eu",       "https://9kw.eu/"),
+                                                                                              ("2captcha.com", "http://2captcha.com/")])
 
 def GetConfigList():
     optionList = []
@@ -307,23 +308,29 @@ class BSTO(CBaseHostClass):
                 sitekey = self.cm.ph.getSearchGroups(data, '''['"]sitekey['"]\s*?:\s*?['"]([^'^"]+?)['"]''')[0]
                 if sitekey != '' and 'bitte das Captcha' in data:
                     errorMsgTab = [_('Link protected with google recaptcha v2.')]
-                    recaptcha = None
-                    if config.plugins.iptvplayer.bsto_bypassrecaptcha.value == '9kw.eu':
-                        recaptcha = UnCaptchaReCaptcha_9kw()
-                    elif config.plugins.iptvplayer.bsto_bypassrecaptcha.value == '2captcha.com':
-                        recaptcha = UnCaptchaReCaptcha_2captcha()
-                    elif config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
-                        recaptcha = UnCaptchaReCaptcha_myjd()
                     
-                    if recaptcha == None:
-                        errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to workaround this.'))
-                        self.sessionEx.open(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
-                    else:
-                        token = recaptcha.processCaptcha(sitekey, prevUrl)
-                        if token != '':
-                            sts, data = self.cm.getPage(url + '?t=%s&s=%s' % (token, query.get('s', '')), self.defaultParams)
-                            if not sts: return []
-                            url = data.meta['url']
+                    recaptcha = UnCaptchaReCaptcha_fallback()
+                    token = recaptcha.processCaptcha(sitekey, self.cm.meta['url'])
+                    if token == '':
+                        recaptcha = None
+                        if config.plugins.iptvplayer.bsto_bypassrecaptcha.value == '9kw.eu':
+                            recaptcha = UnCaptchaReCaptcha_9kw()
+                        elif config.plugins.iptvplayer.bsto_bypassrecaptcha.value == '2captcha.com':
+                            recaptcha = UnCaptchaReCaptcha_2captcha()
+                        elif config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
+                            recaptcha = UnCaptchaReCaptcha_myjd()
+                        
+                        if recaptcha == None:
+                            errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to redirect this task to the external device.'))
+                            self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
+                            errorMsgTab.append(_(' or '))
+                            errorMsgTab.append(_('You can use \"%s\" or \"%s\" services for automatic solution.') % ("http://2captcha.com/", "https://9kw.eu/", )) + ' ' + _('Go to the host configuration available under blue button.')
+                        else:
+                            token = recaptcha.processCaptcha(sitekey, prevUrl)
+                            if token != '':
+                                sts, data = self.cm.getPage(url + '?t=%s&s=%s' % (token, query.get('s', '')), self.defaultParams)
+                                if not sts: return []
+                                url = data.meta['url']
             
             if 1 != self.up.checkHostSupport(url):
                 url  = baseUrl.replace('/out/', '/watch/')[1:]

@@ -24,9 +24,10 @@ from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
-from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_9kw import UnCaptchaReCaptcha as UnCaptchaReCaptcha_9kw
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_2captcha import UnCaptchaReCaptcha as UnCaptchaReCaptcha_2captcha
+from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_myjd import UnCaptchaReCaptcha as UnCaptchaReCaptcha_myjd
+from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha as  UnCaptchaReCaptcha_fallback
 ###################################################
 
 
@@ -441,7 +442,7 @@ class MRPiracyGQ(CBaseHostClass):
 
                 if 'sitekey' in playerData:
                     errorMsgTab = [_('Link protected with google recaptcha v2.')]
-                    recaptcha = UnCaptchaReCaptcha(lang=GetDefaultLang())
+                    recaptcha = UnCaptchaReCaptcha_fallback(lang=GetDefaultLang())
                     recaptcha.HTTP_HEADER['Referer'] = playerData['ref_url']
                     recaptcha.HTTP_HEADER['User-Agent'] = self.USER_AGENT
                     token = recaptcha.processCaptcha(playerData['sitekey'])
@@ -451,12 +452,16 @@ class MRPiracyGQ(CBaseHostClass):
                             recaptcha = UnCaptchaReCaptcha_9kw()
                         elif config.plugins.iptvplayer.mrpiracy_bypassrecaptcha.value == '2captcha.com':
                             recaptcha = UnCaptchaReCaptcha_2captcha()
+                        elif config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
+                            recaptcha = UnCaptchaReCaptcha_myjd()
                         
                         if recaptcha != None:
                             token = recaptcha.processCaptcha(playerData['sitekey'], playerData['ref_url'])
                         else:
-                            errorMsgTab.append(_('You can use \"%s\" or \"%s\" services to workaround this protection.') % ("http://2captcha.com/", "https://9kw.eu/", )) 
-                            errorMsgTab.append(_('Go to the host configuration available under blue button.'))
+                            errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to redirect this task to the external device.'))
+                            self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
+                            errorMsgTab.append(_(' or '))
+                            errorMsgTab.append(_('You can use \"%s\" or \"%s\" services for automatic solution.') % ("http://2captcha.com/", "https://9kw.eu/", )) + ' ' + _('Go to the host configuration available under blue button.')
                     
                     printDBG('> token "%s" ' % token)
                     post_data['token'] = token
@@ -596,7 +601,7 @@ class MRPiracyGQ(CBaseHostClass):
 
         sitekey = self.cm.ph.getSearchGroups(data, 'fallback\?k=([^"]+?)"')[0]
         if sitekey != '':
-            recaptcha = UnCaptchaReCaptcha(lang=GetDefaultLang())
+            recaptcha = UnCaptchaReCaptcha_fallback(lang=GetDefaultLang())
             recaptcha.HTTP_HEADER['Referer'] = self.getMainUrl()
             recaptcha.HTTP_HEADER['User-Agent'] = self.USER_AGENT
             token = recaptcha.processCaptcha(sitekey)
