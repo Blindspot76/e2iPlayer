@@ -461,7 +461,7 @@ class MRPiracyGQ(CBaseHostClass):
                             errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to redirect this task to the external device.'))
                             self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
                             errorMsgTab.append(_(' or '))
-                            errorMsgTab.append(_('You can use \"%s\" or \"%s\" services for automatic solution.') % ("http://2captcha.com/", "https://9kw.eu/", )) + ' ' + _('Go to the host configuration available under blue button.')
+                            errorMsgTab.append(_('You can use \"%s\" or \"%s\" services for automatic solution.') % ("http://2captcha.com/", "https://9kw.eu/", ) + ' ' + _('Go to the host configuration available under blue button.'))
                     
                     printDBG('> token "%s" ' % token)
                     post_data['token'] = token
