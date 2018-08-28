@@ -14,6 +14,7 @@ from random import shuffle as random_shuffle
 ####################################################
 #                   E2 components
 ####################################################
+from skin import parseColor
 from Screens.Screen import Screen
 from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Screens.MessageBox import MessageBox
@@ -80,14 +81,14 @@ class IPTVPlayerWidget(Screen):
     screenwidth = getDesktop(0).size().width()
     if screenwidth and screenwidth == 1920:
         skin =  """
-                    <screen name="IPTVPlayerWidget" position="center,center" size="1590,825" title="IPTV Player HD v%s">
+                    <screen name="IPTVPlayerWidget" position="center,center" size="1590,825" title="E2iPlayer %s">
                             <ePixmap position="5,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="180,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="385,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="700,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <widget render="Label" source="key_red" position="45,9" size="140,32" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;32" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget render="Label" source="key_yellow" position="220,9" size="180,32" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;32" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
-                            <widget render="Label" source="key_green" position="425,9" size="300,32" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;32" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+                            <widget name="key_green_ext" position="425,9" size="300,32" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;32" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget render="Label" source="key_blue" position="740,9" size="140,32" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;32" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget name="headertext" position="15,55" zPosition="1" size="1080,30" font="Regular;30" transparent="1" backgroundColor="#00000000" />
                             <widget name="statustext" position="15,148" zPosition="1" size="985,90" font="Regular;30" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
@@ -105,13 +106,13 @@ class IPTVPlayerWidget(Screen):
                 """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('yellow.png'), GetIconDir('green.png'), GetIconDir('blue.png'))
     else:
         skin =  """
-                    <screen name="IPTVPlayerWidget" position="center,center" size="1090,525" title="IPTV Player v%s">
+                    <screen name="IPTVPlayerWidget" position="center,center" size="1090,525" title="E2iPlayer %s">
                             <ePixmap position="30,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="287,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="554,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="801,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <widget render="Label" source="key_red"    position="65,9"  size="210,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
-                            <widget render="Label" source="key_green"  position="322,9" size="210,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
+                            <widget name="key_green_ext"  position="322,9" size="210,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget render="Label" source="key_yellow" position="589,9" size="210,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget render="Label" source="key_blue"   position="836,9" size="210,27" zPosition="5" valign="center" halign="left" backgroundColor="black" font="Regular;21" transparent="1" foregroundColor="white" shadowColor="black" shadowOffset="-1,-1" />
                             <widget name="headertext" position="5,47" zPosition="1" size="1080,23" font="Regular;20" transparent="1" backgroundColor="#00000000" />
@@ -165,7 +166,9 @@ class IPTVPlayerWidget(Screen):
             self.session.nav.stopService()
 
         self["key_red"]    = StaticText(_("Exit"))
-        self["key_green"]  = StaticText(_("Player > Recorder"))
+        #self["key_green"]  = StaticText(_("Download"))
+        self["key_green_ext"]  = Label(_("Download"))
+        
         self["key_yellow"] = StaticText(_("Refresh"))
         self["key_blue"]   = StaticText(_("More"))
 
@@ -326,8 +329,30 @@ class IPTVPlayerWidget(Screen):
         asynccall.SetMainThreadId()
         
         self.checkWrongImage = True
+        self.downloadable = False
+        self.colorEnabled = parseColor("#FFFFFF")
+        self.colorDisabled = parseColor("#808080")
     
     #end def __init__(self, session):
+    
+    def updateDownloadButton(self):
+        self.downloadable = False
+        try:
+            if self["list"].visible:
+                item = self.getSelItem()
+                self.downloadable = self.isDownloadableType(item.type)
+                if self.downloadable and item.urlItems[0].url.startswith('file://'): # workaround for LocalMedia
+                    self.downloadable = False
+        except Exception:
+            printExc()
+        
+        try:
+            if self.downloadable:
+                self["key_green_ext"].instance.setForegroundColor(self.colorEnabled)
+            else:
+                self["key_green_ext"].instance.setForegroundColor(self.colorDisabled)
+        except Exception:
+            printExc()
     
     def getSkinResolutionType(self):
         return self.skinResolutionType
@@ -375,6 +400,12 @@ class IPTVPlayerWidget(Screen):
         
     def isPlayableType(self, type):
         if type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_ARTICLE, CDisplayListItem.TYPE_PICTURE]:
+            return True
+        else:
+            return False
+        
+    def isDownloadableType(self, type):
+        if type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_DATA]:
             return True
         else:
             return False
@@ -522,18 +553,9 @@ class IPTVPlayerWidget(Screen):
 
     def green_pressed(self):
         self.stopAutoPlaySequencer()
-        if self.recorderMode and IsExecutable( DMHelper.GET_WGET_PATH() ):
-            self.recorderMode = False
-            printDBG( "IPTV - tryb Odtwarzacza" )
-            self["key_green"].setText(_("Player > Recorder"))
-        elif not IsExecutable( DMHelper.GET_WGET_PATH() ):
-            self.recorderMode = False
-            self["key_green"].setText(_("Player > Recorder"))
-        else:
-            self.recorderMode = True
-            printDBG( "IPTV - tryb Rekordera" )
-            self["key_green"].setText(_("Recorder > Player"))
-        return
+        self.updateDownloadButton()
+        self.recorderMode = self.downloadable
+        if  self.downloadable: self.ok_pressed('green')
 
     def yellow_pressed(self):
         self.stopAutoPlaySequencer()
@@ -793,6 +815,7 @@ class IPTVPlayerWidget(Screen):
             self["console"].setText('')
     
     def onSelectionChanged(self):
+        self.updateDownloadButton()
         self.changeBottomPanel()
 
     def back_pressed(self):
@@ -865,6 +888,9 @@ class IPTVPlayerWidget(Screen):
     
     def ok_pressed(self, eventFrom='remote', useAlternativePlayer=False):
         self.useAlternativePlayer = useAlternativePlayer
+        if eventFrom != 'green':
+            self.recorderMode = False
+        
         if 'sequencer' != eventFrom:
             self.stopAutoPlaySequencer()
         if self.visible:
@@ -1581,12 +1607,12 @@ class IPTVPlayerWidget(Screen):
             if len(ret.value) > 0:
                 url = ret.value[0]
         
-        self.setStatusTex("")            
+        self.setStatusTex("")
         self["list"].show()
         
         if url != '' and CDisplayListItem.TYPE_PICTURE == self.currItem.type:
             self.session.openWithCallback(self.leavePicturePlayer, IPTVPicturePlayerWidget, url, config.plugins.iptvplayer.bufferingPath.value, self.currItem.name, {'seq_mode':self.autoPlaySeqStarted})
-        elif url != '' and self.currItem.type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_DATA]:
+        elif url != '' and self.isDownloadableType(self.currItem.type):
             printDBG( "playVideo url[%s]" % url)
             if self.currItem.type == CDisplayListItem.TYPE_DATA:
                 recorderMode = True
@@ -1904,8 +1930,9 @@ class IPTVPlayerWidget(Screen):
             #selection will not be change so manualy call
             self.changeBottomPanel()
             
-            self.setStatusTex("")            
+            self.setStatusTex("")
             self["list"].show()
+        self.updateDownloadButton()
         if 2 == refresh:
             self.autoPlaySequencerNext(False)
         elif 1 == refresh:
