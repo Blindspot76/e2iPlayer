@@ -485,7 +485,8 @@ class IPTVPlayerBufferingWidget(Screen):
             #messageTab = [_("Error occurs during download. \nStatus[%s], tmpBuffSize[%r], canRunMoviePlayer[%r]") % (self.downloader.getStatus(), tmpBuffSize, self.canRunMoviePlayer)]
             messageTab = [_("Error occurs during download.")]
             errorCode, errorDesc = self.downloader.getLastError()
-            messageTab.append(_('Code %s: %s') % (errorCode, _(errorDesc)))
+            if errorCode != None:
+                messageTab.append(_('%s returned %s: %s') % (self.downloader.getName(), errorCode, _(errorDesc)))
             self.session.openWithCallback(self.iptvDoClose, MessageBox, '\n'.join(messageTab), type = MessageBox.TYPE_ERROR, timeout = 10 )
             self.canRunMoviePlayer = False
             # stop timer before message
