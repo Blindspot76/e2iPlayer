@@ -5,8 +5,8 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, CSearchHistoryHelper, GetLogoDir, GetCookieDir
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher import aes_cbc, base
@@ -308,14 +308,14 @@ class TvnVod(CBaseHostClass):
                     # get icon
                     icon = self._getIconUrl(item)
                 
-                    params = { 'id'       : id,
-                               'previd'   : cItem.get('id', ''),
-                               'title'    : title,
-                               'desc'     : desc,
-                               'icon'     : icon,
-                               'category' : category,
-                               'season'   : 0,
-                             }
+                    params = { 'id'          : id,
+                               'previd'      : cItem.get('id', ''),
+                               'title'       : title,
+                               'desc'        : desc,
+                               'icon'        : icon,
+                               'category'    : category,
+                               'season'      : 0,
+                               'good_for_fav': True, }
                     if 'episode' == category:
                         if cItem.get('search_category', False):
                             continue
@@ -329,18 +329,18 @@ class TvnVod(CBaseHostClass):
             
             if showSeasons:
                 for season in seasons:
-                    params = { 'id'       : cItem['id'],
-                               'previd'   : cItem.get('id', ''),
-                               'title'    : self._getJItemStr(season, 'name', ''),
-                               'desc'     : '',
-                               'icon'     : self._getIconUrl(season),
-                               'category' : cItem['category'], #self._getJItemStr(season, 'type', ''),
-                               'season'   : self._getJItemNum(season, 'id', 0),
-                             }
+                    params = { 'id'          : cItem['id'],
+                               'previd'      : cItem.get('id', ''),
+                               'title'       : self._getJItemStr(season, 'name', ''),
+                               'desc'        : '',
+                               'icon'        : self._getIconUrl(season),
+                               'category'    : cItem['category'], #self._getJItemStr(season, 'type', ''),
+                               'season'      : self._getJItemNum(season, 'id', 0),
+                               'good_for_fav': True, }
                     self.addDir(params)
             if showNextPage:
                 params = dict(cItem)
-                params.update({'title':_('Następna strona'), 'page': page, 'icon':'', 'desc':''})
+                params.update({'good_for_fav':False, 'title':_('Następna strona'), 'page': page, 'icon':'', 'desc':''})
                 self.addDir(params)
         except Exception: 
             printExc()
@@ -444,10 +444,11 @@ class TvnVod(CBaseHostClass):
                 break
         return videoUrls
         
-    def getFavouriteData(self, cItem):
-        return str(cItem['id'])
-        
     def getLinksForFavourite(self, fav_data):
+        try:
+            cItem = byteify(json.loads(fav_data))
+            return self.getLinks(cItem['id'])
+        except Exception: printExc()
         return self.getLinks(fav_data)
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):

@@ -493,7 +493,8 @@ class EkinoTv(CBaseHostClass):
                     if t != '': self.loginMessage.append(t)
                 self.loginMessage = '[/br]'.join(self.loginMessage)
             else:
-                message = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'alert'), ('</div', '>'))[1])
+                if sts: message = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'alert'), ('</div', '>'))[1])
+                else: message = ''
                 self.sessionEx.open(MessageBox, _('Login failed.') + '\n' + message, type = MessageBox.TYPE_ERROR, timeout = 10)
                 printDBG('tryTologin failed')
         return self.loggedIn
