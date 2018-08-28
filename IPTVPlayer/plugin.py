@@ -29,18 +29,18 @@ def Plugins(**kwargs):
     screenwidth = getDesktop(0).size().width()
     if screenwidth and screenwidth == 1920: iconFile = "icons/iptvlogohd.png"
     else: iconFile = "icons/iptvlogo.png"
-    desc = _("Watch video materials from IPTV services")
+    desc = _("Watch Videos Online")
     list = []
     if config.plugins.iptvplayer.plugin_autostart.value:
         if config.plugins.iptvplayer.plugin_autostart_method.value == 'wizard':
-            list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_WIZARD], fnc=(9, pluginAutostart), needsRestart=False))
+            list.append(PluginDescriptor(name=(_("E2iPlayer")), description=desc, where = [PluginDescriptor.WHERE_WIZARD], fnc=(9, pluginAutostart), needsRestart=False))
         elif config.plugins.iptvplayer.plugin_autostart_method.value == 'infobar':
             list.append(PluginDescriptor(where=[PluginDescriptor.WHERE_SESSIONSTART, PluginDescriptor.WHERE_AUTOSTART], fnc=pluginAutostartSetup))
     
-    list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_PLUGINMENU], icon=iconFile, fnc=main)) # always show in plugin menu
-    list.append(PluginDescriptor(name=(_("IPTV Player")), description=desc, where = PluginDescriptor.WHERE_MENU, fnc=startIPTVfromMenu))
+    list.append(PluginDescriptor(name=(_("E2iPlayer")), description=desc, where = [PluginDescriptor.WHERE_PLUGINMENU], icon=iconFile, fnc=main)) # always show in plugin menu
+    list.append(PluginDescriptor(name=(_("E2iPlayer")), description=desc, where = PluginDescriptor.WHERE_MENU, fnc=startIPTVfromMenu))
     if config.plugins.iptvplayer.showinextensions.value:
-        list.append (PluginDescriptor(name=(_("IPTV Player")), description=desc, where = [PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main))
+        list.append (PluginDescriptor(name=(_("E2iPlayer")), description=desc, where = [PluginDescriptor.WHERE_EXTENSIONSMENU], fnc=main))
     if  IsWebInterfaceModuleAvailable() and config.plugins.iptvplayer.IPTVWebIterface.value:
         try:
             list.append(PluginDescriptor(where=PluginDescriptor.WHERE_SESSIONSTART, fnc=sessionstart, needsRestart=False)) # activating IPTV web interface
@@ -78,9 +78,9 @@ def doPluginAutostart():
 
 def startIPTVfromMenu(menuid, **kwargs):
     if menuid == "system":
-        return [(_("Configure IPTV Player"), mainSetup, "iptv_config", None)]
+        return [(_("Configure E2iPlayer"), mainSetup, "iptv_config", None)]
     elif menuid == "mainmenu" and config.plugins.iptvplayer.showinMainMenu.value == True:
-        return [("IPTV Player", main, "iptv_main", None)]
+        return [("E2iPlayer", main, "iptv_main", None)]
     else:
         return []
     
