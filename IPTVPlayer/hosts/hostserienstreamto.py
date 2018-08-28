@@ -3,7 +3,8 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, ArticleContent
+from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -57,7 +58,7 @@ def GetConfigList():
 def gettytul():
     return 'https://serienstream.to/'
 
-class SerienStreamTo(CBaseHostClass):
+class SerienStreamTo(CBaseHostClass, CaptchaHelper):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'SerienStreamTo.tv', 'cookie':'serienstreamto.cookie'})
@@ -406,5 +407,4 @@ class SerienStreamTo(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, SerienStreamTo(), True, []) #[CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO]
-
+        CHostBase.__init__(self, SerienStreamTo(), True, [])

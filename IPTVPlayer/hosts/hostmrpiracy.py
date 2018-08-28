@@ -4,6 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, ArticleContent
+from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify, rm, GetPluginDir, GetCacheSubDir, ReadTextFile, WriteTextFile
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -24,9 +25,6 @@ from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
-from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_9kw import UnCaptchaReCaptcha as UnCaptchaReCaptcha_9kw
-from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_2captcha import UnCaptchaReCaptcha as UnCaptchaReCaptcha_2captcha
-from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_myjd import UnCaptchaReCaptcha as UnCaptchaReCaptcha_myjd
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha as  UnCaptchaReCaptcha_fallback
 ###################################################
 
@@ -68,7 +66,7 @@ def GetConfigList():
 def gettytul():
     return 'http://mrpiracy.site/'
 
-class MRPiracyGQ(CBaseHostClass):
+class MRPiracyGQ(CBaseHostClass, CaptchaHelper):
     LINKS_CACHE = {}
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'mrpiracy.gq', 'cookie':'mrpiracygq.cookie'})
@@ -441,28 +439,7 @@ class MRPiracyGQ(CBaseHostClass):
                 urlParams['header']['Referer'] = playerData['ref_url']
 
                 if 'sitekey' in playerData:
-                    errorMsgTab = [_('Link protected with google recaptcha v2.')]
-                    recaptcha = UnCaptchaReCaptcha_fallback(lang=GetDefaultLang())
-                    recaptcha.HTTP_HEADER['Referer'] = playerData['ref_url']
-                    recaptcha.HTTP_HEADER['User-Agent'] = self.USER_AGENT
-                    token = recaptcha.processCaptcha(playerData['sitekey'])
-                    if token == '':
-                        recaptcha = None
-                        if config.plugins.iptvplayer.mrpiracy_bypassrecaptcha.value == '9kw.eu':
-                            recaptcha = UnCaptchaReCaptcha_9kw()
-                        elif config.plugins.iptvplayer.mrpiracy_bypassrecaptcha.value == '2captcha.com':
-                            recaptcha = UnCaptchaReCaptcha_2captcha()
-                        elif config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
-                            recaptcha = UnCaptchaReCaptcha_myjd()
-                        
-                        if recaptcha != None:
-                            token = recaptcha.processCaptcha(playerData['sitekey'], playerData['ref_url'])
-                        else:
-                            errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to redirect this task to the external device.'))
-                            self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
-                            errorMsgTab.append(_(' or '))
-                            errorMsgTab.append(_('You can use \"%s\" or \"%s\" services for automatic solution.') % ("http://2captcha.com/", "https://9kw.eu/", ) + ' ' + _('Go to the host configuration available under blue button.'))
-                    
+                    token, errorMsgTab = self.processCaptcha(playerData['sitekey'], playerData['ref_url'], config.plugins.iptvplayer.mrpiracy_bypassrecaptcha.value)
                     printDBG('> token "%s" ' % token)
                     post_data['token'] = token
                     

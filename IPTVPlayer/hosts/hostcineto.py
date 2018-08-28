@@ -3,11 +3,10 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, ArticleContent
+from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2_myjd import UnCaptchaReCaptcha as UnCaptchaReCaptcha_myjd
-from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha as  UnCaptchaReCaptcha_fallback
 ###################################################
 
 ###################################################
@@ -49,7 +48,8 @@ def GetConfigList():
 def gettytul():
     return 'https://cine.to/'
 
-class CineTO(CBaseHostClass):
+class CineTO(CBaseHostClass, CaptchaHelper):
+    LINKS_CACHE = {}
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'cine.to', 'cookie':'cine.to.cookie'})
@@ -366,32 +366,22 @@ class CineTO(CBaseHostClass):
         sts, data = self.getPage(videoUrl)
         if sts: 
             videoUrl = data.meta['url']
-            
+            cacheKey = videoUrl
             if 1 != self.up.checkHostSupport(videoUrl) and 'gcaptchaSetup' in data:
-                sitekey = self.cm.ph.getSearchGroups(data, '''gcaptchaSetup\s*?\(\s*?['"]([^'^"]+?)['"]''')[0]
-                if sitekey != '':
-                    errorMsgTab = [_('Link protected with google recaptcha v2.')]
-                    
-                    recaptcha = UnCaptchaReCaptcha_fallback()
-                    token = recaptcha.processCaptcha(sitekey, self.cm.meta['url'])
-                    if token == '':
-                        recaptcha = None
-                        if config.plugins.iptvplayer.myjd_login.value != '' and config.plugins.iptvplayer.myjd_password.value != '':
-                            recaptcha = UnCaptchaReCaptcha_myjd()
-                        if recaptcha != None:
-                            token = recaptcha.processCaptcha(sitekey, self.cm.meta['url'])
-                    
-                    if recaptcha == None and token == '':
-                        errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to redirect this task to the external device.'))
-                        self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
-                        errorMsgTab.append(_(' or '))
-                        errorMsgTab.append(_('You can use \"%s\" or \"%s\" services for automatic solution.') % ("http://2captcha.com/", "https://9kw.eu/", ) + ' ' + _('Go to the host configuration available under blue button.'))
-                    
-                    if token != '':
-                        params = MergeDicts(self.defaultParams, {'max_data_size':0})
-                        params['header'] = MergeDicts(params['header'] , {'Referer':self.cm.meta['url']})
-                        sts, data = self.getPage(videoUrl + '?token=' + token, params)
-                        if sts: videoUrl = self.cm.meta['url']
+                if cacheKey in CineTO.LINKS_CACHE:
+                    videoUrl = CineTO.LINKS_CACHE[cacheKey]
+                else:
+                    sitekey = self.cm.ph.getSearchGroups(data, '''gcaptchaSetup\s*?\(\s*?['"]([^'^"]+?)['"]''')[0]
+                    if sitekey != '':
+                        token, errorMsgTab = self.processCaptcha(sitekey, self.cm.meta['url'])
+                        
+                        if token != '':
+                            params = MergeDicts(self.defaultParams, {'max_data_size':0})
+                            params['header'] = MergeDicts(params['header'] , {'Referer':self.cm.meta['url']})
+                            sts, data = self.getPage(videoUrl + '?token=' + token, params)
+                            if sts: videoUrl = self.cm.meta['url']
+                    if 1 == self.up.checkHostSupport(videoUrl):
+                        CineTO.LINKS_CACHE[cacheKey] = videoUrl
             returnCode = self.cm.meta.get('status_code', 200)
             urlTab = self.up.getVideoLinkExt(videoUrl)
         else:

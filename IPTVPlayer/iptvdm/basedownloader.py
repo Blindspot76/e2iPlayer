@@ -61,6 +61,9 @@ class BaseDownloader:
     def getStatus(self):
         return self.status
         
+    def getLastError(self):
+        return None, ''
+    
     def isDownloading(self):
         if DMHelper.STS.DOWNLOADING == self.status:
             return True
