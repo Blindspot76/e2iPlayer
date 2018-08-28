@@ -154,7 +154,7 @@ class TrailersApple(CBaseHostClass):
         searchPattern = urllib.quote_plus(searchPattern)
         
         url = self.getFullUrl('/trailers/home/scripts/quickfind.php?q=') + urllib.quote_plus(searchPattern)
-        self.listItems(url, 'explore_item')
+        self.listItems({'url':url}, 'explore_item')
         
     def getLinksForVideo(self, cItem):
         printDBG("TrailersApple.getLinksForVideo [%s]" % cItem)
