@@ -134,9 +134,13 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
     
     def listItems(self, cItem, nextCategory):
         printDBG("SerienStreamTo.listItems")
+        page = cItem.get('page', 1)
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        
+        nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'pagination'), ('</div', '>'), False)[1]
+        nextPage = self.getFullUrl( self.cm.ph.getSearchGroups(nextPage, '''<a[^>]*?href=['"]([^'^"]+?)['"][^>]*?>%s<''' % (page + 1))[0] )
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="seriesListContainer', '<div class="cf">', withMarkers=True)[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a ', '</a>', withMarkers=True)
@@ -149,6 +153,11 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
             desc   = self.cleanHtmlStr(item)
             params = dict(cItem)
             params.update({'category':nextCategory, 'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':desc})
+            self.addDir(params)
+        
+        if nextPage != '':
+            params = dict(cItem)
+            params.update({'good_for_fav':False, 'title':_('Next page'), 'url':nextPage, 'page':page + 1, 'desc':''})
             self.addDir(params)
             
     def listSeasons(self, cItem, nextCategory):
