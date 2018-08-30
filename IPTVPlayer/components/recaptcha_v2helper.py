@@ -12,7 +12,7 @@ from Components.config import config
 
 class CaptchaHelper():
 
-    def processCaptcha(self, sitekey, refUrl, bypassCaptchaService=None, userAgent=None, baseErrMsgTab=None):
+    def processCaptcha(self, sitekey, refUrl, bypassCaptchaService=None, userAgent=None, baseErrMsgTab=None, beQuaiet=False):
         if isinstance(baseErrMsgTab, list):
             errorMsgTab = list(baseErrMsgTab)
         else:
@@ -49,7 +49,8 @@ class CaptchaHelper():
                 token = recaptcha.processCaptcha(sitekey, refUrl)
             else:
                 errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to redirect this task to the external device.'))
-                self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
+                if not beQuaiet:
+                    self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
                 if bypassCaptchaService != None:
                     errorMsgTab.append(_(' or '))
                     errorMsgTab.append(_('You can use \"%s\" or \"%s\" services for automatic solution.') % ("http://2captcha.com/", "https://9kw.eu/", ) + ' ' + _('Go to the host configuration available under blue button.'))

@@ -4,6 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import DecodeGzipped, EncodeGzipped
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -27,7 +28,7 @@ except Exception: import simplejson as json
 def gettytul():
     return 'https://9anime.is/'
 
-class AnimeTo(CBaseHostClass):
+class AnimeTo(CBaseHostClass, CaptchaHelper):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'9anime.to', 'cookie':'9animeto.cookie'})
@@ -36,7 +37,7 @@ class AnimeTo(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://www8.9anime.is/'
+        self.MAIN_URL = 'https://www9.9anime.is/'
         self.cacheEpisodes = {}
         self.cacheLinks    = {}
         self.cacheFilters  = {}
@@ -54,27 +55,14 @@ class AnimeTo(CBaseHostClass):
                             ]
         self.scriptCache = {}
     
-    def setMainUrl(self, url):
-        if self.cm.isValidUrl(url):
-            self.MAIN_URL = self.cm.getBaseUrl(url)
-    
     def getFullIconUrl(self, url):
         url = url.replace('&amp;', '&')
         return CBaseHostClass.getFullIconUrl(self, url)
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
-        if addParams == {}:
-            addParams = dict(self.defaultParams)
-        
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url):
-                return url
-            else:
-                return urlparse.urljoin(baseUrl, url)
-            
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
-        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
-        return sts, data
+        if addParams == {}: addParams = dict(self.defaultParams)
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
     
     def listLetters(self, cItem, nextCategory):
         printDBG("AnimeTo.listLetters")
@@ -214,7 +202,14 @@ class AnimeTo(CBaseHostClass):
         
         id = self.cm.ph.getDataBeetwenNodes(data, ('<', '"player"', '>'), ('<', '>'))[1]
         id = self.cm.ph.getSearchGroups(id, '''data-id=['"]([^'^"]+?)['"]''')[0]
+        
         getParams = {}
+        
+        sitekey = self.cm.ph.getSearchGroups(data, '''data\-sitekey=['"]([^'^"]+?)['"]''')[0]
+        if sitekey != '':
+            token, errorMsgTab = self.processCaptcha(sitekey, self.cm.meta['url'])
+            if token != '':
+                getParams['gresponse'] = token
         
         url = self.getFullUrl('/ajax/film/servers/{0}'.format(id))
         url = self._getUrl(jsCode, url, urllib.urlencode(getParams), timestamp)
