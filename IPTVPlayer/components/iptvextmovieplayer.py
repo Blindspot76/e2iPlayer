@@ -1601,7 +1601,8 @@ class IPTVExtMoviePlayer(Screen):
         self.subHandler['timer_conn'] = None
         
         self.updateInfoTimer_conn = None
-        self.playback['GoToSeekTimer_conn'] = None
+        for key in self.playback.iterkeys():
+            self.playback[key] = None
         self.onClose.remove(self.__onClose)
         self.messageQueue = []
         
