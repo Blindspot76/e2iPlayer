@@ -153,6 +153,7 @@ class ExtPlayerCommandsDispatcher():
 
 class IPTVExtMoviePlayer(Screen):
     Y_CROPPING_GUARD = 0
+    playback = {}
     def __prepareSkin(self):
         
         if self.subConfig['wrapping_enabled']:
@@ -415,7 +416,6 @@ class IPTVExtMoviePlayer(Screen):
         self.metaHandler = IPTVMovieMetaDataHandler( self.hostName, self.title, self.fileSRC )
         
         # goto seek  timer
-        self.playback = {}
         self.playback['GoToSeekTimer'] = eTimer()
         self.playback['GoToSeekTimer_conn'] = eConnectCallback(self.playback['GoToSeekTimer'].timeout, self.doGoToSeek)
         
@@ -1601,7 +1601,8 @@ class IPTVExtMoviePlayer(Screen):
         self.subHandler['timer_conn'] = None
         
         self.updateInfoTimer_conn = None
-        self.playback['GoToSeekTimer_conn'] = None
+        for key in self.playback.iterkeys():
+            self.playback[key] = None
         self.onClose.remove(self.__onClose)
         self.messageQueue = []
         
