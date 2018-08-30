@@ -497,6 +497,7 @@ class urlparser:
                        'cloudcartel.net':      self.pp.parserCLOUDCARTELNET ,
                        'haxhits.com':          self.pp.parserHAXHITSCOM     ,
                        'jawcloud.co':          self.pp.parserJAWCLOUDCO     ,
+                       'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
                     }
         return
     
@@ -10469,3 +10470,39 @@ class pageParser(CaptchaHelper):
                 linksTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
         return linksTab
         
+    def parserGOUNLIMITEDTO(self, baseUrl):
+        printDBG("parserGOUNLIMITEDTO baseUrl[%r]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        domain = urlparser.getDomain(cUrl)
+        
+        if 'embed' not in cUrl:
+            url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0], domain)
+            if 'embed' in url:
+                urlParams['header']['Referer'] = cUrl
+                sts, data = self.cm.getPage(url, urlParams)
+                if not sts: return False
+        
+        jscode = [self.jscode['jwplayer'], "Clappr={Player:jwplayer()['setup']};"]
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item and 'sources' in item:
+                jscode.append(item)
+        urlTab = []
+        jscode = '\n'.join(jscode)
+        ret = iptv_js_execute( jscode )
+        printDBG(ret['data'])
+        data = byteify(json.loads(ret['data']))
+        for item in data['sources']:
+            url = self.cm.getFullUrl(item, domain)
+            url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'Range':'bytes=0-'})
+            urlTab.append({'name':domain, 'url':url})
+            
+        return urlTab
