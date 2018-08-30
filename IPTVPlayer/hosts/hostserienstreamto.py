@@ -188,7 +188,7 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
         for item in self.allCache['%s_keys' % mode][key]:
             params = dict(cItem)
             params.update(item)
-            params.update({'category':nextCategory})
+            params.update({'category':nextCategory, 'good_for_fav':True})
             self.addDir(params)
     
     def listItems(self, cItem, nextCategory):
