@@ -2187,7 +2187,9 @@ class IPTVExtMoviePlayerSummary(Screen):
     else:
         skin = """
             <screen position="0,0" size="132,64">
-                <widget source="parent.Title" render="Label" position="6,4" size="120,42" font="Regular;18" />
+                <widget source="global.CurrentTime" render="Label" position="0,0" size="120,42" font="Regular;18" noWrap="1">
+                        <convert type="ClockToText"></convert>
+                </widget>
             </screen>"""
         def __init__(self, session, parent):
                 Screen.__init__(self, session, parent = parent)
