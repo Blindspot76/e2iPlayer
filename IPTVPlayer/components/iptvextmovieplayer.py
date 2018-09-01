@@ -421,6 +421,8 @@ class IPTVExtMoviePlayer(Screen):
         
         self.playback.update( {'CurrentTime':    0,
                                'BufferCTime':    0,
+                               'ConfirmedCTime': 0,
+                               'BufferFill':     0,
                                'Length':         0,
                                'LengthFromPlayerReceived': False,
                                'GoToSeekTime':      0,
@@ -1063,12 +1065,16 @@ class IPTVExtMoviePlayer(Screen):
         
     def updateInfo(self):
         self.extPlayerCmddDispatcher.doUpdateInfo()
+        self.updateBufferFill()
+        
+    def updateBufferFill(self):
         if None != self.downloader:
             if self.downloader.hasDurationInfo() and self.downloader.getTotalFileDuration() > 0:
                 totalDuration = self.downloader.getTotalFileDuration()
                 downloadDuration = self.downloader.getDownloadedFileDuration()
                 if 0 < totalDuration and 0 < downloadDuration:
-                    self['bufferingBar'].value = (downloadDuration * 100000) / totalDuration
+                    self.playback['BufferFill'] = (downloadDuration * 100000) / totalDuration
+                    self['bufferingBar'].value = self.playback['BufferFill']
                     if self.playback['Length'] < totalDuration:
                         self.setPlaybackLength(totalDuration)
                         self.clipLength = totalDuration
@@ -1078,7 +1084,8 @@ class IPTVExtMoviePlayer(Screen):
             if 0 < remoteFileSize:
                 localFileSize = self.downloader.getLocalFileSize(True) - self.availableDataSizeCorrection
                 if 0 < localFileSize:
-                    self['bufferingBar'].value = (localFileSize * 100000) / remoteFileSize
+                    self.playback['BufferFill'] = (localFileSize * 100000) / remoteFileSize
+                    self['bufferingBar'].value = self.playback['BufferFill']
         
     def showMessage(self, message, type, callback=None):
         printDBG("IPTVExtMoviePlayer.showMessage")
@@ -1131,9 +1138,18 @@ class IPTVExtMoviePlayer(Screen):
                 if 0 < val:
                     # restore last position
                     if 10 < self.lastPosition and self.lastPosition < (self.playback['Length'] - 10):
-                        self.showPlaybackInfoBar()
-                        self.extPlayerCmddDispatcher.doGoToSeek(str(self.lastPosition-5))
-                        self.lastPosition = 0
+                        self.updateBufferFill()
+                        if self.playback['BufferFill'] > 0:
+                            max = self.playback['Length'] * self.playback['BufferFill'] / 100000
+                            if max > self.playback['Length']:
+                                max = self.playback['Length']
+                        else:
+                            max = self.playback['Length']
+                        
+                        if self.lastPosition <= max:
+                            self.showPlaybackInfoBar()
+                            self.extPlayerCmddDispatcher.doGoToSeek(str(self.lastPosition-5))
+                            self.lastPosition = 0
                     tmpLength = self.playback['BufferCTime']
                     if self.playback['CurrentTime'] > tmpLength:
                         tmpLength = self.playback['CurrentTime']
@@ -1148,8 +1164,13 @@ class IPTVExtMoviePlayer(Screen):
                 if self.playback['Length'] < val and val > self.playback['BufferCTime']:
                     self.setPlaybackLength(val)
                 self['progressBar'].value = val
+                prevCTime = self.playback['CurrentTime'] 
                 self.playback['CurrentTime'] = stsObj['CurrentTime']
-                if 0 < self.playback['CurrentTime']: self.playback['StartGoToSeekTime'] = self.playback['CurrentTime']
+                if 0 < self.playback['CurrentTime']: 
+                    self.playback['StartGoToSeekTime'] = self.playback['CurrentTime']
+                    diff = self.playback['CurrentTime'] - prevCTime
+                    if diff > 0 and diff < 3: # CurrentTime in seconds
+                        self.playback['ConfirmedCTime'] = self.playback['CurrentTime']
                 self['currTimeLabel'].setText( str(timedelta(seconds=self.playback['CurrentTime'])) )
                 self['remainedLabel'].setText( '-' + str(timedelta(seconds=self.playback['Length']-self.playback['CurrentTime'])) )
                 self['pleaseWait'].hide()
@@ -1212,9 +1233,20 @@ class IPTVExtMoviePlayer(Screen):
             self["goToSeekLabel"].show()
         
         # update data
-        self.playback['GoToSeekTime'] += seek
-        if self.playback['GoToSeekTime'] < 0: self.playback['GoToSeekTime'] = 0
-        if self.playback['GoToSeekTime'] > self.playback['Length']: self.playback['GoToSeekTime'] = self.playback['Length']
+        if self.playback['BufferFill'] > 0:
+            max = self.playback['Length'] * self.playback['BufferFill'] / 100000
+            if max > self.playback['Length']:
+                max = self.playback['Length']
+            if max < self.playback['BufferCTime']:
+                max = self.playback['BufferCTime']
+        else:
+            max = self.playback['Length']
+        
+        pos = self.playback['GoToSeekTime'] + seek
+        if pos > max: pos = max
+        if pos < 0: pos = 0
+        
+        self.playback['GoToSeekTime'] = pos
         self["goToSeekLabel"].setText( str(timedelta(seconds=self.playback['GoToSeekTime'])) )
         
         # update position
@@ -1229,10 +1261,10 @@ class IPTVExtMoviePlayer(Screen):
         self.playback['GoToSeekTimer'].start(1000)
         
     def saveLastPlaybackTime(self):
-        lastPosition = self.playback.get('CurrentTime', 0)
+        lastPosition = self.playback.get('ConfirmedCTime', 0)
         if config.plugins.iptvplayer.remember_last_position.value and lastPosition > 0:
             self.metaHandler.setLastPosition( lastPosition )
-            
+    
     def loadLastPlaybackTime(self):
         if config.plugins.iptvplayer.remember_last_position.value and self.lastPosition < 1:
             self.lastPosition = self.metaHandler.getLastPosition()
@@ -1656,7 +1688,7 @@ class IPTVExtMoviePlayer(Screen):
             sts = 1
             
         self.isClosing = True
-        self.showMessage(None, None, boundFunction(self.extmovieplayerClose, sts, self.playback.get('CurrentTime', 0)))
+        self.showMessage(None, None, boundFunction(self.extmovieplayerClose, sts, self.playback.get('ConfirmedCTime', 0)))
 
     def extmovieplayerClose(self, sts, currentTime):
         if self.childWindowsCount > 0:
