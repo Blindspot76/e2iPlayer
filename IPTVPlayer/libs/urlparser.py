@@ -498,6 +498,7 @@ class urlparser:
                        'haxhits.com':          self.pp.parserHAXHITSCOM     ,
                        'jawcloud.co':          self.pp.parserJAWCLOUDCO     ,
                        'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
+                       'wstream.video':        self.pp.parserWSTREAMVIDEO   ,
                     }
         return
     
@@ -9906,6 +9907,47 @@ class pageParser(CaptchaHelper):
                 if self.cm.isValidUrl(url):
                     url = strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
                     urlTab.append({'name':name, 'url':url})
+        printDBG(urlTab)
+        return urlTab
+        
+    def parserWSTREAMVIDEO(self, baseUrl):
+        printDBG("parserWSTREAMVIDEO baseUrl[%s]" % baseUrl)
+        domain = urlparser.getDomain(baseUrl) 
+        
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
+        
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        if referer != '': HTTP_HEADER['Referer'] = referer
+        
+        COOKIE_FILE = GetCookieDir('wstream.video')
+        params = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+        params['cloudflare_params'] = { 'cookie_file':COOKIE_FILE, 'User-Agent':HTTP_HEADER['User-Agent']}
+        
+        sts, data = self.cm.getPageCFProtection(baseUrl, params)
+        if not sts: return False
+        
+        jscode = [self.jscode['jwplayer']]
+        jscode.append('var element=function(n){print(JSON.stringify(n)),this.on=function(){}},Clappr={};Clappr.Player=element,Clappr.Events={PLAYER_READY:1,PLAYER_TIMEUPDATE:1,PLAYER_PLAY:1,PLAYER_ENDED:1};')
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        
+        playerData = ''
+        for item in tmp:
+            if 'eval(' in item and 'Clappr' in item: playerData = item
+        jscode.append(playerData)
+        urlTab = []
+        ret = iptv_js_execute( '\n'.join(jscode) )
+        data = byteify(json.loads(ret['data'].strip()))
+        for item in data['sources']:
+            name = 'direct'
+            if isinstance(item, dict):
+                url = item['file']
+                name = item.get('label', name)
+            else:
+                url = item
+            if self.cm.isValidUrl(url):
+                url = strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':baseUrl})
+                urlTab.append({'name':name, 'url':url})
         printDBG(urlTab)
         return urlTab
         

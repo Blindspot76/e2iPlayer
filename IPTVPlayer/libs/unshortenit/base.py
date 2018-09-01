@@ -53,6 +53,8 @@ class UnshortenIt(object):
     _anonymz_regex = r'anonymz\.com'
     _iitvpl_regex = r'iiv\.pl'
     _short24_regex = r'short24\.pw'
+    _rapidcrypt_regex = r'rapidcrypt\.net'
+    _vcryptnet_regex = r'vcrypt\.net'
     
     _maxretries = 5
 
@@ -92,7 +94,11 @@ class UnshortenIt(object):
             return self._unshorten_iivpl(uri)
         if re.search(self._short24_regex, domain, re.IGNORECASE):
             return self._unshorten_short24(uri)
-            
+        if re.search(self._rapidcrypt_regex, domain, re.IGNORECASE):
+            return self._unshorten_rapidcrypt(uri)
+        if re.search(self._vcryptnet_regex, domain, re.IGNORECASE):
+            return self._unshorten_vcryptnet(uri)
+        
         return uri, 200
 
     def unwrap_30x(self, uri, timeout=10):
@@ -477,6 +483,43 @@ class UnshortenIt(object):
         try:
             sts, data = self.cm.getPage(uri, {'header':HTTP_HEADER})
             uri = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''window\.location\s*?=\s*?['"]([^'^"]+?)['"]''')[0], self.cm.getBaseUrl(self.cm.meta['url']))
+            return uri, 'OK'
+        except Exception as e:
+            printExc()
+            return uri, str(e)
+
+    def _unshorten_rapidcrypt(self, uri):
+        try:
+            COOKIE_FILE = GetCookieDir('rapidcrypt.net')
+            params = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+            params['cloudflare_params'] = { 'cookie_file':COOKIE_FILE, 'User-Agent':HTTP_HEADER['User-Agent']}
+            sts, data = self.cm.getPageCFProtection(uri, params)
+            uri = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'push_button'), ('</a', '>'))[1]
+            printDBG(uri)
+            uri = self.cm.ph.getSearchGroups(uri, '''href=([^>^\s]+?)[>\s]''')[0]
+            if uri.startswith('"'): uri = self.cm.ph.getSearchGroups(uri, '"([^"]+?)"')[0]
+            elif uri.startswith("'"): uri = self.cm.ph.getSearchGroups(uri, "'([^']+?)'")[0]
+            
+            uri = self.cm.getFullUrl(uri, self.cm.getBaseUrl(self.cm.meta['url']))
+            return uri, 'OK'
+        except Exception as e:
+            printExc()
+            return uri, str(e)
+
+    def _unshorten_vcryptnet(self, uri):
+        try:
+            COOKIE_FILE = GetCookieDir('vcrypt.net')
+            params = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+            params['cloudflare_params'] = { 'cookie_file':COOKIE_FILE, 'User-Agent':HTTP_HEADER['User-Agent']}
+            sts, data = self.cm.getPageCFProtection(uri, params)
+            uri = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'push_button'), ('</a', '>'))[1]
+            
+            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            printDBG(self.cm.meta['url'])
+            printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            uri = self.cm.meta['url']
+            
+            uri = self.cm.getFullUrl(uri, self.cm.getBaseUrl(self.cm.meta['url']))
             return uri, 'OK'
         except Exception as e:
             printExc()
