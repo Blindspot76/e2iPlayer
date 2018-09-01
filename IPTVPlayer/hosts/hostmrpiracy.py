@@ -356,6 +356,7 @@ class MRPiracyGQ(CBaseHostClass, CaptchaHelper):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return urlTab
+        cUrl = self.cm.meta['url']
         
         trailerUrl = self.cm.ph.getSearchGroups(data, '''trailer\(\s*["'](https?://youtube.com/[^"^']+?)["']''')[0]
         
@@ -367,9 +368,10 @@ class MRPiracyGQ(CBaseHostClass, CaptchaHelper):
         
         token = self.cm.ph.getSearchGroups(data, '''var\s+form_data\s*=\s*['"]([^'^"]+?)['"]''')[0]
         jscode = []
-        jscode.append(self.cm.ph.getDataBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)[1])
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'server'), ('</script', '>'))[1]
-        jscode.append(self.cm.ph.getDataBeetwenNodes(tmp, ('<script', '>'), ('</script', '>'), False)[1])
+        scriptsData = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in scriptsData:
+            if ('var _' in item and 'server' in item) or (item.count('var ') == 1 and item.count(';') < 2):
+                jscode.append(item)
         jscode = '\n'.join(jscode)
         
         linksData = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'buttonSv'), ('</div', '>'))
@@ -380,10 +382,37 @@ class MRPiracyGQ(CBaseHostClass, CaptchaHelper):
             playerData['ref_url'] = cItem['url']
             url = '>' + '%s' % playerData
             playerData['jscode'] = jscode
-            urlTab.append({'name':name, 'url':strwithmeta(url, playerData), 'need_resolve':1})
+            urlTab.append({'name':'[www] ' + name, 'url':strwithmeta(url, playerData), 'need_resolve':1})
+        
+        if len(urlTab):
+            authCookie = self.cm.getCookieItem(self.COOKIE_FILE, 'id_utilizador')
+            if authCookie == '': authCookie = self.cm.getCookieItem(self.COOKIE_FILE, 'admin')
+        
+            id = urlTab[0]['url'].meta.get('id', '')
+            type = cItem['url'].rsplit('/', 1)[-1].split('.', 1)[0]
+            url = 'http://mpapi.ml/apinew/' + type + 's.php?action=links&' + {'filme':'idFilme'}.get(type, 'idEpisodio') + '=' + id
+            
+            sts, data = self.getPage(url, {'cookie_items':{'username':authCookie}})
+            if sts:
+                try:
+                    kodiLinks = []
+                    data = byteify(json.loads(data))
+                    for item in data:
+                        for i in range(10):
+                            if i == 0: key = 'URL'
+                            else: key = 'URL%s' % i
+                            url = item.get(key, '')
+                            if not self.cm.isValidUrl(url): continue
+                            kodiLinks.append({'name':'[kodi] ' + self.up.getHostName(url).rsplit('.', 1)[0].title(), 'url':strwithmeta(url, {'kodi_link':True, 'Referer':cUrl}), 'need_resolve':1})
+                    kodiLinks.extend(urlTab)
+                    urlTab = kodiLinks
+                except Exception:
+                    printExc()
         
         if self.cm.isValidUrl(trailerUrl):
             urlTab.append({'name':_('Trailer'), 'url':trailerUrl, 'need_resolve':1})
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return urlTab
         
         if len(urlTab):
             self.cacheLinks[cItem['url']] = urlTab
