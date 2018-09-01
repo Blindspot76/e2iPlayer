@@ -69,7 +69,7 @@ class ArconaitvME(CBaseHostClass):
                              {'category':'search',            'title': _('Search'), 'search_item':True,},
                              {'category':'search_history',    'title': _('Search history'),            } 
                             ]
-        self.proxyUrl = 'http://securefor.com/browse.php?u={0}&b=4&f=norefer'
+        self.proxyUrl = 'http://myproxysite.ga/browse.php?u={0}&b=4&f=norefer'
         
     def isProxyNeeded(self, url):
         return False #'arconai.tv' in url
