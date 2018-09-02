@@ -23,7 +23,7 @@ from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 from Components.config import config, ConfigSubsection, ConfigSelection, ConfigDirectory, ConfigYesNo, ConfigOnOff, Config, ConfigInteger, ConfigSubList, ConfigText, getConfigListEntry, configfile
 ###################################################
-config.plugins.iptvplayer.extplayer_summary = ConfigSelection(default = "auto", choices = [('auto', _('Auto')), ('yes', _('Yes')), ('no', _('No'))])
+config.plugins.iptvplayer.extplayer_summary = ConfigSelection(default = "yes", choices = [('auto', _('Auto')), ('yes', _('Yes')), ('no', _('No'))])
 config.plugins.iptvplayer.use_clear_iframe = ConfigYesNo(default = False)
 config.plugins.iptvplayer.show_iframe = ConfigYesNo(default = True)
 config.plugins.iptvplayer.iframe_file = ConfigIPTVFileSelection(fileMatch = "^.*\.mvi$", default = "/usr/share/enigma2/radio.mvi")
