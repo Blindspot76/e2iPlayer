@@ -30,6 +30,7 @@ from Screens.MessageBox import MessageBox
 # Config options for HOST
 ###################################################
 config.plugins.iptvplayer.hdsto_proxy = ConfigSelection(default = "None", choices = [("None",     _("None")),
+                                                                                     ("webproxy", _("Web proxy")),
                                                                                      ("proxy_1",  _("Alternative proxy server (1)")),
                                                                                      ("proxy_2",  _("Alternative proxy server (2)"))])
 config.plugins.iptvplayer.hdsto_login      = ConfigText(default = "", fixed_size = False)
@@ -50,46 +51,86 @@ class HDSTo(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'HDSTo', 'cookie':'HDSTo.cookie'})
-        self.MAIN_URL    = 'https://www.hds.to/'
-        self.DEFAULT_ICON_URL = self.getFullIconUrl('/images/logox2.png')
-        self.cacheLinks = {}
+
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        
+
+        self.MAIN_URL    = 'https://www.hds.to/'
+        self.DEFAULT_ICON_URL = self.getFullIconUrl('/images/logox2.png')
+
+        self.cacheLinks = {}
         self.loggedIn = None
         self.login    = ''
         self.password = ''
+        self.membersOnly = [_('Page accessible to logged in members only.'), _('You can try to use WebProxy as workaround, check options under blue button.')]
+    
+    def getRealUrl(self, url):
+        if config.plugins.iptvplayer.hdsto_proxy.value == 'webproxy' and url != None and 'browse.php?u=' in url:
+            url = urllib.unquote( self.cm.ph.getSearchGroups(url+'&', '''\?u=(http[^&]+?)&''')[0] )
+        return url
     
     def getFullUrl(self, url, baseUrl=None):
+        url = self.getRealUrl(url)
+        baseUrl = self.getRealUrl(baseUrl)
         if not self.cm.isValidUrl(url) and baseUrl != None:
             if url.startswith('/'): baseUrl = self.cm.getBaseUrl(baseUrl)
             else: baseUrl = baseUrl.rsplit('/', 1)[0] + '/'
         return CBaseHostClass.getFullUrl(self, url.replace('&#038;', '&'), baseUrl)
     
+    def setMainUrl(self, url):
+        CBaseHostClass.setMainUrl(self, self.getRealUrl(url))
+    
     def getPage(self, baseUrl, addParams={}, post_data=None):
         if addParams == {}: addParams = dict(self.defaultParams)
         
         proxy = config.plugins.iptvplayer.hdsto_proxy.value
-        if proxy != 'None':
+        if proxy == 'webproxy':
+            addParams = dict(addParams)
+            proxy = 'http://n-guyot.fr/exit/browse.php?u={0}&b=4'.format(urllib.quote(baseUrl, ''))
+            addParams['header']['Referer'] = proxy + '&f=norefer'
+            baseUrl = proxy
+        elif proxy != 'None':
             if proxy == 'proxy_1':
                 proxy = config.plugins.iptvplayer.alternative_proxy1.value
             else:
                 proxy = config.plugins.iptvplayer.alternative_proxy2.value
             addParams = dict(addParams)
             addParams.update({'http_proxy':proxy})
-        
-        sts, data = self.cm.getPage(baseUrl, addParams, post_data)
-        if sts and self.cm.meta['url'].endswith('/home.php'):
-            SetIPTVPlayerLastHostError(_('Page accessible to logged in members only'))
+        tries = 0
+        while tries < 2:
+            tries += 1
+            sts, data = self.cm.getPage(baseUrl, addParams, post_data)
+            if sts:
+                if self.getFullUrl(self.cm.meta['url']).endswith('/home.php'):
+                    SetIPTVPlayerLastHostError('\n'.join(self.membersOnly))
+                elif config.plugins.iptvplayer.hdsto_proxy.value == 'webproxy' and 'sslagree' in data:
+                    sts, data = self.cm.getPage('http://n-guyot.fr/exit/includes/process.php?action=sslagree', addParams, post_data)
+                    continue
+            break
         return sts, data
+        
+    def getFullIconUrl(self, url, currUrl=None):
+        url = self.getFullUrl(url, currUrl)
+        proxy = config.plugins.iptvplayer.hdsto_proxy.value
+        if proxy == 'webproxy':
+            return url
+        elif proxy != 'None':
+            if proxy == 'proxy_1':
+                proxy = config.plugins.iptvplayer.alternative_proxy1.value
+            else:
+                proxy = config.plugins.iptvplayer.alternative_proxy2.value
+            url = strwithmeta(url, {'iptv_http_proxy':proxy})
+        return url
     
     def listMain(self, cItem):
         printDBG("HDSTo.listMain")
         sts, data = self.getPage(self.getMainUrl())
         if not sts: return
         self.setMainUrl(self.cm.meta['url'])
-        if self.cm.meta['url'].endswith('/home.php'):
-            GetIPTVNotify().push(_('Page accessible to logged in members only'), 'info', 10)
+        if self.getFullUrl(self.cm.meta['url']).endswith('/home.php'):
+            GetIPTVNotify().push('\n'.join(self.membersOnly), 'info', 10)
+        
+        printDBG(data)
         
         tmp = self.cm.ph.getDataBeetwenNodes(data, ('<nav', '>'), ('</nav', '>'), False)[1]
         tmp = re.compile('(<li[^>]*?>|</li>|<ul[^>]*?>|</ul>)').split(tmp)
@@ -169,6 +210,7 @@ class HDSTo(CBaseHostClass):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
             if url == '': continue
             icon = self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^"^']+?\.(?:jpe?g|png)(?:\?[^'^"]*?)?)['"]''')[0]
+            if icon == '': icon = self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^"^']+?)['"]''')[0]
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<h', '>'), ('</h', '>'), False)[1] )
             if 'details-serie' in cItem['url']: title += ' ' + self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'opacity'), ('</span', '>'), False)[1] )
             if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<a', '>', 'name'), ('</a', '>'), False)[1] )
@@ -231,7 +273,7 @@ class HDSTo(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        cUrl = self.cm.meta['url']
+        cUrl = self.getFullUrl(self.cm.meta['url'])
         self.setMainUrl(cUrl)
         
         sTtile = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'title-holder'), ('</h', '>'), False)[1])
@@ -318,7 +360,7 @@ class HDSTo(CBaseHostClass):
         if 0 == self.up.checkHostSupport(videoUrl): 
             sts, data = self.getPage(videoUrl)
             if sts:
-                cUrl = self.cm.meta['url']
+                cUrl = self.getFullUrl(self.cm.meta['url'])
                 sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')
                 if sts:
                     tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>', False, False)
@@ -458,14 +500,14 @@ class HDSTo(CBaseHostClass):
             sts, data = self.getPage(self.getFullUrl('/home.php'))
             if not sts: return False
             
-            actionUrl = self.cm.meta['url']
+            actionUrl = self.getFullUrl(self.cm.meta['url'])
             post_data = {'email':self.login, 'password':self.password, 'submit_form':'Login'}
 
             httpParams = dict(self.defaultParams)
             httpParams['header'] = dict(httpParams['header'])
             httpParams['header']['Referer'] = self.cm.meta['url']
             sts, data = self.getPage(actionUrl, httpParams, post_data)
-            if sts and (actionUrl != self.cm.meta['url'] or 'sweetAlert(' not in data):
+            if sts and (actionUrl != self.getFullUrl(self.cm.meta['url']) or 'sweetAlert(' not in data):
                 printDBG('tryTologin OK')
                 self.loggedIn = True
             else:
