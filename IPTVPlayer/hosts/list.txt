@@ -69,6 +69,7 @@ hostguardaserie
 hosthdfilmetv
 hosthdkinomir
 hosthdpopcornscom
+hosthdsto
 hosthdstreams
 hosthitboxtv
 hosthoofootcom
