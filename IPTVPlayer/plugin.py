@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget import IPTVPlayerWidget
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerwidget import E2iPlayerWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvconfigmenu import ConfigMenu
 from Plugins.Extensions.IPTVPlayer.components.iptvpin import IPTVPinWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, IPTVPlayerNeedInit
@@ -110,13 +110,13 @@ class pluginAutostart(Screen):
         runMain(self.session, self.iptvDoRunMain)
         
     def iptvDoRunMain(self, session):
-        session.openWithCallback(self.iptvDoClose, IPTVPlayerWidget)
+        session.openWithCallback(self.iptvDoClose, E2iPlayerWidget)
         
     def iptvDoClose(self, **kwargs):
         self.close()
     
 def doRunMain(session):
-    session.open(IPTVPlayerWidget)
+    session.open(E2iPlayerWidget)
 
 def runMain(session, nextFunction=doRunMain):
     wgetpath     = IsExecutable(config.plugins.iptvplayer.wgetpath.value)

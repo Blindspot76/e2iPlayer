@@ -106,7 +106,7 @@ class buildtempLogsHTML(threading.Thread):
 		with open(self.DebugFileName, 'r') as f:
 			last_bit = f.readlines()[-settings.MaxLogLinesToShow:]
 			for L in last_bit:
-				if L.find('IPTVPlayerWidget.__init__') > 0:
+				if L.find('E2iPlayerWidget.__init__') > 0:
 					LogText = ''
 				settings.tempLogsHTML += L + '<br>\n'
 ########################################################

@@ -1,4 +1,4 @@
-<screen name="IPTVPlayerWidget" position="center,center" size="1920,1080" title="E2iPlayer" flags="wfBorder">
+<screen position="center,center" size="1920,1080" title="E2iPlayer" flags="wfBorder">
      <ePixmap position="170,1040" zPosition="4" size="30,30" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/icons/red.png" transparent="1" alphatest="on" />
      <ePixmap position="620,1040" zPosition="4" size="30,30" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/icons/green.png" transparent="1" alphatest="on" />
      <ePixmap position="1120,1040" zPosition="4" size="30,30" pixmap="/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/icons/yellow.png" transparent="1" alphatest="on" />

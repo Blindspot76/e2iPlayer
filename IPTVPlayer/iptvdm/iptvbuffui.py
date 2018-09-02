@@ -534,5 +534,3 @@ class IPTVPlayerBufferingWidget(Screen):
         if not self.onStartCalled:
             self.onStartCalled = True
             self.onStart()
-
-#class IPTVPlayerWidget

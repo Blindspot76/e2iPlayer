@@ -29,7 +29,7 @@ from Tools.LoadPixmap import LoadPixmap
 class IPTVSetupMainWidget(Screen):
     IPTV_VERSION = GetIPTVPlayerVerstion()
     skin = """
-    <screen name="IPTVPlayerWidget" position="center,center" size="600,300" title="IPTVPlayer setup version %s">
+    <screen position="center,center" size="600,300" title="E2iPlayer setup version %s">
             <widget name="sub_title"    position="10,10" zPosition="2" size="580,90"   valign="center" halign="center" font="Regular;24" transparent="1" foregroundColor="white" />
             <widget name="info_field"   position="10,100" zPosition="2" size="580,200" valign="top" halign="center"   font="Regular;22" transparent="1" foregroundColor="white" />
             

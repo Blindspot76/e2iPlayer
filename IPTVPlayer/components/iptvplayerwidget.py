@@ -76,12 +76,12 @@ from Plugins.Extensions.IPTVPlayer.components.playerselector import PlayerSelect
 ######################################################
 gDownloadManager = None
 
-class IPTVPlayerWidget(Screen):
+class E2iPlayerWidget(Screen):
     IPTV_VERSION = GetIPTVPlayerVerstion()
     screenwidth = getDesktop(0).size().width()
     if screenwidth and screenwidth == 1920:
         skin =  """
-                    <screen name="IPTVPlayerWidget" position="center,center" size="1590,825" title="E2iPlayer %s">
+                    <screen position="center,center" size="1590,825" title="E2iPlayer %s">
                             <ePixmap position="5,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="180,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="385,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
@@ -106,7 +106,7 @@ class IPTVPlayerWidget(Screen):
                 """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('yellow.png'), GetIconDir('green.png'), GetIconDir('blue.png'))
     else:
         skin =  """
-                    <screen name="IPTVPlayerWidget" position="center,center" size="1090,525" title="E2iPlayer %s">
+                    <screen position="center,center" size="1090,525" title="E2iPlayer %s">
                             <ePixmap position="30,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="287,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="554,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
@@ -132,7 +132,7 @@ class IPTVPlayerWidget(Screen):
                     </screen>
                 """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('green.png'), GetIconDir('yellow.png'), GetIconDir('blue.png'), GetIconDir('line.png'))      
     def __init__(self, session):
-        printDBG("IPTVPlayerWidget.__init__ desktop IPTV_VERSION[%s]\n" % (IPTVPlayerWidget.IPTV_VERSION) )
+        printDBG("E2iPlayerWidget.__init__ desktop IPTV_VERSION[%s]\n" % (E2iPlayerWidget.IPTV_VERSION) )
         self.session = session
         self.skinResolutionType = 'sd'
         screenwidth = getDesktop(0).size().width()
@@ -362,7 +362,7 @@ class IPTVPlayerWidget(Screen):
         self["statustext"].setText(msg)
         
     def __del__(self):
-        printDBG("IPTVPlayerWidget.__del__ --------------------------")
+        printDBG("E2iPlayerWidget.__del__ --------------------------")
 
     def __onClose(self):
         self.session.nav.playService(self.currentService)
@@ -481,7 +481,7 @@ class IPTVPlayerWidget(Screen):
                 try: 
                     exceptStack = self.workThread.getExceptStack()
                     reporter = GetPluginDir('iptvdm/reporthostcrash.py')
-                    msg = urllib_quote('%s|%s|%s|%s' % ('HOST_CRASH', IPTVPlayerWidget.IPTV_VERSION, self.hostName, self.getCategoryPath()))
+                    msg = urllib_quote('%s|%s|%s|%s' % ('HOST_CRASH', E2iPlayerWidget.IPTV_VERSION, self.hostName, self.getCategoryPath()))
                     self.crashConsole = iptv_system('python "%s" "http://iptvplayer.vline.pl/reporthostcrash.php?msg=%s" "%s" 2&>1 > /dev/null' % (reporter, msg, exceptStack))
                     printDBG(msg)
                 except Exception:
@@ -1048,6 +1048,7 @@ class IPTVPlayerWidget(Screen):
     def onStart(self):
         self.onShow.remove(self.onStart)
         #self.onLayoutFinish.remove(self.onStart)
+        self.setTitle( 'E2iPlayer ' + GetIPTVPlayerVerstion() )
         self.loadSpinner()
         self.hideSpinner()
         self.checkBlacklistedImage()
@@ -1871,7 +1872,7 @@ class IPTVPlayerWidget(Screen):
         refresh  = params['add_param'].get('refresh', 0)
         selIndex = params['add_param'].get('selIndex', -1)
         ret      = params['ret']
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> IPTVPlayerWidget.reloadList refresh[%s], selIndex[%s]" % (refresh, selIndex))
+        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> E2iPlayerWidget.reloadList refresh[%s], selIndex[%s]" % (refresh, selIndex))
         if 0 < refresh and -1 < selIndex:
             self.nextSelIndex = selIndex
         # ToDo: check ret.status if not OK do something :P
@@ -2001,7 +2002,7 @@ class IPTVPlayerWidget(Screen):
         asynccall.gMainFunctionsQueueTab[0].addToQueue("handleFavouriteItemCallback", [thread, ret])
         
     def handleFavouriteItemCallback(self, ret):
-        printDBG("IPTVPlayerWidget.handleFavouriteItemCallback")
+        printDBG("E2iPlayerWidget.handleFavouriteItemCallback")
         self.setStatusTex("")
         self["list"].show()
         linkList = []
@@ -2015,7 +2016,7 @@ class IPTVPlayerWidget(Screen):
         else: self.session.open(MessageBox, _("No valid links available."), type=MessageBox.TYPE_INFO, timeout=10 )
         
     def menu_pressed(self):
-        printDBG("IPTVPlayerWidget.menu_pressed")
+        printDBG("E2iPlayerWidget.menu_pressed")
         # we have to be careful here as we will call method 
         # directly from host
         options = []
@@ -2042,7 +2043,7 @@ class IPTVPlayerWidget(Screen):
             printExc()
             
     def requestCustomActionFromHost(self, ret):
-        printDBG("IPTVPlayerWidget.requestCustomActionFromHost ret[%r]" % [ret])
+        printDBG("E2iPlayerWidget.requestCustomActionFromHost ret[%r]" % [ret])
         if isinstance(ret, IPTVChoiceBoxItem):
             self.requestListFromHost('PerformCustomAction', -1, ret.privateData)
             
@@ -2050,7 +2051,7 @@ class IPTVPlayerWidget(Screen):
         asynccall.gMainFunctionsQueueTab[0].addToQueue("handlePerformCustomActionCallback", [thread, ret])
             
     def handlePerformCustomActionCallback(self, ret):
-        printDBG("IPTVPlayerWidget.handlePerformCustomActionCallback")
+        printDBG("E2iPlayerWidget.handlePerformCustomActionCallback")
         self.setStatusTex("")
         self["list"].show()
         linkList = []
@@ -2066,7 +2067,7 @@ class IPTVPlayerWidget(Screen):
         asynccall.gMainFunctionsQueueTab[0].addToQueue("handleMarkItemAsViewedCallback", [thread, ret])
            
     def handleMarkItemAsViewedCallback(self, ret):
-        printDBG("IPTVPlayerWidget.handleMarkItemAsViewedCallback")
+        printDBG("E2iPlayerWidget.handleMarkItemAsViewedCallback")
         self.setStatusTex("")
         self["list"].show()
         linkList = []
@@ -2099,7 +2100,7 @@ class IPTVPlayerWidget(Screen):
                             GetIPTVNotify().push('\n'.join(message), 'error', 120)
             except:
                 printExc()
-#class IPTVPlayerWidget
+#class E2iPlayerWidget
 
 class IPTVPlayerLCDScreen(Screen):
     try:

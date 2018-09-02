@@ -45,7 +45,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://hds.to'
+    return 'http://hds.to/'
 
 class HDSTo(CBaseHostClass):
 
@@ -55,7 +55,7 @@ class HDSTo(CBaseHostClass):
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
-        self.MAIN_URL    = 'https://www.hds.to/'
+        self.MAIN_URL    = 'http://www.hds.to/'
         self.DEFAULT_ICON_URL = self.getFullIconUrl('/images/logox2.png')
 
         self.cacheLinks = {}

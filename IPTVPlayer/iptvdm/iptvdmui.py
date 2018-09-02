@@ -405,7 +405,6 @@ class IPTVDMWidget(Screen):
         
     def __event(self, ev):
         pass
-#class IPTVPlayerWidget
 
 class IPTVDMNotificationWidget(Screen):
     d_w = getDesktop(0).size().width() - 20
