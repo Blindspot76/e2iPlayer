@@ -5,7 +5,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, MergeDicts
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, MergeDicts, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
@@ -17,6 +17,30 @@ import re
 import urllib
 try: import json
 except Exception: import simplejson as json
+from Components.config import config, ConfigText, ConfigSelection, getConfigListEntry
+###################################################
+
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Screens.MessageBox import MessageBox
+###################################################
+
+###################################################
+# Config options for HOST
+###################################################
+config.plugins.iptvplayer.hdsto_proxy = ConfigSelection(default = "None", choices = [("None",     _("None")),
+                                                                                     ("proxy_1",  _("Alternative proxy server (1)")),
+                                                                                     ("proxy_2",  _("Alternative proxy server (2)"))])
+config.plugins.iptvplayer.hdsto_login      = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.hdsto_password   = ConfigText(default = "", fixed_size = False)
+
+def GetConfigList():
+    optionList = []
+    optionList.append(getConfigListEntry(_("Use proxy server:"), config.plugins.iptvplayer.hdsto_proxy))
+    optionList.append(getConfigListEntry(_("email"), config.plugins.iptvplayer.hdsto_login))
+    optionList.append(getConfigListEntry(_("password"), config.plugins.iptvplayer.hdsto_password))
+    return optionList
 ###################################################
 
 def gettytul():
@@ -31,6 +55,10 @@ class HDSTo(CBaseHostClass):
         self.cacheLinks = {}
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        
+        self.loggedIn = None
+        self.login    = ''
+        self.password = ''
     
     def getFullUrl(self, url, baseUrl=None):
         if not self.cm.isValidUrl(url) and baseUrl != None:
@@ -40,6 +68,15 @@ class HDSTo(CBaseHostClass):
     
     def getPage(self, baseUrl, addParams={}, post_data=None):
         if addParams == {}: addParams = dict(self.defaultParams)
+        
+        proxy = config.plugins.iptvplayer.hdsto_proxy.value
+        if proxy != 'None':
+            if proxy == 'proxy_1':
+                proxy = config.plugins.iptvplayer.alternative_proxy1.value
+            else:
+                proxy = config.plugins.iptvplayer.alternative_proxy2.value
+            addParams = dict(addParams)
+            addParams.update({'http_proxy':proxy})
         
         sts, data = self.cm.getPage(baseUrl, addParams, post_data)
         if sts and self.cm.meta['url'].endswith('/home.php'):
@@ -51,6 +88,8 @@ class HDSTo(CBaseHostClass):
         sts, data = self.getPage(self.getMainUrl())
         if not sts: return
         self.setMainUrl(self.cm.meta['url'])
+        if self.cm.meta['url'].endswith('/home.php'):
+            GetIPTVNotify().push(_('Page accessible to logged in members only'), 'info', 10)
         
         tmp = self.cm.ph.getDataBeetwenNodes(data, ('<nav', '>'), ('</nav', '>'), False)[1]
         tmp = re.compile('(<li[^>]*?>|</li>|<ul[^>]*?>|</ul>)').split(tmp)
@@ -198,7 +237,7 @@ class HDSTo(CBaseHostClass):
         sTtile = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'title-holder'), ('</h', '>'), False)[1])
         desc = ''
         
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'type=iframe'), ('</a', '>'))
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'iframe'), ('</a', '>'))
         for item in tmp:
             if 'file-video-o' not in item: continue
             title = self.cleanHtmlStr(item)
@@ -246,6 +285,8 @@ class HDSTo(CBaseHostClass):
                 self.addVideo(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
+        self.tryTologin()
+
         searchPattern = urllib.quote_plus(searchPattern)
         cItem = dict(cItem)
         cItem['category'] = 'list_items'
@@ -258,9 +299,9 @@ class HDSTo(CBaseHostClass):
         self.currList = self.getItems(cItem, 'explore_item', data)
         
     def getLinksForVideo(self, cItem):
+        self.tryTologin()
+
         printDBG("HDSTo.getLinksForVideo [%s]" % cItem)
-        if 'trailer' in cItem:
-            return self.up.getVideoLinkExt(cItem['url'])
         return self.cacheLinks.get(cItem['url'], [])
         
     def getVideoLinks(self, videoUrl):
@@ -368,40 +409,76 @@ class HDSTo(CBaseHostClass):
         
         url = cItem.get('prev_url', cItem['url'])
         if data == None:
+            self.tryTologin()
             sts, data = self.getPage(url)
             if not sts: data = ''
 
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'movie-info'), ('<div', '>', 'watch-links'), False)[1]
+        data = data.split('title-holder', 1)[-1]
+        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<h', '>'), ('</h', '>'), False)[1])
         icon = ''
-        if '/seria/' in url: title = ''
-        else: title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'title'), ('</div', '>'), False)[1] )
-        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'synopsis'), ('</div', '>'), False)[1] )
+        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'text-hold'), ('</div', '>'), False)[1] )
 
         itemsList = []
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'info-right'), ('</div', '>'), False)[1]
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<span', '</span>')
-        for idx in range(1, len(tmp), 2):
-            key = self.cleanHtmlStr(tmp[idx-1])
-            val = self.cleanHtmlStr(tmp[idx])
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'descr-list'), ('</ul', '>'), False)[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
+        for item in tmp:
+            item = item.split('</span>', 1)
+            key = self.cleanHtmlStr(item[0])
+            val = self.cleanHtmlStr(item[-1]).replace(' , ', ', ')
+            if val == '' and 'determinate' in item[-1]:
+                val = self.cm.ph.getSearchGroups(item[-1], '''<div([^>]+?determinate[^>]+?)>''')[0]
+                val = self.cm.ph.getSearchGroups(val, '''width\:\s*([0-9]+)''')[0]
+                try: val = str(int(val) / 10.0)
+                except Exception: continue
             if key == '' or val == '': continue
             itemsList.append((key, val))
-
-        tmp = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'movie-len'), ('</span', '>'), False)[1])
-        if tmp != '': itemsList.append((_('Duration:'), tmp))
-        
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'genre'), ('</ul', '>'), False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
-        tmp = []
-        for t in data:
-            t = self.cleanHtmlStr(t)
-            if t != '': tmp.append(t)
-        if len(tmp): itemsList.append((_('Genres:'), ', '.join(tmp)))
 
         if title == '': title = cItem['title']
         if icon == '':  icon  = cItem.get('icon', self.DEFAULT_ICON_URL)
         if desc == '':  desc  = cItem.get('desc', '')
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':{'custom_items_list':itemsList}}]
+        
+    def tryTologin(self):
+        printDBG('tryTologin start')
+        
+        if None == self.loggedIn or self.login != config.plugins.iptvplayer.hdsto_login.value or\
+            self.password != config.plugins.iptvplayer.hdsto_password.value:
+        
+            self.login = config.plugins.iptvplayer.hdsto_login.value
+            self.password = config.plugins.iptvplayer.hdsto_password.value
+            
+            self.loggedIn = False
+            
+            if '' == self.login.strip() or '' == self.password.strip():
+                return False
+            
+            rm(self.COOKIE_FILE)
+            
+            sts, data = self.getPage(self.getFullUrl('/home.php'))
+            if not sts: return False
+            
+            actionUrl = self.cm.meta['url']
+            post_data = {'email':self.login, 'password':self.password, 'submit_form':'Login'}
+
+            httpParams = dict(self.defaultParams)
+            httpParams['header'] = dict(httpParams['header'])
+            httpParams['header']['Referer'] = self.cm.meta['url']
+            sts, data = self.getPage(actionUrl, httpParams, post_data)
+            if sts and (actionUrl != self.cm.meta['url'] or 'sweetAlert(' not in data):
+                printDBG('tryTologin OK')
+                self.loggedIn = True
+            else:
+                msgTab = [_('Login failed.')]
+                if sts: 
+                    data = self.cm.ph.getDataBeetwenMarkers(data, 'sweetAlert(', ')', False)[1]
+                    data = data.split('",')
+                    if len(data) == 3:
+                        idx = data[1].find('"')
+                        if idx >= 0: msgTab.append(self.cleanHtmlStr(data[1][idx+1:])) 
+                self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(msgTab), type = MessageBox.TYPE_ERROR, timeout = 10)
+                printDBG('tryTologin failed')
+        return self.loggedIn
         
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
@@ -412,7 +489,9 @@ class HDSTo(CBaseHostClass):
         category = self.currItem.get("category", '')
         printDBG( "handleService: ||| name[%s], category[%s] " % (name, category) )
         self.currList = []
-        
+
+        self.tryTologin()
+
     #MAIN MENU
         if name == None:
             self.listMain({'name':'category', 'type':'category'})
