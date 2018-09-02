@@ -172,6 +172,7 @@ hostvevo
 hostvideopenny
 hostvimeo
 hostvodpl
+hostvumedicom
 hostwatchcartoononline
 hostwatchwrestling
 hostwatchwrestlinguno

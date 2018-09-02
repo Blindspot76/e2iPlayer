@@ -111,12 +111,12 @@ class FilmStreamHD(CBaseHostClass):
                 if t != '': desc.append(t)
                 
             params = dict(cItem)
-            params.update({'title':title, 'url':url, 'icon':icon, 'desc':' | '.join(desc)})
+            params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':' | '.join(desc)})
             self.addVideo(params)
         
         if nextPage:
             params = dict(cItem)
-            params.update({'title':_('Next page'), 'url':nextPage, 'page':cItem.get('page', 1)+1})
+            params.update({'good_for_fav':False, 'title':_('Next page'), 'url':nextPage, 'page':cItem.get('page', 1)+1})
             self.addDir(params)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
