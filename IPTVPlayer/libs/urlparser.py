@@ -72,6 +72,16 @@ try:    from urlparse import urlsplit, urlunsplit, urljoin
 except Exception: printExc()
 ###################################################
 
+def InternalCipher(data, encrypt=True):
+    tmp = sha256('|'.join(GetPluginDir().split('/')[-2:])).digest()
+    key = tmp[:16]
+    iv  = tmp[16:]
+    cipher = AES_CBC(key=key, keySize=16)
+    if encrypt:
+        return cipher.encrypt(data, iv)
+    else:
+        return cipher.decrypt(data, iv)
+
 class urlparser:
     def __init__(self):
         self.cm = common()
@@ -7671,8 +7681,10 @@ class pageParser(CaptchaHelper):
         HTTP_HEADER= {'User-Agent':"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0"}
         defaultParams = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
         
-        if False:
-            baseDomain = 'http://m.rocketmediaworld.com/' 
+        if True:
+            tmp = InternalCipher(unhexlify('31f2d1daa8ffc1d0a02a7da8c325c9e66ba24e5684091e5a643798031da9d4217eabe17d11aa69b5d6b415e11536ae203e986c79566b7606153582e098283c9df81527340cbe1f2f1c99a9e1fc4db2950c3dde0d26dcd9d5c8a3d39829e7bc75'), False).split('|', 1)
+            HTTP_HEADER['User-Agent'] = tmp[1]
+            baseDomain = tmp[0]
             try:
                 url = baseDomain + 'login'
                 login  = config.plugins.iptvplayer.streamliveto_login.value.strip()
@@ -7686,9 +7698,9 @@ class pageParser(CaptchaHelper):
                 printExc()
             #----------------------------------------
             params = dict(defaultParams)
-            url = baseUrl.replace('/info/', '/view/')
-            videoId = self.cm.ph.getSearchGroups(baseUrl, '/([0-9]+?)/')[0]
-            videoUrl = baseDomain + 'view/' + videoId
+            obj = urlparse(baseUrl)
+            videoUrl = baseDomain[:-1] + obj.path #.replace('/info/', '/view/')
+            if obj.query != '': videoUrl += '?' + obj.query
         else:
             params = dict(defaultParams)
             videoUrl = baseUrl
@@ -7714,9 +7726,7 @@ class pageParser(CaptchaHelper):
                 tmp = item
                 break
         tmp = str(tmp)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        printDBG(tmp)
-        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        printDBG(">>>>\n%s\n<<<<" % tmp)
         
         jscode = base64.b64decode('''dmFyIGRvY3VtZW50ID0ge307DQp2YXIgd2luZG93ID0gdGhpczsNCg0KJXMNCg0KdmFyIGVsZW1lbnQgPSBmdW5jdGlvbiAoaW5uZXJIVE1MKQ0Kew0KICAgIHRoaXMuX2lubmVySFRNTCA9IGlubmVySFRNTDsNCiAgICANCiAgICBPYmplY3QuZGVmaW5lUHJvcGVydHkodGhpcywgImlubmVySFRNTCIsIHsNCiAgICAgICAgZ2V0IDogZnVuY3Rpb24gKCkgew0KICAgICAgICAgICAgcmV0dXJuIHRoaXMuX2lubmVySFRNTDsNCiAgICAgICAgfSwNCiAgICAgICAgc2V0IDogZnVuY3Rpb24gKHZhbCkgew0KICAgICAgICAgICAgdGhpcy5faW5uZXJIVE1MID0gdmFsOw0KICAgICAgICB9DQogICAgfSk7DQp9Ow0KDQpkb2N1bWVudC5nZXRFbGVtZW50QnlJZCA9IGZ1bmN0aW9uKGlkKXsNCiAgICByZXR1cm4gbmV3IGVsZW1lbnQoYXNzb2NpYXRpdmVBcnJheVtpZF0pOw0KfQ0KDQpmdW5jdGlvbiBqd3BsYXllcigpIHsNCiAgICByZXR1cm4gandwbGF5ZXI7DQp9DQoNCmp3cGxheWVyLnNldHVwID0gZnVuY3Rpb24oc3JjZXMpew0KICAgIHByaW50KEpTT04uc3RyaW5naWZ5KHNyY2VzKSk7DQp9''')
         jscode = jscode % ('\n'.join(associativeArray))
