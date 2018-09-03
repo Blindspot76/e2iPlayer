@@ -8435,6 +8435,7 @@ class pageParser(CaptchaHelper):
             sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
             if not sts: return False
             error = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'vp_video_stub_txt'), ('</div', '>'), False)[1])
+            if error == '': error = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'page-not-found'), ('</', '>'), False)[1])
             if error != '': SetIPTVPlayerLastHostError(error)
         
             tmpTab = re.compile('''data-options=['"]([^'^"]+?)['"]''').findall(data)
@@ -8487,7 +8488,7 @@ class pageParser(CaptchaHelper):
         return urlsTab
         
     def parserALLOCINEFR(self, baseUrl):
-        printDBG("parserOKRU baseUrl[%r]" % baseUrl)
+        printDBG("parserALLOCINEFR baseUrl[%r]" % baseUrl)
         # based on https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/allocine.py
         _VALID_URL = r'https?://(?:www\.)?allocine\.fr/_?(?P<typ>article|video|film|video|film)/(iblogvision.aspx\?cmedia=|fichearticle_gen_carticle=|player_gen_cmedia=|fichefilm_gen_cfilm=|video-)(?P<id>[0-9]+)(?:\.html)?'
         mobj = re.match(_VALID_URL, baseUrl)
