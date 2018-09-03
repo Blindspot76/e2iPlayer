@@ -226,7 +226,7 @@ class VUMEDI(CBaseHostClass):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''\shref=['"]([^'^"]+?)['"]''')[0].strip())
             if url == '': continue
             
-            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?src=['"]([^'^"]+?)['"]''')[0])
+            icon = self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^"^']+?\.(?:jpe?g|png)(?:\?[^'^"]*?)?)['"]''')[0]
             title = self.cleanHtmlStr(tmp)
             
             desc = [t]
