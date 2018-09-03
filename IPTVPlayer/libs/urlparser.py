@@ -4941,7 +4941,7 @@ class pageParser(CaptchaHelper):
         return False
         
     def parser1FICHIERCOM(self, baseUrl):
-        printDBG("parserUPLOAD baseUrl[%s]" % baseUrl)
+        printDBG("parser1FICHIERCOM baseUrl[%s]" % baseUrl)
         HTTP_HEADER = { 'User-Agent':'Mozilla/%s%s' % (pageParser.FICHIER_DOWNLOAD_NUM, pageParser.FICHIER_DOWNLOAD_NUM),
                         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
@@ -4972,6 +4972,9 @@ class pageParser(CaptchaHelper):
         
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
+        
+        error = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'bloc'), ('</div', '>'), False)[1])
+        if error != '': SetIPTVPlayerLastHostError(error)
         
         data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
         printDBG(data)
@@ -5019,7 +5022,10 @@ class pageParser(CaptchaHelper):
             
             printDBG(data)
             videoUrl = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?)['"][^>]+?ok btn-general''')[0]
-            
+        
+        error = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'bloc'), ('</div', '>'), False)[1])
+        if error != '': SetIPTVPlayerLastHostError(error)
+        
         printDBG('>>> videoUrl[%s]' % videoUrl)
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
@@ -7194,7 +7200,7 @@ class pageParser(CaptchaHelper):
             sts, data = self.cm.getPage(url)
             if not sts: return False
             
-            errMsg = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'errorBox'), ('</div', '>'))[1]
+            errMsg = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'error'), ('</div', '>'))[1]
             SetIPTVPlayerLastHostError(clean_html(errMsg))
         
             subTracks = []
@@ -8428,13 +8434,16 @@ class pageParser(CaptchaHelper):
         if 'videoPlayerMetadata' not in baseUrl:
             sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
             if not sts: return False
+            error = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'vp_video_stub_txt'), ('</div', '>'), False)[1])
+            if error != '': SetIPTVPlayerLastHostError(error)
+        
             tmpTab = re.compile('''data-options=['"]([^'^"]+?)['"]''').findall(data)
             for tmp in tmpTab:
                 tmp = clean_html(tmp)
                 tmp = byteify(json.loads(tmp))
-                printDBG("==============================================================")
+                printDBG("====")
                 printDBG(tmp)
-                printDBG("==============================================================")
+                printDBG("====")
                 
                 tmp = tmp['flashvars']
                 if 'metadata' in tmp:
@@ -10059,15 +10068,16 @@ class pageParser(CaptchaHelper):
             sourceData = self.cm.ph.getAllItemsBeetwenMarkers(sourceData, '{', '}')
             for item in sourceData:
                 marker = item.lower()
-                if 'video/mp4' not in marker and 'video/x-flv' not in marker and 'x-mpeg' not in marker: continue
+                if ' type=' in marker and ('video/mp4' not in marker and 'video/x-flv' not in marker and 'x-mpeg' not in marker): continue
                 item = item.replace('\\/', '/')
                 url  = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''(?:src|file)['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0], self.cm.getBaseUrl(cUrl))
                 type = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
-                label = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                label = self.cm.ph.getSearchGroups(item, '''label['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
                 printDBG(url)
+                if type == '': type = url.split('?', 1)[0].rsplit('.', 1)[-1].lower()
                 if url == '': continue
                 url = strwithmeta(url, {'User-Agent': HTTP_HEADER['User-Agent'], 'Referer':cUrl})
-                if 'x-mpeg' in marker:
+                if 'x-mpeg' in marker or type == 'm3u8':
                     videoTab.extend(getDirectM3U8Playlist(url, checkContent=True))
                 else:
                     videoTab.append({'name':'[%s] %s %s' % (type, domain, label), 'url':url})
