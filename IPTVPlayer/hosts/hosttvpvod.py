@@ -820,7 +820,7 @@ class TvpVod(CBaseHostClass):
         
     def getFavouriteData(self, cItem):
         printDBG('TvpVod.getFavouriteData')
-        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem['icon']}
+        params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem.get('icon', '')}
         if 'list_episodes' in cItem:
             params['list_episodes'] = cItem['list_episodes']
         return json.dumps(params) 

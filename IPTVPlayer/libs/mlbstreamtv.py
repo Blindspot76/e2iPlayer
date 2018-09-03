@@ -69,7 +69,7 @@ class MLBStreamTVApi(CBaseHostClass):
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(tmp[-1], '''href=['"]([^'^"]+?)['"]''')[0] )
                 title = self.cleanHtmlStr(tmp[-1])
                 sts, tmp = self.cm.getPage(url, self.defaultParams)
-                if '<iframe' in tmp:
+                if sts and '<iframe' in tmp:
                     title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<title', '</title>')[1])
                     url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
                     channelsList.append({'name':'mlbstream.tv', 'type':'video', 'url':url, 'title':title, 'Referer':self.cm.meta['url'], 'icon':self.DEFAULT_ICON_URL})
