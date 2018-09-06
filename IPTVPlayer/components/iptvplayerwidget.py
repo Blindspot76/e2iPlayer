@@ -1621,7 +1621,7 @@ class E2iPlayerWidget(Screen):
                 recorderMode = self.recorderMode
             url = urlparser.decorateUrl(url)
             titleOfMovie = self.currItem.name.replace('/','-').replace(':','-').replace('*','-').replace('?','-').replace('"','-').replace('<','-').replace('>','-').replace('|','-')
-            fileExtension = self.getFileExt(url, self.currItem.type)            
+            fileExtension = self.getFileExt(url, self.currItem.type)
                         
             blocked, reaseon = self.isUrlBlocked(url, self.currItem.type)
             if blocked:
@@ -1675,9 +1675,10 @@ class E2iPlayerWidget(Screen):
                 
                 self.writeCurrentTitleToFile(titleOfMovie)
                 if isBufferingMode:
+                    global gDownloadManager
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(True, self.useAlternativePlayer))
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize, gstAdditionalParams)
+                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize, gstAdditionalParams, gDownloadManager, fileExtension)
                 else:
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(False, self.useAlternativePlayer))

@@ -293,6 +293,7 @@ class IPTVExtMoviePlayer(Screen):
         else:
             self.lastPosition = 0 
         self.downloader = additionalParams.get('downloader', None)
+        self.isDownladManagerAvailable = additionalParams.get('download_manager_available', False)
         self.externalSubTracks = additionalParams.get('external_sub_tracks', []) #[{'title':'', 'lang':'', 'url':''}, ...]
         self.refreshCmd = additionalParams.get('iptv_refresh_cmd', '')
         self.refreshCmdConsole = None
@@ -472,6 +473,7 @@ class IPTVExtMoviePlayer(Screen):
         self.waitCloseFix['timer_conn'] = eConnectCallback(self.waitCloseFix['timer'].timeout, self.waitCloseTimeoutCallback)
         
         self.isCloseRequestedByUser = False
+        self.savePlabackBuffer = False
         self.playerBinaryInfo = {'version':None, 'data':''}
         self.messageQueue = []
         self.underMessage = False
@@ -498,6 +500,9 @@ class IPTVExtMoviePlayer(Screen):
         if len(self.playback['AudioTracks']): options.append(IPTVChoiceBoxItem(_("Audio tracks"), "", "audio_tracks"))
         options.append(IPTVChoiceBoxItem(_("Video options"), "", "video_options"))
         
+        if self.isDownladManagerAvailable and self.downloader:
+            options.append(IPTVChoiceBoxItem(_("Stop playback with buffer save"), "", "close_with_buffer_save"))
+        
         self.openChild(boundFunction(self.childClosed, self.showMenuOptionsCallback), IPTVChoiceBoxWidget, {'width':500, 'height':340, 'current_idx':0, 'title':_("Menu"), 'options':options})
         
     def showMenuOptionsCallback(self, ret=None):
@@ -512,6 +517,8 @@ class IPTVExtMoviePlayer(Screen):
             self.selectAudioTrack()
         elif "video_options" == ret.privateData:
             self.selectVideoOptions()
+        elif "close_with_buffer_save" == ret.privateData:
+            self.key_stop(True, True)
         
     def runConfigMoviePlayer(self):
         printDBG("runConfigMoviePlayerCallback")
@@ -1270,10 +1277,11 @@ class IPTVExtMoviePlayer(Screen):
             self.lastPosition = self.metaHandler.getLastPosition()
     
     # handling of RCU keys
-    def key_stop(self, requestedByUser=True):
+    def key_stop(self, requestedByUser=True, savePlabackBuffer=False):
         self['pleaseWait'].setText(_("Closing. Please wait..."))
         self['pleaseWait'].show()
         self.isCloseRequestedByUser = requestedByUser
+        self.savePlabackBuffer = savePlabackBuffer
         if self.console != None:
             if self.extPlayerCmddDispatcher.stop():
                 self.saveLastPlaybackTime()
@@ -1683,7 +1691,7 @@ class IPTVExtMoviePlayer(Screen):
         #   - no data in buffer - should return sts = 1
         #   - triggered by user - should return sts = 0
         if self.isCloseRequestedByUser: 
-            sts = 0
+            sts = 2 if self.savePlabackBuffer else 0
         else:
             sts = 1
             

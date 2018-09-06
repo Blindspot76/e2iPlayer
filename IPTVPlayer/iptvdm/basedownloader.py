@@ -8,7 +8,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 ###################################################
 
@@ -16,6 +16,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 # FOREIGN import
 ###################################################
 import datetime
+from os import rename as os_rename
 ###################################################
 
 ###################################################
@@ -89,7 +90,19 @@ class BaseDownloader:
 
     def getFullFileName(self):
         return self.filePath
-        
+
+    def moveFullFileName(self, newPath):
+        bRet = False
+        msg = ''
+        try:
+            os_rename(self.filePath, newPath)
+            self.filePath = newPath
+            bRet = True
+        except Exception, e:
+            printExc()
+            msg = str(e)
+        return bRet, msg
+
     def getUrl(self):
         return self.url
 
