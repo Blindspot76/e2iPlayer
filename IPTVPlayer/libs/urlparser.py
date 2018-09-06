@@ -2154,7 +2154,11 @@ class pageParser(CaptchaHelper):
         video_id = mobj.group('id')
         url = 'http://streamcloud.eu/%s' % video_id
         
-        sts, data = self.cm.getPage(url)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(url, urlParams)
         if not sts: return False
         
         fields = re.findall(r'''(?x)<input\s+
@@ -2169,16 +2173,19 @@ class pageParser(CaptchaHelper):
             msg = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<p', '</p>')[1])
             SetIPTVPlayerLastHostError(msg)
         else:
-            try: t = int(self.getSearchGroups(data, '''var\s*count\s*=\s*([0-9]+?)\s*;''')[0])
-            except Exception: t = 12
+            try: t = int(self.cm.ph.getSearchGroups(data, '''var\s*count\s*=\s*([0-9]+?)\s*;''')[0]) + 1
+            except Exception:
+                printExc()
+                t = 12
             GetIPTVSleep().Sleep(t)
         
-        sts, data = self.cm.getPage(url, {}, fields)
+        sts, data = self.cm.getPage(url, urlParams, fields)
         if not sts: return False
+        cUrl = self.cm.meta['url']
         
-        file = self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0]
-        if file.startswith('http'): return file
-
+        file = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0], cUrl)
+        if file != '':
+            return strwithmeta(file, {'Referer':cUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
         return False
 
     def parserLIMEVIDEO(self,url):
@@ -4952,11 +4959,10 @@ class pageParser(CaptchaHelper):
         
     def parser1FICHIERCOM(self, baseUrl):
         printDBG("parser1FICHIERCOM baseUrl[%s]" % baseUrl)
-        HTTP_HEADER = { 'User-Agent':'Mozilla/%s%s' % (pageParser.FICHIER_DOWNLOAD_NUM, pageParser.FICHIER_DOWNLOAD_NUM),
-                        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        HTTP_HEADER = { 'User-Agent': 'Mozilla/%s%s' % (pageParser.FICHIER_DOWNLOAD_NUM, pageParser.FICHIER_DOWNLOAD_NUM), ## 'Wget/1.%s.%s (linux-gnu)'
+                        'Accept': '*/*',
                         'Accept-Language':'pl,en-US;q=0.7,en;q=0.3',
                         'Accept-Encoding':'gzip, deflate',
-                        'DNT':1,
                       }
         pageParser.FICHIER_DOWNLOAD_NUM += 1
         COOKIE_FILE = GetCookieDir('1fichiercom.cookie')
@@ -4986,13 +4992,19 @@ class pageParser(CaptchaHelper):
         error = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'bloc'), ('</div', '>'), False)[1])
         if error != '': SetIPTVPlayerLastHostError(error)
         
-        data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<form[^>]+?method="POST"', re.IGNORECASE),  re.compile('</form>', re.IGNORECASE), True)[1]
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'post'), ('</form', '>'), caseSensitive=False)[1]
+        printDBG("++++")
         printDBG(data)
-        action = self.cm.ph.getSearchGroups(data, "action='([^']+?)'", ignoreCase=True)[0]
-        post_data = dict(re.compile(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', re.IGNORECASE).findall(data))
+        action = self.cm.ph.getSearchGroups(data, '''action=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '>', caseSensitive=False)
+        all_post_data = {}
+        for item in tmp:
+            name = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            all_post_data[name] = value
         
         if 'use_credits' in data:
-            post_data['use_credits'] = 'on'
+            all_post_data['use_credits'] = 'on'
             logedin = True
         else:
             logedin = False
@@ -5016,7 +5028,8 @@ class pageParser(CaptchaHelper):
         else:
             SetIPTVPlayerLastHostError(error)
         
-        post_data['dl_no_ssl'] = 'on'
+        
+        post_data = {'dl_no_ssl':'on', 'adzone' :all_post_data['adzone']}
         action = urljoin(baseUrl, action)
         
         if logedin:
