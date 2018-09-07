@@ -148,7 +148,7 @@ class IPTVSetupImpl:
             self.setInfo(_(self.stepHelper.getMessage(key,0)), _(self.stepHelper.getMessage(key,1)))
        
     def start(self):
-        printDBG("IPTVSetupImpl.showMessage")
+        printDBG("IPTVSetupImpl.start")
         self.glibcVerDetect()
         
     ###################################################

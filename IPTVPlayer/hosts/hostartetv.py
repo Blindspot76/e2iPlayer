@@ -115,12 +115,22 @@ class ArteTV(CBaseHostClass):
             sts, data = self.getPage(url)
             if not sts: return
             
-            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<article', '>'), ('</article', '>'))
-            for item in data:
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<article', '>'), ('</article', '>'))
+            for item in tmp:
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0])
                 title = self.cleanHtmlStr(item)
                 params = dict(cItem)
                 params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'url':url})
+                self.addDir(params)
+            
+            data = self.cm.ph.getDataBeetwenNodes(data, ('<nav', '>', 'navigation'), ('</nav', '>'))[1]
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+            for item in data:
+                url = self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0]
+                if '/videos/' not in url: continue
+                title = self.cleanHtmlStr(item)
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'category':nextCategory, 'title':title, 'url':self.getFullUrl(url)})
                 self.addDir(params)
         
     def listItems(self, cItem, nextCategory):
@@ -164,7 +174,8 @@ class ArteTV(CBaseHostClass):
         sectionUrl = ''
         tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<section', '>'), ('</section', '>'))
         while idx < len(tmp):
-            if 'next-teaser__link' not in tmp[idx]:
+            
+            if 'next-teaser__link' not in tmp[idx] and '__duration' not in tmp[idx]:
                 sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp[idx], '<h2', '</h2>')[1])
                 if sectionTitle == '': sectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp[idx], ('<li', '>', 'is-highlighted'), ('</li', '>'))[1])
                 sectionUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp[idx], '''\shref=['"]([^'^"]+?)['"]''')[0])
@@ -179,9 +190,13 @@ class ArteTV(CBaseHostClass):
                     sectionTitle = ''
                     sectionUrl = ''
                     continue
+            else:
+                tmpSectionTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp[idx], ('<h', '>', 'section-title'), ('</h', '>'))[1])
+                if tmpSectionTitle != '': sectionTitle = tmpSectionTitle
             
             itemsTab = []
             itemsData = self.cm.ph.getAllItemsBeetwenNodes(tmp[idx], ('<a', '>', 'next-teaser__link'), ('</a', '>'))
+            if len(itemsData) == 0: itemsData = self.cm.ph.getAllItemsBeetwenNodes(tmp[idx], ('<a', '</a>', '__duration'), ('</div', '>'))
             for item in itemsData:
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0])
                 if url == '': continue
@@ -233,7 +248,8 @@ class ArteTV(CBaseHostClass):
                         
                         lang = jsonData['pages']['list'][currentCode]['language']
                         web  = jsonData['pages']['list'][currentCode]['support']
-                        code = zone['code']
+                        code = zone['code']['name']
+                        printDBG('CODE: %s' % zone['code'])
                         nextPage = nextPage.rsplit('/', 1)[-1]
                         if code in nextPage:
                             #url = self.getFullUrl('/guide/api/api/zones/%s/%s/%s' % (lang, web, re.compile('''page=[0-9]+''').sub('page={0}', nextPage)))
