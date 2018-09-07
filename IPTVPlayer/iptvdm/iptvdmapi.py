@@ -230,7 +230,7 @@ class IPTVDMApi():
     def addBufferItem(self, downloader, newFilePath):
         if downloader.getStatus() == DMHelper.STS.DOWNLOADING:
             if len(self.queueUD) >= self.MAX_DOWNLOAD_ITEM:
-                return False, _('Max number of parallel download has been exhausted.')
+                return False, _('Max number of parallel downloads has been reached.')
         
         newFilePath = DMHelper.makeUnikalFileName(newFilePath, False, False)
         bRet, errMsg = downloader.moveFullFileName(newFilePath)
