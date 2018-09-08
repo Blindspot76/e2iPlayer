@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, MergeDicts, rm, GetDefaultLang
@@ -101,12 +101,16 @@ class DDLMe(CBaseHostClass):
             addParams = dict(addParams)
             addParams.update({'http_proxy':proxy})
         tries = 0
-        while tries < 2:
+        while tries < 3:
             tries += 1
             sts, data = self.cm.getPage(baseUrl, addParams, post_data)
             if sts:
                 if config.plugins.iptvplayer.ddlme_proxy.value == 'webproxy' and 'sslagree' in data:
                     sts, data = self.cm.getPage('http://n-guyot.fr/exit/includes/process.php?action=sslagree', addParams, post_data)
+                    tries += 1
+                    continue
+                elif len(data) < 256 and 'warming' in data:
+                    GetIPTVSleep().Sleep(2)
                     continue
             break
         return sts, data
@@ -130,14 +134,14 @@ class DDLMe(CBaseHostClass):
         if not sts: return
 
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'mainmenu'), ('</div', '>'), False)[1]
-        for type in ['moviez', 'episodez']:
-            item = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', type), ('</a', '>'))[1]
-            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+        for type in [('releases', 'release_tab'), ('top100', 'top100_tab'), ('moviez', 'cat_items'), ('episodez', 'cat_items'), ('tags', 'tags_tab')]:
+            item = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', type[0]), ('</a', '>'))[1]
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0].replace('/cover/', '/serien/')
             item = re.compile('<span[^>]*?>').split(item, 1)
             title = self.cleanHtmlStr(item[0])
             desc = self.cleanHtmlStr(item[-1])
             params = dict(cItem)
-            params.update({'good_for_fav':False, 'category':'cat_items', 'title':title, 'url':url, 'desc':desc, 'f_type':type})
+            params.update({'good_for_fav':False, 'category':type[1], 'title':title, 'url':url, 'desc':desc, 'f_type':type[0]})
             self.addDir(params)
         
         MAIN_CAT_TAB = [{'category':'search',         'title': _('Search'),       'search_item':True       },
@@ -149,7 +153,72 @@ class DDLMe(CBaseHostClass):
         if url.startswith('"'): url = self.cm.ph.getSearchGroups(url, '"([^"]+?)"')[0]
         if url.startswith("'"): url = self.cm.ph.getSearchGroups(url, "'([^']+?)'")[0]
         return self.getFullUrl(url)
+        
+    def listSubTabs(self, cItem, nextCategory):
+        printDBG("DDLMe.listSubTabs")
+        sts, data = self.getPage(self.getFullUrl(cItem['url']))
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'catSwitch'), ('</div', '>'), False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            if '/movies' not in url and '/tv' not in url: continue
+            title = self.cleanHtmlStr(item)
+            if title  == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
+            self.addDir(MergeDicts(cItem, {'title':title, 'url':url, 'category':nextCategory, 'desc':''}))
+        
+        if len(self.currList) == 0:
+            self.listTabItems(MergeDicts(cItem, {'category':nextCategory}), 'explore_item')
+        
+    def listTabs(self, cItem, nextCategory):
+        printDBG("DDLMe.listTabs")
+        sts, data = self.getPage(self.getFullUrl(cItem['url']))
+        if not sts: return
+        
+        list = []
+        tabTypes = False
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'btabs'), ('</ul', '>'), False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            if 'filme' in url:
+                tabTypes = True
+            title = self.cleanHtmlStr(item)
+            if title == '' and 'all' in url: title = _('--All--')
+            params = {'title':title, 'url':url}
+            list.append(params)
+        
+        for item in list:
+            if not tabTypes or 'filme' in item['url'] or 'serien' in item['url']:
+                self.addDir(MergeDicts(cItem, item, {'category':nextCategory, 'desc':''}))
     
+    def listTags(self, cItem, nextCategory):
+        printDBG("DDLMe.listTags")
+        sts, data = self.getPage(self.getFullUrl(cItem['url']))
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'css3Tags'), ('</ul', '>'), False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            title = self.cleanHtmlStr(item)
+            desc = self.cm.ph.getSearchGroups(item, '''/explore/([^/]+?)/''')[0].title()
+            self.addDir(MergeDicts(cItem, {'title':title, 'url':url, 'category':nextCategory, 'desc':desc}))
+            
+    def listSortTags(self, cItem, nextCategory):
+        printDBG("DDLMe.listSortTags")
+        sts, data = self.getPage(self.getFullUrl(cItem['url']))
+        if not sts: return
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'viewSwitch'), ('</div', '>'), False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            title = self.cleanHtmlStr(item)
+            if title  == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
+            self.addDir(MergeDicts(cItem, {'title':title, 'url':url, 'category':nextCategory, 'desc':''}))
+        
     def listCatItems(self, cItem, nextCategory):
         printDBG("DDLMe.listCatItems")
         self.cacheCats = []
@@ -183,59 +252,10 @@ class DDLMe(CBaseHostClass):
     def listSubItems(self, cItem):
         printDBG("DDLMe.listSubItems")
         self.currList = cItem['sub_items']
-    
-    def getItems(self, cItem, nextCategory, data):
-        printDBG("DDLMe.getItems")
-        retList = []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
-        for item in data:
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
-            if url == '': continue
-            icon = self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^"^']+?\.(?:jpe?g|png)(?:\?[^'^"]*?)?)['"]''')[0]
-            if icon == '': icon = self.cm.ph.getSearchGroups(item, '''\ssrc=['"]([^"^']+?)['"]''')[0]
-            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<h', '>'), ('</h', '>'), False)[1] )
-            if 'details-serie' in cItem['url']: title += ' ' + self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'opacity'), ('</span', '>'), False)[1] )
-            if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(item, ('<a', '>', 'name'), ('</a', '>'), False)[1] )
-            
-            desc = ''
-            descTab = []
-            
-            desc = self.cm.ph.getAllItemsBeetwenMarkers(item, '<h3', '</h3>')
-            desc.append(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'genre'), ('</div', '>'))[1])
-            desc.extend( self.cm.ph.getAllItemsBeetwenNodes(item, ('<span', '>'), ('</span', '>')) )
-
-            for t in desc:
-                d = self.cleanHtmlStr(t)
-                if d == '': continue
-                else: descTab.append(d)
-            desc = ' | '.join(descTab)
-            params = dict(cItem)
-            if 'tout_voir' in icon:
-                params.update( {'good_for_fav': False, 'title':'TOUT VOIR >>'})
-            elif 'details-serie' in url:
-                params.update( {'good_for_fav': True, 'title':title})
-            else:
-                params.update( {'good_for_fav': True, 'category':nextCategory, 'title':title})
-                
-            params.update( {'url':url, 'desc':desc, 'icon':self.getFullIconUrl(icon)} )
-            retList.append(params)
-        return retList
         
-    def listItems(self, cItem, nextCategory):
-        printDBG("DDLMe.listItems [%s]" % cItem)
-
-        page = cItem.get('page', 1)
-        url = '/%s_%s_%s_2_%s/' % (cItem['f_type'], cItem['f_type'], cItem['f_sort'], page)
-        sts, data = self.getPage(self.getFullUrl(url))
-        if not sts: return
+    def _listItems(self, cItem, nextCategory, data):
+        printDBG("DDLMe._listItems [%s]" % nextCategory)
         cUrl = self.cm.meta['url']
-        
-        if config.plugins.iptvplayer.ddlme_proxy.value == 'webproxy':
-            nextPage = '_{0}%2'
-        else:
-            nextPage = '_{0}/'
-        nextPage = nextPage.format(page + 1) in data
-        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<table', '</table>', False)[1].split('</tr>')
         for item in data:
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''rel=['"]([^"^']+?)["']''', 1, True)[0], cUrl)
@@ -255,6 +275,77 @@ class DDLMe(CBaseHostClass):
             params.update( {'good_for_fav': True, 'title':title, 'category':nextCategory, 'year':self.cleanHtmlStr(item[-1]), 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)} )
             self.addDir(params)
         
+    def listTagItems(self, cItem, nextCategory):
+        printDBG("DDLMe.listTagItems [%s]" % cItem)
+
+        page = cItem.get('page', 1)
+
+        sts, data = self.getPage(self.getFullUrl(cItem['url']))
+        if not sts: return
+
+        nextPage = self.cm.ph.getSearchGroups(data, '''<a([^>]+?fa\-arrow\-circle\-right[^>]+?)>''')[0]
+        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''href=['"]([^'^"]+?)['"]''')[0])
+
+        cUrl = self.cm.meta['url']
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'item'), ('</a', '>'))
+        for item in data:
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0], cUrl)
+            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)["']''', 1, True)[0], cUrl)
+            item = item.split('</span>', 1)
+            title = self.cleanHtmlStr(item[0])
+            desc = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item[-1], '''rel=['"]([^"^']+?)["']''', 1, True)[0]) + ' | ' + self.cleanHtmlStr(item[-1])
+            
+            params = dict(cItem)
+            params.update( {'good_for_fav': True, 'title':title, 'category':nextCategory, 'year':self.cleanHtmlStr(item[-1].split('#', 1)[0]), 'url':url, 'icon':icon, 'desc':desc} )
+            self.addDir(params)
+
+        if nextPage and len(self.currList):
+            try:
+                tmp = int(self.cm.ph.getSearchGroups(nextPage, '''/([0-9]+)/?$''')[0])
+                if tmp > page:
+                    params = dict(cItem)
+                    params.update( {'good_for_fav': False, 'title':_('Next page'), 'url':nextPage, 'page':tmp} )
+                    self.addDir(params)
+            except Exception:
+                printExc()
+        
+    def listTabItems(self, cItem, nextCategory):
+        printDBG("DDLMe.listTabItems [%s]" % cItem)
+
+        page = cItem.get('page', 1)
+
+        sts, data = self.getPage(self.getFullUrl(cItem['url']))
+        if not sts: return
+
+        nextPage = self.cm.ph.getSearchGroups(data, '''<a([^>]+?fa\-arrow\-circle\-right[^>]+?)>''')[0]
+        nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''href=['"]([^'^"]+?)['"]''')[0])
+
+        self._listItems(cItem, nextCategory, data)
+
+        if nextPage and len(self.currList):
+            try:
+                tmp = int(self.cm.ph.getSearchGroups(nextPage, '''/([0-9]+)/?$''')[0])
+                if tmp > page:
+                    params = dict(cItem)
+                    params.update( {'good_for_fav': False, 'title':_('Next page'), 'url':nextPage, 'page':tmp} )
+                    self.addDir(params)
+            except Exception:
+                printExc()
+        
+    def listItems(self, cItem, nextCategory):
+        printDBG("DDLMe.listItems [%s]" % cItem)
+
+        page = cItem.get('page', 1)
+        url = '/%s_%s_%s_2_%s/' % (cItem['f_type'], cItem['f_type'], cItem['f_sort'], page)
+        sts, data = self.getPage(self.getFullUrl(url))
+        if not sts: return
+        
+        if config.plugins.iptvplayer.ddlme_proxy.value == 'webproxy': nextPage = '_{0}%2'
+        else: nextPage = '_{0}/'
+        nextPage = nextPage.format(page + 1) in data
+        
+        self._listItems(cItem, nextCategory, data)
+        
         if nextPage:
             params = dict(cItem)
             params.update( {'good_for_fav': False, 'title':_('Next page'), 'page':page + 1} )
@@ -267,6 +358,8 @@ class DDLMe(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         cUrl = self.getFullUrl(self.cm.meta['url'])
+        
+        #printDBG(data)
         
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'detailDesc'), ('</p', '>'), False)[1])
         
@@ -494,6 +587,27 @@ class DDLMe(CBaseHostClass):
     #MAIN MENU
         if name == None:
             self.listMain({'name':'category', 'type':'category'})
+        
+        elif category == 'release_tab':
+            self.listTabs(self.currItem, 'tab_items')
+        
+        elif category == 'top100_tab':
+            self.listTabs(self.currItem, 'top100_subtab')
+        elif category == 'top100_subtab':
+            self.listSubTabs(self.currItem, 'tab_items')
+        
+        elif category == 'tab_items':
+            self.listTabItems(self.currItem, 'explore_item')
+        
+        elif category == 'tags_tab':
+            self.listTabs(self.currItem, 'tags')
+        elif category == 'tags':
+            self.listTags(self.currItem, 'sort_tags')
+        elif category == 'sort_tags':
+            self.listSortTags(self.currItem, 'tag_items')
+        elif category == 'tag_items':
+            self.listTagItems(self.currItem, 'explore_item')
+        
         elif category == 'cat_items':
             self.listCatItems(self.currItem, 'sort_items')
         elif category == 'sort_items':
