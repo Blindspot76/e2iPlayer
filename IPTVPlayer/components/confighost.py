@@ -192,6 +192,14 @@ class ConfigHostsMenu(ConfigBaseWidget):
             self._moveItem(curIndex)
         else:
             ConfigBaseWidget.keyDown(self)
+            
+    def keyPageUp(self):
+        if not self.reorderingEnabled:
+            ConfigBaseWidget.keyPageUp(self)
+    
+    def keyPageDown(self):
+        if not self.reorderingEnabled:
+            ConfigBaseWidget.keyPageDown(self)
     
     def keyLeft(self):
         if not self.reorderingEnabled:

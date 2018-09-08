@@ -277,10 +277,12 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
     def keyYellow(self):
         self.hiddenOptionsSecretCode += "y"
         self.runSetup()
+        self.keyPageUp()
 
     def keyBlue(self):
         self.hiddenOptionsSecretCode += "b"
         self.runSetup()
+        self.keyPageDown()
         
     def keyMenu(self):
         pass
@@ -294,10 +296,12 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
             self["config"].instance.moveSelection(self["config"].instance.moveDown)
             
     def keyPageUp(self):
-        pass
+        if self["config"].instance is not None:
+            self["config"].instance.moveSelection(self["config"].instance.pageUp)
     
     def keyPageDown(self):
-        pass
+        if self["config"].instance is not None:
+            self["config"].instance.moveSelection(self["config"].instance.pageDown)
         
     def keyHome(self):
         pass
