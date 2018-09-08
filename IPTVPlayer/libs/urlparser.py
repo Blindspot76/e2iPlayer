@@ -5052,7 +5052,11 @@ class pageParser(CaptchaHelper):
             params['header']['Referer'] = baseUrl
             sts = self.cm.getPage(action, params, post_data)[0]
             if not sts: return False
-            videoUrl = self.cm.meta['url']
+            if 'text' not in self.cm.meta.get('content-type', ''):
+                videoUrl = self.cm.meta['url']
+            else:
+                SetIPTVPlayerLastHostError(error)
+                videoUrl = ''
         else:
             params['header']['Referer'] = baseUrl
             sts, data = self.cm.getPage(action, params, post_data)
@@ -7218,14 +7222,20 @@ class pageParser(CaptchaHelper):
     def parserUPTOSTREAMCOM(self, baseUrl):
         printDBG("parserUPTOSTREAMCOM baseUrl[%s]" % baseUrl)
         
+        sts, baseData = self.cm.getPage(baseUrl)
+        if not sts: return False
+        baseUrl = self.cm.meta['url']
+        
+        timestamp = time.time()
+        cUrl = baseUrl
         url = baseUrl
         domain = urlparser.getDomain(baseUrl) 
         if '/iframe/' not in url:
             url = 'https://' + domain + '/iframe/' + url.split('/')[-1]
-            baseUrl = url
         else:
             url = baseUrl
         
+        urlTab = []
         tries = 0
         while tries < 2:
             tries += 1
@@ -7233,13 +7243,12 @@ class pageParser(CaptchaHelper):
             if tries == 2 and domain != 'uptostream.com':
                 url = url.replace(domain, 'uptostream.com')
                 domain = 'uptostream.com'
-                baseUrl = url
             
             sts, data = self.cm.getPage(url)
             if not sts: return False
             
             errMsg = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'error'), ('</div', '>'))[1]
-            SetIPTVPlayerLastHostError(clean_html(errMsg))
+            SetIPTVPlayerLastHostError(clean_html(errMsg).strip())
         
             subTracks = []
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<track', '</track>', False, False)
@@ -7255,7 +7264,6 @@ class pageParser(CaptchaHelper):
                 subTracks.append({'title':label, 'url':url, 'lang':label, 'format':type})
             
             #'<font color="red">', '</font>'
-            urlTab = []
             items = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
             if 0 == len(items):
                 sts, items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''var\s+sources\s*=\s*\['''), re.compile('''\]'''), False)
@@ -7273,11 +7281,61 @@ class pageParser(CaptchaHelper):
                 if url.startswith('//'):
                     url = 'http:' + url
                 if self.cm.isValidUrl(url):
-                    url = strwithmeta(url, {'Referer':baseUrl, 'external_sub_tracks':subTracks})
+                    url = strwithmeta(url, {'Referer':self.cm.meta['url'], 'external_sub_tracks':subTracks})
                     urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
             if len(urlTab):
                 break
         urlTab.reverse()
+        
+        if len(urlTab) == 0:
+            sleep_time = self.cm.ph.getSearchGroups(baseData, '''data\-remaining\-time=['"]([0-9]+?)['"]''')[0]
+            if sleep_time != '':
+                sleep_time = float(sleep_time)
+                sleep_time -= time.time() - timestamp
+                if  sleep_time > 0:
+                    GetIPTVSleep().Sleep(int(math.ceil(sleep_time)) + 1)
+                
+            errMsg = self.cm.ph.getDataBeetwenNodes(baseData, ('<', '>', 'fa-times'), ('</p', '>'))[1]
+            if errMsg == '':
+                errMsg = self.cm.ph.getDataBeetwenNodes(baseData, ('<form', '>'), ('</form', '>'))[1]
+            SetIPTVPlayerLastHostError(clean_html(errMsg).strip())
+            
+            tmp = ''
+            tmpTab = self.cm.ph.getAllItemsBeetwenNodes(baseData, ('<form', '>', 'post'), ('</form', '>'), True, caseSensitive=False)
+            for tmpItem in tmpTab:
+                if 'waitingToken' in tmpItem:
+                    tmp = tmpItem
+                    break
+            
+            if tmp != '':
+                action = self.cm.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''action=['"]([^'^"]+?)['"]''', ignoreCase=True)[0], baseUrl)
+                if action == '': action = baseUrl
+                
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<input', '>', False, False)
+                post_data = {}
+                for item in tmp:
+                    name  = self.cm.ph.getSearchGroups(item, '''name=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                    value = self.cm.ph.getSearchGroups(item, '''value=['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+                    if name != '' and value != '': post_data[name] = value
+                
+                sts, baseData = self.cm.getPage(action, post_data=post_data)
+                if not sts: return urlTab
+                baseUrl = self.cm.meta['url']
+            
+            printDBG(baseData)
+            
+            tries = 0
+            while tries < 2:
+                tries += 1
+                downloadLink = self.cm.ph.getDataBeetwenNodes(baseData, ('<a', '>', 'button-green-flat '), ('</a', '>'))[1]
+                downloadLink = self.cm.getFullUrl(self.cm.ph.getSearchGroups(downloadLink, '''href=['"]([^'^"]+?)['"]''')[0], baseUrl)
+                if downloadLink != '': 
+                    urlTab.append({'name':'%s - download' % domain, 'url':strwithmeta(downloadLink, {'Referer':baseUrl})})
+                    break
+                
+                sts, baseData = self.cm.getPage(baseUrl)
+                if not sts: return urlTab
+            
         return urlTab
         
     def parseVIMEOCOM(self, baseUrl):
