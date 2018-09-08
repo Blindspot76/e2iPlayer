@@ -20,6 +20,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigDirect
 import re
 import codecs
 import time
+from os.path import normpath
 ###################################################
 
 
@@ -38,7 +39,7 @@ config.plugins.iptvplayer.sortuj         = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = [] 
-    optionList.append(getConfigListEntry(_('Text files ytlist and urllist are in:'), config.plugins.iptvplayer.Sciezkaurllist))    
+    optionList.append(getConfigListEntry(_('Text files ytlist and urllist are in:'), config.plugins.iptvplayer.Sciezkaurllist))
     optionList.append(getConfigListEntry(_('Sort the list:'), config.plugins.iptvplayer.sortuj))
     optionList.append(getConfigListEntry(_('Group links into categories: '), config.plugins.iptvplayer.grupujurllist))
     return optionList
@@ -54,12 +55,13 @@ class Urllist(CBaseHostClass):
     
     def __init__(self):
         printDBG("Urllist.__init__")
+        path = config.plugins.iptvplayer.Sciezkaurllist.value + '/'
         
-        self.MAIN_GROUPED_TAB = [{'category': 'all', 'title': (_("All in one")), 'desc': (_("Links are videos and messages, without division into categories")), 'icon':'http://osvita.mediasapiens.ua/content/news/001000-002000/shyfrovanie_dannyh_1415.jpg'}]     
-        self.MAIN_GROUPED_TAB.extend( [{'category': Urllist.URLLIST_FILE,       'title': (_("Videos")),                    'desc': (_("Links to the video files from the file urllist.txt")),        'icon':'http://mohov.h15.ru/logotip_kino.jpg'}, \
-                                       {'category': Urllist.URRLIST_STREAMS,    'title': (_("live transfers")),            'desc': (_("Live broadcasts from the file urllist.stream")),              'icon':'http://asiamh.ru.images.1c-bitrix-cdn.ru/images/media_logo.jpg?136879146733721'}, \
-                                       {'category': Urllist.URRLIST_USER,       'title': (_("User files")),                'desc': (_("Favorite addresses are stored under the file urllist.user")), 'icon':'http://kinovesti.ru/uploads/posts/2014-12/1419918660_1404722920_02.jpg'}])
-        CBaseHostClass.__init__(self)               
+        self.MAIN_GROUPED_TAB = [{'category': 'all',                            'title': _("All in one"),                'desc': _("Links from all files without categories"),                              'icon':'http://osvita.mediasapiens.ua/content/news/001000-002000/shyfrovanie_dannyh_1415.jpg'}]
+        self.MAIN_GROUPED_TAB.extend( [{'category': Urllist.URLLIST_FILE,       'title': _("Videos"),                    'desc': _("Links from the file %s") % normpath(path + 'urllist.txt'),              'icon':'http://mohov.h15.ru/logotip_kino.jpg'}, \
+                                       {'category': Urllist.URRLIST_STREAMS,    'title': _("Live streams"),              'desc': _("Links from the file %s") % normpath(path + 'urllist.stream'),           'icon':'http://asiamh.ru.images.1c-bitrix-cdn.ru/images/media_logo.jpg?136879146733721'}, \
+                                       {'category': Urllist.URRLIST_USER,       'title': _("User files"),                'desc': _("Links from the file %s") % normpath(path + 'urllist.user'),             'icon':'http://kinovesti.ru/uploads/posts/2014-12/1419918660_1404722920_02.jpg'}])
+        CBaseHostClass.__init__(self)
         self.currFileHost = None 
     
     def _cleanHtmlStr(self, str):

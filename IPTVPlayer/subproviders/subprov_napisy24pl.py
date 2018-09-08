@@ -96,7 +96,7 @@ class Napisy24plProvider(CBaseSubProviderClass):
             else:
                 self.logedIn = True
         else:
-            self.sessionEx.open(MessageBox, _('Service http://napisy24.pl/ requires registration. \nPlease fill your login and password in the IPTVPlayer configuration.'), type = MessageBox.TYPE_ERROR, timeout = 10)
+            self.sessionEx.open(MessageBox, _('Service %s requires registration. \nPlease fill your login and password in the %s configuration.') % ('http://napisy24.pl/', 'E2iPlayer'), type = MessageBox.TYPE_ERROR, timeout = 10)
         
     def sortSubtitlesByDurationMatch(self):
         # we need duration to sort

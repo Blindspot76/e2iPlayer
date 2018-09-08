@@ -35,15 +35,9 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-#config.plugins.iptvplayer.alltubetv_premium  = ConfigYesNo(default = False)
-#config.plugins.iptvplayer.alltubetv_login    = ConfigText(default = "", fixed_size = False)
-#config.plugins.iptvplayer.alltubetv_password = ConfigText(default = "", fixed_size = False)
 
 def GetConfigList():
     optionList = []
-    #if config.plugins.iptvplayer.alltubetv_premium.value:
-    #    optionList.append(getConfigListEntry("  alltubetv login:", config.plugins.iptvplayer.alltubetv_login))
-    #    optionList.append(getConfigListEntry("  alltubetv hasło:", config.plugins.iptvplayer.alltubetv_password))
     return optionList
 ###################################################
 

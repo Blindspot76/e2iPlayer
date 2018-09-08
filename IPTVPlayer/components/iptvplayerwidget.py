@@ -462,9 +462,7 @@ class E2iPlayerWidget(Screen):
                 elif not self.workThread.isFinished():
                     if self.hostName not in GetHostsList(fromList=True, fromHostFolder=False):
                         message = _('It seems that the host "%s" has crashed.') % self.hostName
-                        message += _('\nThis host is not integral part of the IPTVPlayer plugin.\nIt is not supported by IPTVPlayer team.')
-                        if 'weebtv' == self.hostName:
-                            message += _('\nPlease use "Web" streams player -> WeebTV instead.')
+                        message += _('\nThis host is not integral part of the E2iPlayer plugin.\nIt is not supported by E2iPlayer team.')
                         self.session.open(MessageBox, message, type = MessageBox.TYPE_ERROR)
                     else:
                         message = _('It seems that the host "%s" has crashed. Do you want to report this problem?') % self.hostName

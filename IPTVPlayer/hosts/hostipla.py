@@ -52,9 +52,9 @@ config.plugins.iptvplayer.iplaUseDF         = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_("Używaj danych z pamięci podręcznej:"), config.plugins.iptvplayer.iplacachexml))
-    optionList.append(getConfigListEntry(_("Domyślny format video:"), config.plugins.iptvplayer.iplaDefaultformat))
-    optionList.append(getConfigListEntry(_("Używaj domyślnego format video:"), config.plugins.iptvplayer.iplaUseDF))
+    optionList.append(getConfigListEntry("Używaj danych z pamięci podręcznej:", config.plugins.iptvplayer.iplacachexml))
+    optionList.append(getConfigListEntry("Domyślny format video:", config.plugins.iptvplayer.iplaDefaultformat))
+    optionList.append(getConfigListEntry("Używaj domyślnego format video:", config.plugins.iptvplayer.iplaUseDF))
     return optionList
 ###################################################
 

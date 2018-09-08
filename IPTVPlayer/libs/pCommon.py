@@ -511,7 +511,7 @@ class common:
         messages.append(_('It looks like your current configuration do not allow to connect to the https://%s/.\n') % domain)
         
         if type == 'verify' and IsHttpsCertValidationEnabled():
-            messages.append(_('You can disable HTTPS certificates validation in the IPTVPlayer configuration to suppress this problem.'))
+            messages.append(_('You can disable HTTPS certificates validation in the E2iPlayer configuration to suppress this problem.'))
         else:
             pyCurlInstalled = False
             try:
@@ -523,11 +523,11 @@ class common:
                 printExc()
             if pyCurlInstalled:
                 if not UsePyCurl():
-                    messages.append(_('You can enable PyCurl in the IPTVPlayer configuration to fix this problem.'))
+                    messages.append(_('You can enable PyCurl in the E2iPlayer configuration to fix this problem.'))
                 else:
-                    messages.append(_('Please report this problem to the developer iptvplayere2@gmail.com.'))
+                    messages.append(_('Please report this problem to the developer %s.') % 'iptvplayere2@gmail.com')
             else:
-                messages.append(_('You can install PyCurl package from http://www.iptvplayer.gitlab.io/ to fix this problem.'))
+                messages.append(_('You can install PyCurl package from %s to fix this problem.') % 'http://www.iptvplayer.gitlab.io/')
         GetIPTVNotify().push('\n'.join(messages), 'error', 40, type + domain, 40)
     
     def usePyCurl(self):

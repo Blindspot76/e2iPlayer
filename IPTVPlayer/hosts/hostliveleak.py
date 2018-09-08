@@ -33,11 +33,11 @@ except Exception: import simplejson as json
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.liveleak_searchsort = ConfigSelection(default = "relevance", choices = [("relevance", _("Najtrafniejsze")), ("date", _("Najnowsze")), ("views", _("Popularność")), ("votes", _("Najlepiej oceniane"))])
+config.plugins.iptvplayer.liveleak_searchsort = ConfigSelection(default = "relevance", choices = [("relevance", "Najtrafniejsze"), ("date", "Najnowsze"), ("views", "Popularność"), ("votes", "Najlepiej oceniane")])
 
 def GetConfigList():
     optionList = []
-    optionList.append( getConfigListEntry( _("Sortuj wyniki wyszukiwania po:"), config.plugins.iptvplayer.liveleak_searchsort ) )
+    optionList.append( getConfigListEntry( "Sortuj wyniki wyszukiwania po:", config.plugins.iptvplayer.liveleak_searchsort ) )
     return optionList
 ###################################################
 

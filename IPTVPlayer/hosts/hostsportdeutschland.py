@@ -108,7 +108,7 @@ class SportDeutschland(CBaseHostClass):
         printDBG("SportDeutschland.listCategories")
         data = self._getItemsListFromJson(self.MAIN_API_URL + 'sections?access_token=true&per_page=9999')
         
-        params = {'name':'category', 'title':_('--Wszystkie--'), 'category':'category', 'permalink':'', 'uuid':'', 'page':1}
+        params = {'name':'category', 'title':_('--All--'), 'category':'category', 'permalink':'', 'uuid':'', 'page':1}
         self.addDir(params)
         
         for item in data:

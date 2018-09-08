@@ -63,7 +63,6 @@ def GetConfigList():
     optionList.append(getConfigListEntry("Domyślna jakość wideo",           config.plugins.iptvplayer.tvpVodDefaultformat))
     optionList.append(getConfigListEntry("Używaj domyślnej jakości wideo:", config.plugins.iptvplayer.tvpVodUseDF))
     optionList.append(getConfigListEntry("Korzystaj z proxy?",              config.plugins.iptvplayer.tvpVodProxyEnable))
-    #optionList.append(getConfigListEntry("Więcej jako następna strona",     config.plugins.iptvplayer.tvpVodNextPage))
     return optionList
 ###################################################
 
@@ -402,7 +401,7 @@ class TvpVod(CBaseHostClass):
             params = dict(cItem)
             params.update({'page':page+1})
             if config.plugins.iptvplayer.tvpVodNextPage.value:
-                params['title'] = _("Następna strona")
+                params['title'] = _('Next page')
                 self.addDir(params)
             else:
                 params['title'] = _('More')

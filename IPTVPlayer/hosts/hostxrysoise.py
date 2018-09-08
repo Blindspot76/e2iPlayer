@@ -33,7 +33,7 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.movieshdco_sortby = ConfigSelection(default = "date", choices = [("date", _("Lastest")), ("views", _("Most viewed")), ("duree", _("Longest")), ("rate", _("Top rated")), ("random", _("Tandom"))]) 
+config.plugins.iptvplayer.movieshdco_sortby = ConfigSelection(default = "date", choices = [("date", _("Lastest")), ("views", _("Most viewed")), ("duree", _("Longest")), ("rate", _("Top rated")), ("random", _("Random"))]) 
 
 def GetConfigList():
     optionList = []

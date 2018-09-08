@@ -289,11 +289,11 @@ class TvnVod(CBaseHostClass):
                     if '' == title: title = self._getJItemStr(item, 'title', '')
                     if '' == title:
                         if category == 'recommended': continue
-                        else: title = _('Brak nazwy')
+                        else: title = 'Brak nazwy'
                     tmp = self._getJItemStr(item, 'episode', '')
-                    if tmp not in ('', '0'): title += _(", odcinek ") + tmp
+                    if tmp not in ('', '0'): title += ", odcinek " + tmp
                     tmp = self._getJItemStr(item, 'season', '')
-                    if tmp not in ('', '0'): title += _(", sezon ") + tmp
+                    if tmp not in ('', '0'): title += ", sezon " + tmp
                     try:
                         tmp = self._getJItemStr(item, 'start_date', '')
                         if '' != tmp:
@@ -340,7 +340,7 @@ class TvnVod(CBaseHostClass):
                     self.addDir(params)
             if showNextPage:
                 params = dict(cItem)
-                params.update({'good_for_fav':False, 'title':_('Następna strona'), 'page': page, 'icon':'', 'desc':''})
+                params.update({'good_for_fav':False, 'title':_('Next page'), 'page': page, 'icon':'', 'desc':''})
                 self.addDir(params)
         except Exception: 
             printExc()

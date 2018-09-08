@@ -197,7 +197,7 @@ class ZalukajCOM(CBaseHostClass):
             if '' != url: self.addVideo({'title':title, 'url':url, 'desc':desc, 'icon':icon})
         if nextPage: 
             params = dict(cItem)
-            params.update({'title':_('Następna strona'), 'page':page+1})
+            params.update({'title':_('Next page'), 'page':page+1})
             self.addDir(params)
             
     def listUpdatedSeries(self, cItem, category):

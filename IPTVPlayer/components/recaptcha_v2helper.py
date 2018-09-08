@@ -16,7 +16,7 @@ class CaptchaHelper():
         if isinstance(baseErrMsgTab, list):
             errorMsgTab = list(baseErrMsgTab)
         else:
-            errorMsgTab = [_('Link protected with google recaptcha v2.')]
+            errorMsgTab = [_('Link protected with Google ReCaptcha v2')]
         
         if userAgent == None:
             try:
@@ -48,7 +48,7 @@ class CaptchaHelper():
             if recaptcha != None:
                 token = recaptcha.processCaptcha(sitekey, refUrl)
             else:
-                errorMsgTab.append(_('Please visit http://www.iptvplayer.gitlab.io/captcha.html to learn how to redirect this task to the external device.'))
+                errorMsgTab.append(_('Please visit %s to learn how to redirect this task to the external device.') % 'http://www.iptvplayer.gitlab.io/captcha.html')
                 if not beQuaiet:
                     self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(errorMsgTab), type=MessageBox.TYPE_ERROR, timeout=20)
                 if bypassCaptchaService != None:

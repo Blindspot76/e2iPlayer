@@ -220,8 +220,9 @@ class iptv_system:
     used inside other threads
     '''
     def __init__(self, cmd, callBackFun=None):
-        printDBG("iptv_system.__init__")
+        printDBG("iptv_system.__init__ cmd [%s]" % cmd)
         self.callBackFun = callBackFun
+        self.cmd = cmd
         
         self.console = eConsoleAppContainer()
         if None != self.callBackFun:
@@ -251,7 +252,7 @@ class iptv_system:
             self.outData += data
 
     def _cmdFinished(self, code):
-        printDBG("iptv_system._cmdFinished code[%r]" % code)
+        printDBG("iptv_system._cmdFinished cmd[%s] code[%r]" % (self.cmd, code))
         self.console_appClosed_conn = None
         self.console_stdoutAvail_conn = None
         self.console = None
@@ -259,7 +260,7 @@ class iptv_system:
         self.callBackFun = None
 
     def __del__(self):
-        printDBG("iptv_system.__del__")
+        printDBG("iptv_system.__del__ cmd[%s]" % self.cmd)
 
 def IsHttpsCertValidationEnabled():
     return config.plugins.iptvplayer.httpssslcertvalidation.value

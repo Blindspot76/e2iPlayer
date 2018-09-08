@@ -48,7 +48,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'IPTVPlayer Info'
+    return 'E2iPlayer info'
 
 class IPTVPlayerInfo(CBaseHostClass):
  
@@ -66,11 +66,11 @@ class IPTVPlayerInfo(CBaseHostClass):
                              {'category':'tutorial',       'title': _('Tutorials'),     } 
                             ]
                             
-        self.TUTORIALS_TAB = [{'title': _('Services management'),                               'url':'https://www.youtube.com/watch?v=pG-_csh2TDk'},
-                             {'title': _('http://rte.ie/player serivce overview'),              'url':'https://www.youtube.com/watch?v=IhC8m8K1jkg'},
-                             {'title': _('[en] External subtitles download - how to'),          'url':'https://www.youtube.com/watch?v=ZO6w6Pr5z_4'},
-                             {'title': _('[pl] External subtitles download - how to'),          'url':'https://www.youtube.com/watch?v=3onH5vxlDcg'},
-                             {'title': _('http://prijevodi-online.org/ subtitles provider'),    'url':'https://www.youtube.com/watch?v=lb8QvViUYq4'},
+        self.TUTORIALS_TAB = [{'title': _('Services management'),                                     'url':'https://www.youtube.com/watch?v=pG-_csh2TDk'},
+                             {'title': _('%s - service overview') % 'http://rte.ie/player',           'url':'https://www.youtube.com/watch?v=IhC8m8K1jkg'},
+                             {'title': _('%s subtitles download - how to') % _('[en]'),               'url':'https://www.youtube.com/watch?v=ZO6w6Pr5z_4'},
+                             {'title': _('%s subtitles download - how to') % _('[pl]'),               'url':'https://www.youtube.com/watch?v=3onH5vxlDcg'},
+                             {'title': _('%s - subtitles provider') % 'http://prijevodi-online.org/', 'url':'https://www.youtube.com/watch?v=lb8QvViUYq4'},
                             ]
                             
                             

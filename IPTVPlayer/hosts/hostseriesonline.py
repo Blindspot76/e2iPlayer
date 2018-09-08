@@ -106,7 +106,7 @@ class SeriesOnlineIO(CBaseHostClass):
             break
 
         if captcha:
-            message =_('This site is protected with google recaptcha v2.')
+            message =_('This site is protected with Google reCaptcha v2.')
             SetIPTVPlayerLastHostError(message)
             if not self.userInformedAboutCaptchaProtection:
                 self.userInformedAboutCaptchaProtection = True

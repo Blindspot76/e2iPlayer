@@ -84,7 +84,7 @@ class GoldVodTVApi:
                 self.loggedIn = True
                 self.http_params.update({'save_cookie': True, 'load_cookie': True, 'cookiefile': self.COOKIE_FILE})
             else:
-                self.sessionEx.open(MessageBox, _('Problem z zalogowanie użytkownika "%s. Sprawdź dane do logowania w konfiguracji hosta."') % login, type = MessageBox.TYPE_INFO, timeout = 10 )
+                self.sessionEx.open(MessageBox, 'Problem z zalogowanie użytkownika "%s. Sprawdź dane do logowania w konfiguracji hosta."' % login, type = MessageBox.TYPE_INFO, timeout = 10 )
                 self.loggedIn = False
         
         channelsTab = []

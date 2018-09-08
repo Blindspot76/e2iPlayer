@@ -509,6 +509,7 @@ class urlparser:
                        'jawcloud.co':          self.pp.parserJAWCLOUDCO     ,
                        'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
                        'wstream.video':        self.pp.parserWSTREAMVIDEO   ,
+                       'share-online.biz':     self.pp.parserSHAREONLINEBIZ ,
                     }
         return
     
@@ -549,7 +550,12 @@ class urlparser:
         parser = self.getParser(url, host)
         if None != parser:
             return 1
+        elif self.isHostsNotSupported(host):
+            return -1
         return ret
+        
+    def isHostsNotSupported(self, host):
+        return host in ['rapidgator.net', 'oboom.com']
 
     def getVideoLinkExt(self, url):
         videoTab = []
@@ -581,6 +587,12 @@ class urlparser:
             parser = self.getParser(url)
             if None != parser:
                 nUrl = parser(url)
+            else:
+                host = self.getHostName(url)
+                if self.isHostsNotSupported(host):
+                    SetIPTVPlayerLastHostError(_('Hosting "%s" not supported.') % host)
+                else:
+                    SetIPTVPlayerLastHostError(_('Hosting "%s" unknown.') % host)
     
             if isinstance(nUrl, list) or isinstance(nUrl, tuple):
                 if True == acceptsList:
@@ -2186,6 +2198,9 @@ class pageParser(CaptchaHelper):
         file = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, r'''['"]?file['"]?[ ]*:[ ]*['"]([^"^']+)['"],''')[0], cUrl)
         if file != '':
             return strwithmeta(file, {'Referer':cUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            
+        msg = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'msgboxinfo'), ('</div', '>'), False)[1])
+        SetIPTVPlayerLastHostError(msg)
         return False
 
     def parserLIMEVIDEO(self,url):
@@ -4984,7 +4999,7 @@ class pageParser(CaptchaHelper):
                 else:
                     error = clean_html(self.cm.ph.getDataBeetwenMarkers(data, '<div class="bloc2"', '</div>')[1])
                     sessionEx = MainSessionWrapper() 
-                    sessionEx.waitForFinishOpen(MessageBox, _('Login on https://1fichier.com/ failed.') + '\n' + error, type = MessageBox.TYPE_INFO, timeout = 5)
+                    sessionEx.waitForFinishOpen(MessageBox, _('Login on {0} failed.').format('https://1fichier.com/') + '\n' + error, type = MessageBox.TYPE_INFO, timeout = 5)
         
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: return False
@@ -7923,7 +7938,7 @@ class pageParser(CaptchaHelper):
         orgData = re.sub('''if\s*\([^\}]+?document[^\}]+?\}''', '', orgData)
         dec = __decode_k(encTab[0], orgData)
         if dec == '':
-            SetIPTVPlayerLastHostError(_('https://openload.co/ link extractor error.'))
+            SetIPTVPlayerLastHostError(_('%s link extractor error.') % 'https://openload.co/')
             return False
         
         videoUrl = 'https://openload.co/stream/{0}?mime=true'.format(dec)
@@ -10582,3 +10597,77 @@ class pageParser(CaptchaHelper):
             urlTab.append({'name':domain, 'url':url})
             
         return urlTab
+
+    def parserSHAREONLINEBIZ(self, baseUrl):
+        printDBG("parserSHAREONLINEBIZ baseUrl[%s]" % baseUrl)
+        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
+        COOKIE_FILE = GetCookieDir('share-online.biz')
+        rm(COOKIE_FILE)
+        defaultParams = {'header': HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+        
+        sts, data = self.cm.getPage(baseUrl, defaultParams)
+        if not sts: return False
+        baseUrl = self.cm.meta['url']
+        defaultParams['header']['Referer'] = baseUrl
+        mainUrl = baseUrl
+        
+        data = self.cm.ph.getSearchGroups(data, '''function\s+?go_free\(\s*?\)\s*?\{([^\}]+?)\}''')[0]
+        action = self.cm.ph.getSearchGroups(data, '''var\s+?url\s*?=\s*?['"]([^'^"]+?)['"]''')[0]
+        action = self.cm.getFullUrl(action, baseUrl)
+        
+        post_data = {}
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '$', ';')
+        for item in data:
+            name  = self.cm.ph.getSearchGroups(item, '''['"]?name['"]?\s*?,\s*?['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            value  = self.cm.ph.getSearchGroups(item, '''['"]?name['"]?\s*?,\s*?['"]([^'^"]+?)['"]''', ignoreCase=True)[0]
+            if name != '':
+                post_data[name] = value
+         
+        sts, data = self.cm.getPage(action, defaultParams, post_data)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        defaultParams['header']['Referer'] = cUrl
+        
+        timestamp = time.time()
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'finish' in item:
+                jscode = item + '\n' +  "retObj={};for(var name in global) { if (global[name] != retObj) {retObj[name] = global[name];} } retObj['real_wait'] = Math.ceil((retObj['finish'].getTime() - Date.now()) / 1000);print(JSON.stringify(retObj));"
+                ret = iptv_js_execute( jscode )
+                downloadData = byteify(json.loads(ret['data']))
+        sleep_time = downloadData['real_wait']
+        captcha = base64.b64decode(downloadData['dl']).split('hk||')[1]
+        url = "/free/captcha/".join(downloadData['url'].split("///"))
+        sleep_time2 = downloadData['wait']
+        
+        tmp = re.compile('(<[^>]+?data\-sitekey[^>]*?>)').findall(data)
+        for item in tmp:
+            if 'hidden' not in item:
+                sitekey = self.cm.ph.getSearchGroups(item, 'data\-sitekey="([^"]+?)"')[0]
+                break
+
+        if sitekey == '': sitekey = self.cm.ph.getSearchGroups(data, 'data\-sitekey="([^"]+?)"')[0]
+        if sitekey != '': 
+            token, errorMsgTab = self.processCaptcha(sitekey, mainUrl)
+            if token == '':
+                SetIPTVPlayerLastHostError('\n'.join(errorMsgTab)) 
+                return False
+        else:
+            token = ''
+            
+        post_data = {'dl_free':'1', 'captcha':captcha, 'recaptcha_challenge_field':token, 'recaptcha_response_field': token}
+        
+        sleep_time -= time.time() - timestamp
+        if  sleep_time > 0:
+            GetIPTVSleep().Sleep(int(math.ceil(sleep_time)))
+        
+        defaultParams['header'] = MergeDicts(defaultParams['header'], {'Accept':'*/*', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With':'XMLHttpRequest'})
+        sts, data = self.cm.getPage(url, defaultParams, post_data)
+        if not sts: return False
+        
+        data = base64.b64decode(data)
+        printDBG('CAPTCHA CHECK: ' + data)
+        if self.cm.isValidUrl(data):
+            GetIPTVSleep().Sleep(sleep_time2)
+            return strwithmeta(data, {'Referer':defaultParams['header']['Referer'], 'User-Agent':defaultParams['header']['User-Agent']})
+        return False

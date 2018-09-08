@@ -383,7 +383,7 @@ class TVNowDE(CBaseHostClass):
                     seoUrlFormat = self.getStr(item['format'], 'seoUrl')
                     
                     descTab = []
-                    for d in [('broadcastStartDate', _('%s')), ('episode', _('episode: %s')), ('duration', _('duration: %s'))]:
+                    for d in [('broadcastStartDate', '%s'), ('episode', _('episode: %s')), ('duration', _('duration: %s'))]:
                         t = self.getStr(item, d[0])
                         if t != '': descTab.append(d[1] % t)
                     if len(descTab):

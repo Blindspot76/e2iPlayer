@@ -388,9 +388,9 @@ class IPTVSetupImpl:
             symlinksText = []
             for item in linksTab:
                 symlinksText.append('%s -> %s' % (item[0], item[1]))
-            msg = _("OpenSSL in your image has different library names then these used by IPTVPlayer.\nThere is need to create following symlinks:\n%s\nto be able to install binary components from IPTVPlayer server.\nDo you want to proceed?" % ('\n'.join(symlinksText)))
+            msg = _("OpenSSL in your image has different library names then these used by %s.\nThere is need to create following symlinks:\n%s\nto be able to install binary components from %s server.\nDo you want to proceed?" % ('E2iPlayer', '\n'.join(symlinksText), 'E2iPlayer'))
             self.showMessage(msg, MessageBox.TYPE_YESNO, boundFunction(self.createOpenSSLSymlinks, linksTab) )
-            return                
+            return
             
         self.getGstreamerVer()
     
@@ -511,7 +511,7 @@ class IPTVSetupImpl:
             return cmd
         
         self.stepHelper = CBinaryStepHelper("wget", self.platform, self.openSSLVersion, config.plugins.iptvplayer.wgetpath)
-        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.') % ('wget', 'http, https, f4m, uds, hls')), 1)
+        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the %s to buffering and downloading [%s] links.') % ('wget', 'E2iPlayer', 'http, https, f4m, uds, hls')), 1)
         self.stepHelper.setInstallChoiseList( self._wgetInstallChoiseList )
         self.stepHelper.setPaths( self.wgetpaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " -V 2>&1 " )
@@ -573,7 +573,7 @@ class IPTVSetupImpl:
             return cmd
             
         self.stepHelper = CBinaryStepHelper("rtmpdump", self.platform, self.openSSLVersion, config.plugins.iptvplayer.rtmpdumppath)
-        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.') % ('rtmpdump', 'rtmp, rtmpt, rtmpe, rtmpte, rtmps')), 1)
+        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the %s to buffering and downloading [%s] links.') % ('rtmpdump', 'E2iPlayer', 'rtmp, rtmpt, rtmpe, rtmpte, rtmps')), 1)
         self.stepHelper.setInstallChoiseList( [('rtmpdump', '/usr/bin/rtmpdump')] )
         self.stepHelper.setPaths( self.rtmpdumppaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " -V 2>&1 " )
@@ -629,7 +629,7 @@ class IPTVSetupImpl:
             return cmd
             
         self.stepHelper = CBinaryStepHelper("uchardet", self.platform, self.openSSLVersion, config.plugins.iptvplayer.uchardetpath)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer to determine the encoding of the text.') % 'uchardet', 1)
+        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the %s to determine the encoding of the text.') % ('E2iPlayer', 'uchardet'), 1)
         self.stepHelper.setInstallChoiseList( self._uchardetInstallChoiseList )
         self.stepHelper.setPaths( self.uchardetpaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " --version 2>&1 " )
@@ -924,7 +924,7 @@ class IPTVSetupImpl:
             return cmd
             
         self.stepHelper = CBinaryStepHelper("f4mdump", self.platform, self.openSSLVersion, config.plugins.iptvplayer.f4mdumppath)
-        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the IPTVPlayer to buffering and downloading [%s] links.') % ('f4mdump', 'f4m, uds')), 1)
+        self.stepHelper.updateMessage('detection', (_('The "%s" utility is used by the %s to buffering and downloading [%s] links.') % ('f4mdump', 'E2iPlayer', 'f4m, uds')), 1)
         self.stepHelper.setInstallChoiseList( self._f4mdumpInstallChoiseList )
         self.stepHelper.setPaths( self.f4mdumppaths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
@@ -980,7 +980,7 @@ class IPTVSetupImpl:
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
         self.stepHelper = CBinaryStepHelper("exteplayer3", self.platform, self.openSSLVersion, config.plugins.iptvplayer.exteplayer3path)
-        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer as external movie player based on the ffmpeg and libeplayer.') % ('exteplayer3'), 1)
+        self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the %s as external movie player based on the ffmpeg and libeplayer.') % ('E2iPlayer', 'exteplayer3'), 1)
         self.stepHelper.setInstallChoiseList( self._exteplayer3InstallChoiseList )
         self.stepHelper.setPaths( self.exteplayer3paths )
         self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
@@ -1027,7 +1027,7 @@ class IPTVSetupImpl:
                 cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
                 return cmd
             self.stepHelper = CBinaryStepHelper("gstplayer", self.platform, self.openSSLVersion, config.plugins.iptvplayer.gstplayerpath)
-            self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the IPTVPlayer as external movie player.') % ('gstplayer'), 1)
+            self.stepHelper.updateMessage('detection', _('The "%s" utility is used by the %s as external movie player.') % ('gstplayer', 'E2iPlayer'), 1)
             self.stepHelper.setInstallChoiseList( self._gstplayerInstallChoiseList )
             self.stepHelper.setPaths( self.gstplayerpaths )
             self.stepHelper.setDetectCmdBuilder( lambda path: path + " 2>&1 " )
@@ -1155,7 +1155,7 @@ class IPTVSetupImpl:
             self.stepHelper.getSaveConfigOptionHandler()( self.stepHelper.getConfigOption(), path )
             # NEXT STEP
             if self.stepHelper.isDebugMessagesAllowed():
-                self.showMessage(_("[%s] will be used by IPTVPlayer.") % path, MessageBox.TYPE_INFO, self.finish)
+                self.showMessage(_("[%s] will be used by %s.") % (path, 'E2iPlayer'), MessageBox.TYPE_INFO, self.finish)
             else:
                 self.stepHelper.getFinishHandler()(True)
         else:

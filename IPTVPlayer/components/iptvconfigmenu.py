@@ -344,7 +344,7 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry(_("    Number of rows"), config.plugins.iptvplayer.numOfRow))
             list.append(getConfigListEntry(_("    Number of columns"), config.plugins.iptvplayer.numOfCol))
         
-        list.append(getConfigListEntry(_("Use the PyCurl for HTTP requests"), config.plugins.iptvplayer.usepycurl))
+        list.append(getConfigListEntry(_("Use the PyCurl for HTTP(S) requests"), config.plugins.iptvplayer.usepycurl))
         list.append(getConfigListEntry(_("https - validate SSL certificates"), config.plugins.iptvplayer.httpssslcertvalidation))
         list.append(getConfigListEntry(_("Alternative proxy server (1)"), config.plugins.iptvplayer.alternative_proxy1))
         list.append(getConfigListEntry(_("Alternative proxy server (2)"), config.plugins.iptvplayer.alternative_proxy2))
@@ -371,9 +371,9 @@ class ConfigMenu(ConfigBaseWidget):
         list.append(getConfigListEntry(_("Show download manager after adding new item"), config.plugins.iptvplayer.IPTVDMShowAfterAdd))
         list.append(getConfigListEntry(_("Number of downloaded files simultaneously"), config.plugins.iptvplayer.IPTVDMMaxDownloadItem))
         
-        list.append(getConfigListEntry(_("My JDownloader e-mail"), config.plugins.iptvplayer.myjd_login))
-        list.append(getConfigListEntry(_("My JDownloader password"), config.plugins.iptvplayer.myjd_password))
-        list.append(getConfigListEntry(_("My JDownloader device name"), config.plugins.iptvplayer.myjd_jdname))
+        list.append(getConfigListEntry(_("%s e-mail") % ('My JDownloader'), config.plugins.iptvplayer.myjd_login))
+        list.append(getConfigListEntry(_("%s password") % ('My JDownloader'), config.plugins.iptvplayer.myjd_password))
+        list.append(getConfigListEntry(_("%s device name") % ('My JDownloader'), config.plugins.iptvplayer.myjd_jdname))
         
         list.append(getConfigListEntry(_("%s API KEY") % 'https://9kw.eu/', config.plugins.iptvplayer.api_key_9kweu))
         list.append(getConfigListEntry(_("%s API KEY") % 'http://2captcha.com/', config.plugins.iptvplayer.api_key_2captcha))

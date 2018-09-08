@@ -69,9 +69,9 @@ class RadiostacjaPl(CBaseHostClass):
     def listMainMenu(self, cItem):
         printDBG("RadiostacjaPl.listMainMenu")
         
-        MAIN_CAT_TAB = [{'category':'live',           'title': _('Stacje Radiowe'),  'f_cache':'live',     'url':self.getFullUrl('/data/mobile/live.json')}, 
-                        {'category':'channels',       'title': _('Kanały Muzyczne'), 'f_cache':'muzyczne', 'url':self.getFullUrl('/data/mobile/muzyczne_android.json')}, 
-                        {'category':'djsety',         'title': _('Sety Muzyczne'),   'f_cache':'podcasty', 'url':self.getFullUrl('/data/mobile/podcasty_android.json'), 'f_key':'djsety'}, 
+        MAIN_CAT_TAB = [{'category':'live',           'title': 'Stacje Radiowe',  'f_cache':'live',     'url':self.getFullUrl('/data/mobile/live.json')}, 
+                        {'category':'channels',       'title': 'Kanały Muzyczne', 'f_cache':'muzyczne', 'url':self.getFullUrl('/data/mobile/muzyczne_android.json')}, 
+                        {'category':'djsety',         'title': 'Sety Muzyczne',   'f_cache':'podcasty', 'url':self.getFullUrl('/data/mobile/podcasty_android.json'), 'f_key':'djsety'}, 
                        ]
         
         self.listsTab(MAIN_CAT_TAB, cItem)
@@ -85,11 +85,11 @@ class RadiostacjaPl(CBaseHostClass):
         printDBG("RadiostacjaPl.listGenres [%s]" % cItem)
         
         params = dict(cItem)
-        params.update({'good_for_fav':True, 'title': _('Radia RMFON'), 'category':nextCategory2, 'f_cache':'rmfon', 'url':'http://rmfon.pl/json/app.txt', 'icon':'http://www.programosy.pl/download/screens/13748/android-rmfon-1_s.png'})
+        params.update({'good_for_fav':True, 'title': 'Radia RMFON', 'category':nextCategory2, 'f_cache':'rmfon', 'url':'http://rmfon.pl/json/app.txt', 'icon':'http://www.programosy.pl/download/screens/13748/android-rmfon-1_s.png'})
         self.addDir(params)
         
-        CAT_TAB = [{'good_for_fav':True, 'title': _('Radia ZET'),      'f_key':'eurozet'},
-                   {'good_for_fav':True, 'title': _('Radia Lokalne'),  'f_key':'lokalne'}]
+        CAT_TAB = [{'good_for_fav':True, 'title': 'Radia ZET',      'f_key':'eurozet'},
+                   {'good_for_fav':True, 'title': 'Radia Lokalne',  'f_key':'lokalne'}]
         
         cItem = dict(cItem)
         cItem['category'] = nextCategory1
@@ -131,8 +131,8 @@ class RadiostacjaPl(CBaseHostClass):
         printDBG("RadiostacjaPl.listGenres [%s]" % cItem)
         self._fillCache(cItem)
         
-        CAT_TAB = [{'good_for_fav':True, 'category':'list_items',  'title': _('Wszystkie'), 'f_key':'muzyczne'},
-                   {'good_for_fav':True, 'category':'list_genres', 'title': _('Nastroje'),  'f_key':'kategorie'}]
+        CAT_TAB = [{'good_for_fav':True, 'category':'list_items',  'title': 'Wszystkie', 'f_key':'muzyczne'},
+                   {'good_for_fav':True, 'category':'list_genres', 'title': 'Nastroje',  'f_key':'kategorie'}]
         
         cItem = dict(cItem)
         cItem.pop('category', None)

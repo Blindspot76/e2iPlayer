@@ -32,7 +32,7 @@ config.plugins.iptvplayer.sportstream365_language = ConfigSelection(default = ""
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry(_('Preferred slanguage') + ": ", config.plugins.iptvplayer.sportstream365_language))
+    optionList.append(getConfigListEntry(_('Preferred language') + ": ", config.plugins.iptvplayer.sportstream365_language))
     return optionList
 ###################################################
     

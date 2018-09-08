@@ -62,7 +62,7 @@ class HDSTo(CBaseHostClass):
         self.loggedIn = None
         self.login    = ''
         self.password = ''
-        self.membersOnly = [_('Page accessible to logged in members only.'), _('You can try to use WebProxy as workaround, check options under blue button.')]
+        self.membersOnly = [_('Page accessible to logged in members only.'), _('You can try to use proxy as workaround, check options under blue button.')]
     
     def getRealUrl(self, url):
         if config.plugins.iptvplayer.hdsto_proxy.value == 'webproxy' and url != None and 'browse.php?u=' in url:

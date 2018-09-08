@@ -33,7 +33,7 @@ from Screens.MessageBox import MessageBox
 ###################################################
 # Config options for HOST
 ###################################################
-config.plugins.iptvplayer.cda_searchsort = ConfigSelection(default = "best", choices = [("best", _("Najtrafniejsze")), ("date", _("Najnowsze")), ("rate", _("Najlepiej oceniane")), ("alf", _("Alfabetycznie"))])
+config.plugins.iptvplayer.cda_searchsort = ConfigSelection(default = "best", choices = [("best", "Najtrafniejsze"), ("date", "Najnowsze"), ("rate", "Najlepiej oceniane"), ("alf", "Alfabetycznie")])
 config.plugins.iptvplayer.cda_login      = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.cda_password   = ConfigText(default = "", fixed_size = False)
 
@@ -41,7 +41,7 @@ def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry("Login:", config.plugins.iptvplayer.cda_login))
     optionList.append(getConfigListEntry("Hasło:", config.plugins.iptvplayer.cda_password))
-    optionList.append( getConfigListEntry( _("Sortuj wyniki wyszukiwania po:"), config.plugins.iptvplayer.cda_searchsort ) )
+    optionList.append( getConfigListEntry( "Sortuj wyniki wyszukiwania po:", config.plugins.iptvplayer.cda_searchsort ) )
     return optionList
 ###################################################
 

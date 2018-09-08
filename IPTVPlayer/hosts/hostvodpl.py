@@ -70,8 +70,8 @@ class VODPL(CBaseHostClass):
     
         self.MAIN_CAT_TAB = [{'category':'list_filters',  'title': _('Movies'),         'url':self.getFullUrl('filmy'),              'f_element':'SiteFilmy',        },
                              {'category':'list_items',    'title': _('Series'),         'url':self.getFullUrl('seriale'),            'f_element':'SiteSeriale',      },
-                             {'category':'list_filters',  'title': _('Programy onetu'), 'url':self.getFullUrl('programy-onetu'),     'f_element':'SiteProgramyOnetu',},
-                             {'category':'list_filters',  'title': _('Dokumentalne'),   'url':self.getFullUrl('filmy-dokumentalne'), 'f_element':'SiteDokumenty',    },
+                             {'category':'list_filters',  'title': 'Programy onetu',    'url':self.getFullUrl('programy-onetu'),     'f_element':'SiteProgramyOnetu',},
+                             {'category':'list_filters',  'title': 'Dokumentalne',      'url':self.getFullUrl('filmy-dokumentalne'), 'f_element':'SiteDokumenty',    },
                              
                              
                              {'category':'search',            'title': _('Search'), 'search_item':True,},
@@ -452,11 +452,11 @@ class IPTVHost(CHostBase):
     
     def getSearchTypes(self):
         searchTypesOptions = []
-        searchTypesOptions.append((_("Wszystkie"),    "wszystkie"))
-        searchTypesOptions.append((_("Filmy"),            "filmy"))
-        searchTypesOptions.append((_("Seriale"),        "seriale"))
-        searchTypesOptions.append((_("Dokumentalne"), "dokumenty"))
-        searchTypesOptions.append((_("Programy TV"),   "programy"))
+        searchTypesOptions.append(("Wszystkie",    "wszystkie"))
+        searchTypesOptions.append(("Filmy",            "filmy"))
+        searchTypesOptions.append(("Seriale",        "seriale"))
+        searchTypesOptions.append(("Dokumentalne", "dokumenty"))
+        searchTypesOptions.append(("Programy TV",   "programy"))
         return searchTypesOptions
     
     #def withArticleContent(self, cItem):

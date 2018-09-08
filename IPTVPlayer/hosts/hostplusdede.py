@@ -402,8 +402,8 @@ class PlusDEDE(CBaseHostClass):
                 for t in tmp:
                     t = self.cleanHtmlStr(t)
                     if t != '': titleTab.append(t)
-                if idx == 0: retTab.append({'name':_('%s') % (' | '.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
-                else: dwnTab.append({'name':_('%s') % (' | '.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
+                if idx == 0: retTab.append({'name':'%s' % (' | '.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
+                else: dwnTab.append({'name':'%s' % (' | '.join(titleTab)), 'url':self.getFullUrl(url), 'need_resolve':1})
         
         #retTab.extend(dwnTab)
         if len(retTab): self.cacheLinks[cacheKey] = retTab
