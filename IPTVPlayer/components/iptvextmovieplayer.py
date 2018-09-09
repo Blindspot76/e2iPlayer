@@ -651,7 +651,7 @@ class IPTVExtMoviePlayer(Screen):
         printDBG("selectVideoOptions")
         options = []
         currIdx = 0
-        optionsTab = [{'title':_('Policy'), 'name': 'policy'}, {'title':_('Policy2'), 'name': 'policy2'}, {'title':_('Aspect'), 'name': 'aspect'}, {'title':_('Video mode'), 'name': 'videomode'}]
+        optionsTab = [{'title':_('Video policy'), 'name': 'policy'}, {'title':_('Video policy for 4:3'), 'name': 'policy2'}, {'title':_('Aspect'), 'name': 'aspect'}, {'title':_('Video mode'), 'name': 'videomode'}]
         for option in optionsTab:
             if len(self.defVideoOptions[option['name']+'_choices' ]) < 2: continue
             if None == self.defVideoOptions[option['name']]: continue

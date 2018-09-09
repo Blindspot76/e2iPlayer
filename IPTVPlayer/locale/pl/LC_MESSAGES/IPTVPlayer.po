@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: IPTVPlayer\n"
-"POT-Creation-Date: 2018-09-08 16:19+0200\n"
+"POT-Creation-Date: 2018-09-09 19:35+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: kosmacz <anteneczka@gmail.com> poprawki sq9\n"
 "Language-Team: IPTVPlayer\n"
@@ -206,187 +206,199 @@ msgstr "wyśrodkuj"
 msgid "top"
 msgstr "góra"
 
-#: components/configextmovieplayer.py:82 components/configextmovieplayer.py:94
-#: components/configextmovieplayer.py:106
-#: components/configextmovieplayer.py:118
-#: components/configextmovieplayer.py:130
+#: components/configextmovieplayer.py:77 components/iptvextmovieplayer.py:780
+#: hosts/host123movieshd.py:24 hosts/hostakoam.py:26 hosts/hostbsto.py:42
+#: hosts/hostcimaclubcom.py:42 hosts/hostddl.py:32
+#: hosts/hostfilmeonlineto.py:40 hosts/hostfilmstreamvkcom.py:42
+#: hosts/hosthdsto.py:32 hosts/hosthdstreams.py:49 hosts/hosticefilmsinfo.py:38
+#: hosts/hostkinox.py:32 hosts/hostkissanimeto.py:33 hosts/hostlocalmedia.py:44
+#: hosts/hostlosmovies.py:41 hosts/hostmrpiracy.py:48
+#: hosts/hostplanetstreamingcom.py:43 hosts/hostputlockertvto.py:42
+#: hosts/hostseriesonline.py:39 hosts/hostskstream.py:44
+#: hosts/hostsolarmovie.py:44 hosts/hostyesmoviesto.py:43
+#: hosts/hostyifytv.py:42 hosts/hostzalukajcom.py:36
+msgid "None"
+msgstr "Brak"
+
+#: components/configextmovieplayer.py:77
+msgid "24 hour format "
+msgstr ""
+
+#: components/configextmovieplayer.py:77
+msgid "12 hour format "
+msgstr ""
+
+#: components/configextmovieplayer.py:84 components/configextmovieplayer.py:96
+#: components/configextmovieplayer.py:108
+#: components/configextmovieplayer.py:120
+#: components/configextmovieplayer.py:132
 msgid "From E2 settings"
 msgstr "Z ustawień E2"
 
-#: components/configextmovieplayer.py:231
-#: components/configextmovieplayer.py:267
+#: components/configextmovieplayer.py:238
+#: components/configextmovieplayer.py:274
 msgid "Configuring an external movie player"
 msgstr "Konfiguracja zewnętrznego odtwarzacza filmów"
 
-#: components/configextmovieplayer.py:261
+#: components/configextmovieplayer.py:268
 msgid "Some changes will be applied only after movie player restart."
 msgstr ""
 "Niektóre zmiany zostaną zastosowane po ponownym uruchomieniu odtwarzacza."
 
-#: components/configextmovieplayer.py:288
-msgid "Use black iframe at normal video playback finish"
-msgstr "Czyszczenie ekranu po zakończeniu odtwarzania"
-
-#: components/configextmovieplayer.py:289
-msgid "show iframe for audio item"
-msgstr "wyświetlić ramkę iFrame podczas odtwarzania plików audio"
-
-#: components/configextmovieplayer.py:291
-msgid "Iframe file"
-msgstr "Plik ramki iframe"
-
-#: components/configextmovieplayer.py:293
-msgid "Black iframe file"
-msgstr "Plik czyszczącej ramki iframe"
-
-#: components/configextmovieplayer.py:295
+#: components/configextmovieplayer.py:296
 msgid "Remember last watched position"
 msgstr "Pamiętać ostatnią pozycję filmu"
 
-#: components/configextmovieplayer.py:296
-msgid "Create summary screen"
-msgstr "Utwórz skin LCD/VFD \"summary screen"
-
 #: components/configextmovieplayer.py:298
+msgid "Info Banner clock format"
+msgstr ""
+
+#: components/configextmovieplayer.py:299
+msgid "Create LCD/VFD summary screen"
+msgstr "Utwórz \" summary screen\" dla LCD/VFD"
+
+#: components/configextmovieplayer.py:301
 msgid "----------------- External exteplayer3 options -----------------"
 msgstr "---------------- Opcje zewnętrznego odtwarzacza ----------------"
 
-#: components/configextmovieplayer.py:299
+#: components/configextmovieplayer.py:302
 msgid "RAM buffer size [MB] for network protocols"
 msgstr "Rozmiar bufora w RAM dla plików online"
 
-#: components/configextmovieplayer.py:300
+#: components/configextmovieplayer.py:303
 msgid "RAM buffer size [MB] for local files"
 msgstr "Rozmiar bufora w RAM dla plików lokalnych"
 
-#: components/configextmovieplayer.py:301
-msgid "External player use software decoder for the AAC"
-msgstr "Programowe dekodowanie dla AAC"
-
-#: components/configextmovieplayer.py:302
-msgid "External player use software decoder for the AC3"
-msgstr "Programowe dekodowanie dla AC3"
-
-#: components/configextmovieplayer.py:303
-msgid "External player use software decoder for the EAC3"
-msgstr "Programowe dekodowanie dla EAC3"
-
+#: components/configextmovieplayer.py:304
 #: components/configextmovieplayer.py:305
-msgid "External player use software decoder for the DTS"
-msgstr "Programowe dekodowanie dla DTS"
-
 #: components/configextmovieplayer.py:306
-msgid "External player use software decoder for the WMA"
-msgstr "Programowe dekodowanie dla WMA"
-
-#: components/configextmovieplayer.py:307
-msgid "External player use software decoder for the MP3"
-msgstr "Programowe dekodowanie dla MP3"
-
+#: components/configextmovieplayer.py:308
 #: components/configextmovieplayer.py:309
+#: components/configextmovieplayer.py:310
+#, python-format
+msgid "Use software decoder for the %s"
+msgstr "Programowe dekodowanie %s"
+
+#: components/configextmovieplayer.py:312
 msgid "Software decoding as"
 msgstr "Programowe dekodowanie jako"
 
-#: components/configextmovieplayer.py:310
+#: components/configextmovieplayer.py:313
 msgid "Stereo downmix mode for software decoder"
-msgstr "Tryb Stereo downmix dla programowego dekodera"
+msgstr "Stereo downmix dla programowego dekodera"
 
-#: components/configextmovieplayer.py:312
-msgid "AC3 mix mode"
-msgstr "Tryb mieszany AC3"
+#: components/configextmovieplayer.py:315
+msgid "AC3 downmix mode"
+msgstr "Tryb downmix AC3"
 
-#: components/configextmovieplayer.py:314
-msgid "AAC mix mode"
-msgstr "Tryb mieszany AAC"
-
-#: components/configextmovieplayer.py:316
-msgid "External player infobar timeout"
-msgstr "Czas wyswietlania paska informacyjnego"
+#: components/configextmovieplayer.py:317
+msgid "AAC downmix mode"
+msgstr "Tryb downmix AAC"
 
 #: components/configextmovieplayer.py:319
+msgid "Info Banner timeout"
+msgstr ""
+
+#: components/configextmovieplayer.py:322
 msgid "Default video aspect ratio"
 msgstr "Domyślne proporcje obrazu wideo"
 
-#: components/configextmovieplayer.py:321
+#: components/configextmovieplayer.py:324
 msgid "Default video policy"
 msgstr "Domyślny sposób konwersji wideo"
 
-#: components/configextmovieplayer.py:323
-msgid "Default second video policy"
-msgstr "Domyślny sposób konwersji wideo dla drugiego wyjścia"
+#: components/configextmovieplayer.py:326
+msgid "Default video policy for 4:3"
+msgstr "Domyślny sposób konwersji wideo dla 4:3"
 
-#: components/configextmovieplayer.py:325
+#: components/configextmovieplayer.py:328
 msgid "Load automatically the subtitle from file with the same name"
 msgstr "Wczytać autom. napisy z pliku o takiej samej nazwie"
 
-#: components/configextmovieplayer.py:326
+#: components/configextmovieplayer.py:329
 msgid "Subtitle line wrapping"
 msgstr "Zawijać wiersze napisów"
 
-#: components/configextmovieplayer.py:327
+#: components/configextmovieplayer.py:330
 msgid "Subtitle font"
 msgstr "Czcionka napisów"
 
-#: components/configextmovieplayer.py:328
+#: components/configextmovieplayer.py:331
 msgid "Subtitle font size"
 msgstr "Rozmiar czcionki napisów"
 
-#: components/configextmovieplayer.py:330
 #: components/configextmovieplayer.py:333
+#: components/configextmovieplayer.py:336
 msgid "Subtitle line height"
 msgstr "Wysokość wiersza napisów"
 
-#: components/configextmovieplayer.py:331
+#: components/configextmovieplayer.py:334
 msgid "Line Spacing"
 msgstr "Rozstaw wiersza"
 
-#: components/configextmovieplayer.py:335
+#: components/configextmovieplayer.py:338
 msgid "Subtitle font color"
 msgstr "Kolor czcionki napisów"
 
-#: components/configextmovieplayer.py:336
+#: components/configextmovieplayer.py:339
 msgid "Subtitle background"
 msgstr "Tło napisów"
 
-#: components/configextmovieplayer.py:338
+#: components/configextmovieplayer.py:341
 msgid "Subtitle box position"
 msgstr "Pozycja napisów"
 
-#: components/configextmovieplayer.py:341
+#: components/configextmovieplayer.py:344
 msgid "Subtitle box height"
 msgstr "Wysokość napisów"
 
-#: components/configextmovieplayer.py:342
+#: components/configextmovieplayer.py:345
 msgid "Subtitle vertical alignment"
 msgstr "Wyrównanie pionowe napisów"
 
-#: components/configextmovieplayer.py:345
+#: components/configextmovieplayer.py:348
 msgid "Subtitle border enabled"
 msgstr "Włączyć obramowanie napisów"
 
-#: components/configextmovieplayer.py:347
+#: components/configextmovieplayer.py:350
 msgid "Subtitle border color"
 msgstr "Kolor obramowania napisów"
 
-#: components/configextmovieplayer.py:348
+#: components/configextmovieplayer.py:351
 msgid "Subtitle border width"
 msgstr "Szerokość obramowania napisów"
 
-#: components/configextmovieplayer.py:350
+#: components/configextmovieplayer.py:353
 msgid "Subtitle shadow enabled"
 msgstr "Włączyć cienie napisów"
 
-#: components/configextmovieplayer.py:352
+#: components/configextmovieplayer.py:355
 msgid "Subtitle shadow color"
 msgstr "Kolor cieni napisów"
 
-#: components/configextmovieplayer.py:353
+#: components/configextmovieplayer.py:356
 msgid "Subtitle shadow X offset"
 msgstr "Przesunięcie cieni napisów X"
 
-#: components/configextmovieplayer.py:354
+#: components/configextmovieplayer.py:357
 msgid "Subtitle shadow Y offset"
 msgstr "Przesunięcie cieni napisów Y"
+
+#: components/configextmovieplayer.py:359
+msgid "Inject black iframe at video playback finish"
+msgstr "Czyszczenie ekranu po zakończeniu odtwarzania"
+
+#: components/configextmovieplayer.py:360
+msgid "Show iframe during audio playback"
+msgstr "Wyświetlić ramkę iFrame podczas odtwarzania audio"
+
+#: components/configextmovieplayer.py:362
+msgid "Radio iframe file"
+msgstr "Plik ramki iframe dla audio"
+
+#: components/configextmovieplayer.py:364
+msgid "Black iframe file"
+msgstr "Plik czyszczącej ramki iframe"
 
 #: components/configgroups.py:36
 msgid "E2iPlayer enable/disabled groups"
@@ -429,7 +441,7 @@ msgstr "Wyłącz tryb zmiany kolejności"
 msgid "Select option"
 msgstr "Wybór opcji"
 
-#: components/confighost.py:206
+#: components/confighost.py:214
 msgid ""
 "Using this host in your country can be illegal.\n"
 "Do you want to continue at your own risk?"
@@ -461,7 +473,7 @@ msgstr ""
 #: hosts/hostcineto.py:492 hosts/hostclassiccinemaonline.py:314
 #: hosts/hostcrtankocom.py:319 hosts/hostdailymotion.py:241
 #: hosts/hostdancetrippin.py:361 hosts/hostdardarkomcom.py:433
-#: hosts/hostdarshowcom.py:372 hosts/hostddl.py:469
+#: hosts/hostdarshowcom.py:372 hosts/hostddl.py:629
 #: hosts/hostdokumentalnenet.py:212 hosts/hostdpstreamingcx.py:317
 #: hosts/hostdrdk.py:186 hosts/hostefilmytv.py:762 hosts/hostegybest.py:507
 #: hosts/hostekinotv.py:541 hosts/hosteskago.py:318
@@ -513,7 +525,7 @@ msgstr ""
 #: hosts/hostsportdeutschland.py:245 hosts/hoststreamcomplet.py:300
 #: hosts/hoststreaminghdfun.py:444 hosts/hoststreamliveto.py:438
 #: hosts/hostsvtplayse.py:587 hosts/hosttainieskaiseirestv.py:403
-#: hosts/hosttantifilmorg.py:492 hosts/hosttata.py:383 hosts/hostted.py:603
+#: hosts/hosttantifilmorg.py:492 hosts/hostted.py:603
 #: hosts/hosttfarjocom.py:427 hosts/hostthewatchseriesto.py:367
 #: hosts/hosttreetv.py:512 hosts/hosttvgrypl.py:283 hosts/hosttvnowde.py:554
 #: hosts/hosttvnvod.py:478 hosts/hosttvplayercom.py:401 hosts/hosttvpvod.py:898
@@ -646,11 +658,11 @@ msgstr "wewnętrzny"
 msgid "standard"
 msgstr "systemowy"
 
-#: components/iptvconfigmenu.py:87 components/iptvextmovieplayer.py:272
+#: components/iptvconfigmenu.py:87 components/iptvextmovieplayer.py:281
 msgid "external eplayer3"
 msgstr "zewnętrzny eplayer3"
 
-#: components/iptvconfigmenu.py:87 components/iptvextmovieplayer.py:263
+#: components/iptvconfigmenu.py:87 components/iptvextmovieplayer.py:272
 msgid "external gstplayer"
 msgstr "zewnętrzny gstplayer"
 
@@ -679,7 +691,7 @@ msgid "all types"
 msgstr "wszystkie typy"
 
 #: components/iptvconfigmenu.py:209 components/iptvsubsimpledownloader.py:272
-#: hosts/hostddl.py:36 libs/urlparser.py:7203
+#: hosts/hostddl.py:36 libs/urlparser.py:7207
 msgid "default"
 msgstr "domyślny"
 
@@ -1093,120 +1105,106 @@ msgstr "Wystąpił wyjątek"
 msgid "Invalid name."
 msgstr "Nieprawidłowa nazwa."
 
-#: components/iptvextmovieplayer.py:381
+#: components/iptvextmovieplayer.py:391
 msgid "Opening. Please wait..."
 msgstr "Otwieranie. Proszę czekać..."
 
-#: components/iptvextmovieplayer.py:498 components/iptvplayerwidget.py:1116
+#: components/iptvextmovieplayer.py:512 components/iptvplayerwidget.py:1116
 #: components/iptvplayerwidget.py:1244
 msgid "Configuration"
 msgstr "Konfiguracja"
 
-#: components/iptvextmovieplayer.py:499
+#: components/iptvextmovieplayer.py:513
 msgid "Subtitles"
 msgstr "Napisy"
 
-#: components/iptvextmovieplayer.py:500
+#: components/iptvextmovieplayer.py:514
 msgid "Audio tracks"
 msgstr "Ścieżki audio"
 
-#: components/iptvextmovieplayer.py:501
+#: components/iptvextmovieplayer.py:515
 msgid "Video options"
 msgstr "Opcje wideo"
 
-#: components/iptvextmovieplayer.py:504
+#: components/iptvextmovieplayer.py:518
 msgid "Stop playback with buffer save"
 msgstr "Zatrzymaj odtwarzanie zachowując bufor"
 
-#: components/iptvextmovieplayer.py:506
+#: components/iptvextmovieplayer.py:520
 msgid "Menu"
 msgstr "Menu"
 
-#: components/iptvextmovieplayer.py:640
-msgid "Policy"
+#: components/iptvextmovieplayer.py:654
+msgid "Video policy"
 msgstr "Sposób konwersji wideo"
 
-#: components/iptvextmovieplayer.py:640
-msgid "Policy2"
-msgstr "Sposób konwersji wideo dla drugiego wyjścia"
+#: components/iptvextmovieplayer.py:654
+msgid "Video policy for 4:3"
+msgstr "Sposób konwersji wideo 4:3"
 
-#: components/iptvextmovieplayer.py:640
+#: components/iptvextmovieplayer.py:654
 msgid "Aspect"
 msgstr "Proporcje obrazu"
 
-#: components/iptvextmovieplayer.py:640
+#: components/iptvextmovieplayer.py:654
 msgid "Video mode"
 msgstr "Tryb Obrazu"
 
-#: components/iptvextmovieplayer.py:649
+#: components/iptvextmovieplayer.py:663
 msgid "Select video option"
 msgstr "Wybierz opcję wideo"
 
-#: components/iptvextmovieplayer.py:669 components/iptvextmovieplayer.py:685
+#: components/iptvextmovieplayer.py:683 components/iptvextmovieplayer.py:699
 #, python-format
 msgid "Select %s"
 msgstr "Wybierz %s"
 
-#: components/iptvextmovieplayer.py:694
+#: components/iptvextmovieplayer.py:708
 msgid "Is this message displayed correctly?"
 msgstr "Czy ta wiadomość została wyświetlona poprawnie?"
 
-#: components/iptvextmovieplayer.py:742
+#: components/iptvextmovieplayer.py:756
 msgid "Select audio track"
 msgstr "Wybierz ścieżkę audio"
 
-#: components/iptvextmovieplayer.py:744
+#: components/iptvextmovieplayer.py:758
 msgid "Information about audio tracks not available."
 msgstr "Informacja o ścieżekach audio nie jest dostępna."
 
-#: components/iptvextmovieplayer.py:766 hosts/host123movieshd.py:24
-#: hosts/hostakoam.py:26 hosts/hostbsto.py:42 hosts/hostcimaclubcom.py:42
-#: hosts/hostddl.py:32 hosts/hostfilmeonlineto.py:40
-#: hosts/hostfilmstreamvkcom.py:42 hosts/hosthdsto.py:32
-#: hosts/hosthdstreams.py:49 hosts/hosticefilmsinfo.py:38 hosts/hostkinox.py:32
-#: hosts/hostkissanimeto.py:33 hosts/hostlocalmedia.py:44
-#: hosts/hostlosmovies.py:41 hosts/hostmrpiracy.py:48
-#: hosts/hostplanetstreamingcom.py:43 hosts/hostputlockertvto.py:42
-#: hosts/hostseriesonline.py:39 hosts/hostskstream.py:44
-#: hosts/hostsolarmovie.py:44 hosts/hostyesmoviesto.py:43
-#: hosts/hostyifytv.py:42 hosts/hostzalukajcom.py:36
-msgid "None"
-msgstr "Brak"
-
-#: components/iptvextmovieplayer.py:794
+#: components/iptvextmovieplayer.py:808
 msgid "Synchronize"
 msgstr "Synchronizacja"
 
-#: components/iptvextmovieplayer.py:797
+#: components/iptvextmovieplayer.py:811
 msgid "Download suggested"
 msgstr "Pobierz sugerowane"
 
-#: components/iptvextmovieplayer.py:799
+#: components/iptvextmovieplayer.py:813
 msgid "Load"
 msgstr "Wczytaj"
 
-#: components/iptvextmovieplayer.py:800 components/iptvplayerwidget.py:170
+#: components/iptvextmovieplayer.py:814 components/iptvplayerwidget.py:170
 msgid "Download"
 msgstr "Pobierz"
 
-#: components/iptvextmovieplayer.py:801
+#: components/iptvextmovieplayer.py:815
 msgid "Select subtitles track"
 msgstr "Wybierz ścieżkę napisów"
 
-#: components/iptvextmovieplayer.py:850
+#: components/iptvextmovieplayer.py:864
 msgid "Select subtitles file"
 msgstr "Wybierz plik z napisami"
 
-#: components/iptvextmovieplayer.py:945
+#: components/iptvextmovieplayer.py:959
 #, python-format
 msgid "An error occurred while loading a subtitle from [%s]."
 msgstr "Wystąpił błąd podczas wczytywania napisów z [%s]."
 
-#: components/iptvextmovieplayer.py:1281
+#: components/iptvextmovieplayer.py:1295
 msgid "Closing. Please wait..."
 msgstr "Zamykanie. Proszę czekać..."
 
-#: components/iptvextmovieplayer.py:1413
+#: components/iptvextmovieplayer.py:1427
 #, python-format
 msgid ""
 "It seems that the video player \"%s\" does not work properly.\n"
@@ -1219,7 +1217,7 @@ msgstr ""
 "STS: %s\n"
 "Kod błędu: %r"
 
-#: components/iptvextmovieplayer.py:1418
+#: components/iptvextmovieplayer.py:1432
 msgid ""
 "ERROR: pipeline could not be constructed: no element \"playbin2\" \n"
 "Please check if gstreamer plugins are available in your system."
@@ -1228,7 +1226,7 @@ msgstr ""
 "\"playbin2\" \n"
 "Sprawdź, czy element \"playbin2\" jest dostępny w systemie."
 
-#: components/iptvextmovieplayer.py:1841
+#: components/iptvextmovieplayer.py:1859
 msgid ""
 "Link is not supported by the gstplayer. Please use the extelayer3 if "
 "available."
@@ -1236,12 +1234,12 @@ msgstr ""
 "Link nie jest wspierany przez gstplayer . Proszę użyć exteplayer3 jeśli jest "
 "dostępny."
 
-#: components/iptvextmovieplayer.py:1891
+#: components/iptvextmovieplayer.py:1909
 #, python-format
 msgid "An error occurred while writing into: %s"
 msgstr "Wystąpił problem podczas zapisu do: %s"
 
-#: components/iptvextmovieplayer.py:2131
+#: components/iptvextmovieplayer.py:2162
 msgid "Fatal error: consoleWrite failed!"
 msgstr "Błąd krytyczny funkcja \"consoleWrite\" zwróciła błąd!"
 
@@ -1920,7 +1918,7 @@ msgstr "Alternatywna domena:"
 #: hosts/hostcineto.py:68 hosts/hostclassiccinemaonline.py:66
 #: hosts/hostcrtankocom.py:58 hosts/hostdailymotion.py:52
 #: hosts/hostdancetrippin.py:62 hosts/hostdardarkomcom.py:56
-#: hosts/hostdarshowcom.py:61 hosts/hostddl.py:143
+#: hosts/hostdarshowcom.py:61 hosts/hostddl.py:147
 #: hosts/hostdokumentalnenet.py:64 hosts/hostdpstreamingcx.py:64
 #: hosts/hostefilmytv.py:93 hosts/hostegybest.py:75 hosts/hostekinotv.py:71
 #: hosts/hosteurosportplayer.py:112 hosts/hostfaselhdcom.py:65
@@ -1970,7 +1968,7 @@ msgstr "Alternatywna domena:"
 #: hosts/hoststreamcomplet.py:54 hosts/hoststreaminghdfun.py:75
 #: hosts/hoststreamliveto.py:58 hosts/hostsvtplayse.py:95
 #: hosts/hosttainieskaiseirestv.py:69 hosts/hosttantifilmorg.py:64
-#: hosts/hosttata.py:78 hosts/hostted.py:103 hosts/hosttfarjocom.py:97
+#: hosts/hostted.py:103 hosts/hosttfarjocom.py:97
 #: hosts/hostthewatchseriesto.py:66 hosts/hosttreetv.py:75
 #: hosts/hosttvgrypl.py:72 hosts/hosttvpvod.py:96 hosts/hosttwitchtv.py:72
 #: hosts/hostuktvplay.py:93 hosts/hostustreamtv.py:55 hosts/hostvevo.py:111
@@ -1996,7 +1994,7 @@ msgstr "Wyszukaj"
 #: hosts/hostcineto.py:69 hosts/hostclassiccinemaonline.py:67
 #: hosts/hostcrtankocom.py:59 hosts/hostdailymotion.py:53
 #: hosts/hostdancetrippin.py:63 hosts/hostdardarkomcom.py:57
-#: hosts/hostdarshowcom.py:62 hosts/hostddl.py:144
+#: hosts/hostdarshowcom.py:62 hosts/hostddl.py:148
 #: hosts/hostdokumentalnenet.py:65 hosts/hostdpstreamingcx.py:65
 #: hosts/hostefilmytv.py:94 hosts/hostegybest.py:76 hosts/hostekinotv.py:72
 #: hosts/hosteurosportplayer.py:113 hosts/hostfaselhdcom.py:66
@@ -2046,7 +2044,7 @@ msgstr "Wyszukaj"
 #: hosts/hoststreamcomplet.py:55 hosts/hoststreaminghdfun.py:76
 #: hosts/hoststreamliveto.py:59 hosts/hostsvtplayse.py:96
 #: hosts/hosttainieskaiseirestv.py:70 hosts/hosttantifilmorg.py:65
-#: hosts/hosttata.py:79 hosts/hostted.py:104 hosts/hosttfarjocom.py:98
+#: hosts/hostted.py:104 hosts/hosttfarjocom.py:98
 #: hosts/hostthewatchseriesto.py:67 hosts/hosttreetv.py:76
 #: hosts/hosttvgrypl.py:73 hosts/hosttvpvod.py:97 hosts/hosttwitchtv.py:73
 #: hosts/hostuktvplay.py:94 hosts/hostustreamtv.py:56 hosts/hostvevo.py:112
@@ -2079,27 +2077,28 @@ msgstr "Funkcjonalność zabezpieczona przez Google reCAPTCHA!"
 #: hosts/hostclassiccinemaonline.py:186 hosts/hostcrtankocom.py:187
 #: hosts/hostcrtankocom.py:235 hosts/hostdailymotion.py:111
 #: hosts/hostdardarkomcom.py:162 hosts/hostdardarkomcom.py:198
-#: hosts/hostdarshowcom.py:199 hosts/hostddl.py:260
-#: hosts/hostdokumentalnenet.py:151 hosts/hostdpstreamingcx.py:131
-#: hosts/hostefilmytv.py:214 hosts/hostefilmytv.py:383
-#: hosts/hostefilmytv.py:410 hosts/hostegybest.py:196 hosts/hostekinotv.py:198
-#: hosts/hostekinotv.py:231 hosts/hosteurosportplayer.py:400
-#: hosts/hosteurosportplayer.py:570 hosts/hostfaselhdcom.py:163
-#: hosts/hostfightvideo.py:191 hosts/hostfightvideo.py:266
-#: hosts/hostfilisertv.py:217 hosts/hostfilma24hdcom.py:180
-#: hosts/hostfilma24io.py:151 hosts/hostfilmaoncom.py:152
-#: hosts/hostfilmativa.py:141 hosts/hostfilmehdnet.py:148
-#: hosts/hostfilmeonlineto.py:256 hosts/hostfilmezz.py:207
-#: hosts/hostfilmixco.py:296 hosts/hostfilmovizijastudio.py:268
-#: hosts/hostfilmpalast.py:218 hosts/hostfilmpertutti.py:106
-#: hosts/hostfilmstreamhdit.py:119 hosts/hostfilmstreamvkcom.py:172
-#: hosts/hostfilmydokumentalneeu.py:155 hosts/hostfokustv.py:183
-#: hosts/hostforjatn.py:188 hosts/hostfreediscpl.py:136
-#: hosts/hostfreediscpl.py:173 hosts/hostgamatocom.py:165
-#: hosts/hostgamatotvme.py:189 hosts/hostgledalica.py:246
-#: hosts/hostgreekdocumentaries3.py:162 hosts/hosthdfilmetv.py:168
-#: hosts/hosthdkinomir.py:231 hosts/hosthdpopcornscom.py:188
-#: hosts/hosthdsto.py:267 hosts/hosthdstreams.py:228 hosts/hosthitboxtv.py:126
+#: hosts/hostdarshowcom.py:199 hosts/hostddl.py:307 hosts/hostddl.py:330
+#: hosts/hostddl.py:351 hosts/hostdokumentalnenet.py:151
+#: hosts/hostdpstreamingcx.py:131 hosts/hostefilmytv.py:214
+#: hosts/hostefilmytv.py:383 hosts/hostefilmytv.py:410 hosts/hostegybest.py:196
+#: hosts/hostekinotv.py:198 hosts/hostekinotv.py:231
+#: hosts/hosteurosportplayer.py:400 hosts/hosteurosportplayer.py:570
+#: hosts/hostfaselhdcom.py:163 hosts/hostfightvideo.py:191
+#: hosts/hostfightvideo.py:266 hosts/hostfilisertv.py:217
+#: hosts/hostfilma24hdcom.py:180 hosts/hostfilma24io.py:151
+#: hosts/hostfilmaoncom.py:152 hosts/hostfilmativa.py:141
+#: hosts/hostfilmehdnet.py:148 hosts/hostfilmeonlineto.py:256
+#: hosts/hostfilmezz.py:207 hosts/hostfilmixco.py:296
+#: hosts/hostfilmovizijastudio.py:268 hosts/hostfilmpalast.py:218
+#: hosts/hostfilmpertutti.py:106 hosts/hostfilmstreamhdit.py:119
+#: hosts/hostfilmstreamvkcom.py:172 hosts/hostfilmydokumentalneeu.py:155
+#: hosts/hostfokustv.py:183 hosts/hostforjatn.py:188
+#: hosts/hostfreediscpl.py:136 hosts/hostfreediscpl.py:173
+#: hosts/hostgamatocom.py:165 hosts/hostgamatotvme.py:189
+#: hosts/hostgledalica.py:246 hosts/hostgreekdocumentaries3.py:162
+#: hosts/hosthdfilmetv.py:168 hosts/hosthdkinomir.py:231
+#: hosts/hosthdpopcornscom.py:188 hosts/hosthdsto.py:267
+#: hosts/hosthdstreams.py:228 hosts/hosthitboxtv.py:126
 #: hosts/hosthitboxtv.py:164 hosts/hosthoofootcom.py:233
 #: hosts/hostinteriatv.py:165 hosts/hostinteriatv.py:204
 #: hosts/hostiptvplayerinfo.py:135 hosts/hostkabarety.py:219
@@ -2136,8 +2135,8 @@ msgstr "Funkcjonalność zabezpieczona przez Google reCAPTCHA!"
 #: hosts/hoststreamcomplet.py:135 hosts/hoststreaminghdfun.py:152
 #: hosts/hoststreamliveto.py:215 hosts/hostsvtplayse.py:284
 #: hosts/hostsvtplayse.py:418 hosts/hosttainieskaiseirestv.py:156
-#: hosts/hosttantifilmorg.py:219 hosts/hosttata.py:199 hosts/hostted.py:343
-#: hosts/hostted.py:393 hosts/hostted.py:452 hosts/hosttfarjocom.py:189
+#: hosts/hosttantifilmorg.py:219 hosts/hostted.py:343 hosts/hostted.py:393
+#: hosts/hostted.py:452 hosts/hosttfarjocom.py:189
 #: hosts/hostthewatchseriesto.py:214 hosts/hosttreetv.py:219
 #: hosts/hosttvgrypl.py:143 hosts/hosttvnvod.py:343 hosts/hosttvpvod.py:404
 #: hosts/hosttvpvod.py:600 hosts/hosttwitchtv.py:172 hosts/hosttwitchtv.py:192
@@ -2164,7 +2163,7 @@ msgstr "Następna strona"
 
 #: hosts/host123movieshd.py:222 hosts/hostakoam.py:229
 #: hosts/hostallboxtv.py:287 hosts/hostaltadefinizione.py:188
-#: hosts/hostddl.py:278 hosts/hostfilma24io.py:178 hosts/hostfilmaoncom.py:245
+#: hosts/hostddl.py:371 hosts/hostfilma24io.py:178 hosts/hostfilmaoncom.py:245
 #: hosts/hostgamatocom.py:200 hosts/hostkinogo.py:206
 #: hosts/hostmozicsillag.py:295 hosts/hostnaszekinotv.py:328
 #: hosts/hoststreaminghdfun.py:246 hosts/hosttfarjocom.py:275
@@ -2329,7 +2328,7 @@ msgid "Relese"
 msgstr "Data wydania"
 
 #: hosts/hostandrijaiandjelka.py:89 hosts/hostappletrailers.py:57
-#: hosts/hostefilmytv.py:118 hosts/hostefilmytv.py:127
+#: hosts/hostddl.py:188 hosts/hostefilmytv.py:118 hosts/hostefilmytv.py:127
 #: hosts/hostefilmytv.py:303 hosts/hostfilma24hdcom.py:276
 #: hosts/hostfilmpalast.py:141 hosts/hostfilmpertutti.py:53
 #: hosts/hostgledalica.py:150 hosts/hosthdfilmetv.py:101 hosts/hosthdsto.py:168
@@ -2376,24 +2375,24 @@ msgstr "Gatunki"
 msgid "Studio:"
 msgstr "Studio:"
 
-#: hosts/hostappletrailers.py:97
+#: hosts/hostappletrailers.py:97 hosts/hostddl.py:553
 msgid "Director:"
 msgstr "Reżyser:"
 
-#: hosts/hostappletrailers.py:97
+#: hosts/hostappletrailers.py:97 hosts/hostddl.py:554
 msgid "Directors:"
 msgstr "Reżyserowie:"
 
-#: hosts/hostappletrailers.py:97 hosts/hostfilma24io.py:260
-#: hosts/hostofficialfilmillimite.py:259
+#: hosts/hostappletrailers.py:97 hosts/hostddl.py:551
+#: hosts/hostfilma24io.py:260 hosts/hostofficialfilmillimite.py:259
 msgid "Genres:"
 msgstr "Gatunki:"
 
-#: hosts/hostappletrailers.py:97
+#: hosts/hostappletrailers.py:97 hosts/hostddl.py:550
 msgid "Genre:"
 msgstr "Gatunk:"
 
-#: hosts/hostappletrailers.py:97
+#: hosts/hostappletrailers.py:97 hosts/hostddl.py:560
 msgid "Actors:"
 msgstr "Aktorzy:"
 
@@ -2635,7 +2634,7 @@ msgstr "Najlepiej oceniane"
 msgid "Random"
 msgstr "Losowe"
 
-#: hosts/hostcartoonhd.py:191 hosts/hostddl.py:349 hosts/hostkinomanco.py:506
+#: hosts/hostcartoonhd.py:191 hosts/hostddl.py:442 hosts/hostkinomanco.py:506
 #: libs/moonwalkcc.py:259 subproviders/subprov_napiprojektpl.py:207
 msgid "Season"
 msgstr "Sezon"
@@ -2806,6 +2805,38 @@ msgstr "Język"
 msgid "Use proxy"
 msgstr "Użyj proxy"
 
+#: hosts/hostddl.py:541
+msgid "Year:"
+msgstr "Rok:"
+
+#: hosts/hostddl.py:546 hosts/hostfaselhdcom.py:146
+msgid "Rating:"
+msgstr "Ocena:"
+
+#: hosts/hostddl.py:556
+msgid "Mood:"
+msgstr ""
+
+#: hosts/hostddl.py:557
+msgid "Moods:"
+msgstr ""
+
+#: hosts/hostddl.py:559
+msgid "Actor:"
+msgstr "Aktor:"
+
+#: hosts/hostddl.py:562
+msgid "Praise:"
+msgstr ""
+
+#: hosts/hostddl.py:563
+msgid "Praises:"
+msgstr ""
+
+#: hosts/hostddl.py:565
+msgid "Others tags:"
+msgstr "Pozostałe tagi:"
+
 #: hosts/hostdrdk.py:43
 msgid "Geolocation IP:"
 msgstr "Geolokalizacja IP:"
@@ -2858,16 +2889,16 @@ msgid "With subtitles"
 msgstr "Z napisami"
 
 #: hosts/hostegybest.py:126 hosts/hostfilmixco.py:193 hosts/hostplusdede.py:166
-#: hosts/hostplusdede.py:176 hosts/hosttata.py:119 hosts/hostted.py:130
-#: hosts/hostted.py:136 hosts/hostted.py:142 hosts/hostted.py:147
-#: hosts/hostted.py:164 hosts/hostted.py:170 hosts/hostted.py:175
+#: hosts/hostplusdede.py:176 hosts/hostted.py:130 hosts/hostted.py:136
+#: hosts/hostted.py:142 hosts/hostted.py:147 hosts/hostted.py:164
+#: hosts/hostted.py:170 hosts/hostted.py:175
 msgid "--Any--"
 msgstr "--Dowolny--"
 
 #: hosts/hostekinotv.py:398 hosts/hostekinotv.py:416 hosts/hostfilmezz.py:305
 #: hosts/hostfreediscpl.py:78 hosts/hosthdstreams.py:413
 #: hosts/hosthdstreams.py:429 hosts/hostmooviecc.py:423
-#: hosts/hostserienstreamto.py:389 libs/urlparser.py:9011
+#: hosts/hostserienstreamto.py:389 libs/urlparser.py:9069
 msgid "Link protected with google recaptcha v2."
 msgstr "Link zabezpieczony przez Google ReCaptcha v2."
 
@@ -2905,10 +2936,6 @@ msgstr ""
 #: hosts/hosteurosportplayer.py:623
 msgid "Login failed. Invalid email or password."
 msgstr "Logowanie nie powiodło się. Nieprawidłowy e-mail lub hasło."
-
-#: hosts/hostfaselhdcom.py:146
-msgid "Rating:"
-msgstr "Ocena:"
 
 #: hosts/hostfaselhdcom.py:147 hosts/hosthdstreams.py:220
 msgid "Views:"
@@ -5019,11 +5046,11 @@ msgstr "Wywołanie getURLRequestData z gównego wątku jest niedozwolone."
 msgid "You should never perform block I/O operations in the __init__."
 msgstr "Nie powinieneś nigdy wykonywać blokujących operacji w __init__."
 
-#: libs/pCommon.py:1495
+#: libs/pCommon.py:1496
 msgid "Critical Error – Content-Encoding gzip cannot be handled!"
 msgstr "Błąd krytyczny - moduł gzip nie jest dostępny!"
 
-#: libs/pCommon.py:1496 libs/pCommon.py:1506
+#: libs/pCommon.py:1497 libs/pCommon.py:1507
 #, python-format
 msgid ""
 "Last error:\n"
@@ -5032,11 +5059,11 @@ msgstr ""
 "Ostatni błąd:\n"
 "%s"
 
-#: libs/pCommon.py:1505
+#: libs/pCommon.py:1506
 msgid "Critical Error – cookie can't be saved!"
 msgstr "Błąd krytyczny -plik cookie nie może zostać zapisany!"
 
-#: libs/pCommon.py:1507
+#: libs/pCommon.py:1508
 msgid ""
 "Please make sure that the folder for cache data (set in the configuration) "
 "is writable."
@@ -5174,7 +5201,7 @@ msgstr "Źródło %s"
 msgid "Login on {0} failed."
 msgstr "Logowanie do {0} nie powiodło się."
 
-#: libs/urlparser.py:7797
+#: libs/urlparser.py:7855
 msgid ""
 "Only logged in user have access.\n"
 "Please set login data in the host configuration under blue button."
@@ -5183,7 +5210,7 @@ msgstr ""
 "Wprowadź login i hasło w konfiguracji hosta dostępnej po naciśnięciu "
 "niebieskiego przycisku."
 
-#: libs/urlparser.py:7894
+#: libs/urlparser.py:7952
 msgid ""
 "We can't find the file you are looking for. It maybe got deleted by the "
 "owner or was removed due a copyright violation."
@@ -5191,12 +5218,12 @@ msgstr ""
 "Nie możemy znaleźć pliku, którego szukasz. Być może został usunięty przez "
 "właściciela lub został usunięty z powodu naruszenia praw autorskich."
 
-#: libs/urlparser.py:7941
+#: libs/urlparser.py:7999
 #, python-format
 msgid "%s link extractor error."
 msgstr "Wewnętrzny błąd parsera %s."
 
-#: libs/urlparser.py:10444
+#: libs/urlparser.py:10502
 #, python-format
 msgid "Internal Server Error. Server response code: %s"
 msgstr "Wewnętrzny błąd serwera. Kod odpowiedzi serwera: %s"
@@ -5851,3 +5878,33 @@ msgstr "Bład zapisu pliku \"%s\".\n"
 #: tools/iptvhostgroups.py:127
 msgid "This host has been added already to this group."
 msgstr "Ten host został już dodany do tej grupy."
+
+#~ msgid "Default second video policy"
+#~ msgstr "Domyślny sposób konwersji wideo dla drugiego wyjścia"
+
+#~ msgid "Policy"
+#~ msgstr "Sposób konwersji wideo"
+
+#~ msgid "Policy2"
+#~ msgstr "Sposób konwersji wideo dla drugiego wyjścia"
+
+#~ msgid "Iframe file"
+#~ msgstr "Plik ramki iframe"
+
+#~ msgid "External player use software decoder for the AC3"
+#~ msgstr "Programowe dekodowanie dla AC3"
+
+#~ msgid "External player use software decoder for the EAC3"
+#~ msgstr "Programowe dekodowanie dla EAC3"
+
+#~ msgid "External player use software decoder for the DTS"
+#~ msgstr "Programowe dekodowanie dla DTS"
+
+#~ msgid "External player use software decoder for the WMA"
+#~ msgstr "Programowe dekodowanie dla WMA"
+
+#~ msgid "External player use software decoder for the MP3"
+#~ msgstr "Programowe dekodowanie dla MP3"
+
+#~ msgid "External player infobar timeout"
+#~ msgstr "Czas wyswietlania paska informacyjnego"
