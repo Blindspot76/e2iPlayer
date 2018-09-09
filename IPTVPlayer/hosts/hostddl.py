@@ -336,7 +336,7 @@ class DDLMe(CBaseHostClass):
         printDBG("DDLMe.listItems [%s]" % cItem)
 
         page = cItem.get('page', 1)
-        url = '/%s_%s_%s_2_%s/' % (cItem['f_type'], cItem['f_type'], cItem['f_sort'], page)
+        url = '/%s_%s_%s_2_%s/' % (cItem['f_type'], cItem['f_cat'], cItem['f_sort'], page)
         sts, data = self.getPage(self.getFullUrl(url))
         if not sts: return
         
