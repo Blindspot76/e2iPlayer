@@ -52,13 +52,31 @@ class MLBStreamTVApi(CBaseHostClass):
         while GMTOffset.endswith(':00'):
             GMTOffset = GMTOffset.rsplit(':', 1)[0]
         self.GMTOffset = GMTOffset
-
+        self.offset = timedelta(seconds=seconds)
+        
+        self.gameSchedule = {}
+        
+    def _str2date(self, txt):
+        txt = self.cm.ph.getSearchGroups(txt, '([0-9]+\-[0-9]+\-[0-9]+T[0-9]+\:[0-9]+:[0-9]+)')[0]
+        return datetime.strptime(txt, '%Y-%m-%dT%H:%M:%S') + self.offset
+    
     def getList(self, cItem):
         printDBG("MLBStreamTVApi.getList cItem[%s]" % cItem )
         channelsList = []
         
         category = cItem.get('priv_cat')
         if category == None:
+            if not self.gameSchedule:
+                try:
+                    sts, data = self.cm.getPage('https://statsapi.mlb.com/api/v1/schedule?sportId=1')
+                    data = json.loads(data)
+                    for item in data['dates']:
+                        for gameItem in item['games']:
+                            key = (gameItem['teams']['home']['team']['name'].replace(' ', ''), gameItem['teams']['away']['team']['name'].replace(' ', ''))
+                            self.gameSchedule[key] = self._str2date(gameItem['gameDate'])
+                except Exception:
+                    printExc()
+        
             sts, data = self.cm.getPage(self.getMainUrl(), self.defaultParams)
             if not sts: return []
             self.setMainUrl(self.cm.meta['url'])
@@ -91,13 +109,25 @@ class MLBStreamTVApi(CBaseHostClass):
                             continue
                         
                         date = self.cm.ph.getSearchGroups(item, '''data\-token=['"]([^'^"]+?)['"]''')[0]
+                        date = datetime.fromtimestamp(int(date))
+                        
+                        home = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'team-name'), ('</span', '>'), False)[1]).decode('utf-8').replace(' ', '')
+                        away = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<span', '>', 'away-name'), ('</span', '>'), False)[1]).decode('utf-8').replace(' ', '')
+                        if (home, away) in self.gameSchedule:
+                            key = (home, away)
+                        elif (away, home) in self.gameSchedule:
+                            key = (away, home)
+                        else:
+                            key = None
                         url = self.cm.ph.getSearchGroups(item, '''\sdata\-link=['"]([^'^"]+?)['"]''')[0]
                         
                         item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<td', '</td>')
                         title = self.cleanHtmlStr(''.join(item[3:]))
                         icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item[3], '''<img[^>]+?src=['"]([^'^"]+?)['"]''')[0])
                         desc = self.cleanHtmlStr(item[2])
-                        desc += '[/br]' + datetime.fromtimestamp(int(date)).strftime('%A, %-d %B %H:%M')
+                        if key != None: desc += '[/br]www.mlb.com: ' + self.gameSchedule[key].strftime('%A, %-d %B %H:%M')
+                        desc += '[/br]mlbstream.tv: ' + date.strftime('%A, %-d %B %H:%M')
+                        
                         subItems.append({'name':'mlbstream.tv', 'type':'dir', 'priv_cat':'links', 'title':title, 'url':self.getFullUrl(url), 'desc':desc, 'icon':icon})
                     if len(subItems):
                         channelsList.append({'name':'mlbstream.tv', 'type':'dir', 'priv_cat':'sub_items', 'title':sTitle, 'sub_items':subItems, 'desc':sDesc, 'icon':self.DEFAULT_ICON_URL})
