@@ -204,6 +204,8 @@ class IPTVExtMoviePlayer(Screen):
                     <widget name="remainedLabel"      noWrap="1" position="518,62"        size="120,30"   zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
                     <widget name="videoInfo"          noWrap="1" position="0,0"           size="650,30"   zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
                     
+                    %s
+                    
                     <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                     <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
                     
@@ -229,7 +231,9 @@ class IPTVExtMoviePlayer(Screen):
                     <widget name="currTimeLabel"      noWrap="1" position="220,100"       size="200,40"   zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;30" halign="left"   valign="top"/>
                     <widget name="lengthTimeLabel"    noWrap="1" position="540,100"       size="200,40"   zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;30" halign="center" valign="top"/>
                     <widget name="remainedLabel"      noWrap="1" position="860,100"       size="200,40"   zPosition="3" transparent="1" foregroundColor="#66ccff"   backgroundColor="#251f1f1f" font="Regular;30" halign="right"  valign="top"/>
-                    <widget name="videoInfo"          noWrap="1" position="560,20"        size="500,30"    zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+                    <widget name="videoInfo"          noWrap="1" position="560,20"        size="500,30"   zPosition="3" transparent="1" foregroundColor="#999999"   backgroundColor="#251f1f1f" font="Regular;24" halign="right"  valign="top"/>
+                    
+                    %s
                     
                     <widget name="subSynchroIcon"     position="0,0"           size="180,66"  zPosition="4" transparent="1" alphatest="blend" />
                     <widget name="subSynchroLabel"    position="1,3"           size="135,50"  zPosition="5" transparent="1" foregroundColor="white"      backgroundColor="transparent" font="Regular;24" halign="center"  valign="center"/>
@@ -237,6 +241,10 @@ class IPTVExtMoviePlayer(Screen):
                     %s
             </screen>""" 
 
+        if self.clockFormat:
+            clockWidget = '<widget name="clockTime"        noWrap="1" position="37,69"        size="100,40"   zPosition="3" transparent="1" foregroundColor="#5e5e5e"   backgroundColor="#251f1f1f" font="Regular;24" halign="center"  valign="center" />'
+        else:
+            clockWidget = ''
         
         skin =  skin % ( getDesktop(0).size().width(), 
                          getDesktop(0).size().height(),
@@ -245,15 +253,16 @@ class IPTVExtMoviePlayer(Screen):
                          GetIPTVDMImgDir("playback_cbuff_progress.png"),
                          GetIPTVDMImgDir("playback_buff_progress.png"),
                          GetIPTVDMImgDir('playback_pointer.png'),
+                         clockWidget,
                          subSkin
                          ) ##00000000 bottom
         sub = None
         return skin
     
     def __init__(self, session, filesrcLocation, FileName, lastPosition=None, player='eplayer', additionalParams={}):
-        # 'gstplayer'
         self.configObj = ConfigExtMoviePlayerBase()
         self.subConfig = self.configObj.getSubtitleFontSettings()
+        self.clockFormat = self.configObj.getInfoBannerrClockFormat()
         self.skin = self.__prepareSkin()
         Screen.__init__(self, session)
         self.skinName = "IPTVExtMoviePlayer"
@@ -378,6 +387,7 @@ class IPTVExtMoviePlayer(Screen):
         self['remainedLabel']     = Label("-0:00:00")
         self['lengthTimeLabel']   = Label("0:00:00")
         self['videoInfo']         = Label(" ")
+        if self.clockFormat: self['clockTime'] = Label(" ")
         self['pleaseWait']        = Label(_("Opening. Please wait..."))
         
         # for subtitles
@@ -458,6 +468,10 @@ class IPTVExtMoviePlayer(Screen):
         self.goToSeekRepeatCount = 0
         self.goToSeekStep = 0
         self.playbackInfoBar = {'visible':False, 'blocked':False, 'guiElemNames':['playbackInfoBaner', 'progressBar', 'bufferingCBar', 'bufferingBar', 'goToSeekPointer', 'goToSeekLabel', 'infoBarTitle', 'currTimeLabel', 'remainedLabel', 'lengthTimeLabel', 'videoInfo', 'statusIcon', 'loopIcon', 'logoIcon'] }
+        if self.clockFormat: 
+            self.playbackInfoBar['guiElemNames'].append('clockTime')
+            self.playbackInfoBar['clock_timer'] = eTimer()
+            self.playbackInfoBar['clock_timer_conn'] = eConnectCallback(self.playbackInfoBar['clock_timer'].timeout, self.updateClock)
         self.playbackInfoBar['timer'] = eTimer()
         self.playbackInfoBar['timer_conn'] = eConnectCallback(self.playbackInfoBar['timer'].timeout, self.hidePlaybackInfoBar)
         
@@ -1632,6 +1646,10 @@ class IPTVExtMoviePlayer(Screen):
         if None != self.downloader:
             self.downloader.unsubscribeFor_Finish(self.onDownloadFinished)
         self.downloader = None
+        
+        if self.clockFormat: 
+            self.playbackInfoBar['clock_timer'].stop()
+            self.playbackInfoBar['clock_timer_conn'] = None
         self.playbackInfoBar['timer'].stop()
         self.playbackInfoBar['timer_conn'] = None
         self.waitEOSAbortedFix['timer_conn'] = None
@@ -2061,6 +2079,10 @@ class IPTVExtMoviePlayer(Screen):
         self.setSubOffsetFromInfoBar()
         if -1 != self.subHandler['current_sub_time_ms']:
             self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
+        
+        if self.clockFormat: 
+            self.updateClock()
+            self.playbackInfoBar['clock_timer'].start(1000)
 
     def hidePlaybackInfoBar(self, excludeElems=[], force=False):
         self.playbackInfoBar['timer'].stop()
@@ -2076,6 +2098,15 @@ class IPTVExtMoviePlayer(Screen):
         self.setSubOffsetFromInfoBar()
         if -1 != self.subHandler['current_sub_time_ms']:
             self.updateSubtitles(self.subHandler['current_sub_time_ms'], True)
+        
+        if self.clockFormat: 
+            self.playbackInfoBar['clock_timer'].stop()
+    
+    def updateClock(self):
+        if self.clockFormat == '24':
+            self['clockTime'].setText(time.strftime("%H:%M"))
+        elif self.clockFormat == '12':
+            self['clockTime'].setText(time.strftime("%I:%M"))
         
     def _showHideSubSynchroControl(self, show=True):
         for elem in self.subHandler['synchro']['guiElemNames']:
