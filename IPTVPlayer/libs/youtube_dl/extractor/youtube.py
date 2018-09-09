@@ -155,8 +155,7 @@ class CVevoSignAlgoExtractor:
             #match = re.search("signature=([$a-zA-Z]+)", self.playerData)
             #if not match:
             #get main function name 
-
-            for rgx in [r'(["\'])signature\1\s*,\s*(?P<sig>[a-zA-Z0-9$]+)\(', r'\.sig\|\|(?P<sig>[a-zA-Z0-9$]+)\(']:
+            for rgx in [r'(["\'])signature\1\s*,\s*(?P<sig>[a-zA-Z0-9$]+)\(', r'\.sig\|\|(?P<sig>[a-zA-Z0-9$]+)\(',  r'\.sig\|\|(?P<sig>[a-zA-Z0-9$]+)\(', r'yt\.akamaized\.net/\)\s*\|\|\s*.*?\s*c\s*&&\s*d\.set\([^,]+\s*,\s*(?P<sig>[a-zA-Z0-9$]+)\(', r'\bc\s*&&\s*d\.set\([^,]+\s*,\s*(?P<sig>[a-zA-Z0-9$]+)\(']:
                 match = re.search(rgx, self.playerData)
                 if match:
                     break
