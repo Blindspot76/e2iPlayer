@@ -510,6 +510,7 @@ class urlparser:
                        'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
                        'wstream.video':        self.pp.parserWSTREAMVIDEO   ,
                        'share-online.biz':     self.pp.parserSHAREONLINEBIZ ,
+                       'krakenfiles.com':      self.pp.parserKRAKENFILESCOM ,
                     }
         return
     
@@ -10654,6 +10655,27 @@ class pageParser(CaptchaHelper):
             url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'Range':'bytes=0-'})
             urlTab.append({'name':domain, 'url':url})
             
+        return urlTab
+        
+    def parserKRAKENFILESCOM(self, baseUrl):
+        printDBG("parserKRAKENFILESCOM baseUrl[%r]" % baseUrl)
+        
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+        
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        domain = urlparser.getDomain(cUrl)
+        
+        urlTab = []
+        data = re.compile('''['"]([^'^"]+?/uploads/[^'^"]+?\.(?:m4a|mp3)(?:\?[^'^"]*?)?)['"]''').findall(data)
+        for url in data:
+            url = strwithmeta(self.cm.getFullUrl(url, self.cm.meta['url']), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+            urlTab.append({'name':'%s %s' % (domain, len(urlTab)+1), 'url':url})
+        
         return urlTab
 
     def parserSHAREONLINEBIZ(self, baseUrl):

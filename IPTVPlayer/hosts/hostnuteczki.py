@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
 ###################################################
 
 ###################################################
@@ -329,19 +330,36 @@ class NuteczkiEU(CBaseHostClass):
         if not sts: return []
         self.setMainUrl(self.cm.meta['url'])
         
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'frame-fixer'), ('</div', '>'), caseSensitive=False)
+        for idx in range(len(tmp)):
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp[idx], '''\sdata\-url=['"]([^"^']+?)['"]''', 1, True)[0])
+            if 1 != self.up.checkHostSupport(url):
+                jscode = []
+                jsData = self.cm.ph.getAllItemsBeetwenNodes(tmp[idx], ('<script', '>'), ('</script', '>'), caseSensitive=False)
+                for jsItem in jsData:
+                    if 'src=' in jsItem.lower():
+                        scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(jsItem, '''<script[^>]+?src=['"]([^'^"]*?krakenfiles[^'^"]+?)['"]''', 1, True)[0], self.cm.meta['url'])
+                        sts, jsItem = self.getPage(scriptUrl)
+                        if sts and jsItem != '': jscode.append(jsItem)
+                    else:
+                        sts, jsItem = self.cm.ph.getDataBeetwenNodes(jsItem, ('<script', '>'), ('</script', '>'), False, caseSensitive=False)
+                        if sts: jscode.append(jsItem)
+                if len(jscode):
+                    jscode.insert(0, 'window=global; window.location={}; window.location.protocol="%s"; var document={}; document.write=function(txt){print(txt);}' % self.getMainUrl().split('//', 1)[0])
+                    ret = iptv_js_execute('\n'.join(jscode), {'timeout_sec':15})
+                    if ret['sts'] and 0 == ret['code']:
+                        printDBG(ret['data'])
+                        data += ret['data'].strip()
+                    
+            elif 'facebook' not in url.lower(): 
+                name = _('Player %s: %s') % (idx+1, self.up.getHostName(url))
+                urlTab.append({'url':url, 'name':name, 'need_resolve':1})
+        
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>', caseSensitive=False)
         for idx in range(len(tmp)):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp[idx], '''\ssrc=['"]([^"^']+?)['"]''', 1, True)[0])
             if url == '' or 'facebook' in url.lower(): continue
             name = _('Player %s') % (idx + 1)
-            urlTab.append({'url':url, 'name':name, 'need_resolve':1})
-        
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'frame-fixer'), ('</div', '>'), caseSensitive=False)
-        for idx in range(len(tmp)):
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp[idx], '''\sdata\-url=['"]([^"^']+?)['"]''', 1, True)[0])
-            if url == '' or 'facebook' in url.lower(): continue
-            if 1 != self.up.checkHostSupport(url): continue 
-            name = _('Player %s: %s') % (idx+1, self.up.getHostName(url))
             urlTab.append({'url':url, 'name':name, 'need_resolve':1})
         
         return urlTab

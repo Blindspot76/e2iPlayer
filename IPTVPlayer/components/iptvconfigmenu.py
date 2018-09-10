@@ -209,7 +209,7 @@ config.plugins.iptvplayer.hiddenAllVersionInUpdate = ConfigYesNo(default = False
 config.plugins.iptvplayer.hidden_ext_player_def_aspect_ratio = ConfigSelection(default = "-1", choices = [("-1", _("default")), ("0", _("4:3 Letterbox")), ("1", _("4:3 PanScan")), ("2", _("16:9")), ("3", _("16:9 always")), ("4", _("16:10 Letterbox")), ("5", _("16:10 PanScan")), ("6", _("16:9 Letterbox"))] )
         
 config.plugins.iptvplayer.search_history_size  = ConfigInteger(50, (0, 1000000))
-config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (1, 1000000))
+config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (0, 9))
 
 config.plugins.iptvplayer.watched_item_color = ConfigSelection(default = "#808080", choices = COLORS_DEFINITONS)
 config.plugins.iptvplayer.usepycurl = ConfigYesNo(default = False)

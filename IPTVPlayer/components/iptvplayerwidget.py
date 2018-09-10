@@ -603,8 +603,12 @@ class E2iPlayerWidget(Screen):
         
     def stopAutoPlaySequencer(self):
         if self.autoPlaySeqStarted:
-            #try: raise
-            #except Exception: printExc()
+            if not config.plugins.iptvplayer.disable_live.value:
+                self.session.nav.playService(self.currentService)
+            
+            if config.plugins.iptvplayer.autoplay_start_delay.value == 0:
+                self.showWindow()
+            
             self.autoPlaySeqTimer.stop()
             self["sequencer"].setText("")
             self.autoPlaySeqStarted = False
@@ -619,7 +623,11 @@ class E2iPlayerWidget(Screen):
         idx = self.getSelIndex()
         if -1 != idx:
             # find next playable item
-            if goToNext:  idx += 1
+            if goToNext:
+                idx += 1
+                if config.plugins.iptvplayer.autoplay_start_delay.value == 0:
+                    self.hideWindow()
+            
             while idx < len(self.currList):
                 if self.currList[idx].type in [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO, CDisplayListItem.TYPE_PICTURE, CDisplayListItem.TYPE_MORE]:
                     break
@@ -633,8 +641,12 @@ class E2iPlayerWidget(Screen):
     
     def sequencerPressOK(self):
         self.autoPlaySeqTimerValue = config.plugins.iptvplayer.autoplay_start_delay.value
-        self["sequencer"].setText(str(self.autoPlaySeqTimerValue))
-        self.autoPlaySeqTimer.start(1000)
+        
+        if self.autoPlaySeqTimerValue == 0:
+            self.ok_pressed('sequencer')
+        else:
+            self["sequencer"].setText(str(self.autoPlaySeqTimerValue))
+            self.autoPlaySeqTimer.start(1000)
             
     def autoPlaySeqTimerCallBack(self):
         self.autoPlaySeqTimerValue -= 1
@@ -824,9 +836,8 @@ class E2iPlayerWidget(Screen):
                     self.workThread = None
                     self.setStatusTex(_("Operation aborted!"))
                 return
-        except Exception: return    
+        except Exception: return
         if self.visible:
-                       
             if len(self.prevSelList) > 0:
                 self.nextSelIndex = self.prevSelList.pop()
                 self.categoryList.pop()
@@ -891,10 +902,11 @@ class E2iPlayerWidget(Screen):
         
         if 'sequencer' != eventFrom:
             self.stopAutoPlaySequencer()
-        if self.visible:
+        
+        if self.visible or 'sequencer' == eventFrom:
             sel = None
             try:
-                if len(self.currList) > 0 and not self["list"].getVisible():
+                if len(self.currList) > 0 and (not self["list"].getVisible() and 'sequencer' != eventFrom):
                     printDBG("ok_pressed -> ignored /\\")
                     return
             except Exception:
@@ -1454,12 +1466,13 @@ class E2iPlayerWidget(Screen):
             if hRet.status == RetHost.OK: self.hostFavTypes = hRet.value
         except Exception: printExc('The current host crashed')
         
-        # request initial list from host        
+        # request initial list from host
         self.getInitialList()
     #end selectHostCallback(self, ret):
 
     def selectLinkForCurrVideo(self, customUrlItems=None):
-        if not self.visible:
+        if not self.visible and not (self.autoPlaySeqStarted and 
+           config.plugins.iptvplayer.autoplay_start_delay.value == 0):
             self.setStatusTex("")
             self.showWindow()
         
@@ -1714,7 +1727,14 @@ class E2iPlayerWidget(Screen):
         if None not in [self.prevVideoMode, videoMode] and self.prevVideoMode != videoMode:
             printDBG("Restore previus video mode")
             SetE2VideoMode(self.prevVideoMode)
-        if not config.plugins.iptvplayer.disable_live.value:
+        
+        try:
+            if answer != None:
+                self.stopAutoPlaySequencer()
+        except Exception:
+            printExc()
+        
+        if not config.plugins.iptvplayer.disable_live.value and not self.autoPlaySeqStarted:
             self.session.nav.playService(self.currentService)
         
         if 'favourites' == self.hostName and lastPosition != None and clipLength != None:

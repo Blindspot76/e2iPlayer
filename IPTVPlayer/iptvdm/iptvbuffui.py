@@ -157,6 +157,7 @@ class IPTVPlayerBufferingWidget(Screen):
         self.moovAtomStatus = self.MOOV_STS.UNKNOWN
         self.moovAtomDownloader = None
         self.moovAtomPath  = pathForRecordings + '/.iptv_buffering_moov.flv'
+        self.closeRequestedByUser = None
         
         printDBG(">> activMoviePlayer[%s]" % self.activMoviePlayer)
         
@@ -218,12 +219,11 @@ class IPTVPlayerBufferingWidget(Screen):
         self.canRunMoviePlayer = False
         self.inMoviePlayer = False
         
-        #  ret == 1 - no data in buffer
-        #  ret == 0 - triggered by user
-        #  ret == 2 - triggered by user to keep download/buffer 
-        if 2 == ret:
+        self.closeRequestedByUser = ret
+        
+        if 'save_buffer' == ret:
             self.moveToDownloadManager()
-        elif 1 == ret:
+        elif ret in ['key_exit', None]:
             if DMHelper.STS.DOWNLOADING == self.downloader.getStatus():
                 self.lastSize = self.downloader.getLocalFileSize(True)
                 printDBG("IPTVPlayerBufferingWidget.leaveMoviePlayer: movie player consume all data from buffer - still downloading")
@@ -234,7 +234,7 @@ class IPTVPlayerBufferingWidget(Screen):
                     self.session.openWithCallback(self.iptvDoClose, MessageBox, text=_("Error occurs during download."), type = MessageBox.TYPE_ERROR, timeout=5)
                 else:
                     self.iptvDoClose()
-        elif 0 == ret or None == ret:
+        elif ret in ['key_stop']:
             # ask if we should close
             self.lastSize = self.downloader.getLocalFileSize(True)
             #list = [ (_("yes"), True), (_("no"), False) ]
@@ -272,12 +272,13 @@ class IPTVPlayerBufferingWidget(Screen):
             self.session.openWithCallback(self.confirmExitCallBack, MessageBox, text=message, type=MessageBox.TYPE_YESNO)
 
     def back_pressed(self):
+        self.closeRequestedByUser = 'key_exit'
         self.iptvDoClose()
         return
         
     def iptvDoClose(self, *args, **kwargs):
         self.onEnd()
-        self.close(None, self.lastPosition, self.clipLength)
+        self.close(self.closeRequestedByUser, self.lastPosition, self.clipLength)
     
     def ok_pressed(self):
         if self.canRunMoviePlayer and self.downloader.getPlayableFileSize() > 0:

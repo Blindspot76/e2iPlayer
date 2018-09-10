@@ -486,8 +486,7 @@ class IPTVExtMoviePlayer(Screen):
         self.waitCloseFix['timer'] = eTimer()
         self.waitCloseFix['timer_conn'] = eConnectCallback(self.waitCloseFix['timer'].timeout, self.waitCloseTimeoutCallback)
         
-        self.isCloseRequestedByUser = False
-        self.savePlabackBuffer = False
+        self.closeRequestedByUser = None
         self.playerBinaryInfo = {'version':None, 'data':''}
         self.messageQueue = []
         self.underMessage = False
@@ -532,7 +531,7 @@ class IPTVExtMoviePlayer(Screen):
         elif "video_options" == ret.privateData:
             self.selectVideoOptions()
         elif "close_with_buffer_save" == ret.privateData:
-            self.key_stop(True, True)
+            self.key_stop("save_buffer")
         
     def runConfigMoviePlayer(self):
         printDBG("runConfigMoviePlayerCallback")
@@ -1291,11 +1290,10 @@ class IPTVExtMoviePlayer(Screen):
             self.lastPosition = self.metaHandler.getLastPosition()
     
     # handling of RCU keys
-    def key_stop(self, requestedByUser=True, savePlabackBuffer=False):
+    def key_stop(self, requestedByUser="key_stop"):
         self['pleaseWait'].setText(_("Closing. Please wait..."))
         self['pleaseWait'].show()
-        self.isCloseRequestedByUser = requestedByUser
-        self.savePlabackBuffer = savePlabackBuffer
+        self.closeRequestedByUser = requestedByUser
         if self.console != None:
             if self.extPlayerCmddDispatcher.stop():
                 self.saveLastPlaybackTime()
@@ -1411,7 +1409,7 @@ class IPTVExtMoviePlayer(Screen):
             self.playbackInfoBar['blocked'] = False
             self.hidePlaybackInfoBar()
         else:
-            self.key_stop(False)
+            self.key_stop("key_exit")
             
     def doInfo(self):
         if not self.playbackInfoBar['visible']:
@@ -1423,7 +1421,7 @@ class IPTVExtMoviePlayer(Screen):
     def eplayer3Finished(self, code):
         printDBG("IPTVExtMoviePlayer.eplayer3Finished code[%r]" % code)
         if self.isClosing: return
-         
+        
         msg = _("It seems that the video player \"%s\" does not work properly.\n\nSTS: %s\nERROR CODE: %r")
         if None == self.playerBinaryInfo['version']:
             msg = msg % (self.playerName, self.playerBinaryInfo['data'], code)
@@ -1705,16 +1703,8 @@ class IPTVExtMoviePlayer(Screen):
         self.playbackInfoBar['blocked'] = False
         self.hidePlaybackInfoBar()
         
-        # onLeavePlayer can be called by two reason:
-        #   - no data in buffer - should return sts = 1
-        #   - triggered by user - should return sts = 0
-        if self.isCloseRequestedByUser: 
-            sts = 2 if self.savePlabackBuffer else 0
-        else:
-            sts = 1
-            
         self.isClosing = True
-        self.showMessage(None, None, boundFunction(self.extmovieplayerClose, sts, self.playback.get('ConfirmedCTime', 0)))
+        self.showMessage(None, None, boundFunction(self.extmovieplayerClose, self.closeRequestedByUser, self.playback.get('ConfirmedCTime', 0)))
 
     def extmovieplayerClose(self, sts, currentTime):
         if self.childWindowsCount > 0:
