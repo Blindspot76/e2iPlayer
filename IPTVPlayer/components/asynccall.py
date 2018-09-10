@@ -4,7 +4,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import iptv_system, printDBG, GetDukPath, CreateTmpFile, rm, getDebugMode
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError, GetIPTVNotify
 ###################################################
 # FOREIGN import
 ###################################################
@@ -349,15 +349,25 @@ class iptv_execute(object):
 def iptv_js_execute(jscode, params={}):
     sts, tmpPath = CreateTmpFile('.iptv_js.js', jscode)
     if sts:
+        noDuk = False
         cmd =  GetDukPath()
-        cmd += ' -t %s ' % params.get('timeout_sec', 20)
-        cmd += ' ' + tmpPath + ' 2> /dev/null'
-        printDBG("iptv_js_execute cmd[%s]" % cmd)
-        ret = iptv_execute()( cmd )
-        
-        # leave last script for debug purpose
-        if getDebugMode() == '':
-            rm(tmpPath)
+        if cmd != '':
+            cmd += ' -t %s ' % params.get('timeout_sec', 20)
+            cmd += ' ' + tmpPath + ' 2> /dev/null'
+            printDBG("iptv_js_execute cmd[%s]" % cmd)
+            ret = iptv_execute()( cmd )
+            
+            # leave last script for debug purpose
+            if getDebugMode() == '':
+                rm(tmpPath)
+            if ret['code'] == 127:
+                noDuk = True
+        else:
+            noDuk = True
+        if noDuk:
+            messages = [_('The %s utility is necessary here but it was not detected.') % ('duktape')]
+            messages.append(_('Please consider restart your Engima2 and agree to install the %s utlity when the %s will propose this.') % ('duktape', 'E2iPlayer'))
+            GetIPTVNotify().push('\n'.join(messages), 'error', 40, 'no_duktape', 40)
     else:
         ret = {'sts':False, 'code':-12, 'data':''}
     printDBG('iptv_js_execute cmd ret[%s]' % ret)
