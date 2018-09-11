@@ -21,7 +21,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 ###################################################
 
 def gettytul():
-    return 'http://guardaserie.click/'
+    return 'http://guardaserie.watch/'
 
 class GuardaSerieClick(CBaseHostClass):
 
@@ -32,8 +32,8 @@ class GuardaSerieClick(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html'}
         self.AJAX_HEADER = MergeDicts(self.HEADER, {'X-Requested-With':'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'})
         
-        self.MAIN_URL = 'http://www.guardaserie.click/'
-        self.DEFAULT_ICON_URL = 'http://www.guardaserie.click/wp-content/themes/guardaserie/images/logogd.png'
+        self.MAIN_URL = 'http://www.guardaserie.watch/'
+        self.DEFAULT_ICON_URL = self.getFullIconUrl('/wp-content/themes/guardaserie/images/logogd.png')
         
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
     
@@ -82,6 +82,7 @@ class GuardaSerieClick(CBaseHostClass):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0])
             icon  = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, '''<img[^>]+?src=['"]([^"^']+?)['"]''')[0] )
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<p', '</p>')[1])
+            if title == '': continue
             desc  = []
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<span', '</span>')
             for t in tmp:

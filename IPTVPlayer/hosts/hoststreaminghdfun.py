@@ -35,14 +35,14 @@ def GetConfigList():
     return optionList
 ###################################################
 def gettytul():
-    return 'https://streaminghd.fun/'
+    return 'https://streaminghd.online/'
 
 class StreamingHDFun(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'streaminghd.fun', 'cookie':'streaminghd.fun.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'https://streaminghd.fun/'
+        self.MAIN_URL = 'https://streaminghd.online/'
         self.DEFAULT_ICON_URL = 'https://www.pitupitu.pl/files/QMQNlOEPWQjUCVWov3CCWIVv0zs/coverBig'
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
@@ -277,9 +277,9 @@ class StreamingHDFun(CBaseHostClass):
         tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'play-box'), ('</div', '>'))
         for item in tmp:
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
-            if 1 != self.up.checkHostSupport(url): continue
+            #if 1 != self.up.checkHostSupport(url): continue
             id = self.cm.ph.getSearchGroups(item, '''id=['"]([^"^']+?)['"]''', 1, True)[0]
-            name = namesData.get(id, '')
+            name = namesData.get(id, '') + _(' main link')
             if name == '': name = self.up.getHostName(url)
             retTab.append({'name':name, 'url':strwithmeta(url, {'Referer':cUrl}), 'need_resolve':1})
             

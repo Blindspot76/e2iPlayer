@@ -44,10 +44,10 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://tantifilm.uno/'
+    return 'https://tantifilm.gratis/'
 
 class TantiFilmOrg(CBaseHostClass):
- 
+    REMOVE_COOKIE = True
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'TantiFilmOrg.tv', 'cookie':'tantifilmorg.cookie'})
         self.USER_AGENT = 'Mozilla/5.0'
@@ -57,7 +57,7 @@ class TantiFilmOrg(CBaseHostClass):
         self.cm.HEADER = self.HEADER # default header
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'http://www.tantifilm.uno/'
+        self.MAIN_URL = 'https://www.tantifilm.gratis/'
         self.DEFAULT_ICON_URL = 'https://raw.githubusercontent.com/Zanzibar82/images/master/posters/tantifilm.png'
         
         self.MAIN_CAT_TAB = [{'category':'list_categories',    'title': _('Categories'),                           'url':self.MAIN_URL  },
@@ -77,11 +77,7 @@ class TantiFilmOrg(CBaseHostClass):
         origBaseUrl = baseUrl
         baseUrl = self.cm.iriToUri(baseUrl)
         
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urlparse.urljoin(baseUrl, url)
-        
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
     def refreshCookieHeader(self):
@@ -98,23 +94,26 @@ class TantiFilmOrg(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
         
-        params = dict(cItem)
-        params.update({'category':nextCategory, 'title':'Film', 'url':self.getFullUrl('/film/')})
-        self.addDir(params)
+        #params = dict(cItem)
+        #params.update({'category':nextCategory, 'title':'Film', 'url':self.getFullUrl('/film/')})
+        #self.addDir(params)
         
         data = self.cm.ph.getDataBeetwenMarkers(data, '<nav id="ddmenu">', '</ul>', withMarkers=False)[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, "<li", '</li>', withMarkers=True)
         for item in data:
             title = self.cleanHtmlStr(item)
             if title.upper() == 'HOME': continue # not items on home page
-            url   = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+            url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            if self.cm.getBaseUrl(self.getMainUrl(), True) != self.cm.getBaseUrl(url, True) or '/supporto/' in url:
+                continue
             params = dict(cItem)
             if 'elenco-saghe' not in url:
-                params.update({'category':nextCategory, 'title':title, 'url':self.getFullUrl(url)})
+                params.update({'category':nextCategory, 'title':title, 'url':url})
                 self.addDir(params)
             else:
-                params.update({'category':'list_collections', 'title':title, 'url':self.getFullUrl(url)})
+                params.update({'category':'list_collections', 'title':title, 'url':url})
                 self.addDir(params)
                 break
                 
@@ -466,6 +465,9 @@ class TantiFilmOrg(CBaseHostClass):
         
     #MAIN MENU
         if name == None:
+            if TantiFilmOrg.REMOVE_COOKIE:
+                TantiFilmOrg.REMOVE_COOKIE = False
+                rm(self.COOKIE_FILE)
             self.listMainMenu({'name':'category', 'url':self.MAIN_URL}, 'list_items')
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
         elif 'list_categories' == category:
