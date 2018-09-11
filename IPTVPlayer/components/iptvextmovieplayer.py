@@ -356,6 +356,7 @@ class IPTVExtMoviePlayer(Screen):
                 'videooptions' : self.key_videooption,
                 'menu'         : self.key_menu,
                 'loop'         : self.key_loop,
+                'record'       : self.key_record,
             }, -1)
         
         self.onClose.append(self.__onClose)
@@ -1353,6 +1354,12 @@ class IPTVExtMoviePlayer(Screen):
         
     def key_menu(self):
         self.showMenuOptions()
+        
+    def key_record(self):
+        if self.isDownladManagerAvailable and self.downloader:
+            self.key_stop("save_buffer")
+            return
+        return 0
         
     def goSubKey(self, direction, state='press'):
         if not self.subHandler['enabled'] or None == self.metaHandler.getSubtitleTrack():

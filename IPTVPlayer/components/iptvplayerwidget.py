@@ -192,7 +192,9 @@ class E2iPlayerWidget(Screen):
             "3"       :   self.ok_pressed3,
             "4"       :   self.ok_pressed4,
             "play"    :   self.startAutoPlaySequencer,
-            "menu"    :   self.menu_pressed
+            "menu"    :   self.menu_pressed,
+            "tools"   :   self.blue_pressed,
+            "record"  :   self.green_pressed,
         }, -1)
 
         self["headertext"] = Label()
