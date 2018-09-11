@@ -67,7 +67,7 @@ config.plugins.iptvplayer.bufferingPath      = ConfigDirectory(default = config.
 config.plugins.iptvplayer.buforowanie        = ConfigYesNo(default = False)
 config.plugins.iptvplayer.buforowanie_m3u8   = ConfigYesNo(default = True)
 config.plugins.iptvplayer.buforowanie_rtmp   = ConfigYesNo(default = False)
-config.plugins.iptvplayer.requestedBuffSize  = ConfigInteger(5, (1,120))
+config.plugins.iptvplayer.requestedBuffSize  = ConfigInteger(2, (1,120))
 config.plugins.iptvplayer.requestedAudioBuffSize  = ConfigInteger(256, (1,10240))
 
 config.plugins.iptvplayer.IPTVDMRunAtStart      = ConfigYesNo(default = False)

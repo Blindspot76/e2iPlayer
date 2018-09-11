@@ -53,7 +53,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           GetEnabledHostsList, SaveHostsOrderList, GetUpdateServerUri
 from Plugins.Extensions.IPTVPlayer.tools.iptvhostgroups import IPTVHostsGroups
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
-from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import IPTVPlayerBufferingWidget
+from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import E2iPlayerBufferingWidget
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdmapi import IPTVDMApi, DMItem
 from Plugins.Extensions.IPTVPlayer.iptvupdate.updatemainwindow import IPTVUpdateWindow, UpdateMainAppImpl
 
@@ -1646,19 +1646,21 @@ class E2iPlayerWidget(Screen):
             else:
                 isBufferingMode = self.activePlayer.get('buffering', self.checkBuffering(url))
             
+            bufferingPath = config.plugins.iptvplayer.bufferingPath.value
+            downloadingPath = config.plugins.iptvplayer.NaszaSciezka.value
             if not recorderMode:
-                pathForRecordings = config.plugins.iptvplayer.bufferingPath.value
+                destinationPath = config.plugins.iptvplayer.bufferingPath.value
             else:
-                pathForRecordings = config.plugins.iptvplayer.NaszaSciezka.value
-            fullFilePath = pathForRecordings + '/' + titleOfMovie + fileExtension
-             
-            if (recorderMode or isBufferingMode) and not iptvtools_FreeSpace(pathForRecordings, 500):
+                destinationPath = config.plugins.iptvplayer.NaszaSciezka.value
+            
+            if (recorderMode or isBufferingMode) and not iptvtools_FreeSpace(destinationPath, 500):
                 self.stopAutoPlaySequencer()
-                self.session.open(MessageBox, _("There is no free space on the drive [%s].") % pathForRecordings, type=MessageBox.TYPE_INFO, timeout=10)
+                self.session.open(MessageBox, _("There is no free space on the drive [%s].") % destinationPath, type=MessageBox.TYPE_INFO, timeout=10)
             elif recorderMode:
                 global gDownloadManager
                 if None != gDownloadManager:
                     if IsUrlDownloadable(url):
+                        fullFilePath = downloadingPath + '/' + titleOfMovie + fileExtension
                         ret = gDownloadManager.addToDQueue( DMItem(url, fullFilePath) )
                     else:
                         ret = False
@@ -1691,7 +1693,7 @@ class E2iPlayerWidget(Screen):
                     global gDownloadManager
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(True, self.useAlternativePlayer))
-                    self.session.openWithCallback(self.leaveMoviePlayer, IPTVPlayerBufferingWidget, url, pathForRecordings, titleOfMovie, player.value, self.bufferSize, gstAdditionalParams, gDownloadManager, fileExtension)
+                    self.session.openWithCallback(self.leaveMoviePlayer, E2iPlayerBufferingWidget, url, bufferingPath, downloadingPath, titleOfMovie, player.value, self.bufferSize, gstAdditionalParams, gDownloadManager, fileExtension)
                 else:
                     self.session.nav.stopService()
                     player = self.activePlayer.get('player', self.getMoviePlayer(False, self.useAlternativePlayer))

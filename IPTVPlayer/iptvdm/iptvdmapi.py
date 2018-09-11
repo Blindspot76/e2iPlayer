@@ -227,13 +227,19 @@ class IPTVDMApi():
             self.listChanged()
         return bRet
 
-    def addBufferItem(self, downloader, newFilePath):
+    def addBufferItem(self, downloader, fullFilesPaths=[]):
         if downloader.getStatus() == DMHelper.STS.DOWNLOADING:
             if len(self.queueUD) >= self.MAX_DOWNLOAD_ITEM:
                 return False, _('Max number of parallel downloads has been reached.')
         
-        newFilePath = DMHelper.makeUnikalFileName(newFilePath, False, False)
-        bRet, errMsg = downloader.moveFullFileName(newFilePath)
+        bRet, msg = False, ''
+        for newFilePath in fullFilesPaths:
+            newFilePath = DMHelper.makeUnikalFileName(newFilePath, False, False)
+            bRet, msg = downloader.moveFullFileName(newFilePath)
+            if bRet:
+                msg = newFilePath
+                break
+            
         if bRet:
             newItem = DMItem(downloader.getUrl(), downloader.getFullFileName())
             
@@ -254,7 +260,7 @@ class IPTVDMApi():
             
             self.listChanged()
         
-        return bRet, errMsg
+        return bRet, msg
 
     def processDQ(self):
             if False == self.running: return
