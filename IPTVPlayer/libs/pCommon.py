@@ -967,7 +967,7 @@ class common:
                 sts, data = self._getPageWithPyCurl(url, params, post_data)
                 if not sts and 'pycurl_error' in self.meta and \
                    pycurl.E_SSL_CONNECT_ERROR == self.meta['pycurl_error'][0]:
-                    if 'SSL_set_session failed' in self.meta['pycurl_error'][1]:
+                    if 'SSL_set_session failed' in self.meta['pycurl_error'][1] or '-308' in self.meta['pycurl_error'][1]:
                         printDBG("pCommon - getPageWithPyCurl() - retry with fresh session")
                         if sessionReused:
                             sessionReused = False
