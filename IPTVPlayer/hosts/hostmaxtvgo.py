@@ -110,8 +110,10 @@ class MaxtvGO(CBaseHostClass):
                 subItems = []
                 for it in item['videos']:
                     title = self.cleanHtmlStr(it['title'])
-                    icon = self.getFullIconUrl(it['image'])
-                    url = self.getFullUrl('index.php?film=') + it['code']
+                    #icon = self.getFullIconUrl(it['image'])
+                    icon = str(it.get('vimeoPosterId', ''))
+                    if icon != '': icon = 'http://i.vimeocdn.com/video/%s.jpg?mw=300' % icon
+                    url = self.getFullUrl('video.php?film=') + it['code']
                     params = dict(cItem)
                     params.update({'type':'video', 'good_for_fav':True, 'title':title, 'url':url, 'icon':icon})
                     subItems.append(params)
@@ -161,9 +163,9 @@ class MaxtvGO(CBaseHostClass):
         
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source', '>')
-        for item in data:
+        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>')
+        for item in tmp:
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
             if not self.cm.isValidUrl(url): continue
             type = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''type=['"]([^'^"]+?)['"]''')[0]).lower()
@@ -172,6 +174,12 @@ class MaxtvGO(CBaseHostClass):
                 retTab.append({'name':'direct', 'url':url, 'need_resolve':0})
             else:
                 printDBG("Unknown source: [%s]" % item)
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'player'), ('</div', '>'), False)[1]
+        videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0], self.cm.meta['url'])
+        if videoUrl != '':
+            videoUrl = strwithmeta(videoUrl, {'User-Agent':self.USER_AGENT, 'Referer':self.cm.meta['url']})
+            retTab.extend(self.up.getVideoLinkExt(videoUrl))
         
         return retTab
         
@@ -237,7 +245,7 @@ class MaxtvGO(CBaseHostClass):
         if not sts: return []
         
         videoID = self.cm.ph.getSearchGroups(data, '''(<input[^>]+?videoID[^>]+?>)''', 1, True)[0]
-        videoID = self.cm.ph.getSearchGroups(videoID, '''\sid=['"]([^'^"]+?)['"]''', 1, True)[0]
+        videoID = self.cm.ph.getSearchGroups(videoID, '''\svalue=['"]([^'^"]+?)['"]''', 1, True)[0]
         
         if videoID == '':
             return []
