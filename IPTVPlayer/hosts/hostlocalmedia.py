@@ -655,12 +655,23 @@ class IPTVHost(CHostBase):
                     retlist = [_('File "%s" already exists') % newPath]
                     ok = False
                 else:
+                    ret = {'sts':True, 'code':0, 'data':''}
                     if self.cType == 'cut':
-                        os_rename(self.cFilePath, newPath)
-                        self.needRefresh = cutPath
+                        try:
+                            os_rename(self.cFilePath, newPath)
+                            self.needRefresh = cutPath
+                        except Exception:
+                            printExc()
+                            cmd = 'mv -f "%s" "%s"' % (self.cFilePath, newPath)
+                            ret = iptv_execute_wrapper(cmd)
                     elif self.cType == 'copy':
                         cmd = 'cp "%s" "%s"' % (self.cFilePath, newPath)
                         ret = iptv_execute_wrapper(cmd)
+                
+                if ret['sts'] and 0 != ret['code']:
+                    retlist = [(_('Moving file from "%s" to "%s" failed.\n') % (self.cFilePath, newPath)) + (_('Error code: %s\n') % ret['code']) + (_('Error message: %s\n') % ret['data'])]
+                    ok = False
+                
                 if ok:
                     self.cType =  ''
                     self.cFilePath =  ''

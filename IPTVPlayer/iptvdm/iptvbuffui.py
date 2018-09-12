@@ -309,6 +309,7 @@ class E2iPlayerBufferingWidget(Screen):
         if self.canRunMoviePlayer:# and self.downloader.getPlayableFileSize() > 0:
             self.canRunMoviePlayer = False
             self.setMainTimerSts(False)
+            self.closeRequestedByUser = 'save_buffer'
             self.moveToDownloadManager(False)
         
     def iptvDoClose(self, *args, **kwargs):
