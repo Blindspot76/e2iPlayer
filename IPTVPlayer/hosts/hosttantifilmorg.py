@@ -78,7 +78,30 @@ class TantiFilmOrg(CBaseHostClass):
         baseUrl = self.cm.iriToUri(baseUrl)
         
         addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
-        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        if sts and 'aes.min.js' in data:
+            jscode = ['var document={};document.location={};']
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'))
+            for item in tmp:
+                scriptUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0], self.cm.meta['url'])
+                if scriptUrl != '':
+                    sts2, item = self.cm.getPage(scriptUrl, addParams, post_data)
+                    if sts2: jscode.append(item)
+                else:
+                    item = self.cm.ph.getDataBeetwenNodes(item, ('<script', '>'), ('</script', '>'), False)[1]
+                    if item != '': jscode.append(item)
+            jscode.append('print(JSON.stringify(document));')
+            ret = ret = iptv_js_execute('\n'.join(jscode), {'timeout_sec':15})
+            if ret['sts'] and 0 == ret['code']:
+                try:
+                    tmp = byteify(json.loads(ret['data']))
+                    item = tmp['cookie'].split(';', 1)[0].split('=', 1)
+                    self.defaultParams['cookie_items'] = {item[0]:item[1]}
+                    addParams['cookie_items'] = self.defaultParams['cookie_items']
+                    sts, data = self.cm.getPage(baseUrl, addParams, post_data)
+                except Exception:
+                    printExc()
+        return sts, data
         
     def refreshCookieHeader(self):
         self.cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
@@ -99,9 +122,10 @@ class TantiFilmOrg(CBaseHostClass):
         #params = dict(cItem)
         #params.update({'category':nextCategory, 'title':'Film', 'url':self.getFullUrl('/film/')})
         #self.addDir(params)
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<nav id="ddmenu">', '</ul>', withMarkers=False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, "<li", '</li>', withMarkers=True)
+        printDBG(data)
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<nav', '>', 'ddmenu'), ('</ul', '>'), False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>', withMarkers=True)
+        printDBG(data)
         for item in data:
             title = self.cleanHtmlStr(item)
             if title.upper() == 'HOME': continue # not items on home page
