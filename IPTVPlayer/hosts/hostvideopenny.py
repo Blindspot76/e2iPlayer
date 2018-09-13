@@ -2,7 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
@@ -49,7 +49,7 @@ def GetConfigList():
 
 
 def gettytul():
-    return 'http://videopenny.net/'
+    return 'https://videopenny.net/'
 
 class VideoPenny(CBaseHostClass):
  
@@ -60,7 +60,7 @@ class VideoPenny(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.DEFAULT_ICON_URL = 'http://videopenny.net/wp-content/uploads/icons/VideoPennyNet-logo_126x30.png'
+        self.DEFAULT_ICON_URL = 'https://videopenny.net/wp-content/uploads/icons/VideoPennyNet-logo_126x30.png'
         self.MAIN_URL = None
         self.cacheSeries = []
         self.cachePrograms = []
@@ -73,12 +73,12 @@ class VideoPenny(CBaseHostClass):
         if addParams == {}:
             addParams = dict(self.defaultParams)
         
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urljoin(baseUrl, url)
-        
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
-        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        if sts and 'zablokowany.html' in self.cm.meta['url']:
+            messages = self.cleanHtmlStr(data)
+            GetIPTVNotify().push(messages, 'error', 40, self.cm.meta['url'], 40)
+        return sts, data
         
     def getFullUrl(self, url):
         url = CBaseHostClass.getFullUrl(self, url)
@@ -87,7 +87,7 @@ class VideoPenny(CBaseHostClass):
         return url
         
     def selectDomain(self):                
-        self.MAIN_URL = 'http://videopenny.net/'
+        self.MAIN_URL = 'https://videopenny.net/'
         self.MAIN_CAT_TAB = [{'category':'list_sort_filter',    'title': 'Seriale',           'url':self.getFullUrl('/kategoria-2/seriale-pl'),           'icon':self.getFullIconUrl('/wp-content/uploads/2014/05/Seriale-tv.png')},
                              {'category':'list_sort_filter',    'title': 'Programy online',   'url':self.getFullUrl('/kategoria-2/programy-rozrywkowe'),  'icon':self.getFullIconUrl('/wp-content/uploads/2014/05/Programy-online.png')},
                              {'category':'list_sort_filter',    'title': 'Filmy',             'url':self.getFullUrl('/category/filmy-pl/'),               'icon':self.getFullIconUrl('/wp-content/uploads/2014/05/Filmy.png')},
