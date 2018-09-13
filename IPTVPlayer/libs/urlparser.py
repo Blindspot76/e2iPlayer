@@ -487,6 +487,7 @@ class urlparser:
                        'widestream.io':        self.pp.parserWIDESTREAMIO   ,
                        'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
                        'vidbom.com':           self.pp.parserVIDBOMCOM      ,
+                       'hxload.io':            self.pp.parserVIDBOMCOM      ,
                        'interia.tv':           self.pp.parserINTERIATV      ,
                        'cloudyfiles.org':      self.pp.parserUPLOAD         ,
                        'cloudyfiles.me':       self.pp.parserUPLOAD         ,
@@ -2819,11 +2820,11 @@ class pageParser(CaptchaHelper):
             if 'eval(' in item and 'setup' in item:
                 jscode.append(item)
         urlTab = []
-        jscode = '\n'.join(jscode)
-        ret = iptv_js_execute( jscode )
-        if ret['sts'] and 0 == ret['code']:
-            data = byteify(json.loads(ret['data']))
-            for item in data['sources']:
+        try:
+            jscode = '\n'.join(jscode)
+            ret = iptv_js_execute( jscode )
+            tmp = byteify(json.loads(ret['data']))
+            for item in tmp['sources']:
                 url = item['file']
                 type = item.get('type', '')
                 if type == '': type = url.split('.')[-1].split('?', 1)[0]
@@ -2833,6 +2834,22 @@ class pageParser(CaptchaHelper):
                 if url == '': continue
                 url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
                 urlTab.append({'name':'{0} {1}'.format(domain, label), 'url':url})
+        except Exception:
+            printExc()
+        if len(urlTab) == 0:
+            items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''sources\s*[=:]\s*\['''), re.compile('''\]'''), False)[1].split('},')
+            printDBG(items)
+            domain = urlparser.getDomain(baseUrl)
+            for item in items:
+                item = item.replace('\/', '/')
+                url  = self.cm.ph.getSearchGroups(item, '''(?:src|file)['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                if not url.lower().split('?', 1)[0].endswith('.mp4') or not self.cm.isValidUrl(url): continue
+                type = self.cm.ph.getSearchGroups(item, '''type['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                res  = self.cm.ph.getSearchGroups(item, '''res['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                if res == '': res = self.cm.ph.getSearchGroups(item, '''label['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                lang = self.cm.ph.getSearchGroups(item, '''lang['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                url = urlparser.decorateUrl(self.cm.getFullUrl(url, cUrl), {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})
+                urlTab.append({'name':domain + ' {0} {1}'.format(lang, res), 'url':url})
         return urlTab
         
     def parserINTERIATV(self, baseUrl):
@@ -9566,32 +9583,49 @@ class pageParser(CaptchaHelper):
         HTTP_HEADER = { 'User-Agent':'Mozilla/5.0', 'Referer':referer}
         params = {'header':HTTP_HEADER}
         
-        sts, data = self.cm.getPage(baseUrl, params)
-        if not sts: return []
-        
-        urlTab = []
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '.setup(', ')')
-        for item in data:
-            printDBG(item)
-            url  = self.cm.ph.getSearchGroups(item, '''['"]?file['"]?\s*:\s*['"]([^"^']+?)['"]''')[0]
-            if url.startswith('//'): url = 'http:' + url
-            if not url.startswith('http'): continue
-            type = self.cm.ph.getSearchGroups(item, '''['"]?type['"]?\s*:\s*['"]([^"^']+?)['"]''')[0].lower()
-            printDBG('>>>>>>>>>>>>> ' + url)
+        tries = 0
+        while tries < 5 and baseUrl != '':
+            tries += 1
+            sts, data = self.cm.getPage(baseUrl, params)
+            if not sts: return []
             
-            if 'mp4' in type:
-                url    = urlparser.decorateUrl(url, {'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
-                urlTab.insert(0, {'name':type, 'url':url})
-            elif 'mpegurl' in type or 'hls' in type:
-                url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
-                tmpTab = getDirectM3U8Playlist(url, checkExt=False, variantCheck=False, checkContent=True)
-                try: tmpTab = sorted(tmpTab, key=lambda item: int(item.get('bitrate', '0')))
-                except Exception: pass
-                urlTab.extend(tmpTab)
-            elif 'dash' in type:
-                url = urlparser.decorateUrl(url, {'iptv_proto':'dash', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
-                urlTab.extend(getMPDLinksWithMeta(url, False))
-        urlTab.reverse()
+            printDBG(data)
+            
+            urlTab = []
+            tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '.setup(', ')')
+            for item in tmp:
+                printDBG(item)
+                url  = self.cm.ph.getSearchGroups(item, '''['"]?file['"]?\s*:\s*['"]([^"^']+?)['"]''')[0]
+                if url.startswith('//'): url = 'http:' + url
+                if not url.startswith('http'): continue
+                type = self.cm.ph.getSearchGroups(item, '''['"]?type['"]?\s*:\s*['"]([^"^']+?)['"]''')[0].lower()
+                printDBG('>>>>>>>>>>>>> ' + url)
+                
+                if 'mp4' in type:
+                    url    = urlparser.decorateUrl(url, {'Referer':baseUrl,  'User-Agent':HTTP_HEADER['User-Agent']})
+                    urlTab.insert(0, {'name':type, 'url':url})
+                elif 'mpegurl' in type or 'hls' in type:
+                    url = urlparser.decorateUrl(url, {'iptv_proto':'m3u8', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                    tmpTab = getDirectM3U8Playlist(url, checkExt=False, variantCheck=False, checkContent=True)
+                    try: tmpTab = sorted(tmpTab, key=lambda item: int(item.get('bitrate', '0')))
+                    except Exception: pass
+                    urlTab.extend(tmpTab)
+                elif 'dash' in type:
+                    url = urlparser.decorateUrl(url, {'iptv_proto':'dash', 'Referer':baseUrl, 'Origin':urlparser.getDomain(baseUrl, False), 'User-Agent':HTTP_HEADER['User-Agent']})
+                    urlTab.extend(getMPDLinksWithMeta(url, False))
+            urlTab.reverse()
+            if len(urlTab) == 0:
+                url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0], self.cm.meta['url'])
+                if url != '': 
+                    printDBG(url)
+                    urlTab = urlparser().getVideoLinkExt(strwithmeta(url, MergeDicts(baseUrl.meta, {'Referer':self.cm.meta['url']})))
+                    break
+            if len(urlTab) == 0:
+                url = self.cm.ph.getSearchGroups(data, '''<meta[^>]+?([^>]+?refresh[^>]+?)>''', 1, True)[0]
+                url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(url, '''url=([^'^"]+?)['"]''', 1, True)[0], self.cm.meta['url'])
+                baseUrl = strwithmeta(url, MergeDicts(baseUrl.meta, {'Referer':self.cm.meta['url']}))
+            else:
+                break
         return urlTab
     
     def parserKINGVIDTV(self, baseUrl):
