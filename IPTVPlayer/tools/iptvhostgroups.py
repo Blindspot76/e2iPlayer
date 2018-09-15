@@ -80,7 +80,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['polish']           = ['youtube','webstream','efilmytv','alltubetv','allboxtv','filisertv','ekinotv','cdapl','kinomanco','iitvpl','videopenny','zalukajcom','serialnet','tvpvod','ipla','tvnvod','vodpl', \
                                                      'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajkipopolskucom','bajeczkiorg','animeodcinki','playpuls','meczykipl','fokustv','eskago','filmydokumentalneeu', \
                                                      'tvjworg','artetv','dailymotion', 'vimeo', 'kabarety','twitchtv','hitboxtv','tvgrypl','chomikuj','fighttube','spryciarze','wgrane','wolnelekturypl','tvn24','ninateka', \
-                                                     'maxtvgo','wpolscepl','wrealu24tv','wptv','interiatv','kinopodaniolempl', 'dokumentalnenet', 'serialeco','radiostacja','nuteczki','luxveritatis','naszekinotv','salvetvpl','tvrepublika']
+                                                     'maxtvgo','wpolscepl','wrealu24tv','wptv','interiatv','kinopodaniolempl', 'dokumentalnenet', 'serialeco','radiostacja','nuteczki','luxveritatis','naszekinotv','tvproart','tvrepublika']
         self.PREDEFINED_HOSTS['english']          = ['youtube','webstream','liveleak','bbciplayer','bbcsport','tvplayercom','itvcom','uktvplay','appletrailers','classiccinemaonline','seriesonline','mythewatchseries', \
                                                      'thewatchseriesto','icefilmsinfo','movienightws','yifytv', 'artetv',\
                                                      'hdpopcornscom','losmovies','solarmovie','putlockertvto','vumooch','movie4kto','cineto','cartoonhd','worldfree4u','9anime','kisscartoonme','kissanimeto','watchcartoononline','dailymotion', \

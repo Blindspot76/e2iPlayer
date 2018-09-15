@@ -132,7 +132,6 @@ hostquesttvcouk
 hostradiostacja
 hostrtbfbe
 hostrteieplayer
-hostsalvetvpl
 hostserialeco
 hostserialnet
 hostserienstreamto
@@ -162,6 +161,7 @@ hosttvn24
 hosttvnowde
 hosttvnvod
 hosttvplayercom
+hosttvproart
 hosttvpvod
 hosttvrepublika
 hosttwitchtv
