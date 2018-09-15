@@ -12,6 +12,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIconDir
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3, Cover2
 from Plugins.Extensions.IPTVPlayer.components.VirtualKeyBoard import IPTVVirtualKeyBoardWithCaptcha
+from Plugins.Extensions.IPTVPlayer.components.e2ivkselector import GetVirtualKeyboard
 ###################################################
 
 ###################################################
@@ -24,7 +25,6 @@ from Components.ActionMap import NumberActionMap
 from Components.Label import Label
 from Components.Input import Input
 from Tools.BoundFunction import boundFunction
-from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Tools.LoadPixmap import LoadPixmap
 from enigma import gRGB
 from skin import parseColor
@@ -309,7 +309,7 @@ class IPTVMultipleInputBox(Screen):
         except Exception: printExc()
         
         if not captchaKeyBoard:
-            self.session.openWithCallback(VirtualKeyBoardCallBack, VirtualKeyBoard, title=title, text=self[self.activeInput].getText())
+            self.session.openWithCallback(VirtualKeyBoardCallBack, GetVirtualKeyboard(), title=title, text=self[self.activeInput].getText())
         else:
             self.session.openWithCallback(VirtualKeyBoardCallBack, IPTVVirtualKeyBoardWithCaptcha, title=title, text=self[self.activeInput].getText(), additionalParams=params)
 

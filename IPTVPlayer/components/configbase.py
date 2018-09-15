@@ -11,6 +11,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.components.iptvdirbrowser import IPTVDirectorySelectorWidget, IPTVFileSelectorWidget
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.e2ivkselector import GetVirtualKeyboard
 ###################################################
 
 ###################################################
@@ -21,7 +22,6 @@ from enigma import getDesktop
 
 from Screens.MessageBox import MessageBox
 from Screens.Screen import Screen
-from Screens.VirtualKeyBoard import VirtualKeyBoard
 
 from Components.ActionMap import ActionMap, HelpableActionMap
 from Components.Label import Label
@@ -260,7 +260,7 @@ class ConfigBaseWidget(Screen, ConfigListScreen):
         elif isinstance(currItem, ConfigText):
             def VirtualKeyBoardCallBack(curIndex, newTxt):
                 if isinstance(newTxt, basestring): self["config"].list[curIndex][1].value = newTxt
-            self.session.openWithCallback(boundFunction(VirtualKeyBoardCallBack, curIndex), VirtualKeyBoard, title=(_("Enter a value")), text=currItem.value)
+            self.session.openWithCallback(boundFunction(VirtualKeyBoardCallBack, curIndex), GetVirtualKeyboard(), title=(_("Enter a value")), text=currItem.value)
             return
 
         ConfigListScreen.keyOK(self)

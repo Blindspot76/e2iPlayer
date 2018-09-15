@@ -14,6 +14,7 @@ from Plugins.Extensions.IPTVPlayer.libs.m3uparser import ParseM3u
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxItem
+from Plugins.Extensions.IPTVPlayer.components.e2ivkselector import GetVirtualKeyboard
 ###################################################
 
 ###################################################
@@ -34,7 +35,6 @@ from Components.config import config, ConfigSelection, ConfigInteger, ConfigYesN
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_execute
 from Screens.MessageBox import MessageBox
-from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Tools.Directories import fileExists
 ###################################################
 
@@ -625,7 +625,7 @@ class IPTVHost(CHostBase):
             try:
                 path, fileName = os_path.split(privateData['file_path'])
                 name, ext = os_path.splitext(fileName)
-                ret = self.host.sessionEx.waitForFinishOpen(VirtualKeyBoard, title=_('Set file name'), text=name)
+                ret = self.host.sessionEx.waitForFinishOpen(GetVirtualKeyboard(), title=_('Set file name'), text=name)
                 printDBG('rename_file new name[%s]' % ret)
                 if isinstance(ret[0], basestring):
                     newPath = os_path.join(path, ret[0] + ext)

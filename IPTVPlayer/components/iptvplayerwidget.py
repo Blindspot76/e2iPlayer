@@ -16,7 +16,6 @@ from random import shuffle as random_shuffle
 ####################################################
 from skin import parseColor
 from Screens.Screen import Screen
-from Screens.VirtualKeyBoard import VirtualKeyBoard
 from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 from Components.ActionMap import ActionMap
@@ -72,7 +71,7 @@ from Plugins.Extensions.IPTVPlayer.components.cover import Cover, Cover3
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxWidget, IPTVChoiceBoxItem
 import Plugins.Extensions.IPTVPlayer.components.asynccall as asynccall
 from Plugins.Extensions.IPTVPlayer.components.playerselector import PlayerSelectorWidget
-
+from Plugins.Extensions.IPTVPlayer.components.e2ivkselector import GetVirtualKeyboard
 ######################################################
 gDownloadManager = None
 
@@ -119,7 +118,7 @@ class E2iPlayerWidget(Screen):
                             <widget name="statustext" position="5,140" zPosition="1" size="985,90" font="Regular;20" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
                             <widget name="list" position="5,100" zPosition="2" size="1080,280" enableWrapAround="1" scrollbarMode="showOnDemand" transparent="1" backgroundColor="#00000000" />
                             <widget name="console" position="165,430" zPosition="1" size="935,140" font="Regular;20" transparent="1" backgroundColor="#00000000" />
-                            <widget name="cover" zPosition="2" position="5,400" size="122,140" alphatest="blend" />     
+                            <widget name="cover" zPosition="2" position="5,400" size="122,140" alphatest="blend" />
                             <widget name="playerlogo" zPosition="4" position="964,3" size="120,40" alphatest="blend" />
                             <ePixmap zPosition="4" position="5,395" size="1080,5" pixmap="%s" transparent="1" />
                             <widget name="sequencer" position="0,0" zPosition="6" size="1090,525" font="Regular;160" halign="center" valign="center" transparent="1" backgroundColor="#00000000" />
@@ -130,7 +129,7 @@ class E2iPlayerWidget(Screen):
                             <widget name="spinner_3" zPosition="1" position="495,200" size="16,16" transparent="1" alphatest="blend" />
                             <widget name="spinner_4" zPosition="1" position="511,200" size="16,16" transparent="1" alphatest="blend" />
                     </screen>
-                """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('green.png'), GetIconDir('yellow.png'), GetIconDir('blue.png'), GetIconDir('line.png'))      
+                """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('green.png'), GetIconDir('yellow.png'), GetIconDir('blue.png'), GetIconDir('line.png'))
     def __init__(self, session):
         printDBG("E2iPlayerWidget.__init__ desktop IPTV_VERSION[%s]\n" % (E2iPlayerWidget.IPTV_VERSION) )
         self.session = session
@@ -563,6 +562,11 @@ class E2iPlayerWidget(Screen):
         return
      
     def blue_pressed(self):
+        # For Keyboard test
+        if False:
+            self.session.open(GetVirtualKeyboard())
+            return
+        
         # For subtitles test
         if False:
             from Plugins.Extensions.IPTVPlayer.components.iptvsubdownloader import IPTVSubDownloaderWidget
@@ -1834,12 +1838,12 @@ class E2iPlayerWidget(Screen):
             self.session.openWithCallback(self.selectSearchTypeCallback, ChoiceBox, title=_("Search type"), list = searchTypes)
         else:
             self.searchType = None
-            self.session.openWithCallback(self.enterPatternCallBack, VirtualKeyBoard, title=(_("Your search entry")), text = self.searchPattern)
+            self.session.openWithCallback(self.enterPatternCallBack, GetVirtualKeyboard(), title=(_("Your search entry")), text = self.searchPattern)
     
     def selectSearchTypeCallback(self, ret = None):
         if ret:
             self.searchType = ret[1]
-            self.session.openWithCallback(self.enterPatternCallBack, VirtualKeyBoard, title=(_("Your search entry")), text = self.searchPattern)
+            self.session.openWithCallback(self.enterPatternCallBack, GetVirtualKeyboard(), title=(_("Your search entry")), text = self.searchPattern)
         else:
             pass
             # zrezygnowal z wyszukiwania
