@@ -31,6 +31,7 @@
         <key id="KEY_RECORD"   mapto="record"       flags="m" />
     </map>
     <map context="E2iPlayerVKActions">
-        <key id="KEY_ENTER"    mapto="ok_repeat"    flags="m" />
+        <key id="KEY_ENTER" mapto="ok_repeat"    flags="r" />
+        <key id="KEY_OK"    mapto="ok_repeat"    flags="r" />
     </map>
 </keymap>
