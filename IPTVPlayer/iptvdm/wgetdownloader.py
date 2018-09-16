@@ -67,8 +67,8 @@ class WgetDownloader(BaseDownloader):
         # map Exit Status to message - https://www.gnu.org/software/wget/manual/html_node/Exit-Status.html
         self.lastErrorCode = code
         if code == 0: self.lastErrorDesc = "No problems occurred."
-        elif code == 1: self.lastErrorDesc = "Parse error."
-        elif code == 2: self.lastErrorDesc = "Generic error code."
+        elif code == 1: self.lastErrorDesc = "Generic error code."
+        elif code == 2: self.lastErrorDesc = "Parse error."
         elif code == 3: self.lastErrorDesc = "File I/O error."
         elif code == 4: self.lastErrorDesc = "Network failure."
         elif code == 5: self.lastErrorDesc = "SSL verification failure."

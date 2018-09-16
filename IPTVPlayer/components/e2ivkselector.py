@@ -11,10 +11,12 @@ from Components.config import config
 def GetVirtualKeyboard():
     type = config.plugins.iptvplayer.osk_type.value
     
-    if type == 'own':
+    if type in ['own', '']:
         try:
-            from Plugins.Extensions.IPTVPlayer.components.e2ivk import E2iVirtualKeyBoard
-            return E2iVirtualKeyBoard
+            from enigma import getDesktop
+            if getDesktop(0).size().width() >= 1050:
+                from Plugins.Extensions.IPTVPlayer.components.e2ivk import E2iVirtualKeyBoard
+                return E2iVirtualKeyBoard
         except Exception:
             printExc()
 

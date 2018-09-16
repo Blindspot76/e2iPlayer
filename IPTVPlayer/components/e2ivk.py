@@ -7,19 +7,74 @@
 # 
 from Screens.Screen import Screen
 from Components.ActionMap import ActionMap
-from enigma import ePoint, gFont, gRGB, getDesktop
+from enigma import ePoint, gFont, gRGB, eListboxPythonMultiContent, eListbox, gFont, RT_HALIGN_LEFT, RT_HALIGN_RIGHT, RT_VALIGN_CENTER, getDesktop
 from Tools.LoadPixmap import LoadPixmap
+from Tools.Directories import fileExists
+from Tools.BoundFunction import boundFunction
 from Components.Label import Label
 from Components.Input import Input
-from Components.config import config
+from Components.config import config, configfile
 from Screens.MessageBox import MessageBox
 from Screens.ChoiceBox import ChoiceBox
 
 from Plugins.Extensions.IPTVPlayer.components.cover import Cover3
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetIconDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, mkdirs, GetDefaultLang, GetIconDir, GetE2iPlayerVKLayoutDir, GetResourcesServerUri
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.iptvlist import IPTVListComponentBase
+from Plugins.Extensions.IPTVPlayer.components.e2isimpledownloader import SingleFileDownloaderWidget
+
+class E2iVKSelectionList(IPTVListComponentBase):
+    ICONS_FILESNAMES = {'on' : 'radio_button_on.png', 'off' : 'radio_button_off.png'}
+    def __init__(self):
+        IPTVListComponentBase.__init__(self)
+        try: self.font = skin.fonts["e2ivklistitem"]
+        except Exception: self.font = ("Regular", 16, 30, 0)
+        
+        self.l.setFont(0, gFont("Regular", 40))
+        self.l.setFont(1, gFont(self.font[0], self.font[1]))
+        self.l.setItemHeight(self.font[2])
+        self.dictPIX = {}
+    
+    def _nullPIX(self):
+        for key in self.ICONS_FILESNAMES:
+            self.dictPIX[ key ] = None
+
+    def onCreate(self):
+        printDBG('--- onCreate ---')
+        self._nullPIX()
+        for key in self.dictPIX:
+            try:
+                pixFile = self.ICONS_FILESNAMES.get(key, None)
+                if None != pixFile: self.dictPIX[key] = LoadPixmap(cached=True, path=GetIconDir(pixFile))
+            except Exception: printExc()
+        
+    def onDestroy(self):
+        printDBG('--- onDestroy ---')
+        self._nullPIX()
+        
+    def buildEntry(self, item):
+        res = [ None ]
+        width  = self.l.getItemSize().width()
+        height = self.l.getItemSize().height()
+        try:
+            if 'sel' in item:
+                if item['sel']:
+                    sel_key = 'on'
+                else:
+                    sel_key = 'off'
+                y = (height - 16) / 2
+                res.append((eListboxPythonMultiContent.TYPE_TEXT, 20, 0, width-20, height, 1, RT_HALIGN_LEFT|RT_VALIGN_CENTER, item['val'][0])) #, item.get('color')
+                res.append((eListboxPythonMultiContent.TYPE_PIXMAP_ALPHABLEND, 3, y, 16, 16, self.dictPIX.get(sel_key, None)))
+            else:
+                pass
+        except Exception:
+            printExc()
+        return res
 
 class E2iVirtualKeyBoard(Screen):
+    FOCUS_LANGUAGES = 1
+    FOCUS_KEYBOARD = 0
+    FOCUS_SUGGESTIONS = 2
     SK_NONE  = 0
     SK_SHIFT = 1
     SK_CTRL  = 2
@@ -33,7 +88,9 @@ class E2iVirtualKeyBoard(Screen):
                [43, 43,   44, 45,   46, 47,  48,  49,  50,  51,  52,  53,  54,  55,  55],
                [56, 56,   57, 58,   59, 59,  59,  59,  59,  59,  59,  59,  60,  61,  62],
               ]
-
+    ALL_VK_LAYOUTS = [('Albanian','sq_AL','0000041c'),('Arabic (101)','ar_SA','00000401'),('Arabic (102)','ar_SA','00010401'),('Arabic (102) AZERTY','ar_SA','00020401'),('Armenian Eastern','hy_AM','0000042b'),('Armenian Western','hy_AM','0001042b'),('Assamese - INSCRIPT','as_IN','0000044d'),('Azeri Cyrillic','az_Cyrl-AZ','0000082c'),('Azeri Latin','az_Latn-AZ','0000042c'),('Bashkir','ba_RU','0000046d'),('Belarusian','be_BY','00000423'),('Belgian (Comma)','fr_BE','0001080c'),('Belgian (Period)','nl_BE','00000813'),('Belgian French','fr_BE','0000080c'),('Bengali','bn_IN','00000445'),('Bengali - INSCRIPT','bn_IN','00020445'),('Bengali - INSCRIPT (Legacy)','bn_IN','00010445'),('Bosnian (Cyrillic)','bs_Cyrl-BA','0000201a'),('Bulgarian','bg_BG','00030402'),('Bulgarian (Latin)','bg_BG','00010402'),('Bulgarian (Phonetic Traditional)','bg_BG','00040402'),('Bulgarian (Phonetic)','bg_BG','00020402'),('Bulgarian (Typewriter)','bg_BG','00000402'),('Canadian French','en_CA','00001009'),('Canadian French (Legacy)','fr_CA','00000c0c'),('Canadian Multilingual Standard','en_CA','00011009'),('Chinese (Simplified) - US Keyboard','zh_CN','00000804'),('Chinese (Simplified, Singapore) - US Keyboard','zh_SG','00001004'),('Chinese (Traditional) - US Keyboard','zh_TW','00000404'),('Chinese (Traditional, Hong Kong S.A.R.) - US Keyboard','zh_HK','00000c04'),('Chinese (Traditional, Macao S.A.R.) - US Keyboard','zh_MO','00001404'),('Croatian','hr_HR','0000041a'),('Czech','cs_CZ','00000405'),('Czech (QWERTY)','cs_CZ','00010405'),('Czech Programmers','cs_CZ','00020405'),('Danish','da_DK','00000406'),('Devanagari - INSCRIPT','hi_IN','00000439'),('Divehi Phonetic','dv_MV','00000465'),('Divehi Typewriter','dv_MV','00010465'),('Dutch','nl_NL','00000413'),('Estonian','et_EE','00000425'),('Faeroese','fo_FO','00000438'),('Finnish','fi_FI','0000040b'),('Finnish with Sami','se_SE','0001083b'),('French','fr_FR','0000040c'),('Gaelic','en_IE','00011809'),('Georgian','ka_GE','00000437'),('Georgian (Ergonomic)','ka_GE','00020437'),('Georgian (QWERTY)','ka_GE','00010437'),('German','de_DE','00000407'),('German (IBM)','de_DE','00010407'),('Greek','el_GR','00000408'),('Greek (220)','el_GR','00010408'),('Greek (220) Latin','el_GR','00030408'),('Greek (319)','el_GR','00020408'),('Greek (319) Latin','el_GR','00040408'),('Greek Latin','el_GR','00050408'),('Greek Polytonic','el_GR','00060408'),('Greenlandic','kl_GL','0000046f'),('Gujarati','gu_IN','00000447'),('Hausa','ha_Latn-NG','00000468'),('Hebrew','he_IL','0000040d'),('Hindi Traditional','hi_IN','00010439'),('Hungarian','hu_HU','0000040e'),('Hungarian 101-key','hu_HU','0001040e'),('Icelandic','is_IS','0000040f'),('Igbo','ig_NG','00000470'),('Inuktitut - Latin','iu_Latn-CA','0000085d'),('Inuktitut - Naqittaut','iu_Cans-CA','0001045d'),('Irish','en_IE','00001809'),('Italian','it_IT','00000410'),('Italian (142)','it_IT','00010410'),('Japanese','ja_JP','00000411'),('Kannada','kn_IN','0000044b'),('Kazakh','kk_KZ','0000043f'),('Khmer','km_KH','00000453'),('Korean','ko_KR','00000412'),('Kyrgyz Cyrillic','ky_KG','00000440'),('Lao','lo_LA','00000454'),('Latin American','es_MX','0000080a'),('Latvian','lv_LV','00000426'),('Latvian (QWERTY)','lv_LV','00010426'),('Lithuanian','lt_LT','00010427'),('Lithuanian IBM','lt_LT','00000427'),('Lithuanian Standard','lt_LT','00020427'),('Luxembourgish','lb_LU','0000046e'),('Macedonian (FYROM)','mk_MK','0000042f'),('Macedonian (FYROM) - Standard','mk_MK','0001042f'),('Malayalam','ml_IN','0000044c'),('Maltese 47-Key','mt_MT','0000043a'),('Maltese 48-Key','mt_MT','0001043a'),('Maori','mi_NZ','00000481'),('Marathi','mr_IN','0000044e'),('Mongolian (Mongolian Script)','mn_Mong-CN','00000850'),('Mongolian Cyrillic','mn_MN','00000450'),('Nepali','ne_NP','00000461'),('Norwegian','nb_NO','00000414'),('Norwegian with Sami','se_NO','0000043b'),('Oriya','or_IN','00000448'),('Pashto (Afghanistan)','ps_AF','00000463'),('Persian','fa_IR','00000429'),('Polish (214)','pl_PL','00010415'),('Polish (Programmers)','pl_PL','00000415'),('Portuguese','pt_PT','00000816'),('Portuguese (Brazilian ABNT)','pt_BR','00000416'),('Portuguese (Brazilian ABNT2)','pt_BR','00010416'),('Punjabi','pa_IN','00000446'),('Romanian (Legacy)','ro_RO','00000418'),('Romanian (Programmers)','ro_RO','00020418'),('Romanian (Standard)','ro_RO','00010418'),('Russian','ru_RU','00000419'),('Russian (Typewriter)','ru_RU','00010419'),('Sami Extended Finland-Sweden','se_SE','0002083b'),('Sami Extended Norway','se_NO','0001043b'),('Serbian (Cyrillic)','sr_Cyrl-CS','00000c1a'),('Serbian (Latin)','sr_Latn-CS','0000081a'),('Sesotho sa Leboa','nso_ZA','0000046c'),('Setswana','tn_ZA','00000432'),('Sinhala','si_LK','0000045b'),('Sinhala - Wij 9','si_LK','0001045b'),('Slovak','sk_SK','0000041b'),('Slovak (QWERTY)','sk_SK','0001041b'),('Slovenian','sl_SI','00000424'),('Sorbian Extended','hsb_DE','0001042e'),('Sorbian Standard','hsb_DE','0002042e'),('Sorbian Standard (Legacy)','hsb_DE','0000042e'),('Spanish','es_ES','0000040a'),('Spanish Variation','es_ES','0001040a'),('Swedish','sv_SE','0000041d'),('Swedish with Sami','se_SE','0000083b'),('Swiss French','fr_CH','0000100c'),('Swiss German','de_CH','00000807'),('Syriac','syr_SY','0000045a'),('Syriac Phonetic','syr_SY','0001045a'),('Tajik','tg_Cyrl-TJ','00000428'),('Tamil','ta_IN','00000449'),('Tatar','tt_RU','00000444'),('Telugu','te_IN','0000044a'),('Thai Kedmanee','th_TH','0000041e'),('Thai Kedmanee (non-ShiftLock)','th_TH','0002041e'),('Thai Pattachote','th_TH','0001041e'),('Thai Pattachote (non-ShiftLock)','th_TH','0003041e'),('Tibetan (PRC)','bo_CN','00000451'),('Turkish F','tr_TR','0001041f'),('Turkish Q','tr_TR','0000041f'),('Turkmen','tk_TM','00000442'),('US','en_US','00000409'),('US English Table for IBM Arabic 238_L','en_US','00050409'),('Ukrainian','uk_UA','00000422'),('Ukrainian (Enhanced)','uk_UA','00020422'),('United Kingdom','en_GB','00000809'),('United Kingdom Extended','cy_GB','00000452'),('United States-Dvorak','en_US','00010409'),('United States-Dvorak for left hand','en_US','00030409'),('United States-Dvorak for right hand','en_US','00040409'),('United States-International','en_US','00020409'),('Urdu','ur_PK','00000420'),('Uyghur','ug_CN','00010480'),('Uyghur (Legacy)','ug_CN','00000480'),('Uzbek Cyrillic','uz_Cyrl-UZ','00000843'),('Vietnamese','vi_VN','0000042a'),('Wolof','wo_SN','00000488'),('Yakut','sah_RU','00000485'),('Yoruba','yo_NG','0000046a')]
+    DEFAULT_VK_LAYOUT = {'layout':{2:{0:u'`',1:u'~',8:u'`',9:u'~'},3:{0:u'1',1:u'!',6:u'\xa1',7:u'\xb9',8:u'1',9:u'!',14:u'\xa1',15:u'\xb9'},4:{0:u'2',1:u'@',6:u'\xb2',8:u'2',9:u'@',14:u'\xb2'},5:{0:u'3',1:u'#',6:u'\xb3',8:u'3',9:u'#',14:u'\xb3'},6:{0:u'4',1:u'$',6:u'\xa4',7:u'\xa3',8:u'4',9:u'$',14:u'\xa4',15:u'\xa3'},7:{0:u'5',1:u'%',6:u'\u20ac',8:u'5',9:u'%',14:u'\u20ac'},8:{0:u'6',1:u'^',6:u'\xbc',8:u'6',9:u'^',14:u'\xbc'},9:{0:u'7',1:u'&',6:u'\xbd',8:u'7',9:u'&',14:u'\xbd'},10:{0:u'8',1:u'*',6:u'\xbe',8:u'8',9:u'*',14:u'\xbe'},11:{0:u'9',1:u'(',6:u'\u2018',8:u'9',9:u'(',14:u'\u2018'},12:{0:u'0',1:u')',6:u'\u2019',8:u'0',9:u')',14:u'\u2019'},13:{0:u'-',1:u'_',6:u'\xa5',8:u'-',9:u'_',14:u'\xa5'},14:{0:u'=',1:u'+',6:u'\xd7',7:u'\xf7',8:u'=',9:u'+',14:u'\xd7',15:u'\xf7'},17:{0:u'q',1:u'Q',6:u'\xe4',7:u'\xc4',8:u'Q',9:u'q',14:u'\xc4',15:u'\xe4'},18:{0:u'w',1:u'W',6:u'\xe5',7:u'\xc5',8:u'W',9:u'w',14:u'\xc5',15:u'\xe5'},19:{0:u'e',1:u'E',6:u'\xe9',7:u'\xc9',8:u'E',9:u'e',14:u'\xc9',15:u'\xe9'},20:{0:u'r',1:u'R',6:u'\xae',8:u'R',9:u'r',14:u'\xae'},21:{0:u't',1:u'T',6:u'\xfe',7:u'\xde',8:u'T',9:u't',14:u'\xde',15:u'\xfe'},22:{0:u'y',1:u'Y',6:u'\xfc',7:u'\xdc',8:u'Y',9:u'y',14:u'\xdc',15:u'\xfc'},23:{0:u'u',1:u'U',6:u'\xfa',7:u'\xda',8:u'U',9:u'u',14:u'\xda',15:u'\xfa'},24:{0:u'i',1:u'I',6:u'\xed',7:u'\xcd',8:u'I',9:u'i',14:u'\xcd',15:u'\xed'},25:{0:u'o',1:u'O',6:u'\xf3',7:u'\xd3',8:u'O',9:u'o',14:u'\xd3',15:u'\xf3'},26:{0:u'p',1:u'P',6:u'\xf6',7:u'\xd6',8:u'P',9:u'p',14:u'\xd6',15:u'\xf6'},27:{0:u'[',1:u'{',2:u'\x1b',6:u'\xab',8:u'[',9:u'{',10:u'\x1b',14:u'\xab'},28:{0:u']',1:u'}',2:u'\x1d',6:u'\xbb',8:u']',9:u'}',10:u'\x1d',14:u'\xbb'},31:{0:u'a',1:u'A',6:u'\xe1',7:u'\xc1',8:u'A',9:u'a',14:u'\xc1',15:u'\xe1'},32:{0:u's',1:u'S',6:u'\xdf',7:u'\xa7',8:u'S',9:u's',14:u'\xa7',15:u'\xdf'},33:{0:u'd',1:u'D',6:u'\xf0',7:u'\xd0',8:u'D',9:u'd',14:u'\xd0',15:u'\xf0'},34:{0:u'f',1:u'F',8:u'F',9:u'f'},35:{0:u'g',1:u'G',8:u'G',9:u'g'},36:{0:u'h',1:u'H',8:u'H',9:u'h'},37:{0:u'j',1:u'J',8:u'J',9:u'j'},38:{0:u'k',1:u'K',8:u'K',9:u'k'},39:{0:u'l',1:u'L',6:u'\xf8',7:u'\xd8',8:u'L',9:u'l',14:u'\xd8',15:u'\xf8'},40:{0:u';',1:u':',6:u'\xb6',7:u'\xb0',8:u';',9:u':',14:u'\xb6',15:u'\xb0'},41:{0:u"'",1:u'"',6:u'\xb4',7:u'\xa8',8:u"'",9:u'"',14:u'\xb4',15:u'\xa8'},44:{0:u'z',1:u'Z',6:u'\xe6',7:u'\xc6',8:u'Z',9:u'z',14:u'\xc6',15:u'\xe6'},45:{0:u'x',1:u'X',8:u'X',9:u'x'},46:{0:u'c',1:u'C',6:u'\xa9',7:u'\xa2',8:u'C',9:u'c',14:u'\xa2',15:u'\xa9'},47:{0:u'v',1:u'V',8:u'V',9:u'v'},48:{0:u'b',1:u'B',8:u'B',9:u'b'},49:{0:u'n',1:u'N',6:u'\xf1',7:u'\xd1',8:u'N',9:u'n',14:u'\xd1',15:u'\xf1'},50:{0:u'm',1:u'M',6:u'\xb5',8:u'M',9:u'm',14:u'\xb5'},51:{0:u',',1:u'<',6:u'\xe7',7:u'\xc7'},52:{0:u'.',1:u'>',8:u'.',9:u'>'},53:{0:u'/',1:u'?',6:u'\xbf',8:u'/',9:u'?',14:u'\xbf'},54:{0:u'\\',1:u'|',2:u'\x1c',6:u'\xac',7:u'\xa6',8:u'\\',9:u'|',10:u'\x1c',14:u'\xac',15:u'\xa6'},59:{0:u' ',1:u' ',2:u' ',8:u' ',9:u' ',10:u' '}},'name':u'English (United States)','locale':u'en-US','id':u'00020409','deadkeys':{u'~':{u'a':u'\xe3',u'A':u'\xc3',u' ':u'~',u'O':u'\xd5',u'N':u'\xd1',u'o':u'\xf5',u'n':u'\xf1'},u'`':{u'a':u'\xe0',u'A':u'\xc0',u'e':u'\xe8',u' ':u'`',u'i':u'\xec',u'o':u'\xf2',u'I':u'\xcc',u'u':u'\xf9',u'O':u'\xd2',u'E':u'\xc8',u'U':u'\xd9'},u'"':{u'a':u'\xe4',u'A':u'\xc4',u'e':u'\xeb',u' ':u'"',u'i':u'\xef',u'o':u'\xf6',u'I':u'\xcf',u'u':u'\xfc',u'O':u'\xd6',u'y':u'\xff',u'E':u'\xcb',u'U':u'\xdc'},u"'":{u'a':u'\xe1',u'A':u'\xc1',u'c':u'\xe7',u'e':u'\xe9',u' ':u"'",u'i':u'\xed',u'C':u'\xc7',u'o':u'\xf3',u'I':u'\xcd',u'u':u'\xfa',u'O':u'\xd3',u'y':u'\xfd',u'E':u'\xc9',u'U':u'\xda',u'Y':u'\xdd'},u'^':{u'a':u'\xe2',u'A':u'\xc2',u'e':u'\xea',u' ':u'^',u'i':u'\xee',u'o':u'\xf4',u'I':u'\xce',u'u':u'\xfb',u'O':u'\xd4',u'E':u'\xca',u'U':u'\xdb'}},'desc':u'United States-International'}
+    
     def prepareSkin(self):
         # screen size
         # we do not want borders, so make the screen lager than a desktop
@@ -72,7 +129,7 @@ class E2iVirtualKeyBoard(Screen):
                 align = 'center'
             skinTab.append('<widget name="_%s" zPosition="%d" position="%d,%d" size="%d,%d" transparent="1" noWrap="1" font="Regular;%s" valign="center" halign="%s" foregroundColor="#ffffff" backgroundColor="%s" />' % (name, p+2, x, y, w, h, font, align, color))
         
-        skinTab.append('<widget name="header" zPosition="%d" position="%d,%d" size="%d,%d"  transparent="1" noWrap="1" font="Regular;20" valign="center" halign="left" foregroundColor="#ffffff" backgroundColor="#000000" />' % (2,  x+5, y-50,  740, 36))
+        skinTab.append('<widget name="header" zPosition="%d" position="%d,%d" size="%d,%d"  transparent="1" noWrap="1" font="Regular;20" valign="center" halign="left" foregroundColor="#ffffff" backgroundColor="#000000" />' % (2,  x+5, y-36,  740, 36))
         skinTab.append('<widget name="text"   zPosition="%d" position="%d,%d" size="%d,%d"  transparent="1" noWrap="1" font="Regular;26" valign="center" halign="left" />' % (2,  x+5, y+7,  740, 36))
         _addPixmapWidget(0, x, y,  750, 50, 1)
         _addPixmapWidget('e_m', 0, 0,  750, 50, 5)
@@ -108,7 +165,6 @@ class E2iVirtualKeyBoard(Screen):
         _addButton(62, x+50*14, y+10+50*5,  50,  50, 1)
         
         # Backspace
-        #_addMarker('m_0', x+10,       y+10+50*2+40, 80,  3, 2, '#ed1c24')
         _addMarker('m_0', x+50*14+10, y+10+50*1+40, 30,  3, 2, '#ed1c24')
 
         # Shift
@@ -122,6 +178,10 @@ class E2iVirtualKeyBoard(Screen):
         # Enter
         _addMarker('m_5', x+50*13+10, y+10+50*3+40, 80,  3, 2, '#22b14c')
 
+        # Left list
+        skinTab.append('<widget name="left_header" zPosition="2" position="%d,%d" size="%d,%d"  transparent="0" noWrap="1" font="Regular;20" valign="center" halign="center" foregroundColor="#000000" backgroundColor="#ffffff" />' % (x-255, y-36,  250, 36))
+        skinTab.append('<widget name="left_list"   zPosition="1"  position="%d,%d" size="%d,%d" scrollbarMode="showOnDemand" transparent="0"  backgroundColor="#3f4450" enableWrapAround="1" />' % (x-255, y, 250, 6*50+10))
+
         skinTab.append('</screen>')
         return '\n'.join(skinTab)
 
@@ -134,20 +194,26 @@ class E2iVirtualKeyBoard(Screen):
 
         self.onLayoutFinish.append(self.setGraphics)
         self.onShown.append(self.onWindowShow)
+        self.onClose.append(self.__onClose)
 
-        self["actions"] = ActionMap(["WizardActions", "DirectionActions", "ColorActions"],
+        self["actions"] = ActionMap(["WizardActions", "DirectionActions", "ColorActions", "E2iPlayerVKActions"],
         {
-            "ok":    self.keyOK,
-            "back":  self.keyBack,
-            "left":  self.keyLeft,
-            "right": self.keyRight,
-            "up":    self.keyUp,
-            "down":  self.keyDown,
-            "red":   self.keyRed,
-            "green": self.keyGreen,
-            "yellow":self.keyYellow,
-            "blue":  self.keyBlue,
+            "ok":        self.keyOK,
+            "ok_repeat": self.keyOK,
+            "back":      self.keyBack,
+            "left":      self.keyLeft,
+            "right":     self.keyRight,
+            "up":        self.keyUp,
+            "down":      self.keyDown,
+            "red":       self.keyRed,
+            "green":     self.keyGreen,
+            "yellow":    self.keyYellow,
+            "blue":      self.keyBlue,
         }, -1)
+
+        # Left list
+        self['left_header'] = Label(" ")
+        self['left_list'] = E2iVKSelectionList()
 
         self.graphics = {}
         for key in ['pb', 'pr', 'pg', 'py', 'l', 'b', 'e', 'e_m', 'k', 'k_m', 'k_s', 'k2_m', 'k2_s', 'k3', 'k3_m']:
@@ -172,7 +238,6 @@ class E2iVirtualKeyBoard(Screen):
 
         self.header = title if title else _('Enter the text')
         self.startText = text
-        self.oskLayout = additionalParams.get('osk_layout', config.plugins.iptvplayer.osk_layout.value)
         
         self["text"] = Input(text=self.startText)
         self["header"] = Label(" ")
@@ -183,23 +248,66 @@ class E2iVirtualKeyBoard(Screen):
         self.rowIdx = 1
         self.colIdx = 0
 
-        self.colors = {'normal':gRGB(int('ffffff', 0x10)), 'selected':gRGB(int('39b54a', 0x10)), 'deadkey':gRGB(int('0000ff', 0x10)), 'ligature':gRGB(int('ff3c00', 0x10)), 'inactive':gRGB(int('979697', 0x10))}
+        self.colors = {'normal':gRGB(int('ffffff', 0x10)), 'selected':gRGB(int('39b54a', 0x10)), 'deadkey':gRGB(int('0275a0', 0x10)), 'ligature':gRGB(int('ed1c24', 0x10)), 'inactive':gRGB(int('979697', 0x10))}
 
         self.specialKeyState = self.SK_NONE
-        self.currentKeyboardLayout = {}
-
+        self.currentVKLayout = self.DEFAULT_VK_LAYOUT
+        self.selectedVKLayoutId = config.plugins.iptvplayer.osk_layout.value
+        self.vkRequestedId = additionalParams.get('vk_layout_id', '')
         self.deadKey = u''
+        self.focus = self.FOCUS_KEYBOARD
+        
+    def __onClose(self):
+        self.onClose.remove(self.__onClose)
+        if self.selectedVKLayoutId != config.plugins.iptvplayer.osk_layout.value:
+            config.plugins.iptvplayer.osk_layout.value = self.selectedVKLayoutId
+            config.plugins.iptvplayer.osk_layout.save()
+            configfile.save()
+        
+    def getKeyboardLayoutItem(self, vkLayoutId):
+        retItem = None
+        for item in self.ALL_VK_LAYOUTS:
+            if vkLayoutId == item[2]:
+                retItem = item
+                break
+        return retItem
 
     def onWindowShow(self):
         self.onShown.remove(self.onWindowShow)
         self.setTitle(_('Virtual Keyboard'))
         self["header"].setText(self.header)
-        
+
         self["text"].right()
         self["text"].currPos = len(self.startText)
         self["text"].right()
-        #self.oskLayout
-        self.loadKeyboardLayout('polish-p')
+
+        # Left list
+        self['left_header'].hide()
+        self['left_list'].hide()
+
+        vkLayoutId = self.vkRequestedId if self.vkRequestedId else self.selectedVKLayoutId
+        if vkLayoutId == '':
+            e2Locale = GetDefaultLang(True)
+            langMap = {'pl_PL':'00000415', 'en_EN':'00020409'}
+            vkLayoutId = langMap.get(e2Locale, '')
+            
+            if vkLayoutId == '':
+                for item in self.ALL_VK_LAYOUTS:
+                    if e2Locale == item[1]:
+                        vkLayoutId = item[2]
+                        break
+            
+            if vkLayoutId == '':
+                e2lang = GetDefaultLang() + '_'
+                for item in self.ALL_VK_LAYOUTS:
+                    if item[1].startswith(e2lang):
+                        vkLayoutId = item[2]
+                        break
+        
+        if not self.getKeyboardLayoutItem(vkLayoutId):
+            vkLayoutId = self.DEFAULT_VK_LAYOUT['id']
+        
+        self.loadKeyboardLayout(vkLayoutId)
 
     def setGraphics(self):
         self.onLayoutFinish.remove(self.setGraphics)
@@ -215,8 +323,8 @@ class E2iVirtualKeyBoard(Screen):
         self['b'].setPixmap( self.graphics['b'] )
         self['l'].setPixmap( self.graphics['l'] )
         
-        keyID = self.KEYIDMAP[self.rowIdx][self.colIdx]
-        self.moveMarker(-1, keyID)
+        self.currentKeyId = self.KEYIDMAP[self.rowIdx][self.colIdx]
+        self.moveKeyMarker(-1, self.currentKeyId)
         
         self.setSpecialKeyLabels()
 
@@ -233,8 +341,6 @@ class E2iVirtualKeyBoard(Screen):
         self['_60'].setText('Alt')
         self['_61'].setText(u'\u2190'.encode('utf-8'))
         self['_62'].setText(u'\u2192'.encode('utf-8'))
-        
-        self['_56'].setText('PL') # test
 
     def handleArrowKey(self, dx=0, dy=0):
         oldKeyId = self.KEYIDMAP[self.rowIdx][self.colIdx]
@@ -282,9 +388,15 @@ class E2iVirtualKeyBoard(Screen):
             if maxKeyX - minKeyX > 2:
                 self.colIdx = (maxKeyX + minKeyX) / 2
 
-        self.moveMarker(oldKeyId, self.KEYIDMAP[self.rowIdx][self.colIdx])
+        self.currentKeyId = self.KEYIDMAP[self.rowIdx][self.colIdx]
+        self.moveKeyMarker(oldKeyId, self.currentKeyId)
 
-    def moveMarker(self, oldKeyId, newKeyId):
+    def moveKeyMarker(self, oldKeyId, newKeyId):
+        if oldKeyId == -1 and newKeyId == -1:
+            for key in ['e_m', 'k_m', 'k2_m', 'k3_m']:
+                self[key].hide()
+            return
+        
         if oldKeyId != -1:
             keyid = str(oldKeyId)
             marker = self.markerMap.get(keyid, 'k_m') 
@@ -296,14 +408,16 @@ class E2iVirtualKeyBoard(Screen):
             self[marker].instance.move(ePoint(self[keyid].position[0], self[keyid].position[1]))
             self[marker].show()
 
-        self.currentKeyId = newKeyId
-
     def handleKeyId(self, keyid):
         if keyid == 0:    # OK
             keyid = 42
 
         if keyid == 1:  # Escape
-            self.close(None)
+            if self.deadKey:
+                self.deadKey = u''
+                self.updateKeysLabels()
+            else:
+                self.close(None)
             return
         elif keyid == 15: # Backspace
             self["text"].deleteBackward()
@@ -316,7 +430,8 @@ class E2iVirtualKeyBoard(Screen):
             self["text"].update()
             return
         elif keyid == 56: # Language
-            pass
+            self.switchToLanguageSelection()
+            return
         elif keyid == 61: # Left
             self["text"].left()
             return
@@ -368,13 +483,13 @@ class E2iVirtualKeyBoard(Screen):
 
             if val:
                 if self.deadKey:
-                    if val in self.currentKeyboardLayout['deadkeys'].get(self.deadKey, {}):
-                        text = self.currentKeyboardLayout['deadkeys'][self.deadKey][val]
+                    if val in self.currentVKLayout['deadkeys'].get(self.deadKey, {}):
+                        text = self.currentVKLayout['deadkeys'][self.deadKey][val]
                     else:
                         text = self.deadKey + val
                     self.deadKey = u''
                     updateKeysLabels = True
-                elif val in self.currentKeyboardLayout['deadkeys']:
+                elif val in self.currentVKLayout['deadkeys']:
                     self.deadKey = val
                     updateKeysLabels = True
                 else:
@@ -394,9 +509,66 @@ class E2iVirtualKeyBoard(Screen):
             return ret
         return 0
 
-    def loadKeyboardLayout(self, language):
-        self.currentKeyboardLayout = {'layout':{2:{0:u'`',1:u'~',8:u'`',9:u'~'},3:{0:u'1',1:u'!',8:u'1',9:u'!'},4:{0:u'2',1:u'@',8:u'2',9:u'@'},5:{0:u'3',1:u'#',8:u'3',9:u'#'},6:{0:u'4',1:u'$',8:u'4',9:u'$'},7:{0:u'5',1:u'%',8:u'5',9:u'%'},8:{0:u'6',1:u'^',8:u'6',9:u'^'},9:{0:u'7',1:u'&',8:u'7',9:u'&'},10:{0:u'8',1:u'*',8:u'8',9:u'*'},11:{0:u'9',1:u'(',8:u'9',9:u'('},12:{0:u'0',1:u')',8:u'0',9:u')'},13:{0:u'-',1:u'_',8:u'-',9:u'_'},14:{0:u'=',1:u'+',8:u'=',9:u'+'},17:{0:u'q',1:u'Q',8:u'Q',9:u'q'},18:{0:u'w',1:u'W',8:u'W',9:u'w'},19:{0:u'e',1:u'E',6:u'\u0119',7:u'\u0118',8:u'E',9:u'e',14:u'\u0118',15:u'\u0119'},20:{0:u'r',1:u'R',8:u'R',9:u'r'},21:{0:u't',1:u'T',8:u'T',9:u't'},22:{0:u'y',1:u'Y',8:u'Y',9:u'y'},23:{0:u'u',1:u'U',6:u'\u20ac',8:u'U',9:u'u',14:u'\u20ac'},24:{0:u'i',1:u'I',8:u'I',9:u'i'},25:{0:u'o',1:u'O',6:u'\xf3',7:u'\xd3',8:u'O',9:u'o',14:u'\xd3',15:u'\xf3'},26:{0:u'p',1:u'P',8:u'P',9:u'p'},27:{0:u'[',1:u'{',2:u'\x1b',8:u'[',9:u'{',10:u'\x1b'},28:{0:u']',1:u'}',2:u'\x1d',8:u']',9:u'}',10:u'\x1d'},31:{0:u'a',1:u'A',6:u'\u0105',7:u'\u0104',8:u'A',9:u'a',14:u'\u0104',15:u'\u0105'},32:{0:u's',1:u'S',6:u'\u015b',7:u'\u015a',8:u'S',9:u's',14:u'\u015a',15:u'\u015b'},33:{0:u'd',1:u'D',8:u'D',9:u'd'},34:{0:u'f',1:u'F',8:u'F',9:u'f'},35:{0:u'g',1:u'G',8:u'G',9:u'g'},36:{0:u'h',1:u'H',8:u'H',9:u'h'},37:{0:u'j',1:u'J',8:u'J',9:u'j'},38:{0:u'k',1:u'K',8:u'K',9:u'k'},39:{0:u'l',1:u'L',6:u'\u0142',7:u'\u0141',8:u'L',9:u'l',14:u'\u0141',15:u'\u0142'},40:{0:u';',1:u':',2:u'\x1d',8:u';',9:u':',10:u'\x1d'},41:{0:u"'",1:u'"',8:u"'",9:u'"'},44:{0:u'z',1:u'Z',6:u'\u017c',7:u'\u017b',8:u'Z',9:u'z',14:u'\u017b',15:u'\u017c'},45:{0:u'x',1:u'X',6:u'\u017a',7:u'\u0179',8:u'X',9:u'x',14:u'\u0179',15:u'\u017a'},46:{0:u'c',1:u'C',6:u'\u0107',7:u'\u0106',8:u'C',9:u'c',14:u'\u0106',15:u'\u0107'},47:{0:u'v',1:u'V',8:u'V',9:u'v'},48:{0:u'b',1:u'B',8:u'B',9:u'b'},49:{0:u'n',1:u'N',6:u'\u0144',7:u'\u0143',8:u'N',9:u'n',14:u'\u0143',15:u'\u0144'},50:{0:u'm',1:u'M',8:u'M',9:u'm'},51:{0:u',',1:u'<',8:u',',9:u'<'},52:{0:u'.',1:u'>',8:u'.',9:u'>'},53:{0:u'/',1:u'?',8:u'/',9:u'?'},54:{0:u'\\',1:u'|',2:u'\x1c',8:u'\\',9:u'|',10:u'\x1c'},59:{0:u' ',1:u' ',2:u' ',8:u' ',9:u' ',10:u' '}},'deadkeys':{u'~':{u'a':u'\u0105',u'A':u'\u0104',u'c':u'\u0107',u'Z':u'\u017b',u'e':u'\u0119',u' ':u'~',u'N':u'\u0143',u'l':u'\u0142',u'o':u'\xf3',u'n':u'\u0144',u's':u'\u015b',u'O':u'\xd3',u'E':u'\u0118',u'X':u'\u0179',u'x':u'\u017a',u'C':u'\u0106',u'z':u'\u017c',u'S':u'\u015a',u'L':u'\u0141'}}}
+    def loadKeyboardLayout(self, vkLayoutId, allowDownload=True):
+        errorMsg = ''
+        askForDowanload = 0
+        filePath = GetE2iPlayerVKLayoutDir('%s.kle' % vkLayoutId)
+        if vkLayoutId == self.DEFAULT_VK_LAYOUT['id']:
+            self.setVKLayout(self.DEFAULT_VK_LAYOUT)
+            return
+        else:
+            vkLayoutItem = self.getKeyboardLayoutItem(vkLayoutId)
+            if fileExists( filePath ):
+                try:
+                    from ast import literal_eval
+                    import codecs
+                    with codecs.open(filePath, encoding='utf-16') as f:
+                        data = f.read()
+                    data = literal_eval(data)
+                    if data['id'] != vkLayoutId:
+                        raise Exception(_('Locale ID mismatched! %s <> %s') % (data['id'], vkLayoutId))
+                    self.setVKLayout(data)
+                    return
+                except ImportError as error:
+                    errorMsg = _('Load of the Virtual Keyboard layout "%s" failed due to the following error: "%s"') % (vkLayoutItem[0], str(e))
+                except Exception as e:
+                    errorMsg = _('Load of the Virtual Keyboard layout "%s" failed due to the following error: "%s"') % (vkLayoutItem[0], str(e))
+                    askForDowanload = 2
+            else:
+                errorMsg = _('"%s" Virtual Keyboard layout not available.') % vkLayoutItem[0]
+                askForDowanload = 1
+
+            if errorMsg != '':
+                if askForDowanload and allowDownload:
+                    if askForDowanload == 1:
+                        errorMsg += '\n' + _('Do you want to download "%s" Virtual Keyboard layout now?') % vkLayoutItem[0]
+                    else:
+                        errorMsg += '\n' + _('Do you want to try to re-download "%s" Virtual Keyboard layout?') % vkLayoutItem[0]
+                    self.session.openWithCallback(boundFunction(self.askForVKLayoutDownload, vkLayoutId), MessageBox, text=errorMsg, type=MessageBox.TYPE_YESNO)
+                else:
+                    self.session.open(MessageBox, text=errorMsg, type=MessageBox.TYPE_ERROR)
+
+    def setVKLayout(self, layout=None):
+        if layout != None:
+            self.currentVKLayout = layout
         self.updateKeysLabels()
+        self['_56'].setText(self.currentVKLayout['locale'].encode('UTF-8').split('-', 1)[0].upper())
+        self['_56'].show()
+
+    def askForVKLayoutDownload(self, vkLayoutId, ret=None):
+        if ret:
+            file = '%s.kle' % vkLayoutId
+            path = GetE2iPlayerVKLayoutDir()
+            mkdirs(path)
+            self.session.openWithCallback(boundFunction(self.vkLayoutDownloadCallback, vkLayoutId), SingleFileDownloaderWidget, GetResourcesServerUri('vk/' + file), path + file)
+        else:
+            self.setVKLayout()
+
+    def vkLayoutDownloadCallback(self, vkLayoutId, ret=None):
+        if ret:
+            self.loadKeyboardLayout(vkLayoutId, False)
+        else:
+            self.setVKLayout()
 
     def updateSpecialKey(self, keysidTab, state):
         if state:
@@ -412,7 +584,7 @@ class E2iVirtualKeyBoard(Screen):
         # we treat both Alt keys as AltGr
         if self.specialKeyState & self.SK_ALT and not (self.specialKeyState & self.SK_CTRL):
             state ^= self.SK_CTRL
-        key = self.currentKeyboardLayout['layout'][keyid]
+        key = self.currentVKLayout['layout'][keyid]
         if state in key:
             val = key[state]
         else:
@@ -425,12 +597,12 @@ class E2iVirtualKeyBoard(Screen):
         if not self.deadKey:
             if len(val) > 1:
                 color = self.colors['ligature']
-            elif val in self.currentKeyboardLayout['deadkeys']:
+            elif val in self.currentVKLayout['deadkeys']:
                 color = self.colors['deadkey']
             else:
                 color = self.colors['normal']
-        elif val in self.currentKeyboardLayout['deadkeys'].get(self.deadKey, {}):
-            val = self.currentKeyboardLayout['deadkeys'][self.deadKey][val]
+        elif val in self.currentVKLayout['deadkeys'].get(self.deadKey, {}):
+            val = self.currentVKLayout['deadkeys'][self.deadKey][val]
             color = self.colors['normal']
         else:
             color = self.colors['inactive']
@@ -444,43 +616,132 @@ class E2iVirtualKeyBoard(Screen):
             for keyid in range(rangeItem[0], rangeItem[1]+1):
                 self.updateNormalKeyLabel(keyid)
 
+    def switchToLanguageSelection(self):
+        self.moveKeyMarker(-1, -1)
+        self.focus = self.FOCUS_LANGUAGES
+        
+        leftList = self['left_list']
+
+        selIdx = None
+        listValue = []
+        for i in range(len(self.ALL_VK_LAYOUTS)):
+            x = self.ALL_VK_LAYOUTS[i]
+            if self.currentVKLayout['id'] == x[2]:
+                sel = True
+                selIdx = i
+            else:
+                sel = False
+            listValue.append( ({'sel':sel, 'val':x}, ) )
+
+        leftList.setList( listValue )
+        if selIdx != None:
+            leftList.moveToIndex(selIdx)
+        leftList.show()
+        
+        self['left_header'].setText(_('Select language'))
+        self['left_header'].show()
+
+    def switchToKayboard(self):
+        self.focus = self.FOCUS_KEYBOARD
+        self.moveKeyMarker(-1, self.currentKeyId)
+        self['left_header'].hide()
+        self['left_list'].hide()
+        self['left_list'].setList([])
+
     def keyRed(self):
-        self.handleKeyId(15)
+        if self.focus == self.FOCUS_KEYBOARD:
+            self.handleKeyId(15)
+        else:
+            return 0
 
     def keyGreen(self):
         self.handleKeyId(42)
 
     def keyYellow(self):
-        self.handleKeyId(60)
+        if self.focus == self.FOCUS_KEYBOARD:
+            self.handleKeyId(60)
+        else:
+            return 0
 
     def keyBlue(self):
-        self.handleKeyId(43)
+        if self.focus == self.FOCUS_KEYBOARD:
+            self.handleKeyId(43)
+        else:
+            return 0
 
     def keyOK(self):
-        self.handleKeyId(self.currentKeyId)
+        if self.focus == self.FOCUS_KEYBOARD:
+            self.handleKeyId(self.currentKeyId)
+        elif self.focus == self.FOCUS_LANGUAGES:
+            try:
+                selIdx = self['left_list'].getCurrentIndex()
+                vkLayoutId = self.ALL_VK_LAYOUTS[selIdx][2]
+                self.selectedVKLayoutId = vkLayoutId
+                self.switchToKayboard()
+                self.loadKeyboardLayout(vkLayoutId)
+            except Exception:
+                printExc()
+        else:
+            return 0
 
     def keyBack(self):
-        self.close(None)
+        if self.focus == self.FOCUS_KEYBOARD:
+            if self.deadKey:
+                self.deadKey = u''
+                self.updateKeysLabels()
+            else:
+                self.close(None)
+        elif self.focus == self.FOCUS_LANGUAGES:
+            self.switchToKayboard()
+        else:
+            return 0
 
     def keyUp(self):
         printDBG('keyUp')
-        self.handleArrowKey(0, -1)
+        if self.focus == self.FOCUS_KEYBOARD:
+            self.handleArrowKey(0, -1)
+        elif self.focus == self.FOCUS_LANGUAGES:
+            item = self['left_list']
+            if item.instance is not None:
+                item.instance.moveSelection(item.instance.moveUp)
+        else:
+            return 0
 
     def keyDown(self):
         printDBG('keyDown')
-        self.handleArrowKey(0, 1)
+        if self.focus == self.FOCUS_KEYBOARD:
+            self.handleArrowKey(0, 1)
+        elif self.focus == self.FOCUS_LANGUAGES:
+            item = self['left_list']
+            if item.instance is not None:
+                item.instance.moveSelection(item.instance.moveDown)
+        else:
+            return 0
 
     def keyLeft(self):
         printDBG('keyLeft')
-        if self.currentKeyId == 0:
-            self["text"].left()
+        if self.focus == self.FOCUS_KEYBOARD:
+            if self.currentKeyId == 0:
+                self["text"].left()
+            else:
+                self.handleArrowKey(-1, 0)
+        elif self.focus == self.FOCUS_LANGUAGES:
+            item = self['left_list']
+            if item.instance is not None:
+                item.instance.moveSelection(item.instance.pageUp)
         else:
-            self.handleArrowKey(-1, 0)
+            return 0
 
     def keyRight(self):
         printDBG('keyRight')
-        if self.currentKeyId == 0:
-            self["text"].right()
+        if self.focus == self.FOCUS_KEYBOARD:
+            if self.currentKeyId == 0:
+                self["text"].right()
+            else:
+                self.handleArrowKey(1, 0)
+        elif self.focus == self.FOCUS_LANGUAGES:
+            item = self['left_list']
+            if item.instance is not None:
+                item.instance.moveSelection(item.instance.pageDown)
         else:
-            self.handleArrowKey(1, 0)
-
+            return 0

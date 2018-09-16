@@ -355,6 +355,12 @@ def GetTmpDir(file = ''):
     path = path.replace('//', '/')
     mkdirs(path)
     return path + '/' + file
+
+def GetE2iPlayerRootfsDir(file = ''):
+    return '/iptvplayer_rootfs/' + file
+
+def GetE2iPlayerVKLayoutDir(file = ''):
+    return GetE2iPlayerRootfsDir('etc/vk/' + file)
     
 def CreateTmpFile(filename, data=''):
     sts = False
