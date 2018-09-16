@@ -510,6 +510,7 @@ class E2iVirtualKeyBoard(Screen):
         return 0
 
     def loadKeyboardLayout(self, vkLayoutId, allowDownload=True):
+        printDBG("loadKeyboardLayout vkLayoutId: %s" % vkLayoutId)
         errorMsg = ''
         askForDowanload = 0
         filePath = GetE2iPlayerVKLayoutDir('%s.kle' % vkLayoutId)
@@ -529,9 +530,11 @@ class E2iVirtualKeyBoard(Screen):
                         raise Exception(_('Locale ID mismatched! %s <> %s') % (data['id'], vkLayoutId))
                     self.setVKLayout(data)
                     return
-                except ImportError as error:
+                except ImportError as e:
+                    printExc()
                     errorMsg = _('Load of the Virtual Keyboard layout "%s" failed due to the following error: "%s"') % (vkLayoutItem[0], str(e))
                 except Exception as e:
+                    printExc()
                     errorMsg = _('Load of the Virtual Keyboard layout "%s" failed due to the following error: "%s"') % (vkLayoutItem[0], str(e))
                     askForDowanload = 2
             else:
@@ -584,7 +587,7 @@ class E2iVirtualKeyBoard(Screen):
         # we treat both Alt keys as AltGr
         if self.specialKeyState & self.SK_ALT and not (self.specialKeyState & self.SK_CTRL):
             state ^= self.SK_CTRL
-        key = self.currentVKLayout['layout'][keyid]
+        key = self.currentVKLayout['layout'].get(keyid, {})
         if state in key:
             val = key[state]
         else:
