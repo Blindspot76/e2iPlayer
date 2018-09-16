@@ -347,6 +347,8 @@ class iptv_execute(object):
     #    printDBG("iptv_execute.__del__ ---")
 
 def iptv_js_execute(jscode, params={}):
+    ret = {'sts':False, 'code':-12, 'data':''}
+
     sts, tmpPath = CreateTmpFile('.iptv_js.js', jscode)
     if sts:
         noDuk = False
@@ -356,7 +358,7 @@ def iptv_js_execute(jscode, params={}):
             cmd += ' ' + tmpPath + ' 2> /dev/null'
             printDBG("iptv_js_execute cmd[%s]" % cmd)
             ret = iptv_execute()( cmd )
-            
+
             # leave last script for debug purpose
             if getDebugMode() == '':
                 rm(tmpPath)
@@ -364,12 +366,12 @@ def iptv_js_execute(jscode, params={}):
                 noDuk = True
         else:
             noDuk = True
+            ret['code'] = 127
+
         if noDuk:
             messages = [_('The %s utility is necessary here but it was not detected.') % ('duktape')]
             messages.append(_('Please consider restart your Engima2 and agree to install the %s utlity when the %s will propose this.') % ('duktape', 'E2iPlayer'))
             GetIPTVNotify().push('\n'.join(messages), 'error', 40, 'no_duktape', 40)
-    else:
-        ret = {'sts':False, 'code':-12, 'data':''}
     printDBG('iptv_js_execute cmd ret[%s]' % ret)
     return ret
 
