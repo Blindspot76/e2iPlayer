@@ -126,8 +126,7 @@ class AsyncCall(object):
         
         killable = True
         try:
-            with self.mainLock:
-                thread = self.Thread
+            thread = self.Thread
             if thread:
                 with thread._iptvplayer_ext['kill_lock']:
                     killable = thread._iptvplayer_ext['killable']
