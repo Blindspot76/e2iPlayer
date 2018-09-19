@@ -198,7 +198,7 @@ class Youtube(CBaseHostClass):
             printExc()
             return self.getLinksForVideo({'url':fav_data})
         return links
-        
+
     def setInitListFromFavouriteItem(self, fav_data):
         printDBG('Youtube.setInitListFromFavouriteItem')
         try:
@@ -208,7 +208,7 @@ class Youtube(CBaseHostClass):
             printExc()
         self.addDir(params)
         return True
-    
+
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('Youtube.handleService start')
         
@@ -239,7 +239,12 @@ class Youtube(CBaseHostClass):
             printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
-    
+
+    def getSuggestionsProvider(self, index):
+        printDBG('Youtube.getSuggestionsProvider')
+        from Plugins.Extensions.IPTVPlayer.suggestions.google import SuggestionsProvider
+        return SuggestionsProvider(True)
+
 class IPTVHost(CHostBase):
     
     def getSearchTypes(self):

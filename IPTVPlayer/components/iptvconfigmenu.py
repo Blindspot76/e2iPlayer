@@ -83,6 +83,7 @@ config.plugins.iptvplayer.plugin_autostart_method = ConfigSelection(default = "w
 config.plugins.iptvplayer.preferredupdateserver = ConfigSelection(default = "", choices = [("", _("Default")),("1", "http://iptvplayer.vline.pl/"), ("2", _("http://www.iptvplayer.gitlab.io/"))])
 config.plugins.iptvplayer.osk_type = ConfigSelection(default = "", choices = [("", _("Auto")),("system", _("System")), ("own", _("Own model"))])
 config.plugins.iptvplayer.osk_layout = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.osk_allow_suggestions = ConfigYesNo(default = True)
 
 def GetMoviePlayerName(player):
     map = {"auto":_("auto"), "mini": _("internal"), "standard":_("standard"), 'exteplayer': _("external eplayer3"), 'extgstplayer': _("external gstplayer")}
@@ -322,6 +323,8 @@ class ConfigMenu(ConfigBaseWidget):
         list.append( getConfigListEntry(_("The preferred update server"), config.plugins.iptvplayer.preferredupdateserver) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
         list.append( getConfigListEntry(_("Virtual Keyboard type"), config.plugins.iptvplayer.osk_type) )
+        if config.plugins.iptvplayer.osk_type.value == 'own':
+            list.append( getConfigListEntry(_("    Allow_suggestions"), config.plugins.iptvplayer.osk_allow_suggestions) )
         list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
         list.append( getConfigListEntry(_("Services configuration"), config.plugins.iptvplayer.fakeHostsList) )
         list.append( getConfigListEntry(_("Remove disabled services"), config.plugins.iptvplayer.remove_diabled_hosts) )
@@ -582,7 +585,8 @@ class ConfigMenu(ConfigBaseWidget):
               config.plugins.iptvplayer.ListaGraficzna,
               config.plugins.iptvplayer.pluginProtectedByPin,
               config.plugins.iptvplayer.configProtectedByPin,
-              config.plugins.iptvplayer.plarform
+              config.plugins.iptvplayer.plarform,
+              config.plugins.iptvplayer.osk_type
               ]
         players = []
         if 'sh4' == config.plugins.iptvplayer.plarform.value:

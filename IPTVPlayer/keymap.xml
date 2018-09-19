@@ -33,5 +33,6 @@
     <map context="E2iPlayerVKActions">
         <key id="KEY_ENTER" mapto="ok_repeat"    flags="r" />
         <key id="KEY_OK"    mapto="ok_repeat"    flags="r" />
+        <key id="KEY_RED"   mapto="red_repeat"   flags="r" />
     </map>
 </keymap>

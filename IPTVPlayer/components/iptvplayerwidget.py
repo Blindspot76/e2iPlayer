@@ -184,7 +184,6 @@ class E2iPlayerWidget(Screen):
             "back"    :   self.back_pressed,
             "info"    :   self.info_pressed,
             "8"       :   self.startAutoPlaySequencer,
-#            "0"       :   self.ok_pressedUseAlternativePlayer,
             "0"       :   self.ok_pressed0,
             "1"       :   self.ok_pressed1,
             "2"       :   self.ok_pressed2,
@@ -563,9 +562,11 @@ class E2iPlayerWidget(Screen):
      
     def blue_pressed(self):
         # For Keyboard test
-        if False:
-            self.session.open(GetVirtualKeyboard())
-            return
+        #if False:
+        #    from Plugins.Extensions.IPTVPlayer.components.e2ivksuggestion import AutocompleteSearch
+        #    from Plugins.Extensions.IPTVPlayer.suggestions.google import SuggestionsProvider
+        #    self.session.open(GetVirtualKeyboard(), additionalParams={'autocomplete':AutocompleteSearch(SuggestionsProvider(True))})
+        #    return
         
         # For subtitles test
         if False:
@@ -873,9 +874,6 @@ class E2iPlayerWidget(Screen):
                 self.currSelIndex = currSelIndex = self["list"].getCurrentIndex()
                 self.requestListFromHost('ForArticleContent', currSelIndex)
     #end info_pressed(self):
-    
-#    def ok_pressedUseAlternativePlayer(self):
-#        self.ok_pressed(useAlternativePlayer=True)
 
     def ok_pressed0(self):
         self.activePlayer.set({}) 
@@ -1838,24 +1836,48 @@ class E2iPlayerWidget(Screen):
             self.session.openWithCallback(self.selectSearchTypeCallback, ChoiceBox, title=_("Search type"), list = searchTypes)
         else:
             self.searchType = None
-            self.session.openWithCallback(self.enterPatternCallBack, GetVirtualKeyboard(), title=(_("Your search entry")), text = self.searchPattern)
+            self.doSearchWithVirtualKeyboard()
     
     def selectSearchTypeCallback(self, ret = None):
         if ret:
             self.searchType = ret[1]
-            self.session.openWithCallback(self.enterPatternCallBack, GetVirtualKeyboard(), title=(_("Your search entry")), text = self.searchPattern)
+            self.doSearchWithVirtualKeyboard()
         else:
             pass
-            # zrezygnowal z wyszukiwania
+
+    def doSearchWithVirtualKeyboard(self):
+        printDBG("doSearchWithVirtualKeyboard")
+        caps = {}
+        virtualKeyboard = GetVirtualKeyboard(caps)
+        
+        if caps.get('has_additional_params'):
+            additionalParams = {}
+            if caps.get('has_suggestions') and config.plugins.iptvplayer.osk_allow_suggestions.value:
+                # we have to be careful here as we will call method 
+                # directly from host it must be non blocking!!!
+                suggestionsProvider = None
+                try:
+                    if self.visible and not self.isInWorkThread():
+                        currSelIndex = self.getSelItem().itemIdx 
+                        hRet= self.host.getSuggestionsProvider(currSelIndex)
+                        if hRet.status == RetHost.OK and hRet.value and hRet.value[0]:
+                            suggestionsProvider = hRet.value[0]
+                except Exception:
+                    printExc()
+
+                if suggestionsProvider:
+                    from Plugins.Extensions.IPTVPlayer.components.e2ivksuggestion import AutocompleteSearch
+                    additionalParams['autocomplete']  = AutocompleteSearch(suggestionsProvider)
+
+            self.session.openWithCallback(self.enterPatternCallBack, virtualKeyboard, title=(_("Your search entry")), text = self.searchPattern, additionalParams=additionalParams)
+        else:
+            self.session.openWithCallback(self.enterPatternCallBack, virtualKeyboard, title=(_("Your search entry")), text = self.searchPattern)
 
     def enterPatternCallBack(self, callback = None):
         if callback is not None and len(callback):  
             self.searchPattern = callback
             CSearchHistoryHelper.saveLastPattern(self.searchPattern)
             self.requestListFromHost('ForSearch')
-        else:
-            pass
-            # zrezygnowal z wyszukiwania
 
     def configCallback(self):
         if IPTVPlayerNeedInit():
@@ -1899,12 +1921,12 @@ class E2iPlayerWidget(Screen):
         refresh  = params['add_param'].get('refresh', 0)
         selIndex = params['add_param'].get('selIndex', -1)
         ret      = params['ret']
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> E2iPlayerWidget.reloadList refresh[%s], selIndex[%s]" % (refresh, selIndex))
+        printDBG("> E2iPlayerWidget.reloadList refresh[%s], selIndex[%s]" % (refresh, selIndex))
         if 0 < refresh and -1 < selIndex:
             self.nextSelIndex = selIndex
         # ToDo: check ret.status if not OK do something :P
         if ret.status != RetHost.OK:
-            printDBG( "++++++++++++++++++++++ reloadList ret.status = %s" % ret.status )
+            printDBG( "+ reloadList ret.status = %s" % ret.status )
             self.stopAutoPlaySequencer()
         
         self.canRandomizeList = False
