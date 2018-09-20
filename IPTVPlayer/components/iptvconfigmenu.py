@@ -84,7 +84,7 @@ config.plugins.iptvplayer.preferredupdateserver = ConfigSelection(default = "", 
 config.plugins.iptvplayer.osk_type = ConfigSelection(default = "", choices = [("", _("Auto")),("system", _("System")), ("own", _("Own model"))])
 config.plugins.iptvplayer.osk_layout = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.osk_allow_suggestions = ConfigYesNo(default = True)
-config.plugins.iptvplayer.osk_default_suggestions = ConfigSelection(default = "", choices = [("", _("Auto")),("none", _("None")), ("google", "google.com"), ("filmweb", "filmweb.pl"), ("imdb", "imdb.com")]) 
+config.plugins.iptvplayer.osk_default_suggestions = ConfigSelection(default = "", choices = [("", _("Auto")),("none", _("None")), ("google", "google.com"), ("filmweb", "filmweb.pl"), ("imdb", "imdb.com"), ("filmstarts", "filmstarts.de")]) 
 
 
 def GetMoviePlayerName(player):

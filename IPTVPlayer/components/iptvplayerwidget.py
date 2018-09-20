@@ -1874,6 +1874,8 @@ class E2iPlayerWidget(Screen):
                             if self.hostName in self.groupObj.PREDEFINED_HOSTS['moviesandseries']:
                                 if self.hostName in self.groupObj.PREDEFINED_HOSTS['polish']:
                                     providerAlias = 'filmweb'
+                                elif self.hostName in self.groupObj.PREDEFINED_HOSTS['german']:
+                                    providerAlias = 'filmstarts'
                                 else:
                                     providerAlias = 'imdb'
                             else:
@@ -1888,6 +1890,9 @@ class E2iPlayerWidget(Screen):
                         elif providerAlias == 'google':
                             from Plugins.Extensions.IPTVPlayer.suggestions.google import SuggestionsProvider as google_Provider
                             suggestionsProvider = google_Provider()
+                        elif providerAlias == 'filmstarts':
+                            from Plugins.Extensions.IPTVPlayer.suggestions.filmstarts import SuggestionsProvider as filmstarts_Provider
+                            suggestionsProvider = filmstarts_Provider()
 
                     if suggestionsProvider:
                         from Plugins.Extensions.IPTVPlayer.components.e2ivksuggestion import AutocompleteSearch
