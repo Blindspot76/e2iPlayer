@@ -27,10 +27,17 @@ class E2iVKSelectionList(IPTVListComponentBase):
     ICONS_FILESNAMES = {'on' : 'radio_button_on.png', 'off' : 'radio_button_off.png'}
     def __init__(self, withRatioButton=True):
         IPTVListComponentBase.__init__(self)
-        try: self.font = skin.fonts["e2ivklistitem"]
-        except Exception: self.font = ("Regular", 16, 30, 0)
+        if getDesktop(0).size().width() == 1920:
+            fontSize = 24
+            itemHeight = 38
+        else:
+            fontSize = 16
+            itemHeight = 30
         
-        self.l.setFont(0, gFont("Regular", 40))
+        try: self.font = skin.fonts["e2ivklistitem"]
+        except Exception: self.font = ("Regular", fontSize, itemHeight, 0)
+        
+        self.l.setFont(0, gFont("Regular", 60))
         self.l.setFont(1, gFont(self.font[0], self.font[1]))
         self.l.setItemHeight(self.font[2])
         self.dictPIX = {}
@@ -102,8 +109,16 @@ class E2iVirtualKeyBoard(Screen):
         # we do not want borders, so make the screen lager than a desktop
         sz_w = getDesktop(0).size().width() 
         sz_h = getDesktop(0).size().height()
-        x = (sz_w - 750) / 2
-        y = sz_h - 350
+        
+        self.fullHD = getDesktop(0).size().width() == 1920
+        
+        bw = 70 if self.fullHD else 50
+        bh = 70 if self.fullHD else 50
+        inputFontSize = 33 if self.fullHD else 26
+        headerFontSize = 25 if self.fullHD else 20
+        
+        x = (sz_w - 15*bw) / 2
+        y = sz_h - 7*bh
         
         skinTab = ["""<screen position="center,center" size="%d,%d" title="E2iPlayer virtual keyboard">""" %( sz_w, sz_h ) ]
         
@@ -116,82 +131,82 @@ class E2iVirtualKeyBoard(Screen):
         def _addButton(name, x, y, w, h, p):
             _addPixmapWidget(name, x, y, w,  h, p)
             if name in [1, 16, 29, 30, 42, 43, 55, 57, 58, 60]:
-                font = 20
+                font = 25 if self.fullHD else 20
                 color = '#1688b2'
                 align = 'center'
             elif name in [61, 62]:
-                font = 30
+                font = 35 if self.fullHD else 30
                 color = '#1688b2'
                 align = 'center'
             elif name == 56:
-                font = 20
+                font = 25 if self.fullHD else 20
                 color = '#1688b2'
                 align = 'left'
                 x += 40
                 w -= 40
             else:
-                font = 20
+                font = 25 if self.fullHD else 20
                 color = '#404551'
                 align = 'center'
             skinTab.append('<widget name="_%s" zPosition="%d" position="%d,%d" size="%d,%d" transparent="1" noWrap="1" font="Regular;%s" valign="center" halign="%s" foregroundColor="#ffffff" backgroundColor="%s" />' % (name, p+2, x, y, w, h, font, align, color))
         
-        skinTab.append('<widget name="header" zPosition="%d" position="%d,%d" size="%d,%d"  transparent="1" noWrap="1" font="Regular;20" valign="center" halign="left" foregroundColor="#ffffff" backgroundColor="#000000" />' % (2,  x+5, y-36,  740, 36))
-        skinTab.append('<widget name="text"   zPosition="%d" position="%d,%d" size="%d,%d"  transparent="1" noWrap="1" font="Regular;26" valign="center" halign="left" />' % (2,  x+5, y+7,  740, 36))
-        _addPixmapWidget(0, x, y,  750, 50, 1)
-        _addPixmapWidget('e_m', 0, 0,  750, 50, 5)
-        _addPixmapWidget('k_m', 0, 0,   50, 50, 5)
-        _addPixmapWidget('k2_m', 0, 0, 100, 50, 5)
-        _addPixmapWidget('k3_m', 0, 0, 400, 50, 5)
+        skinTab.append('<widget name="header" zPosition="%d" position="%d,%d" size="%d,%d"  transparent="1" noWrap="1" font="Regular;%s" valign="center" halign="left" foregroundColor="#ffffff" backgroundColor="#000000" />' % (2,  x+5, y-(bh-7*2),  15*bw-10, bh-7*2, headerFontSize))
+        skinTab.append('<widget name="text"   zPosition="%d" position="%d,%d" size="%d,%d"  transparent="1" noWrap="1" font="Regular;%s" valign="center" halign="left" />' % (2,  x+5, y+7,  15*bw-10, bh-7*2, inputFontSize))
+        _addPixmapWidget(0, x, y,  15*bw, bh, 1)
+        _addPixmapWidget('e_m', 0, 0,  15*bw, bh, 5)
+        _addPixmapWidget('k_m', 0, 0,   bw, bh, 5)
+        _addPixmapWidget('k2_m', 0, 0, bw*2, bh, 5)
+        _addPixmapWidget('k3_m', 0, 0, bw*8, bh, 5)
         
         for i in range(0, 15):
-            _addButton(i+1, x+50*i, y+10+50*1, 50,  50, 1)
-        _addPixmapWidget('b', x+50*14+7, y+10+50*1+15, 41,  35, 3) # backspace icon
+            _addButton(i+1, x+bw*i, y+10+bh*1, bw,  bh, 1)
+        _addPixmapWidget('b', x+bw*14+(bw-32)/2, y+10+bh*1+(bh-20)/2, 32,  20, 3) # backspace icon
         
-        _addButton(16, x, y+10+50*2, 100,  50, 1)
+        _addButton(16, x, y+10+bh*2, bw*2,  bh, 1)
         for i in range(0, 14):
-            _addButton(i+17, x+50*(i+2), y+10+50*2, 50,  50, 1)
+            _addButton(i+17, x+bw*(i+2), y+10+bh*2, bw, bh, 1)
         
-        _addButton(30, x, y+10+50*3, 100,  50, 1)
+        _addButton(30, x, y+10+bh*3, bw*2,  bh, 1)
         for i in range(0, 13):
-            _addButton(i+31, x+50*(i+2), y+10+50*3, 50,  50, 1)
-        _addButton(42, x+50*13, y+10+50*3, 100,  50, 1)
+            _addButton(i+31, x+bw*(i+2), y+10+bh*3, bw, bh, 1)
+        _addButton(42, x+bw*13, y+10+bh*3, bw*2, bh, 1)
         
-        _addButton(43, x, y+10+50*4, 100,  50, 1)
+        _addButton(43, x, y+10+bh*4, bw*2, bh, 1)
         for i in range(0, 13):
-            _addButton(i+44, x+50*(i+2), y+10+50*4, 50,  50, 1)
-        _addButton(55, x+50*13, y+10+50*4, 100,  50, 1)
+            _addButton(i+44, x+bw*(i+2), y+10+bh*4, bw,  bh, 1)
+        _addButton(55, x+bw*13, y+10+bh*4, bw*2, bh, 1)
         
-        _addPixmapWidget('l', x+10, y+10+50*5+14, 26,  26, 3) # language icon
-        _addButton(56, x,       y+10+50*5, 100,  50, 1)
-        _addButton(57, x+50*2,  y+10+50*5,  50,  50, 1)
-        _addButton(58, x+50*3,  y+10+50*5,  50,  50, 1)
-        _addButton(59, x+50*4,  y+10+50*5, 400,  50, 1)
-        _addButton(60, x+50*12, y+10+50*5,  50,  50, 1)
-        _addButton(61, x+50*13, y+10+50*5,  50,  50, 1)
-        _addButton(62, x+50*14, y+10+50*5,  50,  50, 1)
+        _addPixmapWidget('l', x+10, y+10+bh*5+14, 26,  26, 3) # language icon
+        _addButton(56, x,       y+10+bh*5, bw*2,  bh, 1)
+        _addButton(57, x+bw*2,  y+10+bh*5,   bw,  bh, 1)
+        _addButton(58, x+bw*3,  y+10+bh*5,   bw,  bh, 1)
+        _addButton(59, x+bw*4,  y+10+bh*5, bw*8,  bh, 1)
+        _addButton(60, x+bw*12, y+10+bh*5,   bw,  bh, 1)
+        _addButton(61, x+bw*13, y+10+bh*5,   bw,  bh, 1)
+        _addButton(62, x+bw*14, y+10+bh*5,   bw,  bh, 1)
         
         # Backspace
-        _addMarker('m_0', x+50*14+10, y+10+50*1+40, 30,  3, 2, '#ed1c24')
+        _addMarker('m_0', x+bw*14+10, y+10+bh*1+(bh-10), bw-20,  3, 2, '#ed1c24')
 
         # Shift
-        _addMarker('m_1', x+10,       y+10+50*4+40, 80,  3, 2, '#3f48cc')
-        _addMarker('m_2', x+50*13+10, y+10+50*4+40, 80,  3, 2, '#3f48cc')
+        _addMarker('m_1', x+10,       y+10+bh*4+(bh-10), bw*2-20,  3, 2, '#3f48cc')
+        _addMarker('m_2', x+bw*13+10, y+10+bh*4+(bh-10), bw*2-20,  3, 2, '#3f48cc')
 
         # Alt
-        _addMarker('m_3', x+50*3+10,  y+10+50*5+40, 30,  3, 2, '#fff200')
-        _addMarker('m_4', x+50*12+10, y+10+50*5+40, 30,  3, 2, '#fff200')
+        _addMarker('m_3', x+bw*3+10,  y+10+bh*5+(bh-10),  bw-20,  3, 2, '#fff200')
+        _addMarker('m_4', x+bw*12+10, y+10+bh*5+(bh-10),  bw-20,  3, 2, '#fff200')
 
         # Enter
-        _addMarker('m_5', x+50*13+10, y+10+50*3+40, 80,  3, 2, '#22b14c')
+        _addMarker('m_5', x+bw*13+10, y+10+bh*3+(bh-10), bw*2-20,  3, 2, '#22b14c')
 
         # Left list
-        skinTab.append('<widget name="left_header" zPosition="2" position="%d,%d" size="%d,%d"  transparent="0" noWrap="1" font="Regular;20" valign="center" halign="center" foregroundColor="#000000" backgroundColor="#ffffff" />' % (x-250-5, y-36,  250, 36))
-        skinTab.append('<widget name="left_list"   zPosition="1"  position="%d,%d" size="%d,%d" scrollbarMode="showOnDemand" transparent="0"  backgroundColor="#3f4450" enableWrapAround="1" />' % (x-250-5, y, 250, 6*50+10))
+        skinTab.append('<widget name="left_header" zPosition="2" position="%d,%d" size="%d,%d"  transparent="0" noWrap="1" font="Regular;%d" valign="center" halign="center" foregroundColor="#000000" backgroundColor="#ffffff" />' % (x-bw*5-5, y-(bh-7*2), bw*5, bh-7*2, headerFontSize))
+        skinTab.append('<widget name="left_list"   zPosition="1"  position="%d,%d" size="%d,%d" scrollbarMode="showOnDemand" transparent="0"  backgroundColor="#3f4450" enableWrapAround="1" />' % (x-bw*5-5, y, bw*5, 6*bh+10))
 
         # Right list
         if self.autocomplete:
-            skinTab.append('<widget name="right_header" zPosition="2" position="%d,%d" size="%d,%d"  transparent="0" noWrap="1" font="Regular;20" valign="center" halign="center" foregroundColor="#000000" backgroundColor="#ffffff" />' % (x+50*15+5, y-36,  250, 36))
-            skinTab.append('<widget name="right_list"   zPosition="1"  position="%d,%d" size="%d,%d" scrollbarMode="showOnDemand" transparent="0"  backgroundColor="#3f4450" enableWrapAround="1" />' % (x+50*15+5, y, 250, 6*50+10))
+            skinTab.append('<widget name="right_header" zPosition="2" position="%d,%d" size="%d,%d"  transparent="0" noWrap="1" font="Regular;%d" valign="center" halign="center" foregroundColor="#000000" backgroundColor="#ffffff" />' % (x+bw*15+5, y-(bh-7*2), bw*5, bh-7*2, headerFontSize))
+            skinTab.append('<widget name="right_list"   zPosition="1"  position="%d,%d" size="%d,%d" scrollbarMode="showOnDemand" transparent="0"  backgroundColor="#3f4450" enableWrapAround="1" />' % (x+bw*15+5, y, bw*5, 6*bh+10))
 
         skinTab.append('</screen>')
         return '\n'.join(skinTab)
@@ -239,7 +254,7 @@ class E2iVirtualKeyBoard(Screen):
 
         self.graphics = {}
         for key in ['pb', 'pr', 'pg', 'py', 'l', 'b', 'e', 'e_m', 'k', 'k_m', 'k_s', 'k2_m', 'k2_s', 'k3', 'k3_m']:
-            self.graphics[key] = LoadPixmap(GetIconDir('e2ivk/%s.png') % key)
+            self.graphics[key] = LoadPixmap(GetIconDir('e2ivk_hd/%s.png' if self.fullHD else 'e2ivk/%s.png') % key)
 
         for i in range(0, 63):
             self[str(i)] = Cover3()
