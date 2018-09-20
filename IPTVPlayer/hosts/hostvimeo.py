@@ -31,6 +31,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
 from Screens.MessageBox import MessageBox
@@ -46,6 +47,26 @@ def GetConfigList():
 ###################################################
 def gettytul():
     return 'https://vimeo.com/'
+
+class SuggestionsProvider:
+
+    def __init__(self):
+        self.cm = common()
+        self.cm.HEADER = {'User-Agent':self.cm.getDefaultHeader()['User-Agent'], 'X-Requested-With':'XMLHttpRequest'}
+
+    def getName(self):
+        return _("Vimeo Suggestions")
+
+    def getSuggestions(self, text, locale):
+        lang = locale.split('-', 1)[0]
+        url = 'https://vimeo.com/search/autocomplete?q=' + urllib.quote(text)
+        sts, data = self.cm.getPage(url)
+        if sts:
+            retList = []
+            for item in json.loads(data)['options']:
+                retList.append(item['text'].encode('UTF-8'))
+            return retList 
+        return None
 
 class VimeoCom(CBaseHostClass):
     
@@ -384,6 +405,10 @@ class VimeoCom(CBaseHostClass):
             printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
+
+    def getSuggestionsProvider(self, index):
+        printDBG('Vimeo.getSuggestionsProvider')
+        return SuggestionsProvider()
 
 class IPTVHost(CHostBase):
 
