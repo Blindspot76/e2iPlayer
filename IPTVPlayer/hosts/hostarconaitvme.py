@@ -172,11 +172,11 @@ class ArconaitvME(CBaseHostClass):
                 scripts.append(item.strip())
             try:
                 jscode = base64.b64decode('''dmFyIGRvY3VtZW50PXt9LHdpbmRvdz10aGlzLGVsZW1lbnQ9ZnVuY3Rpb24oZSl7dGhpcy5fbmFtZT1lLHRoaXMuc2V0QXR0cmlidXRlPWZ1bmN0aW9uKGUsdCl7InNyYyI9PWUmJih0aGlzLnNyYz10KX0sT2JqZWN0LmRlZmluZVByb3BlcnR5KHRoaXMsInNyYyIse2dldDpmdW5jdGlvbigpe3JldHVybiB0aGlzLl9zcmN9LHNldDpmdW5jdGlvbihlKXt0aGlzLl9zcmM9ZSxwcmludChlKX19KX0sJD1mdW5jdGlvbihlKXtyZXR1cm4gbmV3IGVsZW1lbnQoZSl9O2RvY3VtZW50LmdldEVsZW1lbnRCeUlkPWZ1bmN0aW9uKGUpe3JldHVybiBuZXcgZWxlbWVudChlKX0sZG9jdW1lbnQuZ2V0RWxlbWVudHNCeVRhZ05hbWU9ZnVuY3Rpb24oZSl7cmV0dXJuW25ldyBlbGVtZW50KGUpXX07''')
-                ret = iptv_js_execute( jscode + '\n'.join(scripts))
-                if ret['sts'] and 0 == ret['code']:
-                    decoded = ret['data'].strip()
-                    if decoded.split('?', 1)[0].endswith('.m3u8'):
-                        playerUrl = decoded
+                ret = iptv_js_execute( jscode + '\nvar videojs={Hls:{xhr:{}}};function eval(data){print(data);}\n' + '\n'.join(scripts))
+                decoded = self.cm.ph.getSearchGroups(ret['data'], '''['"]([^'^"]+?\.m3u8(?:\?[^'^"]*?)?)['"]''')[0].replace('\\/', '/')
+                decoded = self.cm.getFullUrl(decoded, self.cm.meta['url'])
+                if decoded.split('?', 1)[0].endswith('.m3u8'):
+                    playerUrl = decoded
             except Exception:
                 printExc()
         playerUrl = strwithmeta(playerUrl, {'User-Agent':self.HEADER['User-Agent'], 'Referer':cItem['url'], 'Origin':self.getMainUrl()})
