@@ -479,6 +479,7 @@ class urlparser:
                        'watchvideo17.us':      self.pp.parserWATCHVIDEO17US ,
                        'upvid.co':             self.pp.parserWATCHUPVIDCO   ,
                        'powvideo.net':         self.pp.parserPOWVIDEONET    ,
+                       'powvideo.cc':          self.pp.parserPOWVIDEONET    ,
                        'gamovideo.com':        self.pp.parserGAMOVIDEOCOM   ,
                        'streamix.cloud':       self.pp.parserSTREAMIXCLOUD  ,
                        'veoh.com':             self.pp.parserVEOHCOM        ,
@@ -513,6 +514,7 @@ class urlparser:
                        'wstream.video':        self.pp.parserWSTREAMVIDEO   ,
                        'share-online.biz':     self.pp.parserSHAREONLINEBIZ ,
                        'krakenfiles.com':      self.pp.parserKRAKENFILESCOM ,
+                       'filefactory.com':      self.pp.parserFILEFACTORYCOM ,
                     }
         return
     
@@ -2993,9 +2995,9 @@ class pageParser(CaptchaHelper):
         
         ret = iptv_js_execute( '\n'.join(jscode) )
         videoUrl = self.cm.ph.getSearchGroups(ret['data'], '''['"](https?://[^"^']+?\.mp4(?:\?[^'^"]+?)?)['"]''', 1, True)[0]
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        printDBG(">>")
         printDBG(videoUrl)
-        printDBG("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        printDBG("<<")
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
         return False
@@ -3003,7 +3005,10 @@ class pageParser(CaptchaHelper):
     def parserPOWVIDEONET(self, videoUrl):
         printDBG("parserPOWVIDEONET baseUrl[%r]" % videoUrl)
         HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36', 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate'}
-        baseUrl = urlparser.getDomain(videoUrl, False)
+        sts, data = self.cm.getPage(videoUrl, {'header': HEADER})
+        if not sts: return False
+        
+        baseUrl = urlparser.getDomain(self.cm.meta['url'], False)
         vidId = self.cm.ph.getSearchGroups(videoUrl, '''[^-]*?\-([^-^.]+?)[-.]''')[0]
         if not vidId: vidId = videoUrl.rsplit('/')[-1].split('.', 1)[0]
         printDBG('parserPOWVIDEONET VID ID: %s' % vidId)
@@ -3032,6 +3037,7 @@ class pageParser(CaptchaHelper):
         if not sts: return False
         
         linksTab = []
+        jscode.insert(0, 'location={};jQuery.cookie = function(){};function ga(){};document.getElementsByTagName = function(){return [document]}; document.createElement = function(){return document};document.parentNode = {insertBefore: function(){return document}};')
         jscode.insert(0, data[data.find('var S='):])
         jscode.insert(0, base64.b64decode('''aXB0dl9zb3VyY2VzPVtdO3ZhciBkb2N1bWVudD17fTt3aW5kb3c9dGhpcyx3aW5kb3cuYXRvYj1mdW5jdGlvbih0KXt0Lmxlbmd0aCU0PT09MyYmKHQrPSI9IiksdC5sZW5ndGglND09PTImJih0Kz0iPT0iKSx0PUR1a3RhcGUuZGVjKCJiYXNlNjQiLHQpLGRlY1RleHQ9IiI7Zm9yKHZhciBlPTA7ZTx0LmJ5dGVMZW5ndGg7ZSsrKWRlY1RleHQrPVN0cmluZy5mcm9tQ2hhckNvZGUodFtlXSk7cmV0dXJuIGRlY1RleHR9LGpRdWVyeT17fSxqUXVlcnkubWFwPUFycmF5LnByb3RvdHlwZS5tYXAsalF1ZXJ5Lm1hcD1mdW5jdGlvbigpe3JldHVybiBhcmd1bWVudHNbMF0ubWFwKGFyZ3VtZW50c1sxXSksaXB0dl9zb3VyY2VzLnB1c2goYXJndW1lbnRzWzBdKSxhcmd1bWVudHNbMF19LCQ9alF1ZXJ5LGlwdHZvYmo9e30saXB0dm9iai5zZXR1cD1mdW5jdGlvbigpe3JldHVybiBpcHR2b2JqfSxpcHR2b2JqLm9uPWZ1bmN0aW9uKCl7cmV0dXJuIGlwdHZvYmp9LGp3cGxheWVyPWZ1bmN0aW9uKCl7cmV0dXJuIGlwdHZvYmp9Ow=='''))
         jscode.append('print(JSON.stringify(iptv_sources[iptv_sources.length-1]));')
@@ -3041,9 +3047,15 @@ class pageParser(CaptchaHelper):
             for item in data:
                 if 'src' in item: url = item['src']
                 else: url = item['file']
-                if url.lower().split('?', 1)[0].endswith('.mp4'):
-                    url = strwithmeta(url, {'Referer':HEADER['Referer'], 'User-Agent':HEADER['User-Agent']})
+                url = strwithmeta(url, {'Referer':HEADER['Referer'], 'User-Agent':HEADER['User-Agent']})
+                test = url.lower()
+                if test.split('?', 1)[0].endswith('.mp4'):
                     linksTab.append({'name':'mp4', 'url':url})
+                elif test.split('?', 1)[0].endswith('.m3u8'):
+                    linksTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+                #elif test.startswith('rtmp://'):
+                #    linksTab.append({'name':'rtmp', 'url':url})
+                
         return linksTab
         
     def parserSPEEDVIDNET(self, baseUrl):
@@ -10692,7 +10704,7 @@ class pageParser(CaptchaHelper):
             urlTab.append({'name':domain, 'url':url})
             
         return urlTab
-        
+
     def parserKRAKENFILESCOM(self, baseUrl):
         printDBG("parserKRAKENFILESCOM baseUrl[%r]" % baseUrl)
         
@@ -10713,6 +10725,37 @@ class pageParser(CaptchaHelper):
             urlTab.append({'name':'%s %s' % (domain, len(urlTab)+1), 'url':url})
         
         return urlTab
+
+    def parserFILEFACTORYCOM(self, baseUrl):
+        printDBG("parserFILEFACTORYCOM baseUrl[%r]" % baseUrl)
+
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        domain = urlparser.getDomain(cUrl)
+
+        videoUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''data\-href=['"]([^'^"]+?)['"]''')[0], self.cm.meta['url'])
+        if not videoUrl: return False
+
+        sleep_time = self.cm.ph.getSearchGroups(data, '''data\-delay=['"]([0-9]+?)['"]''')[0]
+        try: GetIPTVSleep().Sleep(int(sleep_time))
+        except Exception: printExc()
+
+        sts, data = self.cm.getPage(videoUrl, {'max_data_size':200*1024})
+        if sts:
+            if 'text' not in self.cm.meta['content-type']:
+                return [{'name':domain, 'url':videoUrl}]
+            else:
+                printDBG(data)
+                msg = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'box-message'), ('</div', '>'), False)[1])
+                SetIPTVPlayerLastHostError(msg)
+
+        return False
 
     def parserSHAREONLINEBIZ(self, baseUrl):
         printDBG("parserSHAREONLINEBIZ baseUrl[%s]" % baseUrl)

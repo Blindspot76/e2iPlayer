@@ -268,6 +268,13 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
         self.currList = cItem['sub_items']
 
     def _getLinks(self, cUrl, data):
+        msg = []
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'alert-warning'), ('</div', '>'), False)
+        for t in tmp:
+            t = self.cleanHtmlStr(t)
+            msg.append(t)
+        SetIPTVPlayerLastHostError(' '.join(msg))
+
         reObj = re.compile('<div[^>]+?link\-option\-head[^>]+?>')
         data = reObj.split(data)
         del data[0]
@@ -417,6 +424,8 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
             url = self.getFullUrl('/services/fetch_links_from_episode')
             sts, data = self.getPage(url, post_data={'episode':cItem['episode_id']})
             if not sts: return linksTab
+
+            printDBG(data)
 
             linksTab = self._getLinks(cItem['url'], data)
 
