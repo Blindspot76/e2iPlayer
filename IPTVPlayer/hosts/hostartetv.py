@@ -382,23 +382,29 @@ class ArteTV(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         printDBG("ArteTV.getLinksForVideo [%s]" % cItem)
         self.cacheLinks = {}
-        
+
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        
+
         url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
-        
-        sts, data = self.getPage(url)
-        if not sts: return
-        
+        jsonUrl = url.split('json_url=', 1)[-1].split('&', 1)[0]
+
+        if not jsonUrl:
+            sts, data = self.getPage(url)
+            if not sts: return
+            data = self.cm.ph.getDataBeetwenNodes(data, ('var', '=', 'js_json'), ('</script', '>'), False)[1]
+            data[:data.find('};')+1]
+        else:
+            sts, data = self.getPage(urllib.unquote(jsonUrl))
+            if not sts: return
+
         linksTab = []
-        data = self.cm.ph.getDataBeetwenNodes(data, ('var', '=', 'js_json'), ('</script', '>'), False)[1]
         try:
             langsMap = {'FR':'fr', 'ESP':'es', 'DE':'de', 'POL':'pl', 'ANG':'en'}
             self.cacheLinks = {}
             cacheLabels = {}
             
-            data = byteify(json.loads(data[:data.find('};')+1]))
+            data = byteify(json.loads(data))
             for key in data['videoJsonPlayer']['VSR']:
                 item = data['videoJsonPlayer']['VSR'][key]
                 if item['mediaType'] not in ['mp4', 'hls']: continue
