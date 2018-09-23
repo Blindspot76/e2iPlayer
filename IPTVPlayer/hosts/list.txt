@@ -164,10 +164,12 @@ hosttvproart
 hosttvpvod
 hosttvrepublika
 hosttwitchtv
+hosttwitchtv_2
 hostuktvplay
 hosturllist
 hostustreamtv
 hostvevo
+hostvidcorncom
 hostvideopenny
 hostvimeo
 hostvodpl
