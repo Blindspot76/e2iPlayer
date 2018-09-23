@@ -148,7 +148,7 @@ class HDKinoMir(CBaseHostClass):
             params['desc'] = desc
             params['url'] = url
             hostName = self.up.getHostName(url)
-            if hostName in ['serpens.nl', '37.220.36.15']:
+            if hostName in ['serpens.nl', '37.220.36.15', 'daaidaij.com']:
                 hostName = 'moonwalk.cc'
             
             if hostName == 'moonwalk.cc' and '/serial/' in url:
