@@ -59,8 +59,7 @@ class LosMovies(CBaseHostClass):
         self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
         self.DEFAULT_ICON_URL = 'https://superrepo.org/static/images/icons/original/xplugin.video.losmovies.png.pagespeed.ic.JtaWsQ6YWz.jpg'
-        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
+        self.HEADER = self.cm.getDefaultHeader(browser='chrome')
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = 'http://losmovies.cx/'
@@ -101,7 +100,7 @@ class LosMovies(CBaseHostClass):
             else:
                 return urlparse.urljoin(baseUrl, url)
                 
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.HEADER['User-Agent']}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
     def listCats(self, cItem, nextCategory):
@@ -368,11 +367,13 @@ class LosMovies(CBaseHostClass):
             printDBG(item)
             
             if 'mp4' in item:
+                url = strwithmeta(self.cm.getFullUrl(url, self.cm.meta['url']), {'User-Agent':self.HEADER['User-Agent'], 'Referer':self.cm.meta['url']})
                 urlTab.append({'name':name, 'url':url})
             elif 'captions' in item:
                 format = url[-3:]
                 if format in ['srt', 'vtt']:
-                    subTracks.append({'title':name, 'url':self.getFullIconUrl(url), 'lang':name, 'format':format})
+                    url = strwithmeta(self.cm.getFullUrl(url, self.cm.meta['url']), {'User-Agent':self.HEADER['User-Agent'], 'Referer':self.cm.meta['url']})
+                    subTracks.append({'title':name, 'url':url, 'lang':name, 'format':format})
             
         printDBG(subTracks)
         if len(subTracks):

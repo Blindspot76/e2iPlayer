@@ -68,7 +68,7 @@ class E2iVKSelectionList(IPTVListComponentBase):
         width  = self.l.getItemSize().width()
         height = self.l.getItemSize().height()
         try:
-            if self.withRatioButton:
+            if self.withRatioButton and callable(getattr(item, "get", None)):
                 if item['sel']:
                     sel_key = 'on'
                 else:
@@ -86,6 +86,7 @@ class E2iVirtualKeyBoard(Screen):
     FOCUS_LANGUAGES = 1
     FOCUS_KEYBOARD = 0
     FOCUS_SUGGESTIONS = 2
+    FOCUS_SEARCH_HISTORY = 3
     SK_NONE  = 0
     SK_SHIFT = 1
     SK_CTRL  = 2
@@ -105,8 +106,7 @@ class E2iVirtualKeyBoard(Screen):
     DEFAULT_VK_LAYOUT = {'layout':{2:{0:u'`',1:u'~',8:u'`',9:u'~'},3:{0:u'1',1:u'!',6:u'\xa1',7:u'\xb9',8:u'1',9:u'!',14:u'\xa1',15:u'\xb9'},4:{0:u'2',1:u'@',6:u'\xb2',8:u'2',9:u'@',14:u'\xb2'},5:{0:u'3',1:u'#',6:u'\xb3',8:u'3',9:u'#',14:u'\xb3'},6:{0:u'4',1:u'$',6:u'\xa4',7:u'\xa3',8:u'4',9:u'$',14:u'\xa4',15:u'\xa3'},7:{0:u'5',1:u'%',6:u'\u20ac',8:u'5',9:u'%',14:u'\u20ac'},8:{0:u'6',1:u'^',6:u'\xbc',8:u'6',9:u'^',14:u'\xbc'},9:{0:u'7',1:u'&',6:u'\xbd',8:u'7',9:u'&',14:u'\xbd'},10:{0:u'8',1:u'*',6:u'\xbe',8:u'8',9:u'*',14:u'\xbe'},11:{0:u'9',1:u'(',6:u'\u2018',8:u'9',9:u'(',14:u'\u2018'},12:{0:u'0',1:u')',6:u'\u2019',8:u'0',9:u')',14:u'\u2019'},13:{0:u'-',1:u'_',6:u'\xa5',8:u'-',9:u'_',14:u'\xa5'},14:{0:u'=',1:u'+',6:u'\xd7',7:u'\xf7',8:u'=',9:u'+',14:u'\xd7',15:u'\xf7'},17:{0:u'q',1:u'Q',6:u'\xe4',7:u'\xc4',8:u'Q',9:u'q',14:u'\xc4',15:u'\xe4'},18:{0:u'w',1:u'W',6:u'\xe5',7:u'\xc5',8:u'W',9:u'w',14:u'\xc5',15:u'\xe5'},19:{0:u'e',1:u'E',6:u'\xe9',7:u'\xc9',8:u'E',9:u'e',14:u'\xc9',15:u'\xe9'},20:{0:u'r',1:u'R',6:u'\xae',8:u'R',9:u'r',14:u'\xae'},21:{0:u't',1:u'T',6:u'\xfe',7:u'\xde',8:u'T',9:u't',14:u'\xde',15:u'\xfe'},22:{0:u'y',1:u'Y',6:u'\xfc',7:u'\xdc',8:u'Y',9:u'y',14:u'\xdc',15:u'\xfc'},23:{0:u'u',1:u'U',6:u'\xfa',7:u'\xda',8:u'U',9:u'u',14:u'\xda',15:u'\xfa'},24:{0:u'i',1:u'I',6:u'\xed',7:u'\xcd',8:u'I',9:u'i',14:u'\xcd',15:u'\xed'},25:{0:u'o',1:u'O',6:u'\xf3',7:u'\xd3',8:u'O',9:u'o',14:u'\xd3',15:u'\xf3'},26:{0:u'p',1:u'P',6:u'\xf6',7:u'\xd6',8:u'P',9:u'p',14:u'\xd6',15:u'\xf6'},27:{0:u'[',1:u'{',2:u'\x1b',6:u'\xab',8:u'[',9:u'{',10:u'\x1b',14:u'\xab'},28:{0:u']',1:u'}',2:u'\x1d',6:u'\xbb',8:u']',9:u'}',10:u'\x1d',14:u'\xbb'},31:{0:u'a',1:u'A',6:u'\xe1',7:u'\xc1',8:u'A',9:u'a',14:u'\xc1',15:u'\xe1'},32:{0:u's',1:u'S',6:u'\xdf',7:u'\xa7',8:u'S',9:u's',14:u'\xa7',15:u'\xdf'},33:{0:u'd',1:u'D',6:u'\xf0',7:u'\xd0',8:u'D',9:u'd',14:u'\xd0',15:u'\xf0'},34:{0:u'f',1:u'F',8:u'F',9:u'f'},35:{0:u'g',1:u'G',8:u'G',9:u'g'},36:{0:u'h',1:u'H',8:u'H',9:u'h'},37:{0:u'j',1:u'J',8:u'J',9:u'j'},38:{0:u'k',1:u'K',8:u'K',9:u'k'},39:{0:u'l',1:u'L',6:u'\xf8',7:u'\xd8',8:u'L',9:u'l',14:u'\xd8',15:u'\xf8'},40:{0:u';',1:u':',6:u'\xb6',7:u'\xb0',8:u';',9:u':',14:u'\xb6',15:u'\xb0'},41:{0:u"'",1:u'"',6:u'\xb4',7:u'\xa8',8:u"'",9:u'"',14:u'\xb4',15:u'\xa8'},44:{0:u'z',1:u'Z',6:u'\xe6',7:u'\xc6',8:u'Z',9:u'z',14:u'\xc6',15:u'\xe6'},45:{0:u'x',1:u'X',8:u'X',9:u'x'},46:{0:u'c',1:u'C',6:u'\xa9',7:u'\xa2',8:u'C',9:u'c',14:u'\xa2',15:u'\xa9'},47:{0:u'v',1:u'V',8:u'V',9:u'v'},48:{0:u'b',1:u'B',8:u'B',9:u'b'},49:{0:u'n',1:u'N',6:u'\xf1',7:u'\xd1',8:u'N',9:u'n',14:u'\xd1',15:u'\xf1'},50:{0:u'm',1:u'M',6:u'\xb5',8:u'M',9:u'm',14:u'\xb5'},51:{0:u',',1:u'<',6:u'\xe7',7:u'\xc7'},52:{0:u'.',1:u'>',8:u'.',9:u'>'},53:{0:u'/',1:u'?',6:u'\xbf',8:u'/',9:u'?',14:u'\xbf'},54:{0:u'\\',1:u'|',2:u'\x1c',6:u'\xac',7:u'\xa6',8:u'\\',9:u'|',10:u'\x1c',14:u'\xac',15:u'\xa6'},59:{0:u' ',1:u' ',2:u' ',8:u' ',9:u' ',10:u' '}},'name':u'English (United States)','locale':u'en-US','id':u'00020409','deadkeys':{u'~':{u'a':u'\xe3',u'A':u'\xc3',u' ':u'~',u'O':u'\xd5',u'N':u'\xd1',u'o':u'\xf5',u'n':u'\xf1'},u'`':{u'a':u'\xe0',u'A':u'\xc0',u'e':u'\xe8',u' ':u'`',u'i':u'\xec',u'o':u'\xf2',u'I':u'\xcc',u'u':u'\xf9',u'O':u'\xd2',u'E':u'\xc8',u'U':u'\xd9'},u'"':{u'a':u'\xe4',u'A':u'\xc4',u'e':u'\xeb',u' ':u'"',u'i':u'\xef',u'o':u'\xf6',u'I':u'\xcf',u'u':u'\xfc',u'O':u'\xd6',u'y':u'\xff',u'E':u'\xcb',u'U':u'\xdc'},u"'":{u'a':u'\xe1',u'A':u'\xc1',u'c':u'\xe7',u'e':u'\xe9',u' ':u"'",u'i':u'\xed',u'C':u'\xc7',u'o':u'\xf3',u'I':u'\xcd',u'u':u'\xfa',u'O':u'\xd3',u'y':u'\xfd',u'E':u'\xc9',u'U':u'\xda',u'Y':u'\xdd'},u'^':{u'a':u'\xe2',u'A':u'\xc2',u'e':u'\xea',u' ':u'^',u'i':u'\xee',u'o':u'\xf4',u'I':u'\xce',u'u':u'\xfb',u'O':u'\xd4',u'E':u'\xca',u'U':u'\xdb'}},'desc':u'United States-International'}
     
     def prepareSkin(self):
-        # screen size
-        # we do not want borders, so make the screen lager than a desktop
+        # full screen
         sz_w = getDesktop(0).size().width() 
         sz_h = getDesktop(0).size().height()
         
@@ -218,6 +218,8 @@ class E2iVirtualKeyBoard(Screen):
         self.autocomplete = additionalParams.get('autocomplete')
         self.isAutocompleteEnabled = False
 
+        self.searchHistory = additionalParams.get('search_history', [])
+
         self.skin = self.prepareSkin()
 
         Screen.__init__(self, session)
@@ -318,15 +320,17 @@ class E2iVirtualKeyBoard(Screen):
         self["header"].setText(self.header)
 
         # Left list
+        self['left_list'].setSelectionState(False)
         self['left_header'].hide()
         self['left_list'].hide()
+        self.showSearchHistory()
 
         # Right list
         if self.autocomplete:
             self['right_header'].setText(self.autocomplete.getProviderName())
             self['right_list'].setSelectionState(False)
-            self.setSuggestionVisible(False)
-            #self.setSuggestions(['takie siakie 1', 'takie owakie 2', 'nosa nosa', 'śćźńęą']) # for test only
+            self['right_header'].hide()
+            self['right_list'].hide()
 
         vkLayoutId = self.vkRequestedId if self.vkRequestedId else self.selectedVKLayoutId
         if vkLayoutId == '':
@@ -669,6 +673,20 @@ class E2iVirtualKeyBoard(Screen):
             for keyid in range(rangeItem[0], rangeItem[1]+1):
                 self.updateNormalKeyLabel(keyid)
 
+    def showSearchHistory(self):
+        if self.searchHistory:
+            leftList = self['left_list']
+            leftList.setList([ (x,) for x in self.searchHistory])
+            leftList.moveToIndex(0)
+            leftList.show()
+            self['left_header'].setText(_('Search history'))
+            self['left_header'].show()
+
+    def hideLefList(self):
+        self['left_header'].hide()
+        self['left_list'].hide()
+        self['left_list'].setList([])
+
     def switchToLanguageSelection(self):
         self.setFocus(self.FOCUS_LANGUAGES)
 
@@ -688,6 +706,7 @@ class E2iVirtualKeyBoard(Screen):
         leftList.setList( listValue )
         if selIdx != None:
             leftList.moveToIndex(selIdx)
+        leftList.setSelectionState(True)
         leftList.show()
 
         self['left_header'].setText(_('Select language'))
@@ -697,24 +716,30 @@ class E2iVirtualKeyBoard(Screen):
         self.setFocus(self.FOCUS_KEYBOARD)
         self.moveKeyMarker(-1, self.currentKeyId)
 
-    def hideLefList(self):
-        self['left_header'].hide()
-        self['left_list'].hide()
-        self['left_list'].setList([])
-
     def switchToSuggestions(self):
         self.setFocus(self.FOCUS_SUGGESTIONS)
         self['right_list'].moveToIndex(0)
         self['right_list'].setSelectionState(True)
 
+    def switchSearchHistory(self):
+        self.setFocus(self.FOCUS_SEARCH_HISTORY)
+        self['left_list'].moveToIndex(0)
+        self['left_list'].setSelectionState(True)
+
     def setFocus(self, focus):
         if self.focus != focus:
             if self.focus == self.FOCUS_LANGUAGES:
-                self.hideLefList()
+                self['left_list'].setSelectionState(False)
+                if self.searchHistory:
+                    self.showSearchHistory()
+                else:
+                    self.hideLefList()
             elif self.focus == self.FOCUS_KEYBOARD:
                 self.moveKeyMarker(-1, -1)
             elif self.focus == self.FOCUS_SUGGESTIONS:
                 self['right_list'].setSelectionState(False)
+            elif self.focus == self.FOCUS_SEARCH_HISTORY:
+                self['left_list'].setSelectionState(False)
             self.focus = focus
 
     def keyRed(self):
@@ -739,8 +764,8 @@ class E2iVirtualKeyBoard(Screen):
             return 0
 
     def keyOK(self):
-        if self.focus == self.FOCUS_SUGGESTIONS:
-            text = self['right_list'].getCurrent()
+        if self.focus in (self.FOCUS_SUGGESTIONS, self.FOCUS_SEARCH_HISTORY):
+            text = self['right_list' if self.focus == self.FOCUS_SUGGESTIONS else "left_list"].getCurrent()
             if text: self.setText(text)
             self.currentKeyId = 0
             self.rowIdx = 0
@@ -767,7 +792,7 @@ class E2iVirtualKeyBoard(Screen):
                 self.updateKeysLabels()
             else:
                 self.close(None)
-        elif self.focus in (self.FOCUS_LANGUAGES, self.FOCUS_SUGGESTIONS):
+        elif self.focus in (self.FOCUS_LANGUAGES, self.FOCUS_SUGGESTIONS, self.FOCUS_SEARCH_HISTORY):
             self.switchToKayboard()
         else:
             return 0
@@ -776,8 +801,12 @@ class E2iVirtualKeyBoard(Screen):
         printDBG('keyUp')
         if self.focus == self.FOCUS_KEYBOARD:
             self.handleArrowKey(0, -1)
-        elif self.focus == self.FOCUS_LANGUAGES:
+        elif self.focus in (self.FOCUS_LANGUAGES, self.FOCUS_SEARCH_HISTORY):
             item = self['left_list']
+            if item.instance is not None:
+                item.instance.moveSelection(item.instance.moveUp)
+        elif self.focus == self.FOCUS_SUGGESTIONS:
+            item = self['right_list']
             if item.instance is not None:
                 item.instance.moveSelection(item.instance.moveUp)
         else:
@@ -787,8 +816,12 @@ class E2iVirtualKeyBoard(Screen):
         printDBG('keyDown')
         if self.focus == self.FOCUS_KEYBOARD:
             self.handleArrowKey(0, 1)
-        elif self.focus == self.FOCUS_LANGUAGES:
+        elif self.focus in (self.FOCUS_LANGUAGES, self.FOCUS_SEARCH_HISTORY):
             item = self['left_list']
+            if item.instance is not None:
+                item.instance.moveSelection(item.instance.moveDown)
+        elif self.focus == self.FOCUS_SUGGESTIONS:
+            item = self['right_list']
             if item.instance is not None:
                 item.instance.moveSelection(item.instance.moveDown)
         else:
@@ -796,14 +829,27 @@ class E2iVirtualKeyBoard(Screen):
 
     def keyLeft(self):
         printDBG('keyLeft')
-        if self.focus == self.FOCUS_SUGGESTIONS:
+        if self.focus == self.FOCUS_SEARCH_HISTORY:
+            if self.isSuggestionVisible:
+                self.switchToSuggestions()
+            else:
+                self.switchToKayboard()
+                if self.currentKeyId in self.LEFT_KEYS:
+                    self.handleArrowKey(-1, 0)
+        elif self.focus == self.FOCUS_SUGGESTIONS:
             self.switchToKayboard()
             if self.currentKeyId in self.LEFT_KEYS:
                 self.handleArrowKey(-1, 0)
         elif self.focus == self.FOCUS_KEYBOARD:
-            if self.isSuggestionVisible and (self.currentKeyId in self.LEFT_KEYS or (self.currentKeyId == 0 and self['text'].currPos == 0)):
-                self.switchToSuggestions()
-            elif self.currentKeyId == 0:
+            if self.currentKeyId in self.LEFT_KEYS or (self.currentKeyId == 0 and self['text'].currPos == 0):
+                if self.searchHistory:
+                    self.switchSearchHistory()
+                    return
+                elif self.isSuggestionVisible:
+                    self.switchToSuggestions()
+                    return
+
+            if self.currentKeyId == 0:
                 self["text"].left()
             else:
                 self.handleArrowKey(-1, 0)
@@ -816,14 +862,27 @@ class E2iVirtualKeyBoard(Screen):
 
     def keyRight(self):
         printDBG('keyRight')
-        if self.focus == self.FOCUS_SUGGESTIONS:
+        if self.focus == self.FOCUS_SEARCH_HISTORY:
             self.switchToKayboard()
             if self.currentKeyId in self.RIGHT_KEYS:
                 self.handleArrowKey(1, 0)
+        elif self.focus == self.FOCUS_SUGGESTIONS:
+            if self.searchHistory:
+                self.switchSearchHistory()
+            else:
+                self.switchToKayboard()
+                if self.currentKeyId in self.RIGHT_KEYS:
+                    self.handleArrowKey(1, 0)
         elif self.focus == self.FOCUS_KEYBOARD:
-            if self.isSuggestionVisible and (self.currentKeyId in self.RIGHT_KEYS or (self.currentKeyId == 0 and self['text'].currPos == len(self['text'].Text))):
-                self.switchToSuggestions()
-            elif self.currentKeyId == 0:
+            if self.currentKeyId in self.RIGHT_KEYS or (self.currentKeyId == 0 and self['text'].currPos == len(self['text'].Text)):
+                if self.isSuggestionVisible:
+                    self.switchToSuggestions()
+                    return
+                elif self.searchHistory:
+                    self.switchSearchHistory()
+                    return
+
+            if self.currentKeyId == 0:
                 self["text"].right()
             else:
                 self.handleArrowKey(1, 0)
