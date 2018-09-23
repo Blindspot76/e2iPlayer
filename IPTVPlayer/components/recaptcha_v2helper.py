@@ -33,7 +33,7 @@ class CaptchaHelper():
         recaptcha = UnCaptchaReCaptcha_fallback(lang=GetDefaultLang())
         recaptcha.HTTP_HEADER['Referer'] = refUrl
         if userAgent != None:
-            recaptcha.HTTP_HEADER['User-Agent'] = self.USER_AGENT
+            recaptcha.HTTP_HEADER['User-Agent'] = userAgent
         token = recaptcha.processCaptcha(sitekey)
         
         if token == '':

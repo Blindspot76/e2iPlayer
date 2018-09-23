@@ -3005,6 +3005,7 @@ class pageParser(CaptchaHelper):
         HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36', 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate'}
         baseUrl = urlparser.getDomain(videoUrl, False)
         vidId = self.cm.ph.getSearchGroups(videoUrl, '''[^-]*?\-([^-^.]+?)[-.]''')[0]
+        if not vidId: vidId = videoUrl.rsplit('/')[-1].split('.', 1)[0]
         printDBG('parserPOWVIDEONET VID ID: %s' % vidId)
         referer = baseUrl + ('preview-%s-1920x882.html' % vidId)
         videoUrl = baseUrl + ('iframe-%s-1920x882.html' % vidId)
