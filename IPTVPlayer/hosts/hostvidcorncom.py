@@ -80,7 +80,7 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
                 continue
             url = self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0]
             category = url.rsplit('/', 1)[-1]
-            if category not in ['series', 'peliculas']: #, 'listas', 'gente'
+            if category not in ['series', 'peliculas', 'listas', 'gente']:
                 continue
             title = self.cleanHtmlStr(item)
             params = MergeDicts(cItem, {'category':category, 'f_type':category, 'title':title, 'url':self.getFullUrl(url)})
@@ -134,6 +134,7 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
             if url == '': continue
             icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''original=['"]([^"^']+?)['"]''')[0])
+            if icon == '': icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?src=['"]([^"^']+?\.jpe?g(?:\?[^'^"]*?)?)['"]''')[0])
             title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(item, ('<div', '>', 'info-'), ('</div', '>'), False)[1])
             type = self.cm.ph.getSearchGroups(item, '''data\-type=['"]([^"^']+?)['"]''')[0]
 
@@ -146,8 +147,8 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
                     descTab.append(t)
             if type in ['series', 'peliculas']: # , 'listas', 'gente'
                 nextCategory = 'explore_item'
-            else:
-                continue
+            elif type == 'actores':
+                nextCategory = 'list_actor_items'
             params = MergeDicts(cItem, {'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'f_type':type, 'icon':icon, 'desc':' | '.join(descTab)})
             retList.append(params)
         return retList
@@ -174,6 +175,93 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
         if nextPage:
             params = MergeDicts(cItem, {'title':_('Next page'), 'page':page + 1})
             self.addDir(params)
+
+    def _listLists(self, cItem, nextCategory, data):
+        printDBG("VidCorn._listLists")
+        retList = []
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'data-list'), ('<div', '>', 'list-content'))
+        for item in data:
+            listId = self.cm.ph.getSearchGroups(item, '''data\-list=['"]([^"^']+?)['"]''')[0]
+            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''<img[^>]+?src=['"]([^"^']+?)['"]''')[0])
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1])
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)["']''', 1, True)[0])
+
+            descTab = []
+            item = self.cm.ph.getAllItemsBeetwenNodes(item, ('<span', '>'), ('</span', '>'), False)
+            for it in item:
+                it = self.cleanHtmlStr(it)
+                if it: descTab.append(it)
+
+            params = MergeDicts(cItem, {'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'list_id':listId, 'f_type':'listas', 'icon':icon, 'desc':'[/br]'.join(descTab)})
+            retList.append(params)
+        return retList
+
+    def listLists(self, cItem, nextCategory):
+        printDBG("VidCorn.listLists")
+        post_data = {}
+        page = cItem.get('page', 0)
+        post_data['page'] = str(page)
+        post_data['order_by']  = cItem.get('f_order', '1')
+        post_data['keyword']   = cItem.get('f_keyword', '0')
+
+        url = self.getFullUrl('/services/fetch_lists')
+
+        sts, data = self.getPage(url, post_data=post_data)
+        if not sts: return
+
+        nextPage = True if "$('#load_more_button').show();" in data else False
+        self.currList.extend(self._listLists(cItem, nextCategory, data))
+
+        if nextPage:
+            params = MergeDicts(cItem, {'title':_('Next page'), 'page':page + 1})
+            self.addDir(params)
+
+    def listListItems(self, cItem, nextCategory):
+        printDBG("VidCorn.listListItems")
+        post_data = {}
+        page = cItem.get('page', 0)
+        post_data['page'] = str(page)
+        post_data['list']   = cItem.get('list_id', '0')
+
+        url = self.getFullUrl('/services/fetch_list_content')
+
+        sts, data = self.getPage(url, post_data=post_data)
+        if not sts: return
+
+        nextPage = True if "$('#load_more_button').show();" in data else False
+        self.currList.extend(self._listItems(cItem, data))
+
+        if nextPage:
+            params = MergeDicts(cItem, {'title':_('Next page'), 'page':page + 1})
+            self.addDir(params)
+
+    def listPeoples(self, cItem):
+        printDBG("VidCorn.listPeoples")
+        post_data = {}
+        page = cItem.get('page', 0)
+        post_data['page'] = str(page)
+        post_data['filter_by'] = cItem.get('f_filter', '0')
+        post_data['keyword']   = cItem.get('f_keyword', '0')
+
+        url = self.getFullUrl('/services/fetch_people')
+
+        sts, data = self.getPage(url, post_data=post_data)
+        if not sts: return
+
+        nextPage = True if "$('#load_more_button').show();" in data else False
+        self.currList.extend(self._listItems(cItem, data))
+
+        if nextPage:
+            params = MergeDicts(cItem, {'title':_('Next page'), 'page':page + 1})
+            self.addDir(params)
+
+    def listActorItems(self, cItem):
+        printDBG("VidCorn.listActorItems")
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        printDBG(data)
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'data-type'), ('<div', '>', 'padding-top'))[1]
+        self.currList.extend(self._listItems(cItem, data))
 
     def listSubItems(self, cItem):
         printDBG("VidCorn.listSubItems")
@@ -218,7 +306,11 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
         cUrl = self.getFullUrl(self.cm.meta['url'])
         self.setMainUrl(cUrl)
 
-        desc = ''
+        desc = []
+        descObj = self.getArticleContent(cItem, data)[0]
+        for item in descObj['other_info']['custom_items_list']:
+            desc.append(item[1])
+        desc = ' | '.join(desc) + '[/br]' + descObj['text']
 
         trailer = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'trailer'), ('<button', '>', 'onclick'), False)[1]
         printDBG(trailer)
@@ -235,7 +327,6 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
         url = self.getFullUrl('/services/fetch_links')
         sts, data = self.getPage(url, post_data={'movie':movieId, 'data_type':cItem['f_type']})
         if not sts: return
-        printDBG(data)
 
         linksTab = self._getLinks(cUrl, data)
         if len(linksTab):
@@ -269,20 +360,20 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
                         title = tab[1]
                     else:
                         title = ''
-                    desc = ' | '.join(tab[2:])
+                    #desc = ' | '.join(tab[2:])
                     tab = []
                     tmp = self.cm.ph.getAllItemsBeetwenMarkers(item, '<small', '</small>')
                     for t in tmp:
                         t = self.cleanHtmlStr(t)
                         if t: tab.append(t)
-                    desc += '[/br]' + ' | '.join(tab)
+                    #desc += '[/br]' + ' | '.join(tab)
                     title = '%s: s%se%s %s' % (cItem['title'], sNum.zfill(2), eNum.zfill(2), title)
                     params = MergeDicts(cItem, {'good_for_fav': False, 'type':'video', 'title':title, 'url':url, 'episode_id':episodeId, 'desc':desc, 'prev_url':cUrl})
                     episodes.append(params)
 
                 if len(episodes):
                     params = dict(cItem)
-                    params.update({'good_for_fav': False, 'category':'sub_items', 'title':sTitle, 'sub_items':episodes, 'prev_url':cUrl})
+                    params.update({'good_for_fav': False, 'category':'sub_items', 'title':sTitle, 'sub_items':episodes, 'prev_url':cUrl, 'desc':desc})
                     self.addDir(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -302,7 +393,12 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'search-item'), ('<div', '>', 'dialog'), False)[1]
         data = re.compile('<div[^>]+?search\-item[^>]+?>').split(data)
         for idx in range(len(data)):
-            subItem = self._listItems(cItem, data[idx])
+            itemData = data[idx]
+            if idx == 1:
+                subItem = self._listLists(cItem, 'list_list_items', itemData)
+            else:
+                subItem = self._listItems(cItem, itemData)
+
             if len(subItem):
                 params = MergeDicts(cItem, {'good_for_fav':False, 'category':'sub_items', 'title':headersTitles[idx], 'sub_items':subItem})
                 self.addDir(params)
@@ -321,7 +417,6 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
             url = self.getFullUrl('/services/fetch_links_from_episode')
             sts, data = self.getPage(url, post_data={'episode':cItem['episode_id']})
             if not sts: return linksTab
-            printDBG(data)
 
             linksTab = self._getLinks(cItem['url'], data)
 
@@ -373,25 +468,38 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
             sts, data = self.getPage(url)
             if not sts: data = ''
 
-        data = data.split('title-holder', 1)[-1]
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<h', '>'), ('</h', '>'), False)[1])
-        icon = ''
-        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'text-hold'), ('</div', '>'), False)[1] )
+        data = data.split('page-content', 1)[-1]
+        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(data, '''<img[^>]+?src=['"]([^"^']+?\.jpe?g(?:\?[^'^"]*?)?)['"]''')[0])
+
+        tmp = data.split('titulo', 1)[-1]
+        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp, ('<h1', '>'), ('</h1', '>'), False)[1])
+        title1 = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp, ('<h3', '>'), ('</h3', '>'), False)[1])
+        if title1: title  = '%s (%s)' % (title, title1)
+
+        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(tmp, ('<div', '>', 'description'), ('</div', '>'), False)[1] )
 
         itemsList = []
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'descr-list'), ('</ul', '>'), False)[1]
-        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>')
-        for item in tmp:
-            item = item.split('</span>', 1)
-            key = self.cleanHtmlStr(item[0])
-            val = self.cleanHtmlStr(item[-1]).replace(' , ', ', ')
-            if val == '' and 'determinate' in item[-1]:
-                val = self.cm.ph.getSearchGroups(item[-1], '''<div([^>]+?determinate[^>]+?)>''')[0]
-                val = self.cm.ph.getSearchGroups(val, '''width\:\s*([0-9]+)''')[0]
-                try: val = str(int(val) / 10.0)
-                except Exception: continue
-            if key == '' or val == '': continue
-            itemsList.append((key, val))
+
+        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'tv-status'), ('</span', '>'), False)[1])
+        if val: itemsList.append((_('TV status'), val))
+
+        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'año'), ('</span', '>'), False)[1])
+        if val: itemsList.append((_('Year'), val))
+
+        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<i', '>', 'fa-star'), ('</b', '>'), False)[1])
+        if val: itemsList.append((_('IMDb rating'), val))
+
+        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'ratingValue'), ('</div', '>'), False)[1])
+        val1 = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'total-item-rates'), ('</span', '>'), False)[1])
+        if val1: val = '%s (%s)' % (val, val1)
+        if val: itemsList.append((_('Rating'), val))
+
+        val = []
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'generos'), ('</div', '>'), False)[1].split('</span>')
+        for t in tmp:
+            t = self.cleanHtmlStr(t)
+            if t: val.append(t)
+        if val: itemsList.append((_('Genres'), ', '.join(val)))
 
         if title == '': title = cItem['title']
         if icon == '':  icon  = cItem.get('icon', self.DEFAULT_ICON_URL)
@@ -451,7 +559,6 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
                 httpParams['header'] = MergeDicts(httpParams['header'], {'Referer':self.cm.meta['url'], 'X-Requested-With':'XMLHttpRequest', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'})
 
                 sts, data = self.getPage(actionUrl, httpParams, post_data)
-                printDBG(data)
 
             if sts and data.strip() == 'success':
                 printDBG('tryTologin OK')
@@ -488,15 +595,24 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
     #MAIN MENU
         if name == None:
             self.listMain({'name':'category', 'type':'category'})
-        elif category in ['series', 'peliculas']: #'listas', 'gente'
+        elif category in ['series', 'peliculas']:
             self.listFilters(self.currItem, 'list_items')
-            
-            
+        elif category == 'listas':
+            self.listFilters(self.currItem, 'list_list')
+        elif category == 'gente':
+            self.listPeoples(self.currItem)
+        elif category == 'list_actor_items':
+            self.listActorItems(self.currItem)
+
         elif category == 'sub_items':
             self.listSubItems(self.currItem)
         elif category == 'list_items':
             self.listItems(self.currItem)
 
+        elif category == 'list_list':
+            self.listLists(self.currItem, 'list_list_items')
+        elif category == 'list_list_items':
+            self.listListItems(self.currItem, 'explore_item')
 
         elif category == 'explore_item':
             self.exploreItem(self.currItem)
@@ -518,6 +634,6 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, VidCorn(), True, [])
     
-    #def withArticleContent(self, cItem):
-    #    if 'prev_url' in cItem or cItem.get('category', '') == 'explore_item': return True
-    #    else: return False
+    def withArticleContent(self, cItem):
+        if cItem.get('f_type', '') in ['series', 'peliculas']: return True
+        else: return False
