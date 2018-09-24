@@ -3036,6 +3036,7 @@ class pageParser(CaptchaHelper):
         sts, data = self.cm.getPage(jwplayer, {'header': HEADER})
         if not sts: return False
         
+        hlsTab = []
         linksTab = []
         jscode.insert(0, 'location={};jQuery.cookie = function(){};function ga(){};document.getElementsByTagName = function(){return [document]}; document.createElement = function(){return document};document.parentNode = {insertBefore: function(){return document}};')
         jscode.insert(0, data[data.find('var S='):])
@@ -3052,10 +3053,10 @@ class pageParser(CaptchaHelper):
                 if test.split('?', 1)[0].endswith('.mp4'):
                     linksTab.append({'name':'mp4', 'url':url})
                 elif test.split('?', 1)[0].endswith('.m3u8'):
-                    linksTab.extend(getDirectM3U8Playlist(url, checkContent=True))
+                    hlsTab.extend(getDirectM3U8Playlist(url, checkContent=True))
                 #elif test.startswith('rtmp://'):
                 #    linksTab.append({'name':'rtmp', 'url':url})
-                
+        linksTab.extend(hlsTab)
         return linksTab
         
     def parserSPEEDVIDNET(self, baseUrl):
@@ -9097,10 +9098,25 @@ class pageParser(CaptchaHelper):
         if not sts: return False
         cUrl = data.meta['url']
         
+        if 'embed' not in cUrl:
+            paramsUrl['Referer'] = cUrl
+            embedUrl = '/embed-%s-640x360.html' % cUrl.rsplit('/', 1)[-1].split('.', 1)[0]
+            sts, tmp = self.cm.getPage(self.cm.getFullUrl(embedUrl, self.cm.getBaseUrl(cUrl)), paramsUrl)
+            if sts:
+                printDBG(tmp)
+
         data = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST"', '</Form>', False, False)[1]
-        if 'recaptcha' in data: SetIPTVPlayerLastHostError(_('Link protected with google recaptcha v2.'))
-        
         post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
+        
+        sitekey = self.cm.ph.getSearchGroups(data, 'data\-sitekey="([^"]+?)"')[0]
+        if sitekey != '': 
+            token, errorMsgTab = self.processCaptcha(sitekey, cUrl)
+            if token == '':
+                SetIPTVPlayerLastHostError('\n'.join(errorMsgTab)) 
+                return False
+            else:
+                post_data['g-recaptcha-response'] = token
+
         try:
             sleep_time = int(self.cm.ph.getSearchGroups(data, '<span id="cxc">([0-9])</span>')[0])
             GetIPTVSleep().Sleep(sleep_time)
@@ -9135,25 +9151,38 @@ class pageParser(CaptchaHelper):
         # unpack and decode params from JS player script code
         tmp = unpackJSPlayerParams(tmp, VIDUPME_decryptPlayerParams, 0, r2=True)
         printDBG(tmp)
-        urls = re.compile('''(https?://[^'^"]+?\.mp4(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(tmp)
+        urls = re.compile('''(https?://[^'^"]+?(?:\.mp4|\.m3u8|\.mpd)(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(tmp)
         tab = []
         for url in urls:
-            tab.append(url[0])
+            tab.append(url)
         
         printDBG(tab)
         
-        baseUrl = urlparser.getDomain(baseUrl, False)
-        jwplayer = self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^'^"]+?/jwplayer\.js[^'^"]*?)['"]''')[0]
-        if jwplayer != '' and not self.cm.isValidUrl(jwplayer):
-            if jwplayer.startswith('//'): jwplayer = 'https:' + jwplayer
-            elif jwplayer.startswith('/'): jwplayer = baseUrl + jwplayer[1:]
-            else: jwplayer = baseUrl + jwplayer
-        
-        sts, data = self.cm.getPage(jwplayer, {'header': HTTP_HEADER})
-        if not sts: return False
-        
+        if False:
+            #baseUrl = urlparser.getDomain(baseUrl, False)
+            #jwplayer = self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^'^"]+?/jwplayer\.js[^'^"]*?)['"]''')[0]
+            #if jwplayer != '' and not self.cm.isValidUrl(jwplayer):
+            #    if jwplayer.startswith('//'): jwplayer = 'https:' + jwplayer
+            #    elif jwplayer.startswith('/'): jwplayer = baseUrl + jwplayer[1:]
+            #    else: jwplayer = baseUrl + jwplayer
+            
+            #sts, data = self.cm.getPage(jwplayer, {'header': HTTP_HEADER})
+            #if not sts: return False
+            # mapData = data[data.find('var S=function'):]
+            pass
+        else:
+            mapData = ''
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+            for item in tmp:
+                if 'jQuery.cookie' in item:
+                    mapData = item
+                    break
+
+        dashTab = []
+        hlsTab = []
         linksTab = []
-        jscode.insert(0, data[data.find('var S=function'):])
+        jscode.insert(0, mapData)
+        jscode.insert(0, "isAdb = '';$.cookie=function(){}");
         jscode.insert(0, base64.b64decode('''YXRvYj1mdW5jdGlvbihlKXtlLmxlbmd0aCU0PT09MyYmKGUrPSI9IiksZS5sZW5ndGglND09PTImJihlKz0iPT0iKSxlPUR1a3RhcGUuZGVjKCJiYXNlNjQiLGUpLGRlY1RleHQ9IiI7Zm9yKHZhciB0PTA7dDxlLmJ5dGVMZW5ndGg7dCsrKWRlY1RleHQrPVN0cmluZy5mcm9tQ2hhckNvZGUoZVt0XSk7cmV0dXJuIGRlY1RleHR9LHdpbmRvdz10aGlzLGpRdWVyeT17fSxqUXVlcnkubWFwPWZ1bmN0aW9uKGUsdCl7Zm9yKHZhciByPWUubGVuZ3RoLG49MDtyPm47bisrKWVbbl09dChlW25dKTtyZXR1cm4gZX0sJD1qUXVlcnk7'''))
         jscode.append('''var dupa = %s;dupa['size']();print(JSON.stringify(dupa));''' % json.dumps(tab))
         ret = iptv_js_execute( '\n'.join(jscode) )
@@ -9161,7 +9190,15 @@ class pageParser(CaptchaHelper):
             data = byteify(json.loads(ret['data']))
             for url in data:
                 url = strwithmeta(url, {'Referer':HTTP_HEADER['Referer'], 'User-Agent':HTTP_HEADER['User-Agent']})
-                linksTab.append({'name':'mp4', 'url':url})
+                ext = url.lower().split('?', 1)[0].rsplit('.', 1)[-1]
+                if ext == 'mp4':
+                    linksTab.append({'name':'mp4', 'url':url})
+                elif ext == 'mpd':
+                    dashTab.extend(getMPDLinksWithMeta(url, False))
+                elif ext == 'm3u8':
+                    hlsTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True))
+        linksTab.extend(hlsTab)
+        linksTab.extend(dashTab)
         return linksTab
         
     def parserVEOHCOM(self, baseUrl):
@@ -9962,15 +9999,36 @@ class pageParser(CaptchaHelper):
         
     def parserGAMOVIDEOCOM(self, baseUrl):
         printDBG("parserGAMOVIDEOCOM baseUrl[%s]" % baseUrl)
-        
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
+
         domain = urlparser.getDomain(baseUrl) 
-        HEADER = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36', 'Accept':'*/*', 'Accept-Encoding':'gzip, deflate'}
+        HEADER = self.cm.getDefaultHeader(browser='chrome')
+        HEADER['Referer'] = referer
+
         sts, data = self.cm.getPage(baseUrl, {'header': HEADER})
         if not sts: return False
-        
+
+        if 'embed' not in self.cm.meta['url'].lower():
+            HEADER['Referer'] = self.cm.meta['url']
+            url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?embed[^"^']+?)['"]''', 1, True)[0], self.cm.meta['url'])
+            sts, data = self.cm.getPage(url, {'header': HEADER})
+            if not sts: return False
+
+        jscode = [self.jscode['jwplayer']]
+        jscode.append('var element=function(n){print(JSON.stringify(n)),this.on=function(){}},Clappr={};Clappr.Player=element,Clappr.Events={PLAYER_READY:1,PLAYER_TIMEUPDATE:1,PLAYER_PLAY:1,PLAYER_ENDED:1};')
+        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in tmp:
+            if 'eval(' in item and 'jwplayer' in item:
+                jscode.append(item)
+
+        ret = iptv_js_execute( '\n'.join(jscode) )
+        if ret['sts']:
+            data += ret['data']
+
         urlTab = []
         items = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
-        if 0 == len(items): items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''\ssources\s*[=:]\s*\['''), re.compile('''\]'''), False)[1].split('},')
+        if 0 == len(items): items = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''[\s'"]sources[\s'"]*[=:]\s*\['''), re.compile('''\]'''), False)[1].split('},')
         printDBG(items)
         for item in items:
             item = item.replace('\/', '/')
