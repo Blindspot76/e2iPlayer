@@ -468,7 +468,7 @@ class VidCorn(CBaseHostClass, CaptchaHelper):
         return linksTab
 
     def getArticleContent(self, cItem, data=None):
-        printDBG("Altadefinizione.getArticleContent [%s]" % cItem)
+        printDBG("HDFull.getArticleContent [%s]" % cItem)
         retTab = []
         
         url = cItem.get('prev_url', cItem['url'])

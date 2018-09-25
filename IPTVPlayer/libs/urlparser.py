@@ -4045,6 +4045,8 @@ class pageParser(CaptchaHelper):
         unique = []
         urls = []
         
+        printDBG(data)
+        
         tmpTab = re.compile('''var\s*url\s*=\s*['"]([,]*?http[^'^"]+?)['"]''').findall(data)
         for tmp in tmpTab:
             urls.extend(tmp.split(' or '))
@@ -4060,9 +4062,9 @@ class pageParser(CaptchaHelper):
             ok = False
             if 'video/mp4' in item:
                 ok = True
-            url = self.cm.ph.getSearchGroups(item,'''["'](http[^"^']+?)["']''', 1, True)[0]
-            if ok or url.split('?')[0].endswith('.mp4'): 
-                urlsTab.append(url)
+            url = self.cm.ph.getSearchGroups(item,'''["']([^"^']+?\.mp4(?:\?[^'^"]*?)?)["']''', 1, True)[0]
+            if ok or url.split('?')[0].lower().endswith('.mp4'): 
+                urlsTab.append(self.cm.getFullUrl(url, self.cm.meta['url']))
         
         for url in urlsTab:
             url = url.strip()

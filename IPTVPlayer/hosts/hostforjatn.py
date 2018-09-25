@@ -198,6 +198,8 @@ class ForjaTN(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
+        SetIPTVPlayerLastHostError( self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'medias_container'), ('</div', '>'), False)[1]) )
+        
         if type == 'series':
             seasonsTab = []
             data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'episode-container'), ('</div', '>'))

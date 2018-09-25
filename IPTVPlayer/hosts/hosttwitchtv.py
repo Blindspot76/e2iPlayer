@@ -498,7 +498,7 @@ class Twitch(CBaseHostClass):
             vidUrl   = self.LIVE_URL
             liveStream = True
         else:
-            id = cItem['video_id']
+            id = cItem.get('video_id', '')
             tokenUrl = self.VOD_TOKEN_URL
             vidUrl   = self.VOD_URL
             liveStream = False
