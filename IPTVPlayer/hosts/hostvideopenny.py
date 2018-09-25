@@ -55,7 +55,7 @@ class VideoPenny(CBaseHostClass):
  
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'video.penny.ie', 'cookie':'video.penny.ie.cookie'})
-        self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
@@ -66,10 +66,11 @@ class VideoPenny(CBaseHostClass):
         self.cachePrograms = []
         self.cacheLast = {}
 
-        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'cookie_items':{'retina':'1'}}
         self._getHeaders = None
+        self.mainPageReceived = False
         
-    def getPage(self, baseUrl, addParams = {}, post_data = None):
+    def _getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}:
             addParams = dict(self.defaultParams)
         
@@ -80,14 +81,26 @@ class VideoPenny(CBaseHostClass):
             GetIPTVNotify().push(messages, 'error', 40, self.cm.meta['url'], 40)
         return sts, data
         
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        if not self.mainPageReceived:
+            requestUrl = self.getMainUrl()
+            sts, data = self._getPage(self.getMainUrl(), addParams, post_data)
+            self.mainPageReceived = True
+            if sts:
+                self.setMainUrl(self.cm.meta['url'])
+            if baseUrl == requestUrl: return  sts, data
+        return self._getPage(baseUrl, addParams, post_data)
+
     def getFullUrl(self, url):
         url = CBaseHostClass.getFullUrl(self, url)
         try: url.encode('ascii')
         except Exception: url = urllib.quote(url, safe="/:&?%@[]()*$!+-=|<>;")
         return url
         
-    def selectDomain(self):                
+    def selectDomain(self):
         self.MAIN_URL = 'https://videopenny.net/'
+        sts, data = self.getPage(self.getMainUrl())
+
         self.MAIN_CAT_TAB = [{'category':'list_sort_filter',    'title': 'Seriale',           'url':self.getFullUrl('/kategoria-2/seriale-pl'),           'icon':self.getFullIconUrl('/wp-content/uploads/2014/05/Seriale-tv.png')},
                              {'category':'list_sort_filter',    'title': 'Programy online',   'url':self.getFullUrl('/kategoria-2/programy-rozrywkowe'),  'icon':self.getFullIconUrl('/wp-content/uploads/2014/05/Programy-online.png')},
                              {'category':'list_sort_filter',    'title': 'Filmy',             'url':self.getFullUrl('/category/filmy-pl/'),               'icon':self.getFullIconUrl('/wp-content/uploads/2014/05/Filmy.png')},
