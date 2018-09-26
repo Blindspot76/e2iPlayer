@@ -2,10 +2,10 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 ###################################################
 
 ###################################################
@@ -13,21 +13,18 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 import time
 import re
-import random
 import urllib
 import base64
 try:    import json
 except Exception: import simplejson as json
-try:    from urlparse import urljoin
-except Exception: printExc()
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from urlparse import urljoin
+from Components.config import config, ConfigSelection, ConfigText, getConfigListEntry
 ###################################################
 
 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_js_execute
 from Screens.MessageBox import MessageBox
 ###################################################
 
@@ -236,7 +233,7 @@ class CartoonHD(CBaseHostClass):
             printDBG("++++  CODE  ++++")
             printDBG(jscode)
             printDBG("++++++++++++++++")
-            ret = iptv_js_execute( jscode )
+            ret = js_execute( jscode )
             if ret['sts'] and 0 == ret['code']:
                 decoded = ret['data'].strip()
                 printDBG('DECODED DATA -> [%s]' % decoded)

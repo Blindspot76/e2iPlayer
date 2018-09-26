@@ -4,8 +4,8 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, MergeDicts, rm
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
@@ -382,7 +382,7 @@ class HDSTo(CBaseHostClass):
                 if not jwplayer: jscode.insert(0, 'var document={};function RadiantMP(){return document}document.getElementById=function(){return document},document.addEventListener=function(){},document.init=function(){print(JSON.stringify(arguments))};')
                 else: jscode.insert(0, 'window=this; function stub() {}; function jwplayer() {return {setup:function(){print(JSON.stringify(arguments[0]))}, onTime:stub, onPlay:stub, onComplete:stub, onReady:stub, addButton:stub}}; window.jwplayer=jwplayer;')
                 
-                ret = iptv_js_execute( '\n'.join(jscode) )
+                ret = js_execute( '\n'.join(jscode) )
                 try:
                     data = byteify(json.loads(ret['data'].strip()))
                     if jwplayer:

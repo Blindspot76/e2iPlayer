@@ -2,14 +2,12 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html, unescapeHTML
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, CSelOneLink, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl, getDirectM3U8Playlist, getF4MLinksWithMeta
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 ###################################################
 
@@ -20,10 +18,9 @@ import re
 import base64
 import copy
 import urllib
-from binascii import hexlify, unhexlify
-from hashlib import md5
+from binascii import unhexlify
 from urlparse import urlparse, parse_qsl
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from Components.config import config, ConfigSelection, ConfigYesNo
 try: import json
 except Exception: import simplejson as json
 ###################################################
@@ -115,7 +112,7 @@ class MoonwalkParser():
         printDBG('Code start:')
         printDBG(jscode)
         printDBG('Code end:')
-        ret = iptv_js_execute( jscode, {'timeout_sec':30} )
+        ret = js_execute( jscode, {'timeout_sec':30} )
         if ret['sts'] and 0 == ret['code']:
             printDBG(ret['data'])
             try:
@@ -278,9 +275,9 @@ class MoonwalkParser():
             baseUrl = '{uri.scheme}://{uri.netloc}{uri.path}'.format(uri=parsedUri)
             query = dict(parse_qsl(parsedUri.query))
             
-            printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            printDBG("+++")
             printDBG(data)
-            printDBG("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            printDBG("+++")
             
             episodeData = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''episodes\s*:'''), re.compile(']]'))[1]
             if episodeData != '': 

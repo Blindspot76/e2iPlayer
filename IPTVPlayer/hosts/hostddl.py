@@ -2,12 +2,11 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify, GetIPTVSleep
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, MergeDicts, rm, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, MergeDicts, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
 
 ###################################################
@@ -17,13 +16,7 @@ import re
 import urllib
 try: import json
 except Exception: import simplejson as json
-from Components.config import config, ConfigText, ConfigSelection, getConfigListEntry
-###################################################
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Screens.MessageBox import MessageBox
+from Components.config import config, ConfigSelection, getConfigListEntry
 ###################################################
 
 ###################################################
@@ -384,7 +377,7 @@ class DDLMe(CBaseHostClass):
             playableItems = []
             
             jscode = tmp + '\n' + 'print(JSON.stringify(subcats));'
-            ret = iptv_js_execute(jscode)
+            ret = js_execute(jscode)
             if ret['sts'] and 0 == ret['code']:
                 data = ret['data'].strip()
                 data = byteify(json.loads(data))

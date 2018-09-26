@@ -313,7 +313,10 @@ def GetPyScriptCmd(name):
                 cmd = '%s %s' % (pyPath, baseName)
                 break
     return cmd
-    
+
+def GetJSScriptFile(file):
+    return resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/jsscripts/') + file
+
 def GetUchardetPath():
     return config.plugins.iptvplayer.uchardetpath.value
 
@@ -323,33 +326,75 @@ def GetCmdwrapPath():
 def GetDukPath():
     return config.plugins.iptvplayer.dukpath.value
 
-gIPTVPlayerTempCookieDir = None
+gE2iPlayerTempCookieDir = None
 def SetTmpCookieDir():
-    global gIPTVPlayerTempCookieDir
-    gIPTVPlayerTempCookieDir = '/tmp/iptvplayer_cookies/'
-    mkdirs(gIPTVPlayerTempCookieDir)
+    global gE2iPlayerTempCookieDir
+    gE2iPlayerTempCookieDir = '/tmp/e2iplayer_cookies/'
+    mkdirs(gE2iPlayerTempCookieDir)
     
 def ClearTmpCookieDir():
-    global gIPTVPlayerTempCookieDir
-    if gIPTVPlayerTempCookieDir != None:
+    global gE2iPlayerTempCookieDir
+    if gE2iPlayerTempCookieDir != None:
         try:
-            for file in os.listdir( gIPTVPlayerTempCookieDir ):
-                rm(gIPTVPlayerTempCookieDir + '/' + file)
+            for file in os.listdir( gE2iPlayerTempCookieDir ):
+                rm(gE2iPlayerTempCookieDir + '/' + file)
         except Exception:
             printExc()
     
-    gIPTVPlayerTempCookieDir = None
-    
-def GetCookieDir(file = ''):
-    global gIPTVPlayerTempCookieDir
-    if gIPTVPlayerTempCookieDir == None: cookieDir = config.plugins.iptvplayer.SciezkaCache.value + '/cookies/'
-    else: cookieDir = gIPTVPlayerTempCookieDir
+    gE2iPlayerTempCookieDir = None
+
+def TestTmpCookieDir():
+    path = GetCookieDir(forceFromConfig=True)
+    if not os.path.isdir(path):
+        mkdirs(path, True)
+    with open(path + ".rw_test", 'w') as f:
+        f.write("test")
+
+def GetCookieDir(file = '', forceFromConfig=False):
+    global gE2iPlayerTempCookieDir
+    if gE2iPlayerTempCookieDir == None or forceFromConfig: cookieDir = config.plugins.iptvplayer.SciezkaCache.value + '/cookies/'
+    else: cookieDir = gE2iPlayerTempCookieDir
     try:
         if not os.path.isdir(cookieDir):
             mkdirs(cookieDir)
     except Exception: printExc()
     return cookieDir + file
-    
+
+###########################
+gE2iPlayerTempJSCache = None
+def SetTmpJSCacheDir():
+    global gE2iPlayerTempJSCache
+    gE2iPlayerTempJSCache = '/tmp/e2iplayer_js_cache/'
+    mkdirs(gE2iPlayerTempJSCache)
+
+def ClearTmpJSCacheDir():
+    global gE2iPlayerTempJSCache
+    if gE2iPlayerTempJSCache != None:
+        try:
+            for file in os.listdir( gE2iPlayerTempJSCache ):
+                rm(gE2iPlayerTempJSCache + '/' + file)
+        except Exception:
+            printExc()
+    gE2iPlayerTempJSCache = None
+
+def TestTmpJSCacheDir():
+    path = GetJSCacheDir(forceFromConfig=True)
+    if not os.path.isdir(path):
+        mkdirs(path, True)
+    with open(path + ".rw_test", 'w') as f:
+        f.write("test")
+
+def GetJSCacheDir(file = '', forceFromConfig=False):
+    global gE2iPlayerTempJSCache
+    if gE2iPlayerTempJSCache == None or forceFromConfig: cookieDir = config.plugins.iptvplayer.SciezkaCache.value + '/JSCache/'
+    else: cookieDir = gE2iPlayerTempJSCache
+    try:
+        if not os.path.isdir(cookieDir):
+            mkdirs(cookieDir)
+    except Exception: printExc()
+    return cookieDir + file
+##############################
+
 def GetTmpDir(file = ''):
     path = config.plugins.iptvplayer.NaszaTMP.value
     path = path.replace('//', '/')
@@ -776,7 +821,7 @@ def mkdir(newdir):
         printExc()
     return sts,msg
 
-def mkdirs(newdir):
+def mkdirs(newdir, raiseException=False):
     """ Create a directory and all parent folders.
         Features:
         - parent directories will be created
@@ -796,9 +841,11 @@ def mkdirs(newdir):
             if tail:
                 os.mkdir(newdir)
         return True
-    except Exception:
-        printExc('!!!!!!!!!! EXCEPTION mkdirs["%s"]' % newdir)
-        return False
+    except Exception, e:
+        printDBG('Exception mkdirs["%s"]' % e)
+        if raiseException:
+            raise e
+    return False
         
 def rm(fullname):
     try:

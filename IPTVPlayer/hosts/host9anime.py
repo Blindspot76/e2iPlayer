@@ -8,17 +8,15 @@ from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaH
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, GetPluginDir
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import DecodeGzipped, EncodeGzipped
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import urlparse
 import re
 import urllib
-import random
 from binascii import hexlify, unhexlify
 from hashlib import md5
 try:    import json
@@ -327,7 +325,7 @@ class AnimeTo(CBaseHostClass, CaptchaHelper):
 
         retUrl = ''
         jscode = ['iptv_ts=%s;' % timestamp, tmp, jsCode, 'iptv_arg = {url:"%s", "data":"%s"}; iptv_call(iptv_arg); print(JSON.stringify(iptv_arg));' % (url, data)]
-        ret = iptv_js_execute('\n'.join(jscode), {'timeout_sec':15})
+        ret = js_execute('\n'.join(jscode), {'timeout_sec':15})
         if ret['sts'] and 0 == ret['code']:
             data = ret['data'].strip()
             try:

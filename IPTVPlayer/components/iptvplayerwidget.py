@@ -48,7 +48,8 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           eConnectCallback, GetSkinsDir, GetIconDir, GetPluginDir, GetExtensionsDir, \
                                                           SortHostsList, GetHostsOrderList, CSearchHistoryHelper, IsExecutable, \
                                                           CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize, \
-                                                          GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, ClearTmpCookieDir, \
+                                                          GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, TestTmpCookieDir, TestTmpJSCacheDir,\
+                                                          ClearTmpCookieDir, ClearTmpJSCacheDir, SetTmpCookieDir, SetTmpJSCacheDir,\
                                                           GetEnabledHostsList, SaveHostsOrderList, GetUpdateServerUri
 from Plugins.Extensions.IPTVPlayer.tools.iptvhostgroups import IPTVHostsGroups
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
@@ -306,7 +307,6 @@ class E2iPlayerWidget(Screen):
                 gDownloadManager.runWorkThread() 
         #################################################################
 
-
         #################################################################
         #                   Auto playing sequencer
         #################################################################
@@ -315,15 +315,27 @@ class E2iPlayerWidget(Screen):
         self.autoPlaySeqTimer_conn = eConnectCallback(self.autoPlaySeqTimer.timeout, self.autoPlaySeqTimerCallBack)
         self.autoPlaySeqTimerValue = 0
         #################################################################
-        
+
         self.activePlayer = None
         self.canRandomizeList = False
-        
+
         self.prevVideoMode = None
-        
-        # clear temp cookie location to use path from configuration
-        ClearTmpCookieDir()
-        
+
+        # test if path for js and cookies temporary files
+        # is writable, without this plugin can not works
+        try:
+            TestTmpCookieDir()
+            TestTmpJSCacheDir()
+            ClearTmpCookieDir()
+            ClearTmpJSCacheDir()
+        except Exception as e:
+            SetTmpCookieDir()
+            SetTmpJSCacheDir()
+            msg1 = _("Critical Error – cookie can't be saved!")
+            msg2 = _("Last error:\n%s" % str(e))
+            msg3 = _("Please make sure that the folder for cache data (set in the configuration) is writable.")
+            GetIPTVNotify().push('%s\n\n%s\n\n%s' % (msg1, msg2, msg3), 'error', 20)
+
         self.statusTextValue = ""
         self.enabledHostsListOld = []
         asynccall.SetMainThreadId()

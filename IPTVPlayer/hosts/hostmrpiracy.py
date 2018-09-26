@@ -2,26 +2,20 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, ArticleContent
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify, rm, GetPluginDir, GetCacheSubDir, ReadTextFile, WriteTextFile
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify, rm, GetCacheSubDir, ReadTextFile, WriteTextFile
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import urlparse
-import time
 import re
 import urllib
-import string
-import random
-import base64
 from copy import deepcopy
-from hashlib import md5
 try:    import json
 except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
@@ -32,7 +26,6 @@ from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha a
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
 from Screens.MessageBox import MessageBox
 ###################################################
 
@@ -132,14 +125,8 @@ class MRPiracyGQ(CBaseHostClass, CaptchaHelper):
     def getPage(self, baseUrl, addParams = {}, post_data = None):
         if addParams == {}:
             addParams = dict(self.defaultParams)
-        
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url):
-                return url
-            else:
-                return urlparse.urljoin(baseUrl, url)
-            
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         if sts:
             encoding = self.cm.ph.getDataBeetwenMarkers(data, 'charset=', '"', False)[1]
@@ -457,7 +444,7 @@ class MRPiracyGQ(CBaseHostClass, CaptchaHelper):
             try:
                 jscode = playerData.pop('jscode', '')
                 jscode += '''var iptv_fake_element={hide:function(){},show:function(){},addClass:function(){},removeClass:function(){}};playertype="iptv_player_data";var iptv_player_data=''' + json.dumps(playerData) + ''';$=function(){return 1==arguments.length&&arguments[0].endsWith(playertype)?{data:function(a){return iptv_player_data[a]}}:iptv_fake_element},$.ajax=function(){print(JSON.stringify(arguments[0]))},''' + playerData['callback'] + '''(iptv_player_data.sitekey);'''
-                ret = iptv_js_execute(jscode)
+                ret = js_execute(jscode)
                 data = ret['data'].strip()
                 data = byteify(json.loads(data))
                 

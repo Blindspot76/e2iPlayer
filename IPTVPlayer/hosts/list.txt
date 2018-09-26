@@ -68,6 +68,7 @@ hostgledalica
 hostgreekdocumentaries3
 hostguardaserie
 hosthdfilmetv
+hosthdfull
 hosthdkinomir
 hosthdpopcornscom
 hosthdsto
@@ -164,7 +165,6 @@ hosttvproart
 hosttvpvod
 hosttvrepublika
 hosttwitchtv
-hosttwitchtv_2
 hostuktvplay
 hosturllist
 hostustreamtv

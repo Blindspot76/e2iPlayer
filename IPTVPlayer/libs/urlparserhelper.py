@@ -96,40 +96,6 @@ def drdX_fx(e):
         n += 72
     return s
 
-
-    
-####################################################
-# myobfuscate.com 
-####################################################
-def MYOBFUSCATECOM_OIO(data, _0lllOI="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=", enc=''):
-    i = 0;
-    while i < len(data):
-        h1 = _0lllOI.find(data[i]);
-        h2 = _0lllOI.find(data[i+1]);
-        h3 = _0lllOI.find(data[i+2]);
-        h4 = _0lllOI.find(data[i+3]);
-        i += 4;
-        bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
-        o1 = bits >> 16 & 0xff;
-        o2 = bits >> 8 & 0xff;
-        o3 = bits & 0xff;
-        if h3 == 64:
-            enc += chr(o1);
-        else:
-            if h4 == 64:
-                enc += chr(o1) + chr(o2);
-            else:
-                enc += chr(o1) + chr(o2) + chr(o3);
-    return enc
-
-def MYOBFUSCATECOM_0ll(string, baseRet=''):
-    ret = baseRet
-    i = len(string) - 1
-    while i >= 0:
-        ret += string[i]
-        i -= 1
-    return ret
-    
 def VIDEOMEGA_decryptPlayerParams(p, a, c, k, e, d):
     def e1(c):
         return JS_toString(c, 36)
@@ -402,24 +368,7 @@ def VIDEOWEED_unpackJSPlayerParams(code):
             printDBG('decryptPlayerParams EXCEPTION')
             return ''
     return ''
-    
-    
-def pythonUnescape(data):
-    sourceCode = "retData = '''%s'''" % data
-    try:
-        code = compile(sourceCode, '', 'exec')
-    except Exception:
-        printExc('pythonUnescape compile algo code EXCEPTION')
-        return ''
-    vGlobals = {"__builtins__": None, 'string': string}
-    vLocals = { 'paramsTouple': None }
-    try:
-        exec( code, vGlobals, vLocals )
-    except Exception:
-        printExc('pythonUnescape exec code EXCEPTION')
-        return ''
-    return vLocals['retData']
-    
+
 ###############################################################################
 
 class captchaParser:

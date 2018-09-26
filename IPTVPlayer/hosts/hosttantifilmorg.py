@@ -2,46 +2,20 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify, rm
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import urlparse
 import re
-import urllib
-import string
-import base64
-import random
 try:    import json
 except Exception: import simplejson as json
-from datetime import datetime
-from copy import deepcopy
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
-
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper, iptv_js_execute
-from Screens.MessageBox import MessageBox
-###################################################
-
-###################################################
-# Config options for HOST
-###################################################
-
-def GetConfigList():
-    optionList = []
-    return optionList
-###################################################
-
-
 
 def gettytul():
     return 'https://tantifilm.gratis/'
@@ -91,7 +65,7 @@ class TantiFilmOrg(CBaseHostClass):
                     item = self.cm.ph.getDataBeetwenNodes(item, ('<script', '>'), ('</script', '>'), False)[1]
                     if item != '': jscode.append(item)
             jscode.append('print(JSON.stringify(document));')
-            ret = ret = iptv_js_execute('\n'.join(jscode), {'timeout_sec':15})
+            ret = ret = js_execute('\n'.join(jscode), {'timeout_sec':15})
             if ret['sts'] and 0 == ret['code']:
                 try:
                     tmp = byteify(json.loads(ret['data']))
@@ -429,7 +403,7 @@ class TantiFilmOrg(CBaseHostClass):
                     tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
                     for item in tmp:
                         jscode.append(item)
-                    ret = iptv_js_execute( '\n'.join(jscode) )
+                    ret = js_execute( '\n'.join(jscode) )
                     if ret['sts'] and 0 == ret['code']:
                         data = ret['data'].strip()
                         if self.cm.isValidUrl(data):
@@ -451,30 +425,7 @@ class TantiFilmOrg(CBaseHostClass):
                 printExc()
                 break
         return urlTab
-        
-    def getFavouriteData(self, cItem):
-        printDBG('TantiFilmOrg.getFavouriteData')
-        return json.dumps(cItem)
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('TantiFilmOrg.getLinksForFavourite')
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('TantiFilmOrg.setInitListFromFavouriteItem')
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-        
+
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -484,7 +435,7 @@ class TantiFilmOrg(CBaseHostClass):
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: || name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU

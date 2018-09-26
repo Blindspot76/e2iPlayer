@@ -7,7 +7,8 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, SetTmpCookieDir, rm, UsePyCurl
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute, IsMainThread, IsThreadTerminated, SetThreadKillable
+from Plugins.Extensions.IPTVPlayer.components.asynccall import IsMainThread, IsThreadTerminated, SetThreadKillable
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 ###################################################
 # FOREIGN import
 ###################################################
@@ -1153,7 +1154,7 @@ class common:
                         printDBG("+ CODE +")
                         printDBG(jscode)
                         printDBG("++++++++")
-                        ret = iptv_js_execute( jscode )
+                        ret = js_execute( jscode )
                         decoded = byteify(json.loads(ret['data'].strip()))
                         
                         verData = self.ph.getDataBeetwenReMarkers(verData, re.compile('<form[^>]+?id="challenge-form"'), re.compile('</form>'), False)[1]
@@ -1503,11 +1504,6 @@ class common:
                 cj.save(params['cookiefile'], ignore_discard = True)
             except Exception as e:
                 printExc()
-                msg1 = _("Critical Error – cookie can't be saved!")
-                msg2 = _("Last error:\n%s" % str(e))
-                msg3 = _("Please make sure that the folder for cache data (set in the configuration) is writable.")
-                GetIPTVNotify().push('%s\n\n%s\n\n%s' % (msg1, msg2, msg3), 'error', 20)
-                SetTmpCookieDir()
                 raise e
         
         out_data, metadata = self.handleCharset(params, out_data, metadata)

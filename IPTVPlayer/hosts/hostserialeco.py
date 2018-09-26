@@ -2,31 +2,22 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_js_execute
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import urlparse
 import re
 import urllib
 try:    import json
 except Exception: import simplejson as json
 ###################################################
 
-###################################################
-# Config options for HOST
-###################################################
-def GetConfigList():
-    optionList = []
-    return optionList
-###################################################
 def gettytul():
     return 'http://seriale.co/'
 
@@ -56,10 +47,7 @@ class SerialeCO(CBaseHostClass):
         if addParams == {}: addParams = dict(self.defaultParams)
         origBaseUrl = baseUrl
         baseUrl = self.cm.iriToUri(baseUrl)
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urlparse.urljoin(baseUrl, url)
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
     
     def listMainMenu(self, cItem):
@@ -172,7 +160,7 @@ class SerialeCO(CBaseHostClass):
             self.addDir(params)
         
         if 0 == len(self.currList) and ajaxInfoVarName != '' and ajaxInfoData != '':
-            ret = iptv_js_execute( '{0}="{1}";\n'.format(ajaxInfoVarName, self.playerData.get(ajaxInfoVarName, '')) + 'print(JSON.stringify({0}));\n'.format(ajaxInfoData) )
+            ret = js_execute( '{0}="{1}";\n'.format(ajaxInfoVarName, self.playerData.get(ajaxInfoVarName, '')) + 'print(JSON.stringify({0}));\n'.format(ajaxInfoData) )
             if ret['sts'] and 0 == ret['code']:
                 data = ret['data'].strip()
                 printDBG('DECODED DATA -> \n[%s]\n' % data)
