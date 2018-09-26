@@ -13,6 +13,7 @@ from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 # FOREIGN import
 ###################################################
 import re
+import urllib
 try:    import json
 except Exception: import simplejson as json
 ###################################################

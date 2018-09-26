@@ -20,6 +20,7 @@ from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, 
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from binascii import unhexlify
 from hashlib import md5
+import base64
 ###################################################
 
 ###################################################

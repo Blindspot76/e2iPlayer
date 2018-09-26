@@ -15,14 +15,12 @@ import base64
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from binascii import a2b_hex
 from hashlib import sha256
-from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
+from Components.config import config, ConfigSelection, getConfigListEntry
 ###################################################
 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
 from Plugins.Extensions.IPTVPlayer.components.iptvimageselector import IPTVMultipleImageSelectorWidget
 ###################################################
 

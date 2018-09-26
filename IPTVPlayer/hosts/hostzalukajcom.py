@@ -22,7 +22,6 @@ except Exception: import json
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, MainSessionWrapper
 from Screens.MessageBox import MessageBox
 ###################################################
 

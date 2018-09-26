@@ -15,10 +15,11 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 ###################################################
 import re
 import urllib
+import base64
 from urlparse import urlparse
 try:    import json
 except Exception: import simplejson as json
-from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
+from Components.config import config, ConfigYesNo, getConfigListEntry
 ###################################################
 
 ###################################################

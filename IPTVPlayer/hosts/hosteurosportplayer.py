@@ -18,7 +18,7 @@ import urllib
 from datetime import datetime, timedelta
 try:    import json
 except Exception: import simplejson as json
-from Components.config import config, ConfigSelection, ConfigText, getConfigListEntry
+from Components.config import config, ConfigText, getConfigListEntry
 ###################################################
 
 ###################################################

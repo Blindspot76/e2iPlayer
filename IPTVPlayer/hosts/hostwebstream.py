@@ -3,12 +3,12 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetLogoDir, GetCookieDir, byteify, SaveHostsOrderList, GetHostsOrderList
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, RetHost, CUrlItem
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify, GetHostsOrderList
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import  CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, \
                                                                unpackJS, SAWLIVETV_decryptPlayerParams
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils  import clean_html, compat_parse_qs
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils  import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.teledunet         import  TeledunetParser
 from Plugins.Extensions.IPTVPlayer.libs.urlparser         import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.filmonapi         import FilmOnComApi, GetConfigList as FilmOn_GetConfigList
@@ -41,22 +41,19 @@ from Plugins.Extensions.IPTVPlayer.libs.mlbstreamtv       import MLBStreamTVApi,
 # FOREIGN import
 ###################################################
 import re
-import time
 import urllib
 try:    import simplejson as json
 except Exception: import json
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
+from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
 
 try:    from urlparse import urlsplit, urlunsplit
 except Exception: pass
-from hashlib import md5
 ############################################
 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
 ###################################################
 
 ###################################################

@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, GetPluginDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, VIDEOMEGA_decryptPlayerParams
 ###################################################
@@ -12,7 +12,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
 ###################################################
 # FOREIGN import
 ###################################################
-import re
 import urllib
 import random
 try:    import json
@@ -324,7 +323,7 @@ class SKStream(CBaseHostClass):
                         if 'dl-protect.co' in self.up.getDomain(url):
                             
                             # get JS player script code from confirmation page
-                            sts, tmpData = CParsingHelper.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
+                            sts, tmpData = self.cm.ph.getDataBeetwenMarkers(data, ">eval(", '</script>', False)
                             if sts: data += unpackJSPlayerParams(tmpData, VIDEOMEGA_decryptPlayerParams, 0, r2=True) #YOUWATCH_decryptPlayerParams == VIDUPME_decryptPlayerParams
                             
                             printDBG(data)

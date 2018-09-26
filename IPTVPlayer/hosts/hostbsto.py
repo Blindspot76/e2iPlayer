@@ -13,7 +13,6 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 ###################################################
 # FOREIGN import
 ###################################################
-import time
 import base64
 import hashlib
 from binascii import unhexlify

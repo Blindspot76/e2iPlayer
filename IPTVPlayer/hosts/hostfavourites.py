@@ -4,10 +4,9 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem, CFavItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, GetLogoDir, GetFavouritesDir, mkdirs, rm, touch
+from Plugins.Extensions.IPTVPlayer.components.ihost import IHost, CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, CFavItem
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printDBG, printExc, GetLogoDir, GetFavouritesDir, mkdirs, rm, touch
 from Plugins.Extensions.IPTVPlayer.tools.iptvfavourites import IPTVFavourites
-from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxItem
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 ###################################################
@@ -15,25 +14,17 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigInteger, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 from Tools.Directories import fileExists
 try:    import simplejson as json
 except Exception: import json
 from binascii import hexlify
+from Components.config import config, ConfigYesNo, getConfigListEntry
 ###################################################
-
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
-###################################################
-config.plugins.iptvplayer.favourites_use_watched_flag = ConfigYesNo(default = True)
 
 ###################################################
 # Config options for HOST
 ###################################################
+config.plugins.iptvplayer.favourites_use_watched_flag = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []

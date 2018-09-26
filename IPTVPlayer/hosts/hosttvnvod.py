@@ -15,8 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher import aes_cbc, base
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
-import re
+from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
 import urllib
 import time
 import binascii
@@ -30,12 +29,6 @@ except ImportError:
     sha1 = sha.new
 ###################################################
 
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Screens.MessageBox import MessageBox
-###################################################
 
 ###################################################
 # Config options for HOST
