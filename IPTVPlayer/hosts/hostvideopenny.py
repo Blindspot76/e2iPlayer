@@ -226,7 +226,7 @@ class VideoPenny(CBaseHostClass):
 
                     playerUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''['"]((?:https?:)?//[^'^"]+?)['"]''')[0])
                     if not self.cm.isValidUrl(playerUrl): continue
-                    if 1 != self.up.checkHostSupport(playerUrl) and 'rodzinnekino' not in self.cm.getBaseUrl(playerUrl) : continue 
+                    if 1 != self.up.checkHostSupport(playerUrl) and '/player.php' not in playerUrl: continue 
                     if playerUrl in uniqueTab: continue
                     uniqueTab.add(playerUrl)
                     urlTab.append({'name':'%s - %s' % (linkVer, name), 'url':strwithmeta(playerUrl, {'Referer':self.cm.meta['url']}), 'need_resolve':1})
@@ -240,7 +240,7 @@ class VideoPenny(CBaseHostClass):
         for item in tmp:
             playerUrl = item.strip()
             if not self.cm.isValidUrl(playerUrl): continue
-            if 1 != self.up.checkHostSupport(playerUrl) and 'rodzinnekino' not in self.cm.getBaseUrl(playerUrl) : continue 
+            if 1 != self.up.checkHostSupport(playerUrl) and '/player.php' not in playerUrl: continue 
             if playerUrl in uniqueTab: continue
             uniqueTab.add(playerUrl)
             urlTab.append({'name':self.up.getDomain(playerUrl, False), 'url':strwithmeta(playerUrl, {'Referer':self.cm.meta['url']}), 'need_resolve':1})

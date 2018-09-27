@@ -9292,7 +9292,9 @@ class pageParser(CaptchaHelper):
         sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts: return videoTab
         cUrl = self.cm.meta['url']
-        
+
+        timestamp = time.time()
+
         errMsg = self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'important'), ('<', '>', 'div'))[1]
         SetIPTVPlayerLastHostError(clean_html(errMsg))
         
@@ -9303,13 +9305,20 @@ class pageParser(CaptchaHelper):
                 data = item
                 break
                 
+        #jscode = 'var document = {};\nvar window = this;\n' + self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<script[^>]*?>'), re.compile('var\s*srces\s*=\s*\[\];'), False)[1]
+        #data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'srces.push(', ');')
+        #jscode += '\nvar srces=[];\n' + '\n'.join(data) + '\nprint(JSON.stringify(srces));'
+        #ret = js_execute( jscode )
+        
         jscode = 'var document = {};\nvar window = this;\n' + self.cm.ph.getDataBeetwenReMarkers(data, re.compile('<script[^>]*?>'), re.compile('var\s*srces\s*=\s*\[\];'), False)[1]
+        js_params = [{'name':'streamgo', 'code':jscode}]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'srces.push(', ');')
-        jscode += '\nvar srces=[];\n' + '\n'.join(data) + '\nprint(JSON.stringify(srces));'
-        ret = js_execute( jscode )
-        if ret['sts'] and 0 == ret['code']:
-            data = ret['data'].strip()
-            data = byteify(json.loads(data))
+        jscode = '\nvar srces=[];\n' + '\n'.join(data) + '\nprint(JSON.stringify(srces));'
+        js_params.append({'code':jscode})
+        ret = js_execute_ext( js_params )
+        #if ret['sts'] and 0 == ret['code']:
+        data = ret['data'].strip()
+        data = byteify(json.loads(data))
         
         dashTab = []
         hlsTab = []
@@ -9337,7 +9346,10 @@ class pageParser(CaptchaHelper):
         videoTab.extend(hlsTab)
         videoTab.extend(dashTab)
         if len(videoTab):
-            GetIPTVSleep().Sleep(5)
+            wait = time.time() - timestamp
+            if wait < 4:
+                printDBG(" time [%s]" % wait)
+                GetIPTVSleep().Sleep(3 - int(wait))
         return videoTab
         
     def parserCASACINEMACC(self, baseUrl):
