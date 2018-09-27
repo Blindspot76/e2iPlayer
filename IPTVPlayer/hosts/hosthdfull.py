@@ -125,16 +125,31 @@ class HDFull(CBaseHostClass, CaptchaHelper):
                 category = 'list_sort_series'
             elif category in ['peliculas', 'movies']:
                 category = 'list_sort_movies'
+            elif category == '#':
+                category = ''
             else:
                 continue
 
             menuTitle = self.cleanHtmlStr(menuData[0])
             menuData = self.cm.ph.getAllItemsBeetwenMarkers(menuData[-1], '<li', '</li>')
-            subItems = [MergeDicts(cItem, {'url':menuUrl, 'title':_('All'), 'category':category})]
+
+            subItems = []
+            if category:
+                subItems = [MergeDicts(cItem, {'url':menuUrl, 'title':_('All'), 'category':category})]
+            
             for item in menuData:
                 title = self.cleanHtmlStr(item)
                 url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0] )
-                subItems.append(MergeDicts(cItem, {'url':url, 'title':title, 'category':category}))
+                params = {'url':url, 'title':title}
+                if category:
+                    params['category'] = category
+                else:
+                    tmp = url.split('#', 1)
+                    if len(tmp) == 2:
+                        params.update({'category':'list_episodes_langs', 'url':tmp[0], 'f_action':tmp[1]})
+                    else:
+                        params['category'] = 'list_items'
+                subItems.append(MergeDicts(cItem, params))
 
             if len(subItems):
                 self.addDir(MergeDicts(cItem, {'url':menuUrl, 'title':menuTitle, 'category':'sub_items', 'sub_items':subItems}))
@@ -365,29 +380,33 @@ class HDFull(CBaseHostClass, CaptchaHelper):
 
     def listEpisodes(self, cItem):
         printDBG("HDFull.listEpisodes")
-        ITEMS = 2
-
-        lang = config.plugins.iptvplayer.hdfull_language.value
 
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         cUrl = self.getFullUrl(self.cm.meta['url'])
         self.setMainUrl(cUrl)
-        
+
         sid = self.cm.ph.getSearchGroups(data, '''var\s+?sid\s*?=\s*?['"]([0-9]+)['"]?;''')[0]
-        
-        if '/season-' in cUrl:
-            baseEpisodeUrl = '/show/%s/season-%s/episode-%s'
-        else: #elif '/temporada-' in cUrl:
-            baseEpisodeUrl = '/serie/%s/temporada-%s/episodio-%s'
-        
+        cItem = MergeDicts(cItem, {'category':'list_episodes2', 'url':cUrl, 'f_action':'season', 'f_show':sid, 'f_season':cUrl.rsplit('-', 1)[-1]})
+        self.listEpisodes2(cItem)
+
+    def listEpisodes2(self, cItem):
+        printDBG("HDFull.listEpisodes [%s]" % cItem)
+
+        ITEMS = 24
         baseIconUrl = '/tthumb/220x124/'
-        
+        lang = config.plugins.iptvplayer.hdfull_language.value
+
         page = cItem.get('page', 0)
-        
-        post_data = {'action':'season', 'start':page*ITEMS, 'limit':ITEMS, 'show':sid, 'season':cUrl.rsplit('-', 1)[-1]}
+
+        baseEpisodeUrl = '/show/%s/season-%s/episode-%s' if lang  == 'en' else '/serie/%s/temporada-%s/episodio-%s'
+        post_data= {'action':cItem['f_action'], 'start':page*ITEMS, 'limit':ITEMS}
+        if 'f_show' in cItem: post_data['show'] = cItem['f_show']
+        if 'f_season' in cItem: post_data['season'] = cItem['f_season']
+        if 'f_elang' in cItem: post_data['elang'] = cItem['f_elang'].upper()
+
         params = dict(self.defaultParams)
-        params['header'] = MergeDicts(params['header'], {'Referer':cUrl, 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'})
+        params['header'] = MergeDicts(params['header'], {'Referer':cItem['url'], 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'})
         
         sts, data = self.getPage(self.getFullUrl('/a/episodes'), params, post_data)
         if not sts: return
@@ -408,7 +427,22 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             printExc()
 
         if len(self.currList) == ITEMS:
-            self.addDir(MergeDicts(cItem, {'url':nextPage, 'title':_('Next page'), 'page':page + 1}))
+            self.addDir(MergeDicts(cItem, {'title':_('Next page'), 'page':page + 1}))
+
+    def listEpisodesLangs(self, cItem, nextCategory):
+        printDBG("HDFull.listEpisodesLangs")
+        
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        cUrl = self.getFullUrl(self.cm.meta['url'])
+        self.setMainUrl(cUrl)
+        
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'lang-bar'), ('</ul', '>'), False)[1]
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        for item in data:
+            lang = self.cm.ph.getSearchGroups(item, '''data\-lang=['"]([^"^']+?)['"]''')[0]
+            title = self.cleanHtmlStr(item)
+            self.addDir(MergeDicts(cItem, {'category':nextCategory, 'title':title, 'f_elang':lang}))
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         self.tryTologin()
@@ -649,6 +683,10 @@ class HDFull(CBaseHostClass, CaptchaHelper):
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
 
+        elif category == 'list_episodes_langs':
+            self.listEpisodesLangs(self.currItem, 'list_episodes2')
+        elif category == 'list_episodes2':
+            self.listEpisodes2(self.currItem)
     #SEARCH
         elif category in ["search", "search_next_page"]:
             cItem = dict(self.currItem)
