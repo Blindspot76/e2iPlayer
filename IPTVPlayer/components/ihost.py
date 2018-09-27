@@ -9,7 +9,6 @@ from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrappe
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetLogoDir, byteify
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 
 from Components.config import config
 from skin import parseColor
@@ -677,48 +676,27 @@ class CBaseHostClass:
         return False
     
     def getFullUrl(self, url, currUrl=None):
-        if url.startswith('./'):
-            url = url[1:]
-        
         if currUrl == None or not self.cm.isValidUrl(currUrl):
-            try: mainUrl = self.getMainUrl()
-            except Exception: mainUrl = 'http://fake'
-        else:
-            mainUrl = self.cm.getBaseUrl(currUrl)
-        
-        if url.startswith('//'):
-            proto = mainUrl.split('://', 1)[0]
-            url = proto + ':' + url
-        elif url.startswith('://'):
-            proto = mainUrl.split('://', 1)[0]
-            url = proto + url
-        elif url.startswith('/'):
-            url = mainUrl + url[1:]
-        elif 0 < len(url) and '://' not in url:
-            if currUrl == None or not self.cm.isValidUrl(currUrl):
-                url =  mainUrl + url
-            else:
-                url = urljoin(currUrl, url)
-        return url
-        
+            try:
+                currUrl = self.getMainUrl()
+            except Exception:
+                currUrl = 'http://fake/'
+        return self.cm.getFullUrl(url, currUrl)
+
     def getFullIconUrl(self, url, currUrl=None):
         if currUrl != None: return self.getFullUrl(url, currUrl)
         else: return self.getFullUrl(url)
         
     def getDefaulIcon(self, cItem=None):
-        try: return self.DEFAULT_ICON_URL
+        try:
+            return self.DEFAULT_ICON_URL
         except Exception:
             pass
         return ''
-    
+
     @staticmethod 
     def cleanHtmlStr(str):
-        str = str.replace('<', ' <')
-        str = str.replace('&nbsp;', ' ')
-        str = str.replace('&nbsp', ' ')
-        str = clean_html(str)
-        str = str.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-        return CParsingHelper.removeDoubles(str, ' ').strip()
+        return CParsingHelper.cleanHtmlStr(str)
 
     @staticmethod 
     def getStr(v, default=''):

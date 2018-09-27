@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, SetTmpCookieDir, rm, UsePyCurl
 from Plugins.Extensions.IPTVPlayer.components.asynccall import IsMainThread, IsThreadTerminated, SetThreadKillable
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 # FOREIGN import
 ###################################################
@@ -427,6 +428,15 @@ class CParsingHelper:
     @staticmethod
     def isalpha(txt, idx=None):
         return CParsingHelper.getNormalizeStr(txt, idx).isalpha()
+ 
+    @staticmethod 
+    def cleanHtmlStr(str):
+        str = str.replace('<', ' <')
+        str = str.replace('&nbsp;', ' ')
+        str = str.replace('&nbsp', ' ')
+        str = clean_html(str)
+        str = str.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+        return CParsingHelper.removeDoubles(str, ' ').strip()
 
 class common:
     HOST   = 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'
@@ -477,7 +487,13 @@ class common:
         return domain
         
     @staticmethod
-    def getFullUrl(url, mainUrl='http://fake'):
+    def getFullUrl(url, mainUrl='http://fake/'):
+        if url.startswith('./'):
+            url = url[1:]
+
+        currUrl = mainUrl
+        mainUrl = common.getBaseUrl(currUrl)
+
         if url.startswith('//'):
             proto = mainUrl.split('://', 1)[0]
             url = proto + ':' + url
@@ -486,10 +502,13 @@ class common:
             url = proto + url
         elif url.startswith('/'):
             url = mainUrl + url[1:]
-        elif 0 < len(url) and not common.isValidUrl(url):
-            url = urljoin(mainUrl, url)
+        elif 0 < len(url) and '://' not in url:
+            if currUrl == mainUrl:
+                url =  mainUrl + url
+            else:
+                url = urljoin(currUrl, url)
         return url
-        
+
     @staticmethod
     def isValidUrl(url):
         return url.startswith('http://') or url.startswith('https://')

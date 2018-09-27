@@ -193,10 +193,6 @@ class HDFull(CBaseHostClass, CaptchaHelper):
 
     def _listItems(self, cItem, nextCategory, data):
         printDBG("HDFull._listItems")
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        printDBG(data)
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-
         retList = []
         reLang = re.compile('/images/([^\.]+?)\.png')
         data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'view'), ('<div', '>', 'clear'), False)[1]
@@ -506,6 +502,14 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             linksTab = self.up.getVideoLinkExt(videoUrl)
         return linksTab
 
+    def _desc(self, data):
+        desc = []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
+        for t in data:
+            t = self.cleanHtmlStr(t)
+            desc.append(t)
+        return ', '.join(desc)
+
     def getArticleContent(self, cItem, data=None):
         printDBG("HDFull.getArticleContent [%s]" % cItem)
         retTab = []
@@ -516,38 +520,29 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             sts, data = self.getPage(url)
             if not sts: data = ''
 
-        data = data.split('page-content', 1)[-1]
-        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(data, '''<img[^>]+?src=['"]([^"^']+?\.jpe?g(?:\?[^'^"]*?)?)['"]''')[0])
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'summary-title'), ('<div', '>', 'breakaway-wrapper'), False)[1]
+        title = self.cleanHtmlStr(data[:data.find('</div')])
+        icon = self.cm.ph.getSearchGroups(data, '''<img([^>]+?video\-page\-thumbnail[^>]+?)>''')[0]
+        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''src=['"]([^"^']+?\.jpe?g(?:\?[^'^"]*?)?)['"]''')[0])
 
-        tmp = data.split('titulo', 1)[-1]
-        title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp, ('<h1', '>'), ('</h1', '>'), False)[1])
-        title1 = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(tmp, ('<h3', '>'), ('</h3', '>'), False)[1])
-        if title1: title  = '%s (%s)' % (title, title1)
-
-        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(tmp, ('<div', '>', 'description'), ('</div', '>'), False)[1] )
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'description'), ('</div', '>'), False)[1].split('<br', 1)
+        desc = self.cleanHtmlStr( tmp[0] )
 
         itemsList = []
+        
+        value = self.cm.ph.getSearchGroups(data, '''<([^>]+?datePublished[^>]+?)>''')[0]
+        value = self.cleanHtmlStr(self.cm.ph.getSearchGroups(value, '''content=['"]([^"^']+?)['"]''')[0])
+        if value: itemsList.append((_('Published:'), value))
 
-        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'tv-status'), ('</span', '>'), False)[1])
-        if val: itemsList.append((_('TV status'), val))
-
-        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'año'), ('</span', '>'), False)[1])
-        if val: itemsList.append((_('Year'), val))
-
-        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<i', '>', 'fa-star'), ('</b', '>'), False)[1])
-        if val: itemsList.append((_('IMDb rating'), val))
-
-        val = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'ratingValue'), ('</div', '>'), False)[1])
-        val1 = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(data, ('<span', '>', 'total-item-rates'), ('</span', '>'), False)[1])
-        if val1: val = '%s (%s)' % (val, val1)
-        if val: itemsList.append((_('Rating'), val))
-
-        val = []
-        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'generos'), ('</div', '>'), False)[1].split('</span>')
-        for t in tmp:
-            t = self.cleanHtmlStr(t)
-            if t: val.append(t)
-        if val: itemsList.append((_('Genres'), ', '.join(val)))
+        item = tmp[-1]
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'details'), ('</div', '>'), False)[1].split('</p>')
+        tmp.append(item)
+        for item in tmp:
+            header = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<span', '</span>')[1])
+            if header == '': continue
+            value = self._desc(item)
+            if value == '': continue
+            itemsList.append((header, value))
 
         if title == '': title = cItem['title']
         if icon == '':  icon  = cItem.get('icon', self.DEFAULT_ICON_URL)
@@ -677,5 +672,7 @@ class IPTVHost(CHostBase):
         CHostBase.__init__(self, HDFull(), True, [])
     
     def withArticleContent(self, cItem):
-        if cItem.get('f_type', '') in ['series', 'peliculas']: return True
-        else: return False
+        if cItem.get('prev_url') or cItem.get('type') == 'video' or  cItem.get('category') == 'explore_item':
+            return True
+        else:
+            return False
