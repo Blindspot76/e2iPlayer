@@ -205,8 +205,32 @@ class VideoPenny(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
+        self.setMainUrl(self.cm.meta['url'])
         
         urlTab = []
+        uniqueTab = set()
+        
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'multilink-table'), ('</div', '>'))[1]
+        printDBG(tmp)
+        tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<tr', '</tr>')
+        for mainItem in tmp:
+            linkVer = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(mainItem, ('<td', '>', 'multilink-title'), ('</td', '>'), False)[1])
+            mainItem = self.cm.ph.getAllItemsBeetwenMarkers(mainItem, '<a', '</a>')
+            for nameItem in mainItem:
+                url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(nameItem, '''href=['"]([^'^"]+?)['"]''')[0])
+                name = self.cleanHtmlStr(nameItem)
+                playerId = self.cm.ph.getSearchGroups(nameItem, '''id=['"]([^'^"]+?)['"]''')[0]
+                embedData = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', playerId), ('</div', '>'))
+                for item in embedData:
+                    if not self.cm.ph.getSearchGroups(item, '''class=['"](%s)['"]''' % playerId)[0]: continue
+
+                    playerUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(item, '''['"]((?:https?:)?//[^'^"]+?)['"]''')[0])
+                    if not self.cm.isValidUrl(playerUrl): continue
+                    if 1 != self.up.checkHostSupport(playerUrl) and 'rodzinnekino' not in self.cm.getBaseUrl(playerUrl) : continue 
+                    if playerUrl in uniqueTab: continue
+                    uniqueTab.add(playerUrl)
+                    urlTab.append({'name':'%s - %s' % (linkVer, name), 'url':strwithmeta(playerUrl, {'Referer':self.cm.meta['url']}), 'need_resolve':1})
+        
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'player-embed', '</div>')[1]
         tmp += '\n'.join(self.cm.ph.getAllItemsBeetwenNodes(data, ('<', '>', 'multilink'), ('</a', '>')))
         data = tmp
@@ -216,8 +240,10 @@ class VideoPenny(CBaseHostClass):
         for item in tmp:
             playerUrl = item.strip()
             if not self.cm.isValidUrl(playerUrl): continue
-            if 1 != self.up.checkHostSupport(playerUrl): continue 
-            urlTab.append({'name':self.up.getDomain(playerUrl, False), 'url':playerUrl, 'need_resolve':1})
+            if 1 != self.up.checkHostSupport(playerUrl) and 'rodzinnekino' not in self.cm.getBaseUrl(playerUrl) : continue 
+            if playerUrl in uniqueTab: continue
+            uniqueTab.add(playerUrl)
+            urlTab.append({'name':self.up.getDomain(playerUrl, False), 'url':strwithmeta(playerUrl, {'Referer':self.cm.meta['url']}), 'need_resolve':1})
         
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>')
@@ -229,13 +255,23 @@ class VideoPenny(CBaseHostClass):
             if label == '': label = self.cm.ph.getSearchGroups(item, '''res=\s*([^\s]+?)[\s>]''')[0]
             printDBG(url)
             if self.cm.isValidUrl(url):
-                urlTab.append({'name':'[%s] %s' % (type, label), 'url':strwithmeta(url)})
+                urlTab.append({'name':'[%s] %s' % (type, label), 'url':strwithmeta(url, {'Referer':self.cm.meta['url']})})
         
         return urlTab
         
     def getVideoLinks(self, videoUrl):
         printDBG("VideoPenny.getVideoLinks [%s]" % videoUrl)
         urlTab = []
+        
+        if 0 == self.up.checkHostSupport(videoUrl): # 'rodzinnekino' not in self.cm.getBaseUrl(videoUrl):
+            params = dict(self.defaultParams)
+            params['header'] = dict(params['header'])
+            params['header']['Referer'] = videoUrl.meta['Referer']
+            params['max_data_size'] = 0
+            sts, data = self.getPage(videoUrl, params)
+            if not sts: return []
+            videoUrl = strwithmeta(self.cm.meta['url'], videoUrl.meta)
+
         if self.cm.isValidUrl(videoUrl):
             urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab

@@ -37,7 +37,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerPar
                                                                unicode_escape
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, MainSessionWrapper
-from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute, js_execute_ext
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute, js_execute_ext, is_js_cached
 from Screens.MessageBox import MessageBox
 ###################################################
 # FOREIGN import
@@ -512,6 +512,7 @@ class urlparser:
                        'share-online.biz':     self.pp.parserSHAREONLINEBIZ ,
                        'krakenfiles.com':      self.pp.parserKRAKENFILESCOM ,
                        'filefactory.com':      self.pp.parserFILEFACTORYCOM ,
+                       'telerium.tv':          self.pp.parserTELERIUMTV     ,
                     }
         return
     
@@ -9288,9 +9289,9 @@ class pageParser(CaptchaHelper):
         else:
             url = baseUrl
         
-        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER, 'with_metadata':True})
+        sts, data = self.cm.getPage(url, {'header' : HTTP_HEADER})
         if not sts: return videoTab
-        cUrl = data.meta['url']
+        cUrl = self.cm.meta['url']
         
         errMsg = self.cm.ph.getDataBeetwenNodes(data, ('<', '>', 'important'), ('<', '>', 'div'))[1]
         SetIPTVPlayerLastHostError(clean_html(errMsg))
@@ -9323,7 +9324,7 @@ class pageParser(CaptchaHelper):
                 type = self.cm.ph.getSearchGroups(item, r'''['"]?type['"]?\s*:\s*['"]([^"^']+)['"]''')[0]
                 if not self.cm.isValidUrl(url): continue
             
-                #url = strwithmeta(url, {'User-Agent':params['header']})
+                url = strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':self.cm.meta['url'], 'Range':'bytes=0-'})
                 if 'dash' in type:
                     dashTab.extend(getMPDLinksWithMeta(url, False))
                 elif 'hls' in type:
@@ -9335,6 +9336,8 @@ class pageParser(CaptchaHelper):
         videoTab.extend(mp4Tab)
         videoTab.extend(hlsTab)
         videoTab.extend(dashTab)
+        if len(videoTab):
+            GetIPTVSleep().Sleep(5)
         return videoTab
         
     def parserCASACINEMACC(self, baseUrl):
@@ -10877,4 +10880,55 @@ class pageParser(CaptchaHelper):
         if self.cm.isValidUrl(data):
             GetIPTVSleep().Sleep(sleep_time2)
             return strwithmeta(data, {'Referer':defaultParams['header']['Referer'], 'User-Agent':defaultParams['header']['User-Agent']})
+        return False
+
+    def parserTELERIUMTV(self, baseUrl):
+        printDBG("parserTELERIUMTV baseUrl[%r]" % baseUrl)
+
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        
+        
+        HTTP_HEADER['User-Agent'] = 'Mozilla / 5.0 (SMART-TV; Linux; Tizen 2.4.0) AppleWebkit / 538.1 (KHTML, podobnie jak Gecko) SamsungBrowser / 1.1 TV Safari / 538.1'
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+
+        js_params = [{'code':'var e2i_obj={resp:"", agent:"%s", ref:"%s"};' % (HTTP_HEADER['User-Agent'], HTTP_HEADER['Referer'])}]
+        js_params.append({'path':GetJSScriptFile('telerium1.byte')})
+        js_params.append({'hash':str(time.time()), 'name':'telerium2', 'code':''})
+
+        HTTP_HEADER['Referer'] = cUrl
+
+        data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+        for item in data:
+            if 'eval(' in item:
+                js_params[2]['code'] = item
+
+        ret = js_execute_ext( js_params )
+        data = json.loads(ret['data'])
+
+        url = self.cm.getFullUrl(data['url'], cUrl)
+        
+        
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts: return False
+
+        data= byteify(json.loads(data))
+        printDBG(">>>: " + data)
+        js_params[0]['code'] = js_params[0]['code'].replace('resp:""', 'resp:"%s"' % data)
+
+        ret = js_execute_ext( js_params )
+        data = json.loads(ret['data'])
+
+        url = self.cm.getFullUrl(data['source'], cUrl)
+        
+        
+        if url.split('?', 1)[0].lower().endswith('.m3u8'):
+            url = strwithmeta(url, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':HTTP_HEADER['Referer'], 'Origin':self.cm.getBaseUrl(HTTP_HEADER['Referer'])[:-1], 'Accept':'*/*'})
+            return getDirectM3U8Playlist(url, checkExt=False, checkContent=True)
+
         return False
