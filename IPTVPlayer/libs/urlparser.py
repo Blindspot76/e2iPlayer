@@ -10069,7 +10069,9 @@ class pageParser(CaptchaHelper):
             streamUrl = urlparser.decorateUrl(streamUrl, HTTP_HEADER)
             tmp = getDirectM3U8Playlist(streamUrl, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999)
             if len(tmp):
-                pyCmd = GetPyScriptCmd('keepalive_proxy') + ' "%s" "%s" "%s" "%s" "%s" ' % (config.plugins.iptvplayer.livesports_port.value, libsPath, HTTP_HEADER['User-Agent'], HTTP_HEADER['Referer'], str(streamUrl))
+                try: port = config.plugins.iptvplayer.livesports_port.value
+                except Exception: port = 8193
+                pyCmd = GetPyScriptCmd('keepalive_proxy') + ' "%s" "%s" "%s" "%s" "%s" ' % (port, libsPath, HTTP_HEADER['User-Agent'], HTTP_HEADER['Referer'], str(streamUrl))
                 meta = {'iptv_proto':'em3u8'}
                 meta['iptv_refresh_cmd'] = pyCmd
                 streamUrl = urlparser.decorateUrl("ext://url/" + streamUrl, meta)

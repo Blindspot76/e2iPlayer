@@ -35,6 +35,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes        import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.djingcom          import DjingComApi
 from Plugins.Extensions.IPTVPlayer.libs.sportstream365    import SportStream365Api, GetConfigList as SportStream365_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.mlbstreamtv       import MLBStreamTVApi, GetConfigList as MLBStreamTV_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.internetowa       import InternetowaApi, GetConfigList as Internetowa_GetConfigList
 ###################################################
 
 ###################################################
@@ -66,67 +67,70 @@ config.plugins.iptvplayer.fake_separator = ConfigSelection(default = " ", choice
 
 def GetConfigList():
     optionList = []
-    
+
     optionList.append(getConfigListEntry("----------------pilot.wp.pl-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( VideoStar_GetConfigList() )
     except Exception: printExc()
-    
+
+    optionList.append(getConfigListEntry("----------------internetowa.ws------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( Internetowa_GetConfigList() )
+    except Exception: printExc()
+
     optionList.append(getConfigListEntry("------------------meteo.pl------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( MeteoPL_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("-------------------WeebTV-------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WeebTv_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("-----------------FilmOn TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( FilmOn_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("----------------ustvnow.com-----------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( Ustvnow_GetConfigList() )
     except Exception: printExc()
-   
+
     optionList.append(getConfigListEntry("-------------------edem.tv------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( EdemTv_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("-------------SkyLineWebCams.com-------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WkylinewebcamsCom_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry(_("----------Other----------"), config.plugins.iptvplayer.fake_separator))
     optionList.append(getConfigListEntry(_("Turn off buffering for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weatherbymatzgprohibitbuffering))
     optionList.append(getConfigListEntry(_("Use Polish proxy for http://prognoza.pogody.tv/"), config.plugins.iptvplayer.weather_useproxy))
-    
+
     optionList.append(getConfigListEntry("----------------GoldVod.TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( GoldVodTV_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("-----------------Wizja.TV------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WizjaTV_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("--------------wagasworld.com---------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( WagasWorld_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("----------------bilasport.pw-------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( BilaSportPw_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("--------------sportstream365.com---------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( SportStream365_GetConfigList() )
     except Exception: printExc()
-    
+
     optionList.append(getConfigListEntry("-----------------mlbstream.tv------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( MLBStreamTV_GetConfigList() )
     except Exception: printExc()
-    
+
     return optionList
 
 ###################################################
-# "HasBahCa"
 def gettytul():
     return _('"Web" streams player')
 
@@ -134,6 +138,7 @@ class HasBahCa(CBaseHostClass):
     HTTP_HEADER= { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
     MAIN_GROUPED_TAB = [{'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'WeebTV',                            'url': '',                                                                   'icon': 'http://xmtvplayer.com/wp-content/uploads/2014/07/weebtv.png'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'https://pilot.wp.pl/',              'url': '',                                                                   'icon': 'http://satkurier.pl/uploads/53612.jpg'}, \
+                        {'alias_id':'internetowa.ws',          'name': 'internetowa.ws',      'title': 'https://internetowa.ws/',           'url': '',                                                                   'icon': 'https://internetowa.ws/img/internetowa-logo-new-3.png'}, \
                         #{'alias_id':'iptv_matzgpl',            'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.cba.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.cba.pl/Iptv_matzgPL.png'}, \
                         {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'prognoza.pogody.tv',                'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://s2.manifo.com/usr/a/A17f/37/manager/pogoda-w-chorwacji-2013.png'}, \
                         {'alias_id':'meteo.pl',                'name': 'meteo.pl',            'title': 'Pogoda PL - meteorogramy',          'url': 'http://meteo.pl/',                                                   'icon': 'http://www.meteo.pl/img/napis_glowny_pl_2.png'}, \
@@ -195,6 +200,7 @@ class HasBahCa(CBaseHostClass):
         self.djingComApi          = None
         self.sportStream365Api    = None
         self.MLBStreamTVApi       = None
+        self.InternetowaApi       = None
         
         self.hasbahcaiptv = {}
         self.webcameraSubCats = {}
@@ -535,7 +541,7 @@ class HasBahCa(CBaseHostClass):
         urlsTab = self.sportStream365Api.getVideoLink(cItem)
         return urlsTab
     #############################################################
-    
+
     #############################################################
     def getMLBStreamTVList(self, cItem):
         printDBG("getMLBStreamTVList start")
@@ -555,7 +561,23 @@ class HasBahCa(CBaseHostClass):
         printDBG("getMLBStreamResolvedLink start")
         return self.MLBStreamTVApi.getResolvedVideoLink(url)
     #############################################################
-    
+
+    #############################################################
+    def getInternetowaList(self, cItem):
+        printDBG("getInternetowaList start")
+        if None == self.InternetowaApi: self.InternetowaApi = InternetowaApi()
+        tmpList = self.InternetowaApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
+
+    def getInternetowaLink(self, cItem):
+        printDBG("getInternetowaLink start")
+        urlsTab = self.InternetowaApi.getVideoLink(cItem)
+        return urlsTab
+    #############################################################
+
     #############################################################
     def getUstvnowList(self, cItem):
         printDBG("getUstvnowList start")
@@ -863,6 +885,8 @@ class HasBahCa(CBaseHostClass):
         elif name == 'others':              self.getOthersList(self.currItem)
         elif name == 'sportstream365.com':  self.getSportStream365List(self.currItem)
         elif name == 'mlbstream.tv':        self.getMLBStreamTVList(self.currItem)
+        elif name == 'internetowa.ws':      self.getInternetowaList(self.currItem)
+        
         
         CBaseHostClass.endHandleService(self, index, refresh)
 
@@ -919,6 +943,8 @@ class IPTVHost(CHostBase):
         elif name == "webcamera.pl":               urlList = self.host.getWebCameraLink(cItem)
         elif name == "prognoza.pogody.tv":         urlList = self.host.prognozaPogodyLink(url)
         elif name == "mlbstream.tv":               urlList = self.host.getMLBStreamTVLink(cItem)
+        elif name == "internetowa.ws":             urlList = self.host.getInternetowaLink(cItem)
+        
         
         if isinstance(urlList, list):
             for item in urlList:
