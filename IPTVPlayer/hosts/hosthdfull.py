@@ -67,7 +67,7 @@ class SuggestionsProvider:
             self.lang = lang
 
         url = self.MAIN_URL + '/ajax/search.php'
-        sts, data = self.cm.getPage(url, post_data={'q':urllib.quote_plus(text), 'limit':'10', 'timestamp':str(int(time.time()*1000)), 'verifiedCheck':''})
+        sts, data = self.cm.getPage(url, post_data={'q':text, 'limit':'10', 'timestamp':str(int(time.time()*1000)), 'verifiedCheck':''})
         if sts:
             retList = []
             for item in json.loads(data):
@@ -459,7 +459,7 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             name = self.cm.ph.getSearchGroups(item, '''name=['"]([^"^']+?)['"]''')[0]
             value = self.cm.ph.getSearchGroups(item, '''value=['"]([^"^']+?)['"]''')[0]
             if name != '': post_data[name] = value
-        post_data.update( {'query':urllib.quote_plus(searchPattern)} )
+        post_data.update( {'query':searchPattern} )
         
         httpParams = dict(self.defaultParams)
         httpParams['header'] = MergeDicts(httpParams['header'], {'Referer':self.cm.meta['url'], 'Content-Type':'application/x-www-form-urlencoded'})
