@@ -17,6 +17,7 @@ from Tools.BoundFunction import boundFunction
 from Tools.Directories   import resolveFilename, SCOPE_PLUGINS
 from os                  import path as os_path, chmod as os_chmod, remove as os_remove, listdir as os_listdir, getpid as os_getpid, symlink as os_symlink, unlink as os_unlink
 import re
+import sys
 ###################################################
 
 class IPTVSetupImpl:
@@ -97,7 +98,11 @@ class IPTVSetupImpl:
         # subparser
         self.subparserVersion = 0.4
         self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/_subparser.so')]
-        
+
+        # e2icjson
+        self.e2icjsonVersion = 10201 #'1.2.1' int(z[0]) * 10000 + int(z[1]) * 100 + int(z[2])
+        self.e2icjsonPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/e2icjson/e2icjson.so')]
+
         # hlsdl
         self.hlsdlVersion = 0.16
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl'), "/usr/bin/hlsdl"]
@@ -650,10 +655,11 @@ class IPTVSetupImpl:
         printDBG("IPTVSetupImpl.subparserStep")
         
         def _detectCmdBuilder(path):
-            cmd = GetPyScriptCmd('subparserversion') + ' "%s" ' % resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/')
+            cmd = GetPyScriptCmd('modver') + ' "%s" iptvsubparser _subparser ' % resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/')
             return cmd
             
         def _detectValidator(code, data):
+            printDBG("subparserStep_detectValidator code[%d], data[%s]" % (code, data))
             if 0 == code:
                 try: 
                     if float(data.strip()) >= self.subparserVersion:
@@ -695,9 +701,114 @@ class IPTVSetupImpl:
         self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
         self.stepHelper.setFinishHandler( self.subparserStepFinished )
         self.binaryDetect()
-    
+
     def subparserStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.subparserStepFinished sts[%r]" % sts)
+        self.e2icjsonStep()
+
+    ###################################################
+    # STEP: e2icjson
+    ###################################################
+    def e2icjsonStep(self, ret=None):
+        printDBG("IPTVSetupImpl.e2icjsonStep")
+        
+        def _detectCmdBuilder(path):
+            cmd = GetPyScriptCmd('modver') + ' "%s" e2icjson e2icjson ' % resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/')
+            return cmd
+            
+        def _detectValidator(code, data):
+            printDBG("e2icjsonStep_detectValidator code[%d], data[%s]" % (code, data))
+            if 0 == code:
+                try: 
+                    ver = data.strip().split('.')
+                    ver = int(ver[0]) * 10000 + int(ver[1]) * 100 + int(ver[2])
+                    if ver >= self.e2icjsonVersion:
+                        return True,False
+                except Exception: 
+                    pass
+            return False,True
+
+        def _deprecatedHandler(paths, stsTab, dataTab):
+            try: 
+                ver = data.strip().split('.')
+                ver = int(ver[0]) * 10000 + int(ver[1]) * 100 + int(ver[2])
+                return True,self.e2icjsonPaths[0]
+            except Exception: 
+                pass
+            return False,""
+
+        def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
+            url = server + 'bin/' + platform + ('/%s' % binName)
+            tmpFile = tmpPath + binName
+            cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
+            return cmd
+
+        packageAvailable = False
+        try: 
+            old = 'none'
+            if self.platform == 'mipsel':
+                if fpuType == 'hard':
+                    if self.glibcVersion >= 2.21:
+                        old = ''
+                    elif self.glibcVersion >= 2.12:
+                        old = '_old'
+                elif fpuType == 'soft':
+                    if self.glibcVersion >= 2.20:
+                        old = ''
+                    elif self.glibcVersion >= 2.12:
+                        old = '_old'
+            elif self.platform == 'sh4':
+                if self.glibcVersion >= 2.19:
+                    old = ''
+                elif self.glibcVersion >= 2.10:
+                    old = '_old'
+            elif self.platform == 'armv7':
+                if self.glibcVersion >= 2.18:
+                    old = ''
+            elif self.platform == 'i686':
+                old = ''
+
+            remoteBinaryName = 'python%s.%s' % (sys.version_info[0], sys.version_info[1])
+            remoteBinaryName += '_e2icjson.so' + old
+            if 'mipsel' == self.platform and IsFPUAvailable():
+                remoteBinaryName += '_softfpu'
+
+            # check if there package available for user configuration
+            if self.platform == 'mipsel' and remoteBinaryName in ('python2.6_e2icjson.so_old','python2.6_e2icjson.so_old_softfpu','python2.7_e2icjson.so',\
+                                                                  'python2.7_e2icjson.so_old','python2.7_e2icjson.so_old_softfpu','python2.7_e2icjson.so_softfpu'):
+                packageAvailable = True
+            elif self.platform == 'sh4' and remoteBinaryName in ('python2.6_e2icjson.so_old','python2.7_e2icjson.so','python2.7_e2icjson.so_old'):
+                packageAvailable = True
+            elif self.platform == 'armv7' and remoteBinaryName in ('python2.7_e2icjson.so'):
+                packageAvailable = True
+            elif self.platform == 'i686' and remoteBinaryName in ('python2.7_e2icjson.so'):
+                packageAvailable = True
+        except Exception:
+            printExc()
+
+        if packageAvailable:
+            self.stepHelper = CBinaryStepHelper(remoteBinaryName, self.platform, self.openSSLVersion, None)
+            msg1 = _("python-cjson")
+            msg2 = _("\nFor more info please ask %s ") % 'samsamsam@o2.pl'
+            msg3 = _('It improves json data parsing.\n')
+            self.stepHelper.updateMessage('detection', msg1, 0)
+            self.stepHelper.updateMessage('detection', msg2, 1)
+            self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+            self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+
+            self.stepHelper.setInstallChoiseList( [('e2icjson.so', self.e2icjsonPaths[0])] )
+            self.stepHelper.setPaths( self.e2icjsonPaths )
+            self.stepHelper.setDetectCmdBuilder( _detectCmdBuilder )
+            self.stepHelper.setDetectValidator( _detectValidator )
+            self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+            self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+            self.stepHelper.setFinishHandler( self.e2icjsonStepFinished )
+            self.binaryDetect()
+        else:
+            self.hlsdlStep()
+
+    def e2icjsonStepFinished(self, sts, ret=None):
+        printDBG("IPTVSetupImpl.e2icjsonStepFinished sts[%r]" % sts)
         self.hlsdlStep()
     
     ###################################################

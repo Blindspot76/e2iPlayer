@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.libs.json import loads as json_loads
 ###################################################
 
 ###################################################
@@ -13,8 +14,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 ###################################################
 import re
 import urllib
-try:    import json
-except Exception: import simplejson as json
 ###################################################
 
 
@@ -124,7 +123,7 @@ class ArteTV(CBaseHostClass):
         
         jsonData = self.cm.ph.getDataBeetwenNodes(data, ('__INITIAL_STATE__', '='), ('</script', '>'), False)[1].strip()
         try:
-            jsonData = byteify(json.loads(jsonData[:jsonData.find('};')+1]))
+            jsonData = json_loads(jsonData[:jsonData.find('};')+1])
             try:
                 for item in jsonData['videos']['videos']:
                     try: iconsMap[item['url']] = item['images'][0]['url']
@@ -266,7 +265,7 @@ class ArteTV(CBaseHostClass):
         printDBG('+++++++++++++++++++++++++++++++++')
         
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             if 'videos' in data and data['videos'] != None:
                 tab = data['videos']
                 type = 'video'
@@ -331,7 +330,7 @@ class ArteTV(CBaseHostClass):
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('var ', '=', 'js_json_playlist'), ('var ', ';', '='), False)[1].strip()[:-1]
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for item in data['videos']:
                 url = self.getFullUrl( item['url'] )
                 title = self.cleanHtmlStr( item['title'] )
@@ -378,7 +377,7 @@ class ArteTV(CBaseHostClass):
             self.cacheLinks = {}
             cacheLabels = {}
             
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for key in data['videoJsonPlayer']['VSR']:
                 item = data['videoJsonPlayer']['VSR'][key]
                 if item['mediaType'] not in ['mp4', 'hls']: continue

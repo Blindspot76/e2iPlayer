@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute_ext, is_js_cach
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, GetCookieDir, ReadTextFile, WriteTextFile, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
+from Plugins.Extensions.IPTVPlayer.libs.json import loads as json_loads
 ###################################################
 
 ###################################################
@@ -18,9 +19,6 @@ from binascii import hexlify
 from hashlib import md5
 import time
 import re
-import urllib
-try: import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigText, ConfigSelection, getConfigListEntry
 ###################################################
 
@@ -70,8 +68,8 @@ class SuggestionsProvider:
         sts, data = self.cm.getPage(url, post_data={'q':text, 'limit':'10', 'timestamp':str(int(time.time()*1000)), 'verifiedCheck':''})
         if sts:
             retList = []
-            for item in json.loads(data):
-                retList.append(item['title'].encode('UTF-8'))
+            for item in json_loads(data):
+                retList.append(item['title'])
             return retList 
         return None
 
@@ -329,7 +327,7 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             js_params.append({'code':'e2iLinks("%s");' % ad})
             ret = js_execute_ext( js_params )
 
-            data = byteify(json.loads(ret['data']))
+            data = json_loads(ret['data'])
             for item in data:
                 name = '%s | %s | %s ' % (item['lang'], item['provider'], item['quality'])
                 url = item['embed']
@@ -412,14 +410,14 @@ class HDFull(CBaseHostClass, CaptchaHelper):
         if not sts: return
 
         try:
-            data = json.loads(data)
+            data = json_loads(data)
             for item in data:
                 sNum = jstr(item, 'season')
                 eNum = jstr(item, 'episode')
 
                 icon = self.getFullIconUrl(baseIconUrl + jstr(item, 'thumbnail'))
                 title = '%s - s%se%s %s' % (jstr(item['show']['title'], lang), sNum.zfill(2), eNum.zfill(2), jstr(item['title'], lang))
-                desc =  jstr(item, 'date_aired') + ' | ' + (u', '.join(item.get('languages', []))).encode('utf-8')
+                desc =  jstr(item, 'date_aired') + ' | ' + (', '.join(item.get('languages', [])))
                 url = self.getFullUrl(baseEpisodeUrl % (jstr(item, 'permalink'), sNum, eNum))
                 
                 self.addVideo({'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc})

@@ -9,12 +9,11 @@ from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrappe
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc, GetLogoDir, byteify
+from Plugins.Extensions.IPTVPlayer.libs.json import loads as json_loads, dumps as json_dumps
 
 from Components.config import config
 from skin import parseColor
 
-try:    import json
-except Exception: import simplejson as json
 from urlparse import urljoin
 
 class CUrlItem:
@@ -645,7 +644,7 @@ class CBaseHostClass:
         sts, data = self.cm.getPage('https://dcinfos.abtasty.com/geolocAndWeather.php')
         if not sts: return
         try:
-            data = byteify(json.loads(data.strip()[1:-1]), '', True)
+            data = json_loads(data.strip()[1:-1], '', True)
             if data['country'] != country:
                 message = _('%s uses "geo-blocking" measures to prevent you from accessing the services from outside the %s Territory.') 
                 GetIPTVNotify().push(message % (self.getMainUrl(), country), 'info', 5)
@@ -777,7 +776,7 @@ class CBaseHostClass:
             
     def getFavouriteData(self, cItem):
         try:
-            return json.dumps(cItem)
+            return json_dumps(cItem)
         except Exception: 
             printExc()
         return ''
@@ -790,7 +789,7 @@ class CBaseHostClass:
             printExc()
         links = []
         try:
-            cItem = byteify(json.loads(fav_data))
+            cItem = json_loads(fav_data)
             links = self.getLinksForItem(cItem)
         except Exception: printExc()
         return links
@@ -802,7 +801,7 @@ class CBaseHostClass:
         except Exception: 
             printExc()
         try:
-            params = byteify(json.loads(fav_data))
+            params = json_loads(fav_data)
         except Exception: 
             params = {}
             printExc()

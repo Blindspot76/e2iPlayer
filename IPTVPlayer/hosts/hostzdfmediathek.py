@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.libs.json import loads as json_loads
 ###################################################
 
 ###################################################
@@ -17,8 +18,6 @@ from datetime import datetime, timedelta
 import re
 import urllib
 import time
-try:    import simplejson as json
-except Exception: import json
 ###################################################
 
 
@@ -214,7 +213,7 @@ class ZDFmediathek(CBaseHostClass):
                     if icon == '': 
                         tmp = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''teaser-image=['"]([^'^"]+?)['"]''')[0])
                         try:
-                            tmp = byteify(json.loads(tmp))['original']
+                            tmp = json_loads(tmp)['original']
                             if tmp != '': icon = self.getIconUrl(tmp.split('~', 1)[0])
                         except Exception:
                             printExc()
@@ -269,7 +268,7 @@ class ZDFmediathek(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for item in data['stage']:
                 self._addItem(cItem, item)
             self._listCluster(cItem, data['cluster'])
@@ -281,7 +280,7 @@ class ZDFmediathek(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         try:
-            data = byteify(json.loads(data)['broadcastCluster'])
+            data = json_loads(data)['broadcastCluster']
             self._listCluster(cItem, data)
         except Exception:
             printExc()
@@ -291,7 +290,7 @@ class ZDFmediathek(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         try:
-            data = byteify(json.loads(data)['cluster'])
+            data = json_loads(data)['cluster']
             self._listCluster(cItem, data)
         except Exception:
             printExc()
@@ -363,7 +362,7 @@ class ZDFmediathek(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for item in data['results']:
                 self._addItem(cItem, item)
             if data['nextPage']:
@@ -397,7 +396,7 @@ class ZDFmediathek(CBaseHostClass):
             subTracks = []
             urlTab = []
             tmpUrlTab = []
-            data = byteify(json.loads(data)['document'])
+            data = json_loads(data)['document']
             try:
                 for item in data['captions']:
                     if 'vtt' in item['format'] and self.cm.isValidUrl(item['uri']):
@@ -477,30 +476,7 @@ class ZDFmediathek(CBaseHostClass):
             printExc()
             
         return urlTab
-        
-    def getFavouriteData(self, cItem):
-        printDBG('getFavouriteData')
-        return json.dumps(cItem) 
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('getLinksForFavourite')
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('setInitListFromFavouriteItem')
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-    
+
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('ZDFmediathek.handleService start')
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)

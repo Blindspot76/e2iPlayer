@@ -536,7 +536,10 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             self.copyBinariesCmdList = []
             if fileExists("%s/libs/iptvsubparser/_subparser.so" % os_path.join(self.ExtensionPath, 'IPTVPlayer')):
                 self.copyBinariesCmdList.append( 'cp -f "%s/libs/iptvsubparser/_subparser.so" "%s/libs/iptvsubparser/_subparser.so"  2>&1 ' % (os_path.join(self.ExtensionPath, 'IPTVPlayer'), os_path.join(self.ExtensionTmpPath, 'IPTVPlayer')) )
-            
+
+            if fileExists("%s/libs/e2icjson/e2icjson.so" % os_path.join(self.ExtensionPath, 'IPTVPlayer')):
+                self.copyBinariesCmdList.append( 'cp -f "%s/libs/e2icjson/e2icjson.so" "%s/libs/e2icjson/e2icjson.so"  2>&1 ' % (os_path.join(self.ExtensionPath, 'IPTVPlayer'), os_path.join(self.ExtensionTmpPath, 'IPTVPlayer')) )
+
             binPath = "%s/bin/" % (os_path.join(self.ExtensionPath, 'IPTVPlayer'))
             binariesTab = [('exteplayer3', config.plugins.iptvplayer.exteplayer3path.value), \
                            ('gstplayer', config.plugins.iptvplayer.gstplayerpath.value), \

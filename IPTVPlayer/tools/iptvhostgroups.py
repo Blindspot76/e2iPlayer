@@ -7,6 +7,7 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetConfigDir, GetHostsList, IsHostEnabled
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostsGroupItem
+from Plugins.Extensions.IPTVPlayer.libs.json import loads as json_loads, dumps as json_dumps
 ###################################################
 
 ###################################################
@@ -14,8 +15,6 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostsGroupItem
 ###################################################
 import codecs
 from os import path as os_path, remove as os_remove
-try: import json
-except Exception: import simplejson as json
 ###################################################
 
 
@@ -201,7 +200,7 @@ class IPTVHostsGroups:
         printDBG("IPTVHostsGroups._saveHosts")
         ret = True
         try:
-            data = json.dumps(outObj)
+            data = json_dumps(outObj)
             self._saveToFile(groupFile, data)
         except Exception:
             printExc()
@@ -219,7 +218,7 @@ class IPTVHostsGroups:
         if os_path.isfile(groupFile):
             try:
                 data = self._loadFromFile(groupFile)
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 for item in data.get('disabled_hosts', []):
                     # we need only information about predefined hosts which were disabled
                     if item in predefinedHosts and item in hostListFromList:
@@ -284,7 +283,7 @@ class IPTVHostsGroups:
         printDBG("IPTVHostsGroups._saveGroups")
         ret = True
         try:
-            data = json.dumps(outObj)
+            data = json_dumps(outObj)
             self._saveToFile(self.GROUPS_FILE, data)
         except Exception:
             printExc()
@@ -306,7 +305,7 @@ class IPTVHostsGroups:
         if os_path.isfile(self.GROUPS_FILE):
             try:
                 data = self._loadFromFile(self.GROUPS_FILE)
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 for item in data.get('disabled_groups', []):
                     # we need only information about predefined groups which were disabled
                     if item in self.PREDEFINED_GROUPS:
