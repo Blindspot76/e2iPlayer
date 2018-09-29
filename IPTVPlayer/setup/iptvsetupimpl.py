@@ -747,16 +747,16 @@ class IPTVSetupImpl:
         try: 
             old = 'none'
             if self.platform == 'mipsel':
-                if fpuType == 'hard':
+                if IsFPUAvailable():
                     if self.glibcVersion >= 2.21:
                         old = ''
                     elif self.glibcVersion >= 2.12:
                         old = '_old'
-                elif fpuType == 'soft':
+                else:
                     if self.glibcVersion >= 2.20:
-                        old = ''
+                        old = '_softfpu'
                     elif self.glibcVersion >= 2.12:
-                        old = '_old'
+                        old = '_old_softfpu'
             elif self.platform == 'sh4':
                 if self.glibcVersion >= 2.19:
                     old = ''
@@ -770,8 +770,6 @@ class IPTVSetupImpl:
 
             remoteBinaryName = 'python%s.%s' % (sys.version_info[0], sys.version_info[1])
             remoteBinaryName += '_e2icjson.so' + old
-            if 'mipsel' == self.platform and IsFPUAvailable():
-                remoteBinaryName += '_softfpu'
 
             # check if there package available for user configuration
             if self.platform == 'mipsel' and remoteBinaryName in ('python2.6_e2icjson.so_old','python2.6_e2icjson.so_old_softfpu','python2.7_e2icjson.so',\
