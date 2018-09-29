@@ -14,7 +14,7 @@ except Exception: import simplejson as json
 e2icjson = None
 ############################################
 
-def loads(input, utf8=True, noneReplacement=None, baseTypesAsString=False):
+def loads(input, noneReplacement=None, baseTypesAsString=False, utf8=True):
     global e2icjson
     if e2icjson == None:
         try:
@@ -25,9 +25,10 @@ def loads(input, utf8=True, noneReplacement=None, baseTypesAsString=False):
             printExc()
 
     if e2icjson:
-        printDBG(">> cjson ACELERATION")
+        printDBG(">> cjson ACELERATION noneReplacement[%s] baseTypesAsString[%s]" % (noneReplacement, baseTypesAsString))
         out = e2icjson.decode(input, 2 if utf8 else 1)
         if noneReplacement != None or baseTypesAsString != False:
+            printDBG(">> cjson ACELERATION byteify")
             out = byteify(out, noneReplacement, baseTypesAsString)
     else:
         out = json.loads(input)

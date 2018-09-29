@@ -495,7 +495,7 @@ class CartoonHD(CBaseHostClass):
         else:
             title = self.cleanHtmlStr(title)
 
-        keysMap = {'rat':_('PEGI'), 'dur':_('Duration'), 'dat':_('Year')}
+        keysMap = {'rat':_('PEGI'), 'dur':_('Duration'), 'dat':_('Year'), 'net':_('Network')}
         raiting = []
         tmp = self.cm.ph.getDataBeetwenMarkers(tmp, '<p', '</p>')[1]
         tmp = self.cm.ph.rgetAllItemsBeetwenMarkers(tmp, '</span>', '<span')

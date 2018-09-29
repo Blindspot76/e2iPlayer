@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, \
                                                           DaysInMonth, NextMonth, PrevMonth, NextDay, PrevDay
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 ###################################################
 
 ###################################################
@@ -16,8 +17,6 @@ import urlparse
 import urllib
 import datetime
 from copy import deepcopy
-try:    import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -45,7 +44,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://www.kinoman.co/'
+    return 'https://kinoman.co/'
 
 class KinomanCO(CBaseHostClass):
     CAPTCHA_CHALLENGE=''
@@ -139,7 +138,7 @@ class KinomanCO(CBaseHostClass):
                 sts, data = self.getPage(url)
                 if not sts: break
                 try:
-                    data = byteify(json.loads(data), '',  baseTypesAsString=True)
+                    data = json_loads(data, '',  baseTypesAsString=True)
                     for item in data:
                         self.translations[item['key']] = item['value']
                 except Exception:
@@ -151,7 +150,7 @@ class KinomanCO(CBaseHostClass):
             sts, data = self.getPage(url)
             if not sts: return
             try:
-                data = byteify(json.loads(data), noneReplacement='', baseTypesAsString=True)
+                data = json_loads(data, noneReplacement='', baseTypesAsString=True)
                 
                 key = 'f_is_vip'
                 tab = []
@@ -169,10 +168,18 @@ class KinomanCO(CBaseHostClass):
                 if len(tab):
                     self.cacheFilters[key] = tab
                     self.cacheFiltersKeys.append(key)
-                    
+
+                # fix missing year 2018
                 key = 'f_years'
+                currYear = datetime.datetime.now().year
+                years = []
+                for year in range(currYear, currYear-10, -1):
+                    years.append(str(year))
+                for year in data['years']:
+                    if year not in years:
+                        years.append(year)
                 tab = []
-                for item in data['years']:
+                for item in years:
                     tab.append({key:item, 'title':item})
                 if len(tab):
                     tab.insert(0, {'title':self._('All')})
@@ -422,7 +429,7 @@ class KinomanCO(CBaseHostClass):
         if not sts: return
         
         try:
-            data = byteify(json.loads(data), noneReplacement='', baseTypesAsString=True)
+            data = json_loads(data, noneReplacement='', baseTypesAsString=True)
             for item in data['objects']:
                 self._addItem(item, cItem, nextCategory)
         except Exception:
@@ -449,7 +456,7 @@ class KinomanCO(CBaseHostClass):
             if not sts: return
         
             # type: 0 == cinema, 2 == series, 1 == movies
-            data = byteify(json.loads(data))[0]
+            data = json_loads(data)[0]
             for item in data['languages']:
                 icon = cItem.get('icon', '')
                 cover = self._getStr(data, 'cover')
@@ -474,11 +481,11 @@ class KinomanCO(CBaseHostClass):
         
         try:
             type = cItem.get('f_type', '')
-            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> type[%s]' % type)
+            printDBG('>> type[%s]' % type)
             url = self.getFullUrl('/api/media?slug=%s&cache=3600' % cItem['url'], 'api_cache')
             sts, data = self.getPage(url)
             if not sts: return
-            data = byteify(json.loads(data), '', True)
+            data = json_loads(data, '', True)
             if "youtube" == data.get("trailer", {}).get("host", ""):
                 url = 'https://www.youtube.com/watch?v=' +  data['trailer']['host_code']
                 title = self.cleanHtmlStr(data['trailer']['name'])
@@ -509,7 +516,7 @@ class KinomanCO(CBaseHostClass):
             url = self.getFullUrl('/api/media/season?slug=%s&season=%s&cache=1800' % (cItem['url'], cItem['s_num']), 'api_cache')
             sts, data = self.getPage(url)
             if not sts: return
-            data = byteify(json.loads(data), '', True)
+            data = json_loads(data, '', True)
             for item in data['episodes']:
                 self._addItem(item['media'], cItem, nextCategory)
         except Exception:
@@ -541,7 +548,7 @@ class KinomanCO(CBaseHostClass):
             url = self.getFullUrl('/api/link?media_slug=%s' % cItem['url'], 'api')
             sts, data = self.getPage(url)
             if not sts: return []
-            data = byteify(json.loads(data), '', True)
+            data = json_loads(data, '', True)
             printDBG(data)
             
             vipItems = []
@@ -599,7 +606,7 @@ class KinomanCO(CBaseHostClass):
                 sts, data = self.getPage(url, httpParams, post_data)
                 printDBG(data)
                 if sts:
-                    data = byteify(json.loads(data), '', True)
+                    data = json_loads(data, '', True)
                     if not isinstance(data, str):
                         videoUrl = data['link']
                     elif 'captcha' in data.lower():
@@ -607,7 +614,7 @@ class KinomanCO(CBaseHostClass):
                         if not sts:
                             SetIPTVPlayerLastHostError(_('Network connection failed.'))
                             break
-                        data = byteify(json.loads(data), '', True)
+                        data = json_loads(data, '', True)
                         captchaTitle = self._('Fill captcha')
                         imgUrl = data['image']
                         KinomanCO.CAPTCHA_HASHKEY = data['key']
@@ -696,7 +703,7 @@ class KinomanCO(CBaseHostClass):
             url = self.getFullUrl('/api/media?slug=%s&cache=3600' % cItem['url'], 'api_cache')
             sts, data = self.getPage(url)
             if not sts: return []
-            data = byteify(json.loads(data), '', True)
+            data = json_loads(data, '', True)
             
             printDBG(data)
             
@@ -765,7 +772,7 @@ class KinomanCO(CBaseHostClass):
         printDBG(data)
         if sts:
             try:
-                data = byteify(json.loads(data), '', True)
+                data = json_loads(data, '', True)
                 if not isinstance(data, str):
                     self.defaultParams['header']['x-user-token'] = data['token']
                     self.loggedIn = True
