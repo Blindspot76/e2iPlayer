@@ -680,6 +680,8 @@ class CBaseHostClass:
             try:
                 currUrl = self.getMainUrl()
             except Exception:
+                currUrl = None
+            if currUrl == None or not self.cm.isValidUrl(currUrl):
                 currUrl = 'http://fake/'
         return self.cm.getFullUrl(url, currUrl)
 

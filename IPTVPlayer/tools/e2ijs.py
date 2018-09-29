@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDukPath, CreateTmpFile, rm, getDebugMode, GetJSCacheDir, \
                                                           ReadTextFile, WriteTextFile
