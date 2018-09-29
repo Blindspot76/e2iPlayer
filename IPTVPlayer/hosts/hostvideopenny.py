@@ -13,6 +13,9 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 import re
 import urllib
+import time
+from binascii import hexlify
+from hashlib import md5
 ###################################################
 
 def gettytul():
@@ -36,10 +39,17 @@ class VideoPenny(CBaseHostClass):
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE, 'cookie_items':{'retina':'1'}}
         self._getHeaders = None
         self.mainPageReceived = False
+        self.timestam = 0
         
     def _getPage(self, baseUrl, addParams = {}, post_data = None):
-        if addParams == {}:
-            addParams = dict(self.defaultParams)
+        if addParams == {}: addParams = dict(self.defaultParams)
+        
+        if 'cookie_items' in addParams:
+            timestamp = int(time.time())
+            if timestamp > self.timestam:
+                timestamp += 180
+                hash = hexlify(md5(str(timestamp)).digest())
+                addParams['cookie_items']['token'] = '%s,%s' % (timestamp, hash)
         
         addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
@@ -268,6 +278,7 @@ class VideoPenny(CBaseHostClass):
             params['header'] = dict(params['header'])
             params['header']['Referer'] = videoUrl.meta['Referer']
             params['max_data_size'] = 0
+            params['save_cookie'] = False
             sts, data = self.getPage(videoUrl, params)
             if not sts: return []
             videoUrl = strwithmeta(self.cm.meta['url'], videoUrl.meta)
@@ -281,7 +292,7 @@ class VideoPenny(CBaseHostClass):
         
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
         if self.MAIN_URL == None:
-            #rm(self.COOKIE_FILE)
+            rm(self.COOKIE_FILE)
             self.selectDomain()
 
         name     = self.currItem.get("name", '')

@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, MergeDicts
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, MergeDicts, GetJSScriptFile
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute_ext, is_js_cached
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
@@ -190,22 +190,31 @@ class CartoonHD(CBaseHostClass):
         except Exception:
             printExc()
 
+    def _updateDesc(self, cItem, data):
+        desc = []
+        descObj = self.getArticleContent(cItem, data)[0]
+        for item in descObj['other_info']['custom_items_list']:
+            desc.append(item[1])
+        desc = ' | '.join(desc) + '[/br]' + descObj['text']
+        return MergeDicts(cItem, {'desc':desc})
+
     def exploreItem(self, cItem):
         printDBG("CartoonHD.exploreItem")
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
+        cItem = self._updateDesc(cItem, data)
 
         self._addTrailer(cItem, '{0} - {1}'.format(cItem['title'], _('trailer')), data)
         linksTab = self.getLinksForVideo(cItem, data)
-        if linksTab:
-            self.addVideo(dict(cItem))
+        if linksTab: self.addVideo(dict(cItem))
 
     def listSeasons(self, cItem, nextCategory):
         printDBG("CartoonHD.listSeasons")
 
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
-        
+        cItem = self._updateDesc(cItem, data)
+
         data = self.cm.ph.getDataBeetwenMarkers(data, '<b>Season(s):</b>', '</div>', False)[1]
         data = re.compile('<a[^>]*?href="([^"]+?)"[^>]*?>([^>]+?)</a>').findall(data)
         for item in data:
@@ -213,12 +222,13 @@ class CartoonHD(CBaseHostClass):
             url = self.getFullUrl(item[0])
             params.update({'url':url, 'title':_("Season") + ' ' + item[1], 'show_title':cItem['title'], 'category':nextCategory})
             self.addDir(params)
-    
+
     def listEpisodes(self, cItem):
         printDBG("CartoonHD.listEpisodes")
 
         sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
         if not sts: return
+        cItem = self._updateDesc(cItem, data)
 
         showTitle = cItem.get('show_title', '')
 
@@ -464,12 +474,68 @@ class CartoonHD(CBaseHostClass):
         if self.cm.isValidUrl( videoUrl ):
             urlTab = self.up.getVideoLinkExt(videoUrl)
         return urlTab
+
+    def getArticleContent(self, cItem, data=None):
+        printDBG("CartoonHD.getArticleContent [%s]" % cItem)
+        retTab = []
+        itemsList = []
+
+        url = cItem.get('prev_url', cItem['url'])
+        if data == None:
+            self.tryTologin()
+            sts, data = self.cm.getPage(url, self.defaultParams)
+            if not sts: data = ''
+
+        tmp = self.cm.ph.getDataBeetwenNodes(data, ('<section', '>', 'info'), ('</section', '>'), False)[1]
+        title = self.cm.ph.getDataBeetwenMarkers(tmp, '<h1', '</h1>')[1]
+        eTtile = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(title, ('<span', '>', 'episode'), ('</span', '>'), False)[1])
+        if eTtile: 
+            title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenNodes(title, ('<span', '>', 'title'), ('</span', '>'), False)[1])
+            itemsList.append((_('Episode title'), eTtile))
+        else:
+            title = self.cleanHtmlStr(title)
+
+        keysMap = {'rat':_('PEGI'), 'dur':_('Duration'), 'dat':_('Year')}
+        raiting = []
+        tmp = self.cm.ph.getDataBeetwenMarkers(tmp, '<p', '</p>')[1]
+        tmp = self.cm.ph.rgetAllItemsBeetwenMarkers(tmp, '</span>', '<span')
+        for item in tmp:
+            key = self.cm.ph.getSearchGroups(item, '''class=['"]([^"^']+?)['"]''')[0]
+            value = self.cleanHtmlStr(item)
+            if key == '' or value == '': continue
+            if 'rating' in key:
+                raiting.append(value)
+            key = keysMap.get(key)
+            if not key: continue
+            itemsList.append((key, value))
+
+        if raiting:
+            itemsList.append((_('Raiting'), ' '.join(raiting)))
+
+        data = self.cm.ph.getDataBeetwenNodes(data, ('<section', '>', 'content'), ('</section', '>'), False)[1]
+        icon = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'poster'), ('</div', '>'), False)[1]
+        icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(icon, '''src=['"]([^"^']+?\.jpe?g(?:\?[^'^"]*?)?)['"]''')[0])
+
+        desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<p', '>', 'desc'), ('</p', '>'), False)[1] )
         
-    def getFavouriteData(self, cItem):
-        return cItem['url']
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<p', '</p>')
+        for item in data:
+            item = item.split('</b>', 1)
+            if len(item) != 2: continue
+            key = self.cleanHtmlStr(item[0])
+            value = []
+            item = self.cm.ph.getAllItemsBeetwenMarkers(item[1], '<a', '</a>')
+            for t in item:
+                t = self.cleanHtmlStr(t)
+                if t: value.append(t)
+            if key and value:
+                itemsList.append((key, ', '.join(value)))
+
+        if title == '': title = cItem['title']
+        if icon == '':  icon  = cItem.get('icon', self.DEFAULT_ICON_URL)
+        if desc == '':  desc  = cItem.get('desc', '')
         
-    def getLinksForFavourite(self, fav_data):
-        return self.getLinksForVideo({'url':fav_data})
+        return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':{'custom_items_list':itemsList}}]
 
     def tryTologin(self):
         printDBG('tryTologin start')
@@ -556,3 +622,9 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, CartoonHD(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
+
+    def withArticleContent(self, cItem):
+        if cItem.get('prev_url') or cItem.get('type') == 'video' or  cItem.get('category') in ('explore_item', 'list_seasons', 'list_episodes'):
+            return True
+        else:
+            return False
