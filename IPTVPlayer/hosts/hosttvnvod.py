@@ -10,6 +10,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG,
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher import aes_cbc, base
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
@@ -19,8 +20,6 @@ from Components.config import config, ConfigSelection, ConfigYesNo, getConfigLis
 import urllib
 import time
 import binascii
-try:    import simplejson as json
-except Exception: import json
 from os import urandom as os_urandom
 try:
     from hashlib import sha1
@@ -148,7 +147,7 @@ class TvnVod(CBaseHostClass):
                 return default
         except Exception:
             return default
-        return clean_html(u'%s' % v).encode('utf-8')
+        return clean_html('%s' % v)
         
     def _getJItemNum(self, item, key, default=0):
         v = item.get(key, None)
@@ -225,7 +224,7 @@ class TvnVod(CBaseHostClass):
         try:
             url = self.getBaseUrl(pl) + urlQuery
             sts, data = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
-            data = json.loads(data)
+            data = json_loads(data)
             
             if 'success' != data['status']:
                 printDBG("TvnVod.listsCategories status[%s]" % data['status'])
@@ -372,7 +371,7 @@ class TvnVod(CBaseHostClass):
         videoUrl = ''
         if len(url) > 0:
             if 'Android' in pl:
-                videoUrl = self._generateToken(url).encode('utf-8')
+                videoUrl = self._generateToken(url)
             elif 'Panasonic' in pl:
                 videoUrl = url
             else:
@@ -401,7 +400,7 @@ class TvnVod(CBaseHostClass):
             sts, data = self.cm.getPage(url, { 'header': self.getHttpHeader(pl) })
             if not sts: continue
             try:
-                data = json.loads(data)
+                data = json_loads(data)
                 if 'success' == data['status']:
                     data = data['item']
                     # videoTime = 0
@@ -439,7 +438,7 @@ class TvnVod(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         try:
-            cItem = byteify(json.loads(fav_data))
+            cItem = json_loads(fav_data)
             return self.getLinks(cItem['id'])
         except Exception: printExc()
         return self.getLinks(fav_data)

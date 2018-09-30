@@ -8,6 +8,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSelOneLink, printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 ###################################################
 
 ###################################################
@@ -18,8 +19,6 @@ from datetime import datetime, timedelta, date
 import re
 import urllib
 import time
-try:    import simplejson as json
-except Exception: import json
 ###################################################
 
 
@@ -322,7 +321,7 @@ class TvpVod(CBaseHostClass):
         if not sts: return
         try:
             #date.fromtimestamp(item['release_date']['sec']).strftime('%H:%M')
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             data['items'].sort(key=lambda item: item['release_date_hour'])
             for item in data['items']:
                 if not item.get('is_live', False): continue 
@@ -420,7 +419,7 @@ class TvpVod(CBaseHostClass):
             
     def mapHoeverItem(self, cItem, item, rawItem, nextCategory):
         try:
-            item = byteify(json.loads(item))
+            item = json_loads(item)
             title = self.getJItemStr(item, 'title')
             icon = self._getFullUrl(self.getJItemStr(item, 'image'))
             tmp = []
@@ -715,16 +714,16 @@ class TvpVod(CBaseHostClass):
             sts, data = self.cm.getPage( 'http://www.tvp.pl/shared/cdn/tokenizer_v2.php?mime_type=video%2Fmp4&object_id=' + asset_id, self.defaultParams)
             printDBG("%s -> [%s]" % (sts, data))
             try:
-                data = json.loads( data )
+                data = json_loads( data )
                 
                 def _getVideoLink(data, FORMATS):
                     videoTab = []
                     for item in data['formats']:
                         if item['mimeType'] in FORMATS.keys():
-                            formatType = FORMATS[item['mimeType']].encode('utf-8')
+                            formatType = FORMATS[item['mimeType']]
                             format = self.REAL_FORMATS.get(formatType, '')
                             name = self.getFormatFromBitrate( str(item['totalBitrate']) ) + '\t ' + formatType
-                            url = item['url'].encode('utf-8')
+                            url = item['url']
                             if 'm3u8' == formatType:
                                 videoTab.extend( getDirectM3U8Playlist(url, checkExt=False, variantCheck=False) )
                             else:
@@ -755,7 +754,7 @@ class TvpVod(CBaseHostClass):
             sts, data = self.cm.getPage( 'https://apivod.tvp.pl/tv/video/%s/default/default?device=android' % asset_id, params)
             printDBG("%s -> [%s]" % (sts, data))
             try:
-                data = byteify(json.loads( data ), '', True)
+                data = json_loads(data, '', True)
                 for item in data['data']:
                     if 'formats' in item:
                         data = item
@@ -804,7 +803,7 @@ class TvpVod(CBaseHostClass):
             if premium: self.loggedIn, msg = self.tryTologin()
         
         try:
-            cItem = byteify(json.loads(fav_data))
+            cItem = json_loads(fav_data)
             links = self.getLinksForVideo(cItem)
         except Exception:
             cItem = {'url':fav_data}
@@ -819,12 +818,12 @@ class TvpVod(CBaseHostClass):
         params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem.get('desc', ''), 'icon':cItem.get('icon', '')}
         if 'list_episodes' in cItem:
             params['list_episodes'] = cItem['list_episodes']
-        return json.dumps(params) 
+        return json_dumps(params) 
         
     def setInitListFromFavouriteItem(self, fav_data):
         printDBG('TvpVod.setInitListFromFavouriteItem')
         try:
-            params = byteify(json.loads(fav_data))
+            params = json_loads(fav_data)
         except Exception: 
             params = {}
             printExc()

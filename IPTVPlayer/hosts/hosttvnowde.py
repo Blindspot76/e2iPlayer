@@ -7,6 +7,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getMPDLinksWithMeta
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
@@ -15,8 +16,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 import urlparse
 import urllib
 from datetime import datetime, date, timedelta
-try:    import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
 ###################################################
 
@@ -88,7 +87,10 @@ class TVNowDE(CBaseHostClass):
         
     def getStr(self, item, key):
         value = item.get(key, None)
-        if value == None: value = ''
+        if value == None:
+            value = ''
+        elif type('') == type(value):
+            return value
         return str(value)
         
     def listChannelsCats(self, cItem, nextCategory):
@@ -97,7 +99,7 @@ class TVNowDE(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return 
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for item in data['items']:
                 if not item.get('active', True): continue
                 #url = '/channels/{0}?fields=%5B%22*%22,%22movies%22,%5B%22id%22,%22title%22,%22episode%22,%22broadcastStartDate%22,%22blockadeText%22,%22free%22,%22replaceMovieInformation%22,%22seoUrl%22,%22pictures%22,%5B%22*%22%5D,%22packages%22,%5B%22*%22%5D,%22manifest%22,%5B%22*%22%5D,%22format%22,%5B%22id%22,+%22station%22,+%22title%22,%22seoUrl%22,%22defaultDvdImage%22%5D%5D%5D'.format(item['id'])
@@ -172,7 +174,7 @@ class TVNowDE(CBaseHostClass):
                 sts, data = self.getPage(url)
                 if not sts: return 
                 try:
-                    data = byteify(json.loads(data))
+                    data = json_loads(data)
                     total += len(data['items'])
                     for item in data['items']:  
                         self.cacheAllAZ.append(item)
@@ -250,8 +252,8 @@ class TVNowDE(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return 
         try:
-            data = byteify(json.loads(data))
-            for item in data['items']:  
+            data = json_loads(data)
+            for item in data['items']:
                 if not config.plugins.iptvplayer.tvnowde_show_paid_items.value and not item.get('hasFreeEpisodes', False): 
                     continue
                 icon = self.getStr(item, 'defaultDvdImage')
@@ -282,7 +284,7 @@ class TVNowDE(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return 
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             if data.get('tabSeason', False):
                 for item in data['formatTabs']['items']:
                     if not item.get('visible', False): continue
@@ -340,7 +342,7 @@ class TVNowDE(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return 
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             subKey = cItem.get('sub_key', '')
             if subKey != '': data = data[subKey]
             for item in data['items']:
@@ -404,7 +406,7 @@ class TVNowDE(CBaseHostClass):
                 url = self.getFullUrl('/movies/{0}/{1}?fields=*,format,files,manifest,breakpoints,paymentPaytypes,trailers,packages&station={2}'.format(seoUrlItem, seoUrlFormat, station))
                 sts, data = self.getPage(url)
                 if not sts: return []
-                try: data = byteify(json.loads(data))
+                try: data = json_loads(data)
                 except Exception: data = 'error'
                 
                 if 'error' in data: data = cItem['orig_item']
@@ -458,36 +460,13 @@ class TVNowDE(CBaseHostClass):
             urlTab = self.up.getVideoLinkExt(videoUrl)
         
         return urlTab
-    
+
     def getFavouriteData(self, cItem):
         printDBG('TVNowDE.getFavouriteData')
         params = dict(cItem)
         params.pop('dashclear', None)
         return json.dumps(params) 
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('TVNowDE.getLinksForFavourite')
-        if self.MAIN_URL == None:
-            self.selectDomain()
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('TVNowDE.setInitListFromFavouriteItem')
-        if self.MAIN_URL == None:
-            self.selectDomain()
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-    
+
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -497,7 +476,7 @@ class TVNowDE(CBaseHostClass):
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
         
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+        printDBG( "handleService: || name[%s], category[%s] " % (name, category) )
         self.currList = []
         
     #MAIN MENU

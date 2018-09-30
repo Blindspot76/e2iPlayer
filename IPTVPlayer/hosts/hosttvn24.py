@@ -5,13 +5,12 @@
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, ArticleContent, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-try:    import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, getConfigListEntry
 ###################################################
 
@@ -38,12 +37,14 @@ class Tvn24(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'SeansikTV'})
-        
+
     def getStr(self, v, default=''):
         if None == v:
-            return default
-        return v.encode('utf-8')
-        
+            v = default
+        elif type(v) == type(u''):
+            v = v.encode('utf-8')
+        return v
+
     def converUrl(self, url):
         if "http://" == config.plugins.iptvplayer.TVN24httpType.value and url.startswith("https://"):
             return "http" + url[5:]
@@ -81,7 +82,7 @@ class Tvn24(CBaseHostClass):
         printDBG("listPlaylist url[%s]" % (url))
         try:
             sts,data = self.cm.getPage( url, {'host' : Tvn24.HOST} )
-            data = json.loads( data )
+            data = json_loads( data )
             for item in data:
                 title  = self.getStr( item.get('title', '') )
                 plot   = self.getStr( item.get('description', '') )
@@ -143,7 +144,7 @@ class Tvn24(CBaseHostClass):
                 self.addDir(params)
         try:
             sts,data = self.cm.getPage( url, {'host' : Tvn24.HOST} )
-            data = json.loads( data )
+            data = json_loads( data )
             if pagination:
                 if int(data['pageCount']) > int(data['currentPageNumber']):
                     nextPage = str(int(page) + 1)
@@ -182,7 +183,7 @@ class Tvn24(CBaseHostClass):
         nextPage = None
         try:
             sts,data = self.cm.getPage( url, {'host' : Tvn24.HOST} )
-            data = json.loads( data )
+            data = json_loads( data )
             if pagination:
                 if int(data['pageCount']) > int(data['currentPageNumber']):
                     nextPage = str(int(page) + 1)
@@ -243,7 +244,7 @@ class Tvn24(CBaseHostClass):
             try:
                 url = Tvn24.MAIN_URL + '/articles/' + Tvn24.API_KEY + '/%s,0,1,10' % articleID
                 sts,data = self.cm.getPage( url, {'host' : Tvn24.HOST} )
-                data = json.loads( data )
+                data = json_loads( data )
                 data = data['getArticleDetail']
                 item = {}
                 item['title']  = self.getStr( data.get('title',     ''), '')
@@ -373,8 +374,8 @@ class IPTVHost(CHostBase):
                 if '' != url:
                     hostLinks.append(CUrlItem("Link", url, 1))
                 
-            title       =  clean_html( cItem.get('title', '').decode("utf-8")).encode("utf-8" )
-            description =  clean_html( cItem.get('plot', '').decode("utf-8")).encode("utf-8" )
+            title       =  clean_html( cItem.get('title', '') )
+            description =  clean_html( cItem.get('plot', '') )
             icon        =  cItem.get('icon', '')
             
             hostItem = CDisplayListItem(name = title,

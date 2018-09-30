@@ -100,7 +100,7 @@ class IPTVSetupImpl:
         self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/_subparser.so')]
 
         # e2icjson
-        self.e2icjsonVersion = 10201 #'1.2.1' int(z[0]) * 10000 + int(z[1]) * 100 + int(z[2])
+        self.e2icjsonVersion = 10202 #'1.2.2' int(z[0]) * 10000 + int(z[1]) * 100 + int(z[2])
         self.e2icjsonPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/e2icjson/e2icjson.so')]
 
         # hlsdl
