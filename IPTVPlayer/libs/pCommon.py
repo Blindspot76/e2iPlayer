@@ -91,6 +91,185 @@ class MultipartPostHandler(urllib2.BaseHandler):
     
     https_request = http_request
 
+class ph:
+    START_E=1 # embeded in data
+    START_S=2 # as separete item in the return list
+    END_E=4
+    END_S=8
+    IGNORECASE=16
+    CHECK_ALL=32
+
+    @staticmethod
+    def all(tab, data, start, end):
+        for it in tab:
+            if data.find(it, start, end) == -1:
+                return False
+        return True
+
+    @staticmethod
+    def any(tab, data, start, end):
+        for it in tab:
+            if data.find(it, start, end) != -1:
+                return True
+        return False
+
+    @staticmethod
+    def _check(positiv_patterns, positiv_method, negative_patterns, negative_method, data, start, end):
+        if positiv_patterns and not positiv_method(positiv_patterns, data, start, end):
+            return False
+
+        if negative_patterns and negative_method(negative_patterns, data, start, end):
+            return False
+
+        return True
+
+    @staticmethod
+    def getall(data, start, end=('',), flags=START_E|END_E, max_items=-1):
+
+        start = start if isinstance(start, tuple) or isinstance(start, list) else (start,)
+        end = start if isinstance(end, tuple) or isinstance(end, list) else (end,)
+
+        if len(start) < 1 or len(end) < 1:
+            return []
+
+        itemsTab = []
+        default_check = ph.all if flags & ph.CHECK_ALL else ph.any
+        in1P_check = default_check
+        nin1P_check = default_check
+        in2P_check = default_check
+        nin2P_check = default_check
+
+        n1S = start[0]
+        n1E = start[1] if len(start) > 1 else ''
+        if len(start) > 2:
+            in1P = start[2] if isinstance(start[2], tuple) or isinstance(start[2], list) else (start[2],)
+        else:
+            in1P = []
+
+        in1Pop = ph.any
+        if len(in1P) > 1 and in1P[-1]:
+            in1Pop = ph.any
+
+        if len(start) > 3:
+            nin1P = start[3] if isinstance(start[3], tuple) or isinstance(start[3], list) else (start[3],)
+        else:
+            nin1P = []
+
+        n2S = end[0]
+        n2E = end[1] if len(end) > 1 else ''
+
+        if len(end) > 2:
+            in2P = end[2] if isinstance(end[2], tuple) or isinstance(end[2], list) else (end[2],)
+        else:
+            in2P = []
+        if len(end) > 3:
+            nin2P = end[3] if isinstance(end[3], tuple) or isinstance(end[3], list) else (end[3],)
+        else:
+            nin2P = []
+
+        lastIdx = 0
+        search = 1
+        
+        if not (flags & ph.IGNORECASE):
+            sData = data
+        else:
+            sData = data.lower()
+            n1S = n1S.lower()
+            n1E = n1E.lower()
+            in1P = [x.lower() for x in in1P]
+            nin1P = [x.lower() for x in nin1P]
+            n2S = n2S.lower()
+            n2E = n2E.lower()
+            in2P = [x.lower() for x in in2P]
+            nin2P = [x.lower() for x in nin2P]
+
+        while True:
+            if search == 1:
+                # node 1 - start
+                idx1 = sData.find(n1S, lastIdx)
+                if -1 == idx1: return itemsTab
+                lastIdx = idx1 + len(n1S)
+                idx2 = sData.find(n1E, lastIdx)
+                if -1 == idx2: return itemsTab
+                lastIdx = idx2 + len(n1E)
+
+                if not ph._check(in1P, in1P_check, nin1P, nin1P_check, sData, idx1 + len(n1S), idx2):
+                    continue
+
+                search = 2
+            else:
+                # node 2 - end
+                tIdx1 = sData.find(n2S, lastIdx)
+                if -1 == tIdx1: return itemsTab
+                lastIdx = tIdx1 + len(n2S)
+                tIdx2 = sData.find(n2E, lastIdx)
+                if -1 == tIdx2: return itemsTab
+                lastIdx = tIdx2 + len(n2E)
+                if not ph._check(in2P, in2P_check, nin2P, nin2P_check, sData, tIdx1 + len(n2S), tIdx2):
+                    continue
+
+                if flags & ph.START_S:
+                    itemsTab.append(data[idx1:idx2 + len(n1E)])
+
+                idx1 = idx1 if flags & ph.START_E else idx2 + len(n1E)
+                idx2 = tIdx2 + len(n2E) if flags & ph.END_E else tIdx1
+
+                itemsTab.append(data[idx1:idx2])
+
+                if flags & ph.END_S:
+                    itemsTab.append(data[tIdx1:tIdx2 + len(n2E)])
+
+                search = 1
+
+            if max_items > 0 and len(itemsTab) == max_items:
+                break
+        return itemsTab
+
+    @staticmethod
+    def getdata(data, start, end=('',), flags=START_E|END_E):
+        ret = ph.getall(data, start, end, flags, 1)
+        if len(ret): return True, ret[0]
+        else: return False, ''
+
+    @staticmethod
+    def search(data, pattern, flags=0, max_items=1):
+        tab = []
+        reFlags = re.IGNORECASE if flags & ph.IGNORECASE else 0
+        match = re.search(pattern, data, reFlags)
+
+        for idx in range(max_items):
+            try:    value = match.group(idx + 1)
+            except Exception: value = ''
+            tab.append(value)
+        return tab
+
+    @staticmethod
+    def getattr(data, attrmame, flags=0):
+        if flags & ph.IGNORECASE:
+            sData = data.lower() 
+            m = '%s=' % attrmame.lower() 
+        else:
+            sData = data
+            m = '%s=' % attrmame
+        sidx = 0
+        while True:
+            sidx = sData.find(m, sidx)
+            if sidx == -1:
+                return ''
+            if data[sidx - 1] in ('\t', ' ', '\n', '\r'):
+                break
+            sidx += len(m)
+        sidx += len(m)
+        z = data[sidx]
+        if z not in ('"', "'"):
+            return ''
+        eidx = sidx + 1
+        while eidx < len(data):
+            if data[eidx] == z:
+                return data[sidx+1:eidx]
+            eidx += 1
+        return ''
+
 class CParsingHelper:
     @staticmethod
     def listToDir(cList, idx):
