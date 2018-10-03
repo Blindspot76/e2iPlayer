@@ -106,7 +106,8 @@ class CYTSignAlgoExtractor:
         decSignatures = []
         code = ''
         jsname = 'ytsigndec'
-        if not is_js_cached(jsname, playerUrl):
+        jshash = 'hash5_' + playerUrl.split('://', 1)[-1]
+        if not is_js_cached(jsname, jshash):
         
             # get main function
             sts, self.playerData = self.cm.getPage(playerUrl)
@@ -114,9 +115,9 @@ class CYTSignAlgoExtractor:
 
             t1 = time.time()
             code = []
-            name = self._findMainFunctionName()
+            mainFunctionName = self._findMainFunctionName()
 
-            mainFunction = self._findFunction(name)
+            mainFunction = self._findFunction(mainFunctionName)
             code.append(mainFunction)
 
             funNames = self._getAllLocalSubFunNames(mainFunction)
@@ -129,7 +130,7 @@ class CYTSignAlgoExtractor:
                 obj = self._findObject(objName, methods)
                 code.insert(0, obj)
 
-            code.insert(0, 'e2i_dec=[];for (var idx in e2i_enc){e2i_dec.push(MK(e2i_enc[idx]));};print(JSON.stringify(e2i_dec));')
+            code.append('e2i_dec=[];for (var idx in e2i_enc){e2i_dec.push(%s(e2i_enc[idx]));};print(JSON.stringify(e2i_dec));' % mainFunctionName)
             code = '\n'.join(code)
             printDBG( "---------------------------------------" )
             printDBG( "|    ALGO FOR SIGNATURE DECRYPTION    |" )
@@ -137,10 +138,10 @@ class CYTSignAlgoExtractor:
             printDBG( code )
             printDBG( "---------------------------------------" )
         else:
-            printDBG("USE ALGO FROM CACHE: %s" % playerUrl)
+            printDBG("USE ALGO FROM CACHE: %s" % jshash)
 
         js_params = [{'code':'e2i_enc = %s;' % json_dumps(encSignatures)}]
-        js_params.append({'name':jsname, 'code':code, 'hash':playerUrl})
+        js_params.append({'name':jsname, 'code':code, 'hash':jshash})
         ret = js_execute_ext( js_params )
         if ret['sts'] and 0 == ret['code']:
             try:
@@ -500,13 +501,6 @@ class YoutubeIE(object):
         sts, video_webpage = self.cm.getPage(url)
         if not sts: raise ExtractorError('Unable to download video webpage')
 
-        # Attempt to extract SWF player URL
-        mobj = re.search(r'swfConfig.*?"(http:\\/\\/.*?watch.*?-.*?\.swf)"', video_webpage)
-        if mobj is not None:
-            player_url = re.sub(r'\\(.)', r'\1', mobj.group(1))
-        else:
-            player_url = ''
-
         # Get video info
         if re.search(r'player-age-gate-content">', video_webpage) is not None:
             self.report_age_confirmation()
@@ -607,21 +601,21 @@ class YoutubeIE(object):
                     if not supported:
                         continue
 
-                    url_item = {'url':_unquote(url_data['url'])}
+                    url_item = {'url':_unquote(url_data['url'], None)}
                     if 'sig' in url_data:
                         signature = url_data['sig']
                         url_item['url'] += '&signature=' + signature
                     elif 's' in url_data:
                         url_item['esign'] = url_data['s']
                         url_item['url'] += '&signature={0}'
-                    if not 'ratebypass' in url:
+                    if not 'ratebypass' in url_item['url']:
                         url_item['url'] += '&ratebypass=yes'
                     url_map[url_data['itag']] = url_item
             video_url_list = self._get_video_url_list(url_map)
    
         if video_info.get('hlsvp') and not video_url_list:
             is_m3u8 = 'yes'
-            manifest_url = _unquote(video_info['hlsvp'])
+            manifest_url = _unquote(video_info['hlsvp'], None)
             url_map = self._extract_from_m3u8(manifest_url, video_id)
             video_url_list = self._get_video_url_list(url_map)
         
@@ -637,6 +631,7 @@ class YoutubeIE(object):
 
         if len(signatures):
             # decrypt signatures
+            printDBG("signatures: %s" % signatures)
             playerUrl = ''
             tmp = ph.find(video_webpage, ('<script', '>', 'player/base'))[1]
             playerUrl = ph.getattr(tmp, 'src')
@@ -647,10 +642,12 @@ class YoutubeIE(object):
                         break
             playerUrl = self.cm.getFullUrl(playerUrl.replace('\\', ''), self.cm.meta['url'])
             if playerUrl:
-                signatures = CYTSignAlgoExtractor(self.cm).decryptSignatures(signatures, playerUrl)
+                decSignatures = CYTSignAlgoExtractor(self.cm).decryptSignatures(signatures, playerUrl)
                 if len(signatures) == len(signItems):
                     for idx in range(len(signItems)):
-                        signItems[idx]['url'] = signItems[idx]['url'].format(signatures[idx])
+                        signItems[idx]['url'] = signItems[idx]['url'].format(decSignatures[idx])
+                else:
+                    return []
 
         if isGoogleDoc:
             cookieHeader = self.cm.getCookieHeader(COOKIE_FILE)
@@ -679,7 +676,7 @@ class YoutubeIE(object):
                 'format':   video_format,
                 'thumbnail':    '',
                 'duration':     video_duration,
-                'player_url':   player_url,
+                'player_url':   '',
                 'm3u8'      :   is_m3u8,
             })
             
