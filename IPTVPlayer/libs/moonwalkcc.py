@@ -2,13 +2,14 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
@@ -21,8 +22,6 @@ import urllib
 from binascii import unhexlify
 from urlparse import urlparse, parse_qsl
 from Components.config import config, ConfigSelection, ConfigYesNo
-try: import json
-except Exception: import simplejson as json
 ###################################################
 
 ###################################################
@@ -116,13 +115,13 @@ class MoonwalkParser():
         if ret['sts'] and 0 == ret['code']:
             printDBG(ret['data'])
             try:
-                data = byteify( json.loads(ret['data']) )
+                data = json_loads(ret['data'])
                 baseUrl = data['url']
                 if baseUrl.startswith('/'):
                     baseUrl = self.baseUrl + baseUrl
                 
                 for itemKey in data['data'].keys():
-                    tmp = byteify( json.loads(data['data'][itemKey]) )
+                    tmp = json_loads(data['data'][itemKey])
                     decrypted = tmp['data']['data']
                     key       = tmp['password']['data']
                     iv        = tmp['salt']['iv']['data']
@@ -162,14 +161,14 @@ class MoonwalkParser():
             if not sts: return []
             
             try: 
-                data = byteify( json.loads(data) )
+                data = json_loads(data)
                 data = data['mans']
             except Exception: printExc()
             try:
                 mp4Url = strwithmeta(data["mp4"], {'User-Agent':'Mozilla/5.0', 'Referer':url})
                 sts, tmp = self.cm.getPage(mp4Url, {'User-Agent':'Mozilla/5.0', 'Referer':url})
                 tmpTab = []
-                tmp = byteify(json.loads(tmp))
+                tmp = json_loads(tmp)
                 printDBG(tmp)
                 for key in tmp:
                     mp4Url = tmp[key]

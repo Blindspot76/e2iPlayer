@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, by
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
@@ -16,8 +17,6 @@ import re
 import urllib
 import base64
 from datetime import datetime, timedelta
-try: import json
-except Exception: import simplejson
 ############################################
 
 ###################################################
@@ -69,7 +68,7 @@ class MLBStreamTVApi(CBaseHostClass):
             if not self.gameSchedule:
                 try:
                     sts, data = self.cm.getPage('https://statsapi.mlb.com/api/v1/schedule?sportId=1')
-                    data = json.loads(data)
+                    data = json_loads(data)
                     for item in data['dates']:
                         for gameItem in item['games']:
                             key = (gameItem['teams']['home']['team']['name'].replace(' ', ''), gameItem['teams']['away']['team']['name'].replace(' ', ''))
@@ -95,7 +94,7 @@ class MLBStreamTVApi(CBaseHostClass):
             sDesc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'entry-content'), ('</', '>'), False)[1] )
             data = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('var\s+?timezoneJSON\s*?=\s*?\['), re.compile('\];'), False)[1]
             try:
-                data = byteify(json.loads('[%s]' % data))
+                data = json_loads('[%s]' % data)
                 for sData in data:
                     subItems = []
                     sTitle = ''
@@ -180,9 +179,9 @@ class MLBStreamTVApi(CBaseHostClass):
         tmp = self.cm.ph.getDataBeetwenMarkers(data, 'unescape(', ')', False)[1].strip()
         data = urllib.unquote(data[1:-1]) + data
         
-        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG("+++")
         printDBG(data)
-        printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        printDBG("+++")
         
         source  = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?source['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
         replace = self.cm.ph.getSearchGroups(data, '''[\s\{\,]['"]?replace['"]?\s*:\s*['"](https?://[^'^"]+?)['"]''', 1, True)[0]
@@ -203,7 +202,7 @@ class MLBStreamTVApi(CBaseHostClass):
             for idx in range(len(hlsTab)):
                 hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'iptv_m3u8_key_uri_replace_old':replace, 'iptv_m3u8_key_uri_replace_new':keyurl})
         elif len(replaceTab):
-            scriptUrl = '|' + base64.b64encode(json.dumps(replaceTab).encode('utf-8'))
+            scriptUrl = '|' + base64.b64encode(json_loads(replaceTab))
         elif rewrittenUrl != '':
             scriptUrl = '<proxy>' + rewrittenUrl
         elif '/js/nhl.js' in data:

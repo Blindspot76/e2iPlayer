@@ -1,16 +1,16 @@
 ﻿# -*- coding: utf-8 -*-
-# Based on (root)/trunk/xbmc-addons/src/plugin.video.polishtv.live/hosts/ @ 419 - Wersja 605
 
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, SetTmpCookieDir, rm, UsePyCurl
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsHttpsCertValidationEnabled, byteify, GetDefaultLang, rm, UsePyCurl
 from Plugins.Extensions.IPTVPlayer.components.asynccall import IsMainThread, IsThreadTerminated, SetThreadKillable
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs import ph
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 # FOREIGN import
 ###################################################
@@ -20,21 +20,16 @@ import base64
 try: import ssl
 except Exception: pass
 import re
-import string
 import time
-import htmlentitydefs
 import cookielib
 import unicodedata
 try: import pycurl
 except Exception: pass
-try:    import json
-except Exception: import simplejson as json
 try:
     try: from cStringIO import StringIO
     except Exception: from StringIO import StringIO 
     import gzip
 except Exception: pass
-from Tools.Directories import fileExists
 from urlparse import urljoin, urlparse, urlunparse
 from binascii import hexlify
 ###################################################
@@ -404,7 +399,7 @@ class common:
             sts, data = self.getPage('http://ip-api.com/json')
             if sts:
                 try:
-                    self.geolocation['countryCode'] = byteify(json.loads(data))['countryCode']
+                    self.geolocation['countryCode'] = json_loads(data)['countryCode']
                 except Exception:
                     printExc()
         return self.geolocation.get('countryCode', '').lower()
@@ -1001,7 +996,7 @@ class common:
                         printDBG(jscode)
                         printDBG("++++++++")
                         ret = js_execute( jscode )
-                        decoded = byteify(json.loads(ret['data'].strip()))
+                        decoded = json_loads(ret['data'].strip())
                         
                         verData = self.ph.getDataBeetwenReMarkers(verData, re.compile('<form[^>]+?id="challenge-form"'), re.compile('</form>'), False)[1]
                         printDBG(">>")

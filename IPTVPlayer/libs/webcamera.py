@@ -4,39 +4,24 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
 import urllib
-import random
-import string
-try:    import json
-except Exception: import simplejson as json
-############################################
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
 ###################################################
 
 ###################################################
 # Config options for HOST
 ###################################################
-
 def GetConfigList():
     optionList = []
     return optionList
-    
 ###################################################
 
 class WebCameraApi(CBaseHostClass):
@@ -115,7 +100,7 @@ class WebCameraApi(CBaseHostClass):
                     cItem['more_url'] = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]*?/ajax/[^'^"]+?)['"]''')[0]
                 else:
                     try:
-                        data = byteify(json.loads(data), '', True)['html']
+                        data = json_loads(data, '', True)['html']
                     except Exception:
                         printExc()
                         return []

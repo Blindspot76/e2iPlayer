@@ -4,34 +4,28 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, GetCookieDir, byteify, GetPyScriptCmd, GetPluginDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2, SAWLIVETV_decryptPlayerParams
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
 import urllib
 import random
-import string
 import base64
-try:    import json
-except Exception: import simplejson as json
 from time import time
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
-from binascii import hexlify, unhexlify, a2b_hex
-from hashlib import md5, sha256
-from os import path as os_path
-from datetime import datetime, timedelta
+from binascii import  a2b_hex
+from hashlib import md5
+from datetime import datetime
 ############################################
 
 ###################################################
@@ -66,10 +60,10 @@ class Sport365LiveApi:
     def getPage(self, url, params={}, post_data=None):
         sts, data = self.cm.getPage(url, params, post_data)
         if sts:
-            printDBG("-------------------------------------------------------")
+            printDBG("---")
             printDBG("url: %s" % url)
             printDBG(data)
-            printDBG("-------------------------------------------------------")
+            printDBG("---")
         return sts, data
         
     def getFullUrl(self, url):
@@ -103,7 +97,7 @@ class Sport365LiveApi:
             printExc()
             id = '403'
             
-        printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> id[%s]\n" % id)
+        printDBG(">> id[%s]\n" % id)
         xz = str(int(time() * 1000)) + id + str(int(random.random()*1000)) + str(2 * int(random.random()*4)) + str(num)
         xz = base64.b64encode(xz)
         return 'MarketGidStorage=%s; ' % urllib.quote('{"0":{"svspr":"%s","svsds":%s,"TejndEEDj":"%s"},"C%s":{"page":1,"time":%s}}' % (referer, num, xz, id, int(time() * 100)))
@@ -282,7 +276,7 @@ class Sport365LiveApi:
                     ret = js_execute( jscode )
                     if ret['sts'] and 0 == ret['code']:
                         decoded = ret['data'].strip()
-                        aes = byteify(json.loads(decoded))['aes']
+                        aes = json_loads(decoded)['aes']
                 except Exception:
                     printExc()
                 if aes != '':
@@ -326,9 +320,9 @@ class Sport365LiveApi:
                         if aes == '':
                             funname = self.cm.ph.getSearchGroups(tmpData, 'CryptoJS\.AES\.decrypt\([^\,]+?\,([^\,]+?)\,')[0].strip()
                             if funname != '':
-                                printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                                printDBG("ZZZZZZZZZZZZZ")
                                 printDBG("FUN NAME: [%s]" % funname)
-                                printDBG("ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+                                printDBG("ZZZZZZZZZZZZZ")
                                 tmp = self.cm.ph.getDataBeetwenMarkers(tmpData, 'function %s' % funname, '}')[1]
                                 try: aes = self.cm.ph.getSearchGroups(tmp, '"([^"]+?)"')[0].encode('utf-8')
                                 except Exception: printExc()
@@ -349,36 +343,34 @@ class Sport365LiveApi:
         
     def getVideoLink(self, cItem):
         printDBG("Sport365LiveApi.getVideoLink")
-        
+
         if Sport365LiveApi.CACHE_AES_PASSWORD != '':
             tries = 2
         else:
             tries = 1
-        
+
         urlsTab = []
         for checkIdx in range(tries):
             if checkIdx > 0:
                 aes = self.getAesPassword(cItem, True)
             else:
                 aes = self.getAesPassword(cItem)
-            
-            
+
             if aes == '': 
                 return []
-            
-            #printDBG(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> [%s]" % aes)
+
             try:
                 linkData   = base64.b64decode(cItem['link_data'])
-                linkData   = byteify(json.loads(linkData))
+                linkData   = json_loads(linkData)
                 
                 ciphertext = base64.b64decode(linkData['ct'])
                 iv         = a2b_hex(linkData['iv'])
                 salt       = a2b_hex(linkData['s'])
-                
+
                 playerUrl = self.cryptoJS_AES_decrypt(ciphertext, aes, salt)
                 printDBG(playerUrl)
-                playerUrl = byteify(json.loads(playerUrl))
-                
+                playerUrl = json_loads(playerUrl)
+
                 if not playerUrl.startswith('http'): 
                     continue
                 sts, data = self.getPage(playerUrl, self.http_params)
@@ -389,8 +381,8 @@ class Sport365LiveApi:
                 urlsTab = self.up.getVideoLinkExt(strwithmeta(playerUrl, {'aes_key':aes}))
                 if len(urlsTab):
                     break
-                
+
             except Exception:
                 printExc()
-            
+
         return urlsTab

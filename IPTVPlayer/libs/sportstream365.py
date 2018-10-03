@@ -2,9 +2,9 @@
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, MergeDicts, GetDefaultLang
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, GetDefaultLang
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
@@ -12,16 +12,7 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
 ###################################################
 from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
 from datetime import datetime, timedelta
-try: import json
-except Exception: import simplejson
 ############################################
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
-###################################################
 
 ###################################################
 # Config options for HOST
@@ -122,7 +113,7 @@ class SportStream365Api(CBaseHostClass):
                     sts, data = self.cm.getPage(url, MergeDicts(self.defaultParams, {'header':self.AJAX_HEADER, 'raw_post_data':True}), post_data='')
                     if not sts: return []
                     
-                    data = byteify(json.loads(data))
+                    data = json_loads(data)
                     uri = 'ws:' + self.getFullUrl('/signcon?id=').split(':', 1)[-1] + data['connectionId']
                     
                     printDBG("URI: %s" % uri)
@@ -140,7 +131,7 @@ class SportStream365Api(CBaseHostClass):
                             break
                     ws1.close()
                     try:
-                        data = byteify(json.loads(data.split('\x1E', 1)[0]))
+                        data = json_loads(data.split('\x1E', 1)[0])
                     except Exception:
                         printExc()
                         continue
@@ -160,7 +151,7 @@ class SportStream365Api(CBaseHostClass):
                     else:
                         return parseInt(x['FirstGameId']) - parseInt(y['FirstGameId'])
                 
-                data = byteify(json.loads(data['arguments'][0]))['Value']
+                data = json_loads(data['arguments'][0])['Value']
                 data.sort(cmp = cmp) #key = lambda item: (parseInt(item['SportId']), item['Liga'], parseInt(item['FirstGameId']))
                 printDBG(data)
                 for item in data:

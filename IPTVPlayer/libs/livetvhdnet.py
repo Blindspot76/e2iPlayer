@@ -6,40 +6,24 @@
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
-from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 import re
 import urllib
-import random
-import string
-try:    import json
-except Exception: import simplejson as json
 ############################################
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
-###################################################
 
 ###################################################
 # Config options for HOST
 ###################################################
-
 def GetConfigList():
     optionList = []
     return optionList
-    
 ###################################################
 
 class LivetvhdNetApi(CBaseHostClass):
@@ -91,7 +75,7 @@ class LivetvhdNetApi(CBaseHostClass):
                     
                 sts, data = self.cm.getPage('https://livetvhd.net/api/categories')
                 if not sts: return []
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 for item in data:
                     params = dict(cItem)
                     params.update({'init_list':False, 'url':'https://livetvhd.net/api/videos/category/' + item['seo_name'], 'title':self.cleanHtmlStr(item['name'])})
@@ -99,7 +83,7 @@ class LivetvhdNetApi(CBaseHostClass):
             else:
                 sts, data = self.cm.getPage(cItem['url'])
                 if not sts: return []
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 if 'videos' in data: data = data['videos']
                 for item in data:
                     url   = item['url']

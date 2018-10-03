@@ -4,11 +4,9 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
-from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute_ext, is_js_cached
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, GetCookieDir, ReadTextFile, WriteTextFile, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, GetCookieDir, ReadTextFile, WriteTextFile
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, ph
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
@@ -18,11 +16,9 @@ from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 from binascii import hexlify
 from hashlib import md5
-import time
-import re
 import urllib
-from datetime import timedelta, datetime
-from Components.config import config, ConfigText, ConfigSelection, getConfigListEntry
+from datetime import datetime
+from Components.config import config, ConfigText, getConfigListEntry
 ###################################################
 
 ###################################################
@@ -68,7 +64,7 @@ class SuggestionsProvider:
             return retList 
         return None
 
-class DixMax(CBaseHostClass, CaptchaHelper):
+class DixMax(CBaseHostClass):
 
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'dixmax.com', 'cookie':'dixmax.com.cookie'})
@@ -382,7 +378,7 @@ class DixMax(CBaseHostClass, CaptchaHelper):
             linksTab = self.cacheLinks.get(key, [])
 
         return linksTab
-        
+
     def getVideoLinks(self, videoUrl):
         printDBG("DixMax.getVideoLinks [%s]" % videoUrl)
         # mark requested link as used one
@@ -395,30 +391,8 @@ class DixMax(CBaseHostClass, CaptchaHelper):
 
         if 0 != self.up.checkHostSupport(videoUrl): 
             return self.up.getVideoLinkExt(videoUrl)
-        
-        return []
-        linksTab = []
-        urlParams = dict(self.defaultParams)
-        urlParams['header'] = MergeDicts(urlParams['header'], {'Referer':videoUrl.meta['Referer']})
-        
-        sts, data = self.getPage(videoUrl, urlParams)
-        if not sts: linksTab
-        
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'go-link-container'), ('</div', '>'), False)[1]
-        videoUrl = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''href=['"]([^"^']+?)["']''', 1, True)[0], self.cm.meta['url'])
-        
-        if 0 == self.up.checkHostSupport(videoUrl): 
-            urlParams['header']['Referer'] = self.cm.meta['url']
-            urlParams['max_data_size'] = 0
-            sts, data = self.getPage(videoUrl, urlParams)
-            if sts: 
-                videoUrl = strwithmeta(self.cm.meta['url'], {'Referer':urlParams['header']['Referer']})
-        else:
-            videoUrl = strwithmeta(videoUrl, {'Referer':self.cm.meta['url']})
 
-        if 1 == self.up.checkHostSupport(videoUrl):
-            linksTab = self.up.getVideoLinkExt(videoUrl)
-        return linksTab
+        return []
 
     def getArticleContent(self, cItem, data=None):
         printDBG("DixMax.getArticleContent [%s]" % cItem)
@@ -519,6 +493,7 @@ class DixMax(CBaseHostClass, CaptchaHelper):
     #MAIN MENU
         if name == None:
             self.listMain({'name':'category', 'type':'category'})
+
         elif category == 'list_filters':
             self.listFilters(self.currItem, 'list_items')
 
@@ -527,9 +502,6 @@ class DixMax(CBaseHostClass, CaptchaHelper):
 
         elif category == 'sub_items':
             self.listSubItems(self.currItem)
-
-        elif category == 'list_series_abc':
-            self.listSeriesABC(self.currItem, 'list_items')
 
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')

@@ -4,7 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, MergeDicts, GetJSScriptFile
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, rm, MergeDicts, GetJSScriptFile
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute_ext, is_js_cached
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
@@ -15,7 +15,6 @@ from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 import time
 import re
 import urllib
-import base64
 from urlparse import urljoin
 from Components.config import config, ConfigSelection, ConfigText, getConfigListEntry
 ###################################################

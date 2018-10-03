@@ -6,7 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute_ext, is_js_cached
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, GetCookieDir, ReadTextFile, WriteTextFile, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, GetCookieDir, ReadTextFile, WriteTextFile
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
@@ -186,11 +186,6 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             title = self.cleanHtmlStr(item)
             self.addDir(MergeDicts(cItem, {'url':url, 'title':title, 'category':category, 'fix_next_page':fixNextPage}))
 
-        # movies special items
-        # 'peliculas-actualizadas', 'updated-movies'
-        
-        # series
-        # 'episode', 'episodio', 'list', 'list'
     def listSeriesABC(self, cItem, nextCategory):
         printDBG("HDFull.listSeriesABC")
         sts, data = self.getPage(cItem['url'])
@@ -320,7 +315,6 @@ class HDFull(CBaseHostClass, CaptchaHelper):
                         printDBG(">>>>")
                         printDBG(tabJs[key]['code'])
                         printDBG("<<<<")
-
         try:
             js_params = [tabJs['providers']]
             js_params.append(tabJs['view'])
@@ -511,28 +505,6 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             return self.up.getVideoLinkExt(videoUrl)
         
         return []
-        linksTab = []
-        urlParams = dict(self.defaultParams)
-        urlParams['header'] = MergeDicts(urlParams['header'], {'Referer':videoUrl.meta['Referer']})
-        
-        sts, data = self.getPage(videoUrl, urlParams)
-        if not sts: linksTab
-        
-        data = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'go-link-container'), ('</div', '>'), False)[1]
-        videoUrl = self.getFullUrl( self.cm.ph.getSearchGroups(data, '''href=['"]([^"^']+?)["']''', 1, True)[0], self.cm.meta['url'])
-        
-        if 0 == self.up.checkHostSupport(videoUrl): 
-            urlParams['header']['Referer'] = self.cm.meta['url']
-            urlParams['max_data_size'] = 0
-            sts, data = self.getPage(videoUrl, urlParams)
-            if sts: 
-                videoUrl = strwithmeta(self.cm.meta['url'], {'Referer':urlParams['header']['Referer']})
-        else:
-            videoUrl = strwithmeta(videoUrl, {'Referer':self.cm.meta['url']})
-
-        if 1 == self.up.checkHostSupport(videoUrl):
-            linksTab = self.up.getVideoLinkExt(videoUrl)
-        return linksTab
 
     def _desc(self, data):
         desc = []
@@ -585,7 +557,7 @@ class HDFull(CBaseHostClass, CaptchaHelper):
     def tryTologin(self):
         printDBG('tryTologin start')
         
-        if None == self.loggedIn or self.login != config.plugins.iptvplayer.hdfull_login.value or\
+        if None == self.loggedIn or self.login != config.plugins.iptvplayer.hdfull_login.value or \
             self.password != config.plugins.iptvplayer.hdfull_password.value:
 
             self.cm.clearCookie(self.COOKIE_FILE, removeNames=['language'])
@@ -646,9 +618,9 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             if self.loggedIn:
                 hash = hexlify(md5('%s@***@%s' % (self.login, self.password)).digest())
                 WriteTextFile(loginCookie, hash)
-                
+
         return self.loggedIn
-        
+
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
@@ -664,6 +636,7 @@ class HDFull(CBaseHostClass, CaptchaHelper):
     #MAIN MENU
         if name == None:
             self.listMain({'name':'category', 'type':'category'})
+
         elif category in ['list_sort_series', 'list_sort_movies']:
             self.listSortMoviesSeries(self.currItem, 'list_items', 'list_series_abc')
 
@@ -678,11 +651,13 @@ class HDFull(CBaseHostClass, CaptchaHelper):
 
         elif category == 'explore_item':
             self.exploreItem(self.currItem, 'list_episodes')
+
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
 
         elif category == 'list_episodes_langs':
             self.listEpisodesLangs(self.currItem, 'list_episodes2')
+
         elif category == 'list_episodes2':
             self.listEpisodes2(self.currItem)
     #SEARCH
@@ -695,7 +670,7 @@ class HDFull(CBaseHostClass, CaptchaHelper):
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
-        
+
         CBaseHostClass.endHandleService(self, index, refresh)
 
     def getSuggestionsProvider(self, index):

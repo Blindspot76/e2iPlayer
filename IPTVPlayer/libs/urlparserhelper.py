@@ -156,32 +156,6 @@ def SAWLIVETV_decryptPlayerParams(p, a, c, k, e, d):
             p = re.sub(reg, k[c], p)
     return p
 
-def OPENLOADIO_decryptPlayerParams(p, a, c, k, e, d):
-    def e1(c):
-        return c
-    def e2(t=None):
-        return '\\w+'
-    def k1(matchobj):
-        return d[int(matchobj.group(0))]
-    e = e1
-    if True:
-        while c != 0:
-            c -= 1
-            d[c] = k[c]
-            if c < len(k):
-                d[c] = k[c]
-            else:
-                d[c] = c
-        c = 1
-        k = [k1]
-        e = e2
-    while c != 0:
-        c -= 1
-        if k[c]:
-            reg = '\\b' + e(c) + '\\b'
-            p = re.sub(reg, k[c], p)
-    return p
-    
 def KINGFILESNET_decryptPlayerParams(p, a, c, k, e=None, d=None):
     def e1(c, a):
         return JS_toString(c, a)
@@ -218,14 +192,7 @@ def TEAMCASTPL_decryptPlayerParams(p, a, c, k, e=None, d=None):
 ###############################################################################
 # there is problem in exec when this functions are class methods
 # sub (even static) or functions
-# Code example:
-#<div id="player_code" style="height:100% ; width:100%; visibility:none;"><span id='flvplayer'></span>
-#<script type='text/javascript' src='http://vidup.me/player/jwplayer.js'></script>
-#<script type='text/javascript'>eval(function(p,a,c,k,e,d){while(c--)if(k[c])p=p.replace(new RegExp('\\b'+c.toString(a)+'\\b','g'),k[c]);return p}('1l(\'1k\').1j({\'1i\':\'/7/7.1h\',a:"0://g.f.e.c:1g/d/1f/1e.1d",1c:"0",\'1b\':\'9\',\'1a\':\'19\',\'18\':\'h%\',\'17\':\'h%\',\'16\':\'15\',\'14\':\'13\',\'12\':\'11\',\'10\':\'0://g.f.e.c/i/z/6.y\',\'b\':\'0://5.4/7/b.x\',\'w\':\'v\',\'2.a\':\'0://5.4/u/t.s\',\'2.8\':\'0://5.4/6\',\'2.r\':\'q\',\'2.p\':\'o\',\'2.n\':\'9-m\',\'l\':{\'k-1\':{\'8\':\'0://5.4/6\'},\'j-3\':{}}});',36,58,'http||logo||me|vidup|yx616ubt7l82|player|link|bottom|file|skin|187||116|39|84|100||timeslidertooltipplugin|fbit|plugins|right|position|false|hide|_blank|linktarget|png|logoheader|images|000000|screencolor|zip|jpg|00049|image|always|allowscriptaccess|true|allowfullscreen|7022|duration|height|width|transparent|wmode|controlbar|provider|flv|video|zesaswuvnsv27kymojykzci5bbll4pqkmqipzoez4eakqgfaacm7fbqf|182|swf|flashplayer|setup|flvplayer|jwplayer'.split('|')))
-#</script>
-#<br></div>
-#
-#       
+
 def getParamsTouple(code, type=1, r1=False, r2=False ):
     mark1Tab = ["}(", "}\r\n(", "}\n(", "}\r("]
     mark2 = "))"
@@ -330,44 +297,6 @@ def VIDEOWEED_decryptPlayerParams2(w, i, s=None, e=None):
         i += JS_FromCharCode(int(w[s:s+2], 36))
         s += 2
     return i
-
-def VIDEOWEED_unpackJSPlayerParams(code):
-    sts, code = CParsingHelper.rgetDataBeetwenMarkers(code, 'eval(function', '</script>')
-    if not sts: return ''
-    while True:
-        mark1 = "}("
-        mark2 = "));"
-        idx1 = code.rfind(mark1)
-        if -1 == idx1: return ''
-        idx1 += len(mark1)
-        idx2 = code.rfind(mark2, idx1)
-        if -1 == idx2: return ''
-        #idx2 += 1
-        
-        paramsCode = 'paramsTouple = (' + code[idx1:idx2] + ')'
-        paramsAlgoObj = compile(paramsCode, '', 'exec')
-        try:
-            paramsAlgoObj = compile(paramsCode, '', 'exec')
-        except Exception:
-            printDBG('unpackJSPlayerParams compile algo code EXCEPTION')
-            return ''
-        vGlobals = {"__builtins__": None, 'string': string}
-        vLocals = { 'paramsTouple': None }
-        try:
-            exec( paramsAlgoObj, vGlobals, vLocals )
-        except Exception:
-            printDBG('unpackJSPlayerParams exec code EXCEPTION')
-            return ''
-        # decrypt JS Player params
-        code = VIDEOWEED_decryptPlayerParams(*vLocals['paramsTouple'])
-        try:
-            code = VIDEOWEED_decryptPlayerParams(*vLocals['paramsTouple'])
-            if -1 == code.find('eval'):
-                return code
-        except Exception:
-            printDBG('decryptPlayerParams EXCEPTION')
-            return ''
-    return ''
 
 ###############################################################################
 

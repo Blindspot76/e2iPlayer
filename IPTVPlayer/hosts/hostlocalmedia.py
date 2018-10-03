@@ -4,8 +4,7 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, RetHost, CUrlItem, ArticleContent
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSearchHistoryHelper, remove_html_markup, \
-                                                          GetLogoDir, GetCookieDir, byteify, ReadTextFile, GetBinDir, \
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, ReadTextFile, GetBinDir, \
                                                           formatBytes, GetTmpDir, mkdirs
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
@@ -14,13 +13,12 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvchoicebox import IPTVChoiceBoxItem
 from Plugins.Extensions.IPTVPlayer.components.e2ivkselector import GetVirtualKeyboard
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-try:    import json
-except Exception: import simplejson as json
 from os import path as os_path, chmod as os_chmod, remove as os_remove, rename as os_rename
 from Components.config import config, ConfigSelection, ConfigInteger, ConfigYesNo, getConfigListEntry
 ###################################################
@@ -477,7 +475,7 @@ class LocalMedia(CBaseHostClass):
             params = dict(cItem)
             if 'url' in params:
                 params['fav_url_meta'] = strwithmeta(params['url']).meta
-            data = json.dumps(cItem)
+            data = json_dumps(cItem)
         except Exception: 
             printExc()
             data = ''
@@ -485,7 +483,7 @@ class LocalMedia(CBaseHostClass):
         
     def getLinksForFavourite(self, fav_data):
         try:
-            cItem = byteify(json.loads(fav_data))
+            cItem = json_loads(fav_data)
             fav_data = strwithmeta(cItem['url'], cItem.get('fav_url_meta', {}))
         except Exception:
             printExc()

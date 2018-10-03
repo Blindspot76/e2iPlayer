@@ -14,13 +14,12 @@ import copy
 
 try: import requests
 except Exception: pass
-try: import json
-except Exception: import simplejson as json
 
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import byteify, printExc, printDBG, GetCookieDir, rm
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError, GetIPTVSleep
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 
 HTTP_HEADER = {
     "User-Agent": 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36',
@@ -138,8 +137,6 @@ class UnshortenIt(object):
                         retries = retries + 1
                     else:
                         return r.url, r.status_code
-
-
         except Exception as e:
             return uri, str(e)
 
@@ -167,10 +164,7 @@ class UnshortenIt(object):
                 return True, query["url"].pop()
             else:
                 raise ValueError("Google outbound proxy URL without a target url ('%s')?" % url)
-
-
         return False, url
-
 
     def _unshorten_adfly(self, uri):
 
@@ -201,8 +195,6 @@ class UnshortenIt(object):
         except Exception as e:
             return uri, str(e)
 
-
-
     def _unshorten_linkbucks(self, uri):
         '''
         (Attempt) to decode linkbucks content. HEAVILY based on the OSS jDownloader codebase.
@@ -232,7 +224,6 @@ class UnshortenIt(object):
             r"src=\"http://static\.linkbucks\.com/tmpl/mint/img/lb\.gif\" /></a>.*?<a href=\"(.*?)\"",
             r"id=\"content\" src=\"([^\"]*)",
         ]
-
 
         for regex in regexes:
             if self.inValidate(link):
@@ -275,20 +266,14 @@ class UnshortenIt(object):
             if any([not l1, not l2, not token]):
                 return uri, "Missing required tokens?"
 
-
-            print(l1, l2)
-
-
             authkey = int(l1) + int(l2)
 
 
 
             p1_url = urljoin(baseloc, "/director/?t={tok}".format(tok=token))
-            print(p1_url)
             r2 = requests.get(p1_url, headers=HTTP_HEADER, timeout=self._timeout, cookies=r.cookies)
 
             p1_url = urljoin(baseloc, "/scripts/jquery.js?r={tok}&{key}".format(tok=token, key=l1))
-            print(p1_url)
             r2_1 = requests.get(p1_url, headers=HTTP_HEADER, timeout=self._timeout, cookies=r.cookies)
 
 
@@ -298,16 +283,9 @@ class UnshortenIt(object):
             p3_url = urljoin(baseloc, "/intermission/loadTargetUrl?t={tok}&aK={key}&a_b=false".format(tok=token, key=str(authkey)))
             r3 = requests.get(p3_url, headers=HTTP_HEADER, timeout=self._timeout, cookies=r2.cookies)
 
-            resp_json = json.loads(r3.text)
+            resp_json = json_loads(r3.text)
             if "Url" in resp_json:
                 return resp_json['Url'], r3.status_code
-
-            print(p3_url)
-            print(r3)
-            print(r3.text)
-            print(resp_json)
-
-
 
         return "Wat", "wat"
 
@@ -386,7 +364,7 @@ class UnshortenIt(object):
                 payload = {'adSessionId': session_id, 'callback': 'c'}
                 sts, response = self.cm.getPage('http://sh.st/shortest-url/end-adsession', {'header':http_header}, payload)
 
-                resp_uri = byteify(json.loads(response[6:-2]))['destinationUrl']
+                resp_uri = json_loads(response[6:-2])['destinationUrl']
                 if resp_uri is not None:
                     uri = resp_uri
             
@@ -438,7 +416,7 @@ class UnshortenIt(object):
                 post_data = {'salt':salt, 'banner':banner, 'blocker':0}
                 params['header'] = HTTP_HEADER_AJAX
                 sts, data = self.cm.getPage(baseUri, params, post_data)
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 printDBG(">>>%s<<<" % data)
                 uri = self.cm.ph.getSearchGroups(data[partials], '''href="(https?://[^"]+?)"''')[0]
                 retUri, retSts = uri, 'OK'
@@ -469,7 +447,7 @@ class UnshortenIt(object):
                 payload = {'adSessionId': session_id, 'callback': 'c'}
                 sts, response = self.cm.getPage('http://viid.me/shortest-url/end-adsession', {'header':http_header}, payload)
 
-                resp_uri = byteify(json.loads(response[6:-2]))['destinationUrl']
+                resp_uri = json_loads(response[6:-2])['destinationUrl']
                 if resp_uri is not None:
                     uri = resp_uri
             

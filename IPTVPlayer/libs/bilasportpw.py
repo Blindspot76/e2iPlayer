@@ -4,37 +4,21 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetPyScriptCmd
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, GetCookieDir, GetPyScriptCmd
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getMPDLinksWithMeta
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.components.ihost import CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-
-from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, ConfigInteger, getConfigListEntry
+from Components.config import config, ConfigInteger, getConfigListEntry
 import base64
 import re
-import urllib
-import random
-import string
-try:    import json
-except Exception: import simplejson as json
-from datetime import datetime, timedelta
-from os import path as os_path
 ############################################
-
-###################################################
-# E2 GUI COMMPONENTS 
-###################################################
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-from Screens.MessageBox import MessageBox
-###################################################
 
 ###################################################
 # Config options for HOST
@@ -105,7 +89,7 @@ class BilaSportPwApi(CBaseHostClass):
         replaceTab = re.compile('''\.replace\(['"](\s*[^'^"]+?)['"]\s*\,\s*['"]([^'^"]+?)['"]''').findall(replaceTab)
         printDBG(replaceTab)
         if len(replaceTab):
-            scriptUrl = '|' + base64.b64encode(json.dumps(replaceTab).encode('utf-8'))
+            scriptUrl = '|' + base64.b64encode(json_loads(replaceTab))
         else:
             scriptUrl = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<script[^>]+?src=['"]([^"^']*?\.js)['"]''', 1, True)[0])
         
