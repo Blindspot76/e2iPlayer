@@ -325,7 +325,7 @@ class C3player(CBaseHostClass):
                 printDBG(data)
                 printDBG("+++++++++++++++++++++++++++++++++++++++")
                 embedToken = self.cm.ph.getSearchGroups(data, '''['"]?embedToken['"]?\s*?:\s*?['"](https?://[^'^"]+?)['"]''')[0]
-            
+            drmProtection = False
             if embedToken != '':
                 parsedUri = urlparse(embedToken)
                 auth = parsedUri.path.split('/embed_token/', 1)[-1].split('/')

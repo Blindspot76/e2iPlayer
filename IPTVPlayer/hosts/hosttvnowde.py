@@ -465,7 +465,7 @@ class TVNowDE(CBaseHostClass):
         printDBG('TVNowDE.getFavouriteData')
         params = dict(cItem)
         params.pop('dashclear', None)
-        return json.dumps(params) 
+        return json_dumps(params) 
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')

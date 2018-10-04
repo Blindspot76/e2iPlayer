@@ -30,8 +30,8 @@ config.plugins.iptvplayer.internetowa_password = ConfigText(default = "", fixed_
 
 def GetConfigList():
     optionList = []
-    optionList.append(getConfigListEntry('wizja.tv ' + _("email") + ':', config.plugins.iptvplayer.internetowa_login))
-    optionList.append(getConfigListEntry('wizja.tv ' + _("password") + ':', config.plugins.iptvplayer.internetowa_password))
+    optionList.append(getConfigListEntry('internetowa.ws ' + _("email") + ':', config.plugins.iptvplayer.internetowa_login))
+    optionList.append(getConfigListEntry('internetowa.ws ' + _("password") + ':', config.plugins.iptvplayer.internetowa_password))
     return optionList
     
 ###################################################
@@ -75,7 +75,7 @@ class InternetowaApi(CBaseHostClass):
                 params = dict(self.http_params)
                 params['header'] = MergeDicts(self.HTTP_HEADER, {'Referer':self.getFullUrl('/logowanie/')})
 
-                post_data = {'email': login, 'password': password}
+                post_data = {'email': self.login, 'password': self.password}
                 sts, data = self.cm.getPage( self.getFullUrl('/logowanie/'), params, post_data)
 
             if sts and '/wyloguj' in data:
