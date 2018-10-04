@@ -447,14 +447,22 @@ class common:
         cookiesDict = self.getCookieItems(cookiefile)
         return cookiesDict.get(item, '')
         
-    def getCookieItems(self, cookiefile, ignoreDiscard=True, ignoreExpires=False):
-        cookiesDict = {}
+    def getCookie(self, cookiefile, ignoreDiscard=True, ignoreExpires=False):
+        cj = None
         try:
             if self.usePyCurl():
                 cj = self._pyCurlLoadCookie(cookiefile, ignoreDiscard, ignoreExpires)
             else:
                 cj = cookielib.MozillaCookieJar()
                 cj.load(cookiefile, ignore_discard = ignoreDiscard)
+        except Exception:
+            printExc()
+        return cj
+
+    def getCookieItems(self, cookiefile, ignoreDiscard=True, ignoreExpires=False):
+        cookiesDict = {}
+        try:
+            cj = self.getCookie(cookiefile, ignoreDiscard, ignoreExpires)
             for cookie in cj:
                 cookiesDict[cookie.name] = cookie.value
         except Exception:

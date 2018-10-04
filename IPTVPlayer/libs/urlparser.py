@@ -1411,16 +1411,25 @@ class pageParser(CaptchaHelper):
         
     def parserCDA(self, inUrl):
         COOKIE_FILE = GetCookieDir('cdapl.cookie')
+        self.cm.clearCookie(COOKIE_FILE, removeNames=['vToken'])
+
         #HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
-        HTTP_HEADER = self.cm.getDefaultHeader(browser='iphone_3_0')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome') #iphone_3_0
         defaultParams = {'header': HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
         
         def _decorateUrl(inUrl, host, referer):
+            cookies = []
+            cj = self.cm.getCookie(COOKIE_FILE)
+            for cookie in cj:
+                if (cookie.name == 'vToken' and cookie.path in inUrl) or cookie.name == 'PHPSESSID':
+                    cookies.append('%s=%s;' % (cookie.name, cookie.value))
+                    printDBG(">> \t%s \t%s \t%s \t%s" % (cookie.domain, cookie.path, cookie.name, cookie.value) )
+
             # prepare extended link
             retUrl = strwithmeta( inUrl )
             retUrl.meta['User-Agent']        = HTTP_HEADER['User-Agent']
             retUrl.meta['Referer']           = referer
-            retUrl.meta['Cookie']            = "PHPSESSID=1" #self.cm.getCookieHeader(COOKIE_FILE) 
+            retUrl.meta['Cookie']            = ' '.join(cookies)
             retUrl.meta['iptv_proto']        = 'http'
             retUrl.meta['iptv_urlwithlimit'] = False
             retUrl.meta['iptv_livestream']   = False
