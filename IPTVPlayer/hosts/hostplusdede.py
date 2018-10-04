@@ -6,23 +6,17 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem, ArticleContent
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetCookieDir, byteify, rm, GetTmpDir, GetDefaultLang, WriteTextFile, ReadTextFile
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
-import urlparse
-import time
 import re
 import urllib
-import string
-import random
-import base64
 from datetime import datetime
 from hashlib import md5
 from copy import deepcopy
-try:    import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, ConfigYesNo, ConfigText, getConfigListEntry
 ###################################################
 
@@ -48,7 +42,7 @@ def GetConfigList():
     return optionList
 ###################################################
 def gettytul():
-    return 'https://www.megadede.com/'
+    return 'https://megadede.com/'
 
 class PlusDEDE(CBaseHostClass):
     login    = None
@@ -84,10 +78,7 @@ class PlusDEDE(CBaseHostClass):
         if addParams == {}: addParams = dict(self.defaultParams)
         origBaseUrl = baseUrl
         baseUrl = self.cm.iriToUri(baseUrl)
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urlparse.urljoin(baseUrl, url)
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
         return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         
     def calcLoginMarker(self, login, password):
@@ -593,7 +584,7 @@ class PlusDEDE(CBaseHostClass):
             error = ''
             sts, data = self.cm.getPage(actionUrl, httpParams, post_data)
             try:
-                tmp = byteify(json.loads(data))['content']
+                tmp = json_loads(data)['content']
                 printDBG(tmp)
                 tmp = self.cm.ph.getAllItemsBeetwenNodes(tmp, ('<div', '>', 'alert'), ('</div', '>'))
                 tab = []
