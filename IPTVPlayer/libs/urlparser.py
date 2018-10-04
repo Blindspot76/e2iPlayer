@@ -1411,12 +1411,14 @@ class pageParser(CaptchaHelper):
         
     def parserCDA(self, inUrl):
         COOKIE_FILE = GetCookieDir('cdapl.cookie')
-        HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
-        defaultParams = {'header': HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
+        #HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html'}
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='iphone_3_0')
+        defaultParams = {'header': HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIE_FILE}
         
         def _decorateUrl(inUrl, host, referer):
             # prepare extended link
             retUrl = strwithmeta( inUrl )
+            retUrl.meta['User-Agent']        = HTTP_HEADER['User-Agent']
             retUrl.meta['Referer']           = referer
             retUrl.meta['Cookie']            = "PHPSESSID=1" #self.cm.getCookieHeader(COOKIE_FILE) 
             retUrl.meta['iptv_proto']        = 'http'
