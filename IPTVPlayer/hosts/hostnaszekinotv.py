@@ -6,6 +6,8 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, rm, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs import ph
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
@@ -15,8 +17,7 @@ import urlparse
 import re
 import urllib
 from copy import deepcopy
-try:    import json
-except Exception: import simplejson as json
+import base64
 from Components.config import config, ConfigText, getConfigListEntry
 ###################################################
 
@@ -472,7 +473,14 @@ class NaszeKinoTv(CBaseHostClass):
         data = self.cm.ph.getDataBeetwenNodes(data, ('<tbody', '>'), ('</tbody', '>'), False)[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>', False)
         for item in data:
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0])
+            url = ''
+            tmp = ph.getattr(item, 'data-iframe')
+            try:
+                tmp = json_loads(base64.b64decode(tmp))['src']
+                url = self.getFullUrl(tmp)
+            except Exception:
+                printExc()
+                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0])
             if url == '': continue
             item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<td', '</td>')
             name = []
