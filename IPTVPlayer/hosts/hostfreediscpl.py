@@ -4,15 +4,14 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, rm
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
 import urllib
-try:    import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigText, getConfigListEntry
 ###################################################
 
@@ -103,7 +102,7 @@ class FreeDiscPL(CBaseHostClass):
         if not sts: return
         
         try:
-            data = byteify(json.loads(data))['response']
+            data = json_loads(data)['response']
             if 'visited' in url:
                 data = data['html_visited']
             else:
@@ -145,13 +144,13 @@ class FreeDiscPL(CBaseHostClass):
         params['header'] = dict(self.AJAX_HEADER)
         params['header']['Referer']= self.cm.getBaseUrl(self.getMainUrl()) + 'search/%s/%s' % (cItem.get('f_search_type', ''), urllib.quote(cItem.get('f_search_pattern', '')))
         
-        sts, data = self.getPage(cItem['url'], params, json.dumps(post_data))
+        sts, data = self.getPage(cItem['url'], params, json_dumps(post_data))
         if not sts: return
         
         printDBG(data)
         
         try:
-            data = byteify(json.loads(data))['response']
+            data = json_loads(data)['response']
             logins = data['logins_translated']
             translated = data['directories_translated']
             for item in data['data_files']['data']:
@@ -227,7 +226,7 @@ class FreeDiscPL(CBaseHostClass):
                 sts, data = self.getPage(url, urlParams)
                 if not sts: return
                 
-                self.treeCache[userId] = byteify(json.loads(data), '', True)['response']['data']
+                self.treeCache[userId] = json_loads(data, '', True)['response']['data']
             
             # sub dirs at first
             if dirId in self.treeCache[userId]:
@@ -252,7 +251,7 @@ class FreeDiscPL(CBaseHostClass):
             sts, data = self.getPage(url, urlParams)
             if not sts: return
 
-            data = byteify(json.loads(data), '', True)['response']['data']
+            data = json_loads(data, '', True)['response']['data']
             if 'data' in data:
                 filesTab = []
                 for key in data['data']:
@@ -318,7 +317,7 @@ class FreeDiscPL(CBaseHostClass):
             links = self.getLinksForVideo({'url':fav_data})
         else:
             try:
-                cItem = byteify(json.loads(fav_data))
+                cItem = json_loads(fav_data)
                 links = self.getLinksForVideo(cItem)
             except Exception: printExc()
         return links
@@ -351,11 +350,11 @@ class FreeDiscPL(CBaseHostClass):
             params['header']['Referer']= self.getMainUrl()
             
             post_data = {"email_login":self.login,"password_login":self.password,"remember_login":1,"provider_login":""}
-            sts, data = self.getPage(self.getFullUrl('/account/signin_set'), params, json.dumps(post_data))
+            sts, data = self.getPage(self.getFullUrl('/account/signin_set'), params, json_dumps(post_data))
             if not sts: return None
             
             try:
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 if data['success'] == True: self.loggedIn = True
                 else: errMsg = [self.cleanHtmlStr(data['response']['info'])]
             except Exception:
