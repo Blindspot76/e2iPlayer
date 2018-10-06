@@ -34,7 +34,7 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("Use default video quality:"), config.plugins.iptvplayer.ytUseDF))
     # temporary, the ffmpeg must be in right version to be able to merge file without transcoding
     # checking should be moved to setup
-    if not config.plugins.iptvplayer.ytUseDF.value and IsExecutable('ffmpeg'): 
+    if IsExecutable('ffmpeg'): 
         optionList.append(getConfigListEntry(_("Allow dash format:"), config.plugins.iptvplayer.ytShowDash))
     return optionList
 ###################################################

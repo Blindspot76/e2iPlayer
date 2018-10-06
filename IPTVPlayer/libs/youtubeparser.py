@@ -3,8 +3,7 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.extractor.youtube import YoutubeIE
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, remove_html_markup, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, IsExecutable
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl
@@ -27,14 +26,26 @@ from Components.config import config, ConfigSelection, ConfigYesNo
 config.plugins.iptvplayer.ytformat        = ConfigSelection(default = "mp4", choices = [("flv, mp4", "flv, mp4"),("flv", "flv"),("mp4", "mp4")]) 
 config.plugins.iptvplayer.ytDefaultformat = ConfigSelection(default = "720", choices = [("0", _("the worst")), ("144", "144p"), ("240", "240p"), ("360", "360p"),("720", "720"), ("1080", "1080"),("9999", _("the best"))])
 config.plugins.iptvplayer.ytUseDF         = ConfigYesNo(default = True)
-config.plugins.iptvplayer.ytShowDash      = ConfigYesNo(default = False)
+config.plugins.iptvplayer.ytShowDash      = ConfigSelection(default = "auto", choices = [("auto", _("Auto")),("true", _("Yes")),("false", _("No"))])
 config.plugins.iptvplayer.ytSortBy        = ConfigSelection(default = "", choices = [("", _("Relevance")),("video_date_uploaded", _("Upload date")),("video_view_count", _("View count")),("video_avg_rating", _("Rating"))]) 
+
 
 class YouTubeParser():
     HOST = 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'
     def __init__(self):
         self.cm = common()
         return
+
+    @staticmethod
+    def isDashAllowed():
+        value = config.plugins.iptvplayer.ytShowDash.value
+        printDBG("ALLOW DASH: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s" % value)
+        if value == "true" and IsExecutable('ffmpeg'):
+            return True
+        elif value == "auto" and IsExecutable('ffmpeg') and IsExecutable(config.plugins.iptvplayer.exteplayer3path.value):
+            return True
+        else:
+            return False
 
     def getDirectLinks(self, url, formats = 'flv, mp4', dash=True, dashSepareteList = False):
         printDBG('YouTubeParser.getDirectLinks')
@@ -189,7 +200,8 @@ class YouTubeParser():
                         tmarker = titleMarker[1:tidx]
                         title = self.cm.ph.getDataBeetwenMarkers(data[i],  titleMarker, '</%s>' % tmarker)[1]
             
-            if '' != title: title = CParsingHelper.removeDoubles(remove_html_markup(title, ' '), ' ')
+            if '' != title:
+                title = CParsingHelper.cleanHtmlStr(title)
             if i == 0:
                 printDBG(data[i])
                 
@@ -218,8 +230,7 @@ class YouTubeParser():
             
             newDescTab = []
             for desc in descTab:
-                desc = self.cm.ph.removeDoubles(remove_html_markup(desc, ' '), ' ')
-                desc = clean_html(desc).strip()
+                desc = CParsingHelper.cleanHtmlStr(desc)
                 if desc != '':
                     newDescTab.append(desc)
             
@@ -244,7 +255,7 @@ class YouTubeParser():
                     #    if correctUrlTab[i].startswith('https:'):
                     #        correctUrlTab[i] = "http:" + correctUrlTab[i][6:]
 
-                title = clean_html(title)
+                title = CParsingHelper.cleanHtmlStr(title)
                 params = {'type': urlPatterns[type][0], 'category': type, 'title': title, 'url': correctUrlTab[0], 'icon': correctUrlTab[1].replace('&amp;', '&'), 'time': time, 'desc': '[/br]'.join(newDescTab)}
                 currList.append(params)
 

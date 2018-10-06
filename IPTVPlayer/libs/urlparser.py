@@ -2641,34 +2641,39 @@ class pageParser(CaptchaHelper):
     def parserYOUTUBE(self, url):
         def __getLinkQuality( itemLink ):
             val = itemLink['format'].split('x', 1)[0].split('p', 1)[0]
-            try: return int(val)
-            except Exception: return 0
+            try:
+                val = int(val) if 'x' in itemLink['format'] else int(val) - 1
+                return val
+            except Exception:
+                return 0
         
         if None != self.getYTParser():
             try:
                 formats = config.plugins.iptvplayer.ytformat.value
                 height = config.plugins.iptvplayer.ytDefaultformat.value
-                dash    = config.plugins.iptvplayer.ytShowDash.value
+                dash    = self.getYTParser().isDashAllowed()
             except Exception:
                 printDBG("parserYOUTUBE default ytformat or ytDefaultformat not available here")
                 formats = "mp4"
                 height = "360"
                 dash    = False
-            
+
             tmpTab, dashTab = self.getYTParser().getDirectLinks(url, formats, dash, dashSepareteList = True)
-            tmpTab = CSelOneLink(tmpTab, __getLinkQuality, int(height)).getSortedLinks()
-            dashTab = CSelOneLink(dashTab, __getLinkQuality, int(height)).getSortedLinks()
-            
+            #tmpTab = CSelOneLink(tmpTab, __getLinkQuality, int(height)).getSortedLinks()
+            #dashTab = CSelOneLink(dashTab, __getLinkQuality, int(height)).getSortedLinks()
+
             videoUrls = []
             for item in tmpTab:
                 url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
-                videoUrls.append({ 'name': 'YouTube: ' + item['format'] + '\t' + item['ext'] , 'url':url})
+                videoUrls.append({ 'name': 'YouTube | {0}: {1}'.format(item['ext'], item['format']), 'url':url, 'format':item.get('format', '')})
             for item in dashTab:
                 url = strwithmeta(item['url'], {'youtube_id':item.get('id', '')})
                 if item.get('ext', '') == 'mpd':
-                    videoUrls.append({'name': 'YouTube | dash: ' + item['name'], 'url':url})
+                    videoUrls.append({'name': 'YouTube | dash: ' + item['name'], 'url':url, 'format':item.get('format', '')})
                 else:
-                    videoUrls.append({'name': 'YouTube | custom dash: ' + item['format'], 'url':url})
+                    videoUrls.append({'name': 'YouTube | custom dash: ' + item['format'], 'url':url, 'format':item.get('format', '')})
+
+            videoUrls = CSelOneLink(videoUrls, __getLinkQuality, int(height)).getSortedLinks()
             return videoUrls
 
         return False
