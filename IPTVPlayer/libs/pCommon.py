@@ -216,7 +216,7 @@ class CParsingHelper:
                     quote = not quote
                 elif not tag:
                     out = out + c
-        return re.sub('&\w+;', ' ',out)        
+        return re.sub('&\w+;', ' ',out)
         
     # this method is useful only for developers 
     # to dump page code to the file
@@ -250,9 +250,22 @@ class CParsingHelper:
     @staticmethod
     def isalpha(txt, idx=None):
         return CParsingHelper.getNormalizeStr(txt, idx).isalpha()
- 
+
+    STRIP_HTML_TAGS_C = None
     @staticmethod 
     def cleanHtmlStr(str):
+        if None == CParsingHelper.STRIP_HTML_TAGS_C:
+            CParsingHelper.STRIP_HTML_TAGS_C = False
+            try:
+                from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as p
+                if 'strip_html_tags' in dir(p):
+                    CParsingHelper.STRIP_HTML_TAGS_C = p
+            except Exception:
+                printExc()
+
+        if CParsingHelper.STRIP_HTML_TAGS_C and type(u' ') != type(str):
+            return CParsingHelper.STRIP_HTML_TAGS_C.strip_html_tags(str)
+
         str = str.replace('<', ' <')
         str = str.replace('&nbsp;', ' ')
         str = str.replace('&nbsp', ' ')
