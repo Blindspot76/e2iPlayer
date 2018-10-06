@@ -3,15 +3,14 @@
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
 # FOREIGN import
 ###################################################
 import random
-try:    import json
-except Exception: import simplejson as json
 ###################################################
 
 
@@ -72,7 +71,7 @@ class RadiostacjaPl(CBaseHostClass):
             if not sts: return
             
             try:
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 self.cache[cItem['f_cache']] = data
             except Exception:
                 printExc()

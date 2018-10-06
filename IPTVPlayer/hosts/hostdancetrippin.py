@@ -13,8 +13,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 ###################################################
 import re
 import urllib
-try:    import json
-except Exception: import simplejson as json
 ###################################################
 
 
@@ -288,9 +286,9 @@ class DancetrippinTV(CBaseHostClass):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
             sts, data = self.cm.getPage(url)
             if not sts: return urlTab
-            hlsUrls = re.compile('''(https?://[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(data)
+            hlsUrls = re.compile('''(//[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(data)
             for url in hlsUrls:
-                urlTab.extend(getDirectM3U8Playlist(url, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
+                urlTab.extend(getDirectM3U8Playlist(self.getFullUrl(url), checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
             
         return urlTab
         
