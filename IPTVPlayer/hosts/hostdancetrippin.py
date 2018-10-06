@@ -286,7 +286,7 @@ class DancetrippinTV(CBaseHostClass):
             url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0])
             sts, data = self.cm.getPage(url)
             if not sts: return urlTab
-            hlsUrls = re.compile('''(//[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(data)
+            hlsUrls = re.compile('''['"]((?:https?:)?//[^'^"]+?\.m3u8(?:\?[^'^"]+?)?)['"]''', re.IGNORECASE).findall(data)
             for url in hlsUrls:
                 urlTab.extend(getDirectM3U8Playlist(self.getFullUrl(url), checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
             
