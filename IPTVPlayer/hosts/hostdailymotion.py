@@ -4,7 +4,8 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetDefaultLang
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 
 ###################################################
@@ -12,8 +13,6 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Ge
 ###################################################
 from datetime import timedelta
 import urllib
-try:    import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigSelection, getConfigListEntry
 ###################################################
 
@@ -109,7 +108,7 @@ class Dailymotion(CBaseHostClass):
         params.update({'title':_('All'), 'category':category})
         self.addDir(params)
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             nextPage = data['has_more']
             for item in data['list']:
                 params = dict(cItem)
@@ -156,7 +155,7 @@ class Dailymotion(CBaseHostClass):
         if not sts: return
         nextPage = False
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             nextPage = data['has_more']
             for item in data['list']:
                 printDBG(item)
