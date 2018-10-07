@@ -67,11 +67,11 @@ class VideoPenny(CBaseHostClass):
                 self.setMainUrl(self.cm.meta['url'])
                 self.defaultParams['cookie_items'] = {'retina':'1'}
             self.mainPageReceived = True
-            cUrl = self.cm.meta['url']
-            elements = re.compile(r'''src=(['"])([^\1]+?)(?:\1)''', re.I).findall(data)
-            for it in elements:
-                it = self.getFullUrl(it[1], cUrl)
-                self._getPage(it, addParams)
+            #cUrl = self.cm.meta['url']
+            #elements = re.compile(r'''src=(['"])([^\1]+?)(?:\1)''', re.I).findall(data)
+            #for it in elements:
+            #    it = self.cm.getFullUrl(it[1], cUrl)
+            #    self._getPage(it, addParams)
 
             if baseUrl == requestUrl:
                 return  sts, data
