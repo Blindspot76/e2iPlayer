@@ -30,7 +30,7 @@ config.plugins.iptvplayer.icefilmsinfo_alt_domain = ConfigText(default = "", fix
 def GetConfigList():
     optionList = []
     optionList.append(getConfigListEntry(_("Use proxy server:"), config.plugins.iptvplayer.icefilmsinfo_proxy))
-    if config.plugins.iptvplayer.kinox_proxy.value == 'None':
+    if config.plugins.iptvplayer.icefilmsinfo_proxy.value == 'None':
         optionList.append(getConfigListEntry(_("Alternative domain:"), config.plugins.iptvplayer.icefilmsinfo_alt_domain))
     return optionList
 ###################################################
