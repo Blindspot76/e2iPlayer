@@ -22,11 +22,6 @@ from enigma import eConsoleAppContainer
 from time import sleep
 import re
 import datetime
-try:
-    try:    import json
-    except Exception: import simplejson as json
-except Exception:
-    printExc()
 ###################################################
 
 ###################################################
