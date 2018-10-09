@@ -71,7 +71,7 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['cartoonsandanime'] = ['bajeczkiorg','kreskowkazone','kreskoweczki','bajkipopolskucom','animeodcinki','9anime','kisscartoonme','kissanimeto','watchcartoononline','shahiidanimenet', \
                                                      'otakufr','crtankocom']
         self.PREDEFINED_HOSTS['sport']            = ['webstream','meczykipl','ekstraklasatv','laola1tv','bbcsport','ourmatchnet','hoofootcom','okgoals','ngolos','watchwrestlinguno','watchwrestling','fighttube','fightvideo', \
-                                                     'twitchtv','hitboxtv','pinkbike','sportdeutschland','eurosportplayer']
+                                                     'twitchtv','hitboxtv','pinkbike','sportdeutschland','eurosportplayer','del']
         self.PREDEFINED_HOSTS['live']             = ['webstream','streamliveto','ustreamtv','youtube','dailymotion','fokustv','eskago','arconaitvme','eurosportplayer']
         self.PREDEFINED_HOSTS['documentary']      = ['fokustv','dokumentalnenet','filmydokumentalneeu','greekdocumentaries3','dailymotion','orthobulletscom','vumedicom']
         self.PREDEFINED_HOSTS['science']          = ['questtvcouk','fokustv','dailymotion','ustreamtv','dokumentalnenet','orthobulletscom','vumedicom']
@@ -86,7 +86,7 @@ class IPTVHostsGroups:
                                                      'ourmatchnet','watchwrestlinguno','watchwrestling','laola1tv','hoofootcom','fightvideo','twitchtv','hitboxtv','ted','ororotv','pinkbike','dancetrippin','appletrailers', \
                                                      'ustreamtv','rteieplayer','3player','questtvcouk','forjatn','yesmoviesto','movierulzsx','filmeonlineto','playrtsiw','123movieshd','orthobulletscom','vumedicom','hdsto','ddl']
         self.PREDEFINED_HOSTS['german']           = ['youtube','webstream','ardmediathek','zdfmediathek','artetv','tvnowde','spiegeltv','ddl','hdstreams','serienstreamto','bsto','hdfilmetv','cineto','filmpalast','kinox','arconaitvme','movie4kto','tata', \
-                                                     'dailymotion','vimeo','laola1tv','sportdeutschland','twitchtv','hitboxtv','playrtsiw']
+                                                     'dailymotion','vimeo','laola1tv','sportdeutschland','twitchtv','hitboxtv','playrtsiw','del']
         self.PREDEFINED_HOSTS['french']           = ['youtube','tfarjocom','skstream','filmstreamvkcom','streamcomplet','dpstreamingcx','librestream','cinemay','otakufr','rtbfbe','artetv','movie4kto','dailymotion',\
                                                      'vimeo','twitchtv','hitboxtv','forjatn','planetstreamingcom','playrtsiw','officialfilmillimite','hdsto']
         self.PREDEFINED_HOSTS['russian']          = ['youtube','treetv','kinogo','kinotan','hdkinomir','sovdub','filmixco','kinopokaz','movie4kto','dailymotion','vimeo','twitchtv','hitboxtv']
