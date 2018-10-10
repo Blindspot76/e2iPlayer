@@ -1,6 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 import re
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html as yt_clean_html
 
 START_E=1
 START_S=2
@@ -229,3 +230,30 @@ def rfind(data, start, end=('',), flags=START_E|END_E):
     ret = rfindall(data, start, end, flags, 1)
     if len(ret): return True, ret[0]
     else: return False, ''
+
+def strip_doubles(data, pattern):
+    while -1 < data.find(pattern+pattern) and '' != pattern:
+        data = data.replace(pattern+pattern, pattern)
+    return data 
+
+STRIP_HTML_TAGS_C = None
+def clean_html(str):
+    global STRIP_HTML_TAGS_C
+    if None == STRIP_HTML_TAGS_C:
+        STRIP_HTML_TAGS_C = False
+        try:
+            from Plugins.Extensions.IPTVPlayer.libs.iptvsubparser import _subparser as p
+            if 'strip_html_tags' in dir(p):
+                STRIP_HTML_TAGS_C = p
+        except Exception:
+            printExc()
+
+    if STRIP_HTML_TAGS_C and type(u' ') != type(str):
+        return STRIP_HTML_TAGS_C.strip_html_tags(str)
+
+    str = str.replace('<', ' <')
+    str = str.replace('&nbsp;', ' ')
+    str = str.replace('&nbsp', ' ')
+    str = yt_clean_html(str)
+    str = str.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    return strip_doubles(str, ' ').strip()
