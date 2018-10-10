@@ -24,7 +24,7 @@ except Exception: import simplejson as json
 ###################################################
 
 def gettytul():
-    return 'https://9anime.is/'
+    return 'https://9anime.to/'
 
 class AnimeTo(CBaseHostClass, CaptchaHelper):
  
@@ -35,7 +35,7 @@ class AnimeTo(CBaseHostClass, CaptchaHelper):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://www9.9anime.is/'
+        self.MAIN_URL = 'https://www1.9anime.to/'
         self.cacheEpisodes = {}
         self.cacheLinks    = {}
         self.cacheFilters  = {}
