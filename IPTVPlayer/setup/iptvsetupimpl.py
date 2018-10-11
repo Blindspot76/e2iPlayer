@@ -96,7 +96,7 @@ class IPTVSetupImpl:
         self.gstifdsrcPaths = ["/usr/lib/gstreamer-1.0/libgstifdsrc.so"]
         
         # subparser
-        self.subparserVersion = 0.4
+        self.subparserVersion = 0.5
         self.subparserPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/iptvsubparser/_subparser.so')]
 
         # e2icjson
@@ -647,17 +647,61 @@ class IPTVSetupImpl:
     def uchardetStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.uchardetStepFinished sts[%r]" % sts)
         self.subparserStep()
-        
+
+    def getPackageName(self, name):
+        packageAvailable = False
+        try: 
+            old = 'none'
+            if self.platform == 'mipsel':
+                if IsFPUAvailable():
+                    if self.glibcVersion >= 2.21:
+                        old = ''
+                    elif self.glibcVersion >= 2.12:
+                        old = '_old'
+                else:
+                    if self.glibcVersion >= 2.20:
+                        old = '_softfpu'
+                    elif self.glibcVersion >= 2.12:
+                        old = '_old_softfpu'
+            elif self.platform == 'sh4':
+                if self.glibcVersion >= 2.19:
+                    old = ''
+                elif self.glibcVersion >= 2.10:
+                    old = '_old'
+            elif self.platform == 'armv7':
+                if self.glibcVersion >= 2.18:
+                    old = ''
+            elif self.platform == 'i686':
+                old = ''
+
+            remoteBinaryName = 'python%s.%s' % (sys.version_info[0], sys.version_info[1])
+            remoteBinaryName += '_{0}' + old
+
+            # check if there package available for user configuration
+            if self.platform == 'mipsel' and remoteBinaryName in ('python2.6_{0}_old','python2.6_{0}_old_softfpu','python2.7_{0}',\
+                                                                  'python2.7_{0}_old','python2.7_{0}_old_softfpu','python2.7_{0}_softfpu'):
+                packageAvailable = True
+            elif self.platform == 'sh4' and remoteBinaryName in ('python2.6_{0}_old','python2.7_{0}','python2.7_{0}_old'):
+                packageAvailable = True
+            elif self.platform == 'armv7' and remoteBinaryName in ('python2.7_{0}'):
+                packageAvailable = True
+            elif self.platform == 'i686' and remoteBinaryName in ('python2.7_{0}'):
+                packageAvailable = True
+        except Exception:
+            printExc()
+
+        return remoteBinaryName.format(name) if packageAvailable else ''
+
     ###################################################
     # STEP: subparser
     ###################################################
     def subparserStep(self, ret=None):
         printDBG("IPTVSetupImpl.subparserStep")
-        
+
         def _detectCmdBuilder(path):
             cmd = GetPyScriptCmd('modver') + ' "%s" iptvsubparser _subparser ' % resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/')
             return cmd
-            
+
         def _detectValidator(code, data):
             printDBG("subparserStep_detectValidator code[%d], data[%s]" % (code, data))
             if 0 == code:
@@ -667,7 +711,7 @@ class IPTVSetupImpl:
                 except Exception: 
                     pass
             return False,True
-        
+
         def _deprecatedHandler(paths, stsTab, dataTab):
             try: 
                 ver = float(dataTab[0].strip())
@@ -675,32 +719,34 @@ class IPTVSetupImpl:
             except Exception: 
                 pass
             return False,""
-        
+
         def _downloadCmdBuilder(binName, platform, openSSLVersion, server, tmpPath):
             url = server + 'bin/' + platform + ('/%s' % binName)
-            if 'mipsel' == self.platform and IsFPUAvailable():
-                url += '.fpu'
             tmpFile = tmpPath + binName
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
-        
-        self.stepHelper = CBinaryStepHelper("_subparser.so", self.platform, self.openSSLVersion, None)
-        msg1 = _("C subtitle parser")
-        msg2 = _("\nFor more info please ask the author samsamsam@o2.pl")
-        msg3 = _('It improves subtitles parsing.\n')
-        self.stepHelper.updateMessage('detection', msg1, 0)
-        self.stepHelper.updateMessage('detection', msg2, 1)
-        self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
-        self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
-        
-        self.stepHelper.setInstallChoiseList( [('_subparser.so', self.subparserPaths[0])] )
-        self.stepHelper.setPaths( self.subparserPaths )
-        self.stepHelper.setDetectCmdBuilder( _detectCmdBuilder )
-        self.stepHelper.setDetectValidator( _detectValidator )
-        self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
-        self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
-        self.stepHelper.setFinishHandler( self.subparserStepFinished )
-        self.binaryDetect()
+
+        remoteBinaryName = self.getPackageName('_subparser.so')
+        if remoteBinaryName:
+            self.stepHelper = CBinaryStepHelper(remoteBinaryName, self.platform, self.openSSLVersion, None)
+            msg1 = _("C subtitle parser")
+            msg2 = _("\nFor more info please ask the author samsamsam@o2.pl")
+            msg3 = _('It improves subtitles parsing.\n')
+            self.stepHelper.updateMessage('detection', msg1, 0)
+            self.stepHelper.updateMessage('detection', msg2, 1)
+            self.stepHelper.updateMessage('not_detected_2', msg1 + _(' has not been detected. \nDo you want to install it? ') + msg3 + msg2, 1)
+            self.stepHelper.updateMessage('deprecated_2', msg1 + _(' is deprecated. \nDo you want to install new one? ') + msg3 + msg2, 1)
+            
+            self.stepHelper.setInstallChoiseList( [('_subparser.so', self.subparserPaths[0])] )
+            self.stepHelper.setPaths( self.subparserPaths )
+            self.stepHelper.setDetectCmdBuilder( _detectCmdBuilder )
+            self.stepHelper.setDetectValidator( _detectValidator )
+            self.stepHelper.setDownloadCmdBuilder( _downloadCmdBuilder )
+            self.stepHelper.setDeprecatedHandler( _deprecatedHandler )
+            self.stepHelper.setFinishHandler( self.subparserStepFinished )
+            self.binaryDetect()
+        else:
+            self.e2icjsonStep()
 
     def subparserStepFinished(self, sts, ret=None):
         printDBG("IPTVSetupImpl.subparserStepFinished sts[%r]" % sts)
@@ -743,48 +789,8 @@ class IPTVSetupImpl:
             cmd = SetupDownloaderCmdCreator(url, tmpFile) + ' > /dev/null 2>&1'
             return cmd
 
-        packageAvailable = False
-        try: 
-            old = 'none'
-            if self.platform == 'mipsel':
-                if IsFPUAvailable():
-                    if self.glibcVersion >= 2.21:
-                        old = ''
-                    elif self.glibcVersion >= 2.12:
-                        old = '_old'
-                else:
-                    if self.glibcVersion >= 2.20:
-                        old = '_softfpu'
-                    elif self.glibcVersion >= 2.12:
-                        old = '_old_softfpu'
-            elif self.platform == 'sh4':
-                if self.glibcVersion >= 2.19:
-                    old = ''
-                elif self.glibcVersion >= 2.10:
-                    old = '_old'
-            elif self.platform == 'armv7':
-                if self.glibcVersion >= 2.18:
-                    old = ''
-            elif self.platform == 'i686':
-                old = ''
-
-            remoteBinaryName = 'python%s.%s' % (sys.version_info[0], sys.version_info[1])
-            remoteBinaryName += '_e2icjson.so' + old
-
-            # check if there package available for user configuration
-            if self.platform == 'mipsel' and remoteBinaryName in ('python2.6_e2icjson.so_old','python2.6_e2icjson.so_old_softfpu','python2.7_e2icjson.so',\
-                                                                  'python2.7_e2icjson.so_old','python2.7_e2icjson.so_old_softfpu','python2.7_e2icjson.so_softfpu'):
-                packageAvailable = True
-            elif self.platform == 'sh4' and remoteBinaryName in ('python2.6_e2icjson.so_old','python2.7_e2icjson.so','python2.7_e2icjson.so_old'):
-                packageAvailable = True
-            elif self.platform == 'armv7' and remoteBinaryName in ('python2.7_e2icjson.so'):
-                packageAvailable = True
-            elif self.platform == 'i686' and remoteBinaryName in ('python2.7_e2icjson.so'):
-                packageAvailable = True
-        except Exception:
-            printExc()
-
-        if packageAvailable:
+        remoteBinaryName = self.getPackageName('e2icjson.so')
+        if remoteBinaryName:
             self.stepHelper = CBinaryStepHelper(remoteBinaryName, self.platform, self.openSSLVersion, None)
             msg1 = _("python-cjson")
             msg2 = _("\nFor more info please ask %s ") % 'samsamsam@o2.pl'
