@@ -41,7 +41,7 @@ class Urllist(CBaseHostClass):
     URLLIST_FILE     = 'urllist.txt'
     URRLIST_STREAMS  = 'urllist.stream'
     URRLIST_USER     = 'urllist.user'
-    
+
     def __init__(self):
         printDBG("Urllist.__init__")
         path = config.plugins.iptvplayer.Sciezkaurllist.value + '/'
@@ -51,12 +51,8 @@ class Urllist(CBaseHostClass):
                                        {'category': Urllist.URRLIST_STREAMS,    'title': _("Live streams"),              'desc': _("Links from the file %s") % normpath(path + 'urllist.stream'),           'icon':'http://asiamh.ru.images.1c-bitrix-cdn.ru/images/media_logo.jpg?136879146733721'}, \
                                        {'category': Urllist.URRLIST_USER,       'title': _("User files"),                'desc': _("Links from the file %s") % normpath(path + 'urllist.user'),             'icon':'http://kinovesti.ru/uploads/posts/2014-12/1419918660_1404722920_02.jpg'}])
         CBaseHostClass.__init__(self)
-        self.currFileHost = None 
-    
-    def _cleanHtmlStr(self, str):
-            str = self.cm.ph.replaceHtmlTags(str, ' ').replace('\n', ' ')
-            return clean_html(self.cm.ph.removeDoubles(str, ' ').replace(' )', ')').strip())
-            
+        self.currFileHost = None
+
     def _getHostingName(self, url):
         if 0 != self.up.checkHostSupport(url):
             return self.up.getHostName(url)
