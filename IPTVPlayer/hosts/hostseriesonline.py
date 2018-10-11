@@ -235,7 +235,7 @@ class SeriesOnlineIO(CBaseHostClass):
             title = title.replace('EPISODE', ' ')
             title = title.replace(' 0', ' ')
             if 'TRAILER' not in title: title = 'Episode ' + title
-            title = self.cleanHtmlStr(title, ' ')
+            title = self.cleanHtmlStr(title)
             if title not in episodeKeys:
                 episodeLinks[title] = []
                 episodeKeys.append(title)
