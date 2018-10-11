@@ -188,7 +188,7 @@ class TurcjaTv(CBaseHostClass):
         if not sts: return
         self.setMainUrl(self.cm.meta['url'])
 
-        data = ph.find(data, ('<div', '>', 'video-player'), '</div>')[1]
+        data = ph.find(data, ('<div', '>', 'player'), '</div>')[1]
         url = self.getFullUrl(ph.search(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', flags=ph.IGNORECASE)[0])
         return self.up.getVideoLinkExt(url)
 
