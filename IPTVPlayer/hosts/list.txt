@@ -44,6 +44,7 @@ hosteskago
 hosteurosportplayer
 hostfaselhdcom
 hostfavourites
+hostfenixsite
 hostfighttube
 hostfightvideo
 hostfilisertv

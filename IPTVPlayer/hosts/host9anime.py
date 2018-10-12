@@ -9,6 +9,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, by
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import DecodeGzipped, EncodeGzipped
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 ###################################################
 
@@ -19,8 +20,6 @@ import re
 import urllib
 from binascii import hexlify, unhexlify
 from hashlib import md5
-try:    import json
-except Exception: import simplejson as json
 ###################################################
 
 def gettytul():
@@ -216,7 +215,7 @@ class AnimeTo(CBaseHostClass, CaptchaHelper):
         if not sts: return []
         
         try:
-            data = byteify(json.loads(data))['html']
+            data = json_loads(data)['html']
             printDBG(data)
         except Exception:
             printExc()
@@ -329,7 +328,7 @@ class AnimeTo(CBaseHostClass, CaptchaHelper):
         if ret['sts'] and 0 == ret['code']:
             data = ret['data'].strip()
             try:
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 retUrl = data['url']
                 if data['data'] != '': retUrl += '&' + data['data']
             except Exception:
@@ -415,7 +414,7 @@ class AnimeTo(CBaseHostClass, CaptchaHelper):
         videoUrl = ''
         subTrack = ''
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             printDBG(data)
             subTrack = data.get('subtitle', '')
             if data['type'] == 'iframe':
@@ -424,14 +423,14 @@ class AnimeTo(CBaseHostClass, CaptchaHelper):
                     videoUrl = self._getUrl(jsCode, videoUrl, "", timestamp)
                 if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
             elif data['type'] == 'direct':
-                printDBG("----------------------------------------------")
+                printDBG("---")
                 printDBG(data)
-                printDBG("----------------------------------------------")
+                printDBG("---")
                 if domain in data['grabber']:
                     url = self._getUrl(jsCode, data['grabber'], urllib.urlencode(dict(data['params'])), timestamp) + '&mobile=0'
                 sts, data = self.getPage(url, params)
                 if not sts: return []
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 for item in data['data']:
                     if item['type'] != 'mp4': continue
                     if not self.cm.isValidUrl(item['file']): continue
