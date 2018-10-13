@@ -655,22 +655,22 @@ class IPTVSetupImpl:
             old = 'none'
             if self.platform == 'mipsel':
                 if IsFPUAvailable():
-                    if self.glibcVersion >= 2.21:
+                    if self.glibcVersion >= 2210:
                         old = ''
-                    elif self.glibcVersion >= 2.12:
+                    elif self.glibcVersion >= 2120:
                         old = '_old'
                 else:
-                    if self.glibcVersion >= 2.20:
+                    if self.glibcVersion >= 2200: 
                         old = '_softfpu'
-                    elif self.glibcVersion >= 2.12:
+                    elif self.glibcVersion >= 2120:
                         old = '_old_softfpu'
             elif self.platform == 'sh4':
-                if self.glibcVersion >= 2.19:
+                if self.glibcVersion >= 2190:
                     old = ''
-                elif self.glibcVersion >= 2.10:
+                elif self.glibcVersion >= 2100:
                     old = '_old'
             elif self.platform == 'armv7':
-                if self.glibcVersion >= 2.18:
+                if self.glibcVersion >= 2180:
                     old = ''
             elif self.platform == 'i686':
                 old = ''
