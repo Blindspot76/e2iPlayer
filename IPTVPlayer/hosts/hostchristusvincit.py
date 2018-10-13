@@ -61,7 +61,7 @@ class Christusvincit(CBaseHostClass):
             url = self.getFullUrl( ph.search(item, ph.A_HREF_URI_RE)[1] )
             icon = self.getFullUrl( ph.search(item, self.reImgObj)[1] )
             title = icon.rsplit('/', 1)[-1].rsplit('.', 1)[0].upper()
-            subItems.append(MergeDicts(cItem, {'category':nextCategory, 'title':title, 'url':url, 'icon':icon}))
+            subItems.append(MergeDicts(cItem, {'good_for_fav':True:, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon}))
 
         if len(subItems) > 1:
             self.addDir(MergeDicts(cItem, {'category':'sub_items', 'title':sTitle, 'icon':sIcon, 'sub_items':subItems}))
@@ -169,10 +169,6 @@ class Christusvincit(CBaseHostClass):
             printExc()
         
         CBaseHostClass.endHandleService(self, index, refresh)
-
-    def getSuggestionsProvider(self, index):
-        printDBG('Christusvincit.getSuggestionsProvider')
-        return SuggestionsProvider()
 
 class IPTVHost(CHostBase):
 

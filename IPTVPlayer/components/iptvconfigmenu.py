@@ -85,7 +85,7 @@ config.plugins.iptvplayer.osk_type = ConfigSelection(default = "", choices = [("
 config.plugins.iptvplayer.osk_layout = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.osk_allow_suggestions = ConfigYesNo(default = True)
 config.plugins.iptvplayer.osk_default_suggestions = ConfigSelection(default = "", choices = [("", _("Auto")),("none", _("None")), ("google", "google.com"), ("filmweb", "filmweb.pl"), ("imdb", "imdb.com"), ("filmstarts", "filmstarts.de")]) 
-
+config.plugins.iptvplayer.osk_background_color = ConfigSelection(default = "", choices = [('', _('Default')), ('transparent', _('Transparent')), ('#000000', _('Black')), ('#80000000', _('Darkgray')), ('#cc000000', _('Lightgray'))])
 
 def GetMoviePlayerName(player):
     map = {"auto":_("auto"), "mini": _("internal"), "standard":_("standard"), 'exteplayer': _("external eplayer3"), 'extgstplayer': _("external gstplayer")}
@@ -320,14 +320,16 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("IPTVPlayer password", config.plugins.iptvplayer.iptvplayer_password))
             list.append(getConfigListEntry("IPTVPlayer auto start at Enigma2 start", config.plugins.iptvplayer.plugin_autostart))
             list.append(getConfigListEntry("Auto start method", config.plugins.iptvplayer.plugin_autostart_method))
-        
+
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("The preferred update server"), config.plugins.iptvplayer.preferredupdateserver) )
         list.append( getConfigListEntry(_("Update"), config.plugins.iptvplayer.fakeUpdate) )
         list.append( getConfigListEntry(_("Virtual Keyboard type"), config.plugins.iptvplayer.osk_type) )
         if config.plugins.iptvplayer.osk_type.value == 'own':
+            list.append( getConfigListEntry(_("    Background color"), config.plugins.iptvplayer.osk_background_color) )
             list.append( getConfigListEntry(_("    Show suggestions"), config.plugins.iptvplayer.osk_allow_suggestions) )
             list.append( getConfigListEntry(_("    Default suggestions provider"), config.plugins.iptvplayer.osk_default_suggestions) )
+
         list.append( getConfigListEntry(_("Platform"), config.plugins.iptvplayer.plarform) )
         list.append( getConfigListEntry(_("Services configuration"), config.plugins.iptvplayer.fakeHostsList) )
         list.append( getConfigListEntry(_("Remove disabled services"), config.plugins.iptvplayer.remove_diabled_hosts) )
