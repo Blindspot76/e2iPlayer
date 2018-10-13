@@ -649,6 +649,7 @@ class IPTVSetupImpl:
         self.subparserStep()
 
     def getPackageName(self, name):
+        printDBG("getPackageName platform [%s] glibcVersion [%s] " % (self.platform, self.glibcVersion))
         packageAvailable = False
         try: 
             old = 'none'
@@ -676,6 +677,7 @@ class IPTVSetupImpl:
 
             remoteBinaryName = 'python%s.%s' % (sys.version_info[0], sys.version_info[1])
             remoteBinaryName += '_{0}' + old
+            printDBG("getPackageName remoteBinaryName [%s] " % (remoteBinaryName))
 
             # check if there package available for user configuration
             if self.platform == 'mipsel' and remoteBinaryName in ('python2.6_{0}_old','python2.6_{0}_old_softfpu','python2.7_{0}',\
