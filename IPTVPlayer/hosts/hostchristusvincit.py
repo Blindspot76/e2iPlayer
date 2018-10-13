@@ -2,6 +2,7 @@
 ###################################################
 # LOCAL import
 ###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, formatBytes
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -80,6 +81,9 @@ class Christusvincit(CBaseHostClass):
         if addParams == {}: addParams = dict(self.defaultParams)
         return self.cm.getPage(baseUrl, addParams, post_data)
 
+    def getFullUrl(self, url, currUrl=None):
+        return CBaseHostClass.getFullUrl(self, url.replace('&amp;', '&'), currUrl)
+
     def listSubItems(self, cItem):
         printDBG("Christusvincit.listSubItems")
         self.currList = cItem['sub_items']
@@ -144,18 +148,21 @@ class Christusvincit(CBaseHostClass):
         data = ph.find(data, 'search_result', '</table>', flags=0)[1]
         data = re.compile('''<div[^>]+?pagenav[^>]*?>''').split(data, 1)
         if len(data) == 2: 
-            nextPage = ph.find(data[-1], ('<a', '>%s<' % (page+1)))[0]
+            nextPage = ph.find(data[-1], ('<a', '>%s<' % (page+1)))[1]
             nextPage = self.getFullUrl(ph.getattr(nextPage, 'href'))
         else: nextPage = ''
 
-        data = ph.findall(data[0], ('<a', '>', ph.check(ph.any, ('articles.php', 'readarticle.php'))), '</a>')
+        data = ph.findall(data[0], ('<a', '>', ph.check(ph.any, ('articles.php', 'readarticle.php'))), '</span>')
         for item in data:
             url = self.getFullUrl( ph.search(item, ph.A_HREF_URI_RE)[1] )
             icon = self.getFullUrl( ph.search(item, self.reImgObj)[1] )
-            title = self.cleanHtmlStr(item)
-            self.addDir(MergeDicts(cItem, {'good_for_fav':True, 'category':'explore_item', 'title':title, 'url':url, 'icon':icon}))
+            item = item.split('</a>', 1)
+            title = self.cleanHtmlStr(item[0])
+            desc = self.cleanHtmlStr(item[-1])
+
+            self.addDir(MergeDicts(cItem, {'good_for_fav':True, 'category':'explore_item', 'title':title, 'url':url, 'icon':icon, 'desc':desc}))
         if nextPage:
-            self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'page':page+1, 'url':nextPage}))
+            self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'title':_('Next page'), 'page':page+1, 'url':nextPage}))
 
     def getLinksForVideo(self, cItem):
         urlsTab = []
