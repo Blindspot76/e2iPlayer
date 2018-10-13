@@ -193,6 +193,7 @@ class Fenixsite(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return []
         self.setMainUrl(self.cm.meta['url'])
+        cUrl = self.cm.meta['url']
 
         # get trailer
         trailerUrl = ''
@@ -259,7 +260,7 @@ class Fenixsite(CBaseHostClass):
             if subTrack:
                 subTrack = [{'title':_('Default'), 'url':subTrack, 'lang':'default', 'format':'vtt'}]
                 for item in linksTab:
-                    item['url'] = strwithmeta(item['url'], {'Referer':self.cm.meta['url'], 'external_sub_tracks':subTrack})
+                    item['url'] = strwithmeta(item['url'], {'Referer':cUrl, 'external_sub_tracks':subTrack})
             self.cacheLinks[cItem['url']] = linksTab
 
         if trailerUrl: linksTab.append({'name':_('Trailer'), 'url':trailerUrl, 'need_resolve':1})

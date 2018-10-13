@@ -10,7 +10,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, CSelOneLink, GetCookieDir, byteify, formatBytes, GetPyScriptCmd, GetTmpDir, rm, \
                                                           GetDefaultLang, GetFileSize, GetPluginDir, MergeDicts, GetJSScriptFile
 from Plugins.Extensions.IPTVPlayer.libs.crypto.hash.md5Hash import MD5
-
+from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
 from Plugins.Extensions.IPTVPlayer.libs.gledajfilmDecrypter import gledajfilmDecrypter
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes  import AES
@@ -313,6 +313,7 @@ class urlparser:
                        'oload.stream':         self.pp.parserOPENLOADIO    ,
                        'oload.site':           self.pp.parserOPENLOADIO    ,
                        'oload.cloud':          self.pp.parserOPENLOADIO    ,
+                       'oload.download':       self.pp.parserOPENLOADIO    ,
                        'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
                        'vevo.com':             self.pp.parserVEVO          ,
                        'bbc.co.uk':            self.pp.parserBBC           ,
@@ -498,6 +499,9 @@ class urlparser:
                        'krakenfiles.com':      self.pp.parserKRAKENFILESCOM ,
                        'filefactory.com':      self.pp.parserFILEFACTORYCOM ,
                        'telerium.tv':          self.pp.parserTELERIUMTV     ,
+                       'vidstodo.me':          self.pp.parserVIDSTODOME     ,
+                       'vidtodo.com':          self.pp.parserVIDSTODOME     ,
+                       'cloudvideo.tv':        self.pp.parserCLOUDVIDEOTV   ,
                     }
         return
     
@@ -10909,3 +10913,46 @@ class pageParser(CaptchaHelper):
             return getDirectM3U8Playlist(url, checkExt=False, checkContent=True)
 
         return False
+
+    def parserVIDSTODOME(self, baseUrl):
+        printDBG("parserVIDSTODOME baseUrl[%r]" % baseUrl)
+        # example video: https://vidstodo.me/embed-6g0hf5ne3eb2.html
+        def _findLinks(data):
+            linksTab = []
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
+            data = re.compile('"(http[^"]+?)"').findall(data)
+            for link in data:
+                if link.split('?')[0].endswith('m3u8'):
+                    linksTab.extend(getDirectM3U8Playlist(link, checkContent=True))
+                elif link.split('?')[0].endswith('mp4'):
+                    linksTab.append({'name':'mp4', 'url': link})
+            return linksTab
+        return self._parserUNIVERSAL_A(baseUrl, 'https://vidstodo.me/embed-{0}.html', _findLinks)
+
+    def parserCLOUDVIDEOTV(self, baseUrl):
+        printDBG("parserCLOUDVIDEOTV baseUrl[%r]" % baseUrl)
+        # example video: https://cloudvideo.tv/embed-1d3w4w97woun.html
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        domain = urlparser.getDomain(cUrl)
+
+        retTab = []
+        tmp = ph.find(data, '<video', '</video>', flags=ph.IGNORECASE)[1]
+        tmp = ph.findall(tmp, '<source', '>', flags=ph.IGNORECASE)
+        for item in tmp:
+            url = ph.getattr(item, 'src')
+            type = ph.getattr(item, 'type') 
+            if 'video' not in type and 'x-mpeg' not in type: continue
+            if url:
+                url = self.cm.getFullUrl(url, cUrl)
+                if 'video' in type:
+                    retTab.append({'name':'[%s]' % type, 'url':url})
+                elif 'x-mpeg' in type:
+                    retTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+        return retTab
