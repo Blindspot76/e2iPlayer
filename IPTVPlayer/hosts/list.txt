@@ -21,6 +21,7 @@ hostbsto
 hostcartoonhd
 hostcdapl
 hostchomikuj
+hostchristusvincit
 hostcimaclubcom
 hostcinemay
 hostcineto
@@ -80,6 +81,7 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
+hostinfoversion
 hostinteriatv
 hostipla
 hostiptvplayerinfo
