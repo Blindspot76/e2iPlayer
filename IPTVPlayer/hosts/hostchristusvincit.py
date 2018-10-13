@@ -15,6 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 ###################################################
 import re
 import time
+import urllib
 from datetime import  timedelta
 ###################################################
 
@@ -31,7 +32,7 @@ class Christusvincit(CBaseHostClass):
 
         self.MAIN_URL   = 'http://christusvincit-tv.pl/'
         self.DEFAULT_ICON_URL = 'http://christusvincit-tv.pl/images/christusbg.jpg'
-        self.reImgObj = re.compile(r'''<img[^>]+?src=(['"])([^>]*?\.(?:jpe?g|png|gif)(?:\?[^\1]*?)?)(?:\1)''', re.I)
+        self.reImgObj = re.compile(r'''<img[^>]+?src=(['"])([^>]*?)(?:\1)''', re.I)
 
     def listMain(self, cItem, nextCategory):
         printDBG("Christusvincit.listMain")
@@ -45,6 +46,10 @@ class Christusvincit(CBaseHostClass):
         for section in sections:
             self.handleSection(cItem, nextCategory, section)
 
+        MAIN_CAT_TAB = [{'category':'search',         'title': _('Search'),       'search_item':True},
+                        {'category':'search_history', 'title': _('Search history'),                 }]
+        self.listsTab(MAIN_CAT_TAB, cItem)
+
     def handleSection(self, cItem, nextCategory, section):
         printDBG("Christusvincit.handleSection")
 
@@ -56,11 +61,12 @@ class Christusvincit(CBaseHostClass):
         iframe = ph.search(section, ph.IFRAME_SRC_URI_RE)[1]
         subItems = []
         if iframe: subItems.append(MergeDicts(cItem, {'category':nextCategory, 'title':sTitle, 'url':iframe}))
-        section = ph.findall(section, ('<a', '>', 'articles.php'), '</a>')
+        section = ph.findall(section, ('<a', '>', ph.check(ph.any, ('articles.php', 'readarticle.php'))), '</a>')
         for item in section:
             url = self.getFullUrl( ph.search(item, ph.A_HREF_URI_RE)[1] )
             icon = self.getFullUrl( ph.search(item, self.reImgObj)[1] )
-            title = icon.rsplit('/', 1)[-1].rsplit('.', 1)[0].upper()
+            title = self.cleanHtmlStr(item)
+            if not title: title = icon.rsplit('/', 1)[-1].rsplit('.', 1)[0].upper()
             subItems.append(MergeDicts(cItem, {'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'icon':icon}))
 
         if len(subItems) > 1:
@@ -84,9 +90,10 @@ class Christusvincit(CBaseHostClass):
 
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        self.setMainUrl(self.cm.meta['url'])
+        cUrl = self.cm.meta['url']
+        self.setMainUrl(cUrl)
 
-        if 'articles.php' in cItem['url']:
+        if 'articles.php' in cUrl:
             iframe = ph.search(data, ph.IFRAME_SRC_URI_RE)[1]
             if not iframe: 
                 iframe = ph.find(data, ('<script', '>', 'embedIframeJs'))[1]
@@ -103,7 +110,7 @@ class Christusvincit(CBaseHostClass):
                     self.handleSection(cItem, cItem['category'], section)
         else:
             playerConfig = ph.find(data, '{"playerConfig"', '};')[1][:-1]
-        
+
         if playerConfig:
             try:
                 playerConfig = json_loads(playerConfig)
@@ -119,6 +126,36 @@ class Christusvincit(CBaseHostClass):
                         self.addVideo(params)
             except Exception:
                 printExc()
+
+    def listSearchResult(self, cItem, searchPattern, searchType):
+
+        url = self.getFullUrl('/search.php?stext=%s&search=Szukaj&method=AND&stype=articles&forum_id=0&datelimit=0&fields=2&sort=datestamp&order=0&chars=50' % urllib.quote_plus(searchPattern))
+        cItem = MergeDicts(cItem, {'category':'list_search', 'url':url})
+        self.listSearchItems(cItem)
+
+    def listSearchItems(self, cItem):
+        printDBG("Christusvincit.listSearchItems")
+        page = cItem.get('page', 1)
+
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
+
+        data = ph.find(data, 'search_result', '</table>', flags=0)[1]
+        data = re.compile('''<div[^>]+?pagenav[^>]*?>''').split(data, 1)
+        if len(data) == 2: 
+            nextPage = ph.find(data[-1], ('<a', '>%s<' % (page+1)))[0]
+            nextPage = self.getFullUrl(ph.getattr(nextPage, 'href'))
+        else: nextPage = ''
+
+        data = ph.findall(data[0], ('<a', '>', ph.check(ph.any, ('articles.php', 'readarticle.php'))), '</a>')
+        for item in data:
+            url = self.getFullUrl( ph.search(item, ph.A_HREF_URI_RE)[1] )
+            icon = self.getFullUrl( ph.search(item, self.reImgObj)[1] )
+            title = self.cleanHtmlStr(item)
+            self.addDir(MergeDicts(cItem, {'good_for_fav':True, 'category':'explore_item', 'title':title, 'url':url, 'icon':icon}))
+        if nextPage:
+            self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'page':page+1, 'url':nextPage}))
 
     def getLinksForVideo(self, cItem):
         urlsTab = []
@@ -165,6 +202,16 @@ class Christusvincit(CBaseHostClass):
         elif category == 'sub_items':
             self.listSubItems(self.currItem)
 
+    #SEARCH
+        elif category == 'list_search':
+            self.listSearchItems(self.currItem)
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+    #HISTORIA SEARCH
+        elif category == "search_history":
+            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
         else:
             printExc()
         
@@ -173,5 +220,5 @@ class Christusvincit(CBaseHostClass):
 class IPTVHost(CHostBase):
 
     def __init__(self):
-        CHostBase.__init__(self, Christusvincit(), False, [])
+        CHostBase.__init__(self, Christusvincit(), True, [])
 

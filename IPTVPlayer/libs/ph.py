@@ -68,6 +68,7 @@ def any(tab, data, start, end):
             return True
     return False
 
+# example: ph.findall(data, ('<a', '>', ph.check(('articles.php', 'readarticle.php'), ph.any)), '</a>')
 def check(arg1, arg2=None):
     if arg2 == None and isinstance(arg1, basestring):
         return lambda data, ldata, s, e: ldata.find(arg1, s, e) != -1
