@@ -9,6 +9,7 @@ START_S=2
 END_E=4
 END_S=8
 IGNORECASE=16
+I=16
 
 # pre-compiled regular expressions
 IFRAME_SRC_URI_RE = re.compile(r'''<iframe[^>]+?src=(['"])([^>]*?)(?:\1)''', re.I)
