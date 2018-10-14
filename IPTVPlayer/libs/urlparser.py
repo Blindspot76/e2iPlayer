@@ -9725,29 +9725,37 @@ class pageParser(CaptchaHelper):
         baseUrl = strwithmeta(baseUrl)
         referer = baseUrl.meta.get('Referer', baseUrl)
         url = baseUrl
-        
+
         videoUrls = []
         tries = 0
         while tries < 2:
             tries += 1
             sts, data = self.cm.getPage(url)
             if not sts: return videoUrls
-            
             ckmId = self.cm.ph.getSearchGroups(data, 'data-params-mvp="([^"]+?)"')[0]
             if '' == ckmId: ckmId = self.cm.ph.getSearchGroups(data, 'id="mvp:([^"]+?)"')[0]
+            if '' == ckmId: ckmId = self.cm.ph.getSearchGroups(data, 'data\-mvp="([^"]+?)"')[0]
             if '' != ckmId: 
                 tab = self._parserEKSTRAKLASATV(ckmId)
                 break
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'pulsembed_embed', '</div>')[1]
-            url  = self.cm.ph.getSearchGroups(data, 'href="([^"]+?)"')[0] 
-        
+            tmp = ph.find(data, 'pulsembed_embed', '</div>')[1]
+            url = ph.getattr(tmp, 'href')
+            if url == '':
+                tmp = ph.find(data, ('<div', '>', 'embeddedApp'), ('</div', '>'), flags=0)[1]
+                tmp = ph.clean_html(self.cm.ph.getSearchGroups(tmp, '''data\-params=['"]([^'^"]+?)['"]''')[0])
+                try:
+                    tmp = json_loads(tmp)['parameters']['embedCode']
+                    url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(tmp, 'data\-src="([^"]+?)"')[0], self.cm.meta['url'])
+                except Exception:
+                    printExc()
+
         for item in tab:
             if item[0] != 'mp4': continue
             
             name = "[%s] %s" % (item[0], item[2])
             url  = item[1]
             videoUrls.append({'name':name, 'url':url, 'bitrate':item[2]})
-        
+
         return videoUrls
         
     def parserUPLOAD2(self, baseUrl):

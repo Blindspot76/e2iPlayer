@@ -46,7 +46,6 @@ hosteurosportplayer
 hostfaselhdcom
 hostfavourites
 hostfenixsite
-hostfighttube
 hostfightvideo
 hostfilisertv
 hostfilma24hdcom
@@ -81,7 +80,6 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
-hostinfoversion
 hostinteriatv
 hostipla
 hostiptvplayerinfo
@@ -90,7 +88,6 @@ hostkabarety
 hostkijknl
 hostkinogo
 hostkinomanco
-hostkinopodaniolempl
 hostkinotan
 hostkinox
 hostkissanimeto
