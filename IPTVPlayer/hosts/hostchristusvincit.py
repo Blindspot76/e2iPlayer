@@ -218,15 +218,35 @@ class Christusvincit(CBaseHostClass):
 
     def handleSection(self, cItem, nextCategory, section):
         printDBG("Christusvincit.handleSection")
+        section = ph.STRIP_HTML_COMMENT_RE.sub("", section)
 
         tmp = section.split('</table>', 1)
         sTitle = self.cleanHtmlStr(tmp[0])
         if sTitle.lower() in ('linki',): #'kategorie'
             return
         sIcon = self.getFullUrl( ph.search(section, ph.IMAGE_SRC_URI_RE)[1] )
-        iframe = ph.search(section, ph.IFRAME_SRC_URI_RE)[1]
+
         subItems = []
-        if iframe: subItems.append(MergeDicts(cItem, {'category':nextCategory, 'title':sTitle, 'url':iframe}))
+        uniques = set()
+        iframes = ph.findall(section, '<center>', '</iframe>')
+        if iframes:
+            for iframe in iframes:
+                title = self.cleanHtmlStr(iframe).split('Video Platform', 1)[0].strip()
+                iframe = ph.search(iframe, ph.IFRAME_SRC_URI_RE)[1]
+                if iframe in uniques:
+                    continue
+                uniques.add(iframe)
+                if not title: title = sTitle
+                subItems.append(MergeDicts(cItem, {'category':nextCategory, 'title':title, 'url':iframe}))
+
+        iframes = ph.IFRAME_SRC_URI_RE.findall(section)
+        if iframes:
+            for iframe in iframes:
+                iframe = iframe[1]
+                if iframe in uniques:
+                    continue
+                uniques.add(iframe)
+                subItems.append(MergeDicts(cItem, {'category':nextCategory, 'title':sTitle, 'url':iframe}))
         section = ph.findall(section, ('<a', '>', ph.check(ph.any, ('articles.php', 'readarticle.php'))), '</a>')
         for item in section:
             url = self.getFullUrl( ph.search(item, ph.A_HREF_URI_RE)[1] )
