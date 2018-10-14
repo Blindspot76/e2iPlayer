@@ -486,6 +486,7 @@ class urlparser:
                        'vidcloud.icu':         self.pp.parserVIDCLOUDICU    ,
                        'uploaduj.net':         self.pp.parserUPLOADUJNET    ,
                        'mystream.to':          self.pp.parserMYSTREAMTO     ,
+                       'mystream.io':          self.pp.parserMYSTREAMTO     ,
                        'vidload.co':           self.pp.parserVIDLOADCO      ,
                        'sportstream365.com':   self.pp.parserSPORTSTREAM365 ,
                        'nxload.com':           self.pp.parserNXLOADCOM      ,
@@ -10328,14 +10329,14 @@ class pageParser(CaptchaHelper):
         cUrl = baseUrl
         HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
-        
+
         urlParams = {'header':HTTP_HEADER}
         sts, data = self.cm.getPage(baseUrl, urlParams)
         if not sts: return False
         cUrl = self.cm.meta['url']
-        
+
         domain = self.cm.getBaseUrl(cUrl, True)
-        
+
         videoTab = []
         tmp = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<source', '>')
@@ -10349,6 +10350,25 @@ class pageParser(CaptchaHelper):
             printDBG(url)
             if url != '':
                 videoTab.append({'name':'[%s] %s %s' % (type, domain, label), 'url':strwithmeta(url, {'User-Agent': HTTP_HEADER['User-Agent'], 'Referer':cUrl})})
+
+        if not videoTab:
+            data = ph.findall(data, ('<script', '>'), '</script>', flags=0)
+            for item in data:
+                if 'ﾟωﾟﾉ=' in item:
+                    jscode = ['var e2i_sources=[],document={},element=function(e){this.name=e,this.data={},this.setAttribute=function(e,t){this.data[e]=t}},$=function(e){};document.createElement=function(e){if("source"==e)return e2i_sources.push(new element(e)),e2i_sources[e2i_sources.length-1]},document.append=function(e){},document.getElementById=function(){return document};']
+                    jscode.append(item)
+                    jscode.append('print(JSON.stringify(e2i_sources));')
+                    ret = js_execute( '\n'.join(jscode) )
+                    item = json_loads(ret['data'])
+                    for it in item:
+                        it = it['data']
+                        it['type'] = it.get('type', it['src'].split('?', 1)[0].rsplit('.', 1)[-1]).lower()
+                        url = strwithmeta(self.cm.getFullUrl(it['src'], self.cm.meta['url']), {'Referer':self.cm.meta['url']})
+                        if 'mp4' in it['type']:
+                            videoTab.append({'name':it.get('label', it['type']), 'url':url, 'need_resolve':1})
+                        elif 'mpeg' in it['type']:
+                            videoTab.extend(getDirectM3U8Playlist(url))
+                    break
         return videoTab
     
     def parserVIDLOADCO(self, baseUrl):
