@@ -14,7 +14,6 @@ hostarconaitvme
 hostardmediathek
 hostartetv
 hostbajeczkiorg
-hostbajkipopolskucom
 hostbbciplayer
 hostbbcsport
 hostbsto
