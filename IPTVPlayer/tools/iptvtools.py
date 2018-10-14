@@ -675,7 +675,7 @@ def GetHostsList(fromList=True, fromHostFolder=True, useCache=True):
     return lhosts
 
 def GetHostsAliases():
-    from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
+    from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
     ret = {}
     try:
         HOST_PATH = resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/hosts/')
@@ -1222,7 +1222,7 @@ class CMoviePlayerPerHost():
         self.save()
         
     def load(self):
-        from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
+        from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
         sts, ret = False, ''
         try:
             if not os.path.isfile(self.filePath):
@@ -1241,6 +1241,7 @@ class CMoviePlayerPerHost():
         return sts, ret
         
     def save(self):
+        from Plugins.Extensions.IPTVPlayer.libs.e2ijson import dumps as json_dumps
         sts = False
         try:
             if {} == self.activePlayer and os.path.isfile(self.filePath):
