@@ -377,7 +377,7 @@ class KissAnimeTo(CBaseHostClass):
             sts, data = self.getPage(url) 
             if not sts: return urlTab
             
-            if 'areyouhuman' in self.cm.meta['url'].lower():
+            if 'areyouhuman' in self.cm.meta.get('url', '').lower():
                 tmp = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'specialButton'), ('</a', '>'))[1]
                 tmp = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''href=["']([^"^']+?)['"]''')[0])
                 if tmp != '':

@@ -503,6 +503,7 @@ class urlparser:
                        'vidstodo.me':          self.pp.parserVIDSTODOME     ,
                        'vidtodo.com':          self.pp.parserVIDSTODOME     ,
                        'cloudvideo.tv':        self.pp.parserCLOUDVIDEOTV   ,
+                       'gogoanime.to':         self.pp.parserGOGOANIMETO    ,
                     }
         return
     
@@ -10983,4 +10984,47 @@ class pageParser(CaptchaHelper):
                     retTab.append({'name':'[%s]' % type, 'url':url})
                 elif 'x-mpeg' in type:
                     retTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+        return retTab
+
+    def parserGOGOANIMETO(self, baseUrl):
+        printDBG("parserGOGOANIMETO baseUrl[%r]" % baseUrl)
+        # example video: http://easyvideome.gogoanime.to/gogo/new/?w=647&h=500&vid=at_bible_town_part3.mp4&
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        domain = urlparser.getDomain(cUrl)
+
+        retTab = []
+        try:
+            tmp = json_loads(ph.find(data, 'var video_links =', '};', flags=0)[1] + '}')
+            for subItem in tmp.itervalues():
+                for item in subItem.itervalues():
+                    for it in item:
+                        url = strwithmeta(it['link'], {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':self.cm.meta['url']})
+                        type = url.split('?', 1)[0].rsplit('.', 1)[-1].lower()
+                        if 'mp4' in type:
+                            retTab.append({'name':'[%s] %s' % (it.get('quality', type), it.get('filename')), 'url':url})
+                        elif 'mpeg' in type:
+                            retTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+        except Exception:
+            printExc()
+
+        if not retTab:
+            tmp = ph.findall(data, ('<script', '>'), ('</script', '>'), flags=0)
+            for item in tmp:
+                if '|mp4|' in item:
+                    tmp = item
+                    break
+
+            jscode = tmp.replace('eval(', 'print(')
+            ret = js_execute( jscode )
+            tmp = re.compile('''['"](https?://[^'^"]+?\.mp4(?:\?[^'^"]*?)?)['"]''', re.IGNORECASE).findall(ret['data'])
+            for item in tmp:
+                url = strwithmeta(item, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':self.cm.meta['url']})
+                retTab.append({'name':urlparser.getDomain(url), 'url':url})
         return retTab

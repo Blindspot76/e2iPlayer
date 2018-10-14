@@ -197,6 +197,7 @@ class Christusvincit(CBaseHostClass):
                           "filozofiamyslenia":"Filozofia myślenia",
                           "slowobozevaltorta":"Słowo Boże na co dzień - M. Valtorta",
                           "dni_wiernych_parafii":"Dni wiernych parafii",
+                          "pielgrzymki_550x120":"Pielgrzymki Odbijamy Europę",
                           }
 
     def listMain(self, cItem, nextCategory):
