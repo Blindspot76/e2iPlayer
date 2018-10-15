@@ -508,15 +508,16 @@ class urlparser:
         return
     
     def getHostName(self, url, nameOnly = False):
-        hostName = ''
-        match = re.search('https?://(?:www.)?(.+?)/', url)
-        if match:
-            hostName = match.group(1)
-            if (nameOnly):
-                n = hostName.split('.')
-                try: hostName = n[-2]
-                except Exception: printExc()
-        hostName = hostName.lower()
+        hostName = strwithmeta(url).meta.get('host_name', '')
+        if not hostName:
+            match = re.search('https?://(?:www.)?(.+?)/', url)
+            if match:
+                hostName = match.group(1)
+                if (nameOnly):
+                    n = hostName.split('.')
+                    try: hostName = n[-2]
+                    except Exception: printExc()
+            hostName = hostName.lower()
         printDBG("_________________getHostName: [%s] -> [%s]" % (url, hostName))
         return hostName
         
@@ -4083,6 +4084,13 @@ class pageParser(CaptchaHelper):
             else:
                 url = urlparser.decorateUrl(url, HTTP_HEADER)
                 vidTab.append({'name':label, 'url':url})
+        reNum = re.compile('([0-9]+)')
+        def __quality(x):
+            try: return int(x['name'][:-1])
+            except Exception:
+                printExc()
+                return 0
+        vidTab.sort(key=__quality, reverse=True)
         return vidTab
         
     def parserUSERSCLOUDCOM(self, baseUrl):
