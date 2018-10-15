@@ -4,9 +4,10 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 
 ###################################################
@@ -15,20 +16,18 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 import urlparse
 import re
 import urllib
-try:    import json
-except Exception: import simplejson as json
 ###################################################
 
 
 def gettytul():
-    return 'https://faselhd.com/'
+    return 'https://faselhd.co/'
 
 class FaselhdCOM(CBaseHostClass):
     
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'faselhd.com', 'cookie':'faselhd.com.cookie'})
         self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-        self.MAIN_URL = 'https://www.faselhd.com/'
+        self.MAIN_URL = 'https://www.faselhd.co/'
         self.DEFAULT_ICON_URL = self.getFullUrl('https://i2.wp.com/www.faselhd.com/wp-content/themes/adbreak/images/logo.png')
         self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
         self.AJAX_HEADER = dict(self.HTTP_HEADER)
@@ -101,6 +100,7 @@ class FaselhdCOM(CBaseHostClass):
         
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        baseData = data
         
         nextPage = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'pagination'), ('</div', '>'))[1]
         nextPage = self.getFullUrl(self.cm.ph.getSearchGroups(nextPage, '''<a[^>]+?href=['"]([^'^"]+?)['"][^>]*?>%s<''' % (page + 1))[0])
@@ -133,12 +133,20 @@ class FaselhdCOM(CBaseHostClass):
             else:
                 params['category'] = nextCategory
                 self.addDir(params)
-        
+
+        if not cItem.get('sub_view'):
+            data = ph.findall(baseData, ('<span', '>', 'sub-view'), '</span>')
+            for item in data:
+                if 'display:none' in item: continue
+                url = self.getFullUrl(ph.getattr(item, 'href'), self.cm.meta['url'])
+                title = '%s - %s' % (cItem['title'], ph.clean_html(item))
+                self.addDir(MergeDicts(cItem, {'url':url, 'title':title, 'sub_view':True}))
+
         if self.cm.isValidUrl(nextPage):
             params = dict(cItem)
             params.update({'good_for_fav':False, 'title':_("Next page"), 'url':nextPage, 'page':page+1})
             self.addDir(params)
-        
+
     def exploreItem(self, cItem, nextCategory):
         printDBG("FaselhdCOM.exploreItem")
         
