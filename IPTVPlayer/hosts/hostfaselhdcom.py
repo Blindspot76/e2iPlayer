@@ -45,12 +45,14 @@ class FaselhdCOM(CBaseHostClass):
         if addParams == {}: addParams = dict(self.defaultParams)
         origBaseUrl = baseUrl
         baseUrl = self.cm.iriToUri(baseUrl)
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url): return url
-            else: return urlparse.urljoin(baseUrl, url)
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
-        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
-        
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        if sts and 'http-equiv="refresh"' in data:
+            url = ph.find(data, ('<meta', '>', 'http-equiv="refresh"'))[1]
+            url = self.getFullUrl(ph.getattr(url.replace(';', ' '), 'URL'), self.cm.meta['url'])
+            return self.cm.getPageCFProtection(url, addParams, post_data)
+        return sts, data
+
     def getFullIconUrl(self, url):
         url =  CBaseHostClass.getFullIconUrl(self, url)
         if url != '' and self.up.getDomain(url) in self.getMainUrl():
@@ -82,6 +84,8 @@ class FaselhdCOM(CBaseHostClass):
             for item in cTree['list']:
                 title = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item['dat'], '<a', '</a>')[1])
                 url   = self.getFullUrl(self.cm.ph.getSearchGroups(item['dat'], '''href=['"]([^'^"]+?)['"]''')[0])
+                if '/promo' in url:
+                    return
                 if 'list' not in item:
                     if self.cm.isValidUrl(url) and title != '':
                         params = dict(cItem)
@@ -126,13 +130,17 @@ class FaselhdCOM(CBaseHostClass):
                     if label != '': desc.append('%s %s' %(label, t))
                     else: desc.append(t)
             
-            params = dict(cItem)
-            params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
-            if nextCategory == '' or cItem.get('f_list_episodes'):
-                self.addVideo(params)
+            if '/seasons/' in self.cm.meta['url'] and not cItem.get('sub_view'):
+                title = '%s - %s' % (cItem['title'], title)
+                self.addDir(MergeDicts(cItem, {'url':url, 'title':title, 'sub_view':True}))
             else:
-                params['category'] = nextCategory
-                self.addDir(params)
+                params = dict(cItem)
+                params.update({'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'desc':'[/br]'.join(desc)})
+                if nextCategory == '' or cItem.get('f_list_episodes'):
+                    self.addVideo(params)
+                else:
+                    params['category'] = nextCategory
+                    self.addDir(params)
 
         if not cItem.get('sub_view'):
             data = ph.findall(baseData, ('<span', '>', 'sub-view'), '</span>')
