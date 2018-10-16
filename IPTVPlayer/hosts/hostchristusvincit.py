@@ -2,9 +2,10 @@
 ###################################################
 # LOCAL import
 ###################################################
+from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, formatBytes
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts, rm, formatBytes, CSelOneLink
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 from Plugins.Extensions.IPTVPlayer.libs import ph
@@ -19,6 +20,32 @@ import time
 import urllib
 from datetime import  timedelta
 ###################################################
+
+config.plugins.iptvplayer.christusvincit_preferred_bitrate = ConfigSelection(default = "99999999", choices = [("0",      _("the lowest")),
+                                                                                                    ("360000",  "360000"),
+                                                                                                    ("590000",  "590000"),
+                                                                                                    ("820000",  "820000"),
+                                                                                                    ("1250000", "1250000"),
+                                                                                                    ("1750000", "1750000"),
+                                                                                                    ("2850000", "2850000"),
+                                                                                                    ("5420000", "5420000"),
+                                                                                                    ("6500000", "6500000"),
+                                                                                                    ("9100000", "9100000"),
+                                                                                                    ("99999999",_("the highest")),
+                                                                                                    ])
+config.plugins.iptvplayer.christusvincit_use_preferred_bitrate = ConfigYesNo(default = True)
+
+###################################################
+# Config options for HOST
+###################################################
+
+def GetConfigList():
+    optionList = []
+    optionList.append(getConfigListEntry("Preferred video bitrate",     config.plugins.iptvplayer.christusvincit_preferred_bitrate))
+    optionList.append(getConfigListEntry("Use preferred video bitrate", config.plugins.iptvplayer.christusvincit_use_preferred_bitrate))
+    return optionList
+###################################################
+
 
 def gettytul():
     return 'http://christusvincit-tv.pl/'
@@ -355,25 +382,31 @@ class Christusvincit(CBaseHostClass):
         urlsTab = []
 
         if 'url' in cItem:
-            return getDirectM3U8Playlist(cItem['url'])
+            urlsTab = getDirectM3U8Playlist(cItem['url'])
+        else:
+            url = 'http://mediaserwer3.christusvincit-tv.pl/api_v3/index.php?service=multirequest&apiVersion=3.1&expiry=86400&clientTag=kwidget%3Av2.41&format=1&ignoreNull=1&action=null&1:service=session&1:action=startWidgetSession&1:widgetId=_100&2:ks=%7B1%3Aresult%3Aks%7D&2:service=baseentry&2:action=list&2:filter:objectType=KalturaBaseEntryFilter&2:filter:redirectFromEntryId='
+            url += cItem['f_id']
+            url += '&3:ks=%7B1%3Aresult%3Aks%7D&3:contextDataParams:referrer=http%3A%2F%2Fmediaserwer3.christusvincit-tv.pl&3:contextDataParams:objectType=KalturaEntryContextDataParams&3:contextDataParams:flavorTags=all&3:contextDataParams:streamerType=auto&3:service=baseentry&3:entryId=%7B2%3Aresult%3Aobjects%3A0%3Aid%7D&3:action=getContextData&4:ks=%7B1%3Aresult%3Aks%7D&4:service=metadata_metadata&4:action=list&4:version=-1&4:filter:metadataObjectTypeEqual=1&4:filter:orderBy=%2BcreatedAt&4:filter:objectIdEqual=%7B2%3Aresult%3Aobjects%3A0%3Aid%7D&4:pager:pageSize=1&5:ks=%7B1%3Aresult%3Aks%7D&5:service=cuepoint_cuepoint&5:action=list&5:filter:objectType=KalturaCuePointFilter&5:filter:orderBy=%2BstartTime&5:filter:statusEqual=1&5:filter:entryIdEqual=%7B2%3Aresult%3Aobjects%3A0%3Aid%7D&kalsig=404d9c08e114ce91328cd739e5151b80'
+            sts, data = self.getPage(url)
+            if not sts: return []
 
-        url = 'http://mediaserwer3.christusvincit-tv.pl/api_v3/index.php?service=multirequest&apiVersion=3.1&expiry=86400&clientTag=kwidget%3Av2.41&format=1&ignoreNull=1&action=null&1:service=session&1:action=startWidgetSession&1:widgetId=_100&2:ks=%7B1%3Aresult%3Aks%7D&2:service=baseentry&2:action=list&2:filter:objectType=KalturaBaseEntryFilter&2:filter:redirectFromEntryId='
-        url += cItem['f_id']
-        url += '&3:ks=%7B1%3Aresult%3Aks%7D&3:contextDataParams:referrer=http%3A%2F%2Fmediaserwer3.christusvincit-tv.pl&3:contextDataParams:objectType=KalturaEntryContextDataParams&3:contextDataParams:flavorTags=all&3:contextDataParams:streamerType=auto&3:service=baseentry&3:entryId=%7B2%3Aresult%3Aobjects%3A0%3Aid%7D&3:action=getContextData&4:ks=%7B1%3Aresult%3Aks%7D&4:service=metadata_metadata&4:action=list&4:version=-1&4:filter:metadataObjectTypeEqual=1&4:filter:orderBy=%2BcreatedAt&4:filter:objectIdEqual=%7B2%3Aresult%3Aobjects%3A0%3Aid%7D&4:pager:pageSize=1&5:ks=%7B1%3Aresult%3Aks%7D&5:service=cuepoint_cuepoint&5:action=list&5:filter:objectType=KalturaCuePointFilter&5:filter:orderBy=%2BstartTime&5:filter:statusEqual=1&5:filter:entryIdEqual=%7B2%3Aresult%3Aobjects%3A0%3Aid%7D&kalsig=404d9c08e114ce91328cd739e5151b80'
-        sts, data = self.getPage(url)
-        if not sts: return []
-
-        try:
-            data = json_loads(data)
-            baseUrl = data[1]['objects'][0]['dataUrl']
-            for item in data[2]['flavorAssets']:
-                if item['fileExt'] != 'mp4' or not item['isWeb']: continue
-                name = '%sx%s %s' % (item['width'], item['height'], formatBytes(item['size']*1024))
-                url = baseUrl.replace('/format/', '/flavorId/%s/format/' % item['id'])
-                urlsTab.append({'name':name, 'url':url, 'need_resolve':0, 'bitrate':item['bitrate'], 'original':item['isOriginal']})
-            urlsTab.sort(key=lambda x: x['bitrate'], reverse=True)
-        except Exception:
-            printExc()
+            try:
+                data = json_loads(data)
+                baseUrl = data[1]['objects'][0]['dataUrl']
+                for item in data[2]['flavorAssets']:
+                    if item['fileExt'] != 'mp4' or not item['isWeb']: continue
+                    item['bitrate'] *= 1024
+                    name = '%sx%s %s, bitrate: %s' % (item['width'], item['height'], formatBytes(item['size']*1024), item['bitrate'])
+                    url = baseUrl.replace('/format/', '/flavorId/%s/format/' % item['id'])
+                    urlsTab.append({'name':name, 'url':url, 'need_resolve':0, 'bitrate':item['bitrate'], 'original':item['isOriginal']})
+                urlsTab.sort(key=lambda x: x['bitrate'], reverse=True)
+            except Exception:
+                printExc()
+        if len(urlsTab):
+            max_bitrate = int(config.plugins.iptvplayer.christusvincit_preferred_bitrate.value)
+            urlsTab = CSelOneLink(urlsTab, lambda x: int(x['bitrate']), max_bitrate).getSortedLinks()
+            if config.plugins.iptvplayer.christusvincit_use_preferred_bitrate.value:
+                urlsTab = [urlsTab[0]]
         return urlsTab
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
