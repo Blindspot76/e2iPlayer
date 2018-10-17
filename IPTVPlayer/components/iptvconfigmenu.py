@@ -218,6 +218,8 @@ config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (0, 9))
 config.plugins.iptvplayer.watched_item_color = ConfigSelection(default = "#808080", choices = COLORS_DEFINITONS)
 config.plugins.iptvplayer.usepycurl = ConfigYesNo(default = False)
 
+config.plugins.iptvplayer.prefer_hlsdl_for_pls_with_alt_media = ConfigYesNo(default = False)
+
 ###################################################
 
 ########################################################
@@ -316,10 +318,11 @@ class ConfigMenu(ConfigBaseWidget):
             list.append(getConfigListEntry("f4mdumppath", config.plugins.iptvplayer.f4mdumppath))
             list.append(getConfigListEntry("uchardetpath", config.plugins.iptvplayer.uchardetpath))
             list.append(getConfigListEntry("MIPS Floating Point Architecture", config.plugins.iptvplayer.plarformfpuabi))
-            list.append(getConfigListEntry("IPTVPlayer login", config.plugins.iptvplayer.iptvplayer_login))
-            list.append(getConfigListEntry("IPTVPlayer password", config.plugins.iptvplayer.iptvplayer_password))
-            list.append(getConfigListEntry("IPTVPlayer auto start at Enigma2 start", config.plugins.iptvplayer.plugin_autostart))
+            list.append(getConfigListEntry("E2iPlayer login", config.plugins.iptvplayer.iptvplayer_login))
+            list.append(getConfigListEntry("E2iPlayer password", config.plugins.iptvplayer.iptvplayer_password))
+            list.append(getConfigListEntry("E2iPlayer auto start at Enigma2 start", config.plugins.iptvplayer.plugin_autostart))
             list.append(getConfigListEntry("Auto start method", config.plugins.iptvplayer.plugin_autostart_method))
+            list.append(getConfigListEntry("Prefer hlsld for playlist with alt. media", config.plugins.iptvplayer.prefer_hlsdl_for_pls_with_alt_media))
 
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("The preferred update server"), config.plugins.iptvplayer.preferredupdateserver) )
