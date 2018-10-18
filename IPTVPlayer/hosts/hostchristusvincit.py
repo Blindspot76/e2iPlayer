@@ -239,6 +239,22 @@ class Christusvincit(CBaseHostClass):
         for section in sections:
             self.handleSection(cItem, nextCategory, section)
 
+        rtmpUrl = ph.search(data, '''netConnectionUrl['"\s]*?:\s*?['"](rtmp://[^'^"]+?)['"]''')[0]
+        # move live to the top
+        prevlist = self.currList
+        self.currList = []
+        for item in prevlist:
+            if "na żywo" in item['title']:
+                if rtmpUrl:
+                    try:
+                        rtmpUrl = strwithmeta(rtmpUrl, {'iptv_proto':'rtmp', 'iptv_livestream':True})
+                        item['sub_items'].append({'title':'%s [RTMP]' % item['title'], 'url':rtmpUrl, 'type':'video'})
+                    except Exception:
+                        printExc()
+                self.currList.insert(0, item)
+            else:
+                self.currList.append(item)
+
         MAIN_CAT_TAB = [{'category':'search',         'title': _('Search'),       'search_item':True},
                         {'category':'search_history', 'title': _('Search history'),                 }]
         self.listsTab(MAIN_CAT_TAB, cItem)
@@ -381,7 +397,9 @@ class Christusvincit(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         urlsTab = []
 
-        if 'url' in cItem:
+        if 'url' in cItem and cItem['url'].startswith('rtmp://'):
+            urlsTab = [{'name':'rtmp', 'url':cItem['url'], 'need_resolve':0}]
+        elif 'url' in cItem:
             urlsTab = getDirectM3U8Playlist(cItem['url'])
         else:
             url = 'http://mediaserwer3.christusvincit-tv.pl/api_v3/index.php?service=multirequest&apiVersion=3.1&expiry=86400&clientTag=kwidget%3Av2.41&format=1&ignoreNull=1&action=null&1:service=session&1:action=startWidgetSession&1:widgetId=_100&2:ks=%7B1%3Aresult%3Aks%7D&2:service=baseentry&2:action=list&2:filter:objectType=KalturaBaseEntryFilter&2:filter:redirectFromEntryId='
