@@ -218,7 +218,7 @@ config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (0, 9))
 config.plugins.iptvplayer.watched_item_color = ConfigSelection(default = "#808080", choices = COLORS_DEFINITONS)
 config.plugins.iptvplayer.usepycurl = ConfigYesNo(default = False)
 
-config.plugins.iptvplayer.prefer_hlsdl_for_pls_with_alt_media = ConfigYesNo(default = False)
+config.plugins.iptvplayer.prefer_hlsdl_for_pls_with_alt_media = ConfigYesNo(default = True)
 
 ###################################################
 

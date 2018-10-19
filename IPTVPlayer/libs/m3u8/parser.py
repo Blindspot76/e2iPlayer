@@ -77,6 +77,14 @@ def parse(content):
         elif state['expect_playlist']:
             _parse_variant_playlist(line, data, state)
             state['expect_playlist'] = False
+            
+    try:
+        for playlist in data['playlists']:
+            if 'audio' in playlist['stream_info']:
+                if playlist['stream_info']['audio'] in data['alt_media']:
+                    playlist['alt_audio_streams'] = data['alt_media'][playlist['stream_info']['audio']]
+    except Exception:
+        pass
 
     return data
 
@@ -128,21 +136,16 @@ def _parse_alternate_media(line, data):
     if group:
         if group not in data['alt_media']:
             data['alt_media'][group] = []
-        data['alt_media'][group].append(normalize_params)
+        if normalize_params.get('default') == "YES":
+            data['alt_media'][group].insert(0, normalize_params)
+        else:
+            data['alt_media'][group].append(normalize_params)
 
 def _parse_variant_playlist(line, data, state):
     stream_info = state.pop('stream_info')
     playlist = {'uri': line,
                 'stream_info': stream_info,
                 'alt_audio_streams': []}
-    try:
-        alt_audio_streams = []
-        for item in data['alt_media'][stream_info['audio']]:
-            if item['type'].lower() == 'audio':
-                alt_audio_streams.append(item)
-        playlist['alt_audio_streams'] = alt_audio_streams
-    except Exception:
-        pass
     data['playlists'].append(playlist)
 
 def _parse_simple_parameter(line, data, cast_to=str):
