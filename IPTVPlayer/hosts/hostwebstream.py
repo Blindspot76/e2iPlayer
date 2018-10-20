@@ -4,11 +4,13 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, RetHost, CUrlItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, byteify, GetHostsOrderList
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetLogoDir, GetCookieDir, GetHostsOrderList
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
+
 from Plugins.Extensions.IPTVPlayer.libs.pCommon import  CParsingHelper
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils  import clean_html
-from Plugins.Extensions.IPTVPlayer.libs.teledunet         import  TeledunetParser
+from Plugins.Extensions.IPTVPlayer.libs.teledunet         import TeledunetParser
 from Plugins.Extensions.IPTVPlayer.libs.urlparser         import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.filmonapi         import FilmOnComApi, GetConfigList as FilmOn_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.videostar         import VideoStarApi, GetConfigList as VideoStar_GetConfigList
@@ -35,6 +37,7 @@ from Plugins.Extensions.IPTVPlayer.libs.djingcom          import DjingComApi
 from Plugins.Extensions.IPTVPlayer.libs.sportstream365    import SportStream365Api, GetConfigList as SportStream365_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.mlbstreamtv       import MLBStreamTVApi, GetConfigList as MLBStreamTV_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.internetowa       import InternetowaApi, GetConfigList as Internetowa_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.firstonetvnet     import FirstOneTvApi, GetConfigList as FirstOneTv_GetConfigList
 ###################################################
 
 ###################################################
@@ -42,12 +45,8 @@ from Plugins.Extensions.IPTVPlayer.libs.internetowa       import InternetowaApi,
 ###################################################
 import re
 import urllib
-try:    import simplejson as json
-except Exception: import json
+from urlparse import urlsplit, urlunsplit
 from Components.config import config, ConfigSelection, ConfigYesNo, getConfigListEntry
-
-try:    from urlparse import urlsplit, urlunsplit
-except Exception: pass
 ############################################
 
 ###################################################
@@ -126,6 +125,11 @@ def GetConfigList():
     optionList.append(getConfigListEntry("-----------------mlbstream.tv------------------", config.plugins.iptvplayer.fake_separator))
     try:    optionList.extend( MLBStreamTV_GetConfigList() )
     except Exception: printExc()
+    
+    optionList.append(getConfigListEntry("----------------firstonetv.net------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( FirstOneTv_GetConfigList() )
+    except Exception: printExc()
+    
 
     return optionList
 
@@ -138,13 +142,12 @@ class HasBahCa(CBaseHostClass):
     MAIN_GROUPED_TAB = [{'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'http://weeb.tv/',                   'url': '',                                                                   'icon': 'http://xmtvplayer.com/wp-content/uploads/2014/07/weebtv.png'}, \
                         {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'https://pilot.wp.pl/',              'url': '',                                                                   'icon': 'http://satkurier.pl/uploads/53612.jpg'}, \
                         {'alias_id':'internetowa.ws',          'name': 'internetowa.ws',      'title': 'https://internetowa.ws/',           'url': '',                                                                   'icon': 'https://internetowa.ws/img/internetowa-logo-new-3.png'}, \
-                        #{'alias_id':'iptv_matzgpl',            'name': 'm3u',                 'title': 'Kanały IPTV_matzgPL',               'url': 'http://matzg2.cba.pl/Lista_matzgPL.m3u',                             'icon': 'http://matzg2.cba.pl/Iptv_matzgPL.png'}, \
+                        {'alias_id':'firstonetv.net',          'name': 'firstonetv.net',      'title': 'https://firstonetv.net/',           'url': '',                                                                   'icon': 'https://www.firstonetv.net/images/logo.png'}, \
                         {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'http://pogody.tv/',                 'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://pogody.pl/images/pogodytv.png'}, \
                         {'alias_id':'meteo.pl',                'name': 'meteo.pl',            'title': 'http://meteo.pl/',                  'url': 'http://meteo.pl/',                                                   'icon': 'http://www.meteo.pl/img/napis_glowny_pl_2.png'}, \
                         {'alias_id':'webcamera.pl',            'name': 'webcamera.pl',        'title': 'https://webcamera.pl/',             'url': 'https://www.webcamera.pl/',                                          'icon': 'http://static.webcamera.pl/webcamera/img/loader-min.png'}, \
                         {'alias_id':'skylinewebcams.com',      'name': 'skylinewebcams.com',  'title': 'https://skylinewebcams.com/',       'url': 'https://www.skylinewebcams.com/',                                    'icon': 'https://cdn.skylinewebcams.com/skylinewebcams.png'}, \
                         {'alias_id':'livespotting.tv',         'name': 'livespotting.tv',     'title': 'http://livespotting.tv/',           'url': 'http://livespotting.tv/',                                            'icon': 'http://livespotting.tv/img/ls_logo.png'}, \
-                        #{'alias_id':'inne_matzg',              'name': 'm3u',                 'title': 'Różne Kanały IPTV_matzg',           'url': 'http://matzg2.cba.pl/inne_matzg.m3u',                                'icon': 'http://matzg2.cba.pl/iptv.png'}, \
                         {'alias_id':'filmon.com',              'name': 'filmon_groups',       'title': 'http://filmon.com/',                'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
                         {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'https://ustvnow.com/',              'url': 'https://www.ustvnow.com/',                                           'icon': 'http://2.bp.blogspot.com/-SVJ4uZ2-zPc/UBAZGxREYRI/AAAAAAAAAKo/lpbo8OFLISU/s1600/ustvnow.png'}, \
                         {'alias_id':'showsport-tv.com',        'name': 'showsport-tv.com',    'title': 'http://showsport-tv.com/',          'url': 'http://showsport-tv.com/',                                           'icon': 'http://showsport-tv.com/images/sstv-logo.png'}, \
@@ -159,7 +162,6 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'djing.com',               'name': 'djing.com',           'title': 'https://djing.com/',                'url': 'https://djing.com/',                                                 'icon': 'https://www.djing.com/newimages/content/c01.jpg'}, \
                         {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'http://live-stream.tv/',            'url': 'http://www.live-stream.tv/',                                         'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
                         {'alias_id':'edem_tv',                 'name': 'edem.tv',             'title': 'https://edem.tv/',                  'url': 'https://edem.tv/',                                                   'icon': 'https://edem.tv/public/images/logo_edem.png'}, \
-                        #{'alias_id':'matzg2_radio',            'name': 'm3u',                 'title': 'Radio-OPEN FM i inne',              'url': 'http://matzg2.cba.pl/radio.m3u',                                     'icon': 'http://matzg2.cba.pl/openfm.png'}, \
                         {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'http://goldvod.tv/',                'url': '',                                                                   'icon': 'http://goldvod.tv/assets/images/logo.png'}, \
                         {'alias_id':'livemass.net',            'name': 'livemass.net',        'title': 'http://livemass.net/',              'url': 'http://www.livemass.net/',                                           'icon': 'http://s3.amazonaws.com/livemass/warrington/images/warrington/iconclr.png'}, \
                         {'alias_id':'wizja.tv',                'name': 'wizja.tv',            'title': 'http://wizja.tv/',                  'url': 'http://wizja.tv/',                                                   'icon': 'http://wizja.tv/logo.png'}, \
@@ -200,6 +202,7 @@ class HasBahCa(CBaseHostClass):
         self.sportStream365Api    = None
         self.MLBStreamTVApi       = None
         self.InternetowaApi       = None
+        self.FirstOneTvApi        = None
         
         self.hasbahcaiptv = {}
         self.webcameraSubCats = {}
@@ -423,7 +426,7 @@ class HasBahCa(CBaseHostClass):
                     if 'headers=' in itemUrl:
                         headers = self.cm.ph.getSearchGroups(itemUrl, 'headers\=(\{[^\}]+?\})')[0]
                         try:
-                            headers = byteify(json.loads(headers))
+                            headers = json_loads(headers)
                             itemUrl = itemUrl.split('headers=')[0].strip()
                             itemUrl = urlparser.decorateUrl(itemUrl, headers)
                         except Exception:
@@ -571,6 +574,26 @@ class HasBahCa(CBaseHostClass):
         printDBG("getInternetowaLink start")
         urlsTab = self.InternetowaApi.getVideoLink(cItem)
         return urlsTab
+    #############################################################
+
+    #############################################################
+    def getFirstOneTvList(self, cItem):
+        printDBG("getFirstOneTvList start")
+        if None == self.FirstOneTvApi: self.FirstOneTvApi = FirstOneTvApi()
+        tmpList = self.FirstOneTvApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
+
+    def getFirstOneTvLink(self, cItem):
+        printDBG("getFirstOneTvLink start")
+        urlsTab = self.FirstOneTvApi.getVideoLink(cItem)
+        return urlsTab
+        
+    def getFirstOneTvdLink(self, url):
+        printDBG("getFirstOneTvdLink start")
+        return self.FirstOneTvApi.getResolvedVideoLink(url)
     #############################################################
 
     #############################################################
@@ -881,8 +904,8 @@ class HasBahCa(CBaseHostClass):
         elif name == 'sportstream365.com':  self.getSportStream365List(self.currItem)
         elif name == 'mlbstream.tv':        self.getMLBStreamTVList(self.currItem)
         elif name == 'internetowa.ws':      self.getInternetowaList(self.currItem)
-        
-        
+        elif name == 'firstonetv.net':      self.getFirstOneTvList(self.currItem)
+
         CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
@@ -939,7 +962,7 @@ class IPTVHost(CHostBase):
         elif name == "prognoza.pogody.tv":         urlList = self.host.prognozaPogodyLink(url)
         elif name == "mlbstream.tv":               urlList = self.host.getMLBStreamTVLink(cItem)
         elif name == "internetowa.ws":             urlList = self.host.getInternetowaLink(cItem)
-        
+        elif name == "firstonetv.net":             urlList = self.host.getFirstOneTvLink(cItem)
         
         if isinstance(urlList, list):
             for item in urlList:
@@ -991,6 +1014,8 @@ class IPTVHost(CHostBase):
         
         if name == 'bilasport.com': urlList = self.host.getBilaSportPwResolvedLink(url)
         elif name == 'mlbstream.tv':  urlList = self.host.getMLBStreamResolvedLink(url)
+        elif name == 'firstonetv.net':  urlList = self.host.getFirstOneTvdLink(url)
+        
         
         if isinstance(urlList, list):
             for item in urlList:
