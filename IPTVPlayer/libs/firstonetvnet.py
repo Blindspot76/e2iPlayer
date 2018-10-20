@@ -71,22 +71,22 @@ class FirstOneTvApi(CBaseHostClass):
             self.password = config.plugins.iptvplayer.firstonetv_password.value
 
             sts, data = self.cm.getPage(self.getFullUrl('/Account/Settings'), self.http_params)
-            if sts: self.setMainUrl(self.cm.meta['url'])
+            if sts:
+                self.setMainUrl(self.cm.meta['url'])
+                data = ph.find(data, ('<imput', '>', 'email'))[1]
+                email = ph.getattr(data, 'value')
 
-            data = ph.find(data, ('<imput', '>', 'email'))[1]
-            email = ph.getattr(data, 'value')
+                if email and (not self.login.strip() or not self.password.strip()):
+                    self.loggedIn = False
+                    rm(self.COOKIE_FILE)
 
-            if email and (not self.login.strip() or not self.password.strip()):
                 self.loggedIn = False
-                rm(self.COOKIE_FILE)
+                if '' == self.login.strip() or '' == self.password.strip():
+                    return False
 
-            self.loggedIn = False
-            if '' == self.login.strip() or '' == self.password.strip():
-                return False
-
-            if email.lower() == self.login.lower():
-                self.loggedIn = True
-                return true
+                if email.lower() == self.login.lower():
+                    self.loggedIn = True
+                    return true
 
             rm(self.COOKIE_FILE)
             params = MergeDicts(self.http_params, {'use_new_session':True})
