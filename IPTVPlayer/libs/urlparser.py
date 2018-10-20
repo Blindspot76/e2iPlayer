@@ -8908,17 +8908,6 @@ class pageParser(CaptchaHelper):
         data = backslashUnEscaped(data)
         
         printDBG(data)
-        printDBG("------------------------------------------------------------------------------------")
-        return
-        #data = data.decode('string_escape')
-        #printDBG(data)
-        data = fun3( data, 23, 1)
-        #data = data.decode('string_escape')
-        data = backslashUnEscaped(data)
-        
-        printDBG("------------------------------------------------------------------------------------")
-        printDBG(data)
-        printDBG("------------------------------------------------------------------------------------")
 
     def parseMETAUA(self, baseUrl):
         printDBG("parseMETAUA baseUrl[%s]" % baseUrl)
@@ -8978,7 +8967,7 @@ class pageParser(CaptchaHelper):
         rm(COOKIE_FILE)
         params = {'with_metadata':True, 'header':HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
         sts, ipData = self.cm.getPage('http://hqq.watch/player/ip.php?type=json', params)
-        ipData = json_loads(ipData) #{"ip":"MTc4LjIzNS40My4zNw==","ip_blacklist":0}
+        ipData = json_loads(ipData)
 
         printDBG("===")
         printDBG(ipData)
@@ -9015,61 +9004,92 @@ class pageParser(CaptchaHelper):
         
         tmp = _getEvalData(data)
         jscode = self.cm.ph.getDataBeetwenMarkers(tmp, 'location.replace(', ')', False)[1]
-        jscode = 'var need_captcha = "0"; var rand = Math.random().toString().substring(2); var data = {ip:""};print(' + jscode + ');'
+        jscode = 'var token="03"; var need_captcha="0"; var rand=Math.random().toString().substring(2); var data=' + json_dumps(ipData) + ';print(' + jscode + ');'
+        
         ret = js_execute( jscode )
         if ret['sts'] and 0 == ret['code']:
-            secPlayerUrl = self.cm.getFullUrl(ret['data'].strip(), self.cm.getBaseUrl(cUrl))
-        
+            secPlayerUrl = self.cm.getFullUrl(ret['data'].strip(), self.cm.getBaseUrl(cUrl)) #'https://hqq.tv/'
+
         HTTP_HEADER['Referer'] = referer
         sts, data = self.cm.getPage(secPlayerUrl, params)
-        
+        cUrl = self.cm.meta['url']
+
+        sitekey = ph.search(data, '''['"]?sitekey['"]?\s*?:\s*?['"]([^"^']+?)['"]''')[0]
+        if sitekey != '': 
+            query = {}
+            token, errorMsgTab = self.processCaptcha(sitekey, cUrl)
+            if token == '':
+                SetIPTVPlayerLastHostError('\n'.join(errorMsgTab)) 
+                return False
+            else:
+                query['g-recaptcha-response'] = token
+                tmp = ph.find(data, ('<form', '>', ), '</form>', flags=ph.I|ph.START_E)[1]
+                if tmp:
+                    printDBG(tmp)
+                    action = ph.getattr(tmp, 'action')
+                    if not action: action = cUrl.split('?', 1)[0]
+                    else: self.cm.getFullUrl(action, cUrl)
+                    tmp = ph.findall(tmp, '<input', '>', flags=ph.I)
+                    
+                    for item in tmp:
+                        name  = ph.getattr(item, 'name')
+                        value  = ph.getattr(item, 'value')
+                        if name != '': query[name] = value
+                    action += '?' + urllib.urlencode(query)
+                    sts, data = self.cm.getPage(action, params)
+                    if sts: cUrl = self.cm.meta['url']
+
         data = re.sub('document\.write\(unescape\("([^"]+?)"\)', lambda m: urllib.unquote(m.group(1)), data)
         data += _getEvalData(data)
-        
-        def getUtf8Str(st):
-            idx = 0
-            st2 = ''
-            while idx < len(st):
-                st2 += '\\u0' + st[idx:idx + 3]
-                idx += 3
-            return st2.decode('unicode-escape').encode('UTF-8')
-        
-        playerData = self.cm.ph.getDataBeetwenMarkers(data, 'get_md5.php', '})')[1]
-        playerData = self.cm.ph.getDataBeetwenMarkers(playerData, '{', '}', False)[1]
-        playerData = playerData.split(',')
-        getParams = {}
-        for p in playerData:
-            tmp = p.split(':')
-            printDBG(tmp)
-            key = tmp[0].replace('"', '').strip()
-            val = tmp[1].strip()
-            if len(val) and val[0] not in ['"', "'"]:
-                printDBG("MY VAL: " + val)
-                v = re.search('''var[ ]+%s[ ]*=[ ]*["']([^"]*?)["']''' % val, data).group(1)
-                if '' != val: val = v
-            if key == 'adb':
-                val = val.replace('1', '0')
-            getParams[key] = val.replace('"', '').strip()
-        playerUrl = 'https://hqq.watch/player/get_md5.php?' + urllib.urlencode(getParams)
-        params['header']['X-Requested-With'] = 'XMLHttpRequest'
-        params['header']['Referer'] = secPlayerUrl
-        sts, data = self.cm.getPage(playerUrl, params)
-        
+        printDBG("+++")
         printDBG(data)
-        if not sts: return False
-        data = json_loads(data)
-        file_url = data['obf_link']
-        
-        printDBG(">> file: ")
-        printDBG(data['obf_link'])
-        if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
-        if file_url.startswith('//'): file_url = 'https:' + file_url
-        if self.cm.isValidUrl(file_url): 
-            file_url = urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent']})
-            if file_url.split('?')[0].endswith('.m3u8') or '/hls-' in file_url:
-                file_url = strwithmeta(file_url, {'iptv_proto':'m3u8'})
-                return getDirectM3U8Playlist(file_url, False, checkContent=True)
-        return file_url
+        printDBG("+++")
+
+        def getUtf8Str(st):
+            try:
+                idx = 0
+                st2 = ''
+                while idx < len(st):
+                    st2 += '\\u0' + st[idx:idx + 3]
+                    idx += 3
+                return st2.decode('unicode-escape').encode('UTF-8')
+            except Exception:
+                return ''
+
+        linksCandidates = re.compile('''['"](#[^'^"]+?)['"]''').findall(data)
+        try:
+            jscode = [data.rsplit('//document.domain="hqq.watch";')[-1]]
+            tmp = ph.findall(data, '//document.domain="hqq.watch";', '</script>', flags=0)
+            for item in tmp:
+                if 'var at' in item:
+                    jscode.append(item)
+                    break
+            jscode.append('var adb = "0/"; ext = "";')
+            tmp = ph.search(data, '''(['"][^'^"]*?get_md5\.php[^;]+?);''')[0]
+            jscode.append('print(%s)' % tmp)
+            ret = js_execute( '\n'.join(jscode) )
+
+            playerUrl = ret['data'].strip()
+            params['header']['Accept'] = '*/*'
+            params['header']['Referer'] = cUrl
+            sts, data = self.cm.getPage(playerUrl, params)
+
+            printDBG(self.cm.meta['url'])
+            linksCandidates.insert(0, self.cm.meta['url'])
+        except Exception:
+            printExc()
+
+        printDBG("linksCandidates >> %s" % linksCandidates)
+        retUrls = []
+        for file_url in linksCandidates:
+            if file_url.startswith('#') and 3 < len(file_url): file_url = getUtf8Str(file_url[1:])
+            if file_url.startswith('//'): file_url = 'https:' + file_url
+            if self.cm.isValidUrl(file_url): 
+                file_url = urlparser.decorateUrl(file_url, {'iptv_livestream':False, 'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':cUrl})
+                if file_url.split('?')[0].endswith('.m3u8') or '/hls-' in file_url:
+                    file_url = strwithmeta(file_url, {'iptv_proto':'m3u8'})
+                    retUrls.extend( getDirectM3U8Playlist(file_url, False, checkContent=True) )
+        return retUrls
         
     def parserSTREAMPLAYTO(self, baseUrl):
         printDBG("parserSTREAMPLAYTO url[%s]\n" % baseUrl)
