@@ -5,7 +5,10 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printDBG, printExc, byteify, rm
+from Plugins.Extensions.IPTVPlayer.components.recaptcha_v2helper import CaptchaHelper
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printDBG, printExc, MergeDicts, rm, GetCookieDir, ReadTextFile, WriteTextFile
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
+from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 
 ###################################################
@@ -14,10 +17,8 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printDBG, printExc, b
 from Components.config import config, ConfigSelection, ConfigText, getConfigListEntry
 import re
 import urllib
-try:    import simplejson as json
-except Exception: import json
-
-
+from binascii import hexlify
+from hashlib import md5
 ###################################################
 
 
@@ -45,7 +46,7 @@ def GetConfigList():
 def gettytul():
     return 'https://cda.pl/'
 
-class cda(CBaseHostClass):
+class cda(CBaseHostClass, CaptchaHelper):
     
     def __init__(self):
         printDBG("cda.__init__")
@@ -81,6 +82,7 @@ class cda(CBaseHostClass):
                                {'url' : '/kat34', 'category':'category', 'title' : 'Życie studenckie'} ]
         self.cacheFilters = {}
         self.filtersTab = []
+        self.loggedIn = None
         self.login    = ''
         self.password = ''
     
@@ -187,7 +189,7 @@ class cda(CBaseHostClass):
             sts, data = self.cm.getPage(self.getFullUrl('premium'), params, post_data)
             if not sts: return
             try:
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 if data['result']['status'] == 'continue' and int(data['id']) < page:
                     nextPage = True
                     nextPageData['id'] = data['id']
@@ -296,10 +298,10 @@ class cda(CBaseHostClass):
             data = []
             for item in tmp: data.append('"%s"' % item)
             data = '[%s]' % ','.join(data)
-            data   = byteify(json.loads(data), '')
-            cats   = byteify(json.loads(cats), '')
-            counts = byteify(json.loads(counts), '')
-            maps   = byteify(json.loads(maps), '')
+            data   = json_loads(data, '')
+            cats   = json_loads(cats, '')
+            counts = json_loads(counts, '')
+            maps   = json_loads(maps, '')
             for item in data:
                 url = self.getFullUrl('/video/' + maps.get(item, item.lower()))
                 printDBG("+++++++++++++++++++++++++++++++++")
@@ -381,71 +383,111 @@ class cda(CBaseHostClass):
             self.addVideo(params)
         
     def getLinksForVideo(self, cItem):
+        self.tryTologin()
         if 'url' not in cItem: return []
         printDBG("cda.getLinksForVideo [%s]" % cItem['url'])
         return self.up.getVideoLinkExt(cItem['url'])
-        
-    def getFavouriteData(self, cItem):
-        try:
-            return json.dumps(cItem)
-        except Exception: 
-            printExc()
-        return ''
-        
+
     def getLinksForFavourite(self, fav_data):
+        self.tryTologin()
         url = fav_data
         try:
-            cItem = byteify(json.loads(fav_data))
+            cItem = json_loads(fav_data)
             url = cItem['url']
         except Exception:
             printExc()
         return self.up.getVideoLinkExt(url)
-        
-    def tryTologin(self, login, password):
+
+    def tryTologin(self):
         printDBG('tryTologin start')
-        connFailed = _('Connection to server failed!')
         
-        loginUrl = 'https://www.cda.pl/login'
-        rm(self.COOKIE_FILE)
-        sts, data = self.cm.getPage(loginUrl, self.defaultParams)
-        if not sts: return False, connFailed 
-        
-        r = self.cm.ph.getSearchGroups(data, '''name=['"]r['"][^>]+?value=['"]([^'^"]+?)['"]''', 1, True)[0]
-        
-        post_data = {"r":r, "username":login, "password":password, "login":"zaloguj"}
-        params = dict(self.defaultParams)
-        HEADER = dict(self.AJAX_HEADER)
-        HEADER['Referer'] = self.MAIN_URL
-        params.update({'header':HEADER})
-        
-        # login
-        sts, data = self.cm.getPage(loginUrl, params, post_data)
-        if not sts: return False, connFailed
-        
-        # check if logged
-        sts, data = self.cm.getPage(self.MAIN_URL, self.defaultParams)
-        if not sts: return False, connFailed 
-        
-        if '/logout' in data:
-            return True, 'OK'
-        else:
-            return False, 'NOT OK'
-    
+        if None == self.loggedIn or self.login != config.plugins.iptvplayer.cda_login.value or\
+            self.password != config.plugins.iptvplayer.cda_password.value:
+
+            loginCookie = GetCookieDir('cda.pl.login')
+            self.login = config.plugins.iptvplayer.cda_login.value
+            self.password = config.plugins.iptvplayer.cda_password.value
+
+            sts, data = self.cm.getPage(self.getMainUrl(), self.defaultParams)
+            if sts: self.setMainUrl(self.cm.meta['url'])
+
+            freshSession = False
+            if sts and '/logout' in data:
+                printDBG("Check hash")
+                hash = hexlify(md5('%s@***@%s' % (self.login, self.password)).digest())
+                prevHash = ReadTextFile(loginCookie)[1].strip()
+
+                printDBG("$hash[%s] $prevHash[%s]" % (hash, prevHash))
+                if hash == prevHash:
+                    self.loggedIn = True
+                    return
+                else:
+                    freshSession = True
+
+            rm(loginCookie)
+            rm(self.COOKIE_FILE)
+            if freshSession:
+                sts, data = self.cm.getPage(self.getMainUrl(), MergeDicts(self.defaultParams, {'use_new_session':True}))
+
+            self.loggedIn = False
+            if '' == self.login.strip() or '' == self.password.strip():
+                return False
+
+            actionUrl = 'https://www.cda.pl/login'
+            sitekey = ''
+
+            sts, data = self.cm.getPage(actionUrl, self.defaultParams)
+            tries = 0
+            while tries < 2:
+                msgTab = [_('Login failed.')]
+                tries += 1
+                if sts:
+                    r = ph.search(data, '''name=['"]r['"][^>]+?value=['"]([^'^"]+?)['"]''', flags=ph.I)[0]
+                    post_data = {"r":r, "username":self.login, "password":self.password, "login":"zaloguj"}
+                    params = dict(self.defaultParams)
+                    HEADER = dict(self.AJAX_HEADER)
+                    HEADER['Referer'] = self.MAIN_URL
+                    params.update({'header':HEADER})
+
+                    tmp = ph.findall(data, ('<form', '>', '/login'), '</form>', flags=ph.I)
+                    for item in tmp:
+                        if 'data-sitekey' in item:
+                            sitekey = ph.search(item, '''data\-sitekey=['"]([^'^"]+?)['"]''')[0]
+                            break
+
+                    if sitekey != '':
+                        token, errorMsgTab = self.processCaptcha(sitekey, self.cm.meta['url'])
+                        if token != '': post_data['g-recaptcha-response'] = token
+
+                    # login
+                    sts, data = self.cm.getPage(actionUrl, params, post_data)
+
+                    printDBG(data)
+                    if sts:  msgTab.append(ph.clean_html(ph.find(data, ('<p', '>', 'error-form'), '</p>', flags=0)[1]))
+
+                if sts and '/logout' in data:
+                    printDBG('tryTologin OK')
+                    self.loggedIn = True
+                elif sts and sitekey == '' and 'data-sitekey' in data:
+                    continue
+                else:
+                    #printDBG(data)
+                    self.sessionEx.waitForFinishOpen(MessageBox, '\n'.join(msgTab), type = MessageBox.TYPE_ERROR, timeout = 10)
+                    printDBG('tryTologin failed')
+                break
+
+            if self.loggedIn:
+                hash = hexlify(md5('%s@***@%s' % (self.login, self.password)).digest())
+                WriteTextFile(loginCookie, hash)
+
+        return self.loggedIn
+
     def handleService(self, index, refresh=0, searchPattern='', searchType=''):
         printDBG('cda.handleService start')
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
-        
-        if self.login != config.plugins.iptvplayer.cda_login.value and \
-           self.password != config.plugins.iptvplayer.cda_password.value and \
-           '' != config.plugins.iptvplayer.cda_login.value.strip() and \
-           '' != config.plugins.iptvplayer.cda_password.value.strip():
-            loggedIn, msg = self.tryTologin(config.plugins.iptvplayer.cda_login.value, config.plugins.iptvplayer.cda_password.value)
-            if not loggedIn:
-                self.sessionEx.open(MessageBox, 'Problem z zalogowaniem użytkownika "%s".' % config.plugins.iptvplayer.cda_login.value, type = MessageBox.TYPE_INFO, timeout = 10 )
-            else:
-                self.login    = config.plugins.iptvplayer.cda_login.value
-                self.password = config.plugins.iptvplayer.cda_password.value
-        
+
+        self.tryTologin()
+
         name     = self.currItem.get("name", None)
         category = self.currItem.get("category", '')
         printDBG( "cda.handleService: ---------> name[%s], category[%s] " % (name, category) )
