@@ -754,7 +754,7 @@ class common:
                 # we should not use pycurl anymore
                 SetThreadKillable(True)
                 
-                self.fillHeaderItems(metadata, responseHeaders)
+                self.fillHeaderItems(metadata, responseHeaders, collectAllHeaders=params.get('collect_all_headers'))
                 
                 if params['return_data']:
                     out_data = buffer.getvalue()
@@ -828,14 +828,18 @@ class common:
             printExc()
         return sts, data
 
-    def fillHeaderItems(self, metadata, responseHeaders, camelCase=False):
+    def fillHeaderItems(self, metadata, responseHeaders, camelCase=False, collectAllHeaders=False):
         returnKeys = ['content-type', 'content-disposition', 'content-length', 'location']
         if camelCase: sourceKeys = ['Content-Type', 'Content-Disposition', 'Content-Length', 'Location']
         else: sourceKeys = returnKeys
         for idx in range(len(returnKeys)):
             if sourceKeys[idx] in responseHeaders:
                 metadata[returnKeys[idx]] = responseHeaders[sourceKeys[idx]]
-        
+
+        if collectAllHeaders:
+            for header, value in responseHeaders.iteritems():
+                metadata[header.lower()] = responseHeaders[header]
+
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
         
@@ -859,7 +863,7 @@ class common:
                     metadata = self.meta
                     metadata['url'] = e.fp.geturl()
                     metadata['status_code'] = e.code
-                    self.fillHeaderItems(metadata, e.fp.info(), True)
+                    self.fillHeaderItems(metadata, e.fp.info(), True, collectAllHeaders=addParams.get('collect_all_headers'))
                     
                     data = e.fp.read(addParams.get('max_data_size', -1))
                     if e.fp.info().get('Content-Encoding', '') == 'gzip':
@@ -1283,7 +1287,7 @@ class common:
                 try: 
                     metadata['url'] = response.geturl()
                     metadata['status_code'] = response.getcode()
-                    self.fillHeaderItems(metadata, response.info(), True)
+                    self.fillHeaderItems(metadata, response.info(), True, collectAllHeaders=params.get('collect_all_headers'))
                 except Exception: pass
                 
                 data = response.read(params.get('max_data_size', -1))
@@ -1303,7 +1307,7 @@ class common:
                         gzip_encoding = True
                     try: 
                         metadata['url'] = e.fp.geturl()
-                        self.fillHeaderItems(metadata, e.fp.info(), True)
+                        self.fillHeaderItems(metadata, e.fp.info(), True, collectAllHeaders=params.get('collect_all_headers'))
                     except Exception: pass
                     data = e.fp.read(params.get('max_data_size', -1))
                     #e.msg

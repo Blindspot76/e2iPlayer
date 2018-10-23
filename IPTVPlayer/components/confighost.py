@@ -41,7 +41,7 @@ class ConfigHostMenu(ConfigBaseWidget):
 
     def layoutFinished(self):
         ConfigBaseWidget.layoutFinished(self)
-        self.setTitle("IPTV Player " + (_("[%s] - configuration") % self.hostName))
+        self.setTitle("E2iPlayer " + (_("[%s] - configuration") % self.hostName))
 
     def runSetup(self):
         self.list = self.host.GetConfigList()
