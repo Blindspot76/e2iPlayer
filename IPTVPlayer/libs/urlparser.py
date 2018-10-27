@@ -356,6 +356,7 @@ class urlparser:
                        'serpens.nl':           self.pp.parserMOONWALKCC    ,
                        '37.220.36.15':         self.pp.parserMOONWALKCC    ,
                        'daaidaij.com':         self.pp.parserMOONWALKCC    ,
+                       'mastarti.com':         self.pp.parserMOONWALKCC    ,
                        'easyvid.org':          self.pp.parserEASYVIDORG    ,
                        'playvid.org':          self.pp.parserEASYVIDORG    ,
                        'mystream.la':          self.pp.parserMYSTREAMLA    ,

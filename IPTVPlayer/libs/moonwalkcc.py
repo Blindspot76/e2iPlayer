@@ -284,7 +284,9 @@ class MoonwalkParser():
                 for item in episodeData:
                     item = item.strip()
                     query['episode'] = item
-                    episodesTab.append({'title':_('Episode') + ' ' + item, 'id':int(item), 'url': '%s?%s' % (baseUrl, urllib.urlencode(query))})
+                    url = '%s?%s' % (baseUrl, urllib.urlencode(query))
+                    
+                    episodesTab.append({'title':_('Episode') + ' ' + item, 'id':int(item), 'url': strwithmeta(url, {'host_name':'moonwalk.cc'})})
                     
             else:
                 episodeData = self.cm.ph.getSearchGroups(data, '''episodes\s*:\s*\[([^\]]+?)\]''')[0]
@@ -293,7 +295,8 @@ class MoonwalkParser():
                     item = item.strip()
                     if item[0] in ['"', "'"]: item = item[1:-1]
                     query['episode'] = item
-                    episodesTab.append({'title':_('Episode') + ' ' + item, 'id':int(item), 'url': '%s?%s' % (baseUrl, urllib.urlencode(query))})
+                    url = '%s?%s' % (baseUrl, urllib.urlencode(query))
+                    episodesTab.append({'title':_('Episode') + ' ' + item, 'id':int(item), 'url': strwithmeta(url, {'host_name':'moonwalk.cc'})})
             episodesTab.sort(key=lambda item: item['id'])
         except Exception:
             printExc()
