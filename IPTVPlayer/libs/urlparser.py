@@ -507,6 +507,7 @@ class urlparser:
                        'cloudvideo.tv':        self.pp.parserCLOUDVIDEOTV   ,
                        'gogoanime.to':         self.pp.parserGOGOANIMETO    ,
                        'mediasetplay.mediaset.it': self.pp.parserMEDIASET   ,
+                       'videomore.ru':         self.pp.parserVIDEOMORERU    ,
                     }
         return
     
@@ -11086,3 +11087,31 @@ class pageParser(CaptchaHelper):
                         uniqueUrls.add(url)
                         retTab.append({'name':'%s - %s' % (f, asset_type), 'url':url})
         return retTab
+
+
+    def parserVIDEOMORERU(self, baseUrl):
+        printDBG("parserVIDEOMORERU baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+
+        track_id = ph.search('"track_id"\s*:\s*"?([0-9]+)')[0]
+        url = self.cm.getFullUrl('/video/tracks/709253.json', cUrl)
+        urlParams['header']['Referer'] = cUrl
+
+        videoUrls = []
+
+        urlParams = {'header': MergeDicts(self.cm.getDefaultHeader(browser='iphone_3_0'), {'Referer':cUrl})}
+        sts, data = self.cm.getPage(url, urlParams)
+        if sts:
+            data = json_loads(data)
+            hlsUrl = data['data']['playlist']['items'][0]['hls_url']
+            hlsUrl = urlparser.decorateUrl(hlsUrl, {'iptv_proto':'m3u8', 'User-Agent':urlParams['header']['User-Agent'], 'Referer':cUrl, 'Origin':urlparser.getDomain(cUrl, False)})
+            return getDirectM3U8Playlist(hlsUrl, checkExt=False, checkContent=True, sortWithMaxBitrate=999999999, cookieParams={'header':urlParams['header']})
+        
+        
