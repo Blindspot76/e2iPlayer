@@ -414,6 +414,7 @@ class urlparser:
                        'clicknupload.link':    self.pp.parserUPLOAD         ,
                        'clicknupload.org':     self.pp.parserUPLOAD         ,
                        'suprafiles.org':       self.pp.parserUPLOAD         ,
+                       'sfiles.org':           self.pp.parserUPLOAD         ,
                        'kingfiles.net':        self.pp.parserKINGFILESNET   ,
                        'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
                        'vidabc.com':           self.pp.parserVIDABCCOM      ,
@@ -504,6 +505,7 @@ class urlparser:
                        'vidtodo.com':          self.pp.parserVIDSTODOME     ,
                        'cloudvideo.tv':        self.pp.parserCLOUDVIDEOTV   ,
                        'gogoanime.to':         self.pp.parserGOGOANIMETO    ,
+                       'mediasetplay.mediaset.it': self.pp.parserMEDIASET   ,
                     }
         return
     
@@ -11055,4 +11057,31 @@ class pageParser(CaptchaHelper):
             for item in tmp:
                 url = strwithmeta(item, {'User-Agent':HTTP_HEADER['User-Agent'], 'Referer':self.cm.meta['url']})
                 retTab.append({'name':urlparser.getDomain(url), 'url':url})
+        return retTab
+
+    def parserMEDIASET(self, baseUrl):
+        printDBG("parserMEDIASET baseUrl[%r]" % baseUrl)
+        guid  = ph.search(baseUrl, r'''https?://(?:(?:www|static3)\.)?mediasetplay\.mediaset\.it/(?:(?:video|on-demand)/(?:[^/]+/)+[^/]+_|player/index\.html\?.*?\bprogramGuid=)([0-9A-Z]{16})''')[0]
+        if not guid: return
+
+        tp_path = 'PR1GhC/media/guid/2702976343/' + guid
+        
+        uniqueUrls = set()
+        retTab = []
+        for asset_type in ('SD', 'HD'):
+            for f in ('MPEG4'): #, 'MPEG-DASH', 'M3U', 'ISM'):
+                url = 'http://link.theplatform.%s/s/%s?mbr=true&formats=%s&assetTypes=%s' % ('eu', tp_path, f, asset_type)
+                sts, data = self.cm.getPage(url, post_data={'format': 'SMIL'})
+                if not sts: continue
+                if 'GeoLocationBlocked' in data:
+                    SetIPTVPlayerLastHostError(ph.getattr(data, 'abstract'))
+                printDBG("++++++++++++++++++++++++++++++++++")
+                printDBG(data)
+                tmp = ph.findall(data, '<video', '>')
+                for item in tmp:
+                    url = ph.getattr(item, 'src')
+                    if not self.cm.isValidUrl(url): continue
+                    if url not in uniqueUrls:
+                        uniqueUrls.add(url)
+                        retTab.append({'name':'%s - %s' % (f, asset_type), 'url':url})
         return retTab
