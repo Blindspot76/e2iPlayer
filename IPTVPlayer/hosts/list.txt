@@ -102,6 +102,7 @@ hostlosmovies
 hostluxveritatis
 hostmaxtvgo
 hostmeczykipl
+hostmediasetplay
 hostmooviecc
 hostmovie4kto
 hostmovienightws
