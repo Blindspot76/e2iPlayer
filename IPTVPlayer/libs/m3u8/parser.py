@@ -131,6 +131,10 @@ def _parse_alternate_media(line, data):
     for param in params:
         name, value = param.split('=', 1)
         normalize_params[normalize_attribute(name)] = remove_quotes(value)
+    
+    # skip alternative audio if it does not have URI to media playlist attrib 
+    if normalize_params.pop('type', '').upper() == 'AUDIO' and not normalize_params.pop('uri', None):
+        return
 
     group = remove_quotes(normalize_params.pop('group_id', None))
     if group:
