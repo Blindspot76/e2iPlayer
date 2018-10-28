@@ -493,7 +493,7 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 printDBG(data)
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                if not data.strip():
+                if sts and not data.strip():
                     sts, data = self.getPage(actionUrl)
                 if sts and '/home/logout' in data:
                     printDBG('tryTologin OK')

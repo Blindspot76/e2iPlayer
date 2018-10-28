@@ -30,6 +30,7 @@ class Kkiste(CBaseHostClass):
         self.cacheLinks   = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
+        self.cacheSeasons = {}
         self.MOVIES_GENRE_CAT = []
         self.SERIES_GENRE_CAT = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -200,8 +201,7 @@ class Kkiste(CBaseHostClass):
 
             if self.cacheLinks != {}:
                 params = dict(cItem)
-                params.update({'good_for_fav': False, 'links_key':linksKey})
-                params.update({'good_for_fav': False, 'title':'%s' % title, 'url':linksKey, 'desc':desc})
+                params.update({'good_for_fav': False, 'title':'%s' % title, 'links_key':linksKey, 'url':linksKey, 'desc':desc})
                 self.addVideo(params)
         else:
             seasons = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="spoiler', '</fieldset>')
@@ -232,7 +232,7 @@ class Kkiste(CBaseHostClass):
                         self.cacheSeasons[sKey] = episodesList
 
                     params = dict(cItem)
-                    params.update({'good_for_fav':True, 'category':'list_episodes', 'title':title + ' ' + _('Season %s') % season, 'url':url, 'desc':desc, 'icon':icon, 's_key':sKey})
+                    params.update({'good_for_fav':False, 'category':'list_episodes', 'title':title + ' ' + _('Season %s') % season, 'url':url, 'desc':desc, 'icon':icon, 's_key':sKey})
                     self.addDir(params)
                     sKey += 1
                 else:
@@ -251,7 +251,7 @@ class Kkiste(CBaseHostClass):
                     self.cacheSeasons[sKey] = episodesList
 
                 params = dict(cItem)
-                params.update({'good_for_fav':True, 'category':'list_episodes', 'title':title + ' ' + _('Season %s') % season, 'url':url, 'desc':desc, 'icon':icon, 's_key':sKey})
+                params.update({'good_for_fav':False, 'category':'list_episodes', 'title':title + ' ' + _('Season %s') % season, 'url':url, 'desc':desc, 'icon':icon, 's_key':sKey})
                 self.addDir(params)
 
     def listEpisodes(self, cItem):

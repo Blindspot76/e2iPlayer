@@ -248,7 +248,11 @@ class Christusvincit(CBaseHostClass):
                 if rtmpUrl:
                     try:
                         rtmpUrl = strwithmeta(rtmpUrl, {'iptv_proto':'rtmp', 'iptv_livestream':True})
-                        item['sub_items'].append({'title':'%s [RTMP]' % item['title'], 'url':rtmpUrl, 'type':'video'})
+                        params = {'title':'%s [RTMP]' % item['title'], 'url':rtmpUrl, 'type':'video'}
+                        if 'sub_items' in item:
+                            item['sub_items'].append(params)
+                        else:
+                            item['rtmp_item'] = params
                     except Exception:
                         printExc()
                 self.currList.insert(0, item)
@@ -323,43 +327,46 @@ class Christusvincit(CBaseHostClass):
         playerConfig = None
 
         sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        cUrl = self.cm.meta['url']
-        self.setMainUrl(cUrl)
+        if sts:
+            cUrl = self.cm.meta['url']
+            self.setMainUrl(cUrl)
 
-        if 'articles.php' in cUrl:
-            iframe = ph.search(data, ph.IFRAME_SRC_URI_RE)[1]
-            if not iframe: 
-                iframe = ph.find(data, ('<script', '>', 'embedIframeJs'))[1]
-                iframe = ph.getattr(iframe, 'src')
+            if 'articles.php' in cUrl:
+                iframe = ph.search(data, ph.IFRAME_SRC_URI_RE)[1]
+                if not iframe: 
+                    iframe = ph.find(data, ('<script', '>', 'embedIframeJs'))[1]
+                    iframe = ph.getattr(iframe, 'src')
 
-            if iframe and '?' in iframe:
-                sts, tmp = self.getPage(self.getFullUrl(iframe.replace('?', '?iframeembed=true&')))
-                if not sts: return
-                playerConfig = ph.find(tmp, '{"playerConfig"', '};')[1][:-1]
+                if iframe and '?' in iframe:
+                    sts, tmp = self.getPage(self.getFullUrl(iframe.replace('?', '?iframeembed=true&')))
+                    if not sts: return
+                    playerConfig = ph.find(tmp, '{"playerConfig"', '};')[1][:-1]
+                else:
+                    sections = ph.find(data, '<noscript', 'scapmain-left')[1]
+                    sections = ph.rfindall(sections, '</table>', ('<td', '>', 'capmain-left'), flags=0)
+                    for section in sections:
+                        self.handleSection(cItem, cItem['category'], section)
             else:
-                sections = ph.find(data, '<noscript', 'scapmain-left')[1]
-                sections = ph.rfindall(sections, '</table>', ('<td', '>', 'capmain-left'), flags=0)
-                for section in sections:
-                    self.handleSection(cItem, cItem['category'], section)
-        else:
-            playerConfig = ph.find(data, '{"playerConfig"', '};')[1][:-1]
+                playerConfig = ph.find(data, '{"playerConfig"', '};')[1][:-1]
 
-        if playerConfig:
-            try:
-                playerConfig = json_loads(playerConfig)
-                playlistResult = playerConfig.get('playlistResult', {})
-                if not playlistResult: playlistResult['0'] = {'items':[playerConfig['entryResult']['meta']]}
-                for key, section in playlistResult.iteritems():
-                    for item in section['items']:
-                        icon = self.getFullUrl(item['thumbnailUrl'])
-                        title = item['name']
-                        desc = '%s | %s' % (str(timedelta(seconds=item['duration'])), item['description'])
-                        params = {'title':title, 'icon':icon, 'desc':desc, 'f_id':item['id']}
-                        if item.get('hlsStreamUrl'): params['url'] = item['hlsStreamUrl']
-                        self.addVideo(params)
-            except Exception:
-                printExc()
+            if playerConfig:
+                try:
+                    playerConfig = json_loads(playerConfig)
+                    playlistResult = playerConfig.get('playlistResult', {})
+                    if not playlistResult: playlistResult['0'] = {'items':[playerConfig['entryResult']['meta']]}
+                    for key, section in playlistResult.iteritems():
+                        for item in section['items']:
+                            icon = self.getFullUrl(item['thumbnailUrl'])
+                            title = item['name']
+                            desc = '%s | %s' % (str(timedelta(seconds=item['duration'])), item['description'])
+                            params = {'title':title, 'icon':icon, 'desc':desc, 'f_id':item['id']}
+                            if item.get('hlsStreamUrl'): params['url'] = item['hlsStreamUrl']
+                            self.addVideo(params)
+                except Exception:
+                    printExc()
+
+        rtmpItem = dict(cItem).pop('rtmp_item', None)
+        if rtmpItem: self.addVideo(rtmpItem)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
 
