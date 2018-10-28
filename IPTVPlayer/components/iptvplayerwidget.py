@@ -2252,18 +2252,24 @@ class IPTVPlayerLCDScreen(Screen):
 
     def __init__(self, session, parent):
         Screen.__init__(self, session)
-        self["text1"] =  Label("IPTVPlayer")
-        self["text2"] = Label("")
-        self["LCDlogo"] = Pixmap()
+        try: 
+            self["text1"] =  Label("IPTVPlayer")
+            self["text2"] = Label("")
+            self["LCDlogo"] = Pixmap()
+        except Exception: pass
 
     def setText(self, text):
-        self["text2"].setText(text[0:39])
+        try: self["text2"].setText(text[0:39])
+        except Exception: pass
 
     def LCD_showPic(self, widgetName, picPath):
-        self[widgetName].instance.setScale(1)
-        self[widgetName].instance.setPixmap(LoadPixmap(picPath))
-        self[widgetName].show()
+        try: 
+            self[widgetName].instance.setScale(1)
+            self[widgetName].instance.setPixmap(LoadPixmap(picPath))
+            self[widgetName].show()
+        except Exception: pass
 
     def LCD_hide(self, widgetName):
-        self[widgetName].hide()
+        try: self[widgetName].hide()
+        except Exception: pass
       
