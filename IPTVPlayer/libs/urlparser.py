@@ -398,6 +398,7 @@ class urlparser:
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
                        'tusfiles.net':         self.pp.parserUSERSCLOUDCOM ,
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
+                       'hdgo.cx':              self.pp.parserHDGOCC        ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
                        'streamable.com':       self.pp.parserSTREAMABLECOM  ,
                        'matchat.online':       self.pp.parserMATCHATONLINE  ,
@@ -511,6 +512,7 @@ class urlparser:
                        'mediasetplay.mediaset.it': self.pp.parserMEDIASET   ,
                        'videomore.ru':         self.pp.parserVIDEOMORERU    ,
                        'ntv.ru':               self.pp.parserNTVRU          ,
+                       '1tv.ru':               self.pp.parser1TVRU          ,
                     }
         return
     
@@ -11211,17 +11213,15 @@ class pageParser(CaptchaHelper):
 
         errorMessage = clean_html(self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'alert-danger'), ('</div', '>'), False)[1])
         SetIPTVPlayerLastHostError(errorMessage)
-        
+
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
-        
-        #printDBG(data)
-        
+
         videoUrl = self.cm.ph.rgetDataBeetwenMarkers2(data, '>download<', '<a ', caseSensitive=False)[1]
         videoUrl = self.cm.ph.getSearchGroups(videoUrl, '''href=['"]([^"^']+?)['"]''')[0]
         if self.cm.isValidUrl(videoUrl):
             return videoUrl
-        
+
         sts, videoUrl = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'download-btn'), ('</a', '>'), caseSensitive=False)
         if not sts:
             sts, videoUrl = self.cm.ph.getDataBeetwenNodes(data, ('<a', '>', 'downloadbtn'), ('</a', '>'), caseSensitive=False)
@@ -11229,7 +11229,7 @@ class pageParser(CaptchaHelper):
             return self.cm.ph.getSearchGroups(videoUrl, '''href=['"]([^"^']+?)['"]''')[0]
         else:
             printDBG(data)
-            printDBG('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+            printDBG('<<<')
             looksGood = ''
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
             for item in data:
@@ -11242,5 +11242,31 @@ class pageParser(CaptchaHelper):
                 if '/d/' in url:
                     looksGood = videoUrl
             if videoUrl == '': videoUrl = looksGood
-        
+
         return videoUrl
+
+    def parser1TVRU(self, baseUrl):
+        printDBG("parser1TVRU baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+        urlParams = {'header':HTTP_HEADER}
+
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+
+        video_id = ph.search(baseUrl, '[^0-9]([0-9]{3}[0-9]+)')[0]
+
+        url = self.cm.getFullUrl('/video_materials.json?video_id=' + video_id, cUrl)
+        sts, data = self.cm.getPage(url, urlParams)
+        if not sts: return False
+
+        videoUrls = []
+        data = json_loads(data)
+        for item in data[0]['mbr']:
+            url = strwithmeta(self.cm.getFullUrl(item['src'], cUrl), {'Referer':cUrl})
+            name = ph.clean_html(item['name'])
+            videoUrls.append({'name':name, 'url':url})
+
+        return videoUrls
