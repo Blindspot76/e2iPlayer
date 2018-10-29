@@ -4,6 +4,8 @@ import re
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html as yt_clean_html
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printExc
 
+# flags:
+NONE=0
 START_E=1
 START_S=2
 END_E=4
@@ -16,6 +18,11 @@ IFRAME_SRC_URI_RE = re.compile(r'''<iframe[^>]+?src=(['"])([^>]*?)(?:\1)''', re.
 IMAGE_SRC_URI_RE = re.compile(r'''<img[^>]+?src=(['"])([^>]*?\.(?:jpe?g|png)(?:\?[^\1]*?)?)(?:\1)''', re.I)
 A_HREF_URI_RE = re.compile(r'''<a[^>]+?href=(['"])([^>]*?)(?:\1)''', re.I)
 STRIP_HTML_COMMENT_RE = re.compile("<!--[\s\S]*?-->")
+
+# add short aliases
+IFRAME = IFRAME_SRC_URI_RE
+IMG = IMAGE_SRC_URI_RE
+A = A_HREF_URI_RE
 
 def getattr(data, attrmame, flags=0):
     if flags & IGNORECASE:
