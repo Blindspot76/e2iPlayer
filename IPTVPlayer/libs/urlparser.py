@@ -3085,9 +3085,7 @@ class pageParser(CaptchaHelper):
                         data = json_loads(ret['data'].strip())
                         defaultParams['cookie_items'] = data['cookies']
                         defaultParams['header']['Referer'] = baseUrl
-                        url = data['href']
-                        if url.startswith('/') and not url.startswith('//'): url = self.cm.getBaseUrl(data['sources']['sharing']['link'])[:-1] + url
-                        if url.startswith('//'): url = 'http:' + url
+                        url = self.cm.getFullUrl(data['href'], self.cm.meta['url'])
                         if self.cm.isValidUrl(url):
                             return self._parserUNIVERSAL_A(url, '', _findLinks2, httpHeader=defaultParams['header'], params=defaultParams)
             
@@ -3102,6 +3100,9 @@ class pageParser(CaptchaHelper):
         printDBG("parserVIDLOXTV baseUrl[%r]" % baseUrl)
         # example video: http://vidlox.tv/embed-e9r0y7i65i1v.html
         def _findLinks(data):
+            data = re.sub("<!--[\s\S]*?-->", "", data)
+            errorMsg = ph.find(data, ('<h1', '>'), '</p>', flags=0)[1]
+            if '<script' not in errorMsg: SetIPTVPlayerLastHostError(ph.clean_html(errorMsg))
             linksTab = []
             data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
             data = re.compile('"(http[^"]+?)"').findall(data)
@@ -6424,27 +6425,34 @@ class pageParser(CaptchaHelper):
         
     def parserFASTVIDEOIN(self, baseUrl):
         printDBG("parserFASTVIDEOIN baseUrl[%s]" % baseUrl)
-        
-        HTTP_HEADER = self.cm.getDefaultHeader()
-        
+
+        baseUrl = strwithmeta(baseUrl)
+        referer = baseUrl.meta.get('Referer', '')
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        HTTP_HEADER['Referer'] = referer if referer != '' else 'https://www1.swatchseries.to/'
+
         COOKIE_FILE = GetCookieDir('FASTVIDEOIN.cookie')
-        defaultParams = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
-        
+        defaultParams = {'header':HTTP_HEADER, 'with_metadata':True, 'use_new_session':True, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
+
         rm(COOKIE_FILE)
-        
+
         sts, data = self.cm.getPage(baseUrl, defaultParams)
         if not sts: return
         url = self.cm.meta['url']
-        
+
+        defaultParams.pop('use_new_session')
+
+        printDBG("111\n%s\n111" % data)
         defaultParams['cookie_items'] = self.cm.getCookieItems(COOKIE_FILE)
-        
+
         #http://fastvideo.in/nr4kzevlbuws
-        host = self.cm.ph.getDataBeetwenMarkers(url, "://", '/', False)[1]
+        host = ph.find(url, "://", '/', flags=0)[1]
 
         defaultParams['header']['Referer'] = url
         sts, data = self.cm.getPage(url, defaultParams)
         if not sts: return False
-        
+
+        printDBG("222\n%s\n222" % data)
         try:
             sleep_time =  self.cm.ph.getDataBeetwenMarkers(data, '<div class="btn-box"', '</div>')[1]
             sleep_time = self.cm.ph.getSearchGroups(sleep_time, '>([0-9]+?)<')[0]
@@ -6452,12 +6460,14 @@ class pageParser(CaptchaHelper):
         except Exception:
             printExc()
             
-        sts, tmp = self.cm.ph.getDataBeetwenMarkers(data, 'method="POST" action', '</Form>', False, False)
+        sts, tmp = ph.find(data, 'method="POST" action', '</Form>', flags=ph.I)
         if sts:
             post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
             post_data.pop('method_premium', None)
             defaultParams['header']['Referer'] = url
             sts, data = self.cm.getPage(url, defaultParams, post_data)
+            if sts: SetIPTVPlayerLastHostError(ph.clean_html(ph.find(data, ('<font', '>', 'err'), ('</font', '>'), flags=0)[1]))
+            printDBG("333\n%s\n333" % data)
         linksTab = self._findLinks(data, host, linkMarker=r'''['"](https?://[^"^']+(?:\.mp4|\.flv)[^'^"]*?)['"]''')
         for idx in range(len(linksTab)):
             linksTab[idx]['url'] = strwithmeta(linksTab[idx]['url'], {'Referer':url, 'User-Agent':['User-Agent']})
