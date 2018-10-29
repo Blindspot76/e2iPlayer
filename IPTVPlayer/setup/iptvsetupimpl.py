@@ -104,7 +104,7 @@ class IPTVSetupImpl:
         self.e2icjsonPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/e2icjson/e2icjson.so')]
 
         # hlsdl
-        self.hlsdlVersion = 0.20
+        self.hlsdlVersion = 0.21
         self.hlsdlPaths = [resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/bin/hlsdl'), "/usr/bin/hlsdl"]
         
         # cmdwrap
