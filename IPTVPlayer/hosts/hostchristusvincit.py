@@ -263,7 +263,8 @@ class Christusvincit(CBaseHostClass):
                           'niepokalanego_poczecia_08122013': 'Uroczysto\xc5\x9b\xc4\x87 Niepokalanego Pocz\xc4\x99cia NMP 2013',
                           'godzina_laski': 'Godzina \xc5\x82aski',
                           'odpust2012': 'Odpust Parafialny 2012',
-                          'pielgrzymki_550x120': 'Pielgrzymki Odbijamy Europ\xc4\x99'}
+                          'pielgrzymki_550x120': 'Pielgrzymki Odbijamy Europ\xc4\x99',
+                          'chrystuskrol2018': 'Uroczysto\xc5\x9b\xc4\x87 Jezusa Chrystusa Kr\xc3\xb3la Polski 2018'}
 
     def listMain(self, cItem, nextCategory):
         printDBG("Christusvincit.listMain")
