@@ -264,7 +264,8 @@ class Christusvincit(CBaseHostClass):
                           'godzina_laski': 'Godzina \xc5\x82aski',
                           'odpust2012': 'Odpust Parafialny 2012',
                           'pielgrzymki_550x120': 'Pielgrzymki Odbijamy Europ\xc4\x99',
-                          'chrystuskrol2018': 'Uroczysto\xc5\x9b\xc4\x87 Jezusa Chrystusa Kr\xc3\xb3la Polski 2018'}
+                          'chrystuskrol2018': 'Uroczysto\xc5\x9b\xc4\x87 Jezusa Chrystusa Kr\xc3\xb3la Polski 2018',
+                          'podmianka': 'Podmianka - Atrapa Ko\xc5\x9bcio\xc5\x82a',}
 
     def listMain(self, cItem, nextCategory):
         printDBG("Christusvincit.listMain")
