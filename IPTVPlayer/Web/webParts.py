@@ -22,7 +22,7 @@ def IncludeHEADER(extraMetas = ''):
 	<meta http-equiv="pragma" content="no-cache" />
 	<meta http-equiv="expires" content="0">
 	%s
-	<title>IPTVPlayer %s</title>
+	<title>E2iPlayer %s</title>
   <style>
     body {margin:0;}
 
@@ -74,7 +74,7 @@ def IncludeMENU( MenuStatusMSG = '', ShowCancelButton = False):
     <a href="/iptvplayer/?resetState=1" >%s</a>
   </div>
   <div class="bottombar">
-    <a href="https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/commits/master" target="_blank" >IPTVPlayer %s: <b><font color="#A9F5F2">%s</font></b></a>
+    <a href="https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/commits/master" target="_blank" >E2iPlayer %s: <b><font color="#A9F5F2">%s</font></b></a>
     <a>, %s: <b>%s</b></a/>
   </div>
 """ % ( _('Information'), _('Selected hosts'), _('Search'), _('Download manager'), _('Settings'), _('Logs'), _('Reset State'), _('version'), IPTV_VERSION, _('Web interface version'), settings.WebInterfaceVersion )
@@ -94,7 +94,7 @@ class Body():
 		tempText += '<form method="POST" action="--WEBBOT-SELF--">\n'
 		tempText += IncludeMENU()
 		tempText += '<div class="main">\n'
-		tempText += '<p align="left"><b>%s</b></p>' % _('<font color="#FE642E">REMEMBER:</font></b> IPTVPlayer <b>IS ONLY</b> specialized Web browser. It does <b>NOT</b> host any materials!!!</font>')
+		tempText += '<p align="left"><b>%s</b></p>' % _('<font color="#FE642E">REMEMBER:</font></b> E2iPlayer <b>IS ONLY</b> specialized Web browser. It does <b>NOT</b> host any materials!!!</font>')
 		tempText += '<p align="left">%s</p>' % resetStatusMSG
 		tempText += '</div></body>\n'
 		return tempText

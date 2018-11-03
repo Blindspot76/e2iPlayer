@@ -4,7 +4,7 @@ msgstr ""
 "POT-Creation-Date: 2017-07-12 17:00+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: j00zek <zdzislaw22@windowslive.com>\n"
-"Language-Team: IPTVPlayer\n"
+"Language-Team: E2iPlayer\n"
 "Language: pl_PL\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -18,8 +18,8 @@ msgstr ""
 msgid "Redirect"
 msgstr "Przekierowanie"
 
-msgid "You are using old version of OpenWebif.<br> To go to IPTVPlayer web Select the following link<br>"
-msgstr "Używasz starej wersji wtyczki OpenWebif.<br>Aby przejść na stronę IPTVPlayer-a, naciśnij poniższy skrót<br>"
+msgid "You are using old version of OpenWebif.<br> To go to E2iPlayer web Select the following link<br>"
+msgstr "Używasz starej wersji wtyczki OpenWebif.<br>Aby przejść na stronę E2iPlayer-a, naciśnij poniższy skrót<br>"
 
 msgid "Click"
 msgstr "Kliknij"
@@ -70,8 +70,8 @@ msgstr "Informacje diagnostyczne wtyczki są zaisywanie do pliku, ale plik nie i
 msgid "Content of the %s file"
 msgstr "Informacje diagnostyczne z pliku %s"
 
-msgid "<font color=\"#FE642E\">REMEMBER:</font></b> IPTVPlayer <b>IS ONLY</b> specialized Web browser. It does <b>NOT</b> host any materials!!!</font>"
-msgstr "<font color=\"#FE642E\">PAMIĘTAJ:</font></b> IPTVPlayer <b>JEST TYLKO</b> specyficzną przeglądarką sieci i <b>NIE</b> zawiera żadnych materiałów!!!</font>"
+msgid "<font color=\"#FE642E\">REMEMBER:</font></b> E2iPlayer <b>IS ONLY</b> specialized Web browser. It does <b>NOT</b> host any materials!!!</font>"
+msgstr "<font color=\"#FE642E\">PAMIĘTAJ:</font></b> E2iPlayer <b>JEST TYLKO</b> specyficzną przeglądarką sieci i <b>NIE</b> zawiera żadnych materiałów!!!</font>"
 
 msgid "Download log file"
 msgstr "Pobierz plik diagnostyczny"
@@ -195,15 +195,3 @@ msgstr "Tylko muzyka"
 
 msgid "Waiting search thread to stop, please wait (%d)"
 msgstr "Czekam na zatrzymanie wątku, proszę czekać (%d)"
-
-msgid ""
-msgstr ""
-
-msgid ""
-msgstr ""
-
-msgid ""
-msgstr ""
-
-msgid ""
-msgstr ""

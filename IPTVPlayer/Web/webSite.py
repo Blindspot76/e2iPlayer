@@ -42,7 +42,7 @@ def reloadScripts():
 ########################################################
 class redirectionPage(resource.Resource):
     
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
    
     def render(self, req):
@@ -65,14 +65,14 @@ class redirectionPage(resource.Resource):
   </body>
 </html>""" % (language.getLanguage()[:2],
           _('Redirect'),
-          _('You are using old version of OpenWebif.<br> To go to IPTVPlayer web Select the following link<br>'),
+          _('You are using old version of OpenWebif.<br> To go to E2iPlayer web Select the following link<br>'),
           _('Click'))
 
         return html
 
 #######################################################
 class StartPage(resource.Resource):
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
    
     def __init__(self):
@@ -118,7 +118,7 @@ class StartPage(resource.Resource):
         return html 
 #######################################################
 class searchPage(resource.Resource):
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
    
     def __init__(self):
@@ -196,7 +196,7 @@ class searchPage(resource.Resource):
 
 #######################################################
 class hostsPage(resource.Resource):
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
     
     def __init__(self):
@@ -232,7 +232,7 @@ class hostsPage(resource.Resource):
         return html
 ##########################################################
 class logsPage(resource.Resource):
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
    
     def __init__(self):
@@ -293,7 +293,7 @@ class logsPage(resource.Resource):
         return html
 #######################################################
 class settingsPage(resource.Resource):
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
    
     def __init__(self):
@@ -357,7 +357,7 @@ class settingsPage(resource.Resource):
         return html
 #######################################################
 class downloaderPage(resource.Resource):
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
    
     def __init__(self):
@@ -462,7 +462,7 @@ class downloaderPage(resource.Resource):
         return html
 #######################################################
 class useHostPage(resource.Resource):
-    title = "IPTVPlayer Webinterface"
+    title = "E2iPlayer Webinterface"
     isLeaf = False
    
     def __init__(self):
