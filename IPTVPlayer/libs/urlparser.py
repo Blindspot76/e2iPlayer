@@ -5743,8 +5743,8 @@ class pageParser(CaptchaHelper):
         printDBG("parserSAWLIVETV linkUrl[%s]" % baseUrl)
         HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
-        Referer = baseUrl.meta.get('Referer', baseUrl)
-        
+        HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
+
         if '/embed/stream/' not in baseUrl:
             sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
             if not sts: return False

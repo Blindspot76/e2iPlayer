@@ -39,6 +39,7 @@ from Plugins.Extensions.IPTVPlayer.libs.mlbstreamtv       import MLBStreamTVApi,
 from Plugins.Extensions.IPTVPlayer.libs.internetowa       import InternetowaApi, GetConfigList as Internetowa_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.firstonetvnet     import FirstOneTvApi, GetConfigList as FirstOneTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.beinmatch         import BeinmatchApi
+from Plugins.Extensions.IPTVPlayer.libs.wiz1net           import Wiz1NetApi
 ###################################################
 
 ###################################################
@@ -160,6 +161,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'karwan.tv',               'name': 'karwan.tv',           'title': 'http://karwan.tv/',                 'url': 'http://karwan.tv/',                                                  'icon': 'http://karwan.tv//logo/karwan-tv/karwan-tv-1.png'}, \
                         {'alias_id':'canlitvlive.io',          'name': 'canlitvlive.io',      'title': 'http://canlitvlive.io/',            'url': 'http://www.canlitvlive.io/',                                         'icon': 'http://www.canlitvlive.io/images/footer_simge.png'}, \
                         {'alias_id':'beinmatch.com',           'name': 'beinmatch.com',       'title': 'http://beinmatch.com/',             'url': '',                                                                   'icon': 'http://www.beinmatch.com/assets/images/bim/logo.png'}, \
+                        {'alias_id':'wiz1.net',                'name': 'wiz1.net',            'title': 'http://wiz1.net/',                  'url': '',                                                                   'icon': 'http://i.imgur.com/yBX7fZA.jpg'}, \
                         {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'http://wagasworld.com/',            'url': 'http://www.wagasworld.com/channels.php',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'alias_id':'djing.com',               'name': 'djing.com',           'title': 'https://djing.com/',                'url': 'https://djing.com/',                                                 'icon': 'https://www.djing.com/newimages/content/c01.jpg'}, \
                         {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'http://live-stream.tv/',            'url': 'http://www.live-stream.tv/',                                         'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
@@ -206,6 +208,7 @@ class HasBahCa(CBaseHostClass):
         self.InternetowaApi       = None
         self.FirstOneTvApi        = None
         self.BeinmatchApi         = None
+        self.Wiz1NetApi           = None
         
         self.hasbahcaiptv = {}
         self.webcameraSubCats = {}
@@ -616,6 +619,22 @@ class HasBahCa(CBaseHostClass):
     #############################################################
 
     #############################################################
+    def getWiz1NetList(self, cItem):
+        printDBG("getWiz1NetList start")
+        if None == self.Wiz1NetApi: self.Wiz1NetApi = Wiz1NetApi()
+        tmpList = self.Wiz1NetApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
+
+    def getWiz1NetLink(self, cItem):
+        printDBG("getWiz1NetLink start")
+        urlsTab = self.Wiz1NetApi.getVideoLink(cItem)
+        return urlsTab
+    #############################################################
+
+    #############################################################
     def getUstvnowList(self, cItem):
         printDBG("getUstvnowList start")
         if None == self.ustvnowApi:
@@ -925,7 +944,8 @@ class HasBahCa(CBaseHostClass):
         elif name == 'internetowa.ws':      self.getInternetowaList(self.currItem)
         elif name == 'firstonetv.net':      self.getFirstOneTvList(self.currItem)
         elif name == 'beinmatch.com':       self.getBeinmatchList(self.currItem)
-
+        elif name == 'wiz1.net':            self.getWiz1NetList(self.currItem)
+        
         CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
@@ -984,6 +1004,7 @@ class IPTVHost(CHostBase):
         elif name == "internetowa.ws":             urlList = self.host.getInternetowaLink(cItem)
         elif name == "firstonetv.net":             urlList = self.host.getFirstOneTvLink(cItem)
         elif name == "beinmatch.com":              urlList = self.host.getBeinmatchLink(cItem)
+        elif name == "wiz1.net":                   urlList = self.host.getWiz1NetLink(cItem)
 
         if isinstance(urlList, list):
             for item in urlList:
