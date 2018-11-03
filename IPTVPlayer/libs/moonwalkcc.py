@@ -121,18 +121,20 @@ class MoonwalkParser():
                     baseUrl = self.baseUrl + baseUrl
                 
                 for itemKey in data['data'].keys():
-                    tmp = json_loads(data['data'][itemKey])
-                    decrypted = tmp['data']['data']
-                    key       = tmp['password']['data']
-                    iv        = tmp['salt']['iv']['data']
-                    printDBG('>>>> key: [%s]' % key)
-                    printDBG('>>>> iv: [%s]' % iv)
-                    if tmp['password']['type'] == 'hex':
-                        key = unhexlify(key)
-                    if tmp['salt']['iv']['type'] == 'hex':
-                        iv = unhexlify(iv)
-                    
-                    post_data[itemKey] = base64.b64encode(self.cryptoJS_AES_encrypt(decrypted, key, iv)) #.replace('+', ' ')
+                    try:
+                        tmp = json_loads(data['data'][itemKey])
+                        decrypted = tmp['data']['data']
+                        key       = tmp['password']['data']
+                        iv        = tmp['salt']['iv']['data']
+                        printDBG('>>>> key: [%s]' % key)
+                        printDBG('>>>> iv: [%s]' % iv)
+                        if tmp['password']['type'] == 'hex':
+                            key = unhexlify(key)
+                        if tmp['salt']['iv']['type'] == 'hex':
+                            iv = unhexlify(iv)
+                        post_data[itemKey] = base64.b64encode(self.cryptoJS_AES_encrypt(decrypted, key, iv)) #.replace('+', ' ')
+                    except Exception:
+                        post_data[itemKey] = data['data'][itemKey]
             except Exception:
                 printExc()
         

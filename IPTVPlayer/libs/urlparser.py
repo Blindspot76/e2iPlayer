@@ -5741,7 +5741,7 @@ class pageParser(CaptchaHelper):
         
     def parserSAWLIVETV(self, baseUrl):
         printDBG("parserSAWLIVETV linkUrl[%s]" % baseUrl)
-        HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:42.0) Gecko/20100101 Firefox/42.0', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', baseUrl)
         #HTTP_HEADER['Referer'] = Referer
@@ -6597,39 +6597,16 @@ class pageParser(CaptchaHelper):
         file = re.sub('"\+[^"]+?\[([0-9]+?)\]\+"', _replace, file+'+"')
         hlsUrl = urlparser.decorateUrl(file, {'iptv_proto':'m3u8', 'iptv_livestream':True, 'Referer':'http://p.jwpcdn.com/6/12/jwplayer.flash.swf', 'User-Agent':'Mozilla/5.0'})
         return getDirectM3U8Playlist(hlsUrl)
-        
-    def parserCASTAMPCOMUnpackJS(self, code, name):
-        printDBG(">>>>>>>>>>>>>>>> code start")
-        printDBG(code)
-        printDBG(">>>>>>>>>>>>>>>> code end")
-        try:
-            paramsAlgoObj = compile(code, '', 'exec')
-        except Exception:
-            printExc('unpackJS compile algo code EXCEPTION')
-            return ''
-
-        try:
-            vGlobals = {"__builtins__": None, 'string': string, 'str':str, 'chr':chr, 'decodeURIComponent':urllib.unquote, 'unescape':urllib.unquote}
-            vLocals = { name: None }
-            exec( code, vGlobals, vLocals )
-        except Exception:
-            printExc('unpackJS exec code EXCEPTION')
-            return ''
-        try:
-            return vLocals[name]
-        except Exception:
-            printExc('decryptPlayerParams EXCEPTION')
-        return ''
 
     def parserCASTAMPCOM(self, baseUrl):
         printDBG("parserCASTAMPCOM baseUrl[%s]" % baseUrl)
-        channel = self.cm.ph.getSearchGroups(baseUrl + '&', 'c=([^&]+?)&')[0]
+        channel = ph.search(baseUrl + '&', 'c=([^&]+?)&')[0]
 
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', '')
         HTTP_HEADER = dict(self.HTTP_HEADER) 
         HTTP_HEADER['Referer'] = Referer
-        
+
         def _getDomainsa():
             chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz"
             string_length = 8
@@ -6640,39 +6617,51 @@ class pageParser(CaptchaHelper):
             return randomstring 
         
         linkUrl = 'http://www.castamp.com/embed.php?c={0}&tk={1}&vwidth=710&vheight=460'.format(channel, _getDomainsa())
-        
+
         sts, data = self.cm.getPage(linkUrl, {'header':HTTP_HEADER})
         if not sts: return False
-        
-        sts, data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="player">', '</script>')
+
+        jscode = ['var player={};function setup(e){this.obj=e}function jwplayer(){return player}player.setup=setup,document={},document.getElementById=function(e){return{innerHTML:interHtmlElements[e]}};']
+        interHtmlElements = {}
+        tmp = ph.findall(data, ('<div', '>', 'display:none;'), '</div>', flags=ph.START_S)
+        for idx in range(1, len(tmp), 2):
+            if '<' in tmp[idx] or '>' in tmp[idx]: continue
+            elemId = ph.getattr(tmp[idx-1], 'id')
+            interHtmlElements[elemId] = tmp[idx].strip()
+        jscode.append('var interHtmlElements=%s;' % json_dumps(interHtmlElements))
+
+        cUrl = self.cm.meta['url']
+        tmp = ph.findall(data, ('<script', '>', 'src'))
+        for item in tmp:
+            url = self.cm.getFullUrl(ph.getattr(item, 'src'), cUrl)
+            sts, item = self.cm.getPage(url, {'header':HTTP_HEADER})
+            if sts and 'eval(' in item: jscode.append(item)
+
+        sts, data = ph.find(data, ('<div', '>', 'player'), '</script>')
         if not sts: return False
-        
+
         data = re.sub("<!--[\s\S]*?-->", "", data)
         data = re.sub("/\*[\s\S]*?\*/", "", data)
-        data = 'var ' + self.cm.ph.getDataBeetwenMarkers(data, 'var ', '</script>', False)[1]
-        
-        printDBG("--------------------")
-        printDBG(data)
-        printDBG("--------------------")
-        jscode = base64.b64decode('''dmFyIHBsYXllciA9IHt9Ow0KZnVuY3Rpb24gc2V0dXAob2JqKQ0Kew0KICAgIHRoaXMub2JqID0gb2JqOw0KfTsNCg0KcGxheWVyLnNldHVwID0gc2V0dXA7DQoNCmZ1bmN0aW9uIGp3cGxheWVyKCkNCnsNCiAgICByZXR1cm4gcGxheWVyOw0KfQ0KDQolcw0KDQpwcmludChKU09OLnN0cmluZ2lmeShwbGF5ZXIub2JqKSk7DQo=''') % (data)                     
+        data = ph.find(data, ('<script', '>'), '</script>', flags=0)[1]
+        jscode.append(data)
+        jscode.append('print(JSON.stringify(player.obj));')
+
         printDBG("+++++++++++++++++++++++  CODE  ++++++++++++++++++++++++")
         printDBG(jscode)
         printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        ret = js_execute( jscode )
+        ret = js_execute( '\n'.join(jscode) )
         if ret['sts'] and 0 == ret['code']:
             decoded = ret['data'].strip()
             decoded = json_loads(decoded)
             swfUrl = decoded['flashplayer']
             url    = decoded['streamer']
             file   = decoded['file']
-
             if '' != file and '' != url:
                 url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
                 printDBG(url)
                 return url
-        
         return False
-        
+
     def parserCRICHDTV(self, baseUrl):
         printDBG("parserCRICHDTV baseUrl[%s]" % baseUrl)
         
