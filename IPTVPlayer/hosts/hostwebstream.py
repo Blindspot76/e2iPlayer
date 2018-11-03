@@ -38,6 +38,7 @@ from Plugins.Extensions.IPTVPlayer.libs.sportstream365    import SportStream365A
 from Plugins.Extensions.IPTVPlayer.libs.mlbstreamtv       import MLBStreamTVApi, GetConfigList as MLBStreamTV_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.internetowa       import InternetowaApi, GetConfigList as Internetowa_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.firstonetvnet     import FirstOneTvApi, GetConfigList as FirstOneTv_GetConfigList
+from Plugins.Extensions.IPTVPlayer.libs.beinmatch         import BeinmatchApi
 ###################################################
 
 ###################################################
@@ -158,6 +159,7 @@ class HasBahCa(CBaseHostClass):
                         {'alias_id':'livetvhd.net',            'name': 'livetvhd.net',        'title': 'https://livetvhd.net/',             'url': 'https://livetvhd.net/',                                              'icon': 'https://livetvhd.net/images/logo.png'}, \
                         {'alias_id':'karwan.tv',               'name': 'karwan.tv',           'title': 'http://karwan.tv/',                 'url': 'http://karwan.tv/',                                                  'icon': 'http://karwan.tv//logo/karwan-tv/karwan-tv-1.png'}, \
                         {'alias_id':'canlitvlive.io',          'name': 'canlitvlive.io',      'title': 'http://canlitvlive.io/',            'url': 'http://www.canlitvlive.io/',                                         'icon': 'http://www.canlitvlive.io/images/footer_simge.png'}, \
+                        {'alias_id':'beinmatch.com',           'name': 'beinmatch.com',       'title': 'http://beinmatch.com/',             'url': '',                                                                   'icon': 'http://www.beinmatch.com/assets/images/bim/logo.png'}, \
                         {'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'http://wagasworld.com/',            'url': 'http://www.wagasworld.com/channels.php',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
                         {'alias_id':'djing.com',               'name': 'djing.com',           'title': 'https://djing.com/',                'url': 'https://djing.com/',                                                 'icon': 'https://www.djing.com/newimages/content/c01.jpg'}, \
                         {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'http://live-stream.tv/',            'url': 'http://www.live-stream.tv/',                                         'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
@@ -203,6 +205,7 @@ class HasBahCa(CBaseHostClass):
         self.MLBStreamTVApi       = None
         self.InternetowaApi       = None
         self.FirstOneTvApi        = None
+        self.BeinmatchApi         = None
         
         self.hasbahcaiptv = {}
         self.webcameraSubCats = {}
@@ -595,6 +598,22 @@ class HasBahCa(CBaseHostClass):
         printDBG("getFirstOneTvdLink start")
         return self.FirstOneTvApi.getResolvedVideoLink(url)
     #############################################################
+    
+    #############################################################
+    def getBeinmatchList(self, cItem):
+        printDBG("getBeinmatchList start")
+        if None == self.BeinmatchApi: self.BeinmatchApi = BeinmatchApi()
+        tmpList = self.BeinmatchApi.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
+
+    def getBeinmatchLink(self, cItem):
+        printDBG("getBeinmatchLink start")
+        urlsTab = self.BeinmatchApi.getVideoLink(cItem)
+        return urlsTab
+    #############################################################
 
     #############################################################
     def getUstvnowList(self, cItem):
@@ -905,6 +924,7 @@ class HasBahCa(CBaseHostClass):
         elif name == 'mlbstream.tv':        self.getMLBStreamTVList(self.currItem)
         elif name == 'internetowa.ws':      self.getInternetowaList(self.currItem)
         elif name == 'firstonetv.net':      self.getFirstOneTvList(self.currItem)
+        elif name == 'beinmatch.com':       self.getBeinmatchList(self.currItem)
 
         CBaseHostClass.endHandleService(self, index, refresh)
 
@@ -963,7 +983,8 @@ class IPTVHost(CHostBase):
         elif name == "mlbstream.tv":               urlList = self.host.getMLBStreamTVLink(cItem)
         elif name == "internetowa.ws":             urlList = self.host.getInternetowaLink(cItem)
         elif name == "firstonetv.net":             urlList = self.host.getFirstOneTvLink(cItem)
-        
+        elif name == "beinmatch.com":              urlList = self.host.getBeinmatchLink(cItem)
+
         if isinstance(urlList, list):
             for item in urlList:
                 retlist.append(CUrlItem(item['name'], item['url'], item.get('need_resolve', 0)))
