@@ -5738,71 +5738,54 @@ class pageParser(CaptchaHelper):
             except Exception:
                 printExc()
         return videoTab
-        
+
     def parserSAWLIVETV(self, baseUrl):
         printDBG("parserSAWLIVETV linkUrl[%s]" % baseUrl)
         HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
         baseUrl = urlparser.decorateParamsFromUrl(baseUrl)
         Referer = baseUrl.meta.get('Referer', baseUrl)
-        #HTTP_HEADER['Referer'] = Referer
         
-        COOKIE_FILE = GetCookieDir('sawlive.tv')
-        params = {'header' : HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
-        
-        stdWay = False
-        if 1:
+        if '/embed/stream/' not in baseUrl:
             sts, data = self.cm.getPage(baseUrl, {'header': HTTP_HEADER})
             if not sts: return False
-            
-            if 'eval' in data:
-                data  = data.strip()
-                data = data[data.rfind('}(')+2:-2]
-                
-                data = unpackJS(data, SAWLIVETV_decryptPlayerParams)
-                printDBG(">>>>>>>>>>>>>>>>>>>" + data)
-                
-                def jal(a):
-                    b = ''
-                    for c in a:
-                        b += JS_toString(ord(c), 16)
-                    return b
-                
-                linkUrl = self.cm.ph.getSearchGroups(data, '''src="([^"']+?)["']''')[0] + '/' + jal(urlparser().getHostName(Referer))
-            else:
-                stdWay = True
-        if stdWay:
-            params['header']['Referer'] = Referer
-            sts, data = self.cm.getPage(baseUrl, params)
-            if not sts: return False
-            
-            vars = dict( re.compile("var ([^=]+?)='([^']+?)';").findall(data) )
-            data = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
-            
-            def fakeJSExec(dat):
-                dat = dat.group(1)
-                if dat.startswith('unescape'):
-                    dat = self.cm.ph.getSearchGroups(dat, '\(([^)]+?)\)')[0]
-                    if "'" == dat[0]:
-                        dat = dat[1:-1]
-                    else:
-                        dat = vars[dat]
-                    printDBG('dat: ' + dat)
-                    return dat.replace('%', '\\u00').decode('unicode-escape').encode("utf-8")
-                else:
-                    return vars[dat]
-            linkUrl = re.sub("'\+([^+]+?)\+'", fakeJSExec, data)
-        
-        sts, data = self.cm.getPage(linkUrl, params)
+            js_params = [{'path':GetJSScriptFile('sawlive1.byte')}]
+            js_params.append({'name':'sawlive1', 'code':data})
+            ret = js_execute_ext( js_params )
+            printDBG(ret['data'])
+            embedUrl = self.cm.getFullUrl(ph.search(ret['data'], ph.IFRAME)[1], self.cm.meta['url'])
+        else:
+            embedUrl = baseUrl
+
+        sts, data = self.cm.getPage(embedUrl, {'header': HTTP_HEADER})
         if not sts: return False
-        swfUrl = self.cm.ph.getSearchGroups(data, "'(http[^']+?swf)'")[0]
-        url    = self.cm.ph.getSearchGroups(data, "streamer'[^']+?'(rtmp[^']+?)'")[0]
-        file   = self.cm.ph.getSearchGroups(data, "file'[^']+?'([^']+?)'")[0]
+        printDBG(data)
+
+        js_params = [{'path':GetJSScriptFile('sawlive2.byte')}]
+        interHtmlElements = {}
+        tmp = ph.findall(data, ('<span', '>', ph.check(ph.all, ('display', 'none'))), '</span>', flags=ph.START_S)
+        for idx in range(1, len(tmp), 2):
+            if '<' in tmp[idx] or '>' in tmp[idx]: continue
+            elemId = ph.getattr(tmp[idx-1], 'id')
+            interHtmlElements[elemId] = tmp[idx].strip()
+        js_params.append({'code':'var interHtmlElements=%s;' % json_dumps(interHtmlElements)})
+        data = ph.findall(data, ('<script', '>', ph.check(ph.none, ('src=',))), '</script>', flags=0)
+        for item in data:
+            printDBG("+++++++++++++++++++++")
+            printDBG(item)
+            js_params.append({'code':item})
+        ret = js_execute_ext( js_params )
+        printDBG(ret['data'])
+        data = json_loads(ret['data'])
+        swfUrl = data['0']
+        decoded = data['6']
+        url    = decoded['streamer']
+        file   = decoded['file']
         if '' != file and '' != url:
-            url += ' playpath=%s swfUrl=%s pageUrl=%s ' % (file, swfUrl, linkUrl)
-            #printDBG(url)
+            url += ' playpath=%s swfUrl=%s pageUrl=%s live=1 ' % (file, swfUrl, baseUrl)
+            printDBG(url)
             return url
         return False
-        
+
     def parserSHIDURLIVECOM(self, baseUrl):
         printDBG("parserSHIDURLIVECOM linkUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}

@@ -53,6 +53,7 @@ def js_execute_ext(items, params={}):
     fileList = []
     tmpFiles = []
 
+    uniqueId = 0;
     ret = {'sts':False, 'code':-13, 'data':''}
     try:
         for item in items:
@@ -109,7 +110,8 @@ def js_execute_ext(items, params={}):
                 if path:
                     fileList.append(path)
                 else:
-                    path = 'e2i_js_exe_%s.js' % (int(time.time()*1000))
+                    path = 'e2i_js_exe_%s.js' % (uniqueId) #(int(time.time()*1000))
+                    uniqueId += 1
                     sts, path = CreateTmpFile(path, code)
                     if not sts:
                         raise Exception('Faile to create file "%s"' % path)

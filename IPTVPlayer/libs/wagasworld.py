@@ -153,13 +153,15 @@ class WagasWorldApi(CBaseHostClass):
         printDBG("WagasWorldApi.exploreItem url[%s]" % cItem['url'])
         sts,data = self.cm.getPage(cItem['url'], self.http_params)
         if not sts: return []
+
+        desc = ph.clean_html(ph.find(data, ('<div', '>', 'alert-danger'), '</div>', flags=0)[1])
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="videoWrapper">', ' </section>', False)[1]
         if 'pr3v4t.tk' not in data:
             params = dict(cItem)
             params['type'] = 'video'
+            params['desc'] = desc
             return [params]
-        
-        
+
         retTab = [] 
         url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=["'](https?://[^"^']*?pr3v4t\.tk[^"^']+)["']''', 1, True)[0]
         data = self._getEpisode(url)
@@ -167,13 +169,12 @@ class WagasWorldApi(CBaseHostClass):
             params = dict(cItem)
             params.update({'type':'video', 'title':cItem['title'] + ' ' + data['title'], 'waga_url':url, 'waga_episode':int(data['episode'])})
             retTab.append(params)
-            
+
             params = dict(cItem)
             params.update({'type':'more', 'waga_cat':'more', 'title':_('More'), 'waga_title':cItem['title'], 'waga_url':url, 'waga_episode':int(data['episode'])+1})
             retTab.append(params)
-        
         return retTab
-        
+
     def loadMore(self, cItem):
         printDBG("WagasWorldApi.loadMore cItem[%s]" % cItem)
         
