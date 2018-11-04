@@ -14,6 +14,12 @@ except Exception: import simplejson as json
 from binascii import hexlify
 import threading
 
+import signal
+import os
+def signal_handler(sig, frame):
+    os.kill(os.getpid(), signal.SIGTERM)
+signal.signal(signal.SIGINT, signal_handler)
+
 LAST_HTTP_ERROR_CODE =  -1
 LAST_HTTP_ERROR_DATA =  ''
 

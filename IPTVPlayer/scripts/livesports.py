@@ -14,6 +14,12 @@ from urlparse import urlparse
 try:    import json
 except Exception: import simplejson as json
 
+import signal
+import os
+def signal_handler(sig, frame):
+    os.kill(os.getpid(), signal.SIGTERM)
+signal.signal(signal.SIGINT, signal_handler)
+
 def printDBG(strDat):
     return
     strDat = str(strDat)
@@ -107,6 +113,7 @@ if __name__ == "__main__":
         
         if scriptUrl.startswith('<proxy>'):
             urlPath = scriptUrl[7:]
+            if urlPath.startswith('/'): urlPath = urlPath[1:]
         elif scriptUrl.startswith('|'):
             scriptUrl = json.loads(base64.b64decode(scriptUrl))
         else:
@@ -114,13 +121,10 @@ if __name__ == "__main__":
             
             sts, data = getPage(scriptUrl, {'User-Agent':userAgent, 'Referer':mainUrl})
             if sts:
-                try:
-                    urlPath = re.compile('''['"]([^'^"]*?keys/[^'^"]*?)['"]''').search(data)
-                    if urlPath == None: urlPath = re.compile('''['"]([^'^"]*?/live/[^'^"]*?)['"]''').search(data)
-                    urlPath = urlPath.group(1)
-                    if urlPath.startswith('/'): urlPath = urlPath[1:]
-                except Exception:
-                    printExc()
+                urlPath = re.compile('''['"]([^'^"]*?keys/[^'^"]*?)['"]''').search(data)
+                if urlPath == None: urlPath = re.compile('''['"]([^'^"]*?/live/[^'^"]*?)['"]''').search(data)
+                if urlPath != None: urlPath = urlPath.group(1)
+                if urlPath.startswith('/'): urlPath = urlPath[1:]
         
         SocketServer.TCPServer.allow_reuse_address = True
         #httpd = SocketServer.ForkingTCPServer(('127.0.0.1', port), Proxy)

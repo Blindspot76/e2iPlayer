@@ -10,6 +10,12 @@ import urlparse
 import SocketServer
 import SimpleHTTPServer
 
+import signal
+import os
+def signal_handler(sig, frame):
+    os.kill(os.getpid(), signal.SIGTERM)
+signal.signal(signal.SIGINT, signal_handler)
+
 def printExc(msg=''):
     msg = 'EXCEPTION: \n%s' % traceback.format_exc()
     print(msg)

@@ -7,6 +7,12 @@ import sys
 import traceback
 import time
 
+import signal
+import os
+def signal_handler(sig, frame):
+    os.kill(os.getpid(), signal.SIGTERM)
+signal.signal(signal.SIGINT, signal_handler)
+
 def printDBG(strDat):
     if 0:
         print("%s" % strDat)
