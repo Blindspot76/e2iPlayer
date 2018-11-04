@@ -1,6 +1,7 @@
 host123movieshd
 host3player
 host3sktv
+host7tvde
 host9anime
 hostakoam
 hostallboxtv
