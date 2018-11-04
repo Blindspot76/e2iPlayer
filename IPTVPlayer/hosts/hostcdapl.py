@@ -224,20 +224,28 @@ class cda(CBaseHostClass, CaptchaHelper):
     def listSearchResult(self, cItem, searchPattern, searchType):
         printDBG("cda.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         searchsort = config.plugins.iptvplayer.cda_searchsort.value
-        page = cItem.get('page', 1)
-        url  = self.SEARCH_URL % (urllib.quote_plus(searchPattern), page, searchsort)
-        tmpItem = dict(cItem)
-        tmpItem.update({'category' : 'search_next_page', 'search_pattern':searchPattern})
-        self.listItems(tmpItem, url, page, True)
+        url = self.SEARCH_URL % (urllib.quote_plus(searchPattern), 1, searchsort)
+        if searchType != 'all': 
+            sts, data = self.cm.getPage(url)
+            if not sts: return
+            searchPattern = ph.search(self.cm.meta['url']+'/', '/info/([^/^\?]+?)[/\?]')[0]
+            url = self.SEARCH_URL % (searchPattern, 1, searchsort)
+            url += '&duration=' + searchType
+
+        self.listItems(MergeDicts(cItem, {'category':'search_next_page'}), url, search=True)
         
-    def listItems(self, cItem, url, page, search=False):
+    def listItems(self, cItem, url=None, page=None, search=False):
+        if url == None: url = cItem['url']
         sts, data = self.cm.getPage(url)
         if sts:
-            if 'Następna strona' in data:
-                nextPage = True
+            if page == None:
+                page = cItem.get('page', 1)
+                nextPage = ph.find(data, ('<span', '>', 'next-wrapper'), '</span>', flags=0)[1]
+                if not nextPage: nextPage = ph.find(data, ('<a', '>', 'btn-large'))[1]
+                nextPage = self.getFullUrl(ph.getattr(nextPage, 'href'), self.cm.meta['url'])
             else:
-                nextPage = False
-            
+                nextPage = url if 'Następna strona' in data else ''
+
             if search:
                 data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'video-clip-wrapper'), ('</label', '>'))
             elif 'poczekalnia' in url:
@@ -245,12 +253,12 @@ class cda(CBaseHostClass, CaptchaHelper):
                 data = data.split('<div class="videoInfo">')                
             else:
                 data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'video-clip-wrapper'), ('</label', '>'))
-                
+
             for item in data:
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 printDBG(item)
                 printDBG("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                
+
                 descTab = []
                 desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenReMarkers(item, re.compile('''<span class=["']timeElem[^>]*?>'''), re.compile('</span>'), False)[1])
                 if '' != desc: descTab.append(desc)
@@ -277,12 +285,10 @@ class cda(CBaseHostClass, CaptchaHelper):
                 elif '/folder/' in url:
                     params.update({'name':'dir', 'category':'list_folder_sort'})
                     self.addDir(params)
-                
+
             if nextPage:
-                nextPage = dict(cItem)
-                nextPage.update({'good_for_fav':False, 'title':'Następna strona', 'page':page+1})
-                self.addDir(nextPage)
-    
+                self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'url':nextPage, 'title':'Następna strona', 'page':page+1}))
+
     def listChannelsCategories(self, cItem, nextCategory):
         printDBG("cda.listChannelsCategories [%s]" % cItem['url'])
         
@@ -518,11 +524,14 @@ class cda(CBaseHostClass, CaptchaHelper):
             self.listFolderSort(self.currItem, 'list_folder_items')
         elif 'list_folder_items' == category:
             self.listFolderItems(self.currItem)
+
     #SEARCH
-        elif category in ["search", "search_next_page"]:
+        elif category == "search":
             cItem = dict(self.currItem)
             cItem.update({'search_item':False, 'name':'category'}) 
             self.listSearchResult(cItem, searchPattern, searchType)
+        elif 'search_next_page' == category:
+            self.listItems(self.currItem, search=True)
     #HISTORIA SEARCH
         elif category == "search_history":
             self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
@@ -536,3 +545,10 @@ class IPTVHost(CHostBase):
     def __init__(self):
         CHostBase.__init__(self, cda(), True, [CDisplayListItem.TYPE_VIDEO, CDisplayListItem.TYPE_AUDIO])
 
+    def getSearchTypes(self):
+        searchTypesOptions = []
+        searchTypesOptions.append(("każda długość", "all"))
+        searchTypesOptions.append(("krótkie (poniżej 5 minut)",  "krotkie"))
+        searchTypesOptions.append(("średnie (powyżej 20 minut)", "srednie"))
+        searchTypesOptions.append(("długie (powyżej 60 minut)",  "dlugie"))
+        return searchTypesOptions
