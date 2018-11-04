@@ -6,6 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 
 ###################################################
@@ -60,10 +61,10 @@ class Kkiste(CBaseHostClass):
         if cats == []:
             sts, data = self.getPage(url)
             if not sts: return
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a class="CatInf"', '</a>')
+            data = ph.findall(data, '<a class="CatInf"', '</a>')
             for item in data:
-                url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-                title = self.cm.ph.getSearchGroups(item, '''class="CatNameInf">([^<]+)<''')[0]
+                url = self.getFullUrl(ph.search(item, ph.A_HREF_URI_RE)[1])
+                title = ph.search(item, '''class="CatNameInf">([^<]+)<''')[0]
                 if title.startswith('S-'): title = title.replace('S-','')
                 cats.append({'category':'list_items', 'title':title, 'url':url})
 
@@ -79,7 +80,7 @@ class Kkiste(CBaseHostClass):
 
         if not sts: return
 
-        pagedata = self.cm.ph.getAllItemsBeetwenMarkers(data, '<span class="pagesBlockuz1">', '<span class="numShown73">')
+        pagedata = ph.findall(data, '<span class="pagesBlockuz1">', '<span class="numShown73">')
         
         if pagedata == []: 
             nextPage = False
@@ -89,25 +90,25 @@ class Kkiste(CBaseHostClass):
         urls = []
         titles = []
         genres = []
-        ldata = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a class="newstitl entryLink"', '</a>')
+        ldata = ph.findall(data, '<a class="newstitl entryLink"', '</a>')
         for item in ldata:
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+            url = self.getFullUrl(ph.search(item, ph.A_HREF_URI_RE)[1])
             urls.append(url)
-            title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]+['"]>(.+)</''')[0])
+            title = self.cleanHtmlStr(ph.search(item, '''href=['"][^'^"]+['"]>(.+)</''')[0])
             titles.append(title)
 
-        gdata = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="MesWrapBlogDet"', '</a>')
+        gdata = ph.findall(data, '<div class="MesWrapBlogDet"', '</a>')
         for item in gdata:
             if '<script>' in item: continue
-            genre = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''href=['"][^'^"]+['"]>([^<]+)</''')[0])
+            genre = self.cleanHtmlStr(ph.search(item, '''href=['"][^'^"]+['"]>([^<]+)</''')[0])
             genre = genre.replace('Genre: ','')
             if genre.startswith('S-'): genre = genre.replace('S-','')
             genres.append(genre)
 
         index = 0
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="ImgWrapNews">', '</div>')
+        data = ph.findall(data, '<div class="ImgWrapNews">', '</div>')
         for item in data:
-            icon = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+            icon = self.getFullIconUrl(ph.search(item, '''src=['"]([^'^"]+?)['"]''')[0])
             url = urls[index]
             title = titles[index]
             genre = genres[index]
@@ -121,14 +122,14 @@ class Kkiste(CBaseHostClass):
         
         if nextPage:
             for item in pagedata:
-                thispage = self.cm.ph.getAllItemsBeetwenMarkers(item, 'class="swchItem', '</span>')
+                thispage = ph.findall(item, 'class="swchItem', '</span>')
                 current_page = False
                 url = ''
                 for pitem in thispage:
                     if 'swchItemA' in pitem:
                         current_page = True
                     elif current_page:
-                        url = self.getFullUrl(self.cm.ph.getSearchGroups(pitem, '''href=['"]([^'^"]+?)['"]''')[0])
+                        url = self.getFullUrl(ph.search(pitem, ph.A_HREF_URI_RE)[1])
                         break
 
                 if url != '':
@@ -149,15 +150,15 @@ class Kkiste(CBaseHostClass):
         title = cItem.get('title','')
 
         trailerurl = ''
-        trailerdata =  self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe src=', '</iframe>')
+        trailerdata =  ph.findall(data, '<iframe src=', '</iframe>')
         for item in trailerdata:
             if 'youtube' in item:
-                trailerurl = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0])
+                trailerurl = self.getFullUrl(ph.search(item, '''src=['"]([^'^"]+?)['"]''')[0])
                 if trailerurl.endswith('/embed/'): trailerurl = ''
                 break
 
         plot = ''
-        plotdata = self.cm.ph.getAllItemsBeetwenMarkers(data, '<p><b>', '</b></p>', withMarkers=False)
+        plotdata = ph.findall(data, '<p><b>', '</b></p>', flags=0)
         for item in plotdata:
             item = item.replace('\n','')
             item = item.replace('\r','')
@@ -180,7 +181,7 @@ class Kkiste(CBaseHostClass):
             self.addVideo(params)
 
         if '/publ/' in url:
-            links = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="inner', '</fieldset>')
+            links = ph.findall(data, '<div class="inner', '</fieldset>')
 
             self.cacheLinks  = {}
             linksKey = cItem['url']
@@ -190,8 +191,8 @@ class Kkiste(CBaseHostClass):
             for item in links:
                 item = item.replace('\n','')
                 item = item.replace('\r','')
-                url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
-                name = self.cm.ph.getSearchGroups(url, '''//([^/]+)/''')[0]
+                url = ph.search(item, ph.A_HREF_URI_RE)[1]
+                name = ph.search(url, '''//([^/]+)/''')[0]
                 nameparts = name.split('.')
                 if len(nameparts) != 2:
                     name = nameparts[-2] + '.' + nameparts[-1]
@@ -204,7 +205,7 @@ class Kkiste(CBaseHostClass):
                 params.update({'good_for_fav': False, 'title':'%s' % title, 'links_key':linksKey, 'url':linksKey, 'desc':desc})
                 self.addVideo(params)
         else:
-            seasons = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="spoiler', '</fieldset>')
+            seasons = ph.findall(data, '<div class="spoiler', '</fieldset>')
             sKey = 0
             self.cacheSeasons = {}
             onlyEpisodes = False
@@ -213,14 +214,14 @@ class Kkiste(CBaseHostClass):
             for item in seasons:
                 item = item.replace('\n','')
                 item = item.replace('\r','')
-                season = self.cm.ph.getSearchGroups(item, '''STAFFEL ([^<]+)<''')[0]
+                season = ph.search(item, '''STAFFEL ([^<]+)<''')[0]
                 if len(season):
                     if season.startswith('0'): season = season.replace('0','')
                     episodesList = []
-                    links = self.cm.ph.getAllItemsBeetwenMarkers(item, '<a href="', '</a>')
+                    links = ph.findall(item, '<a href="', '</a>')
                     eNum = 1
                     for litem in links:
-                        url = self.cm.ph.getSearchGroups(litem, '''href=['"]([^'^"]+?)['"]''')[0]
+                        url = ph.search(litem, ph.A_HREF_URI_RE)[1]
                         url = strwithmeta(url, {'Referer':cItem['url']})
                         episode = str(eNum)
                         etitle = '%s s%se%s' % (cItem['title'], season.zfill(2), episode.zfill(2))
@@ -238,7 +239,7 @@ class Kkiste(CBaseHostClass):
                 else:
                     onlyEpisodes = True
                     season = '1'
-                    url = self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0]
+                    url = ph.search(item, ph.A_HREF_URI_RE)[1]
                     url = strwithmeta(url, {'Referer':cItem['url']})
                     episode = str(eNum)
                     etitle = '%s s%se%s' % (cItem['title'], season.zfill(2), episode.zfill(2))
