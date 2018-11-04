@@ -88,6 +88,7 @@ class BilaSportPwApi(CBaseHostClass):
         sts, data = self.getPage(cItem['url'])
         if not sts: return urlsTab
         cUrl = self.cm.meta['url']
+        baseUrl = cUrl
 
         url = self.getFullUrl(ph.search(data, '''['"]([^'^"]*?/iframes/[^'^"]+?)['"]''')[0], cUrl)
         if not url: return urlsTab
@@ -96,10 +97,10 @@ class BilaSportPwApi(CBaseHostClass):
         cUrl = self.cm.meta['url']
 
         url = self.getFullUrl(ph.search(data, ph.IFRAME)[1], cUrl)
-        if not url: return urlsTab
-        sts, data = self.getPage(url)
-        if not sts: return urlsTab
-        cUrl = self.cm.meta['url']
+        if url:
+            sts, data = self.getPage(url)
+            if not sts: return urlsTab
+            cUrl = self.cm.meta['url']
 
         replaceTab = self.cm.ph.getDataBeetwenMarkers(data, 'prototype.open', '};', False)[1]
         printDBG(replaceTab)
@@ -123,7 +124,13 @@ class BilaSportPwApi(CBaseHostClass):
                 hlsTab[idx]['need_resolve'] = 1
                 hlsTab[idx]['url'] = strwithmeta(hlsTab[idx]['url'], {'name':cItem['name'], 'Referer':url, 'priv_script_url':scriptUrl})
 
-        return hlsTab
+        if hlsTab:
+            return hlsTab
+
+        if 1 == self.up.checkHostSupport(cUrl): 
+            return self.up.getVideoLinkExt(strwithmeta(cUrl, {'Referer':baseUrl}))
+
+        return []
 
     def getResolvedVideoLink(self, videoUrl):
         printDBG("BilaSportPwApi.getResolvedVideoLink [%s]" % videoUrl)
@@ -160,6 +167,7 @@ class BilaSportPwApi(CBaseHostClass):
             meta['iptv_m3u8_key_uri_replace_old'] = '%s://' % proto 
             meta['iptv_m3u8_key_uri_replace_new'] = 'http://127.0.0.1:{0}/{1}/'.format(config.plugins.iptvplayer.bilasportpw_port.value, proto)
             meta['iptv_refresh_cmd'] = pyCmd
-        
-        videoUrl = urlparser.decorateUrl("ext://url/" + videoUrl, meta)
+            videoUrl = urlparser.decorateUrl("ext://url/" + videoUrl, meta)
+        else:
+            videoUrl = urlparser.decorateUrl(videoUrl, meta)
         return [{'name':'direct', 'url':videoUrl}]
