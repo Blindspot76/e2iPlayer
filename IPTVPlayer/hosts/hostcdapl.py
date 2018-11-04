@@ -225,7 +225,7 @@ class cda(CBaseHostClass, CaptchaHelper):
         printDBG("cda.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         searchsort = config.plugins.iptvplayer.cda_searchsort.value
         url = self.SEARCH_URL % (urllib.quote_plus(searchPattern), 1, searchsort)
-        if searchType != 'all': 
+        if searchType and searchType != 'all': 
             sts, data = self.cm.getPage(url)
             if not sts: return
             searchPattern = ph.search(self.cm.meta['url']+'/', '/info/([^/^\?]+?)[/\?]')[0]
