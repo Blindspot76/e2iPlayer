@@ -40,6 +40,9 @@ class C7tvDe(CBaseHostClass):
         if addParams == {}: addParams = dict(self.defaultParams)
         return self.cm.getPage(baseUrl, addParams, post_data)
 
+    def getFullUrl(self, url, curUrl=None):
+        return CBaseHostClass.getFullUrl(self, url.replace(' ', '%20'), curUrl)
+
     def listMain(self, cItem, nextCategory):
         printDBG("C7tvDe.listMain")
         sts, data = self.getPage(self.getMainUrl())
