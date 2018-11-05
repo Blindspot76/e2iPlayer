@@ -226,11 +226,13 @@ class cda(CBaseHostClass, CaptchaHelper):
         searchsort = config.plugins.iptvplayer.cda_searchsort.value
         url = self.SEARCH_URL % (urllib.quote_plus(searchPattern), 1, searchsort)
         if searchType and searchType != 'all': 
+            url += '&duration=' + searchType
             sts, data = self.cm.getPage(url)
             if not sts: return
-            searchPattern = ph.search(self.cm.meta['url']+'/', '/info/([^/^\?]+?)[/\?]')[0]
-            url = self.SEARCH_URL % (searchPattern, 1, searchsort)
-            url += '&duration=' + searchType
+            if '/info/' in self.cm.meta['url']:
+                searchPattern = ph.search(self.cm.meta['url']+'/', '/info/([^/^\?]+?)[/\?]')[0]
+                url = self.SEARCH_URL % (searchPattern, 1, searchsort)
+                url += '&duration=' + searchType
 
         self.listItems(MergeDicts(cItem, {'category':'search_next_page'}), url, search=True)
         
