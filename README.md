@@ -1,3 +1,3 @@
-# IPTVPlayer for E2
+# E2iPlayer for E2
 
-The IPTVPlayer project website: http://www.iptvplayer.gitlab.io/
+The E2iPlayer project website: http://www.iptvplayer.gitlab.io/
