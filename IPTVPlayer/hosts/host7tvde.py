@@ -119,7 +119,7 @@ class C7tvDe(CBaseHostClass):
             for letter, value in data['facet'].iteritems():
                 if letter == '#': letter = '0-9'
                 if value:
-                    title = '%s (%s)' % (letter, value)
+                    title = '%s (%s)' % (letter.upper(), value)
                     url = cUrl + '/(letter)/%s' % letter
                     self.addDir(MergeDicts(cItem, {'category':nextCategory, 'url':url, 'title':title, 'letter':letter}))
             self.currList.sort(key=lambda k: k['letter'].decode('utf-8'))
