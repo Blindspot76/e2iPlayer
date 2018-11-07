@@ -85,13 +85,17 @@ class cda(CBaseHostClass, CaptchaHelper):
         self.loggedIn = None
         self.login    = ''
         self.password = ''
-    
+
+    def getPage(self, url, addParams = {}, post_data = None):
+        baseUrl = self.cm.iriToUri(url)
+        return self.cm.getPage(baseUrl, addParams, post_data)
+
     # premium filters
     def fillFilters(self, cItem):
         printDBG("cda.fillFilters")
         self.cacheFilters = {}
         self.filtersTab = []
-        sts, data = self.cm.getPage(cItem['url'], self.defaultParams)
+        sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return
         
         def addFilter(data, key, addAny, titleBase):
@@ -172,7 +176,7 @@ class cda(CBaseHostClass, CaptchaHelper):
         nextPageData = {}
         
         if page == 1:
-            sts, data = self.cm.getPage(baseUrl, self.defaultParams)
+            sts, data = self.getPage(baseUrl, self.defaultParams)
             if not sts: return
             tmp = self.cm.ph.getSearchGroups(data, '''katalogLoadMore\([^\,]+?\,\s*"([^"]+?)"\s*,\s*"([^"]+?)"''', 2)
             nextPageData = {'cat':tmp[0], 'sort':tmp[1]}
@@ -186,7 +190,7 @@ class cda(CBaseHostClass, CaptchaHelper):
             nextPageData = cItem.get('next_page_data', {})
             post_data = '{"jsonrpc":"2.0","method":"katalogLoadMore","params":[%s,"%s","%s",{}],"id":%s}' % (page, nextPageData.get('cat', 'all'), nextPageData.get('sort', 'new'), nextPageData.get('id', page-1))
             params['raw_post_data'] = True
-            sts, data = self.cm.getPage(self.getFullUrl('premium'), params, post_data)
+            sts, data = self.getPage(self.getFullUrl('premium'), params, post_data)
             if not sts: return
             try:
                 data = json_loads(data)
@@ -218,7 +222,7 @@ class cda(CBaseHostClass, CaptchaHelper):
     def listCategory(self, cItem):
         printDBG("cda.listCategory cItem[%s]" % cItem)
         page = cItem.get('page', 1)
-        url = self.getFullUrl( cItem['base_url'] + cItem['url'] + ('/p%d' % page))
+        url = self.getFullUrl( cItem['base_url'] + ('/p%d' % page))
         self.listItems(cItem, url, page)
         
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -227,7 +231,7 @@ class cda(CBaseHostClass, CaptchaHelper):
         url = self.SEARCH_URL % (urllib.quote_plus(searchPattern), 1, searchsort)
         if searchType and searchType != 'all': 
             url += '&duration=' + searchType
-            sts, data = self.cm.getPage(url)
+            sts, data = self.getPage(url)
             if not sts: return
             if '/info/' in self.cm.meta['url']:
                 searchPattern = ph.search(self.cm.meta['url']+'/', '/info/([^/^\?]+?)[/\?]')[0]
@@ -238,13 +242,13 @@ class cda(CBaseHostClass, CaptchaHelper):
         
     def listItems(self, cItem, url=None, page=None, search=False):
         if url == None: url = cItem['url']
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if sts:
             if page == None:
                 page = cItem.get('page', 1)
                 nextPage = ph.find(data, ('<span', '>', 'next-wrapper'), '</span>', flags=0)[1]
                 if not nextPage: nextPage = ph.find(data, ('<a', '>', 'btn-large'))[1]
-                nextPage = self.getFullUrl(ph.getattr(nextPage, 'href'), self.cm.meta['url'])
+                nextPage = self.getFullUrl(ph.clean_html(ph.getattr(nextPage, 'href')), self.cm.meta['url'])
             else:
                 nextPage = url if 'Następna strona' in data else ''
 
@@ -295,7 +299,7 @@ class cda(CBaseHostClass, CaptchaHelper):
         printDBG("cda.listChannelsCategories [%s]" % cItem['url'])
         
         url = self.getFullUrl('/partial/polecanekanaly_paski')
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         cats = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('var\s*?polecani_partnerzy\s*?='), re.compile(';'), False)[1].strip()
@@ -326,7 +330,7 @@ class cda(CBaseHostClass, CaptchaHelper):
     def listChannels(self, cItem, nextCategory):
         printDBG("cda.listChannels [%s]" % cItem['url'])
         
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<a', '>', 'tube-wrap'), ('</a', '>'))
@@ -342,7 +346,7 @@ class cda(CBaseHostClass, CaptchaHelper):
             
     def listFolders(self, cItem, nextCategory):
         printDBG("cda.listFolders [%s]" % cItem['url'])
-        sts, data = self.cm.getPage(cItem['url'])
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
         
         data = self.cm.ph.getDataBeetwenNodes(data, ('<ul', '>', 'navigation_foldery'), ('<div', '>', 'panel-footer'))[1]
@@ -373,7 +377,7 @@ class cda(CBaseHostClass, CaptchaHelper):
         else: url += '?'
         url += 'type=pliki'
         
-        sts, data = self.cm.getPage(url)
+        sts, data = self.getPage(url)
         if not sts: return
         
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'list-when-small'), ('</div', '>'))
@@ -416,7 +420,7 @@ class cda(CBaseHostClass, CaptchaHelper):
             self.login = config.plugins.iptvplayer.cda_login.value
             self.password = config.plugins.iptvplayer.cda_password.value
 
-            sts, data = self.cm.getPage(self.getMainUrl(), self.defaultParams)
+            sts, data = self.getPage(self.getMainUrl(), self.defaultParams)
             if sts: self.setMainUrl(self.cm.meta['url'])
 
             freshSession = False
@@ -435,7 +439,7 @@ class cda(CBaseHostClass, CaptchaHelper):
             rm(loginCookie)
             rm(self.COOKIE_FILE)
             if freshSession:
-                sts, data = self.cm.getPage(self.getMainUrl(), MergeDicts(self.defaultParams, {'use_new_session':True}))
+                sts, data = self.getPage(self.getMainUrl(), MergeDicts(self.defaultParams, {'use_new_session':True}))
 
             self.loggedIn = False
             if '' == self.login.strip() or '' == self.password.strip():
@@ -444,7 +448,7 @@ class cda(CBaseHostClass, CaptchaHelper):
             actionUrl = 'https://www.cda.pl/login'
             sitekey = ''
 
-            sts, data = self.cm.getPage(actionUrl, self.defaultParams)
+            sts, data = self.getPage(actionUrl, self.defaultParams)
             tries = 0
             while tries < 2:
                 msgTab = [_('Login failed.')]
@@ -468,7 +472,7 @@ class cda(CBaseHostClass, CaptchaHelper):
                         if token != '': post_data['g-recaptcha-response'] = token
 
                     # login
-                    sts, data = self.cm.getPage(actionUrl, params, post_data)
+                    sts, data = self.getPage(actionUrl, params, post_data)
 
                     printDBG(data)
                     if sts:  msgTab.append(ph.clean_html(ph.find(data, ('<p', '>', 'error-form'), '</p>', flags=0)[1]))
