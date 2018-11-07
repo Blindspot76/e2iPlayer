@@ -18,6 +18,7 @@ class CYTSignAlgoExtractor:
     MAX_REC_DEPTH = 5
     RE_FUNCTION_NAMES = re.compile('[ =(,]([a-zA-Z$]+?)\([a-z0-9,]*?\)')
     RE_OBJECTS = re.compile('[ =(,;]([a-zA-Z$]+?)\.([a-zA-Z$]+?)\(')
+    RE_MAIN = re.compile('([a-zA-Z0-9$]+)\(')
 
     def __init__(self, cm):
         self.cm = cm
@@ -52,11 +53,12 @@ class CYTSignAlgoExtractor:
 
         tmp = ph.find(data, 'yt.akamaized.net', '}', 0)[1]
         if tmp:
-            tmp = ph.findall(tmp, '.set(', ')')
+            printDBG("DATA: %s" % tmp)
+            tmp = ph.rfindall(tmp, 'return', '.set(', flags=0)
             for name in tmp:
-                name = name.split(',', 1)[-1].split('(', 1)[0].strip()
-                if name and not any((c in name) for c in ''', '"'''):
-                    return name
+                printDBG("ITEM: %s" % name)
+                name = ph.search(name, self.RE_MAIN)[0]
+                if name: return name
 
         tmp = ph.findall(data, ('.set(', '));', lambda d, l, s, e: not ph.any(')-";', l, s, e)))
         for name in tmp:
@@ -106,7 +108,7 @@ class CYTSignAlgoExtractor:
         decSignatures = []
         code = ''
         jsname = 'ytsigndec'
-        jshash = 'hash6_' + playerUrl.split('://', 1)[-1]
+        jshash = 'hash7_' + playerUrl.split('://', 1)[-1]
         if not is_js_cached(jsname, jshash):
         
             # get main function
@@ -116,8 +118,15 @@ class CYTSignAlgoExtractor:
             t1 = time.time()
             code = []
             mainFunctionName = self._findMainFunctionName()
+            if not mainFunctionName:
+                SetIPTVPlayerLastHostError(_('Encryption function name extraction failed!\nPlease report the problem to %s') % 'iptvplayere2@gmail.com')
+                return []
+            printDBG("mainFunctionName >> %s" % mainFunctionName)
 
             mainFunction = self._findFunction(mainFunctionName)
+            if not mainFunction:
+                SetIPTVPlayerLastHostError(_('Encryption function body extraction failed!\nPlease report the problem to %s') % 'iptvplayere2@gmail.com')
+                return []
             code.append(mainFunction)
 
             funNames = self._getAllLocalSubFunNames(mainFunction)
