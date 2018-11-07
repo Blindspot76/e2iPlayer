@@ -82,10 +82,11 @@ class MoonwalkParser():
         data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
         for item in data:
             jscode.append(item)
-        
+
         sts, data = self.cm.getPage(scriptUrl, params)
         if sts:
-            jscode.insert(0, '''window=this;var document={};function setTimeout(e,t){}window.document=document,location={},Object.defineProperty(location,"href",{get:function(){return""},set:function(e){}}),window.location=location,document.on=function(){return document},document.constructor=document.on,document.ready=document.on,document.off=document.on,document.bind=document.on;var element=function(e){this.getElementsByTagName=function(){return elem=new element(""),[elem]},this.attributes={},this.expando=function(){return new element("")},this.firstChild={nodeType:3},this.cloneNode=function(){return new element("")},this.appendChild=function(){return new element("")},this.lastChild=function(){return new element("")},this.setAttribute=function(){this.attributes[arguments[0]]={expando:1}},this.getAttribute=function(){return new element("")},Object.defineProperty(this,"style",{get:function(){return{display:"",animation:""}},set:function(e){}})};document.documentElement=new element(""),document.nodeType=9,document.body=document,document.createDocumentFragment=function(){return new element("")},document.getElementById=function(e){return new element(e)},document.createElement=document.getElementById,document.getElementsByTagName=document.getElementById;\n''' + data)
+            jscode.insert(0, '''window=this;var document={};function setTimeout(e,t){}window.document=document,location={},Object.defineProperty(location,"href",{get:function(){return""},set:function(e){}}),window.location=location,document.on=function(){return document},document.constructor=document.on,document.ready=document.on,document.off=document.on,document.bind=document.on;var element=function(e){this.getElementsByTagName=function(){return elem=new element(""),[elem]},this.attributes={},this.expando=function(){return new element("")},this.firstChild={nodeType:3},this.cloneNode=function(){return new element("")},this.appendChild=function(){return new element("")},this.lastChild=function(){return new element("")},this.setAttribute=function(){this.attributes[arguments[0]]={expando:1}},this.getAttribute=function(){return new element("")},Object.defineProperty(this,"style",{get:function(){return{display:"",animation:""}},set:function(e){}})};document.documentElement=new element(""),document.nodeType=9,document.body=document,document.createDocumentFragment=function(){return new element("")},document.getElementById=function(e){return new element(e)},document.createElement=document.getElementById,document.getElementsByTagName=document.getElementById;\n''')
+            #jscode.insert(1, data)
             try:
                 endIdx = data.rfind('}')
                 idx = endIdx
@@ -104,7 +105,7 @@ class MoonwalkParser():
                 jscode.append('\n'.join(tabVars))
             except Exception:
                 printExc()
-            item = "iptv.call = %s;iptv['call']();" % self._getFunctionCode(data.split('getVideoManifests:', 1)[-1])
+            item = "iptv.call = %s;iptv['call']();" % self._getFunctionCode(data.split('getVideoManifests:', 1)[-1]).replace('while(true)', 'while(false)').replace('while (true)', 'while(false)').replace('"gger"', '"zgger"')
             jscode.append(item)
         
         jscode = '\n'.join(jscode)
