@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ###################################################
 # LOCAL import
 ###################################################
@@ -102,11 +102,11 @@ class FilmixCO(CBaseHostClass):
 
     def listMainMenu(self, cItem):
         printDBG("FilmixCO.listMainMenu")
-        sts, data = self.getPage(self.getMainUrl())
+        sts, data = self.getPage(self.getFullUrl('/films'))
         self.cacheFilters = []
         if sts:
             tmp = self.cm.ph.getDataBeetwenNodes(data, ('<form', '>', 'filtersForm'), ('</form', '>'))[1]
-            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div', '>', 'filter-category'), ('</div', '>'))
+            tmp = self.cm.ph.rgetAllItemsBeetwenNodes(data, ('</div', '>'), ('<div', '>', 'filter-category'),)
             for item in tmp:
                 scope = self.cm.ph.getSearchGroups(item, '''\sdata\-scope=['"]([^'^"]+?)['"]''')[0]
                 type  = self.cm.ph.getSearchGroups(item, '''\sdata\-type=['"]([^'^"]+?)['"]''')[0]
@@ -173,26 +173,32 @@ class FilmixCO(CBaseHostClass):
             if 'values' not in filter and 'type' in filter:
                 # separate request is needed to get filter values
                 values = []
-                url = self.getFullUrl('/engine/ajax/get_filter.php')
-                urlParams = dict(self.defaultParams)
-                urlParams['header'] = dict(self.AJAX_HEADER)
-                urlParams['Referer'] = self.getMainUrl()
-                sts, data = self.getPage(url, urlParams, {'scope':'cat', 'type':filter['type']})
-                if not sts: return
-                try:
-                    printDBG(data)
-                    data = json_loads('[%s]' % data.replace('":"', '","')[1:-1])
-                    for i in range(0, len(data), 2):
-                        title = self.cleanHtmlStr(data[i+1])
-                        value = data[i]
-                        if value.startswith('f'): value = value[1:]
-                        values.append({'title':title, ('f_%s' % filter['scope']):value})
+                if 'rating' == filter['type']:
+                    for i in range(9, 0, -1):
+                        values.append({'title':'%s-%s'% (str(i).zfill(2), str(i+1).zfill(2)), ('f_%s' % filter['scope']):'%s%s' % (str(i).zfill(2), str(i+1).zfill(2))})
                     if len(values):
-                        if 'years' == filter['type']: values.reverse()
                         values.insert(0, {'title':_('--Any--')})
-                        filter['values'] = values
-                except Exception:
-                    printExc()
+                else:
+                    url = self.getFullUrl('/engine/ajax/get_filter.php')
+                    urlParams = dict(self.defaultParams)
+                    urlParams['header'] = dict(self.AJAX_HEADER)
+                    urlParams['Referer'] = self.getMainUrl()
+                    sts, data = self.getPage(url, urlParams, {'scope':'cat', 'type':filter['type']})
+                    if not sts: return
+                    try:
+                        printDBG(data)
+                        data = json_loads('[%s]' % data.replace('":"', '","')[1:-1])
+                        for i in range(0, len(data), 2):
+                            title = self.cleanHtmlStr(data[i+1])
+                            value = data[i]
+                            if value.startswith('f'): value = value[1:]
+                            values.append({'title':title, ('f_%s' % filter['scope']):value})
+                        if len(values):
+                            if 'years' == filter['type']: values.reverse()
+                            values.insert(0, {'title':_('--Any--')})
+                            filter['values'] = values
+                    except Exception:
+                        printExc()
             elif 'values' in filter:
                 values = filter['values']
             
@@ -518,4 +524,3 @@ class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, FilmixCO(), True, favouriteTypes=[]) 
-
