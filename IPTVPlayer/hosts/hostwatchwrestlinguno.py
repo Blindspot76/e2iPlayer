@@ -14,14 +14,10 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 import re
 import urllib
 import urlparse
-try:    import json
-except Exception: import simplejson as json
 ###################################################
 
-
-
 def gettytul():
-    return 'http://watchwrestling.uno/'
+    return 'http://watchwrestling.ac/'
 
 class WatchwrestlingUNO(CBaseHostClass):
     def __init__(self):
@@ -238,29 +234,6 @@ class WatchwrestlingUNO(CBaseHostClass):
         else:
             urlTab = self.up.getVideoLinkExt(url)
         return urlTab
-        
-    def getFavouriteData(self, cItem):
-        printDBG('WatchwrestlingUNO.getFavouriteData')
-        return json.dumps(cItem) 
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('WatchwrestlingUNO.getLinksForFavourite')
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('WatchwrestlingUNO.setInitListFromFavouriteItem')
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
