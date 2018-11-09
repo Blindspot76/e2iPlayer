@@ -7,6 +7,8 @@ from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostC
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.components.sweetcaptcha_v2widget import UnCaptchaSweetCaptchaWidget
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
+from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 
 ###################################################
@@ -16,8 +18,6 @@ import urlparse
 import re
 import urllib
 import base64
-try:    import json
-except Exception: import simplejson as json
 from datetime import datetime
 from time import sleep, time
 from copy import deepcopy
@@ -254,57 +254,61 @@ class FiliserTv(CBaseHostClass):
         sts, data = self.getPage(baseUrl)
         if not sts: return
 
-        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="resultList2">', '</ul>', withMarkers=False)[1]
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>', withMarkers=True)
-        for item in data:
-            tmp    = item.split('<div class="info">')
-            url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            title  = self.cleanHtmlStr(tmp[0].replace('<div class="title_org">', '/'))
-            icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0].strip())
-            desc   = self.cleanHtmlStr(tmp[-1])
-            params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
-            if '/film/' in url:
-                self.addVideo(params)
-            elif '/serial/' in url:
-                params['category'] = 'list_seasons'
-                self.addDir(params)
+        data = ph.findall(data, ('<ul', '>', 'resultList2'), '</ul>', flags=0)
+        for sData in data:
+            sData = ph.findall(sData, ('<li', '>'), '</li>', flags=0)
+            for item in sData:
+                tmp    = item.split('<div class="info">')
+                url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
+                title  = self.cleanHtmlStr(tmp[0].replace('<div class="title_org">', '/'))
+                icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0].strip())
+                desc   = self.cleanHtmlStr(tmp[-1])
+                params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
+                if '/film/' in url:
+                    self.addVideo(params)
+                elif '/serial/' in url:
+                    params['category'] = 'list_seasons'
+                    self.addDir(params)
     
     def getLinksForVideo(self, cItem):
         printDBG("FiliserTv.getLinksForVideo [%s]" % cItem)
         urlTab = []
-        
+
         if len(self.cacheLinks.get(cItem['url'], [])):
             return self.cacheLinks[cItem['url']]
-        
+
         sts, data = self.getPage(cItem['url'], self.defaultParams)
         if not sts: return []
-        
-        errorMessage = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<h2 class="title_block">', '</section>')[1])
+
+        errorMessage = ph.clean_html(ph.find(data, ('<h2', '>', 'title_block'), '</section>')[1])
         if '' != errorMessage:  SetIPTVPlayerLastHostError(errorMessage)
-        
+
         lParams = {}
-        tmp = self.cm.ph.getSearchGroups(data, '''(<div[^>]+?['"]box['"][^>]*?>)''')[0]
-        lParams['code'] = self.cm.ph.getSearchGroups(tmp, '''data\-code=['"]([^'^"]+?)['"]''')[0]
-        lParams['code2'] = self.cm.ph.getSearchGroups(tmp, '''data\-code2=['"]([^'^"]+?)['"]''')[0]
-        lParams['type'] =  self.cm.ph.getSearchGroups(tmp, '''id=['"]([^'^"^_]+?)['"_]''')[0]
-        
+        tmp = ph.find(data, ('<div', '>', ph.check(ph.any, ('"box"',"'box'"))))[1]
+        lParams['code'] = ph.getattr(tmp, 'data-code')
+        lParams['code2'] = ph.getattr(tmp, 'data-code2')
+        lParams['type'] = ph.getattr(tmp, 'id').split('_', 1)[0]
+
+        lParams['title1'] = ph.clean_html(ph.find(data, ('<h3', '>'), '</h3>', flags=0)[1])
+        lParams['title2'] = ph.clean_html(ph.find(data, ('<h4', '>'), '</h4>', flags=0)[1])
+
         data = data.split('<div id="links">')
         if 2 != len(data): return []
-        
+
         tabs = []
-        tmp = self.cm.ph.getDataBeetwenMarkers(data[0], '<div id="video_links"', '<div class="clear">')[1]
+        tmp = ph.find(data[0], '<div id="video_links"', '<div class="clear">')[1]
         tmp = re.compile('<[^>]+?data-type\="([^"]+?)"[^>]*?>([^<]+?)<').findall(tmp)
         for item in tmp:
-            tabs.append({'key':item[0], 'title':self.cleanHtmlStr(item[1])})
-        
-        del data[0]
-        
+            tabs.append({'key':item[0], 'title':ph.clean_html(item[1])})
+
+        if tabs: del data[0]
+
         for tab in tabs:
-            tmp = self.cm.ph.getDataBeetwenMarkers(data[0], 'data-type="%s"' % tab['key'], '</ul>')[1]
-            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li', '</li>', withMarkers=True)
+            tmp = ph.find(data[0], 'data-type="%s"' % tab['key'], '</ul>')[1]
+            tmp =  ph.findall(tmp, '<li', '</li>')
             for item in tmp:
-                url    = strwithmeta(self.cm.ph.getSearchGroups(item, '''data-ref=['"]([^'^"]+?)['"]''')[0], {'link_params':lParams})
-                title  = self.cleanHtmlStr(item.split('<div class="rightSide">')[0])
+                url    = strwithmeta(ph.getattr(item, 'data-ref'), {'link_params':lParams})
+                title  = ph.clean_html(item.split('<div class="rightSide">')[0])
                 urlTab.append({'name': '%s: %s' % (tab['title'], title), 'url':url, 'need_resolve':1})
         
         self.cacheLinks[cItem['url']] = urlTab
@@ -363,7 +367,7 @@ class FiliserTv(CBaseHostClass):
         printDBG(data)
         thumbFileTab = []
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             imgUrlTab = []
             for item in data["a"]:
                 imgUrlTab.append(_getFullUrl(n(data['simple_key'], item['src'])))
@@ -421,7 +425,7 @@ class FiliserTv(CBaseHostClass):
         reCaptcha = False
         if not self.cm.isValidUrl(videoUrl):
             linkParams = videoUrl.meta['link_params']
-            url = self.getFullUrl('/embed?type=%s&code=%s&code2=%s&salt=%s' % (linkParams['type'], linkParams['code'], linkParams['code2'], videoUrl))
+            url = self.getFullUrl('/embed?type=%s&code=%s&code2=%s&salt=%s&title=%s&title2=%s' % (linkParams['type'], linkParams['code'], linkParams['code2'], videoUrl, urllib.quote(linkParams['title1']), urllib.quote(linkParams['title2'])))
             salt = '%s|%s' % (videoUrl, linkParams)
             if salt not in FiliserTv.SALT_CACHE:
                 httpParams = dict(self.defaultParams)
@@ -483,30 +487,7 @@ class FiliserTv(CBaseHostClass):
             self.sessionEx.waitForFinishOpen(MessageBox, 'Otwórz stronę http://filiser.tv/ w przeglądarce i odtwórz dowolny film potwierdzając, że jesteś człowiekiem.', type = MessageBox.TYPE_ERROR, timeout = 10 )
         
         return urlTab
-        
-    def getFavouriteData(self, cItem):
-        printDBG('FiliserTv.getFavouriteData')
-        return json.dumps(cItem)
-        
-    def getLinksForFavourite(self, fav_data):
-        printDBG('FiliserTv.getLinksForFavourite')
-        links = []
-        try:
-            cItem = byteify(json.loads(fav_data))
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-        
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('FiliserTv.setInitListFromFavouriteItem')
-        try:
-            params = byteify(json.loads(fav_data))
-        except Exception: 
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-        
+
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
         
