@@ -459,7 +459,7 @@ class PlayerSelectorWidget(Screen):
         return
         
     def keyBlue(self):
-        self.close((_("IPTV download manager"), "IPTVDM"))
+        self.close((_("Download manager"), "IPTVDM"))
         
     def keyMenu(self):
         printDBG(">> PlayerSelectorWidget.keyMenu")
@@ -472,7 +472,7 @@ class PlayerSelectorWidget(Screen):
             options.append((_("Enable reordering mode"), "CHANGE_REORDERING_MODE"))
         elif self.reorderingMode:
             options.append((_("Disable reordering mode"), "CHANGE_REORDERING_MODE"))
-        options.append((_("IPTV download manager"), "IPTVDM"))
+        options.append((_("Download manager"), "IPTVDM"))
         if self.groupName in ['selecthost', 'all']:
             options.append((_("Disable/Enable services"), "config_hosts"))
         if self.groupName in ['selectgroup']:

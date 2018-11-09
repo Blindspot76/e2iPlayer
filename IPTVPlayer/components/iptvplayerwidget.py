@@ -608,7 +608,7 @@ class E2iPlayerWidget(Screen):
                 options.append((_("Configure host"), "HostConfig"))
         except Exception: printExc()
         options.append((_("Info"), "info"))
-        options.append((_("IPTV download manager"), "IPTVDM"))
+        options.append((_("Download manager"), "IPTVDM"))
         self.session.openWithCallback(self.blue_pressed_next, ChoiceBox, title = _("Select option"), list = options)
 
     def pause_pressed(self):

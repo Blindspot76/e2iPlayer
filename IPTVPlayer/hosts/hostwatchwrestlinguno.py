@@ -22,9 +22,9 @@ def gettytul():
 class WatchwrestlingUNO(CBaseHostClass):
     def __init__(self):
         CBaseHostClass.__init__(self, {'history':'watchwrestling.uno', 'cookie':'watchwrestling.uno.cookie'})
-        self.MAIN_URL    = 'http://watchwrestling.uno/'
+        self.MAIN_URL    = 'http://watchwrestling.ac/'
         self.SRCH_URL    = self.getFullUrl('index.php?s=')
-        self.DEFAULT_ICON_URL = 'http://i.imgur.com/UsYsZ.png' #'http://watchwrestling.uno/wp-content/uploads/2016/03/wwunologo2.png'
+        self.DEFAULT_ICON_URL = 'http://i.imgur.com/UsYsZ.png'
         
         self.MAIN_CAT_TAB = [{'category':'categories',    'title': _('Categories'),  'url':self.getMainUrl(),  'm1':'Categories</h3>'              },
                              {'category':'categories',    'title': _('WWE'),         'url':self.getFullUrl('category/wwe/'),  'm1':'>WWE</a>'      },
