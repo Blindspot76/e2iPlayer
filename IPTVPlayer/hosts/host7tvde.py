@@ -106,6 +106,8 @@ class C7tvDe(CBaseHostClass):
     def doListItems(self, cItem, nextCategory, data, cursor):
         for item in data:
             params = self.mapItem(cItem, nextCategory, item)
+            if not params:
+                continue
             if params['f_type'] == 'video':
                 self.addVideo(params)
             else:
@@ -122,12 +124,15 @@ class C7tvDe(CBaseHostClass):
 
         icon = item.get('image')
         icon = self.getFullIconUrl(icon + '/profile:mag-300x170') if icon else ''
+        if type == None: 
+            printDBG("ITEM TYPE IS NONE: %s" % item)
+            return None
 
         desc = [type]
-        try: desc.append( item['branding']['name'] )
+        try: desc.append( '' + item['branding']['name'] )
         except Exception: pass
 
-        try: desc.append( item['channel']['title'] )
+        try: desc.append( '' + item['channel']['title'] )
         except Exception: pass
 
         tmp = item.get('videoType')
@@ -163,6 +168,7 @@ class C7tvDe(CBaseHostClass):
                     subItems = []
                     for item in sSection['items']:
                         params = self.mapItem(cItem, nextCategory, item)
+                        if not params: continue
                         if params['f_type'] == 'video': params['type'] = 'video'
                         else: params['category'] = nextCategory
                         subItems.append(params)
