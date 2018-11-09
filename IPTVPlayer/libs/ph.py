@@ -158,7 +158,7 @@ def findall(data, start, end=('',), flags=START_E|END_E, limits=-1):
 
             search = 1
 
-        if limits > 0 and len(itemsTab) == limits:
+        if limits > 0 and len(itemsTab) >= limits:
             break
     return itemsTab
 
@@ -231,7 +231,7 @@ def rfindall(data, start, end=('',), flags=START_E|END_E, limits=-1):
 
             search = 1
 
-        if limits > 0 and len(itemsTab) == limits:
+        if limits > 0 and len(itemsTab) >= limits:
             break
     return itemsTab
 

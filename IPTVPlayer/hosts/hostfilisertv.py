@@ -60,44 +60,35 @@ class FiliserTv(CBaseHostClass):
         FiliserTv.SALT_CACHE = {}
         self.WaitALittleBit  = None
         self.filtersTab = [] # ['language', 'genres', 'year', 'sort_by']
-        
+
     def getStr(self, item, key):
         if key not in item: return ''
         if item[key] == None: return ''
         return str(item[key])
-        
+
     def getPage(self, baseUrl, addParams = {}, post_data = None):
-        if addParams == {}:
-            addParams = dict(self.defaultParams)
-        
-        def _getFullUrl(url):
-            if self.cm.isValidUrl(url):
-                return url
-            else:
-                return urlparse.urljoin(baseUrl, url)
-            
-        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
-        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
-        return sts, data
-        
+        if addParams == {}: addParams = dict(self.defaultParams)
+        addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+        return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+
     def getFullIconUrl(self, url):
         url = CBaseHostClass.getFullIconUrl(self, url)
         if url == '': return ''
         cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
         return strwithmeta(url, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
-        
+
     def fillFilters(self, cItem):
         self.cacheFilters = {}
         self.filtersTab = [] # ['language', 'genres', 'year', 'sort_by']
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        
+
         def addFilter(data, key, addAny, titleBase, marker):
             self.cacheFilters[key] = []
             for item in data:
                 value = self.cm.ph.getSearchGroups(item, '''%s=['"]([^'^"]+?)['"]''' % marker)[0]
                 if value == '': continue
-                title = self.cleanHtmlStr(item)
+                title = ph.clean_html(item)
                 if titleBase == '':
                     title = title.title()
                 self.cacheFilters[key].append({'title':titleBase + title, key:value})
@@ -105,27 +96,27 @@ class FiliserTv(CBaseHostClass):
                 self.cacheFilters[key].insert(0, {'title':'Wszystkie'})
             if len(self.cacheFilters[key]):
                 self.filtersTab.append(key)
-                
+
         # language
         tmpData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="vBox"', '</div>', withMarkers=True)
         addFilter(tmpData, 'language', True, '', 'data-type')
-        
+
         # genres
         tmpData = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li data-gen', '</li>', withMarkers=True)
         addFilter(tmpData, 'genres', True, '', 'data-gen') 
-        
+
         # year
         self.cacheFilters['year'] = [{'title':_('Year: ') + _('Any')}]
         year = datetime.now().year
         while year >= 1978:
             self.cacheFilters['year'].append({'title': _('Year: ') + str(year), 'year': year})
             year -= 1
-        
+
         # sort
         self.cacheFilters['sort_by'] = []
         for item in [('date', 'data dodania/aktualizacji'), ('views', ' liczba wyświetleń'), ('rate', ' ocena')]:
             self.cacheFilters['sort_by'].append({'title': _('Sort by: ') + str(item[1]), 'sort_by': item[0]})
-        
+
         # add order to sort_by filter
         orderLen = len(self.cacheFilters['sort_by'])
         for idx in range(orderLen):
@@ -137,7 +128,7 @@ class FiliserTv(CBaseHostClass):
             self.cacheFilters['sort_by'].append(item)
         if len(self.cacheFilters['sort_by']):
             self.filtersTab.append('sort_by')
-        
+
     def listFilter(self, cItem):
         params = dict(cItem)
         idx = params.get('f_idx', 0)
@@ -184,26 +175,26 @@ class FiliserTv(CBaseHostClass):
         
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<section class="item"', '</section>', withMarkers=True)
         for item in data:
-            url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-            icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0].strip())
-            title  = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''alt=['"]([^'^"]+?)['"]''')[0])
-            if title == '': title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(item, '''title=['"]([^'^"]+?)['"]''')[0])
-            title1 = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h3', '</h3>')[1])
-            title2 = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<h4', '</h4>')[1])
+            url    = self.getFullUrl(ph.search(item, ph.A)[1])
+            icon   = self.getFullIconUrl(ph.search(item, ph.IMG)[1].strip())
+            title  = ph.clean_html(ph.getattr(item, 'alt'))
+            if title == '': title = ph.clean_html(ph.getattr(item, 'title'))
+            title1 = ph.clean_html(ph.find(item, ('<h3', '>'), '</h3>', flags=0)[1])
+            title2 = ph.clean_html(ph.find(item, ('<h4', '>'), '</h4>', flags=0)[1])
             
-            desc   = self.cleanHtmlStr(item.split('<div class="block2">')[-1].replace('<p class="desc">', '[/br]'))
+            desc   = ph.clean_html(item.split('<div class="block2">')[-1].replace('<p class="desc">', '[/br]'))
             params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
             if '/film/' in url:
                 self.addVideo(params)
             elif '/serial/' in url:
                 params['category'] = nextCategory
                 self.addDir(params)
-        
+
         if nextPage:
             params = dict(cItem)
             params.update({'title':_('Next page'), 'page':page + 1})
             self.addDir(params)
-        
+
     def listSeasons(self, cItem, nextCategory):
         printDBG("FiliserTv.listSeasons")
         
@@ -218,7 +209,7 @@ class FiliserTv(CBaseHostClass):
         tmp = self.cm.ph.getDataBeetwenMarkers(data[0], '<div id="seasons_list">', '<div class="clear">')[1]
         tmp = re.compile('<[^>]+?num\="([0-9]+?)"[^>]*?>([^<]+?)<').findall(tmp)
         for item in tmp:
-            self.cacheSeasons['keys'].append({'key':item[0], 'title':self.cleanHtmlStr(item[1])})
+            self.cacheSeasons['keys'].append({'key':item[0], 'title':ph.clean_html(item[1])})
         
         del data[0]
         
@@ -229,7 +220,7 @@ class FiliserTv(CBaseHostClass):
             self.cacheSeasons['dict'][season['key']] = []
             for item in tmp:
                 url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-                title  = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(item, '<a class="episodeName"', '</a>')[1])
+                title  = ph.clean_html(self.cm.ph.getDataBeetwenMarkers(item, '<a class="episodeName"', '</a>')[1])
                 es     = self.cm.ph.getSearchGroups(url, '''/(s[0-9]+?e[0-9]+?)/''')[0]
                 self.cacheSeasons['dict'][season['key']].append({'good_for_fav': True, 'title': '%s: %s %s' % (cItem['title'], es, title), 'url':url})
                 
@@ -260,9 +251,9 @@ class FiliserTv(CBaseHostClass):
             for item in sData:
                 tmp    = item.split('<div class="info">')
                 url    = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
-                title  = self.cleanHtmlStr(tmp[0].replace('<div class="title_org">', '/'))
+                title  = ph.clean_html(tmp[0].replace('<div class="title_org">', '/'))
                 icon   = self.getFullIconUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^'^"]+?)['"]''')[0].strip())
-                desc   = self.cleanHtmlStr(tmp[-1])
+                desc   = ph.clean_html(tmp[-1])
                 params = {'good_for_fav': True, 'title':title, 'url':url, 'icon':icon, 'desc':desc}
                 if '/film/' in url:
                     self.addVideo(params)
@@ -284,13 +275,15 @@ class FiliserTv(CBaseHostClass):
         if '' != errorMessage:  SetIPTVPlayerLastHostError(errorMessage)
 
         lParams = {}
-        tmp = ph.find(data, ('<div', '>', ph.check(ph.any, ('"box"',"'box'"))))[1]
-        lParams['code'] = ph.getattr(tmp, 'data-code')
-        lParams['code2'] = ph.getattr(tmp, 'data-code2')
-        lParams['type'] = ph.getattr(tmp, 'id').split('_', 1)[0]
+        tmp = ph.findall(data, ('<div', '>', ph.check(ph.any, ('"box"',"'box'"))), '</section>', flags=ph.START_S, limits=2)
+        if not tmp: return
+        lParams['code'] = ph.getattr(tmp[0], 'data-code')
+        lParams['code2'] = ph.getattr(tmp[0], 'data-code2')
+        lParams['type'] = ph.getattr(tmp[0], 'id').split('_', 1)[0]
 
-        lParams['title1'] = ph.clean_html(ph.find(data, ('<h3', '>'), '</h3>', flags=0)[1])
-        lParams['title2'] = ph.clean_html(ph.find(data, ('<h4', '>'), '</h4>', flags=0)[1])
+        tmp = ph.findall(tmp[1], ('<h', '>'), ('</h', '>'), flags=0, limits=2)
+        lParams['title1'] = ph.clean_html(tmp[0])
+        lParams['title2'] = ph.clean_html(tmp[-1])
 
         data = data.split('<div id="links">')
         if 2 != len(data): return []
@@ -490,16 +483,16 @@ class FiliserTv(CBaseHostClass):
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
-        
+
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
-        
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
+
+        printDBG( "handleService: || name[%s], category[%s] " % (name, category) )
         self.currList = []
-        
+
     #MAIN MENU
         if name == None:
             self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
@@ -507,7 +500,7 @@ class FiliserTv(CBaseHostClass):
             idx = self.currItem.get('f_idx', 0)
             if 0 == idx:
                 self.fillFilters(self.currItem)
-            
+
             if idx < len(self.filtersTab):
                 self.listFilter(self.currItem)
             else:
