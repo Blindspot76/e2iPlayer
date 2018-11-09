@@ -15,7 +15,7 @@ from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 # FOREIGN import
 ###################################################
 import urllib
-from hashlib import sha1, sha256
+from hashlib import sha1
 from datetime import timedelta
 ###################################################
 
@@ -34,12 +34,14 @@ class C7tvDe(CBaseHostClass):
         self.DEFAULT_ICON_URL = 'https://s.p7s1.io/xfiles/7tv/android-icon-192x192.png'
 
         self.cacheLinks = {}
-        self.cacheChannels = []
-        self.cacheABC = []
+        self.channelsMap = {'titles':{'kabel1doku':'kabel eins Doku', 'pro7':'ProSieben', 'kabel1':'Kabeleins'}, 'order':{'kabel1doku':10, 'pro7':1, 'kabel1':3}}
 
     def getPage(self, baseUrl, addParams={}, post_data=None):
         if addParams == {}: addParams = dict(self.defaultParams)
         return self.cm.getPage(baseUrl, addParams, post_data)
+
+    def getFullUrl(self, url, curUrl=None):
+        return CBaseHostClass.getFullUrl(self, url.replace(' ', '%20'), curUrl)
 
     def listMain(self, cItem, nextCategory):
         printDBG("C7tvDe.listMain")
@@ -47,106 +49,171 @@ class C7tvDe(CBaseHostClass):
         if not sts: return
         self.setMainUrl(self.cm.meta['url'])
 
-        MAIN_CAT_TAB = [{'category':'explore_item',   'title': 'Home',            'url':self.getMainUrl()},
-                        {'category':'channels',       'title': 'Mediathek',       'url':self.getFullUrl('/mediathek')},
+        MAIN_CAT_TAB = [{'category':'programs',       'title': 'Sendungen A-Z',       'url':self.getFullUrl('/sendungen-a-z')},
+                        {'category':'missed',         'title': 'Sendung verpasst',    'url':self.getFullUrl('/sendung-verpasst')},
+                        {'category':'channels',       'title': 'Sender',              'url':self.getMainUrl()},
                         {'category':'search',         'title': _('Search'),       'search_item':True       },
                         {'category':'search_history', 'title': _('Search history'),                        }]
         self.listsTab(MAIN_CAT_TAB, cItem)
 
+    def listMissed(self, cItem, nextCategory):
+        printDBG("C7tvDe.listMissed")
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
+
+        tmp = ph.find(data, ('<ul', '>', 'site-nav-submenu'), '</ul>', flags=0)[1]
+        tmp = ph.findall(tmp, ('<li', '>'), '</li>', flags=0)
+        for idx, item in enumerate(tmp, 1):
+            channel = ph.getattr(item, 'href').rsplit('/', 1)[-1]
+            self.channelsMap['titles'][channel] = ph.clean_html(item)
+            self.channelsMap['order'][channel] = idx
+
+        data = ph.find(data, ('<ul', '>', 'tab-list'), '</ul>', flags=0)[1]
+        data = ph.findall(data, ('<li', '>'), '</li>', flags=0)
+        for item in data:
+            title = ph.clean_html(item)
+            url = self.getFullUrl(ph.getattr(item, 'data-href'))
+            self.addDir(MergeDicts(cItem, {'category':nextCategory, 'url':url, 'title':title}))
+
     def listChannels(self, cItem, nextCategory):
-        printDBG("listChannels")
-        if not self.cacheChannels or not self.cacheABC:
-            sts, data = self.getPage(cItem['url'])
-            if not sts: return
+        printDBG("C7tvDe.listChannels")
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
 
-            tmp = ph.find(data, ('<div', '>', 'filterAZ'), ('<div', '>', 'filter-search'), flags=0)[1]
-            tmp = ph.findall(tmp, ('<a', '>'), '</a>', flags=0)
-            for item in tmp:
-                item = ph.clean_html(item)
-                self.cacheABC.append({'title':item, 'f_letter':item})
+        data = ph.find(data, ('<ul', '>', 'brandgrid'), '</ul>', flags=0)[1]
+        data = ph.findall(data, ('<li', '>'), '</li>', flags=0)
+        for item in data:
+            title = ph.clean_html(item)
+            url = self.getFullUrl(ph.search(item, ph.A)[1])
+            self.addDir(MergeDicts(cItem, {'category':nextCategory, 'url':url, 'title':title}))
 
-            tmp = ph.find(data, ('<div', '>', 'filterCategorie'), ('<button', '>', 'next'), flags=0)[1]
-            tmp = ph.find(tmp, ('<a', '>', 'selected'), ('<a', '>', 'selected'))[1]
-            tmp = ph.findall(tmp, ('<a', '>'), '</a>', flags=0)
-            for item in tmp:
-                item = ph.clean_html(item)
-                self.cacheChannels.append({'title':item, 'f_channel':item})
+    def listProgramsMenu(self, cItem, nextCategory1, nextCategory2):
+        printDBG("C7tvDe.listProgramsMenu")
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
 
-        self.listsTab(self.cacheChannels, MergeDicts(cItem, {'category':nextCategory}))
+        data = ph.find(data, ('<nav', '>', 'tvshow-nav'), '</nav>', flags=0)[1]
+        data = data.split('</ul>')[:-1]
+        for sData in data:
+            subItems = []
+            sTitle = ph.clean_html(ph.find(sData, ('<h3', '>'), '</h3>', flags=0)[1])
+            sData = ph.findall(sData, ('<a', '>'), '</a>', flags=ph.START_S)
+            for idx in range(1, len(sData), 2):
+                url = self.getFullUrl(ph.getattr(sData[idx-1], 'data-href'))
+                title = ph.clean_html(sData[idx])
+                if url: subItems.append(MergeDicts(cItem, {'url':url, 'title':title, 'category':nextCategory2}))
+                else: subItems.append(MergeDicts(cItem, {'title':title, 'category':nextCategory1}))
+            if not sTitle: self.currList.extend(subItems)
+            else: self.addDir(MergeDicts(cItem, {'category':'sub_items', 'sub_items':subItems, 'title':sTitle}))
 
     def listABC(self, cItem, nextCategory):
-        printDBG("listABC")
-        self.listsTab(self.cacheABC, MergeDicts(cItem, {'category':nextCategory}))
-
-    def getAPIUrl(self, baseUrl, query):
-        url = 'https://magellan-api.7tv.de/' + baseUrl
-        url += query
-        url += '&queryhash=' + sha256(query).hexdigest()
-        return url + '&initialcv=browser-0b546aff762ba75475aa-1'
-
-    def listItems(self, cItem, nextCategory):
-        printDBG("listItems")
-        cursor = cItem.get('f_cursor')
-        cursor = '%22' + cursor + '%22' if cursor else 'null'
-        query = 'operationName=&query=%20query%20QueryItems(%24domain%3A%20String!%2C%20%24elementId%3A%20String!%2C%20%24channelContext%3A%20String%2C%20%24groupId%3A%20String%2C%20%24cursor%3A%20String%2C%20%24filter%3A%20FilterStateInputType%2C%20%24limit%3A%20Int%2C%20%24debug%3A%20Boolean!%2C%20%24authentication%3A%20AuthenticationInput)%20%7B%20site(domain%3A%20%24domain%2C%20authentication%3A%20%24authentication)%20%7B%20items(element%3A%20%24elementId%2C%20channelContext%3A%20%24channelContext%2C%20group%3A%20%24groupId%2C%20cursor%3A%20%24cursor%2C%20filter%3A%20%24filter%2C%20limit%3A%20%24limit)%20%7B%20id%20title%20total%20cursor%20items%20%7B%20...fContentElementItem%20%7D%20debug%20%40include(if%3A%20%24debug)%20%7B%20...fContentDebugInfo%20%7D%20%7D%20%7D%20%7D%20%0Afragment%20fContentElementItem%20on%20ContentElementItem%20%7B%20id%20url%20info%20branding%20%7B%20...fBrand%20%7D%20body%20config%20headline%20contentType%20channel%20%7B%20...fChannelInfo%20%7D%20site%20image%20videoType%20orientation%20date%20duration%20flags%20genres%20valid%20%7B%20from%20to%20%7D%20epg%20%7B%20episode%20%7B%20...fEpisode%20%7D%20season%20%7B%20...fSeason%20%7D%20duration%20nextEpgInfo%20%7B%20...fEpgInfo%20%7D%20%7D%20debug%20%40include(if%3A%20%24debug)%20%7B%20...fContentDebugInfo%20%7D%20%7D%20%0Afragment%20fBrand%20on%20Brand%20%7B%20id%2C%20name%20%7D%20%0Afragment%20fChannelInfo%20on%20ChannelInfo%20%7B%20title%20shortName%20cssId%20cmsId%20%7D%20%0Afragment%20fEpisode%20on%20Episode%20%7B%20number%20%7D%20%0Afragment%20fSeason%20on%20Season%20%7B%20number%20%7D%20%0Afragment%20fEpgInfo%20on%20EpgInfo%20%7B%20time%20endTime%20primetime%20%7D%20%0Afragment%20fContentDebugInfo%20on%20ContentDebugInfo%20%7B%20source%20transformations%20%7B%20description%20%7D%20%7D%20&variables=%7B%22channelContext%22%3Anull%2C%22cursor%22%3A'
-        query+= cursor + '%2C%22debug%22%3Afalse%2C%22domain%22%3A%227tv.de%22%2C%22elementId%22%3A%22mediathek%3Apage%22%2C%22filter%22%3A%7B%22categories%22%3A%5B%7B%22name%22%3A%22brand%22%2C%22value%22%3A%22'
-        query+= urllib.quote(cItem['f_channel']) + '%22%7D%5D%2C%22search%22%3Anull%2C%22term%22%3A%22'
-        query+= urllib.quote(cItem['f_letter']) + '%22%7D%2C%22groupId%22%3Anull%2C%22limit%22%3A18%7D'
-
-        url = self.getAPIUrl('pagination/7tv.de/mediathek:page/graphql?', query)
-        sts, data = self.getPage(url)
+        printDBG("C7tvDe.listABC")
+        sts, data = self.getPage(cItem['url'])
         if not sts: return
+        cUrl = self.cm.meta['url']
         try:
-            data = json_loads(data)['data']['site']['items']
-            cursor = data.get('cursor')
-            self.doListItems(cItem, nextCategory, data['items'], cursor)
+            data = json_loads(data)
+            for letter, value in data['facet'].iteritems():
+                if letter == '#': letter = '0-9'
+                if value:
+                    title = '%s (%s)' % (letter.upper(), value)
+                    url = cUrl + '/(letter)/%s' % letter
+                    self.addDir(MergeDicts(cItem, {'category':nextCategory, 'url':url, 'title':title, 'letter':letter}))
+            self.currList.sort(key=lambda k: k['letter'].decode('utf-8'))
         except Exception:
             printExc()
 
-    def doListItems(self, cItem, nextCategory, data, cursor):
-        for item in data:
-            params = self.mapItem(cItem, nextCategory, item)
-            if not params:
-                continue
-            if params['f_type'] == 'video':
-                self.addVideo(params)
+    def listABCItems(self, cItem, nextCategory):
+        printDBG("C7tvDe.listABCItems")
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        cUrl = self.cm.meta['url']
+        try:
+            data = json_loads(data)
+            for item in data['entries']:
+                if item['type'] == 'tvShow': category = nextCategory
+                else: category = nextCategory
+                try: icon = self.getFullIconUrl(item['images'][0]['url'])
+                except Exception: icon = ''
+                desc = ' | '.join(item.get('relatedProviders', []))
+                self.addDir(MergeDicts(cItem, {'good_for_fav':True, 'category':category, 'url':self.getFullUrl(item['url']), 'icon':icon, 'title':str(item['title']), 'desc':desc}))
+        except Exception:
+            printExc()
+
+    def listMissedItems(self, cItem, nextCategory):
+        printDBG("C7tvDe.listMissedItems")
+        titlesMap = {} #{'pro7':'', 'sat1':'', 'kabel1':'', 'sixx':'', 'prosiebenmaxx':'', 'sat1gold':'', 'kabel1doku':'', 'dmax':'', 'tlc':'', 'eurosport':''}
+
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        cUrl = self.cm.meta['url']
+
+        try:
+            data = json_loads(data)
+            channels = list(data['entries'].keys())
+            channels.sort(key=lambda k: self.channelsMap['order'].get(k, 20))
+
+            for channel in channels:
+                cData = data['entries'][channel]
+                sTitle = self.channelsMap['titles'].get(channel, channel)
+                subItems = []
+                for item in cData:
+                    desc = [cItem['title'], item['airtime']]
+                    try: desc.append(str(timedelta(seconds=item['duration'] / 1000)))
+                    except Exception: pass
+                    if item['subType'] == "episode":
+                        title = '%s: ' % (item['metadata']['tvShowTitle'])
+                    title += item['title']
+                    icon = self.getFullIconUrl(item['url'] + '?fake=need_resolve.jpeg')
+                    url = self.getFullUrl(item['url']) 
+                    params = MergeDicts(cItem, {'good_for_fav':True, 'url':url, 'icon':icon, 'title':title, 'desc':' | '.join(desc)})
+                    if item['type'] == 'video':
+                        params['type'] = 'video'
+                        subItems.append(params)
+                    else:
+                        params['category'] = nextCategory
+                        subItems.append(params)
+
+                if len(subItems):
+                    self.addDir(MergeDicts(cItem, {'category':'sub_items', 'sub_items':subItems, 'title':sTitle}))
+        except Exception:
+            printExc()
+
+    def listSubItems(self, cItem):
+        printDBG("C7tvDe.listSubItems")
+        self.currList = cItem['sub_items']
+
+    def listItems(self, cItem, nextCategory):
+        printDBG("C7tvDe.listItems")
+        sts, data = self.getPage(cItem['url'])
+        if not sts: return
+        self.setMainUrl(self.cm.meta['url'])
+        self.currList = self.getItems(cItem, nextCategory, data)
+
+    def getItems(self, cItem, nextCategory, data):
+        retList = []
+        sTitle = ph.clean_html(ph.find(data, ('<span', '>', 'format-header_title'), '</span>', flags=0)[1])
+        data = ph.findall(data, ('<article', '>', 'teaser'), '</article>', flags=ph.START_S)
+        for idx in range(1, len(data), 2):
+            item = data[idx]
+            url = ph.search(item, ph.A)[1]
+            icon = self.getFullIconUrl( ph.getattr(item, 'data-src') )
+            desc = ph.clean_html(ph.find(item, ('<div', '>', 'caption'), '</div>', flags=0)[1])
+            title = ph.clean_html(ph.find(item, ('<h5', '>', 'title'), '</h5>', flags=0)[1])
+            if title == '': title = url.rsplit('/', 1)[-1].replace('-', ' ').decode('utf-8').title().encode('utf-8')
+            desc = [desc] if desc else []
+            desc.append(ph.clean_html(ph.find(item, ('<p', '>'), '</p>', flags=0)[1]))
+            if sTitle: title = '%s: %s' % (sTitle, title)
+            params = MergeDicts(cItem, {'good_for_fav':True, 'title':title, 'url':self.getFullUrl(url), 'icon':icon, 'desc':'[/br]'.join(desc)})
+            if 'class-clip' in data[idx-1]: # and '-clip' in url:
+                params.update({'type':'video'})
             else:
                 params.update({'category':nextCategory})
-                self.addDir(params)
-
-        if cursor:
-            self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'title':_('Next page'), 'f_cursor':cursor}))
-
-    def mapItem(self, cItem, nextCategory, item):
-        type = item['contentType']
-        url = self.getFullUrl(item['url'])
-        title = ph.clean_html(item['headline'])
-
-        icon = item.get('image')
-        icon = self.getFullIconUrl(icon + '/profile:mag-300x170') if icon else ''
-        if type == None: 
-            printDBG("ITEM TYPE IS NONE: %s" % item)
-            return None
-
-        desc = [type]
-        try: desc.append( '' + item['branding']['name'] )
-        except Exception: pass
-
-        try: desc.append( '' + item['channel']['title'] )
-        except Exception: pass
-
-        tmp = item.get('videoType')
-        if tmp: desc.append(ph.clean_html(tmp))
-
-        tmp = item.get('orientation')
-        if tmp: desc.append(ph.clean_html(tmp))
-
-        desc = [' | '.join(desc)]
-
-        tmp = item.get('info')
-        if tmp: desc.append(ph.clean_html(tmp))
-
-        return MergeDicts(cItem, {'good_for_fav':True, 'title':title, 'url':url, 'icon':icon, 'f_type':type, 'desc':'[/br]'.join(desc)})
+            retList.append(params)
+        return retList
 
     def exploreItem(self, cItem, nextCategory):
         printDBG("C7tvDe.exploreItem")
@@ -154,68 +221,64 @@ class C7tvDe(CBaseHostClass):
         if not sts: return
         self.setMainUrl(self.cm.meta['url'])
         
-        data = ph.find(data, ('<script', '>', 'state'), '</script>', flags=0)[1]
-        try: 
-            data = json_loads(data)['views']['default']['content']['areas'][0]['containers']
-            for cData in data:
-                cData = cData['elements'][0]
-                gTitle = cData['title']
-                if not cData['groups']: continue
-                for sSection in cData['groups']:
-                    sTitle = sSection['title']
-                    if not sTitle: sTitle = gTitle
-                    if sTitle: sTitle = '%s (%s)' % (sTitle, sSection['total'])
-                    subItems = []
-                    for item in sSection['items']:
-                        params = self.mapItem(cItem, nextCategory, item)
-                        if not params: continue
-                        if params['f_type'] == 'video': params['type'] = 'video'
-                        else: params['category'] = nextCategory
-                        subItems.append(params)
-                    if len(subItems):
-                        if sTitle:
-                            self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'category':'sub_items', 'sub_items':subItems, 'title':sTitle}))
-                        else:
-                            self.currList.extend(subItems)
+        tmp = ph.find(data, 'var contentResources = [', '];', flags=0)[1]
+        try:
+            tmp = json_loads('[%s]' % tmp)
+            for item in tmp:
+                icon = self.getFullIconUrl(item.get('poster', ''))
+                desc = []
+                try: desc.append(str(timedelta(seconds=item['duration'])))
+                except Exception: printExc()
+                try: desc.append(item['teaser']['description'])
+                except Exception: printExc()
+                self.addVideo(MergeDicts(cItem, {'good_for_fav':False, 'title':item['title'], 'item_data':item, 'icon':icon, 'desc':'[/br]'.join(desc)}))
         except Exception:
             printExc()
+            return []
+
+        if not cItem.get('sub_menu_item'):
+            tmp = ph.find(data, ('<article', '>', 'class-clip'))[1]
+            if not tmp: return
+
+            data = ph.find(data, ('<ul', '>', 'format-nav-list'), '</ul>', flags=0)[1]
+            data = ph.findall(data, ('<a', '>'), '</a>', flags=ph.START_S)
+            for idx in range(1, len(data), 2):
+                url = self.getFullUrl(ph.getattr(data[idx-1], 'href'))
+                if '7tv.de' not in self.cm.getBaseUrl(url, True): continue
+                title = self.cleanHtmlStr(data[idx])
+                self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'sub_menu_item':True, 'category':nextCategory, 'title':title, 'url':url}))
+
+            if len(self.currList) == 1 and self.currList[0]['type'] != 'video':
+                item = self.currList.pop()
+                self.listItems(item, 'explore_item')
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        if searchType == 'videos':
-            cItem = MergeDicts(cItem, {'category':'search_next', 'f_pattern':searchPattern})
-            self.listSearchResultNext(cItem, 'explore_item')
-        else:
-            cItem = MergeDicts(cItem, {'category':'list_items', 'f_letter':searchPattern, 'f_channel':'Alle'})
-            self.listItems(cItem, 'explore_item')
+        url = self.getFullUrl('/7tvsearch/search/(query)/%s/(type)/%s/(offset)/{0}/(limit)/{0}' % (urllib.quote(searchPattern), searchType))
+        cItem = MergeDicts(cItem, {'category':'search_next', 'url':url})
+        self.listSearchResultNext(cItem, 'explore_item')
 
     def listSearchResultNext(self, cItem, nextCategory):
-        cursor = cItem.get('f_cursor')
-        cursor = '%22' + cursor + '%22' if cursor else 'null'
-        query = 'operationName=&query=%20query%20SearchQuery(%24domain%3A%20String!%2C%20%24filter%3A%20String%2C%20%24query%3A%20String%2C%20%24limit%3A%20Int%2C%20%24cursor%3A%20String)%20%7B%20site(domain%3A%20%24domain)%20%7B%20search(query%3A%20%24query%2C%20filter%3A%20%24filter%2C%20limit%3A%20%24limit%2C%20cursor%3A%20%24cursor)%20%7B%20total%20filter%20filtersHits%20%7B%20name%20hits%20%7D%20offset%20cursor%20results%20%7B%20...fTeaserItem%20%7D%20%7D%20%7D%20%7D%0Afragment%20fTeaserItem%20on%20TeaserItem%20%7B%20id%20url%20info%20headline%20contentType%20channel%20%7B%20...fChannelInfo%20%7D%20branding%20%7B%20...fBrand%20%7D%20site%20image%20videoType%20orientation%20date%20flags%20valid%20%7B%20from%20to%20%7D%20epg%20%7B%20episode%20%7B%20...fEpisode%20%7D%20season%20%7B%20...fSeason%20%7D%20duration%20nextEpgInfo%20%7B%20...fEpgInfo%20%7D%20%7D%20%7D%20%0Afragment%20fChannelInfo%20on%20ChannelInfo%20%7B%20title%20shortName%20cssId%20cmsId%20%7D%20%0Afragment%20fBrand%20on%20Brand%20%7B%20id%2C%20name%20%7D%20%0Afragment%20fEpisode%20on%20Episode%20%7B%20number%20%7D%20%0Afragment%20fSeason%20on%20Season%20%7B%20number%20%7D%20%0Afragment%20fEpgInfo%20on%20EpgInfo%20%7B%20time%20endTime%20primetime%20%7D%20&variables=%7B%22cursor%22%3A'
-        query+= cursor + '%2C%22domain%22%3A%227tv.de%22%2C%22filter%22%3Anull%2C%22limit%22%3A33%2C%22query%22%3A%22'
-        query+= urllib.quote(cItem['f_pattern']) + '%22%7D'
-
-        url = self.getAPIUrl('graphql?', query)
-        sts, data = self.getPage(url)
-        if not sts: return
-        try:
-            data = json_loads(data)['data']['site']['search']
-            cursor = data.get('cursor')
-            self.doListItems(cItem, nextCategory, data['results'], cursor)
-        except Exception:
-            printExc()
+        ITEMS_NUM = 6
+        page = cItem.get('page', 0)
+        url = cItem['url'].format(page*ITEMS_NUM, ITEMS_NUM)
+        params = MergeDicts(cItem, {'url':url})
+        self.listItems(params, nextCategory)
+        if len(self.currList) == ITEMS_NUM:
+            self.addDir(MergeDicts(cItem, {'good_for_fav':False, 'title':_('Next page'), 'page':page + 1}))
 
     def getLinksForVideo(self, cItem, source_id=None):
         linksTab = []
 
-        sts, data = self.getPage(cItem['url'])
-        if not sts: return
-        client_location = self.cm.meta['url']
-        data = ph.find(data, ('<script', '>', 'state'), '</script>', flags=0)[1]
-        try: 
-            data = json_loads(json_loads(data)['views']['default']['page']['contentResource'])[0]
-        except Exception:
-            printExc()
+        if 'item_data' not in cItem:
+            sts, data = self.getPage(cItem['url'])
+            if not sts: return
+            client_location = self.cm.meta['url']
+            data = ph.find(data, 'var contentResources = [', '];', flags=0)[1]
+            try: data = json_loads('[%s]' % data)[0]
+            except Exception: pass
+        else:
+            client_location = cItem['url']
+            data = cItem['item_data']
 
         try:
             drm = data.get('drm')
@@ -350,21 +413,32 @@ class C7tvDe(CBaseHostClass):
         if name == None:
             self.listMain({'name':'category', 'type':'category'}, 'list_items')
 
-        elif category == 'channels':
-            self.listChannels(self.currItem, 'abc')
+        elif category == 'programs':
+            self.listProgramsMenu(self.currItem, 'list_items', 'list_abc')
 
-        elif category == 'abc':
-            self.listABC(self.currItem, 'list_items')
+        elif category == 'list_abc':
+            self.listABC(self.currItem, 'list_abc_items')
             
-        elif category == 'list_items':
-            self.listItems(self.currItem, 'explore_item')
+        elif category == 'list_abc_items':
+            self.listABCItems(self.currItem, 'explore_item')
 
         elif category == 'sub_items':
             self.listSubItems(self.currItem)
 
-        elif category == 'explore_item':
-            self.exploreItem(self.currItem, 'explore_item')
+        elif category == 'list_items':
+            self.listItems(self.currItem, 'explore_item')
 
+        elif category == 'explore_item':
+            self.exploreItem(self.currItem, 'list_items')
+
+        elif category == 'channels':
+            self.listChannels(self.currItem, 'list_items')
+
+        elif category == 'missed':
+            self.listMissed(self.currItem, 'list_missed_items')
+
+        elif category == 'list_missed_items':
+            self.listMissedItems(self.currItem, 'explore_item')
     #SEARCH
         elif category == 'search':
             self.listSearchResult(MergeDicts(self.currItem, {'search_item':False, 'name':'category'}), searchPattern, searchType)
@@ -385,5 +459,6 @@ class IPTVHost(CHostBase):
     def getSearchTypes(self):
         searchTypesOptions = []
         searchTypesOptions.append(("Sendungen",    "format"))
-        searchTypesOptions.append((_("Videos"),    "videos"))
+        searchTypesOptions.append(("Ganze Folgen", "episode"))
+        searchTypesOptions.append(("Clips",        "clip"))
         return searchTypesOptions
