@@ -74,7 +74,7 @@ msgid "    Remove thumbnails"
 msgstr "    Lösche Vorschaubilder"
 
 msgid "    Service icon size"
-msgstr "    Service Icon Größe "
+msgstr "    Service Icon Größe"
 
 msgid "    Video buffer size [MB]"
 msgstr "    Videopuffergröße in [MB]"
@@ -163,7 +163,7 @@ msgid "All movies"
 msgstr "Alle Filme"
 
 msgid "Allow dash format:"
-msgstr "Erlaube Dash Format"
+msgstr "Erlaube Dash Format:"
 
 msgid "Allow downgrade"
 msgstr "Erlaube Downgrade"
@@ -221,6 +221,9 @@ msgid "Browse"
 msgstr "Blättern"
 
 msgid "Buffering location"
+msgstr "Puffer-Verzeichnis"
+
+msgid "buffering location"
 msgstr "Puffer-Verzeichnis"
 
 msgid "CATEGORY"
@@ -323,7 +326,7 @@ msgid "Default video quality:"
 msgstr "Standard Video Qualität:"
 
 msgid "Description:"
-msgstr "Beschreibung: "
+msgstr "Beschreibung:"
 
 msgid "Detection of the \"%s\" utility."
 msgstr "Erkennung des \"%s\" Dienstprogramms."
@@ -611,7 +614,7 @@ msgid "Group %d"
 msgstr "Gruppe %d"
 
 msgid "Group links into categories: "
-msgstr "Links in Kategorien gliedern:"
+msgstr "Links in Kategorien gliedern: "
 
 msgid "Group with id[%s] not found."
 msgstr "Gruppe mit ID [%s] wurde nicht gefunden."
@@ -637,7 +640,7 @@ msgstr "E2iPlayer - Konfiguration"
 msgid "IPTV Player HD version %s"
 msgstr "E2iPlayer HD Version %s"
 
-msgid "IPTV download manager"
+msgid "Download manager"
 msgstr "Downloadverwaltung"
 
 msgid "IPTVPlayer - update"
@@ -976,7 +979,7 @@ msgid "Playlists"
 msgstr "Wiedergabelisten"
 
 msgid "Please remember that you use this plugin at your own risk."
-msgstr "Bitte bedenken Sie, dass Sie das Plugin auf eigene Verantwortung benutzen!"
+msgstr "Bitte bedenken Sie, dass Sie das Plugin auf eigene Verantwortung benutzen."
 
 msgid "Plugin can be run on one of the following platforms: sh4, mipsel, i686, armv7."
 msgstr "Plugin funktioniert auf folgenden Plattformen: sh4, mipsel, i686, armv7."
@@ -1160,7 +1163,7 @@ msgid "Search type"
 msgstr "Suchmodus"
 
 msgid "Search youtube materials "
-msgstr "Suche auf Youtube"
+msgstr "Suche auf Youtube "
 
 msgid "Second movie player in buffering mode"
 msgstr "Alternativer Player im Puffermodus"
@@ -1284,7 +1287,7 @@ msgid "Sorry"
 msgstr "Entschuldigung"
 
 msgid "Sort by:"
-msgstr "Sortieren nach: "
+msgstr "Sortieren nach:"
 
 msgid "Sort search result by"
 msgstr "Sortiere Suchergebnisse nach"
@@ -1592,7 +1595,7 @@ msgid "Video buffer size [MB]"
 msgstr "Videopuffergröße in [MB]"
 
 msgid "Video format:"
-msgstr "Videoformat: "
+msgstr "Videoformat:"
 
 msgid "Video options"
 msgstr "Video-Optionen"
@@ -1761,7 +1764,7 @@ msgid "format"
 msgstr " Format "
 
 msgid "Format"
-msgstr " Format "
+msgstr "Format"
 
 msgid "fuchsia"
 msgstr "magenta"
@@ -1885,9 +1888,6 @@ msgstr "Sekunde"
 
 msgid "seconds"
 msgstr "Sekunden"
-
-msgid "sequencer"
-msgstr ""
 
 msgid "silver"
 msgstr "silber"
@@ -2022,7 +2022,7 @@ msgid "Next"
 msgstr "Nächste"
 
 msgid "Page: "
-msgstr "Seite:"
+msgstr "Seite: "
 
 msgid "Last Page"
 msgstr "Letzte Seite"
@@ -2083,9 +2083,6 @@ msgstr "AAC Downmix-Modus"
 
 msgid "Preferred protocol:"
 msgstr "Bevorzugtes Protokoll:"
-
-msgid "Use the default video quality:"
-msgstr "Benutze die voreingestellte Videoqualität"
 
 msgid "password:"
 msgstr "Passwort:"
@@ -3579,3 +3576,48 @@ msgid ""
 msgstr ""
 "Um Videos von http://vk.com/ schauen zu können, müssen Sie sich anmelden.\n"
 "Bitte füllen Sie Ihr Login und Passwort in der E2iPlayer-Konfiguration aus."
+
+msgid "Please set valid %s in the %s configuration."
+msgstr "Bitte setzen Sie ein gültiges %s in der %s Konfiguration."
+
+msgid "There is no enough free space in the folder \"%s\"."
+msgstr "Es gibt nicht genug freien Speicherplatz im Verzeichnis \"%s\"."
+
+msgid "\tDisk space required: %s"
+msgstr "\tSpeicherplatz benötigt: %s"
+
+msgid "\tDisk space available: %s"
+msgstr "\tSpeicherplatz vorhanden: %s"
+
+msgid "Tip! You can connect USB flash drive to fix this problem."
+msgstr "Tipp! Sie können ein USB-Stick anschließen, um das Problem zu beheben."
+
+msgid "    Background color"
+msgstr "    Hintergrundfarbe"
+
+msgid "User login \"%s\" failed."
+msgstr "Benutzer-Login \"%s\" fehlgeschlagen."
+
+msgid "Link protected with google recaptcha v2."
+msgstr "Link ist geschützt mit Google reCaptcha v2."
+
+msgid "Please retry later."
+msgstr "Bitte später probieren."
+
+msgid "This host has been added already to this group."
+msgstr "Dieser Service wurde bereits zu dieser Gruppe hinzugefügt."
+
+msgid "The YouTube video ID is invalid."
+msgstr "Die Youtube Video-ID ist ungültig."
+
+msgid "Audio tracks"
+msgstr "Tonspur"
+
+msgid "Save"
+msgstr "Speichern"
+
+msgid "wait %s seconds"
+msgstr "warte %s Sekunden"
+
+msgid "Link protected with DRM."
+msgstr "Link ist DRM geschützt."
