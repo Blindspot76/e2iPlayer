@@ -80,12 +80,7 @@ class Kkiste(CBaseHostClass):
 
         if not sts: return
 
-        pagedata = ph.findall(data, '<span class="pagesBlockuz1">', '<span class="numShown73">')
-        
-        if pagedata == []: 
-            nextPage = False
-        else: 
-            nextPage = True
+        nextPage, pagedata = ph.find(data, '<span class="pagesBlockuz1">', '<span class="numShown73">')
         
         urls = []
         titles = []
@@ -119,24 +114,24 @@ class Kkiste(CBaseHostClass):
             params.update({'good_for_fav':True, 'category':nextCategory, 'title':title, 'url':url, 'desc':desc, 'icon':icon})
             self.addDir(params)
             index += 1
+            printDBG("hostszenestreamz.title [%s]" % title)
         
         if nextPage:
-            for item in pagedata:
-                thispage = ph.findall(item, 'class="swchItem', '</span>')
-                current_page = False
-                url = ''
-                for pitem in thispage:
-                    if 'swchItemA' in pitem:
-                        current_page = True
-                    elif current_page:
-                        url = self.getFullUrl(ph.search(pitem, ph.A_HREF_URI_RE)[1])
-                        break
+            printDBG("hostszenestreamz.nextPage")
+            thispage = ph.findall(pagedata, 'class="swchItem', '</span>')
+            current_page = False
+            url = ''
+            for pitem in thispage:
+                if 'swchItemA' in pitem:
+                    current_page = True
+                elif current_page:
+                    url = self.getFullUrl(ph.search(pitem, '''href="([^"]+)"''')[0])
+                    break
 
-                if url != '':
-                    url = url.replace('&amp;','&')
-                    params = dict(cItem)
-                    params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1, 'url':url})
-                    self.addDir(params)
+            if url != '':
+                params = dict(cItem)
+                params.update({'good_for_fav':False, 'title':_('Next page'), 'page':page+1, 'url':url})
+                self.addDir(params)
         
     def exploreItem(self, cItem):
         printDBG("hostszenestreamz.exploreItem")
