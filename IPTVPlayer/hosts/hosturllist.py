@@ -7,9 +7,9 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass, CDisplayListItem, RetHost, CUrlItem
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import  printDBG, GetLogoDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvfilehost import IPTVFileHost
-from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, getMPDLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
 
 ###################################################
@@ -60,12 +60,10 @@ class Urllist(CBaseHostClass):
             return (_('direct link'))
         else:
             return (_('unknown'))
-    
+
     def _uriIsValid(self, url):
-        if '://' in url:
-            return True
-        return False
-        
+        return '://' in url
+
     def listCategory(self, cItem, searchMode=False):
         printDBG("Urllist.listCategory cItem[%s]" % cItem)
         
@@ -216,7 +214,7 @@ class IPTVHost(CHostBase):
                     hostLinks.append(CUrlItem("Link", url, 1))
                 
             title       =  cItem.get('title', '')
-            description =  clean_html(cItem.get('desc', ''))
+            description =  ph.clean_html(cItem.get('desc', ''))
             icon        =  cItem.get('icon', '')
             
             hostItem = CDisplayListItem(name = title,
