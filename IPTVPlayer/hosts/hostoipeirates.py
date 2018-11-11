@@ -18,7 +18,7 @@ import urllib
 
 
 def gettytul():
-    return 'https://oipeirates.online/'
+    return 'https://oipeirates.tv/'
 
 class OipeiratesOnline(CBaseHostClass):
 
@@ -30,7 +30,7 @@ class OipeiratesOnline(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         
-        self.MAIN_URL = 'https://oipeirates.online/'
+        self.MAIN_URL = 'https://oipeirates.tv/'
         self.DEFAULT_ICON_URL = 'http://1.bp.blogspot.com/-EWw9aeMT-bo/U1_TUm3oM-I/AAAAAAAABiE/n07eIp9i6CI/s1600/oipeirates.jpg'
         
         self.defaultParams = {'with_metadata':True, 'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
