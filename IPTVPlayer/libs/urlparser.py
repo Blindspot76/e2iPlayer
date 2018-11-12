@@ -8504,18 +8504,15 @@ class pageParser(CaptchaHelper):
         
     def parserTWITCHTV(self, baseUrl):
         printDBG("parserFILEHOOT baseUrl[%r]" % baseUrl)
-        if 'channel'  in baseUrl:
-            data = baseUrl + '&'
-        else:
-            sts, data = self.cm.getPage(baseUrl)
-        
+        if 'channel'  in baseUrl: data = baseUrl + '&'
+        else: sts, data = self.cm.getPage(baseUrl)
         channel = self.cm.ph.getSearchGroups(data, '''channel=([^&^'^"]+?)[&'"]''')[0]
         MAIN_URLS = 'https://api.twitch.tv/'
-        CHANNEL_TOKEN_URL = MAIN_URLS + 'api/channels/%s/access_token'
+        CHANNEL_TOKEN_URL = MAIN_URLS + 'api/channels/%s/access_token?need_https=false&oauth_token&platform=web&player_backend=mediaplayer&player_type=site'
         LIVE_URL = 'http://usher.justin.tv/api/channel/hls/%s.m3u8?token=%s&sig=%s&allow_source=true'
         if '' != channel:
             url = CHANNEL_TOKEN_URL % channel
-            sts, data = self.cm.getPage(url)
+            sts, data = self.cm.getPage(url, {'header':MergeDicts(self.cm.getDefaultHeader(browser='chrome'), {'Accept': 'application/vnd.twitchtv.v5+json', 'Client-ID':'jzkbprff40iqj646a697cyrvl0zt2m6'})})
             urlTab = []
             if sts:
                 try:

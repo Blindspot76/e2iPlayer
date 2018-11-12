@@ -52,8 +52,12 @@ class BeinmatchApi(CBaseHostClass):
         if not self.getLinkJS:
             self.sessionEx.waitForFinishOpen(MessageBox, _('Data for link generation could not be found.\nPlease report this problem to %s') % 'iptvplayere2@gmail.com', type = MessageBox.TYPE_ERROR, timeout = 10)
 
-        data = ph.findall(data, ('<table', '>', 'tabIndex'), '</table>')
+        data = ph.find(data, ('<table', '>', 'tabIndex'), ('<div', '>', 'Side'))[1]
+        data = ph.rfindall(data, '</tr>', ('<table', '>', 'tabIndex'))
         for item in data:
+            printDBG("+++++++++++++++++++++++++++++++++++++++++")
+            printDBG(item)
+            printDBG("+++++++++++++++++++++++++++++++++++++++++")
             icon = self.getFullIconUrl(ph.find(item, 'url(', ')', flags=0)[1].strip())
             title = ph.clean_html(' vs '.join(ph.findall(item, ('<td', '>', 'tdTeam'), '</td>', flags=0)))
             url = ph.getattr(item, 'onclick')
