@@ -397,6 +397,7 @@ class urlparser:
                        'fileone.tv':           self.pp.parserFILEONETV     ,
                        'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
                        'tusfiles.net':         self.pp.parserUSERSCLOUDCOM ,
+                       'tusfiles.com':         self.pp.parserUSERSCLOUDCOM ,
                        'hdgo.cc':              self.pp.parserHDGOCC        ,
                        'hdgo.cx':              self.pp.parserHDGOCC        ,
                        'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
@@ -4111,7 +4112,8 @@ class pageParser(CaptchaHelper):
         params = {'header':HTTP_HEADER, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True, 'load_cookie':True}
         
         sts, data = self.cm.getPage(baseUrl, params)
-        
+        cUrl = self.cm.meta['url']
+
         errorTab = ['File Not Found', 'File was deleted']
         for errorItem in errorTab:
             if errorItem in data:
@@ -4133,10 +4135,10 @@ class pageParser(CaptchaHelper):
         if not sts: return False
         
         post_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', data))
-        params['header']['Referer'] = baseUrl
+        params['header']['Referer'] = cUrl
         params['max_data_size'] = 0
         
-        sts, data = self.cm.getPage(baseUrl, params, post_data)
+        sts, data = self.cm.getPage(cUrl, params, post_data)
         if sts and 'text' not in self.cm.meta['content-type']:
             return self.cm.meta['url']
         
