@@ -746,6 +746,7 @@ class common:
                 # reset will cause lost all cookies, so we force to saved them in the file
                 if params.get('use_cookie', False) and params.get('save_cookie', False):
                     curlSession.setopt(pycurl.COOKIELIST , 'FLUSH')
+                    curlSession.setopt(pycurl.COOKIELIST , 'ALL')
                 
                 curlSession.reset()
                 # to be re-used in next request
