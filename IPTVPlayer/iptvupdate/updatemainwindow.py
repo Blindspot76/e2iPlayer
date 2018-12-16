@@ -271,6 +271,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.iconsSourceArchive = None
 
         self.decKey = None
+        self.decKeyFilePath = None
 
         self.destinationArchive = None
         self.serverIdx          = 0
@@ -438,7 +439,16 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
 
     def stepDecryptArchive(self):
         printDBG('UpdateMainAppImpl.stepDecryptArchive: sourceArchive[%s]' % (self.sourceArchive) )
-        cmd = GetPyScriptCmd('decrypt') + ' "%s" "%s" "%s" ' % (resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/'), self.sourceArchive, self.decKey)
+        from hashlib import sha256
+        try:
+            self.decKeyFilePath = GetTmpDir(sha256(self.user).hexdigest()[:16])
+            with open(self.decKeyFilePath, "wb") as f:
+                f.write(self.decKey)
+            cmd = GetPyScriptCmd('decrypt') + ' "%s" "%s" "%s" ' % (resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/'), self.sourceArchive, self.decKeyFilePath)
+        except Exception:
+            printExc()
+            cmd = 'fake'
+        
         self.cmd = iptv_system( cmd, self.__decryptionCmdFinished )
 
     def stepGetGraphicsArchive(self):
@@ -853,8 +863,8 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             self.stepFinished(-1, _("Wrong the encryption key size: %s\n") % localFileSize)
         else:
             try:
-                from crypto.cipher.aes import AES
-                from crypto.cipher.base import noPadding
+                from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes import AES
+                from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.base import noPadding
                 from hashlib import sha256, md5
 
                 with open(filePath, "rb") as f:
@@ -899,6 +909,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     # DECRYPTION ARCHIVE STEP'S PRIVATES METHODS
     ##############################################################################
     def __decryptionCmdFinished(self, status, outData):
+        if self.decKeyFilePath: rm(self.decKeyFilePath)
         code = -1
         msg  = ""
         self.cmd = None
