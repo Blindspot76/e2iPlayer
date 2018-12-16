@@ -10,7 +10,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools          import printDBG, printExc, mkdirs, rmtree, FreeSpace, formatBytes, iptv_system, \
                                                                    GetIPTVDMImgDir, GetIPTVPlayerVerstion, GetShortPythonVersion, GetTmpDir, \
                                                                    GetHostsList, GetEnabledHostsList, WriteTextFile, IsExecutable, GetUpdateServerUri, \
-                                                                   GetIconsHash, SetIconsHash, GetGraphicsHash, SetGraphicsHash
+                                                                   GetIconsHash, SetIconsHash, GetGraphicsHash, SetGraphicsHash, rm, GetPyScriptCmd
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes          import enum
 from Plugins.Extensions.IPTVPlayer.iptvupdate.iptvlist      import IPTVUpdateList
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdownloadercreator import UpdateDownloaderCreator
@@ -265,22 +265,26 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.localGraphicsHash = ''
         self.localIconsHash = ''
         self.currServIdx = 0
-        
+
         self.sourceArchive      = None
         self.graphicsSourceArchive = None
         self.iconsSourceArchive = None
-        
+
+        self.decKey = None
+
         self.destinationArchive = None
         self.serverIdx          = 0
-        
+
         self.messages = {}
         self.messages['completed']       = _("Completed.")
         self.messages['problem_removal'] = _("Problem with the removal of the previous version.\nStatus[%d], outData[%s].")
         self.messages['problem_install'] = _("Problem with installing the new version.\nStatus[%d], outData[%s]")
         self.messages['problem_copy']    = _("Problem with copy files.\nStatus[%d], outData[%s]")
-        
+
         self.list = []
-        
+        self.user = config.plugins.iptvplayer.iptvplayer_login.value
+        self.password = config.plugins.iptvplayer.iptvplayer_password.value
+
     def checkVersionFile(self, newVerPath):
         code = 0
         msg  = _('Correct version.')
@@ -401,8 +405,15 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['url'])
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__archiveDownloadFinished, None))
         self.sourceArchive = os_path.join(self.tmpDir, 'iptvplayer_archive.tar.gz')
-        self.downloader.start(self.serversList[self.currServIdx]['url'], self.sourceArchive)
-        
+        url = self.serversList[self.currServIdx]['url']
+
+        if self.decKey:
+            from hashlib import sha256
+            url += '&' if '?' in url else '?'
+            url += 'hash=%s' % sha256(self.user).hexdigest()
+
+        self.downloader.start(url, self.sourceArchive)
+
     def stepUnpackArchive(self):
         self.destinationArchive  = os_path.join(self.tmpDir , 'iptv_archive')
         self.ExtensionTmpPath    = os_path.join(self.destinationArchive, self.serversList[self.currServIdx]['subdir'])
@@ -415,6 +426,21 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         cmd = 'rm -f "%s/*" > /dev/null 2>&1; tar -xzf "%s" -C "%s" 2>&1; PREV_RET=$?; rm -f "%s" > /dev/null 2>&1; (exit $PREV_RET)' % (self.destinationArchive, self.sourceArchive, self.destinationArchive, self.sourceArchive)
         self.cmd = iptv_system( cmd, self.__unpackCmdFinished )
         
+    def stepGetEncKey(self):
+        printDBG('UpdateMainAppImpl.stepGetEncKey')
+        from hashlib import sha256
+        nameHash = sha256(self.user).hexdigest()
+
+        self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['graphics_url'])
+        self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__encKeyDownloadFinished, None))
+        encKeyBin = os_path.join(self.tmpDir, 'iptvplayer_enc_key.bin')
+        self.downloader.start(self.serversList[self.currServIdx]['enc_url_tmp'].format(nameHash), encKeyBin)
+
+    def stepDecryptArchive(self):
+        printDBG('UpdateMainAppImpl.stepDecryptArchive: sourceArchive[%s]' % (self.sourceArchive) )
+        cmd = GetPyScriptCmd('decrypt') + ' "%s" "%s" "%s" ' % (resolveFilename(SCOPE_PLUGINS, 'Extensions/IPTVPlayer/libs/'), self.sourceArchive, self.decKey)
+        self.cmd = iptv_system( cmd, self.__decryptionCmdFinished )
+
     def stepGetGraphicsArchive(self):
         if '' == self.serversList[self.currServIdx]['graphics_url']:
             self.stepFinished(0, _('Skipped.'))
@@ -694,6 +720,15 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                             
                     #printDBG("")
                     if not serverOK: continue
+                    enc = server.get('enc')
+                    encUrlTmp = server.get('enc_url_tmp')
+                    if enc:
+                        if (not self.user or not self.password):
+                            continue
+                        else:
+                            extServer['enc'] = enc.encode('utf8')
+                            extServer['enc_url_tmp'] = encUrlTmp.encode('utf8')
+
                     newServer = dict(extServer)
                     serversList.append(newServer)
                 serverGraphicsHash = str(jsonData.get('graphics_hash', ''))
@@ -775,6 +810,10 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                     list.append( self.__getStepDesc(title = _("Copy icons."),    execFunction = self.stepCopyOnlyIcons ) )
             
             self.list[3:3] = list
+            if 'enc' in self.serversList[self.currServIdx]:
+                self.list.insert(1, self.__getStepDesc(title = _("Get decryption key."),    execFunction = self.stepGetEncKey ) )
+                self.list.insert(3, self.__getStepDesc(title = _("Decrypt archive."),       execFunction = self.stepDecryptArchive ) )
+            
             self.stepFinished(0, _("Selected version [%s].") % retArg[0])
         else:
             self.stepFinished(-1, _("Update server not selected."))
@@ -797,7 +836,46 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         else:
             self.stepFinished(0, _("Update packet was downloaded successfully."))
         return
-        
+
+    ##############################################################################
+    # GET ARCHIVE STEP'S PRIVATES METHODS
+    ############################################################################## 
+    def __encKeyDownloadFinished(self, arg, status):
+        url            = self.downloader.getUrl()
+        filePath       = self.downloader.getFullFileName()
+        remoteFileSize = self.downloader.getRemoteFileSize()
+        localFileSize  = self.downloader.getLocalFileSize(True)
+        self.downloader = None
+        printDBG('UpdateMainAppImpl.__encKeyDownloadFinished url[%s], filePath[%s], remoteFileSize[%d], localFileSize[%d] ' % (url, filePath, remoteFileSize, localFileSize))
+        if DMHelper.STS.DOWNLOADED != status and remoteFileSize > localFileSize:
+            self.stepFinished(-1, _("Problem with downloading the encryption key:\n[%s].") % url)
+        elif localFileSize != 16:
+            self.stepFinished(-1, _("Wrong the encryption key size: %s\n") % localFileSize)
+        else:
+            try:
+                from crypto.cipher.aes import AES
+                from crypto.cipher.base import noPadding
+                from hashlib import sha256, md5
+
+                with open(filePath, "rb") as f:
+                    data = f.read()
+
+                userKey = sha256(self.password).digest()[:16]
+                cipher = AES(userKey, keySize=len(userKey), padding=noPadding())
+                data  = cipher.decrypt(data)
+                check = md5(data).hexdigest()[:16]
+                if check != self.serversList[self.currServIdx]['enc']:
+                    self.stepFinished(-1, _("Problem with decryption the key."))
+                    return
+                self.decKey = data
+            except Exception:
+                printExc()
+                self.stepFinished(-1, _("Problem with decryption the key."))
+                return
+
+            self.stepFinished(0, _("Encryption key was downloaded successfully."))
+        return
+
     ##############################################################################
     # UNPACK ARCHIVE STEP'S PRIVATES METHODS
     ##############################################################################
@@ -816,7 +894,26 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             code = 0
             msg  = _("Unpacking the archive completed successfully.")
         self.stepFinished(code, msg)
-    
+
+    ##############################################################################
+    # DECRYPTION ARCHIVE STEP'S PRIVATES METHODS
+    ##############################################################################
+    def __decryptionCmdFinished(self, status, outData):
+        code = -1
+        msg  = ""
+        self.cmd = None
+        if 0 != status:
+            code = -1
+            msg  = _("Problem with decryption the archive. Return code [%d]\n%s.") % (status, outData)
+        else:
+            try:
+                os_remove
+            except Exception:
+                printExc()
+            code = 0
+            msg  = _("Decryption the archive completed successfully.")
+        self.stepFinished(code, msg)
+
     ##############################################################################
     # REMOVE UNNECESSARY FILES STEP'S PRIVATES METHODS
     ##############################################################################
