@@ -22,7 +22,7 @@ except Exception: import simplejson as json
 
 
 def gettytul():
-    return 'https://a-o.ninja/'
+    return 'https://anime-odcinki.pl/'
 
 class AnimeOdcinkiPL(CBaseHostClass):
  
@@ -34,8 +34,8 @@ class AnimeOdcinkiPL(CBaseHostClass):
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'https://a-o.ninja/'
-        self.DEFAULT_ICON_URL = 'https://a-o.ninja/wp-content/uploads/2017/07/A-O_logo.png'
+        self.MAIN_URL = 'https://anime-odcinki.pl/'
+        self.DEFAULT_ICON_URL = 'https://anime-odcinki.pl/wp-content/uploads/2017/07/A-O_logo.png'
         
         self.MAIN_CAT_TAB = [{'category':'new',               'title': _('New'),                          'url':self.MAIN_URL                    },
                              {'category':'list_emitowane',    'title': 'Emitowane',                       'url':self.MAIN_URL                    },
