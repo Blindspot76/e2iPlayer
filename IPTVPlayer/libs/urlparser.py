@@ -514,6 +514,7 @@ class urlparser:
                        'videomore.ru':         self.pp.parserVIDEOMORERU    ,
                        'ntv.ru':               self.pp.parserNTVRU          ,
                        '1tv.ru':               self.pp.parser1TVRU          ,
+                       'videohouse.me':        self.pp.parserVIDEOHOUSE     ,
                     }
         return
     
@@ -7959,6 +7960,22 @@ class pageParser(CaptchaHelper):
         rtmpUrl += ' swfUrl=%s pageUrl=%s live=1 ' % (swfUrl, linkUrl)
         printDBG(rtmpUrl)
         return rtmpUrl
+
+    def parserVIDEOHOUSE(self, baseUrl):
+        printDBG("parserVIDEOHOUSE baseUrl[%r]" % baseUrl )
+        HTTP_HEADER = MergeDicts(self.cm.getDefaultHeader('firefox'), {'Referer':baseUrl})
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        up = urlparser()
+        tmp = ph.IFRAME.findall(data)
+        tmp.extend(ph.A.findall(data))
+        for item in tmp:
+            url = self.cm.getFullUrl(item[1], cUrl)
+            if 1 == up.checkHostSupport(url):
+                urls = up.getVideoLink(url)
+                if urls: return urls        
+        return False
         
     def parserOPENLOADIO(self, baseUrl):
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
