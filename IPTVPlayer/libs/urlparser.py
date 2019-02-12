@@ -3629,7 +3629,7 @@ class pageParser(CaptchaHelper):
         printDBG("parserGOLDVODTV baseUrl[%s]" % baseUrl)
         COOKIE_FILE = GetCookieDir('goldvodtv.cookie')
         HTTP_HEADER = { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
-        SWF_URL = 'http://p.jwpcdn.com/6/9/jwplayer.flash.swf'
+        SWF_URL = 'http://goldvod.tv/jwplayer_old/jwplayer.flash.swf'
         
         url = strwithmeta(baseUrl)
         baseParams = url.meta.get('params', {})
