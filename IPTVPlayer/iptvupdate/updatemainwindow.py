@@ -36,6 +36,7 @@ from Components.Label import Label
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 
+import time
 try:    import json
 except Exception: import simplejson as json
 
@@ -754,6 +755,28 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             if config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
                 self.__addLastVersion(serversList) # get last version from gitlab.com only for developers
 
+            if config.plugins.iptvplayer.gitlab_repo.value:
+                newVerNum = ''
+                url = "https://gitlab.com/e2i/e2iplayer/raw/master/IPTVPlayer/version.py"
+                cmd = '%s --no-check-certificate "%s" -t 1 -T 10 -P %s > /dev/null 2>&1; ' % (config.plugins.iptvplayer.wgetpath.value, url, self.tmpDir)
+                iptv_system(cmd)
+                newVerFile = os_path.join(self.tmpDir, 'version.py')
+                verPattern = self.VERSION_PATTERN
+                _timeout = 0
+                while not os_path.isfile(newVerFile) and _timeout < 100:
+                    _timeout += 1
+                    time.sleep(0.1)
+                try:
+                    with open (newVerFile, "r") as verFile: data = verFile.read()
+                    newVerNum = CParsingHelper.getSearchGroups(data, verPattern)[0]
+                except Exception:
+                    printExc()
+                if 13 == len(newVerNum):
+                    sourceUrl = "https://gitlab.com/e2i/e2iplayer/-/archive/master/e2iplayer-master.tar.gz"
+                    server = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'e2iplayer-master/', 'pyver':'X.X', 'packagetype':'sourcecode'}
+                    printDBG("__serversListDownloadFinished: [%s]" % str(server))
+                    serversList.append(server)
+
             self.serversList = serversList
             self.serverGraphicsHash = serverGraphicsHash
             self.serverIconsHash = serverIconsHash
@@ -794,31 +817,32 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             
             self.currServIdx = retArg[1]
             list = []
-            if  self.localGraphicsHash == '' or self.serverGraphicsHash == '' or \
-                self.localGraphicsHash != self.serverGraphicsHash:
-                list.append( self.__getStepDesc(title = _("Downloading graphics package."),   execFunction = self.stepGetGraphicsArchive ) )
-                list.append( self.__getStepDesc(title = _("Extracting graphics package."),    execFunction = self.stepUnpackGraphicsArchive ) )
-                oldGraphics = False
-            else:
-                oldGraphics = True
-            
-            if self.localIconsHash == '' or self.serverIconsHash == '' or \
-               self.localIconsHash != self.serverIconsHash:
-                if oldGraphics:
-                    list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
-                
-                if config.plugins.iptvplayer.ListaGraficzna.value:
-                    list.append( self.__getStepDesc(title = _("Downloading icons package."),      execFunction = self.stepGetIconsArchive ) )
-                    list.append( self.__getStepDesc(title = _("Extracting icons package."),       execFunction = self.stepUnpackIconsArchive ) )
-            else:
-                if oldGraphics:
-                    if config.plugins.iptvplayer.ListaGraficzna.value:
-                        list.append( self.__getStepDesc(title = _("Copy all graphics."),    execFunction = self.stepCopyAllGraphics ) )
-                    else:
+            if 'graphics_url' in self.serversList[self.currServIdx]:
+                if  self.localGraphicsHash == '' or self.serverGraphicsHash == '' or \
+                    self.localGraphicsHash != self.serverGraphicsHash:
+                    list.append( self.__getStepDesc(title = _("Downloading graphics package."),   execFunction = self.stepGetGraphicsArchive ) )
+                    list.append( self.__getStepDesc(title = _("Extracting graphics package."),    execFunction = self.stepUnpackGraphicsArchive ) )
+                    oldGraphics = False
+                else:
+                    oldGraphics = True
+
+                if self.localIconsHash == '' or self.serverIconsHash == '' or \
+                   self.localIconsHash != self.serverIconsHash:
+                    if oldGraphics:
                         list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
-                elif config.plugins.iptvplayer.ListaGraficzna.value:
-                    list.append( self.__getStepDesc(title = _("Copy icons."),    execFunction = self.stepCopyOnlyIcons ) )
-            
+
+                    if config.plugins.iptvplayer.ListaGraficzna.value:
+                        list.append( self.__getStepDesc(title = _("Downloading icons package."),      execFunction = self.stepGetIconsArchive ) )
+                        list.append( self.__getStepDesc(title = _("Extracting icons package."),       execFunction = self.stepUnpackIconsArchive ) )
+                else:
+                    if oldGraphics:
+                        if config.plugins.iptvplayer.ListaGraficzna.value:
+                            list.append( self.__getStepDesc(title = _("Copy all graphics."),    execFunction = self.stepCopyAllGraphics ) )
+                        else:
+                            list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
+                    elif config.plugins.iptvplayer.ListaGraficzna.value:
+                        list.append( self.__getStepDesc(title = _("Copy icons."),    execFunction = self.stepCopyOnlyIcons ) )
+
             self.list[3:3] = list
             if 'enc' in self.serversList[self.currServIdx]:
                 self.list.insert(1, self.__getStepDesc(title = _("Get decryption key."),    execFunction = self.stepGetEncKey ) )
@@ -1022,7 +1046,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
 
             self.cmd = iptv_system( 'rm -rf ' + self.tmpDir + " && sync" , self.__doSyncCallBack )
         return
-        
+
     def __doSyncCallBack(self, status, outData):
         self.cmd = None
         code, msg = self.checkVersionFile( os_path.join(self.ExtensionPath, 'IPTVPlayer') )
