@@ -36,7 +36,6 @@ from Components.Label import Label
 from Tools.BoundFunction import boundFunction
 from Tools.Directories import resolveFilename, SCOPE_PLUGINS
 
-import time
 try:    import json
 except Exception: import simplejson as json
 
