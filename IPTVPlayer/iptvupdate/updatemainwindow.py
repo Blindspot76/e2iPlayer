@@ -260,6 +260,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader  = None
         self.cmd         = None
         self.serversList = []
+        self.gitlabList  = {}
 
         self.serverGraphicsHash = ''
         self.serverIconsHash = ''
@@ -370,6 +371,8 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     
     def getStepsList(self):
         self.list = []
+        if config.plugins.iptvplayer.gitlab_repo.value:
+            self.list.append( self.__getStepDesc(title = _("Add repository last version."),   execFunction = self.stepGetGitlab, ignoreError=True ) )
         self.list.append( self.__getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
         self.list.append( self.__getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
         self.list.append( self.__getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
@@ -402,6 +405,18 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader = UpdateDownloaderCreator(serverUrl)
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__serversListDownloadFinished, None))
         self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'serwerslist2.json'))
+
+    def stepGetGitlab(self):
+        printDBG('UpdateMainAppImpl.stepGetGitlab')
+        self.clearTmpData()
+        sts, msg = self.createPath(self.tmpDir)
+        if not sts:
+            self.stepFinished(-1, msg)
+            return
+        serverUrl = "https://gitlab.com/e2i/e2iplayer/raw/master/IPTVPlayer/version.py"
+        self.downloader = UpdateDownloaderCreator(serverUrl)
+        self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__serversListGitlabFinished, None))
+        self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'lastversion.py'))
         
     def stepGetArchive(self):
         self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['url'])
@@ -682,6 +697,37 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             else:
                 printDBG("Wrong crcSum[%s]" % crcSum)
 
+    def __serversListGitlabFinished(self, arg, status):
+        url            = self.downloader.getUrl()
+        filePath       = self.downloader.getFullFileName()
+        self.downloader = None
+        printDBG('UpdateMainAppImpl.__serversListGitlabFinished url[%s], filePath[%s] ' % (url, filePath))
+        if DMHelper.STS.DOWNLOADED != status:
+            msg = _("Problem with downloading the packet:\n[%s].") % url
+            self.stepFinished(-1, msg)
+        else:
+            newVerNum = ''
+            newVerFile = os_path.join(self.tmpDir, 'lastversion.py')
+            verPattern = self.VERSION_PATTERN
+            if os_path.isfile(newVerFile):
+                try:
+                    with open (newVerFile, "r") as verFile: data = verFile.read()
+                    newVerNum = CParsingHelper.getSearchGroups(data, verPattern)[0]
+                except Exception:
+                    printExc()
+                if 13 == len(newVerNum):
+                    sourceUrl = "https://gitlab.com/e2i/e2iplayer/-/archive/master/e2iplayer-master.tar.gz"
+                    self.gitlabList = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'e2iplayer-master/', 'pyver':'X.X', 'packagetype':'sourcecode'}
+                    printDBG("__serversListGitlabFinished: [%s]" % str(self.gitlabList))
+                else:
+                    msg = _("Wrong version: [%s].") % str(self.gitlabList)
+                    self.stepFinished(-1, msg)
+            else:
+                msg = _("File not found:\n[%s].") % filePath
+                self.stepFinished(-1, msg)
+            self.stepFinished(0, _("GitLab version was downloaded successfully."))
+        return
+
     def __serversListDownloadFinished(self, arg, status):
         def ServerComparator(x, y):
             try:    val1 = int(x['version'].replace('.', ''))
@@ -756,26 +802,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 self.__addLastVersion(serversList) # get last version from gitlab.com only for developers
 
             if config.plugins.iptvplayer.gitlab_repo.value:
-                newVerNum = ''
-                url = "https://gitlab.com/e2i/e2iplayer/raw/master/IPTVPlayer/version.py"
-                cmd = '%s --no-check-certificate "%s" -t 1 -T 10 -P %s > /dev/null 2>&1; ' % (config.plugins.iptvplayer.wgetpath.value, url, self.tmpDir)
-                iptv_system(cmd)
-                newVerFile = os_path.join(self.tmpDir, 'version.py')
-                verPattern = self.VERSION_PATTERN
-                _timeout = 0
-                while not os_path.isfile(newVerFile) and _timeout < 100:
-                    _timeout += 1
-                    time.sleep(0.1)
-                try:
-                    with open (newVerFile, "r") as verFile: data = verFile.read()
-                    newVerNum = CParsingHelper.getSearchGroups(data, verPattern)[0]
-                except Exception:
-                    printExc()
-                if 13 == len(newVerNum):
-                    sourceUrl = "https://gitlab.com/e2i/e2iplayer/-/archive/master/e2iplayer-master.tar.gz"
-                    server = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'e2iplayer-master/', 'pyver':'X.X', 'packagetype':'sourcecode'}
-                    printDBG("__serversListDownloadFinished: [%s]" % str(server))
-                    serversList.append(server)
+                serversList.append(self.gitlabList)
 
             self.serversList = serversList
             self.serverGraphicsHash = serverGraphicsHash
