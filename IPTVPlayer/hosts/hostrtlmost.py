@@ -6,9 +6,10 @@
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, getMPDLinksWithMeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 ###################################################
 
 ###################################################
@@ -22,8 +23,6 @@ import cookielib
 import urllib
 import base64
 from hashlib import sha1
-try:    import json
-except Exception: import simplejson as json
 from Components.config import config, ConfigText, getConfigListEntry
 ###################################################
 
@@ -70,7 +69,7 @@ class RtlMostHU(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'rtlmost.hu', 'cookie':'rtlmosthu.cookie'})
 
         self.SEARCH_TYPES = [
-            ( _("Program"), "Program" ), 
+            ( _("Program"), "Program" ),
             ( _("Video"), "Video" ),
             ( _("Preview"),  "Preview" ),
             ( _("Playlist"), "Playlist")
@@ -157,9 +156,9 @@ class RtlMostHU(CBaseHostClass):
         sts, data = self.cm.getPage(self.MENU_URL.format(100, 0), self.apiParams)
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for i in data:
-                title = i['name'].encode('utf-8')
+                title = i['name']
                 url = str(i['id'])
                 params = dict(cItem)
                 params.update({'category':'list_programs', 'title': title, 'url': url})
@@ -175,34 +174,33 @@ class RtlMostHU(CBaseHostClass):
         sts, data = self.cm.getPage(self.PROGRAMS_URL.format( url, 100, 0), self.apiParams)
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for i in data:
-                title = i['title'].encode('utf-8')
+                title = i['title']
                 url = str(i['id'])
                 desc = i.get('description','')
-                if desc: desc = desc.encode('utf-8')
                 icon = _getImageExtKey(i['images'], 'totem')
                 params = dict(cItem)
                 if icon: params['icon'] = 'tj'+icon
                 params.update({'good_for_fav': True, 'category':'list_subcategories', 'title': title, 'url': url, 'desc':desc, 'other_info':{}})
                 self.addDir(params)
         except Exception: printExc()
-			
+
     def listPlaylist(self, cItem):
         printDBG("RtlMostHU.listPlaylist")
         url = cItem['url']
         sts, data = self.cm.getPage(self.VIDEO_URL.format( url ), self.apiParams)
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for c in data['clips']:
-                title = c['title'].encode('utf-8')
+                title = c['title']
                 otherInfo =dict(cItem['other_info'])
                 _updateOtherInfo(otherInfo,c)
                 desc = c.get('description')
-                icon = _getImageExtKey(c['images'], 'vignette')					
+                icon = _getImageExtKey(c['images'], 'vignette')
                 params = dict(cItem)
-                if desc: params['desc'] = desc.encode('utf-8')
+                if desc: params['desc'] = desc
                 if icon: params['icon'] = 'vj'+icon
                 params.update({'good_for_fav': True, 'title': title, 'url': c['video_id'], 'other_info': otherInfo})
                 self.addVideo(params)
@@ -214,7 +212,7 @@ class RtlMostHU(CBaseHostClass):
         sts, data = self.cm.getPage(self.EPISODES_URL.format( url, subcat, 100, 0), self.apiParams)
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             for i in data:
                 clips = i['clips']
                 if 0 == len(clips): continue
@@ -228,16 +226,17 @@ class RtlMostHU(CBaseHostClass):
                     isVideo = False
                     url =c['id']
                 _updateOtherInfo(otherInfo,c)
-                title = c['title'].encode('utf-8')
+                title = c['title']
                 desc = c.get('description')
-                icon = _getImageExtKey(c['images'], 'vignette')				
+                icon = _getImageExtKey(c['images'], 'vignette')
                 params = dict(cItem)
-                if desc: params['desc'] = desc.encode('utf-8')
+                params.pop('subcat',None)
+                if desc: params['desc'] = desc
                 if icon: params['icon'] = 'vj'+icon
                 params.update({'good_for_fav': True, 'title': title, 'url': url, 'other_info': otherInfo})
                 if isVideo:
                     self.addVideo(params)
-                else: 
+                else:
                     params['category']='list_playlist'
                     self.addDir(params)
         except Exception: printExc()
@@ -248,7 +247,7 @@ class RtlMostHU(CBaseHostClass):
         sts, data = self.cm.getPage(self.SUBCATS_URL.format( url), self.apiParams)
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             subcats = data['program_subcats']
             if 0 == len(subcats): return
             if 1 == len(subcats):
@@ -256,7 +255,7 @@ class RtlMostHU(CBaseHostClass):
                 self.listEpisodes(cItem,str(i['id']))
                 return
             for i in subcats:
-                title = i['title'].encode('utf-8')
+                title = i['title']
                 subcat = str(i['id'])
                 params = dict(cItem)
                 params.update({'good_for_fav': True, 'category':'list_episodes', 'title': title, 'url': url, 'subcat': subcat})
@@ -289,27 +288,25 @@ class RtlMostHU(CBaseHostClass):
             query = self.queryFiltered
         else: return
         page = cItem.get('page',0)
-        cItem.pop('page',None)        
         sts, data = self.cm.getPage(self.QUERY_URL.format(queryType), self.queryParams,
           query.format( urllib.quote(searchPattern), page, 50 ))
         if not sts: return
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             hits = data['hits']
             nbPages = data.get('nbPages')
             for i in hits:
                 otherInfo ={}
                 _updateOtherInfo(otherInfo,i)
-                title = i['title'].encode('utf-8')
-                desc = i.get('description','')
-                if desc: desc = desc.encode('utf-8')
+                title = i['title']
                 params = dict(cItem)
+                params.pop('page',None)
                 icon = _getImageExtKey(i['images'], role)
                 if icon: params['icon'] = role[:1]+'j'+icon
                 elif role == 'vignette':
                     icon = _getImageExtKey(i['program']['images'], 'totem')
-                    if icon:  params['icon'] = 'tj'+icon 					
-                params.update({'good_for_fav': True, 'title': title, 'url': i['id'], 'desc':desc, 'other_info': otherInfo})
+                    if icon:  params['icon'] = 'tj'+icon
+                params.update({'good_for_fav': True, 'title': title, 'url': i['id'], 'desc': i.get('description',''), 'other_info': otherInfo})
                 if isVideo:
                     self.addVideo(params)
                 else:
@@ -322,7 +319,7 @@ class RtlMostHU(CBaseHostClass):
                 self.addDir(params)
 
         except Exception: printExc()
-		
+
     def getLinksForVideo(self, cItem):
         url = cItem['url']
         printDBG("RtlMostHU.getLinksForVideo url[%s]" % url)
@@ -332,7 +329,7 @@ class RtlMostHU(CBaseHostClass):
 
         if not sts: return videoUrls
         try:
-            data = byteify(json.loads(data))
+            data = json_loads(data)
             assets = data['clips'][0].get('assets')
             url = assets[0].get('full_physical_path');
         except Exception: printExc()
@@ -357,24 +354,22 @@ class RtlMostHU(CBaseHostClass):
         printDBG('RtlMostHU.getFavouriteData')
         params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem['desc'], 'icon':cItem['icon']}
         if 'subcat' in cItem: params['subcat'] = cItem['subcat']
-        if 'other_info' in cItem: params['other_info'] = cItem['other_info']		
-        return json.dumps(params)
+        if 'other_info' in cItem: params['other_info'] = cItem['other_info']
+        return json_dumps(params)
 
     def getLinksForFavourite(self, fav_data):
         printDBG('RtlMostHU.getLinksForFavourite')
         links = []
         try:
-            cItem = byteify(json.loads(fav_data))
+            cItem = json_loads(fav_data)
             links = self.getLinksForVideo(cItem)
         except Exception: printExc()
         return links
 
     def setInitListFromFavouriteItem(self, fav_data):
         printDBG('RtlMostHU.setInitListFromFavouriteItem')
-        if self.MAIN_URL == None:
-            self.selectDomain()
         try:
-            params = byteify(json.loads(fav_data))
+            params = json_loads(fav_data)
         except Exception:
             params = {}
             printExc()
@@ -410,13 +405,13 @@ class RtlMostHU(CBaseHostClass):
             else: cj = cookielib.MozillaCookieJar()
 
             cookieNames = ['sessionToken', 'sessionSecret', 'loginHash', 'loginValid']
-            cookies = [None, None, None, None] 
+            cookies = [None, None, None, None]
 
             for cookie in cj:
                 if cookie.domain == 'vpv.jf7ekt7r6rbm2.hu':
                     try:
                         i = cookieNames.index(cookie.name)
-                        if cookies[i]: cookie.discard = True 
+                        if cookies[i]: cookie.discard = True
                         else: cookies[i] = cookie
                     except ValueError: cookie.discard = True
             for i, cookie in enumerate(cookies):
@@ -438,12 +433,12 @@ class RtlMostHU(CBaseHostClass):
                     return True
                 sts, data = self.cm.getPage(self.ACCOUNT_URL.format(token.value, secret.value), self.loginParams)
                 if not sts: raise Exception('Can not Get Account page!')
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 needLogin = data['errorCode'] != 0
             if needLogin:
                 sts, data = self.cm.getPage(self.LOGIN_URL.format( self.login, self.password), self.loginParams)
                 if not sts: raise Exception('Can not Get Login page!')
-                data = byteify(json.loads(data))
+                data = json_loads(data)
                 if data['errorCode'] != 0: raise Exception(data.get('errorMessage'))
                 token.value = data['sessionInfo']['sessionToken']
                 secret.value = data['sessionInfo']['sessionSecret']
@@ -460,16 +455,16 @@ class RtlMostHU(CBaseHostClass):
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('handleService start')
-       
+
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
 
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
-        
+
         printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
-        if self.tryTologin():        
+        if self.tryTologin():
     #MAIN MENU
             if name == None:
                 self.listMainMenu({'name':'category'})
@@ -484,14 +479,14 @@ class RtlMostHU(CBaseHostClass):
     #SEARCH
             elif category in ["search", "search_next_page"]:
                 cItem = dict(self.currItem)
-                cItem.update({'search_item':False, 'name':'category'}) 
+                cItem.update({'search_item':False, 'name':'category'})
                 self.listSearchResult(cItem, searchPattern, searchType)
     #HISTORIA SEARCH
             elif category == "search_history":
                 self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
             else:
                 printExc()
-        
+
         CBaseHostClass.endHandleService(self, index, refresh)
 
 
