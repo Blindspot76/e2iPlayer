@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-02-26 Celeburdi
+# 2019-02-27 Celeburdi
 ###################################################
 # LOCAL import
 ###################################################
@@ -397,7 +397,7 @@ class RtlMostHU(CBaseHostClass):
 
         if '' == self.login.strip() or '' == self.password.strip():
             printDBG('tryTologin wrong login data')
-            self.sessionEx.open(MessageBox, _('The host %s requires registration. \nPlease fill your login and password in the host configuration. Available under blue button.' % self.getMainUrl()), type = MessageBox.TYPE_ERROR, timeout = 10 )
+            self.sessionEx.open(MessageBox, _('The host %s requires registration. \nPlease fill your login and password in the host configuration. Available under blue button.') % self.getMainUrl(), type = MessageBox.TYPE_ERROR, timeout = 10 )
             return False
 
         try:
