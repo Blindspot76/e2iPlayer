@@ -370,7 +370,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     
     def getStepsList(self):
         self.list = []
-        if config.plugins.iptvplayer.gitlab_repo.value:
+        if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value == '2':
             self.list.append( self.__getStepDesc(title = _("Add repository last version."),   execFunction = self.stepGetGitlab, ignoreError=True ) )
         self.list.append( self.__getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
         self.list.append( self.__getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
