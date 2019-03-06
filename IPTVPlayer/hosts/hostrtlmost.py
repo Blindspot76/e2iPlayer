@@ -357,25 +357,6 @@ class RtlMostHU(CBaseHostClass):
         if 'other_info' in cItem: params['other_info'] = cItem['other_info']
         return json_dumps(params)
 
-    def getLinksForFavourite(self, fav_data):
-        printDBG('RtlMostHU.getLinksForFavourite')
-        links = []
-        try:
-            cItem = json_loads(fav_data)
-            links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
-        return links
-
-    def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('RtlMostHU.setInitListFromFavouriteItem')
-        try:
-            params = json_loads(fav_data)
-        except Exception:
-            params = {}
-            printExc()
-        self.addDir(params)
-        return True
-
     def getArticleContent(self, cItem):
         printDBG("RtlMostHU.getArticleContent [%s]" % cItem)
         retTab = {'title':cItem['title'], 'text': cItem['desc'], 'images':[{'title':'', 'url':self.getFullIconUrl(cItem.get('icon'))}]}
