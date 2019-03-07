@@ -259,6 +259,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader  = None
         self.cmd         = None
         self.serversList = []
+        self.gitlabList  = {}
 
         self.serverGraphicsHash = ''
         self.serverIconsHash = ''
@@ -369,6 +370,8 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     
     def getStepsList(self):
         self.list = []
+        if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value == '2':
+            self.list.append( self.__getStepDesc(title = _("Add repository last version."),   execFunction = self.stepGetGitlab, ignoreError=True ) )
         self.list.append( self.__getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
         self.list.append( self.__getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
         self.list.append( self.__getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
@@ -401,6 +404,18 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         self.downloader = UpdateDownloaderCreator(serverUrl)
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__serversListDownloadFinished, None))
         self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'serwerslist2.json'))
+
+    def stepGetGitlab(self):
+        printDBG('UpdateMainAppImpl.stepGetGitlab')
+        self.clearTmpData()
+        sts, msg = self.createPath(self.tmpDir)
+        if not sts:
+            self.stepFinished(-1, msg)
+            return
+        serverUrl = "https://gitlab.com/e2i/e2iplayer/raw/master/IPTVPlayer/version.py"
+        self.downloader = UpdateDownloaderCreator(serverUrl)
+        self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__serversListGitlabFinished, None))
+        self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'lastversion.py'))
         
     def stepGetArchive(self):
         self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['url'])
@@ -681,6 +696,37 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             else:
                 printDBG("Wrong crcSum[%s]" % crcSum)
 
+    def __serversListGitlabFinished(self, arg, status):
+        url            = self.downloader.getUrl()
+        filePath       = self.downloader.getFullFileName()
+        self.downloader = None
+        printDBG('UpdateMainAppImpl.__serversListGitlabFinished url[%s], filePath[%s] ' % (url, filePath))
+        if DMHelper.STS.DOWNLOADED != status:
+            msg = _("Problem with downloading the packet:\n[%s].") % url
+            self.stepFinished(-1, msg)
+        else:
+            newVerNum = ''
+            newVerFile = os_path.join(self.tmpDir, 'lastversion.py')
+            verPattern = self.VERSION_PATTERN
+            if os_path.isfile(newVerFile):
+                try:
+                    with open (newVerFile, "r") as verFile: data = verFile.read()
+                    newVerNum = CParsingHelper.getSearchGroups(data, verPattern)[0]
+                except Exception:
+                    printExc()
+                if 13 == len(newVerNum):
+                    sourceUrl = "https://gitlab.com/e2i/e2iplayer/-/archive/master/e2iplayer-master.tar.gz"
+                    self.gitlabList = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'e2iplayer-master/', 'pyver':'X.X', 'packagetype':'sourcecode'}
+                    printDBG("__serversListGitlabFinished: [%s]" % str(self.gitlabList))
+                else:
+                    msg = _("Wrong version: [%s].") % str(self.gitlabList)
+                    self.stepFinished(-1, msg)
+            else:
+                msg = _("File not found:\n[%s].") % filePath
+                self.stepFinished(-1, msg)
+            self.stepFinished(0, _("GitLab version was downloaded successfully."))
+        return
+
     def __serversListDownloadFinished(self, arg, status):
         def ServerComparator(x, y):
             try:    val1 = int(x['version'].replace('.', ''))
@@ -754,6 +800,9 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             if config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
                 self.__addLastVersion(serversList) # get last version from gitlab.com only for developers
 
+            if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value == '2':
+                serversList.append(self.gitlabList)
+
             self.serversList = serversList
             self.serverGraphicsHash = serverGraphicsHash
             self.serverIconsHash = serverIconsHash
@@ -794,31 +843,32 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             
             self.currServIdx = retArg[1]
             list = []
-            if  self.localGraphicsHash == '' or self.serverGraphicsHash == '' or \
-                self.localGraphicsHash != self.serverGraphicsHash:
-                list.append( self.__getStepDesc(title = _("Downloading graphics package."),   execFunction = self.stepGetGraphicsArchive ) )
-                list.append( self.__getStepDesc(title = _("Extracting graphics package."),    execFunction = self.stepUnpackGraphicsArchive ) )
-                oldGraphics = False
-            else:
-                oldGraphics = True
-            
-            if self.localIconsHash == '' or self.serverIconsHash == '' or \
-               self.localIconsHash != self.serverIconsHash:
-                if oldGraphics:
-                    list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
-                
-                if config.plugins.iptvplayer.ListaGraficzna.value:
-                    list.append( self.__getStepDesc(title = _("Downloading icons package."),      execFunction = self.stepGetIconsArchive ) )
-                    list.append( self.__getStepDesc(title = _("Extracting icons package."),       execFunction = self.stepUnpackIconsArchive ) )
-            else:
-                if oldGraphics:
-                    if config.plugins.iptvplayer.ListaGraficzna.value:
-                        list.append( self.__getStepDesc(title = _("Copy all graphics."),    execFunction = self.stepCopyAllGraphics ) )
-                    else:
+            if 'graphics_url' in self.serversList[self.currServIdx]:
+                if  self.localGraphicsHash == '' or self.serverGraphicsHash == '' or \
+                    self.localGraphicsHash != self.serverGraphicsHash:
+                    list.append( self.__getStepDesc(title = _("Downloading graphics package."),   execFunction = self.stepGetGraphicsArchive ) )
+                    list.append( self.__getStepDesc(title = _("Extracting graphics package."),    execFunction = self.stepUnpackGraphicsArchive ) )
+                    oldGraphics = False
+                else:
+                    oldGraphics = True
+
+                if self.localIconsHash == '' or self.serverIconsHash == '' or \
+                   self.localIconsHash != self.serverIconsHash:
+                    if oldGraphics:
                         list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
-                elif config.plugins.iptvplayer.ListaGraficzna.value:
-                    list.append( self.__getStepDesc(title = _("Copy icons."),    execFunction = self.stepCopyOnlyIcons ) )
-            
+
+                    if config.plugins.iptvplayer.ListaGraficzna.value:
+                        list.append( self.__getStepDesc(title = _("Downloading icons package."),      execFunction = self.stepGetIconsArchive ) )
+                        list.append( self.__getStepDesc(title = _("Extracting icons package."),       execFunction = self.stepUnpackIconsArchive ) )
+                else:
+                    if oldGraphics:
+                        if config.plugins.iptvplayer.ListaGraficzna.value:
+                            list.append( self.__getStepDesc(title = _("Copy all graphics."),    execFunction = self.stepCopyAllGraphics ) )
+                        else:
+                            list.append( self.__getStepDesc(title = _("Copy graphics without icons."),    execFunction = self.stepCopyGraphicsWithoutIcons ) )
+                    elif config.plugins.iptvplayer.ListaGraficzna.value:
+                        list.append( self.__getStepDesc(title = _("Copy icons."),    execFunction = self.stepCopyOnlyIcons ) )
+
             self.list[3:3] = list
             if 'enc' in self.serversList[self.currServIdx]:
                 self.list.insert(1, self.__getStepDesc(title = _("Get decryption key."),    execFunction = self.stepGetEncKey ) )
@@ -1022,7 +1072,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
 
             self.cmd = iptv_system( 'rm -rf ' + self.tmpDir + " && sync" , self.__doSyncCallBack )
         return
-        
+
     def __doSyncCallBack(self, status, outData):
         self.cmd = None
         code, msg = self.checkVersionFile( os_path.join(self.ExtensionPath, 'IPTVPlayer') )
