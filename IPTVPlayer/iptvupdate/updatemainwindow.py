@@ -800,7 +800,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             if config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
                 self.__addLastVersion(serversList) # get last version from gitlab.com only for developers
 
-            if config.plugins.iptvplayer.gitlab_repo.value:
+            if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value == '2':
                 serversList.append(self.gitlabList)
 
             self.serversList = serversList
