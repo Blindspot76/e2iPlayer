@@ -39,7 +39,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://vidcorn.tv'
+    return 'https://vidcorn.tv/'
 
 class VidCorn(CBaseHostClass, CaptchaHelper):
 
