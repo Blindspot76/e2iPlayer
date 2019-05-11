@@ -7984,7 +7984,7 @@ class pageParser(CaptchaHelper):
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         #printDBG("parserVERYSTREAM data: [%s]" % data )
-        id = self.cm.ph.getSearchGroups(data, """id="videolink">([^>]+?)<""")[0]
+        id = ph.search(data, """id="videolink">([^>]+?)<""")[0]
         videoUrl = 'https://verystream.com/gettoken/{0}?mime=true'.format(id)
         sts, data = self.cm.getPage(videoUrl, {'max_data_size':0})
         if not sts: return False
