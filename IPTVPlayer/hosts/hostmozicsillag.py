@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-11 by Alec - modified Mozicsillag
+# 2019-06-27 by Alec - modified Mozicsillag
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetIPTVPlayerVerstion
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetIPTVPlayerVerstion, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -112,21 +112,32 @@ class MuziCsillangCC(CBaseHostClass):
             self.cacheLinks = {}
             if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
+            vtb = self.malvadnav(cItem, '1', '5', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    item['category'] = 'list_third'
+                    self.addVideo(item)
             tab_catalog = 'mozicsillag_catalog'
             desc_catalog = self.getdvdsz(tab_catalog, 'Főoldali felvételek megjelenítése...')
             tab_movies = 'mozicsillag_movies'
             desc_movies = self.getdvdsz(tab_movies, 'Filmek megjelenítése...')
             tab_series = 'mozicsillag_series'
             desc_series = self.getdvdsz(tab_series, 'Sorozatok megjelenítése...')
+            tab_ajanlott = 'mozicsillag_ajanlott'
+            desc_ajanlott = self.getdvdsz(tab_ajanlott, 'Ajánlott, nézett tartalmak megjelenítése...')
+            tab_keresett = 'mozicsillag_keresett_tartalom'
+            desc_keresett = self.getdvdsz(tab_keresett, 'Keresett tartalmak megjelenítése...')
             tab_search = 'mozicsillag_search'
             desc_search = self.getdvdsz(tab_search, 'Keresés...')
             tab_search_hist = 'mozicsillag_search_hist'
             desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
-            MAIN_CAT_TAB = [{'category':'list_filters', 'title': _('Home'), 'url':self.getMainUrl(), 'use_query':True, 'tab_id':tab_catalog, 'desc':desc_catalog },
-                            {'category':'list_movies', 'title': _('Movies'), 'url':self.getMainUrl(), 'tab_id':tab_movies, 'desc':desc_movies },
-                            {'category':'list_series', 'title': _('Series'), 'url':self.getMainUrl(), 'tab_id':tab_series, 'desc':desc_series },
-                            {'category':'search', 'title': _('Search'), 'search_item':True, 'tab_id':tab_search, 'desc':desc_search },
-                            {'category':'search_history', 'title': _('Search history'), 'tab_id':tab_search_hist, 'desc':desc_search_hist }
+            MAIN_CAT_TAB = [{'category':'list_filters', 'title': _('Home'), 'url':self.getMainUrl(), 'use_query':True, 'tps':'0', 'tab_id':tab_catalog, 'desc':desc_catalog },
+                            {'category':'list_movies', 'title': _('Movies'), 'url':self.getMainUrl(), 'tps':'1', 'tab_id':tab_movies, 'desc':desc_movies },
+                            {'category':'list_series', 'title': _('Series'), 'url':self.getMainUrl(), 'tps':'2', 'tab_id':tab_series, 'desc':desc_series },
+                            {'category':'list_main', 'title': 'Ajánlott, nézett tartalmak', 'tab_id':tab_ajanlott, 'desc':desc_ajanlott},
+                            {'category':'list_main', 'title': 'Keresett tartalmak', 'tab_id':tab_keresett, 'desc':desc_keresett},
+                            {'category':'search', 'title': _('Search'), 'search_item':True, 'tps':'0', 'tab_id':tab_search, 'desc':desc_search },
+                            {'category':'search_history', 'title': _('Search history'), 'tps':'0', 'tab_id':tab_search_hist, 'desc':desc_search_hist }
                            ]
             self.listsTab(MAIN_CAT_TAB, {'name':'category'})
             self.ilk = True
@@ -134,10 +145,8 @@ class MuziCsillangCC(CBaseHostClass):
             printExc()
     
     def fillCacheFilters(self, cItem):
-        printDBG("MuziCsillangCC.listCategories")
         self.cacheFilters = {}
         self.cacheFiltersKeys = []
-        
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         self.setMainUrl(data.meta['url'])
@@ -189,10 +198,37 @@ class MuziCsillangCC(CBaseHostClass):
         tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input id="search_share_', '</label>')
         if len(tmp): addFilter(tmp, 'value', 'search_share_', _('Any'))
         
-        printDBG(self.cacheFilters)
+    def listMainItems(self, cItem):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'mozicsillag_ajanlott':
+                self.susn('2', '5', tabID)
+                self.Fzkttm(cItem, tabID)
+            elif tabID == 'mozicsillag_keresett_tartalom':
+                self.susn('2', '5', tabID)
+                self.Vdakstmk({'name':'history', 'category': 'search', 'tab_id':''}, 'desc', _("Type: "), tabID)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Fzkttm(self, cItem, tabID):
+        try:
+            tab_ams = 'mozicsillag_ajnlt_musor'
+            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint...')
+            tab_adt = 'mozicsillag_ajnlt_datum'
+            desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
+            tab_anzt = 'mozicsillag_ajnlt_nezettseg'
+            desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
+            A_CAT_TAB = [{'category':'list_third', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
+                         {'category':'list_third', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt},
+                         {'category':'list_third', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams} 
+                        ]
+            self.listsTab(A_CAT_TAB, cItem)
+        except Exception:
+            printExc()
         
     def listFilters(self, cItem, nextCategory):
-        printDBG("MuziCsillangCC.listFilters")
         if self.ilk:
             self.susn('2', '5', 'mozicsillag_catalog')
             self.ilk = False
@@ -211,9 +247,52 @@ class MuziCsillangCC(CBaseHostClass):
             cItem['category'] = nextCategory
         self.listsTab(self.cacheFilters.get(filter, []), cItem)
         
-    def listItems(self, cItem, nextCategory):
-        printDBG("MuziCsillangCC.listItems")
+    def listThirdItems(self, cItem):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'mozicsillag_ajnlt_musor':
+                self.Vajnltmsr(cItem)
+            elif tabID == 'mozicsillag_ajnlt_datum':
+                self.Vajnltdtm(cItem)
+            elif tabID == 'mozicsillag_ajnlt_nezettseg':
+                self.Vajnltnztsg(cItem)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Vajnltmsr(self,cItem):
+        try:
+            self.susn('2', '5', 'mozicsillag_ajnlt_musor')
+            vtb = self.malvadnav(cItem, '3', '5', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    self.addVideo(item)
+        except Exception:
+            printExc()
+            
+    def Vajnltdtm(self,cItem):
+        vtb = []
+        try:
+            self.susn('2', '5', 'mozicsillag_ajnlt_datum')
+            vtb = self.malvadnav(cItem, '4', '5', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    self.addVideo(item)
+        except Exception:
+            printExc()
+            
+    def Vajnltnztsg(self,cItem):
+        try:
+            self.susn('2', '5', 'mozicsillag_ajnlt_nezettseg')
+            vtb = self.malvadnav(cItem, '5', '5', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    self.addVideo(item)
+        except Exception:
+            printExc()
         
+    def listItems(self, cItem, nextCategory):
         url = cItem['url']
         page = cItem.get('page', 1)
         sort = cItem.get('f_sort', '')
@@ -267,21 +346,18 @@ class MuziCsillangCC(CBaseHostClass):
                 descTab.append(t)
             ######
             
-            params = dict(cItem)
-            params = {'good_for_fav': True, 'title':title, 'url':url, 'desc':'[/br]'.join(descTab), 'icon':icon}
-            params['category'] = nextCategory
+            params = MergeDicts(cItem, {'good_for_fav': True, 'category':nextCategory, 'title':title, 'url':url, 'desc':'[/br]'.join(descTab), 'icon':icon})
             self.addDir(params)
         
         if nextPage and len(self.currList) > 0:
             params = dict(cItem)
-            params.update({'title':_("Next page"), 'page':page+1})
+            params.update({'title':_("Next page"), 'page':page+1, 'desc':'Nyugi...\nVan még további tartalom, lapozz tovább!!!'})
             self.addDir(params)
             
     def _listCategories(self, cItem, nextCategory, m1, m2):
-        printDBG("MuziCsillangCC._listCategories")
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        
+        if len(data) == 0: return
         data = self.cm.ph.getDataBeetwenMarkers(data, m1, m2)[1]
         data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
         for item in data:
@@ -293,21 +369,18 @@ class MuziCsillangCC(CBaseHostClass):
             self.addDir(params)
         
     def listMovies(self, cItem, nextCategory):
-        printDBG("MuziCsillangCC.listMovies")
         tabID = cItem['tab_id']
         if tabID != '':
             self.susn('2', '5', tabID)
         self._listCategories(cItem, nextCategory, 'Filmek</a>', 'has-dropdown not-click')
         
     def listSeries(self, cItem, nextCategory):
-        printDBG("MuziCsillangCC.listSeries")
         tabID = cItem['tab_id']
         if tabID != '':
             self.susn('2', '5', tabID)
         self._listCategories(cItem, nextCategory, 'Sorozatok</a>', '/sztarok"')
         
     def listSort(self, cItem, nextCategory):
-        printDBG("MuziCsillangCC.listSeries")
         cItem['desc'] = ''
         if 0 == len(self.cacheSortOrder):
             sts, data = self.getPage(self.getFullUrl('/filmek-online')) # sort order is same for movies and series
@@ -327,15 +400,12 @@ class MuziCsillangCC(CBaseHostClass):
             self.addDir(params)
         
     def exploreItem(self, cItem):
-        printDBG("MuziCsillangCC.exploreItem")
-        
         sts, data = self.getPage(cItem['url'])
         if not sts: return
+        if len(data) == 0: return
         lastUrl = data.meta['url']
-        
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<p>', '</p>')[1])
         desc = re.sub(r'^(.{1000}).*$', '\g<1>...', desc)
-        
         # trailer 
         tmp = self.cm.ph.rgetAllItemsBeetwenMarkers(data, '</iframe>', '<h2')
         for idx in xrange(len(tmp)):
@@ -348,37 +418,34 @@ class MuziCsillangCC(CBaseHostClass):
                 params = dict(cItem)
                 params.update({'good_for_fav': False, 'title':'%s. %s' % (idx+1, title), 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'desc':desc})
                 self.addVideo(params)
-        
         sourcesLink = self.cm.ph.rgetDataBeetwenMarkers2(data, 'Beküldött linkek megtekintése', '<a', caseSensitive=False)[1]
         sourcesLink = self.cm.ph.getSearchGroups(sourcesLink, '''href=['"](https?://[^'^"]+?)['"]''')[0]
         if not self.cm.isValidUrl(sourcesLink):
-            printDBG("MuziCsillangCC.exploreItem - missing link for sources")
             return
-        
         if sourcesLink != '':
             sts, data = self.getPage(sourcesLink)
             if not sts: return
             lastUrl = data.meta['url']
-        
         sourcesLink = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?)['"][^>]*?>Lejatszas''')[0]
         if sourcesLink != '':
             sts, data = self.getPage(sourcesLink)
             if not sts: return
             lastUrl = data.meta['url']
-        
         self.cacheLinks  = {}
-        
         data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="links_holder', '<script type="text/javascript">', False)[1]
         data = data.split('accordion-episodes')
         episodesTab = []
         for tmp in data:
             episodeName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<h3', '</h3>')[1])
-            
+            if 'Online' in episodeName:
+                episodeName = ''
+            if 'Utolsó' in episodeName:
+                idx1 = episodeName.find('Utolsó')
+                if -1 < idx1:
+                    episodeName = episodeName[:idx1-1].strip()
             tmp = tmp.split('panel')
             for item in tmp:
-                printDBG(">>>>>>>>>>>> [%s]" % item)
                 url = self.cm.ph.getSearchGroups(item, '''<a[^>]+?href=['"]([^'^"]*?watch[^'^"]*?)['"]''')[0]
-                
                 if url != '': url = self.getFullUrl(url, lastUrl)
                 if not self.cm.isValidUrl(url): continue
                 serverName = []
@@ -389,37 +456,96 @@ class MuziCsillangCC(CBaseHostClass):
                     t = self.cleanHtmlStr(t)
                     if t != '': serverName.append(t)
                 serverName = ' | '.join(serverName)
-                
                 if episodeName not in episodesTab:
                     episodesTab.append(episodeName)
                     self.cacheLinks[episodeName] = []
                 self.cacheLinks[episodeName].append({'name':serverName, 'url':url, 'need_resolve':1})
-        
         for item in episodesTab:
             params = dict(cItem)
             title = cItem['title']
-            if item != '': title += ' : ' + item
+            if item != '': title += ' :: ' + item
             params.update({'good_for_fav': False, 'title':title, 'links_key':item, 'prev_desc':cItem.get('desc', ''), 'desc':desc})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("MuziCsillangCC.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))        
-        cItem = dict(cItem)
-        query = base64.b64encode('search_term=%s&search_type=0&search_where=0&search_rating_start=1&search_rating_end=10&search_year_from=1900&search_year_to=2100' % urllib.quote_plus(searchPattern) ) 
-        cItem['url'] = self.getFullUrl('kereses/' + query)
-        self.listItems(cItem, 'explore_item')
+        try:
+            self.suskrbt('2', '5', searchPattern)
+            cItem = dict(cItem)
+            query = base64.b64encode('search_term=%s&search_type=0&search_where=0&search_rating_start=1&search_rating_end=10&search_year_from=1900&search_year_to=2100' % urllib.quote_plus(searchPattern) ) 
+            cItem['url'] = self.getFullUrl('kereses/' + query)
+            self.listItems(cItem, 'explore_item')
+        except Exception:
+            return
         
     def getLinksForVideo(self, cItem):
-        printDBG("MuziCsillangCC.getLinksForVideo [%s]" % cItem)
         retTab = []
         if 1 == self.up.checkHostSupport(cItem.get('url', '')):
             videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
             return self.up.getVideoLinkExt(videoUrl)
-        key = cItem.get('links_key', '')
+        if cItem['category'] != 'list_third':
+            self.susmrgts('2', '5', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'])
+            key = cItem.get('links_key', '')
+        else:
+            key = ''
+            idx1 = cItem['title'].rfind('::')
+            if -1 < idx1:
+                key = cItem['title'][idx1+2:].strip()
+            self.flzchim(cItem['url'])
         return self.cacheLinks.get(key, [])
         
+    def flzchim(self, i_u=''):
+        try:
+            if i_u != '':
+                sts, data = self.getPage(i_u)
+                if not sts: return
+                if len(data) == 0: return
+                lastUrl = data.meta['url']
+                sourcesLink = self.cm.ph.rgetDataBeetwenMarkers2(data, 'Beküldött linkek megtekintése', '<a', caseSensitive=False)[1]
+                sourcesLink = self.cm.ph.getSearchGroups(sourcesLink, '''href=['"](https?://[^'^"]+?)['"]''')[0]
+                if not self.cm.isValidUrl(sourcesLink):
+                    return
+                if sourcesLink != '':
+                    sts, data = self.getPage(sourcesLink)
+                    if not sts: return
+                    lastUrl = data.meta['url']
+                sourcesLink = self.cm.ph.getSearchGroups(data, '''<a[^>]+?href=['"](https?://[^'^"]+?)['"][^>]*?>Lejatszas''')[0]
+                if sourcesLink != '':
+                    sts, data = self.getPage(sourcesLink)
+                    if not sts: return
+                    lastUrl = data.meta['url']
+                self.cacheLinks  = {}
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="links_holder', '<script type="text/javascript">', False)[1]
+                data = data.split('accordion-episodes')
+                episodesTab = []
+                for tmp in data:
+                    episodeName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<h3', '</h3>')[1])
+                    if 'Online' in episodeName:
+                        episodeName = ''
+                    if 'Utolsó' in episodeName:
+                        idx1 = episodeName.find('Utolsó')
+                        if -1 < idx1:
+                            episodeName = episodeName[:idx1-1].strip()
+                    tmp = tmp.split('panel')
+                    for item in tmp:
+                        url = self.cm.ph.getSearchGroups(item, '''<a[^>]+?href=['"]([^'^"]*?watch[^'^"]*?)['"]''')[0]
+                        if url != '': url = self.getFullUrl(url, lastUrl)
+                        if not self.cm.isValidUrl(url): continue
+                        serverName = []
+                        item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<div', '</div>')
+                        for t in item:
+                            if 'link_flag' in t:
+                                t = self.cm.ph.getSearchGroups(t, '''<img[^>]+?src=['"][^"^']+?/([^/]+?)\.png['"]''')[0]
+                            t = self.cleanHtmlStr(t)
+                            if t != '': serverName.append(t)
+                        serverName = ' | '.join(serverName)
+                        if episodeName not in episodesTab:
+                            episodesTab.append(episodeName)
+                            self.cacheLinks[episodeName] = []
+                        self.cacheLinks[episodeName].append({'name':serverName, 'url':url, 'need_resolve':1})
+        except Exception:
+            return
+        
     def getVideoLinks(self, videoUrl):
-        printDBG("MuziCsillangCC.getVideoLinks [%s]" % videoUrl)
         videoUrl = strwithmeta(videoUrl)
         urlTab = []
         
@@ -437,8 +563,6 @@ class MuziCsillangCC(CBaseHostClass):
         
         if 1 != self.up.checkHostSupport(videoUrl):
             if not sts: return []
-            
-            printDBG(data)
             tmp = re.compile('''<iframe[^>]+?src=['"]([^"^']+?)['"]''', re.IGNORECASE).findall(data)
             for url in tmp:
                 if 1 == self.up.checkHostSupport(url):
@@ -451,12 +575,10 @@ class MuziCsillangCC(CBaseHostClass):
         return urlTab
     
     def getFavouriteData(self, cItem):
-        printDBG('MuziCsillangCC.getFavouriteData')
         params = {'type':cItem['type'], 'category':cItem.get('category', ''), 'title':cItem['title'], 'url':cItem['url'], 'desc':cItem['desc'], 'icon':cItem['icon']}
         return json.dumps(params) 
         
     def getLinksForFavourite(self, fav_data):
-        printDBG('MuziCsillangCC.getLinksForFavourite')
         if self.MAIN_URL == None:
             self.selectDomain()
         links = []
@@ -467,7 +589,6 @@ class MuziCsillangCC(CBaseHostClass):
         return links
         
     def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('MuziCsillangCC.setInitListFromFavouriteItem')
         if self.MAIN_URL == None:
             self.selectDomain()
         try:
@@ -479,9 +600,7 @@ class MuziCsillangCC(CBaseHostClass):
         return True
         
     def getArticleContent(self, cItem):
-        printDBG("MuziCsillangCC.getArticleContent [%s]" % cItem)
         retTab = []
-        
         otherInfo = {}
         
         url = cItem.get('prev_url', '')
@@ -517,6 +636,44 @@ class MuziCsillangCC(CBaseHostClass):
         if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
+    
+    def suskrbt(self, i_md='', i_hgk='', i_mpsz=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzwbywERxYklKkl5BRgEAD/4T/Q=='))
+        try:
+            if i_mpsz != '' and len(i_mpsz) > 1:
+                if len(i_mpsz) > 80:
+                    i_mpsz = i_mpsz[:78]
+                i_mpsz = base64.b64encode(i_mpsz).replace('\n', '').strip()
+                if i_hgk != '':
+                    i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+                    pstd = {'md':i_md, 'hgk':i_hgk, 'mpsz':i_mpsz}
+                    if i_md != '' and i_hgk != '' and i_mpsz != '':
+                        sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
+            
+    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        try:
+            if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+            if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
+            if i_mpu != '': i_mpu = base64.b64encode(i_mpu).replace('\n', '').strip()
+            if i_mpt != '': i_mpt = base64.b64encode(i_mpt).replace('\n', '').strip()
+            if i_mpi == '':
+                i_mpi = base64.b64encode('-')
+            else:
+                i_mpi = base64.b64encode(i_mpi).replace('\n', '').strip()
+            if i_mpdl == '':
+                i_mpdl = base64.b64encode('-')
+            else:
+                i_mpdl = base64.b64encode(i_mpdl).replace('\n', '').strip()
+            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl}
+            if i_md != '' and i_hgk != '' and i_mptip != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
     
     def getdvdsz(self, pu='', psz=''):
         bv = ''
@@ -562,6 +719,52 @@ class MuziCsillangCC(CBaseHostClass):
         except Exception:
             return t_s
             
+    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        t_s = []
+        try:
+            if i_md != '' and i_hgk != '' and i_mptip != '':
+                if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+                if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip}
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+                if not sts: return t_s
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div_a1_div"', '<div id="div_a2_div"')[1]
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="d_sor_d"', '</div>')
+                if len(data) == 0: return t_s
+                for temp_item in data:
+                    temp_data = self.cm.ph.getAllItemsBeetwenMarkers(temp_item, '<span', '</span>')
+                    if len(temp_data) == 0: return t_s
+                    for item in temp_data:
+                        t_vp = self.cm.ph.getSearchGroups(item, 'class=[\'"]([^"^\']+?)[\'"]')[0]
+                        if t_vp == 'c_sor_u':
+                            temp_u = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_u">', '</span>', False)[1]
+                            if temp_u != '': temp_u = base64.b64decode(temp_u)
+                        if t_vp == 'c_sor_t':
+                            temp_t = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_t">', '</span>', False)[1]
+                            if temp_t != '': temp_t = base64.b64decode(temp_t)
+                        if t_vp == 'c_sor_i':
+                            temp_i = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_i">', '</span>', False)[1]
+                            if temp_i != '': temp_i = base64.b64decode(temp_i)
+                        if t_vp == 'c_sor_l':
+                            temp_l = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_l">', '</span>', False)[1]
+                            if temp_l != '': temp_l = base64.b64decode(temp_l)
+                        if t_vp == 'c_sor_n':
+                            temp_n = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_n">', '</span>', False)[1]
+                            if temp_n != '': temp_n = base64.b64decode(temp_n)
+                        if t_vp == 'c_sor_tip':
+                            temp_tp = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_tip">', '</span>', False)[1]
+                            if temp_tp != '': temp_tp = base64.b64decode(temp_tp)
+                    if temp_u == '' and temp_t =='': continue
+                    if temp_n == '': temp_n = '1'
+                    params = MergeDicts(cItem, {'good_for_fav': False, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp})
+                    t_s.append(params)       
+            return t_s
+        except Exception:
+            return []
+            
     def susn(self, i_md='', i_hgk='', i_mpu=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
         pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu, 'hv':self.vivn, 'orv':self.porv, 'bts':self.pbtp}
@@ -601,6 +804,58 @@ class MuziCsillangCC(CBaseHostClass):
             return bv
         except:
             return '-'
+            
+    def malvadkrttmk(self, i_md='', i_hgk=''):
+        bv = []
+        ukszrz = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzwbywERxYklKkl5BRgEAD/4T/Q=='))
+        try:
+            if i_md != '' and i_hgk != '':
+                i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk}
+                sts, data = self.cm.getPage(ukszrz, self.defaultParams, pstd)
+                if not sts: return []
+                if len(data) == 0: return []
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div>', '</div>', False)
+                if len(data) == 0: return []
+                for item in data:
+                    if item != '':
+                        bv.append(base64.b64decode(item))
+            return bv
+        except Exception:
+            return []
+            
+    def Vdakstmk(self, baseItem={'name': 'history', 'category': 'search'}, desc_key='plot', desc_base=(_("Type: ")), tabID='' ):
+        
+        def _vdakstmk(data,lnp=50):
+            ln = 0
+            for histItem in data:
+                plot = ''
+                try:
+                    ln += 1
+                    if type(histItem) == type({}):
+                        pattern = histItem.get('pattern', '')
+                        search_type = histItem.get('type', '')
+                        if '' != search_type: plot = desc_base + _(search_type)
+                    else:
+                        pattern = histItem
+                        search_type = None
+                    params = dict(baseItem)
+                    params.update({'title': pattern, 'search_type': search_type,  desc_key: plot, 'tps':'0'})
+                    self.addDir(params)
+                    if ln >= lnp:
+                        break
+                except Exception: printExc()
+            
+        try:
+            list = self.malvadkrttmk('1','5')
+            if len(list) > 0:
+                _vdakstmk(list,2)
+            if len(list) > 0:
+                list = list[2:]
+                random.shuffle(list)
+                _vdakstmk(list,48)
+        except Exception:
+            printExc()
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
@@ -622,6 +877,10 @@ class MuziCsillangCC(CBaseHostClass):
             self.listItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
             self.exploreItem(self.currItem)
+        elif category == 'list_main':
+            self.listMainItems(self.currItem)
+        elif category == 'list_third':
+            self.listThirdItems(self.currItem)
         elif category in ["search", "search_next_page"]:
             if self.currItem['tab_id'] == 'mozicsillag_search':
                 self.susn('2', '5', 'mozicsillag_search')
@@ -631,7 +890,7 @@ class MuziCsillangCC(CBaseHostClass):
         elif category == "search_history":
             if self.currItem['tab_id'] == 'mozicsillag_search_hist':
                 self.susn('2', '5', 'mozicsillag_search_hist')
-            self.listsHistory({'name':'history', 'category': 'search', 'tab_id':''}, 'desc', _("Type: "))
+            self.listsHistory({'name':'history', 'category': 'search', 'tab_id':'', 'tps':'0'}, 'desc', _("Type: "))
         else:
             printExc()
         CBaseHostClass.endHandleService(self, index, refresh)
