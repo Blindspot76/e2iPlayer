@@ -1,3 +1,3 @@
-# E2iPlayer - project has been closed - please start to use different branch
+# Köszönet SamSamSam-nek, az eredeti program alkotójának!
 
-The E2iPlayer project website: http://www.iptvplayer.gitlab.io/
+Thanks to SamSamSam for the original version of this program!
