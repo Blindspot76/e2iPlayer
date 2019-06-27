@@ -516,6 +516,8 @@ class urlparser:
                        '1tv.ru':               self.pp.parser1TVRU          ,
                        'videohouse.me':        self.pp.parserVIDEOHOUSE     ,
                        'verystream.com':       self.pp.parserVERYSTREAM     ,
+                       'justupload.io':        self.pp.parserJUSTUPLOAD     ,
+                       'gloria.tv':            self.pp.parserGLORIATV       , 
                     }
         return
     
@@ -1181,7 +1183,7 @@ class pageParser(CaptchaHelper):
             vplayerData = ''
             tmp = []
             ret = js_execute( jscode )
-            if ret['sts'] and 0 == ret['code']:
+            if ret['sts'] and 0 == ret['code'] or 'sources' in ret.get('data', ''):
                 vplayerData = ret['data'].strip()
         
         if vplayerData != '':
@@ -5896,7 +5898,7 @@ class pageParser(CaptchaHelper):
         
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return urlsTab
-        
+
         playerUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?webcamera\.[^'^"]+?/player/[^'^"]+?)['"]""")[0]
         if playerUrl == '': playerUrl = self.cm.ph.getSearchGroups(data, """['"]([^'^"]+?player\.webcamera\.[^'^"]+?)['"]""")[0]
         playerUrl = _getFullUrl(playerUrl)
@@ -5905,7 +5907,7 @@ class pageParser(CaptchaHelper):
             tmp = re.compile("""['"]([^'^"]+?\.m3u8[^'^"]*?)['"]""").findall(tmp)
             if len(tmp) == 2:
                 tmpList = getDirectM3U8Playlist(_getFullUrl(tmp[0]), checkContent=True)
-                if len(tmpList):
+                if len(tmpList) and not 'connlimit' in tmp[0]:
                     urlsTab.extend(tmpList)
                 else:
                     return getDirectM3U8Playlist(_getFullUrl(tmp[1]), checkContent=True)
@@ -7984,14 +7986,56 @@ class pageParser(CaptchaHelper):
         sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
         if not sts: return False
         #printDBG("parserVERYSTREAM data: [%s]" % data )
-        id = ph.search(data, """id="videolink">([^>]+?)<""")[0]
+        id = ph.search(data, '''id\s*?=\s*?['"]videolink['"]>([^>]+?)<''')[0]
         videoUrl = 'https://verystream.com/gettoken/{0}?mime=true'.format(id)
         sts, data = self.cm.getPage(videoUrl, {'max_data_size':0})
         if not sts: return False
         return self.cm.meta['url']
 
+    def parserJUSTUPLOAD(self, baseUrl):
+        printDBG("parserJUSTUPLOAD baseUrl[%r]" % baseUrl )
+        HTTP_HEADER = MergeDicts(self.cm.getDefaultHeader('firefox'), {'Referer':baseUrl})
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: return False
+        #printDBG("parserJUSTUPLOAD data: [%s]" % data )
+        videoUrl = ph.search(data, '''<source\s*?src=['"]([^'^"]+?)['"]''')[0]
+        if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+        return videoUrl
+
+    def parserGLORIATV(self, baseUrl):
+        printDBG("parserGLORIATV baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='firefox')
+        referer = baseUrl.meta.get('Referer')
+        if referer: HTTP_HEADER['Referer'] = referer
+        urlParams = {'header': HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return False
+        cUrl = self.cm.meta['url']
+        retTab = []
+        data = ph.find(data, ('<video', '>'), '</video>', flags=0)[1]
+        data = ph.findall(data, '<source', '>', flags=0)
+        for item in data:
+            url = self.cm.getFullUrl(ph.getattr(item, 'src').replace('&amp;', '&'), cUrl)
+            type = ph.clean_html(ph.getattr(item, 'type').lower())
+            if 'video' not in type and 'x-mpeg' not in type: continue
+            url = strwithmeta(url, {'Referer': cUrl, 'User-Agent': HTTP_HEADER['User-Agent']})
+            if 'video' in type:
+                width = ph.getattr(item, 'width')
+                height = ph.getattr(item, 'height')
+                bitrate = ph.getattr(item, 'bitrate')
+                retTab.append({'name': '[%s] %sx%s %s' % (type, width, height, bitrate), 'url': url})
+            elif 'x-mpeg' in type:
+                retTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+        return retTab
+
     def parserOPENLOADIO(self, baseUrl):
         printDBG("parserOPENLOADIO baseUrl[%r]" % baseUrl )
+        try:
+            from Plugins.Extensions.IPTVPlayer.tsiplayer.pars_openload import get_video_url as pars_openload
+            return pars_openload(baseUrl)
+        except Exception:
+            printExc()
         HTTP_HEADER= { 'User-Agent':"Mozilla/5.0", 'Referer':baseUrl}
         
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -10209,13 +10253,16 @@ class pageParser(CaptchaHelper):
         
         sts, data = self.cm.getPage('https://nadaje.com/api/1.0/services/video/%s/' % videoId, {'header': HEADER})
         if not sts: return False
-        
+
         linksTab = []
         data = json_loads(data)['transmission-info']['data']['streams'][0]['urls']
         for key in ['hls', 'rtmp', 'hds']:
             if key not in data: continue
             url = data[key]
-            url = urlparser.decorateUrl(url, {'iptv_livestream':True, 'Referer':referer, 'User-Agent':USER_AGENT, 'Origin':origin})
+            try:
+                url = urlparser.decorateUrl(url, {'iptv_livestream':True, 'Referer':referer, 'User-Agent':USER_AGENT, 'Origin':origin})
+            except Exception:
+                printExc()
             if key == 'hls': linksTab.extend( getDirectM3U8Playlist(url, checkExt=False, checkContent=True) )
             #elif key == 'hds': linksTab.extend( getF4MLinksWithMeta(url) )
             #elif key == 'rtmp': linksTab.append( {'name':key, 'url':url} )
