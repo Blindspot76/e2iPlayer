@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 ###################################################
+# 2019-06-11 by Alec - modified Mozicsillag
+###################################################
+HOST_VERSION = "1.1"
+###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetIPTVPlayerVerstion
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -14,11 +18,43 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 import urlparse
 import re
 import urllib
+import random
+import os
+import datetime
+import time
+import zlib
+import cookielib
 import base64
-try:    import json
-except Exception: import simplejson as json
+import traceback
+try:
+    import json
+except Exception:
+    import simplejson as json
+from Components.config import config, ConfigText, ConfigYesNo, getConfigListEntry
+from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
+from datetime import datetime
+from hashlib import sha1
 ###################################################
 
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
+from Screens.MessageBox import MessageBox
+###################################################
+
+###################################################
+# Config options for HOST
+###################################################
+config.plugins.iptvplayer.mozicsillag_id = ConfigYesNo(default = False)
+config.plugins.iptvplayer.boxtipus = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.boxrendszer = ConfigText(default = "", fixed_size = False)
+
+def GetConfigList():
+    optionList = []
+    optionList.append(getConfigListEntry("id:", config.plugins.iptvplayer.mozicsillag_id))
+    return optionList
+###################################################
 
 def gettytul():
     return 'https://mozicsillag.me/'
@@ -33,19 +69,19 @@ class MuziCsillangCC(CBaseHostClass):
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = 'https://mozicsillag.me/'
         self.DEFAULT_ICON_URL =  strwithmeta('https://mozicsillag.me/img/logo.png', {'Referer':self.getMainUrl()})
+        self.vivn = GetIPTVPlayerVerstion()
+        self.porv = self.gits()
+        self.pbtp = '-'
+        self.btps = config.plugins.iptvplayer.boxtipus.value
+        self.brdr = config.plugins.iptvplayer.boxrendszer.value
+        self.aid = config.plugins.iptvplayer.mozicsillag_id.value
+        self.aid_ki = ''
+        self.ilk = False
         self.cacheLinks    = {}
         self.cacheFilters  = {}
         self.cacheFiltersKeys = []
         self.cacheSortOrder = []
         self.defaultParams = {'header':self.HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-    
-        self.MAIN_CAT_TAB = [{'category':'list_filters',    'title': _('Catalog'), 'url':self.getMainUrl(), 'use_query':True },
-                             {'category':'list_movies',     'title': _('Movies'),  'url':self.getMainUrl()  },
-                             {'category':'list_series',     'title': _('Series'),  'url':self.getMainUrl()  },
-                             
-                             {'category':'search',            'title': _('Search'), 'search_item':True,},
-                             {'category':'search_history',    'title': _('Search history'),            } 
-                            ]
                             
     def getFullIconUrl(self, url):
         if url == '': return url
@@ -70,6 +106,32 @@ class MuziCsillangCC(CBaseHostClass):
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         return sts, data
+        
+    def listMainMenu(self, cItem):
+        try:
+            self.cacheLinks = {}
+            if not self.ebbtit(): return
+            if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
+            tab_catalog = 'mozicsillag_catalog'
+            desc_catalog = self.getdvdsz(tab_catalog, 'Főoldali felvételek megjelenítése...')
+            tab_movies = 'mozicsillag_movies'
+            desc_movies = self.getdvdsz(tab_movies, 'Filmek megjelenítése...')
+            tab_series = 'mozicsillag_series'
+            desc_series = self.getdvdsz(tab_series, 'Sorozatok megjelenítése...')
+            tab_search = 'mozicsillag_search'
+            desc_search = self.getdvdsz(tab_search, 'Keresés...')
+            tab_search_hist = 'mozicsillag_search_hist'
+            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
+            MAIN_CAT_TAB = [{'category':'list_filters', 'title': _('Home'), 'url':self.getMainUrl(), 'use_query':True, 'tab_id':tab_catalog, 'desc':desc_catalog },
+                            {'category':'list_movies', 'title': _('Movies'), 'url':self.getMainUrl(), 'tab_id':tab_movies, 'desc':desc_movies },
+                            {'category':'list_series', 'title': _('Series'), 'url':self.getMainUrl(), 'tab_id':tab_series, 'desc':desc_series },
+                            {'category':'search', 'title': _('Search'), 'search_item':True, 'tab_id':tab_search, 'desc':desc_search },
+                            {'category':'search_history', 'title': _('Search history'), 'tab_id':tab_search_hist, 'desc':desc_search_hist }
+                           ]
+            self.listsTab(MAIN_CAT_TAB, {'name':'category'})
+            self.ilk = True
+        except Exception:
+            printExc()
     
     def fillCacheFilters(self, cItem):
         printDBG("MuziCsillangCC.listCategories")
@@ -131,7 +193,11 @@ class MuziCsillangCC(CBaseHostClass):
         
     def listFilters(self, cItem, nextCategory):
         printDBG("MuziCsillangCC.listFilters")
+        if self.ilk:
+            self.susn('2', '5', 'mozicsillag_catalog')
+            self.ilk = False
         cItem = dict(cItem)
+        cItem['desc'] = ''
         
         f_idx = cItem.get('f_idx', 0)
         if f_idx == 0: self.fillCacheFilters(cItem)
@@ -147,6 +213,7 @@ class MuziCsillangCC(CBaseHostClass):
         
     def listItems(self, cItem, nextCategory):
         printDBG("MuziCsillangCC.listItems")
+        
         url = cItem['url']
         page = cItem.get('page', 1)
         sort = cItem.get('f_sort', '')
@@ -184,7 +251,7 @@ class MuziCsillangCC(CBaseHostClass):
             url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0] )
             if not self.cm.isValidUrl(url): continue
             
-            icon = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?\.jpe?g)['"]''')[0] )
+            icon = self.getFullIconUrl( self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?\.jpe?g)''')[0] )
             title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<strong', '</strong>')[1] )
             if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1] )
             
@@ -221,19 +288,27 @@ class MuziCsillangCC(CBaseHostClass):
             url   = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''href=['"]([^'^"]+?)['"]''')[0])
             title = self.cleanHtmlStr(item)
             params = dict(cItem)
+            params['desc'] = ''
             params.update({'category':nextCategory, 'title':title, 'url':url})
             self.addDir(params)
         
     def listMovies(self, cItem, nextCategory):
         printDBG("MuziCsillangCC.listMovies")
+        tabID = cItem['tab_id']
+        if tabID != '':
+            self.susn('2', '5', tabID)
         self._listCategories(cItem, nextCategory, 'Filmek</a>', 'has-dropdown not-click')
         
     def listSeries(self, cItem, nextCategory):
         printDBG("MuziCsillangCC.listSeries")
+        tabID = cItem['tab_id']
+        if tabID != '':
+            self.susn('2', '5', tabID)
         self._listCategories(cItem, nextCategory, 'Sorozatok</a>', '/sztarok"')
         
     def listSort(self, cItem, nextCategory):
         printDBG("MuziCsillangCC.listSeries")
+        cItem['desc'] = ''
         if 0 == len(self.cacheSortOrder):
             sts, data = self.getPage(self.getFullUrl('/filmek-online')) # sort order is same for movies and series
             if not sts: return
@@ -259,6 +334,7 @@ class MuziCsillangCC(CBaseHostClass):
         lastUrl = data.meta['url']
         
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<p>', '</p>')[1])
+        desc = re.sub(r'^(.{1000}).*$', '\g<1>...', desc)
         
         # trailer 
         tmp = self.cm.ph.rgetAllItemsBeetwenMarkers(data, '</iframe>', '<h2')
@@ -327,7 +403,7 @@ class MuziCsillangCC(CBaseHostClass):
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("MuziCsillangCC.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        printDBG("MuziCsillangCC.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))        
         cItem = dict(cItem)
         query = base64.b64encode('search_term=%s&search_type=0&search_where=0&search_rating_start=1&search_rating_end=10&search_year_from=1900&search_year_to=2100' % urllib.quote_plus(searchPattern) ) 
         cItem['url'] = self.getFullUrl('kereses/' + query)
@@ -442,22 +518,98 @@ class MuziCsillangCC(CBaseHostClass):
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
-    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
-        printDBG('handleService start')
+    def getdvdsz(self, pu='', psz=''):
+        bv = ''
+        if pu != '' and psz != '':
+            n_atnav = self.malvadst('1', '5', pu)
+            if n_atnav != '' and self.aid:
+                if pu == 'mozicsillag_catalog':
+                    self.aid_ki = 'ID: ' + n_atnav + '  |  Mozicsillag  v' + HOST_VERSION + '\n'
+                else:
+                    self.aid_ki = 'ID: ' + n_atnav + '\n'
+            else:
+                if pu == 'mozicsillag_catalog':
+                    self.aid_ki = 'Mozicsillag  v' + HOST_VERSION + '\n'
+                else:
+                    self.aid_ki = ''
+            bv = self.aid_ki + psz
+        return bv
         
+    def malvadst(self, i_md='', i_hgk='', i_mpu=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu}
+        t_s = ''
+        temp_vn = ''
+        temp_vni = ''
+        try:
+            if i_md != '' and i_hgk != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+                if not sts: return t_s
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div_a_div', '</div>')[1]
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '/>')
+                if len(data) == 0: return t_s
+                for item in data:
+                    t_i = self.cm.ph.getSearchGroups(item, 'id=[\'"]([^"^\']+?)[\'"]')[0]
+                    if t_i == 'vn':
+                        temp_vn = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                    elif t_i == 'vni':
+                        temp_vni = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                if temp_vn != '':
+                    t_s = temp_vn
+            return t_s
+        except Exception:
+            return t_s
+            
+    def susn(self, i_md='', i_hgk='', i_mpu=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu, 'hv':self.vivn, 'orv':self.porv, 'bts':self.pbtp}
+        try:
+            if i_md != '' and i_hgk != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
+    
+    def ebbtit(self):
+        try:
+            if '' == self.btps.strip() or '' == self.brdr.strip():
+                msg = 'A Set-top-Box típusát és a használt rendszer (image) nevét egyszer meg kell adni!\n\nA kompatibilitás és a megfelelő használat miatt kellenek ezek az adatok a programnak.\nKérlek, a helyes működéshez a valóságnak megfelelően írd be azokat.\n\nA "HU Telepítő" keretrendszerben tudod ezt megtenni.\n\nKilépek és megyek azt beállítani?'
+                ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
+                return False
+            else:
+                return True
+        except Exception:
+            return False
+    
+    def gits(self):
+        bv = '-'
+        tt = []
+        try:
+            if fileExists(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE'))):
+                fr = open(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE')),'r')
+                for ln in fr:
+                    ln = ln.rstrip('\n')
+                    if ln != '':
+                        tt.append(ln)
+                fr.close()
+                if len(tt) == 1:
+                    bv = tt[0].strip()[:-6].capitalize()
+                if len(tt) == 2:
+                    bv = tt[1].strip()[:-6].capitalize()
+            return bv
+        except:
+            return '-'
+    
+    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
-
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
-        
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
-        
-    #MAIN MENU
         if name == None:
-            self.cacheLinks = {}
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.listMainMenu( {'name':'category'} )
         elif category == 'list_filters':
             self.listFilters(self.currItem, 'list_sort')
         elif category == 'list_movies':
@@ -470,17 +622,18 @@ class MuziCsillangCC(CBaseHostClass):
             self.listItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
             self.exploreItem(self.currItem)
-    #SEARCH
         elif category in ["search", "search_next_page"]:
+            if self.currItem['tab_id'] == 'mozicsillag_search':
+                self.susn('2', '5', 'mozicsillag_search')
             cItem = dict(self.currItem)
             cItem.update({'search_item':False, 'name':'category'}) 
             self.listSearchResult(cItem, searchPattern, searchType)
-    #HISTORIA SEARCH
         elif category == "search_history":
-            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+            if self.currItem['tab_id'] == 'mozicsillag_search_hist':
+                self.susn('2', '5', 'mozicsillag_search_hist')
+            self.listsHistory({'name':'history', 'category': 'search', 'tab_id':''}, 'desc', _("Type: "))
         else:
             printExc()
-        
         CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):

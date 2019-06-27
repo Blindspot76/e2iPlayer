@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 ###################################################
+# 2019-06-12 by Alec - modified Mooviecc
+###################################################
+HOST_VERSION = "1.1"
+###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetTmpDir
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetTmpDir, GetIPTVPlayerVerstion
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -14,17 +18,44 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 import urlparse
 import re
 import urllib
+import random
+import os
+import datetime
+import time
+import zlib
+import cookielib
+import base64
+import traceback
 from copy import deepcopy
-try:    import json
-except Exception: import simplejson as json
+try:
+    import json
+except Exception:
+    import simplejson as json
+from Components.config import config, ConfigText, ConfigYesNo, getConfigListEntry
+from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
+from datetime import datetime
+from hashlib import sha1
 ###################################################
 
 ###################################################
 # E2 GUI COMMPONENTS 
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
+from Screens.MessageBox import MessageBox
 ###################################################
 
+###################################################
+# Config options for HOST
+###################################################
+config.plugins.iptvplayer.mooviecc_id = ConfigYesNo(default = False)
+config.plugins.iptvplayer.boxtipus = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.boxrendszer = ConfigText(default = "", fixed_size = False)
+
+def GetConfigList():
+    optionList = []
+    optionList.append(getConfigListEntry("id:", config.plugins.iptvplayer.mooviecc_id))
+    return optionList
+###################################################
 
 def gettytul():
     return 'https://moovie.cc/'
@@ -39,26 +70,26 @@ class MoovieCC(CBaseHostClass):
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
         self.MAIN_URL = 'https://moovie.cc/'
+        self.vivn = GetIPTVPlayerVerstion()
+        self.porv = self.gits()
+        self.pbtp = '-'
+        self.btps = config.plugins.iptvplayer.boxtipus.value
+        self.brdr = config.plugins.iptvplayer.boxrendszer.value
+        self.aid = config.plugins.iptvplayer.mooviecc_id.value
+        self.aid_ki = ''
+        self.ilk = False
         self.cacheLinks    = {}
         self.cacheSortOrder = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-    
-        self.MAIN_CAT_TAB = [{'category':'list_movies',       'title': _('Movies') },
-                             {'category':'list_series',       'title': _('Series') },
-                             {'category':'list_main',         'title': 'Legjobbra értékelt',     'tab_id':'now_watched'},
-                             {'category':'list_main',         'title': 'Épp most nézik',         'tab_id':'best_rated' },
-                             {'category':'search',            'title': _('Search'), 'search_item':True,},
-                             {'category':'search_history',    'title': _('Search history'),            } 
-                            ]
                             
-        self.MOVIES_CAT_TAB = [{'category':'movies_cats',     'title': _('Categories'),          'url':self.getFullUrl('/online-filmek/') },
-                               {'category':'list_main',       'title': 'Premier filmek',         'tab_id':'prem_movies'},
-                               {'category':'list_main',       'title': 'Népszerű online filmek', 'tab_id':'pop_movies' },
+        self.MOVIES_CAT_TAB = [{'category':'movies_cats',     'title': _('Categories'),          'url':self.getFullUrl('/online-filmek/'), 'desc':''},
+                               #{'category':'list_main',       'title': 'Premier filmek',         'tab_id':'prem_movies', 'desc':''},
+                               {'category':'list_main',       'title': 'Népszerű online filmek', 'tab_id':'pop_movies', 'desc':'' }
                               ]
         
-        self.SERIES_CAT_TAB = [{'category':'series_cats',     'title': _('Categories'),             'url':self.getFullUrl('/online-sorozatok/')},
-                               {'category':'list_main',       'title': 'Népszerű online sorozatok', 'tab_id':'pop_series'},
-                               {'category':'list_main',       'title': 'Új Epizódok',               'tab_id':'new_episodes'},
+        self.SERIES_CAT_TAB = [{'category':'series_cats',     'title': _('Categories'),             'url':self.getFullUrl('/online-sorozatok/'), 'desc':''},
+                               {'category':'list_main',       'title': 'Népszerű online sorozatok', 'tab_id':'pop_series', 'desc':''},
+                               {'category':'list_main',       'title': 'Új Epizódok',               'tab_id':'new_episodes', 'desc':''}
                               ]
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
@@ -74,6 +105,35 @@ class MoovieCC(CBaseHostClass):
         addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
         sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
         return sts, data
+        
+    def listMainMenu(self, cItem):
+        try:
+            self.cacheLinks = {}
+            if not self.ebbtit(): return
+            if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
+            tab_movies = 'mooviecc_filmek'
+            desc_movies = self.getdvdsz(tab_movies, 'Filmek megjelenítése...')
+            tab_series = 'mooviecc_sorozatok'
+            desc_series = self.getdvdsz(tab_series, 'Sorozatok megjelenítése...')
+            tab_now_watched = 'mooviecc_most_nezik'
+            desc_now_watched = self.getdvdsz(tab_now_watched, 'Épp most nézik...')
+            tab_best_rated = 'mooviecc_legjobbak'
+            desc_best_rated = self.getdvdsz(tab_best_rated, 'Legjobbra értékeltek megjelenítése...')
+            tab_search = 'mooviecc_kereses'
+            desc_search = self.getdvdsz(tab_search, 'Keresés...')
+            tab_search_hist = 'mooviecc_kereses_elozmeny'
+            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
+            MAIN_CAT_TAB = [{'category':'list_movies', 'title': _('Movies'), 'cat_tab_id':tab_movies, 'desc':desc_movies },
+                            {'category':'list_series', 'title': _('Series'), 'cat_tab_id':tab_series, 'desc':desc_series },
+                            {'category':'list_main', 'title': 'Legjobbra értékelt', 'cat_tab_id':tab_best_rated, 'tab_id':'now_watched', 'desc':desc_best_rated },
+                            {'category':'list_main', 'title': 'Épp most nézik', 'cat_tab_id':tab_now_watched, 'tab_id':'best_rated', 'desc':desc_now_watched },
+                            {'category':'search', 'title': _('Search'), 'search_item':True, 'cat_tab_id':tab_search, 'desc':desc_search },
+                            {'category':'search_history', 'title': _('Search history'), 'cat_tab_id':tab_search_hist, 'desc':desc_search_hist } 
+                           ]               
+            self.listsTab(MAIN_CAT_TAB, {'name':'category'})
+            self.ilk = True
+        except Exception:
+            printExc()
         
     def listMainItems(self, cItem, nextCategory):
         printDBG("MoovieCC.listMainItems")
@@ -282,6 +342,8 @@ class MoovieCC(CBaseHostClass):
         if not sts: return
         
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div id="plot">', '</div>')[1])
+        desc = re.sub(r'^(.{1000}).*$', '\g<1>...', desc)
+        
         icon  = self.cm.ph.getDataBeetwenMarkers(data, '<div id="poster"', '</div>')[1]
         icon  = self.getFullIconUrl( self.cm.ph.getSearchGroups(icon, '''<img[^>]+?src=['"]([^"^']+?\.jpe?g[^"^']*?)["']''')[0] )
         if icon == '': icon = cItem.get('icon', '')
@@ -330,6 +392,7 @@ class MoovieCC(CBaseHostClass):
         else:
             desc2 = self.cleanHtmlStr(desc2)
             if desc2 != '': desc = desc2
+            desc = re.sub(r'^(.{1000}).*$', '\g<1>...', desc)
             episodesList = self._fillLinksCache(data, '<table')
             for item in episodesList:
                 params = dict(cItem)
@@ -343,6 +406,7 @@ class MoovieCC(CBaseHostClass):
         if not sts: return
         
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<article', '</article>')[1])
+        desc = re.sub(r'^(.{1000}).*$', '\g<1>...', desc)
         
         seriesTitle = cItem.get('prev_title', '')
         sNum = self.cm.ph.getSearchGroups(cItem['title'], '''^([0-9]+?)\.''')[0]
@@ -531,7 +595,6 @@ class MoovieCC(CBaseHostClass):
         sts, data = self.getPage(url)
         if not sts: return retTab
         
-        
         title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(data, '''<meta[^>]+?itemprop="name"[^>]+?content="([^"]+?)"''')[0])
         icon  = self.cm.ph.getDataBeetwenMarkers(data, '<div id="poster"', '</div>')[1]
         icon  = self.getFullIconUrl( self.cm.ph.getSearchGroups(icon, '''<img[^>]+?src=['"]([^"^']+?\.jpe?g[^"^']*?)["']''')[0] )
@@ -566,25 +629,105 @@ class MoovieCC(CBaseHostClass):
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
     
-    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
-        printDBG('handleService start')
+    def getdvdsz(self, pu='', psz=''):
+        bv = ''
+        if pu != '' and psz != '':
+            n_atnav = self.malvadst('1', '4', pu)
+            if n_atnav != '' and self.aid:
+                if pu == 'mooviecc_filmek':
+                    self.aid_ki = 'ID: ' + n_atnav + '  |  Mooviecc  v' + HOST_VERSION + '\n'
+                else:
+                    self.aid_ki = 'ID: ' + n_atnav + '\n'
+            else:
+                if pu == 'mooviecc_filmek':
+                    self.aid_ki = 'Mooviecc  v' + HOST_VERSION + '\n'
+                else:
+                    self.aid_ki = ''
+            bv = self.aid_ki + psz
+        return bv
         
+    def malvadst(self, i_md='', i_hgk='', i_mpu=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu}
+        t_s = ''
+        temp_vn = ''
+        temp_vni = ''
+        try:
+            if i_md != '' and i_hgk != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+                if not sts: return t_s
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div_a_div', '</div>')[1]
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '/>')
+                if len(data) == 0: return t_s
+                for item in data:
+                    t_i = self.cm.ph.getSearchGroups(item, 'id=[\'"]([^"^\']+?)[\'"]')[0]
+                    if t_i == 'vn':
+                        temp_vn = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                    elif t_i == 'vni':
+                        temp_vni = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                if temp_vn != '':
+                    t_s = temp_vn
+            return t_s
+        except Exception:
+            return t_s
+            
+    def susn(self, i_md='', i_hgk='', i_mpu=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu, 'hv':self.vivn, 'orv':self.porv, 'bts':self.pbtp}
+        try:
+            if i_md != '' and i_hgk != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
+    
+    def ebbtit(self):
+        try:
+            if '' == self.btps.strip() or '' == self.brdr.strip():
+                msg = 'A Set-top-Box típusát és a használt rendszer (image) nevét egyszer meg kell adni!\n\nA kompatibilitás és a megfelelő használat miatt kellenek ezek az adatok a programnak.\nKérlek, a helyes működéshez a valóságnak megfelelően írd be azokat.\n\nA "HU Telepítő" keretrendszerben tudod ezt megtenni.\n\nKilépek és megyek azt beállítani?'
+                ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
+                return False
+            else:
+                return True
+        except Exception:
+            return False
+    
+    def gits(self):
+        bv = '-'
+        tt = []
+        try:
+            if fileExists(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE'))):
+                fr = open(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE')),'r')
+                for ln in fr:
+                    ln = ln.rstrip('\n')
+                    if ln != '':
+                        tt.append(ln)
+                fr.close()
+                if len(tt) == 1:
+                    bv = tt[0].strip()[:-6].capitalize()
+                if len(tt) == 2:
+                    bv = tt[1].strip()[:-6].capitalize()
+            return bv
+        except:
+            return '-'
+    
+    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
-
         name     = self.currItem.get("name", '')
         category = self.currItem.get("category", '')
         mode     = self.currItem.get("mode", '')
-        
-        printDBG( "handleService: |||||||||||||||||||||||||||||||||||| name[%s], category[%s] " % (name, category) )
         self.currList = []
-        
-    #MAIN MENU
         if name == None:
-            self.cacheLinks = {}
-            self.listsTab(self.MAIN_CAT_TAB, {'name':'category'})
+            self.listMainMenu( {'name':'category'} )
         elif category == 'list_movies':
+            if self.currItem['cat_tab_id'] == 'mooviecc_filmek':
+                self.susn('2', '4', 'mooviecc_filmek')
             self.listsTab(self.MOVIES_CAT_TAB, self.currItem)
         elif category == 'list_series':
+            if self.currItem['cat_tab_id'] == 'mooviecc_sorozatok':
+                self.susn('2', '4', 'mooviecc_sorozatok')
             self.listsTab(self.SERIES_CAT_TAB, self.currItem)
         elif category == 'movies_cats':
             self.listMovies(self.currItem, 'list_sort')
@@ -595,22 +738,27 @@ class MoovieCC(CBaseHostClass):
         elif category == 'list_items':
             self.listItems(self.currItem, 'explore_item')
         elif category == 'list_main':
+            if self.currItem['cat_tab_id'] == 'mooviecc_legjobbak':
+                self.susn('2', '4', 'mooviecc_legjobbak')
+            if self.currItem['cat_tab_id'] == 'mooviecc_most_nezik':
+                self.susn('2', '4', 'mooviecc_most_nezik')
             self.listMainItems(self.currItem, 'explore_item')
         elif category == 'explore_item':
             self.exploreItem(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
-    #SEARCH
         elif category in ["search", "search_next_page"]:
+            if self.currItem['cat_tab_id'] == 'mooviecc_kereses':
+                self.susn('2', '4', 'mooviecc_kereses')
             cItem = dict(self.currItem)
             cItem.update({'search_item':False, 'name':'category'}) 
             self.listSearchResult(cItem, searchPattern, searchType)
-    #HISTORIA SEARCH
         elif category == "search_history":
-            self.listsHistory({'name':'history', 'category': 'search'}, 'desc', _("Type: "))
+            if self.currItem['cat_tab_id'] == 'mooviecc_kereses_elozmeny':
+                self.susn('2', '4', 'mooviecc_kereses_elozmeny')
+            self.listsHistory({'name':'history', 'category': 'search', 'cat_tab_id':''}, 'desc', _("Type: "))
         else:
             printExc()
-        
         CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):

@@ -35,7 +35,6 @@ hostdarshowcom
 hostddl
 hostdel
 hostdixmax
-hostdplayit
 hostdokumentalnenet
 hostdpstreamingcx
 hostdrdk
@@ -63,8 +62,6 @@ hostfilmpalast
 hostfilmpertutti
 hostfilmstreamhdit
 hostfilmstreamvkcom
-hostfilmydokumentalneeu
-hostfokustv
 hostforjatn
 hostfreediscpl
 hostgamatocom
@@ -83,6 +80,7 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
+hostinfoversion
 hostinteriatv
 hostipla
 hostiptvplayerinfo
@@ -90,7 +88,6 @@ hostitvcom
 hostkabarety
 hostkijknl
 hostkinogo
-hostkinomanco
 hostkinotan
 hostkinox
 hostkissanimeto
@@ -119,7 +116,6 @@ hostmusicbox
 hostmusicmp3ru
 hostmyfreemp3
 hostmythewatchseries
-hostnaszekinotv
 hostngolos
 hostninateka
 hostnuteczki
@@ -138,10 +134,9 @@ hostplusdede
 hostputlockertvto
 hostquesttvcouk
 hostradiostacja
-hostraiplay
+hostredbull
 hostrtbfbe
 hostrteieplayer
-hostrtlmost
 hostserialeco
 hostserialnet
 hostserienstreamto
@@ -166,7 +161,6 @@ hostted
 hosttfarjocom
 hostthewatchseriesto
 hosttreetv
-hostturcjatv
 hosttvgrypl
 hosttvjworg
 hosttvn24
@@ -202,3 +196,5 @@ hostyifytv
 hostyoutube
 hostzalukajcom
 hostzdfmediathek
+hostwebhuplayer
+hostupdatehosts

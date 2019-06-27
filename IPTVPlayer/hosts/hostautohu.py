@@ -1,0 +1,2170 @@
+# -*- coding: utf-8 -*-
+###################################################
+# 2019-06-09 by Alec - auto.HU
+#            by celeburdi - rtlmost.hu
+#            by McFly - logok
+###################################################
+HOST_VERSION = "1.6"
+###################################################
+# LOCAL import
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, GetIPTVPlayerVerstion, GetTmpDir, MergeDicts
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist, getF4MLinksWithMeta, getMPDLinksWithMeta, decorateUrl
+from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
+from Plugins.Extensions.IPTVPlayer.libs.youtubeparser import YouTubeParser
+from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
+from Plugins.Extensions.IPTVPlayer.libs import ph
+###################################################
+
+###################################################
+# FOREIGN import
+###################################################
+import urlparse
+import re
+import urllib
+import random
+import os
+import datetime
+import time
+import zlib
+import cookielib
+import base64
+import traceback
+from copy import deepcopy
+try:
+    import json
+except Exception:
+    import simplejson as json
+from Components.config import config, ConfigText, ConfigYesNo, getConfigListEntry
+from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
+from datetime import datetime
+from hashlib import sha1
+###################################################
+
+###################################################
+# E2 GUI COMMPONENTS 
+###################################################
+from Plugins.Extensions.IPTVPlayer.components.iptvmultipleinputbox import IPTVMultipleInputBox
+from Screens.MessageBox import MessageBox
+###################################################
+
+###################################################
+# Config options for HOST
+###################################################
+config.plugins.iptvplayer.autohu_rtlmost_login    = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.autohu_rtlmost_password = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.autohu_id = ConfigYesNo(default = False)
+config.plugins.iptvplayer.boxtipus = ConfigText(default = "", fixed_size = False)
+config.plugins.iptvplayer.boxrendszer = ConfigText(default = "", fixed_size = False)
+
+def GetConfigList():
+    optionList = []
+    optionList.append(getConfigListEntry("autohu_rtlmost_login:", config.plugins.iptvplayer.autohu_rtlmost_login))
+    optionList.append(getConfigListEntry("autohu_rtlmost_password:", config.plugins.iptvplayer.autohu_rtlmost_password))
+    optionList.append(getConfigListEntry("autohu_id:", config.plugins.iptvplayer.autohu_id))
+    return optionList
+###################################################
+
+def gettytul():
+    return 'auto.HU'
+    
+def _getImageExtKey(images, role):
+    try:
+        for i in images:
+            if i.get('role') == role: return i['external_key']
+    except: pass
+    return None
+
+class AutosHU(CBaseHostClass):
+ 
+    def __init__(self):
+        CBaseHostClass.__init__(self, {'history':'auto.hu', 'cookie':'autohu.cookie'})
+        self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
+        self.HEADER = self.cm.getDefaultHeader()
+        self.AJAX_HEADER = dict(self.HEADER)
+        self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
+        self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8sLcnPKI3PyU/P1yvISwcAfmERMA=='))
+        self.MAIN_URL_AUTOGRAM = zlib.decompress(base64.b64decode('eJwzNzczAQACJQDZ'))
+        self.DEFAULT_ICON_URL_AUTOGRAM = zlib.decompress(base64.b64decode(
+            'eJwtyEsOwiAQANDbsCyUqXxMiEcxAx0KhioC2vT2bnzLl8ao/cp53nGjPqla8Jxi41/5Lz4LsEZY'
+            '3vC4HXkdyUktWaK8peHmC7CYh+sBC91De1X2/mDJ43RKsPhqOw73qLSx/BzUCgZyM0vYkwOpyWiI'
+            'gqRfpQdj5aIpBA1eg16V8YDWLuoHajI0vg=='))
+        self.API_URL = zlib.decompress(base64.b64decode(
+            'eJwdxkEKwCAMBdEb+aELF72MWI21oChJVHr7SjfzJqt2OYEeTH1iLLQ8k7G9+Nckxj+YB7aaGldB'
+            'tTe30d2iC0I8n0AC1pKH23W1ieIDaJggkw=='))
+        self.API_HEADER = dict(self.HEADER)
+        self.API_HEADER.update( {'x-customer-name': 'rtlhu'} )
+        self.ICON_PATH = zlib.decompress(base64.b64decode(
+            'eJzTLzPSz8xNTE8t1q+u1S9KLLcvz0wpybCtrlXLSM1MzygBsdIywVRhaWJOZkklWCS/KDcRLJiZ'
+            'V5JalJOYnArkAABkJB19'))
+        self.ICON_HASH = zlib.decompress(base64.b64decode(
+            'eJwzNUkyNTUxsEg0NTawNAVxjNPSzC1TLS0AVI4Gfg=='))
+        self.ICON_URL = zlib.decompress(base64.b64decode(
+            'eJzLKCkpKLbS18/MTUxPLdYzK8hJrNRLK6quVctILM6wra4FAM7fDFk='))
+        self.ACCOUNT_URL = zlib.decompress(base64.b64decode(
+            'eJwlxt0KgjAUAOC38U6NDKFAokhEo1gYZd3IGHPz7xzZjtgPvXtE39WniQa78v0OVQ2eoa5HS54e'
+            'fS4EjkDWU5I2/6dQ4Rr5SLokbCVE749jpTCSfqvQ9JyixiI4fKj38hkFJWOje5g3LbLzjRY9uPqy'
+            'TUJI2LaZ4iLMMjXlx3u9LFylXicz6+ARJBSoON1ZkefXL7XkOfU='))
+        self.LOGIN_URL = zlib.decompress(base64.b64decode(
+            'eJwdjN0KgjAYQN9md2pkCAUSiCIaxcIo6ybmsjndj2yf2Q+9e+TN4cCB0wD0duV5QjOuXANCagtu'
+            'M3iEUj0osO5U1hOzOPx8UU+sHbW5/R2IYTUk6hFKXXFRo7s2kkDYWq0Q6fmmfoX+FePB2c7bTuPD'
+            'GRZSOc0xSgOV4qgdkzLIczYWuwtflg5j772ZCfX0U/BZksWWFsUJUSJERWg3fX939EE8'))
+        self.SUBCATS_URL = self.API_URL+zlib.decompress(base64.b64decode(
+            'eJwrKMpPL0rMLdavrrUvzyzJsM3JzMsu1ikuTUpOLCnWKcpMzygpBgAacg7K'))
+        self.EPISODES_URL = self.API_URL+zlib.decompress(base64.b64decode(
+            'eJwlyjEKwzAMBdDbeDJk6ih6FlWVU1EbC3/FIYTcvZBub3g++jq4YTmvZdpbO54CpkfaLT4k1Ry5'
+            'DNVmW3OWL1IcrjQtT8le+aiGSNhewkHnlao1u9FLgd5CH0H/8QMyYSqT'))
+        self.VIDEO_URL = self.API_URL+zlib.decompress(base64.b64decode(
+            'eJwtyDEKgDAMAMDfOBWcHItPKSGNNbShIdGKiH938cYbnKn7/LwrOsRluvjYIzZWD5sRCZ+igNWD'
+            'Wi8GkligkAcnG4yUMrs2uP/+AKaUHqw='))
+        self.loginParams = {'header':self.HEADER}
+        self.apiParams = {'header':self.API_HEADER}        
+        self.MAIN_URL_GARAZS = zlib.decompress(base64.b64decode('eJzLKCkpsNLXT08sSqwq1isp0y/LTEnNz9ZPTEksBlIAt9MLew=='))
+        self.MAIN_URL_GARAZS_ADASOK = zlib.decompress(base64.b64decode('eJzLKCkpsNLXT08sSqwq1isp0y/LTEnNz9ZPTEkszs8GAKxYC0w='))
+        self.DEFAULT_ICON_URL_GARAZS = zlib.decompress(base64.b64decode('eJzLKCkpsNLXT08sSqwq1isp08/MTUxPLdbPyU/P1yvISwcAwzsL8Q=='))
+        self.MAIN_URL_SUPERCAR = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v1ysuLUgtSk4sKinTyyjVBwB7dQl1'))
+        self.MAIN_URL_SUPERCAR_ADASOK = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v1ysuLUgtSk4sKinTyyjVT0xJLM7P1gcAyKoMFw=='))
+        self.DEFAULT_ICON_URL_SUPERCAR = zlib.decompress(base64.b64decode(
+            'eJzLKCkpsNLXLy4tSC1KTizSKzYu18so1S8v0E3OzytJzSvRLy3IyU9MKdY3MjC00DcwhyuNz8lP'
+            'z9cryEsHADc1GCA='))
+        self.MAIN_URL_TOTALCAR = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y/JL0nMSU4s0sso1S8pAwBf1QhK'))
+        self.DEFAULT_ICON_URL_TOTALCAR = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S/JL0nMSU4sis/JT8/XyypIBwChxxHw'))
+        self.DEFAULT_ICON_URL_VEZESS = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9LrUotLo7PyU/P18sqSAcAfukRNg=='))
+        self.DEFAULT_ICON_URL_AUTONAV = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8sLcnPSyzLTE8syS+Kz8lPz9fLKkgHAAP0FBo='))
+        self.MAIN_URL_FORMA1 = zlib.decompress(base64.b64decode('eJzLKCkpKLbS108zTCstSczNz9ZLLQUATWQHYg=='))
+        self.DEFAULT_ICON_URL_FORMA1 = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8zjM/JT8/XK8hLBwA4Gg8x'))
+        self.MAIN_URL_FORMA1_VERSENYNAPTAR = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLNSkuyC8q0cso1U8z1C1LLSpOzavMSywoSSzSBwAwVw73'))
+        self.MAIN_URL_FORMA1_PONTVERSENY = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLNSkuyC8q0cso1U8z1C3IzyspSy0qTs2r1AcAErkOMg=='))
+        self.kfvk = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUTzPUBwAMUA2+'))
+        self.kfvcsk =zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUTzNMLk4sSCzRBwBowRA6'))
+        self.vivn = GetIPTVPlayerVerstion()
+        self.porv = self.gits()
+        self.pbtp = '-'
+        self.btps = config.plugins.iptvplayer.boxtipus.value
+        self.brdr = config.plugins.iptvplayer.boxrendszer.value
+        self.ytp = YouTubeParser()
+        self.loggedIn = False
+        self.login = ''
+        self.password = ''
+        self.aid = config.plugins.iptvplayer.autohu_id.value
+        self.aid_ki = ''
+        self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}    
+                            
+    def listMainMenu(self, cItem):
+        if not self.ebbtit(): return
+        if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
+        url_legfris = 'legfrissebb'
+        desc_legfris = self.getdvdsz(url_legfris, 'auto.HU - v' + HOST_VERSION + '\n\nLegfrissebb autós adások, műsorok és információk gyűjtőhelye. Amennyiben egyes adások nem játszhatók le - NINCS ELÉRHETŐ LINK, akkor az adott műsor tartalomszolgáltatója megváltoztatta annak elérhetőségét. Ez nem az "auto.HU" lejátszó hibája!!!  Kérlek, hogy ezt vedd figyelembe...')
+        url_mindentudo = 'auto_hu_mindentudo'
+        desc_mindentudo = self.getdvdsz(url_mindentudo, 'Minden, ami az autókról, illetve az autózásről tudni kell. Autós műsorcsatornák lejátszási listái, videói.\nÉrdekes elméleti és gyakorlati ismeretek bemutatói, videói...')
+        url_autoskoz = 'auto_hu_musorcsat'
+        desc_autoskoz = self.getdvdsz(url_autoskoz, 'Autós műsorcsatornák (AUTOGRAM, GARAZS, SUPERCAR, TOTALCAR) műsorai...')
+        url_inenonan = 'inenonan'
+        desc_inenonan = self.getdvdsz(url_inenonan, 'Autós műsorok véletlenszerű megjelenéssel (A betöltődés hosszabb ideig is eltarthat, max. 1-2 percig is. Várd meg míg betöltődnek az adások..)')
+        url_atipus = 'atipus'
+        desc_atipus = self.getdvdsz(url_atipus, 'Autós műsorok az adott autó típusának megfelelően...')
+        url_forma1 = self.MAIN_URL_FORMA1
+        desc_forma1 = self.getdvdsz(url_forma1, 'Forma1 közvetítések, versenynaptár, pontverseny...')
+        url_keres = 'auto_kereses'
+        desc_keres = self.getdvdsz(url_keres, 'Keresés az autós műsorok tartalmának címében...')
+        url_info = 'auto_informacio'
+        desc_info = self.getdvdsz(url_info, 'Információk megjelenítése...')
+        MAIN_CAT_TAB = [{'category':'list_main', 'title': 'Legfrissebb adások', 'url': url_legfris, 'tab_id': 'legfrissebb', 'desc': desc_legfris},
+                        {'category':'list_main', 'title': 'AUTÓS műsorcsatornák', 'url': url_autoskoz, 'tab_id': 'autoskoz', 'desc': desc_autoskoz},
+                        {'category':'list_main', 'title': 'AUTÓS mindentudó', 'url': url_mindentudo, 'tab_id': 'mindentudo', 'desc': desc_mindentudo},
+                        {'category':'list_main', 'title': 'Adások innen-onnan', 'url': url_inenonan, 'tab_id': 'veletlenszeru', 'desc': desc_inenonan},
+                        {'category':'list_main', 'title': 'Autók típus szerint', 'url': url_atipus, 'tab_id': 'tipusok', 'desc': desc_atipus},
+                        {'category':'list_main', 'title': 'FORMA1 közvetítések', 'url': url_forma1, 'tab_id': 'forma1', 'icon': self.DEFAULT_ICON_URL_FORMA1, 'desc': desc_forma1},
+                        {'category':'search', 'title': 'Keresés', 'url': url_keres, 'search_item': True, 'desc': desc_keres}                        
+                       ]
+        self.listsTab(MAIN_CAT_TAB, cItem)
+        params = dict(cItem)
+        params = {'good_for_fav': False, 'title':'Információ', 'url': url_info, 'desc':desc_info, 'icon':self.DEFAULT_ICON_URL, 'art_id':'foinformacio', 'type':'article'}
+        self.addArticle(params)
+        
+    def MusorMainMenu(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        url_autogram = self.MAIN_URL_AUTOGRAM
+        desc_autogram = self.getdvdsz(url_autogram, 'Autogram autós műsor adásai...')
+        url_garazs = self.MAIN_URL_GARAZS
+        desc_garazs = self.getdvdsz(url_garazs, 'GarázsTV autós műsor adásai...')
+        url_super = self.MAIN_URL_SUPERCAR
+        desc_super = self.getdvdsz(url_super, 'Supercar autós műsor adásai...')
+        url_totalcar = self.MAIN_URL_TOTALCAR
+        desc_total = self.getdvdsz(url_totalcar, 'TotalcarTV autós műsor adásai...')
+        MR_CAT_TAB = [{'category':'list_second', 'title': 'Autogram adásai', 'url': url_autogram, 'tab_id': 'autogram', 'icon': self.DEFAULT_ICON_URL_AUTOGRAM, 'desc': desc_autogram},
+                      {'category':'list_second', 'title': 'GarázsTV adásai', 'url': url_garazs, 'tab_id': 'garazs', 'icon': self.DEFAULT_ICON_URL_GARAZS, 'desc': desc_garazs},
+                      {'category':'list_second', 'title': 'Supercar adásai', 'url': url_super, 'tab_id': 'supercar', 'icon': self.DEFAULT_ICON_URL_SUPERCAR, 'desc': desc_super},
+                      {'category':'list_second', 'title': 'TotalcarTV adásai', 'url': url_totalcar, 'tab_id': 'totalcar', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total}
+                     ]
+        self.listsTab(MR_CAT_TAB, cItem)
+        
+    def MindentudoMainMenu(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        url_vezess_m = 'auto_vezess_csatorna_m'
+        desc_vezess_m = self.getdvdsz(url_vezess_m, 'Vezess TV csatorna műsorai, videói...')
+        url_totalcar_m = 'auto_totalcar_csatorna_m'
+        desc_totalcar_m = self.getdvdsz(url_totalcar_m, 'Totalcar csatorna műsorai, videói...')
+        url_autonav_m = 'auto_autonav_csatorna_m'
+        desc_autonav_m = self.getdvdsz(url_autonav_m, 'Autónavigátor csatorna műsorai, videói...')
+        MT_CAT_TAB = [{'category':'list_second', 'title': 'Vezess TV', 'url': url_vezess_m, 'tab_id': 'vezess_m', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_m},
+                      {'category':'list_second', 'title': 'Totalcar', 'url': url_totalcar_m, 'tab_id': 'totalcar_m', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_totalcar_m},
+                      {'category':'list_second', 'title': 'Autónavigátor', 'url': url_autonav_m, 'tab_id': 'autonav_m', 'icon': self.DEFAULT_ICON_URL_AUTONAV, 'desc': desc_autonav_m}
+                     ]
+        self.listsTab(MT_CAT_TAB, cItem)
+                            
+    def getFullIconUrl(self, url):
+        url = url.replace('&amp;', '&')
+        return CBaseHostClass.getFullIconUrl(self, url)
+        
+    def getFullIconUrl_Autogram(self, url):
+        if not url: return self.DEFAULT_ICON_URL_AUTOGRAM
+        if url[:1] == 't':
+            width = 250
+            height = 617
+        else:
+            width = 480
+            height = 360
+        if url[1:2] == 'p': format = 'png'
+        else: format = 'jpeg'
+        path = self.ICON_PATH.format(url[2:],width,height,'scale_crop',60,format,1)
+        return self.ICON_URL.format(path, sha1(path+self.ICON_HASH).hexdigest())
+        
+    def getPage(self, baseUrl, addParams = {}, post_data = None):
+        if addParams == {}:
+            addParams = dict(self.defaultParams)
+        
+        def _getFullUrl(url):
+            if self.cm.isValidUrl(url):
+                return url
+            else:
+                return urlparse.urljoin(baseUrl, url)
+            
+        addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT, 'full_url_handle':_getFullUrl}
+        sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+        return sts, data
+
+    def datum_converter(self, date_string, separator='-'):
+        dateList = []
+        dateList = date_string.split(".")
+        if len(dateList) != 2: 
+            return date_string
+        if not dateList[0].isdigit():
+            return date_string
+        month_string = dateList[1].strip()
+        if month_string in ('január','januar','Január','Januar'):
+            return dateList[0] + separator + '01'
+        elif month_string in ('február','februar','Február','Februar'):
+            return dateList[0] + separator + '02'    
+        elif month_string in ('március','marcius','Március','Marcius'):
+            return dateList[0] + separator + '03'
+        elif month_string in ('április','aprilis','Április','Aprilis'):
+            return dateList[0] + separator + '04'
+        elif month_string in ('május','majus','Május','Majus'):
+            return dateList[0] + separator + '05'
+        elif month_string in ('június','junius','Június','Junius'):
+            return dateList[0] + separator + '06'
+        elif month_string in ('július','julius','Július','Julius'):
+            return dateList[0] + separator + '07'
+        elif month_string in ('augusztus','Augusztus'):
+            return dateList[0] + separator + '08'
+        elif month_string in ('szeptember','Szeptember'):
+            return dateList[0] + separator + '09'
+        elif month_string in ('október','oktober','Október','Oktober'):
+            return dateList[0] + separator + '10'
+        elif month_string in ('november','November'):
+            return dateList[0] + separator + '11'
+        elif month_string in ('december','December'):
+            return dateList[0] + separator + '12'
+        else:
+            return date_string
+            
+    def honapnev_e(self, honap_string=''):
+        if honap_string != '':
+            if honap_string in ('január','Január','február','Február','március','Március','április','Április','május','Május','június','Június','július','Július','augusztus','Augusztus','szeptember','Szeptember','október','Október','november','November','december','December'):
+                return True
+            else:
+                return False            
+        else:        
+            return False
+            
+    def ev_e(self, ev_string='', jelenkor=False, eddig_string='2030'):
+        if ev_string != '':
+            if jelenkor:
+                m = re.search(r'[2]\d{3}',ev_string)
+                if m is not None:
+                    try:
+                        eddig = int(eddig_string)
+                        ev = int(m.group(0))
+                        if ev > 2000 or ev < eddig:
+                            return True
+                        else:
+                            return False
+                    except:
+                        return False
+                    return True
+                else:
+                    return False
+            else:
+                m = re.search(r'\d{4}',ev_string)
+                if m is not None:
+                    return True
+                else:
+                    return False
+        else:
+            return False
+            
+    def ekezetes_atalakitas(self, szoveg=''):
+        if szoveg != '':
+            szoveg = szoveg.replace('&aacute;', 'á')
+            szoveg = szoveg.replace('&eacute;', 'é')
+            szoveg = szoveg.replace('&iacute;', 'í')
+            szoveg = szoveg.replace('&oacute;', 'ó')
+            szoveg = szoveg.replace('&uacute;', 'ú')
+        return szoveg        
+            
+    def datum_honapos(self, date_string, delimiter='.'):
+        dateList = []
+        dateList = date_string.split(delimiter)
+        if len(dateList) < 3: 
+            return date_string
+        for i in (0,1,2):
+            if not dateList[i].isdigit():
+                return date_string
+        if dateList[1] == '01':
+            return dateList[0] + '. január ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '02':
+            return dateList[0] + '. február ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '03':
+            return dateList[0] + '. március ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '04':
+            return dateList[0] + '. április ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '05':
+            return dateList[0] + '. május ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '06':
+            return dateList[0] + '. június ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '07':
+            return dateList[0] + '. július ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '08':
+            return dateList[0] + '. augusztus ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '09':
+            return dateList[0] + '. szeptember ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '10':
+            return dateList[0] + '. október ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '11':
+            return dateList[0] + '. november ' + dateList[2].lstrip('0') + '.'
+        elif dateList[1] == '12':
+            return dateList[0] + '. decmber ' + dateList[2].lstrip('0') + '.'
+        else:
+            return date_string
+            
+    def datum_from_honapos(self, date_string, separator='-'):
+        dateList = []
+        dateList = date_string.split(' ')
+        if len(dateList) < 3: 
+            return date_string
+        if not self.ev_e(dateList[0], True):
+            return date_string
+        ev_string = dateList[0].strip().replace('.','')
+        month_string = dateList[1].strip()
+        nap_string = dateList[2].strip().replace('.','')
+        if month_string in ('január','januar','Január','Januar'):
+            return ev_string + separator + '01' + separator + nap_string
+        elif month_string in ('február','februar','Február','Februar'):
+            return ev_string + separator + '02' + separator + nap_string   
+        elif month_string in ('március','marcius','Március','Marcius'):
+            return ev_string + separator + '03' + separator + nap_string
+        elif month_string in ('április','aprilis','Április','Aprilis'):
+            return ev_string + separator + '04' + separator + nap_string
+        elif month_string in ('május','majus','Május','Majus'):
+            return ev_string + separator + '05' + separator + nap_string
+        elif month_string in ('június','junius','Június','Junius'):
+            return ev_string + separator + '06' + separator + nap_string
+        elif month_string in ('július','julius','Július','Julius'):
+            return ev_string + separator + '07' + separator + nap_string
+        elif month_string in ('augusztus','Augusztus'):
+            return ev_string + separator + '08' + separator + nap_string
+        elif month_string in ('szeptember','Szeptember'):
+            return ev_string + separator + '09' + separator + nap_string
+        elif month_string in ('október','oktober','Október','Oktober'):
+            return ev_string + separator + '10' + separator + nap_string
+        elif month_string in ('november','November'):
+            return ev_string + separator + '11' + separator + nap_string
+        elif month_string in ('december','December'):
+            return ev_string + separator + '12' + separator + nap_string
+        else:
+            return date_string
+            
+    def Garazs_data(self):
+        try:
+            data = []
+            uhe = self.MAIN_URL_GARAZS_ADASOK
+            ptdt = {'_kiemelt':'1', '_akcios':'', '_uj':'', '_nezet':'tablazat', '_random':'', '_tol':'0', '_orderby':'', '_where':" and ty.id not in ('LAPTIME','STORYKAT','TUNINGKAT','TESZTKAT')  and hsz.focusnr<'01' ", '_keres_txt':'', '_dblap':'150', 'lapozas':'1', '_sum':'421', '_mutat':'6' }
+            sts, data = self.cm.getPage(uhe, self.defaultParams, ptdt)
+            if not sts: return data
+            if len(data) == 0: return data
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<form id="lapozo"', '<input')[1]
+            if len(data) == 0: return data
+            data = self.cm.ph.getAllItemsBeetwenNodes(data, ('<div class=', '>', 'block'), ('<span class="date', '</span>'))
+            return data
+        except Exception:
+            printExc()
+            return data
+
+    def listMainItems(self, cItem, nextCategory):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'legfrissebb':
+                self.Legfrissebb_MainItems(cItem, tabID)
+            elif tabID == 'veletlenszeru':
+                self.Veletlen_MainItems(cItem, tabID)
+            elif tabID == 'tipusok':
+                self.Tipusok_MainItems(cItem, nextCategory, tabID)
+            elif tabID == 'autoskoz':
+                self.MusorMainMenu(cItem, nextCategory, tabID)
+            elif tabID == 'mindentudo':
+                self.MindentudoMainMenu(cItem, nextCategory, tabID)
+            elif tabID == 'forma1':
+                self.Forma1_MainItems(cItem, nextCategory, tabID)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def listSecondItems(self, cItem, nextCategory):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'autogram':
+                self.Autogram_MainItems(cItem, nextCategory, tabID)
+            elif tabID == 'garazs':
+                self.Garazs_MainItems(cItem, nextCategory, tabID)
+            elif tabID == 'supercar':
+                self.Supercar_MainItems(cItem, nextCategory, tabID)
+            elif tabID == 'totalcar':
+                self.Totalcar_MainItems(cItem, nextCategory, tabID)
+            elif tabID == 'totalcar_m':
+                self.Totalcar_mindentudolista(cItem, nextCategory, tabID)
+            elif tabID == 'vezess_m':
+                self.Vezess_mindentudolista(cItem, nextCategory, tabID)
+            elif tabID == 'autonav_m':
+                self.Autonav_lista(cItem, nextCategory, tabID)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Vezess_mindentudolista(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        plurl_vezess_matksz = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQVB4X6GBsEm5gYWqamlhkkV3qEFPs6GANqaGcw='))
+        url_vezess_matksz = 'auto_vezess_matksz'
+        desc_vezess_matksz = self.getdvdsz(url_vezess_matksz, 'Minden amit tudni akarsz az autókról...\nElméleti és gyakorlati bemutatása az autózás műfajának. Ok-okozati összefüggések, elemzések, előnyök, hátrányok. Érdekes videók a témával kapcsolatban Gajdán Miklóssal.')
+        plurl_vezess_ertekb = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQVBFpH5ebo5xWYukWXmjkl+eVWVzu7lAOZaGtM='))
+        url_vezess_ertekb = 'auto_vezess_ertekb'
+        desc_vezess_ertekb = self.getdvdsz(url_vezess_ertekb, 'Autók értékbecslése, hibafeltárása, átvizsgálása...\nHasznált autókról Őszintén.')
+        plurl_vezess_aszaloncs = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQVBHmWZxc6BpgHlvuHGaf4+xq7GlUa5AOWCGks='))
+        url_vezess_aszaloncs = 'auto_vezess_aszaloncs'
+        desc_vezess_aszaloncs = self.getdvdsz(url_vezess_aszaloncs, 'Autószalonokon készült videók, interjuk...\nGenf, Frankfurt, Párizs, illetve egyéb más autóbemutatók felvételei, videói.')
+        plurl_vezess_ojkogm = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQUhWbnenoaRjuZVyabZrpFBpZleTtnmAOSnGm4='))
+        url_vezess_ojkogm = 'auto_vezess_ojkogm'
+        desc_vezess_ojkogm = self.getdvdsz(url_vezess_ojkogm, 'Olaj, kenőolaj témakör Gajdán Miklóssal...\nMotorolajok legfontosabb tulajdonságai, adalékok. Hogyan válasszunk olajat.')
+        plurl_vezess_bgtgml = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQVBJgEhfmFufn66RqkGOb6JVeaROU4GANySGdo='))
+        url_vezess_bgtgml = 'auto_vezess_bgtgml'
+        desc_vezess_bgtgml = self.getdvdsz(url_vezess_bgtgml, 'Benzin, gázolaj témakör Gajdán Miklóssal...\n Mi a különbség a két üzemanyag fajta között. Benzinkút, tankolás, prémiumüzemanyagok.')
+        plurl_vezess_htank = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQWBlinlqRV+Bi7mke6e6amergZ+EW6WAONZGgc='))
+        url_vezess_htank = 'auto_vezess_htank'
+        desc_vezess_htank = self.getdvdsz(url_vezess_htank, 'Hasznos tanácsok autósoknak...')
+        plurl_vezess_haaktink = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQXBHqlVBqaepmbGmW7mxY4myVGlrm5VANzHGf8='))
+        url_vezess_haaktink = 'auto_vezess_haaktink'
+        desc_vezess_haaktink = self.getdvdsz(url_vezess_haaktink, 'Használt autók amiket imádunk mi magyarok...')
+        plurl_vezess_trahvzs = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPsWVRalhmcbhWQWB6T6+QeWhicaOFkk5+fGWfpYeWfEZAOUiGoU='))
+        url_vezess_trahvzs = 'auto_vezess_trahvzs'
+        desc_vezess_trahvzs = self.getdvdsz(url_vezess_trahvzs, 'Ütközések, karambolok...')
+        MV_CAT_TAB = [{'category':'list_third', 'title': 'Minden amit tudni akarsz az autókról - Gajdán Miklóssal', 'url': url_vezess_matksz, 'plurl': plurl_vezess_matksz, 'tab_id': 'vezess_matksz', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_matksz},
+                      {'category':'list_third', 'title': 'Használt autókról őszintén - ÉRTÉKBECSLŐ', 'url': url_vezess_ertekb, 'plurl': plurl_vezess_ertekb, 'tab_id': 'vezess_ertekb', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_ertekb},
+                      {'category':'list_third', 'title': 'Autószalonok csillogása', 'url': url_vezess_aszaloncs, 'plurl': plurl_vezess_aszaloncs, 'tab_id': 'vezess_aszaloncs', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_aszaloncs},
+                      {'category':'list_third', 'title': 'Olaj, kenőolaj témakör Gajdán Miklóssal', 'url': url_vezess_ojkogm, 'plurl': plurl_vezess_ojkogm, 'tab_id': 'vezess_ojkogm', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_ojkogm},
+                      {'category':'list_third', 'title': 'Benzin, gázolaj témakör Gajdán Miklóssal', 'url': url_vezess_bgtgml, 'plurl': plurl_vezess_bgtgml, 'tab_id': 'vezess_bgtgml', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_bgtgml},
+                      {'category':'list_third', 'title': 'Hasznos tanácsok autósoknak', 'url': url_vezess_htank, 'plurl': plurl_vezess_htank, 'tab_id': 'vezess_htank', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_htank},
+                      {'category':'list_third', 'title': 'Használt autók amiket imádunk mi magyarok', 'url': url_vezess_haaktink, 'plurl': plurl_vezess_haaktink, 'tab_id': 'vezess_haaktink', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_haaktink},
+                      {'category':'list_third', 'title': 'Trash', 'url': url_vezess_trahvzs, 'plurl': plurl_vezess_trahvzs, 'tab_id': 'vezess_trahvzs', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_trahvzs}
+                     ]
+        self.listsTab(MV_CAT_TAB, cItem)
+        
+    def Totalcar_mindentudolista(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        plurl_total_trtk = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S/ISazMySwusQcRtgE+Hs6lga4mgf5RPhGmLjlBxS4eOQbxfslZJRmeZWmeho4ArcAZSw=='))
+        url_total_trtk = 'auto_total_trtk'
+        desc_total_trtk = self.getdvdsz(url_total_trtk, 'Totalcar Tesztek műsorai, videói...\nÚj és használtautó tesztek, összehasonlítások, végsebességtesztek.')
+        plurl_total_mlypn = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPh7OpYGuJoH+UT5h3k7pyfFuxj4hFYYWwZWVYX6RPlnFAMwNGc8='))
+        url_total_mlypn = 'auto_total_mlypn'
+        desc_total_mlypn = self.getdvdsz(url_total_mlypn, 'MűhelyPRN műsorai, videói...\nHasznált autók felújításainak, karbantartásainak bemutatása.')
+        plurl_total_treo = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPh7OpYGuJoH+UT6hOT4BWUFlZh5GhY4e2eVBjhFZoRnlAM9hGgI='))
+        url_total_treo = 'auto_total_treo'
+        desc_total_treo = self.getdvdsz(url_total_treo, 'Totalcar Erőmérő műsorai, videói...\nKülönböző autók teljesítménymérései, állapotfelmérései.')
+        plurl_total_tlbk = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPh7OpYGuJoH+UT5hYYZlZlGlOXkpheYV4VW6eZ5prjnuANMlGic='))
+        url_total_tlbk = 'auto_total_tlbk'
+        desc_total_tlbk = self.getdvdsz(url_total_tlbk, 'Totalbike műsorai, videói...\nInformációk, élménybeszámolók különböző motorokról és a hozzátartozó kiegészítőkről.')
+        plurl_total_szjsn = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPh7OpYGuJoH+UT6hLhUuUYEWwYWJAZlBRq6OLuGRpRneAMxtGZo='))
+        url_total_szjsn = 'auto_total_szjsn'
+        desc_total_szjsn = self.getdvdsz(url_total_szjsn, 'Szerelj Szabadon! műsorai, videói...\nAz autó különböző részegységeinek, alkatrészeinek cseréje, szerelése, javítása. Műhelyinformációk és szerelési videók bemutatása.')
+        plurl_total_trmks = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPh7OpYGuJoH+UT5hBUmhhcEhOZ6+3kWmES6ema65RlUWANIUGcs='))
+        url_total_trmks = 'auto_total_trmks'
+        desc_total_trmks = self.getdvdsz(url_total_trmks, 'Totalcar Mesterkurzus - Autókról alaposan! műsorai, videói...\nInformációk autótuningról, autókészítésről.')
+        plurl_total_uzk = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPh7OpYGuJoH+UT5hrvHxubnejgEe4X55AVGRRVVREYFhANDUGhA='))
+        url_total_uzk = 'auto_total_uzk'
+        desc_total_uzk = self.getdvdsz(url_total_uzk, 'Utazunk műsorai, videói...\nAutós információk utazáshoz. Tesztelések több napon át. Takarékossági tesztek.')
+        plurl_total_tlac = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbYBPh7OpYGuJoH+UT4RrtnOmeVlxQElUQYhnvEV2clpFT4+ANaPGng='))
+        url_total_tlac = 'auto_total_tlac'
+        desc_total_tlac = self.getdvdsz(url_total_tlac, 'TotalArc műsorai, videói...\nAutósműsor emberekről. Történetek és egyéb információk megosztása, elmesélése.')
+        MT_CAT_TAB = [{'category':'list_third', 'title': 'Totalcar Tesztek', 'url': url_total_trtk, 'plurl': plurl_total_trtk, 'tab_id': 'total_trtk', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_trtk},
+                      {'category':'list_third', 'title': 'MűhelyPRN', 'url': url_total_mlypn, 'plurl': plurl_total_mlypn, 'tab_id': 'total_mlypn', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_mlypn},
+                      {'category':'list_third', 'title': 'Totalcar Erőmérő', 'url': url_total_treo, 'plurl': plurl_total_treo, 'tab_id': 'total_treo', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_treo},
+                      {'category':'list_third', 'title': 'Totalbike', 'url': url_total_tlbk, 'plurl': plurl_total_tlbk, 'tab_id': 'total_tlbk', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_tlbk},
+                      {'category':'list_third', 'title': 'Szerelj Szabadon!', 'url': url_total_szjsn, 'plurl': plurl_total_szjsn, 'tab_id': 'total_szjsn', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_szjsn},
+                      {'category':'list_third', 'title': 'Totalcar Mesterkurzus - Autókról alaposan!', 'url': url_total_trmks, 'plurl': plurl_total_trmks, 'tab_id': 'total_trmks', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_trmks},
+                      {'category':'list_third', 'title': 'Utazunk', 'url': url_total_uzk, 'plurl': plurl_total_uzk, 'tab_id': 'total_uzk', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_uzk},
+                      {'category':'list_third', 'title': 'TotalArc', 'url': url_total_tlac, 'plurl': plurl_total_tlac, 'tab_id': 'total_tlac', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total_tlac}
+                     ]
+        self.listsTab(MT_CAT_TAB, cItem)
+            
+    def Legfrissebb_MainItems(self, cItem, tabID):
+        url = cItem['url']
+        try:
+            self.susn('2', '1', url)
+            params = dict()
+            params = self.Autogram_Legfrissebb()
+            if params:
+                self.addVideo(params)
+            params = self.Garazs_Legfrissebb()
+            if params:
+                self.addVideo(params)
+            params = self.Supercar_Legfrissebb()
+            if params:
+                self.addVideo(params)
+            params = self.Totalcar_Legfrissebb()
+            if params:
+                self.addVideo(params)
+            params = self.Forma1_Legfrissebb()
+            if params:
+                self.addVideo(params)
+        except Exception:
+            printExc()
+            
+    def Autogram_Legfrissebb(self):
+        tabID = 'autogram'
+        desc = ''
+        params = dict()
+        if self.tryTologin():
+            url = self.MAIN_URL_AUTOGRAM
+            sts, data = self.cm.getPage(self.SUBCATS_URL.format(url), self.apiParams)
+            if not sts: return params
+            if len(data) == 0: return params
+            try:
+                data = json_loads(data)
+                subcats = data['program_subcats']
+                if 0 == len(subcats): return params
+                for i in subcats:
+                    subcat = str(i['id'])
+                    break
+            except Exception:
+                printExc()
+                return params
+            sts, data = self.cm.getPage(self.EPISODES_URL.format(url, subcat, 100, 0), self.apiParams)
+            if not sts: return params
+            if len(data) == 0: return params
+            try:
+                data = json_loads(data)
+                for i in data:
+                    clips = i['clips']
+                    if 0 == len(clips): continue
+                    if 1 == len(clips):
+                        c = clips[0]
+                        url = c['video_id']
+                    else:
+                        continue
+                    title = c['title']
+                    desc = ''
+                    m = re.search(r'\d{4}-\d{2}-\d{2}',c['code'])
+                    if m is not None:
+                        desctemp = self.malvad('1', '1', url, title)
+                        desc = self.datum_honapos(m.group(0),'-') + '-i adás tartalma:\n\n' + desctemp
+                    icon_tmp = _getImageExtKey(c['images'], 'vignette')
+                    if icon_tmp is None:
+                        icon = self.DEFAULT_ICON_URL_AUTOGRAM
+                    else:
+                        icon = self.getFullIconUrl_Autogram('vj'+icon_tmp)
+                    params = {'good_for_fav': False, 'title': title, 'url': url, 'icon': icon, 'desc': desc, 'tab_id': tabID}
+                    break
+                return params
+            except Exception:
+                printExc()
+                return params
+        else:
+            return params
+        
+    def Garazs_Legfrissebb(self):
+        tabID = 'garazs'
+        params = dict()
+        data = self.Garazs_data()
+        if len(data) == 0: return params
+        for item in data:
+            musor_datuma = self.cm.ph.getDataBeetwenMarkers(item, '<span class="date" title="', '">', False)[1]
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0])
+            if not self.cm.isValidUrl(url):
+                continue
+            icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0])
+            title_tmp = self.cm.ph.getDataBeetwenMarkers(item, '<a href="', '">')[1]
+            title = self.cm.ph.getSearchGroups(title_tmp, '''title="([^"]+?)"''')[0]
+            if title == '': continue
+            desctemp = self.malvad('1', '2', url, title)
+            desc = musor_datuma + '-i adás tartalma:\n\n' + desctemp
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            break
+        return params
+        
+    def Supercar_Legfrissebb(self):
+        tabID = 'supercar'
+        params = dict()
+        url = self.MAIN_URL_SUPERCAR_ADASOK
+        sts, data = self.getPage(url)
+        if not sts: return params
+        if len(data) == 0: return params
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="flex_column av_two_third', '<div class="flex_column av_one_third')[1]
+        if len(data) == 0: return params
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a href=', '</a>')
+        if len(data) == 0: return params
+        for item in data:
+            if not 'av-masonry-1-item' in item: continue
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0])
+            if not self.cm.isValidUrl(url):
+                continue
+            icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'url[\'(]([^"^\']+?)[\')]')[0])
+            title_tmp = self.cm.ph.getSearchGroups(item, '''title="([^"]+?)"''')[0]
+            if not title_tmp.endswith('.'):
+                title_tmp += '.'
+            title = 'Supercar - ' + title_tmp
+            desctemp = self.malvad('1', '3', url, title)
+            desc = self.datum_honapos(title_tmp) + '-i adás tartalma:\n\n' + desctemp
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            break
+        return params
+        
+    def Totalcar_Legfrissebb(self):
+        tabID = 'totalcar'
+        params = dict()
+        url = self.MAIN_URL_TOTALCAR
+        sts, data = self.getPage(url)
+        if not sts: return {}
+        if len(data) == 0: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="ajanlok"', '<div class="archivum">')[1]
+        if len(data) == 0: return {}
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        if len(data) == 0: return {}
+        for item in data:
+            tmp_i = self.cm.ph.getDataBeetwenMarkers(item, '<div class="img_wrapper"', '</div>')[1]
+            if len(tmp_i) == 0: continue
+            temp_u = self.cm.ph.getSearchGroups(tmp_i, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if not self.cm.isValidUrl(temp_u):
+                continue
+            icon = self.cm.ph.getSearchGroups(tmp_i, '''src=['"]([^"^']+?)['"]''')[0]
+            if icon == '':
+                icon = self.DEFAULT_ICON_URL_TOTALCAR
+            temp_desc = self.cm.ph.getDataBeetwenMarkers(item, '<p class="ajanlo">', '</p>', False)[1]
+            if len(temp_desc) == 0: continue
+            temp_sts, tmp_da = self.getPage(temp_u)
+            if not temp_sts: continue
+            if len(tmp_da) == 0: continue
+            temp_title = self.cm.ph.getDataBeetwenMarkers(tmp_da, '<h1 class="cim"><span>', '</span>', False)[1]
+            if temp_title == '': continue
+            temp_datum = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp_da, '<div class="datum">', '</span>', False)[1])
+            if len(temp_datum) == 0: continue
+            title = 'Totalcar - ' + temp_datum
+            tmp_ttu = self.cm.ph.getDataBeetwenMarkers(tmp_da, '<div class="yt-video-container"', '</iframe>', False)[1]
+            if len(tmp_ttu) == 0: continue
+            url = self.cm.ph.getSearchGroups(tmp_ttu, '''src=['"]([^"^']+?)['"]''')[0]
+            if not self.cm.isValidUrl(url):
+                continue
+            n_tc = self.malvadst('1', '1', url)
+            if n_tc != '' and self.aid:
+                self.aid_ki = 'ID: ' + n_tc + '\n'
+            else:
+                self.aid_ki = ''
+            desc = self.aid_ki + temp_datum + '\n\nMűsor címe:  ' + temp_title + '\nTartalom:  ' + temp_desc
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            break
+        return params
+        
+    def Forma1_Legfrissebb(self):
+        tabID = 'forma1'
+        params = dict()
+        url = self.MAIN_URL_FORMA1
+        sts, data = self.getPage(url)
+        if not sts: return params
+        if len(data) == 0: return params
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<a  href="/2011"', '</ul>')[1]
+        if len(data) == 0: return params
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        if len(data) == 0: return params
+        for item in reversed(data):
+            url = self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if url.startswith('/'):
+                url = self.MAIN_URL_FORMA1 + url
+            if not self.cm.isValidUrl(url):
+                return params
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, "<a", "</a>")[1] )
+            break
+        url_citem = url
+        title_citem = title
+        sts, data = self.getPage(url_citem)
+        if not sts: return params
+        if len(data) == 0: return params
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="k2Container', '</section>')[1]
+        if len(data) == 0: return params
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<span class="catItemImage"', '</span>')
+        if len(data) == 0: return params
+        for item in data:
+            title_kieg = ''
+            url_i = self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if url_i.startswith('/'):
+                url_i = self.MAIN_URL_FORMA1 + url_i
+            if not self.cm.isValidUrl(url_i):
+                continue
+            else:
+                url, title_kieg = self.Forma1_ft(url_i)
+                if title_kieg != '':
+                    title_kieg = ' - ' + title_kieg
+            if not title_citem+'-r' in url_i: continue
+            icon = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            if icon.startswith('/'):
+                icon = self.MAIN_URL_FORMA1 + icon
+            title = 'Forma1 - ' + self.ekezetes_atalakitas(self.cm.ph.getSearchGroups(item, '''title="([^"]+?)"''')[0]) + title_kieg
+            title = title.strip()
+            desctemp = self.malvad('1', '4', url, title)
+            desc = title + '\n\n' + desctemp
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            break
+        return params
+        
+    def Veletlen_MainItems(self, cItem, tabID):
+        url = cItem['url']
+        try:
+            self.susn('2', '1', url)
+            musorList = []
+            autogramList = self.Autogram_veletlen()
+            if len(autogramList) > 0:
+                for item in autogramList:
+                    musorList.append(item)
+            garazsList = self.Garazs_veletlen()
+            if len(garazsList) > 0:
+                for item in garazsList:
+                    musorList.append(item)
+            supercarList = self.Supercar_veletlen()
+            if len(supercarList) > 0:
+                for item in supercarList:
+                    musorList.append(item)        
+            if len(musorList) > 0:
+                random.shuffle(musorList)
+                i = 1
+                for item in musorList:
+                    i += 1
+                    if i > 20:
+                        break
+                    self.addVideo(item)
+        except Exception:
+            printExc()
+                
+    def Autogram_veletlen(self):
+        tabID = 'autogram'
+        desc = ''
+        paramsList = []
+        params = dict()
+        if self.tryTologin():
+            url = self.MAIN_URL_AUTOGRAM
+            sts, data = self.cm.getPage(self.SUBCATS_URL.format(url), self.apiParams)
+            if not sts: return paramsList
+            if len(data) == 0: return paramsList
+            try:
+                data = json_loads(data)
+                subcats = data['program_subcats']
+                if 0 == len(subcats): return paramsList
+                y = 1
+                for item in subcats:
+                    subcat = str(item['id'])
+                    sts, data = self.cm.getPage(self.EPISODES_URL.format(url, subcat, 100, 0), self.apiParams)
+                    if not sts: return paramsList
+                    if len(data) == 0: return paramsList
+                    try:
+                        data = json_loads(data)
+                        for i in data:
+                            clips = i['clips']
+                            if 0 == len(clips): continue
+                            if 1 == len(clips):
+                                c = clips[0]
+                                url_ep = c['video_id']
+                            else:
+                                continue
+                            title = c['title']
+                            desc = ''
+                            m = re.search(r'\d{4}-\d{2}-\d{2}',c['code'])
+                            if m is not None:
+                                desctemp = self.malvad('1', '1', url_ep, title)
+                                desc = self.datum_honapos(m.group(0),'-') + '-i adás tartalma:\n\n' + desctemp
+                            icon_tmp = _getImageExtKey(c['images'], 'vignette')
+                            if icon_tmp is None:
+                                icon = self.DEFAULT_ICON_URL_AUTOGRAM
+                            else:
+                                icon = self.getFullIconUrl_Autogram('vj'+icon_tmp)
+                            params = {'good_for_fav': False, 'title': title, 'url': url_ep, 'icon': icon, 'desc': desc, 'tab_id': tabID}
+                            paramsList.append(params)
+                            y += 1
+                            if y > 30:
+                                break
+                    except Exception:
+                        printExc()
+                return paramsList                        
+            except Exception:
+                printExc()
+                return paramsList                
+        else:
+            return paramsList
+                
+    def Garazs_veletlen(self):
+        tabID = 'garazs'
+        paramsList = []
+        params = dict()
+        data = self.Garazs_data()
+        if len(data) == 0: return paramsList
+        i = 1
+        for item in data:
+            musor_datuma = self.cm.ph.getDataBeetwenMarkers(item, '<span class="date" title="', '">', False)[1]
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0])
+            if not self.cm.isValidUrl(url):
+                continue
+            icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0])
+            title_tmp = self.cm.ph.getDataBeetwenMarkers(item, '<a href="', '">')[1]
+            title = self.cm.ph.getSearchGroups(title_tmp, '''title="([^"]+?)"''')[0]
+            if title == '': continue
+            desctemp = self.malvad('1', '2', url, title)
+            desc = musor_datuma + '-i adás tartalma:\n\n' + desctemp
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            paramsList.append(params)
+            i += 1
+            if i > 30:
+                break
+        return paramsList
+        
+    def Supercar_veletlen(self):
+        tabID = 'supercar'
+        paramsList = []
+        params = dict()
+        url = self.MAIN_URL_SUPERCAR_ADASOK
+        sts, data = self.getPage(url)
+        if not sts: return paramsList
+        if len(data) == 0: return paramsList
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="flex_column av_two_third', '<div class="flex_column av_one_third')[1]
+        if len(data) == 0: return paramsList
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a href=', '</a>')
+        if len(data) == 0: return paramsList
+        i = 1
+        for item in data:
+            if not 'av-masonry-1-item' in item: continue
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0])
+            if not self.cm.isValidUrl(url):
+                continue
+            icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'url[\'(]([^"^\']+?)[\')]')[0])
+            title_tmp = self.cm.ph.getSearchGroups(item, '''title="([^"]+?)"''')[0]
+            if not title_tmp.endswith('.'):
+                title_tmp += '.'
+            title = 'Supercar - ' + title_tmp
+            desctemp = self.malvad('1', '3', url, title)
+            desc = self.datum_honapos(title_tmp) + '-i adás tartalma:\n\n' + desctemp
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            paramsList.append(params)
+            i += 1
+            if i > 30:
+                break
+        return paramsList
+    
+    def Tipusok_MainItems(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        try:
+            self.susn('2', '1', url)
+        except Exception:
+            printExc()
+        return
+    
+    def Autogram_MainItems(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        if self.tryTologin():
+            url = self.MAIN_URL_AUTOGRAM
+            sts, data = self.cm.getPage(self.SUBCATS_URL.format(url), self.apiParams)
+            if not sts: return
+            if len(data) == 0: return
+            try:
+                data = json_loads(data)
+                subcats = data['program_subcats']
+                if 0 == len(subcats): return
+                ln = 0
+                for i in subcats:
+                    ln += 1
+                    title = i['title']
+                    subcat = str(i['id'])
+                    n_autogram = self.malvadst('1', '1', subcat)
+                    if n_autogram != '' and self.aid:
+                        self.aid_ki = 'ID: ' + n_autogram + '\n'
+                    else:
+                        self.aid_ki = ''
+                    desc = self.aid_ki + '%s. év adásai' % title
+                    params = dict(cItem)
+                    params.update({'good_for_fav': False, 'category': nextCategory, 'title': title, 'url': url, 'subcat': subcat, 'desc': desc, 'tab_id': tabID, 'icon': self.DEFAULT_ICON_URL_AUTOGRAM})
+                    self.addDir(params)
+                    if ln >= 2: break
+            except Exception: printExc()
+        
+    def Garazs_MainItems(self, cItem, nextCategory, tabID):
+        url_susn = cItem['url']
+        self.susn('2', '1', url_susn)
+        datum_lista = []
+        url_home = self.MAIN_URL_GARAZS_ADASOK
+        data = self.Garazs_data()
+        if len(data) == 0: return
+        ln = 0
+        for item in data:
+            musor_datuma = self.cm.ph.getDataBeetwenMarkers(item, '<span class="date" title="', '">', False)[1]
+            tmp_tomb = musor_datuma.split(' ')
+            if len(tmp_tomb) < 2:
+                continue
+            else:
+                ln += 1
+                if not self.ev_e(self.cm.ph.getSearchGroups(tmp_tomb[0], '''([0-9]{4})''')[0],True): continue
+                if not self.honapnev_e(tmp_tomb[1].strip()): continue
+                if not tmp_tomb[0].endswith('.'):
+                    tmp_tomb[0] += '.'
+                ev_honap = "%s %s" % (tmp_tomb[0], tmp_tomb[1])
+                if (ev_honap in datum_lista) or (len(datum_lista) > 30):
+                    continue
+                else:
+                    datum_lista.append(ev_honap)
+                url = url_home
+                if not self.cm.isValidUrl(url):
+                    continue
+                icon = self.DEFAULT_ICON_URL_GARAZS
+                title = ev_honap
+                n_garazs = self.malvadst('1', '1', url+'/'+title)
+                if n_garazs != '' and self.aid:
+                    self.aid_ki = 'ID: ' + n_garazs + '\n'
+                else:
+                    self.aid_ki = ''
+                desc = self.aid_ki + '%s havi adások' % title
+                params = dict(cItem)
+                params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+                params['category'] = nextCategory
+                self.addDir(params)
+                if ln > 15: break
+        
+    def Supercar_MainItems(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        sts, data = self.getPage(url)
+        if not sts: return
+        if len(data) == 0: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, "<h3 class='widgettitle'>Archív</h3><ul>", "</ul>")[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        if len(data) == 0: return
+        ln = 0
+        for item in data:
+            ln += 1
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0])
+            if not self.cm.isValidUrl(url):
+                continue
+            icon = self.DEFAULT_ICON_URL_SUPERCAR
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, "<a", "</a>")[1] )
+            n_supercar = self.malvadst('1', '1', url)
+            if n_supercar != '' and self.aid:
+                self.aid_ki = 'ID: ' + n_supercar + '\n'
+            else:
+                self.aid_ki = ''
+            desc = self.aid_ki + '%s havi adások' % title
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            params['category'] = nextCategory
+            self.addDir(params)
+            if ln > 15: break
+        
+    def getVAPList_vs(self, url, category, page, cItem, tabID):
+        playlistID = self.cm.ph.getSearchGroups(url + '&', 'list=([^&]+?)&')[0]
+        baseUrl = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9XPySwuiU/MSqywLy6pzEm1zSrOz1NLTC7JzM+LT08tiQfJ2xqqgSnVYgC/tBqx')) % playlistID
+        currList = []
+        if baseUrl != '':
+            sts, data =  self.cm.getPage(baseUrl, {'host': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'})
+            try:
+                data = json_loads(data)['video']
+                for item in data:
+                    if 'vezess' not in item['author'].lower():
+                        continue
+                    url   = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S9PLEnOsC+zBQC7bgue')) + item['encrypted_id']
+                    title = CParsingHelper.cleanHtmlStr(item['title'])
+                    title_ere = title
+                    tlt = title.rfind('- ')
+                    if -1 < tlt:
+                        title = title[:tlt-1].strip()
+                    tlt = title.rfind('/')
+                    if -1 < tlt:
+                        title = title[:tlt-1].strip()
+                    tlt = title.rfind('|')
+                    if -1 < tlt:
+                        title = title[:tlt-1].strip()
+                    img   = item['thumbnail']
+                    time  = item['duration']
+                    added  = item['added']
+                    tempdesc  = item['description']
+                    tempdesc = tempdesc.replace('\n','')
+                    tempdesc = tempdesc.replace(zlib.decompress(base64.b64decode('eJxzS83JLEosyc6vOrywWCFRIbk4sSS/KO/wwqJEK4WMkpICK339pMwSvZxK/bDUqtTi4pAw3TS4nsRiAEWAGV4=')),'')
+                    tempdesc = tempdesc.replace(zlib.decompress(base64.b64decode('eJzLKCkpsNLXT8os0cup1A9LrUotLg4J001LzcksSizJzq9KLAYA5e8NQA==')),'')
+                    tempdesc = tempdesc.replace('(VEZESS TV ARCHÍV)','')
+                    tempdesc = tempdesc.replace(zlib.decompress(base64.b64decode('eJxzDQpx9XZydQ728XcIc41yDQ7W8wgFAENUBh8=')),'')
+                    tempdesc = tempdesc.replace(zlib.decompress(base64.b64decode('eJxLLSpJzU5KTS7OyXcoS61KLS7WyygFAF6UCH8=')),'')
+                    tempdesc = tempdesc.replace(zlib.decompress(base64.b64decode('eJwrS61KLS7Wyyh1SM9NzMzRS87PBQBLiQdj')),'')
+                    tempdesc = tempdesc.replace('IRATKOZZ FEL!:','')
+                    tempdesc = tempdesc.replace('HIBAJAVÍTÁS ITT:','')
+                    tempdesc = tempdesc.replace(zlib.decompress(base64.b64decode('eJwrS61KLS7WyygFABLlA6w=')),'')
+                    tlt = tempdesc.find('http')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tempdesc = tempdesc.strip()
+                    tempdesc = re.sub(r'^(.{400}).*$', '\g<1>...', tempdesc)
+                    if tempdesc == '':
+                        tempdesc = title_ere
+                    tempdesc = CParsingHelper.cleanHtmlStr(tempdesc)
+                    n_de = self.malvadst('1', '1', url)
+                    if n_de != '' and self.aid:
+                        self.aid_ki = 'ID: ' + n_de + '\n'
+                    else:
+                        self.aid_ki = ''
+                    desc = self.aid_ki + added + '  |  Időtartatm:  ' + time + '\n\nTartalom:\n' + tempdesc
+                    params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': added, 'desc': desc, 'tab_id':tabID}
+                    currList.append(params)
+            except Exception:
+                printExc()
+        if len(currList) != '':        
+            currList = sorted(currList, key=lambda i: (i['time'], i['title']))       
+            return reversed(currList)
+        else:
+            return []
+            
+    def getVAPList_tc(self, url, category, page, cItem, tabID):
+        playlistID = self.cm.ph.getSearchGroups(url + '&', 'list=([^&]+?)&')[0]
+        baseUrl = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9XPySwuiU/MSqywLy6pzEm1zSrOz1NLTC7JzM+LT08tiQfJ2xqqgSnVYgC/tBqx')) % playlistID
+        currList = []
+        if baseUrl != '':
+            sts, data =  self.cm.getPage(baseUrl, {'host': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'})
+            try:
+                data = json_loads(data)['video']
+                for item in data:
+                    url   = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S9PLEnOsC+zBQC7bgue')) + item['encrypted_id']
+                    title = CParsingHelper.cleanHtmlStr(item['title'])
+                    img   = item['thumbnail']
+                    time  = item['duration']
+                    added  = item['added']
+                    tempdesc  = item['description']
+                    tempdesc = tempdesc.replace('\n','')
+                    tlt = tempdesc.find('Még több vid')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('http')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tempdesc = tempdesc.strip()
+                    tempdesc = re.sub(r'^(.{400}).*$', '\g<1>...', tempdesc)
+                    n_de = self.malvadst('1', '1', url)
+                    if n_de != '' and self.aid:
+                        self.aid_ki = 'ID: ' + n_de + '\n'
+                    else:
+                        self.aid_ki = ''
+                    desc = self.aid_ki + added + '  |  Időtartatm:  ' + time + '\n\nTartalom:\n' + tempdesc
+                    params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': added, 'desc': desc, 'tab_id':tabID}
+                    currList.append(params)
+            except Exception:
+                printExc()
+        if len(currList) != '':        
+            currList = sorted(currList, key=lambda i: (i['time'], i['title']))       
+            return reversed(currList)
+        else:
+            return []
+            
+    def Ytpl_lista(self, cItem, tabID, mk='vs'):
+        llst = []
+        templlst = []
+        ln = 0
+        category = 'playlist'
+        url = cItem['plurl']
+        page = '1'
+        self.susn('2', '1', cItem['url'])
+        params = dict(cItem)
+        try:
+            if url != '' and tabID != '':
+                if mk == 'vs':
+                    llst = self.getVAPList_vs(url, category, page, params, tabID)
+                if mk == 'tc':
+                    llst = self.getVAPList_tc(url, category, page, params, tabID)
+                for item in llst:
+                    templlst.append(item)
+                    ln += 1
+                    if ln > 120: break
+            self.currList = templlst
+        except Exception:
+            self.currList = []
+            
+    def Autonav_lista(self, cItem, nextCategory, tabID):
+        llst = []
+        category = 'channel'
+        url = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S8tTi3STywtyc9LLMtMTyzJL8ooBQBqBxDk'))
+        page = '1'
+        self.susn('2', '1', cItem['url'])
+        if -1 == url.find('browse_ajax'):
+            if url.endswith('/videos'): 
+                url = url + '?flow=list&view=0&sort=dd'
+            else:
+                url = url + '/videos?flow=list&view=0&sort=dd'
+        params = dict(cItem)
+        llst = self.ytp.getVideosFromChannelList(url, category, page, params)
+        for idx in range(len(llst)):
+            if llst[idx].get('type', '') == 'video':
+                llst[idx]['good_for_fav'] = False
+                llst[idx]['tab_id'] = tabID
+            if llst[idx].get('page', '') != '':
+                llst.remove(llst[idx])
+                continue
+            tt = llst[idx].get('title', '')
+            tlt = tt.find('- I')
+            if -1 < tlt:
+                tj = tt[:tlt].strip()
+                ti = tt[tlt+2:]
+                if 'acebook' in tj:
+                    tmpl = tj.find(':')
+                    if -1 < tmpl:
+                        tsz = tj[tmpl+1:].strip()
+                    else:
+                        tmpl = tj.find('-')
+                        if -1 < tmpl:
+                            tsz = tj[tmpl+1:].strip()
+                    if tsz != '':
+                        tj = tsz
+                if tj != '':
+                    llst[idx]['title'] = tj
+            tdsc = llst[idx].get('desc', '')
+            if tdsc != '':
+                tlt = tdsc.find('[/br]')
+                if -1 < tlt:
+                    tls1 = tdsc[:tlt]
+                    tls2 = tdsc[tlt+5:]
+                else:
+                    tls1 = tdsc
+                    tls2 = ''
+                if tls1 != '':
+                    tlt = tls1.find('megte')
+                    if -1 < tlt:
+                        tls1 = tls1[:tlt-1].strip()
+                        tlt = tls1.rfind(' ')
+                        if -1 < tlt:
+                            tls1 = tls1[:tlt].strip()
+                    tls1 = tls1 + '  |  ' + ti.replace('.','')
+                if tls2 != '':
+                    tlt = tls2.find('A teljes cikk')
+                    if -1 < tlt:
+                        tls2 = tls2[:tlt-1].strip()
+                    tlt = tls2.find('acebook')
+                    if -1 < tlt:
+                        tls2 = tj
+                else:
+                    tls2 = tj
+                if tls1 == '' and tls2 == '':
+                    continue
+                if tls1 != '':
+                    n_de = self.malvadst('1', '1', llst[idx].get('url', ''))
+                    if n_de != '' and self.aid:
+                        self.aid_ki = 'ID: ' + n_de + '\n'
+                    else:
+                        self.aid_ki = ''
+                    desc_de = self.aid_ki + tls1 + '\n\nTartalom:\n' + tls2
+                    llst[idx]['desc'] = desc_de
+        self.currList = llst
+            
+    def Totalcar_MainItems(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        sts, data = self.getPage(url)
+        if not sts: return
+        if len(data) == 0: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="ajanlok"', '<div class="archivum">')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        if len(data) == 0: return
+        ln = 0
+        for item in data:
+            tmp_i = self.cm.ph.getDataBeetwenMarkers(item, '<div class="img_wrapper"', '</div>')[1]
+            if len(tmp_i) == 0: continue
+            temp_u = self.cm.ph.getSearchGroups(tmp_i, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if not self.cm.isValidUrl(temp_u):
+                continue
+            icon = self.cm.ph.getSearchGroups(tmp_i, '''src=['"]([^"^']+?)['"]''')[0]
+            if icon == '':
+                icon = self.DEFAULT_ICON_URL_TOTALCAR
+            temp_desc = self.cm.ph.getDataBeetwenMarkers(item, '<p class="ajanlo">', '</p>', False)[1]
+            if len(temp_desc) == 0: continue
+            temp_sts, tmp_da = self.getPage(temp_u)
+            if not temp_sts: continue
+            if len(tmp_da) == 0: continue
+            title = self.cm.ph.getDataBeetwenMarkers(tmp_da, '<h1 class="cim"><span>', '</span>', False)[1]
+            if title == '': continue
+            temp_datum = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp_da, '<div class="datum">', '</span>', False)[1])
+            if len(temp_datum) == 0: continue
+            tmp_ttu = self.cm.ph.getDataBeetwenMarkers(tmp_da, '<div class="yt-video-container"', '</iframe>', False)[1]
+            if len(tmp_ttu) == 0: continue
+            url = self.cm.ph.getSearchGroups(tmp_ttu, '''src=['"]([^"^']+?)['"]''')[0]
+            if not self.cm.isValidUrl(url):
+                continue
+            n_tc = self.malvadst('1', '1', url)
+            if n_tc != '' and self.aid:
+                self.aid_ki = 'ID: ' + n_tc + '\n'
+            else:
+                self.aid_ki = ''
+            desc = self.aid_ki + temp_datum + '\n\n' + temp_desc
+            ln += 1
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            self.addVideo(params)
+            if ln > 30: break
+            
+    def Forma1_MainItems(self, cItem, nextCategory, tabID):
+        url = cItem['url']
+        self.susn('2', '1', url)
+        sts, data = self.getPage(url)
+        if not sts: return
+        if len(data) == 0: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<a  href="/2011"', '</ul>')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+        if len(data) == 0: return
+        i = 1
+        for item in reversed(data):
+            url = self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if url.startswith('/'):
+                url = self.MAIN_URL_FORMA1 + url
+            if not self.cm.isValidUrl(url):
+                continue
+            icon = self.DEFAULT_ICON_URL_FORMA1
+            title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, "<a", "</a>")[1] )
+            n_forma1 = self.malvadst('1', '1', url)
+            if n_forma1 != '' and self.aid:
+                self.aid_ki = 'ID: ' + n_forma1 + '\n'
+            else:
+                self.aid_ki = ''
+            desc = self.aid_ki + '%s. évad futamai' % title
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            params['category'] = nextCategory
+            self.addDir(params)
+            i += 1
+            if i > 2: break
+        url_forma1_hatra = self.MAIN_URL_FORMA1_VERSENYNAPTAR
+        desc_forma1_hatra = self.getdvdsz('forma1_naptar', 'Hátralévő versenyek az aktuális évben...')
+        params = dict(cItem)
+        params = {'good_for_fav': False, 'category':nextCategory, 'title':'Hátralévő versenyek', 'url':url_forma1_hatra, 'icon': self.DEFAULT_ICON_URL_FORMA1, 'desc':desc_forma1_hatra, 'tab_id':'forma1_naptar'}
+        self.addDir(params)
+        url_forma1_pont = self.MAIN_URL_FORMA1_PONTVERSENY
+        desc_forma1_pont = self.getdvdsz('forma1_pontverseny', 'Az aktuális év pontversenye. Versenyzői és konstruktőri bajnokság állása...')
+        params = dict(cItem)
+        params = {'good_for_fav': False, 'category':nextCategory, 'title':'Pontverseny', 'url':url_forma1_pont, 'icon': self.DEFAULT_ICON_URL_FORMA1, 'desc':desc_forma1_pont, 'tab_id':'forma1_pontverseny'}
+        self.addDir(params)
+        url_forma1_ered = self.MAIN_URL_FORMA1_VERSENYNAPTAR
+        desc_forma1_ered = self.getdvdsz('forma1_eredmeny', 'Az aktuális év lezajlott futamjainak eredményei...')
+        params = dict(cItem)
+        params = {'good_for_fav': False, 'category':nextCategory, 'title':'Eredmények', 'url':url_forma1_ered, 'icon': self.DEFAULT_ICON_URL_FORMA1, 'desc':desc_forma1_ered, 'tab_id':'forma1_eredmeny'}
+        self.addDir(params)
+            
+    def listEpisodes(self, cItem, nextCategory):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'autogram':
+                self.Autogram_Episodes(cItem, tabID)
+            elif tabID == 'garazs':
+                self.Garazs_Episodes(cItem, tabID)
+            elif tabID == 'supercar':
+                self.Supercar_Episodes(cItem, tabID)
+            elif tabID == 'forma1':
+                self.Forma1_Episodes(cItem, tabID)
+            elif tabID == 'forma1_naptar':
+                self.Forma1_versenynaptar(cItem, tabID)
+            elif tabID == 'forma1_pontverseny':
+                self.Forma1_pontverseny(cItem, nextCategory, tabID)
+            elif tabID == 'forma1_eredmeny':
+                self.Forma1_eredmeny(cItem, tabID)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Autogram_Episodes(self, cItem, tabID):
+        url = cItem['url']
+        subcat = cItem['subcat']
+        self.susn('2', '1', subcat)
+        sts, data = self.cm.getPage(self.EPISODES_URL.format(url, subcat, 100, 0), self.apiParams)
+        if not sts: return
+        if len(data) == 0: return
+        try:
+            data = json_loads(data)
+            for i in data:
+                clips = i['clips']
+                if 0 == len(clips): continue
+                if 1 == len(clips):
+                    c = clips[0]
+                    isVideo = True
+                    url = c['video_id']
+                else:
+                    continue
+                title = c['title']
+                desc = ''
+                m = re.search(r'\d{4}-\d{2}-\d{2}',c['code'])
+                if m is not None:
+                    desctemp = self.malvad('1', '1', url, title)
+                    desc = self.datum_honapos(m.group(0),'-') + '-i adás tartalma:\n\n' + desctemp
+                icon_tmp = _getImageExtKey(c['images'], 'vignette')
+                params = dict(cItem)
+                params.pop('subcat',None)
+                if icon_tmp is None:
+                    icon = self.DEFAULT_ICON_URL_AUTOGRAM
+                else:
+                    icon = self.getFullIconUrl_Autogram('vj'+icon_tmp)
+                params.update({'good_for_fav':False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID})
+                self.addVideo(params)
+        except Exception:
+            printExc()
+            return
+        
+    def Garazs_Episodes(self, cItem, tabID):
+        url_home = self.MAIN_URL_GARAZS_ADASOK
+        datum_szoveg = cItem['title']
+        url_sata = cItem['url']
+        self.susn('2', '1', url_sata+'/'+datum_szoveg)
+        data = self.Garazs_data()
+        if len(data) == 0: return
+        for item in data:
+            musor_datuma = self.cm.ph.getDataBeetwenMarkers(item, '<span class="date" title="', '">', False)[1]
+            if not datum_szoveg in musor_datuma: continue
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0])
+            if not self.cm.isValidUrl(url):
+                continue
+            icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0])
+            title_tmp = self.cm.ph.getDataBeetwenMarkers(item, '<a href="', '">')[1]
+            title = self.cm.ph.getSearchGroups(title_tmp, '''title="([^"]+?)"''')[0]
+            if title == '': continue
+            desctemp = self.malvad('1', '2', url, title)
+            desc = musor_datuma + '-i adás tartalma:\n\n' + desctemp
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            self.addVideo(params)
+        
+    def Supercar_Episodes(self, cItem, tabID):
+        datum_szoveg = cItem['title']
+        url_sata = cItem['url']
+        self.susn('2', '1', url_sata)
+        datum_szoveg = self.datum_converter(datum_szoveg, '-')
+        url = self.MAIN_URL_SUPERCAR_ADASOK
+        sts, data = self.getPage(url)
+        if not sts: return
+        if len(data) == 0: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="flex_column av_two_third', '<div class="flex_column av_one_third')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a href=', '</a>')
+        for item in data:
+            if not 'av-masonry-1-item' in item: continue
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0])
+            if not self.cm.isValidUrl(url):
+                continue
+            if not datum_szoveg in url: continue
+            icon = self.getFullUrl(self.cm.ph.getSearchGroups(item, 'url[\'(]([^"^\']+?)[\')]')[0])
+            title_tmp = self.cm.ph.getSearchGroups(item, '''title="([^"]+?)"''')[0]
+            if not title_tmp.endswith('.'):
+                title_tmp += '.'
+            title = 'Supercar - ' + title_tmp
+            desctemp = self.malvad('1', '3', url, title)
+            desc = self.datum_honapos(title_tmp) + '-i adás tartalma:\n\n' + desctemp
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            self.addVideo(params)
+            
+    def Forma1_Episodes(self, cItem, tabID):
+        title_kieg = ''
+        url_citem = cItem['url']
+        self.susn('2', '1', url_citem)
+        title_citem = cItem['title']
+        sts, data = self.getPage(url_citem)
+        if not sts: return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="k2Container', '</section>')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<span class="catItemImage"', '</span>')
+        if len(data) == 0: return
+        for item in data:
+            url_i = self.cm.ph.getSearchGroups(item, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if url_i.startswith('/'):
+                url_i = self.MAIN_URL_FORMA1 + url_i
+            if not self.cm.isValidUrl(url_i):
+                continue
+            else:
+                url, title_kieg = self.Forma1_ft(url_i)
+                if title_kieg != '':
+                    title_kieg = ' - ' + title_kieg
+            #if not url_citem in url: continue
+            if not title_citem+'-r' in url_i: continue
+            icon = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            if icon.startswith('/'):
+                icon = self.MAIN_URL_FORMA1 + icon
+            title = self.ekezetes_atalakitas(self.cm.ph.getSearchGroups(item, '''title="([^"]+?)"''')[0]) + title_kieg
+            title = title.strip()
+            desctemp = self.malvad('1', '4', url, title)
+            desc = title + '\n\n' + desctemp
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'tab_id':tabID}
+            self.addVideo(params)
+            
+    def Forma1_ft(self, pu):
+        bu = ''
+        btk = ''
+        tvb = False
+        try:
+            if pu != '':
+                sts, data_tmp = self.getPage(pu)
+                if not sts: return '',''
+                if data_tmp == '': return '',''
+                data = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<a id="anchor-futam', '</iframe>')[1]
+                if data != '':
+                    tvb = True
+                if not tvb:
+                    data = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<a id="anchor-idomero-edzes', '</iframe>')[1]
+                    if data != '':
+                        tvb = True
+                        btk = 'időmérőedzés'
+                if not tvb:
+                    data = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<a id="anchor-3-szabadedzes', '</iframe>')[1]
+                    if data != '':
+                        tvb = True
+                        btk = '3. szabadedzés'
+                if not tvb:
+                    data = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<a id="anchor-2-szabadedzes', '</iframe>')[1]
+                    if data != '':
+                        tvb = True
+                        btk = '2. szabadedzés'
+                if not tvb:
+                    data = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<a id="anchor-1-szabadedzes', '</iframe>')[1]
+                    if data != '':
+                        tvb = True
+                        btk = '1. szabadedzés'
+                if data == '': return '',''
+                url = self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?)['"]''')[0]
+                if url == '': return '',''
+                if url.startswith('//'):
+                    url = 'https:' + url
+                bu = url
+                return bu, btk
+        except Exception:
+            return '',''
+        return bu, btk
+            
+    def Forma1_versenynaptar(self, cItem, tabID):
+        url_citem = cItem['url']
+        tabid_citem = cItem['tab_id']
+        self.susn('2', '1', tabid_citem)
+        sts, data = self.getPage(url_citem)
+        if not sts: return
+        if len(data) == '': return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="F1-RaceSelectorList"', '<div class="F1-raceSelectorMobil">')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a href="javascript:void(0);"', '</a>')
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''data-target_url=[\'"]([^"^\']+?)[\'"]''')[0]
+            if url.startswith('//'):
+                url = 'https:' + url
+            if not url.startswith('https'):
+                continue
+            if not self.cm.isValidUrl(url):
+                continue
+            currentYear = str(datetime.now().year)
+            datum_tmp = self.cm.ph.getDataBeetwenMarkers(item, '<div class="raceDate"', '</div>')[1]
+            datum_string = currentYear + '. ' +self.cm.ph.getDataBeetwenMarkers(datum_tmp, '<span>', '</span>', False)[1]
+            datum = datetime.strptime(self.datum_from_honapos(datum_string), "%Y-%m-%d").date()
+            akt_datum = datetime.now().date()
+            if datum >= akt_datum:
+                hely_city = self.cm.ph.getDataBeetwenMarkers(item, 'class="F1-raceCity">', '</span>', False)[1]
+                hely_country = self.cm.ph.getDataBeetwenMarkers(item, 'class="F1-raceCountry">', '</span>', False)[1]
+                title = self.datum_from_honapos(datum_string) + '  -  ' + hely_city + ' (' + hely_country +')'
+                icon = self.DEFAULT_ICON_URL_FORMA1
+                desc = 'Futam időpontja:  ' + datum_string + '\nFutam helyszine:  ' + hely_city + ' (' + hely_country +')\n\n\nTovábbi információkért nyomd meg az OK gombot a távirányítón!'
+                params = dict(cItem)
+                params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'art_id':'forma1_hatralevo', 'type':'article'}
+                self.addArticle(params)
+                
+    def Forma1_pontverseny(self, cItem, nextCategory, tabID):
+        self.susn('2', '1', 'forma1_pontverseny')
+        desc_ev = self.getdvdsz('auto_f1_egyeni_verseny', 'Versenyzői bajnokság...')
+        desc_csv = self.getdvdsz('auto_f1_csapat_verseny', 'Konstruktőri bajnokság...')
+        PV_CAT_TAB = [{'category':nextCategory, 'title': 'Versenyzői bajnokság', 'tab_id': 'f1_egyeni_verseny', 'desc': desc_ev},
+                      {'category':nextCategory, 'title': 'Konstruktőri bajnokság', 'tab_id': 'f1_csapat_verseny', 'desc': desc_csv}                        
+                     ]
+        self.listsTab(PV_CAT_TAB, cItem)
+        
+    def Forma1_eredmeny(self, cItem, tabID):
+        url_citem = cItem['url']
+        tabid_citem = cItem['tab_id']
+        self.susn('2', '1', 'forma1_eredmeny')
+        sts, data = self.getPage(url_citem)
+        if not sts: return
+        if len(data) == '': return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="F1-RaceSelectorList"', '<div class="F1-raceSelectorMobil">')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a href="javascript:void(0);"', '</a>')
+        if len(data) == 0: return
+        for item in reversed(data):
+            url = self.cm.ph.getSearchGroups(item, '''data-target_url=[\'"]([^"^\']+?)[\'"]''')[0]
+            if url.startswith('//'):
+                url = 'https:' + url
+            if not url.startswith('https'):
+                continue
+            if not self.cm.isValidUrl(url):
+                continue
+            currentYear = str(datetime.now().year)
+            datum_tmp = self.cm.ph.getDataBeetwenMarkers(item, '<div class="raceDate"', '</div>')[1]
+            datum_string = currentYear + '. ' +self.cm.ph.getDataBeetwenMarkers(datum_tmp, '<span>', '</span>', False)[1]
+            datum = datetime.strptime(self.datum_from_honapos(datum_string), "%Y-%m-%d").date()
+            akt_datum = datetime.now().date()
+            if datum < akt_datum:
+                ems, biu = self.emselo(url)
+                hely_city = self.cm.ph.getDataBeetwenMarkers(item, 'class="F1-raceCity">', '</span>', False)[1]
+                hely_country = self.cm.ph.getDataBeetwenMarkers(item, 'class="F1-raceCountry">', '</span>', False)[1]
+                title = self.datum_from_honapos(datum_string) + '  -  ' + hely_city + ' (' + hely_country +')'
+                icon = biu
+                desc = 'Futam:  ' + datum_string + '  |  ' + hely_city + ' (' + hely_country +')\n\nEredmény:\n' + ems
+                params = dict(cItem)
+                params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'art_id':'forma1_hatralevo', 'type':'article'}
+                self.addArticle(params)
+                
+    def emselo(self, url):
+        bvs = ''
+        biu = self.DEFAULT_ICON_URL_FORMA1
+        ln = 0
+        try:
+            if url != '':
+                sts, data = self.getPage(url)
+                if not sts: return bvs, biu
+                if len(data) == '': return bvs, biu
+                imdata = self.cm.ph.getDataBeetwenMarkers(data, '<div class="gpName"', '<div class="gpTimetable">')[1]
+                image_url = self.cm.ph.getSearchGroups(imdata, '''src=[\'"]([^"^\']+?)[\'"]''')[0]
+                if image_url != '':
+                    if image_url.startswith('//'):
+                        image_url = 'https:' + image_url
+                    if not image_url.startswith('https'):
+                        image_url = self.DEFAULT_ICON_URL_FORMA1
+                else:
+                    image_url = self.DEFAULT_ICON_URL_FORMA1
+                biu = image_url
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="raceResultsTable finish active" data-tab_id="1"', '<div class="raceResultsTable practice"')[1]
+                if len(data) == 0: return bvs, biu
+                data =  self.cm.ph.getAllItemsBeetwenNodes(data, ('<div class=', '>', 'line'), ('<div class="wcPoints"', '</div>'))
+                if len(data) == 0: return bvs, biu
+                for item in data:
+                    poz = self.cm.ph.getDataBeetwenMarkers(item, '<div class="position">', '</div>', False)[1]
+                    if len(poz) == 0: continue
+                    nev = self.cm.ph.getDataBeetwenMarkers(item, '<span class="pilotNameLong">', '</span>', False)[1]
+                    if len(nev) == 0: continue
+                    pont = self.cm.ph.getDataBeetwenMarkers(item, '<div class="wcPoints">', '</div>', False)[1]
+                    if len(pont) == 0: continue
+                    ln += 1
+                    if ln == 1:
+                        tmp = poz + ' - ' + nev + '  (' + pont + ' pont)'
+                    else:
+                        tmp = ',   ' + poz + ' - ' + nev + '  (' + pont + ' pont)'
+                    bvs = bvs + tmp
+            return bvs, biu
+        except Exception:
+            return '', self.DEFAULT_ICON_URL_FORMA1
+        
+    def listThird(self, cItem):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'f1_egyeni_verseny':
+                self.Ltev(cItem, tabID)
+            elif tabID == 'f1_csapat_verseny':
+                self.Ltcsv(cItem, tabID)
+            elif tabID in ['vezess_matksz','vezess_ertekb','vezess_aszaloncs','vezess_ojkogm','vezess_bgtgml','vezess_htank','vezess_haaktink','vezess_trahvzs']:
+                self.Ytpl_lista(cItem, tabID, 'vs')
+            elif tabID in ['total_trtk', 'total_mlypn', 'total_treo', 'total_tlbk', 'total_szjsn', 'total_trmks', 'total_uzk', 'total_tlac']:
+                self.Ytpl_lista(cItem, tabID, 'tc')
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Ltev(self, cItem, tabID):
+        url = ''
+        self.susn('2', '1', 'auto_f1_egyeni_verseny')
+        sts, data = self.getPage(self.MAIN_URL_FORMA1_PONTVERSENY)
+        if not sts: return
+        if len(data) == '': return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="pilotStandings"', '<div class="teamStandings">')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>')
+        if len(data) == 0: return
+        for item in data:
+            poz = self.cm.ph.getDataBeetwenMarkers(item, '<td class="position"><span>', '</span></td>', False)[1]
+            if len(poz) == 0: continue
+            nev = self.cm.ph.getDataBeetwenMarkers(item, '<span class="pilotNameLong">', '</span>', False)[1]
+            if len(nev) == 0: continue
+            csapat = self.cm.ph.getDataBeetwenMarkers(item, '<span class="pilotTeamLong">', '</span>', False)[1]
+            if len(csapat) == 0: continue
+            pont = self.cm.ph.getDataBeetwenMarkers(item, '<td class="points"><span>', '</span>', False)[1]
+            if len(pont) == 0: continue
+            nev_url_tmp = self.cm.ph.getDataBeetwenMarkers(item, '<td class="pilotName">', '</td>', False)[1]
+            nev_url = self.cm.ph.getSearchGroups(nev_url_tmp, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if nev_url != '':
+                if nev_url.startswith('//'):
+                    nev_url = 'https:' + nev_url
+            if not self.cm.isValidUrl(nev_url):
+                continue
+            icon = self.Ltev_i(nev_url,self.kfvk)
+            if icon == '':
+                icon = self.DEFAULT_ICON_URL_FORMA1
+            title = poz + '. hely  -  ' + nev + '  (' + csapat + ')  -  ' + pont + ' pont'
+            desc = 'Helyezés:\n' + title
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'type':'article'}
+            self.addArticle(params)
+            
+    def Ltev_i(self, nu='', eu=''):
+        icon = self.DEFAULT_ICON_URL_FORMA1
+        try:
+            if nu != '' and eu != '':
+                tlt = nu.find('=')
+                if -1 < tlt:
+                    ti = eu + nu[tlt+1:].replace('ü','u') + '.jpg'
+                    if self.cm.isValidUrl(ti):
+                        icon = ti
+            return icon
+        except Exception:
+            return self.DEFAULT_ICON_URL_FORMA1
+        
+    def Ltcsv(self, cItem, tabID):
+        icon = self.DEFAULT_ICON_URL_FORMA1
+        url = ''
+        self.susn('2', '1', 'auto_f1_csapat_verseny')
+        sts, data = self.getPage(self.MAIN_URL_FORMA1_PONTVERSENY)
+        if not sts: return
+        if len(data) == '': return
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="teamStandings"', '<div class="clearFix">')[1]
+        if len(data) == 0: return
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<tr', '</tr>')
+        if len(data) == 0: return
+        for item in data:
+            poz = self.cm.ph.getDataBeetwenMarkers(item, '<td class="position"><span>', '</span></td>', False)[1]
+            if len(poz) == 0: continue
+            csapat = self.cm.ph.getDataBeetwenMarkers(item, '<span class="teamNameLong">', '</span>', False)[1]
+            if len(csapat) == 0: continue
+            pont = self.cm.ph.getDataBeetwenMarkers(item, '<td class="points"><span>', '</span>', False)[1]
+            if len(pont) == 0: continue
+            nev_url_tmp = self.cm.ph.getDataBeetwenMarkers(item, '<td class="teamName">', '</td>', False)[1]
+            nev_url = self.cm.ph.getSearchGroups(nev_url_tmp, 'href=[\'"]([^"^\']+?)[\'"]')[0]
+            if nev_url != '':
+                if nev_url.startswith('//'):
+                    nev_url = 'https:' + nev_url
+            if not self.cm.isValidUrl(nev_url):
+                continue
+            icon = self.Ltev_i(nev_url,self.kfvcsk)
+            if icon == '':
+                icon = self.DEFAULT_ICON_URL_FORMA1
+            title = poz + '. hely  -  ' + csapat + '  -  ' + pont + ' pont'
+            desc = 'Helyezés:\n' + title
+            params = dict(cItem)
+            params = {'good_for_fav': False, 'title':title, 'url':url, 'icon':icon, 'desc':desc, 'type':'article'}
+            self.addArticle(params)
+            
+    def getArticleContent(self, cItem):
+        try:
+            artID = cItem.get('art_id', '')
+            if artID == 'forma1_hatralevo':
+                return self.Forma1_hatralevo_getArticleContent(cItem)
+            elif artID == 'foinformacio':
+                return self.fgtac(cItem)
+            else:
+                return []
+        except Exception:
+            printExc()
+            
+    def Forma1_hatralevo_getArticleContent(self, cItem):
+        try:
+            url_citem = cItem['url']
+            title_citem = cItem['title']
+            sts, data = self.getPage(url_citem)
+            if not sts: return []
+            if len(data) == '': return []
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="gpName"', '<div class="gpTimetable">')[1]
+            palya_neve = self.cm.ph.getDataBeetwenMarkers(data, '<h2>', '</h2>', False)[1]
+            image_url = self.cm.ph.getSearchGroups(data, '''src=[\'"]([^"^\']+?)[\'"]''')[0]
+            image_alt = self.cm.ph.getSearchGroups(data, '''alt=[\'"]([^"^\']+?)[\'"]''')[0]
+            if image_url != '':
+                if image_url.startswith('//'):
+                    image_url = 'https:' + image_url
+                if not image_url.startswith('https'):
+                    return []
+            else:
+                image_url = self.DEFAULT_ICON_URL_FORMA1
+            data_tmp = self.cm.ph.getDataBeetwenNodes(data, ('<div class=', '>', 'gpInfo'), ('<span class="lrTime"', '</span>'))[1]
+            if data_tmp != '':
+                csucs_vezeto = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<span class="lrName">', '</span>', False)[1]
+                csucs_ev = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<span class="lrTeam">', '</span>', False)[1]
+                csucs_ev = self.cm.ph.getSearchGroups(csucs_ev, '''([0-9]{4})''')[0]
+                csucs_ido = self.cm.ph.getDataBeetwenMarkers(data_tmp, '<span class="lrTime">', '</span>', False)[1]
+            else:
+                csucs_vezeto = ''
+                csucs_ev = ''
+                csucs_ido = ''
+            items = self.cm.ph.getAllItemsBeetwenMarkers(data_tmp, '<div class="', '</div>')
+            if len(items) > 0:
+                palyahossz = clean_html(items[0])
+                palyahossz_value = clean_html(items[1])
+                versenytav = clean_html(items[2])
+                versenytav_value = clean_html(items[3])
+                korok = clean_html(items[4])
+                korok_value = clean_html(items[5])
+                desc = palya_neve + '\n\n' + palyahossz + ':  ' + palyahossz_value + '\n' + versenytav + ':  ' + versenytav_value + '\n' + korok + ':  ' + korok_value + '\n\nPályacsúcs:\n' + csucs_vezeto + '\név: ' + csucs_ev + '\nidő: ' + csucs_ido
+            else:
+                desc = ''            
+            retList = {'title':title_citem, 'text': desc, 'images':[{'title':image_alt, 'url':image_url}]}
+            return [retList]
+        except Exception:
+            printExc()
+            
+    def fgtac(self, cItem):
+        try:
+            self.susn('2', '1', cItem['url'])
+            title_citem = cItem['title']
+            icon_citem = cItem['icon']
+            desc = 'Észrevételeidet, javaslataidat a következő címre küldheted el:\n' + zlib.decompress(base64.b64decode('eJxLLC3J18so1ctJLUvNcUjPTczM0UvOzwUAaY8Iwg==')) + '\n\nFelhívjuk figyelmedet, hogy egyes csatornák adásai átmenetileg szünetelhetnek. Mielőtt hibát jelzel, ellenőrizd az adott csatorna internetes oldalán az adás működését.\n\nAmennyiben egyes adások nem játszhatók le (NINCS ELÉRHETŐ LINK), akkor az adott műsor tartalomszolgáltatója megváltoztatta annak elérhetőségét. Ez nem az "auto.HU" lejátszó hibája!!!\n\nKellemes szórakozást kívánunk!'            
+            retList = {'title':title_citem, 'text': desc, 'images':[{'title':'', 'url':icon_citem}]}
+            return [retList]
+        except Exception:
+            printExc()
+
+    def getLinksForVideo(self, cItem):
+        try:
+            tabID = cItem.get('tab_id', '')
+            if tabID == 'autogram':
+                nez = self.Autogram_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.suuim('2', cItem['url'])
+                return nez
+            elif tabID == 'garazs':
+                nez = self.Garazs_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.suuim('2', cItem['url'])
+                return nez
+            elif tabID == 'supercar':
+                nez = self.Supercar_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.suuim('2', cItem['url'])
+                return nez
+            elif tabID in ['vezess_matksz','vezess_ertekb','vezess_aszaloncs','vezess_ojkogm','vezess_bgtgml','vezess_htank','vezess_haaktink','vezess_trahvzs']:
+                nez = self.Yt_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.susn('2', '1', cItem['url'])
+                return nez
+            elif tabID in ['totalcar', 'total_trtk', 'total_mlypn', 'total_treo', 'total_tlbk', 'total_szjsn', 'total_trmks', 'total_uzk', 'total_tlac']:
+                nez = self.Yt_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.susn('2', '1', cItem['url'])
+                return nez
+            elif tabID == 'autonav_m':
+                nez = self.Yt_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.susn('2', '1', cItem['url'])
+                return nez
+            elif tabID == 'forma1':
+                nez = self.Forma1_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.suuim('2', cItem['url'])
+                return nez
+            else:
+                return []
+        except Exception:
+            printExc()    
+            
+    def Autogram_getLinksForVideo(self, cItem):
+        url = cItem['url']
+        videoUrls = []
+        if not self.tryTologin(): return videoUrls
+        sts, data = self.cm.getPage(self.VIDEO_URL.format(url), self.apiParams)
+        if not sts: return videoUrls
+        if len(data) == 0: return videoUrls
+        try:
+            data = json_loads(data)
+            assets = data['clips'][0].get('assets')
+            url = assets[0].get('full_physical_path');
+        except Exception:
+            printExc()
+            return videoUrls
+        uri = urlparser.decorateParamsFromUrl(url)
+        protocol = uri.meta.get('iptv_proto', '')
+        printDBG("PROTOCOL [%s] " % protocol)
+        if protocol == 'm3u8':
+            retTab = getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
+            videoUrls.extend(retTab)
+        elif protocol == 'f4m':
+            retTab = getF4MLinksWithMeta(uri)
+            videoUrls.extend(retTab)
+        elif protocol == 'mpd':
+            retTab = getMPDLinksWithMeta(uri, False)
+            videoUrls.extend(retTab)
+        else:
+            videoUrls.append({'name':'direct link', 'url':uri})
+        return videoUrls
+            
+    def Garazs_getLinksForVideo(self, cItem):
+        urlTab = []
+        url = cItem['url']
+        sts, data = self.getPage(url)
+        if not sts: return []
+        if len(data) == 0: return []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<span class="video-holder', '</span>')[1]
+        if len(data) == 0: return []
+        url = self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?)['"]''')[0]
+        if zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOzwUAae8I2Q==')) in url:
+            if 1 == self.up.checkHostSupport(url):
+                return self.up.getVideoLinkExt(url)
+            else:
+                return []
+        else:
+            return []
+
+    def Supercar_getLinksForVideo(self, cItem):
+        urlTab = []
+        url = cItem['url']
+        sts, data = self.getPage(url)
+        if not sts: return []
+        if len(data) == 0: return []
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>')[1]
+        if len(data) == 0: return []
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<source ', '>', False, False)
+        if data == '': return []
+        for item in data:
+            url = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0]
+            tmp_url_list = url.split('?')
+            url = tmp_url_list[0]
+            if url.startswith('//'):
+                url = 'http:' + url
+            if not url.startswith('http'):
+                continue
+            if not self.cm.isValidUrl(url):
+                continue
+            if 'video/mp4' in item:
+                label = self.cm.ph.getSearchGroups(item, '''type=['"]([^"^']+?)['"]''')[0]
+                urlTab.append({'name':label, 'url':url, 'need_resolve':0})
+        return urlTab
+        
+    def Yt_getLinksForVideo(self, cItem):
+        url = cItem['url']
+        if 1 == self.up.checkHostSupport(url):
+            return self.up.getVideoLinkExt(url)
+        else:
+            return []
+        
+    def Forma1_getLinksForVideo(self, cItem):
+        urlTab = []
+        url = cItem['url']
+        baseUrl = strwithmeta(url)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+        referer = baseUrl.meta.get('Referer')
+        if referer: HTTP_HEADER['Referer'] = referer
+        urlParams = {'header':HTTP_HEADER}
+        sts, data = self.cm.getPage(baseUrl, urlParams)
+        if not sts: return []
+        if data == '': return []
+        cUrl = self.cm.meta['url']
+        f = ph.find(data, 'player?', '&', flags=0)[1]
+        if not f: f = cUrl.split('player?', 1)[-1].rsplit('&', 1)[0]
+        if not f: f = ph.find(data, 'player?', '&', flags=0)[1]
+        if not f: return []
+        url = '/videaplayer_get_xml.php?{0}&start=0&enablesnapshot=0&platform=desktop&referrer={1}'.format(f, urllib.quote(baseUrl))
+        sts, data = self.cm.getPage(self.cm.getFullUrl(url, cUrl))
+        if not sts: return []
+        if data == '': return []
+        meta = {'Referer':cUrl, 'Origin':urlparser.getDomain(baseUrl, False)[:-1], 'User-Agent':HTTP_HEADER['User-Agent']}
+        hlsMeta = MergeDicts(meta, {'iptv_proto':'m3u8'})
+        data = ph.find(data, ('<video_sources', '>'), '</video_sources>', flags=0)[1]
+        if data == '': return []
+        data = ph.findall(data, ('<video_source', '>'), '</video_source>')
+        if data == '': return []
+        for item in data:
+            url = self.cm.getFullUrl(ph.clean_html(item), cUrl)
+            if not url: continue
+            if 'video/mp4' in item:
+                width  = ph.getattr(item, 'width')
+                height = ph.getattr(item, 'height')
+                name   = ph.getattr(item, 'name')
+                url    = urlparser.decorateUrl(url, meta)
+                urlTab.append({'name':'{0} - {1}x{2}'.format(name, width, height), 'url':url})
+            elif 'mpegurl' in item:
+                url = urlparser.decorateUrl(url, hlsMeta)
+                tmpTab = getDirectM3U8Playlist(url, checkExt=False, checkContent=True)
+                urlTab.extend(tmpTab)
+        urlTab.reverse()
+        return urlTab
+        
+    def ebbtit(self):
+        try:
+            if '' == self.btps.strip() or '' == self.brdr.strip():
+                msg = 'A Set-top-Box típusát és a használt rendszer (image) nevét egyszer meg kell adni!\n\nA kompatibilitás és a megfelelő használat miatt kellenek ezek az adatok a programnak.\nKérlek, a helyes működéshez a valóságnak megfelelően írd be azokat.\n\nA "HU Telepítő" keretrendszerben tudod ezt megtenni.\n\nKilépek és megyek azt beállítani?'
+                ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
+                return False
+            else:
+                return True
+        except Exception:
+            return False
+        
+    def tryTologin(self):
+        needLogin = False
+        if self.login != config.plugins.iptvplayer.autohu_rtlmost_login.value or self.password != config.plugins.iptvplayer.autohu_rtlmost_password.value:
+            needLogin = True
+            self.login = config.plugins.iptvplayer.autohu_rtlmost_login.value
+            self.password = config.plugins.iptvplayer.autohu_rtlmost_password.value
+        if self.loggedIn and not needLogin: return True
+        self.loggedIn = False
+        if '' == self.login.strip() or '' == self.password.strip():
+            self.sessionEx.open(MessageBox, 'Az Autogram megnézéséhez regisztrálnod kell a %s oldalon! \nA kék gomb, majd az Oldal beállításai segítségével megadhatod az ottani belépési adataidat.' % 'https://www.rtlmost.hu', type = MessageBox.TYPE_ERROR, timeout = 15 )
+            return False
+        try:
+            if os.path.exists(self.COOKIE_FILE): cj = self.cm.getCookie(self.COOKIE_FILE)
+            else: cj = cookielib.MozillaCookieJar()
+            cookieNames = ['sessionToken', 'sessionSecret', 'loginHash', 'loginValid']
+            cookies = [None, None, None, None]
+            for cookie in cj:
+                if cookie.domain == 'vpv.jf7ekt7r6rbm2.hu':
+                    try:
+                        i = cookieNames.index(cookie.name)
+                        if cookies[i]: cookie.discard = True
+                        else: cookies[i] = cookie
+                    except ValueError: cookie.discard = True
+            for i, cookie in enumerate(cookies):
+                if not cookie:
+                    cookie = cookielib.Cookie(version=0, name=cookieNames[i], value=None, port=None, port_specified=False,
+                        domain='vpv.jf7ekt7r6rbm2.hu', domain_specified=False, domain_initial_dot=False, path='/', path_specified=True, secure=True,
+                        expires=2147483647, discard=False, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+                    cookies[i] = cookie
+                    cj.set_cookie(cookie)
+            token = cookies[0]
+            secret = cookies[1]
+            hash = cookies[2]
+            valid = cookies[3]
+            needLogin = needLogin or not(token.value and secret.value and hash.value
+                        and sha1(self.login+self.password+token.value+secret.value).hexdigest() == hash.value)
+            if not needLogin:
+                if valid.value == '1':
+                    self.loggedIn = True
+                    return True
+                sts, data = self.cm.getPage(self.ACCOUNT_URL.format(token.value, secret.value), self.loginParams)
+                if not sts: raise Exception('Can not Get Account page!')
+                data = json_loads(data)
+                needLogin = data['errorCode'] != 0
+            if needLogin:
+                sts, data = self.cm.getPage(self.LOGIN_URL.format( self.login, self.password), self.loginParams)
+                if not sts: raise Exception('Can not Get Login page!')
+                data = json_loads(data)
+                if data['errorCode'] != 0: raise Exception(data.get('errorMessage'))
+                token.value = data['sessionInfo']['sessionToken']
+                secret.value = data['sessionInfo']['sessionSecret']
+                hash.value = sha1(self.login+self.password+token.value+secret.value).hexdigest()
+            valid.value = '1'
+            valid.expires = int(time.time()) + 86400
+            cj.save(self.COOKIE_FILE)
+            self.loggedIn = True
+            return True
+        except:
+           printExc()
+           self.sessionEx.open(MessageBox, _('Login failed.'), type = MessageBox.TYPE_ERROR, timeout = 10)
+        return False
+            
+    def suuim(self, i_md='', i_u=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL0vMS6xKLC3J1yvIKAAAsfsSRw=='))
+        pstd = {'md':i_md, 'rl':i_u }
+        try:
+            if i_md != '' and i_u != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
+            
+    def susn(self, i_md='', i_hgk='', i_mpu=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu, 'hv':self.vivn, 'orv':self.porv, 'bts':self.pbtp}
+        try:
+            if i_md != '' and i_hgk != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
+            
+    def gits(self):
+        bv = '-'
+        tt = []
+        try:
+            if fileExists(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE'))):
+                fr = open(zlib.decompress(base64.b64decode('eJzTTy1J1s8sLi5NBQATXQPE')),'r')
+                for ln in fr:
+                    ln = ln.rstrip('\n')
+                    if ln != '':
+                        tt.append(ln)
+                fr.close()
+                if len(tt) == 1:
+                    bv = tt[0].strip()[:-6].capitalize()
+                if len(tt) == 2:
+                    bv = tt[1].strip()[:-6].capitalize()
+            return bv
+        except:
+            return '-'
+            
+    def malvad(self, i_md='', i_tp='', i_u='', i_tl=''):
+        t_s = ''
+        t_le_a = ''
+        temp_le = ''
+        temp_h = ''
+        temp_n = ''
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL0vMS6xKLC3J1yvIKAAAsfsSRw=='))
+        pstd = {'md':i_md, 'tp':i_tp, 'rl':i_u, 'tl':i_tl }
+        try:
+            sts, data = self.getPage(zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1ssoBQCbCwro')))
+            if not sts: return t_s
+            if len(data) == 0: return t_s
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div-fo-div', '</div>')[1]
+            if len(data) == 0: return t_s
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '/>')
+            if len(data) == 0: return t_s
+            if 'ahufh1' not in data[0]: return t_s
+            if 'ahufl1' not in data[1]: return t_s
+            t_le_a = zlib.decompress(base64.b64decode(self.cm.ph.getSearchGroups(data[1], 'value=[\'"]([^"^\']+?)[\'"]')[0]))
+            if i_u == '':
+                return t_le_a
+        except Exception:
+            return t_s
+        try:
+            if i_md != '' and i_tp != '' and i_u != '' and i_tl != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+                if not sts: return t_s
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div_a_div', '</div>')[1]
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '/>')
+                if len(data) == 0: return t_s
+                for item in data:
+                    t_i = self.cm.ph.getSearchGroups(item, 'id=[\'"]([^"^\']+?)[\'"]')[0]
+                    if t_i == 'il':
+                        temp_le = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                        temp_le = temp_le.replace('A_', '')
+                        temp_le = temp_le.replace('_A', '')
+                    elif t_i == 'ih':
+                        temp_h = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0] 
+                    elif t_i == 'in':
+                        temp_n = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                if temp_le == '-' or temp_le == '':
+                    t_s = t_le_a
+                else:
+                    t_s = '- ' + temp_le + '\n\nA műsor hossza:  ' + temp_h + '  |  ' + temp_n
+            return t_s
+        except Exception:
+            return t_le_a
+        return t_s
+        
+    def getdvdsz(self, pu='', psz=''):
+        bv = ''
+        if pu != '' and psz != '':
+            n_atnav = self.malvadst('1', '1', pu)
+            if n_atnav != '' and self.aid:
+                self.aid_ki = 'ID: ' + n_atnav + '\n'
+            else:
+                self.aid_ki = ''
+            bv = self.aid_ki + psz
+        return bv
+
+    def malvadst(self, i_md='', i_hgk='', i_mpu=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
+        pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu }
+        t_s = ''
+        temp_vn = ''
+        temp_vni = ''
+        try:
+            if i_md != '' and i_hgk != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+                if not sts: return t_s
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div_a_div', '</div>')[1]
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<input', '/>')
+                if len(data) == 0: return t_s
+                for item in data:
+                    t_i = self.cm.ph.getSearchGroups(item, 'id=[\'"]([^"^\']+?)[\'"]')[0]
+                    if t_i == 'vn':
+                        temp_vn = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                    elif t_i == 'vni':
+                        temp_vni = self.cm.ph.getSearchGroups(item, 'value=[\'"]([^"^\']+?)[\'"]')[0]
+                if temp_vn != '':
+                    t_s = temp_vn
+            return t_s
+        except Exception:
+            return t_le_a
+        return t_s        
+        
+    def listSearchResult(self, cItem, searchPattern, searchType):
+        printDBG("listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
+        url_susn = cItem['url']
+        self.susn('2', '1', url_susn)
+    
+    def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
+        CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+        name     = self.currItem.get("name", '')
+        category = self.currItem.get("category", '')
+        mode     = self.currItem.get("mode", '')
+        self.currList = []
+        if name == None:
+            self.listMainMenu( {'name':'category'} )
+        elif category == 'list_main':
+            self.listMainItems(self.currItem, 'list_episodes')
+        elif category == 'list_second':
+            self.listSecondItems(self.currItem, 'list_episodes')
+        elif category == 'list_episodes':
+            self.listEpisodes(self.currItem, 'list_third')
+        elif category == 'list_third':
+            self.listThird(self.currItem)
+        elif category in ["search", "search_next_page"]:
+            cItem = dict(self.currItem)
+            cItem.update({'search_item':False, 'name':'category'}) 
+            self.listSearchResult(cItem, searchPattern, searchType)
+        else:
+            printExc()
+        CBaseHostClass.endHandleService(self, index, refresh)
+
+class IPTVHost(CHostBase):
+
+    def __init__(self):
+        CHostBase.__init__(self, AutosHU(), True, [])
+        
+    def withArticleContent(self, cItem):
+        if cItem['type'] != 'article':
+            return False
+        return True
