@@ -14,6 +14,7 @@ hostappletrailers
 hostarconaitvme
 hostardmediathek
 hostartetv
+hostautohu
 hostbajeczkiorg
 hostbbciplayer
 hostbbcsport
@@ -102,9 +103,12 @@ hostliveleak
 hostlocalmedia
 hostlosmovies
 hostluxveritatis
+hostm4sport
 hostmaxtvgo
 hostmeczykipl
 hostmediasetplay
+hostmindigo
+hostmindigtv
 hostmooviecc
 hostmovie4kto
 hostmovienightws
@@ -117,6 +121,7 @@ hostmusicbox
 hostmusicmp3ru
 hostmyfreemp3
 hostmythewatchseries
+hostmytvtelenor
 hostngolos
 hostninateka
 hostnuteczki
@@ -138,6 +143,7 @@ hostradiostacja
 hostredbull
 hostrtbfbe
 hostrteieplayer
+hostrtlmost
 hostserialeco
 hostserialnet
 hostserienstreamto
@@ -147,6 +153,7 @@ hostshahiidanimenet
 hostshoutcast
 hostskstream
 hostsolarmovie
+hostsonyplayer
 hostsovdub
 hostspiegeltv
 hostsportdeutschland
@@ -177,6 +184,7 @@ hosturllist
 hostustreamtv
 hostvevo
 hostvidcorncom
+hostvidea
 hostvideopenny
 hostvimeo
 hostvodpl

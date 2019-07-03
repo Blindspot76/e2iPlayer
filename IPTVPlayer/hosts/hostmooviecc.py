@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-12 by Alec - modified Mooviecc
+# 2019-06-30 by Alec - modified Mooviecc
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetTmpDir, GetIPTVPlayerVerstion
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, GetTmpDir, GetIPTVPlayerVerstion, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
@@ -82,14 +82,14 @@ class MoovieCC(CBaseHostClass):
         self.cacheSortOrder = []
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
                             
-        self.MOVIES_CAT_TAB = [{'category':'movies_cats',     'title': _('Categories'),          'url':self.getFullUrl('/online-filmek/'), 'desc':''},
-                               #{'category':'list_main',       'title': 'Premier filmek',         'tab_id':'prem_movies', 'desc':''},
-                               {'category':'list_main',       'title': 'Népszerű online filmek', 'tab_id':'pop_movies', 'desc':'' }
+        self.MOVIES_CAT_TAB = [{'category':'movies_cats', 'title': _('Categories'), 'url':self.getFullUrl('/online-filmek/'), 'desc':'', 'tps':'1'},
+                               #{'category':'list_main', 'title': 'Premier filmek', 'tab_id':'prem_movies', 'desc':''},
+                               {'category':'list_main', 'title': 'Népszerű online filmek', 'tab_id':'pop_movies', 'desc':'', 'tps':'1' }
                               ]
         
-        self.SERIES_CAT_TAB = [{'category':'series_cats',     'title': _('Categories'),             'url':self.getFullUrl('/online-sorozatok/'), 'desc':''},
-                               {'category':'list_main',       'title': 'Népszerű online sorozatok', 'tab_id':'pop_series', 'desc':''},
-                               {'category':'list_main',       'title': 'Új Epizódok',               'tab_id':'new_episodes', 'desc':''}
+        self.SERIES_CAT_TAB = [{'category':'series_cats', 'title': _('Categories'), 'url':self.getFullUrl('/online-sorozatok/'), 'desc':'', 'tps':'2'},
+                               {'category':'list_main', 'title': 'Népszerű online sorozatok', 'tab_id':'pop_series', 'desc':'', 'tps':'2'},
+                               {'category':'list_main', 'title': 'Új Epizódok', 'tab_id':'new_episodes', 'desc':'', 'tps':'2'}
                               ]
         
     def getPage(self, baseUrl, addParams = {}, post_data = None):
@@ -119,25 +119,34 @@ class MoovieCC(CBaseHostClass):
             desc_now_watched = self.getdvdsz(tab_now_watched, 'Épp most nézik...')
             tab_best_rated = 'mooviecc_legjobbak'
             desc_best_rated = self.getdvdsz(tab_best_rated, 'Legjobbra értékeltek megjelenítése...')
+            tab_ajanlott = 'mooviecc_ajanlott'
+            desc_ajanlott = self.getdvdsz(tab_ajanlott, 'Ajánlott, nézett tartalmak megjelenítése...')
+            tab_keresett = 'mooviecc_keresett_tartalom'
+            desc_keresett = self.getdvdsz(tab_keresett, 'Keresett tartalmak megjelenítése...')
             tab_search = 'mooviecc_kereses'
             desc_search = self.getdvdsz(tab_search, 'Keresés...')
             tab_search_hist = 'mooviecc_kereses_elozmeny'
             desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
-            MAIN_CAT_TAB = [{'category':'list_movies', 'title': _('Movies'), 'cat_tab_id':tab_movies, 'desc':desc_movies },
-                            {'category':'list_series', 'title': _('Series'), 'cat_tab_id':tab_series, 'desc':desc_series },
-                            {'category':'list_main', 'title': 'Legjobbra értékelt', 'cat_tab_id':tab_best_rated, 'tab_id':'now_watched', 'desc':desc_best_rated },
-                            {'category':'list_main', 'title': 'Épp most nézik', 'cat_tab_id':tab_now_watched, 'tab_id':'best_rated', 'desc':desc_now_watched },
-                            {'category':'search', 'title': _('Search'), 'search_item':True, 'cat_tab_id':tab_search, 'desc':desc_search },
-                            {'category':'search_history', 'title': _('Search history'), 'cat_tab_id':tab_search_hist, 'desc':desc_search_hist } 
+            MAIN_CAT_TAB = [{'category':'list_movies', 'title': _('Movies'), 'tps':'1', 'cat_tab_id':tab_movies, 'desc':desc_movies },
+                            {'category':'list_series', 'title': _('Series'), 'tps':'2', 'cat_tab_id':tab_series, 'desc':desc_series },
+                            {'category':'list_main', 'title': 'Legjobbra értékelt', 'tps':'0', 'cat_tab_id':tab_best_rated, 'tab_id':'now_watched', 'desc':desc_best_rated },
+                            {'category':'list_main', 'title': 'Épp most nézik', 'tps':'0', 'cat_tab_id':tab_now_watched, 'tab_id':'best_rated', 'desc':desc_now_watched },
+                            {'category':'list_uj', 'title': 'Ajánlott, nézett tartalmak', 'cat_tab_id':tab_ajanlott, 'desc':desc_ajanlott},
+                            {'category':'list_uj', 'title': 'Keresett tartalmak', 'cat_tab_id':tab_keresett, 'desc':desc_keresett},
+                            {'category':'search', 'title': _('Search'), 'search_item':True, 'tps':'0', 'cat_tab_id':tab_search, 'desc':desc_search },
+                            {'category':'search_history', 'title': _('Search history'), 'tps':'0', 'cat_tab_id':tab_search_hist, 'desc':desc_search_hist } 
                            ]               
             self.listsTab(MAIN_CAT_TAB, {'name':'category'})
+            vtb = self.malvadnav(cItem, '6', '4', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    item['category'] = 'list_third'
+                    self.addVideo(item)
             self.ilk = True
         except Exception:
             printExc()
         
     def listMainItems(self, cItem, nextCategory):
-        printDBG("MoovieCC.listMainItems")
-        
         me = '</ul></ul>'
         m1 = '<li'
         m2 = '</li>'
@@ -186,13 +195,84 @@ class MoovieCC(CBaseHostClass):
                     if t != '': desc.append(t)
                 desc = ' | '.join(desc)
             
-            params = dict(cItem)
-            params = {'good_for_fav': True, 'title':title, 'url':url, 'desc':desc, 'icon':icon}
-            params['category'] = nextCategory
+            params = MergeDicts(cItem, {'good_for_fav': True, 'category':nextCategory, 'title':title, 'url':url, 'desc':desc, 'icon':icon})
             self.addDir(params)
+            
+    def listUjItems(self, cItem):
+        try:
+            tabID = cItem.get('cat_tab_id', '')
+            if tabID == 'mooviecc_ajanlott':
+                self.Fzkttm(cItem, tabID)
+            elif tabID == 'mooviecc_keresett_tartalom':
+                self.Vdakstmk({'name':'history', 'category': 'search', 'cat_tab_id':''}, 'desc', _("Type: "), tabID)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Fzkttm(self, cItem, tabID):
+        try:
+            self.susn('2', '4', tabID)
+            tab_ams = 'mooviecc_ajnlt_musor'
+            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint...')
+            tab_adt = 'mooviecc_ajnlt_datum'
+            desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
+            tab_anzt = 'mooviecc_ajnlt_nezettseg'
+            desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
+            A_CAT_TAB = [{'category':'list_third', 'title': 'Dátum szerint', 'cat_tab_id':tab_adt, 'desc':desc_adt},
+                         {'category':'list_third', 'title': 'Nézettség szerint', 'cat_tab_id':tab_anzt, 'desc':desc_anzt},
+                         {'category':'list_third', 'title': 'Műsorok szerint', 'cat_tab_id':tab_ams, 'desc':desc_ams} 
+                        ]
+            self.listsTab(A_CAT_TAB, cItem)
+        except Exception:
+            printExc()
+            
+    def listThirdItems(self, cItem):
+        try:
+            tabID = cItem.get('cat_tab_id', '')
+            if tabID == 'mooviecc_ajnlt_musor':
+                self.Vajnltmsr(cItem)
+            elif tabID == 'mooviecc_ajnlt_datum':
+                self.Vajnltdtm(cItem)
+            elif tabID == 'mooviecc_ajnlt_nezettseg':
+                self.Vajnltnztsg(cItem)
+            else:
+                return
+        except Exception:
+            printExc()
+            
+    def Vajnltmsr(self,cItem):
+        try:
+            self.susn('2', '4', 'mooviecc_ajnlt_musor')
+            vtb = self.malvadnav(cItem, '3', '4', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    self.addVideo(item)
+        except Exception:
+            printExc()
+            
+    def Vajnltdtm(self,cItem):
+        vtb = []
+        try:
+            self.susn('2', '4', 'mooviecc_ajnlt_datum')
+            vtb = self.malvadnav(cItem, '4', '4', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    self.addVideo(item)
+        except Exception:
+            printExc()
+            
+    def Vajnltnztsg(self,cItem):
+        try:
+            self.susn('2', '4', 'mooviecc_ajnlt_nezettseg')
+            vtb = self.malvadnav(cItem, '5', '4', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    self.addVideo(item)
+        except Exception:
+            printExc()
         
     def listItems(self, cItem, nextCategory):
-        printDBG("MoovieCC.listItems")
         url = cItem['url']
         sort = cItem.get('f_sort', '')
         
@@ -254,18 +334,15 @@ class MoovieCC(CBaseHostClass):
             if title == '': title = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<h2', '</h2>')[1] )
             desc = self.cleanHtmlStr( self.cm.ph.getDataBeetwenMarkers(item, '<p', '</p>')[1] )
             
-            params = dict(cItem)
-            params = {'good_for_fav': True, 'title':title, 'url':url, 'desc':desc, 'icon':icon}
-            params['category'] = nextCategory
+            params = MergeDicts(cItem, {'good_for_fav': True, 'category':nextCategory, 'title':title, 'url':url, 'desc':desc, 'icon':icon})
             self.addDir(params)
         
         if nextPage and len(self.currList) > 0:
             params = dict(cItem)
-            params.update({'title':_("Next page"), 'f_page':cItem.get('f_page', 1)+1})
+            params.update({'title':_("Next page"), 'f_page':cItem.get('f_page', 1)+1, 'desc':'Nyugi...\nVan még további tartalom, lapozz tovább!!!'})
             self.addDir(params)
             
     def _listCategories(self, cItem, nextCategory, m1, m2):
-        printDBG("MoovieCC._listCategories")
         sts, data = self.getPage(cItem['url'])
         if not sts: return
         
@@ -279,15 +356,12 @@ class MoovieCC(CBaseHostClass):
             self.addDir(params)
         
     def listMovies(self, cItem, nextCategory):
-        printDBG("MoovieCC.listMovies")
         self._listCategories(cItem, nextCategory, 'id="get_movies"', '</li>')
         
     def listSeries(self, cItem, nextCategory):
-        printDBG("MoovieCC.listSeries")
         self._listCategories(cItem, nextCategory, 'id="get_series"', '</li>')
         
     def listSort(self, cItem, nextCategory):
-        printDBG("MoovieCC.listSeries")
         if 0 == len(self.cacheSortOrder):
             sts, data = self.getPage(self.getFullUrl('/online-filmek/')) # sort order is same for movies and series
             if not sts: return
@@ -311,14 +385,11 @@ class MoovieCC(CBaseHostClass):
         episodesTab = []
         for tmp in data:
             episodeName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<h2', '</h2>')[1])
-            
             tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<tr', '</tr>')
             for item in tmp:
-                printDBG(item)
                 url = self.cm.ph.getSearchGroups(item, '''href=['"](https?://[^'^"]+?)['"]''')[0]
                 tmpUrl = self.cm.ph.getSearchGroups(url, '''/(https?://[^'^"]+?)$''')[0]
                 if self.cm.isValidUrl(tmpUrl): url = tmpUrl
-                printDBG(">>> " + url)
                 if not self.cm.isValidUrl(url): continue
                 serverName = []
                 item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<td', '</td>')
@@ -328,7 +399,6 @@ class MoovieCC(CBaseHostClass):
                     t = self.cleanHtmlStr(t)
                     if t != '': serverName.append(t)
                 serverName = ' | '.join(serverName)
-                
                 if episodeName not in episodesTab:
                     episodesTab.append(episodeName)
                     self.cacheLinks[episodeName] = []
@@ -336,49 +406,38 @@ class MoovieCC(CBaseHostClass):
         return episodesTab
     
     def exploreItem(self, cItem, nextCategory=''):
-        printDBG("MoovieCC.exploreItem")
-        
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        
+        if len(data) == 0: return
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<div id="plot">', '</div>')[1])
         desc = re.sub(r'^(.{1000}).*$', '\g<1>...', desc)
-        
         icon  = self.cm.ph.getDataBeetwenMarkers(data, '<div id="poster"', '</div>')[1]
         icon  = self.getFullIconUrl( self.cm.ph.getSearchGroups(icon, '''<img[^>]+?src=['"]([^"^']+?\.jpe?g[^"^']*?)["']''')[0] )
         if icon == '': icon = cItem.get('icon', '')
-        
         # trailer 
-        tmp = self.cm.ph.getDataBeetwenMarkers(data, '<a id="youtube_video"', '</a>')[1]
-        url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"]''')[0])
-        if 1 == self.up.checkHostSupport(url):
-            title = self.cleanHtmlStr(tmp)
-            title = '%s - %s' %(cItem['title'], title)
-            params = dict(cItem)
-            params.update({'good_for_fav': False, 'title':title, 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'icon':icon, 'desc':desc})
-            self.addVideo(params)
-        
+        #tmp = self.cm.ph.getDataBeetwenMarkers(data, '<a id="youtube_video"', '</a>')[1]
+        #url = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"]''')[0])
+        #if 1 == self.up.checkHostSupport(url):
+        #    title = self.cleanHtmlStr(tmp)
+        #    title = '%s - %s' %(cItem['title'], title)
+        #    params = dict(cItem)
+        #    params.update({'good_for_fav': False, 'title':title, 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'icon':icon, 'desc':desc})
+        #    self.addVideo(params)
         sourcesLink = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'streambtn'), ('</div', '>'), caseSensitive=False)[1]
         sourcesLink = self.cm.ph.getSearchGroups(sourcesLink, '''href=['"](https?://[^'^"]+?)['"]''')[0]
         if not self.cm.isValidUrl(sourcesLink):
-            printDBG("MoovieCC.exploreItem - missing link for sources")
             return
-        
         tmp = urllib.unquote(sourcesLink)
         tmp = self.cm.ph.getSearchGroups(tmp[1:], '''(https?://.+)''')[0]
         if tmp != '': sourcesLink = tmp
-        
         sts, data = self.getPage(sourcesLink)
         if not sts: return []
-        
+        if len(data) == 0: return []
         desc2 = self.cm.ph.getDataBeetwenMarkers(data, '<article', '</article>')[1]
         mainTitle = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(desc2, '<h1>', '</h1>')[1])
         if mainTitle == '': mainTitle = cItem['title']
-        
         self.cacheLinks  = {}
-        
         if 'seasonList' in data:
-            # list seasons
             data = self.cm.ph.getDataBeetwenMarkers(data, '<nav>', '</nav>')[1]
             data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '</a>')
             for item in data:
@@ -400,17 +459,13 @@ class MoovieCC(CBaseHostClass):
                 self.addVideo(params)
             
     def listEpisodes(self, cItem):
-        printDBG("MoovieCC.listEpisodes")
-        
         sts, data = self.getPage(cItem['url'])
         if not sts: return
-        
+        if len(data) == 0: return
         desc = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(data, '<article', '</article>')[1])
         desc = re.sub(r'^(.{1000}).*$', '\g<1>...', desc)
-        
         seriesTitle = cItem.get('prev_title', '')
         sNum = self.cm.ph.getSearchGroups(cItem['title'], '''^([0-9]+?)\.''')[0]
-        
         episodesList = self._fillLinksCache(data, '<div class="item">')
         for item in episodesList:
             eNum = self.cm.ph.getSearchGroups(item, '''^([0-9]+?)\.''')[0]
@@ -424,25 +479,109 @@ class MoovieCC(CBaseHostClass):
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
-        printDBG("MoovieCC.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
-        cItem = dict(cItem)
-        cItem['url'] = self.getFullUrl('/core/ajax/movies.php')
-        cItem['f_query'] = 'type=search&query=keywords:%s|' % searchPattern
-        cItem['f_page'] = 1
-        cItem['filters'] = ['page']
-        self.listItems(cItem, 'explore_item')
+        try:
+            self.suskrbt('2', '4', searchPattern)
+            cItem = dict(cItem)
+            cItem['url'] = self.getFullUrl('/core/ajax/movies.php')
+            cItem['f_query'] = 'type=search&query=keywords:%s|' % searchPattern
+            cItem['f_page'] = 1
+            cItem['filters'] = ['page']
+            self.listItems(cItem, 'explore_item')
+        except Exception:
+            return
+            
+    def mstr(self, i_t=''):
+        bv = ''
+        try:
+            if i_t != '':
+                idx1 = i_t.rfind('-')
+                if -1 < idx1:
+                    tmp_i_t = i_t[idx1+1:].strip()
+                    idx2 = tmp_i_t.rfind('e')
+                    if -1 < idx2:
+                        tmp_i_t = tmp_i_t[idx2+1:].strip()
+                        idx3 = len(tmp_i_t)
+                        if idx3 == 0 or idx3 > 2: return ''
+                        if tmp_i_t.startswith('0'): tmp_i_t = tmp_i_t[1:].strip()
+                        bv = tmp_i_t
+            return bv
+        except Exception:
+            return ''
+            
+    def flzchim(self, i_u='', i_t=''):
+        try:
+            if i_u != '' and i_t != '':
+                self.cacheLinks  = {}
+                if 'filmbazis' in i_u:
+                    episodesTab = []
+                    resz = self.mstr(i_t)
+                    if resz != '':
+                        sts, data = self.getPage(i_u)
+                        if not sts: return
+                        if len(data) == 0: return
+                        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="item">', '</table>')
+                        if len(data) == 0: return
+                        for tmp in data:
+                            id_v = self.cm.ph.getSearchGroups(tmp, '''id=['"]([^'^"]+?)['"]''')[0]
+                            if len(id_v) == 0 or id_v != resz: continue
+                            episodeName = self.cleanHtmlStr(self.cm.ph.getDataBeetwenMarkers(tmp, '<h2', '</h2>')[1])
+                            tmp = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<tr', '</tr>')
+                            for item in tmp:
+                                url = self.cm.ph.getSearchGroups(item, '''href=['"](https?://[^'^"]+?)['"]''')[0]
+                                tmpUrl = self.cm.ph.getSearchGroups(url, '''/(https?://[^'^"]+?)$''')[0]
+                                if self.cm.isValidUrl(tmpUrl): url = tmpUrl
+                                if not self.cm.isValidUrl(url): continue
+                                serverName = []
+                                item = self.cm.ph.getAllItemsBeetwenMarkers(item, '<td', '</td>')
+                                for t in item:
+                                    if '/flags/' in t:
+                                        t = self.cm.ph.getSearchGroups(t, '''<img[^>]+?src=['"][^"^']+?/([^/]+?)\.png['"]''')[0]
+                                    t = self.cleanHtmlStr(t)
+                                    if t != '': serverName.append(t)
+                                serverName = ' | '.join(serverName)
+                                if episodeName not in episodesTab:
+                                    episodesTab.append(episodeName)
+                                    self.cacheLinks[episodeName] = []
+                                self.cacheLinks[episodeName].append({'name':serverName, 'url':url, 'need_resolve':1})
+                            break
+                if 'moovie' in i_u:
+                    sts, data = self.getPage(i_u)
+                    if not sts: return
+                    if len(data) == 0: return
+                    sourcesLink = self.cm.ph.getDataBeetwenNodes(data, ('<div', '>', 'streambtn'), ('</div', '>'), caseSensitive=False)[1]
+                    sourcesLink = self.cm.ph.getSearchGroups(sourcesLink, '''href=['"](https?://[^'^"]+?)['"]''')[0]
+                    if not self.cm.isValidUrl(sourcesLink): return
+                    tmp = urllib.unquote(sourcesLink)
+                    tmp = self.cm.ph.getSearchGroups(tmp[1:], '''(https?://.+)''')[0]
+                    if tmp != '': sourcesLink = tmp
+                    sts, data = self.getPage(sourcesLink)
+                    if not sts: return
+                    if len(data) == 0: return
+                    if 'seasonList' not in data:
+                        episodesList = self._fillLinksCache(data, '<table')
+        except Exception:
+            return
         
     def getLinksForVideo(self, cItem):
-        printDBG("MoovieCC.getLinksForVideo [%s]" % cItem)
         retTab = []
-        if 1 == self.up.checkHostSupport(cItem.get('url', '')):
-            videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
-            return self.up.getVideoLinkExt(videoUrl)
-        key = cItem.get('links_key', '')
-        return self.cacheLinks.get(key, [])
+        try:
+            if 1 == self.up.checkHostSupport(cItem.get('url', '')):
+                videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
+                return self.up.getVideoLinkExt(videoUrl)
+            if cItem['category'] != 'list_third':
+                self.susmrgts('2', '4', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'])
+                key = cItem.get('links_key', '')
+            else:
+                key = ''
+                resz = self.mstr(cItem['title'])
+                if resz != '':
+                    key = resz + '. rész'
+                self.flzchim(cItem['url'], cItem['title'])
+            return self.cacheLinks.get(key, [])
+        except Exception:
+            return []
         
     def getVideoLinks(self, videoUrl):
-        printDBG("MoovieCC.getVideoLinks [%s]" % videoUrl)
         videoUrl = strwithmeta(videoUrl)
         urlTab = []
         
@@ -557,11 +696,9 @@ class MoovieCC(CBaseHostClass):
         return urlTab
     
     def getFavouriteData(self, cItem):
-        printDBG('MoovieCC.getFavouriteData')
         return json.dumps(cItem) 
         
     def getLinksForFavourite(self, fav_data):
-        printDBG('MoovieCC.getLinksForFavourite')
         if self.MAIN_URL == None:
             self.selectDomain()
         links = []
@@ -572,7 +709,6 @@ class MoovieCC(CBaseHostClass):
         return links
         
     def setInitListFromFavouriteItem(self, fav_data):
-        printDBG('MoovieCC.setInitListFromFavouriteItem')
         if self.MAIN_URL == None:
             self.selectDomain()
         try:
@@ -584,9 +720,7 @@ class MoovieCC(CBaseHostClass):
         return True
         
     def getArticleContent(self, cItem):
-        printDBG("MoovieCC.getArticleContent [%s]" % cItem)
         retTab = []
-        
         otherInfo = {}
         
         url = cItem.get('prev_url', '')
@@ -628,6 +762,44 @@ class MoovieCC(CBaseHostClass):
         if icon == '':  icon = cItem.get('icon', self.DEFAULT_ICON_URL)
         
         return [{'title':self.cleanHtmlStr( title ), 'text': self.cleanHtmlStr( desc ), 'images':[{'title':'', 'url':self.getFullUrl(icon)}], 'other_info':otherInfo}]
+    
+    def suskrbt(self, i_md='', i_hgk='', i_mpsz=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzwbywERxYklKkl5BRgEAD/4T/Q=='))
+        try:
+            if i_mpsz != '' and len(i_mpsz) > 1:
+                if len(i_mpsz) > 80:
+                    i_mpsz = i_mpsz[:78]
+                i_mpsz = base64.b64encode(i_mpsz).replace('\n', '').strip()
+                if i_hgk != '':
+                    i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+                    pstd = {'md':i_md, 'hgk':i_hgk, 'mpsz':i_mpsz}
+                    if i_md != '' and i_hgk != '' and i_mpsz != '':
+                        sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
+            
+    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        try:
+            if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+            if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
+            if i_mpu != '': i_mpu = base64.b64encode(i_mpu).replace('\n', '').strip()
+            if i_mpt != '': i_mpt = base64.b64encode(i_mpt).replace('\n', '').strip()
+            if i_mpi == '':
+                i_mpi = base64.b64encode('-')
+            else:
+                i_mpi = base64.b64encode(i_mpi).replace('\n', '').strip()
+            if i_mpdl == '':
+                i_mpdl = base64.b64encode('-')
+            else:
+                i_mpdl = base64.b64encode(i_mpdl).replace('\n', '').strip()
+            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl}
+            if i_md != '' and i_hgk != '' and i_mptip != '' and i_mpu != '':
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+            return
+        except Exception:
+            return
     
     def getdvdsz(self, pu='', psz=''):
         bv = ''
@@ -673,6 +845,52 @@ class MoovieCC(CBaseHostClass):
         except Exception:
             return t_s
             
+    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
+        t_s = []
+        try:
+            if i_md != '' and i_hgk != '' and i_mptip != '':
+                if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+                if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip}
+                sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
+                if not sts: return t_s
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div id="div_a1_div"', '<div id="div_a2_div"')[1]
+                if len(data) == 0: return t_s
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="d_sor_d"', '</div>')
+                if len(data) == 0: return t_s
+                for temp_item in data:
+                    temp_data = self.cm.ph.getAllItemsBeetwenMarkers(temp_item, '<span', '</span>')
+                    if len(temp_data) == 0: return t_s
+                    for item in temp_data:
+                        t_vp = self.cm.ph.getSearchGroups(item, 'class=[\'"]([^"^\']+?)[\'"]')[0]
+                        if t_vp == 'c_sor_u':
+                            temp_u = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_u">', '</span>', False)[1]
+                            if temp_u != '': temp_u = base64.b64decode(temp_u)
+                        if t_vp == 'c_sor_t':
+                            temp_t = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_t">', '</span>', False)[1]
+                            if temp_t != '': temp_t = base64.b64decode(temp_t)
+                        if t_vp == 'c_sor_i':
+                            temp_i = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_i">', '</span>', False)[1]
+                            if temp_i != '': temp_i = base64.b64decode(temp_i)
+                        if t_vp == 'c_sor_l':
+                            temp_l = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_l">', '</span>', False)[1]
+                            if temp_l != '': temp_l = base64.b64decode(temp_l)
+                        if t_vp == 'c_sor_n':
+                            temp_n = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_n">', '</span>', False)[1]
+                            if temp_n != '': temp_n = base64.b64decode(temp_n)
+                        if t_vp == 'c_sor_tip':
+                            temp_tp = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_tip">', '</span>', False)[1]
+                            if temp_tp != '': temp_tp = base64.b64decode(temp_tp)
+                    if temp_u == '' and temp_t =='': continue
+                    if temp_n == '': temp_n = '1'
+                    params = MergeDicts(cItem, {'good_for_fav': False, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp})
+                    t_s.append(params)       
+            return t_s
+        except Exception:
+            return []
+            
     def susn(self, i_md='', i_hgk='', i_mpu=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
         pstd = {'md':i_md, 'hgk':i_hgk, 'mpu':i_mpu, 'hv':self.vivn, 'orv':self.porv, 'bts':self.pbtp}
@@ -712,6 +930,60 @@ class MoovieCC(CBaseHostClass):
             return bv
         except:
             return '-'
+            
+    def malvadkrttmk(self, i_md='', i_hgk=''):
+        bv = []
+        ukszrz = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzwbywERxYklKkl5BRgEAD/4T/Q=='))
+        try:
+            if i_md != '' and i_hgk != '':
+                i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk}
+                sts, data = self.cm.getPage(ukszrz, self.defaultParams, pstd)
+                if not sts: return []
+                if len(data) == 0: return []
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div>', '</div>', False)
+                if len(data) == 0: return []
+                for item in data:
+                    if item != '':
+                        bv.append(base64.b64decode(item))
+            return bv
+        except Exception:
+            return []
+            
+    def Vdakstmk(self, baseItem={'name': 'history', 'category': 'search'}, desc_key='plot', desc_base=(_("Type: ")), tabID='' ):
+        if tabID != '':
+            self.susn('2', '4', tabID)
+            
+        def _vdakstmk(data,lnp=50):
+            ln = 0
+            for histItem in data:
+                plot = ''
+                try:
+                    ln += 1
+                    if type(histItem) == type({}):
+                        pattern = histItem.get('pattern', '')
+                        search_type = histItem.get('type', '')
+                        if '' != search_type: plot = desc_base + _(search_type)
+                    else:
+                        pattern = histItem
+                        search_type = None
+                    params = dict(baseItem)
+                    params.update({'title': pattern, 'search_type': search_type,  desc_key: plot, 'tps':'0'})
+                    self.addDir(params)
+                    if ln >= lnp:
+                        break
+                except Exception: printExc()
+            
+        try:
+            list = self.malvadkrttmk('1','4')
+            if len(list) > 0:
+                _vdakstmk(list,2)
+            if len(list) > 0:
+                list = list[2:]
+                random.shuffle(list)
+                _vdakstmk(list,48)
+        except Exception:
+            printExc()
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
@@ -747,6 +1019,10 @@ class MoovieCC(CBaseHostClass):
             self.exploreItem(self.currItem, 'list_episodes')
         elif category == 'list_episodes':
             self.listEpisodes(self.currItem)
+        elif category == 'list_uj':
+            self.listUjItems(self.currItem)
+        elif category == 'list_third':
+            self.listThirdItems(self.currItem)
         elif category in ["search", "search_next_page"]:
             if self.currItem['cat_tab_id'] == 'mooviecc_kereses':
                 self.susn('2', '4', 'mooviecc_kereses')
@@ -756,7 +1032,7 @@ class MoovieCC(CBaseHostClass):
         elif category == "search_history":
             if self.currItem['cat_tab_id'] == 'mooviecc_kereses_elozmeny':
                 self.susn('2', '4', 'mooviecc_kereses_elozmeny')
-            self.listsHistory({'name':'history', 'category': 'search', 'cat_tab_id':''}, 'desc', _("Type: "))
+            self.listsHistory({'name':'history', 'category': 'search', 'cat_tab_id':'', 'tps':'0'}, 'desc', _("Type: "))
         else:
             printExc()
         CBaseHostClass.endHandleService(self, index, refresh)

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-24 by Alec - modified Filmezz
+# 2019-06-30 by Alec - modified Filmezz
 ###################################################
-HOST_VERSION = "1.7"
+HOST_VERSION = "1.8"
 ###################################################
 # LOCAL import
 ###################################################
@@ -316,7 +316,7 @@ class FilmezzEU(CBaseHostClass):
                 descTab.insert(0, ' | '.join(tmp))
                 ######
                 
-                params = MergeDicts(cItem, {'good_for_fav': True, 'category':nextCategory , 'title':title, 'url':url, 'desc':'[/br]'.join(descTab), 'icon':icon})
+                params = MergeDicts(cItem, {'good_for_fav': False, 'category':nextCategory , 'title':title, 'url':url, 'desc':'[/br]'.join(descTab), 'icon':icon})
                 self.addDir(params)
             
             if nextPage and len(self.currList) > 0:
@@ -343,7 +343,8 @@ class FilmezzEU(CBaseHostClass):
         reDescObj = re.compile('title="([^"]+?)"')
         titlesTab = []
         self.cacheLinks  = {}
-        tmp_url = self.cm.ph.getDataBeetwenMarkers(data, "window.open('", "',", False)[1]
+        data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-md-6 col-sm-12', '</div>')[1]
+        tmp_url = self.cm.ph.getSearchGroups(data, '''href=['"]([^'^"]+?)['"]''')[0]
         sts, data = self.getPage(tmp_url)
         if not sts: return
         if len(data) == 0: return
@@ -404,7 +405,8 @@ class FilmezzEU(CBaseHostClass):
                 reDescObj = re.compile('title="([^"]+?)"')
                 titlesTab = []
                 self.cacheLinks  = {}
-                tmp_url = self.cm.ph.getDataBeetwenMarkers(data, "window.open('", "',", False)[1]
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="col-md-6 col-sm-12', '</div>')[1]
+                tmp_url = self.cm.ph.getSearchGroups(data, '''href=['"]([^'^"]+?)['"]''')[0]
                 sts, data = self.getPage(tmp_url)
                 if not sts: return
                 if len(data) == 0: return
