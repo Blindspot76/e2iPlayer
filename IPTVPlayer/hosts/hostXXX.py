@@ -163,7 +163,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.06.24.0"
+    XXXversion = "2019.07.08.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -374,7 +374,7 @@ class Host:
 
            valTab.append(CDisplayListItem('FOTKA-PL-KAMERKI',     'http://www.fotka.pl/kamerki', CDisplayListItem.TYPE_CATEGORY, ['http://api.fotka.pl/v2/cams/get?page=1&limit=100&gender=f'],'FOTKA-PL-KAMERKI', 'https://pbs.twimg.com/profile_images/3086758992/6fb5cc2ee2735c334d0363bcb01a52ca_400x400.png', None)) 
            valTab.append(CDisplayListItem('CHATURBATE',     'chaturbate.com', CDisplayListItem.TYPE_CATEGORY, ['https://chaturbate.com'],'CHATURBATE','http://www.adultcamfriendx.com/wp-content/uploads/2016/11/chaturbate-cams-logo.png', None)) 
-           #valTab.append(CDisplayListItem('XHAMSTERLIVE',       "Kamerki",       CDisplayListItem.TYPE_CATEGORY,['http://xhamsterlive.com'], 'xhamster-cams', 'https://cdn.stripchat.com/assets/common/images/favicon_xh.png',None))
+           valTab.append(CDisplayListItem('XHAMSTERLIVE',       "Kamerki",       CDisplayListItem.TYPE_CATEGORY,['http://xhamsterlive.com'], 'xhamsterlive', 'https://adultwebcamnews.com/wp-content/uploads/2016/10/StripChat.jpg',None))
            valTab.append(CDisplayListItem('CAM4 - KAMERKI',     'http://www.cam4.pl', CDisplayListItem.TYPE_CATEGORY, ['http://www.cam4.pl/female'],'CAM4-KAMERKI', 'https://www.cam4models.com/images/c4logo_white.png', None)) 
            valTab.append(CDisplayListItem('MYFREECAMS',     'http://www.myfreecams.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.myfreecams.com/#Homepage'],'MYFREECAMS', 'http://www.adultcamfriendx.com/wp-content/uploads/2016/11/myfreecams-webcams-logo.png', None)) 
            #valTab.append(CDisplayListItem('LIVEJASMIN',     'http://new.livejasmin.com', CDisplayListItem.TYPE_CATEGORY, ['http://new.livejasmin.com/en/girl/free+chat?selectedFilters=12'],'LIVEJASMIN', 'http://livejasmins.fr/livejasmin-france.png', None)) 
@@ -389,7 +389,7 @@ class Host:
                valTab.append(CDisplayListItem('CAMSTER',       'http://new.naked.com',       CDisplayListItem.TYPE_CATEGORY, ['http://new.naked.com/'],            'NAKED', phImage, None)) 
            except Exception: 
                printExc()
-           #valTab.append(CDisplayListItem('FIRECAMS',       'https://firecams.com',       CDisplayListItem.TYPE_CATEGORY, ['https://firecams.com/category'],            'FIRECAMS','https://www.bucharestsummit.com/uploads/firecams.jpg', None)) 
+           #valTab.append(CDisplayListItem('FIRECAMS',       'https://firecams.com',       CDisplayListItem.TYPE_CATEGORY, ['http://sexycamx.com'],            'FIRECAMS','https://www.bucharestsummit.com/uploads/firecams.jpg', None)) 
            valTab.append(CDisplayListItem('ADULT-TV',     'http://www.adulttvlive.net/category/live-18-tv/', CDisplayListItem.TYPE_CATEGORY, ['http://www.adulttvlive.net/category/live-18-tv/'],'ADULTTV', 'http://www.adultstv.net/wp-content/uploads/2018/10/adulogo-e1540927937315.png', None)) 
            #valTab.append(CDisplayListItem('ADULT-CHANNELS',     'http://adult-channels.com', CDisplayListItem.TYPE_CATEGORY, ['http://adult-channels.com/free-sex-channels/'],'ADULT', 'http://adult-channels.com/wp-content/uploads/2015/09/adult-channels-logo.png', None)) 
            #valTab.append(CDisplayListItem('OKLIVETV ADULT-18',     'http://oklivetv.com/genre/adult-18/', CDisplayListItem.TYPE_CATEGORY, ['http://oklivetv.com/genre/adult-18/?orderby=title'],'OKLIVETV', 'http://oklivetv.com/wp-content/uploads/2015/01/logo2.png', None)) 
@@ -1206,31 +1206,33 @@ class Host:
                  valTab.append(CDisplayListItem(phTitle.strip(),phTitle.strip(),CDisplayListItem.TYPE_CATEGORY, [phUrl],'xhamster-clips', '', None)) 
            return valTab
 
-        if 'xhamster-cams' == name:
+        if 'xhamsterlive' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'http://xhamsterlive.com' 
            url='http://xhamsterlive.com/api/front/models'
-           query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-           try: data = self.cm.getURLRequestData(query_data)
-           except Exception as e:
-              printExc()
-              msg = _("Last error:\n%s" % str(e))
-              GetIPTVNotify().push('%s' % msg, 'error', 20)
-              printDBG( 'Host listsItems query error url: '+url )
-              return valTab
-           #printDBG( 'Host listsItems data: '+data )
-           parse = re.search('"models":(.*?),"ttl":', data, re.S) 
-           if not parse: return valTab
-           result = simplejson.loads(parse.group(1))
-           if result:
-              for item in result:
+           COOKIEFILE = os_path.join(GetCookieDir(), 'xhamsterlive.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(url)
+           if not sts: return valTab
+           printDBG( 'Host listsItems data: '+data )
+           country = ''
+           result = simplejson.loads(data)
+           try:
+              for item in result["models"]:
                  ID = str(item["id"]) 
                  Name = str(item["username"])
                  BroadcastServer = str(item["broadcastServer"])
                  Image = str(item["previewUrl"].replace('\/','/'))  
                  status = str(item["status"])
+                 try:
+                    country = ' [Country: '+str(item["country"]).upper()+']'
+                 except Exception:
+                    printExc()
                  if status == "public":
-                    valTab.append(CDisplayListItem(Name,Name,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', ID, 1)], 0, Image, None)) 
+                    valTab.append(CDisplayListItem(Name,Name+country,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', ID, 1)], 0, Image, None)) 
+           except Exception:
+              printExc()
            return valTab
 
         if 'eporner' == name:
@@ -6203,10 +6205,10 @@ class Host:
         if 'FIRECAMS' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'https://firecams.com/'
-           COOKIEFILE = os_path.join(GetCookieDir(), 'firecams.cookie')
+           COOKIEFILE = os_path.join(GetCookieDir(), 'sexycamx.cookie')
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            self.defaultParams['cookie_items'] = {'isAdultUser':'true'}
-           sts, data = self.getPage(url, 'firecams.cookie', 'firecams.com', self.defaultParams)
+           sts, data = self.getPage(url, 'sexycamx.cookie', 'sexycamx.com', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+data )
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="categories-page__tile">', '</div>')
@@ -7619,36 +7621,37 @@ class Host:
 
         if parser == 'http://xhamster.com/cams':
            config='http://xhamsterlive.com/api/front/config'
-           query_data = { 'url': config, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-           try: data = self.cm.getURLRequestData(query_data)
-           except:
-              printDBG( 'Host listsItems query error url: '+url )
-              return ''
-           #printDBG( 'Host listsItems data: '+data )
+           COOKIEFILE = os_path.join(GetCookieDir(), 'xhamsterlive.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(config)
+           if not sts: return ''
+           printDBG( 'Host listsItems data1: '+data )
            parse = re.search('"sessionHash":"(.*?)"', data, re.S) 
            if not parse: return ''
            sessionHash = parse.group(1) 
            printDBG( 'Host sessionHash: '+sessionHash )
 
            models='http://xhamsterlive.com/api/front/models'
-           query_data = { 'url': models, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-           try: data = self.cm.getURLRequestData(query_data)
-           except:
-              printDBG( 'Host listsItems query error models: '+models )
-              return ''
-           #printDBG( 'Host listsItems data: '+data )
-           parse = re.search('"models":(.*?),"ttl":', data, re.S) 
-           if not parse: return ''
-           result = simplejson.loads(parse.group(1))
-           if result:
-              for item in result:
+           COOKIEFILE = os_path.join(GetCookieDir(), 'xhamsterlive.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(models)
+           if not sts: return ''
+           printDBG( 'Host listsItems data2: '+data )
+           result = simplejson.loads(data)
+           try:
+              for item in result["models"]:
                  ID = str(item["id"]) 
                  Name = item["username"]
                  BroadcastServer = item["broadcastServer"]
                  swf_url = 'http://xhamsterlive.com/assets/cams/components/ui/Player/player.swf?bgColor=2829099&isModel=false&version=1.5.892&bufferTime=1&camFPS=30&camKeyframe=15&camQuality=85&camWidth=640&camHeight=480'
-                 Url = 'rtmp://b-eu4.stripcdn.com:1935/%s?sessionHash=%s&domain=xhamsterlive.com playpath=%s swfUrl=%s pageUrl=http://xhamsterlive.com/cams/%s live=1 ' % (BroadcastServer, sessionHash, ID, swf_url, Name) 
+                 Url = 'rtmp://b-eu10.stripcdn.com:1935/%s?sessionHash=%s&domain=xhamsterlive.com playpath=%s swfUrl=%s pageUrl=http://xhamsterlive.com/cams/%s live=1 ' % (BroadcastServer, sessionHash, ID, swf_url, Name) 
+                 Url = 'rtmp://b-eu10.stripcdn.com:1935/%s?sessionHash=%s&domain=xhamsterlive.com playpath=%s swfVfy=%s pageUrl=http://xhamsterlive.com/cams/%s live=1 ' % (BroadcastServer, sessionHash, ID, swf_url, Name) 
                  if ID == url: 
-                    return Url
+                    return urlparser.decorateUrl(Url, {'Referer': 'https://xhamsterlive.com/cams/'+Name, 'iptv_livestream': True}) 
+           except Exception:
+              printExc()
            return ''
 
         if parser == 'http://www.cliphunter.com':
