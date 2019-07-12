@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-30 by Alec - modified Filmezz
+# 2019-07-11 by Alec - modified Filmezz
 ###################################################
-HOST_VERSION = "1.8"
+HOST_VERSION = "2.0"
 ###################################################
 # LOCAL import
 ###################################################
@@ -316,7 +316,7 @@ class FilmezzEU(CBaseHostClass):
                 descTab.insert(0, ' | '.join(tmp))
                 ######
                 
-                params = MergeDicts(cItem, {'good_for_fav': False, 'category':nextCategory , 'title':title, 'url':url, 'desc':'[/br]'.join(descTab), 'icon':icon})
+                params = MergeDicts(cItem, {'good_for_fav': True, 'category':nextCategory , 'title':title, 'url':url, 'desc':'[/br]'.join(descTab), 'icon':icon})
                 self.addDir(params)
             
             if nextPage and len(self.currList) > 0:
@@ -338,7 +338,7 @@ class FilmezzEU(CBaseHostClass):
         title = self.cleanHtmlStr(self.cm.ph.getSearchGroups(tmp, '''title=['"]([^'^"]+?)['"]''')[0])
         if 1 == self.up.checkHostSupport(url):
             params = dict(cItem)
-            params.update({'good_for_fav': False, 'title':title, 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'desc':desc})
+            params.update({'good_for_fav': True, 'title':title, 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'desc':desc})
             self.addVideo(params)
         reDescObj = re.compile('title="([^"]+?)"')
         titlesTab = []
@@ -382,7 +382,7 @@ class FilmezzEU(CBaseHostClass):
             params = dict(cItem)
             title = cItem['title']
             if item != '': title += ' :: ' + item
-            params.update({'good_for_fav': False, 'title':title, 'links_key':item, 'prev_desc':cItem.get('desc', ''), 'desc':desc})
+            params.update({'good_for_fav': True, 'title':title, 'links_key':item, 'prev_desc':cItem.get('desc', ''), 'desc':desc})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -735,7 +735,7 @@ class FilmezzEU(CBaseHostClass):
                             if temp_tp != '': temp_tp = base64.b64decode(temp_tp)
                     if temp_u == '' and temp_t =='': continue
                     if temp_n == '': temp_n = '1'
-                    params = MergeDicts(cItem, {'good_for_fav': False, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp})
+                    params = MergeDicts(cItem, {'good_for_fav': True, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp})
                     t_s.append(params)       
             return t_s
         except Exception:

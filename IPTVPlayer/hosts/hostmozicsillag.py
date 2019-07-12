@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-27 by Alec - modified Mozicsillag
+# 2019-07-11 by Alec - modified Mozicsillag
 ###################################################
-HOST_VERSION = "1.2"
+HOST_VERSION = "1.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -416,7 +416,7 @@ class MuziCsillangCC(CBaseHostClass):
             if title == '': title = '%s - %s' %(cItem['title'], _('trailer'))
             if 1 == self.up.checkHostSupport(url):
                 params = dict(cItem)
-                params.update({'good_for_fav': False, 'title':'%s. %s' % (idx+1, title), 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'desc':desc})
+                params.update({'good_for_fav': True, 'title':'%s. %s' % (idx+1, title), 'prev_title':cItem['title'], 'url':url, 'prev_url':cItem['url'], 'prev_desc':cItem.get('desc', ''), 'desc':desc})
                 self.addVideo(params)
         sourcesLink = self.cm.ph.rgetDataBeetwenMarkers2(data, 'Beküldött linkek megtekintése', '<a', caseSensitive=False)[1]
         sourcesLink = self.cm.ph.getSearchGroups(sourcesLink, '''href=['"](https?://[^'^"]+?)['"]''')[0]
@@ -464,7 +464,7 @@ class MuziCsillangCC(CBaseHostClass):
             params = dict(cItem)
             title = cItem['title']
             if item != '': title += ' :: ' + item
-            params.update({'good_for_fav': False, 'title':title, 'links_key':item, 'prev_desc':cItem.get('desc', ''), 'desc':desc})
+            params.update({'good_for_fav': True, 'title':title, 'links_key':item, 'prev_desc':cItem.get('desc', ''), 'desc':desc})
             self.addVideo(params)
 
     def listSearchResult(self, cItem, searchPattern, searchType):
@@ -759,7 +759,7 @@ class MuziCsillangCC(CBaseHostClass):
                             if temp_tp != '': temp_tp = base64.b64decode(temp_tp)
                     if temp_u == '' and temp_t =='': continue
                     if temp_n == '': temp_n = '1'
-                    params = MergeDicts(cItem, {'good_for_fav': False, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp})
+                    params = MergeDicts(cItem, {'good_for_fav': True, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp})
                     t_s.append(params)       
             return t_s
         except Exception:
