@@ -8,6 +8,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Ge
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import *
 from Plugins.Extensions.IPTVPlayer.tsiplayer.pars_openload import get_video_url as pars_openload
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 
 ###################################################
 # FOREIGN import
@@ -75,7 +76,7 @@ def gettytul():
 
 class TSIPlayer(CBaseHostClass):
 
-	tsiplayerversion = "2019.06.13.2" 
+	tsiplayerversion = "2019.07.08.2"  
 	tsiplayerremote  = "0.0.0.0"
 	
 	def __init__(self):
@@ -100,8 +101,18 @@ class TSIPlayer(CBaseHostClass):
 
 #		self.addDir({'category' : 'Ramadan','title':'Ramadan 2019','desc':'Ramadan','icon':'https://freedesignfile.com/upload/2018/07/Ramadan-kareem-purple-background-vector-01.jpg'} )
 #		self.addDir({'category' : 'Kids','title':'Kids','desc':'Kids','icon':'https://store-images.s-microsoft.com/image/apps.29938.9007199266637533.0c6bdecb-3600-484c-8f25-f2bfff75f499.5a2f599e-d619-41d4-a9b9-493f591bd3e0'} )
-		if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/TSmedia/addons'):# #folder=
-			self.addDir({'name':'cat','category' : 'tsmedia','title':'TSMedia','desc':'TSMedia','icon':'https://i.imgur.com/ddCxCbQ.png','gnr':'start'} )
+		if os.path.exists('/usr/lib/enigma2/python/Plugins/Extensions/TSmedia/addons'):
+			desc=''
+			version='/usr/lib/enigma2/python/Plugins/Extensions/TSmedia/version'
+			pic='file:///usr/lib/enigma2/python/Plugins/Extensions/TSmedia/interface/images/team.png' #'https://i.imgur.com/ddCxCbQ.png'
+			with open(version) as f:
+				content = f.readlines()	
+			for x in content:
+				if ':' in x:
+					x1,x2=x.strip().split(':',1)
+					desc=desc+'\c00????00'+x1+':\c00?????? '+x2+'\\n'
+			desc=desc+'\c00????00Developpeur:\c00?????? mfaraj57\\n'		
+			self.addDir({'name':'cat','category' : 'tsmedia','title':'TSMedia','desc':desc,'icon':pic,'gnr':'start'} )
 		if config.plugins.iptvplayer.dev_mod.value:
 			self.addDir({'name':'cat','category' : 'Devmod','title':'Development','desc':'','icon':'http://www.mezganisaid.com/z-include/images/code-dev.png'} )
 		self.GetVersions()
@@ -183,8 +194,8 @@ class TSIPlayer(CBaseHostClass):
 					folder2=folder+'/'+dir_
 					lst2=[]
 					lst2=os.listdir(folder2)
-					if (len(lst2)>1):					
-						self.addDir({'category' : 'tsmedia','title':dir_.upper(),'desc':str(dir_),'icon':img,'folder':folder2,'section':dir_,'gnr':'menu1'})			
+					if (len(lst2)>1):			
+						self.addDir({'category' : 'tsmedia','title':dir_.upper(),'desc':cItem['desc'],'icon':img,'folder':folder2,'section':dir_,'gnr':'menu1'})			
 		if gnr=='menu1':
 			folder=cItem['folder']
 			lst=[]
@@ -192,95 +203,129 @@ class TSIPlayer(CBaseHostClass):
 			for (dir_) in lst:
 				if ('.py' not in dir_):
 					folder2=folder+'/'+dir_	
-					img1='file://'+folder2+'/icon.png'				
-					self.addDir({'category' : 'tsmedia','title':dir_.upper(),'desc':str(dir_),'icon':img1,'py_file':folder2+'/default.py','section':cItem['section'],'plugin_id':dir_,'argv2':'','gnr':'menu2'})	
+					img1='file://'+folder2+'/icon.png'
+					version=folder2+'/addon.xml'
+					desc=''
+					titre=dir_.upper()
+					with open(version) as f:
+						content = f.read()	
+					inf_list = re.findall('id.*?"(.*?)".*?version.*?"(.*?)".*?name.*?"(.*?)".*?name.*?"(.*?)".*?<description>(.*?)</description>', content, re.S)
+					if inf_list: 
+						desc='\c00????00Version:\c00?????? '+inf_list[0][1]+'\\n'
+						desc=desc+'\c00????00ID:\c00?????? '+inf_list[0][0]+'\\n'
+						desc=desc+'\c00????00Provider Name:\c00?????? '+inf_list[0][3]+'\\n'
+						desc=desc+'\c00????00Description:\c00?????? '+inf_list[0][4].strip()+'\\n'
+						titre=inf_list[0][2].strip()
+					self.addDir({'category' : 'tsmedia','title':titre,'desc':desc,'icon':img1,'py_file':folder2+'/default.py','section':cItem['section'],'plugin_id':dir_,'gnr':'menu2'})	
+
+
+
 		if gnr=='menu2':
 			section_=cItem['section']
 			plugin_id_=cItem['plugin_id']					
 			py_file=cItem['py_file']
-			argv2=cItem['argv2']		
+			argv2=cItem.get('argv2','{}')
+			if argv2=='{}':
+				file_=section_ + '___' +plugin_id_
+				try:
+					_url='http://86.105.212.206/tsiplayer/stat.php?host=host_TSMedia&cat='+file_
+					self.cm.getPage(_url)
+				except:
+					printDBG('erreur')	
 			lst=[]	
 			sys.argv = [py_file,'1',argv2,'']
 			import_ = 'from Plugins.Extensions.TSmedia.addons.' + section_ + '.' + plugin_id_ + '.default import start'
 			try:
 				exec (import_)
 				lst=start()
+				printDBG(str(lst))
 			except Exception, e:
 				lst=None
 				self.addMarker({'title':'\c00????00'+'----> Erreur <----','icon':img,'desc':str(e)})
 			if lst:
-				for(titre,argv2_,IMG,x4,x5,x6,x7) in lst:
-					params = self.get_params(argv2_)
-					printDBG(str(params))
-					printDBG(argv2_)
-					try:
-						img_=str(params['image']).replace(' ','+')
-						if img_.startswith('/usr/'):
-							img_='file://'+img_
-					except:
-						img_=IMG
-						if img_.startswith('/usr/'): 
-							img_='file://'+img_
-					try: desc_=params['desc']
-					except: desc_=''
-					try: url_=params['url']
-					except: url_=''
-					try: mode_=params['mode']
-					except: mode_='1'
-					if mode_=='103' or mode_=='603' or mode_=='703' or mode_=='803':
-						URL=cItem['section']+'|'+cItem['plugin_id']+'|'+cItem['py_file']+'|'+argv2_
-						self.addDir({'category':'search'  ,'title': _('Search'),'search_item':True,'page':-1,'hst':'tsmedia','url':URL,'icon':img})				
-					elif (self.up.checkHostSupport(url_) == 1) and config.plugins.iptvplayer.ts_resolver.value=='tsiplayer':
-						URL=url_
-						self.addVideo({'category' : 'video','hst':'none','title':titre,'url':URL,'desc':desc_+' mode='+url_,'icon':img_,'py_file':cItem['py_file'],'section':cItem['section'],'plugin_id':cItem['plugin_id'],'argv2':argv2_,'gnr':'menu2',})					
-					elif argv2_.startswith('http'):
-						URL=argv2_.replace('AxNxD', '&').replace('ExQ', '=')
-						self.addVideo({'category' : 'video','hst':'direct','title':titre,'url':URL,'desc':desc_,'icon':img_})					
-					elif 'plugin://plugin.video.youtube' in argv2_:
-						x1,video_id= argv2_.split('videoidExQ')	
-						URL='https://www.youtube.com/watch?v='+video_id								
-						self.addVideo({'category' : 'video','hst':'none','title':titre,'url':URL,'desc':desc_,'icon':img_})					
-					else:
-						self.addDir({'category' : 'tsmedia','title':titre,'desc':desc_,'icon':img_,'py_file':cItem['py_file'],'section':cItem['section'],'plugin_id':cItem['plugin_id'],'argv2':argv2_,'gnr':'menu2',})	
+				self.tsmedia_getlist(lst,cItem)
+				
+	def tsmedia_getlist(self,lst,cItem):
+		img=cItem['icon']
+		for elm in lst:      #(titre,argv2_,IMG,x4,x5,x6,x7) in lst:
+			titre=elm.get('title','')
+			if titre=='':
+				titre=elm.get('name','')
+			img_=elm['image']
+			if img_.startswith('/usr/'): img_='file://'+img_
+			img_=img_.replace('TSmedia//interface','TSmedia/interface')
+			img_=img_.replace('TSmedia//','TSmedia/addons/')
+			desc_=elm['desc']
+			url_=elm['url']
+			mode_=elm['mode']
+			printDBG('elm'+str(elm))
+			
+			if str(mode_)=='103' or str(mode_)=='603' or str(mode_)=='703' or str(mode_)=='803':
+				URL=cItem['section']+'|'+cItem['plugin_id']+'|'+cItem['py_file']+'|'+str(elm)
+				self.addDir({'category':'search'  ,'title': _('Search'),'search_item':True,'page':-1,'hst':'tsmedia','url':URL,'icon':img})				
+			
+			elif mode_==0:
+				if 'youtube' in url_:
+					self.addVideo({'category' : 'video','hst':'none','title':titre,'url':url_,'desc':desc_,'icon':img_})				
+				else:
+					self.addVideo({'category' : 'video','hst':'direct','title':titre,'url':url_,'desc':desc_,'icon':img_})	
+			elif (self.up.checkHostSupport(url_) == 1) and config.plugins.iptvplayer.ts_resolver.value=='tsiplayer':
+				URL=url_
+				self.addVideo({'category' : 'video','hst':'none','title':titre,'url':URL,'desc':desc_+' mode='+url_,'icon':img_,'py_file':cItem['py_file'],'section':cItem['section'],'plugin_id':cItem['plugin_id'],'argv2':str(elm),'gnr':'menu2',})					
+			else:
+				self.addDir({'category' : 'tsmedia','argv2':str(elm),'title':titre,'desc':desc_,'icon':img_,'py_file':cItem['py_file'],'section':cItem['section'],'plugin_id':cItem['plugin_id'],'gnr':'menu2',})		
+
+	def tsmedia_getlist_sea(self,lst,section_,plugin_id_,py_file,argv2,str_ch):
+		for elm in lst:      #(titre,argv2_,IMG,x4,x5,x6,x7) in lst:
+			titre=elm.get('title','')
+			if titre=='':
+				titre=elm.get('name','')
+			img_=elm['image']
+			if img_.startswith('/usr/'): img_='file://'+img_
+			img_=img_.replace('TSmedia//interface','TSmedia/interface')
+			img_=img_.replace('TSmedia//','TSmedia/addons/')
+			desc_=elm['desc']
+			url_=elm['url']
+			mode_=elm['mode']
+			printDBG('elm'+str(elm))
+			
+			if str(mode_)=='103' or str(mode_)=='603' or str(mode_)=='703' or str(mode_)=='803':
+				URL=section_+'|'+plugin_id_+'|'+py_file+'|'+str(elm)
+				self.addDir({'category':'_next_page','title': '\c0000??00'+'Page Suivante', 'search_item':False,'page':-1,'searchPattern':str_ch,'url':URL,'hst':'tsmedia','icon':img_})				
+			elif mode_==0:
+				if 'youtube' in url_:
+					self.addVideo({'category' : 'video','hst':'none','title':titre,'url':url_,'desc':desc_,'icon':img_})				
+				else:
+					self.addVideo({'category' : 'video','hst':'direct','title':titre,'url':url_,'desc':desc_,'icon':img_})	
+			elif (self.up.checkHostSupport(url_) == 1) and config.plugins.iptvplayer.ts_resolver.value=='tsiplayer':
+				URL=url_
+				self.addVideo({'category' : 'video','hst':'none','title':titre,'url':URL,'desc':desc_+' mode='+url_,'icon':img_,'py_file':cItem['py_file'],'section':cItem['section'],'plugin_id':cItem['plugin_id'],'argv2':str(elm),'gnr':'menu2',})					
+			else:
+				self.addDir({'category' : 'tsmedia','argv2':str(elm),'title':titre,'desc':desc_,'icon':img_,'py_file':py_file,'section':section_,'plugin_id':plugin_id_,'gnr':'menu2',})		
+
 
 	def tsmedia_search(self,str_ch,page,URL):
 		section_,plugin_id_,py_file,argv2=URL.split('|')
 		input_txt = str(str_ch)
-		if not os.path.exists('/tmp/TSmedia'):
-			os.makedirs('/tmp/TSmedia')
-		file = open('/tmp/TSmedia/xbmc_search.txt', 'w')
+		if not os.path.exists('/tmp/TSmedia'): os.makedirs('/tmp/TSmedia')
+		file = open('/tmp/TSmedia/searchSTR', 'w')
 		file.write(input_txt)
-		file.close()		
-		lst=[]	
+		file.close()
+		file = open('/tmp/TSmedia/searchSTR.txt', 'w')
+		file.write(input_txt)
+		file.close()			
+		lst=[]
 		sys.argv = [py_file,'1',argv2,'']
 		import_ = 'from Plugins.Extensions.TSmedia.addons.' + section_ + '.' + plugin_id_ + '.default import start'
-		exec (import_)
-		lst=start()
+		try:
+			exec (import_)
+			lst=start()
+		except Exception, e:
+			lst=None
+			self.addMarker({'title':'\c00????00'+'----> Erreur <----','icon':img,'desc':str(e)})
 		if lst:
-			for(titre,argv2_,IMG,x4,x5,x6,x7) in lst:
-				params = self.get_params(argv2_)
-				printDBG(str(params))
-				printDBG(argv2_)
-				try:
-					img_=str(params['image']).replace(' ','+')
-					if img_.startswith('/usr/'):
-						img_='file://'+img_
-				except:
-					img_=IMG
-					if img_.startswith('/usr/'): 
-						img_='file://'+img_
-				try: desc_=params['desc']
-				except: desc_=''
-				try: url_=params['url']
-				except: url_=''
-				try: mode_=params['mode']
-				except: mode_='1'
-				if mode_=='103' or mode_=='603' or mode_=='703' or mode_=='803':
-					URL=section_+'|'+plugin_id_+'|'+py_file+'|'+argv2_
-					self.addDir({'category':'_next_page','title': '\c0000??00'+'Page Suivante', 'search_item':False,'page':-1,'searchPattern':str_ch,'url':URL,'hst':'tsmedia','icon':img_})				
-				else:
-					self.addDir({'category' : 'tsmedia','title':titre,'desc':desc_,'icon':img_,'py_file':py_file,'section':section_,'plugin_id':plugin_id_,'argv2':argv2_,'gnr':'menu2',})	
-									
+			self.tsmedia_getlist_sea(lst,section_,plugin_id_,py_file,argv2,str_ch)	
+					
 	def get_params(self,data):
 		params = {}
 		item = data.replace('AxNxD', '&').replace('ExQ', '=')
@@ -319,8 +364,23 @@ class TSIPlayer(CBaseHostClass):
 			if (file_.endswith('.py'))and(file_.startswith('host_')):
 				path_=folder+'/'+file_
 				import_str=import_+file_.replace('.py',' import ')
-				exec (import_str+'getinfo')
-				info=getinfo()
+
+				try:
+					exec (import_str+'getinfo')
+					info=getinfo()
+				except Exception, e:
+					info={}
+					info['warning']=' >>>>>>> Problem in this host <<<<<<<'
+					info['desc']=str(e)
+					info['name']=file_
+					info['icon']=''
+					info['version']=''
+					info['cat_id']='104'
+					info['dev']=''
+				
+				
+				
+				
 				desc=''
 				param_ = 'oui'
 				if (info.get('filtre', '')!=''):
@@ -353,8 +413,19 @@ class TSIPlayer(CBaseHostClass):
 				if (file_.endswith('.py'))and(file_.startswith('host_')):
 					path_=folder+'/'+file_
 					import_str=import_+file_.replace('.py',' import ')
-					exec (import_str+'getinfo')
-					info=getinfo()
+					try:
+						exec (import_str+'getinfo')
+						info=getinfo()
+					except Exception, e:
+						info={}
+						info['warning']=' >>>>>>> Problem in this host <<<<<<<'
+						info['desc']=str(e)
+						info['name']=file_
+						info['icon']=''
+						info['version']=''
+						info['cat_id']='104'
+						info['dev']=''
+						
 					desc=''
 					param_ = 'oui'
 					if (info.get('filtre', '')!=''):
@@ -384,9 +455,11 @@ class TSIPlayer(CBaseHostClass):
 		import_str = cItem.get('import',self.import_str)
 		if self.import_str!=import_str:
 			file_=import_str.replace('from Plugins.Extensions.IPTVPlayer.tsiplayer.','').replace(' import ','')
-			#file_=import_str.replace('from etc.tsiplayer.','').replace(' import ','')
-			_url='http://86.105.212.206/tsiplayer/stat.php?host='+file_+'&cat=Main'
-			self.cm.getPage(_url)
+			try:
+				_url='http://86.105.212.206/tsiplayer/stat.php?host='+file_+'&cat=Main_'
+				self.cm.getPage(_url)
+			except:
+				printDBG('erreur')
 			exec (import_str+'TSIPHost')
 			self.import_str=import_str
 			self.host_ = TSIPHost()	

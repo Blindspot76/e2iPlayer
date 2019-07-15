@@ -64,6 +64,7 @@ hostfilmpertutti
 hostfilmstreamhdit
 hostfilmstreamvkcom
 hostforjatn
+hostfrancetv
 hostfreediscpl
 hostgamatocom
 hostgamatotvme
