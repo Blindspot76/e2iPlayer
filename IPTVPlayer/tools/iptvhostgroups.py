@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-#
-
+###################################################
+# 2019-07-16 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -93,7 +93,7 @@ class IPTVHostsGroups:
                                                      'vimeo','twitchtv','hitboxtv','forjatn','planetstreamingcom','playrtsiw','officialfilmillimite',
 													 'hdsto', 'francetv']
         self.PREDEFINED_HOSTS['russian']          = ['youtube','hd1080online','treetv','kinogo','kinotan','hdkinomir','sovdub','filmixco','kinopokaz','movie4kto','dailymotion','vimeo','twitchtv','hitboxtv']
-        self.PREDEFINED_HOSTS['hungarian']        = ['youtube','mooviecc','filmezz','mozicsillag','autohu','m4sport','mindigo','mindigtv','mytvtelenor','rtlmost','webhuplayer','updatehosts','urllist','sonyplayer','dailymotion','videa','twitchtv','hitboxtv']
+        self.PREDEFINED_HOSTS['hungarian']        = ['youtube','dailymotion','twitchtv','hitboxtv']
         self.PREDEFINED_HOSTS['arabic']           = ['youtube','webstream','akoam','egybest','dardarkomcom','movs4ucom','movizlandcom','shahiidanimenet','dailymotion','vimeo','twitchtv','hitboxtv','forjatn','faselhdcom','darshowcom','movierulzsx','3sktv','cimaclubcom','hdsto']
         self.PREDEFINED_HOSTS['greek']            = ['youtube','gamatotvme','xrysoise','tainieskaiseirestv','gamatocom','greekdocumentaries3','dailymotion','vimeo','twitchtv','hitboxtv','oipeirates']
         self.PREDEFINED_HOSTS['latino']           = ['youtube','mrpiracy','solarmovie','artetv','dailymotion','vimeo','twitchtv','hitboxtv','plusdede','hdsto','hdfull','vidcorncom','dixmax']
