@@ -4,7 +4,7 @@
 #
 #  $Id$
 #
-# 
+# 2019-07-17 - Modified by Blindspot
 
 from time import sleep as time_sleep
 from os import remove as os_remove, path as os_path
@@ -480,7 +480,7 @@ class E2iPlayerWidget(Screen):
                         message = _('It seems that the host "%s" has crashed. Do you want to report this problem?') % self.hostName
                         message += "\n"
                         message += _('\nMake sure you are using the latest version of the plugin.')
-                        message += _('\nYou can also report problem here: \nhttps://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/issues\nor here: samsamsam@o2.pl')
+                        message += _('\nYou can also report problem here: \nhttps://github.com/blindspot76/e2iplayer/issues/\nor here: http://www.netboard.hu/viewtopic.php?topic=18425')
                         self.session.openWithCallback(self.reportHostCrash, MessageBox, text=message, type=MessageBox.TYPE_YESNO)
             self.hideSpinner()
         except Exception: printExc()
@@ -492,7 +492,7 @@ class E2iPlayerWidget(Screen):
                     exceptStack = self.workThread.getExceptStack()
                     reporter = GetPluginDir('iptvdm/reporthostcrash.py')
                     msg = urllib_quote('%s|%s|%s|%s' % ('HOST_CRASH', E2iPlayerWidget.IPTV_VERSION, self.hostName, self.getCategoryPath()))
-                    self.crashConsole = iptv_system('python "%s" "http://iptvplayer.vline.pl/reporthostcrash.php?msg=%s" "%s" 2&>1 > /dev/null' % (reporter, msg, exceptStack))
+                    self.crashConsole = iptv_system('python "%s" "http://blindspot.nhely.hu/reporthostcrash.php?msg=%s" "%s" 2&>1 > /dev/null' % (reporter, msg, exceptStack))
                     printDBG(msg)
                 except Exception:
                     printExc()
@@ -686,26 +686,20 @@ class E2iPlayerWidget(Screen):
         TextMSG = ''
         if ret:
             if ret[1] == "info": #information about plugin
-                TextMSG  = _("Lead programmer: ") + "\n\t- samsamsam\n"
-                TextMSG += _("E-mail: ") + "\n\t- iptvplayere2@gmail.com\n"
-                TextMSG += _("www: ") + "\n\t- http://iptvplayer.vline.pl/" + '\n\t- http://www.iptvplayer.gitlab.io/\n'
-                TextMSG += _("Developers: ") 
-                developersTab = [{'nick':'zdzislaw22',},
-                                 {'nick':'mamrot',    },
-                                 {'nick':'MarcinO',   },
-                                 {'nick':'skalita',   },
-                                 {'nick':'atilaks',   },
-                                 {'nick':'huball',    },
-                                 {'nick':'matzg',     },
-                                 {'nick':'tomashj291',},
-                                 {'nick':'a4tech',    },
+                TextMSG  = _("e2iPlayer Magyar Változat")+"\n\n"
+                TextMSG += _("E-mail: ") + "\t- webhuplayer@gmail.com\n\n"
+                TextMSG += _("www: ") + "\n- https://github.com/e2iplayerhosts/" + '\n- http://www.netboard.hu/viewtopic.php?topic=18425/\n\n\n'
+                TextMSG += _("Készítették: ") 
+                developersTab = [{'nick':'Alec',},
+                                 {'nick':'Celeburdi',    },
+                                 {'nick':'Blindspot',   },
                                 ]
                 # present alphabetically, the order does not mean validity
                 sortedList = sorted(developersTab, key=lambda k: k['nick'].upper())
                 for item in sortedList:
                     TextMSG += "\n\t- {0}, ".format(item['nick'])
                 TextMSG = TextMSG[:-2]
-                TextMSG += "\n\tand others\n"
+                TextMSG += "\n\n\tés sokan mások\n"
                 self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO )
             elif ret[1] == "IPTVDM":
                 self.runIPTVDM()
