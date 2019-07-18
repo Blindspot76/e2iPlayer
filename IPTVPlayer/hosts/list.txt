@@ -82,10 +82,8 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
-hostinfoversion
 hostinteriatv
 hostipla
-hostiptvplayerinfo
 hostitvcom
 hostjoemonsterorg
 hostkabarety
@@ -110,7 +108,6 @@ hostmeczykipl
 hostmediasetplay
 hostmindigo
 hostmindigtv
-hostmooviecc
 hostmovie4kto
 hostmovienightws
 hostmovierulzsx
