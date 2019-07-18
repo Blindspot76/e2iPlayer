@@ -163,7 +163,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.07.13.1"
+    XXXversion = "2019.07.14.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -4314,15 +4314,11 @@ class Host:
         if 'KATESTUBE' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'https://www.katestube.com'
-           query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-           try:
-              data = self.cm.getURLRequestData(query_data)
-           except Exception as e:
-              printExc()
-              msg = _("Last error:\n%s" % str(e))
-              GetIPTVNotify().push('%s' % msg, 'error', 20)
-              printDBG( 'Host listsItems query error url:'+url )
-              return valTab
+           COOKIEFILE = os_path.join(GetCookieDir(), 'katestube.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(url)
+           if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
            #data = self.cm.ph.getDataBeetwenMarkers(data, 'class="thumbs-list">', 'footer', False)[1]
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="thumb">', '</div>')
@@ -4347,14 +4343,13 @@ class Host:
            return valTab              
         if 'KATESTUBE-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
-           query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
-           try:
-              data = self.cm.getURLRequestData(query_data)
-           except:
-              printDBG( 'Host listsItems query error url: '+url )
-              return valTab
+           COOKIEFILE = os_path.join(GetCookieDir(), 'katestube.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(url)
+           if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
-           next_page = self.cm.ph.getDataBeetwenMarkers(data, '<li><span>', 'class="next"', False)[1]
+           next_page = ph.findall(data, '<a data=', 'Next') 
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'class="thumb"', '</div>')
            for item in data:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
@@ -4366,7 +4361,7 @@ class Host:
               if phImage.startswith('/'): phImage = 'http:' + phImage
               valTab.append(CDisplayListItem(phTitle,'['+phTime+']  '+phTitle,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next_page:
-              next = self.cm.ph.getSearchGroups(next_page, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+              next = self.cm.ph.getSearchGroups(next_page[-1], '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
               if next.startswith('/'): next = 'https://www.katestube.com' + next
               valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', None))                
            return valTab
