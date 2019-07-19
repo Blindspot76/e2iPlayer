@@ -1,2 +1,2 @@
-#2019.07.18.03
-Webcamera.pl javítva.
+#2019.07.19.01
+-Kisebb javítások

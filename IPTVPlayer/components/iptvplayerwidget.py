@@ -4,7 +4,7 @@
 #
 #  $Id$
 #
-# 2019-07-17 - Modified by Blindspot
+# 2019-07-19 - Modified by Blindspot
 
 from time import sleep as time_sleep
 from os import remove as os_remove, path as os_path
@@ -688,7 +688,7 @@ class E2iPlayerWidget(Screen):
             if ret[1] == "info": #information about plugin
                 TextMSG  = _("e2iPlayer Magyar Változat")+"\n\n"
                 TextMSG += _("E-mail: ") + "\t- webhuplayer@gmail.com\n\n"
-                TextMSG += _("www: ") + "\n- https://github.com/e2iplayerhosts/" + '\n- http://www.netboard.hu/viewtopic.php?topic=18425/\n\n\n'
+                TextMSG += _("www: ") + "\n- https://github.com/blindspot76/e2iplayer/" + '\n- http://www.netboard.hu/viewtopic.php?topic=18425/\n\n\n'
                 TextMSG += _("Készítették: ") 
                 developersTab = [{'nick':'Alec',},
                                  {'nick':'Celeburdi',    },
@@ -699,7 +699,8 @@ class E2iPlayerWidget(Screen):
                 for item in sortedList:
                     TextMSG += "\n\t- {0}, ".format(item['nick'])
                 TextMSG = TextMSG[:-2]
-                TextMSG += "\n\n\tés sokan mások\n"
+                TextMSG += "\n\n\tés sokan mások\n\n"
+				TextMSG += "\n\n\tJó szórakozást!\n"
                 self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO )
             elif ret[1] == "IPTVDM":
                 self.runIPTVDM()
