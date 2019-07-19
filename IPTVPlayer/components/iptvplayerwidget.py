@@ -688,7 +688,7 @@ class E2iPlayerWidget(Screen):
             if ret[1] == "info": #information about plugin
                 TextMSG  = _("e2iPlayer Magyar Változat")+"\n\n"
                 TextMSG += _("E-mail: ") + "\t- webhuplayer@gmail.com\n\n"
-                TextMSG += _("www: ") + "\n- https://github.com/e2iplayerhosts/" + '\n- http://www.netboard.hu/viewtopic.php?topic=18425/\n\n\n'
+                TextMSG += _("www: ") + "\n- https://github.com/blindspot76/e2iplayer/" + '\n- http://www.netboard.hu/viewtopic.php?topic=18425/\n\n\n'
                 TextMSG += _("Készítették: ") 
                 developersTab = [{'nick':'Alec',},
                                  {'nick':'Celeburdi',    },
