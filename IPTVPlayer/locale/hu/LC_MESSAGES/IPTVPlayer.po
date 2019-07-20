@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: IPTVPlayer\n"
+"Project-Id-Version: IPTVPlayer v1.5\n"
 "POT-Creation-Date: 2013-12-15 12:19+0100\n"
 "PO-Revision-Date: \n"
-"Language-Team: IPTVPlayer\n"
+"Language-Team: alec <alex1vagyok@gmail.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.12\n"
+"X-Generator: Poedit 2.2.1\n"
 "X-Poedit-Basepath: .\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Last-Translator: \n"
+"Last-Translator: Alec <alex1vagyok@gmail.com>\n"
 "Language: hu\n"
 "X-Poedit-SearchPath-0: ../plugin\n"
 
@@ -63,13 +63,13 @@ msgstr ""
 "vagy itt: samsamsam@o2.pl"
 
 msgid "    Allowed formats of thumbnails"
-msgstr "Képek engedélyezett formátumai"
+msgstr "    Képek engedélyezett formátumai"
 
 msgid "    Audio buffer size [KB]"
-msgstr "Audió puffer méret [KB]"
+msgstr "   Audió puffer méret [KB]"
 
 msgid "    Buffer size [MB]"
-msgstr "Pufferméret (MB)"
+msgstr "   Pufferméret (MB)"
 
 msgid "    Number of columns"
 msgstr "    Oszlopok száma"
@@ -81,26 +81,26 @@ msgid "    Remove thumbnails"
 msgstr "    Képek eltávolítása"
 
 msgid "    Service icon size"
-msgstr "    Ikonméret"
+msgstr "    Ikon mérete"
 
 msgid "    Video buffer size [MB]"
-msgstr "   Video pufferméret (MB)"
+msgstr "   Videó pufferméret (MB)"
 
 msgid " Last.fm login:"
 msgstr " Last.fm felhasználónév:"
 
 msgid " Password"
-msgstr "Jelszó"
+msgstr " Jelszó"
 
 msgid " Username or Email"
-msgstr "Felhasználónév vagy Email cím"
+msgstr " Felhasználónév vagy Email cím"
 
 msgid ""
 " has not been detected. \n"
 "Do you want to install it? "
 msgstr ""
-"nem található. \n"
-"Szeretnéd telepíteni?"
+" nem található. \n"
+"Szeretnéd telepíteni? "
 
 msgid ""
 " is deprecated. \n"
@@ -161,7 +161,7 @@ msgid "Aborted"
 msgstr "Megszakítva"
 
 msgid "Access status: "
-msgstr "Hozzáférés állapota:"
+msgstr "Hozzáférés állapota: "
 
 msgid "Access status: [%r]"
 msgstr "Hozzáférési állapot: [%r]"
@@ -249,15 +249,10 @@ msgid "Auto selection based on the settings"
 msgstr "Automatikus (Beállítások alapján)"
 
 msgid "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg"
-msgstr ""
-"Készítők: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg"
+msgstr "Készítők: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg"
 
-msgid ""
-"Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, "
-"tomashj291"
-msgstr ""
-"Készítők: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, "
-"tomashj291"
+msgid "Autors: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291"
+msgstr "Készítők: samsamsam, zdzislaw22, mamrot, MarcinO, skalita, huball, matzg, tomashj291"
 
 msgid "Black"
 msgstr "Fekete"
@@ -332,10 +327,10 @@ msgid "Confirm title of the movie"
 msgstr "Filmcím jóváhagyása"
 
 msgid "Confirmation error."
-msgstr "Érvényesítési hiba"
+msgstr "Érvényesítési hiba."
 
 msgid "Confirmation of installation."
-msgstr "Telepítés érvényesítése"
+msgstr "Telepítés érvényesítése."
 
 msgid "Continue downloading"
 msgstr "Letöltés folytatása"
@@ -388,7 +383,7 @@ msgid "Debug logs"
 msgstr "Hibajelentés"
 
 msgid "Default second video policy"
-msgstr "Második video minősége"
+msgstr "Második videó minősége"
 
 msgid "Default video aspect ratio"
 msgstr "Alapértelmezett képarány"
@@ -397,7 +392,7 @@ msgid "Default video policy"
 msgstr "Alapértelmezett minőség"
 
 msgid "Default video quality:"
-msgstr "Alapértelmezett video minőség:"
+msgstr "Alapértelmezett videó minőség:"
 
 msgid "Description:"
 msgstr "Megjegyzés:"
@@ -421,7 +416,7 @@ msgid "Deutsch"
 msgstr "Német"
 
 msgid "Developers: "
-msgstr "Beküldő:"
+msgstr "Fejlesztők: "
 
 msgid "Device ID"
 msgstr "Device ID"
@@ -436,7 +431,7 @@ msgid "Disable reordering mode"
 msgstr "Rendezési mód letiltása"
 
 msgid "Display order:"
-msgstr "Kijelző elrendezése: "
+msgstr "Kijelző elrendezése:"
 
 msgid "Display thumbnails"
 msgstr "Bélyegképek engedélyezése"
@@ -469,10 +464,10 @@ msgstr ""
 "Állapot[%s]"
 
 msgid "Download subtitle \"%s\""
-msgstr " \"%s\" Felirat letöltése"
+msgstr "A(z) \"%s\" felirat letöltése"
 
 msgid "Download subtitle %s"
-msgstr " %s Feliratának letöltése"
+msgstr "A(z) %s feliratának letöltése"
 
 msgid "Download suggested"
 msgstr "Ajánlott letöltése"
@@ -481,7 +476,7 @@ msgid "Downloading"
 msgstr "Letöltés"
 
 msgid "Downloading \"%s\" ."
-msgstr "A \"%s\" letöltése"
+msgstr "A(z) \"%s\" letöltése."
 
 msgid ""
 "Downloading \"%s\" failed. \n"
@@ -491,7 +486,7 @@ msgstr ""
 "Megpróbáljam újra?"
 
 msgid "Downloading an update packet."
-msgstr "Frissítési csomag letöltése"
+msgstr "Frissítési csomag letöltése."
 
 msgid ""
 "Downloading can not be started.\n"
@@ -558,10 +553,10 @@ msgid "Drama Series"
 msgstr "Drámasorozatok"
 
 msgid "During processing, please do not interrupt."
-msgstr "Dolgozom, ne szakíts félbe!"
+msgstr "Dolgozom, ne szakíts félbe."
 
 msgid "During processing, please wait."
-msgstr "Kis türelmet kérek!"
+msgstr "Kis türelmet kérek."
 
 msgid ""
 "E2 GUI restart after IPTVPlayer update to version[%s].\n"
@@ -575,7 +570,7 @@ msgid ""
 "Please check if gstreamer plugins are available in your system."
 msgstr ""
 "HIBA:  \"playbin2\" hiányzik. \n"
-"Ellenőrizd a gstreamer plugin meglétét!"
+"Ellenőrizd a gstreamer plugin meglétét."
 
 msgid "Edit favourites"
 msgstr "Kedvencek szerkesztése"
@@ -663,6 +658,9 @@ msgstr "Kedvenc címek az urllist.user fájlból"
 msgid "Favorites"
 msgstr "Kedvencek"
 
+msgid "Favourites"
+msgstr "Kedvencek"
+
 msgid "Favourites groups"
 msgstr "Kedvenc Csoportok"
 
@@ -673,13 +671,13 @@ msgid "Featured"
 msgstr "Téma"
 
 msgid "File [%s] reading failed."
-msgstr "Hiba a [%s] fájl olvasása közben!"
+msgstr "Hiba a [%s] fájl olvasása közben."
 
 msgid "File [%s] was added to downloading queue."
 msgstr "[%s] hozzáadva a letöltési listához."
 
 msgid "File can not be downloaded. Protocol [%s] is unsupported"
-msgstr "Letöltés sikertelen. A [%s] protokoll nem támogatott."
+msgstr "Letöltés sikertelen. A [%s] protokoll nem támogatott"
 
 msgid "Filmy"
 msgstr "Filmek"
@@ -763,7 +761,7 @@ msgid "Group %d"
 msgstr "%d csoport"
 
 msgid "Group links into categories: "
-msgstr "Csoportok linkje ebbe a kategóriába"
+msgstr "Csoportok linkje ebbe a kategóriába: "
 
 msgid "Group with id[%s] not found."
 msgstr "[%s] csoport nem létezik."
@@ -778,10 +776,10 @@ msgid "History"
 msgstr "Előzmények"
 
 msgid "History of searched phrases."
-msgstr "Keresési előzmények"
+msgstr "Keresési előzmények."
 
 msgid "Home page"
-msgstr "Fő oldal"
+msgstr "Kezdőlap"
 
 msgid "Hosting: %s, %s"
 msgstr "Forrás: %s, %s"
@@ -838,7 +836,7 @@ msgid "IPTVPlayer setup version %s"
 msgstr "IPTVPlayer setup  - Verzió: %s"
 
 msgid "IPTVPlayer setup version %s "
-msgstr "IPTVPlayer setup  - Verzió: %s"
+msgstr "IPTVPlayer setup  - Verzió: %s "
 
 msgid "Icons size"
 msgstr "Ikon mérete"
@@ -883,13 +881,10 @@ msgid "It improves playing of streams hls/m3u8.\n"
 msgstr "Ez javítja a hls/m3u8 streamek lejátszását.\n"
 
 msgid "It seems that the host \"%s\" has crashed."
-msgstr "Úgy tűnik, a  \"%s\" kiszolgáló összeomlott."
+msgstr "Úgy tűnik, a \"%s\" kiszolgáló összeomlott."
 
-msgid ""
-"It seems that the host \"%s\" has crashed. Do you want to report this "
-"problem?"
-msgstr ""
-"Úgy tűnik, a  \"%s\" kiszolgáló összeomlott.Szeretnéd jelenteni a problémát?"
+msgid "It seems that the host \"%s\" has crashed. Do you want to report this problem?"
+msgstr "Úgy tűnik, a \"%s\" kiszolgáló összeomlott. Szeretnéd jelenteni a problémát?"
 
 msgid ""
 "It seems that the video player \"%s\" does not work properly.\n"
@@ -941,22 +936,13 @@ msgstr "Legutóbbi hiba"
 msgid "Last error: \"%s\""
 msgstr "Legutóbbi hiba: \"%s\""
 
-msgid ""
-"Last error: \"People who live where you live aren't allowed to watch this "
-"video.. Not because we don't luv ya, but because the owners have some "
-"restrictions. The good news, is there are tens of thousands of other videos "
-"to choose from.\""
-msgstr ""
-"Hiba: A kiválasztott videó nem érhető el a lakóhelyeden. A tulajdonos "
-"valószínűleg korlátozza a megtekintést bizonyos földrajzi területekre. "
-"Viszont rengeteg hasonló videóból válogathatsz."
+msgid "Last error: \"People who live where you live aren't allowed to watch this video.. Not because we don't luv ya, but because the owners have some restrictions. The good news, is there are tens of thousands of other videos to choose from.\""
+msgstr "Hiba: A kiválasztott videó nem érhető el a lakóhelyeden. A tulajdonos valószínűleg korlátozza a megtekintést bizonyos földrajzi területekre. Viszont rengeteg hasonló videóból válogathatsz."
 
 msgid "Last error: \"Silverlight stream not supported.\""
 msgstr "Hiba: \"Silverlight stream nem támogatott.\""
 
-msgid ""
-"Last error: \"The Mirror is broken.If available you can choose other source."
-"\""
+msgid "Last error: \"The Mirror is broken.If available you can choose other source.\""
 msgstr "Hiba: \"A kiszolgáló nem működik. Ha lehet, válassz másik forrást.\""
 
 msgid "Last error: %s"
@@ -1035,7 +1021,7 @@ msgid "Main Event"
 msgstr "Vezető esemény"
 
 msgid "Main developer, architect, coordinator: "
-msgstr "Fő fejlesztő, koordinátor:"
+msgstr "Fő fejlesztő, koordinátor: "
 
 msgid "Manager status: "
 msgstr "Vezérlő állapota: "
@@ -1074,7 +1060,7 @@ msgid "Movie"
 msgstr "Film"
 
 msgid "Movie \"%s\" has not been found."
-msgstr " \"%s\" című film nem található."
+msgstr "A(z) \"%s\" című film nem található."
 
 msgid "Movie player"
 msgstr "FilmLejátszó"
@@ -1138,9 +1124,7 @@ msgstr "Nincsenek scriptek."
 msgid "No valid links available."
 msgstr "Nincs elérhető link."
 
-msgid ""
-"No valid links available. Last error: \"The Mirror is broken. If available "
-"you can choose other source.\""
+msgid "No valid links available. Last error: \"The Mirror is broken. If available you can choose other source.\""
 msgstr "Nincs elérhető link. Ha lehet, próbálj másik forrást választani."
 
 msgid "None"
@@ -1156,7 +1140,7 @@ msgid "Number of songs fetched at once for the station"
 msgstr "Egy állomáshoz tartozó dalok száma"
 
 msgid "Obtaining server list."
-msgstr "Lista beszerzése a szerverről"
+msgstr "Lista beszerzése a szerverről."
 
 msgid "Odśwież"
 msgstr "Frissítés"
@@ -1174,7 +1158,7 @@ msgid "Operation aborted!"
 msgstr "Művelet megszakítva!"
 
 msgid "Operation aborted! "
-msgstr "Művelet megszakítva!"
+msgstr "Művelet megszakítva! "
 
 msgid "Others"
 msgstr "Egyéb"
@@ -1195,7 +1179,7 @@ msgid "Paste \"%s\""
 msgstr "\"%s\" beillesztése."
 
 msgid "Path to ytlist.txt, urllist.txt"
-msgstr "ytlist.txt, urllist.txt fájlok útvonala"
+msgstr "Az ytlist.txt, urllist.txt fájlok útvonala"
 
 msgid "Pending"
 msgstr "Várakozik"
@@ -1245,11 +1229,8 @@ msgstr "Ne feledd, a programot saját felelősségedre használod."
 msgid "Please remember that you use this plugin at your own risk."
 msgstr "Ne feledd, a plugint saját felelősségedre használod."
 
-msgid ""
-"Plugin can be run on one of the following platforms: sh4, mipsel, i686, "
-"armv7."
-msgstr ""
-"A Plugin csak a következő platformokon működik: sh4, mipsel, i686, armv7."
+msgid "Plugin can be run on one of the following platforms: sh4, mipsel, i686, armv7."
+msgstr "A Plugin csak a következő platformokon működik: sh4, mipsel, i686, armv7."
 
 msgid "Pol'skiy"
 msgstr "Lengyel"
@@ -1288,7 +1269,7 @@ msgid "Preferred streaming protocol"
 msgstr "Előnyben részesített protokoll streamek esetén"
 
 msgid "Preferred streaming protocol' + ': "
-msgstr "Előnyben részesített protokoll'+':"
+msgstr "Előnyben részesített protokoll' + ': "
 
 msgid "Preferred video quality:"
 msgstr "Előnyben részesített video minőség:"
@@ -1330,7 +1311,7 @@ msgstr ""
 "Állapot [%d], Adat [%s]"
 
 msgid "Problem with the directory [%s]."
-msgstr "Hiba a [%s] könyvtárban"
+msgstr "Hiba a [%s] könyvtárban."
 
 msgid ""
 "Problem with the removal of the previous version.\n"
@@ -1415,7 +1396,7 @@ msgid "Remove item"
 msgstr "Elem törlése"
 
 msgid "Removing the old version."
-msgstr "Korábbi verzió törlése"
+msgstr "Korábbi verzió törlése."
 
 msgid "Removing unnecessary files."
 msgstr "Szükségtelen fájlok törlése."
@@ -1434,7 +1415,7 @@ msgid ""
 "Please restart STB manually."
 msgstr ""
 "Újraindítás sikertelen.\n"
-"Kézi újraindítást kérek!"
+"Indítsd újra a készülékedet."
 
 msgid "Russia"
 msgstr "Oroszország"
@@ -1458,7 +1439,7 @@ msgid "Search"
 msgstr "Keresés"
 
 msgid "Search for movie \"%s\""
-msgstr " \"%s\" című film keresése."
+msgstr "A(z) \"%s\" című film keresése."
 
 msgid "Search for subitile for \"%s\""
 msgstr "\"%s\" feliratainak keresése"
@@ -1476,7 +1457,7 @@ msgid "Search type"
 msgstr "Keresés típusa"
 
 msgid "Search youtube materials "
-msgstr "Youtube tartalmak keresése"
+msgstr "Youtube tartalmak keresése "
 
 msgid "Second movie player in buffering mode"
 msgstr "Pufferelt módban a másodlagos lejátszó"
@@ -1533,7 +1514,7 @@ msgid "Select update server"
 msgstr "Válassz frissítési szervert"
 
 msgid "Select video option"
-msgstr "Válassz video opciót"
+msgstr "Válassz videó opciót"
 
 msgid "Selected version [%s]."
 msgstr "A kiválasztott verzió [%s]."
@@ -1584,7 +1565,7 @@ msgid "Shows"
 msgstr "Show műsorok"
 
 msgid "Silverlight stream not supported."
-msgstr "Silverlight adatfolyam nem támogatott"
+msgstr "Silverlight adatfolyam nem támogatott."
 
 msgid "Simple subtitles downloader"
 msgstr "Egyszerű feliratletöltő"
@@ -1595,9 +1576,7 @@ msgstr "Bűn"
 msgid "Skin"
 msgstr "Kezelőfelület"
 
-msgid ""
-"Skipping IPTVPlayer serup may cause problems.Are you sure to skip IPTVPlayer "
-"setup?"
+msgid "Skipping IPTVPlayer serup may cause problems.Are you sure to skip IPTVPlayer setup?"
 msgstr "A beállítások kihagyása problémákat okozhat. Biztosan kihagyod ezeket?"
 
 msgid ""
@@ -1761,47 +1740,34 @@ msgid "Testers: "
 msgstr "Tesztelők:"
 
 msgid "Text files ytlist and urllist are in:"
-msgstr "ytlist és urllist fájlok helye:"
+msgstr "Az ytlist és urllist fájlok helye:"
 
 msgid "The \"%s\" utility is used by IPTVPlayer."
 msgstr "A \"%s\"  kiegészítőt az IPTVPlayer fogja használni."
 
-msgid ""
-"The \"%s\" utility is used by the IPTVPlayer as external movie player based "
-"on the ffmpeg and libeplayer."
-msgstr ""
-"A \"%s\"  kiegészítőt az IPTVPlayer fogja használni a külső "
-"médialejátszónál, amely ffmpeg és libeplayer alapú."
+msgid "The \"%s\" utility is used by the IPTVPlayer as external movie player based on the ffmpeg and libeplayer."
+msgstr "A \"%s\"  kiegészítőt az IPTVPlayer fogja használni a külső médialejátszónál, amely ffmpeg és libeplayer alapú."
 
 msgid "The \"%s\" utility is used by the IPTVPlayer as external movie player."
-msgstr ""
-"A \"%s\"  kiegészítőt az IPTVPlayer fogja használni a külső médialejátszónál."
+msgstr "A \"%s\"  kiegészítőt az IPTVPlayer fogja használni a külső médialejátszónál."
 
-msgid ""
-"The \"%s\" utility is used by the IPTVPlayer to buffering and downloading "
-"[%s] links."
-msgstr ""
-"A \"%s\"  kiegészítőt az IPTVPlayer fogja használni pufferelésnél és [%s] "
-"linkek letöltésénél."
+msgid "The \"%s\" utility is used by the IPTVPlayer to buffering and downloading [%s] links."
+msgstr "A \"%s\"  kiegészítőt az IPTVPlayer fogja használni pufferelésnél és [%s] linkek letöltésénél."
 
-msgid ""
-"The \"%s\" utility is used by the IPTVPlayer to determine the encoding of "
-"the text."
-msgstr ""
-"A \"%s\"  kiegészítőt az IPTVPlayer fogja használni szöveges tartalmak "
-"meghatározásánál és kódolásánál."
+msgid "The \"%s\" utility is used by the IPTVPlayer to determine the encoding of the text."
+msgstr "A \"%s\"  kiegészítőt az IPTVPlayer fogja használni szöveges tartalmak meghatározásánál és kódolásánál."
 
 msgid "The current host crashed"
-msgstr "A jelenlegi kiszolgáló összeomlott."
+msgstr "A jelenlegi kiszolgáló összeomlott"
 
 msgid "The default video quality:"
-msgstr "Az alapértelmezett video minőség:"
+msgstr "Az alapértelmezett videó minőség:"
 
 msgid "The number of items in the search history"
 msgstr "Elemek száma a keresési eredményeknél"
 
 msgid "The preferred protocol:"
-msgstr "Előnyben részesített protokoll"
+msgstr "Előnyben részesített protokoll:"
 
 msgid "The problem with creating a directory [%s]."
 msgstr "Hiba lépett fel a [%s] könyvtár létrehozásakor."
@@ -1809,16 +1775,10 @@ msgstr "Hiba lépett fel a [%s] könyvtár létrehozásakor."
 msgid "The problem with obtaining the gateway proxy!"
 msgstr "Probléma lépett fel a proxy átjáró használata során!"
 
-msgid ""
-"The problem with the logged-in user \"%s. Check your login details in the "
-"host configuration.\""
-msgstr ""
-"Ezzel a felhaszáói fiókkal problémák vannak \"%s. Check your login details "
-"in the host configuration.\""
+msgid "The problem with the logged-in user \"%s. Check your login details in the host configuration.\""
+msgstr "Ezzel a felhaszálói fiókkal problémák vannak \"%s. Ellenőrizze bejelentkezési adatait a host kiszolgáló konfigurációjában..\""
 
-msgid ""
-"The problem with the user's logon \"%s\". Check your login details in the "
-"host configuration."
+msgid "The problem with the user's logon \"%s\". Check your login details in the host configuration."
 msgstr "A \"%s\" bejelentkezése sikertelen. Ellenőrizd a megadott adatokat."
 
 msgid "The same item already exists in this group."
@@ -1832,8 +1792,7 @@ msgid ""
 "Using a limited version that may not work properly with congested links."
 msgstr ""
 "Nincs érvényes prémium előfieztésed.\n"
-"Egy korlátozott verziót használok, amely tömeges használat esetén nem mindig "
-"működik."
+"Egy korlátozott verziót használok, amely tömeges használat esetén nem mindig működik."
 
 msgid ""
 "There is a new version available do you want to update? \n"
@@ -1859,7 +1818,7 @@ msgid "There is no update for the current configuration."
 msgstr "Nincs frissítés a jelenlegi konfigurációhoz."
 
 msgid "There was an error Download."
-msgstr "Letöltési hiba. "
+msgstr "Letöltési hiba."
 
 msgid ""
 "There was an error Download. \n"
@@ -1872,9 +1831,7 @@ msgid "There was an error downloading."
 msgstr "Hiba történt letöltés közben."
 
 msgid "This site requires login. Please complete host configuration data."
-msgstr ""
-"Az oldal használatához be kell lépned. Kérlek, töltsd ki az oldal "
-"konfigurációs beállításait."
+msgstr "Az oldal használatához be kell lépned. Kérlek, töltsd ki az oldal konfigurációs beállításait."
 
 msgid "Today, too many people are watching a movie with"
 msgstr "Ma túl sok ember nézi ezt a filmet"
@@ -1895,13 +1852,13 @@ msgid "Try again for some time"
 msgstr "Próbáld újra egy későbbi időpontban"
 
 msgid "Turkish"
-msgstr "török"
+msgstr "Török"
 
 msgid "Turn off buffering for http://prognoza.pogody.tv/"
 msgstr "Pufferelés kikapcsolása itt http://prognoza.pogody.tv/"
 
 msgid "Type: "
-msgstr "Típus."
+msgstr "Típus: "
 
 msgid "Türk"
 msgstr "Török"
@@ -1939,14 +1896,11 @@ msgstr ""
 "Frissítés sikertelen. \n"
 "Ellenőrizd a kiválasztott verzió elérhetőségét, és próbáld újra."
 
-msgid ""
-"Update failed. Check the status by selectiong interesting and pressing ok."
-msgstr ""
-"Frissítés sikertelen. Ellenőrizd a kiválasztott verzió elérhetőségét, és "
-"próbáld újra."
+msgid "Update failed. Check the status by selectiong interesting and pressing ok."
+msgstr "Frissítés sikertelen. Ellenőrizd a kiválasztott verzió elérhetőségét, és próbáld újra."
 
 msgid "Update not available."
-msgstr "Nincs elérhető frissítés"
+msgstr "Nincs elérhető frissítés."
 
 msgid "Update packet type"
 msgstr "Frissítési csomag típusa"
@@ -2040,8 +1994,7 @@ msgid "Version"
 msgstr "Verzió"
 
 msgid ""
-"Version [%s] is ready for installation. After installation, restart of the "
-"system will be done.\n"
+"Version [%s] is ready for installation. After installation, restart of the system will be done.\n"
 "Do you want to continue?"
 msgstr ""
 "A [%s] verzió telepítésre kész. \n"
@@ -2052,10 +2005,10 @@ msgid "Video"
 msgstr "Videó"
 
 msgid "Video buffer size [MB]"
-msgstr "Video pufferméret (MB)"
+msgstr "Videó pufferméret (MB)"
 
 msgid "Video format:"
-msgstr "Video formátuma:"
+msgstr "Videó formátuma:"
 
 msgid "Video options"
 msgstr "Videó opciók"
@@ -2076,7 +2029,7 @@ msgid "Web streams player"
 msgstr "Web streamek lejátszása"
 
 msgid "Webpages: "
-msgstr "Weboldalak:"
+msgstr "Weboldalak: "
 
 msgid "Week"
 msgstr "Hét"
@@ -2109,8 +2062,7 @@ msgstr "Nincs prémium előfizetésed. Ingyenes közvetítést keresek."
 msgid "You need to enter email and password in configuration."
 msgstr "Meg kell adnod a felhasználónevedet és jelszavadat."
 
-msgid ""
-"You probably have not access to this page due to geolocation restriction."
+msgid "You probably have not access to this page due to geolocation restriction."
 msgstr "Ezen a terülten az oldal használata nem engedélyezett."
 
 msgid "Your OpenSSL version is [%s]"
@@ -2411,10 +2363,10 @@ msgid "rootfs"
 msgstr "rootfs"
 
 msgid "second"
-msgstr "Második"
+msgstr "másodperc"
 
 msgid "seconds"
-msgstr "Másodperc"
+msgstr "másodperc"
 
 msgid "self.getCurrentDirectory()"
 msgstr "self.getCurrentDirectory()"
@@ -2462,7 +2414,7 @@ msgid "very high"
 msgstr "Nagyon magas"
 
 msgid "video"
-msgstr "Video"
+msgstr "Videó"
 
 msgid "web-live.tv login:"
 msgstr "web-live.tv felhasználónév:"
@@ -2489,7 +2441,7 @@ msgid "yes, to console"
 msgstr "Igen, Konzolba"
 
 msgid "yes, to file /hdd/iptv.dbg"
-msgstr "Igen, ide: /hh/iptv.dbg"
+msgstr "Igen, ide: /hdd/iptv.dbg"
 
 msgid "Success."
 msgstr "Sikeres."
@@ -2510,7 +2462,7 @@ msgid "XXX"
 msgstr "Felnőtt"
 
 msgid "--- Featured videos ---"
-msgstr "--- Featured videos ---"
+msgstr "--- Ajánlott videók ---"
 
 msgid "--- Hits ---"
 msgstr "----Sikerek---"
@@ -2732,7 +2684,7 @@ msgid "UPDATE MENU"
 msgstr "FRISSÍTÉSI MENÜ"
 
 msgid " - Remote version"
-msgstr "-Elérhető verzió"
+msgstr " - Elérhető verzió"
 
 msgid "UPDATE"
 msgstr "FRISSÍTÉS"
@@ -2837,7 +2789,7 @@ msgid "The best"
 msgstr "A legjobb"
 
 msgid "Video default quality:"
-msgstr "Alapértelmezett video minőség:"
+msgstr "Alapértelmezett videó minőség:"
 
 msgid "Use default quality:"
 msgstr "Használd az alapértelmezett videó minőséget:"
@@ -3296,7 +3248,7 @@ msgid "top rated"
 msgstr "Legjobbnak értékelt"
 
 msgid "random"
-msgstr "Véletlenszerű"
+msgstr "véletlenszerű"
 
 msgid "Lastest"
 msgstr "Legfrissebb"
@@ -3392,7 +3344,7 @@ msgid "Audience zone"
 msgstr "Célközönség"
 
 msgid "  password:"
-msgstr "Jelszó:"
+msgstr "  jelszó:"
 
 msgid "The default video format"
 msgstr "Alapértelmezett videóformátum"
@@ -3408,6 +3360,9 @@ msgstr ":részére"
 
 msgid "Programs"
 msgstr "Programok"
+
+msgid "Program"
+msgstr "Program"
 
 msgid "Information & journalism"
 msgstr "Információk, hírmagyarázatok"
@@ -3458,22 +3413,22 @@ msgid "format: worst"
 msgstr "Felbontás: legrosszabb"
 
 msgid "format: 720"
-msgstr "Felbontás:720"
+msgstr "Felbontás: 720"
 
 msgid "format: 240p"
-msgstr "Felbontás:240p"
+msgstr "Felbontás: 240p"
 
 msgid "format: 360p"
-msgstr "Felbontás:360p"
+msgstr "Felbontás: 360p"
 
 msgid "format: 480p"
-msgstr "Felbontás:480p"
+msgstr "Felbontás: 480p"
 
 msgid "Cannot find player content"
 msgstr "Nincs lejátszható tartalom"
 
 msgid "Sort movies: "
-msgstr "Filmek rendezése:"
+msgstr "Filmek rendezése: "
 
 msgid "last added"
 msgstr "Legutóbb hozzáadva"
@@ -3482,7 +3437,7 @@ msgid "last watched"
 msgstr "Legutóbb megtekintve"
 
 msgid "views"
-msgstr "Néző"
+msgstr "megtekintés"
 
 msgid "favorite"
 msgstr "Kedvenc"
@@ -3500,19 +3455,14 @@ msgid "WrestlingNet._listVideos - no markers [m1][m2] found!"
 msgstr "WrestlingNet._listVideos - jelzések nélkül [m1][m2] találhatóak!"
 
 msgid ""
-"Please visit '%s' from using web-browser form the PC. If links are available "
-"please report this problem.\n"
+"Please visit '%s' from using web-browser form the PC. If links are available please report this problem.\n"
 "Email: samsamsam@o2.pl"
 msgstr ""
-"Kérlek, látogass el a  '%s'  oldalra számítógépes böngészővel. Ha ott "
-"működik a link, küldj hibajelentést.\n"
+"Kérlek, látogass el a  '%s'  oldalra számítógépes böngészővel. Ha ott működik a link, küldj hibajelentést.\n"
 "Email: samsamsam@o2.pl"
 
-msgid ""
-"Last error: \"Videomega has blocked your IP for some time. Please retry this "
-"link after some time.\""
-msgstr ""
-"Hiba: \"A kiszolgáló blokkolta az IP címedet. Próbálkozz újra később.\""
+msgid "Last error: \"Videomega has blocked your IP for some time. Please retry this link after some time.\""
+msgstr "Hiba: \"A kiszolgáló blokkolta az IP címedet. Próbálkozz újra később.\""
 
 msgid "Newest added"
 msgstr "Legújabb"
@@ -3543,8 +3493,7 @@ msgstr "Belépés sikertelen."
 
 msgid ""
 "This host requires registration. \n"
-"Please fill your login and password in the host configuration. Available "
-"under blue button."
+"Please fill your login and password in the host configuration. Available under blue button."
 msgstr ""
 "Az oldal regisztrációt igényel. \n"
 "A kék gomb segítségével megadhatod a belépési adatokat."
@@ -3595,16 +3544,16 @@ msgid "Use proxy gateway"
 msgstr "Használj proxy átjárót"
 
 msgid "show iframe for audio item"
-msgstr "iframe mutatása hangokhoz "
+msgstr "iframe mutatása hangokhoz"
 
 msgid "Iframe file"
 msgstr "Iframe fájl"
 
 msgid "Clear iframe file"
-msgstr "iframe fájl törlése"
+msgstr "Iframe fájl törlése"
 
 msgid "Total size: "
-msgstr "Teljes méret:"
+msgstr "Teljes méret: "
 
 msgid "Show file size"
 msgstr "Fájlméret megjelenítése"
@@ -3643,11 +3592,11 @@ msgid ""
 "Some changes will be applied only after plugin update.\n"
 "Do you want to perform update now?"
 msgstr ""
-"Néhány változás acsak a plugin frissítését követően lesz érvényes.\n"
+"Néhány változás csak a plugin frissítését követően lesz érvényes.\n"
 "Szeretnéd most frissíteni a plugint?"
 
 msgid "Make directory [%s]"
-msgstr " [%s] mappa létrehozása"
+msgstr "A(z) [%s] mappa létrehozása"
 
 msgid ""
 "Can not get mount points - cmd mount failed.\n"
@@ -3677,7 +3626,7 @@ msgid "Set file name"
 msgstr "Fájlnév választása"
 
 msgid "File \"%s\" already exists!"
-msgstr " \"%s\" fájl már létezik!"
+msgstr "A(z) \"%s\" fájl már létezik!"
 
 msgid "Mangas"
 msgstr "Manga videók"
@@ -3697,11 +3646,8 @@ msgstr "Főoldal"
 msgid "Season"
 msgstr "Évad"
 
-msgid ""
-"Plugin can be run on one of the following platforms: sh4, mipsel, i686, "
-"armv7, armv5t."
-msgstr ""
-"A Plugin csak a következő platformokon működik: sh4, mipsel, i686, armv7."
+msgid "Plugin can be run on one of the following platforms: sh4, mipsel, i686, armv7, armv5t."
+msgstr "A Plugin csak a következő platformokon működik: sh4, mipsel, i686, armv7."
 
 msgid "SovDub"
 msgstr "SovDub"
@@ -3805,15 +3751,11 @@ msgstr "Fordítások"
 msgid "Collections"
 msgstr "Gyűjtemények"
 
-msgid ""
-"Link is not supported by the gstplayer. Please use the extelayer3 if "
-"available."
-msgstr ""
-"A Gstplayer ezt a linket nem támogatja. Próbálj Exteplayer3-at használni, ha "
-"lehet."
+msgid "Link is not supported by the gstplayer. Please use the extelayer3 if available."
+msgstr "A Gstplayer ezt a linket nem támogatja. Próbálj Exteplayer3-at használni, ha lehet."
 
 msgid "Fatal error: consoleWrite failed!"
-msgstr "Végzetes hiba: Konzolba írás siekrtelen"
+msgstr "Végzetes hiba: Konzolba írás sikertelen!"
 
 msgid "Most Viewed"
 msgstr "Legnézettebb"
@@ -3867,10 +3809,10 @@ msgid "Cartoon List"
 msgstr "Rajzfilmek listája"
 
 msgid "only Anime"
-msgstr "Csak Anime"
+msgstr "csak Anime"
 
 msgid "only Cartoons"
-msgstr "Csak Rajzfilmek"
+msgstr "csak Rajzfilmek"
 
 msgid "Views"
 msgstr "Nézők"
@@ -3878,12 +3820,8 @@ msgstr "Nézők"
 msgid "Preview"
 msgstr "Előzetes"
 
-msgid ""
-"It seems that the subtitle's provider \"%s\" has crashed. Do you want to "
-"report this problem?"
-msgstr ""
-"Úgy tűnik, a  \"%s\" felirat kiszolgáló összeomlott. Szeretnéd jelenteni a "
-"problémát?"
+msgid "It seems that the subtitle's provider \"%s\" has crashed. Do you want to report this problem?"
+msgstr "Úgy tűnik, a  \"%s\" felirat kiszolgáló összeomlott. Szeretnéd jelenteni a problémát?"
 
 msgid "Subtitles \"%s\" downloaded correctly."
 msgstr "A \"%s\" felirata sikeresen letöltve."
@@ -3895,7 +3833,7 @@ msgid "Season %s"
 msgstr "%s Évad"
 
 msgid "Failed to create directory \"%s\"."
-msgstr "Hiba a \"%s\" könyvtár létrehozásakor"
+msgstr "Hiba a \"%s\" könyvtár létrehozásakor."
 
 msgid "Unzip error code[%s]."
 msgstr "Kicsomagolási hibakód [%s]."
@@ -3916,13 +3854,13 @@ msgid "Wrong format of rar archive."
 msgstr "Hibás a RAR archívum formátuma."
 
 msgid "Failed to write the file \"%s\"."
-msgstr "Hiba a \"%s\" fájl írása közben!"
+msgstr "Hiba a \"%s\" fájl írása közben."
 
 msgid "Failed to convert the file \"%s\" to UTF-8."
 msgstr "Hiba a \"%s\" fájl UTF-8 formátumba alakítása közben."
 
 msgid "Failed to open the file \"%s\"."
-msgstr "Hiba a \"%s\" fájl megnyitása közben!"
+msgstr "Hiba a \"%s\" fájl megnyitása közben."
 
 msgid "Login failed!"
 msgstr "Belépés sikertelen!"
@@ -3947,7 +3885,7 @@ msgid "Failed to decode to UTF-8."
 msgstr "Átalakítás UTF-8 formátumba sikertelen."
 
 msgid "Failed to write file \"%s\"."
-msgstr "Hiba a \"%s\" fájl írása közben!"
+msgstr "Hiba a \"%s\" fájl írása közben."
 
 msgid "json load error 2"
 msgstr "json betöltési hiba 2"
@@ -3960,16 +3898,16 @@ msgstr ""
 "wget hibakód [%d]."
 
 msgid "unzip error - please check if utitlity unzip is available"
-msgstr "Unzip hiba - Kérlek, ellenőrizd az unzip kiegészítő meglétét"
+msgstr "unzip hiba - Kérlek, ellenőrizd az unzip kiegészítő meglétét"
 
 msgid "write error"
-msgstr "Íráshiba"
+msgstr "írási hiba"
 
 msgid "decode error"
-msgstr "Dekódolási hiba"
+msgstr "dekódolási hiba"
 
 msgid "read error"
-msgstr "Olvasási hiba"
+msgstr "olvasási hiba"
 
 msgid "gzip error"
 msgstr "gzip hiba"
@@ -3996,7 +3934,7 @@ msgid "Titlovi.com"
 msgstr "Titlovi.com"
 
 msgid "Youtube.com"
-msgstr "outube.com"
+msgstr "Youtube.com"
 
 msgid "Subscene.com"
 msgstr "Subscene.com"
@@ -4011,7 +3949,7 @@ msgid "Use UA proxy server to get file lists"
 msgstr "Használj UA proxy szervert fájllista lekéréshez"
 
 msgid "any"
-msgstr "Összes"
+msgstr "összes"
 
 msgid "C subtitle parser"
 msgstr "C Felirat Párosító"
@@ -4020,10 +3958,10 @@ msgid "It improves subtitles parsing.\n"
 msgstr "Ez javítja a felirat hozzárendelést.\n"
 
 msgid "Use subtitles parser extension if available"
-msgstr "Feliratozás bekapcsolása, ha elérhető."
+msgstr "Feliratozás bekapcsolása, ha elérhető"
 
 msgid "Copy post installed binaries."
-msgstr "Telepített csomagok másolása"
+msgstr "Telepített csomagok másolása."
 
 msgid "IPTVPlayer - Start"
 msgstr "IPTVPlayer - Indítás"
@@ -4087,12 +4025,10 @@ msgid "Stand-Up"
 msgstr "Stand-Up"
 
 msgid ""
-"Please remember to visit http://www.sport365.live/ and watch a few "
-"advertisements.\n"
+"Please remember to visit http://www.sport365.live/ and watch a few advertisements.\n"
 "This will fix problem, if your playback is constantly interrupted."
 msgstr ""
-"Látogass el a http://www.sport365.live/ oldalra, és tekints meg néhány "
-"reklámot.\n"
+"Látogass el a http://www.sport365.live/ oldalra, és tekints meg néhány reklámot.\n"
 "Ez megoldhatja a lejátszás rendszeres akadozását."
 
 msgid "Anime list"
@@ -4120,10 +4056,10 @@ msgid "Any"
 msgstr "Összes"
 
 msgid "Year: "
-msgstr "Év:"
+msgstr "Év: "
 
 msgid "Connection to server failed!"
-msgstr "Kapcsolódás a szerverhez sikertelen"
+msgstr "Kapcsolódás a szerverhez sikertelen!"
 
 msgid "Enable reordering"
 msgstr "Átrendezés engedélyezése"
@@ -4135,7 +4071,7 @@ msgid ""
 "To watch videos from http://vk.com/ you need to login.\n"
 "Please fill your login and password in the IPTVPlayer configuration."
 msgstr ""
-" http://vk.com/ videóinak megtekintéséhez be kell jelentkezned.\n"
+"A http://vk.com/ videóinak megtekintéséhez be kell jelentkezned.\n"
 "Kérlek, add meg az adataidat a Konfigurációs menüben."
 
 msgid ""
@@ -4185,7 +4121,7 @@ msgid "Only available in Sweden."
 msgstr "Csak Svédországban elérhető."
 
 msgid "Detection of glibc version."
-msgstr "glibc keresése."
+msgstr "A glibc keresése."
 
 msgid "Detection version of installed standard C library."
 msgstr "Telepített C könyvtár keresés."
@@ -4220,24 +4156,18 @@ msgstr ""
 "\n"
 "További információ: http://ducktape.org/"
 
-msgid ""
-"Duktape is an embeddable Javascript engine, with a focus on portability and "
-"compact footprint.\n"
-msgstr ""
-"A Ducktape egy beágyazható Javascript egység, amely a kompakt méretre és  a "
-"hordozhatóságra fókuszál.\n"
+msgid "Duktape is an embeddable Javascript engine, with a focus on portability and compact footprint.\n"
+msgstr "A Ducktape egy beágyazható Javascript egység, amely a kompakt méretre és  a hordozhatóságra fókuszál.\n"
 
 msgid "TV Show"
 msgstr "TV Show"
 
 msgid ""
 "Access to this service requires login.\n"
-"Please register on the site \"%s\" and then put your e-mail and password in "
-"the host configuration under blue button."
+"Please register on the site \"%s\" and then put your e-mail and password in the host configuration under blue button."
 msgstr ""
 "A szolgáltató regisztrációt igényel.\n"
-"Regisztrálj el a \"%s\" oldalon, majd a kék gomb lenyomása után add meg a "
-"belépési adatokat. "
+"Regisztrálj el a \"%s\" oldalon, majd a kék gomb lenyomása után add meg a belépési adatokat."
 
 msgid "Login mode"
 msgstr "Belépési mód"
@@ -4257,19 +4187,17 @@ msgstr "Azonosító"
 msgid "Trailer"
 msgstr "Előzetes"
 
-msgid ""
-"This service requires a new Enigma2 image with a Python version %s or later."
-msgstr ""
-"Ez az oldal új Enigma2 rendszert igényel, %s vagy újabb Python verzióval."
+msgid "This service requires a new Enigma2 image with a Python version %s or later."
+msgstr "Ez az oldal új Enigma2 rendszert igényel, %s vagy újabb Python verzióval."
 
 msgid "Genre: "
-msgstr "Témakör:"
+msgstr "Témakör: "
 
 msgid "Order by: "
-msgstr "Rendezés mód:"
+msgstr "Rendezés mód: "
 
 msgid "Score at least: "
-msgstr "Minimális pontszám:"
+msgstr "Minimális pontszám: "
 
 msgid "trailer"
 msgstr "Előzetes"
@@ -4326,10 +4254,367 @@ msgid "Show items with DRM"
 msgstr "Másolásvédett elemek megjelenítése"
 
 msgid "Items with DRM protection."
-msgstr "Másolásvédett elemek"
+msgstr "Másolásvédett elemek."
 
 msgid "Video with DRM protection."
-msgstr "Másolásvédett videók"
+msgstr "Másolásvédett videók."
 
 msgid "Trailers"
 msgstr "Előzetesek"
+
+msgid "The preferred update server"
+msgstr "A preferált frissítési kiszolgáló"
+
+msgid "Virtual Keyboard type"
+msgstr "Virtuális billentyűzet típusa"
+
+msgid "Own model"
+msgstr "Saját modell"
+
+msgid "    Background color"
+msgstr "    Háttérszín"
+
+msgid "    Show suggestions"
+msgstr "    Javaslatok megjelenítése"
+
+msgid "    Default suggestions provider"
+msgstr "    Alapértelmezett javaslatok szolgáltatója"
+
+msgid "private"
+msgstr "privát"
+
+msgid "%s login"
+msgstr "%s bejelentkezés"
+
+msgid "%s password"
+msgstr "%s jelszó"
+
+msgid "%s e-mail"
+msgstr "%s e-mail"
+
+msgid "%s device name"
+msgstr "%s eszköz neve"
+
+msgid "%s API KEY"
+msgstr "%s API Key"
+
+msgid "Default"
+msgstr "Alapértelmezett"
+
+msgid "all"
+msgstr "összes"
+
+msgid "    Enable hosts groups"
+msgstr "    Hosts csoportosítások engedélyezése"
+
+msgid "Use the PyCurl for HTTP(S) requests"
+msgstr "PyCurl használata a HTTP(S) kérésekhez"
+
+msgid "Buffering location"
+msgstr "Pufferelés helye"
+
+msgid "Downloads location"
+msgstr "Letöltések helye"
+
+msgid "Use web-proxy for VODs (it may be illegal):"
+msgstr "Proxy használata VOD-hoz (illegális lehet)"
+
+msgid "Info bar clock format"
+msgstr "Információs sáv órajel formátuma"
+
+msgid "24 hour format "
+msgstr "24 órás formátum "
+
+msgid "12 hour format "
+msgstr "12 órás formátum "
+
+msgid "Create LCD/VFD summary screen"
+msgstr "LCD/VFD összefoglaló képernyő létrehozása"
+
+msgid "RAM buffer size [MB] for network protocols"
+msgstr "RAM puffer mérete [MB] a hálózati protokollhoz"
+
+msgid "RAM buffer size [MB] for local files"
+msgstr "RAM puffer mérete [MB] a helyi fájlokhoz"
+
+msgid "Use software decoder for the %s"
+msgstr "Szoftveres dekóder %s használatakor"
+
+msgid "AC3 downmix mode"
+msgstr "AC3 lekeverés mód"
+
+msgid "Info bar timeout"
+msgstr "Információs sáv eltünési ideje"
+
+msgid "Default video policy for 16:9"
+msgstr "Alapértelmezett videó minőség 16:9 esetén"
+
+msgid "Default video policy for 4:3"
+msgstr "Alapértelmezett videó minőség 4:3 esetén"
+
+msgid "Inject black iframe at video playback finish"
+msgstr "Fekete iframe beszúrása a videólejátszás befejezésekor"
+
+msgid "Show iframe during audio playback"
+msgstr "Iframe megjelenítése hang lejátszása közben"
+
+msgid "Radio iframe file"
+msgstr "Rádió iframe fájl"
+
+msgid "Black iframe file"
+msgstr "Fekete iframe fájl"
+
+msgid "E2iPlayer - settings"
+msgstr "E2iPlayer - beállítások"
+
+msgid "Download manager"
+msgstr "Letöltésvezérlő"
+
+msgid "Disable/Enable groups"
+msgstr "Csoportok letiltása/engedélyezése menü"
+
+msgid "Hide \"%s\" group"
+msgstr "A(z) \"%s\" csoport elrejtése"
+
+msgid "Remove \"%s\" item"
+msgstr "A(z) \"%s\" elem törlése"
+
+msgid "Add host %s to group"
+msgstr "A(z) \"%s\" elem hozzáadása csoporthoz"
+
+msgid "Select group"
+msgstr "Válassz csoportot"
+
+msgid "Link protected with DRM."
+msgstr "A link DRM-mel védett."
+
+msgid "Accept"
+msgstr "Elfogad"
+
+msgid "Get decryption key."
+msgstr "Visszafejtési kulcs beszerzése."
+
+msgid "Decrypt archive."
+msgstr "Az archívum visszafejtése."
+
+msgid ""
+"Problem with downloading the encryption key:\n"
+"[%s]."
+msgstr ""
+"Probléma a titkosítási kulcs letöltésével:\n"
+"[%s]."
+
+msgid "Wrong the encryption key size: %s\n"
+msgstr "Hibás a titkosítási kulcs mérete: %s\n"
+
+msgid "Problem with decryption the key."
+msgstr "Probléma a kulcs dekódolásával."
+
+msgid "Encryption key was downloaded successfully."
+msgstr "Titkosítási kulcs sikeresen letöltődött."
+
+msgid "Decryption the archive completed successfully."
+msgstr "Az archívum dekódolása sikeresen befejeződött."
+
+msgid ""
+"Problem with decryption the archive. Return code [%d]\n"
+"%s."
+msgstr ""
+"Probléma az archívum dekódolásával. Visszatérési kód [%d]\n"
+"%s."
+
+msgid "JDownloader script finished."
+msgstr "A JDownloader script futása befejeződött."
+
+msgid ""
+"Captcha solved.\n"
+"Waiting for notification."
+msgstr ""
+"Captcha megfejtve.\n"
+"Várakozás az értesítésre."
+
+msgid "My JDownloader reCAPTCHA v2 solution"
+msgstr "My JDownloader reCAPTCHA v2 megoldás"
+
+msgid "Auto-translate"
+msgstr "Automatikus fordítás"
+
+msgid "Failed to page with subtitle link."
+msgstr "Sikertelen oldalbetöltés felírat linkkel."
+
+msgid "Wrong uri."
+msgstr "Hibás URI."
+
+msgid "Search Movies and TV Series"
+msgstr "Keresés a Filmek és a TV sorozatokban"
+
+msgid "Search only in Movies"
+msgstr "Keresés csak a Filmekben"
+
+msgid "Search only in TV Series"
+msgstr "Keresés csak a TV sorozatokban"
+
+msgid "Get token failed!"
+msgstr "Nem megfelelő a Token!"
+
+msgid "Critical Error – cookie can't be saved!"
+msgstr "Kritikus hiba - a cookie nem menthető!"
+
+msgid ""
+"Last error:\n"
+"%s"
+msgstr ""
+"Utolsó hiba:\n"
+"%s"
+
+msgid "Please make sure that the folder for cache data (set in the configuration) is writable."
+msgstr "Ellenőrizze, hogy a gyorsítótár (cache) adatok mappája írható-e (beállítva a konfigurációban)."
+
+msgid "wait %s second"
+msgstr "várjon %s másodpercet"
+
+msgid "wait %s seconds"
+msgstr "várjon %s másodpercet"
+
+msgid ""
+"It seems that the host \"%s\" has crashed.\n"
+"This host is not integral part of the E2iPlayer plugin.\n"
+"It is not supported by E2iPlayer team."
+msgstr ""
+"Úgy tűnik, hogy a \"%s\" host kiszolgáló összeomlott.\n"
+"Ez a host kiszolgáló nem része az E2iPlayer bővítménynek.\n"
+"Nincs támogatva az E2iPlayer csapat által."
+
+msgid ""
+"It seems that the host \"%s\" has crashed. Do you want to report this problem?\n"
+"\n"
+"Make sure you are using the latest version of the plugin.\n"
+"You can also report problem here: \n"
+"https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/issues\n"
+"or here: samsamsam@o2.pl"
+msgstr ""
+"Úgy tűnik, hogy a(z) \"%s\" host kiszolgáló összeomlott.\n"
+"\n"
+"Győződj meg róla, hogy a legutolsó változatot használod.\n"
+"A problémát itt tudod jelenteni:\n"
+"https://gitlab.com/iptvplayer-for-e2/iptvplayer-for-e2/issues\n"
+"vagy itt: samsamsam@o2.pl"
+
+msgid "Lead programmer: "
+msgstr "Vezető programozó: "
+
+msgid "There is no hosts in this group."
+msgstr "Ebben a csoportban nincs host kiszolgáló."
+
+msgid "Loading %s failed due to following error:"
+msgstr "A(z) %s betöltése nem sikerült a következő hiba miatt:"
+
+msgid "Failed: %s"
+msgstr "Nem sikerült: %s"
+
+msgid "Directory \"%s\" does not exists."
+msgstr "A(z) \"%s\" könyvtár nem létezik."
+
+msgid "Please set valid %s in the %s configuration."
+msgstr "Adjon meg érvényes %s-ot a(z) %s konfigurációban."
+
+msgid "There is no enough free space in the folder \"%s\"."
+msgstr "Nincs elég szabad hely a(z) \"%s\" mappában."
+
+msgid "\tDisk space required: %s"
+msgstr "\tSzükséges lemezterület: %s"
+
+msgid "\tDisk space available: %s"
+msgstr "\tRendelkezésre álló lemezterület: %s"
+
+msgid "Tip! You can connect USB flash drive to fix this problem."
+msgstr "Tipp! A probléma megoldásához csatlakoztass egy USB meghajtót."
+
+msgid "Cartoons and anime"
+msgstr "Rajzfilmek és anime"
+
+msgid "Movies and series"
+msgstr "Filmek és sorozatok"
+
+msgid "Documentary"
+msgstr "Dokumentumfilm"
+
+msgid "Science"
+msgstr "Tudomány"
+
+msgid "E2iPlayer info"
+msgstr "E2iPlayer információ"
+
+msgid "%dsec"
+msgstr "%d másodperc"
+
+msgid "%dhour %dmin"
+msgstr "%d óra %d perc"
+
+msgid "%dhour"
+msgstr "%d óra"
+
+msgid "%dmin"
+msgstr "%d perc"
+
+msgid "Back to the host start"
+msgstr "Vissza a kiszolgáló kiindulási pontjához"
+
+msgid "Back to the category list"
+msgstr "Vissza a Kategória listához"
+
+msgid ""
+"The host %s requires registration. \n"
+"Please fill your login and password in the host configuration. Available under blue button."
+msgstr ""
+"A(z) %s kiszolgáló regisztrációt igényel. \n"
+"A kék gomb, majd az Oldal beállításai segítségével megadhatod a belépési adatokat."
+
+msgid "Hosting \"%s\" not supported."
+msgstr "A(z) \"%s\" kiszolgáló nem támogatott."
+
+msgid "Hosting \"%s\" unknown."
+msgstr "A(z) \"%s\" kiszolgáló nem ismert."
+
+msgid "File Not Found."
+msgstr "A fájl nem található."
+
+msgid "File Not Found"
+msgstr "A fájl nem található"
+
+msgid "Fail to get \"%s\"."
+msgstr "Hiba a \"%s\" lekérése közben."
+
+msgid "File was deleted"
+msgstr "A fájlt törölték"
+
+msgid "File Removed"
+msgstr "A fájl eltávolítva"
+
+msgid "File Deleted."
+msgstr "Fájl törölve."
+
+msgid "Source %s"
+msgstr "Forrás: %s"
+
+msgid "The file you were looking for could not be found, sorry for any inconvenience."
+msgstr "A keresett fájl nem található."
+
+msgid ""
+"Only logged in user have access.\n"
+"Please set login data in the host configuration under blue button."
+msgstr ""
+"Csak a bejelentkezett felhasználó rendelkezik hozzáféréssel.\n"
+"A kék gomb, majd az Oldal beállításai segítségével megadhatod a belépési adatokat."
+
+msgid "We can't find the file you are looking for. It maybe got deleted by the owner or was removed due a copyright violation."
+msgstr "Nem találjuk a keresett fájlt. Lehet, hogy azt a tulajdonos törölte, vagy szerzői jog megsértése miatt eltávolították."
+
+msgid "%s link extractor error."
+msgstr "%s link extractor hiba."
+
+msgid "Internal Server Error. Server response code: %s"
+msgstr "Belső Szerverhiba. Szerver válaszkód: %s"
+
+msgid "not be found"
+msgstr "nem található"

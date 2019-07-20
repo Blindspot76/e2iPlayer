@@ -1,6 +1,12 @@
-﻿#2019.07.19.02
+﻿#2019.07.20.01
+-Updatehosts frissítve
+-Magyarítás frissítve
+#2019.07.19.02
 -Kisebb javítások
+-iptvplayerwidget.py frissítve
 #2019.07.19.01
 -Kisebb javítások
 #2019.07.18.04
 -Webcamera.pl javítva
+#2019.07.18.03
+-Mindig Tv ikonok frissítve
