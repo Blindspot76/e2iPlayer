@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-07-18 by Alec - updatehosts HU host telepítő
+# 2019-07-20 by Alec - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "3.1"
+HOST_VERSION = "3.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -160,7 +160,7 @@ class updatehosts(CBaseHostClass):
             if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
             uvk = self.vohfg(self.vivn,self.geteprvz())
-            if uvk: msg_uve = '- új E2iPlayer lejátszó elérhető - telepíthető, frissíthető\n'
+            if uvk: msg_uve = '- új E2iPlayer lejátszó elérhető (változások listáját nézd meg)  ->  először ezt csináld meg!\n'
             msg_muve = self.mgyerz()
             if msg_muve != '': msg_muve += '\n'
             msg_huve = self.herzs()
@@ -211,7 +211,7 @@ class updatehosts(CBaseHostClass):
             params = dict(cItem)
             params = {'title':'Információ', 'desc':msg_info}
             self.addMarker(params)
-            MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'E2iPlayer telepítése, frissítése', 'tab_id': 'telepites', 'desc': msg_telepites},
+            MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'E2iPlayer telepítése, frissítése, változások listája', 'tab_id': 'telepites', 'desc': msg_telepites},
                             {'category': 'list_main', 'title': 'E2iPlayer magyarítása', 'tab_id': 'magyaritas', 'desc': msg_magyar},
                             {'category': 'list_main', 'title': 'Magyar hostok telepítése, frissítése', 'tab_id': 'hostok', 'desc': msg_host},
                             {'category': 'list_main', 'title': 'Magyar hostok beállításainak mentése/visszatöltése', 'tab_id': 'beall_ment', 'desc': msg_beall_ment},
@@ -391,8 +391,10 @@ class updatehosts(CBaseHostClass):
                 uvk = self.vohfg(self.vivn,self.geteprvz())
                 if uvk:
                     n_tt = 'Telepítés  -  Új verzió elérhető'
+                    n_tft = 'Frissítés  -  A meglévő verzió frissíthető'
                 else:
                     n_tt = 'Telepítés'
+                    n_tft = 'Frissítés'
                 n_mmsb = self.malvadst('1', '9', 'updatehosts_p_telepites')
                 if n_mmsb != '' and self.aid:
                     self.aid_ki = 'ID: ' + n_mmsb + '\n'
@@ -404,9 +406,16 @@ class updatehosts(CBaseHostClass):
                     self.aid_ki = 'ID: ' + n_mast + '\n'
                 else:
                     self.aid_ki = ''
-                msg_p_frissit = self.aid_ki + 'Az E2iPlayer lejátszó program frissítését lehet itt végrehajtani...\n\nA meglévő program frissül!\nAz előző frissítés óta történt változások települnek.'
-                MT_CAT_TAB = [{'category': 'list_second', 'title': n_tt, 'tab_id': 'p_telepit', 'desc': msg_p_telepit},
-                              {'category': 'list_second', 'title': 'Frissítés', 'tab_id': 'p_frissit', 'desc': msg_p_frissit}
+                msg_p_frissit = self.aid_ki + 'Az E2iPlayer lejátszó program frissítését lehet itt végrehajtani...\n\nA meglévő program megmarad, csak frissül, kiegészül!\nAz előző frissítés óta történt változások települnek.'
+                n_vlt = self.malvadst('1', '9', 'updatehosts_p_valtozas')
+                if n_vlt != '' and self.aid:
+                    self.aid_ki = 'ID: ' + n_vlt + '\n'
+                else:
+                    self.aid_ki = ''
+                msg_p_valtozas = self.aid_ki + 'Az E2iPlayer lejátszó változásait lehet it megnézni...'
+                MT_CAT_TAB = [{'category': 'list_second', 'title': 'Változások listája', 'tab_id': 'p_valtozas', 'desc': msg_p_valtozas},
+                              {'category': 'list_second', 'title': n_tft, 'tab_id': 'p_frissit', 'desc': msg_p_frissit},
+                              {'category': 'list_second', 'title': n_tt, 'tab_id': 'p_telepit', 'desc': msg_p_telepit}
                              ]
                 self.listsTab(MT_CAT_TAB, cItem)
             else:
@@ -469,6 +478,9 @@ class updatehosts(CBaseHostClass):
                 else:
                     msg = 'Nincs elegendő hely a "/tmp" tárhelyen!\nLegalább 30MB hely szükséges a frissítéshez...'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
+            elif tabID == 'p_valtozas':
+                self.susn('2', '9', 'updatehosts_p_valtozas')
+                self.elrvtzl(cItem)
             elif tabID == 'minimal_beallit':
                 self.susn('2', '9', 'updatehosts_hu_minimal_beal')
                 self.mlmsbt()
@@ -1404,6 +1416,46 @@ class updatehosts(CBaseHostClass):
             return bv
         except Exception:
             return ''
+            
+    def elrvtzl(self,cItem):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y9KLNdLzyzJKE0qLU4tSs7PK0nNK9FLzs/Vd8rJzEspLsgvMTfTTzXKDMhJrEwt0s9NLC4BUp4BIWFQkeSMxLz01GK9kooSAGbuIAU='))
+        ln = 0
+        dsc = ''
+        dtm = []
+        lrs = []
+        try:
+            sts, data = self.cm.getPage(uhe)
+            if not sts: return
+            if len(data) == 0: return
+            data = data.split('\n')
+            if len(data) == 0: return
+            for line in data:
+                if len(line) > 0:
+                    if line.startswith('-') and line[2] != ' ':
+                        line = '-  ' + line[1:]
+                    idx1 = line.find('#')
+                    if -1 < idx1:
+                        dtm.append(line[idx1+1:].replace('/n','').strip())
+                        ln += 1
+                        if ln > 20: break
+                        continue
+                    if len(lrs) == 0:
+                        lrs.append(line)
+                    elif len(lrs) < ln:
+                        lrs.append(line)
+                    else:
+                        lrs[ln-1] = lrs[ln-1] + '\n' + line
+            if len(dtm) > 0:
+                ln = 0
+                for item in dtm:
+                    if len(lrs) > 0:
+                        dsc = item + ' verzió változtatásai:\n\n' + lrs[ln]
+                    params = dict(cItem)
+                    params = {'title':item, 'desc':dsc}
+                    self.addMarker(params)
+                    ln += 1
+        except Exception:
+            return
         
     def mlmsbt(self):
         encoding = 'utf-8'
@@ -1755,26 +1807,35 @@ class updatehosts(CBaseHostClass):
         
     def hnfwr(self, host=''):
         sikerult = False
+        krs = False
         encoding = 'utf-8'
+        hst_trls = "mooviecc"
         try:
             if host != '':
                 if not fileExists(self.HRG):
-                    datsz = {"disabled_hosts": [], "version": 0, "hosts": ["youtube","mooviecc","filmezz","mozicsillag","dailymotion","vimeo","twitchtv","hitboxtv"]}
+                    datsz = {"disabled_hosts": [], "version": 0, "hosts": ["updatehosts","filmezz","mozicsillag"]}
                     datsz = json_dumps(datsz)
                     with codecs.open(self.HRG, 'w', encoding, 'replace') as fuw:
                         fuw.write(datsz)
                 if fileExists(self.HRG):
                     with codecs.open(self.HRG, 'r', encoding, 'replace') as fpr:
                         data = fpr.read()
-                    data = json_loads(data)
-                    host_array = data.get('hosts', [])
-                    if not host.strip() in host_array:
-                        host_array.append(host.strip())                
-                        data.update({'hosts': host_array})
-                        data = json_dumps(data)
-                        with codecs.open(self.HRG, 'w', encoding, 'replace') as fpw:
-                            fpw.write(data)
-                    sikerult = True
+                    if len(data) > 0:
+                        data = json_loads(data)
+                        host_array = data.get('hosts', [])
+                        if len(host_array) > 0:
+                            if hst_trls in host_array:
+                                host_array.remove(hst_trls)
+                                krs = True
+                            if not host.strip() in host_array:
+                                host_array.append(host.strip())
+                                krs = True
+                            if krs:
+                                data.update({'hosts': host_array})
+                                data = json_dumps(data)
+                                with codecs.open(self.HRG, 'w', encoding, 'replace') as fpw:
+                                    fpw.write(data)
+                            sikerult = True
         except Exception:
             printExc()
         return sikerult

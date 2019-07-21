@@ -1,4 +1,6 @@
-﻿#2019.07.20.01
+﻿#2019.07.21.01
+-HU Telepítő frissítve
+#2019.07.20.01
 -Updatehosts frissítve
 -Magyarítás frissítve
 #2019.07.19.02
