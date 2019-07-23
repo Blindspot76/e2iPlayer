@@ -82,6 +82,7 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
+hostinfoversion
 hostinteriatv
 hostipla
 hostitvcom
@@ -155,6 +156,8 @@ hostsonyplayer
 hostsovdub
 hostspiegeltv
 hostsportdeutschland
+hostsportitalia
+
 hostspryciarze
 hoststreamcomplet
 hoststreaminghdfun
