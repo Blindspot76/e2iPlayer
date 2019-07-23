@@ -1,4 +1,6 @@
-﻿#2019.07.23.01
+﻿#2019.07.23.02
+Filiser.TV javítva
+#2019.07.23.01
 -XXX kiegészítő frissítve
 #2019.07.21.01
 -HU Telepítő frissítve
