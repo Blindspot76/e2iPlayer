@@ -1,4 +1,7 @@
-﻿#2019.07.23.03
+﻿#2019.07.26.01
+-Altadefizione host javítva
+-Ikonok frissítve
+#2019.07.23.03
 -Új host: SportItalia hozzáadva
 #2019.07.23.02
 -Filiser.TV javítva
