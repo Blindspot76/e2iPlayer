@@ -1,16 +1,18 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 #  IplaPlayer based on SHOUTcast
 #
 #  $Id$
 #
-# 2019-07-19 - Modified by Blindspot
+# 2019-08-03 - Modified by Alec
 
 from time import sleep as time_sleep
 from os import remove as os_remove, path as os_path
 from urllib import quote as urllib_quote
 from random import shuffle as random_shuffle
+from datetime import datetime
 import traceback
+import time
 
 ####################################################
 #                   E2 components
@@ -82,7 +84,7 @@ class E2iPlayerWidget(Screen):
     screenwidth = getDesktop(0).size().width()
     if screenwidth and screenwidth == 1920:
         skin =  """
-                    <screen position="center,center" size="1590,825" title="E2iPlayer %s">
+                    <screen position="center,center" size="1590,825" title="E2iPlayer - %s">
                             <ePixmap position="5,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="180,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="385,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
@@ -107,7 +109,7 @@ class E2iPlayerWidget(Screen):
                 """ %( IPTV_VERSION, GetIconDir('red.png'), GetIconDir('yellow.png'), GetIconDir('green.png'), GetIconDir('blue.png'))
     else:
         skin =  """
-                    <screen position="center,center" size="1090,525" title="E2iPlayer %s">
+                    <screen position="center,center" size="1090,525" title="E2iPlayer - %s">
                             <ePixmap position="30,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="287,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
                             <ePixmap position="554,9" zPosition="4" size="30,30" pixmap="%s" transparent="1" alphatest="on" />
@@ -1068,7 +1070,7 @@ class E2iPlayerWidget(Screen):
     def onStart(self):
         self.onShow.remove(self.onStart)
         #self.onLayoutFinish.remove(self.onStart)
-        self.setTitle( 'E2iPlayer ' + GetIPTVPlayerVerstion() )
+        self.setTitle( 'E2iPlayer  |  ' + datetime.now().strftime('%Y. %B %-d. - %A') )
         self.loadSpinner()
         self.hideSpinner()
         self.checkBlacklistedImage()
