@@ -1,4 +1,6 @@
-﻿#2019.08.03.01
+﻿#2019.08.03.02
+-VideoPenny host javítva
+#2019.08.03.01
 -XXX kiegészítő frissítve
 #2019.07.26.01
 -Altadefizione host javítva
