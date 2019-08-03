@@ -1,4 +1,7 @@
-﻿#2019.08.03.02
+﻿#2019.08.03.03
+-HU telepítő frissítve
+-Redbull TV javítva
+#2019.08.03.02
 -VideoPenny host javítva
 #2019.08.03.01
 -XXX kiegészítő frissítve
