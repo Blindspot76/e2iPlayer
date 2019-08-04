@@ -4,7 +4,7 @@
 #
 #  $Id$
 #
-# 
+# 2019-08-04 - Modified by Alec
 ###################################################
 # LOCAL import
 ###################################################
@@ -598,6 +598,43 @@ def printDBG( DBGtxt ):
                 print("======================EXC printDBG======================")
                 print("printDBG(II): %s" % traceback.format_exc())
                 print("========================================================")
+                
+#####################################################
+                
+def GetTextInList(lista,text):
+    in_lista = False
+    if len(lista) > 0:
+        for elem in lista:
+            if text == elem:
+                in_lista = True
+                break
+    return in_lista
+
+def hour_min(l):
+    mins = l/60
+    if mins <= 0:
+        return "%d:%02d" % (l/60, l%60)
+    vhour, vmins = mins // 60, mins % 60
+    if vhour and vmins:
+        return "%d:%02d:%02d" % (l/3600, l%3600/60, l%60)
+    elif vhour and not vmins:
+        return "%d:%02d:%02d" % (l/3600, l%3600/60, l%60)
+    else:
+        return "%d:%02d" % (l/60, l%60)
+
+def hour_min_text(l):
+    mins = l/60
+    if mins == 0:
+        return _("%dsec") % (0)
+    if mins < 1 and mins > 0:
+        return _("%dsec") % (l)
+    vhour, vmins = mins // 60, mins % 60
+    if vhour and vmins:
+        return _("%dhour %dmin") % (vhour,vmins)
+    elif vhour and not vmins:
+        return _("%dhour") % (vhour)
+    else:
+        return _("%dmin") % (vmins)
 
 #####################################################
 # get host list based on files in /hosts folder
