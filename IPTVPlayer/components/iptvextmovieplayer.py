@@ -4,8 +4,7 @@
 #
 #  $Id$
 #
-# 
-
+# # 2019-08-04 - Modified by Alec
 ###################################################
 # LOCAL import
 ###################################################
@@ -16,7 +15,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, Ge
                                                           GetE2VideoAspectChoices, GetE2VideoAspect, SetE2VideoAspect, GetE2VideoPolicyChoices, \
                                                           GetE2VideoPolicy, SetE2VideoPolicy, GetDefaultLang, GetPolishSubEncoding, E2PrioFix, iptv_system, \
                                                           GetE2AudioCodecMixOption, SetE2AudioCodecMixOption, CreateTmpFile, GetTmpDir, IsExecutable, MapUcharEncoding, \
-                                                          GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode
+                                                          GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, hour_min, hour_min_text
 from Plugins.Extensions.IPTVPlayer.tools.iptvsubtitles import IPTVSubtitlesHandler, IPTVEmbeddedSubtitlesHandler
 from Plugins.Extensions.IPTVPlayer.tools.iptvmoviemetadata import IPTVMovieMetaDataHandler
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -384,10 +383,10 @@ class IPTVExtMoviePlayer(Screen):
         self['bufferingBar']      = ProgressBar()
         self['goToSeekPointer']   = Cover3() 
         self['infoBarTitle']      = Label(self.title)
-        self['goToSeekLabel']     = Label("0:00:00")
-        self['currTimeLabel']     = Label("0:00:00")
-        self['remainedLabel']     = Label("-0:00:00")
-        self['lengthTimeLabel']   = Label("0:00:00")
+        self['goToSeekLabel']     = Label("0:00")
+        self['currTimeLabel']     = Label("0:00")
+        self['remainedLabel']     = Label("-0:00")
+        self['lengthTimeLabel']   = Label(_("%dsec") % (0))
         self['videoInfo']         = Label(" ")
         if self.clockFormat: self['clockTime'] = Label(" ")
         self['pleaseWait']        = Label(_("Opening. Please wait..."))
@@ -1142,7 +1141,7 @@ class IPTVExtMoviePlayer(Screen):
         self.playback['Length'] = newLength
         self['progressBar'].range = (0, newLength)
         self['bufferingCBar'].range = (0, newLength)
-        self['lengthTimeLabel'].setText( str(timedelta(seconds=newLength)) )
+        self['lengthTimeLabel'].setText( hour_min_text(newLength) )
         
     def playbackUpdateInfo(self, stsObj):
         # workaround for missing playback length info for under muxing MKV
@@ -1193,8 +1192,8 @@ class IPTVExtMoviePlayer(Screen):
                     diff = self.playback['CurrentTime'] - prevCTime
                     if diff > 0 and diff < 3: # CurrentTime in seconds
                         self.playback['ConfirmedCTime'] = self.playback['CurrentTime']
-                self['currTimeLabel'].setText( str(timedelta(seconds=self.playback['CurrentTime'])) )
-                self['remainedLabel'].setText( '-' + str(timedelta(seconds=self.playback['Length']-self.playback['CurrentTime'])) )
+                self['currTimeLabel'].setText( hour_min(self.playback['CurrentTime']) )
+                self['remainedLabel'].setText( '-' + hour_min(self.playback['Length']-self.playback['CurrentTime']) )
                 self['pleaseWait'].hide()
             elif 'BufferCTime' == key:
                 if self.playback['Length'] < val:
@@ -1269,7 +1268,7 @@ class IPTVExtMoviePlayer(Screen):
         if pos < 0: pos = 0
         
         self.playback['GoToSeekTime'] = pos
-        self["goToSeekLabel"].setText( str(timedelta(seconds=self.playback['GoToSeekTime'])) )
+        self["goToSeekLabel"].setText( hour_min(self.playback['GoToSeekTime']) )
         
         # update position
         # convert time to width

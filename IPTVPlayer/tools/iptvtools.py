@@ -4,7 +4,7 @@
 #
 #  $Id$
 #
-# 2019-08-04 - Modified by Alec
+# 2019-08-06 - Modified by Alec
 ###################################################
 # LOCAL import
 ###################################################
@@ -610,7 +610,7 @@ def GetTextInList(lista,text):
                 break
     return in_lista
 
-def hour_min(l):
+def hour_min(l=0):
     mins = l/60
     if mins <= 0:
         return "%d:%02d" % (l/60, l%60)
@@ -622,10 +622,10 @@ def hour_min(l):
     else:
         return "%d:%02d" % (l/60, l%60)
 
-def hour_min_text(l):
+def hour_min_text(l=0):
     mins = l/60
     if mins == 0:
-        return _("%dsec") % (0)
+        return "0 másodperc"
     if mins < 1 and mins > 0:
         return _("%dsec") % (l)
     vhour, vmins = mins // 60, mins % 60
