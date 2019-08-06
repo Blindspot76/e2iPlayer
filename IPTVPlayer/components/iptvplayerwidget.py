@@ -5,6 +5,7 @@
 #  $Id$
 #
 # 2019-08-03 - Modified by Alec
+###################################################
 
 from time import sleep as time_sleep
 from os import remove as os_remove, path as os_path
@@ -53,7 +54,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import FreeSpace as iptvtools
                                                           CMoviePlayerPerHost, GetFavouritesDir, CFakeMoviePlayerOption, GetAvailableIconSize, \
                                                           GetE2VideoModeChoices, GetE2VideoMode, SetE2VideoMode, TestTmpCookieDir, TestTmpJSCacheDir,\
                                                           ClearTmpCookieDir, ClearTmpJSCacheDir, SetTmpCookieDir, SetTmpJSCacheDir,\
-                                                          GetEnabledHostsList, SaveHostsOrderList, GetUpdateServerUri, GetHostsAliases, formatBytes
+                                                          GetEnabledHostsList, SaveHostsOrderList, GetUpdateServerUri, GetHostsAliases, formatBytes, GetTextInList
 from Plugins.Extensions.IPTVPlayer.tools.iptvhostgroups import IPTVHostsGroups
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.iptvdm.iptvbuffui import E2iPlayerBufferingWidget
@@ -591,6 +592,10 @@ class E2iPlayerWidget(Screen):
         self.stopAutoPlaySequencer()
         options = []
         
+        options.append((_("Back to the host start"), "BackToHostStart"))
+        if GetTextInList(self.categoryList,_("Next page")):
+            options.append((_("Back to the category list"), "BackToCategoryStart"))
+        
         if -1 < self.canByAddedToFavourites()[0]: 
             options.append((_("Add item to favourites"), "ADD_FAV"))
             options.append((_("Edit favourites"), "EDIT_FAV"))
@@ -688,9 +693,9 @@ class E2iPlayerWidget(Screen):
         TextMSG = ''
         if ret:
             if ret[1] == "info": #information about plugin
-                TextMSG  = _("e2iPlayer Magyar Változat")+"\n\n"
-                TextMSG += _("E-mail: ") + "\t- webhuplayer@gmail.com\n\n"
-                TextMSG += _("www: ") + "\n- https://github.com/blindspot76/e2iplayer/" + '\n- http://www.netboard.hu/viewtopic.php?topic=18425/\n\n\n'
+                TextMSG  = _("E2iPlayer Magyar Változat")+"\n\n"
+                TextMSG += _("E-mail: ") + "\nwebhuplayer@gmail.com\n\n"
+                TextMSG += _("www: ") + "\nhttps://github.com/blindspot76/e2iplayer" + '\nhttp://www.netboard.hu/viewtopic.php?topic=18425\n\n\n'
                 TextMSG += _("Készítették: ") 
                 developersTab = [{'nick':'Alec',},
                                  {'nick':'Celeburdi',    },
@@ -699,7 +704,7 @@ class E2iPlayerWidget(Screen):
                 # present alphabetically, the order does not mean validity
                 sortedList = sorted(developersTab, key=lambda k: k['nick'].upper())
                 for item in sortedList:
-                    TextMSG += "\n\t- {0}, ".format(item['nick'])
+                    TextMSG += "\t-  {0},\n".format(item['nick'])
                 TextMSG = TextMSG[:-2]
                 TextMSG += "\n\n\tés sokan mások\n"
                 self.session.open(MessageBox, TextMSG, type = MessageBox.TYPE_INFO )
@@ -747,6 +752,23 @@ class E2iPlayerWidget(Screen):
                 self.randomizePlayableItems()
             elif ret[1] == 'ReversePlayableItems':
                 self.reversePlayableItems()
+            elif ret[1] == 'BackToHostStart':
+                self.loadHost()
+            elif ret[1] == 'BackToCategoryStart':
+                my_out = 0
+                while GetTextInList(self.categoryList,_("Next page")):
+                    my_out = my_out + 1
+                    if len(self.prevSelList) > 0:
+                        self.nextSelIndex = self.prevSelList.pop()
+                        self.categoryList.pop()
+                        self.requestListFromHost('Previous')
+                        time.sleep(0.1)
+                    if my_out > 200:
+                        break
+                if len(self.prevSelList) > 0:
+                    self.nextSelIndex = self.prevSelList.pop()
+                    self.categoryList.pop()
+                    self.requestListFromHost('Previous')
     
     def editFavouritesCallback(self, ret=False):
         if ret and 'favourites' == self.hostName: # we must reload host

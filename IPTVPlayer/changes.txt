@@ -1,4 +1,9 @@
-﻿#2019.08.06.01
+#2019.08.06.02
+-Kisebb fejlesztések, javítások
+-Új funkció:  Vissza a Kategória lista elejéhez, ha több oldal volt megnézve
+-Új funkció:  Vissza a kiszolgáló kiindulási pontjához (gyors visszalépés az adott hoston belül)
+-Magyaros dátumkijelzés
+#2019.08.06.01
 -HU telepítő frissítve
 #2019.08.03.03
 -HU telepítő frissítve
