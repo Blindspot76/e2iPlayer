@@ -1,6 +1,32 @@
-﻿#2019.07.19.02
+﻿#2019.08.06.01
+-HU telepítő frissítve
+#2019.08.03.03
+-HU telepítő frissítve
+-Redbull TV javítva
+#2019.08.03.02
+-VideoPenny host javítva
+#2019.08.03.01
+-XXX kiegészítő frissítve
+#2019.07.26.01
+-Altadefizione host javítva
+-Ikonok frissítve
+#2019.07.23.03
+-Új host: SportItalia hozzáadva
+#2019.07.23.02
+-Filiser.TV javítva
+#2019.07.23.01
+-XXX kiegészítő frissítve
+#2019.07.21.01
+-HU Telepítő frissítve
+#2019.07.20.01
+-Updatehosts frissítve
+-Magyarítás frissítve
+#2019.07.19.02
 -Kisebb javítások
+-iptvplayerwidget.py frissítve
 #2019.07.19.01
 -Kisebb javítások
 #2019.07.18.04
 -Webcamera.pl javítva
+#2019.07.18.03
+-Mindig Tv ikonok frissítve

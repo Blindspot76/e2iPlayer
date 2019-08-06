@@ -8,6 +8,11 @@ hostallboxtv
 hostalltubetv
 hostaltadefinizione
 hostaltadefinizione01
+
+hostaltadefinizionecool
+
+hostaltadefinizione1
+
 hostandrijaiandjelka
 hostanimeodcinki
 hostappletrailers
@@ -82,6 +87,7 @@ hosthitboxtv
 hosthoofootcom
 hosticefilmsinfo
 hostiitvpl
+hostinfoversion
 hostinteriatv
 hostipla
 hostitvcom
@@ -155,6 +161,8 @@ hostsonyplayer
 hostsovdub
 hostspiegeltv
 hostsportdeutschland
+hostsportitalia
+
 hostspryciarze
 hoststreamcomplet
 hoststreaminghdfun

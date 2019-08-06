@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-07-11 by Alec - updatehosts HU host telepítő
+# 2019-08-06 by Alec - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "2.9"
+HOST_VERSION = "3.5"
 ###################################################
 # LOCAL import
 ###################################################
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, rmtree, mkdirs, DownloadFile, GetIPTVPlayerVerstion, GetBinDir, GetTmpDir, GetFileSize, MergeDicts, GetConfigDir, Which
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, byteify, rm, rmtree, mkdir, mkdirs, FreeSpace, DownloadFile, GetIPTVPlayerVerstion, iptv_system, GetBinDir, GetTmpDir, GetFileSize, MergeDicts, GetConfigDir, Which
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 from Plugins.Extensions.IPTVPlayer.libs import ph
@@ -43,7 +43,7 @@ from copy import deepcopy
 try:
     import json
 except Exception:
-    import simplejson as json
+    import simplejson as json    
 from Components.config import config, ConfigText, ConfigYesNo, getConfigListEntry, configfile
 from datetime import datetime
 from time import sleep
@@ -103,9 +103,13 @@ class updatehosts(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'updatehosts', 'cookie':'updatehosts.cookie'})
         self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = self.cm.getDefaultHeader()
+        self.uagnt = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0'
+        self.phdr = {'User-Agent':self.uagnt, 'DNT':'1', 'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate, br', 'Accept-Language':'hu-HU,hu;q=0.8,en-US;q=0.5,en;q=0.3', 'Host':'	api.github.com', 'Upgrade-Insecure-Requests':'1', 'Connection':'keep-alive'}
         self.TEMP = zlib.decompress(base64.b64decode('eJzTL8ktAAADZgGB'))
         self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S8tSEksSc3ILy4pjs/JT8/XyypIBwDb2BNK'))
+        self.EXT = resolveFilename(SCOPE_PLUGINS, zlib.decompress(base64.b64decode('eJxzrShJzSvOzM8rBgAWagQx')))
         self.IH = resolveFilename(SCOPE_PLUGINS, zlib.decompress(base64.b64decode('eJxzrShJzSvOzM8r1vcMCAkLyEmsTC0CAFlVCBA=')))
+        self.IHU = self.EXT + zlib.decompress(base64.b64decode('eJzT9wwICQvISaxMLYovzQIAIuwFHg=='))
         self.HS = zlib.decompress(base64.b64decode('eJzTz8gvLikGAAeYAmE='))
         self.ILS = zlib.decompress(base64.b64decode('eJzTz0zOzyvWz8lPzy8GAByVBJ8='))
         self.IPSR = zlib.decompress(base64.b64decode('eJzTz0zOzyvWD8hJrEwtCk7NSU0uyS8CAFYtCCk='))
@@ -120,6 +124,9 @@ class updatehosts(CBaseHostClass):
         self.vivn = GetIPTVPlayerVerstion()
         self.porv = self.gits()
         self.pbtp = '-'
+        self.dstn = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzXKDMhJrEwt0qvKLAAAI98FHg=='))
+        self.dstn_dir = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzXKDMhJrEwt0s1NLC5JLQIANWAGVg=='))
+        self.EPLRUC = zlib.decompress(base64.b64decode('eJzTTy1J1k/Ny0zPTTTSTzXKLMhJrEwtykksLknOz83NLAEAv1kMNw=='))
         self.UPDATEHOSTS = zlib.decompress(base64.b64decode('eJwrLUhJLEnNyC8uKQYAHAAEtQ=='))
         self.SONYPLAYER = zlib.decompress(base64.b64decode('eJwrzs+rLMhJrEwtAgAYFQRX'))
         self.MYTVTELENOR = zlib.decompress(base64.b64decode('eJzLrSwpK0nNSc3LLwIAHQwEyg=='))
@@ -152,15 +159,31 @@ class updatehosts(CBaseHostClass):
 
     def listMainMenu(self, cItem):
         try:
+            msg_uve = ''
+            msg_muve = ''
             #vszt = self.muves('1')
             if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
+            uvk = self.vohfg(self.vivn,self.geteprvz())
+            if uvk:
+                msg_uve = '- új E2iPlayer lejátszó elérhető  -  változások listáját nézd meg először!\n'
+            else:
+                tmpc = self.eplrucmtr()
+                if tmpc != '':
+                    tmpct = self.eplrcmtse()
+                    if len(tmpct) == 1:
+                        if tmpct[0] != tmpc:
+                            msg_uve = '- új E2iPlayer lejátszó frissíthető!\n'
+            msg_muve = self.mgyerz()
+            if msg_muve != '': msg_muve += '\n'
+            msg_huve = self.herzs()
+            if msg_huve != '': msg_huve += '\n'
             n_hst = self.malvadst('1', '9', 'updatehosts_hostok')
             if n_hst != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_hst + '\n'
             else:
                 self.aid_ki = ''
-            msg_host = self.aid_ki + 'v' + HOST_VERSION + '  |  Magyar Hostok listája  -  telepítés, frissítés\n\nA hostok betöltése több időt vehet igénybe!  A letöltés ideje függ az internet sebességétől, illetve a gyűjtő oldal leterheltségétől is...\nVárd meg míg a hostok listája megjelenik. Ez eltarthat akár 1-2 percig is.'
+            msg_host = self.aid_ki + 'Magyar Hostok listája  -  telepítés, frissítés\n\nA hostok betöltése több időt vehet igénybe!  A letöltés ideje függ az internet sebességétől, illetve a gyűjtő oldal leterheltségétől is...\nVárd meg míg a hostok listája megjelenik. Ez eltarthat akár 1-2 percig is.'
             n_mtps = self.malvadst('1', '9', 'updatehosts_main_telepites')
             if n_mtps != '' and self.aid:
                 self.aid_ki = 'ID: ' + n_mtps + '\n'
@@ -197,10 +220,14 @@ class updatehosts(CBaseHostClass):
             else:
                 self.aid_ki = ''
             msg_urllist = self.aid_ki + 'Blindspot féle urllist.stream fájlt lehet itt telepíteni, frissíteni.\nA stream fájlt az "Urllists player" hosttal (Egyéb csoport) lehet lejátszani a Live streams menüpontban...\n\nA "WEB HU PLAYER" host használatát javasoljuk, mert hamarosan a tartalom csak ott lesz elérhető!!!'
-            MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'Magyar hostok telepítése, frissítése', 'tab_id': 'hostok', 'desc': msg_host},
-                            {'category': 'list_main', 'title': 'Magyar hostok beállításainak mentése/visszatöltése', 'tab_id': 'beall_ment', 'desc': msg_beall_ment},
-                            {'category': 'list_main', 'title': 'E2iPlayer telepítése, frissítése', 'tab_id': 'telepites', 'desc': msg_telepites},
+            msg_info = 'v' + HOST_VERSION + '  |  E2iPlayer verzió:  ' + self.vivn + '  |  ' + zlib.decompress(base64.b64decode('eJwrT03KKC3ISaxMLXJIz03MzNFLzs8FAF5sCGA=')) + '  -  Alec\n\n' + msg_uve + msg_muve + msg_huve
+            params = dict(cItem)
+            params = {'title':'Információ', 'desc':msg_info}
+            self.addMarker(params)
+            MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'E2iPlayer telepítése, frissítése, változások listája', 'tab_id': 'telepites', 'desc': msg_telepites},
                             {'category': 'list_main', 'title': 'E2iPlayer magyarítása', 'tab_id': 'magyaritas', 'desc': msg_magyar},
+                            {'category': 'list_main', 'title': 'Magyar hostok telepítése, frissítése', 'tab_id': 'hostok', 'desc': msg_host},
+                            {'category': 'list_main', 'title': 'Magyar hostok beállításainak mentése/visszatöltése', 'tab_id': 'beall_ment', 'desc': msg_beall_ment},
                             #{'category': 'list_main', 'title': 'E2iPlayer hibajavításai', 'tab_id': 'javitas', 'desc': msg_javitas},
                             {'category': 'list_main', 'title': 'Magyar minimál stílus', 'tab_id': 'magyar_minimal', 'desc': msg_magyar_minimal},
                             {'category': 'list_main', 'title': 'Urllist fájl telepítése', 'tab_id': 'urllist', 'desc': msg_urllist}
@@ -242,7 +269,7 @@ class updatehosts(CBaseHostClass):
                 HOST_CAT_TAB.append(self.menuItem(self.MYTVTELENOR))
                 HOST_CAT_TAB.append(self.menuItem(self.RTLMOST))
                 HOST_CAT_TAB.append(self.menuItem(self.MINDIGO))
-                HOST_CAT_TAB.append(self.menuItem(self.MOOVIECC))
+                #HOST_CAT_TAB.append(self.menuItem(self.MOOVIECC))
                 HOST_CAT_TAB.append(self.menuItem(self.MOZICSILLAG))
                 HOST_CAT_TAB.append(self.menuItem(self.FILMEZZ))
                 HOST_CAT_TAB.append(self.menuItem(self.WEBHUPLAYER))
@@ -374,21 +401,41 @@ class updatehosts(CBaseHostClass):
             valasz, msg = self._usable()
             if valasz:
                 self.susn('2', '9', 'updatehosts_main_telepites')
+                uvk = self.vohfg(self.vivn,self.geteprvz())
+                if uvk:
+                    n_tt = 'Telepítés  -  Új verzió elérhető'
+                    n_tft = 'Frissítés  -  A meglévő verzió frissíthető'
+                else:
+                    n_tt = 'Telepítés'
+                    n_tft = 'Frissítés'
+                    tmpc = self.eplrucmtr()
+                    if tmpc != '':
+                        tmpct = self.eplrcmtse()
+                        if len(tmpct) == 1:
+                            if tmpct[0] != tmpc:
+                                n_tft = 'Frissítés  -  A meglévő verzió frissíthető'
                 n_mmsb = self.malvadst('1', '9', 'updatehosts_p_telepites')
                 if n_mmsb != '' and self.aid:
                     self.aid_ki = 'ID: ' + n_mmsb + '\n'
                 else:
                     self.aid_ki = ''
-                msg_p_telepit = self.aid_ki + 'Az E2iPlayer lejátszó program telepítését lehet itt végrehajtani...\n\nFigyelem!!!\nTeljesen új, komplett E2iPlayer települ. Egyes beállítások elveszhetnek, illetve módosulhatnak!\nTelepítés előtt javasolt a beállítások mentése...'
+                msg_p_telepit = self.aid_ki + 'Teljesen új, komplett E2iPlayer telepítését lehet itt végrehajtani. A meglévő lejátszó törlésre kerül!\nEgyes beállítások elveszhetnek, illetve módosulhatnak!  Telepítés előtt javasolt a beállítások mentése...\nAz "OK" gomb megnyomása után azonnal indul a telepítés.\n\nJelenlegi verzió:  ' + self.vivn + '\nElérhető verzió:  ' + self.geteprvz()
                 n_mast = self.malvadst('1', '9', 'updatehosts_p_frissites')
                 if n_mast != '' and self.aid:
                     self.aid_ki = 'ID: ' + n_mast + '\n'
                 else:
                     self.aid_ki = ''
-                msg_p_frissit = self.aid_ki + 'Az E2iPlayer lejátszó program frissítését lehet itt végrehajtani...\n\nA meglévő program frissül!\nAz előző frissítés óta történt változások települnek.'
-                MT_CAT_TAB = [{'category': 'list_second', 'title': 'Telepítés', 'tab_id': 'p_telepit', 'desc': msg_p_telepit},
-                               {'category': 'list_second', 'title': 'Frissítés', 'tab_id': 'p_frissit', 'desc': msg_p_frissit}
-                              ]
+                msg_p_frissit = self.aid_ki + 'Az E2iPlayer lejátszó program frissítését lehet itt végrehajtani...\nA meglévő program megmarad, csak frissül, kiegészül!  Az előző frissítés óta történt változások települnek.\nAz "OK" gomb megnyomása után azonnal indul a frissítés.  A frissítés 1-3 percig is eltarthat, légy türelmes!'
+                n_vlt = self.malvadst('1', '9', 'updatehosts_p_valtozas')
+                if n_vlt != '' and self.aid:
+                    self.aid_ki = 'ID: ' + n_vlt + '\n'
+                else:
+                    self.aid_ki = ''
+                msg_p_valtozas = self.aid_ki + 'Az E2iPlayer lejátszó változásait lehet it megnézni...\nEzek alapján el tudod dönteni, hogy szükséges-e frissítened a rendszered, illetve az új verziót telepítened a boxodra.'
+                MT_CAT_TAB = [{'category': 'list_second', 'title': 'Változások listája', 'tab_id': 'p_valtozas', 'desc': msg_p_valtozas},
+                              {'category': 'list_second', 'title': n_tft, 'tab_id': 'p_frissit', 'desc': msg_p_frissit},
+                              {'category': 'list_second', 'title': n_tt, 'tab_id': 'p_telepit', 'desc': msg_p_telepit}
+                             ]
                 self.listsTab(MT_CAT_TAB, cItem)
             else:
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
@@ -430,10 +477,29 @@ class updatehosts(CBaseHostClass):
                 self.ytjv()
             elif tabID == 'p_telepit':
                 self.susn('2', '9', 'updatehosts_p_telepites')
-                self.pttpts()
+                if FreeSpace(self.TEMP, 30):
+                    if FreeSpace(self.EXT, 25):
+                        self.pttpts()
+                    else:
+                        msg = 'Nincs elegendő hely a "' + self.EXT + '" tárhelyen!\nLegalább 25MB hely szükséges a telepítéshez...'
+                        self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
+                else:
+                    msg = 'Nincs elegendő hely a "/tmp" tárhelyen!\nLegalább 30MB hely szükséges a telepítéshez...'
+                    self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             elif tabID == 'p_frissit':
                 self.susn('2', '9', 'updatehosts_p_frissites')
-                self.ptfrts()
+                if FreeSpace(self.TEMP, 30):
+                    if FreeSpace(self.EXT, 25):
+                        self.ptfrts(cItem)
+                    else:
+                        msg = 'Nincs elegendő hely a "' + self.EXT + '" tárhelyen!\nLegalább 25MB hely szükséges a frissítéshez...'
+                        self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
+                else:
+                    msg = 'Nincs elegendő hely a "/tmp" tárhelyen!\nLegalább 30MB hely szükséges a frissítéshez...'
+                    self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
+            elif tabID == 'p_valtozas':
+                self.susn('2', '9', 'updatehosts_p_valtozas')
+                self.elrvtzl(cItem)
             elif tabID == 'minimal_beallit':
                 self.susn('2', '9', 'updatehosts_hu_minimal_beal')
                 self.mlmsbt()
@@ -1071,7 +1137,7 @@ class updatehosts(CBaseHostClass):
                                                     for it in tstm:
                                                         if it == '' or it == '\n' or it.startswith('#'):
                                                             continue
-                                                        tit = it.replace('/n','').strip()
+                                                        tit = it.replace('\n','').strip()
                                                         ltp = tit.find('=')
                                                         if -1 < ltp:
                                                             try:
@@ -1158,7 +1224,7 @@ class updatehosts(CBaseHostClass):
                 idef = config.plugins.iptvplayer.hostmentes_file.value
                 if ided != '' and ided.endswith('/'):
                     ided = ided[:-1]
-                idefw = ided + '/' + idef + '.writing'
+                idefw = ided + '/' + idef + zlib.decompress(base64.b64decode('eJzTKy/KLMnMSwcADcADMw=='))
                 msg = 'A mentés helye:  ' + ided.replace('/',' / ').strip() + ' / ' + idef.strip() + '\nFolytathatom?'
                 msg += '\n\nHa máshova szeretnéd, akkor itt nem - utána KÉK gomb, majd az Oldal beállításai.\nOtt az adatok megadása, s utána a ZÖLD gomb (Mentés) megnyomása!'
                 ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
@@ -1268,22 +1334,408 @@ class updatehosts(CBaseHostClass):
             self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
             
     def pttpts(self):
-        bv = ''
+        hiba = False
+        msg = ''
+        url = zlib.decompress(base64.b64decode('eJzLKCkpKLbS10/PLMkoTdJLzs/Vd8rJzEspLsgvMTfTTzXKDMhJrEwt0k8sSs7ILEvVz00sLkkt0qvKLAAAinYV8A=='))
+        destination = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzXKDMhJrEwt0qvKLAAAI98FHg=='))
+        destination_dir = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzXKDMhJrEwt0s1NLC5JLQIANWAGVg=='))
+        unzip_command = ['unzip', '-q', '-o', destination, '-d', self.TEMP]
         try:
-            msg = 'Jelenleg ez a funkció még nem üzemel!\nDolgozom rajta...\n\nNézz vissza késöbb.'
-            self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 20 )
+            if fileExists(destination):
+                rm(destination)
+                rmtree(destination_dir, ignore_errors=True)
+            if self.dflt(url,destination):
+                if fileExists(destination):
+                    if GetFileSize(destination) > 0:
+                        if self._mycall(unzip_command) == 0:
+                            if os.path.isdir(destination_dir + zlib.decompress(base64.b64decode('eJzT9wwICQvISaxMLQIAFNsD4A=='))):
+                                bsts,bmsg = mkdir(self.IHU)
+                                if bsts:
+                                    if self._mycopy_o(destination_dir + zlib.decompress(base64.b64decode('eJzT9wwICQvISaxMLdLXAgAdIwQ5')),self.IHU):
+                                        if os.path.isdir(self.IHU):
+                                            hiba = False
+                                        else:
+                                            hiba = True
+                                            msg = 'Hiba: 811 - Az E2iPlayer telepítése nemsikerült!'    
+                                    else:
+                                        hiba = True
+                                        msg = 'Hiba: 810 - Az E2iPlayer telepítése nemsikerült!'
+                                else:
+                                    hiba = True
+                                    msg = 'Hiba: 809 - Az E2iPlayer telepítése nemsikerült!'        
+                            else:
+                                hiba = True
+                                msg = 'Hiba: 808 - Az E2iPlayer telepítése nemsikerült!'
+                        else:
+                            hiba = True
+                            msg = 'Hiba: 807 - Az E2iPlayer telepítése nemsikerült!'
+                    else:
+                        hiba = True
+                        msg = 'Hiba: 806 - Az E2iPlayer telepítése nemsikerült!'
+                else:
+                    hiba = True
+                    msg = 'Hiba: 805 - Az E2iPlayer telepítése nemsikerült!'
+            else:
+                hiba = True
+                msg = 'Hiba: 804 - Az E2iPlayer telepítése nemsikerült!'
+            if hiba:
+                if msg == '':
+                    msg = 'Hiba: 803 - Nem sikerült az E2iPlayer telepítése!'
+                title = 'Az E2iPlayer telepítése nemsikerült!'
+                desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+                self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
+            else:
+                try:
+                    msg = 'Sikerült az E2iPlayer lejátszó program telepítése!\n\nKezelőfelület újraindítása szükséges. Újraindítsam most?'
+                    ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
+                    if ret[0]:
+                        try:
+                            title = 'Telepítés végrehajtva'
+                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés!!!'
+                            iptv_system(zlib.decompress(base64.b64decode('eJwrylXQLUpTAAAJSQIl')) + self.IH + zlib.decompress(base64.b64decode('eJxTUFNTyC1TAAAFXAGQ')) + self.IHU + ' ' + self.IH + zlib.decompress(base64.b64decode('eJxTUFNTKK7MSwYACAwCSg==')))
+                            if fileExists(destination):
+                                rm(destination)
+                            if os.path.isdir(destination_dir):
+                                rmtree(destination_dir, ignore_errors=True)
+                            GetIPTVSleep().Sleep(7)
+                            tmpc = self.eplrcmtse()
+                            if len(tmpc) == 1:
+                                erdm = self.eplrucmtw(tmpc[0])
+                                if not erdm:
+                                    if fileExists(self.EPLRUC):
+                                        rm(self.EPLRUC)
+                            GetIPTVSleep().Sleep(3)
+                            quitMainloop(3)
+                        except Exception:
+                            msg = 'Hiba: 802 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
+                            title = 'Az E2iPlayer telepítése nemsikerült!'
+                            desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés!!!'
+                            self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
+                    else:
+                        title = 'Telepítés megszakítva!'
+                        desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+                        if os.path.isdir(self.IHU):
+                            rmtree(self.IHU, ignore_errors=True)
+                except Exception:
+                    msg = 'Hiba: 801 - Nem sikerült az újraindítás. Indítsd újra a Kezelőfelületet manuálisan!'
+                    desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt, mert csak így sikeres a telepítés!!!'
+                    self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
+        except Exception:
+            title = 'Az E2iPlayer telepítése nemsikerült!'
+            desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+        params = dict()
+        params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'p_telepit', 'desc': desc})
+        self.addDir(params)
+        if os.path.isdir(self.IHU):
+            rmtree(self.IHU, ignore_errors=True)
+        if fileExists(destination):
+            rm(destination)
+            rmtree(destination_dir, ignore_errors=True)
+        return
+        
+        
+    def epltmfls(self): 
+        hiba = True
+        url = zlib.decompress(base64.b64decode('eJzLKCkpKLbS10/PLMkoTdJLzs/Vd8rJzEspLsgvMTfTTzXKDMhJrEwt0k8sSs7ILEvVz00sLkkt0qvKLAAAinYV8A=='))
+        unzip_command = ['unzip', '-q', '-o', self.dstn, '-d', self.TEMP]
+        try:
+            if fileExists(self.dstn):
+                rm(self.dstn)
+            if os.path.isdir(self.dstn_dir):
+                rmtree(self.dstn_dir, ignore_errors=True)
+            if self.dflt(url,self.dstn):
+                if fileExists(self.dstn):
+                    if GetFileSize(self.dstn) > 0:
+                        if self._mycall(unzip_command) == 0:
+                            hiba = False
+            return hiba
+        except Exception:
+            return True
+            
+    def ptfrts(self, cItem):
+        title = cItem['title']
+        desc = cItem['desc']
+        hiba = False
+        msg = ''
+        ucmt = ''
+        try:
+            self.eplftatls()
+            tmpc = self.eplrucmtr()
+            if tmpc == '':
+                self.eplftatls()
+                msg = 'Most még nem lehet frissíteni!\nElőször egy új telepítést kell végrehajtanod, s utána tudsz majd frissíteni...\n\nLépj vissza...'
+                self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 20)
+            else:
+                tmpctmb = self.eplrcmtso(tmpc)
+                if len(tmpctmb) == 0:
+                    self.eplftatls()
+                    msg = 'Sajnos nem lehet frissíteni!\nElőször egy új telepítést kell végrehajtanod, s utána tudsz majd frissíteni...\n\nLépj vissza...'
+                    self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 20)
+                else:
+                    if len(tmpctmb) == 1 and tmpctmb[0] == tmpc:
+                        self.eplftatls()
+                        msg = 'Nincs szükség a frissítésre!\nNaprakész a rendszered.\n\nLépj vissza...'
+                        self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 20)
+                    else:
+                        if self.epltmfls():
+                            msg = 'Sajnos nem lehet frissíteni!\nJelenleg nem elérhető a fő verzió.\n\nLépj vissza...'
+                            hiba = True
+                        else:
+                            for item in tmpctmb:
+                                if item == tmpc: continue
+                                hiba = self.eplcmtflts(item)
+                                if hiba:
+                                    break
+                                else:
+                                    ucmt = item
+                        if hiba:
+                            self.eplftatls()
+                            if msg == '':
+                                msg = 'Sajnos nem lehet a frissítést végrehajtani!\n Probálkozz még 2x-szer, s ha akkor sem sikerül, azután egy új telepítést kell végrehajtanod!'
+                            title = 'A Frissítés nemsikerült!'
+                            desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+                            self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20)
+                        else:
+                            try:
+                                msg = 'Sikerült az E2iPlayer lejátszó program frissítése!\n\nKezelőfelület újraindítása szükséges. Újraindítsam most?'
+                                ret = self.sessionEx.waitForFinishOpen(MessageBox, msg, type=MessageBox.TYPE_YESNO, default=True)
+                                if ret[0]:
+                                    try:
+                                        if not self.fteplr():
+                                            if self._mycopy_o(self.TEMP + zlib.decompress(base64.b64decode('eJzT9wwICQvISaxMLdLXAgAdIwQ5')),self.IH):
+                                                if ucmt != '':
+                                                    erdm = self.eplrucmtw(ucmt)
+                                                    if not erdm:
+                                                        if fileExists(self.EPLRUC):
+                                                            rm(self.EPLRUC)
+                                                self.eplftatls()
+                                                GetIPTVSleep().Sleep(7)
+                                                quitMainloop(3)
+                                            else:
+                                                self.eplftatls()
+                                                msg = 'Hiba: 1000 - Nem sikerült a Frissítés!'
+                                                title = 'A Frissítés nemsikerült!'
+                                                desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+                                                self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
+                                        else:
+                                            self.eplftatls()
+                                            msg = 'Hiba: 1001 - Nem sikerült a Frissítés!'
+                                            title = 'A Frissítés nemsikerült!'
+                                            desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+                                            self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
+                                    except Exception:
+                                        self.eplftatls()
+                                        msg = 'Hiba: 1002 - Nem sikerült a Frissítés!\n\nIndítsd újra a Kezelőfelületet manuálisan!'
+                                        title = 'A Frissítés nemsikerült!'
+                                        desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt!!!'
+                                        self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
+                                else:
+                                    title = 'Frissítés megszakítva!'
+                                    desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+                                    self.eplftatls()
+                            except Exception:
+                                self.eplftatls()
+                                msg = 'Hiba: 1003 - Nem sikerült a Frissítés!\n\nIndítsd újra a Kezelőfelületet manuálisan!'
+                                desc = 'Nyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón,\n\nmajd Kezelőfelület újraindítása, vagy reboot.  =>  Meg kell tenni ezt!!!'
+                                self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15)
+        except Exception:
+            title = 'Frissítés nemsikerült!'
+            desc = 'Nyomd meg a Vissza gombot!  -  EXIT / BACK gomb a távirányítón'
+        params = dict()
+        params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'p_frissit', 'desc': desc})
+        self.addDir(params)
+        self.eplftatls()
+        return
+        
+    def fteplr(self):
+        tfet = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzVKy8xJLckvyknNS8kHACt2Bc4='))
+        try:
+            if fileExists(tfet):
+                with open(tfet, 'r') as f:
+                    for line in f:
+                        ffnnvv = line.strip()
+                        if ffnnvv != '':
+                            tfn = self.EXT + '/' + ffnnvv
+                            if fileExists(tfn):
+                                rm(tfn)
+                            fext = os.path.splitext(tfn)[1]
+                            if fext == '.py':
+                                tfnpyo = tfn.replace('.py','.pyo')
+                                if fileExists(tfnpyo):
+                                    rm(tfnpyo)
+            return False
+        except Exception:
+            return True
+            
+    def eplftatls(self):
+        try:
+            tdfn = self.TEMP + zlib.decompress(base64.b64decode('eJzT9wwICQvISaxMLQIAFNsD4A=='))
+            tfet = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzVKy8xJLckvyknNS8kHACt2Bc4='))
+            if os.path.isdir(tdfn):
+                rmtree(tdfn, ignore_errors=True)
+            if fileExists(tfet):
+                rm(tfet)
+            if fileExists(self.dstn):
+                rm(self.dstn)
+            if os.path.isdir(self.dstn_dir):
+                rmtree(self.dstn_dir, ignore_errors=True)
+        except Exception:
+            return
+            
+    def eplcmtflts(self, i_c=''):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpKLbS108syNRLzyzJKE3SS87P1S9KLcgv1nfKycxLKS7ILzE30081ygzISaxMLdIHyudmlhTrAwCLRBW9'))
+        dsz = ''
+        hb = False
+        try:
+            if i_c != '' and os.path.isdir(self.dstn_dir + zlib.decompress(base64.b64decode('eJzT9wwICQvISaxMLQIAFNsD4A=='))):
+                tuhe = uhe + i_c
+                sts, data = self.cm.getPage(tuhe, self.phdr)
+                if not sts: return True
+                if len(data) == 0: return True
+                dtmb = data.split('\n')
+                if len(dtmb) > 0:
+                    for item in dtmb:
+                        dsz += item.strip()
+                    if dsz != '':
+                        dsz = '[' + dsz + ']'
+                        data = json_loads(dsz)
+                        if len(data) > 0:
+                            for item in data:
+                                if hb:
+                                    break
+                                tfls = item.get('files', [])
+                                if len(tfls) > 0:
+                                    for item2 in tfls:
+                                        ffnnvv = item2['filename']
+                                        if 'IPTVPlayer' not in ffnnvv: continue
+                                        rurl = item2['raw_url']
+                                        stts = item2['status']
+                                        tdfn = self.TEMP + '/' + ffnnvv
+                                        ddnnvv = os.path.dirname(tdfn)
+                                        if stts == zlib.decompress(base64.b64decode('eJwrSs3NL0tNAQAL8ALz')):
+                                            if not self.eplrcmtftls(ffnnvv):
+                                                hb = False
+                                            else:
+                                                hb = True
+                                                break
+                                        else:
+                                            if not os.path.isdir(ddnnvv):
+                                                mkdirs(ddnnvv)
+                                            if os.path.isdir(ddnnvv):
+                                                if fileExists(self.dstn_dir + '/' + ffnnvv):
+                                                    if self._mycopy(self.dstn_dir + '/' + ffnnvv,tdfn):
+                                                        if fileExists(tdfn):
+                                                            if GetFileSize(tdfn) > 0:
+                                                                hb = False
+                                                            else:
+                                                                hb = True
+                                                                break
+                                                        else:
+                                                            hb = True
+                                                            break
+                                                    else:
+                                                        hb = True
+                                                        break
+                                            else:
+                                                hb = True
+                                                break
+                                else:
+                                    hb = True
+                                    break
+                        else:
+                            hb = True
+                    else:
+                        hb = True
+                else:
+                    hb = True
+            else:
+                hb = True
+            return hb    
+        except Exception:
+            return True
+            
+    def eplrcmtftls(self, ffnnvv=''):
+        bv = True
+        try:
+            if ffnnvv != '':
+                tdfn = self.TEMP + '/' + ffnnvv
+                if fileExists(tdfn):
+                    rm(tdfn)
+                f = open(self.TEMP + zlib.decompress(base64.b64decode('eJzTTzVKy8xJLckvyknNS8kHACt2Bc4=')), 'a')
+                f.write(ffnnvv + '\n')
+                f.close
+                bv = False
+            return bv
+        except Exception:
+            return True
+            
+    def eplrucmtr(self):
+        bv = ''
+        encoding = 'utf-8'
+        try:
+            if fileExists(self.EPLRUC):
+                with codecs.open(self.EPLRUC, 'r', encoding, 'replace') as fpr:
+                    data = fpr.read()
+                if len(data) > 0:
+                    bv = data.strip()
             return bv
         except Exception:
             return ''
             
-    def ptfrts(self):
-        bv = ''
+    def eplrucmtw(self, i_c=''):
+        bv = False
+        encoding = 'utf-8'
         try:
-            msg = 'Jelenleg ez a funkció még nem üzemel!\nDolgozom rajta...\n\nNézz vissza késöbb.'
-            self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 20 )
+            if i_c != '':
+                fpw = codecs.open(self.EPLRUC, 'w', encoding, 'replace')
+                fpw.write(i_c.strip())
+                fpw.flush()
+                os.fsync(fpw.fileno())
+                fpw.close()
+                bv = True
             return bv
         except Exception:
-            return ''
+            return False
+            
+    def elrvtzl(self,cItem):
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y9KLNdLzyzJKE0qLU4tSs7PK0nNK9FLzs/Vd8rJzEspLsgvMTfTTzXKDMhJrEwt0s9NLC4BUp4BIWFQkeSMxLz01GK9kooSAGbuIAU='))
+        ln = 0
+        dsc = ''
+        dtm = []
+        lrs = []
+        try:
+            sts, data = self.cm.getPage(uhe)
+            if not sts: return
+            if len(data) == 0: return
+            data = data.split('\n')
+            if len(data) == 0: return
+            for line in data:
+                if len(line) > 0:
+                    if line.startswith('-') and line[2] != ' ':
+                        line = '-  ' + line[1:]
+                    idx1 = line.find('#')
+                    if -1 < idx1:
+                        dtm.append(line[idx1+1:].replace('\n','').strip())
+                        ln += 1
+                        if ln > 20: break
+                        continue
+                    if len(lrs) == 0:
+                        lrs.append(line)
+                    elif len(lrs) < ln:
+                        lrs.append(line)
+                    else:
+                        lrs[ln-1] = lrs[ln-1] + '\n' + line
+            if len(dtm) > 0:
+                ln = 0
+                for item in dtm:
+                    if len(lrs) > 0:
+                        dsc = item + ' verzió változtatásai:\n\n' + lrs[ln]
+                    params = dict(cItem)
+                    params = {'title':item, 'desc':dsc}
+                    self.addMarker(params)
+                    ln += 1
+        except Exception:
+            return
         
     def mlmsbt(self):
         encoding = 'utf-8'
@@ -1366,6 +1818,34 @@ class updatehosts(CBaseHostClass):
         params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'minimal_beallit', 'desc': desc})
         self.addDir(params)
         
+    def herzs(self):
+        hlt = [self.UPDATEHOSTS,self.SONYPLAYER,self.MYTVTELENOR,self.RTLMOST,self.MINDIGO,self.MOZICSILLAG,self.FILMEZZ,self.WEBHUPLAYER,self.AUTOHU,self.M4SPORT,self.VIDEA]        
+        try:
+            for host in hlt:
+                lhv_tmp = self.getHostVersion_local(self.IH + self.HS + '/host' + host + '.py')
+                rhv_tmp = self.getrhhve(host)
+                if lhv_tmp == 'nincs ilyen host':
+                    if rhv_tmp == '-':
+                        continue
+                    else:
+                        return '- új Magyar host telepíthető, frissíthető'
+                elif lhv_tmp == 'ismeretlen verzió':
+                    if rhv_tmp == '-':
+                        continue
+                    else:
+                        return '- új Magyar host telepíthető, frissíthető'
+                else:        
+                    try:
+                        lhv = float(lhv_tmp)
+                        rhv = float(rhv_tmp)
+                        if lhv < rhv:
+                            return '- új Magyar host telepíthető, frissíthető'
+                    except Exception:
+                        continue
+            return ''
+        except Exception:
+            return ''
+        
     def cfnbbak(self, fnb=''):
         skt = False
         encoding = 'utf-8'
@@ -1396,6 +1876,17 @@ class updatehosts(CBaseHostClass):
             if fileExists(filename):
                 copy_command = ['cp', '-f', filename, dest_dir]
                 if self._mycall(copy_command) == 0:
+                    sikerult = True
+        except Exception:
+            printExc()
+        return sikerult
+        
+    def _mycopy_o(self, filename, dest_dir):
+        sikerult = False
+        try:
+            if filename != '' and dest_dir != '':
+                copy_command = 'cp -rf ' + filename + ' ' + dest_dir
+                if subprocess.call(copy_command, shell=True) == 0:
                     sikerult = True
         except Exception:
             printExc()
@@ -1433,10 +1924,10 @@ class updatehosts(CBaseHostClass):
                     break
                 else:
                     sleep(ved)
+            return vissza
         except Exception:
-            printExc()
-        return vissza
-        
+            return False
+
     def lfwr(self, text=''):
         sikerult = False
         nincs_benne = True
@@ -1454,16 +1945,16 @@ class updatehosts(CBaseHostClass):
                         f.write(text.strip() + '\n')
                         f.close
                     sikerult = True
+            return sikerult
         except Exception:
-            printExc()
-        return sikerult
+            return False
         
     def asfwr(self, text_key='', text_value=''):
         sikerult = False
         nincs_benne = True
         encoding = 'utf-8'
         try:
-            if (text_key != '' and text_value != ''):
+            if text_key != '' and text_value != '':
                 if fileExists(self.ASTX):
                     with codecs.open(self.ASTX, 'r', encoding, 'replace') as fpr:
                         data = fpr.read()
@@ -1473,9 +1964,9 @@ class updatehosts(CBaseHostClass):
                     with codecs.open(self.ASTX, 'w', encoding, 'replace') as fpw:
                         fpw.write(data)
                     sikerult = True
+            return sikerult
         except Exception:
-            printExc()
-        return sikerult
+            return False
         
     def muves(self, i_md=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL0stTtQvS8wD0SlJegUZBQAQzBQG'))
@@ -1498,6 +1989,101 @@ class updatehosts(CBaseHostClass):
             return vzt
         except Exception:
             return vzt
+            
+    def eplrcmtse(self):
+        bv = []
+        dsz = ''
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpKLbS108syNRLzyzJKE3SS87P1S9KLcgv1nfKycxLKS7ILzE30081ygzISaxMLdIHyudmlhQDAHWHFY4='))
+        try:
+            sts, data = self.cm.getPage(uhe, self.phdr)
+            if not sts: return []
+            if len(data) == 0: return []
+            dtmb = data.split('\n')
+            if len(dtmb) > 0:
+                for item in dtmb:
+                    dsz += item.strip()
+                if dsz != '':
+                    data = json_loads(dsz)
+                    if len(data) > 0:
+                        for item in data:
+                            bv.append(item['sha'])
+                            break
+            if len(bv) > 0:
+                return bv
+            else:
+                return []
+        except Exception:
+            return []
+            
+    def eplrcmtso(self, i_c=''):
+        bv = []
+        dsz = ''
+        klp = False
+        vbn = False
+        uhe1 = zlib.decompress(base64.b64decode('eJzLKCkpKLbS108syNRLzyzJKE3SS87P1S9KLcgvzizJL8pMLdY3tDQxMDUzszDUB0rlZpYU2xckpqfaGgIAkt0U9w=='))
+        uhe2 = zlib.decompress(base64.b64decode('eJzLKCkpKLbS108syNRLzyzJKE3SS87P1S9KLcgvzizJL8pMLdY3tDQxMDUzszDUB0rlZpYU2xckpqfaGgEAkt4U+A=='))
+        try:
+            if i_c != '':
+                sts, data = self.cm.getPage(uhe1, self.phdr)
+                if not sts: return []
+                if len(data) == 0: return []
+                dtmb = data.split('\n')
+                if len(dtmb) > 0:
+                    for item in dtmb:
+                        dsz += item.strip()
+                    if dsz != '':
+                        data = json_loads(dsz)
+                        if len(data) > 0:
+                            for item in data:
+                                tmpsha = item['sha']
+                                if tmpsha != '':
+                                    if i_c != tmpsha:
+                                        bv.append(item['sha'])
+                                    else:
+                                        bv.append(item['sha'])
+                                        klp = True
+                                        vbn = True
+                                        break
+                if not klp and len(bv) > 0:
+                    dsz = ''
+                    sts, data = self.cm.getPage(uhe2, self.phdr)
+                    if not sts: return []
+                    if len(data) == 0: return []
+                    dtmb = data.split('\n')
+                    if len(dtmb) > 0:
+                        for item in dtmb:
+                            dsz += item.strip()
+                        if dsz != '':
+                            data = json_loads(dsz)
+                            if len(data) > 0:
+                                for item in data:
+                                    tmpsha = item['sha']
+                                    if tmpsha != '':
+                                        if i_c != tmpsha:
+                                            bv.append(item['sha'])
+                                        else:
+                                            bv.append(item['sha'])
+                                            vbn = True
+                                            break
+            if vbn and len(bv) > 0:
+                tbv = bv[::-1]
+                return tbv
+            else:
+                return []
+        except Exception:
+            return []
+            
+    def vohfg(self, i_m='0', i_u='0'):
+        bv = False
+        try:
+            if i_m != '0' and i_u != '0':
+                cvn = int(i_m.replace('.', ''))
+                uvn = int(i_u.replace('.', ''))
+                if uvn > cvn:
+                    bv = True
+            return bv
+        except Exception:
+            return False
             
     def malvadst(self, i_md='', i_hgk='', i_mpu=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUL04sSdQvS8wD0ilJegUZBQD8FROZ'))
@@ -1554,29 +2140,65 @@ class updatehosts(CBaseHostClass):
             return bv
         except:
             return '-'
+            
+    def mgyerz(self):
+        bv = ''
+        try:
+            lhv_tmp = self.getHunVersion_local()
+            rhv_tmp = self.getHunVersion_remote()
+            if lhv_tmp == 'nincs helyi verzio':
+                if rhv_tmp == 'ismeretlen verzió':
+                    return ''
+                else:
+                    bv = '- új E2iPlayer magyarítás elérhető'
+            elif lhv_tmp == 'ismeretlen verzió':
+                if rhv_tmp == 'ismeretlen verzió':
+                    return ''
+                else:
+                    bv = '- új E2iPlayer magyarítás elérhető'
+            else:        
+                try:
+                    lhv = float(lhv_tmp)
+                    rhv = float(rhv_tmp)
+                    if lhv < rhv:
+                        bv = '- új E2iPlayer magyarítás elérhető'
+                except Exception:
+                    return ''
+            return bv
+        except Exception:
+            return ''
         
     def hnfwr(self, host=''):
         sikerult = False
+        krs = False
         encoding = 'utf-8'
+        hst_trls = "a"
         try:
             if host != '':
                 if not fileExists(self.HRG):
-                    datsz = {"disabled_hosts": [], "version": 0, "hosts": ["youtube","mooviecc","filmezz","mozicsillag","dailymotion","vimeo","twitchtv","hitboxtv"]}
+                    datsz = {"disabled_hosts": [], "version": 0, "hosts": ["updatehosts"]}
                     datsz = json_dumps(datsz)
                     with codecs.open(self.HRG, 'w', encoding, 'replace') as fuw:
                         fuw.write(datsz)
                 if fileExists(self.HRG):
                     with codecs.open(self.HRG, 'r', encoding, 'replace') as fpr:
                         data = fpr.read()
-                    data = json_loads(data)
-                    host_array = data.get('hosts', [])
-                    if not host.strip() in host_array:
-                        host_array.append(host.strip())                
-                        data.update({'hosts': host_array})
-                        data = json_dumps(data)
-                        with codecs.open(self.HRG, 'w', encoding, 'replace') as fpw:
-                            fpw.write(data)
-                    sikerult = True
+                    if len(data) > 0:
+                        data = json_loads(data)
+                        host_array = data.get('hosts', [])
+                        if len(host_array) > 0:
+                            if hst_trls in host_array:
+                                host_array.remove(hst_trls)
+                                krs = True
+                            if not host.strip() in host_array:
+                                host_array.append(host.strip())
+                                krs = True
+                            if krs:
+                                data.update({'hosts': host_array})
+                                data = json_dumps(data)
+                                with codecs.open(self.HRG, 'w', encoding, 'replace') as fpw:
+                                    fpw.write(data)
+                            sikerult = True
         except Exception:
             printExc()
         return sikerult
@@ -1599,8 +2221,36 @@ class updatehosts(CBaseHostClass):
                     verzio = 'ismeretlen verzió'
         except Exception:
             verzio = 'nincs ilyen host'
-            printExc()
         return verzio
+        
+    def geteprvz(self):
+        bv = '-'
+        uhe = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y9KLNdLzyzJKE0qLU4tSs7PK0nNK9FLzs/Vd8rJzEspLsgvMTfTTzXKDMhJrEwt0s9NLC4BUp4BIWFQkbLUouLM/Dy9gkoASFofuw=='))
+        try:
+            sts, data = self.cm.getPage(uhe)
+            if not sts: return '-'
+            if len(data) == 0: return '-'
+            vt = self.cm.ph.getSearchGroups(data, '''IPTV_VERSION['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+            if vt != '':
+                bv = vt
+            return bv
+        except Exception:
+            return '-'
+            
+    def getrhhve(self, i_h=''):
+        bv = '-'
+        try:
+            if i_h != '':
+                uhe = zlib.decompress(base64.b64decode('eJwFwWEKABAMBtAbWfnpNmiZwrR9ktt7T4DticjyDa1DTjnOVnWBF0LVSRz7HvmxiTqcPtkIEwo=')) + i_h + zlib.decompress(base64.b64decode('eJzTz00sLkkt0vcMCAkLyEmsBDIz8otLisEkAJ5YCug=')) + i_h + '.py'
+                sts, data = self.cm.getPage(uhe)
+                if not sts: return '-'
+                if len(data) == 0: return '-'
+                vt = self.cm.ph.getSearchGroups(data, '''HOST_VERSION['"]?\s*[=:]\s*['"]([^"^']+?)['"]''')[0]
+                if vt != '':
+                    bv = vt
+            return bv
+        except Exception:
+            return '-'
         
     def getHostVersion_remote(self, host):
         verzio = 'ismeretlen verzió'
@@ -1636,7 +2286,6 @@ class updatehosts(CBaseHostClass):
                                     verzio = 'ismeretlen verzió'
         except Exception:
             verzio = 'ismeretlen verzió'
-            printExc()
         if fileExists(destination):
             rm(destination)
             rmtree(destination_dir, ignore_errors=True)
@@ -1718,8 +2367,7 @@ class updatehosts(CBaseHostClass):
                 except Exception:
                     verzio = 'ismeretlen verzió'
         except Exception:
-            verzio = 'nincs helyi verzio'        
-            printExc()
+            verzio = 'nincs helyi verzio'
         return verzio
         
     def getHunVersion_remote(self):
@@ -1760,7 +2408,6 @@ class updatehosts(CBaseHostClass):
                                     verzio = 'ismeretlen verzió'    
         except Exception:
             verzio = 'ismeretlen verzió'
-            printExc()
         if fileExists(destination):
             rm(destination)
             rmtree(destination_dir, ignore_errors=True)
@@ -1847,8 +2494,7 @@ class updatehosts(CBaseHostClass):
                 except Exception:
                     verzio = 'ismeretlen verzió'
         except Exception:
-            verzio = 'nincs helyi verzio'        
-            printExc()
+            verzio = 'nincs helyi verzio'
         return verzio
         
     def getUrllistVersion_remote(self):
@@ -1888,7 +2534,6 @@ class updatehosts(CBaseHostClass):
                                     verzio = 'ismeretlen verzió'    
         except Exception:
             verzio = 'ismeretlen verzió'
-            printExc()
         if fileExists(destination):
             rm(destination)
             rmtree(destination_dir, ignore_errors=True)
