@@ -1,4 +1,6 @@
-﻿#2019.08.03.03
+﻿#2019.08.06.01
+-HU telepítő frissítve
+#2019.08.03.03
 -HU telepítő frissítve
 -Redbull TV javítva
 #2019.08.03.02

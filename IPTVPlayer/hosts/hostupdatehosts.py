@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-07-27 by Alec - updatehosts HU host telepítő
+# 2019-08-06 by Alec - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "3.3"
+HOST_VERSION = "3.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -124,6 +124,8 @@ class updatehosts(CBaseHostClass):
         self.vivn = GetIPTVPlayerVerstion()
         self.porv = self.gits()
         self.pbtp = '-'
+        self.dstn = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzXKDMhJrEwt0qvKLAAAI98FHg=='))
+        self.dstn_dir = self.TEMP + zlib.decompress(base64.b64decode('eJzTTzXKDMhJrEwt0s1NLC5JLQIANWAGVg=='))
         self.EPLRUC = zlib.decompress(base64.b64decode('eJzTTy1J1k/Ny0zPTTTSTzXKLMhJrEwtykksLknOz83NLAEAv1kMNw=='))
         self.UPDATEHOSTS = zlib.decompress(base64.b64decode('eJwrLUhJLEnNyC8uKQYAHAAEtQ=='))
         self.SONYPLAYER = zlib.decompress(base64.b64decode('eJwrzs+rLMhJrEwtAgAYFQRX'))
@@ -163,7 +165,15 @@ class updatehosts(CBaseHostClass):
             if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
             uvk = self.vohfg(self.vivn,self.geteprvz())
-            if uvk: msg_uve = '- új E2iPlayer lejátszó elérhető  -  változások listáját nézd meg először!\n'
+            if uvk:
+                msg_uve = '- új E2iPlayer lejátszó elérhető  -  változások listáját nézd meg először!\n'
+            else:
+                tmpc = self.eplrucmtr()
+                if tmpc != '':
+                    tmpct = self.eplrcmtse()
+                    if len(tmpct) == 1:
+                        if tmpct[0] != tmpc:
+                            msg_uve = '- új E2iPlayer lejátszó frissíthető!\n'
             msg_muve = self.mgyerz()
             if msg_muve != '': msg_muve += '\n'
             msg_huve = self.herzs()
@@ -398,6 +408,12 @@ class updatehosts(CBaseHostClass):
                 else:
                     n_tt = 'Telepítés'
                     n_tft = 'Frissítés'
+                    tmpc = self.eplrucmtr()
+                    if tmpc != '':
+                        tmpct = self.eplrcmtse()
+                        if len(tmpct) == 1:
+                            if tmpct[0] != tmpc:
+                                n_tft = 'Frissítés  -  A meglévő verzió frissíthető'
                 n_mmsb = self.malvadst('1', '9', 'updatehosts_p_telepites')
                 if n_mmsb != '' and self.aid:
                     self.aid_ki = 'ID: ' + n_mmsb + '\n'
@@ -1121,7 +1137,7 @@ class updatehosts(CBaseHostClass):
                                                     for it in tstm:
                                                         if it == '' or it == '\n' or it.startswith('#'):
                                                             continue
-                                                        tit = it.replace('/n','').strip()
+                                                        tit = it.replace('\n','').strip()
                                                         ltp = tit.find('=')
                                                         if -1 < ltp:
                                                             try:
@@ -1416,6 +1432,25 @@ class updatehosts(CBaseHostClass):
             rm(destination)
             rmtree(destination_dir, ignore_errors=True)
         return
+        
+        
+    def epltmfls(self): 
+        hiba = True
+        url = zlib.decompress(base64.b64decode('eJzLKCkpKLbS10/PLMkoTdJLzs/Vd8rJzEspLsgvMTfTTzXKDMhJrEwt0k8sSs7ILEvVz00sLkkt0qvKLAAAinYV8A=='))
+        unzip_command = ['unzip', '-q', '-o', self.dstn, '-d', self.TEMP]
+        try:
+            if fileExists(self.dstn):
+                rm(self.dstn)
+            if os.path.isdir(self.dstn_dir):
+                rmtree(self.dstn_dir, ignore_errors=True)
+            if self.dflt(url,self.dstn):
+                if fileExists(self.dstn):
+                    if GetFileSize(self.dstn) > 0:
+                        if self._mycall(unzip_command) == 0:
+                            hiba = False
+            return hiba
+        except Exception:
+            return True
             
     def ptfrts(self, cItem):
         title = cItem['title']
@@ -1442,13 +1477,17 @@ class updatehosts(CBaseHostClass):
                         msg = 'Nincs szükség a frissítésre!\nNaprakész a rendszered.\n\nLépj vissza...'
                         self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 20)
                     else:
-                        for item in tmpctmb:
-                            if item == tmpc: continue
-                            hiba = self.eplcmtflts(item)
-                            if hiba:
-                                break
-                            else:
-                                ucmt = item
+                        if self.epltmfls():
+                            msg = 'Sajnos nem lehet frissíteni!\nJelenleg nem elérhető a fő verzió.\n\nLépj vissza...'
+                            hiba = True
+                        else:
+                            for item in tmpctmb:
+                                if item == tmpc: continue
+                                hiba = self.eplcmtflts(item)
+                                if hiba:
+                                    break
+                                else:
+                                    ucmt = item
                         if hiba:
                             self.eplftatls()
                             if msg == '':
@@ -1469,6 +1508,7 @@ class updatehosts(CBaseHostClass):
                                                     if not erdm:
                                                         if fileExists(self.EPLRUC):
                                                             rm(self.EPLRUC)
+                                                self.eplftatls()
                                                 GetIPTVSleep().Sleep(7)
                                                 quitMainloop(3)
                                             else:
@@ -1535,6 +1575,10 @@ class updatehosts(CBaseHostClass):
                 rmtree(tdfn, ignore_errors=True)
             if fileExists(tfet):
                 rm(tfet)
+            if fileExists(self.dstn):
+                rm(self.dstn)
+            if os.path.isdir(self.dstn_dir):
+                rmtree(self.dstn_dir, ignore_errors=True)
         except Exception:
             return
             
@@ -1543,7 +1587,7 @@ class updatehosts(CBaseHostClass):
         dsz = ''
         hb = False
         try:
-            if i_c != '':
+            if i_c != '' and os.path.isdir(self.dstn_dir + zlib.decompress(base64.b64decode('eJzT9wwICQvISaxMLQIAFNsD4A=='))):
                 tuhe = uhe + i_c
                 sts, data = self.cm.getPage(tuhe, self.phdr)
                 if not sts: return True
@@ -1563,6 +1607,7 @@ class updatehosts(CBaseHostClass):
                                 if len(tfls) > 0:
                                     for item2 in tfls:
                                         ffnnvv = item2['filename']
+                                        if 'IPTVPlayer' not in ffnnvv: continue
                                         rurl = item2['raw_url']
                                         stts = item2['status']
                                         tdfn = self.TEMP + '/' + ffnnvv
@@ -1577,19 +1622,23 @@ class updatehosts(CBaseHostClass):
                                             if not os.path.isdir(ddnnvv):
                                                 mkdirs(ddnnvv)
                                             if os.path.isdir(ddnnvv):
-                                                if self.dflt(rurl,tdfn):
-                                                    if fileExists(tdfn):
-                                                        if GetFileSize(tdfn) > 0:
-                                                            hb = False
+                                                if fileExists(self.dstn_dir + '/' + ffnnvv):
+                                                    if self._mycopy(self.dstn_dir + '/' + ffnnvv,tdfn):
+                                                        if fileExists(tdfn):
+                                                            if GetFileSize(tdfn) > 0:
+                                                                hb = False
+                                                            else:
+                                                                hb = True
+                                                                break
                                                         else:
                                                             hb = True
                                                             break
                                                     else:
                                                         hb = True
                                                         break
-                                                else:
-                                                    hb = True
-                                                    break
+                                            else:
+                                                hb = True
+                                                break
                                 else:
                                     hb = True
                                     break
