@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-26 by Alec - Web HU Player
+# 2019-08-12 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "2.4"
+HOST_VERSION = "2.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -408,14 +408,8 @@ class webhuplayer(CBaseHostClass):
                             if pt != '' and pu != '' and pd != '' and pi != '' and pa != '' and pmk != '' and pmd != '':
                                 tdpt = {'title':pt, 'url':pu, 'desc':tmpsz, 'icon':pi, 'azn':pa, 'mkt':pmk, 'md':pmd, 'mjnts':False}
                                 fext = os.path.splitext(pu)[1]
-                                if fext in ['.mp3','.acc'] or 'RÁDIÓ' in tmpsz:
-                                    temp_prot = self.ultpvz(pu)
-                                    if temp_prot == '':
-                                        self.addMarker({'title':pt, 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
-                                    elif 'audio' in temp_prot:
-                                        self.addAudio(tdpt)
-                                    else:
-                                        self.addVideo(tdpt)
+                                if fext in ['.mp3','.acc'] or 'MAGYAR RÁDIÓK' in tmpsz:
+                                    self.addAudio(tdpt)
                                 else:
                                     self.addVideo(tdpt)
                                 if ln > 50:
@@ -544,14 +538,8 @@ class webhuplayer(CBaseHostClass):
                         random.shuffle(mlt)
                         for ipv in mlt:
                             fext = os.path.splitext(ipv['url'])[1]
-                            if fext in ['.mp3','.acc'] or 'RÁDIÓ' in ipv['desc']:
-                                temp_prot = self.ultpvz(ipv['url'])
-                                if temp_prot == '':
-                                    self.addMarker({'title':ipv['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
-                                elif 'audio' in temp_prot:
-                                    self.addAudio(ipv)
-                                else:
-                                    self.addVideo(ipv)
+                            if fext in ['.mp3','.acc'] or 'MAGYAR RÁDIÓK' in ipv['desc']:
+                                self.addAudio(ipv)
                             else:
                                 self.addVideo(ipv)
             else:
@@ -644,14 +632,8 @@ class webhuplayer(CBaseHostClass):
                         random.shuffle(mlt)
                         for ipv in mlt:
                             fext = os.path.splitext(ipv['url'])[1]
-                            if fext in ['.mp3','.acc'] or 'RÁDIÓ' in ipv['desc']:
-                                temp_prot = self.ultpvz(ipv['url'])
-                                if temp_prot == '':
-                                    self.addMarker({'title':ipv['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
-                                elif 'audio' in temp_prot:
-                                    self.addAudio(ipv)
-                                else:
-                                    self.addVideo(ipv)
+                            if fext in ['.mp3','.acc'] or 'MAGYAR RÁDIÓK' in ipv['desc']:
+                                self.addAudio(ipv)
                             else:
                                 self.addVideo(ipv)
             else:
@@ -818,14 +800,8 @@ class webhuplayer(CBaseHostClass):
                         item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
                         item['mjnts'] = False
                     fext = os.path.splitext(item['url'])[1]
-                    if fext in ['.mp3','.acc'] or 'RÁDIÓ' in item['mkt']:
-                        temp_prot = self.ultpvz(item['url'])
-                        if temp_prot == '':
-                            self.addMarker({'title':item['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
-                        elif 'audio' in temp_prot:
-                            self.addAudio(item)
-                        else:
-                            self.addVideo(item)
+                    if fext in ['.mp3','.acc'] or 'MAGYAR RÁDIÓK' in item['mkt']:
+                        self.addAudio(item)
                     else:
                         self.addVideo(item)
         except Exception:
@@ -847,14 +823,8 @@ class webhuplayer(CBaseHostClass):
                         item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
                         item['mjnts'] = False
                     fext = os.path.splitext(item['url'])[1]
-                    if fext in ['.mp3','.acc'] or 'RÁDIÓ' in item['mkt']:
-                        temp_prot = self.ultpvz(item['url'])
-                        if temp_prot == '':
-                            self.addMarker({'title':item['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
-                        elif 'audio' in temp_prot:
-                            self.addAudio(item)
-                        else:
-                            self.addVideo(item)
+                    if fext in ['.mp3','.acc'] or 'MAGYAR RÁDIÓK' in item['mkt']:
+                        self.addAudio(item)
                     else:
                         self.addVideo(item)
         except Exception:
@@ -874,14 +844,8 @@ class webhuplayer(CBaseHostClass):
                         item['desc'] = tid + '\n\n' + kszv + '\n' + item['mkt']
                         item['mjnts'] = False
                     fext = os.path.splitext(item['url'])[1]
-                    if fext in ['.mp3','.acc'] or 'RÁDIÓ' in item['mkt']:
-                        temp_prot = self.ultpvz(item['url'])
-                        if temp_prot == '':
-                            self.addMarker({'title':item['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
-                        elif 'audio' in temp_prot:
-                            self.addAudio(item)
-                        else:
-                            self.addVideo(item)
+                    if fext in ['.mp3','.acc'] or 'MAGYAR RÁDIÓK' in item['mkt']:
+                        self.addAudio(item)
                     else:
                         self.addVideo(item)
         except Exception:
@@ -1090,14 +1054,8 @@ class webhuplayer(CBaseHostClass):
                 desc = tdsc + '\n\n' + self.aid_ki
                 params = {'title':prdt['title'], 'url':prdt['url'], 'desc':desc, 'icon':prdt['icon'], 'azn':prdt['azn'], 'mkt': elso, 'md':hnn, 'mjnts':True}
                 fext = os.path.splitext(prdt['url'])[1]
-                if fext in ['.mp3','.acc'] or 'RÁDIÓ' in elso:
-                    temp_prot = self.ultpvz(prdt['url'])
-                    if temp_prot == '':
-                        self.addMarker({'title':prdt['title'], 'desc':'Sajnos, ez a tartalom jelenleg nem elérhető...'})
-                    elif 'audio' in temp_prot:
-                        self.addAudio(params)
-                    else:
-                        self.addVideo(params)
+                if fext in ['.mp3','.acc'] or 'MAGYAR RÁDIÓK' in elso:
+                    self.addAudio(params)
                 else:
                     self.addVideo(params)
         except Exception:

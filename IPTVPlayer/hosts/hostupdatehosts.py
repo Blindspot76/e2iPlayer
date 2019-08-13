@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-08-06 by Alec - updatehosts HU host telepítő
+# 2019-08-12 by Alec - updatehosts HU host telepítő
 ###################################################
-HOST_VERSION = "3.5"
+HOST_VERSION = "3.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -1639,9 +1639,6 @@ class updatehosts(CBaseHostClass):
                                             else:
                                                 hb = True
                                                 break
-                                else:
-                                    hb = True
-                                    break
                         else:
                             hb = True
                     else:
@@ -1828,18 +1825,27 @@ class updatehosts(CBaseHostClass):
                     if rhv_tmp == '-':
                         continue
                     else:
-                        return '- új Magyar host telepíthető, frissíthető'
+                        if host == self.UPDATEHOSTS:
+                            return '- a keretrendszer telepíthető, frissíthető  -  Ezt csináld meg először!'
+                        else:
+                            return '- új Magyar host telepíthető, frissíthető'
                 elif lhv_tmp == 'ismeretlen verzió':
                     if rhv_tmp == '-':
                         continue
                     else:
-                        return '- új Magyar host telepíthető, frissíthető'
+                        if host == self.UPDATEHOSTS:
+                            return '- a keretrendszer telepíthető, frissíthető  -  Ezt csináld meg először!'
+                        else:
+                            return '- új Magyar host telepíthető, frissíthető'
                 else:        
                     try:
                         lhv = float(lhv_tmp)
                         rhv = float(rhv_tmp)
                         if lhv < rhv:
-                            return '- új Magyar host telepíthető, frissíthető'
+                            if host == self.UPDATEHOSTS:
+                                return '- a keretrendszer telepíthető, frissíthető  -  Ezt csináld meg először!'
+                            else:
+                                return '- új Magyar host telepíthető, frissíthető'
                     except Exception:
                         continue
             return ''
