@@ -1,4 +1,6 @@
-﻿#2019.08.13.01
+﻿#2019.08.13.02
+-TSiPlayer frissítve
+#2019.08.13.01
 -HU Telepítő frissítve
 -WebHU Player frissítve
 #2019.08.07.01

@@ -6,9 +6,15 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import *
-from Plugins.Extensions.IPTVPlayer.tsiplayer.pars_openload import get_video_url as pars_openload
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import *
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
+
+
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pars_openload import get_video_url as pars_openload
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pars_samaup import get_video_url as pars_samaup
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pars_yourupload import get_video_url as pars_yourupload
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pars_thevid import get_video_url as pars_thevid 
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.resolver import URLResolver
 
 ###################################################
 # FOREIGN import
@@ -34,16 +40,16 @@ config.plugins.iptvplayer.ts_xtream_user   = ConfigText(default = '', fixed_size
 config.plugins.iptvplayer.ts_xtream_pass   = ConfigText(default = '', fixed_size = False)
 config.plugins.iptvplayer.ts_xtream_host   = ConfigText(default = '', fixed_size = False)
 config.plugins.iptvplayer.ts_xtream_ua     = ConfigText(default = '', fixed_size = False)
-config.plugins.iptvplayer.ts_egybest_email = ConfigText(default = '', fixed_size = False)
-config.plugins.iptvplayer.ts_egybest_pass  = ConfigText(default = '', fixed_size = False)
-config.plugins.iptvplayer.ts_star7live_user  = ConfigText(default = '', fixed_size = False)
-config.plugins.iptvplayer.ts_star7live_pass  = ConfigText(default = '', fixed_size = False)
+#config.plugins.iptvplayer.ts_egybest_email = ConfigText(default = '', fixed_size = False)
+#config.plugins.iptvplayer.ts_egybest_pass  = ConfigText(default = '', fixed_size = False)
+#config.plugins.iptvplayer.ts_star7live_user  = ConfigText(default = '', fixed_size = False)
+#config.plugins.iptvplayer.ts_star7live_pass  = ConfigText(default = '', fixed_size = False)
 
 
 
 config.plugins.iptvplayer.ts_dsn           = ConfigYesNo(default = True)
 config.plugins.iptvplayer.ud_methode = ConfigSelection(default = "tar", choices = [("tar", "TAR"), ("zip", "ZIP")])
-config.plugins.iptvplayer.ol_resolver = ConfigSelection(default = "e2iplayer", choices = [("e2iplayer", "E2IPlayer"), ("tsiplayer", "TSIPlayer")])
+#config.plugins.iptvplayer.ol_resolver = ConfigSelection(default = "e2iplayer", choices = [("e2iplayer", "E2IPlayer"), ("tsiplayer", "TSIPlayer")])
 config.plugins.iptvplayer.ts_resolver = ConfigSelection(default = "tsmedia", choices = [("tsmedia", "TSMedia"), ("tsiplayer", "TSIPlayer")])
 config.plugins.iptvplayer.dev_mod     = ConfigYesNo(default = False)
 config.plugins.iptvplayer.imsakiya_tn = ConfigSelection(default = '', choices = tunisia_gouv)
@@ -56,17 +62,17 @@ def GetConfigList():
 	optionList.append( getConfigListEntry(_("Update Archive Type:"), config.plugins.iptvplayer.ud_methode) )
 	optionList.append( getConfigListEntry(_("Developer mode:"), config.plugins.iptvplayer.dev_mod) )
 	optionList.append( getConfigListEntry(_("TSMedia group Resolver:"), config.plugins.iptvplayer.ts_resolver) )	
-	optionList.append( getConfigListEntry(_("Openload Resolver:"), config.plugins.iptvplayer.ol_resolver) )	
+#	optionList.append( getConfigListEntry(_("Openload Resolver:"), config.plugins.iptvplayer.ol_resolver) )	
 	optionList.append( getConfigListEntry(_("Display Xtream:"), config.plugins.iptvplayer.xtream_active) )
 	optionList.append( getConfigListEntry(_("Xtream User:"), config.plugins.iptvplayer.ts_xtream_user) )
 	optionList.append( getConfigListEntry(_("Xtream Pass:"), config.plugins.iptvplayer.ts_xtream_pass) )
 	optionList.append( getConfigListEntry(_("Xtream Host:"), config.plugins.iptvplayer.ts_xtream_host) )	
 	optionList.append( getConfigListEntry(_("Xtream User Agent:"), config.plugins.iptvplayer.ts_xtream_ua) )	
 	optionList.append( getConfigListEntry(_("Imsakiya:"), config.plugins.iptvplayer.imsakiya_tn) )
-	optionList.append( getConfigListEntry(_("EgyBest Email:"), config.plugins.iptvplayer.ts_egybest_email) )
-	optionList.append( getConfigListEntry(_("EgyBest Pass:"), config.plugins.iptvplayer.ts_egybest_pass) )
-	optionList.append( getConfigListEntry(_("Star7 Live User:"), config.plugins.iptvplayer.ts_star7live_user) )
-	optionList.append( getConfigListEntry(_("Star7 Live Pass:"), config.plugins.iptvplayer.ts_star7live_pass) )				
+#	optionList.append( getConfigListEntry(_("EgyBest Email:"), config.plugins.iptvplayer.ts_egybest_email) )
+#	optionList.append( getConfigListEntry(_("EgyBest Pass:"), config.plugins.iptvplayer.ts_egybest_pass) )
+#	optionList.append( getConfigListEntry(_("Star7 Live User:"), config.plugins.iptvplayer.ts_star7live_user) )
+#	optionList.append( getConfigListEntry(_("Star7 Live Pass:"), config.plugins.iptvplayer.ts_star7live_pass) )				
 	return optionList
 
 
@@ -76,10 +82,11 @@ def gettytul():
 
 class TSIPlayer(CBaseHostClass):
 
-	tsiplayerversion = "2019.07.08.2"  
-	tsiplayerremote  = "0.0.0.0"
+	#tsiplayerversion = "2019.08.03.1"  
+	#tsiplayerremote  = "0.0.0.0"
 	
-	def __init__(self):
+	def __init__(self,item={}):
+		self.startitem_=item
 		CBaseHostClass.__init__(self, {'cookie':'TSIPlayer.cookie1'})
 		self.USER_AGENT = self.cm.getDefaultHeader()['User-Agent']	
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':'', 'Origin':''}
@@ -116,7 +123,15 @@ class TSIPlayer(CBaseHostClass):
 		if config.plugins.iptvplayer.dev_mod.value:
 			self.addDir({'name':'cat','category' : 'Devmod','title':'Development','desc':'','icon':'http://www.mezganisaid.com/z-include/images/code-dev.png'} )
 		self.GetVersions()
-		if (self.tsiplayerversion == self.tsiplayerremote):
+		if (self.tsiplayerremote=='xxxx.xx.xx.x'):
+			color='\c00??0000'
+			titre_='INFO (Remote version problem !!)'
+			img_='https://i.ibb.co/Q8ZRP0X/yaq9y3ab.png'
+		elif (self.tsiplayerversion=='xxxx.xx.xx.x'):			
+			color='\c0000????'
+			titre_=' ---> UPDATE <--- (Local version problem !!)'
+			img_='https://i.ibb.co/fVR0HL6/tsiplayer-update.png'						
+		elif (self.tsiplayerversion == self.tsiplayerremote):
 			color='\c00??????'
 			titre_='INFO'
 			img_='https://i.ibb.co/Q8ZRP0X/yaq9y3ab.png'
@@ -126,9 +141,10 @@ class TSIPlayer(CBaseHostClass):
 			img_='https://i.ibb.co/fVR0HL6/tsiplayer-update.png'
 		params = {'name':'cat','category' : 'update','title':color+titre_,'desc':'تحديث البرنامج','icon':img_} 
 		self.addDir(params)	
-
+#		self.addDir({'name':'cat','category' : 'vstream','title':'Vstream','desc':'desc','icon':''} )
 #1:Ar,2:Live,3:Kids,4:Ramadan,6:Ar+In,10:dev,101:EN,102:FR,
-#Live: 100
+#Live sport: 100,replay Sport: 110
+#Live all: 120, replay all:130
 #All:  101  
 #Dev:  102
 #Dev Touls :103
@@ -169,7 +185,8 @@ class TSIPlayer(CBaseHostClass):
 					
 	def IptvCat(self):
 		self.tsiplayer_host({'cat_id':'100'})
-						
+		self.tsiplayer_host({'cat_id':'110'})
+		self.tsiplayer_host({'cat_id':'120'})						
 	def DevCat(self):
 		self.addMarker({'category' :'marker','title':'\c00????00 -----●★| Tools |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
 		self.tsiplayer_host({'cat_id':'103'})	
@@ -178,6 +195,45 @@ class TSIPlayer(CBaseHostClass):
 		self.addMarker({'category' :'marker','title':'\c00????00 -----●★| Hosts Out |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
 		self.tsiplayer_host({'cat_id':'104'})	
 
+
+
+###################################################
+# HOST vstream
+###################################################	
+	def vstream_host(self,cItem):
+		img=cItem.get('icon','')
+		gnr=cItem.get('gnr','start')
+		if gnr=='start':	
+			self.addDir({'category' : 'vstream','title':'Test','desc':'desc','icon':img,'gnr':'exemple1'})	
+		elif gnr=='exemple1':
+			file_='filmzenstream_com'
+			
+			'''
+			filename='/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/libs/vstream/resources/lib/handler/requestHandler.py'
+			rep1='resources.lib'
+			rep2='Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.resources.lib'
+			# Read in the file
+			with open(filename, 'r') as file :
+			  filedata = file.read()
+
+			# Replace the target string
+			filedata = filedata.replace(rep1, rep2)
+
+			# Write the file out again
+			with open(filename, 'w') as file:
+			  file.write(filedata)
+			'''			
+			import sys
+			import_ = 'from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.' + file_+' import load'
+			exec (import_)
+			load()
+			printDBG('fffffffff'+str(sys.argv))
+			import_ = 'from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.' + file_+' import showMovies'
+			exec (import_)
+			showMovies()			
+			
+			
+			
 
 ###################################################
 # HOST tsmedia
@@ -263,7 +319,8 @@ class TSIPlayer(CBaseHostClass):
 			if str(mode_)=='103' or str(mode_)=='603' or str(mode_)=='703' or str(mode_)=='803':
 				URL=cItem['section']+'|'+cItem['plugin_id']+'|'+cItem['py_file']+'|'+str(elm)
 				self.addDir({'category':'search'  ,'title': _('Search'),'search_item':True,'page':-1,'hst':'tsmedia','url':URL,'icon':img})				
-			
+			elif ('plugin.video.youtube' in url_) and  ('&videoid=' in url_):
+				self.addVideo({'category' : 'video','hst':'none','title':titre,'url':'https://www.youtube.com/watch?v='+url_.split('&videoid=',1)[1],'desc':desc_,'icon':img_})
 			elif mode_==0:
 				if 'youtube' in url_:
 					self.addVideo({'category' : 'video','hst':'none','title':titre,'url':url_,'desc':desc_,'icon':img_})				
@@ -292,7 +349,9 @@ class TSIPlayer(CBaseHostClass):
 			if str(mode_)=='103' or str(mode_)=='603' or str(mode_)=='703' or str(mode_)=='803':
 				URL=section_+'|'+plugin_id_+'|'+py_file+'|'+str(elm)
 				self.addDir({'category':'_next_page','title': '\c0000??00'+'Page Suivante', 'search_item':False,'page':-1,'searchPattern':str_ch,'url':URL,'hst':'tsmedia','icon':img_})				
-			elif mode_==0:
+			elif ('plugin.video.youtube' in url_) and  ('&videoid=' in url_):
+				self.addVideo({'category' : 'video','hst':'none','title':titre,'url':'https://www.youtube.com/watch?v='+url_.split('&videoid=',1)[1],'desc':desc_,'icon':img_})
+			elif mode_==0: 
 				if 'youtube' in url_:
 					self.addVideo({'category' : 'video','hst':'none','title':titre,'url':url_,'desc':desc_,'icon':img_})				
 				else:
@@ -451,7 +510,7 @@ class TSIPlayer(CBaseHostClass):
 		self.tsiplayer_get_remote(cItem)
 						
 	def host2_host(self,cItem):
-		mode_=cItem['mode']
+		mode_=cItem.get('mode','00')
 		import_str = cItem.get('import',self.import_str)
 		if self.import_str!=import_str:
 			file_=import_str.replace('from Plugins.Extensions.IPTVPlayer.tsiplayer.','').replace(' import ','')
@@ -473,18 +532,31 @@ class TSIPlayer(CBaseHostClass):
 
 	def GetVersions(self):
 		printDBG( 'GetVersions begin' )
-		_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/raw/master/IPTVPlayer/hosts/hosttsiplayer.py'	
-		query_data = { 'url': _url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
+		#get tsiplayerversion
+		_file = '/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/version.py'
+		self.tsiplayerversion='xxxx.xx.xx.x'
 		try:
-			data = self.cm.getURLRequestData(query_data)
-			r=self.cm.ph.getSearchGroups(data, '''tsiplayerversion = ['"]([^"^']+?)['"]''', 1, True)[0]
-			if r:
-				printDBG( 'tsiplayerremote = '+r )
-				self.tsiplayerremote=r
+			with open(_file) as f:
+				data = f.read()
+			vers_data = re.findall('="(.*?)"', data, re.S)
+			if vers_data:
+				printDBG( 'tsiplayerversion = '+vers_data[0] )
+				self.tsiplayerversion=vers_data[0]			
 		except:
-			printDBG( 'Host init query error' )
-				
-
+			pass
+		
+		#get tsiplayerremote
+		self.tsiplayerremote='xxxx.xx.xx.x'
+		_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/raw/master/IPTVPlayer/tsiplayer/version.py'
+		try:
+			sts,data = self.cm.getPage(_url)
+			if sts:
+				vers_data = re.findall('="(.*?)"', data, re.S)
+				if vers_data:
+					printDBG( 'tsiplayerremote = '+vers_data[0] )
+					self.tsiplayerremote=vers_data[0]
+		except:
+			pass
 		
 	def GetCommits(self):
 		printDBG( 'GetCommits begin' )
@@ -515,7 +587,7 @@ class TSIPlayer(CBaseHostClass):
 		self.addDir(params)	
 		params = {'category' : 'contact','title':'Contact Us','name':'contact'} 
 		self.addDir(params)	
-		if (self.tsiplayerversion != self.tsiplayerremote):
+		if (self.tsiplayerversion != self.tsiplayerremote) and (self.tsiplayerremote!='xxxx.xx.xx.x'):
 			if config.plugins.iptvplayer.ud_methode.value=='tar':
 				cat_='update_now'
 				tag='tar'
@@ -675,7 +747,13 @@ class TSIPlayer(CBaseHostClass):
 						
 	def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
 		printDBG('handleService start')
+		Item={'category': 'host2', 'title': 'Akoam', 'mode': '00', 'import': 'from Plugins.Extensions.IPTVPlayer.tsiplayer.host_akoam import ', 'icon': 'https://i.ibb.co/pLWdJQn/akoam.png', 'type': 'category', 'desc': '\\c00????00 Info: \\c00??????\xd8\xa3\xd9\x81\xd9\x84\xd8\xa7\xd9\x85, \xd9\x85\xd8\xb3\xd9\x84\xd8\xb3\xd9\x84\xd8\xa7\xd8\xaa \xd9\x88 \xd8\xa7\xd9\x86\xd9\x85\xd9\x8a \xd8\xb9\xd8\xb1\xd8\xa8\xd9\x8a\xd8\xa9 \xd9\x88 \xd8\xa7\xd8\xac\xd9\x86\xd8\xa8\xd9\x8a\xd8\xa9\\n \\c00????00Version: \\c00??????1.5 30/06/2019\\n \\c00????00Developpeur: \\c00??????RGYSoft\\n\\c00????00 Last Update: \\c00??????Change host to web.akoam.net\\n'}
+		
+		printDBG('self.currItem='+str(self.currItem))
 		CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
+		if self.startitem_!={}:
+			self.currItem=self.startitem_
+			self.startitem_={}
 		name     = self.currItem.get("name", '')
 		category = self.currItem.get("category", '')
 		printDBG( "handleService: || name[%s], category[%s] " % (name, category) )
@@ -883,27 +961,25 @@ class TSIPlayer(CBaseHostClass):
 			message=URL
 			self.sessionEx.open(MessageBox,'Contact RGYSOFT' + '\n' + message, type = MessageBox.TYPE_ERROR, timeout = 20)		
 		return urlTab
+
+
+
 		 
 	def TSgetVideoLinkExt(self,videoUrl):
 		urlTab=[]
-		if ('openload' in videoUrl) and (config.plugins.iptvplayer.ol_resolver.value=='tsiplayer'):
-			urlTab = pars_openload(videoUrl)
-			printDBG(str(urlTab))
-			
-			#urlTab = self.openloadResolver(videoUrl)
-		else:
-			urlTab = self.up.getVideoLinkExt(videoUrl)	
+		try:
+			urlTab = URLResolver(videoUrl).getLinks()
+		except:
+			urlTab=[]
 		return urlTab
 	
 
 class IPTVHost(CHostBase): 
 
-	def __init__(self):    
-		CHostBase.__init__(self, TSIPlayer(), False, []) 
+	def __init__(self,item={}):    
+		CHostBase.__init__(self, TSIPlayer(item=item), False, []) 
 		
 	def withArticleContent(self, cItem):
-		if cItem.get('EPG', False):
-			return True
-		else:
-			return False
+		if cItem.get('EPG', False): return True
+		else: return False
 		
