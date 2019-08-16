@@ -1,4 +1,6 @@
-﻿#2019.08.16.01
+﻿#2019.08.16.02
+-Sport 365 javítva
+#2019.08.16.01
 -Filiser.TV javítva
 #2019.08.13.02
 -TSiPlayer frissítve
