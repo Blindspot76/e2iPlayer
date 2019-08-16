@@ -1,4 +1,6 @@
-﻿#2019.08.13.02
+﻿#2019.08.16.01
+-Filiser.TV javítva
+#2019.08.13.02
 -TSiPlayer frissítve
 #2019.08.14.01
 -Felnőtt kiegészítő frissítve
