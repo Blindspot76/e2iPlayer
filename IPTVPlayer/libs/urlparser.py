@@ -1,5 +1,5 @@
-#            -*- coding: utf-8 -*-                #
-#       2019-08-05 Modified by Blindspot          #
+# -*- coding: utf-8 -*-
+
 ###################################################
 # LOCAL import
 ###################################################
@@ -132,394 +132,397 @@ class urlparser:
 
     def setHostsMap(self):
         self.hostMap = {
-                       '1fichier.com':         self.pp.parser1FICHIERCOM    ,
-                       '1tv.ru':               self.pp.parser1TVRU          ,
-                       '37.220.36.15':         self.pp.parserMOONWALKCC    ,
-                       '7cast.net':            self.pp.parser7CASTNET      ,
-                       'abcast.biz':           self.pp.parserABCASTBIZ     ,
-                       'abcast.net':           self.pp.parserABCASTBIZ     ,
-                       'aflamyz.com':          self.pp.parserAFLAMYZCOM     ,
-                       'akvideo.stream':       self.pp.parserAKVIDEOSTREAM ,
-                       'albfilm.com':          self.pp.parserALBFILMCOM    ,
-                       'aliez.me':             self.pp.parserALIEZME       ,
-                       'allcast.is':           self.pp.parserALLCASTIS     ,
-                       'allmyvideos.net':      self.pp.parserALLMYVIDEOS   ,
-                       'allocine.fr':          self.pp.parserALLOCINEFR    ,
-                       'allvid.ch':            self.pp.parserALLVIDCH      ,
-                       'anime-shinden.info':   self.pp.parserANIMESHINDEN  ,
-                       'api.video.mail.ru':    self.pp.parserVIDEOMAIL     ,
-                       'archive.org':          self.pp.parserARCHIVEORG    ,
-                       'auroravid.to':         self.pp.parserAURORAVIDTO    ,
-                       'bbc.co.uk':            self.pp.parserBBC           ,
-                       'bestreams.net':        self.pp.parserBESTREAMS     ,
-                       'biggestplayer.me':     self.pp.parserBIGGESTPLAYER ,
-                       'bitvid.sx':            self.pp.parserVIDEOWEED     ,
-                       'bojem3a.info':         self.pp.parserEXASHARECOM   ,
-                       'bro.adca.st':          self.pp.parseBROADCAST      ,
-                       'bro.adcast.tech':      self.pp.parseBROADCAST      ,
-                       'byetv.org':            self.pp.paserBYETVORG       ,
-                       'casacinema.cc':        self.pp.parserCASACINEMACC   ,
-                       'cast4u.tv':            self.pp.parserCAST4UTV      ,
-                       'castalba.tv':          self.pp.parserCASTALBATV    ,
-                       'castamp.com':          self.pp.parserCASTAMPCOM    ,
-                       'castasap.pw':          self.pp.parseCASTFLASHPW    ,
-                       'castflash.pw':         self.pp.parseCASTFLASHPW    ,
-                       'caston.tv':            self.pp.parseCASTONTV       ,
-                       'castto.me':            self.pp.parserCASTTOME      ,
-                       'cda.pl':               self.pp.parserCDA           ,
-                       'cfiles.net':           self.pp.parserUPLOAD         ,
-                       'chefti.info':          self.pp.parserEXASHARECOM   ,
-                       'clicknupload.link':    self.pp.parserUPLOAD         ,
-                       'clicknupload.org':     self.pp.parserUPLOAD         ,
-                       'clickopen.win':        self.pp.parserCLICKOPENWIN   ,
-                       'clipwatching.com':     self.pp.parserCLIPWATCHINGCOM,
-                       'cloud.mail.ru':        self.pp.parserCOUDMAILRU    ,
-                       'cloudcartel.net':      self.pp.parserCLOUDCARTELNET ,
-                       'cloudstream.us':       self.pp.parserCLOUDSTREAMUS  ,
-                       'cloudtime.to':         self.pp.parserCLOUDTIME     ,
-                       'cloudvideo.tv':        self.pp.parserCLOUDVIDEOTV   ,
-                       'cloudy.ec':            self.pp.parserCLOUDYEC      ,
-                       'cloudyfiles.me':       self.pp.parserUPLOAD         ,
-                       'cloudyfiles.org':      self.pp.parserUPLOAD         ,
-                       'cloudyvideos.com':     self.pp.parserCLOUDYVIDEOS  ,
-                       'content.peteava.ro':   self.pp.parserPETEAVA       ,
-                       'coolcast.eu':          self.pp.parserCOOLCASTEU    ,
-                       'crichd.tv':            self.pp.parserCRICHDTV      ,
-                       'daaidaij.com':         self.pp.parserMOONWALKCC    ,
-                       'daclips.in':           self.pp.parserFASTVIDEOIN   ,
-                       'dailymotion.com':      self.pp.parserDAILYMOTION   ,
-                       'dailyuploads.net':     self.pp.parserUPLOAD2        ,
-                       'darkomplayer.com':     self.pp.parserDARKOMPLAYER   ,
-                       'deltatv.pw':           self.pp.parserDELTATVPW     ,
-                       'divxpress.com':        self.pp.parserDIVEXPRESS    ,
-                       'divxstage.eu':         self.pp.parserDIVXSTAGE     ,
-                       'divxstage.to':         self.pp.parserDIVXSTAGE     ,
-                       'donevideo.com':        self.pp.parserLIMEVIDEO     ,
-                       'dotstream.tv':         self.pp.parserDOTSTREAMTV   ,
-                       'dwn.so':               self.pp.parserDWN           ,
-                       'easyvid.org':          self.pp.parserEASYVIDORG    ,
-                       'easyvideo.me':         self.pp.parserEASYVIDEOME   ,
-                       'ebd.cda.pl':           self.pp.parserCDA           ,
-                       'ekstraklasa.tv':       self.pp.parserEKSTRAKLASATV  ,
-                       'emb.aliez.tv':         self.pp.parserALIEZ         ,
-                       'embed.trilulilu.ro':   self.pp.parserTRILULILU     ,
-                       'embeducaster.com':     self.pp.parserUCASTERCOM     ,
-                       'estream.to':           self.pp.parserESTREAMTO     ,
-                       'exashare.com':         self.pp.parserEXASHARECOM   ,
-                       'facebook.com':         self.pp.parserFACEBOOK      ,
-                       'fastflash.pw':         self.pp.parseCASTFLASHPW    ,
-                       'fastplay.cc':          self.pp.parserFASTPLAYCC     ,
-                       'faststream.in':        self.pp.parserVIDSTREAM     ,
-                       'fastvideo.in':         self.pp.parserFASTVIDEOIN   ,
-                       'filecandy.net':        self.pp.parserFILECANDYNET   ,
-                       'filecloud.io':         self.pp.parserFILECLOUDIO    ,
-                       'filefactory.com':      self.pp.parserFILEFACTORYCOM ,
-                       'filehoot.com':         self.pp.parserFILEHOOT      ,
-                       'filenuke.com':         self.pp.parserFILENUKE      ,
-                       'fileone.tv':           self.pp.parserFILEONETV     ,
-                       'filepup.net':          self.pp.parserFILEPUPNET    ,
-                       'file-upload.com':      self.pp.parserFILEUPLOADCOM  ,
-                       'filez.tv':             self.pp.parserFILEZTV        ,
-                       'firedrive.com':        self.pp.parserFIREDRIVE     , 
-                       'flashcast.pw':         self.pp.parseCASTFLASHPW    ,
-                       'flashlive.pw':         self.pp.parseCASTFLASHPW    ,
-                       'flashx.co':            self.pp.parserFLASHXTV      ,
-                       'flashx.pw':            self.pp.parserFLASHXTV      ,
-                       'flashx.tv':            self.pp.parserFLASHXTV      ,
-                       'freedisc.pl':          self.pp.parserFREEDISC      ,
-                       'fxstream.biz':         self.pp.parserFXSTREAMBIZ   ,
-                       'gametrailers.com':     self.pp.parserGAMETRAILERS  , 
-                       'gamovideo.com':        self.pp.parserGAMOVIDEOCOM   ,
-                       'ginbig.com':           self.pp.parserGINBIG        ,
-                       'gogoanime.to':         self.pp.parserGOGOANIMETO    ,
-                       'goldvod.tv':           self.pp.parserGOLDVODTV     ,
-                       'goodcast.co':          self.pp.parserGOODCASTCO    ,
-                       'goodrtmp.com':         self.pp.parserGOODRTMP      ,
-                       'google.com':           self.pp.parserGOOGLE        ,
-                       'gorillavid.in':        self.pp.parserFASTVIDEOIN   , 
-                       'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
-                       'gounlimited.to':       self.pp.parserGOUNLIMITEDTO  ,
-                       'haxhits.com':          self.pp.parserHAXHITSCOM     ,
-                       'hdcast.info':          self.pp.parserHDCASTINFO    ,
-                       'hdfilmstreaming.com':  self.pp.parserHDFILMSTREAMING,
-                       'hdgo.cc':              self.pp.parserHDGOCC        ,
-                       'hdgo.cx':              self.pp.parserHDGOCC        ,
-                       'hdvid.tv':             self.pp.parserHDVIDTV       ,
-                       'hqq.none':             self.pp.parseNETUTV         ,
-                       'hqq.tv':               self.pp.parseNETUTV         ,
-                       'hqq.watch':            self.pp.parseNETUTV         ,
-                       'hxload.io':            self.pp.parserVIDBOMCOM      ,
-                       'i.vplay.ro':           self.pp.parserVPLAY         ,
-                       'ideoraj.ch':           self.pp.parserCLOUDYEC      ,
-                       'indavideo.hu':         self.pp.parserINDAVIDEOHU    ,
-                       'interia.tv':           self.pp.parserINTERIATV      ,
-                       'jacvideo.com':         self.pp.parseJACVIDEOCOM    ,
-                       'jawcloud.co':          self.pp.parserJAWCLOUDCO     ,
-                       'junkyvideo.com':       self.pp.parserJUNKYVIDEO    ,
-                       'justupload.io':        self.pp.parserJUSTUPLOAD     ,
-                       'kabab.lima-city.de':   self.pp.parserKABABLIMA     ,
-                       'kingfiles.net':        self.pp.parserKINGFILESNET   ,
-                       'kingvid.tv':           self.pp.parserKINGVIDTV      ,
-                       'krakenfiles.com':      self.pp.parserKRAKENFILESCOM ,
-                       'leton.tv':             self.pp.parserDOTSTREAMTV   ,
-                       'letwatch.us':          self.pp.parserLETWATCHUS    ,
-                       'life-rtmp.com':        self.pp.parserLIFERTMP      ,
-                       'limevideo.net':        self.pp.parserLIMEVIDEO     ,
-                       'live.bvbtotal.de':     self.pp.parserLIVEBVBTOTALDE,
-                       'liveall.tv':           self.pp.paserLIVEALLTV      ,
-                       'liveleak.com':         self.pp.parserLIVELEAK      ,
-                       'liveonlinetv247.info': self.pp.parserLIVEONLINE247 ,
-                       'liveonlinetv247.info': self.pp.parserLIVEONLINETV247,
-                       'liveonlinetv247.net':  self.pp.parserLIVEONLINE247 ,
-                       'livestream.com':	   self.pp.parserLIVESTREAMCOM,
-					   'live-stream.tv':       self.pp.parserLIVESTRAMTV   ,
-                       'mastarti.com':         self.pp.parserMOONWALKCC    ,
-                       'matchat.online':       self.pp.parserMATCHATONLINE  ,
-                       'maxupload.tv':         self.pp.parserTOPUPLOAD     ,
-                       'mcloud.to':            self.pp.parserMYCLOUDTO      ,
-                       'mediafire.com':        self.pp.parserMEDIAFIRECOM   ,
+                       'lookmovie.ag' :         self.pp.parserLOOKMOVIE,
+                       '1fichier.com':          self.pp.parser1FICHIERCOM    ,
+                       '1tv.ru':                self.pp.parser1TVRU          ,
+                       '37.220.36.15':          self.pp.parserMOONWALKCC    ,
+                       '7cast.net':             self.pp.parser7CASTNET      ,
+                       'abcast.biz':            self.pp.parserABCASTBIZ     ,
+                       'abcast.net':            self.pp.parserABCASTBIZ     ,
+                       'aflamyz.com':           self.pp.parserAFLAMYZCOM     ,
+                       'akvideo.stream':        self.pp.parserAKVIDEOSTREAM ,
+                       'albfilm.com':           self.pp.parserALBFILMCOM    ,
+                       'aliez.me':              self.pp.parserALIEZME       ,
+                       'allcast.is':            self.pp.parserALLCASTIS     ,
+                       'allmyvideos.net':       self.pp.parserALLMYVIDEOS   ,
+                       'allocine.fr':           self.pp.parserALLOCINEFR    ,
+                       'allvid.ch':             self.pp.parserALLVIDCH      ,
+                       'anime-shinden.info':    self.pp.parserANIMESHINDEN  ,
+                       'api.video.mail.ru':     self.pp.parserVIDEOMAIL     ,
+                       'archive.org':           self.pp.parserARCHIVEORG    ,
+                       'auroravid.to':          self.pp.parserAURORAVIDTO    ,
+                       'bbc.co.uk':             self.pp.parserBBC           ,
+                       'bestreams.net':         self.pp.parserBESTREAMS     ,
+                       'biggestplayer.me':      self.pp.parserBIGGESTPLAYER ,
+                       'bitvid.sx':             self.pp.parserVIDEOWEED     ,
+                       'bojem3a.info':          self.pp.parserEXASHARECOM   ,
+                       'bro.adca.st':           self.pp.parseBROADCAST      ,
+                       'bro.adcast.tech':       self.pp.parseBROADCAST      ,
+                       'byetv.org':             self.pp.paserBYETVORG       ,
+                       'casacinema.cc':         self.pp.parserCASACINEMACC   ,
+                       'cast4u.tv':             self.pp.parserCAST4UTV      ,
+                       'castalba.tv':           self.pp.parserCASTALBATV    ,
+                       'castamp.com':           self.pp.parserCASTAMPCOM    ,
+                       'castasap.pw':           self.pp.parseCASTFLASHPW    ,
+                       'castflash.pw':          self.pp.parseCASTFLASHPW    ,
+                       'caston.tv':             self.pp.parseCASTONTV       ,
+                       'castto.me':             self.pp.parserCASTTOME      ,
+                       'cda.pl':                self.pp.parserCDA           ,
+                       'cfiles.net':            self.pp.parserUPLOAD         ,
+                       'chefti.info':           self.pp.parserEXASHARECOM   ,
+                       'clicknupload.link':     self.pp.parserUPLOAD         ,
+                       'clicknupload.org':      self.pp.parserUPLOAD         ,
+                       'clickopen.win':         self.pp.parserCLICKOPENWIN   ,
+                       'clipwatching.com':      self.pp.parserCLIPWATCHINGCOM,
+                       'cloud.mail.ru':         self.pp.parserCOUDMAILRU    ,
+                       'cloudcartel.net':       self.pp.parserCLOUDCARTELNET ,
+                       'cloudstream.us':        self.pp.parserCLOUDSTREAMUS  ,
+                       'cloudtime.to':          self.pp.parserCLOUDTIME     ,
+                       'cloudvideo.tv':         self.pp.parserCLOUDVIDEOTV   ,
+                       'cloudy.ec':             self.pp.parserCLOUDYEC      ,
+                       'cloudyfiles.me':        self.pp.parserUPLOAD         ,
+                       'cloudyfiles.org':       self.pp.parserUPLOAD         ,
+                       'cloudyvideos.com':      self.pp.parserCLOUDYVIDEOS  ,
+                       'content.peteava.ro':    self.pp.parserPETEAVA       ,
+                       'coolcast.eu':           self.pp.parserCOOLCASTEU    ,
+                       'crichd.tv':             self.pp.parserCRICHDTV      ,
+                       'daaidaij.com':          self.pp.parserMOONWALKCC    ,
+                       'daclips.in':            self.pp.parserFASTVIDEOIN   ,
+                       'dailymotion.com':       self.pp.parserDAILYMOTION   ,
+                       'dailyuploads.net':      self.pp.parserUPLOAD2        ,
+                       'darkomplayer.com':      self.pp.parserDARKOMPLAYER   ,
+                       'deltatv.pw':            self.pp.parserDELTATVPW     ,
+                       'divxpress.com':         self.pp.parserDIVEXPRESS    ,
+                       'divxstage.eu':          self.pp.parserDIVXSTAGE     ,
+                       'divxstage.to':          self.pp.parserDIVXSTAGE     ,
+                       'donevideo.com':         self.pp.parserLIMEVIDEO     ,
+                       'dotstream.tv':          self.pp.parserDOTSTREAMTV   ,
+                       'dwn.so':                self.pp.parserDWN           ,
+                       'easyvid.org':           self.pp.parserEASYVIDORG    ,
+                       'easyvideo.me':          self.pp.parserEASYVIDEOME   ,
+                       'ebd.cda.pl':            self.pp.parserCDA           ,
+                       'ekstraklasa.tv':        self.pp.parserEKSTRAKLASATV  ,
+                       'emb.aliez.tv':          self.pp.parserALIEZ         ,
+                       'embed.trilulilu.ro':    self.pp.parserTRILULILU     ,
+                       'embeducaster.com':      self.pp.parserUCASTERCOM     ,
+                       'estream.to':            self.pp.parserESTREAMTO     ,
+                       'exashare.com':          self.pp.parserEXASHARECOM   ,
+                       'facebook.com':          self.pp.parserFACEBOOK      ,
+                       'fastflash.pw':          self.pp.parseCASTFLASHPW    ,
+                       'fastplay.cc':           self.pp.parserFASTPLAYCC     ,
+                       'faststream.in':         self.pp.parserVIDSTREAM     ,
+                       'fastvideo.in':          self.pp.parserFASTVIDEOIN   ,
+                       'filecandy.net':         self.pp.parserFILECANDYNET   ,
+                       'filecloud.io':          self.pp.parserFILECLOUDIO    ,
+                       'filefactory.com':       self.pp.parserFILEFACTORYCOM ,
+                       'filehoot.com':          self.pp.parserFILEHOOT      ,
+                       'filenuke.com':          self.pp.parserFILENUKE      ,
+                       'fileone.tv':            self.pp.parserFILEONETV     ,
+                       'filepup.net':           self.pp.parserFILEPUPNET    ,
+                       'file-upload.com':       self.pp.parserFILEUPLOADCOM  ,
+                       'filez.tv':              self.pp.parserFILEZTV        ,
+                       'firedrive.com':         self.pp.parserFIREDRIVE     , 
+                       'flashcast.pw':          self.pp.parseCASTFLASHPW    ,
+                       'flashlive.pw':          self.pp.parseCASTFLASHPW    ,
+                       'flashx.co':             self.pp.parserFLASHXTV      ,
+                       'flashx.pw':             self.pp.parserFLASHXTV      ,
+                       'flashx.tv':             self.pp.parserFLASHXTV      ,
+                       'freedisc.pl':           self.pp.parserFREEDISC      ,
+                       'fxstream.biz':          self.pp.parserFXSTREAMBIZ   ,
+                       'gametrailers.com':      self.pp.parserGAMETRAILERS  , 
+                       'gamovideo.com':         self.pp.parserGAMOVIDEOCOM   ,
+                       'ginbig.com':            self.pp.parserGINBIG        ,
+                       'gogoanime.to':          self.pp.parserGOGOANIMETO    ,
+                       'goldvod.tv':            self.pp.parserGOLDVODTV     ,
+                       'goodcast.co':           self.pp.parserGOODCASTCO    ,
+                       'goodrtmp.com':          self.pp.parserGOODRTMP      ,
+                       'google.com':            self.pp.parserGOOGLE        ,
+                       'gorillavid.in':         self.pp.parserFASTVIDEOIN   , 
+                       'gounlimited.to':        self.pp.parserGOUNLIMITEDTO  ,
+                       'gounlimited.to':        self.pp.parserGOUNLIMITEDTO  ,
+                       'haxhits.com':           self.pp.parserHAXHITSCOM     ,
+                       'hdcast.info':           self.pp.parserHDCASTINFO    ,
+                       'hdfilmstreaming.com':   self.pp.parserHDFILMSTREAMING,
+                       'hdgo.cc':               self.pp.parserHDGOCC        ,
+                       'hdgo.cx':               self.pp.parserHDGOCC        ,
+                       'hdvid.tv':              self.pp.parserHDVIDTV       ,
+                       'hqq.none':              self.pp.parseNETUTV         ,
+                       'hqq.tv':                self.pp.parseNETUTV         ,
+                       'hqq.watch':             self.pp.parseNETUTV         ,
+                       'hxload.io':             self.pp.parserVIDBOMCOM      ,
+                       'i.vplay.ro':            self.pp.parserVPLAY         ,
+                       'ideoraj.ch':            self.pp.parserCLOUDYEC      ,
+                       'indavideo.hu':          self.pp.parserINDAVIDEOHU    ,
+                       'interia.tv':            self.pp.parserINTERIATV      ,
+                       'jacvideo.com':          self.pp.parseJACVIDEOCOM    ,
+                       'jawcloud.co':           self.pp.parserJAWCLOUDCO     ,
+                       'junkyvideo.com':        self.pp.parserJUNKYVIDEO    ,
+                       'justupload.io':         self.pp.parserJUSTUPLOAD     ,
+                       'kabab.lima-city.de':    self.pp.parserKABABLIMA     ,
+                       'kingfiles.net':         self.pp.parserKINGFILESNET   ,
+                       'kingvid.tv':            self.pp.parserKINGVIDTV      ,
+                       'krakenfiles.com':       self.pp.parserKRAKENFILESCOM ,
+                       'leton.tv':              self.pp.parserDOTSTREAMTV   ,
+                       'letwatch.us':           self.pp.parserLETWATCHUS    ,
+                       'life-rtmp.com':         self.pp.parserLIFERTMP      ,
+                       'limevideo.net':         self.pp.parserLIMEVIDEO     ,
+                       'live.bvbtotal.de':      self.pp.parserLIVEBVBTOTALDE,
+                       'liveall.tv':            self.pp.paserLIVEALLTV      ,
+                       'liveleak.com':          self.pp.parserLIVELEAK      ,
+                       'liveonlinetv247.info':  self.pp.parserLIVEONLINE247 ,
+                       'liveonlinetv247.info':  self.pp.parserLIVEONLINETV247,
+                       'liveonlinetv247.net':   self.pp.parserLIVEONLINE247 ,
+                       'livestream.com':        self.pp.parserLIVESTREAMCOM,
+                       'live-stream.tv':        self.pp.parserLIVESTRAMTV   ,
+                       'mastarti.com':          self.pp.parserMOONWALKCC    ,
+                       'matchat.online':        self.pp.parserMATCHATONLINE  ,
+                       'maxupload.tv':          self.pp.parserTOPUPLOAD     ,
+                       'mcloud.to':             self.pp.parserMYCLOUDTO      ,
+                       'mediafire.com':         self.pp.parserMEDIAFIRECOM   ,
                        'mediasetplay.mediaset.it': self.pp.parserMEDIASET   ,
-                       'megadrive.co':         self.pp.parserMEGADRIVECO    ,
-                       'megadrive.tv':         self.pp.parserMEGADRIVETV    ,
-                       'megom.tv':             self.pp.paserMEGOMTV        ,
-                       'megustavid.com':       self.pp.parserMEGUSTAVID    ,
-                       'mightyupload.com':     self.pp.parserMIGHTYUPLOAD  ,
-                       'miplayer.net':         self.pp.parserMIPLAYERNET   ,
-                       'moevideo.net':         self.pp.parserPLAYEREPLAY   ,
-                       'moonwalk.cc':          self.pp.parserMOONWALKCC    ,
-                       'moshahda.net':         self.pp.parseMOSHAHDANET    ,
-                       'movdivx.com':          self.pp.parserMODIVXCOM     ,
-                       'movpod.in':            self.pp.parserFASTVIDEOIN   ,
-                       'movreel.com':          self.pp.parserMOVRELLCOM    ,
-                       'movshare.net':         self.pp.parserWHOLECLOUD     ,
-                       'mp4upload.com':        self.pp.parserMP4UPLOAD      ,
-                       'my.mail.ru':           self.pp.parserVIDEOMAIL     ,
-                       'mycloud.to':           self.pp.parserMYCLOUDTO      ,
-                       'mystream.io':          self.pp.parserMYSTREAMTO     ,
-                       'mystream.la':          self.pp.parserMYSTREAMLA    ,
-                       'mystream.to':          self.pp.parserMYSTREAMTO     ,
-                       'myvi.ru':              self.pp.parserMYVIRU        ,
-                       'myvi.tv':              self.pp.parserMYVIRU        ,
-                       'myvideo.de':           self.pp.parserMYVIDEODE     ,
-                       'nadaje.com':           self.pp.parserNADAJECOM      ,
-                       'neodrive.co':          self.pp.parserNEODRIVECO    ,
-                       'netu.tv':              self.pp.parseNETUTV         ,
-                       'nonlimit.pl':          self.pp.parserIITV          ,
-                       'nosvideo.com':         self.pp.parserNOSVIDEO      ,
-                       'novamov.com':          self.pp.parserNOVAMOV       ,
-                       'nowlive.pw':           self.pp.paserNOWLIVEPW      ,
-                       'nowlive.xyz':          self.pp.paserNOWLIVEPW      ,
-                       'nowvideo.ch':          self.pp.parserNOWVIDEOCH    ,
-                       'nowvideo.co':          self.pp.parserNOWVIDEO      ,
-                       'nowvideo.eu':          self.pp.parserNOWVIDEO      ,
-                       'nowvideo.sx':          self.pp.parserNOWVIDEO      ,
-                       'nowvideo.to':          self.pp.parserNOWVIDEO      ,
-                       'ntv.ru':               self.pp.parserNTVRU          ,
-                       'nxload.com':           self.pp.parserNXLOADCOM      ,
-                       'ok.ru':                self.pp.parserOKRU          ,
-                       'oload.cloud':          self.pp.parserOPENLOADIO    ,
-                       'oload.co':             self.pp.parserOPENLOADIO    ,
-                       'oload.download':       self.pp.parserOPENLOADIO    ,
-                       'oload.io':             self.pp.parserOPENLOADIO    ,
-                       'oload.site':           self.pp.parserOPENLOADIO    ,
-                       'oload.stream':         self.pp.parserOPENLOADIO    ,
-                       'oload.tv':             self.pp.parserOPENLOADIO    ,
-                       'onet.pl':              self.pp.parserONETTV        ,
-                       'onet.tv':              self.pp.parserONETTV        ,
-                       'openlive.org':         self.pp.parserOPENLIVEORG   ,
-                       'openload.co':          self.pp.parserOPENLOADIO    ,
-                       'openload.info':        self.pp.parserEXASHARECOM   ,
-                       'openload.io':          self.pp.parserOPENLOADIO    ,
-                       'ovva.tv':              self.pp.parserOVVATV         ,
-                       'owndrives.com':        self.pp.parserUPLOAD         ,
-                       'p2pcast.tv':           self.pp.paserP2PCASTTV      ,
+                       'megadrive.co':          self.pp.parserMEGADRIVECO    ,
+                       'megadrive.tv':          self.pp.parserMEGADRIVETV    ,
+                       'megom.tv':              self.pp.paserMEGOMTV        ,
+                       'megustavid.com':        self.pp.parserMEGUSTAVID    ,
+                       'mightyupload.com':      self.pp.parserMIGHTYUPLOAD  ,
+                       'miplayer.net':          self.pp.parserMIPLAYERNET   ,
+                       'moevideo.net':          self.pp.parserPLAYEREPLAY   ,
+                       'moonwalk.cc':           self.pp.parserMOONWALKCC    ,
+                       'moshahda.net':          self.pp.parseMOSHAHDANET    ,
+                       'movdivx.com':           self.pp.parserMODIVXCOM     ,
+                       'movpod.in':             self.pp.parserFASTVIDEOIN   ,
+                       'movreel.com':           self.pp.parserMOVRELLCOM    ,
+                       'movshare.net':          self.pp.parserWHOLECLOUD     ,
+                       'mp4upload.com':         self.pp.parserMP4UPLOAD      ,
+                       'my.mail.ru':            self.pp.parserVIDEOMAIL     ,
+                       'mycloud.to':            self.pp.parserMYCLOUDTO      ,
+                       'mystream.io':           self.pp.parserMYSTREAMTO     ,
+                       'mystream.la':           self.pp.parserMYSTREAMLA    ,
+                       'mystream.to':           self.pp.parserMYSTREAMTO     ,
+                       'myvi.ru':               self.pp.parserMYVIRU        ,
+                       'myvi.tv':               self.pp.parserMYVIRU        ,
+                       'myvideo.de':            self.pp.parserMYVIDEODE     ,
+                       'nadaje.com':            self.pp.parserNADAJECOM      ,
+                       'neodrive.co':           self.pp.parserNEODRIVECO    ,
+                       'netu.tv':               self.pp.parseNETUTV         ,
+                       'nonlimit.pl':           self.pp.parserIITV          ,
+                       'nosvideo.com':          self.pp.parserNOSVIDEO      ,
+                       'novamov.com':           self.pp.parserNOVAMOV       ,
+                       'nowlive.pw':            self.pp.paserNOWLIVEPW      ,
+                       'nowlive.xyz':           self.pp.paserNOWLIVEPW      ,
+                       'nowvideo.ch':           self.pp.parserNOWVIDEOCH    ,
+                       'nowvideo.co':           self.pp.parserNOWVIDEO      ,
+                       'nowvideo.eu':           self.pp.parserNOWVIDEO      ,
+                       'nowvideo.sx':           self.pp.parserNOWVIDEO      ,
+                       'nowvideo.to':           self.pp.parserNOWVIDEO      ,
+                       'ntv.ru':                self.pp.parserNTVRU          ,
+                       'nxload.com':            self.pp.parserNXLOADCOM      ,
+                       'ok.ru':                 self.pp.parserOKRU          ,
+                       'oload.cloud':           self.pp.parserOPENLOADIO    ,
+                       'oload.co':              self.pp.parserOPENLOADIO    ,
+                       'oload.download':        self.pp.parserOPENLOADIO    ,
+                       'oload.io':              self.pp.parserOPENLOADIO    ,
+                       'oload.site':            self.pp.parserOPENLOADIO    ,
+                       'oload.stream':          self.pp.parserOPENLOADIO    ,
+                       'oload.tv':              self.pp.parserOPENLOADIO    ,
+                       'player.veuclips.com':   self.pp.parserVIUCLIPS	   ,   
+                       'onet.pl':               self.pp.parserONETTV        ,
+                       'onet.tv':               self.pp.parserONETTV        ,
+                       'openlive.org':          self.pp.parserOPENLIVEORG   ,
+                       'openload.co':           self.pp.parserOPENLOADIO    ,
+                       'openload.info':         self.pp.parserEXASHARECOM   ,
+                       'openload.io':           self.pp.parserOPENLOADIO    ,
+                       'ovva.tv':               self.pp.parserOVVATV         ,
+                       'owndrives.com':         self.pp.parserUPLOAD         ,
+                       'p2pcast.tv':            self.pp.paserP2PCASTTV      ,
                        'partners.nettvplus.com': self.pp.parserNETTVPLUSCOM,
-                       'picasaweb.google.com': self.pp.parserPICASAWEB     ,
-                       'playbb.me':            self.pp.parserEASYVIDEOME   ,
-                       'played.to':            self.pp.parserPLAYEDTO      ,
-                       'playedto.me':          self.pp.parserPLAYEDTO      ,
-                       'playpanda.net':        self.pp.parserPLAYPANDANET   ,
-                       'playreplay.net':       self.pp.parserPLAYEREPLAY   ,
-                       'playvid.org':          self.pp.parserEASYVIDORG    ,
-                       'polsatsport.pl':       self.pp.parserPOLSATSPORTPL  ,
-                       'posiedze.pl':          self.pp.parserPOSIEDZEPL    ,
-                       'powvideo.cc':          self.pp.parserPOWVIDEONET    ,
-                       'powvideo.net':         self.pp.parserPOWVIDEONET    ,
-					   'primevideos.net':      self.pp.parserPRIMEVIDEOS,	
-                       'privatestream.tv':     self.pp.parserPRIVATESTREAM ,
-                       'promptfile.com':       self.pp.parserPROMPTFILE    ,
-                       'publicvideohost.org':  self.pp.parsePUBLICVIDEOHOST,
-                       'publicvideohost.org':  self.pp.parserPUBLICVIDEOHOST,
-                       'putlive.in':           self.pp.paserPUTLIVEIN      ,
-                       'putlocker.com':        self.pp.parserFIREDRIVE     , 
-                       'putstream.com':        self.pp.parserPUTSTREAM     ,
-                       'pxstream.tv':          self.pp.parserPXSTREAMTV    ,
-                       'qfer.net':             self.pp.parserQFER          ,
-                       'rapidvideo.com':       self.pp.parserRAPIDVIDEO    ,
-                       'rapidvideo.ws':        self.pp.parserRAPIDVIDEOWS  ,
-                       'raptu.com':            self.pp.parserRAPTUCOM       ,
-                       'realvid.net':          self.pp.parserFASTVIDEOIN   ,
-                       'rutube.ru':            self.pp.parserRUTUBE        ,
-                       'sawlive.tv':           self.pp.parserSAWLIVETV     ,
-                       'scs.pl':               self.pp.parserSCS           ,
-                       'sendvid.com':          self.pp.parserSENDVIDCOM    ,
-                       'seositer.com':         self.pp.parserYANDEX        ,
-                       'serpens.nl':           self.pp.parserMOONWALKCC    ,
-                       'sfiles.org':           self.pp.parserUPLOAD         ,
-                       'shared.sx':            self.pp.parserSHAREDSX      ,
-                       'share-online.biz':     self.pp.parserSHAREONLINEBIZ ,
-                       'sharerepo.com':        self.pp.parseSHAREREPOCOM   ,
-                       'sharesix.com':         self.pp.parserFILENUKE      ,
-                       'sharevideo.pl':        self.pp.parserSHAREVIDEOPL   ,
-                       'sharing-box.cloud':    self.pp.parserSHAREVIDEOPL   ,
-                       'shidurlive.com':       self.pp.parserSHIDURLIVECOM ,
-                       'sockshare.com':        self.pp.parserSOCKSHARE     ,
-                       'sostart.org':          self.pp.parserSOSTARTORG    ,
-                       'sostart.pw':           self.pp.parserSOSTARTPW     ,
-                       'soundcloud.com':       self.pp.parserSOUNDCLOUDCOM  ,
-                       'speedvid.net':         self.pp.parserSPEEDVIDNET    ,
-                       'speedvideo.net':       self.pp.parseSPEEDVICEONET  ,
-                       'sportstream365.com':   self.pp.parserSPORTSTREAM365 ,
-                       'sprocked.com':         self.pp.parserSPROCKED      ,
-                       'spruto.tv':            self.pp.parserSPRUTOTV       ,
-                       'srkcast.com':          self.pp.parserSRKCASTCOM    ,
-                       'ssh101.com':           self.pp.parserSSH101COM     ,
-                       'st.dwn.so':            self.pp.parserDWN           ,
-                       'stopbot.tk':           self.pp.parserSTOPBOTTK      ,
-                       'stream.moe':           self.pp.parseSTREAMMOE      ,
-                       'stream4k.to':          self.pp.parserSTREAM4KTO    ,
-                       'streamable.com':       self.pp.parserSTREAMABLECOM  ,
-                       'streamango.com':       self.pp.parserSTREAMANGOCOM  ,
-                       'streamcherry.com':     self.pp.parserSTREAMANGOCOM  ,
-                       'streamcloud.eu':       self.pp.parserSTREAMCLOUD   ,
-                       'streame.net':          self.pp.parserSTREAMENET    ,
-                       'streamin.to':          self.pp.parserSTREAMINTO    ,
-                       'streamix.cloud':       self.pp.parserSTREAMIXCLOUD  ,
-                       'streamlive.to':        self.pp.paserSTREAMLIVETO   ,
-                       'streamo.tv':           self.pp.parserIITV          ,
-                       'streamplay.cc':        self.pp.parserSTREAMPLAYCC  ,
-                       'streamplay.me':        self.pp.parserSTREAMPLAYTO   ,
-                       'streamplay.to':        self.pp.parserSTREAMPLAYTO   ,
-                       'superfilm.pl':         self.pp.parserSUPERFILMPL   ,
-                       'supervideo.tv':        self.pp.parserSUPERVIDEO    ,
-                       'suprafiles.org':       self.pp.parserUPLOAD         ,
-                       'suspents.info':        self.pp.parserFASTVIDEOIN   ,
+                       'picasaweb.google.com':  self.pp.parserPICASAWEB     ,
+                       'playbb.me':             self.pp.parserEASYVIDEOME   ,
+                       'played.to':             self.pp.parserPLAYEDTO      ,
+                       'playedto.me':           self.pp.parserPLAYEDTO      ,
+                       'playpanda.net':         self.pp.parserPLAYPANDANET   ,
+                       'playreplay.net':        self.pp.parserPLAYEREPLAY   ,
+                       'playvid.org':           self.pp.parserEASYVIDORG    ,
+                       'polsatsport.pl':        self.pp.parserPOLSATSPORTPL  ,
+                       'posiedze.pl':           self.pp.parserPOSIEDZEPL    ,
+                       'powvideo.cc':           self.pp.parserPOWVIDEONET    ,
+                       'powvideo.net':          self.pp.parserPOWVIDEONET    ,
+                       'primevideos.net':       self.pp.parserPRIMEVIDEOS,	
+                       'privatestream.tv':      self.pp.parserPRIVATESTREAM ,
+                       'promptfile.com':        self.pp.parserPROMPTFILE    ,
+                       'publicvideohost.org':   self.pp.parserPUBLICVIDEOHOST,
+                       'putlive.in':            self.pp.paserPUTLIVEIN      ,
+                       'putlocker.com':         self.pp.parserFIREDRIVE     , 
+                       'putstream.com':         self.pp.parserPUTSTREAM     ,
+                       'pxstream.tv':           self.pp.parserPXSTREAMTV    ,
+                       'qfer.net':              self.pp.parserQFER          ,
+                       'rapidvideo.com':        self.pp.parserRAPIDVIDEO    ,
+                       'rapidvideo.ws':         self.pp.parserRAPIDVIDEOWS  ,
+                       'raptu.com':             self.pp.parserRAPTUCOM       ,
+                       'realvid.net':           self.pp.parserFASTVIDEOIN   ,
+                       'rutube.ru':             self.pp.parserRUTUBE        ,
+                       'sawlive.tv':            self.pp.parserSAWLIVETV     ,
+                       'scs.pl':                self.pp.parserSCS           ,
+                       'sendvid.com':           self.pp.parserSENDVIDCOM    ,
+                       'seositer.com':          self.pp.parserYANDEX        ,
+                       'serpens.nl':            self.pp.parserMOONWALKCC    ,
+                       'sfiles.org':            self.pp.parserUPLOAD         ,
+                       'shared.sx':             self.pp.parserSHAREDSX      ,
+                       'share-online.biz':      self.pp.parserSHAREONLINEBIZ ,
+                       'sharerepo.com':         self.pp.parseSHAREREPOCOM   ,
+                       'sharesix.com':          self.pp.parserFILENUKE      ,
+                       'sharevideo.pl':         self.pp.parserSHAREVIDEOPL   ,
+                       'sharing-box.cloud':     self.pp.parserSHAREVIDEOPL   ,
+                       'shidurlive.com':        self.pp.parserSHIDURLIVECOM ,
+                       'sockshare.com':         self.pp.parserSOCKSHARE     ,
+                       'sostart.org':           self.pp.parserSOSTARTORG    ,
+                       'sostart.pw':            self.pp.parserSOSTARTPW     ,
+                       'soundcloud.com':        self.pp.parserSOUNDCLOUDCOM  ,
+                       'speedvid.net':          self.pp.parserSPEEDVIDNET    ,
+                       'speedvideo.net':        self.pp.parseSPEEDVICEONET  ,
+                       'sportstream365.com':    self.pp.parserSPORTSTREAM365 ,
+                       'sprocked.com':          self.pp.parserSPROCKED      ,
+                       'spruto.tv':             self.pp.parserSPRUTOTV       ,
+                       'srkcast.com':           self.pp.parserSRKCASTCOM    ,
+                       'ssh101.com':            self.pp.parserSSH101COM     ,
+                       'st.dwn.so':             self.pp.parserDWN           ,
+                       'stopbot.tk':            self.pp.parserSTOPBOTTK      ,
+                       'stream.moe':            self.pp.parseSTREAMMOE      ,
+                       'stream4k.to':           self.pp.parserSTREAM4KTO    ,
+                       'streamable.com':        self.pp.parserSTREAMABLECOM  ,
+                       'streamango.com':        self.pp.parserSTREAMANGOCOM  ,
+                       'streamcherry.com':      self.pp.parserSTREAMANGOCOM  ,
+                       'streamcloud.eu':        self.pp.parserSTREAMCLOUD   ,
+                       'streame.net':           self.pp.parserSTREAMENET    ,
+                       'streamin.to':           self.pp.parserSTREAMINTO    ,
+                       'streamix.cloud':        self.pp.parserSTREAMIXCLOUD  ,
+                       'streamlive.to':         self.pp.paserSTREAMLIVETO   ,
+                       'streamo.tv':            self.pp.parserIITV          ,
+                       'streamplay.cc':         self.pp.parserSTREAMPLAYCC  ,
+                       'streamplay.me':         self.pp.parserSTREAMPLAYTO   ,
+                       'streamplay.to':         self.pp.parserSTREAMPLAYTO   ,
+                       'superfilm.pl':          self.pp.parserSUPERFILMPL   ,
+                       'supervideo.tv':         self.pp.parserSUPERVIDEO    ,
+                       'suprafiles.org':        self.pp.parserUPLOAD         ,
+                       'suspents.info':         self.pp.parserFASTVIDEOIN   ,
                        'swirownia.com.usrfiles.com': self.pp.parserSWIROWNIA,
-                       'telerium.tv':          self.pp.parserTELERIUMTV     ,
-                       'theactionlive.com':    self.pp.parserTHEACTIONLIVE ,
-                       'thefile.me':           self.pp.parserTHEFILEME     ,
-                       'thevideo.cc':          self.pp.parserTHEVIDEOME    ,
-                       'thevideo.me':          self.pp.parserTHEVIDEOME    ,
-                       'thevideobee.to':       self.pp.parserTHEVIDEOBEETO  ,
-                       'tiny.cc':              self.pp.parserTINYCC        ,
-                       'tinymov.net':          self.pp.parserTINYMOV       ,
-                       'topupload.tv':         self.pp.parserTOPUPLOAD     ,
-                       'tubecloud.net':        self.pp.parserTUBECLOUD     ,
-                       'tune.pk':              self.pp.parseTUNEPK         ,
-                       'tunein.com':           self.pp.parserTUNEINCOM      ,
-                       'tusfiles.com':         self.pp.parserUSERSCLOUDCOM ,
-                       'tusfiles.net':         self.pp.parserUSERSCLOUDCOM ,
-                       'tvad.me':              self.pp.parserTHEVIDEOME    ,
-                       'tvope.com':            self.pp.parserTVOPECOM      ,
-                       'tvp.pl':               self.pp.parserTVP           ,
-                       'twitch.tv':            self.pp.parserTWITCHTV      ,
-                       'ultimatedown.com':     self.pp.parserULTIMATEDOWN   ,
-                       'up2stream.com':        self.pp.parserVIDEOMEGA     ,
-                       'upfile.mobi':          self.pp.parserUPFILEMOBI     ,
-                       'upload.af':            self.pp.parserUPLOAD         ,
-                       'upload.mn':            self.pp.parserUPLOAD2        ,
-                       'uploadc.com':          self.pp.parserUPLOADCCOM    ,
-                       'uploaduj.net':         self.pp.parserUPLOADUJNET    ,
-                       'uploadx.link':         self.pp.parserUPLOAD         ,
-                       'uploadx.org':          self.pp.parserUPLOAD         ,
-                       'uploadz.co':           self.pp.parserUPLOAD         ,
-                       'uploadz.org':          self.pp.parserUPLOAD         ,
-                       'uptobox.com':          self.pp.parserUPTOSTREAMCOM  ,
-                       'uptostream.com':       self.pp.parserUPTOSTREAMCOM  ,
-                       'upvid.co':             self.pp.parserWATCHUPVIDCO   ,
-                       'upvid.mobi':           self.pp.parserUPFILEMOBI     ,
-                       'userscloud.com':       self.pp.parserUSERSCLOUDCOM ,
-                       'ustream.tv':           self.pp.parserUSTREAMTV     ,
-                       'ustreamix.com':        self.pp.parserUSTREAMIXCOM  ,
-                       'vcstream.to':          self.pp.parserVCSTREAMTO     ,
-                       'veehd.com':            self.pp.parseVEEHDCOM       ,
-                       'veoh.com':             self.pp.parserVEOHCOM        ,
-                       'verystream.com':       self.pp.parserVERYSTREAM     ,
-                       'vev.io':               self.pp.parserTHEVIDEOME    ,
-                       'vevo.com':             self.pp.parserVEVO          ,
-                       'vid.ag':               self.pp.parserVIDAG         ,
-                       'vid.gg':               self.pp.parserVIDGGTO       ,
-                       'vid.me':               self.pp.parseVIDME          ,
-                       'vidabc.com':           self.pp.parserVIDABCCOM      ,
-                       'vidbom.com':           self.pp.parserVIDBOMCOM      ,
-                       'vidbull.com':          self.pp.parserVIDBULL       ,
-                       'vidcloud.icu':         self.pp.parserVIDCLOUDICU    ,
-                       'videa.hu':             self.pp.parserVIDEA         ,
-                       'videa.hu':             self.pp.parserVIDEAHU        ,
-                       'video.meta.ua':        self.pp.parseMETAUA         ,
-                       'video.rutube.ru':      self.pp.parserRUTUBE        ,
-                       'video.sibnet.ru':      self.pp.parserSIBNET        ,
-                       'video.tt':             self.pp.parserVIDEOTT       ,
-                       'video.yandex.ru':      self.pp.parserYANDEX        ,
-                       'videoapi.my.mail.ru':  self.pp.parserVIDEOMAIL     ,
-                       'videohouse.me':        self.pp.parserVIDEOHOUSE     ,
-                       'videomega.tv':         self.pp.parserVIDEOMEGA     ,
-                       'videomore.ru':         self.pp.parserVIDEOMORERU    ,
-                       'videoslasher.com':     self.pp.parserVIDEOSLASHER  ,
-                       'videoweed.com':        self.pp.parserVIDEOWEED     ,
-                       'videoweed.es':         self.pp.parserVIDEOWEED     ,
-                       'videowood.tv':         self.pp.parserVIDEOWOODTV   ,
-                       'vidfile.net':          self.pp.parserVIDFILENET    ,
-                       'vidgg.to':             self.pp.parserVIDGGTO       ,
-                       'vidload.co':           self.pp.parserVIDLOADCO      ,
-                       'vidlox.me':            self.pp.parserVIDLOXTV       ,
-                       'vidlox.tv':            self.pp.parserVIDLOXTV       ,
-                       'vidnode.net':          self.pp.parserVIDNODENET     ,
-                       'vidoza.net':           self.pp.parserVIDOZANET      ,
-                       'vidshare.tv':          self.pp.parserVIDSHARETV     ,
-                       'vidspot.net':          self.pp.parserVIDSPOT       ,
-                       'vidsso.com':           self.pp.parserVIDSSO        ,
-                       'vidstodo.me':          self.pp.parserVIDSTODOME     ,
-                       'vidstream.in':         self.pp.parserVIDSTREAM     ,
-                       'vidto.me':             self.pp.parserVIDTO         ,
-                       'vidtodo.com':          self.pp.parserVIDSTODOME     ,
-                       'vidup.me':             self.pp.parserVIDUPME       ,
-                       'vidzer.net':           self.pp.parserVIDZER        ,
-                       'vidzi.tv':             self.pp.parserVIDZITV       ,
-                       'vimeo.com':            self.pp.parseVIMEOCOM       ,
-                       'vivo.sx':              self.pp.parserVIVOSX        ,
-                       'vk.com':               self.pp.parserVK            ,
-                       'vodlocker.com':        self.pp.parserVODLOCKER     ,
-                       'vod-share.com':        self.pp.parserVODSHARECOM   ,
-                       'voodaith7e.com':       self.pp.parserYOUWATCH      ,
-                       'vshare.eu':            self.pp.parserVSHAREEU      ,
-                       'vshare.io':            self.pp.parseVSHAREIO       ,
-                       'vsports.pt':           self.pp.parserVSPORTSPT      ,
-                       'waaw.tv':              self.pp.parseNETUTV         ,
-                       'wat.tv':               self.pp.parseWATTV          ,
-                       'watchers.to':          self.pp.parserWATCHERSTO    ,
-                       'watchvideo17.us':      self.pp.parserWATCHVIDEO17US ,
-                       'webcamera.mobi':       self.pp.parserWEBCAMERAPL   ,
-                       'webcamera.pl':         self.pp.parserWEBCAMERAPL   ,
-                       'wgrane.pl':            self.pp.parserWGRANE        ,
-                       'wholecloud.net':       self.pp.parserWHOLECLOUD     ,
-                       'wholecloud.net':       self.pp.parserWHOLECLOUD    ,
-                       'widestream.io':        self.pp.parserWIDESTREAMIO   ,
-                       'wiiz.tv':              self.pp.parserWIIZTV         ,
-                       'wrzuta.pl':            self.pp.parserWRZUTA        ,
-                       'wstream.video':        self.pp.parserWSTREAMVIDEO   ,
-                       'xage.pl':              self.pp.parserXAGEPL        ,
-                       'xvidstage.com':        self.pp.parseXVIDSTAGECOM   ,
-                       'yocast.tv':            self.pp.parserYOCASTTV      ,
-                       'yourvideohost.com':    self.pp.parserYOURVIDEOHOST ,
-                       'youtu.be':             self.pp.parserYOUTUBE       ,
-                       'youtube.com':          self.pp.parserYOUTUBE       ,
-                       'youtube-nocookie.com': self.pp.parserYOUTUBE       ,
-                       'youwatch.org':         self.pp.parserYOUWATCH      ,
-                       'yukons.net':           self.pp.parserYUKONS        ,
-                       'zalaa.com':            self.pp.parserZALAACOM      ,
-                       'zerocast.tv':          self.pp.parserZEROCASTTV    ,
-                       'zstream.to':           self.pp.parserZSTREAMTO      
+                       'telerium.tv':           self.pp.parserTELERIUMTV     ,
+                       'theactionlive.com':     self.pp.parserTHEACTIONLIVE ,
+                       'thefile.me':            self.pp.parserTHEFILEME     ,
+                       'thevideo.cc':           self.pp.parserTHEVIDEOME    ,
+                       'thevideo.me':           self.pp.parserTHEVIDEOME    ,
+                       'thevideobee.to':        self.pp.parserTHEVIDEOBEETO  ,
+                       'tiny.cc':               self.pp.parserTINYCC        ,
+                       'tinymov.net':           self.pp.parserTINYMOV       ,
+                       'topupload.tv':          self.pp.parserTOPUPLOAD     ,
+                       'tubecloud.net':         self.pp.parserTUBECLOUD     ,
+                       'tune.pk':               self.pp.parseTUNEPK         ,
+                       'tunein.com':            self.pp.parserTUNEINCOM      ,
+                       'tusfiles.com':          self.pp.parserUSERSCLOUDCOM ,
+                       'tusfiles.net':          self.pp.parserUSERSCLOUDCOM ,
+                       'tvad.me':               self.pp.parserTHEVIDEOME    ,
+                       'tvope.com':             self.pp.parserTVOPECOM      ,
+                       'tvp.pl':                self.pp.parserTVP           ,
+                       'twitch.tv':             self.pp.parserTWITCHTV      ,
+                       'ultimatedown.com':      self.pp.parserULTIMATEDOWN   ,
+                       'up2stream.com':         self.pp.parserVIDEOMEGA     ,
+                       'upfile.mobi':           self.pp.parserUPFILEMOBI     ,
+                       'upload.af':             self.pp.parserUPLOAD         ,
+                       'upload.mn':             self.pp.parserUPLOAD2        ,
+                       'uploadc.com':           self.pp.parserUPLOADCCOM    ,
+                       'uploaduj.net':          self.pp.parserUPLOADUJNET    ,
+                       'uploadx.link':          self.pp.parserUPLOAD         ,
+                       'uploadx.org':           self.pp.parserUPLOAD         ,
+                       'uploadz.co':            self.pp.parserUPLOAD         ,
+                       'uploadz.org':           self.pp.parserUPLOAD         ,
+                       'uptobox.com':           self.pp.parserUPTOSTREAMCOM  ,
+                       'uptostream.com':        self.pp.parserUPTOSTREAMCOM  ,
+                       'upvid.co':              self.pp.parserWATCHUPVIDCO   ,
+                       'upvid.mobi':            self.pp.parserUPFILEMOBI     ,
+                       'userscloud.com':        self.pp.parserUSERSCLOUDCOM ,
+                       'ustream.tv':            self.pp.parserUSTREAMTV     ,
+                       'ustreamix.com':         self.pp.parserUSTREAMIXCOM  ,
+                       'vcstream.to':           self.pp.parserVCSTREAMTO     ,
+                       'veehd.com':             self.pp.parseVEEHDCOM       ,
+                       'veoh.com':              self.pp.parserVEOHCOM        ,
+                       'verystream.com':        self.pp.parserVERYSTREAM     ,
+                       'veuclips.com':          self.pp.parserVIUCLIPS	   ,
+                       'vev.io':                self.pp.parserTHEVIDEOME    ,
+                       'vevo.com':              self.pp.parserVEVO          ,
+                       'vid.ag':                self.pp.parserVIDAG         ,
+                       'vid.gg':                self.pp.parserVIDGGTO       ,
+                       'vid.me':                self.pp.parseVIDME          ,
+                       'vidabc.com':            self.pp.parserVIDABCCOM      ,
+                       'vidbom.com':            self.pp.parserVIDBOMCOM      ,
+                       'vidbull.com':           self.pp.parserVIDBULL       ,
+                       'vidcloud.icu':          self.pp.parserVIDCLOUDICU    ,
+                       'videa.hu':              self.pp.parserVIDEA         ,
+                       'videa.hu':              self.pp.parserVIDEAHU        ,
+                       'video.meta.ua':         self.pp.parseMETAUA         ,
+                       'video.rutube.ru':       self.pp.parserRUTUBE        ,
+                       'video.sibnet.ru':       self.pp.parserSIBNET        ,
+                       'video.tt':              self.pp.parserVIDEOTT       ,
+                       'video.yandex.ru':       self.pp.parserYANDEX        ,
+                       'videoapi.my.mail.ru':   self.pp.parserVIDEOMAIL     ,
+                       'videohouse.me':         self.pp.parserVIDEOHOUSE     ,
+                       'videomega.tv':          self.pp.parserVIDEOMEGA     ,
+                       'videomore.ru':          self.pp.parserVIDEOMORERU    ,
+                       'videoslasher.com':      self.pp.parserVIDEOSLASHER  ,
+                       'videoweed.com':         self.pp.parserVIDEOWEED     ,
+                       'videoweed.es':          self.pp.parserVIDEOWEED     ,
+                       'videowood.tv':          self.pp.parserVIDEOWOODTV   ,
+                       'vidfile.net':           self.pp.parserVIDFILENET    ,
+                       'vidgg.to':              self.pp.parserVIDGGTO       ,
+                       'vidload.co':            self.pp.parserVIDLOADCO      ,
+                       'vidlox.me':             self.pp.parserVIDLOXTV       ,
+                       'vidlox.tv':             self.pp.parserVIDLOXTV       ,
+                       'vidnode.net':           self.pp.parserVIDNODENET     ,
+                       'vidoza.net':            self.pp.parserVIDOZANET      ,
+                       'vidshare.tv':           self.pp.parserVIDSHARETV     ,
+                       'vidspot.net':           self.pp.parserVIDSPOT       ,
+                       'vidsso.com':            self.pp.parserVIDSSO        ,
+                       'vidstodo.me':           self.pp.parserVIDSTODOME     ,
+                       'vidstream.in':          self.pp.parserVIDSTREAM     ,
+                       'vidto.me':              self.pp.parserVIDTO         ,
+                       'vidtodo.com':           self.pp.parserVIDSTODOME     ,
+                       'vidup.me':              self.pp.parserVIDUPME       ,
+                       'vidzer.net':            self.pp.parserVIDZER        ,
+                       'vidzi.tv':              self.pp.parserVIDZITV       ,
+                       'vimeo.com':             self.pp.parseVIMEOCOM       ,
+                       'viuclips.net':          self.pp.parserVIUCLIPS	   ,
+                       'vivo.sx':               self.pp.parserVIVOSX        ,
+                       'vk.com':                self.pp.parserVK            ,
+                       'vodlocker.com':         self.pp.parserVODLOCKER     ,
+                       'vod-share.com':         self.pp.parserVODSHARECOM   ,
+                       'voodaith7e.com':        self.pp.parserYOUWATCH      ,
+                       'vshare.eu':             self.pp.parserVSHAREEU      ,
+                       'vshare.io':             self.pp.parseVSHAREIO       ,
+                       'vsports.pt':            self.pp.parserVSPORTSPT      ,
+                       'waaw.tv':               self.pp.parseNETUTV         ,
+                       'wat.tv':                self.pp.parseWATTV          ,
+                       'watchers.to':           self.pp.parserWATCHERSTO    ,
+                       'watchvideo17.us':       self.pp.parserWATCHVIDEO17US ,
+                       'webcamera.mobi':        self.pp.parserWEBCAMERAPL   ,
+                       'webcamera.pl':          self.pp.parserWEBCAMERAPL   ,
+                       'wgrane.pl':             self.pp.parserWGRANE        ,
+                       'wholecloud.net':        self.pp.parserWHOLECLOUD     ,
+                       'wholecloud.net':        self.pp.parserWHOLECLOUD    ,
+                       'widestream.io':         self.pp.parserWIDESTREAMIO   ,
+                       'wiiz.tv':               self.pp.parserWIIZTV         ,
+                       'wrzuta.pl':             self.pp.parserWRZUTA        ,
+                       'wstream.video':         self.pp.parserWSTREAMVIDEO   ,
+                       'xage.pl':               self.pp.parserXAGEPL        ,
+                       'xvidstage.com':         self.pp.parseXVIDSTAGECOM   ,
+                       'yocast.tv':             self.pp.parserYOCASTTV      ,
+                       'yourvideohost.com':     self.pp.parserYOURVIDEOHOST ,
+                       'youtu.be':              self.pp.parserYOUTUBE       ,
+                       'youtube.com':           self.pp.parserYOUTUBE       ,
+                       'youtube-nocookie.com':  self.pp.parserYOUTUBE       ,
+                       'youwatch.org':          self.pp.parserYOUWATCH      ,
+                       'yukons.net':            self.pp.parserYUKONS        ,
+                       'zalaa.com':             self.pp.parserZALAACOM      ,
+                       'zerocast.tv':           self.pp.parserZEROCASTTV    ,
+                       'zstream.to':            self.pp.parserZSTREAMTO      
         }
         return
     
@@ -584,7 +587,9 @@ class urlparser:
                 if not self.cm.isValidUrl(url): continue
                 url = strwithmeta(videoTab[idx]['url'])
                 if 'User-Agent' not in url.meta:
-                    url.meta['User-Agent'] = 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'
+                    #url.meta['User-Agent'] = 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0'
+                    url.meta['User-Agent'] = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
+                    
                     videoTab[idx]['url'] = url
         except Exception:
             printExc()
@@ -962,8 +967,8 @@ class urlparser:
             return []
 
 class pageParser(CaptchaHelper):
-    HTTP_HEADER= {  'User-Agent'  : 'Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:21.0) Gecko/20100101 Firefox/21.0',
-                    'Accept'      :  'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    HTTP_HEADER= {  'User-Agent'  : 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36',
+                    'Accept'      : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                     'Content-type': 'application/x-www-form-urlencoded' }
     FICHIER_DOWNLOAD_NUM = 0
     def __init__(self):
@@ -1287,6 +1292,9 @@ class pageParser(CaptchaHelper):
         except Exception:
             printExc()
         return videoTab
+        
+    def parserLOOKMOVIE(self, url):
+        return url
         
     def __parseJWPLAYER_A(self, baseUrl, serverName='', customLinksFinder=None, folowIframe=False, sleep_time=None):
         printDBG("pageParser.__parseJWPLAYER_A serverName[%s], baseUrl[%r]" % (serverName, baseUrl))
@@ -2631,30 +2639,40 @@ class pageParser(CaptchaHelper):
         return self.cm.meta['url']
 
     def parserRUTUBE(self, url):
+        printDBG("parserRUTUBE baseUrl[%s]" % url)
+
         videoUrls = []
         videoID = ''
         videoPrivate = ''
-        url += '/'
+        url = url + '/'
         
-        if '//rutube.ru/video/embed' in url or '//rutube.ru/play/embed/' in url:
-            sts, data = self.cm.getPage(url)
-            if not sts: return False
-            url = self.cm.ph.getSearchGroups(data, '''<link[^>]+?href=['"]([^'^"]+?)['"]''')[0]
+        #if '//rutube.ru/video/embed' in url or '//rutube.ru/play/embed/' in url:
+        #    sts, data = self.cm.getPage(url)
+        #    if not sts: 
+        #        return False
+        #    url = self.cm.ph.getSearchGroups(data, '''<link[^>]+?href=['"]([^'^"]+?)['"]''')[0]
 
-        videoID = self.cm.ph.getSearchGroups(url+'/', '''[^0-9^a-z]([0-9a-z]{32})[^0-9^a-z]''')[0]
-        if '/private/' in url: videoPrivate = self.cm.ph.getSearchGroups(url+'&', '''[&\?]p=([^&^/]+?)[&/]''')[0]
         
-        if '' != videoID:
+        videoID = re.findall("[^0-9^a-z]([0-9a-z]{32})[^0-9^a-z]", url)
+        if not videoID:
+            videoID = re.findall("/([0-9]+)[/\?]", url)
+        
+        if '/private/' in url: 
+            videoPrivate = self.cm.ph.getSearchGroups(url+'&', '''[&\?]p=([^&^/]+?)[&/]''')[0]
+        
+        if videoID:
+            videoID = videoID[0]
             printDBG('parserRUTUBE: videoID[%s]' % videoID)
             # get videoInfo:
             #vidInfoUrl = 'http://rutube.ru/api/play/trackinfo/%s/?format=json' % videoID
             vidInfoUrl = 'http://rutube.ru/api/play/options/%s/?format=json&referer=&no_404=true&sqr4374_compat=1' % videoID
-            if videoPrivate != '': vidInfoUrl += '&p=' + videoPrivate
+            if videoPrivate != '': 
+                vidInfoUrl += '&p=' + videoPrivate
             
             sts, data = self.cm.getPage(vidInfoUrl)
             data = json_loads(data)
             if 'm3u8' in data['video_balancer'] and self.cm.isValidUrl(data['video_balancer'].get('m3u8', '')):
-                videoUrls = getDirectM3U8Playlist(data['video_balancer']['m3u8'])
+                videoUrls = getDirectM3U8Playlist(data['video_balancer']['m3u8'], checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
             elif 'json' in data['video_balancer'] and self.cm.isValidUrl(data['video_balancer'].get('json', '')): 
                 sts, data = self.cm.getPage(data['video_balancer']['json'])
                 printDBG(data)
@@ -3387,16 +3405,16 @@ class pageParser(CaptchaHelper):
             if not sts: return False
             
             linksData = []
-            tmp = self.cm.ph.getSearchGroups(data, '''\(([^)]+?)\)''')[0].split(',')
-            for t in tmp:
-                linksData.append(t.replace('"', '').strip())
+            tmp = re.compile('''['"]([^'^"]+?)['"]''').findall(data)
             printDBG(linksData)
-            
-            for idx in [1, 2]:
+
+            for t in tmp:
                 try:
-                    linkData = base64.b64decode(linksData[idx])
+                    linkData = base64.b64decode(t).strip()
+                    if linkData[0] == '{' and '"ct"' in linkData: break
                 except Exception:
-                    pass
+                    printExc()
+
             linkData   = json_loads(linkData)
             
             ciphertext = base64.b64decode(linkData['ct'])
@@ -5768,8 +5786,17 @@ class pageParser(CaptchaHelper):
 
         sts, data = self.cm.getPage(embedUrl, {'header': HTTP_HEADER})
         if not sts: return False
-        printDBG(data)
+        #printDBG(data)
 
+        remote_js_scripts = re.findall("<script type=\"text/javascript\" src=\"(http://sawlive\.tv/[a-z]{2}\.js)\">", data)
+        
+        code_remote = ''
+        for j in remote_js_scripts:
+            printDBG(j)
+            sts , data2 = self.cm.getPage(j, {'header': HTTP_HEADER})
+            if sts:
+                code_remote = data2
+                
         js_params = [{'path':GetJSScriptFile('sawlive2.byte')}]
         interHtmlElements = {}
         tmp = ph.findall(data, ('<span', '>', ph.check(ph.all, ('display', 'none'))), '</span>', flags=ph.START_S)
@@ -5777,14 +5804,16 @@ class pageParser(CaptchaHelper):
             if '<' in tmp[idx] or '>' in tmp[idx]: continue
             elemId = ph.getattr(tmp[idx-1], 'id')
             interHtmlElements[elemId] = tmp[idx].strip()
-        js_params.append({'code':'var interHtmlElements=%s;' % json_dumps(interHtmlElements)})
-        data = ph.findall(data, ('<script', '>', ph.check(ph.none, ('src=',))), '</script>', flags=0)
-        for item in data:
-            printDBG("+++++++++++++++++++++")
-            printDBG(item)
-            js_params.append({'code':item})
+        
+        code_var = 'var interHtmlElements=%s;' % json_dumps(interHtmlElements)
+        codes = ph.findall(data, ('<script', '>', ph.check(ph.none, ('src=',))), '</script>', flags=0)
+        code = code_remote + '\n' + code_var + '\n' + '\n'.join(codes)
+
+        js_params.append({'code': code})
         ret = js_execute_ext( js_params )
+        
         printDBG(ret['data'])
+        
         data = json_loads(ret['data'])
         swfUrl = data['0']
         decoded = data['6']
@@ -6375,7 +6404,7 @@ class pageParser(CaptchaHelper):
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return []
         
-        printDBG(data)
+        #printDBG(data)
         
         urlsTab = []
         for item in ['hd_src_no_ratelimit', 'hd_src', 'sd_src_no_ratelimit', 'sd_src']:
@@ -9571,6 +9600,17 @@ class pageParser(CaptchaHelper):
         sts, data = self.cm.getPage(baseUrl)
         if not sts: return []
         
+        #example "//vsports.videos.sapo.pt/qS105THDPkJB9nzFNA5h/mov/"
+        if "vsports.videos.sapo.pt" in data:
+            videoUrl = re.findall("(vsports\.videos\.sapo\.pt/[\w]+/mov/)", data)
+            if videoUrl:
+                videoUrl = "http://" + videoUrl[0] + "?videosrc=true"
+                sts, link = self.cm.getPage(videoUrl)
+                if sts:
+                    printDBG(" '%s' ---> '%s' " % (videoUrl, link))
+                    urlsTab.append({'name':'link', 'url': link })
+                    return urlsTab
+
         tmp = self.cm.ph.getDataBeetwenReMarkers(data, re.compile('''['"]?sources['"]?\s*:\s*\['''), re.compile('\]'), False)[1]
         tmp = tmp.split('}')
         for item in tmp:
@@ -11382,30 +11422,31 @@ class pageParser(CaptchaHelper):
         printDBG("parserLIVESTREAMCOM baseUrl[%s]" % baseUrl)
         # example https://livestream.com/accounts/3312258/events/8705395
 
-        URL_MODEL=r'https?://(?:www\.|new\.)?livestream\.com/(?:accounts/(?P<account_id>\d+))/(?:events/(?P<event_id>\d+))(?:/videos/(?P<id>\d+))?'
+        URL_MODEL = r'https?://(?:new\.)?(?:www\.)?livestream\.com/(?:accounts/(?P<account_id>\d+)|(?P<account_name>[^/]+))/(?:events/(?P<event_id>\d+)|(?P<event_name>[^/]+))(?:/videos/(?P<id>\d+))?'  
         API_URL_MODEL= 'https://livestream.com/api/accounts/%s/events/%s'
         vidTab=[]
 
-        #printDBG(baseUrl)
-        m = re.findall(URL_MODEL, baseUrl)
-        
-        #printDBG(str(m))
-        if len(m)>0:
-            m=m[0]
-            video_id = m[2]
-            event_id = m[1]
-            account_id = m[0]
+        m = re.match(URL_MODEL, baseUrl)
+
+        if m:
+            video_id = m.group('id')
+            if video_id:
+                printDBG('---> video_id:  ' + video_id)
+            else:
+                video_id = ''
+            event_id = m.group('event_id') or m.group('event_name')
+            account_id = m.group('account_id') or m.group('account_name')
             pp=[]
 
             feed_url = API_URL_MODEL % (account_id, event_id) 
 
             printDBG(feed_url)
-            printDBG('---> video_id:  ' + video_id)
+            
             sts, data = self.cm.getPage(feed_url)
             if not sts: 
                 return vidTab
 
-            printDBG(data)
+            #printDBG(data)
             data = json_loads(data)
 
             # key stream_info
@@ -11414,10 +11455,12 @@ class pageParser(CaptchaHelper):
                     i = data['stream_info']
                     title = i['stream_title']
                     url = i['m3u8_url']
+                    pp.append({'name': title + " hls", "url": url})
+
                     params = getDirectM3U8Playlist(url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
                     for p in params:
                         p["name"]= title + " " + p["name"]
-                        p["url"] = strwithmeta(p["url"], {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36', 'Accept-Encoding':'gzip', 'use_cookie': True, 'load_cookie': True, 'save_cookie': True })
+                        #p["url"] = strwithmeta(p["url"], {'Connection': 'keep-alive', 'Accept-Encoding': 'gzip, deflate', 'Accept': '*/*', 'User-Agent': 'python-requests/2.9.1'})
                         pp.append(p)
                                         
             
@@ -11436,5 +11479,39 @@ class pageParser(CaptchaHelper):
                             pp.append(p)
 
             vidTab.extend(pp)
+        return vidTab
+
+    def parserVIUCLIPS(self, baseUrl):
+        printDBG("parserVIUCLIPS baseUrl[%s]" % baseUrl)
+        # example http://oms.viuclips.net/player/PopUpIframe/JwB2kRDt7Y?iframe=popup&u=
+        #         http://oms.veuclips.com/player/PopUpIframe/HGXPBPodVx?iframe=popup&u=
+        #         https://footy11.viuclips.net/player/html/D7o5OVWU9C?popup=yes&autoplay=1
+		# 		  http://player.veuclips.com/embed/JwB2kRDt7Y
+
+        baseUrl = baseUrl + "?"
+        video_id = re.findall("v[ei]uclips\.[nc][eo][tm]/player/PopUpIframe/(.*?)\?", baseUrl)
+        if not video_id:
+            video_id = re.findall("v[ei]uclips\.[nc][eo][tm]/player/html/(.*?)\?", baseUrl)
+        if not video_id:
+            video_id = re.findall("player.veuclips.com/embed/(.*?)\?", baseUrl)
+        if not video_id:
+            return []
+
+        player_url = "http://player.veuclips.com/embed/%s" % video_id[0]
+        sts, data = self.cm.getPage(player_url)
+        if not sts: 
+            return []
+
+        if 'This video has been removed' in data:
+            SetIPTVPlayerLastHostError( 'This video has been removed')
+            return []
+        
+        vidTab=[]
+        links = re.findall("hls:\"(.*?)\"", data)
+        for l in links:
+            if l.startswith("//"):
+                l = "http:" + l
+            vidTab.extend(getDirectM3U8Playlist(l, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
+
         return vidTab
 
