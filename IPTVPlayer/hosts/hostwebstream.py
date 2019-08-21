@@ -40,6 +40,7 @@ from Plugins.Extensions.IPTVPlayer.libs.internetowa       import InternetowaApi,
 from Plugins.Extensions.IPTVPlayer.libs.firstonetvnet     import FirstOneTvApi, GetConfigList as FirstOneTv_GetConfigList
 from Plugins.Extensions.IPTVPlayer.libs.beinmatch         import BeinmatchApi
 from Plugins.Extensions.IPTVPlayer.libs.wiz1net           import Wiz1NetApi
+from Plugins.Extensions.IPTVPlayer.libs.wiziwig1          import Wiziwig1Api
 ###################################################
 
 ###################################################
@@ -128,9 +129,9 @@ def GetConfigList():
     try:    optionList.extend( MLBStreamTV_GetConfigList() )
     except Exception: printExc()
     
-    #optionList.append(getConfigListEntry("----------------firstonetv.net------------------", config.plugins.iptvplayer.fake_separator))
-    #try:    optionList.extend( FirstOneTv_GetConfigList() )
-    #except Exception: printExc()
+    optionList.append(getConfigListEntry("----------------firstonetv.net------------------", config.plugins.iptvplayer.fake_separator))
+    try:    optionList.extend( FirstOneTv_GetConfigList() )
+    except Exception: printExc()
     
 
     return optionList
@@ -141,35 +142,37 @@ def gettytul():
 
 class HasBahCa(CBaseHostClass):
     HTTP_HEADER= { 'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3 Gecko/2008092417 Firefox/3.0.3' }
-    MAIN_GROUPED_TAB = [{'alias_id':'weeb.tv',                 'name': 'weeb.tv',             'title': 'http://weeb.tv/',                   'url': '',                                                                   'icon': 'http://xmtvplayer.com/wp-content/uploads/2014/07/weebtv.png'}, \
-                        {'alias_id':'videostar.pl',            'name': 'videostar.pl',        'title': 'https://pilot.wp.pl/',              'url': '',                                                                   'icon': 'http://satkurier.pl/uploads/53612.jpg'}, \
-                        {'alias_id':'internetowa.ws',          'name': 'internetowa.ws',      'title': 'https://internetowa.ws/',           'url': '',                                                                   'icon': 'https://internetowa.ws/img/internetowa-logo-new-3.png'}, \
-                        #{'alias_id':'firstonetv.net',          'name': 'firstonetv.net',      'title': 'https://firstonetv.net/',           'url': '',                                                                   'icon': 'https://www.firstonetv.net/images/logo.png'}, \
-                        {'alias_id':'prognoza.pogody.tv',      'name': 'prognoza.pogody.tv',  'title': 'http://pogody.tv/',                 'url': 'http://prognoza.pogody.tv',                                          'icon': 'http://pogody.pl/images/pogodytv.png'}, \
-                        {'alias_id':'meteo.pl',                'name': 'meteo.pl',            'title': 'http://meteo.pl/',                  'url': 'http://meteo.pl/',                                                   'icon': 'http://www.meteo.pl/img/napis_glowny_pl_2.png'}, \
-                        {'alias_id':'webcamera.pl',            'name': 'webcamera.pl',        'title': 'https://webcamera.pl/',             'url': 'https://www.webcamera.pl/',                                          'icon': 'http://static.webcamera.pl/webcamera/img/loader-min.png'}, \
-                        {'alias_id':'skylinewebcams.com',      'name': 'skylinewebcams.com',  'title': 'https://skylinewebcams.com/',       'url': 'https://www.skylinewebcams.com/',                                    'icon': 'https://cdn.skylinewebcams.com/skylinewebcams.png'}, \
-                        {'alias_id':'livespotting.com',        'name': 'livespotting.com',    'title': 'http://livespotting.com/',          'url': 'http://livespotting.com/',                                           'icon': 'https://livespotting.com/static/images/logo.png'}, \
-                        {'alias_id':'filmon.com',              'name': 'filmon_groups',       'title': 'http://filmon.com/',                'url': 'http://www.filmon.com/',                                             'icon': 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'}, \
-                        {'alias_id':'ustvnow.com',             'name': 'ustvnow',             'title': 'https://ustvnow.com/',              'url': 'https://www.ustvnow.com/',                                           'icon': 'http://2.bp.blogspot.com/-SVJ4uZ2-zPc/UBAZGxREYRI/AAAAAAAAAKo/lpbo8OFLISU/s1600/ustvnow.png'}, \
-                        {'alias_id':'showsport-tv.com',        'name': 'showsport-tv.com',    'title': 'http://showsport-tv.com/',          'url': 'http://showsport-tv.com/',                                           'icon': 'http://showsport-tv.com/images/sstv-logo.png'}, \
-                        {'alias_id':'sport365.live',           'name': 'sport365.live',       'title': 'http://sport365.live/',             'url': 'http://www.sport365.live/',                                          'icon': 'http://s1.medianetworkinternational.com/images/icons/48x48px.png'}, \
-                        {'alias_id':'sportstream365.com',      'name': 'sportstream365.com',  'title': 'http://sportstream365.com/',        'url': 'http://sportstream365.com/',                                         'icon': 'http://sportstream365.com/img/logo.png'}, \
-                        {'alias_id':'bilasport.com',           'name': 'bilasport.com',       'title': 'http://bilasport.com/',             'url': '',                                                                   'icon': 'https://projects.fivethirtyeight.com/2016-mlb-predictions/images/logos.png'}, \
-                        {'alias_id':'mlbstream.tv',            'name': 'mlbstream.tv',        'title': 'http://mlbstream.tv/ && http://nhlstream.tv/',              'url': '',                                                                   'icon': 'http://mlbstream.tv/wp-content/uploads/2018/03/mlb-network-291x300.png'}, \
-                        #{'alias_id':'livetvhd.net',            'name': 'livetvhd.net',        'title': 'https://livetvhd.net/',             'url': 'https://livetvhd.net/',                                              'icon': 'https://livetvhd.net/images/logo.png'}, \
-                        {'alias_id':'karwan.tv',               'name': 'karwan.tv',           'title': 'http://karwan.tv/',                 'url': 'http://karwan.tv/',                                                  'icon': 'http://karwan.tv//logo/karwan-tv/karwan-tv-1.png'}, \
-                        {'alias_id':'canlitvlive.io',          'name': 'canlitvlive.io',      'title': 'http://canlitvlive.io/',            'url': 'http://www.canlitvlive.io/',                                         'icon': 'http://www.canlitvlive.io/images/footer_simge.png'}, \
-                        {'alias_id':'beinmatch.com',           'name': 'beinmatch.com',       'title': 'http://beinmatch.com/',             'url': '',                                                                   'icon': 'http://www.beinmatch.com/assets/images/bim/logo.png'}, \
-                        {'alias_id':'wiz1.net',                'name': 'wiz1.net',            'title': 'http://wiz1.net/',                  'url': '',                                                                   'icon': 'http://i.imgur.com/yBX7fZA.jpg'}, \
-                        #{'alias_id':'wagasworld',              'name': 'wagasworld.com',      'title': 'http://wagasworld.com/',            'url': 'http://www.wagasworld.com/channels.php',                             'icon': 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'}, \
-                        {'alias_id':'djing.com',               'name': 'djing.com',           'title': 'https://djing.com/',                'url': 'https://djing.com/',                                                 'icon': 'https://www.djing.com/newimages/content/c01.jpg'}, \
-                        {'alias_id':'live_stream_tv',          'name': 'live-stream.tv',      'title': 'http://live-stream.tv/',            'url': 'http://www.live-stream.tv/',                                         'icon': 'http://www.live-stream.tv/images/lstv-logo.png'}, \
-                        {'alias_id':'edem_tv',                 'name': 'edem.tv',             'title': 'https://edem.tv/',                  'url': 'https://edem.tv/',                                                   'icon': 'https://edem.tv/public/images/logo_edem.png'}, \
-                        {'alias_id':'goldvod.tv',              'name': 'goldvod.tv',          'title': 'http://goldvod.tv/',                'url': '',                                                                   'icon': 'http://goldvod.tv/assets/images/logo.png'}, \
-                        {'alias_id':'livemass.net',            'name': 'livemass.net',        'title': 'http://livemass.net/',              'url': 'http://www.livemass.net/',                                           'icon': 'http://s3.amazonaws.com/livemass/warrington/images/warrington/iconclr.png'}, \
-                        #{'alias_id':'wizja.tv',                'name': 'wizja.tv',            'title': 'http://wizja.tv/',                  'url': 'http://wizja.tv/',                                                   'icon': 'http://wizja.tv/logo.png'}, \
-                       ] 
+    MAIN_GROUPED_TAB = [
+            {'alias_id' : 'beinmatch.com',      'name' : 'beinmatch.com',       'title' : 'http://beinmatch.com/',      'url' : '',                                 'icon' : 'http://www.beinmatch.com/assets/images/bim/logo.png'},\
+            {'alias_id' : 'bilasport.com',      'name' : 'bilasport.com',       'title' : 'http://bilasport.com/',      'url' : '',                                 'icon' : 'https://projects.fivethirtyeight.com/2016-mlb-predictions/images/logos.png'},\
+            {'alias_id' : 'canlitvlive.io',     'name' : 'canlitvlive.io',      'title' : 'http://canlitvlive.io/',     'url' : 'http://www.canlitvlive.io/',       'icon' : 'http://www.canlitvlive.io/images/footer_simge.png'},\
+            {'alias_id' : 'djing.com',          'name' : 'djing.com',           'title' : 'https://djing.com/',         'url' : 'https://djing.com/',               'icon' : 'https://www.djing.com/newimages/content/c01.jpg'},\
+            {'alias_id' : 'edem_tv',            'name' : 'edem.tv',             'title' : 'https://edem.tv/',           'url' : 'https://edem.tv/',                 'icon' : 'https://edem.tv/public/images/logo_edem.png'},\
+            {'alias_id' : 'filmon.com',         'name' : 'filmon_groups',       'title' : 'http://filmon.com/',         'url' : 'http://www.filmon.com/',           'icon' : 'http://static.filmon.com/theme/img/filmon_tv_logo_white.png'},\
+            {'alias_id' : 'firstonetv.net',     'name' : 'firstonetv.net',      'title' : 'https://firstonetv.net/',    'url' : '',                                 'icon' : 'https://www.firstonetv.net/images/logo.png'},\
+            {'alias_id' : 'goldvod.tv',         'name' : 'goldvod.tv',          'title' : 'http://goldvod.tv/',         'url' : '',                                 'icon' : 'http://goldvod.tv/assets/images/logo.png'},\
+            {'alias_id' : 'internetowa.ws',     'name' : 'internetowa.ws',      'title' : 'https://internetowa.ws/',    'url' : '',                                 'icon' : 'https://internetowa.ws/img/internetowa-logo-new-3.png'},\
+            {'alias_id' : 'karwan.tv',          'name' : 'karwan.tv',           'title' : 'http://karwan.tv/',          'url' : 'http://karwan.tv/',                'icon' : 'http://karwan.tv//logo/karwan-tv/karwan-tv-1.png'},\
+            {'alias_id' : 'livemass.net',       'name' : 'livemass.net',        'title' : 'http://livemass.net/',       'url' : 'http://www.livemass.net/',         'icon' : 'http://s3.amazonaws.com/livemass/warrington/images/warrington/iconclr.png'},\
+            {'alias_id' : 'livespotting.tv',    'name' : 'livespotting.tv',     'title' : 'http://livespotting.tv/',    'url' : 'http://livespotting.tv/',          'icon' : 'http://livespotting.tv/img/ls_logo.png'},\
+            {'alias_id' : 'live_stream_tv',     'name' : 'live-stream.tv',      'title' : 'http://live-stream.tv/',     'url' : 'http://www.live-stream.tv/',       'icon' : 'http://www.live-stream.tv/images/lstv-logo.png'},\
+            {'alias_id' : 'livetvhd.net',       'name' : 'livetvhd.net',        'title' : 'https://livetvhd.net/',      'url' : 'https://livetvhd.net/',            'icon' : 'https://livetvhd.net/images/logo.png'},\
+            {'alias_id' : 'meteo.pl',           'name' : 'meteo.pl',            'title' : 'http://meteo.pl/',           'url' : 'http://meteo.pl/',                 'icon' : 'http://www.meteo.pl/img/napis_glowny_pl_2.png'},\
+            {'alias_id' : 'mlbstream.tv',       'name' : 'mlbstream.tv',        'title' : 'http://mlbstream.tv/&&http://nhlstream.tv/', 'url' : '',                 'icon' : 'http://mlbstream.tv/wp-content/uploads/2018/03/mlb-network-291x300.png'},\
+            {'alias_id' : 'prognoza.pogody.tv', 'name' : 'prognoza.pogody.tv',  'title' : 'http://pogody.tv/',          'url' : 'http://prognoza.pogody.tv',        'icon' : 'http://pogody.pl/images/pogodytv.png'},\
+            {'alias_id' : 'showsport-tv.com',   'name' : 'showsport-tv.com',    'title' : 'http://showsport-tv.com/',   'url' : 'http://showsport-tv.com/',         'icon' : 'http://showsport-tv.com/images/sstv-logo.png'},\
+            {'alias_id' : 'skylinewebcams.com', 'name' : 'skylinewebcams.com',  'title' : 'https://skylinewebcams.com/', 'url' : 'https://www.skylinewebcams.com/', 'icon' : 'https://cdn.skylinewebcams.com/skylinewebcams.png'},\
+            {'alias_id' : 'sport365.live',      'name' : 'sport365.live',       'title' : 'http://sport365.live/',      'url' : 'http://www.sport365.live/',        'icon' : 'http://s1.medianetworkinternational.com/images/icons/48x48px.png'},\
+            {'alias_id' : 'sportstream365.com', 'name' : 'sportstream365.com',  'title' : 'http://sportstream365.com/', 'url' : 'http://sportstream365.com/',       'icon' : 'http://sportstream365.com/img/logo.png'},\
+            {'alias_id' : 'ustvnow.com',        'name' : 'ustvnow',             'title' : 'https://ustvnow.com/',       'url' : 'https://www.ustvnow.com/',         'icon' : 'http://2.bp.blogspot.com/-SVJ4uZ2-zPc/UBAZGxREYRI/AAAAAAAAAKo/lpbo8OFLISU/s1600/ustvnow.png'},\
+            {'alias_id' : 'videostar.pl',       'name' : 'videostar.pl',        'title' : 'https://pilot.wp.pl/',       'url' : '',                                 'icon' : 'http://satkurier.pl/uploads/53612.jpg'},\
+            {'alias_id' : 'wagasworld',         'name' : 'wagasworld.com',      'title' : 'http://wagasworld.com/',     'url' : 'http://www.wagasworld.com/channels.php', 'icon' : 'http://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Flag_of_Germany.svg/1000px-Flag_of_Germany.svg.png'},\
+            {'alias_id' : 'webcamera.pl',       'name' : 'webcamera.pl',        'title' : 'https://webcamera.pl/',      'url' : 'https://www.webcamera.pl/',        'icon' : 'http://static.webcamera.pl/webcamera/img/loader-min.png'},\
+            {'alias_id' : 'weeb.tv',            'name' : 'weeb.tv',             'title' : 'http://weeb.tv/',            'url' : '',                                 'icon' : 'http://xmtvplayer.com/wp-content/uploads/2014/07/weebtv.png'},\
+            {'alias_id' : 'wiz1.net',           'name' : 'wiz1.net',            'title' : 'http://wiz1.net/',           'url' : '',                                 'icon' : 'http://i.imgur.com/yBX7fZA.jpg'},\
+            {'alias_id' : 'wiziwig1.com',       'name' : 'wiziwig1.com',        'title' : 'http://wiziwig1.com/',       'url' : '',                                 'icon' : 'http://i.imgur.com/yBX7fZA.jpg'},\
+            {'alias_id' : 'wizja.tv',           'name' : 'wizja.tv',            'title' : 'http://wizja.tv/',           'url' : 'http://wizja.tv/',                 'icon' : 'http://wizja.tv/logo.png'}
+    ] 
     
     def __init__(self):
         CBaseHostClass.__init__(self)
@@ -209,6 +212,7 @@ class HasBahCa(CBaseHostClass):
         self.FirstOneTvApi        = None
         self.BeinmatchApi         = None
         self.Wiz1NetApi           = None
+        self.Wiziwig1Api          = None
         
         self.hasbahcaiptv = {}
         self.webcameraSubCats = {}
@@ -635,6 +639,23 @@ class HasBahCa(CBaseHostClass):
     #############################################################
 
     #############################################################
+    def getWiziwig1List(self, cItem):
+        printDBG("getWiziwig1List start")
+        if None == self.Wiziwig1Api: self.Wiziwig1Api = Wiziwig1Api()
+        tmpList = self.Wiziwig1Api.getList(cItem)
+        for item in tmpList:
+            if 'video' == item['type']: self.addVideo(item) 
+            elif 'audio' == item['type']: self.addAudio(item) 
+            else: self.addDir(item)
+
+    def getWiziwig1Link(self, cItem):
+        printDBG("getWiziwig1Link start")
+        urlsTab = self.Wiziwig1Api.getVideoLink(cItem)
+        return urlsTab
+    #############################################################
+
+    #############################################################
+   
     def getUstvnowList(self, cItem):
         printDBG("getUstvnowList start")
         if None == self.ustvnowApi:
@@ -931,7 +952,7 @@ class HasBahCa(CBaseHostClass):
         elif name == 'meteo.pl':            self.getMeteoPLList(self.currItem)
         elif name == 'edem.tv':             self.getEdemTvList(self.currItem)
         elif name == 'skylinewebcams.com':  self.getWkylinewebcamsComList(self.currItem)
-        elif name == 'livespotting.com':     self.getLivespottingTvList(self.currItem)
+        elif name == 'livespotting.tv':     self.getLivespottingTvList(self.currItem)
         elif name == 'live-stream.tv':      self.getLiveStreamTvList(self.currItem)
         elif name == "wagasworld.com":      self.getWagasWorldList(self.currItem)
         elif name == 'weeb.tv':             self.getWeebTvList(url)
@@ -945,6 +966,7 @@ class HasBahCa(CBaseHostClass):
         elif name == 'firstonetv.net':      self.getFirstOneTvList(self.currItem)
         elif name == 'beinmatch.com':       self.getBeinmatchList(self.currItem)
         elif name == 'wiz1.net':            self.getWiz1NetList(self.currItem)
+        elif name == 'wiziwig1.com':        self.getWiziwig1List(self.currItem)
         
         CBaseHostClass.endHandleService(self, index, refresh)
 
@@ -1005,6 +1027,7 @@ class IPTVHost(CHostBase):
         elif name == "firstonetv.net":             urlList = self.host.getFirstOneTvLink(cItem)
         elif name == "beinmatch.com":              urlList = self.host.getBeinmatchLink(cItem)
         elif name == "wiz1.net":                   urlList = self.host.getWiz1NetLink(cItem)
+        elif name == "wiziwig1.com":               urlList = self.host.getWiziwig1Link(cItem)
 
         if isinstance(urlList, list):
             for item in urlList:
