@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-07-11 by Alec - modified Mozicsillag
+# 2019-08-23 by Alec - modified Mozicsillag
 ###################################################
-HOST_VERSION = "1.4"
+HOST_VERSION = "1.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -112,11 +112,6 @@ class MuziCsillangCC(CBaseHostClass):
             self.cacheLinks = {}
             if not self.ebbtit(): return
             if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
-            vtb = self.malvadnav(cItem, '1', '5', '0')
-            if len(vtb) > 0:
-                for item in vtb:
-                    item['category'] = 'list_third'
-                    self.addVideo(item)
             tab_catalog = 'mozicsillag_catalog'
             desc_catalog = self.getdvdsz(tab_catalog, 'Főoldali felvételek megjelenítése...')
             tab_movies = 'mozicsillag_movies'
@@ -131,7 +126,8 @@ class MuziCsillangCC(CBaseHostClass):
             desc_search = self.getdvdsz(tab_search, 'Keresés...')
             tab_search_hist = 'mozicsillag_search_hist'
             desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
-            MAIN_CAT_TAB = [{'category':'list_filters', 'title': _('Home'), 'url':self.getMainUrl(), 'use_query':True, 'tps':'0', 'tab_id':tab_catalog, 'desc':desc_catalog },
+            MAIN_CAT_TAB = [
+                            #{'category':'list_filters', 'title': _('Home'), 'url':self.getMainUrl(), 'use_query':True, 'tps':'0', 'tab_id':tab_catalog, 'desc':desc_catalog },
                             {'category':'list_movies', 'title': _('Movies'), 'url':self.getMainUrl(), 'tps':'1', 'tab_id':tab_movies, 'desc':desc_movies },
                             {'category':'list_series', 'title': _('Series'), 'url':self.getMainUrl(), 'tps':'2', 'tab_id':tab_series, 'desc':desc_series },
                             {'category':'list_main', 'title': 'Ajánlott, nézett tartalmak', 'tab_id':tab_ajanlott, 'desc':desc_ajanlott},
@@ -140,6 +136,11 @@ class MuziCsillangCC(CBaseHostClass):
                             {'category':'search_history', 'title': _('Search history'), 'tps':'0', 'tab_id':tab_search_hist, 'desc':desc_search_hist }
                            ]
             self.listsTab(MAIN_CAT_TAB, {'name':'category'})
+            vtb = self.malvadnav(cItem, '6', '5', '0')
+            if len(vtb) > 0:
+                for item in vtb:
+                    item['category'] = 'list_third'
+                    self.addVideo(item)
             self.ilk = True
         except Exception:
             printExc()
@@ -680,12 +681,12 @@ class MuziCsillangCC(CBaseHostClass):
         if pu != '' and psz != '':
             n_atnav = self.malvadst('1', '5', pu)
             if n_atnav != '' and self.aid:
-                if pu == 'mozicsillag_catalog':
+                if pu == 'mozicsillag_movies':
                     self.aid_ki = 'ID: ' + n_atnav + '  |  Mozicsillag  v' + HOST_VERSION + '\n'
                 else:
                     self.aid_ki = 'ID: ' + n_atnav + '\n'
             else:
-                if pu == 'mozicsillag_catalog':
+                if pu == 'mozicsillag_movies':
                     self.aid_ki = 'Mozicsillag  v' + HOST_VERSION + '\n'
                 else:
                     self.aid_ki = ''

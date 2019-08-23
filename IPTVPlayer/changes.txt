@@ -1,4 +1,6 @@
-﻿#2019.08.23.01
+﻿#2019.08.23.02
+-HU Telepítő, MoziCsillag frissítve
+#2019.08.23.01
 -TS iPlayer javítva
 #2019.08.21.01
 -Beeg javítva (XXX)
