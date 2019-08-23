@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, SAWLIVETV_decryptPlayerParams
-
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 import re
 
 def getinfo():
 	info_={}
 	info_['name']='Movs4u.To'
-	info_['version']='1.3 30/06/2019'
+	info_['version']='1.4 18/08/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات اجنبية'
 	info_['icon']='https://www.movs4u.tv/wp-content/uploads/2019/01/Logo-header.png'
 	info_['recherche_all']='1'
-	info_['update']='Bugs Fix & Change host to movs4u.to'	
+	info_['update']='add movs4u servers'	
 	return info_
 	
 	
@@ -204,6 +204,7 @@ class TSIPHost(TSCBaseHostClass):
 		return url_out	
 	def getVideos(self,videoUrl):
 		urlTab = []	
+		url_ref=videoUrl
 		printDBG("1")
 		if videoUrl.startswith('http'):
 			i=0
@@ -213,15 +214,20 @@ class TSIPHost(TSCBaseHostClass):
 				oldURL=videoUrl
 				videoUrl = self.extractLink(videoUrl)
 				printDBG(str(i)+">>>>End<<<< "+videoUrl)
-				if videoUrl == 'None':
+				if videoUrl == 'None': 
+					printDBG('1') 
 					urlTab.append((oldURL,'1'))
 					break 
 				elif '.m3u8' in videoUrl:
-					urlTab.append((videoUrl,'3'))
+					printDBG('2')
+					URL1=strwithmeta(videoUrl, {'Referer':url_ref})
+					urlTab.append((URL1,'3'))
 					break
 				elif (self.up.checkHostSupport(videoUrl) == 1):	
+					printDBG('3')
 					urlTab.append((videoUrl,'1'))
-					break								 									
+					break
+				printDBG('4')								 									
 							 					
 		else:
 			printDBG("2")

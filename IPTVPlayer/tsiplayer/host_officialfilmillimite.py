@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
@@ -14,14 +14,14 @@ import base64
 
 def getinfo():
 	info_={}
-	info_['name']='Official-Film-Illimite.Ws'
-	info_['version']='1.0 30/05/2019'
+	info_['name']='Official-Film-Illimite'
+	info_['version']='1.1 17/08/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='301'
 	info_['desc']='Films & Series HD et UHD'
-	info_['icon']='https://ww2.official-film-illimite.ws/wp-content/uploads/2016/10/official-film-illimite.png'
+	info_['icon']='https://www.official-film-illimite.to/wp-content/uploads/2016/10/official-film-illimite.png'
 	info_['recherche_all']='1'
-	info_['update']='New Host'
+	info_['update']='Fix Covers'
 	return info_
 	
 	
@@ -29,7 +29,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'officialfilmillimite.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://ww2.official-film-illimite.ws'
+		self.MAIN_URL = 'https://www.official-film-illimite.to'
 		self.HEADER = {'User-Agent': self.USER_AGENT,'Accept':'*/*','X-Requested-With':'XMLHttpRequest', 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Pragma':'no-cache'}
 		self.HEADER1 = {'User-Agent': self.USER_AGENT,'Accept':'*/*', 'Connection': 'keep-alive', 'Accept-Encoding':'gzip'}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -42,7 +42,7 @@ class TSIPHost(TSCBaseHostClass):
 		img_=cItem['icon']								
 		Cat_TAB = [
 					{'category':hst,'title': 'Films', 'mode':'20'},
-					{'category':hst,'title': 'Series', 'mode':'30','url':'https://ww2.official-film-illimite.ws/serie-tv/'},
+					{'category':hst,'title': 'Series', 'mode':'30','url':self.MAIN_URL+'/serie-tv/'},
 					{'category':'search','name':'search','title': _('Search'), 'search_item':True,'hst':'tshost'},
 					]
 		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})	
@@ -51,7 +51,7 @@ class TSIPHost(TSCBaseHostClass):
 		hst='host2'
 		img_=cItem['icon']								
 		Cat_TAB = [
-					{'category':hst,'title': 'Tous', 'mode':'30','url':'https://ww2.official-film-illimite.ws/films/'},
+					{'category':hst,'title': 'Tous', 'mode':'30','url':self.MAIN_URL+'/films/'},
 					{'category':hst,'title': 'Par Genre', 'mode':'21','sub_mode':0},
 					{'category':hst,'title': 'Par Qualité', 'mode':'21','sub_mode':1},
 					{'category':hst,'title': 'Par Année', 'mode':'21','sub_mode':2},
@@ -98,7 +98,7 @@ class TSIPHost(TSCBaseHostClass):
 			i=0
 			for item in data:
 				i=i+1
-				films_list = re.findall('href="(.*?)".*?src="(.*?)".*?alt="(.*?)".*?class="imdb">(.*?)</span>.*?class="ttx">(.*?)</span>.*?class="year">(.*?)<.*?calidad2">(.*?)<', item, re.S)		
+				films_list = re.findall('href="(.*?)".*?-src="(.*?)".*?alt="(.*?)".*?class="imdb">(.*?)</span>.*?class="ttx">(.*?)</span>.*?class="year">(.*?)<.*?calidad2">(.*?)<', item, re.S)		
 				if films_list:
 					for (url,image,titre,rate,desc,year_,qual) in films_list:
 						desc1='\c00??????Rating: \c00????00'+ph.clean_html(rate)+'\c00?????? | Date: \c00????00'+year_+'\c00?????? | Qualitée: \c00????00'+qual

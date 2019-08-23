@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
@@ -19,7 +19,7 @@ def getinfo():
 	info_['dev']='RGYSoft'
 	info_['cat_id']='301'
 	info_['desc']='Films & Series'
-	info_['icon']='https://hdss.to/wp-content/uploads/2018/11/LOGO-1.png'
+	info_['icon']='https://i.ibb.co/f1Tw4M7/j73buveq.png'
 	info_['recherche_all']='1'
 	info_['update']='fix Films-Tous category'
 	return info_

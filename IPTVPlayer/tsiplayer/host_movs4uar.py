@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 
 import re
 
@@ -10,11 +10,11 @@ def getinfo():
 	info_['name']='Movs4u-Ar.Com'
 	info_['version']='1.1 06/07/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='104'#'201'
 	info_['desc']='افلام و مسلسلات عربية '
 	info_['icon']='https://www.movs4u-ar.com/wp-content/uploads/2019/05/Logo-header.png'
 	info_['recherche_all']='1'
-	info_['update']='Bugs Fix'	
+	info_['update']='Site Out'	
 	return info_
 	
 	

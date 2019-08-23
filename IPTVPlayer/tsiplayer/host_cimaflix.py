@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass,cryptoJS_AES_decrypt
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,cryptoJS_AES_decrypt
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, SAWLIVETV_decryptPlayerParams,VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2,TEAMCASTPL_decryptPlayerParams,VIDUPME_decryptPlayerParams,KINGFILESNET_decryptPlayerParams
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, VIDUPME_decryptPlayerParams
 from binascii import a2b_hex
 from hashlib import sha256
 import base64
@@ -17,14 +17,14 @@ from hashlib import md5
 
 def getinfo():
 	info_={}
-	info_['name']='Cimaflix.Net'
-	info_['version']='1.3 05/07/2019'
+	info_['name']='Cimaflix.Tv'
+	info_['version']='1.5 17/08/2019'
 	info_['dev']='RGYSoft (Thx to SAMSAMSAM)'
-	info_['cat_id']='201'
+	info_['cat_id']='201'#'201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
-	info_['icon']='https://cimaflix.net/images/logo.png'
+	info_['icon']='https://cimaflix.tv/images/logo.png'
 	info_['recherche_all']='0'
-	info_['update']='Change host to https://cimaflix.net/ & fix local server'
+	info_['update']='bugs fix'
 		
 	return info_
 	
@@ -33,7 +33,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'cimaflix.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://cimaflix.net'
+		self.MAIN_URL = 'https://cimaflix.tv'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Upgrade-Insecure-Requests':'1','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER,'with_metadata':True,'no_redirection':False, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage
@@ -149,6 +149,7 @@ class TSIPHost(TSCBaseHostClass):
 		 
 	def getVideos(self,videoUrl):
 		urlTab = []	
+		str_='getsource.php?key='
 		try:
 			data = urllib.unquote(videoUrl)
 			data = json_loads(data.strip())
@@ -168,20 +169,19 @@ class TSIPHost(TSCBaseHostClass):
 						if lst_dat2:
 							packed = 'eval'+lst_dat2[0].strip()
 							printDBG('ppppppp#'+packed+'#')
-							'''tab_dec=[SAWLIVETV_decryptPlayerParams,VIDEOWEED_decryptPlayerParams, VIDEOWEED_decryptPlayerParams2,TEAMCASTPL_decryptPlayerParams,VIDUPME_decryptPlayerParams,KINGFILESNET_decryptPlayerParams]
-							for x in tab_dec:
-								try:
-									printDBG('dddddddddd')
-									data = unpackJSPlayerParams(packed, x, 0)
-									printDBG(data)
-								except:
-									printDBG('erreur')
+							try:
+								data = unpackJSPlayerParams(packed, VIDUPME_decryptPlayerParams, 1)
+								printDBG(data)
+							except:
+								printDBG('erreur')
 							lst_dat2=re.findall("='(.*?)'", data, re.S)
 							if lst_dat2:
-								urlTab.append((lst_dat2[0],'0'))'''
+								urlTab.append((lst_dat2[0],'0'))
 				
-				elif 'player.cimaflex.net' in cUrl:
-					cUrl = cUrl.replace('wp-embed.php?url=','getsource.php?key=')
+				elif 'wp-embed.php?url=' in cUrl:
+					#cUrl = cUrl.replace('wp-embed.php?url=','getsource.php?key=')
+					cUrl = cUrl.replace('wp-embed.php?url=',str_)
+					
 					sts, data = self.getPage(cUrl,dict(self.defaultParams))
 					if sts:
 						lst_dat2=re.findall('file".*?"(.*?)".*?label".*?"(.*?)"', data, re.S)

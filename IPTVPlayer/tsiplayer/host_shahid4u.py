@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 
 import re
 
 def getinfo():
 	info_={}
 	info_['name']='Shahid4u'
-	info_['version']='1.1 06/07/2019'
+	info_['version']='1.2 17/08/2019'
 	info_['dev']='Opesboy'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
-	info_['icon']='https://shahd4u.tv/themes/Shahid4u/img/logo.png'
+	info_['icon']='https://shahid4u.net/themes/Shahid4u/img/logo.png'
 	info_['recherche_all']='1'
-	info_['update']='change to shahd4u.tv'	
+	info_['update']='change to shahid4u.net'	
 
 	return info_
 	
@@ -22,7 +22,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'shahid4u.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://shahd4u.tv'
+		self.MAIN_URL = 'https://shahid4u.net'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage

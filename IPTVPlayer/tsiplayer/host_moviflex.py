@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, SAWLIVETV_decryptPlayerParams
@@ -14,7 +14,7 @@ import base64
 def getinfo():
 	info_={}
 	info_['name']='Moviflex.Net'
-	info_['version']='1.1 06/07/2019'
+	info_['version']='1.2 17/08/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات اجنبية'
@@ -31,7 +31,7 @@ class TSIPHost(TSCBaseHostClass):
 		self.MAIN_URL = 'https://www.moviflex.net'
 		self.HEADER = {'User-Agent': self.USER_AGENT,'Accept':'*/*','X-Requested-With':'XMLHttpRequest', 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Pragma':'no-cache'}
 		self.HEADER1 = {'User-Agent': self.USER_AGENT,'Accept':'*/*', 'Connection': 'keep-alive', 'Accept-Encoding':'gzip'}
-		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+		self.defaultParams = {'timeout':9,'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.defaultParams1 = {'header':self.HEADER1, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
 		self.getPage = self.cm.getPage
@@ -118,16 +118,16 @@ class TSIPHost(TSCBaseHostClass):
 	def get_links(self,cItem):
 		urlTab = []	
 		URL=cItem['url']
-		sts, data = self.getPage(URL)
+		sts, data = self.getPage(URL,self.defaultParams)
 		if sts:
 			Tab_els = re.findall('src="(https://www.youtube.*?)"', data, re.S)
 			if Tab_els:
 				urlTab.append({'name':'TRAILER', 'url':Tab_els[0], 'need_resolve':1})
-			Tab_els = re.findall('<iframe.*?data-src="(.*?)".*?></iframe>', data, re.S)
+			Tab_els = re.findall('play-box-iframe.*?data-src="(.*?)".*?></iframe>', data, re.S)
 			for url in Tab_els:
 				try:
 					if '//moviflex.net' in url:
-						sts, data = self.getPage(url)
+						sts, data = self.getPage(url,self.defaultParams)
 						url_els = re.findall('<source src="(.*?)"', data, re.S)
 						if url_els:
 							urlTab.append({'name':'Direct', 'url':url_els[0], 'need_resolve':0})
@@ -154,6 +154,8 @@ class TSIPHost(TSCBaseHostClass):
 								urlTab.append({'name':'Direct ('+titre_+')', 'url':strwithmeta(url_, {'Referer':url}), 'need_resolve':0})				
 					else:	
 						if len(url)>4:
+							url11 = url.split('https://')
+							url='https://' + url11[-1]
 							urlTab.append({'name':gethostname(url), 'url':url, 'need_resolve':1})
 				except:
 					a=''						

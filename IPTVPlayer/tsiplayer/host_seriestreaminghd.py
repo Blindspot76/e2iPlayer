@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 
 
 import re
 
 def getinfo():
 	info_={}
-	info_['name']='Serie-Streaminghd.Net'
-	info_['version']='1.3 06/06/2019'
+	info_['name']='Serie-Streaminghd'
+	info_['version']='1.4 17/08/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='301'
 	info_['desc']='Series en VF & VOSTFR'
-	info_['icon']='https://wvvw.serie-streaminghd.net/uploads/log.png'
+	info_['icon']='https://www.serie-streaminghd.org/uploads/log.png'
 	info_['recherche_all']='1'
 	info_['update']='Fix Search'	
 	return info_
@@ -23,7 +23,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'seriestreaminghd.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://wvvw.serie-streaminghd.net'
+		self.MAIN_URL = 'https://www.serie-streaminghd.org'
 #		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 #		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 

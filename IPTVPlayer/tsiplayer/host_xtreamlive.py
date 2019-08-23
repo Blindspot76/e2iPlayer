@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass,xtream_get_conf
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,xtream_get_conf
 import base64
 import re
 
@@ -12,7 +12,7 @@ def getinfo():
 	info_['name']='Xtream IPTV (LIVE)'
 	info_['version']='1.0 24/04/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='100'
+	info_['cat_id']='120'
 	info_['desc']='مشاهدة القنوات مباشر من اشتراكات xtream'
 	info_['icon']='https://i.ibb.co/nPHsSDp/xtream-code-iptv.jpg'
 	info_['filtre']='xtream_active'
@@ -65,7 +65,7 @@ class TSIPHost(TSCBaseHostClass):
 			elif '***'in elm['name']:
 				self.addMarker({'title':'\c00????00'+elm['name'],'icon':cItem['icon']})	
 			else:
-				self.addVideo({'import':cItem['import'],'category' : 'host2','url': Url,'title':elm['name'],'icon':stream_icon,'hst':'direct','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'stream_id':elm['stream_id'],'EPG':True})
+				self.addVideo({'import':cItem['import'],'category' : 'host2','url': Url,'title':elm['name'],'icon':stream_icon,'hst':'direct','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'stream_id':elm['stream_id'],'EPG':True,'good_for_fav':True})
 
 	def getArticle(self,cItem):
 		otherInfo = {}

@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 
 import re
 
@@ -11,7 +11,7 @@ def getinfo():
 	info_['name']='Mania Tv (Android App)'
 	info_['version']='1.0 20/06/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='100'
+	info_['cat_id']='104'#'100'
 	info_['desc']='تطبيق اندوريد للبث المباشر'
 	info_['icon']='https://media.cdnandroid.com/60/1a/58/af/imagen-yacine-tv-app-0thumb.jpg'
 	info_['recherche_all']='0'

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 
 import re
 
@@ -23,7 +23,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'arblionz.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://arblionz.tv'
+		self.MAIN_URL = 'https://tv.arblionz.tv'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage
@@ -182,8 +182,8 @@ class TSIPHost(TSCBaseHostClass):
 				server_data = re.findall('<a href="(.*?)"', data_, re.S)
 				for (url_1) in server_data:
 					hostUrl=url_1.replace("www.", "")				
-					raw1 =  re.findall('//(.*?)/', hostUrl, re.S)				
-					hostUrl=raw1[0]
+					raw1 =  re.findall('//(.*?)/', hostUrl, re.S)
+					if raw1: hostUrl=raw1[0]
 					if ('openload' in hostUrl.lower())or('uptobox' in hostUrl.lower()):
 						urlTab.append({'name':hostUrl+' - سرفر تحميل', 'url':url_1, 'need_resolve':1})
 			else:

@@ -2,11 +2,11 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
 
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
-from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, SAWLIVETV_decryptPlayerParams
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist,unpackJSPlayerParams, SAWLIVETV_decryptPlayerParams
+
 ###################################################
 
 
@@ -18,11 +18,11 @@ def getinfo():
 	info_['name']='Hdo.To'
 	info_['version']='1.1 08/07/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='401'#'301'
+	info_['cat_id']='104'#'401'
 	info_['desc']='Films & Series'
 	info_['icon']='https://i.ibb.co/CvVHrTr/logo-2x.png'
 	info_['recherche_all']='1'
-	info_['update']='Add internal Cloudflare bypass'
+	info_['update']='site changed to https://solarmoviehd.ru'
 	return info_
 	
 	
@@ -44,7 +44,7 @@ class TSIPHost(TSCBaseHostClass):
 			if "'jschl-answer'" in data:
 				try:
 					import cookielib
-					from Plugins.Extensions.IPTVPlayer.tsiplayer import cfscrape		
+					from Plugins.Extensions.IPTVPlayer.tsiplayer.libs import cfscrape		
 					scraper = cfscrape.create_scraper()
 					data = scraper.get(baseUrl).content
 					tokens, user_agent=cfscrape.get_tokens(self.MAIN_URL)

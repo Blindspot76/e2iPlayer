@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 
 import re
 
@@ -37,7 +37,7 @@ class TSIPHost(TSCBaseHostClass):
 		if "'jschl-answer'" in data:
 			try:
 				import cookielib
-				from Plugins.Extensions.IPTVPlayer.tsiplayer import cfscrape		
+				from Plugins.Extensions.IPTVPlayer.tsiplayer.libs import cfscrape		
 				scraper = cfscrape.create_scraper()
 				data = scraper.get(baseUrl).content
 				tokens, user_agent=cfscrape.get_tokens(self.MAIN_URL)

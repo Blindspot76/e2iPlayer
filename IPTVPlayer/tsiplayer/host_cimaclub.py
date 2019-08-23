@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 from Components.config import config
 
 import re
@@ -10,7 +10,7 @@ import re
 def getinfo():
 	info_={}
 	info_['name']='Cimaclub.Com'
-	info_['version']='1.2.1 05/07/2019'
+	info_['version']='1.3 17/08/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
@@ -24,7 +24,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'cimaclub.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'http://cimaclub.com/'
+		self.MAIN_URL = 'https://m.cimaclub.com'
 		self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.AJAX_HEADER = dict(self.HTTP_HEADER)
 		self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -36,7 +36,7 @@ class TSIPHost(TSCBaseHostClass):
 		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
 		
 	def cimaclub_plus_extract(self,code,id):	
-		URL='http://cimaclub.com/wp-content/themes/Cimaclub/servers/server.php?q='+code+'&i='+id
+		URL=self.MAIN_URL+'/wp-content/themes/Cimaclub/servers/server.php?q='+code+'&i='+id
 		URL_=''
 		sts, data = self.getPage(URL)
 		if sts:
@@ -63,14 +63,14 @@ class TSIPHost(TSCBaseHostClass):
 
 	def showmenu1(self,cItem):
 		gnr2=cItem['sub_mode']			 
-		url='http://cimaclub.com/'
+		url=self.MAIN_URL
 		img=cItem['icon']
 	
 		if gnr2=='filter':
-			Cimaclub_filter=[{'category':'host2', 'title': 'الاحدث'       , 'url':'http://cimaclub.com/wp-content/themes/Cimaclub/filter/recent.php', 'desc':'', 'icon':img, 'mode':'30', 'page':1},
-							 {'category':'host2', 'title': 'المثبت'      , 'url':'http://cimaclub.com/wp-content/themes/Cimaclub/filter/pin.php'   , 'desc':'', 'icon':img, 'mode':'30', 'page':0},						  
-							 {'category':'host2', 'title': 'الاكثر مشاهدة', 'url':'http://cimaclub.com/most-views/'                                 , 'desc':'', 'icon':img, 'mode':'30', 'page':1},						  
-							 {'category':'host2', 'title': 'الأعلى تقييماً', 'url':'http://cimaclub.com/top-imdb/'                                   , 'desc':'', 'icon':img, 'mode':'30', 'page':1},	 
+			Cimaclub_filter=[{'category':'host2', 'title': 'الاحدث'       , 'url':self.MAIN_URL+'/wp-content/themes/Cimaclub/filter/recent.php', 'desc':'', 'icon':img, 'mode':'30', 'page':1},
+							 {'category':'host2', 'title': 'المثبت'      , 'url':self.MAIN_URL+'/wp-content/themes/Cimaclub/filter/pin.php'   , 'desc':'', 'icon':img, 'mode':'30', 'page':0},						  
+							 {'category':'host2', 'title': 'الاكثر مشاهدة', 'url':self.MAIN_URL+'/most-views/'                                 , 'desc':'', 'icon':img, 'mode':'30', 'page':1},						  
+							 {'category':'host2', 'title': 'الأعلى تقييماً', 'url':self.MAIN_URL+'/top-imdb/'                                   , 'desc':'', 'icon':img, 'mode':'30', 'page':1},	 
 							]
 			self.listsTab(Cimaclub_filter, {'name':'categories','import':cItem['import']})
 		else:
@@ -81,7 +81,7 @@ class TSIPHost(TSCBaseHostClass):
 					if gnr2=='film':
 						data1= lst_data[0]
 					elif gnr2=='serie':
-						self.addDir({'category' :'host2', 'url':'http://cimaclub.com/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%b9%d8%b1%d8%a8%d9%8a/%d8%b1%d9%85%d8%b6%d8%a7%d9%86-2019/', 'title':'رمضان 2019', 'desc':'رمضان 2019', 'icon':img, 'mode':'30','page':1,'import':cItem['import']})					
+						self.addDir({'category' :'host2', 'url':self.MAIN_URL+'/category/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%b9%d8%b1%d8%a8%d9%8a/%d8%b1%d9%85%d8%b6%d8%a7%d9%86-2019/', 'title':'رمضان 2019', 'desc':'رمضان 2019', 'icon':img, 'mode':'30','page':1,'import':cItem['import']})					
 						data1= lst_data[1]		
 					elif gnr2=='other':
 						data1= lst_data[2]
@@ -108,10 +108,10 @@ class TSIPHost(TSCBaseHostClass):
 		#sts, data = self.cm.getPage(url)	
 		sts, data = self.getPage(url)	
 		if sts:		
-			lst_data=re.findall('<div class="movie">.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)<.*?<p>(.*?)</p>', data, re.S)
+			lst_data=re.findall('<div class="Block">.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)<.*?DescPost">(.*?)</a>', data, re.S)
 			for (url1,image,name_eng,desc) in lst_data:
 				name_eng=name_eng.replace(' اون لاين','')
-				self.addDir({'import':cItem['import'],'good_for_fav':True,'category':'host2', 'url':url1, 'title':name_eng, 'desc':desc, 'icon':image, 'mode':'31','EPG':True,'hst':'tshost'} )							
+				self.addDir({'import':cItem['import'],'good_for_fav':True,'category':'host2', 'url':url1, 'title':name_eng, 'desc':ph.clean_html(desc), 'icon':image, 'mode':'31','EPG':True,'hst':'tshost'} )							
 			if page!=0:
 				self.addDir({'import':cItem['import'],'category':'host2', 'url':url0, 'title':'Page Suivante', 'page':page+1, 'desc':'Page Suivante', 'icon':cItem['icon'], 'mode':'30'})	
 
@@ -153,25 +153,24 @@ class TSIPHost(TSCBaseHostClass):
 					params = {'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url_,'title':Ep,'desc':'','icon':cItem['icon'],'hst':'tshost'} 
 					self.addVideo(params)					
 			else:
-				if 'اجزاء السلسلة' in data: 
-					cat_data=re.findall('<div class="moviesBlocks">(.*?)<div class="moviesBlocks">', data, re.S)
-					if cat_data:
-						data2=cat_data[0]
-						cat_data=re.findall('<div class="movie">.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)<.*?<p>(.*?)</p>', data2, re.S)
-						for (url,image,name_eng,desc) in cat_data:
-							params = {'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url,'title':name_eng,'desc':desc,'icon':image,'hst':'tshost'} 
-							self.addVideo(params)	
-				else:
-					params = {'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url0,'title':titre,'desc':'','icon':cItem['icon'],'hst':'tshost'} 
-					self.addVideo(params)			
-
+				'''cat_data=re.findall('<div class="moviesBlocks">(.*?)<div class="moviesBlocks">', data, re.S)
+				if cat_data:
+					data2=cat_data[0]'''
+				params = {'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url0,'title':titre,'desc':'','icon':cItem['icon'],'desc':cItem['desc'],'hst':'tshost'} 
+				self.addVideo(params)						
+				self.addMarker({'title':'\c0000??00نرشح لكم','icon':'','desc':''})	
+				cat_data=re.findall('<div class="Block">.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)<.*?DescPost">(.*?)</a>', data, re.S)
+				if cat_data:
+					for (url,image,name_eng,desc) in cat_data:
+						params = {'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url,'title':name_eng,'desc':ph.clean_html(desc),'icon':image,'hst':'tshost'} 
+						self.addVideo(params)	
 	def SearchResult(self,str_ch,page,extra):
-		url_='http://cimaclub.com/page/'+str(page)+'/?s='+str_ch
+		url_=self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
 		sts, data = self.getPage(url_)
 		if sts:
-			cat_data=re.findall('<div class="movie">.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)<.*?<p>(.*?)</p>', data, re.S)
+			cat_data=re.findall('<div class="Block">.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)<.*?DescPost">(.*?)</a>', data, re.S)
 			for (url1,image,name_eng,desc) in cat_data:
-				params = {'import':extra,'good_for_fav':True,'category' : 'host2','url': url1,'title':name_eng,'desc':desc,'icon':image,'mode':'31','EPG':True,'hst':'tshost'} 
+				params = {'import':extra,'good_for_fav':True,'category' : 'host2','url': url1,'title':name_eng,'desc':ph.clean_html(desc),'icon':image,'mode':'31','EPG':True,'hst':'tshost'} 
 				self.addDir(params)		
 		
 	def get_links(self,cItem): 	

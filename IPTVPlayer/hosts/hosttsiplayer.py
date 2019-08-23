@@ -82,7 +82,7 @@ def gettytul():
 
 class TSIPlayer(CBaseHostClass):
 
-	#tsiplayerversion = "2019.08.03.1"  
+	#tsiplayerversion = "2019.08.17.0"  
 	#tsiplayerremote  = "0.0.0.0"
 	
 	def __init__(self,item={}):

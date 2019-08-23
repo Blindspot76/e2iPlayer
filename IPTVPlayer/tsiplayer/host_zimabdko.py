@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
 
 import re
 
@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='Zimabdko.Com'
 	info_['version']='1.0 19/05/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='203'
+	info_['cat_id']='202'
 	info_['desc']='انمي + دراما اسياوية'
 	info_['icon']='https://www.zimabdko.com/wp-content/themes/zimabdk/images/logo.png'
 	info_['recherche_all']='0'

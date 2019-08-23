@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 import re
 import urllib
 def getinfo():
 	info_={}
 	info_['name']='Okanime.Com'
-	info_['version']='1.1 07/07/2019'
+	info_['version']='1.2 17/08/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='203'
+	info_['cat_id']='202'
 	info_['desc']='انمي مترجم'
 	info_['icon']='https://i.ibb.co/88XFP0D/okanim.jpg'
 	info_['recherche_all']='0'
-	info_['update']='Fix Servers'
+	info_['update']='Bugs Fix'
 	return info_
 	
 	
@@ -54,11 +54,11 @@ class TSIPHost(TSCBaseHostClass):
 		page=cItem.get('page',1)
 		sts, data = self.getPage(url1+'&page='+str(page))
 		if sts:
-			films_list = re.findall('class=\'col-md-15.*?title="(.*?)".*?href="(.*?)".*?src="(.*?)".*?class="rating.*?>(.*?)</div>.*?class=\'genre-.*?>(.*?)</div>', data, re.S)		
+			films_list = re.findall('class=\'col-md-15.*?title="(.*?)".*?href="(.*?)".*?src="(.*?)".*?class="rating.*?>(.*?)</div>.*?class=\'info-.*?<a(.*?)</div>', data, re.S)		
 			for (titre,url,image,rate,desc) in films_list:
 				if not url.startswith('http'): url=self.MAIN_URL+url
 				if not image.startswith('http'): image=self.MAIN_URL+image
-				desc='Rating: \c00????00'+ph.clean_html(rate)+'\c00??????\\nGenre: \c00????00'+ph.clean_html(desc)
+				desc='Rating: \c00????00'+ph.clean_html(rate)+'\c00??????\\nGenre: \c00????00'+ph.clean_html('<a'+desc)
 				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
 			self.addDir({'import':cItem['import'],'title':'Page '+str(page+1),'page':page+1,'category' : 'host2','url':url1,'icon':image,'mode':'30'} )									
 

@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.tstools import TSCBaseHostClass
-
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
 
 import re
+import urllib
 
 def getinfo():
 	info_={}
 	info_['name']='Planet-Streaming.Net'
-	info_['version']='1.0 04/05/2019'
+	info_['version']='1.2 17/08/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='301'
 	info_['desc']='Films en VF & VOSTFR'
-	info_['icon']='https://www.planet-streaming.net/uploads/logo.png'
+	info_['icon']='https://i.ibb.co/VvvSHFT/logo.png'
 	info_['recherche_all']='1'
+	info_['update']='Fix Next page in genre pages'
 	return info_
 	
 	
@@ -52,7 +54,7 @@ class TSIPHost(TSCBaseHostClass):
 		if "'jschl-answer'" in data:
 			#try:
 			import cookielib
-			from Plugins.Extensions.IPTVPlayer.tsiplayer import cfscrape		
+			from Plugins.Extensions.IPTVPlayer.tsiplayer.libs import cfscrape		
 			scraper = cfscrape.create_scraper()
 			data = scraper.get(baseUrl).content
 			tokens, user_agent=cfscrape.get_tokens(self.MAIN_URL)
@@ -70,8 +72,22 @@ class TSIPHost(TSCBaseHostClass):
 		sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
 		return sts, data
 
-
-		 
+	def getPage(self,baseUrl, addParams = {}, post_data = None):
+		sts = False
+		try:
+			oRequestHandler = cRequestHandler(baseUrl)
+			if post_data:
+				oRequestHandler.setRequestType(cRequestHandler.REQUEST_TYPE_POST)
+				oRequestHandler.addParametersLine(post_data)			
+			if addParams!={}:
+				oRequestHandler.addParameters(addParams)
+			sHtmlContent    = oRequestHandler.request()
+			sts = True	
+		except Exception, e:
+			sHtmlContent='ERREUR:'+str(e)	
+		return sts, sHtmlContent
+		
+				 
 	def showmenu0(self,cItem):
 		hst='host2'
 		Planet_TAB = [
@@ -98,17 +114,20 @@ class TSIPHost(TSCBaseHostClass):
 		surl=self.MAIN_URL+url0+'page/'+str(page)+'/'
 		sts, data = self.getPage(surl)
 		if sts:
+			i=0
 			data1 = re.findall('fullstream fullstreaming.*?src="(.*?)".*?quality-container">(.*?)</div>.*?href="(.*?)">(.*?)<.*?<FONT.*?>(.*?)fullinfo">',data, re.S)		
 			for (image,qual,url,titre,desc) in data1:
+				i=i+1
 				desc=desc.replace('<strong><span','<stgrong><span')
 				desc=desc.replace('<strong>Qualit','Qualit')			
 				desc=desc.replace('<b>','\\n')
 				desc=desc.replace('<strong>','\\n')
 				desc=ph.clean_html(desc+'>').strip()		
 				self.addVideo({'import':cItem['import'],'title':titre+' \c0000??00('+ph.clean_html(qual)+')','url':url,'desc':desc,'icon':image,'good_for_fav':True,'EPG':True,'hst':'tshost'})
-			if '/regarder-film/' in url0:
+			if i>14:
 				self.addDir({'import':cItem['import'],'category' : 'host2','title':'Page Suivante','url':url0,'page':page+1,'mode':'30'})
-
+		else:
+			self.addMarker({'title':'\c00????00'+'----> Erreur <----','icon':'','desc':data})
 
 	def get_links(self,cItem): 	
 		sts, data = self.getPage(cItem['url'])
@@ -151,7 +170,9 @@ class TSIPHost(TSCBaseHostClass):
 		return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo1}]
 
 	def SearchResult(self, str_ch,page,extra):
-		post_data = {'do':'search', 'subaction':'search', 'search_start':page, 'full_search':'0', 'result_from':1+(page-1)*12, 'story':str_ch} 
+		#post_data  = {'do':'search', 'subaction':'search', 'search_start':page, 'full_search':'0', 'result_from':1+(page-1)*12, 'story':str_ch} 
+		query_args = (('do','search'), ('subaction','search'), ('search_start',page), ('full_search','0'), ('result_from',1+(page-1)*12), ('story',str_ch)) 
+		post_data = urllib.urlencode(query_args)
 		url = self.MAIN_URL+'/index.php?do=search'
 		sts, data = self.getPage(url, post_data=post_data)  
 		if sts: 

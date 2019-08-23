@@ -140,6 +140,7 @@ hostpinkbike
 hostplanetstreamingcom
 hostplaypuls
 hostplayrtsiw
+hosttsiplayer
 hostplusdede
 hostputlockertvto
 hostquesttvcouk
