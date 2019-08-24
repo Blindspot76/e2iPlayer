@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-07-11 by Alec - modified Filmezz
+# 2019-08-23 by Alec - modified Filmezz
 ###################################################
-HOST_VERSION = "2.0"
+HOST_VERSION = "2.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -60,7 +60,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://filmezz.eu/'
+    return 'https://filmezz.co/'
 
 class FilmezzEU(CBaseHostClass):
  
@@ -71,7 +71,7 @@ class FilmezzEU(CBaseHostClass):
         self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html'}
         self.AJAX_HEADER = dict(self.HEADER)
         self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest'} )
-        self.MAIN_URL = 'https://filmezz.eu/'
+        self.MAIN_URL = 'https://filmezz.co/'
         self.vivn = GetIPTVPlayerVerstion()
         self.porv = self.gits()
         self.pbtp = '-'
@@ -122,7 +122,8 @@ class FilmezzEU(CBaseHostClass):
             desc_search = self.getdvdsz(tab_search, 'Keresés...')
             tab_search_hist = 'filmezz_kereses_elozmeny'
             desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
-            MAIN_CAT_TAB = [{'category':'list_filters', 'title': _('Home'), 'url':self.getFullUrl('kereses.php'), 'tps':'0', 'tab_id':tab_home, 'desc':desc_home   },
+            MAIN_CAT_TAB = [
+                            #{'category':'list_filters', 'title': _('Home'), 'url':self.getFullUrl('kereses.php'), 'tps':'0', 'tab_id':tab_home, 'desc':desc_home   },
                             {'category':'list_items', 'title': _('Movies'), 'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=1&h=0&o=feltoltve'), 'tps':'1', 'tab_id':tab_movies, 'desc':desc_movies  },
                             {'category':'list_items', 'title': _('Series'), 'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=2&h=0&o=feltoltve'), 'tps':'2', 'tab_id':tab_series, 'desc':desc_series  },
                             {'category':'list_items', 'title': _('Top movies'), 'url':self.getFullUrl('kereses.php?q=0&l=0&e=0&c=0&t=1&h=0&o=nezettseg'), 'tps':'1', 'tab_id':tab_top_movies, 'desc':desc_top_movies  },
@@ -369,7 +370,7 @@ class FilmezzEU(CBaseHostClass):
                 url = self.getFullUrl(ph.search(url, ph.A)[1])
             if url == '': continue
 
-            if url.startswith('http://adf.ly/'):
+            if url.startswith('https://adf.ly/'):
                 url = urllib.unquote(url.rpartition('/')[2])
                 if url == '': continue
 
@@ -426,7 +427,7 @@ class FilmezzEU(CBaseHostClass):
                         url = ph.find(tmp, ('<a ', '>', 'url-btn play'), '</a>')[1]
                         url = self.getFullUrl(ph.search(url, ph.A)[1])
                     if url == '': continue
-                    if url.startswith('http://adf.ly/'):
+                    if url.startswith('https://adf.ly/'):
                         url = urllib.unquote(url.rpartition('/')[2])
                         if url == '': continue
                     if title not in titlesTab:
@@ -656,12 +657,12 @@ class FilmezzEU(CBaseHostClass):
         if pu != '' and psz != '':
             n_atnav = self.malvadst('1', '2', pu)
             if n_atnav != '' and self.aid:
-                if pu == 'filmezz_fooldal':
+                if pu == 'filmezz_filmek':
                     self.aid_ki = 'ID: ' + n_atnav + '  |  Filmezz  v' + HOST_VERSION + '\n'
                 else:
                     self.aid_ki = 'ID: ' + n_atnav + '\n'
             else:
-                if pu == 'filmezz_fooldal':
+                if pu == 'filmezz_filmek':
                     self.aid_ki = 'Filmezz  v' + HOST_VERSION + '\n'
                 else:
                     self.aid_ki = ''
