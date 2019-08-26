@@ -1,4 +1,6 @@
-﻿#2019.08.24.03
+﻿#2019.08.26.01
+-MediaSet Play javítva
+#2019.08.24.03
 -Kisebb javítások
 #2019.08.24.02
 -BeinMatch fordítás bővítve
