@@ -1,4 +1,7 @@
-﻿#2019.08.27.01
+﻿#2019.08.28.01
+-RaiPlay javítva
+-MediaSet Play javítva
+#2019.08.27.01
 -Twitch TV javítva
 #2019.08.26.01
 -MediaSet Play javítva
