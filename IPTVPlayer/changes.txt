@@ -1,4 +1,6 @@
-﻿#2019.08.28.01
+﻿#2019.09.01.01
+-Documentari Streaming hozzáadva
+#2019.08.28.01
 -RaiPlay javítva
 -MediaSet Play javítva
 #2019.08.27.01

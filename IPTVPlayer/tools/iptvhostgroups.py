@@ -74,8 +74,8 @@ class IPTVHostsGroups:
         self.PREDEFINED_HOSTS['sport']            = ['webstream','meczykipl','ekstraklasatv','laola1tv','bbcsport','ourmatchnet','hoofootcom','okgoals','ngolos','watchwrestlinguno','watchwrestling','fighttube','fightvideo', \
                                                      'twitchtv','hitboxtv','pinkbike','sportdeutschland','eurosportplayer','del','redbull']
         self.PREDEFINED_HOSTS['live']             = ['webstream','streamliveto','ustreamtv','youtube','dailymotion','eskago','arconaitvme','eurosportplayer','infoversion']
-        self.PREDEFINED_HOSTS['documentary']      = ['dokumentalnenet','greekdocumentaries3','dailymotion','orthobulletscom','vumedicom']
-        self.PREDEFINED_HOSTS['science']          = ['questtvcouk','dailymotion','ustreamtv','dokumentalnenet','orthobulletscom','vumedicom']
+        self.PREDEFINED_HOSTS['documentary']      = ['dokumentalnenet','greekdocumentaries3','dailymotion','orthobulletscom','vumedicom','dsda']
+        self.PREDEFINED_HOSTS['science']          = ['questtvcouk','dailymotion','ustreamtv','dokumentalnenet','orthobulletscom','vumedicom','dsda']
         
         self.PREDEFINED_HOSTS['polish']           = ['youtube','webstream','efilmytv','alltubetv','allboxtv','filisertv','ekinotv','cdapl','iitvpl','videopenny','zalukajcom','serialnet','tvpvod','ipla','tvnvod','vodpl', \
                                                      'freediscpl','ekstraklasatv','kreskowkazone','kreskoweczki','bajeczkiorg','animeodcinki','playpuls','meczykipl','eskago', \
