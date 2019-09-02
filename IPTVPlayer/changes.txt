@@ -1,4 +1,7 @@
-﻿#2019.09.01.01
+﻿#2019.09.02.01
+-Kisebb javítások
+-Ikonok frissítve
+#2019.09.01.01
 -Documentari Streaming hozzáadva
 #2019.08.28.01
 -RaiPlay javítva
