@@ -1,4 +1,6 @@
-﻿#2019.09.04.01
+﻿#2019.09.05.01
+-Felnőtt kiegészítő frissítve
+#2019.09.04.01
 -HU telepítő frissítve
 -FilmGo hozzáadva
 #2019.09.02.01
