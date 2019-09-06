@@ -163,7 +163,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.09.04.0"
+    XXXversion = "2019.09.06.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -4228,8 +4228,7 @@ class Host:
            if not sts: return 
            printDBG( 'Host listsItems data: '+str(data) )
            next_page = self.cm.ph.getSearchGroups(data, '''<link rel='next' href=['"]([^"^']+?)['"]''', 1, True)[0] 
-           #data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'data-vid=', '<div class="vid_wl')
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class=\'pes_wl', '</b></div>')
+           data = data.split('data-postid=')
            for item in data:
               printDBG( 'Host listsItems item: '+str(item) )
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"](/post/[^"^']+?)['"]''', 1, True)[0] 
@@ -7939,27 +7938,41 @@ class Host:
            return ''
 
         if parser == 'https://yourporn.sexy':
-           COOKIEFILE = os_path.join(GetCookieDir(), 'yourporn.cookie')
-           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
-           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE, 'return_data': True}
-           self.defaultParams['header']['Origin'] = 'https://sxyprn.com'
-           sts, data = self.getPage(url, 'yourporn.cookie', 'sxyprn.com', self.defaultParams)
-           if not sts: return ''
-           printDBG( 'Host listsItems data: '+str(data) )
-           videoUrl = self.cm.ph.getSearchGroups(data, '''data-vnfo=['"].*?:['"]([^"^']+?)['"]''')[0].replace(r"\/",r"/")
-           if videoUrl:
-               printDBG( 'Host listsItems videoUrl: '+videoUrl )
-               if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
-               if videoUrl.startswith('/'): videoUrl = 'https://sxyprn.com' + videoUrl
-               if '/cdn/' in videoUrl: videoUrl = videoUrl.replace('/cdn/','/cdn'+str(self.yourporn)+'/')
-               videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'Origin': 'https://sxyprn.com'}) 
+           for x in range(1, 99): 
+              COOKIEFILE = os_path.join(GetCookieDir(), 'yourporn.cookie')
+              self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+              self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE, 'return_data': True}
+              self.defaultParams['header']['Origin'] = 'https://sxyprn.com'
+              sts, data = self.getPage(url, 'yourporn.cookie', 'sxyprn.com', self.defaultParams)
+              if not sts: return ''
+              #printDBG( 'Host listsItems data: '+str(data) )
+              videoUrl = self.cm.ph.getSearchGroups(data, '''data-vnfo=['"].*?:['"]([^"^']+?)['"]''')[0].replace(r"\/",r"/")
+              if videoUrl:
+                 printDBG( 'Host listsItems videoUrl: '+videoUrl )
+                 if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+                 if videoUrl.startswith('/'): videoUrl = 'https://sxyprn.com' + videoUrl
+                 if '/cdn/' in videoUrl: videoUrl = videoUrl.replace('/cdn/','/cdn'+str(self.yourporn)+'/')
+                 videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'Origin': 'https://sxyprn.com'}) 
+                 tmp = videoUrl.split('/')
+                 a = str(int(tmp[-3]) - int(re.sub(r'\D', '', tmp[-2])) - int(re.sub(r'\D', '', tmp[-1])))
+                 try:
+                    printDBG( 'Host listsItems -5: '+str(int(re.sub(r'\D', '', tmp[-5])))) 
+                    printDBG( 'Host listsItems -4: '+str(int(re.sub(r'\D', '', tmp[-4]))) )
+                    printDBG( 'Host listsItems -3: '+str(int(tmp[-3])) )
+                    printDBG( 'Host listsItems -2: '+str(int(re.sub(r'\D', '', tmp[-2]))) )
+                    printDBG( 'Host listsItems -1: '+str(int(re.sub(r'\D', '', tmp[-1]))) )
+                    printDBG( 'Host listsItems a: '+a )
+                 except: pass
+                 if int(a)>0: 
+                    tmp[-3] = a
+                 else: 
+                    tmp[-3] = str(int(tmp[-3])-101)
+                 videoUrl = '/'.join(tmp)
 
-           #self.defaultParams['max_data_size'] = 0 , 'User-Agent':host
-           sts, data = self.getPage(videoUrl, 'yourporn.cookie', 'sxyprn.com', self.defaultParams)
-           if not sts: return ''
-           printDBG( 'Host listsItems data2: '+str(data) )
-
-           return data.meta['url']
+              self.defaultParams['max_data_size'] = 0
+              sts, data = self.getPage(videoUrl, 'yourporn.cookie', 'sxyprn.com', self.defaultParams)
+              if not sts: return ''
+              if not 'sxyprn' in data.meta['url']: return data.meta['url']
            return ''
 
         if parser == 'http://oklivetv.com':
@@ -8437,52 +8450,13 @@ class Host:
            sts, data = self.getPage(url, 'adulttv.cookie', 'adulttv.net', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data1: '+data )
-           if 'unescape' in data:
-              data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'eval(', ');', False)
-              try:
-                 ddata = ''
-                 for idx in range(len(data)):
-                    tmp = data[idx].split('+')
-                    for item in tmp:
-                       item = item.strip()
-                       if item.startswith("'") or item.startswith('"'):
-                          ddata += self.cm.ph.getSearchGroups(item, '''['"]([^'^"]+?)['"]''')[0]
-                       else:
-                          tmp2 = re.compile('''unescape\(['"]([^"^']+?)['"]''').findall(item)
-                          for item2 in tmp2:
-                             ddata += urllib.unquote(item2)
-                
-                 printDBG(ddata)
-                
-                 funName = self.cm.ph.getSearchGroups(ddata, '''function\s*([^\(]+?)''')[0].strip()
-                 sp      = self.cm.ph.getSearchGroups(ddata, '''split\(\s*['"]([^'^"]+?)['"]''')[0]
-                 modStr  = self.cm.ph.getSearchGroups(ddata, '''\+\s*['"]([^'^"]+?)['"]''')[0] 
-                 modInt  = int( self.cm.ph.getSearchGroups(ddata, '''\+\s*(-?[0-9]+?)[^0-9]''')[0] )
-                
-                 ddata =  self.cm.ph.getSearchGroups(ddata, '''document\.write[^'^"]+?['"]([^'^"]+?)['"]''')[0]
-                 data  = ''
-                 tmp   = ddata.split(sp)
-                 ddata = urllib.unquote(tmp[0])
-                 k = urllib.unquote(tmp[1] + modStr)
-                 for idx in range(len(ddata)):
-                    data += chr((int(k[idx % len(k)]) ^ ord(ddata[idx])) + modInt)
-                      
-                 printDBG('data: '+data)
-                
-                 if 'rtmp://' in data:
-                    rtmpUrl = self.cm.ph.getDataBeetwenMarkers(data, '&source=', '&', False)[1]
-                    if rtmpUrl == '':
-                       rtmpUrl = self.cm.ph.getSearchGroups(data, r'''['"](rtmp[^"^']+?)['"]''')[0]
-                    return rtmpUrl
-                 elif '.m3u8' in data:
-                    file = self.cm.ph.getSearchGroups(data, r'''['"](http[^"^']+?\.m3u8[^"^']*?)['"]''')[0]
-                    if file == '': file = self.cm.ph.getDataBeetwenMarkers(data, 'src=', '&amp;', False)[1]
-                    return file
-              except Exception:
-                 printExc()
+
 
            videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''')[0] 
            if not videoUrl: return ''
+           if 'exosrv' in videoUrl: return ''
+
+
            sts, data = self.getPage(videoUrl, 'adulttv.cookie', 'adulttv.net', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data2: '+data )
@@ -8501,7 +8475,7 @@ class Host:
                           for item2 in tmp2:
                              ddata += urllib.unquote(item2)
                 
-                 printDBG(ddata)
+                 printDBG('Host listsItems ddata2: '+ddata)
                 
                  funName = self.cm.ph.getSearchGroups(ddata, '''function\s*([^\(]+?)''')[0].strip()
                  sp      = self.cm.ph.getSearchGroups(ddata, '''split\(\s*['"]([^'^"]+?)['"]''')[0]
@@ -8516,7 +8490,7 @@ class Host:
                  for idx in range(len(ddata)):
                     data += chr((int(k[idx % len(k)]) ^ ord(ddata[idx])) + modInt)
                       
-                 printDBG('data: '+data)
+                 printDBG('host data2: '+data)
                 
                  if 'rtmp://' in data:
                     rtmpUrl = self.cm.ph.getDataBeetwenMarkers(data, '&source=', '&', False)[1]
