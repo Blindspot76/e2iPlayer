@@ -163,7 +163,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.09.06.0"
+    XXXversion = "2019.09.06.2"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -7937,6 +7937,14 @@ class Host:
            if videoUrl: return videoUrl.replace('&amp;','&').replace(r"\/",r"/")
            return ''
 
+        # make by 12asdfg12
+        def ssut51(str):
+            str = re.sub(r'\D', '', str)
+            sut = 0
+            for i in range(0, len(str)):
+                sut += int(str[i])
+            return sut
+
         if parser == 'https://yourporn.sexy':
            for x in range(1, 99): 
               COOKIEFILE = os_path.join(GetCookieDir(), 'yourporn.cookie')
@@ -7954,7 +7962,7 @@ class Host:
                  if '/cdn/' in videoUrl: videoUrl = videoUrl.replace('/cdn/','/cdn'+str(self.yourporn)+'/')
                  videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'Origin': 'https://sxyprn.com'}) 
                  tmp = videoUrl.split('/')
-                 a = str(int(tmp[-3]) - int(re.sub(r'\D', '', tmp[-2])) - int(re.sub(r'\D', '', tmp[-1])))
+                 a = str(int(tmp[-3]) - ssut51(re.sub(r'\D', '', tmp[-2])) - ssut51(re.sub(r'\D', '', tmp[-1])))
                  try:
                     printDBG( 'Host listsItems -5: '+str(int(re.sub(r'\D', '', tmp[-5])))) 
                     printDBG( 'Host listsItems -4: '+str(int(re.sub(r'\D', '', tmp[-4]))) )
@@ -7963,6 +7971,7 @@ class Host:
                     printDBG( 'Host listsItems -1: '+str(int(re.sub(r'\D', '', tmp[-1]))) )
                     printDBG( 'Host listsItems a: '+a )
                  except: pass
+
                  if int(a)>0: 
                     tmp[-3] = a
                  else: 
