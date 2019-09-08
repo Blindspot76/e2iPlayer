@@ -163,7 +163,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.09.06.2"
+    XXXversion = "2019.09.07.2"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -364,6 +364,7 @@ class Host:
            valTab.append(CDisplayListItem('ANALDIN',     'https://www.analdin.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.analdin.com/categories/'],'ANALDIN', 'https://www.analdin.com/images/logo-retina.png', None)) 
            valTab.append(CDisplayListItem('NETFLIXPORNO',     'https://netflixporno.net/', CDisplayListItem.TYPE_CATEGORY, ['https://netflixporno.net/'],'NETFLIXPORNO', 'https://netflixporno.net/wp-content/uploads/2018/04/netflixporno-1.png', None)) 
            valTab.append(CDisplayListItem('FAPSET',     'https://fapset.com', CDisplayListItem.TYPE_CATEGORY, ['https://fapset.com'],'fapset', 'https://fapset.com/templates/Default/images/logo.png', None)) 
+           valTab.append(CDisplayListItem('DAFTSEX',     'https://daftsex.com', CDisplayListItem.TYPE_CATEGORY, ['https://daftsex.com/categories'],'daftsex', 'https://daftsex.com/img/daftlogo196x196.png', None)) 
 
            if config.plugins.iptvplayer.xxxsortall.value:
                valTab.sort(key=lambda poz: poz.name)
@@ -6832,7 +6833,69 @@ class Host:
               if next.startswith('/'): next = self.MAIN_URL + next
               valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', 'next'))
            return valTab
-		   
+
+        if 'daftsex' == name:
+           printDBG( 'Host listsItems begin name='+name )
+           self.MAIN_URL = 'https://daftsex.com' 
+           self.format4k = config.plugins.iptvplayer.xxx4k.value
+           COOKIEFILE = os_path.join(GetCookieDir(), 'daftsex.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(url)
+           if not sts: return valTab
+           printDBG( 'Host listsItems data: '+data )
+           self.page = 0
+           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="video-item">', '</div>')
+           for item in data:
+              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0]
+              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0]
+              if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
+              phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0]
+              if phImage.startswith('/'): phImage = self.MAIN_URL + phImage
+              valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'daftsex-clips', phImage, None)) 
+           valTab.sort(key=lambda poz: poz.name)
+           valTab.insert(0,CDisplayListItem("--- LATEST ---","LATEST",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL],             'daftsex-clips',    '', None))
+           self.SEARCH_proc='daftsex-search'
+           valTab.insert(0,CDisplayListItem(_('Search history'), _('Search history'), CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
+           valTab.insert(0,CDisplayListItem(_('Search'),  _('Search'),                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
+           return valTab
+        if 'daftsex-search' == name:
+           printDBG( 'Host listsItems begin name='+name )
+           valTab = self.listsItems(-1, 'https://daftsex.com/video/%s' % url.replace(' ','+'), 'daftsex-clips')
+           return valTab
+        if 'daftsex-clips' == name:
+           printDBG( 'Host listsItems begin name='+name )
+           COOKIEFILE = os_path.join(GetCookieDir(), 'daftsex.cookie')
+           catUrl = self.currList[Index].possibleTypesOfSearch
+           if catUrl == 'next':
+              self.page += 1
+              post_data = {'page' : str(self.page)}
+           else:
+              self.page = 0
+              post_data = {}
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(url, self.defaultParams, post_data)
+           if not sts: return valTab
+           printDBG( 'Host listsItems data: '+data )
+           next = self.cm.ph.getDataBeetwenMarkers(data, '>&uarr;<', '</div>', False)[1]
+           data = data.split('<div class="video-item">')
+           for item in data:
+              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0].replace('\n','').strip()
+              phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+              Time = self.cm.ph.getSearchGroups(item, '''time">([^>]+?)<''', 1, True)[0].strip()
+              Added = self.cm.ph.getSearchGroups(item, '''date">([^>]+?)<''', 1, True)[0].strip()
+              if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
+              if phImage.startswith('//'): phImage = 'https:' + phImage
+              try:
+                 phImage = urlparser.decorateUrl(phImage, {'Referer': url})
+              except: pass
+              if phTitle:
+                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle)+'\nAdded['+Added+']',CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
+           if next:
+              valTab.append(CDisplayListItem('Next ', 'Page: '+str(self.page+1), CDisplayListItem.TYPE_CATEGORY, [url], name, '', 'next'))
+           return valTab
 		   
 		   
         return valTab
@@ -6954,6 +7017,7 @@ class Host:
         if url.startswith('http://fileone.tv'):                       return 'xxxlist.txt'
         if url.startswith('https://fileone.tv'):                      return 'xxxlist.txt'
         if url.startswith('https://streamcherry.com'):                return 'xxxlist.txt'
+        if url.startswith('https://vk.com'):                          return 'xxxlist.txt'
         if url.startswith('http://dato.porn'):                        return 'http://dato.porn'
         if url.startswith('https://dato.porn'):                       return 'http://dato.porn'
         if url.startswith('http://datoporn.co'):                      return 'http://dato.porn'
@@ -6974,7 +7038,6 @@ class Host:
         if self.MAIN_URL == 'https://czechvideo.org':                 return 'xxxlist.txt'
         if self.MAIN_URL == 'http://www.pornfromczech.com':           return 'xxxlist.txt' 
         if self.MAIN_URL == 'http://netflixporno.net':                return 'xxxlist.txt'
-
 
 # A TO DO ...
         if url.startswith('http://www.slutsxmovies.com/embed/'): return 'http://www.nuvid.com'
@@ -7116,6 +7179,7 @@ class Host:
         if self.MAIN_URL == 'https://www.gotporn.com':       return self.MAIN_URL 
         if self.MAIN_URL == 'https://www.analdin.com':       return self.MAIN_URL 
         if self.MAIN_URL == 'https://fapset.com':            return self.MAIN_URL
+        if self.MAIN_URL == 'https://daftsex.com':           return self.MAIN_URL
 
         return ''
 
@@ -7959,25 +8023,22 @@ class Host:
                  printDBG( 'Host listsItems videoUrl: '+videoUrl )
                  if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
                  if videoUrl.startswith('/'): videoUrl = 'https://sxyprn.com' + videoUrl
-                 if '/cdn/' in videoUrl: videoUrl = videoUrl.replace('/cdn/','/cdn'+str(self.yourporn)+'/')
+                 try:
+                    match = re.search('src="(/js/main[^"]+)"', data, re.DOTALL | re.IGNORECASE)
+                    if match.group(1).startswith('/'): result = 'https://sxyprn.com' + match.group(1)
+                    sts, jsscript = self.getPage(result, 'yourporn.cookie', 'sxyprn.com', self.defaultParams)
+                    replaceint = re.search(r'tmp\[1\]\+= "(\d+)";', jsscript, re.DOTALL | re.IGNORECASE).group(1)
+                    videoUrl = videoUrl.replace('/cdn/', '/cdn%s/' % replaceint)
+                 except:
+                    if '/cdn/' in videoUrl: videoUrl = videoUrl.replace('/cdn/','/cdn'+str(self.yourporn)+'/')
                  videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'Origin': 'https://sxyprn.com'}) 
                  tmp = videoUrl.split('/')
                  a = str(int(tmp[-3]) - ssut51(re.sub(r'\D', '', tmp[-2])) - ssut51(re.sub(r'\D', '', tmp[-1])))
-                 try:
-                    printDBG( 'Host listsItems -5: '+str(int(re.sub(r'\D', '', tmp[-5])))) 
-                    printDBG( 'Host listsItems -4: '+str(int(re.sub(r'\D', '', tmp[-4]))) )
-                    printDBG( 'Host listsItems -3: '+str(int(tmp[-3])) )
-                    printDBG( 'Host listsItems -2: '+str(int(re.sub(r'\D', '', tmp[-2]))) )
-                    printDBG( 'Host listsItems -1: '+str(int(re.sub(r'\D', '', tmp[-1]))) )
-                    printDBG( 'Host listsItems a: '+a )
-                 except: pass
-
                  if int(a)>0: 
                     tmp[-3] = a
                  else: 
                     tmp[-3] = str(int(tmp[-3])-101)
                  videoUrl = '/'.join(tmp)
-
               self.defaultParams['max_data_size'] = 0
               sts, data = self.getPage(videoUrl, 'yourporn.cookie', 'sxyprn.com', self.defaultParams)
               if not sts: return ''
@@ -8734,6 +8795,54 @@ class Host:
            match = re.findall('source src="(.*?)"', data, re.S)
            if match: return match[0]
            else: return ''
+
+        def FindServer(video):
+            crazycloud_list = ['13-2','14-2','15-2','16-2','17-2','20-2','13-1','14-1','15-1','16-1','17-1','20-1','13-3','16-3','17-3','20-3','13-4','16-4','13-5','13-6']
+            daxab_list = ['11-1','11-2','11-3','11-4','12-1','12-4','12-5','19-1','19-2','21-1','21-2','25-1','25-2','27-1','27-2','29-1','36-1','36-2','38-1','38-2','38-3','43-1','45-1','46-1','47-1','48-1','49-1','49-2','49-3','49-4','49-5','49-6','49-7','50-1','51-1','52-1','53-1','54-1','55-1','56-1','57-1','58-1','59-1','60-1']
+            crazycloud_list.reverse()
+            for srv in crazycloud_list:
+                server = 'https://psv' + srv + '.crazycloud.ru/videos/'
+                try:
+                    code = urllib2.urlopen(server + video).getcode()
+                    printDBG( 'Host  server + video: '+server + video )
+                    return (server + video)
+                except Exception: 
+                    printExc()
+            daxab_list.reverse()
+            for srv in daxab_list:
+                server = 'https://psv' + srv + '.daxab.com/videos/'
+                try:
+                    code = urllib2.urlopen(server + video).getcode()
+                    printDBG( 'Host  server + video2: '+server + video )
+                    return (server + video)
+                except Exception: printExc()
+
+        if parser == 'https://daftsex.com':
+           COOKIEFILE = os_path.join(GetCookieDir(), 'daftsex.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           self.defaultParams['header']['Referer'] = parser
+           sts, data = self.get_Page(url)
+           if not sts: return ''
+           printDBG( 'Host  data: '+data )
+           videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https://da[^"^']+?)['"]''')[0] 
+           sts, data2 = self.get_Page(videoUrl)
+           if not sts: return ''
+           printDBG( 'Host  data2: '+data2 )
+
+           try:
+              match = re.compile('id: "([^"]+)_([^"]+)".+:"(\d+)\.([^"]+)"}', re.DOTALL | re.IGNORECASE).findall(data2)[0]
+              (id1, id2, res, extra) =  match
+              video =  id1 + '/' + id2 + '/' + res + '.mp4?extra=' + extra
+              printDBG( 'Host  video: '+video )
+              return FindServer(video)
+           except:
+              videoUrl = 'https://vk.com/video' + re.compile("Fav.Toggle\(this, '([^']+)'", re.DOTALL | re.IGNORECASE).findall(data)[0]
+              printDBG( 'Host  video2: '+videoUrl )
+              videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url}) 
+              return self.getResolvedURL(videoUrl)
+           return ''
+
 ##########################################################################################################################
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
         try:
