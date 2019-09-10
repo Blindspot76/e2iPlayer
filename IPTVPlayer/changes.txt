@@ -1,4 +1,6 @@
-﻿#2019.09.08.01
+﻿#2019.09.10.01
+-Felnőtt kiegészítő javítva
+#2019.09.08.01
 -DaftSex hozzáadva
 -Kisebb javítások
 #2019.09.07.01
