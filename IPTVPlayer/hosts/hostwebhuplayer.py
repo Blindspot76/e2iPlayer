@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-08-12 by Alec - Web HU Player
+# 2019-09-10 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "2.5"
+HOST_VERSION = "2.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -35,11 +35,6 @@ try:
     FOUND_SUB = True
 except Exception:
     FOUND_SUB = False
-try:
-    import requests
-    FOUND_REQ = True
-except Exception:
-    FOUND_REQ = False
 from Tools.Directories import resolveFilename, fileExists, SCOPE_PLUGINS
 from Screens.MessageBox import MessageBox
 from hashlib import sha1
@@ -1062,17 +1057,6 @@ class webhuplayer(CBaseHostClass):
             printExc()
         return
         
-    def ultpvz(self, i_u=''):
-        bv = ''
-        try:
-            if i_u != '':
-                r = requests.get(i_u, stream=True, timeout=1.5)
-                if r:
-                    bv = r.headers['content-type']
-            return bv
-        except Exception:
-            return ''
-        
     def tkn_dt(self, fan):
         encoding = 'utf-8'
         data = []
@@ -1199,8 +1183,6 @@ class webhuplayer(CBaseHostClass):
                 msg = 'Hiba: 103 - Nem megfelelő E2iPlayer könyvtár!'
             elif FOUND_SUB == False:
                 msg = 'Hiba: 104 - Sajnos nem kompatibilis a set-top-box rendszered a használathoz!\nsubprocess modul kell a használathoz, telepítsd azt!'
-            elif FOUND_REQ == False:
-                msg = 'Hiba: 105 - Sajnos nem kompatibilis a set-top-box rendszered a használathoz!\nrequests modul kell a használathoz, telepítsd azt!'
             else:
                 valasz = True
         except Exception:

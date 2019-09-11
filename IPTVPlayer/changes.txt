@@ -1,4 +1,7 @@
-﻿#2019.09.10.01
+﻿#2019.09.11.01
+-WebHU Player frissítve
+-FilmGo frissítve
+#2019.09.10.01
 -Felnőtt kiegészítő javítva
 #2019.09.08.01
 -DaftSex hozzáadva

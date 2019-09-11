@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-09-04 by Alec - modified Filmgo
+# 2019-09-10 by Alec - modified Filmgo
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -312,8 +312,6 @@ class Filmgo(CBaseHostClass):
         retTab = []
         md = '1'
         try:
-            if cItem['category'] != 'list_third':
-                self.susmrgts('2', '13', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'])
             if 'seasons' in cItem['url']:
                 if 'episodes' in cItem['url']:
                     evad = int(self.name_find(cItem['url'],'seasons/','/episodes'))
@@ -353,7 +351,12 @@ class Filmgo(CBaseHostClass):
                         else:
                             name = url_name + ' | ' + item['label']
                         retTab.append({'name':name, 'url':item['url'], 'need_resolve':1})
-            return retTab
+            if len(retTab) > 0:
+                if cItem['category'] != 'list_third':
+                    self.susmrgts('2', '13', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'])
+                return retTab
+            else:
+                return []
         except Exception:
             return []
             
