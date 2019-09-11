@@ -64,6 +64,7 @@ class IPTVHostsGroups:
         'webhuplayer' : [ 'hungarian'] ,
         'filmgo' : [ 'hungarian', 'moviesandseries'] ,
         'filmezz' : [ 'hungarian', 'moviesandseries'] ,
+        'nonstopmozi' : [ 'hungarian', 'moviesandseries'] ,
         'mozicsillag' : [ 'hungarian', 'moviesandseries'] ,
         'm4sport' : [ 'hungarian', 'sport'] ,
         'autohu' : [ 'hungarian', 'sport'] ,
