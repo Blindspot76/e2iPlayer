@@ -1,4 +1,7 @@
-﻿#2019.09.11.02
+﻿#2019.09.14.01
+-YouTube frissítve
+-Kisebb módosítások
+#2019.09.11.02
 -HU telepítő frissítve
 -NonStop Mozi hozzáadva
 #2019.09.11.01

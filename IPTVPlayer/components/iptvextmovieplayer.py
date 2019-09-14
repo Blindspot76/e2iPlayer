@@ -4,7 +4,7 @@
 #
 #  $Id$
 #
-# # 2019-08-04 - Modified by Alec
+# # 2019-09-14 - Modified by Blindspot
 ###################################################
 # LOCAL import
 ###################################################
@@ -1283,11 +1283,11 @@ class IPTVExtMoviePlayer(Screen):
         
     def saveLastPlaybackTime(self):
         lastPosition = self.playback.get('ConfirmedCTime', 0)
-        if config.plugins.iptvplayer.remember_last_position.value and lastPosition > 0:
+        if config.plugins.iptvplayer.remember_last_position.value and lastPosition > 0 and not config.plugins.iptvplayer.remember_last_position_ignore.value:
             self.metaHandler.setLastPosition( lastPosition )
     
     def loadLastPlaybackTime(self):
-        if config.plugins.iptvplayer.remember_last_position.value and self.lastPosition < 1:
+        if config.plugins.iptvplayer.remember_last_position.value and self.lastPosition < 1 and not config.plugins.iptvplayer.remember_last_position_ignore.value:
             self.lastPosition = self.metaHandler.getLastPosition()
     
     # handling of RCU keys

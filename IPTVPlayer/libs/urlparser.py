@@ -547,6 +547,7 @@ class urlparser:
                        'clooud.cc':            self.pp.parserCLOOUDCC       , 
                        'veuclips.com':         self.pp.parserVEUCLIPS       , 
                        'verystream.com':       self.pp.parserVERYSTREAM     ,
+                       'woof.tube':            self.pp.parserVERYSTREAM     ,
                        'rapidstream.co':       self.pp.parserRAPIDSTREAMCO  ,
                        'videohouse.me':        self.pp.parserVIDEOHOUSE     ,
                        'justupload.io':        self.pp.parserJUSTUPLOAD     ,
