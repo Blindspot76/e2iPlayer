@@ -1,4 +1,6 @@
-﻿#2019.09.14.01
+﻿#2019.09.15.01
+-Kisebb javítások
+#2019.09.14.01
 -YouTube frissítve
 -Kisebb módosítások
 #2019.09.11.02
