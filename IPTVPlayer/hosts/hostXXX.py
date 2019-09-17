@@ -163,7 +163,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.09.09.0"
+    XXXversion = "2019.09.17.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -1442,19 +1442,22 @@ class Host:
            COOKIEFILE = os_path.join(GetCookieDir(), 'beeg.cookie')
            sts, data = self.get_Page(url)
            if not sts: return
-           #printDBG( 'Host listsItems data: '+data )
+           printDBG( 'Host listsItems data: '+data )
            try:
               result = byteify(simplejson.loads(data))
               if result:
                  for item in result["videos"]:
                     phTitle = str(item["title"])
-                    phVideoId = str(item["id"])
+                    #phVideoId = str(item["id"])
                     try:
-                       phVideoSvId = str(item["svid"])+'?v=2'
+                       pid = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''pid['"]:([^"^']+?),''', 1, True)[0].strip()
+                       start = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''start['"]:([^"^']+?),''', 1, True)[0].strip()
+                       end = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''end['"]:([^"^']+?),''', 1, True)[0].strip()
+                       phVideoSvId = str(item["svid"])+'?v=2&p='+pid+'&s='+start+'&e='+end
                     except Exception:
                        printExc()
                        phVideoSvId = ''
-                    phUrl = 'https:%s%s/video/%s/%s' % (self.beeg_api, self.beeg_version, phVideoId, phVideoSvId)
+                    phUrl = 'https:%s%s/video/%s' % (self.beeg_api, self.beeg_version, phVideoSvId)
                     try:
                         phImage = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''image['"]:\s['"]([^"^']+?)['"]''', 1, True)[0]
                         phImage = 'http://img.beeg.com/236x177/%s' % phImage
@@ -7348,7 +7351,7 @@ class Host:
            return ''
 
         if parser == 'http://beeg.com':
-           URL = url.replace('/'+url.split('/')[-1], '')
+           URL = url
            sts, data = self.get_Page(URL)
            if not sts: return
            printDBG( 'second beeg-clips data: '+data )

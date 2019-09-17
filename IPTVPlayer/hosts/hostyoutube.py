@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 ###################################################
-# 2019-09-14 by Blindspot - modified Youtube
+# 2019-09-17 by Blindspot - modified Youtube
 ###################################################
 # LOCAL import
 ###################################################
@@ -34,8 +34,7 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("Default video quality:"), config.plugins.iptvplayer.ytDefaultformat))
     optionList.append(getConfigListEntry(_("Use default video quality:"), config.plugins.iptvplayer.ytUseDF))
     optionList.append(getConfigListEntry(_("Korhatár ellenőrzés kihagyása:"), config.plugins.iptvplayer.ytAgeGate))
-    if config.plugins.iptvplayer.remember_last_position.value != 'false': 
-        optionList.append(getConfigListEntry(_("Ne jegyezze meg az utolsó lejátszási pozíciót:"), config.plugins.iptvplayer.remember_last_position_ignore))
+    
     # temporary, the ffmpeg must be in right version to be able to merge file without transcoding
     # checking should be moved to setup
     if IsExecutable('ffmpeg'): 

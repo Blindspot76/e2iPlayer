@@ -1,4 +1,8 @@
-﻿#2019.09.15.01
+﻿#2019.09.17.01
+-Kisebb javítások
+-YouTube frissítve
+-Beeg javítva (XXX)
+#2019.09.15.01
 -Kisebb javítások
 #2019.09.14.01
 -YouTube frissítve
