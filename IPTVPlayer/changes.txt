@@ -1,4 +1,6 @@
-﻿#2019.09.21.01
+﻿#2019.09.21.02
+-Kisebb javítások
+#2019.09.21.01
 -AsheMaleTube javítva (XXX)
 #2019.09.17.01
 -Kisebb javítások
