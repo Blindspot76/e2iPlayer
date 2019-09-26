@@ -1,4 +1,7 @@
-﻿#2019.09.21.02
+﻿#2019.09.26.01
+-eKino.tv javítva
+-Auto.HU frissítve
+#2019.09.21.02
 -Kisebb javítások
 #2019.09.21.01
 -AsheMaleTube javítva (XXX)
