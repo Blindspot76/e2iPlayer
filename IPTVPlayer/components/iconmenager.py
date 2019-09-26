@@ -11,7 +11,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import mkdirs, \
                       FreeSpace as iptvtools_FreeSpace, \
                       printDBG, printExc, RemoveOldDirsIcons, RemoveAllFilesIconsFromPath, \
                       RemoveAllDirsIconsFromPath, GetIconsFilesFromDir, GetNewIconsDirName, \
-                      GetIconsDirs, RemoveIconsDirByPath
+                      GetIconsDirs, RemoveIconsDirByPath, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs import ph
 ###################################################
@@ -31,8 +31,10 @@ from Components.config import config
 #config.plugins.iptvplayer.SciezkaCache = ConfigText(default = "/hdd/IPTVCache")
 
 class IconMenager:
-    HEADER = {'User-Agent': 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.18) Gecko/20110621 Mandriva Linux/1.9.2.18-0.1mdv2010.2 (2010.2) Firefox/3.6.18', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
+    HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding': 'gzip, deflate'}
+    #HEADER = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'}
 
+	
     def __init__(self, updateFun = None, downloadNew = True):
         printDBG( "IconMenager.__init__" )
         self.DOWNLOADED_IMAGE_PATH_BASE = config.plugins.iptvplayer.SciezkaCache.value
@@ -246,7 +248,9 @@ class IconMenager:
         else:
             self.checkSpace -= 1
         file_path = "%s%s" % (path, filename)
-        params = {} #{'maintype': 'image'}
+        
+        params = {}	#{'maintype': 'image'}
+        
         if config.plugins.iptvplayer.allowedcoverformats.value != 'all':
             subtypes = config.plugins.iptvplayer.allowedcoverformats.value.split(',')
             #params['subtypes'] = subtypes
@@ -254,9 +258,22 @@ class IconMenager:
             if 'jpeg' in subtypes: params['check_first_bytes'].extend(['\xFF\xD8','\xFF\xD9'])
             if 'png' in subtypes: params['check_first_bytes'].append('\x89\x50\x4E\x47')
             if 'gif' in subtypes: params['check_first_bytes'].extend(['GIF87a','GIF89a'])
+            # formato webp	'RI'
+            if 'webp' in subtypes: params['check_first_bytes'].extend(['RI'])
         else:
-            params['check_first_bytes'] = ['\xFF\xD8', '\xFF\xD9', '\x89\x50\x4E\x47','GIF87a','GIF89a']
+            params['check_first_bytes'] = ['\xFF\xD8', '\xFF\xD9', '\x89\x50\x4E\x47','GIF87a','GIF89a','RI']
         
+        if img_url.endswith('|cf'):
+            img_url = img_url[:-3]
+            params_cfad = {'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True} 
+            domain = urlparser.getDomain(img_url, onlyDomain=True)
+            if domain.startswith("www."):
+                domain = domain[4:]
+            params_cfad['cookiefile']= '/hdd/IPTVCache//cookies/{0}.cookie'.format(domain)
+
+        else:
+            params_cfad={}
+            
         if img_url.endswith('need_resolve.jpeg'):
             domain = urlparser.getDomain(img_url)
             if domain.startswith('www.'): domain = domain[4:]
@@ -318,8 +335,10 @@ class IconMenager:
                 except Exception:
                     printExc()
                     return False
-        
+                
         if not self.cm.isValidUrl(img_url): return False
         
-        return self.cm.saveWebFile(file_path, img_url, params)['sts']
+        params = MergeDicts(params, params_cfad)
+        
+        return self.cm.saveWebFile(file_path, img_url, addParams = params)['sts']
     

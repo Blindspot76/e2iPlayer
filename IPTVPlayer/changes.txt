@@ -1,4 +1,8 @@
-﻿#2019.09.26.01
+﻿#2019.09.26.02
+-CineMay javítva
+-Planet Streaming képmegjelenítés javítva
+-HDFilme javítva
+#2019.09.26.01
 -eKino.tv javítva
 -Auto.HU frissítve
 #2019.09.21.02
