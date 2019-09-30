@@ -51,7 +51,7 @@ def GetConfigList():
 ###################################################
 
 def gettytul():
-    return 'https://serienstream.to/'
+    return 'https://serienstream.sx/'
 
 class SerienStreamTo(CBaseHostClass, CaptchaHelper):
  
@@ -64,8 +64,8 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
         
         self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
         
-        self.MAIN_URL = 'https://s.to/'
-        self.DEFAULT_ICON_URL = 'https://s.to/public/img/facebook.jpg'
+        self.MAIN_URL = 'https://serienstream.sx/'
+        self.DEFAULT_ICON_URL = 'https://serienstream.sx/public/img/facebook.jpg'
         
         
         self.MAIN_CAT_TAB = [{'category':'all_series',        'title': 'Alle Serien',                     'url':self.getFullUrl('/serien-alphabet') },
@@ -227,8 +227,9 @@ class SerienStreamTo(CBaseHostClass, CaptchaHelper):
         if not sts: return
         
         tmp  = self.cm.ph.getDataBeetwenMarkers(data, '<div class="seriesContentBox"', '<div class="series-add')[1]
-        icon = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''src=['"]([^'^"]+?)['"]''')[0])
-        if '' == icon: icon = cItem.get('series_title', '')
+        icon = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''data-src=['"]([^'^"]+?)['"]''')[0])
+        if '' == icon: 
+            icon = cItem.get('series_title', '')
         desc = self.cleanHtmlStr(self.cm.ph.getSearchGroups(tmp, '''description=['"]([^'^"]+?)['"]''')[0])
         
         trailerUrl = self.getFullUrl(self.cm.ph.getSearchGroups(tmp, '''href=['"]([^'^"]+?)['"][^>]+?itemprop=['"]trailer['"]''')[0])

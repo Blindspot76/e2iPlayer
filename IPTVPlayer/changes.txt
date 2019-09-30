@@ -1,4 +1,8 @@
-﻿#2019.09.26.02
+﻿#2019.09.30.01
+-Rai Play javítva
+-SerienStreams javítva
+-Kisebb módosítások (Feliratkeresés)
+#2019.09.26.02
 -CineMay javítva
 -Planet Streaming képmegjelenítés javítva
 -HDFilme javítva
