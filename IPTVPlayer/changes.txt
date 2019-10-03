@@ -1,4 +1,7 @@
-﻿#2019.09.30.01
+﻿#2019.10.03.01
+-HD Filme javítva
+-Rai Play EPG forrás frissítve
+#2019.09.30.01
 -Rai Play javítva
 -SerienStreams javítva
 -Kisebb módosítások (Feliratkeresés)
