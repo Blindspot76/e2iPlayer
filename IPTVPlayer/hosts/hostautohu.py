@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-09-24 by Alec - auto.HU
+# 2019-10-06 by Alec - auto.HU
 #            by celeburdi - rtlmost.hu
 #            by McFly - logok
 ###################################################
-HOST_VERSION = "1.7"
+HOST_VERSION = "1.8"
 ###################################################
 # LOCAL import
 ###################################################
@@ -137,12 +137,16 @@ class AutosHU(CBaseHostClass):
         self.DEFAULT_ICON_URL_VEZESS = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9LrUotLo7PyU/P18sqSAcAfukRNg=='))
         self.DEFAULT_ICON_URL_AUTONAV = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8sLcnPSyzLTE8syS+Kz8lPz9fLKkgHAAP0FBo='))
         self.DEFAULT_ICON_URL_HANDRAS = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzEspSiyOz8lPz9fLKkgHAI57EXc='))
+        self.DEFAULT_ICON_URL_AUTOSAMAN = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8sLckvTsxNzIvPyU/P18sqSAcAtIMSXw=='))
+        self.DEFAULT_ICON_URL_AUTOROOM = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8sLckvys/Pjc/JT8/XyypIBwCi7hIM'))
         self.MAIN_URL_FORMA1 = zlib.decompress(base64.b64decode('eJzLKCkpKLbS108zTCstSczNz9ZLLQUATWQHYg=='))
         self.DEFAULT_ICON_URL_FORMA1 = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8zjM/JT8/XK8hLBwA4Gg8x'))
         self.MAIN_URL_FORMA1_VERSENYNAPTAR = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLNSkuyC8q0cso1U8z1C1LLSpOzavMSywoSSzSBwAwVw73'))
         self.MAIN_URL_FORMA1_PONTVERSENY = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLNSkuyC8q0cso1U8z1C3IzyspSy0qTs2r1AcAErkOMg=='))
         self.MAIN_URL_HOLVEZES = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v18vIzylLrUotLk7N1sso1U9PzEktykzUyyjJzQEAGlgOkQ=='))
         self.DEFAULT_ICON_URL_HOLVEZES = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c/IzylLrUotjs/JT8/XK8hLBwCiphIK'))
+        self.MAIN_URL_AUTOSHOW = zlib.decompress(base64.b64decode('eJxLLC3Jj08EEsUZ+eUAJpYFkw=='))
+        self.DEFAULT_ICON_URL_AUTOSHOW = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8sLckvzsgvj8/JT8/XyypIBwCjCxIQ'))
         self.kfvk = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUTzPUBwAMUA2+'))
         self.kfvcsk =zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUTzNMLk4sSCzRBwBowRA6'))
         self.vivn = GetIPTVPlayerVerstion()
@@ -164,9 +168,9 @@ class AutosHU(CBaseHostClass):
         url_legfris = 'legfrissebb'
         desc_legfris = self.getdvdsz(url_legfris, 'auto.HU - v' + HOST_VERSION + '\n\nLegfrissebb autós adások, műsorok és információk gyűjtőhelye. Amennyiben egyes adások nem játszhatók le - NINCS ELÉRHETŐ LINK, akkor az adott műsor tartalomszolgáltatója megváltoztatta annak elérhetőségét. Ez nem az "auto.HU" lejátszó hibája!!!  Kérlek, hogy ezt vedd figyelembe...')
         url_mindentudo = 'auto_hu_mindentudo'
-        desc_mindentudo = self.getdvdsz(url_mindentudo, 'Minden, ami az autókról, illetve az autózásről tudni kell. Autós műsorcsatornák lejátszási listái, videói.\nÉrdekes elméleti és gyakorlati ismeretek bemutatói, videói...')
+        desc_mindentudo = self.getdvdsz(url_mindentudo, 'Minden, ami az autókról, illetve az autózásről tudni kell.\nAutós műsorcsatornák (VEZESS TV, TOTALCAR, AUTÓNAVIGÁTOR, HANDRAS TV, AUTÓSÁMÁN, AUTOROOM) lejátszási listái, videói.\nÉrdekes elméleti és gyakorlati ismeretek bemutatói, videói...')
         url_autoskoz = 'auto_hu_musorcsat'
-        desc_autoskoz = self.getdvdsz(url_autoskoz, 'Autós műsorcsatornák (AUTOGRAM, GARAZS, SUPERCAR, TOTALCAR, HOLVEZESSEK) műsorai...')
+        desc_autoskoz = self.getdvdsz(url_autoskoz, 'Autós műsorcsatornák (AUTOGRAM, GARAZS, SUPERCAR, TOTALCAR, HOLVEZESSEK, AUTOSHOW) műsorai...')
         url_inenonan = 'inenonan'
         desc_inenonan = self.getdvdsz(url_inenonan, 'Autós műsorok véletlenszerű megjelenéssel (A betöltődés hosszabb ideig is eltarthat, max. 1-2 percig is. Várd meg míg betöltődnek az adások..)')
         url_atipus = 'atipus'
@@ -203,11 +207,15 @@ class AutosHU(CBaseHostClass):
         desc_total = self.getdvdsz(url_totalcar, 'TotalcarTV autós műsor adásai...')
         url_holvezes = self.MAIN_URL_HOLVEZES
         desc_holvezes = self.getdvdsz(url_holvezes, 'Holvezessek.hu autós műsor adásai...')
+        plurl_autoshow = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoW5pbump3mFhGVkRJYHBEUFZxqm6nuUA5W4W7A=='))
+        url_autoshow = self.MAIN_URL_AUTOSHOW
+        desc_autoshow = self.getdvdsz(url_autoshow, 'AutoSHOW videói...')
         MR_CAT_TAB = [{'category':'list_second', 'title': 'Autogram adásai', 'url': url_autogram, 'tab_id': 'autogram', 'icon': self.DEFAULT_ICON_URL_AUTOGRAM, 'desc': desc_autogram},
                       {'category':'list_second', 'title': 'GarázsTV adásai', 'url': url_garazs, 'tab_id': 'garazs', 'icon': self.DEFAULT_ICON_URL_GARAZS, 'desc': desc_garazs},
                       {'category':'list_second', 'title': 'Supercar adásai', 'url': url_super, 'tab_id': 'supercar', 'icon': self.DEFAULT_ICON_URL_SUPERCAR, 'desc': desc_super},
                       {'category':'list_second', 'title': 'TotalcarTV adásai', 'url': url_totalcar, 'tab_id': 'totalcar', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_total},
-                      {'category':'list_second', 'title': 'Holvezessek adásai', 'url': url_holvezes, 'tab_id': 'holvezes', 'icon': self.DEFAULT_ICON_URL_HOLVEZES, 'desc': desc_holvezes}
+                      {'category':'list_second', 'title': 'Holvezessek adásai', 'url': url_holvezes, 'tab_id': 'holvezes', 'icon': self.DEFAULT_ICON_URL_HOLVEZES, 'desc': desc_holvezes},
+                      {'category':'list_second', 'title': 'AutoSHOW adásai', 'url': url_autoshow, 'plurl': plurl_autoshow, 'tab_id': 'autoshow', 'icon': self.DEFAULT_ICON_URL_AUTOSHOW, 'desc': desc_autoshow}
                      ]
         self.listsTab(MR_CAT_TAB, cItem)
         
@@ -222,10 +230,18 @@ class AutosHU(CBaseHostClass):
         desc_autonav_m = self.getdvdsz(url_autonav_m, 'Autónavigátor csatorna műsorai, videói...')
         url_handras_m = 'auto_handras_csatorna_m'
         desc_handras_m = self.getdvdsz(url_handras_m, 'Handras TV csatorna videói...')
+        plurl_autosaman = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoeZBATmGRaFJwc65YXkRnu7mSaaWxekA37YWiw=='))
+        url_autosaman_m = 'auto_autosaman_csatorna_m'
+        desc_autosaman_m = self.getdvdsz(url_autosaman_m, 'AutóSámán.hu csatorna videói...')
+        plurl_autoroom = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoUEWhVEpXh5G3vnBibrJ6eXmOY6FpY4A4IAWwA=='))
+        url_autoroom_m = 'auto_autoroom_csatorna_m'
+        desc_autoroom_m = self.getdvdsz(url_autoroom_m, 'AutoRoom csatorna videói...')
         MT_CAT_TAB = [{'category':'list_second', 'title': 'Vezess TV', 'url': url_vezess_m, 'tab_id': 'vezess_m', 'icon': self.DEFAULT_ICON_URL_VEZESS, 'desc': desc_vezess_m},
                       {'category':'list_second', 'title': 'Totalcar', 'url': url_totalcar_m, 'tab_id': 'totalcar_m', 'icon': self.DEFAULT_ICON_URL_TOTALCAR, 'desc': desc_totalcar_m},
                       {'category':'list_second', 'title': 'Autónavigátor', 'url': url_autonav_m, 'tab_id': 'autonav_m', 'icon': self.DEFAULT_ICON_URL_AUTONAV, 'desc': desc_autonav_m},
-                      {'category':'list_second', 'title': 'Handras TV', 'url': url_handras_m, 'tab_id': 'handras_m', 'icon': self.DEFAULT_ICON_URL_HANDRAS, 'desc': desc_handras_m}
+                      {'category':'list_second', 'title': 'Handras TV', 'url': url_handras_m, 'tab_id': 'handras_m', 'icon': self.DEFAULT_ICON_URL_HANDRAS, 'desc': desc_handras_m},
+                      {'category':'list_second', 'title': 'AutóSámán', 'url': url_autosaman_m, 'plurl': plurl_autosaman, 'tab_id': 'autosaman_m', 'icon': self.DEFAULT_ICON_URL_AUTOSAMAN, 'desc': desc_autosaman_m},
+                      {'category':'list_second', 'title': 'AutoRoom', 'url': url_autoroom_m, 'plurl': plurl_autoroom, 'tab_id': 'autoroom_m', 'icon': self.DEFAULT_ICON_URL_AUTOROOM, 'desc': desc_autoroom_m}
                      ]
         self.listsTab(MT_CAT_TAB, cItem)
                             
@@ -468,6 +484,12 @@ class AutosHU(CBaseHostClass):
                 self.Autonav_lista(cItem, nextCategory, tabID)
             elif tabID == 'handras_m':
                 self.Handras_lista(cItem, nextCategory, tabID)
+            elif tabID == 'autoshow':
+                self.Ytpl_lista(cItem, tabID, 'ash')
+            elif tabID == 'autosaman_m':
+                self.Ytpl_lista(cItem, tabID, 'asm')
+            elif tabID == 'autoroom_m':
+                self.Ytpl_lista(cItem, tabID, 'asr')
             else:
                 return
         except Exception:
@@ -1116,6 +1138,155 @@ class AutosHU(CBaseHostClass):
         else:
             return []
             
+    def getVAPList_ash(self, url, category, page, cItem, tabID):
+        playlistID = self.cm.ph.getSearchGroups(url + '&', 'list=([^&]+?)&')[0]
+        baseUrl = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9XPySwuiU/MSqywLy6pzEm1zSrOz1NLTC7JzM+LT08tiQfJ2xqqgSnVYgC/tBqx')) % playlistID
+        currList = []
+        if baseUrl != '':
+            sts, data =  self.cm.getPage(baseUrl, {'host': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'})
+            try:
+                data = json_loads(data)['video']
+                for item in data:
+                    url   = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S9PLEnOsC+zBQC7bgue')) + item['encrypted_id']
+                    title = CParsingHelper.cleanHtmlStr(item['title'])
+                    img   = item['thumbnail']
+                    time  = item['duration']
+                    added  = item['added']
+                    tempdesc  = item['description']
+                    tempdesc = tempdesc.replace('\n','')
+                    tlt = tempdesc.find('Még több vid')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('http')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tempdesc = tempdesc.strip()
+                    tempdesc = re.sub(r'^(.{400}).*$', '\g<1>...', tempdesc)
+                    n_de = self.malvadst('1', '1', url)
+                    if n_de != '' and self.aid:
+                        self.aid_ki = 'ID: ' + n_de + '\n'
+                    else:
+                        self.aid_ki = ''
+                    desc = self.aid_ki + added + '  |  Időtartatm:  ' + time + '\n\nTartalom:\n' + tempdesc
+                    params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': added, 'desc': desc, 'tab_id':tabID}
+                    currList.append(params)
+            except Exception:
+                printExc()
+        if len(currList) != '':        
+            currList = sorted(currList, key=lambda i: (i['time'], i['title']))       
+            return reversed(currList)
+        else:
+            return []
+            
+    def getVAPList_asm(self, url, category, page, cItem, tabID):
+        playlistID = self.cm.ph.getSearchGroups(url + '&', 'list=([^&]+?)&')[0]
+        baseUrl = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9XPySwuiU/MSqywLy6pzEm1zSrOz1NLTC7JzM+LT08tiQfJ2xqqgSnVYgC/tBqx')) % playlistID
+        currList = []
+        if baseUrl != '':
+            sts, data =  self.cm.getPage(baseUrl, {'host': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'})
+            try:
+                data = json_loads(data)['video']
+                for item in data:
+                    url   = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S9PLEnOsC+zBQC7bgue')) + item['encrypted_id']
+                    title = CParsingHelper.cleanHtmlStr(item['title']).replace('- AutóSámán','').strip()
+                    img   = item['thumbnail']
+                    time  = item['duration']
+                    #added  = item['added']
+                    date_time = datetime.fromtimestamp(item['time_created'])
+                    added = date_time.strftime("%Y.%m.%d.")
+                    tempdesc  = item['description']
+                    tempdesc = tempdesc.replace('\n','')
+                    tlt = tempdesc.find('Még több vid')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Nézd meg')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Nézz rá')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Kukk a')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Ilyen tesztvideókat')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Facebook')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('http')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tempdesc = tempdesc.strip()
+                    tempdesc = re.sub(r'^(.{400}).*$', '\g<1>...', tempdesc)
+                    n_de = self.malvadst('1', '1', url)
+                    if n_de != '' and self.aid:
+                        self.aid_ki = 'ID: ' + n_de + '\n'
+                    else:
+                        self.aid_ki = ''
+                    desc = self.aid_ki + added + '  |  Időtartatm:  ' + time + '\n\nTartalom:\n' + tempdesc
+                    params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': added, 'desc': desc, 'tab_id':tabID}
+                    currList.append(params)
+            except Exception:
+                printExc()
+        if len(currList) != '':        
+            currList = sorted(currList, key=lambda i: (i['time'], i['title']))       
+            return reversed(currList)
+        else:
+            return []
+        
+    def getVAPList_asr(self, url, category, page, cItem, tabID):
+        playlistID = self.cm.ph.getSearchGroups(url + '&', 'list=([^&]+?)&')[0]
+        baseUrl = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9XPySwuiU/MSqywLy6pzEm1zSrOz1NLTC7JzM+LT08tiQfJ2xqqgSnVYgC/tBqx')) % playlistID
+        currList = []
+        if baseUrl != '':
+            sts, data =  self.cm.getPage(baseUrl, {'host': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'})
+            try:
+                data = json_loads(data)['video']
+                for item in data:
+                    url   = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S9PLEnOsC+zBQC7bgue')) + item['encrypted_id']
+                    title = CParsingHelper.cleanHtmlStr(item['title'])
+                    img   = item['thumbnail']
+                    time  = item['duration']
+                    added  = item['added']
+                    tempdesc  = item['description']
+                    tempdesc = tempdesc.replace('\n','')
+                    tlt = tempdesc.find('Még több vid')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Kövess Facebookon')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Kövess Instagramon')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Kövess minket Facebookon')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('http')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tlt = tempdesc.find('Támogass kérlek')
+                    if -1 < tlt:
+                        tempdesc = tempdesc[:tlt-1].strip()
+                    tempdesc = tempdesc.strip()
+                    tempdesc = re.sub(r'^(.{400}).*$', '\g<1>...', tempdesc)
+                    n_de = self.malvadst('1', '1', url)
+                    if n_de != '' and self.aid:
+                        self.aid_ki = 'ID: ' + n_de + '\n'
+                    else:
+                        self.aid_ki = ''
+                    desc = self.aid_ki + added + '  |  Időtartatm:  ' + time + '\n\nTartalom:\n' + tempdesc
+                    params = {'type': 'video', 'category': 'video', 'title': title, 'url': url, 'icon': img, 'time': added, 'desc': desc, 'tab_id':tabID}
+                    currList.append(params)
+            except Exception:
+                printExc()
+        if len(currList) != '':        
+            currList = sorted(currList, key=lambda i: (i['time'], i['title']))       
+            return reversed(currList)
+        else:
+            return []
+            
     def Ytpl_lista(self, cItem, tabID, mk='vs'):
         llst = []
         templlst = []
@@ -1131,6 +1302,12 @@ class AutosHU(CBaseHostClass):
                     llst = self.getVAPList_vs(url, category, page, params, tabID)
                 if mk == 'tc':
                     llst = self.getVAPList_tc(url, category, page, params, tabID)
+                if mk == 'ash':
+                    llst = self.getVAPList_ash(url, category, page, params, tabID)
+                if mk == 'asm':
+                    llst = self.getVAPList_asm(url, category, page, params, tabID)
+                if mk == 'asr':
+                    llst = self.getVAPList_asr(url, category, page, params, tabID)
                 for item in llst:
                     templlst.append(item)
                     ln += 1
@@ -1975,6 +2152,21 @@ class AutosHU(CBaseHostClass):
                 if len(nez) > 0:
                     self.susn('2', '1', cItem['url'])
                 return nez
+            elif tabID == 'autoshow':
+                nez = self.Yt_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.susn('2', '1', cItem['url'])
+                return nez
+            elif tabID == 'autosaman_m':
+                nez = self.Yt_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.susn('2', '1', cItem['url'])
+                return nez
+            elif tabID == 'autoroom_m':
+                nez = self.Yt_getLinksForVideo(cItem)
+                if len(nez) > 0:
+                    self.susn('2', '1', cItem['url'])
+                return nez
             elif tabID == 'forma1':
                 nez = self.Forma1_getLinksForVideo(cItem)
                 if len(nez) > 0:
@@ -2070,8 +2262,11 @@ class AutosHU(CBaseHostClass):
         
     def Yt_getLinksForVideo(self, cItem):
         url = cItem['url']
-        if 1 == self.up.checkHostSupport(url):
-            return self.up.getVideoLinkExt(url)
+        if cItem['url'] != '':
+            if 1 == self.up.checkHostSupport(url):
+                return self.up.getVideoLinkExt(url)
+            else:
+                return []
         else:
             return []
         
