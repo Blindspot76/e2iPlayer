@@ -1,4 +1,8 @@
-﻿#2019.10.07.01
+﻿#2019.10.07.02
+-HD Filme javítva
+-Cinemay frissítve
+-Kisebb módosítások
+#2019.10.07.01
 -HU Telepítő frissítve
 -Auto.hu frissítve
 #2019.10.03.01
