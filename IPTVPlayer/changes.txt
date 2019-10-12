@@ -1,5 +1,7 @@
-﻿#2019.10.07.02
--HD Filme javítva
+﻿#2019.10.12.01
+-FilmeHD.se javítva
+-RaiPlay frissítve
+#2019.10.07.02
 -Cinemay frissítve
 -Kisebb módosítások
 #2019.10.07.01
