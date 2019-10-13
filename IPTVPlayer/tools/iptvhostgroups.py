@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-09-06 by Blindspot - modified iptvhostgroups
+# 2019-10-13 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -266,6 +266,7 @@ class IPTVHostsGroups:
         'uktvplay' : [ 'english'] ,
         'urllist' : [ 'others'] ,
         'ustreamtv' : [ 'english', 'live', 'science'] ,
+        'ustvgo' : [ 'english', 'live'] ,
         'vevo' : [ 'music'] ,
         'vidcorncom' : [ 'latino', 'moviesandseries'] ,
         'videopenny' : [ 'moviesandseries', 'polish'] ,

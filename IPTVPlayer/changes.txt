@@ -1,4 +1,6 @@
-﻿#2019.10.13.01
+﻿#2019.10.13.02
+-USTV Go hozzáadva
+#2019.10.13.01
 -NetFlix Horror Series javítva (TSiPlayer)
 -Beeg javítva (XXX)
 #2019.10.12.01
