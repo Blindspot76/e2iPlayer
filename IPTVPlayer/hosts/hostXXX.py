@@ -163,7 +163,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.09.21.0"
+    XXXversion = "2019.10.13.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -287,7 +287,7 @@ class Host:
            valTab.append(CDisplayListItem('TUBE8',          'www.tube8.com',      CDisplayListItem.TYPE_CATEGORY, ['http://www.tube8.com/categories.html'], 'tube8',   'http://cdn1.static.tube8.phncdn.com/images/t8logo.png', None)) 
            valTab.append(CDisplayListItem('YOUPORN',        'wwww.youporn.com',   CDisplayListItem.TYPE_CATEGORY, ['http://www.youporn.com/categories/alphabetical/'],'youporn', 'https://fs.ypncdn.com/cb/bundles/youpornwebfront/images/l_youporn_black.png?v=9b34af679da9f8f8279fb875c7bcea555a784ec3', None)) 
            valTab.append(CDisplayListItem('PORNHUB',        'www.pornhub.com',    CDisplayListItem.TYPE_CATEGORY, ['https://www.pornhub.com/categories'],    'pornhub', 'https://mk0onemorecupofd9ppb.kinstacdn.com/wp-content/uploads/2018/11/Make-Money-Pornhub.jpg', None)) 
-           valTab.append(CDisplayListItem('HDPORN',         'www.hdporn.net',     CDisplayListItem.TYPE_CATEGORY, ['http://www.hdporn.net/channels/'],      'hdporn',  'http://www.hdporn.com/gfx/logo.jpg', None)) 
+           #valTab.append(CDisplayListItem('HDPORN',         'www.hdporn.net',     CDisplayListItem.TYPE_CATEGORY, ['http://www.hdporn.net/channels/'],      'hdporn',  'http://www.hdporn.com/gfx/logo.jpg', None)) 
            valTab.append(CDisplayListItem('REDTUBE',        'www.redtube.com',    CDisplayListItem.TYPE_CATEGORY, ['http://www.redtube.com/categories'],      'redtube', 'http://img02.redtubefiles.com/_thumbs/design/logo/redtube_260x52_black.png', None)) 
            valTab.append(CDisplayListItem('HENTAIGASM',     'hentaigasm.com',     CDisplayListItem.TYPE_CATEGORY, ['http://hentaigasm.com'],                'hentaigasm','http://hentaigasm.com/wp-content/themes/detube/images/logo.png', None)) 
            valTab.append(CDisplayListItem('XVIDEOS',        'www.xvideos.com',    CDisplayListItem.TYPE_CATEGORY, ['http://www.xvideos.com'],               'xvideos', 'http://emblemsbf.com/img/31442.jpg', None)) 
@@ -336,7 +336,7 @@ class Host:
            valTab.append(CDisplayListItem('VPORN',     'https://www.vporn.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.vporn.com/tags/#'],'vporn', 'https://image.spreadshirtmedia.com/image-server/v1/mp/compositions/1012679167/views/1,width=300,height=300,backgroundColor=E8E8E8,version=1485256808/vporn-brand-dark.jpg', None)) 
            valTab.append(CDisplayListItem('HOTMOVS',     'http://hotmovs.com', CDisplayListItem.TYPE_CATEGORY, ['http://hotmovs.com/categories/'],'hotmovs', 'http://hotmovs.com/images/logo.png', None)) 
            valTab.append(CDisplayListItem('PORNOXO',     'https://www.pornoxo.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.pornoxo.com'],'pornoxo', 'http://www.web-tv-sexe.fr/logo/pornoxo.jpg', None)) 
-           valTab.append(CDisplayListItem('PORNFREE',     'http://pornfree.tv', CDisplayListItem.TYPE_CATEGORY, ['http://pornfree.tv/categories/'],'pornfree', 'http://pornfree.tv/wp-content/uploads/2016/12/logo.png', None)) 
+           #valTab.append(CDisplayListItem('PORNFREE',     'http://pornfree.tv', CDisplayListItem.TYPE_CATEGORY, ['http://pornfree.tv/categories/'],'pornfree', 'http://pornfree.tv/wp-content/uploads/2016/12/logo.png', None)) 
            valTab.append(CDisplayListItem('PINFLIX',     'http://www.pinflix.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.pinflix.com/category'],'pinflix', 'https://pbs.twimg.com/profile_images/568766044114657280/JYh2ZSF_.png', None)) 
            valTab.append(CDisplayListItem('UPORNIA',     'http://www.upornia.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.upornia.com/categories/'],'upornia', 'https://pbs.twimg.com/profile_images/603525677451640833/AE2qwJ5C_400x400.png', None)) 
            valTab.append(CDisplayListItem('TXXX',     'http://www.txxx.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.txxx.com/categories/'],'txxx', 'https://www.txxx.com/images/desktop-logo.png', None)) 
@@ -1448,7 +1448,20 @@ class Host:
               if result:
                  for item in result["videos"]:
                     phTitle = str(item["title"])
+                    if not phTitle: phTitle = str(item["ps_name"])
                     #phVideoId = str(item["id"])
+                    try:
+                       Added = str(item["datetime"])
+                    except Exception:
+                       printExc()
+                       Added = ''
+                    try:
+                       Time = str(item["duration"])
+                       m, s = divmod(int(Time), 60)
+                       Time = "[%02d:%02d] " % (m, s)
+                    except Exception:
+                       printExc()
+                       Time = ''
                     try:
                        pid = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''pid['"]:([^"^']+?),''', 1, True)[0].strip()
                        start = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''start['"]:([^"^']+?),''', 1, True)[0].strip()
@@ -1459,11 +1472,12 @@ class Host:
                        phVideoSvId = ''
                     phUrl = 'https:%s%s/video/%s' % (self.beeg_api, self.beeg_version, phVideoSvId)
                     try:
-                        phImage = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''image['"]:\s['"]([^"^']+?)['"]''', 1, True)[0]
-                        phImage = 'http://img.beeg.com/236x177/%s' % phImage
+                        Image = self.cm.ph.getSearchGroups(str(item["thumbs"]), '''image['"]:\s['"]([^"^']+?)['"]''', 1, True)[0]
+                        phImage = 'http://img.beeg.com/236x177/%s' % Image
+                        if not Image: phImage = 'https://i.pinimg.com/474x/8e/89/91/8e89916e7e4d8c0b314d548578d4aba5.jpg'
                     except:
-                        phImage = 'http://img.beeg.com/236x177/%s.jpg' % phVideoId
-                    valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, phVideoSvId)) 
+                        phImage = 'https://i.pinimg.com/474x/8e/89/91/8e89916e7e4d8c0b314d548578d4aba5.jpg'
+                    valTab.append(CDisplayListItem(phTitle,Time+phTitle+'\nAdded: '+Added,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, phVideoSvId)) 
            except Exception:
               printExc()
            valTab.append(CDisplayListItem('Next', 'Page: '+str(self.page+2), CDisplayListItem.TYPE_CATEGORY, [next], name, '', 'Next'))                
@@ -4305,13 +4319,14 @@ class Host:
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phImage.startswith('/'): phImage = 'http:' + phImage
               phImage = urlparser.decorateUrl(phImage, {'Referer': url})
-              valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [ phUrl], 'freeomovie-serwer', phImage, None)) 
+              valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [ phUrl], 'freeomovie-serwer', phImage, phTitle)) 
            if next_page:
               if next_page.startswith('/'): next_page = self.MAIN_URL + next_page
               valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, '', None))                
            return valTab
         if 'freeomovie-serwer' == name:
            printDBG( 'Host listsItems begin name='+name )
+           catUrl = self.currList[Index].possibleTypesOfSearch
            COOKIEFILE = os_path.join(GetCookieDir(), 'freeomovie.cookie')
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.getPage4k(url, 'freeomovie.cookie', 'freeomovie.com', self.defaultParams)
@@ -4324,7 +4339,7 @@ class Host:
               phTitle = phUrl.split('/')[2]
               if phTitle=='': phTitle=phUrl
               if not 'filecrypt' in phTitle:
-                 valTab.append(CDisplayListItem(phTitle,phUrl,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, '', None)) 
+                 valTab.append(CDisplayListItem(decodeHtml(catUrl),phTitle,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, '', None)) 
 
         if 'KATESTUBE' == name:
            printDBG( 'Host listsItems begin name='+name )
@@ -7015,6 +7030,7 @@ class Host:
         if url.startswith('https://fileone.tv'):                      return 'xxxlist.txt'
         if url.startswith('https://streamcherry.com'):                return 'xxxlist.txt'
         if url.startswith('https://vk.com'):                          return 'xxxlist.txt'
+        if url.startswith('https://videobin.co'):                     return 'https://videobin.co'
         if url.startswith('http://dato.porn'):                        return 'http://dato.porn'
         if url.startswith('https://dato.porn'):                       return 'http://dato.porn'
         if url.startswith('http://datoporn.co'):                      return 'http://dato.porn'
@@ -7360,23 +7376,32 @@ class Host:
               printDBG( 'second beeg-clips data2: '+data )
               #SetIPTVPlayerLastHostError(_(' Video not found.'))
               #return []
-           bestUrl = re.findall('0p":"(.*?)"', data, re.S)
-           if bestUrl:
-              if self.format4k:
-                 phUrl = 'http:%s' % bestUrl[-1]
-              else:
-                 phUrl = 'http:%s' % bestUrl[-1]
-                 if '/1080p/' in phUrl: phUrl = 'http:%s' % bestUrl[-2]
-              phUrl = phUrl.replace('{DATA_MARKERS}','data=pc.DE')
-              if not self.beeg_salt: return phUrl
-              key = re.search(r'/key=(.*?)%2Cend=', phUrl, 0) 
-              key = key.group(1)
-              printDBG( 'key encrypt : '+key )
-              key = decrypt_key(key, self.beeg_salt)
-              printDBG( 'key decrypt: '+key )
-              videoUrl = re.sub(r'/key=(.*?)%2Cend=', '/key='+key+',end=', phUrl)
-              return videoUrl
-           else: return ''
+           phUrl=''
+           try:
+              if data.startswith('{'): data = '['+data+']'
+              result = byteify(simplejson.loads(data))
+              for item in result:
+                 if str(item["240p"]) != 'None': phUrl = str(item["240p"])
+                 if str(item["480p"]) != 'None': phUrl = str(item["480p"])
+                 if str(item["720p"]) != 'None': phUrl = str(item["720p"])
+                 if str(item["1080p"]) != 'None': phUrl = str(item["1080p"])
+                 if self.format4k:
+                    if str(item["2160p"]) != 'None': phUrl = str(item["2160p"])
+           except Exception:
+              printExc()
+           if phUrl== '':
+              SetIPTVPlayerLastHostError(_(' Video not found.'))
+              return []
+           if phUrl.startswith('//'): phUrl = 'http:' + phUrl
+           phUrl = phUrl.replace('{DATA_MARKERS}','data=pc.DE')
+           if not self.beeg_salt: return phUrl
+           key = re.search(r'/key=(.*?)%2Cend=', phUrl, 0) 
+           key = key.group(1)
+           printDBG( 'key encrypt : '+key )
+           key = decrypt_key(key, self.beeg_salt)
+           printDBG( 'key decrypt: '+key )
+           videoUrl = re.sub(r'/key=(.*?)%2Cend=', '/key='+key+',end=', phUrl)
+           return videoUrl
   
         if parser == 'http://showup.tv':
            COOKIEFILE = os_path.join(GetCookieDir(), 'showup.cookie')
@@ -8744,6 +8769,10 @@ class Host:
                  return Url
            videoUrl = self.cm.ph.getSearchGroups(data, '''src: ['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
            if videoUrl: return videoUrl
+           videoUrl = self.cm.ph.getSearchGroups(data, '''file:['"]([^"^']+?\.mp4)['"]''')[0].replace('&amp;','&')
+           if videoUrl: return videoUrl
+           videoUrl = self.cm.ph.getSearchGroups(data, '''file:['"]([^"^']+?\.m3u8)['"]''')[0].replace('&amp;','&')
+           if videoUrl: return videoUrl
            if 'File Not Found' in data: 
               SetIPTVPlayerLastHostError(_(' File Not Found.'))
               return []
@@ -8838,6 +8867,29 @@ class Host:
               videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url}) 
               return self.getResolvedURL(videoUrl)
            return ''
+
+        if parser == 'https://videobin.co':
+            COOKIEFILE = os_path.join(GetCookieDir(), 'videobin.cookie')
+            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.get_Page(url)
+            if not sts: return ''
+            printDBG( 'Host  data: %s' % data )
+            data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
+            data = re.compile('"(http[^"]+?)"').findall(data)
+            for videoUrl in data:
+                if videoUrl.split('?')[0].endswith('m3u8'):
+                    printDBG( 'Host  videoUrl: %s' % videoUrl )
+                    if self.cm.isValidUrl(videoUrl): 
+                        tmp = getDirectM3U8Playlist(videoUrl)
+                        for item in tmp:
+                            printDBG( 'Host listsItems valtab: '  +str(item))
+                            return item['url']
+                elif videoUrl.split('?')[0].endswith('mp4'):
+                    printDBG( 'Host  videoUrl: %s' % videoUrl )
+                    return videoUrl
+            return ''
+
 
 ##########################################################################################################################
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}

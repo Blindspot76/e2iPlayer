@@ -6,7 +6,8 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, GetTmpDir
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import *
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import tunisia_gouv
+
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 
 
@@ -166,7 +167,7 @@ class TSIPlayer(CBaseHostClass):
 		self.addMarker({'category' :'marker','title':'\c00????00 -----●★| Films & Series |★●-----','desc':'Films, Series & Animes'})	
 		self.tsiplayer_host({'cat_id':'101'})	
 		self.tsiplayer_host({'cat_id':'401'})
-#		self.addDir({'name':'search','category' :'search','title': _('Search'),'search_item':True,'page':1,'hst':'ALLFR','icon':''})
+		self.addDir({'name':'search','category' :'search','title': _('Search'),'search_item':True,'page':1,'hst':'ALLEN','icon':''})
 
 
 				
@@ -189,7 +190,15 @@ class TSIPlayer(CBaseHostClass):
 		self.tsiplayer_host({'cat_id':'120'})						
 	def DevCat(self):
 		self.addMarker({'category' :'marker','title':'\c00????00 -----●★| Tools |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
-		self.tsiplayer_host({'cat_id':'103'})	
+		self.tsiplayer_host({'cat_id':'103'})
+		if config.plugins.iptvplayer.ud_methode.value=='tar':
+			cat_='update_now'
+			tag='tar'
+		else:
+			cat_='update_now2'
+			tag='zip'					
+		params = {'category' : cat_,'title':'\c0000????'+' +++++++ FORCE UPDATE & RESTART ('+tag+') +++++++ ','name':'update_restart'} 
+		self.addDir(params)	
 		self.addMarker({'category' :'marker','title':'\c00????00 -----●★| Hosts en développement |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
 		self.tsiplayer_host({'cat_id':'102'})	
 		self.addMarker({'category' :'marker','title':'\c00????00 -----●★| Hosts Out |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
@@ -420,7 +429,7 @@ class TSIPlayer(CBaseHostClass):
 		lst=os.listdir(folder)
 		lst.sort()
 		for (file_) in lst:
-			if (file_.endswith('.py'))and(file_.startswith('host_')):
+			if (file_.endswith('.py'))and((file_.startswith('host_')) or ((file_.startswith('hide_')) and config.plugins.iptvplayer.dev_mod.value)):
 				path_=folder+'/'+file_
 				import_str=import_+file_.replace('.py',' import ')
 
@@ -436,10 +445,7 @@ class TSIPlayer(CBaseHostClass):
 					info['version']=''
 					info['cat_id']='104'
 					info['dev']=''
-				
-				
-				
-				
+
 				desc=''
 				param_ = 'oui'
 				if (info.get('filtre', '')!=''):
@@ -469,7 +475,7 @@ class TSIPlayer(CBaseHostClass):
 			lst=os.listdir(folder)
 			lst.sort()
 			for (file_) in lst:
-				if (file_.endswith('.py'))and(file_.startswith('host_')):
+				if (file_.endswith('.py'))and((file_.startswith('host_')) or ((file_.startswith('hide_')))):
 					path_=folder+'/'+file_
 					import_str=import_+file_.replace('.py',' import ')
 					try:
@@ -830,20 +836,21 @@ class TSIPlayer(CBaseHostClass):
 				if (file_.endswith('.py'))and(file_.startswith('host_')):
 					path_=folder+'/'+file_
 					import_str=import_+file_.replace('.py',' import ')
-					exec (import_str+'getinfo')
-					info=getinfo()
-					desc=''
-					param_ = 'oui'
-					if (info.get('filtre', '')!=''):
-						cmd_='param_ = config.plugins.iptvplayer.'+info.get('filtre', '')+'.value'
-						try:
-							exec(cmd_)
-						except:
-							param_ = ''
-					if param_!='': 
-						if (info.get('recherche_all', '0')=='1') and (((info.get('cat_id', '0')=='201') and hst=='ALLAR') or  ((info.get('cat_id', '0')=='301') and hst=='ALLFR') or  (info.get('cat_id', '0')=='101')):
-							self.addMarker({'title':'\c00????00 ----> '+info['name']+' <----','desc':info['desc']})
+					try:
+						exec (import_str+'getinfo')
+						info=getinfo()
+						desc=''
+						param_ = 'oui'
+						if (info.get('filtre', '')!=''):
+							cmd_='param_ = config.plugins.iptvplayer.'+info.get('filtre', '')+'.value'
 							try:
+								exec(cmd_)
+							except:
+								param_ = ''
+						if param_!='': 
+							if (info.get('recherche_all', '0')=='1') and (((info.get('cat_id', '0')=='201') and hst=='ALLAR') or  ((info.get('cat_id', '0')=='301') and hst=='ALLFR') or  ((info.get('cat_id', '0')=='401') and hst=='ALLEN') or  (info.get('cat_id', '0')=='101')):
+								printDBG('--------------> Recherche '+info['name']+'<----------------')
+								self.addMarker({'title':'\c00????00 ----> '+info['name']+' <----','desc':info['desc']})
 								exec (import_str+'TSIPHost')
 								self.host_ = TSIPHost()
 								self.host_.currList=[]
@@ -855,8 +862,8 @@ class TSIPlayer(CBaseHostClass):
 									lst_out.append(elm)
 								self.currList.extend(lst_out)
 								printDBG(str(self.currList))
-							except:
-								self.addMarker({'title':'\c00??0000 Error','desc':''})
+					except:
+						self.addMarker({'title':'\c00??0000 Error '+file_,'desc':''})
 			self.addDir({'category':'_next_page','title': '\c0000??00'+'Page Suivante', 'search_item':False,'page':page+1,'searchPattern':str_ch,'hst':hst})	
 
 		else:
@@ -886,6 +893,7 @@ class TSIPlayer(CBaseHostClass):
 					urlTab.append({'name':'Direct', 'url':url_})
 		elif hst=='tshost':
 			urlTab1=self.host_.getVideos(videoUrl)
+			urlTab=[]
 			for (url_,type_) in urlTab1:
 				if 	type_=='1':
 					urlTab = self.TSgetVideoLinkExt(url_)
@@ -894,7 +902,29 @@ class TSIPlayer(CBaseHostClass):
 				elif type_=='0':
 					urlTab.append({'name':'Direct', 'url':url_})
 				elif type_=='4':
-					urlTab.append({'name':url_.split('|')[0], 'url':url_.split('|')[1]})					
+					meta =''
+					try:
+						meta = url_.meta
+					except:
+						pass
+					if meta != '':
+						urlTab.append({'name':url_.split('|')[0], 'url':strwithmeta(url_.split('|')[1],meta)})
+					else:
+						urlTab.append({'name':url_.split('|')[0], 'url':url_.split('|')[1]})
+				elif type_=='5':
+					name = url_.split('|')[0]
+					URL  = url_.split('|')[1]
+					urltabout = self.TSgetVideoLinkExt(URL)
+					if urltabout !=[]:
+						for elm in urltabout:
+							elm['name']=name+' ['+elm['name']+']'
+							urlTab.append(elm)	
+				elif type_=='6':	
+					vtt,lng,URL = url_.split('|',2)
+					subTrack = [{'title':lng, 'url':vtt, 'lang':lng, 'format':'vtt'}]
+					URL=strwithmeta(URL,{'external_sub_tracks':subTrack})					
+					urlTab = getDirectM3U8Playlist(URL, False, checkContent=True, sortWithMaxBitrate=999999999)
+					print			
 				else:
 					urlTab.append({'name':'Direct', 'url':url_})
 		else:
@@ -976,7 +1006,8 @@ class TSIPlayer(CBaseHostClass):
 
 class IPTVHost(CHostBase): 
 
-	def __init__(self,item={}):    
+	def __init__(self,item={}):  
+		#item['title']  = 'eeeeee'
 		CHostBase.__init__(self, TSIPlayer(item=item), False, []) 
 		
 	def withArticleContent(self, cItem):
