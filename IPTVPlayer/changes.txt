@@ -1,4 +1,6 @@
-﻿#2019.10.13.02
+﻿#2019.10.14.01
+-CineBlog javítva
+#2019.10.13.02
 -USTV Go hozzáadva
 #2019.10.13.01
 -NetFlix Horror Series javítva (TSiPlayer)
