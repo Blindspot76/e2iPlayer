@@ -1,4 +1,7 @@
-﻿#2019.10.14.01
+﻿#2019.10.14.02
+-PinFlix javítva (XXX)
+-LetMeJerk javítva (XXX)
+#2019.10.14.01
 -CineBlog javítva
 #2019.10.13.02
 -USTV Go hozzáadva
