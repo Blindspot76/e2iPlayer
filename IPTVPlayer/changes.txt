@@ -1,4 +1,6 @@
-﻿#2019.10.14.02
+﻿#2019.10.18.01
+-Felnőtt kiegészítő frissítve
+#2019.10.14.02
 -PinFlix javítva (XXX)
 -LetMeJerk javítva (XXX)
 #2019.10.14.01
