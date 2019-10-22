@@ -1,4 +1,9 @@
-﻿#2019.10.18.02
+﻿#2019.10.22.01
+-YouTube javítva
+-DokumentalneNET javítva
+-RaiPlay javítva
+-GoldVOD javítva
+#2019.10.18.02
 -HooFoot javítva
 -OurMatch javítva
 -USTV Go frissítve
