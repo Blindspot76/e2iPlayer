@@ -164,7 +164,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.10.14.2"
+    XXXversion = "2019.10.24.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -8827,7 +8827,7 @@ class Host:
             for srv in crazycloud_list:
                 server = 'https://psv' + srv + '.crazycloud.ru/videos/'
                 try:
-                    code = urllib2.urlopen(server + video).getcode()
+                    code = urllib2.urlopen(server + video, timeout=1).getcode()
                     printDBG( 'Host  server + video: '+server + video )
                     return (server + video)
                 except Exception: 
@@ -8836,7 +8836,7 @@ class Host:
             for srv in daxab_list:
                 server = 'https://psv' + srv + '.daxab.com/videos/'
                 try:
-                    code = urllib2.urlopen(server + video).getcode()
+                    code = urllib2.urlopen(server + video, timeout=1).getcode()
                     printDBG( 'Host  server + video2: '+server + video )
                     return (server + video)
                 except Exception: printExc()

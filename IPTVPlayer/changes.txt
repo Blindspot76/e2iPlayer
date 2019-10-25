@@ -1,4 +1,6 @@
-﻿#2019.10.22.01
+﻿#2019.10.25.01
+-Felnőtt kiegészítő frissítve
+#2019.10.22.01
 -YouTube javítva
 -DokumentalneNET javítva
 -RaiPlay javítva
