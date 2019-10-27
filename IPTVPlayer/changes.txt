@@ -1,4 +1,6 @@
-﻿#2019.10.25.01
+﻿#2019.10.27.01
+-Miami TV javítva
+#2019.10.25.01
 -Felnőtt kiegészítő frissítve
 #2019.10.22.01
 -YouTube javítva
