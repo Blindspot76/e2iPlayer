@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-08-26 by Blindspot - modified TwitchTV
+# 2019-10-28 by Blindspot - modified TwitchTV
 ###################################################
 # LOCAL import
 ###################################################
@@ -58,7 +58,7 @@ class Twitch(CBaseHostClass):
                                             {'lang':"21d85c73-701f-4259-8c4e-4321265847b5",'title':"Bolgár"},
                                             {'lang':"a6cddaba-f0ce-4526-9087-6de2f603a24d",'title':"Cseh"},
                                             {'lang':"43e598cc-918b-4247-b02c-b13543a1eac9",'title':"Dán"},
-                                            {'lang':"e13e6734-37ae-4d85-897b-3015f0168355",'title':"Német"},
+                                            {'lang':"9166ad14-41f1-4b04-a3b8-c8eb838c6be6",'title':"Német"},
                                             {'lang':"902f6815-a655-4918-99e7-48c74a71feac",'title':"Görög"},
                                             {'lang':"6ea6bca4-4712-4ab9-a906-e3336a9d8039",'title':"Angol"},
                                             {'lang':"d4bb9c58-2141-4881-bcdc-3fe0505457d1",'title':"Spanyol"},
@@ -200,7 +200,7 @@ class Twitch(CBaseHostClass):
         printDBG("Twitch.listDirGames")
 
         cursor = ',"cursor":"%s"' % cItem['cursor'] if 'cursor' in cItem else ''
-        post_data = '[{"operationName":"BrowsePage_AllDirectories","variables":{"limit":30,"directoryFilters":["GAMES"],"isTagsExperiment":false,"tags":[]%s},"extensions":{"persistedQuery":{"version":1,"sha256Hash":"dd3c574a80407f76e94a6e6c90e427cdca29a74791308b686aa2f35895f50a8f"}}}]' % (cursor)
+        post_data = '[{"operationName":"BrowsePage_AllDirectories","variables":{"limit":30,"options":{"recommendationsContext":{"platform":"web"},"sort":"VIEWER_COUNT","tags":[]%s}},"extensions":{"persistedQuery":{"version":1,"sha256Hash":"78957de9388098820e222c88ec14e85aaf6cf844adf44c8319c545c75fd63203"}}}]' % cursor
         url = self.getFullUrl('/gql', self.API2_URL)
         sts, data = self.getPage(url, MergeDicts(self.defaultParams, {'raw_post_data':True}), post_data)
         if not sts: return
@@ -210,7 +210,7 @@ class Twitch(CBaseHostClass):
             for item in data[0]['data']['directories']['edges']:
                 cursor = jstr(item, 'cursor')
                 item = item['node']
-                if item['directoryType'] == 'GAME':
+                if item['__typename'] == 'GAME':
                     title = jstr(item, 'displayName')
                     icon = self.getFullIconUrl(jstr(item, 'avatarURL'), self.cm.meta['url'])
                     desc = jstr(item, '__typename') + ' | ' + _('%s viewers') % item['viewersCount']
