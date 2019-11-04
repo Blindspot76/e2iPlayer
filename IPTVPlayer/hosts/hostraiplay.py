@@ -6,7 +6,7 @@ from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT
 from Plugins.Extensions.IPTVPlayer.components.ihost import CHostBase, CBaseHostClass
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG, printExc, MergeDicts
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
 ###################################################
@@ -17,7 +17,6 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 import re
 import urllib
 import datetime
-import HTMLParser
 ###################################################
 
 
@@ -28,33 +27,29 @@ class Raiplay(CBaseHostClass):
  
     def __init__(self):
 
-        CBaseHostClass.__init__(self, {'history':'raiplay', 'cookie':'raiplay.it.cookie'})
+        CBaseHostClass.__init__(self)
+
         self.MAIN_URL = 'http://raiplay.it/'
         self.MENU_URL="http://www.rai.it/dl/RaiPlay/2016/menu/PublishingBlock-20b274b1-23ae-414f-b3bf-4bdc13b86af2.html?homejson"
         self.CHANNELS_URL= "http://www.rai.it/dl/RaiPlay/2016/PublishingBlock-9a2ff311-fcf0-4539-8f8f-c4fee2a71d58.html?json"
         self.CHANNELS_RADIO_URL="http://rai.it/dl/portaleRadio/popup/ContentSet-003728e4-db46-4df8-83ff-606426c0b3f5-json.html"
-        self.EPG_URL_OLD = "http://www.rai.it/dl/palinsesti/Page-e120a813-1b92-4057-a214-15943d95aa68-json.html?canale=[nomeCanale]&giorno=[dd-mm-yyyy]"
-        #self.EPG_URL = "https://www.raiplay.it/guidatv/lista?canale=[nomeCanale]&giorno=[dd-mm-yyyy]"
-        self.EPG_URL = 'https://www.raiplay.it/palinsesto/guidatv/lista/[idCanale]/[dd-mm-yyyy].html'
+        self.EPG_URL= "http://www.rai.it/dl/palinsesti/Page-e120a813-1b92-4057-a214-15943d95aa68-json.html?canale=[nomeCanale]&giorno=[dd-mm-yyyy]"
         self.TG_URL = "http://www.tgr.rai.it/dl/tgr/mhp/home.xml"
-        
-        self.RAISPORT_MAIN_URL = 'https://www.raisport.rai.it'
-        self.RAISPORT_LIVE_URL = self.RAISPORT_MAIN_URL + '/dirette.html'
-        self.RAISPORT_ARCHIVIO_URL = self.RAISPORT_MAIN_URL + '/archivio.html'        
-        self.RAISPORT_SEARCH_URL = self.RAISPORT_MAIN_URL + "/atomatic/news-search-service/api/v1/search?transform=false"
-        
+        self.RELINKER_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2956.0 Safari/537.36"
+
         self.DEFAULT_ICON_URL = "https://images-eu.ssl-images-amazon.com/images/I/41%2B5P94pGPL.png"
         self.NOTHUMB_URL = "http://www.rai.it/cropgd/256x144/dl/components/img/imgPlaceholder.png"
 
         self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')        
-        self.RELINKER_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36"
+        self.defaultParams = {'header':self.HTTP_HEADER}
+        #self.defaultParams = { 'header': {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:17.0) Gecko/20100101 Firefox/17.0'}}
+        self.defaultParams = { 'header': {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2956.0 Safari/537.36"}}
 
-        self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-        self.RaiSportKeys = []
         
     def getPage(self, url, addParams = {}, post_data = None):
         if addParams == {}:
             addParams = dict(self.defaultParams)
+        #printDBG(self.defaultParams)
         return self.cm.getPage(url, addParams, post_data)
 
     def getThumbnailUrl(self, pathId):
@@ -93,11 +88,9 @@ class Raiplay(CBaseHostClass):
         #printDBG(data)
 
         linksTab=[]
-        if (cItem["category"] == "live_tv") or (cItem["category"] == "live_radio") or (cItem["category"]=="video_link") or (cItem["category"] == "raisport_video"):   
-            url = cItem['url']
-            linksTab.append({'name': 'hls', 'url': url})           
+        if (cItem["category"] == "live_tv") or (cItem["category"] == "live_radio") or (cItem["category"]=="video_link"): 
             
-            url = strwithmeta( url, {'User-Agent': self.RELINKER_USER_AGENT})
+            url=strwithmeta(cItem["url"], {'User-Agent': self.RELINKER_USER_AGENT })
             linksTab.extend(getDirectM3U8Playlist(url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))  
             
         elif (cItem["category"] == "program"):
@@ -106,18 +99,11 @@ class Raiplay(CBaseHostClass):
             program_url=program_url.replace ("/raiplay/",self.MAIN_URL)
             
             sts, data = self.getPage(program_url)
-            if sts:
-                # bypass an error of delimiters in json
-                s_name = re.findall("\"name\": \"(.*?)\",",data)
-                for s in s_name:
-                    data = data.replace(s, s.replace("\""," "))   
-                #
-                response =json_loads(data)
-                video_url=response["video"]["contentUrl"]
-                printDBG(video_url);
-                video_url=strwithmeta(video_url, {'User-Agent': self.RELINKER_USER_AGENT })
-                linksTab.append({'name': 'hls', 'url': video_url})           
-                linksTab.extend(getDirectM3U8Playlist(video_url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))  
+            response =json_loads(data)
+            video_url=response["video"]["contentUrl"]
+            printDBG(video_url);
+            video_url=strwithmeta(video_url, {'User-Agent': self.RELINKER_USER_AGENT })
+            linksTab.extend(getDirectM3U8Playlist(video_url, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))  
             
         else:
             printDBG("Raiplay: video form category %s with url %s not handled" % (cItem["category"],cItem["url"]));
@@ -125,14 +111,15 @@ class Raiplay(CBaseHostClass):
         
         return linksTab
 
+   
     def listMainMenu(self, cItem):
         MAIN_CAT_TAB = [{'category':'live_tv', 'title': 'Dirette tv'},
                         {'category':'live_radio', 'title': 'Dirette radio'},
                         {'category':'replay', 'title': 'Replay'},
                         {'category':'ondemand', 'title': 'Programmi on demand'},
-                        {'category':'tg', 'title': 'Archivio Telegiornali'},
-                        {'category':'raisport_main', 'title':'Archivio Rai Sport'}]  
+                        {'category':'tg', 'title': 'Archivio Telegiornali'}]  
         self.listsTab(MAIN_CAT_TAB, cItem)  
+
 
     def listLiveTvChannels(self, cItem):
         printDBG("Raiplay - start live channel list")
@@ -146,31 +133,12 @@ class Raiplay(CBaseHostClass):
         for station in tv_stations:
             title = station["channel"]
             desc = station["description"]
-            icon = self.getThumbnailUrl(station["transparent-icon"])           
+            icon = self.MAIN_URL + station["icon"]          
             url = station["video"]["contentUrl"]
             params = dict(cItem)
             params = {'title':title, 'url':url, 'icon':icon, 'category': 'live_tv', 'desc': desc}
             self.addVideo(params)
-        
-        #add raisport webstreams
-        sts, data = self.getPage(self.RAISPORT_LIVE_URL)
-        if not sts: 
-            return
-         
-        tmp = self.cm.ph.getDataBeetwenNodes(data, '<ul class="canali">', '</ul>')[1]
-        items = self.cm.ph.getAllItemsBeetwenMarkers(tmp, '<li>', '</li>')
-        for i in items:
-            url = self.cm.ph.getSearchGroups(i, '''data-video-url=['"]([^'^"]+?)['"]''')[0]
-            if url:
-                icon = self.cm.ph.getSearchGroups(i, '''stillframe=['"]([^'^"]+?)['"]''')[0]
-                #if icon:
-                #    icon = icon
-                title = self.cleanHtmlStr(i)
 
-                params = dict(cItem)
-                params = {'title':title, 'url':url, 'icon':icon, 'category': 'live_tv', 'desc': desc}
-                self.addVideo(params)
-            
     def listLiveRadioChannels(self, cItem):
         printDBG("Raiplay - start live radio list")
         sts, data = self.getPage(self.CHANNELS_RADIO_URL)
@@ -227,60 +195,66 @@ class Raiplay(CBaseHostClass):
 
             
     def listEPG(self, cItem):
-        str1 = cItem['name']
-        epgDate = str1[:10]
-        channelName = str1[11:]
+        str=cItem['name']
+        epgDate=str[:10]
+        channelName=str[11:]
         printDBG("Raiplay - start EPG for channel %s and day %s" % (channelName,epgDate))
-        
-        channel_id = channelName.replace(" ", "-").lower()
+
+        channel_id = channelName.replace(" ", "")
         url = self.EPG_URL
-        url = url.replace("[idCanale]", channel_id)
+        url = url.replace("[nomeCanale]", channel_id)
         url = url.replace("[dd-mm-yyyy]", epgDate)
         
         sts, data = self.getPage(url)
-        if not sts: 
-            return
+        if not sts: return
+ 
+        response = json_loads(data)
+        programmes = response [channelName][0]["palinsesto"][0]["programmi"]
+
+        for programme in programmes:
+            if not programme:
+                    continue
+    
+            startTime = programme["timePublished"]
+            title = programme["name"]
         
-        items = self.cm.ph.getAllItemsBeetwenMarkers(data, ('<li', '>', 'eventSpan'), '</li>')
+            if programme["images"]["portrait"] != "":
+                    thumb = self.getThumbnailUrl(programme["images"]["portrait"])
+            elif programme["images"]["landscape"] != "":
+                    thumb = self.getThumbnailUrl(programme["images"]["landscape"])
+            elif programme["isPartOf"] and programme["isPartOf"]["images"]["portrait"] != "":
+                    thumb = self.getThumbnailUrl(programme["isPartOf"]["images"]["portrait"])
+            elif programme["isPartOf"] and programme["isPartOf"]["images"]["landscape"] != "":
+                    thumb = self.getThumbnailUrl(programme["isPartOf"]["images"]["landscape"])
+            else:
+                    thumb = self.NOTHUMB_URL
         
-        for i in items:
-            videoUrl = self.getFullUrl(self.cm.ph.getSearchGroups(i, '''data-href=['"]([^'^"]+?)['"]''')[0])
-            
-            icon = self.cm.ph.getSearchGroups(i, '''data-img=['"]([^'^"]+?)['"]''')[0]
-            if icon:
-                icon = self.getFullUrl(icon)
+            if programme["testoBreve"] != "":
+                desc = programme["testoBreve"]
             else:
-                icon =''
-            title = re.findall("<p class=\"info\">([^<]+?)</p>", i)
-            if title:
-                title = title[0]
-            else:
-                title = ''
-            
-            startTime = re.findall("<p class=\"time\">([^<]+?)</p>", i)
-            if startTime:
-                title = startTime[0] + " " + title
-            
-            desc = re.findall("<p class=\"descProgram\">([^<]+?)</p>", i, re.S)
-            if desc:
-                desc= desc[0]
-            else:
-                desc=""
-            
-            params={}
-            if videoUrl:
-                if not videoUrl.endswith('json'):
-                    videoUrl = videoUrl + "?json"
-                params = {'title':title, 'url':videoUrl, 'icon': icon, 'category': 'program', 'desc': desc}
-            else:
-                # programme is not available
-                title = title + "\c00??8800 [" + _("not available") + "]"
-                params = {'title':title, 'url':'', 'icon': icon, 'desc': desc, 'category': 'nop'}
+                desc = programme["description"] 
                 
-            printDBG(str(params)) 
-            self.addVideo(params)
-            
+            if programme["hasVideo"]:
+                    videoUrl = programme["pathID"]
+            else:
+                    videoUrl = None
+
+            params = dict(cItem)
         
+            if videoUrl is None:
+                # programme is not available
+                title = startTime + " <I>" + title + "</I>"
+                thumbnailImage = thumb
+                params = {'title':title, 'url':'', 'icon': thumb, 'desc': desc, 'category': 'nop'}
+
+            else:
+                title = startTime + " " + title
+                thumbnailImage=thumb
+                params = {'title':title, 'url':videoUrl, 'icon': thumb, 'category': 'program', 'desc': desc}
+                printDBG ("add program %s with pathId %s" % (title,videoUrl)) 
+            
+            self.addVideo(params)
+
     def listOnDemandMain(self, cItem):
         printDBG("Raiplay - start on demand main list")
         sts, data = self.getPage(self.MENU_URL)
@@ -290,7 +264,7 @@ class Raiplay(CBaseHostClass):
         items=response["menu"]
 
         for item in items:
-            if item["sub-type"] in ("RaiPlay Tipologia Page", "RaiPlay Genere Page", "RaiPlay Tipologia Editoriale Page"):
+            if item["sub-type"] in ("RaiPlay Tipologia Page", "RaiPlay Genere Page"):
                 icon_url=self.MAIN_URL + item["image"]
                 self.addDir(MergeDicts(cItem, {'category':'ondemand_items', 'title': item["name"] , 'name': item["name"], 'url': item["PathID"], 'icon': icon_url, 'sub-type': item["sub-type"] }))            
 
@@ -482,134 +456,6 @@ class Raiplay(CBaseHostClass):
         response=json_loads(data)
         return response["list"]
     
-    def fillRaiSportKeys(self):
-        printDBG("Raiplay.fillRaiSportKeys")
-        
-        # search for items in main menu
-        sts, data = self.getPage(self.RAISPORT_MAIN_URL)
-        if not sts: 
-            return
-        menu = self.cm.ph.getDataBeetwenMarkers(data, '<a href="javascript:void(0)">Menu</a>', '</div>')[1]
-        #printDBG(menu)
-        
-        links = re.findall("<a href=\"(?P<url>[^\"]+)\">(?P<title>[^<]+)</a>", menu)
-        good_links=[]
-        for l in links:
-            if ('/archivio.html?' in l[0]) and not ('&amp;' in l[0]):
-                printDBG("{'title': '%s', 'url' : '%s'}" % (l[1],l[0]))
-                good_links.append({'title': l[1], 'url' : l[0]})
-        
-        good_links.append({'title': 'Altri sport', 'url' : '/archivio.html?tematica=altri-sport'})
-        
-        # open any single page in list and grab search keys
-        
-        for l in good_links:
-            sts, data = self.getPage(self.RAISPORT_MAIN_URL + l['url'])
-            if sts:
-                dataDominio= re.findall("data-dominio=\"(.*?)\"", data)
-                dataTematica = re.findall("data-tematica=\"(.*?)\"", data)
-                if dataTematica:
-                    del(dataTematica[0])
-                    #printDBG(str(dataDominio))
-                    #printDBG(str(dataTematica))
-                    title=dataTematica[0].split('|')[0]
-                    title = HTMLParser.HTMLParser().unescape(title).encode('utf-8')
-
-                    params={'title': title, 'dominio': dataDominio[0], 'sub_keys' : dataTematica}
-                    printDBG(str(params))
-                    self.RaiSportKeys.append(params)
-                
-    def listRaiSportMain(self, cItem):
-        printDBG("Raiplay.listRaiSportMain")
-        
-        if not self.RaiSportKeys:
-            self.fillRaiSportKeys()
-        
-        for k in self.RaiSportKeys:
-            params=dict(cItem)
-            params.update({'category': 'raisport_item', 'title': k['title'], 'dominio': k['dominio'], 'sub_keys': k['sub_keys']})
-            self.addDir(params)
-    
-    def listRaiSportItems(self, cItem):
-        printDBG("Raiplay.listRaiSportItem %s" % cItem['title'])
-        dominio = cItem.get('dominio','')
-        sub_keys = cItem.get('sub_keys',[])
-        
-        for k in sub_keys:
-            title = k.split("|")[0]
-            title = HTMLParser.HTMLParser().unescape(title).encode('utf-8')
-
-            if title == cItem['title']:
-                title = "Tutto su " + title
-            
-            params = {'category': 'raisport_subitem', 'title': title, 'dominio': dominio, 'key': k}
-            self.addDir(params)
-    
-    def listRaiSportVideos(self, cItem):
-        printDBG("Raiplay.listRaiSportItem %s" % cItem['title'])
-        key= cItem.get('key','')
-        dominio = cItem.get('dominio','')
-        page = int(cItem.get('page',0))
-        
-        header = {
-                  'Accept': 'application/json, text/javascript, */*; q=0.01' ,
-                  'Content-Type': 'application/json; charset=UTF-8',
-                  'Origin': 'https://www.raisport.rai.it',
-                  'Referer': 'https://www.raisport.rai.it/archivio.html',
-                  'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.132 Safari/537.36',
-                  'X-Requested-With': 'XMLHttpRequest',
-                 }
-        pageSize = 50
-        
-        payload = {
-            "page": page,
-            "pageSize": pageSize,
-            "filters":{
-                "tematica":[key],
-                "dominio": dominio
-            }
-        }
-        postData=json_dumps(payload)
-        
-        sts, data = self.getPage(self.RAISPORT_SEARCH_URL, {'header' : header, 'raw_post_data':1}, post_data= postData) 
-        
-        if sts:
-            j = json_loads(data)
-            if 'hits' in j:
-                h = j['hits']
-                printDBG(str(h))
-                if 'hits' in h:
-                    for hh in h['hits']:
-                        if '_source' in hh:
-                            news_type = hh['_source']['tipo']
-                            if news_type == 'Video' and 'media' in hh['_source']:
-                                relinker_url = hh['_source']['media']['mediapolis']
-                                
-                                if 'durata' in hh['_source']['media']:
-                                    duration = " - " + _("Duration") + ": " + hh['_source']['media']['durata']
-                                else:
-                                    duration = ""
-                                    
-                                icon = hh['_source']['immagini']['default']
-                                title = hh['_source']['titolo']
-                                creation_date = hh['_source']['data_creazione']
-                                if 'sommario' in hh['_source']: 
-                                    desc = creation_date + duration + '\n' + hh['_source']['sommario']
-                                else:
-                                    desc = creation_date + duration
-                                
-                                params= {'category':'raisport_video', 'title': title, 'desc': desc, 'url': relinker_url, 'icon': icon}
-                                printDBG(str(params))
-                                self.addVideo(params)
-         
-                if h['total'] > (page + pageSize):
-                    page += pageSize
-                    params=dict(cItem)
-                    params['title']=_("Next page")
-                    params['page'] = page
-                    self.addMore(params)
-                
-        
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         printDBG('Raiplay - handleService start')
         
@@ -641,7 +487,7 @@ class Raiplay(CBaseHostClass):
         elif category == 'ondemand':
             self.listOnDemandMain(self.currItem)
         elif category == 'ondemand_items':
-            if subtype == "RaiPlay Tipologia Page" or subtype == "RaiPlay Genere Page" or subtype == "RaiPlay Tipologia Editoriale Page":
+            if subtype == "RaiPlay Tipologia Page" or subtype == "RaiPlay Genere Page":
                 self.listOnDemandCategory(self.currItem)
             elif subtype == "Raiplay Tipologia Item":
                 self.listOnDemandAZ(self.currItem)
@@ -660,13 +506,7 @@ class Raiplay(CBaseHostClass):
         elif category in ['tg1','tg2','tg3']:
             self.searchLastTg(self.currItem)
         elif category == 'nop':
-            printDBG('raiplay no link')
-        elif category == 'raisport_main':
-            self.listRaiSportMain(self.currItem)
-        elif category == 'raisport_item':
-            self.listRaiSportItems(self.currItem)
-        elif category == 'raisport_subitem':
-            self.listRaiSportVideos(self.currItem)
+            printDGB('raiplay no link')
         else:
             printExc()
         
