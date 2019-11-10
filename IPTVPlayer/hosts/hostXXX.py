@@ -164,7 +164,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.11.09.2"
+    XXXversion = "2019.11.10.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -7196,6 +7196,7 @@ class Host:
         if url.startswith('https://www.katestube.com'):               return 'https://www.katestube.com'
         if url.startswith('http://www.katestube.com'):                return 'https://www.katestube.com'
         if url.startswith('https://www.koloporno.com'):               return 'https://www.koloporno.com'
+        if url.startswith('https://mangovideo'):                      return 'https://mangovideo'
         if url.startswith('https://www.pinflix.com'):                 return 'https://www.pinflix.com'
         if url.startswith('http://www.pinkrod.com'):                  return 'http://www.updatetube.com'
         if url.startswith('http://pinkrod.com'):                      return 'http://www.updatetube.com'
@@ -9218,6 +9219,20 @@ class Host:
                  return urllib2.unquote(videoUrl)
            return ''
 
+        if parser == 'https://mangovideo':
+           COOKIEFILE = os_path.join(GetCookieDir(), 'mangovideo.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(url, self.defaultParams)
+           if not sts: return ''
+           printDBG( 'Host listsItems data: '+data )
+           license_code = self.cm.ph.getSearchGroups(data, '''license_code\s*?:\s*?['"]([^"^']+?)['"]''')[0]
+           videoUrl = self.cm.ph.getSearchGroups(data, '''video_url\s*?:\s*?['"]([^"^']+?)['"]''')[0]
+           printDBG( 'Host license_code: %s' % license_code )
+           printDBG( 'Host video_url: %s' % videoUrl )		   
+           if 'function/0/' in videoUrl:
+              videoUrl = decryptHash(videoUrl, license_code, '16')
+           return urlparser.decorateUrl(videoUrl, {'Referer': url}) 
 ##########################################################################################################################
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
         try:
@@ -10291,3 +10306,43 @@ def myfreecam_start(url):
 	else:
 		printDBG ("No video server ... _|_ ")
 
+# decrypt function/0/
+def decryptHash(videoUrl, licenseCode, hashRange):
+    result = ''
+    videoUrlPart = videoUrl.split('/')
+    hash = videoUrlPart[7][:2*int(hashRange)]
+    nonConvertHash = videoUrlPart[7][2*int(hashRange):]
+    seed = calcSeed(licenseCode, hashRange)
+    if (seed != '' and hash !=''):
+        for k in range(len(hash)-1, -1, -1):
+            l = k
+            for m in range(k,len(hash)):
+                l += int(seed[m])
+            l = l % len(hash)
+            n = ''
+            for o in range(0, len(hash)):
+                n = n + hash[l] if o == k else n + hash[k] if o == l else n + hash[o]
+            hash = n
+        videoUrlPart[7] = hash + nonConvertHash
+        videoUrlPart.pop(0)
+        videoUrlPart.pop(0)        
+        result = '/'.join(videoUrlPart)   
+    return result        
+
+
+def calcSeed(licenseCode, hashRange):
+    f = licenseCode.replace('$', '').replace('0', '1')
+    j = int(len(f) / 2)
+    k = int(f[:len(f)-j])
+    l = int(f[j:])
+    g = abs(l - k)
+    fi = 4*g
+    i = int(int(hashRange) / 2 + 2)
+    m = ''
+    for g2 in range (0,j+1):
+        for h in range (1,5):
+            n =  int(licenseCode[g2 + h]) + int(str(fi)[g2])
+            if n>=i:
+                n -= i	
+            m = m + str(n)
+    return m 
