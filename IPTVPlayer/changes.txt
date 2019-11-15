@@ -1,4 +1,7 @@
-﻿#2019.11.15.02
+﻿#2019.11.15.03
+-FullMatchTV hozzáadva
+-Kisebb javítások
+#2019.11.15.02
 -FilmOWood hozzáadva
 -SolarMovie javítva
 #2019.11.15.01
