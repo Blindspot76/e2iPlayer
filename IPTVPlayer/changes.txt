@@ -1,4 +1,6 @@
-﻿#2019.11.15.03
+﻿#2019.11.17.01
+-Twitch TV javítva
+#2019.11.15.03
 -FullMatchTV hozzáadva
 -Kisebb javítások
 #2019.11.15.02

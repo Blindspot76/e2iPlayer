@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-10-28 by Blindspot - modified TwitchTV
-###################################################
 # LOCAL import
 ###################################################
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -50,39 +48,39 @@ class Twitch(CBaseHostClass):
         self.VOD_TOKEN_URL = self.API1_URL + 'api/vods/%s/access_token?need_https=true&oauth_token&platform=web&player_backend=mediaplayer&player_type=site'
         self.VOD_URL = 'https://usher.ttvnw.net/vod/%s.m3u8?token=%s&sig=%s&allow_source=true'
 
-        self.platformFilters = [{'title':_('Minden Platform'), 'platform_type':'all'}, {'title':_('Xbox One'), 'platform_type':'xbox'}, {'title':_('PlayStation 4'), 'platform_type':'ps4'}]
+        self.platformFilters = [{'title':_('All Platforms'), 'platform_type':'all'}, {'title':_('Xbox One'), 'platform_type':'xbox'}, {'title':_('PlayStation 4'), 'platform_type':'ps4'}]
         self.languagesFilters =     [
                                             # nice of them to change from meaningful identifers to guid
                                             # screwing things up with the language filtering.  CM
-                                            {'lang':"73cc486a-e56b-41ed-a1df-7afedbc84f6f",'title':"Arab"},
-                                            {'lang':"21d85c73-701f-4259-8c4e-4321265847b5",'title':"Bolgár"},
-                                            {'lang':"a6cddaba-f0ce-4526-9087-6de2f603a24d",'title':"Cseh"},
-                                            {'lang':"43e598cc-918b-4247-b02c-b13543a1eac9",'title':"Dán"},
-                                            {'lang':"9166ad14-41f1-4b04-a3b8-c8eb838c6be6",'title':"Német"},
-                                            {'lang':"902f6815-a655-4918-99e7-48c74a71feac",'title':"Görög"},
-                                            {'lang':"6ea6bca4-4712-4ab9-a906-e3336a9d8039",'title':"Angol"},
-                                            {'lang':"d4bb9c58-2141-4881-bcdc-3fe0505457d1",'title':"Spanyol"},
-                                            {'lang':"220eb274-ab25-425b-8a9b-826103404997",'title':"Finn"},
-                                            {'lang':"6f655045-9989-4ef7-8f85-1edcec42d648",'title':"Francia"},
+                                            {'lang':"73cc486a-e56b-41ed-a1df-7afedbc84f6f",'title':"العربية"},
+                                            {'lang':"21d85c73-701f-4259-8c4e-4321265847b5",'title':"български"},
+                                            {'lang':"a6cddaba-f0ce-4526-9087-6de2f603a24d",'title':"Čeština"},
+                                            {'lang':"43e598cc-918b-4247-b02c-b13543a1eac9",'title':"Dansk"},
+                                            {'lang':"9166ad14-41f1-4b04-a3b8-c8eb838c6be6",'title':"Deutsch"},
+                                            {'lang':"902f6815-a655-4918-99e7-48c74a71feac",'title':"Ελληνικά"},
+                                            {'lang':"6ea6bca4-4712-4ab9-a906-e3336a9d8039",'title':"English"},
+                                            {'lang':"d4bb9c58-2141-4881-bcdc-3fe0505457d1",'title':"Español"},
+                                            {'lang':"220eb274-ab25-425b-8a9b-826103404997",'title':"Suomi"},
+                                            {'lang':"6f655045-9989-4ef7-8f85-1edcec42d648",'title':"Français"},
                                             {'lang':"a298cca5-d408-47c7-a1e7-0c76ca878bc6",'title':"Magyar"},
-                                            {'lang':"5b9935eb-1e9a-4217-98ad-62bda5cff0d1",'title':"Olasz"},
-                                            {'lang':"6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",'title':"Japán"},
-                                            {'lang':"ab2975e3-b9ca-4b1a-a93e-fb61a5d5c3a4",'title':"Koreai"},
-                                            {'lang':"e13e6734-37ae-4d85-897b-3015f0168355",'title':"Holland"},
-                                            {'lang':"5647bf35-f99e-49aa-8578-0e07d936188c",'title':"Norvég"},
-                                            {'lang':"f9d04efa-6e25-49bf-bf0a-da3e2addaf1b",'title':"Lengyel"},
-                                            {'lang':"39ee8140-901a-4762-bfca-8260dea1310f",'title':"Portugál"},
-                                            {'lang':"75a99c80-0f15-4159-b1fd-3812c25b4aca",'title':"Román"},
-                                            {'lang':"0569b171-2a2b-476e-a596-5bdfb45a1327",'title':"Orosz"},
-                                            {'lang':"9b773670-05f8-4c06-ac99-e6649f906171",'title':"Szlovén"},
-                                            {'lang':"145b073b-cb70-4e91-b170-f5fab2ebba05",'title':"Svéd"},
-                                            {'lang':"f19c7524-c18d-41af-9f39-034c8d0b0fee",'title':"Thai"},
-                                            {'lang':"f08d5873-f0c7-4912-94ba-a41933b4c141",'title':"Török"},
-                                            {'lang':"ba3b69fe-899c-4518-ac46-707275e3eba1",'title':"Vietnami"},
-                                            {'lang':"0c8c6543-4019-47d0-9b8a-57a81ee6ace5",'title':"Kínai (Kantoni)"},
-                                            {'lang':"74c92063-a389-4fd2-8460-b1bb82b04ec7",'title':"Kínai"},
-                                            {'lang':'5ad4b978-495f-4093-9461-c194f58201ab','title':'Amerikai jelnyelv'},
-                                            {'lang':'fd76c790-0505-4c4c-865a-d6bd139c0901','title':'Egyéb'}
+                                            {'lang':"5b9935eb-1e9a-4217-98ad-62bda5cff0d1",'title':"Italiano"},
+                                            {'lang':"6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",'title':"日本語"},
+                                            {'lang':"ab2975e3-b9ca-4b1a-a93e-fb61a5d5c3a4",'title':"한국어"},
+                                            {'lang':"e13e6734-37ae-4d85-897b-3015f0168355",'title':"Nederlands"},
+                                            {'lang':"5647bf35-f99e-49aa-8578-0e07d936188c",'title':"Norsk"},
+                                            {'lang':"f9d04efa-6e25-49bf-bf0a-da3e2addaf1b",'title':"Polski"},
+                                            {'lang':"39ee8140-901a-4762-bfca-8260dea1310f",'title':"Português"},
+                                            {'lang':"75a99c80-0f15-4159-b1fd-3812c25b4aca",'title':"Română"},
+                                            {'lang':"0569b171-2a2b-476e-a596-5bdfb45a1327",'title':"Русский"},
+                                            {'lang':"9b773670-05f8-4c06-ac99-e6649f906171",'title':"Slovenčina"},
+                                            {'lang':"145b073b-cb70-4e91-b170-f5fab2ebba05",'title':"Svenska"},
+                                            {'lang':"f19c7524-c18d-41af-9f39-034c8d0b0fee",'title':"ภาษาไทย"},
+                                            {'lang':"f08d5873-f0c7-4912-94ba-a41933b4c141",'title':"Türkçe"},
+                                            {'lang':"ba3b69fe-899c-4518-ac46-707275e3eba1",'title':"TiếngViệt"},
+                                            {'lang':"0c8c6543-4019-47d0-9b8a-57a81ee6ace5",'title':"中文(粵語)"},
+                                            {'lang':"74c92063-a389-4fd2-8460-b1bb82b04ec7",'title':"中文"},
+                                            {'lang':'5ad4b978-495f-4093-9461-c194f58201ab','title':'American Sign Language'},
+                                            {'lang':'fd76c790-0505-4c4c-865a-d6bd139c0901','title':'Other'}
                                     ]
 
         lang = GetDefaultLang()
@@ -103,10 +101,10 @@ class Twitch(CBaseHostClass):
         
         
         self.VIDEOS_TYPES_TAB = [{'title':_('All')}, 
-                                 {'title':_('Legutóbbi premierek'), 'videos_type':'PAST_PREMIERE'},
+                                 {'title':_('Past premieres'), 'videos_type':'PAST_PREMIERE'},
                                  {'title':_('Archive'),        'videos_type':'ARCHIVE'      },
-                                 {'title':_('Összefoglalók'),     'videos_type':'HIGHLIGHT'    },
-                                 {'title':_('Feltöltések'),        'videos_type':'UPLOAD'       },]
+                                 {'title':_('Highlights'),     'videos_type':'HIGHLIGHT'    },
+                                 {'title':_('Uploads'),        'videos_type':'UPLOAD'       },]
  
         self.VIDEOS_SORT_TAB = [{'title':_('Popular'), 'sort':'VIEWS' },
                                 {'title':_('Recent'),  'sort':'TIME'  },]
@@ -119,7 +117,7 @@ class Twitch(CBaseHostClass):
                                   
         self.GAME_CAT_TAB = [{'category':'game_lang', 'next_category':'game_channels',      'title': _('Channels')},
                              {'category':'game_lang', 'next_category':'game_videos_types',  'title': _('Videos') },
-                             {'category':'game_lang', 'next_category':'game_clips_filters', 'title': _('Klipek') },
+                             {'category':'game_lang', 'next_category':'game_clips_filters', 'title': _('Clips') },
                             ]
 
     def getPage(self, baseUrl, addParams={}, post_data=None):
@@ -207,10 +205,10 @@ class Twitch(CBaseHostClass):
         try:
             cursor = ''
             data = json.loads(data)
-            for item in data[0]['data']['directories']['edges']:
+            for item in data[0]['data']['directoriesWithTags']['edges']:
                 cursor = jstr(item, 'cursor')
                 item = item['node']
-                if item['__typename'] == 'GAME':
+                if item['__typename'] == 'Game':
                     title = jstr(item, 'displayName')
                     icon = self.getFullIconUrl(jstr(item, 'avatarURL'), self.cm.meta['url'])
                     desc = jstr(item, '__typename') + ' | ' + _('%s viewers') % item['viewersCount']
