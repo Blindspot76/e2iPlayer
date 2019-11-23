@@ -149,13 +149,12 @@ class Filmotopia(CBaseHostClass):
             
             if '' != linkUrl:  linkUrl = 'http://videomega.tv/view.php?ref={0}&width=700&height=460&val=1'.format(linkUrl)
             if '' == linkUrl:
-                linkUrl = self.cm.ph.getSearchGroups(tmp[-1], 'data-open="([^"]+?)"')[0]
-                linkHosting = self.cm.ph.getSearchGroups(tmp[-1], 'data-source="([^"]+?)"')[0]
+                linkUrl = self.cm.ph.getSearchGroups(tmp[-1], 'data-vidoza="([^"]+?)"')[0]
                 if '' != linkUrl: 
-                    if 'vidoza' in linkHosting: linkUrl = 'https://vidoza.net/embed-{0}.html'.format(linkUrl)
-                    else: linkUrl = 'http://openload.co/embed/{0}/'.format(linkUrl)
-            if '' == linkUrl: linkUrl = self.cm.ph.getSearchGroups(item, '''['"](http[^'^"]+?openload[^'^"]+?)['"]''')[0]
-            if '' == linkUrl: continue
+                    linkUrl = 'https://vidoza.net/embed-{0}.html'.format(linkUrl)
+                linkUrl = self.cm.ph.getSearchGroups(tmp[-1], 'data-only="([^"]+?)"')[0]
+                if '' != linkUrl: 
+                    linkUrl = 'https://onlystream.tv/e/{0}'.format(linkUrl)
             episodeTitle = self.cleanHtmlStr( tmp[0] )
             if 0 == len(self.seriesCache.get(season, [])):
                 self.seriesCache[season] = []
@@ -191,9 +190,17 @@ class Filmotopia(CBaseHostClass):
         else:
             sts, data = self.cm.getPage(cItem['url'])
             if not sts: return urlTab
-            
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<div class="trailer">', '</div>', False)[1]
-            url = self.cm.ph.getSearchGroups(data, 'src="([^"]+?)"')[0]
+
+            tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<button', '>', 'myButton'), ('</button', '>'))
+            for item in tmp:
+                url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\sdata-url=['"]([^"^']+?)['"]''')[0] )
+                title  = self.cleanHtmlStr(item)
+                if not self.cm.isValidUrl(url): continue
+                urlTab.append({'name':title, 'url':url, 'need_resolve':1})
+            if len(urlTab): return urlTab
+
+            tmp = self.cm.ph.getDataBeetwenMarkers(data, '="trailer">', '</div>', False)[1]
+            url = self.cm.ph.getSearchGroups(tmp, 'src="([^"]+?)"')[0]
             if 'videomega.tv/validatehash.php?' in url:
                 sts, data = self.cm.getPage(url, {'header':{'Referer':cItem['url'], 'User-Agent':'Mozilla/5.0'}})
                 if sts:
@@ -202,7 +209,7 @@ class Filmotopia(CBaseHostClass):
                     urlTab.append({'name':'videomega.tv', 'url':linkUrl, 'need_resolve':1})
             elif url.startswith('http://') or url.startswith('https://'):
                 urlTab.append({'name':'link', 'url':url, 'need_resolve':1})
-        
+
         return urlTab
         
     def getVideoLinks(self, baseUrl):

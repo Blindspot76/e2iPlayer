@@ -1,4 +1,9 @@
-﻿#2019.11.23.01
+﻿#2019.11.23.02
+-FullMatch TV javítva
+-eFilmy javítva
+-FilmAtiva javítva
+-Kisebb módosítások
+#2019.11.23.01
 -123 Movies HD javítva
 -Arte.TV javítva
 #2019.11.18.02

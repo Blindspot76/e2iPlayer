@@ -559,6 +559,10 @@ class urlparser:
                        'upclips.online':       self.pp.parserVIUCLIPS       ,
                        'toclipit.com':         self.pp.parserVIUCLIPS       ,
                        'onlystream.tv':        self.pp.parserONLYSTREAMTV   ,
+                       'tunestream.net':       self.pp.parserONLYSTREAMTV   ,
+                       'jetload.net':          self.pp.parserONLYSTREAMTV   ,
+                       'vidia.tv':             self.pp.parserONLYSTREAMTV   ,
+                       'mixdrop.co':           self.pp.parserMIXDROP        ,
                     }
         return
     
@@ -12342,9 +12346,66 @@ class pageParser(CaptchaHelper):
             except Exception: pass
 
         urlTab=[]
-        urlTab = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.mp4(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+        url = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.mp4(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
+        if url != '':
+            url = strwithmeta(url, {'Origin':"https://" + urlparser.getDomain(baseUrl), 'Referer':baseUrl})
+            urlTab.append({'name':'mp4', 'url':url})
         hlsUrl = self.cm.ph.getSearchGroups(data, '''["'](https?://[^'^"]+?\.m3u8(?:\?[^"^']+?)?)["']''', ignoreCase=True)[0]
         if hlsUrl != '':
             hlsUrl = strwithmeta(hlsUrl, {'Origin':"https://" + urlparser.getDomain(baseUrl), 'Referer':baseUrl})
             urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
         return urlTab
+
+    def parserMIXDROP(self, baseUrl):
+        printDBG("parserMIXDROP baseUrl[%s]" % baseUrl)
+        # example :https://mixdrop.co/f/1f13jq
+        #          https://mixdrop.co/e/1f13jq
+
+        if '/f/' in baseUrl:
+            url = baseUrl.replace('/f/','/e/')
+        else:
+            url = baseUrl
+
+        sts, data = self.cm.getPage(url)
+        if not sts:
+            return []
+
+        error = self.cm.ph.getDataBeetwenNodes(data, '<div class="tb error">', '</p>')[1]
+
+        if error:
+            text = clean_html(error)
+            SetIPTVPlayerLastHostError(text)
+            return []
+
+        urlsTab=[]
+        # decrypt packed scripts
+        scripts = re.findall(r"(eval\s?\(function\(p,a,c,k,e,d.*?)</script>", data,re.S)
+        for script in scripts:
+            script = script + "\n"
+            # mods
+            script = script.replace("eval(function(p,a,c,k,e,d","pippo = function(p,a,c,k,e,d")
+            script = script.replace("return p}(", "print(p)}\n\npippo(")
+            script = script.replace("))\n",");\n")
+
+            # duktape
+            ret = js_execute( script )
+            decoded = ret['data']
+            printDBG('------------------------------')
+            printDBG(decoded)
+            printDBG('------------------------------')
+
+            # found a part similar to this one:
+            #MDCore.vsrc="//s-delivery4.mixdrop.co/v/cd5b9db3d4d79b8e27f4b8e9e01b0f89.mp4?s=n4gHzKKmauonkMNudSwDkQ&e=1573868130"
+            link = re.findall("vsrc=\"([^\"]+?)\"", decoded)
+            if link:
+                if link[0].startswith('//'):
+                    video_url = "https:" + link[0]
+                else:
+                    video_url = link[0]
+                video_url = urlparser.decorateUrl(video_url, {'Referer' : baseUrl})
+
+                params = {'name': 'link', 'url': video_url}
+                printDBG(params)
+                urlsTab.append(params)
+
+        return urlsTab
