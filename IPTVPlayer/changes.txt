@@ -1,4 +1,7 @@
-﻿#2019.11.18.02
+﻿#2019.11.23.01
+-123 Movies HD javítva
+-Arte.TV javítva
+#2019.11.18.02
 -WebStream frissítve
 -Kisebb javítások
 #2019.11.18.01
