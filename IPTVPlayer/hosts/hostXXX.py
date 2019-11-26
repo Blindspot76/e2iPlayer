@@ -166,7 +166,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.11.23.0"
+    XXXversion = "2019.11.25.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -399,8 +399,8 @@ class Host:
            valTab.append(CDisplayListItem('CAMSODA',       'http://www.camsoda.com',       CDisplayListItem.TYPE_CATEGORY, ['http://www.camsoda.com/api/v1/browse/online'],            'CAMSODA','https://cachew.camsoda.com/assets/img/camsoda-logo-160x50.png', None)) 
            valTab.append(CDisplayListItem('STREAMATE',       'https://streamate.com',       CDisplayListItem.TYPE_CATEGORY, ['https://streamate.com'],            'STREAMATE','https://m2.nsimg.net/3.0/auto/skin/sm/assets/ffe71-1453326178-logo.png', None)) 
            try: 
-               phImage = urlparser.decorateUrl('http://media4.nkdcdn.com/images/siteImages/textImages/common/phtml/whiteLabel/new.naked/logo.png', {'Referer': 'http://new.naked.com'})
-               valTab.append(CDisplayListItem('CAMSTER',       'http://new.naked.com',       CDisplayListItem.TYPE_CATEGORY, ['http://new.naked.com/'],            'NAKED', phImage, None)) 
+               phImage = urlparser.decorateUrl('http://media4.nkdcdn.com/images/siteImages/textImages/common/phtml/whiteLabel/new.naked/logo.png', {'Referer': 'https://www.naked.com'})
+               valTab.append(CDisplayListItem('CAMSTER',       'https://www.naked.com',       CDisplayListItem.TYPE_CATEGORY, ['https://www.naked.com/'],            'NAKED', phImage, None)) 
            except Exception: 
                printExc()
            #valTab.append(CDisplayListItem('FIRECAMS',       'https://firecams.com',       CDisplayListItem.TYPE_CATEGORY, ['http://sexycamx.com'],            'FIRECAMS','https://www.bucharestsummit.com/uploads/firecams.jpg', None)) 
@@ -1984,27 +1984,30 @@ class Host:
 
         if 'NAKED' == name:
             printDBG( 'Host listsItems begin name='+name ) 
-            self.MAIN_URL = 'http://new.naked.com' 
+            self.MAIN_URL = 'https://www.naked.com' 
             COOKIEFILE = os_path.join(GetCookieDir(), 'naked.cookie')
             host = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Mobile Safari/537.36'
             header = {'User-Agent': host, 'Accept':'application/json','Accept-Language':'en,en-US;q=0.7,en;q=0.3','X-Requested-With':'XMLHttpRequest','Content-Type':'application/x-www-form-urlencoded'} 
-            query_data = { 'url': url, 'header': header, 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': COOKIEFILE, 'use_post': False, 'return_data': True }
+            query_data = {'header': header, 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': COOKIEFILE, 'use_post': False, 'return_data': True }
             try:
-                data = self.cm.getURLRequestData(query_data)
+                #data = self.cm.getURLRequestData(query_data)
+                sts, data = self.cm.getPage(url, query_data)
             except Exception as e:
                 printExc()
                 return valTab 
             printDBG( 'Host listsItems data: '+data )
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'data-model-card', '<div class="each-model" data-cam-score=')
+            #data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'data-model-card', '<div class="each-model" data-cam-score=')
+            data = data.split('<a class="model-wrapper"')
+            if len(data): del data[0]
             for item in data:
-                phTitle = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0] 
+                phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0].replace('Model ','')
                 phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
-                phImage = self.cm.ph.getSearchGroups(item, '''data-profile-image=['"]([^"^']+?)['"]''', 1, True)[0] 
-                Video = self.cm.ph.getSearchGroups(item, '''data-live-feed=['"]([^"^']+?)['"]''', 1, True)[0] 
+                phImage = self.cm.ph.getSearchGroups(item, '''live-image-src=['"]([^"^']+?)['"]''', 1, True)[0] 
+                desc = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0] 
                 age = self.cm.ph.getSearchGroups(item, '''model-age">([^>]+?)<''', 1, True)[0] 
                 if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
                 if phImage.startswith('//'): phImage = 'http:' + phImage
-                valTab.append(CDisplayListItem(decodeHtml(phTitle), decodeHtml(phTitle), CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Video, 0)], 0, phImage, None)) 
+                valTab.append(CDisplayListItem(decodeHtml(phTitle), decodeHtml(phTitle)+'\n'+desc, CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
             return valTab 
 
         if 'YOUJIZZ' == name:
@@ -2927,9 +2930,9 @@ class Host:
            printDBG( 'Host listsItems data: '+str(data) )
            phserwer = ''
            phName = catUrl 
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
+           data = ph.IFRAME.findall(data)
            for item in data:
-              phUrl = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phUrl = self.cm.getFullUrl(item[1])
               phserwer = phUrl.split('/')[2]+' - '
               if 'exosrv' in phUrl: continue
               valTab.append(CDisplayListItem(phserwer+phName,phUrl,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, '', None)) 
@@ -7697,6 +7700,7 @@ class Host:
         if self.MAIN_URL == 'https://www.amateurcool.com':   return self.MAIN_URL 
         if self.MAIN_URL == 'http://anybunny.com':           return self.MAIN_URL  
         if self.MAIN_URL == 'https://hqporner.com':          return self.MAIN_URL 
+        if self.MAIN_URL == 'https://www.naked.com':          return self.MAIN_URL  
 
         return ''
 
@@ -9592,6 +9596,34 @@ class Host:
               return videoUrl
            return ''
 
+        if parser == 'https://www.naked.com':
+           COOKIEFILE = os_path.join(GetCookieDir(), 'naked.cookie')
+           self.defaultParams = {'use_cookie': True, 'load_cookie': False, 'save_cookie': False, 'cookiefile': COOKIEFILE}
+           sts, data = self.getPage(url, 'naked.cookie', 'naked.com', self.defaultParams)
+           if not sts: return ''
+           modelname = self.cm.meta['url'].split('=')[-1]
+           id = ''
+           host = ''
+           printDBG( 'Host listsItems data: '+data )
+           data = data.split('<div class="live clearfix')
+           if len(data): del data[0]
+           for item in data:
+              id = self.cm.ph.getSearchGroups(item, '''data-model-id=['"]([^"^']+?)['"]''')[0] 
+              host = self.cm.ph.getSearchGroups(item, '''data-video-host=['"]([^"^']+?)['"]''')[0] 
+              if modelname == self.cm.ph.getSearchGroups(item, '''data-model-seo-name=['"]([^"^']+?)['"]''', 1, True)[0]: 
+                 if 'multi-user-private' in item: 
+                    SetIPTVPlayerLastHostError(_(' Private Show.'))
+                    return []
+                 break
+
+           videoUrl = 'https://manifest.vscdns.com/manifest.m3u8?key=nil&provider=highwinds&host='+host+'&model_id='+id+'&secure=true&prefix=amlst&youbora-debug=1'
+           PHPSESSID = self.cm.getCookieItem(COOKIEFILE, 'PHPSESSID')
+
+           videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': self.cm.meta['url'], 'Cookie':'PHPSESSID=%s' % PHPSESSID, 'User-Agent': self.USER_AGENT})
+           tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
+           for item in tmp:
+              return item['url']
+           return ''
 ##########################################################################################################################
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
         try:

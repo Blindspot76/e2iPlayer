@@ -1,4 +1,7 @@
-﻿#2019.11.26.01
+﻿#2019.11.26.02
+-Camster javítva (XXX)
+-Kisebb javítások
+#2019.11.26.01
 -SolarMovie javítva
 -YMovies.to javítva
 #2019.11.25.01

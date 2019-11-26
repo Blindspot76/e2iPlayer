@@ -132,7 +132,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2019.10.20"
+    infoversion = "2019.11.19"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -284,6 +284,7 @@ class Host:
            valTab.append(CDisplayListItem('Popler TV', 'http://www.popler.tv/live', CDisplayListItem.TYPE_CATEGORY, ['http://www.popler.tv/live'], 'poplertv', 'http://www.popler.tv/oferta_new/images/logo.png', None)) 
            valTab.append(CDisplayListItem('Kamery HDONTAP', 'https://hdontap.com/index.php/video', CDisplayListItem.TYPE_CATEGORY, ['https://hdontap.com/index.php/video'], 'hdontap', 'https://hdontap.com/assets/images/logo_hdontap.png', None)) 
            valTab.append(CDisplayListItem('Darmowa TV', '', CDisplayListItem.TYPE_CATEGORY, ['https://hdontap.com/index.php/video'], 'darmowa', '', None)) 
+           valTab.append(CDisplayListItem('IPLAX', '', CDisplayListItem.TYPE_CATEGORY, ['https://iplax.eu/'], 'iplax', 'https://iplax.eu/themes/youplay/img/logo-light.png', None)) 
 
            valTab.sort(key=lambda poz: poz.name)
            valTab.insert(0,CDisplayListItem('Info o E2iPlayer - samsamsam', 'Wersja hostinfoversion: '+self.infoversion, CDisplayListItem.TYPE_CATEGORY, ['http://www.e2iplayer.gitlab.io/update2/log.txt'], 'info', 'http://www.cam-sats.com/images/forumicons/ip.png', None)) 
@@ -1733,7 +1734,7 @@ class Host:
             printDBG( 'Host listsItems begin name='+name )
             #valTab.insert(0,CDisplayListItem("--- INNE ---","INNE",     CDisplayListItem.TYPE_CATEGORY,['http://filmypolskie999.blogspot.com/p/inne.html'],'filmypolskie999-seriale',    '',None))
             #valTab.insert(0,CDisplayListItem("--- DOKUMENTY ---","DOKUMENTY",     CDisplayListItem.TYPE_CATEGORY,['http://filmypolskie999.blogspot.com/p/dokument.html'],'filmypolskie999-clips',    '',None))
-            valTab.insert(0,CDisplayListItem("--- TEATR TV ---","TEATR TV",     CDisplayListItem.TYPE_CATEGORY,['http://filmypolskie999.blogspot.com/p/teatr-tv.html'],'filmypolskie999-seriale',    '',None))
+            valTab.insert(0,CDisplayListItem("--- TEATR TV ---","TEATR TV",     CDisplayListItem.TYPE_CATEGORY,['http://filmypolskie999.blogspot.com/p/teatr-tv.html'],'filmypolskie999-clips',    '',None))
             valTab.insert(0,CDisplayListItem("--- SERIALE ---","SERIALE",     CDisplayListItem.TYPE_CATEGORY,['http://filmypolskie999.blogspot.com/p/tv.html'],'filmypolskie999-seriale',    '',None))
             valTab.insert(0,CDisplayListItem("--- FILMY ---","FILMY",     CDisplayListItem.TYPE_CATEGORY,['http://filmypolskie999.blogspot.com/p/film.html'],'filmypolskie999-clips',    '',None))
             return valTab
@@ -1745,14 +1746,29 @@ class Host:
             sts, data = self.get_Page(url)
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
+
             data2 = self.cm.ph.getDataBeetwenMarkers(data, "DODAJ FILM", "footer", False)[1]
             if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, ">CAŁY SERIAL", "</ol>", False)[1]
-            if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, '<div class="separator"', "</ol>", False)[1]
+            #if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, '>Teatr', "footer", False)[1]
+            if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, '>Spektakle', "<div>", False)[1]
+            #if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, '<div class="separator"', "</ol>", False)[1]
+            if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, 'DODAJ', 'footer', False)[1]
+            if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, 'CZAT', 'footer', False)[1]
+
+
+            printDBG( 'Host clips data2:%s' % data2 )
+            if not data2: data2 = data
+
             data = self.cm.ph.getAllItemsBeetwenMarkers(data2, '<a', '</a>')
             for item in data:
                phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
                phTitle = self._cleanHtmlStr(item)
                if phUrl.startswith('//'): phUrl = 'http:' + phUrl
+               if phTitle=='': phUrl=''
+               if 'Wikipedia' in phTitle: phUrl=''
+               if 'Wikipedia' in phTitle: phUrl=''
+               if 'Wikipedia' in phTitle: phUrl=''
+
                if phUrl and not 'tiny.cc' in phTitle:
                   valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'filmypolskie999-serwer', '', phTitle)) 
             return valTab
@@ -1765,20 +1781,29 @@ class Host:
             sts, data = self.get_Page(url)
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
+            if 'BRAK-WIDEO-DODAJ' in data:
+               msg = _("Last error:\n%s" % 'BRAK WIDEO')
+               GetIPTVNotify().push('%s' % msg, 'info', 10)
+            pusty = ''
             phImage = self.cm.ph.getSearchGroups(data, '''<link href=['"]([^"^']+?\.jpg)['"]''', 1, True)[0] 
-            desc = self.cm.ph.getDataBeetwenMarkers(data, "'metaDescription': '", "'", False)[1]
+            desc = self.cm.ph.getDataBeetwenMarkers(data, "'metaDescription': '", "'", False)[1].replace('\n','')
             data2 = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
             for item in data2:
                phUrl = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('\n','').replace('&amp;','&') 
                if phUrl.startswith('//'): phUrl = 'http:' + phUrl
+               if 'amazon' in phUrl: phUrl = ''
                if phUrl:
-                  if not 'amazon' in phUrl:
-                     valTab.append(CDisplayListItem(catUrl,decodeHtml(desc),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
+                  pusty = ' '
+                  valTab.append(CDisplayListItem(catUrl,decodeHtml(desc),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
                else:
                   phUrl = self.cm.ph.getSearchGroups(data, '''file: ['"]([^"^']+?)['"]''', 1, True)[0].replace('\n','').replace('&amp;','&')
                   if phUrl:
+                     pusty = ' '
                      if phUrl.startswith('//'): phUrl = 'http:' + phUrl
                      valTab.append(CDisplayListItem(catUrl,decodeHtml(desc),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
+            printDBG( 'Host listsItems phUrl:%s' % phUrl )
+            if pusty == '':
+               valTab.append(CDisplayListItem(catUrl,'',CDisplayListItem.TYPE_CATEGORY, [url],'filmypolskie999-clips', '', None)) 
             return valTab
         if 'filmypolskie999-seriale' == name:
             printDBG( 'Host listsItems begin name='+name )
@@ -1789,13 +1814,14 @@ class Host:
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
             data2 = self.cm.ph.getDataBeetwenMarkers(data, "Seriale zagraniczne", "footer", False)[1]
+            if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, "SERIALE ZAGRANICZNE", "footer", False)[1]
             if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, ">DODAJ SPEKTAKL", "footer", False)[1]
             data = self.cm.ph.getAllItemsBeetwenMarkers(data2, '<a', '</a>')
             for item in data:
                phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
                phTitle = self._cleanHtmlStr(item)
                if phUrl.startswith('//'): phUrl = 'http:' + phUrl
-               if phUrl:
+               if phUrl!='http://tiny.cc/filmoteka':
                   valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'filmypolskie999-clips', '', phTitle)) 
             return valTab
 
@@ -2009,7 +2035,7 @@ class Host:
             #valTab.insert(0,CDisplayListItem("--- SwirTeamTk ---","SwirTeamTk",     CDisplayListItem.TYPE_CATEGORY,['http://tv-swirtvteam.tk/'],'SwirTeamTk',    '',None))
             valTab.insert(0,CDisplayListItem("--- SuperSportowo ---","SuperSportowo",     CDisplayListItem.TYPE_CATEGORY,['https://supersportowo.com'],'SuperSportowo',    '',None))
             valTab.insert(0,CDisplayListItem("--- Ustreamix ---","Ustreamix",     CDisplayListItem.TYPE_CATEGORY,['https://ssl.ustreamix.com/search.php?q=poland'],'Ustreamix',    '',None))
-            valTab.insert(0,CDisplayListItem("--- Darmowa-telewizja.online ---","Darmowa-telewizja.online",     CDisplayListItem.TYPE_CATEGORY,['http://darmowa-telewizja.online/'],'darmowaonline',    '',None))
+            #valTab.insert(0,CDisplayListItem("--- Darmowa-telewizja.online ---","Darmowa-telewizja.online",     CDisplayListItem.TYPE_CATEGORY,['http://darmowa-telewizja.online/'],'darmowaonline',    '',None))
             return valTab
         if 'darmowaonline' == name:
             printDBG( 'Host listsItems begin name='+name )
@@ -2115,6 +2141,61 @@ class Host:
             #valTab.sort(key=lambda poz: poz.name)
             return valTab
 
+        if 'iplax' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'iplax.cookie')
+            mainurl = 'https://iplax.eu/'
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'iplax.cookie', 'iplax.eu', self.defaultParams)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<h4>', '</h4>')
+            for item in data:
+                Url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                Title = self._cleanHtmlStr(item).replace('Explore more','').strip()
+
+                Image = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+                if Url.startswith('//'): Url = 'http:' + Url
+                #if Url.startswith('i'): Url = mainurl + Url
+                if Image.startswith('//'): Image = 'http:' + Image
+                if Image.startswith('g'): Image = mainurl + Image
+                if  not 'http' in Url: Url = mainurl + Url
+                Image = strwithmeta(Image, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+                if not 'Featured video' in Title:
+                    valTab.append(CDisplayListItem(Title, Url, CDisplayListItem.TYPE_CATEGORY, [Url], 'iplax-clips', '', None))
+            self.SEARCH_proc='iplax-search'
+            valTab.insert(0,CDisplayListItem('Historia wyszukiwania', 'Historia wyszukiwania', CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
+            valTab.insert(0,CDisplayListItem('Szukaj',  'Szukaj filmów',                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
+            return valTab
+        if 'iplax-search' == name:
+            printDBG( 'Host name='+name )
+            valTab = self.listsItems(-1, 'https://iplax.eu/search?keyword='+url.replace(' ','+'), 'iplax-clips')
+            return valTab    
+        if 'iplax-clips' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'iplax.cookie')
+            mainurl = 'https://iplax.eu/'
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'iplax.cookie', 'iplax.eu', self.defaultParams)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            next = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', 'Next Page', False)[1]
+            data = data.split('<div class="video-thumb">')
+            del data[0]
+            for item in data:
+                Image  = self.cm.ph.getSearchGroups(item, 'src="([^"]+?)"')[0]
+                Title = self.cm.ph.getSearchGroups(item, 'alt="([^"]+?)"')[0].strip()
+                Url   = self.cm.ph.getSearchGroups(item, 'href="([^"]+?)"')[0]
+                if Url.startswith('/'): Url = mainurl + Url
+                valTab.append(CDisplayListItem(decodeHtml(Title), decodeHtml(Title),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, Image, None))
+            if next:
+                link = re.findall('href="(.*?)"', next, re.S|re.I)
+                if link:
+                    next = link[-1]
+                    if next.startswith('/'): next = mainurl + next
+                    valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', None))
+            return valTab
 #############################################
         if len(url)>8:
            COOKIEFILE = os_path.join(GetCookieDir(), 'info.cookie')
@@ -3402,6 +3483,19 @@ class Host:
         videoUrl = ''
         valTab = []
 
+        if 'iplax' in url:
+            COOKIEFILE = os_path.join(GetCookieDir(), 'iplax.cookie')
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'iplax.cookie', 'iplax.eu', self.defaultParams)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            videoUrl = self.cm.ph.getSearchGroups(data, '''<source src=['"]([^"^']+?)['"]''', 1, True)[0] 
+            if 'youtube.com' in videoUrl:
+                return self.getResolvedURL(videoUrl)
+            if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+            videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'Connection':'keep-alive'})  
+            return videoUrl 
+
         if 'kastream' in url:
             headers = {'User-Agent': self.USER_AGENT,'Accept': '*/*','Accept-Language': 'pl,en-US;q=0.7,en;q=0.3','Referer': 'http://darmowa-telewizja.online/','Connection': 'keep-alive',}
             COOKIEFILE = os_path.join(GetCookieDir(), 'kastream.cookie')
@@ -4530,6 +4624,7 @@ def decodeHtml(text):
 	text = text.replace('&#8221;', '"')
 	text = text.replace('&#8222;', '"')
 	text = text.replace('&#8211;', '-')
+	text = text.replace('&#039;', "'")
 
 	return text	
 def decodeNat1(text):
