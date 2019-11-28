@@ -166,7 +166,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.11.25.0"
+    XXXversion = "2019.11.26.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -4969,56 +4969,63 @@ class Host:
         if 'txxx' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'https://www.txxx.com'
-           url = 'https://www.txxx.com/categories/'
+           url = 'https://txxx.com/api/json/categories/14400/str.all.json'
            COOKIEFILE = os_path.join(GetCookieDir(), 'txxx.cookie')
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.getPage(url, 'txxx.cookie', 'txxx.com', self.defaultParams)
-           if not sts: return ''
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'li class="categories-list__item"', '</li>')
-           for item in data:
-              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phTitle = self.cm.ph.getSearchGroups(item, '''ata-title=['"]([^"^']+?)['"]''', 1, True)[0]
-              if not phTitle: phTitle = self.cm.ph.getSearchGroups(item, '''title">([^>]+?)<''', 1, True)[0]
-              phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0]
-              if phUrl.startswith('//'): phUrl = 'http:' + phUrl
-              if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
-              if phTitle:
-                 valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'txxx-clips', phImage, None)) 
+           if not sts: return valTab
+           self.page=1
+           printDBG( 'Host data:%s' % data )
+           try:
+              result = byteify(simplejson.loads(data))
+              for item in result["categories"]:
+                 phUrl = 'https://txxx.com/categories/%s/1/?sort=latest-updates&date=day&type=all' % str(item["dir"])
+                 phUrl = 'https://txxx.com/api/json/videos/86400/str/latest-updates/60/categories.%s.%s.all..day.json'  % (str(item["dir"]), str(self.page))
+                 phTitle = str(item["title"])
+                 valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'txxx-clips', '', None)) 
+           except Exception:
+              printExc()
            valTab.sort(key=lambda poz: poz.name)
-           valTab.insert(0,CDisplayListItem("--- Longest ---","Longest",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/longest/'],             'txxx-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Most Popular ---","Most Popular",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/most-popular/'],             'txxx-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Top Rated ---","Top Rated",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/top-rated/'],             'txxx-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Newest ---","Newest",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/latest-updates/'],             'txxx-clips',    '',None))
+           #valTab.insert(0,CDisplayListItem("--- Longest ---","Longest",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/longest/'],             'txxx-clips',    '',None))
+           #valTab.insert(0,CDisplayListItem("--- Most Popular ---","Most Popular",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/most-popular/'],             'txxx-clips',    '',None))
+           #valTab.insert(0,CDisplayListItem("--- Top Rated ---","Top Rated",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/top-rated/'],             'txxx-clips',    '',None))
+           #valTab.insert(0,CDisplayListItem("--- Newest ---","Newest",     CDisplayListItem.TYPE_CATEGORY,['https://www.txxx.com/latest-updates/'],             'txxx-clips',    '',None))
            self.SEARCH_proc='txxx-search'
            valTab.insert(0,CDisplayListItem(_('Search history'), _('Search history'), CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
            valTab.insert(0,CDisplayListItem(_('Search'),  _('Search'),                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
            return valTab
         if 'txxx-search' == name:
            printDBG( 'Host listsItems begin name='+name )
-           valTab = self.listsItems(-1, 'https://www.txxx.com/search/?s=%s' % url.replace(' ','+'), 'txxx-clips')
+           valTab = self.listsItems(-1, 'https://txxx.com/api/videos.php?params=86400/str/relevance/60/search..1.all..day&s=%s' % url.replace(' ','+'), 'txxx-clips')
            return valTab              
         if 'txxx-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
+           catUrl = self.currList[Index].possibleTypesOfSearch
+           printDBG( 'Host listsItems cat-url: '+str(catUrl) )
+           next = url
+           if catUrl == None: 
+              self.page = 1
+           else:
+              self.page += 1
            COOKIEFILE = os_path.join(GetCookieDir(), 'txxx.cookie')
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.getPage(url, 'txxx.cookie', 'txxx.com', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+data )
-           next_page = self.cm.ph.getSearchGroups(data, '''next paginator__item--arrow" href=['"]([^"^']+?)['"]''', 1, True)[0] 
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="thumb__aspect">', '</div></div></div>')
-           for item in data:
-              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phImage = self.cm.ph.getSearchGroups(item, '''image:url\(['"]([^"^']+?)['"]''', 1, True)[0] 
-              if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phTime = self.cm.ph.getSearchGroups(item, '''duration">([^>]+?)<''', 1, True)[0]  
-              phTitle = self.cm.ph.getSearchGroups(item, '''alt="([^"]+?)"''', 1, True)[0]
-              if not phTitle: phTitle = self._cleanHtmlStr(item).replace(phTime,'').replace('Just added','').strip()
-              if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
-              if phImage.startswith('/'): phImage = 'http:' + phImage
-              valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
-           if next_page:
-              if next_page.startswith('/'): next_page = 'https://www.txxx.com' + next_page
-              valTab.append(CDisplayListItem('Next', next_page, CDisplayListItem.TYPE_CATEGORY, [next_page], name, '', None))                
+           try:
+              result = byteify(simplejson.loads(data))
+              for item in result["videos"]:
+                 phTitle = str(item["title"])
+                 video_id = str(item["video_id"])
+                 scr = str(item["scr"])
+                 phUrl = "https://txxx.com/api/videofile.php?video_id=%s&lifetime=8640000" % video_id
+                 phTime = str(item["duration"])
+                 added = str(item["post_date"])
+                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']  '+decodeHtml(phTitle)+'\nAdded: '+added,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, scr, None)) 
+           except Exception:
+              printExc()
+           next_page = url.replace('.'+str(self.page)+'.','.'+str(self.page+1)+'.')
+           valTab.append(CDisplayListItem('Next', 'Page: '+str(self.page+1), CDisplayListItem.TYPE_CATEGORY, [next_page], name, '', 'next'))                
            return valTab
 
         if 'sunporno' == name:
@@ -7677,7 +7684,7 @@ class Host:
         if self.MAIN_URL == 'https://www.pinflix.com':       return self.MAIN_URL
         if self.MAIN_URL == 'http://oklivetv.com':           return self.MAIN_URL
         if self.MAIN_URL == 'http://www.upornia.com':        return 'http://www.hclips.com' #self.MAIN_URL
-        if self.MAIN_URL == 'https://www.txxx.com':          return 'http://www.hclips.com'
+        if self.MAIN_URL == 'https://www.txxx.com':          return 'https://www.txxx.com'
         if self.MAIN_URL == 'https://www.sunporno.com':      return 'http://www.sunporno.com'
         if self.MAIN_URL == 'http://sexu.com':               return self.MAIN_URL
         if self.MAIN_URL == 'http://www.tubewolf.com':       return self.MAIN_URL
@@ -8452,51 +8459,18 @@ class Host:
 
         if parser == 'https://www.txxx.com':
            COOKIEFILE = os_path.join(GetCookieDir(), 'txxx.cookie')
-           host = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
-           header = {'User-Agent': host, 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}   
-           try: data = self.cm.getURLRequestData({ 'url': url, 'header': header, 'use_host': False, 'use_cookie': True, 'save_cookie': True, 'load_cookie': False, 'cookiefile': COOKIEFILE, 'use_post': False, 'return_data': True })
-           except:
-              printDBG( 'Host getResolvedURL query error url: '+url )
-              return ''
-           printDBG( 'Host getResolvedURL data: '+data )
-           videoPage = self.cm.ph.getSearchGroups(data, '''var video_url=['"]([^"^']+?)['"]''')[0] 
-           hash = self.cm.ph.getSearchGroups(data, '''/get_file/(\d+/[^"^']+?)/''')[0] 
-           printDBG( 'Host getResolvedURL videoPage: '+videoPage )
-           if videoPage:
-              decoder = "decrypt=function(_0xf4bdx6) {"\
-                 "var _0xf4bdx7 = '',"\
-                 "    _0xf4bdx8 = 0;"\
-                 "/[^\u0410\u0412\u0421\u0415\u041cA-Za-z0-9\.\,\~]/g ['exec'](_0xf4bdx6) && console['log']('error decoding url');"\
-                 "_0xf4bdx6 = _0xf4bdx6['replace'](/[^\u0410\u0412\u0421\u0415\u041cA-Za-z0-9\.\,\~]/g, '');"\
-                 "do {"\
-                 "var _0xf4bdx9 = '\u0410\u0412\u0421D\u0415FGHIJKL\u041CNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,~' ['indexOf'](_0xf4bdx6['charAt'](_0xf4bdx8++)),"\
-                 "_0xf4bdxa = '\u0410\u0412\u0421D\u0415FGHIJKL\u041CNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,~' ['indexOf'](_0xf4bdx6['charAt'](_0xf4bdx8++)),"\
-                 "_0xf4bdxb = '\u0410\u0412\u0421D\u0415FGHIJKL\u041CNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,~' ['indexOf'](_0xf4bdx6['charAt'](_0xf4bdx8++)),"\
-                 "_0xf4bdxc = '\u0410\u0412\u0421D\u0415FGHIJKL\u041CNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,~' ['indexOf'](_0xf4bdx6['charAt'](_0xf4bdx8++)),"\
-                 "_0xf4bdx9 = _0xf4bdx9 << 2 | _0xf4bdxa >> 4,"\
-                 "_0xf4bdxa = (_0xf4bdxa & 15) << 4 | _0xf4bdxb >> 2,"\
-                 "_0xf4bdxd = (_0xf4bdxb & 3) << 6 | _0xf4bdxc,"\
-                 "_0xf4bdx7 = _0xf4bdx7 + String['fromCharCode'](_0xf4bdx9);"\
-                 "64 != _0xf4bdxb && (_0xf4bdx7 += String['fromCharCode'](_0xf4bdxa));"\
-                 "64 != _0xf4bdxc && (_0xf4bdx7 += String['fromCharCode'](_0xf4bdxd))"\
-                 "} while (_0xf4bdx8 < _0xf4bdx6['length']);;"\
-                 "return unescape(_0xf4bdx7)"\
-                 "};" 
-              js = decoder + "\n" + "vidurl = decrypt('"+videoPage+"');"  
-              printDBG( 'Host getResolvedURL js: '+js )
-              urls = js_execute( js+ '\nfor (n in this){print(n+"="+this[n]+";");}')
-              videoUrl = self.cm.ph.getSearchGroups(urls['data'], '''vidurl=([^"^']+?);''')[0] 
-              printDBG( 'Host hash: '+hash )
-              printDBG( 'Host videoUrl.split4: '+videoUrl.split('/')[-6] )
-              printDBG( 'Host videoUrl.split5: '+videoUrl.split('/')[-5] )
-
-              if hash: videoUrl = videoUrl.replace(videoUrl.split('/')[-6]+'/'+videoUrl.split('/')[-5],hash)
-              if videoUrl: return videoUrl
-              if videoPage.startswith('http'): return videoPage
-
-           videoUrl = self.cm.ph.getSearchGroups(data, '''file\':\s['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
-           if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
-           return urllib2.unquote(videoUrl)
+           self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.getPage(url, 'txxx.cookie', 'txxx.com', self.defaultParams)
+           if not sts: return ''
+           printDBG( 'Host listsItems data: '+data )
+           videoUrl = re.search('video_url":"([^"]+)', data).group(1)
+           replacemap = {'M':'\u041c', 'A':'\u0410', 'B':'\u0412', 'C':'\u0421', 'E':'\u0415', '=':'~', '+':'.', '/':','}
+           for key in replacemap:
+               videoUrl = videoUrl.replace(replacemap[key], key)
+           videoUrl = base64.b64decode(videoUrl)
+           if videoUrl.startswith('//'): videoUrl = 'https:' + videoUrl
+           if videoUrl.startswith('/'): videoUrl = 'https://txxx.com' + videoUrl
+           return urlparser.decorateUrl(videoUrl, {'Referer': url})
 
         if parser == 'http://www.youporn.com':
            COOKIEFILE = os_path.join(GetCookieDir(), 'youporn.cookie')
