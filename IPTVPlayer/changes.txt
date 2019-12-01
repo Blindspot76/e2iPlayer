@@ -1,4 +1,7 @@
-﻿#2019.11.28.01
+﻿#2019.12.01.01
+-EuroSportPlayer frissítve
+-TVP VOD frissítve
+#2019.11.28.01
 -TXXX javítva
 #2019.11.26.02
 -Camster javítva (XXX)
