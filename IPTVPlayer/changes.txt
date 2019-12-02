@@ -1,4 +1,6 @@
-﻿#2019.12.01.01
+﻿#2019.12.02.01
+-USTV Go javítva
+#2019.12.01.01
 -EuroSportPlayer frissítve
 -TVP VOD frissítve
 #2019.11.28.01
