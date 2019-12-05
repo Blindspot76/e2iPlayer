@@ -1,4 +1,6 @@
-﻿#2019.12.02.01
+﻿#2019.12.05.01
+-Youtube javítva
+#2019.12.02.01
 -USTV Go javítva
 #2019.12.01.01
 -EuroSportPlayer frissítve
