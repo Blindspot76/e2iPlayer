@@ -1,4 +1,6 @@
-﻿#2019.12.08.01
+﻿#2019.12.08.02
+-Kisebb módosítások
+#2019.12.08.01
 -DatoPorn javítva (XXX)
 -EroProfile javítva (XXX)
 #2019.12.06.01
