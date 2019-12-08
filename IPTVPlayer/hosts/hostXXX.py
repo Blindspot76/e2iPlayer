@@ -166,7 +166,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.12.04.0"
+    XXXversion = "2019.12.08.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -7014,14 +7014,15 @@ class Host:
               phTitle = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0]
               if phTitle=='': phTitle = self.cm.ph.getSearchGroups(item, '''videoTtl">([^>]+?)<''', 1, True)[0].strip()
               time = self.cm.ph.getSearchGroups(item, '''videoDur">([^>]+?)<''', 1, True)[0].strip()
+              added = self.cm.ph.getSearchGroups(item, '''fsSmall">([^>]+?)<''', 1, True)[0].strip()
               if phUrl.startswith('//'): phUrl = 'http:' + phUrl
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phImage.startswith('//'): phImage = 'http:' + phImage
               try:
                  phImage = urlparser.decorateUrl(phImage, {'Referer': url})
               except: pass
-              if time and not 'Web Analytics' in phTitle:
-                 valTab.append(CDisplayListItem(phTitle,'['+time+'] '+phTitle,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
+              if time and not 'Web Analytics' in phTitle and not 'tools' in time:
+                 valTab.append(CDisplayListItem(phTitle,'['+time+'] '+phTitle+'\nAdded: '+added,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
               next = re.compile('href=[\"|\'](.*?)[\"|\']').findall(next)[-1]
               next = next.replace('&amp;','&')
@@ -9195,7 +9196,7 @@ class Host:
         if parser == 'http://dato.porn':
            if not 'embed' in url:
               url = 'https://datoporn.co/embed-%s-658x400.html' % url.split('/')[-1]
-
+           USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
            COOKIEFILE = os_path.join(GetCookieDir(), 'datoporn.cookie')
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE, 'return_data': True}
            sts, data = self.getPage(url, 'datoporn.cookie', 'datoporn.co', self.defaultParams)
@@ -9210,15 +9211,19 @@ class Host:
                  return ''
               printDBG( 'Host data4: '+str(packed) )
               try:
-                 videoUrl = unpackJSPlayerParams(packed, TEAMCASTPL_decryptPlayerParams, 0, True, True) 
+                 videoPage = unpackJSPlayerParams(packed, TEAMCASTPL_decryptPlayerParams, 0, True, True) 
                  printDBG( 'OK4: ')
               except Exception: pass 
-              printDBG( 'Host videoUrl: '+str(videoUrl) )
-              videoUrl = re.compile('file:"(.*?)"', re.DOTALL).findall(videoUrl)
-              if videoUrl: 
-                 USER_AGENT = 'Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.120 Chrome/37.0.2062.120 Safari/537.36'
-                 Url = urlparser.decorateUrl(videoUrl[-1], {'User-Agent': USER_AGENT, 'Referer': url})
-                 return Url
+              printDBG( 'Host videoPage: '+str(videoPage) )
+              videoUrl = ph.search(videoPage, '''file:['"]([^'^"]+?)['"]''')[0]
+              if not videoUrl: videoUrl = ph.search(videoPage, '''src:['"]([^'^"]+?)['"]''')[0]
+              if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+              videoUrl = urlparser.decorateUrl(videoUrl, {'User-Agent': USER_AGENT, 'Referer': url})
+              if 'm3u8' in videoUrl:
+                 tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
+                 for item in tmp:
+                    videoUrl = item['url']
+              return videoUrl
            videoUrl = self.cm.ph.getSearchGroups(data, '''src: ['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
            if videoUrl: return videoUrl
            videoUrl = self.cm.ph.getSearchGroups(data, '''file:['"]([^"^']+?\.mp4)['"]''')[0].replace('&amp;','&')
