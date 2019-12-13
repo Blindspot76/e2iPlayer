@@ -1,4 +1,6 @@
-﻿#2019.12.08.02
+﻿#2019.12.13.01
+-InfoVersion frissítve
+#2019.12.08.02
 -Kisebb módosítások
 #2019.12.08.01
 -DatoPorn javítva (XXX)

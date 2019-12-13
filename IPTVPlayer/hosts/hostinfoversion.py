@@ -13,6 +13,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import decorateUrl, getD
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html 
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, SetIPTVPlayerLastHostError, GetIPTVNotify, GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.libs import ph
+from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 ###################################################
 # FOREIGN import
 ###################################################
@@ -132,7 +133,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2019.11.19"
+    infoversion = "2019.12.08"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -2032,8 +2033,10 @@ class Host:
             sts, data = self.get_Page(url)
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
+            valTab.insert(0,CDisplayListItem("--- Zobacz.ws ---","Zobacz.ws",     CDisplayListItem.TYPE_CATEGORY,['http://zobacz.ws'],'zobacz_ws',    '',None))
+
             #valTab.insert(0,CDisplayListItem("--- SwirTeamTk ---","SwirTeamTk",     CDisplayListItem.TYPE_CATEGORY,['http://tv-swirtvteam.tk/'],'SwirTeamTk',    '',None))
-            valTab.insert(0,CDisplayListItem("--- SuperSportowo ---","SuperSportowo",     CDisplayListItem.TYPE_CATEGORY,['https://supersportowo.com'],'SuperSportowo',    '',None))
+            valTab.insert(0,CDisplayListItem("--- SuperSportowo ---","SuperSportowo",     CDisplayListItem.TYPE_CATEGORY,['http://supersportowo.com'],'SuperSportowo',    '',None))
             valTab.insert(0,CDisplayListItem("--- Ustreamix ---","Ustreamix",     CDisplayListItem.TYPE_CATEGORY,['https://ssl.ustreamix.com/search.php?q=poland'],'Ustreamix',    '',None))
             #valTab.insert(0,CDisplayListItem("--- Darmowa-telewizja.online ---","Darmowa-telewizja.online",     CDisplayListItem.TYPE_CATEGORY,['http://darmowa-telewizja.online/'],'darmowaonline',    '',None))
             return valTab
@@ -2139,6 +2142,26 @@ class Host:
                 if 'stream' in Url:
                     valTab.append(CDisplayListItem(link, link,  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, Image, None))
             #valTab.sort(key=lambda poz: poz.name)
+            return valTab
+
+        if 'zobacz_ws' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'zobacz.cookie')
+            mainurl = 'http://zobacz.ws'
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'zobacz.cookie', 'zobacz.ws', self.defaultParams)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li id="menu-item', '</li>')
+            for item in data:
+                Url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                Title = self._cleanHtmlStr(item).strip()
+                if Url.startswith('//'): Url = 'http:' + Url
+                #if Url.startswith('i'): Url = mainurl + Url
+                if  not 'http' in Url: Url = mainurl + Url
+                if Title and Url:
+                    valTab.append(CDisplayListItem(decodeHtml(Title), decodeHtml(Title),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, '', None))
             return valTab
 
         if 'iplax' == name:
@@ -2903,16 +2926,11 @@ class Host:
 
         if 'wlkp24' == name:
             printDBG( 'Host listsItems begin name='+name )
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<h4 class="vc_tta-panel-title">', '</script>')
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="vc_btn3-container', '</div>')
             for item in data:
-                Title = self.cm.ph.getSearchGroups(item, '''title-text">([^"^']+?)<''', 1, True)[0] 
-                Url = self.cm.ph.getSearchGroups(item, '''<div id=['"]([^"^']+?)['"]''', 1, True)[0] 
-                url_m3u8 = self.cm.ph.getSearchGroups(item, '''src:  ['"]([^"^']+?)['"]''', 1, True)[0] 
-                if url_m3u8:
-                    if self.cm.isValidUrl(url_m3u8): 
-                        tmp = getDirectM3U8Playlist(url_m3u8)
-                        for item in tmp:
-                            valTab.append(CDisplayListItem(Title, str(item['url']),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', str(item['url']), 0)], 0, '', None))
+                Title = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0] 
+                Url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                valTab.append(CDisplayListItem(Title, Title,  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, '', None))
             return valTab
 
         if 'faustyna' == name:
@@ -3483,6 +3501,16 @@ class Host:
         videoUrl = ''
         valTab = []
 
+        if 'wlkp24' in url:
+            COOKIEFILE = os_path.join(GetCookieDir(), 'wlkp24.cookie')
+            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.get_Page(url)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            videoUrl = self.cm.ph.getSearchGroups(data, '''src:\s*['"]([^"^']+?\.m3u8)['"]''', 1, True)[0] 
+            return videoUrl 
+
         if 'iplax' in url:
             COOKIEFILE = os_path.join(GetCookieDir(), 'iplax.cookie')
             self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
@@ -3546,6 +3574,142 @@ class Host:
                 for item in tmp:
                     return item['url']
             return videoUrl
+
+        if 'wstream.to' in url:
+            COOKIEFILE = os_path.join(GetCookieDir(), 'zobacz.cookie')
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'zobacz.cookie', 'zobacz.ws', self.defaultParams)
+            if not sts: return ''
+            printDBG( 'Host listsItems data1: '+data )
+            unpack = ''
+            if "eval(function(p,a,c,k,e,d)" in data:
+                printDBG( 'Host resolveUrl packed' )
+                packed = re.compile('eval\(function\(p,a,c,k,e,d\)(.+?)</script>', re.DOTALL).findall(data)
+                for item in packed:
+                    if 'm3u8' in item or 'stream' in item:
+                        data2 = item
+                        break
+                    else:
+                        return ''
+                try:
+                    unpack = unpackJSPlayerParams(data2, TEAMCASTPL_decryptPlayerParams, 0, True, True) 
+                except Exception: printExc()
+            printDBG( 'Host listsItems unpack: '+unpack )
+            videoUrl = self.cm.ph.getSearchGroups(unpack, '''source:['"]([^"^']+?)['"]''', 1, True)[0] 
+            videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'Origin':'http://zobacz.ws', 'Connection':'keep-alive'})  
+            if 'm3u8' in videoUrl: 
+                tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
+                for item in tmp:
+                    return item['url']
+            return videoUrl
+
+        if 'assia.tv' in url:
+            COOKIEFILE = os_path.join(GetCookieDir(), 'assia.cookie')
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'assia.cookie', 'assia.tv', self.defaultParams)
+            if not sts: return ''
+            printDBG( 'Host listsItems data1: '+data )
+            videoUrl = self.cm.ph.getSearchGroups(data, '''file:['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
+            return videoUrl
+
+        if 'freecast123' in url:
+            COOKIEFILE = os_path.join(GetCookieDir(), 'freecast123.cookie')
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'freecast123.cookie', 'freecast123.com', self.defaultParams)
+            if not sts: return ''
+            printDBG( 'Host listsItems data1: '+data )
+            js = self.cm.ph.getDataBeetwenMarkers(data, '<script type="text/javascript">', '</script>', False)[1] #.strip()
+            #js = "\n".join(js)
+            printDBG( 'Host  js: %s' % js )
+            urls = js_execute( js+ '\nfor (n in this){print(n+"="+this[n]+";");}')
+
+            return videoUrl
+
+        if 'zobacz.ws' in url:
+            COOKIEFILE = os_path.join(GetCookieDir(), 'zobacz.cookie')
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.getPage(url, 'zobacz.cookie', 'zobacz.ws', self.defaultParams)
+            if not sts: return ''
+            printDBG( 'Host listsItems data1: '+data )
+            data2 = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1].replace('\\','')
+            if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, '<iframe', '</iframe>', False)[1]
+            if not data2:
+                tmp = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="entry-content">', '</div>')
+                for item in tmp:
+                    printDBG( 'Host item:%s ' % item )
+
+                    if 'telerium' in item:
+                        id = self.cm.ph.getSearchGroups(item, '''id=['"]([^"^']+?)['"]''', 1, True)[0]
+                        data = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('embed.js',id+'.html')
+                        printDBG( 'Host listsItems id: '+id )
+                        printDBG( 'Host listsItems datax: '+data )
+                        videoUrl = 'http://telerium.tv/embed/'+id+'.html'
+                        videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.9 Safari/537.36'})  
+                        return self.getResolvedURL(videoUrl)
+
+            videoUrl = self.cm.ph.getSearchGroups(data2, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&').replace('&#038;','&')
+            if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+
+
+            if not 'zobacz' in videoUrl: 
+                videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.9 Safari/537.36'})  
+                return self.getResolvedURL(videoUrl)
+
+            sts, data = self.getPage(videoUrl, 'zobacz.cookie', 'zobacz.ws', self.defaultParams)
+            if not sts: return ''
+            printDBG( 'Host listsItems data2: '+data )
+            cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+            if 'telerium' in data:
+                id = self.cm.ph.getSearchGroups(data, '''id=['"]([^"^']+?)['"]''', 1, True)[0]
+                data = self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('embed.js',id+'.html')
+                printDBG( 'Host listsItems id: '+id )
+                printDBG( 'Host listsItems datax: '+data )
+                videoUrl = 'http://telerium.tv/embed/'+id+'.html'
+                videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.9 Safari/537.36'})  
+                return self.getResolvedURL(videoUrl)
+            if 'm3u8' in data:
+                videoUrl = self.cm.ph.getSearchGroups(data, '''source:\s*['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&').replace('&#038;','&')
+                if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+                sts, data = self.getPage(videoUrl, 'zobacz.cookie', 'zobacz.ws', self.defaultParams)
+                if not sts: return ''
+                cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+                redirectUrl =  strwithmeta(self.cm.meta['url'], {'iptv_proto':'m3u8', 'Cookie':cookieHeader, 'User-Agent': self.HEADER['User-Agent']})
+                return redirectUrl
+
+                printDBG( 'Host listsItems data m3u8: '+data )
+			
+                tmpTab = getDirectM3U8Playlist(self.cm.meta['url'], False, checkContent=True, cookieParams={'header':self.HEADER, 'cookiefile':COOKIEFILE, 'use_cookie': True, 'save_cookie':True})
+                cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+                for tmp in tmpTab:
+                    redirectUrl =  strwithmeta(tmp['url'], {'iptv_proto':'m3u8', 'Cookie':cookieHeader, 'User-Agent': self.HEADER['User-Agent']})
+                    return redirectUrl
+                #for item in tmp:
+                #    return item['url']
+
+                #sts, data = self.getPage(videoUrl, 'zobacz.cookie', 'zobacz.ws', self.defaultParams)
+                #if not sts: return ''
+                #printDBG( 'Host listsItems data3: '+data )
+
+
+                #return urlparser.decorateUrl(videoUrl, {'Cookie': cookieHeader, 'Referer': url, 'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.9 Safari/537.36', 'Accept': '*/*', 'Accept-Language': 'pl,en-US;q=0.7,en;q=0.3'})  
+            data2 = self.cm.ph.getDataBeetwenMarkers(data, '<video', '</video>', False)[1].replace('\\','')
+            if not data2: data2 = self.cm.ph.getDataBeetwenMarkers(data, '<iframe', '</iframe>', False)[1]
+            videoUrl = self.cm.ph.getSearchGroups(data2, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&').replace('&#038;','&')
+            if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
+
+            if not 'zobacz' in videoUrl: return self.getResolvedURL(videoUrl)
+
+            sts, data = self.getPage(videoUrl, 'zobacz.cookie', 'zobacz.ws', self.defaultParams)
+            if not sts: return ''
+            printDBG( 'Host listsItems data3: '+data )
+
+            if not 'zobacz' in videoUrl: return self.getResolvedURL(videoUrl)
+            if 'kastream' in videoUrl:
+                return self.getResolvedURL(videoUrl)
+            if '/weeb/' in videoUrl:
+                return self.getResolvedURL(videoUrl)
+            SetIPTVPlayerLastHostError(_(' zobacz - nie widzi serwera.'))
+            return []
 
         if 'supersportowo' in url:
             COOKIEFILE = os_path.join(GetCookieDir(), 'SuperSportowo.cookie')
@@ -4479,12 +4643,12 @@ class Host:
         if url == 'http://tvtoya.pl/live':
             printDBG( 'Host getResolvedURL mainurl: '+url )
             videoUrl = self.cm.ph.getSearchGroups(data, '''data-stream=['"]([^"^']+?)['"]''', 1, True)[0]
+            videoUrl = urlparser.decorateUrl(videoUrl, {'User-Agent': 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36'})
             if self.cm.isValidUrl(videoUrl): 
-                tmp = getDirectM3U8Playlist(videoUrl)
+                tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
                 for item in tmp:
                     printDBG( 'Host item: '+str(item) )
-                return urlparser.decorateUrl(item['url'], {'User-Agent': 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36'})
-
+                    return item['url']
 
         if url.startswith('https://go.toya.net.pl'):
            printDBG( 'Host getResolvedURL mainurl: '+url )
