@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tunisia_gouv
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tunisia_gouv,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Components.config import config
 import re
@@ -35,7 +35,7 @@ class TSIPHost(TSCBaseHostClass):
 		self.addDir({'import':cItem['import'],'category' :'host2','title':'Reciters | '+'القرّاء'+' Ar','icon':cItem['icon'],'mode': '20','sub_mode':'1'})			
 		self.addDir({'import':cItem['import'],'category' :'host2','title':'Reciters | '+'القرّاء'+' En','icon':cItem['icon'],'mode': '20','sub_mode':'2'})			
 		self.addDir({'import':cItem['import'],'category' :'host2','title':'Radios','icon':cItem['icon'],'mode': '21'})			
-		self.addAudio({'import':cItem['import'],'title':'LIVE Radio','url':'http://live.mp3quran.net:8006/;','icon':cItem['icon'],'desc':'\c00??0000LIVE','hst':'direct'})			
+		self.addAudio({'import':cItem['import'],'title':'LIVE Radio','url':'http://live.mp3quran.net:8006/;','icon':cItem['icon'],'desc':tscolor('\c00??0000')+'LIVE','hst':'direct'})			
 
 	def showmenu1(self,cItem):
 		lng_id=	cItem['sub_mode']
@@ -106,7 +106,7 @@ class TSIPHost(TSCBaseHostClass):
 			if sts:	
 				data_ = re.findall('"ms_weekly_box">.*?data-name="(.*?)".*?data-media="(.*?)".*?<h3>(.*?)</h3>.*?<p>(.*?)<', data, re.S)
 				for (desc,url,name,time_) in data_:
-					self.addAudio({'import':cItem['import'],'title':ph.clean_html(name),'url':url,'icon':cItem['icon'],'desc':'duration: \c00????00'+time_+'\\n \c00??????Reciters: \c00????00'+desc,'hst':'direct'})			
+					self.addAudio({'import':cItem['import'],'title':ph.clean_html(name),'url':url,'icon':cItem['icon'],'desc':'duration: '+tscolor('\c00????00')+time_+'\\n '+tscolor('\c00??????')+'Reciters: '+tscolor('\c00????00')+desc,'hst':'direct'})			
 				
 				Url='https://www.mp3quran.net/includes/ajax.php'
 				post_data={'loadReaderId':id_,'page':'NaN','classification_id':'1','action':'loadMoreByReader'}
@@ -114,7 +114,7 @@ class TSIPHost(TSCBaseHostClass):
 				if sts: 	
 					data_ = re.findall('"ms_weekly_box">.*?data-name="(.*?)".*?data-media="(.*?)".*?<h3>(.*?)</h3>.*?<p>(.*?)<', data, re.S)
 					for (desc,url,name,time_) in data_:
-						self.addAudio({'import':cItem['import'],'title':ph.clean_html(name),'url':url,'icon':cItem['icon'],'desc':'duration: \c00????00'+time_+'\\n \c00??????Reciters: \c00????00'+desc,'hst':'direct'})			
+						self.addAudio({'import':cItem['import'],'title':ph.clean_html(name),'url':url,'icon':cItem['icon'],'desc':'duration: '+tscolor('\c00????00')+time_+'\\n '+tscolor('\c00??????')+'Reciters: '+tscolor('\c00????00')+desc,'hst':'direct'})			
 		
 			
 	def getPage(self,baseUrl, addParams = {}, post_data = None):

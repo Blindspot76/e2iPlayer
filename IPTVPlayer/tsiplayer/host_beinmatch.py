@@ -2,9 +2,10 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,resolve_liveFlash,resolve_zony
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,resolve_liveFlash,resolve_zony,tscolor
 from Plugins.Extensions.IPTVPlayer.libs import ph
-import re,requests
+from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper        import getDirectM3U8Playlist
+import re
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 import urllib
@@ -23,7 +24,7 @@ def getinfo():
 class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'coolkora.cookie'})
-		self.MAIN_URL = 'http://www.beinmatch.com'
+		self.MAIN_URL = 'http://beinmatch.tv'
 		self.USER_AGENT = 'Mozilla/5.0 (Android 4.4; Mobile; rv:41.0) Gecko/41.0 Firefox/41.0'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
@@ -50,10 +51,10 @@ class TSIPHost(TSCBaseHostClass):
 						I_list2 = re.findall('goToMatch\((.*?)\)', id_, re.S)
 						if I_list2: 
 							id_=I_list2[0]
-							titre = '\c0000??00# '+ph.clean_html(team2)+' Vs '+ph.clean_html(team1)+' #'
+							titre = tscolor('\c0000??00')+'# '+ph.clean_html(team2)+' Vs '+ph.clean_html(team1)+' #'
 							self.addDir({'import':cItem['import'],'category' : 'host2','title':titre,'url':id_,'desc':ph.clean_html(desc),'icon':image,'mode':'26','sub_mode':0})	
 					elif ( 'الأهداف' not in x1):
-						titre = '\c00????00# '+ph.clean_html(team2)+' Vs '+ph.clean_html(team1)+' # Not Started yet'
+						titre = tscolor('\c00????00')+'# '+ph.clean_html(team2)+' Vs '+ph.clean_html(team1)+' # Not Started yet'
 						self.addMarker({'title':titre,'desc':ph.clean_html(desc),'icon':image})	
 
 
@@ -92,20 +93,29 @@ class TSIPHost(TSCBaseHostClass):
 		sts, data = self.getPage(URL)
 		printDBG('uuuuuuuuuuuuuuuuuuu11=#'+data+'#')
 		#<iframe width="100%" height="100%" xwidth="100%" xheight="100%" src="http://beinmatch.com/twitc.php" frameborder="0" allowfullscreen="" __idm_id__="893051905"></iframe>                        </div>
-
+		url=''
 		Tab_els = re.findall('<iframe.*?src="(.*?)"', data, re.S)
 		if Tab_els:
 			url=Tab_els[0]
 			if url.startswith('//'): url='http:'+url
 			if ('ok.php?id=' in url):
 				url='http://ok.ru/videoembed/'+url.split('ok.php?id=',1)[1]
-			if ('beinmatch.com' in url):
+			elif ('beinmatch.' in url):
 				sts, data1 = self.getPage(url)
 				if sts:
 					Tab_els1 = re.findall('<iframe.*?src="(.*?)"', data1, re.S)
 					if Tab_els1:
 						url=Tab_els1[0]
-			urlTab.append({'name':'Video', 'url':url, 'need_resolve':1})		
+			urlTab.append({'name':'Video', 'url':url, 'need_resolve':1})
+		else:
+			Tab_els = re.findall('source.*?["\'](.*?)["\']', data, re.S)
+			if Tab_els:
+				meta_={'Referer':URL,'Origin':'http://beinmatch.tv'}
+				url=strwithmeta(Tab_els[0],meta_)
+			if 'm3u8' in url:
+				urlTab = getDirectM3U8Playlist(url, checkExt=True, checkContent=True, sortWithMaxBitrate=999999999)
+			else:
+				urlTab.append({'name':'Video', 'url':url, 'need_resolve':0})		
 		return urlTab
 		
 

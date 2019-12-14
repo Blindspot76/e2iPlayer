@@ -2,8 +2,14 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
-
+try:
+	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
+	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
+except:
+	pass
 import re
+import cookielib
+import time
 
 def getinfo():
 	info_={}
@@ -27,10 +33,49 @@ class TSIPHost(TSCBaseHostClass):
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		#self.getPage = self.cm.getPage
 		
-	def getPage(self, baseUrl, addParams = {}, post_data = None):
-		if addParams == {}: addParams = dict(self.defaultParams)
-		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
-		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+		
+		
+		
+		
+		
+		
+	def getPage(self,baseUrl, addParams = {}, post_data = None):
+		printDBG('etap1')
+		if not post_data: post_data=(None,None)
+		sts, data = self.cm.getPage(baseUrl,addParams,post_data[1])
+		if not data: data=''
+		if '!![]+!![]' in data:
+			try:
+				printDBG('etap2')
+				oRequestHandler = cRequestHandler(baseUrl)
+				if post_data:
+					oRequestHandler.setRequestType(cRequestHandler.REQUEST_TYPE_POST)
+					oRequestHandler.addParametersLine(post_data[0])			
+				data = oRequestHandler.request()
+				sts = True
+				cook = GestionCookie().Readcookie('www_dpstream_top')
+				self.cookieHeader=str(cook)
+				if ';' in cook: cook_tab = cook.split(';')
+				else: cook_tab = cook
+				cj = self.cm.getCookie(self.COOKIE_FILE)
+				for item in cook_tab:
+					if '=' in item:			
+						cookieKey, cookieValue = item.split('=')
+						cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=cookieValue, port=None, port_specified=False, domain='.'+self.cm.getBaseUrl(baseUrl, True), domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=time.time()+3600*48, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+						cj.set_cookie(cookieItem)
+				cj.save(self.COOKIE_FILE, ignore_discard = True)
+
+				printDBG('ffffff'+self.cookieHeader)
+			except Exception, e:
+				printDBG('ERREUR:'+str(e))
+				addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+				sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data[1])
+		return sts, data
+
+
+
+
+
 		 
 	def showmenu0(self,cItem):
 		hst='host2'
@@ -45,7 +90,7 @@ class TSIPHost(TSCBaseHostClass):
 	def showitms(self,cItem):
 		page=cItem.get('page',1)
 		gnr=cItem['sub_mode']
-		if gnr=='serie_ep':
+		if (gnr=='serie_ep') or (page ==1):
 			url_=cItem['Url']
 		else:
 			url_=cItem['Url']+'page/'+str(page)+'/'
@@ -137,7 +182,10 @@ class TSIPHost(TSCBaseHostClass):
 					urlTab.append((videoUrl,'1'))							
 						
 		else:
+			query_args = (('action','doo_player_ajax'), ('post',videoUrl),('nume','trailer'),('type','movie')) 
 			post_data = {'action':'doo_player_ajax','post':videoUrl,'nume':'trailer','type':'movie'}
+			post_data = (urllib.urlencode(query_args),post_data)			
+			
 			sts, data2 = self.getPage(self.MAIN_URL+'/wp-admin/admin-ajax.php', post_data=post_data)
 			if sts:
 				_data0 = re.findall('<iframe.*?src="(.*?)"',data2, re.S)

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 import re
 import urllib
 def getinfo():
 	info_={}
 	info_['name']='Okanime.Com'
-	info_['version']='1.2 17/08/2019'
+	info_['version']='1.2.1 16/09/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='202'
 	info_['desc']='انمي مترجم'
 	info_['icon']='https://i.ibb.co/88XFP0D/okanim.jpg'
 	info_['recherche_all']='0'
-	info_['update']='Bugs Fix'
+	info_['update']='Add newest_animes'
 	return info_
 	
 	
@@ -33,17 +33,17 @@ class TSIPHost(TSCBaseHostClass):
 		self.addMarker({'title':'أفلام','category' : 'host2','icon':img_} )									
 
 		Cat_TAB = [
+					{'category':hst,'title': 'الترتيب حسب أحدث الافلام', 'mode':'30','url':'https://www.okanime.com/movies?direction=desc&sort=published_at'},		
 					{'category':hst,'title': 'الترتيب حسب الأبجدية', 'mode':'30','url':'https://www.okanime.com/movies?direction=asc&sort=title'},
 					{'category':hst,'title': 'الترتيب حسب تقييم الأعضاء', 'mode':'30','url':'https://www.okanime.com/movies?direction=desc&sort=rating_caches.avg'},
-					{'category':hst,'title': 'الترتيب حسب أحدث الافلام', 'mode':'30','url':'https://www.okanime.com/movies?direction=desc&sort=published_at'},
 					]
 		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})	
 		self.addMarker({'title':'قائمة الانميات','category' : 'host2','icon':img_} )	
 		Cat_TAB = [
+					{'category':hst,'title':'آخر الحلقات المضافة', 'mode':'30','url':'https://www.okanime.com/dashboard/newest_animes?direction=asc','sub_mode':1},
+					{'category':hst,'title': 'الترتيب حسب أحدث الانميات', 'mode':'30','url':'https://www.okanime.com/animes?direction=desc&sort=published_at'},
 					{'category':hst,'title': 'الترتيب حسب الأبجدية', 'mode':'30','url':'https://www.okanime.com/animes?direction=asc&sort=title'},
 					{'category':hst,'title': 'الترتيب حسب تقييم الأعضاء', 'mode':'30','url':'https://www.okanime.com/animes?direction=desc&sort=rating_caches.avg'},
-					{'category':hst,'title': 'الترتيب حسب أحدث الانميات', 'mode':'30','url':'https://www.okanime.com/animes?direction=desc&sort=published_at'},
-
 					{'category':'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost'},
 					]
 		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})			
@@ -51,19 +51,32 @@ class TSIPHost(TSCBaseHostClass):
 		
 	def showitms(self,cItem):
 		url1=cItem['url']
+		gnr=cItem.get('sub_mode',0)
 		page=cItem.get('page',1)
-		sts, data = self.getPage(url1+'&page='+str(page))
+		url_=url1+'&page='+str(page)
+		sts, data = self.getPage(url_)
 		if sts:
-			films_list = re.findall('class=\'col-md-15.*?title="(.*?)".*?href="(.*?)".*?src="(.*?)".*?class="rating.*?>(.*?)</div>.*?class=\'info-.*?<a(.*?)</div>', data, re.S)		
-			for (titre,url,image,rate,desc) in films_list:
-				if not url.startswith('http'): url=self.MAIN_URL+url
-				if not image.startswith('http'): image=self.MAIN_URL+image
-				desc='Rating: \c00????00'+ph.clean_html(rate)+'\c00??????\\nGenre: \c00????00'+ph.clean_html('<a'+desc)
-				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
-			self.addDir({'import':cItem['import'],'title':'Page '+str(page+1),'page':page+1,'category' : 'host2','url':url1,'icon':image,'mode':'30'} )									
-
+			if gnr==0:
+				films_list = re.findall('class=\'col-md-15.*?title="(.*?)".*?href="(.*?)".*?src="(.*?)".*?class="rating.*?>(.*?)</div>.*?class=\'info-.*?<a(.*?)</div>', data, re.S)		
+				for (titre,url,image,rate,desc) in films_list:
+					if not url.startswith('http'): url=self.MAIN_URL+url
+					if not image.startswith('http'): image=self.MAIN_URL+image
+					desc='Rating: '+tscolor('\c00????00')+ph.clean_html(rate)+tscolor('\c00??????')+'\\nGenre: '+tscolor('\c00????00')+ph.clean_html('<a'+desc)
+					self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
+			else:
+				films_list0 = re.findall('animes-carousel">(.*?)</ul', data, re.S)	
+				if films_list0:
+					films_list = re.findall('<li.*?href="(.*?)".*?src="(.*?)".*?class="title.*?>(.*?)</div>', films_list0[0], re.S)		
+					for (url,image,titre) in films_list:
+						image = self.MAIN_URL+image
+						url=self.MAIN_URL+url
+						titre=ph.clean_html(titre)
+						self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'hst':'tshost','mode':'31'})		
+			self.addDir({'import':cItem['import'],'title':'Page '+str(page+1),'page':page+1,'category' : 'host2','url':url1,'icon':cItem['icon'],'mode':'30','sub_mode':gnr} )									
+				
 	def showelms(self,cItem):
 		urlo=cItem['url']
+		url1=urlo
 		sts, data = self.getPage(urlo)
 		if sts:
 			Liste_els = re.findall('class="btn btn-lg2.*?href="(.*?)"', data, re.S)
@@ -71,6 +84,7 @@ class TSIPHost(TSCBaseHostClass):
 				url1=Liste_els[0]
 				if not url1.startswith('http'): url1=self.MAIN_URL+url1
 				sts, data = self.getPage(url1)
+			if sts:
 				films_list = re.findall('<ul class=\'episodes-list(.*?)</ul>', data, re.S)
 				if films_list:
 					films_list1 = re.findall('<a.*?href="(.*?)".*?class=\'episode\'>(.*?)</li>', films_list[0], re.S)				
@@ -89,7 +103,7 @@ class TSIPHost(TSCBaseHostClass):
 			for (url,image,rate,titre) in films_list:
 				if not url.startswith('http'): url=self.MAIN_URL+url
 				if not image.startswith('http'): image=self.MAIN_URL+image
-				desc='Rating: \c00????00'+ph.clean_html(rate)
+				desc='Rating: '+tscolor('\c00????00')+ph.clean_html(rate)
 				self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
 
 
@@ -102,7 +116,12 @@ class TSIPHost(TSCBaseHostClass):
 			if Tab_els:
 				Liste_els = re.findall('<li>.*?href="(.*?)">(.*?)<', Tab_els[0], re.S)
 				for (code,host_) in Liste_els:
-					urlTab.append({'name':host_, 'url':'hst#tshost#'+code+'|'+URL, 'need_resolve':1})						
+					local=''
+					if 'google' in host_.lower(): host_= 'google.com'
+					if 'neon' in host_.lower():
+						host_ = '|OKAnime| '+host_
+						local = 'local'
+					urlTab.append({'name':host_, 'url':'hst#tshost#'+code+'|'+URL, 'need_resolve':1,'local':local})						
 		return urlTab
 		
 		 
@@ -124,7 +143,7 @@ class TSIPHost(TSCBaseHostClass):
 						Liste_els_3 = re.findall('loadVideURL\(.*?src.*?\'(.*?)\'', data, re.S)	
 						if Liste_els_3:
 							URL1=Liste_els_3[0]	
-							if ('vk/index.php?v=' in URL1) or ('vr/index.php?link=' in URL1):
+							if ('vk/index.php?v=' in URL1) or ('vr/index.php?link=' in URL1)or ('yd/index.php?id=' in URL1):
 								sts, data = self.getPage(URL1,paramsUrl)
 								paramsUrl = dict(self.defaultParams)
 								paramsUrl['header']['Referer'] = URL1							
@@ -134,6 +153,8 @@ class TSIPHost(TSCBaseHostClass):
 									srvs = json_loads(Liste_els_3[0])
 									for elm in srvs:
 										urlTab.append((elm['label']+'|'+elm['file'],'4'))
+							if 'okgaming' in URL1 :
+								urlTab.append(('','1'))
 							else:			
 								urlTab.append((URL1,'1'))
 						else:

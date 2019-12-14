@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 
 import re
 
 def getinfo():
 	info_={}
 	info_['name']='Shahid4u'
-	info_['version']='1.2 17/08/2019'
+	info_['version']='1.3 28/10/2019'
 	info_['dev']='Opesboy'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
-	info_['icon']='https://shahid4u.net/themes/Shahid4u/img/logo.png'
+	info_['icon']='https://ww.shahid4u.net/themes/Shahid4u/img/logo.png'
 	info_['recherche_all']='1'
-	info_['update']='change to shahid4u.net'	
+	info_['update']='change to ww.shahid4u.net'	
 
 	return info_
 	
@@ -22,7 +22,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'shahid4u.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://shahid4u.net'
+		self.MAIN_URL = 'https://ww.shahid4u.net'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage
@@ -30,7 +30,7 @@ class TSIPHost(TSCBaseHostClass):
 	def showmenu0(self,cItem):
 		hst='host2'
 		self.Arablionz_TAB = [
-							{'category':hst,               'title': '\c00????00'+'By Filter', 'mode':'20','count':1,'data':'none','code':self.MAIN_URL+'/getposts?'},
+							{'category':hst,               'title': tscolor('\c00????00')+'By Filter', 'mode':'20','count':1,'data':'none','code':self.MAIN_URL+'/getposts?'},
 							{'category':hst, 'sub_mode':'film', 'title': 'Films',                  'mode':'21'},
 							{'category':hst, 'sub_mode':'serie','title': 'Series',                 'mode':'21'},
 							#{'category':hst, 'sub_mode':'music','title': 'اغاني وكليبات',          'mode':'21'},							
@@ -100,7 +100,7 @@ class TSIPHost(TSCBaseHostClass):
 					data1=cat_data[0]
 					cat_data=re.findall('<a href="(.*?)".*?<span>(.*?)</span></h3>', data1, re.S)
 					if cat_data:
-						self.addMarker({'title':'\c00????00'+'حلقات اخرة','desc':''})
+						self.addMarker({'title':tscolor('\c00????00')+'حلقات اخرة','desc':''})
 					for(url_,titre_) in cat_data:
 						titre_=titre_.replace('\n',' ')	
 						if titre_=='':
@@ -184,8 +184,9 @@ class TSIPHost(TSCBaseHostClass):
 				server_data = re.findall('<a href="(.*?)"', data_, re.S)
 				for (url_1) in server_data:
 					hostUrl=url_1.replace("www.", "")				
-					raw1 =  re.findall('//(.*?)/', hostUrl, re.S)				
-					hostUrl=raw1[0]
+					raw1 =  re.findall('//(.*?)/', hostUrl, re.S)
+					if raw1:				
+						hostUrl=raw1[0]
 					if ('openload' in hostUrl.lower())or('uptobox' in hostUrl.lower()):
 						urlTab.append({'name':hostUrl+' - سرفر تحميل', 'url':url_1, 'need_resolve':1})
 			else:

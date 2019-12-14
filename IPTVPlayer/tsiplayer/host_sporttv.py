@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='Sport Tv V2.0.8 (Android App)'
 	info_['version']='1.0 24/04/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='100'
+	info_['cat_id']='104'#'100'
 	info_['desc']=' تطبيق اندوريد للبث المباشر للقنوات الرياضية'
 	info_['icon']='https://i.ibb.co/cJ3jY40/8p4hc4g9.png'
 	info_['recherche_all']='0'

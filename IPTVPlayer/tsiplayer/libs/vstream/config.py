@@ -14,7 +14,10 @@ class GestionCookie():
 
     def DeleteCookie(self,Domain):
         Name = ''.join([self.PathCache, "cookie_%s.txt"]) % (Domain)
-        os.remove(Name)
+        try:
+            os.remove(Name)
+        except:
+            pass
 
     def SaveCookie(self,Domain,data):
         Name = ''.join([self.PathCache, "cookie_%s.txt"]) % (Domain)

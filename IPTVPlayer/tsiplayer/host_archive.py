@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 import re
 
 def getinfo():
@@ -29,7 +29,7 @@ class TSIPHost(TSCBaseHostClass):
 	def showmenu(self,cItem):
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'تفسير القرآن للشيخ الشعراوي','url':'https://archive.org/download/movie-tafseer-alsha3rawi-video-full','icon':'https://upload.wikimedia.org/wikipedia/en/8/8b/Muhamad_Motwali_Alsharawi.png','mode':'20'})	
 
-		self.addMarker({'title':'\c00????00'+'رواية حفص','icon':cItem['icon']})
+		self.addMarker({'title':tscolor('\c00????00')+'رواية حفص','icon':cItem['icon']})
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المرتل المصور برواية حفص - ماهر المعيقلي','url':'https://archive.org/download/alfirdwsiy2018_gmail_554222222222222222222222','icon':'http://cdn.marketplaceimages.windowsphone.com/v8/images/413798a4-da4b-4a3d-b56f-339f7bc8202f?imageType=ws_icon_large','mode':'20'})	
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المصور - المنشاوي','url':'https://archive.org/download/Alfirdwsiy143fffffffffffffffffffffffffffffffffffffffffffffffff524547768986785634','icon':'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Elminshwey.jpg/280px-Elminshwey.jpg','mode':'20'})	
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'الختمة المجودة المنوعة - المجد','url':'https://archive.org/download/alfirdwsi4765780990756434678909087956mail_30','icon':'https://www.almajdtv.com/images/ch/quran.png','mode':'20'})	
@@ -46,26 +46,26 @@ class TSIPHost(TSCBaseHostClass):
  
 
 
-		self.addMarker({'title':'\c00????00'+'رواية شعبة','icon':cItem['icon']})
+		self.addMarker({'title':tscolor('\c00????00')+'رواية شعبة','icon':cItem['icon']})
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المرتل المصور برواية شعبة عن عاصم  بصوت الشيخ عبدالرشيد صوفي','url':'https://archive.org/download/Alfirdwsiy1BV346579889HFS_201801','icon':cItem['icon'],'mode':'20'})	
 
-		self.addMarker({'title':'\c00????00'+'رواية قالون','icon':cItem['icon']})
+		self.addMarker({'title':tscolor('\c00????00')+'رواية قالون','icon':cItem['icon']})
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المرتل المصور برواية قالون - محمود خليل الحصري','url':'https://archive.org/download/Alfirdwsiy15hjj8579645632557809p67732478903g_002._201801','icon':'https://upload.wikimedia.org/wikipedia/ar/a/a9/%D8%A7%D9%84%D8%AD%D8%B5%D8%B1%D9%8A.jpg','mode':'20'})	
 		
-		self.addMarker({'title':'\c00????00'+'رواية ورش','icon':cItem['icon']})				
+		self.addMarker({'title':tscolor('\c00????00')+'رواية ورش','icon':cItem['icon']})				
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المصور المعلم-  ياسين الجزائري برواية ورش عن نافع','url':'https://archive.org/download/alfirdwsiy146779674794794679464679796479gmail_28','icon':'https://www.tvquran.com/uploads/authors/images/%D9%8A%D8%A7%D8%B3%D9%8A%D9%86%20%D8%A7%D9%84%D8%AC%D8%B2%D8%A7%D8%A6%D8%B1%D9%8A.jpg','mode':'20'})	
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المعلم المصور المرمز بالألوان رواية ورش بصوت الشيخ محمود خليل الحصري','url':'https://archive.org/download/abdelsattar57_hotmail_1_201805','icon':'https://upload.wikimedia.org/wikipedia/ar/a/a9/%D8%A7%D9%84%D8%AD%D8%B5%D8%B1%D9%8A.jpg','mode':'20','sub_mode':'1'})	
 
-		self.addMarker({'title':'\c00????00'+'رواية أبي الحارث','icon':cItem['icon']})
+		self.addMarker({'title':tscolor('\c00????00')+'رواية أبي الحارث','icon':cItem['icon']})
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المرتل برواية أبي الحارث عن الكسائي بصوت الشيخ عبدالرشيد صوفي','url':'https://archive.org/download/aVC2535468955GFDSAlfirdwsiy1433_gmail_201801','icon':cItem['icon'],'mode':'20'})	
 
-		self.addMarker({'title':'\c00????00'+'رواية ابن وردان','icon':cItem['icon']})
+		self.addMarker({'title':tscolor('\c00????00')+'رواية ابن وردان','icon':cItem['icon']})
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'المصحف المرتل المصور برواية ابن وردان عن أبي جعفر بصوت الشيخ يوسف بن نوح','url':'https://archive.org/download/alfirdwsiy2018111111111111111ail_002.11111','icon':cItem['icon'],'mode':'20'})	
 		
-		self.addMarker({'title':'\c00????00'+'رواية ابن جماز','icon':cItem['icon']})
+		self.addMarker({'title':tscolor('\c00????00')+'رواية ابن جماز','icon':cItem['icon']})
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':' مصحف مصور معلم برواية إبن جماز عن أبي جعفر للشيخ عيسى الشاذلى','url':'https://archive.org/download/999999999999999999999999955553339999','icon':cItem['icon'],'mode':'20'})	
 
-		self.addMarker({'title':'\c00????00'+'مواد اخرة','icon':cItem['icon']})
+		self.addMarker({'title':tscolor('\c00????00')+'مواد اخرة','icon':cItem['icon']})
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'مكتبة الرقية الشرعية بأصوات عدة قراء','url':'https://archive.org/download/Roquia_23','icon':cItem['icon'],'mode':'20'})	
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'اناشيد مشارى العفاسى','url':'https://archive.org/download/all--album--mshary--al3afasy--mp3-anasheed-anashed-anashid','icon':cItem['icon'],'mode':'20'})	
 		self.addDir({'good_for_fav':True,'import':cItem['import'],'category' : 'host2','title':'اناشيد ماهر زين','url':'https://archive.org/download/maher-zean-----anashid----mp3---without---music--anashed_668','icon':cItem['icon'],'mode':'20'})	

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,unifurl
-
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,unifurl,tscolor
+import urllib
 import re
 
 def getinfo():
 	info_={}
 	info_['name']='Arabseed.Com'
-	info_['version']='1.3 30/06/2019'
+	info_['version']='1.5.1 07/11/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'#'201'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
 	info_['icon']='https://arabseed.com/themes/arabseed/img/logo-c.png'
 	info_['recherche_all']='1'
-	info_['update']='Bugs Fix'
+	info_['update']='Add Filter section'
 	return info_
 	
 	
@@ -27,42 +27,6 @@ class TSIPHost(TSCBaseHostClass):
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage
 		
-	def getPage2(self,baseUrl, addParams = {}, post_data = None):
-		if addParams == {}: addParams = dict(self.defaultParams)
-		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
-		sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
-		return sts, data
-
-
-	def getPage3(self,baseUrl, addParams = {}, post_data = None):
-		if addParams == {}: addParams = dict(self.defaultParams)
-		sts, data = self.cm.getPage(baseUrl, addParams, post_data)
-		printDBG(str(sts))
-		if "'jschl-answer'" in data:
-			#try:
-			import cookielib
-			import time
-			from Plugins.Extensions.IPTVPlayer.tsiplayer.libs import cfscrape		
-			scraper = cfscrape.create_scraper()
-			data = scraper.get(baseUrl).content
-			tokens, user_agent=cfscrape.get_tokens(self.MAIN_URL)
-			sts = True
-			cj = self.cm.getCookie(self.COOKIE_FILE)
-			
-			cook_dat=re.findall("'(.*?)'.*?'(.*?)'", str(tokens), re.S)			
-			for (cookieKey,cookieValue) in cook_dat:
-				cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=cookieValue, port=None, port_specified=False, domain='.'+self.cm.getBaseUrl(baseUrl, True), domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=time.time()+3600*48, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
-				cj.set_cookie(cookieItem)		
-			printDBG( 'save cookies=')
-			cj.save(self.COOKIE_FILE, ignore_discard = True)
-			printDBG( 'saveed')
-			'''except Exception as e:
-				printDBG( 'Erreur='+str(e) )	
-				addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
-				sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)'''
-		return sts, data
-
-		 
 	def showmenu0(self,cItem):
 		hst='host2'
 		self.Arablionz_TAB = [
@@ -70,7 +34,8 @@ class TSIPHost(TSCBaseHostClass):
 							{'category':hst, 'sub_mode':1, 'title': 'مسلسلات',     'mode':'20'},
 							#{'category':hst, 'sub_mode':2, 'title':'رمضان 2019',  'mode':'20'},
 							{'category':hst, 'sub_mode':3, 'title': 'اقسام اخري', 'mode':'20'},
-							{'category':'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost'},
+							{'category':hst,               'title': tscolor('\c0000????') + 'حسب التصنيف' , 'mode':'21','count':1,'data':'none','code':self.MAIN_URL+'/getposts?'},	
+							{'category':'search','title':tscolor('\c00????30') + _('Search'), 'search_item':True,'page':1,'hst':'tshost'},
 							]		
 		self.listsTab(self.Arablionz_TAB, {'import':cItem['import'],'icon':cItem['icon']})	
 
@@ -84,7 +49,7 @@ class TSIPHost(TSCBaseHostClass):
 				if cat_film_data:
 					data2=re.findall('<li.*?href="(.*?)">(.*?)<', cat_film_data[gnr], re.S)
 					for (url,titre) in data2:
-						url=self.MAIN_URL+url
+						if not url.startswith('http'): url=self.MAIN_URL+url
 						self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':titre,'desc':'','icon':cItem['icon'],'mode':'30'})	
 		elif gnr==2:	
 			self.Arablionz_TAB = [
@@ -102,13 +67,36 @@ class TSIPHost(TSCBaseHostClass):
 								]		
 			self.listsTab(self.Arablionz_TAB, {'import':cItem['import'],'icon':cItem['icon']})	
 
+	def showmenu2(self,cItem):
+		count=cItem['count']
+		data1=cItem['data']	
+		codeold=cItem['code']	
+		if count==1:
+			sts, data = self.getPage(self.MAIN_URL)
+			if sts:
+				data1=re.findall('class="ti-arrow.*?<ul(.*?)</ul>', data, re.S)
+			else:
+				data1=None
+		if count==3:
+			mode_='30'
+		else:
+			mode_='21'
+		if data1:
+			lst_data1 = re.findall('<li.*?data-cat="(.*?)".*?data-tax="(.*?)">(.*?)</li>',data1[count-1], re.S)	
+			for (x2,x1,x3) in lst_data1:
+				if  ((('–' not in x2) and ('-' not in x2)) or('Sci-Fi' in x2))and ('null' not in x2)and ('كريستينا' not in x2):
+					code=codeold+x1+'='+x2.strip()+'&'
+					self.addDir({'import':cItem['import'],'category' :'host2', 'url':code, 'title':ph.clean_html(x3), 'desc':x1, 'icon':cItem['icon'], 'mode':mode_,'count':count+1,'data':data1,'code':code, 'sub_mode':'item_filter','page':-1})					
 		
 	def showitms(self,cItem):
 		page=cItem.get('page',1)
 		urlorg=cItem['url']
 		titre=cItem['title']
 		img=cItem['icon']
-		url1=urlorg+'?page='+str(page)
+		if page!=-1:
+			url1=urlorg+'?page='+str(page)
+		else:
+			url1=urlorg
 		sts, data = self.getPage(url1)
 		if sts:
 			data1=re.findall('class="media-block.*?href="(.*?)".*?data-src="(.*?)".*?class="details">(.*?)</div>.*?class="info">.*?<h3>(.*?)</h3>(.*?)</div>', data, re.S)		
@@ -116,12 +104,16 @@ class TSIPHost(TSCBaseHostClass):
 			for (url,image,inf,titre,desc) in data1:
 				inf_data=re.findall('class="ti.*?">(.*?)<', inf, re.S)		
 				if inf_data:
-					desc1='Rate: \c0000??00'+inf_data[0]+'\c00?????? \\n'
-					try: desc1=desc1+'View: \c0000??00'+inf_data[1]+'\c00??????\\n'
-					except: pass
-					desc=desc1+ph.clean_html(desc)
+					desc1=tscolor('\c00????00')+'Rate: '+tscolor('\c00??????')+inf_data[0]+' \\n'
+					#try: desc1=desc1+'View: '+tscolor('\c0000??00')+inf_data[1]+tscolor('\c00??????')+'\\n'
+					#except: pass
+					desc=desc1+tscolor('\c00????00')+'Desc: '+tscolor('\c00??????')+ph.clean_html(desc)
 				else:
-					desc=ph.clean_html(desc)				
+					desc=ph.clean_html(desc)
+				desc0,titre = self.uniform_titre(titre)
+				if desc.strip()!='':
+					desc = tscolor('\c00????00')+tscolor('\c00??????')+desc
+				desc=desc0+desc								
 				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'mode':'31','hst':'tshost'})			
 				i=i+1
 			if i>47:
@@ -146,7 +138,37 @@ class TSIPHost(TSCBaseHostClass):
 			data1=re.findall('class="media-block.*?href="(.*?)".*?data-src="(.*?)".*?class="details">(.*?)</div>.*?class="info">.*?<h3>(.*?)</h3>(.*?)</div>', data, re.S)		
 			i=0
 			for (url,image,inf,titre,desc) in data1:
+				desc=ph.clean_html(desc)
+				titre=ph.clean_html(titre)
+				desc0,titre = self.uniform_titre(titre)
+				if desc.strip()!='':
+					desc = tscolor('\c00????00')+'Desc: '+tscolor('\c00??????')+desc
+				desc=desc0+desc	
 				self.addDir({'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'mode':'31','hst':'tshost'})			
+
+
+	def MediaBoxResult(self,str_ch,year_,extra):
+		urltab=[]
+		str_ch_o = str_ch
+		str_ch = urllib.quote(str_ch_o+' '+year_)	
+		url_=self.MAIN_URL+'/search?s='+str_ch+'&page='+str(1)
+		sts, data = self.getPage(url_)
+		if sts:		
+			data1=re.findall('class="media-block.*?href="(.*?)".*?data-src="(.*?)".*?class="details">(.*?)</div>.*?class="info">.*?<h3>(.*?)</h3>(.*?)</div>', data, re.S)		
+			i=0
+			for (url,image,inf,titre,desc) in data1:
+				desc=ph.clean_html(desc)
+				titre=ph.clean_html(titre)
+				desc0,titre = self.uniform_titre(titre,year_op=1)
+				if desc.strip()!='':
+					desc = tscolor('\c00????00')+'Desc: '+tscolor('\c00??????')+desc
+				desc=desc0+desc	
+				titre0='|'+tscolor('\c0060??60')+'ArabSeeD'+tscolor('\c00??????')+'| '+titre				
+				
+				urltab.append({'titre':titre,'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre0,'desc':desc,'icon':image,'mode':'31','hst':'tshost'})			
+		return urltab
+
+
 
 		
 	def get_links(self,cItem): 	
@@ -165,25 +187,25 @@ class TSIPHost(TSCBaseHostClass):
 						for (x1,url,titre) in server_data1:
 							url=unifurl(url)
 							host=gethostname(url)
-							titre = titre.replace('سيرفر','Server')
-							titre=titre+'  \c0000??00( ' +host+' )'
+							titre = titre.replace('سيرفر','Server').replace('عرب سيد',' ArabSeed')
+							titre='|'+titre+'| ' +host
 							if not '/arabseed.' in url:
 								urlTab.append({'name':titre, 'url':url, 'need_resolve':1})
 							else:
-								urlTab.append({'name':titre, 'url':'hst#tshost#'+url, 'need_resolve':1})
+								urlTab.append({'name':titre, 'url':'hst#tshost#'+url, 'need_resolve':1,'type':'local'})
 
 						if len(urlTab)==0:
 							server_data2 = re.findall('<li.*?"(.*?)">(.*?)<', server_data[0], re.S)
 							for (url,titre) in server_data2:
 								url=unifurl(url)
 								host=gethostname(url)
-								titre = titre.replace('سيرفر','Server')
-								titre=titre+'  \c0000??00( ' +host+' )'
+								titre = titre.replace('سيرفر','Server').replace('عرب سيد',' ArabSeed')
+								titre='|'+titre+'| ' +host
 								if not 'arabseed' in url:
 									urlTab.append({'name':titre, 'url':url, 'need_resolve':1})
 								else:
-									urlTab.append({'name':titre, 'url':'hst#tshost#'+url, 'need_resolve':1})
-			
+									urlTab.append({'name':titre, 'url':'hst#tshost#'+url, 'need_resolve':1,'type':'local'})
+			urlTab = sorted(urlTab, key=lambda x: x['name'], reverse=False)
 			return urlTab
 			
 	def getVideos(self,videoUrl):
@@ -225,6 +247,8 @@ class TSIPHost(TSCBaseHostClass):
 			self.showmenu0(cItem)
 		if mode=='20':
 			self.showmenu1(cItem)
+		if mode=='21':
+			self.showmenu2(cItem)
 		if mode=='30':
 			self.showitms(cItem)			
 		if mode=='31':

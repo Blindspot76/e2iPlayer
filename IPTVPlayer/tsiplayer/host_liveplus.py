@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 
 import re
 
@@ -53,7 +53,7 @@ class TSIPHost(TSCBaseHostClass):
 		data = json_loads(data)
 		elmdata = data['items']['all']
 		for elm in 	elmdata:
-			desc='\c00????00'+elm['text']
+			desc=tscolor('\c00????00')+elm['text']
 			img=elm['image']
 			self.addMarker({'title':desc,'desc':desc,'icon':img})
 			for match in elm['match']:
@@ -64,11 +64,11 @@ class TSIPHost(TSCBaseHostClass):
 				res2=match['team_2_result']
 				statut=match['is_live']
 				if match['is_live']==1:
-					statut= '\c0000??00  (LIVE)'
+					statut= tscolor('\c0000??00')+'  (LIVE)'
 				else:
 					x1,x2,x3 = date_.split(' ')
-					statut= '\c00????00  ['+x2+' '+x3+']'
-				desc='\c00????00Date: '+date_
+					statut= tscolor('\c00????00')+'  ['+x2+' '+x3+']'
+				desc=tscolor('\c00????00')+'Date: '+date_
 				self.addDir({'import':cItem['import'],'category' : 'host2','title':'# Match: '+titre+' #'+statut,'url':data,'desc':desc,'icon':img,'mode':'21'})
 
 	def getlive(self,cItem):
@@ -76,7 +76,7 @@ class TSIPHost(TSCBaseHostClass):
 		for comm in data:
 			titre=comm['title']
 			for data2 in comm['channel']:
-				titre2='\c00????00'+data2['name']+' - \c0000??00'+titre
+				titre2=tscolor('\c00????00')+data2['name']+' - '+tscolor('\c0000??00')+titre
 				image=data2['image']
 				self.addMarker({'title':titre2,'icon':image})
 				for serv in data2['servers']:

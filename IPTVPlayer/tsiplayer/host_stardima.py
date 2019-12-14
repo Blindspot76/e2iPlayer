@@ -113,11 +113,15 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			Liste_els = re.findall('contentURL" content="(.*?)"', data, re.S)
 			if 	Liste_els:
-				urlTab.append({'name':'Main Server', 'url':Liste_els[0], 'need_resolve':0})	
+				urlTab.append({'name':'|Watch Server| Main Server', 'url':Liste_els[0], 'need_resolve':0,'type':'local'})	
 			
 			Liste_els = re.findall('<input rel="nofollow".*?.open\(\'(.*?)\'.*?value=\'(.*?)\'', data, re.S)	
 			for (url,titre) in 	Liste_els:
-				urlTab.append({'name':titre, 'url':'hst#tshost#'+url, 'need_resolve':1})	
+				titre = titre.replace('إضغط هنا لتحميل الجودة ✔','Download Server')
+				titre = titre.replace('إضغط هنا تحميل جودة ✔','Download Server')
+				if '|' in titre:
+					titre = '|'+titre.split('|')[-1].strip()+'| '+titre.split('|')[0].strip()+'p'
+				urlTab.append({'name':titre, 'url':'hst#tshost#'+url, 'need_resolve':1,'type':'local'})	
 
 		return urlTab	
 

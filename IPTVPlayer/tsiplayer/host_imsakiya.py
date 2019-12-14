@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tunisia_gouv
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tunisia_gouv,tscolor
 from Components.config import config
 import re
 
@@ -9,7 +9,7 @@ tunisia_gouv_code = [0,23,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,
 
 def getinfo():
 	info_={}
-	info_['name']='Imsakiyat Ramadan (Meteo.Tn)'
+	info_['name']='Prayer Time (Tunisia - Meteo.Tn)'
 	info_['version']='1.0 19/04/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='204'
@@ -45,12 +45,12 @@ class TSIPHost(TSCBaseHostClass):
 			if sts:
 				Liste_cat_data = re.findall('<p class="txt12Bb1".*?>(.*?)<p.*?txt14Bb" >(.*?)<p', data, re.S)
 				if Liste_cat_data:
-					self.addMarker({'title':'\c00????00'+ph.clean_html(Liste_cat_data[0][0]),'desc':ph.clean_html(Liste_cat_data[0][1]),'icon':cItem['icon']})
+					self.addMarker({'title':tscolor('\c00????00')+ph.clean_html(Liste_cat_data[0][0]),'desc':ph.clean_html(Liste_cat_data[0][1]),'icon':cItem['icon']})
 				Liste_cat_data = re.findall('align="left" class="txt14Bb">.*?<b>(.*?)<.*?Tip\(\'(.*?)\'.*?TITLE.*?\'(.*?)\'', data, re.S)
 				for (time_,desc,name_) in Liste_cat_data:
 					name_=name_.replace('&nbsp;','').strip()
 					time_=time_.strip()
-					titre='\c0000??00'+name_+' : '+'\c0000????'+time_
+					titre=tscolor('\c0000??00')+name_+' : '+tscolor('\c0000????')+time_
 					self.addMarker({'title':titre,'desc':ph.clean_html(desc),'icon':cItem['icon']})
 
 
@@ -74,11 +74,11 @@ class TSIPHost(TSCBaseHostClass):
 						printDBG('dddddddddddddd'+str(Liste_cat_data2))
 						a1,a2=Liste_cat_data2[0].split('<br>',1)
 						b1,b2=Liste_cat_data2[1].split('<br>',1)
-					self.addMarker({'title':'\c00????00'+'إمساكية اليوم','desc':desc,'icon':cItem['icon']})
-					titre='\c0000????'+ph.clean_html(a1)+'    \c00??????|    \c0000??00'+ph.clean_html(a2)
+					self.addMarker({'title':tscolor('\c00????00')+'إمساكية اليوم','desc':desc,'icon':cItem['icon']})
+					titre=tscolor('\c0000????')+ph.clean_html(a1)+'    '+tscolor('\c00??????')+'|    '+tscolor('\c0000??00')+ph.clean_html(a2)
 					self.addMarker({'title':titre,'desc':desc,'icon':cItem['icon']})
-					self.addMarker({'title':'\c00????00'+'إمساكية الغد','desc':desc,'icon':cItem['icon']})				
-					titre='\c0000????'+ph.clean_html(b1)+'    \c00??????|    \c0000??00'+ph.clean_html(b2)
+					self.addMarker({'title':tscolor('\c00????00')+'إمساكية الغد','desc':desc,'icon':cItem['icon']})				
+					titre=tscolor('\c0000????')+ph.clean_html(b1)+'    '+tscolor('\c00??????')+'|    '+tscolor('\c0000??00')+ph.clean_html(b2)
 					self.addMarker({'title':titre,'desc':desc,'icon':cItem['icon']})
 					
 					

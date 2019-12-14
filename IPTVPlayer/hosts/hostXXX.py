@@ -52,6 +52,7 @@ config.plugins.iptvplayer.xxxupdate = ConfigYesNo(default = False)
 config.plugins.iptvplayer.xxxzbiornik = ConfigYesNo(default = False)
 config.plugins.iptvplayer.xxx4k = ConfigYesNo(default = False)
 config.plugins.iptvplayer.yourporn = ConfigInteger(4, (1, 99))  
+config.plugins.iptvplayer.beeg = ConfigYesNo(default = True)
 
 def GetConfigList():
     optionList = []
@@ -69,6 +70,7 @@ def GetConfigList():
     optionList.append( getConfigListEntry(_("Show Profiles in ZBIORNIK MINI :"), config.plugins.iptvplayer.xxxzbiornik) )
     optionList.append( getConfigListEntry(_("YOURPORN Server :"), config.plugins.iptvplayer.yourporn) )
     optionList.append( getConfigListEntry(_("Show changelog :"), config.plugins.iptvplayer.xxxupdate) )
+    optionList.append( getConfigListEntry(_("BEEG FullHD :"), config.plugins.iptvplayer.beeg) )
     optionList.append( getConfigListEntry(_("Playback UHD :"), config.plugins.iptvplayer.xxx4k) )
 
     return optionList
@@ -166,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.12.08.0"
+    XXXversion = "2019.12.13.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -277,6 +279,7 @@ class Host:
         printDBG( 'Host listsItems url: '+url )
         valTab = []
         self.format4k = config.plugins.iptvplayer.xxx4k.value
+        self.beegfullhd = config.plugins.iptvplayer.beeg.value
 
         if name == 'main-menu':
            printDBG( 'Host listsItems begin name='+name )
@@ -1418,6 +1421,7 @@ class Host:
            return valTab    
         if 'beeg-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
+           self.beegfullhd = config.plugins.iptvplayer.beeg.value
            catUrl = self.currList[Index].possibleTypesOfSearch
            printDBG( 'Host listsItems cat-url: '+str(catUrl) )
            next = url
@@ -6136,16 +6140,10 @@ class Host:
            if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
            self.page = 0
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="th">', '</div>')
-           for item in data:
-              phTitle = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] #+'&sort_by=post_date'
-              if phImage.startswith('//'): phImage = 'https:' + phImage
-              try:
-                 phImage = urlparser.decorateUrl(phImage, {'Referer': 'https://www.pornrewind.com'})
-              except: pass
-              valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'PORNREWIND-clips', phImage, None)) 
+           cats = ['3d','amateur','asmr','arab','anal','webcam','voyeur','teen','romantic']
+           for item in cats:
+              phUrl = 'https://www.pornrewind.com/categories/%s/' % item
+              valTab.append(CDisplayListItem(item.upper(),item,CDisplayListItem.TYPE_CATEGORY, [phUrl],'PORNREWIND-clips', '', None)) 
            valTab.sort(key=lambda poz: poz.name)
            self.SEARCH_proc='PORNREWIND-search'
            valTab.insert(0,CDisplayListItem(_('Search history'), _('Search history'), CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
@@ -6185,37 +6183,13 @@ class Host:
               try:
                  phImage = urlparser.decorateUrl(phImage, {'Referer': 'https://www.pornrewind.com'})
               except: pass
-              valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle)+'\n'+'Time: ['+Time+']'+'\n'+'Added: ['+Added+']',CDisplayListItem.TYPE_CATEGORY, [phUrl],'PORNREWIND-serwer', phImage, phTitle)) 
-              #valTab.append(CDisplayListItem(decodeHtml(phTitle),phUrl,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
-
+              valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle)+'\n'+'Time: ['+Time+']'+'\n'+'Added: ['+Added+']',CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
               next = self.cm.ph.getSearchGroups(next, '''href=['"]([^"^']+?)['"]''', 1, True)[0]
-              #next = next.replace(next.split('/')[-1],'')
               if next.startswith('/'): next = 'https://www.pornrewind.com' + next
               valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [url], name, '', 'next'))
            return valTab
-        if 'PORNREWIND-serwer' == name:
-           printDBG( 'Host listsItems begin name='+name )
-           COOKIEFILE = os_path.join(GetCookieDir(), 'pornrewind.cookie')
-           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-           sts, data = self.get_Page(url)
-           if not sts: return valTab
-           printDBG( 'Host listsItems data: '+data )
-           catUrl = self.currList[Index].possibleTypesOfSearch
-           phImage = self.cm.ph.getSearchGroups(data, '''"og:image" content=['"]([^"^']+?)['"]''', 1, True)[0] 
 
-           phUrl = self.cm.ph.getSearchGroups(data, '''video_url: ['"]([^"^']+?)['"]''', 1, True)[0] 
-           if phUrl:
-              valTab.append(CDisplayListItem(decodeHtml(catUrl),decodeHtml(catUrl),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 0)], 0, phImage, None)) 
-              return valTab
-
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
-           for item in data:
-              phUrl = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phTitle = self._cleanHtmlStr(item)
-              if not 'syndication' in item and not 'exosrv' in item:
-                 valTab.append(CDisplayListItem(decodeHtml(catUrl),phUrl,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
-           return valTab
 
         if 'FIRECAMS' == name:
            printDBG( 'Host listsItems begin name='+name )
@@ -7443,6 +7417,7 @@ class Host:
         if url.startswith('http://pinkrod.com'):                      return 'http://www.updatetube.com'
         if url.startswith('https://pinkrod.com'):                     return 'http://www.updatetube.com'
         if url.startswith('https://videos.porndig.com'):              return 'https://porndig.com'
+        if url.startswith('https://www.playvids.com'):                return 'https://www.playvids.com'
         if url.startswith('http://porndoe.com'):                      return 'http://porndoe.com'
         if url.startswith('https://porndoe.com'):                     return 'http://porndoe.com'
         if url.startswith('https://www.porndoe.com'):                 return 'http://porndoe.com'
@@ -7459,6 +7434,7 @@ class Host:
         if url.startswith('https://pornohub.su'):                     return 'http://pornohub.su'
         if url.startswith('https://www.pornoxo.com'):                 return 'https://www.pornoxo.com'
         if url.startswith('http://www.pornrabbit.com'):               return 'http://www.pornrabbit.com'
+        if url.startswith('https://www.pornrewind.com'):              return 'https://www.pornrewind.com'
         if url.startswith('https://www.realgfporn.com'):              return 'https://www.realgfporn.com'
         if url.startswith('http://embed.redtube.com'):                return 'http://embed.redtube.com'
         if url.startswith('http://www.redtube.com'):                  return 'http://www.redtube.com'
@@ -7876,7 +7852,8 @@ class Host:
                  if str(item["240p"]) != 'None': phUrl = str(item["240p"])
                  if str(item["480p"]) != 'None': phUrl = str(item["480p"])
                  if str(item["720p"]) != 'None': phUrl = str(item["720p"])
-                 if str(item["1080p"]) != 'None': phUrl = str(item["1080p"])
+                 if self.beegfullhd: 
+                    if str(item["1080p"]) != 'None': phUrl = str(item["1080p"])
                  if self.format4k:
                     if str(item["2160p"]) != 'None': phUrl = str(item["2160p"])
            except Exception:
@@ -9561,15 +9538,24 @@ class Host:
                     SetIPTVPlayerLastHostError(_(' Private Show.'))
                     return []
                  break
-
            videoUrl = 'https://manifest.vscdns.com/manifest.m3u8?key=nil&provider=highwinds&host='+host+'&model_id='+id+'&secure=true&prefix=amlst&youbora-debug=1'
            PHPSESSID = self.cm.getCookieItem(COOKIEFILE, 'PHPSESSID')
-
            videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': self.cm.meta['url'], 'Cookie':'PHPSESSID=%s' % PHPSESSID, 'User-Agent': self.USER_AGENT})
            tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
            for item in tmp:
               return item['url']
            return ''
+
+        if parser == 'https://www.pornrewind.com':
+           COOKIEFILE = os_path.join(GetCookieDir(), 'pornrewind.cookie')
+           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.get_Page(url)
+           if not sts: return valTab
+           printDBG( 'Host listsItems data: '+data )
+           videoUrl = self.cm.ph.getSearchGroups(data, '''video_url:\s*['"]([^"^']+?)['"]''')[0] 
+           return videoUrl
+		   
 ##########################################################################################################################
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
         try:

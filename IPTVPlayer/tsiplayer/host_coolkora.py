@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,resolve_liveFlash,resolve_zony
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,resolve_liveFlash,resolve_zony,tscolor
 from Plugins.Extensions.IPTVPlayer.libs import ph
 import re,requests
 
@@ -45,12 +45,12 @@ class TSIPHost(TSCBaseHostClass):
 				I_list = re.findall('head_line">(.*?)</TD>', data1, re.S)
 				if I_list: titre0=ph.clean_html(I_list[0])
 				else: titre0=''
-				self.addMarker({'title':'\c00????00'+titre0,'desc':'','icon':image})				
+				self.addMarker({'title':tscolor('\c00????00')+titre0,'desc':'','icon':image})				
 				I_list = re.findall('team_l"(.*?)(<TD CLASS="team_logo1|rgysoft)', data1+'rgysoft', re.S)
 				for (data2,x2) in I_list:
 					A_list = re.findall('time_style">(.*?)</.*?channels_table">(.*?)</TABLE>.*?team_name1.*?">(.*?)<.*?team_name2.*?">(.*?)<', data2, re.S)
 					for (time_,data3,name1,name2) in A_list:
-						time1='# ['+ph.clean_html(time_)+'] #  \c0000????'
+						time1='# ['+ph.clean_html(time_)+'] #  '+tscolor('\c0000????')
 						titre=name1+' Vs '+name2
 						self.addDir({'import':cItem['import'],'category' : 'host2','title':time1+titre+'  #','url':data3,'desc':'','icon':image,'mode':'21'})	
 		else:
@@ -99,7 +99,7 @@ class TSIPHost(TSCBaseHostClass):
 			if Tab_els:
 				Tab_els = re.findall('class="quality.*?href="(.*?)".*?quality-name">(.*?)</div>.*?quality-info">(.*?)</ul>', Tab_els[0], re.S)
 				for (url,name1,qual) in Tab_els:
-					name='# '+ph.clean_html(qual)+' #'+' \c00????00'+ph.clean_html(name1)
+					name='# '+ph.clean_html(qual)+' # '+tscolor('\c00????00')+ph.clean_html(name1)
 					urlTab.append({'name':name, 'url':'hst#tshost#'+url, 'need_resolve':1})
 
 				

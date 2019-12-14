@@ -15,7 +15,7 @@ def getinfo():
 	info_['name']='Voirfilms.ws'
 	info_['version']='1.2 06/06/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='301'
+	info_['cat_id']='102'#'301'
 	info_['desc']='Films, Series & Animes VF'
 	info_['icon']='https://film.voirfilms.ws/themes/styles/css/images/logo.png'
 	info_['update']='Fix Search'	

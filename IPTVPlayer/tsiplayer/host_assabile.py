@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tunisia_gouv
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tunisia_gouv,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Components.config import config
 import re
@@ -107,7 +107,7 @@ class TSIPHost(TSCBaseHostClass):
 			for (url,desc,name,desc2,riwaya) in data_:
 				if name !='':
 					i=i+1
-					self.addDir({'import':cItem['import'],'category' :'host2','title':name+' - '+ph.clean_html(riwaya)+ ' - '+desc2,'desc':'\c00????00'+' تلاوة'+desc,'url':'http://ar.assabile.com'+url,'icon':cItem['icon'],'mode': '31'})
+					self.addDir({'import':cItem['import'],'category' :'host2','title':name+' - '+ph.clean_html(riwaya)+ ' - '+desc2,'desc':tscolor('\c00????00')+' تلاوة'+desc,'url':'http://ar.assabile.com'+url,'icon':cItem['icon'],'mode': '31'})
 			if i>14:
 				self.addDir({'import':cItem['import'],'category' : 'host2','icon':cItem['icon'],'title':'Next','url':uRL,'page':page+1,'mode':'16'})
 
@@ -149,7 +149,7 @@ class TSIPHost(TSCBaseHostClass):
 				data_ = re.findall('name-surat">.*?href="(.*?)".*?data-recitation="(.*?)".*?data-name="(.*?)".*?data-riwaya="(.*?)"', data, re.S)
 				for (url,desc,name,riwaya) in data_:
 					if name !='':
-						self.addDir({'import':cItem['import'],'category' :'host2','title':name+' - '+riwaya,'desc':'\c00????00'+' تلاوة'+desc,'url':'http://ar.assabile.com'+url,'icon':cItem['icon'],'mode': '31'})
+						self.addDir({'import':cItem['import'],'category' :'host2','title':name+' - '+riwaya,'desc':tscolor('\c00????00')+' تلاوة'+desc,'url':'http://ar.assabile.com'+url,'icon':cItem['icon'],'mode': '31'})
 
 
 	def showmenu31(self,cItem):

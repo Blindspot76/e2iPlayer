@@ -1,4 +1,7 @@
-﻿#2019.12.13.01
+﻿#2019.12.14.01
+-TSiPlayer frissítve
+-PornRewind javítva (XXX)
+#2019.12.13.01
 -InfoVersion frissítve
 #2019.12.08.02
 -Kisebb módosítások

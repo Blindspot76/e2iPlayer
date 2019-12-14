@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,xtream_get_conf
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,xtream_get_conf,tscolor
 
 import re
 
@@ -42,7 +42,7 @@ class TSIPHost(TSCBaseHostClass):
 
 	def showmenu1(self,cItem):
 		try:
-			self.addMarker({'category' : 'xtream_vod','title':'\c0000??00Films','icon':'','desc':''})
+			self.addMarker({'category' : 'xtream_vod','title':tscolor('\c0000??00')+'Films','icon':'','desc':''})
 			Url=cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_vod_categories'
 			sts, data = self.cm.getPage(Url)
 			data = json_loads(data)
@@ -52,7 +52,7 @@ class TSIPHost(TSCBaseHostClass):
 		except:
 			pass					
 		try:	
-			self.addMarker({'category' : 'xtream_vod','title':'\c0000??00Series','icon':'','desc':''})
+			self.addMarker({'category' : 'xtream_vod','title':tscolor('\c0000??00')+'Series','icon':'','desc':''})
 			Url=cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_series_categories'
 			sts, data = self.cm.getPage(Url)
 			data = json_loads(data)

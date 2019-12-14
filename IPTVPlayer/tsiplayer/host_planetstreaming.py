@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
 
+try:
+	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
+	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
+except:
+	pass 
+	
 import re
-import urllib
+import urllib,cookielib,time
 
 def getinfo():
 	info_={}
@@ -22,71 +28,59 @@ def getinfo():
 	
 class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
-		TSCBaseHostClass.__init__(self,{'cookie':'planetstreaming2.cookie'})
+		TSCBaseHostClass.__init__(self,{'cookie':'planetstreaming.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.86 Safari/537.36'
-		self.MAIN_URL = 'https://www.planet-streaming.net'
+		self.MAIN_URL = 'https://fr.planet-streaming.net'
 		self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1','Connection':'close','Cache-Control': 'no-cache','Pragma': 'no-cache', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Language':'en-US,en;q=0.5', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'with_metadata':True,'no_redirection':False,'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
-	'''		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://www.planet-streaming.net'
-	#		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
-	#		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
 
-		self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
-		self.defaultParams = {'with_metadata':True,'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-
-
-
-	def getPage(self, url, addParams={}, post_data=None):
-		if addParams == {}:
-			addParams = dict(self.defaultParams)
-		addParams['cloudflare_params'] = {'cookie_file': self.COOKIE_FILE, 'User-Agent': self.HTTP_HEADER['User-Agent']}
-		return self.cm.getPageCFProtection(url, addParams, post_data)
-	'''
-
-
-	def getPage(self,baseUrl, addParams = {}, post_data = None):
-		if addParams == {}: addParams = dict(self.defaultParams)
-		'''sts, data = self.cm.getPage(baseUrl, addParams, post_data)
-		printDBG(str(sts))
-		if "'jschl-answer'" in data:
-			#try:
-			import cookielib
-			from Plugins.Extensions.IPTVPlayer.tsiplayer.libs import cfscrape		
-			scraper = cfscrape.create_scraper()
-			data = scraper.get(baseUrl).content
-			tokens, user_agent=cfscrape.get_tokens(self.MAIN_URL)
-			sts = True
-			cj = self.cm.getCookie(self.COOKIE_FILE)
-			
-			cook_dat=re.findall("'(.*?)'.*?'(.*?)'", str(tokens), re.S)			
-			for (cookieKey,cookieValue) in cook_dat:
-				cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=cookieValue, port=None, port_specified=False, domain='.'+self.cm.getBaseUrl(baseUrl, True), domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=time.time()+3600*48, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
-				cj.set_cookie(cookieItem)		
-
-			cj.save(self.COOKIE_FILE, ignore_discard = True)
-			except:'''
-		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+	def getPage_old(self,baseUrl, addParams = {}, post_data = None):
+		if addParams == {}: addParams = dict(self.defaultParams) 
+		addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
 		sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
 		return sts, data
-
+				
 	def getPage(self,baseUrl, addParams = {}, post_data = None):
-		sts = False
-		try:
-			oRequestHandler = cRequestHandler(baseUrl)
-			if post_data:
-				oRequestHandler.setRequestType(cRequestHandler.REQUEST_TYPE_POST)
-				oRequestHandler.addParametersLine(post_data)			
-			if addParams!={}:
-				oRequestHandler.addParameters(addParams)
-			sHtmlContent    = oRequestHandler.request()
-			sts = True	
-		except Exception, e:
-			sHtmlContent='ERREUR:'+str(e)	
-		return sts, sHtmlContent
-		
+		if addParams == {}: addParams = dict(self.defaultParams) 
+		sts, data = self.cm.getPage(baseUrl,addParams,post_data)
+		if not data: data=''
+		if '!![]+!![]' in data:
+			try:
+				printDBG('Start CLoudflare  Vstream methode')
+				oRequestHandler = cRequestHandler(baseUrl)
+				if post_data:
+					post_data_vstream = ''
+					for key in post_data:
+						if post_data_vstream=='':
+							post_data_vstream=key+'='+post_data[key]
+						else:
+							post_data_vstream=post_data_vstream+'&'+key+'='+post_data[key]					
+					oRequestHandler.setRequestType(cRequestHandler.REQUEST_TYPE_POST)
+					oRequestHandler.addParametersLine(post_data_vstream)					
+				data = oRequestHandler.request()
+				sts = True
+				printDBG('cook_vstream_file='+self.up.getDomain(baseUrl).replace('.','_'))
+				cook = GestionCookie().Readcookie(self.up.getDomain(baseUrl).replace('.','_'))
+				printDBG('cook_vstream='+cook)
+				if ';' in cook: cook_tab = cook.split(';')
+				else: cook_tab = cook
+				cj = self.cm.getCookie(self.COOKIE_FILE)
+				for item in cook_tab:
+					if '=' in item:	
+						printDBG('item='+item)		
+						cookieKey, cookieValue = item.split('=')
+						cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=cookieValue, port=None, port_specified=False, domain='.'+self.cm.getBaseUrl(baseUrl, True), domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=time.time()+3600*48, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+						cj.set_cookie(cookieItem)
+				cj.save(self.COOKIE_FILE, ignore_discard = True)
+			except Exception, e:
+				printDBG('ERREUR:'+str(e))
+				printDBG('Start CLoudflare  E2iplayer methode')
+				addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+				sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)	
+		return sts, data		
+
 				 
 	def showmenu0(self,cItem):
 		hst='host2'
@@ -123,11 +117,11 @@ class TSIPHost(TSCBaseHostClass):
 				desc=desc.replace('<b>','\\n')
 				desc=desc.replace('<strong>','\\n')
 				desc=ph.clean_html(desc+'>').strip()		
-				self.addVideo({'import':cItem['import'],'title':titre+' \c0000??00('+ph.clean_html(qual)+')','url':url,'desc':desc,'icon':image,'good_for_fav':True,'EPG':True,'hst':'tshost'})
+				self.addVideo({'import':cItem['import'],'title':titre+' '+tscolor('\c0000??00')+'('+ph.clean_html(qual)+')','url':url,'desc':desc,'icon':image,'good_for_fav':True,'EPG':True,'hst':'tshost'})
 			if i>14:
 				self.addDir({'import':cItem['import'],'category' : 'host2','title':'Page Suivante','url':url0,'page':page+1,'mode':'30'})
 		else:
-			self.addMarker({'title':'\c00????00'+'----> Erreur <----','icon':'','desc':data})
+			self.addMarker({'title':tscolor('\c00????00')+'----> Erreur <----','icon':'','desc':'Cloudflare problem'})
 
 	def get_links(self,cItem): 	
 		sts, data = self.getPage(cItem['url'])
@@ -142,7 +136,7 @@ class TSIPHost(TSCBaseHostClass):
 				url = self.getFullUrl( self.cm.ph.getSearchGroups(item, '''\shref=['"]([^'^"]+?)['"]''')[0] )
 				if url == '': continue
 				title = self.cleanHtmlStr(item)
-				title= title+' \c0000??00('+langTitle+')'
+				title= '|'+langTitle.upper()+'| '+ title
 				linksTab.append({'name':title, 'url':url, 'need_resolve':1})
 		return linksTab
 
@@ -170,9 +164,7 @@ class TSIPHost(TSCBaseHostClass):
 		return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo1}]
 
 	def SearchResult(self, str_ch,page,extra):
-		#post_data  = {'do':'search', 'subaction':'search', 'search_start':page, 'full_search':'0', 'result_from':1+(page-1)*12, 'story':str_ch} 
-		query_args = (('do','search'), ('subaction','search'), ('search_start',page), ('full_search','0'), ('result_from',1+(page-1)*12), ('story',str_ch)) 
-		post_data = urllib.urlencode(query_args)
+		post_data  = {'do':'search', 'subaction':'search', 'search_start':page, 'full_search':'0', 'result_from':1+(page-1)*12, 'story':str_ch} 
 		url = self.MAIN_URL+'/index.php?do=search'
 		sts, data = self.getPage(url, post_data=post_data)  
 		if sts: 
@@ -185,7 +177,7 @@ class TSIPHost(TSCBaseHostClass):
 				desc=desc.replace('<b>','\\n')
 				desc=desc.replace('<strong>','\\n')
 				desc=ph.clean_html(desc+'>').strip()		
-				self.addVideo({'import':extra,'title':titre,'url':url,'desc':desc,'icon':image,'good_for_fav':True,'EPG':True,'hst':'tshost'})
+				self.addVideo({'import':extra,'category' : 'video','title':titre,'url':url,'desc':desc,'icon':image,'good_for_fav':True,'EPG':True,'hst':'tshost'})
 	   
 
 			

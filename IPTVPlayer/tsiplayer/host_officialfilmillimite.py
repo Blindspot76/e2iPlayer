@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
@@ -15,13 +15,13 @@ import base64
 def getinfo():
 	info_={}
 	info_['name']='Official-Film-Illimite'
-	info_['version']='1.1 17/08/2019'
+	info_['version']='1.2 02/09/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='301'
 	info_['desc']='Films & Series HD et UHD'
 	info_['icon']='https://www.official-film-illimite.to/wp-content/uploads/2016/10/official-film-illimite.png'
 	info_['recherche_all']='1'
-	info_['update']='Fix Covers'
+	info_['update']='Fix streamax.club Servers & fix Search'
 	return info_
 	
 	
@@ -43,15 +43,16 @@ class TSIPHost(TSCBaseHostClass):
 		Cat_TAB = [
 					{'category':hst,'title': 'Films', 'mode':'20'},
 					{'category':hst,'title': 'Series', 'mode':'30','url':self.MAIN_URL+'/serie-tv/'},
+					{'category':hst,'title': 'Animes', 'mode':'22'},
 					{'category':'search','name':'search','title': _('Search'), 'search_item':True,'hst':'tshost'},
 					]
-		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})	
-				
+		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})
 	def showmenu1(self,cItem):
 		hst='host2'
 		img_=cItem['icon']								
 		Cat_TAB = [
 					{'category':hst,'title': 'Tous', 'mode':'30','url':self.MAIN_URL+'/films/'},
+					{'category':hst,'title': 'Saga', 'mode':'30','url':self.MAIN_URL+'/films/sagas/'},					
 					{'category':hst,'title': 'Par Genre', 'mode':'21','sub_mode':0},
 					{'category':hst,'title': 'Par Qualité', 'mode':'21','sub_mode':1},
 					{'category':hst,'title': 'Par Année', 'mode':'21','sub_mode':2},
@@ -80,6 +81,15 @@ class TSIPHost(TSCBaseHostClass):
 					if not url.startswith('http'): url=self.MAIN_URL+url
 					self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':titre.strip(),'desc':'','icon':cItem['icon'],'hst':'tshost','mode':'30'})	
 			
+	def showmenu3(self,cItem):
+		hst='host2'
+		img_=cItem['icon']								
+		Cat_TAB = [
+					{'category':hst,'title': 'Tous', 'mode':'30','url':self.MAIN_URL+'/animes/'},
+					{'category':hst,'title': 'Animes VF', 'mode':'30','url':self.MAIN_URL+'/animes/vf/'},					
+					{'category':hst,'title': 'Animes VO', 'mode':'30','url':self.MAIN_URL+'/animes/vo/'},									
+					]
+		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})			
 		
 		
 	def showitms(self,cItem):
@@ -101,19 +111,18 @@ class TSIPHost(TSCBaseHostClass):
 				films_list = re.findall('href="(.*?)".*?-src="(.*?)".*?alt="(.*?)".*?class="imdb">(.*?)</span>.*?class="ttx">(.*?)</span>.*?class="year">(.*?)<.*?calidad2">(.*?)<', item, re.S)		
 				if films_list:
 					for (url,image,titre,rate,desc,year_,qual) in films_list:
-						desc1='\c00??????Rating: \c00????00'+ph.clean_html(rate)+'\c00?????? | Date: \c00????00'+year_+'\c00?????? | Qualitée: \c00????00'+qual
-						desc=desc1+'\\n\c00??????Synopsis: \c0000????'+ph.clean_html(desc)			
+						desc1=tscolor('\c00??????')+'Rating: '+tscolor('\c00????00')+ph.clean_html(rate)+tscolor('\c00??????')+' | Date: '+tscolor('\c00????00')+year_+tscolor('\c00??????')+' | Qualitée: '+tscolor('\c00????00')+qual
+						desc=desc1+'\\n'+tscolor('\c00??????')+'Synopsis: '+tscolor('\c0000????')+ph.clean_html(desc)			
 						self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre.replace(' Streaming HD','')),'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
 				else:
 					films_list = re.findall('href="(.*?)".*?src="(.*?)".*?alt="(.*?)".*?class="imdb">(.*?)</span>.*?class="ttx">(.*?)</span>.*?<.*?calidad2">(.*?)<', item, re.S)		
-					if films_list:
-						for (url,image,titre,rate,desc,qual) in films_list:
-							desc1='\c00??????Rating: \c00????00'+ph.clean_html(rate)+'\c00?????? | Qualitée: \c00????00'+qual
-							desc=desc1+'\\n\c00??????Synopsis: \c0000????'+ph.clean_html(desc)			
-							self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre.replace(' Streaming HD','')),'desc':desc,'icon':image,'hst':'tshost','mode':'31'})		
+					for (url,image,titre,rate,desc,qual) in films_list:
+						desc1=tscolor('\c00??????')+'Rating: '+tscolor('\c00????00')+ph.clean_html(rate)+tscolor('\c00??????')+' | Qualitée: '+tscolor('\c00????00')+qual
+						desc=desc1+'\\n'+tscolor('\c00??????')+'Synopsis: '+tscolor('\c0000????')+ph.clean_html(desc)			
+						self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre.replace(' Streaming HD','')),'desc':desc,'icon':image,'hst':'tshost','mode':'31'})		
 					
-			if i>19:
-				self.addDir({'import':cItem['import'],'title':'\c0000????Page Suivante','page':page+1,'category' : 'host2','url':cItem['url'],'icon':image,'mode':'30'} )									
+			if i>15:
+				self.addDir({'import':cItem['import'],'title':tscolor('\c0000????')+'Page Suivante','page':page+1,'category' : 'host2','url':cItem['url'],'icon':cItem['icon'],'mode':'30'} )									
 
 	def showelms(self,cItem):
 		urlo=cItem['url']
@@ -154,39 +163,45 @@ class TSIPHost(TSCBaseHostClass):
 		
 	
 	def SearchResult(self,str_ch,page,extra):
-		url_='https://www.moviflex.net/page/'+str(page)+'/?s='+str_ch
+		url_=self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
 		sts, data = self.getPage(url_)
 		if sts:
-			films_list = re.findall('class="result-item.*?href="(.*?)".*?src="(.*?)".*?alt="(.*?)"', data, re.S)		
-			for (url,image,titre) in films_list:
-				self.addDir({'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'hst':'tshost','mode':'31'})	
-
+			films_list = re.findall('class="item">.*?href="(.*?)".*?src="(.*?)".*?alt="(.*?)".*?class="imdb">(.*?)</span>.*?class="ttx">(.*?)</span>.*?<.*?calidad2">(.*?)<', data, re.S)		
+			for (url,image,titre,rate,desc,qual) in films_list:
+				desc1=tscolor('\c00??????')+'Rating: '+tscolor('\c00????00')+ph.clean_html(rate)+tscolor('\c00??????')+' | Qualitée: '+tscolor('\c00????00')+qual
+				desc=desc1+'\\n'+tscolor('\c00??????')+'Synopsis: '+tscolor('\c0000????')+ph.clean_html(desc)			
+				self.addDir({'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre.replace(' Streaming HD','')),'desc':desc,'icon':image,'hst':'tshost','mode':'31'})		
 
 	def get_links(self,cItem):
 		urlTab = []
 		url=cItem['url']
 		printDBG('uuuuuuuuuuurrrrrrlllllllll'+str(self.cacheLinks.get(url, [])))
 		for elm in self.cacheLinks.get(url, []):
-			if 'upvid.me' in elm['url']:
+			if ('upvid.me' in elm['url']) or ('streamax.club' in elm['url']):
 				Url=elm['url']
-				printDBG('uuuuuuuuuuurrrrrrlllllllll'+url)
 				URL = 'https://' + Url.split('/')[2] + '/hls/'+Url.split('id=')[1]+'/'+Url.split('id=')[1]+'.playlist.m3u8'
 				URL = strwithmeta(URL, {'Referer':Url})
-				urlTab.extend(getDirectM3U8Playlist(URL, checkExt=True, checkContent=True, sortWithMaxBitrate=999999999))	
+				tmp = getDirectM3U8Playlist(URL, checkExt=True, checkContent=True, sortWithMaxBitrate=999999999)
+				for elm0 in tmp:
+					elm0['type'] = 'local'
+					elm0['name'] = '|HLS| '+elm0['name'] 
+					urlTab.append(elm0)
 			elif 'film-hd.vip' in elm['url']:
 				if 'hst#tshost#' not in elm['url']:
 					elm['url']='hst#tshost#'+elm['url']
-					elm['name']=elm['name']+' (film-hd.vip)'
+					elm['name']='|film-hd.vip| '+elm['name']
+					elm['type'] = 'local'
 				urlTab.append(elm)
 			elif 'clickopen.win' in elm['url']:
 				if 'hst#tshost#' not in elm['url']:
 					elm['url']='hst#tshost#'+elm['url']
-					elm['name']=elm['name']+' (clickopen.win)'
+					elm['name']='|clickopen.win| '+elm['name']
+					elm['type'] = 'local'
 				urlTab.append(elm)
+				
 			elif 'hdss.to' in elm['url']:
-				if 'work ftom hdss.to' not in elm['name']:
-					elm['name']=elm['name']+' (not work from hdss.to !!!)'
-				urlTab.append(elm)
+				printDBG('hdss link')
+				#urlTab.append(elm)
 			else:
 				urlTab.append(elm)
 		
@@ -196,7 +211,13 @@ class TSIPHost(TSCBaseHostClass):
 	def getVideos(self,videoUrl):
 		urlTab=[]
 		Url=videoUrl
-		id_ = Url.split('/v/',1)[1]
+		id_ =''
+		if '/v/' in Url:
+			id_ = Url.split('/v/',1)[1]
+		elif '/x/embed/' in Url:
+			id_ = Url.split('/x/embed/',1)[1]
+			id_ = id_.replace('/','')	
+			
 		if 'film-hd.vip' in Url:
 			post_data = {'r':'', 'd':'film-hd.vip'} 
 			url1= 'https://film-hd.vip/api/source/'+id_
@@ -205,11 +226,14 @@ class TSIPHost(TSCBaseHostClass):
 			url1= 'https://clickopen.win/api/source/'+id_			
 		sts, data = self.getPage(url1, post_data=post_data)
 		if sts:
-			data = json_loads(data)
-			for elm in data['data']:
-				printDBG('rrrrrrrrrrrrrrrrr'+str(elm))		
-				titre=elm['type']+ ' (' +elm['label']+')'
-				urlTab.append((titre+'|'+elm['file'],'4'))	
+			try:
+				data = json_loads(data)
+				for elm in data['data']:
+					printDBG('rrrrrrrrrrrrrrrrr'+str(elm))		
+					titre=elm['type']+ ' (' +elm['label']+')'
+					urlTab.append((titre+'|'+elm['file'],'4'))
+			except:
+				printDBG('eurreur post page')		
 		return urlTab			
 	
 		
@@ -251,6 +275,8 @@ class TSIPHost(TSCBaseHostClass):
 			self.showmenu1(cItem)
 		if mode=='21':
 			self.showmenu2(cItem)
+		if mode=='22':
+			self.showmenu3(cItem)
 		if mode=='30':
 			self.showitms(cItem)			
 		if mode=='31':

@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,xtream_get_conf
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,xtream_get_conf,tscolor
 import base64
 import re
 
@@ -61,9 +61,9 @@ class TSIPHost(TSCBaseHostClass):
 			if elm['stream_icon']: stream_icon =elm['stream_icon']
 			else: stream_icon = ''
 			if '---'in elm['name']:
-				self.addMarker({'title':'\c0000??00'+elm['name'],'icon':cItem['icon']})	
+				self.addMarker({'title':tscolor('\c0000??00')+elm['name'],'icon':cItem['icon']})	
 			elif '***'in elm['name']:
-				self.addMarker({'title':'\c00????00'+elm['name'],'icon':cItem['icon']})	
+				self.addMarker({'title':tscolor('\c00????00')+elm['name'],'icon':cItem['icon']})	
 			else:
 				self.addVideo({'import':cItem['import'],'category' : 'host2','url': Url,'title':elm['name'],'icon':stream_icon,'hst':'direct','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'stream_id':elm['stream_id'],'EPG':True,'good_for_fav':True})
 
@@ -80,8 +80,8 @@ class TSIPHost(TSCBaseHostClass):
 			time_end=elm['end'].split(' ')[1]
 			time1,time2,x1=time_star.split(':')
 			time_1,time_2,x1=time_end.split(':')
-			start_='\c0000??00['+time1+':'+time2+' - '+time_1+':'+time_2+']'+'\c00??????'
-			title = '\c00????00'+base64.b64decode(elm['title'])+'\c00??????'
+			start_=tscolor('\c0000??00')+'['+time1+':'+time2+' - '+time_1+':'+time_2+']'+tscolor('\c00??????')
+			title = tscolor('\c00????00')+base64.b64decode(elm['title'])+tscolor('\c00??????')
 			descr = base64.b64decode(elm['description'])
 			desc=desc+start_+' | '+title+' | '+descr+'\\n'
 		

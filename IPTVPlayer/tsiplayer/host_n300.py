@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
 from Components.config import config
 
 import re
@@ -74,7 +74,7 @@ class TSIPHost(TSCBaseHostClass):
 					for (url1,image,name,desc1,desc2) in lst_data2:
 						image=image.replace('../../../','http://www.n300.me/')
 						url1=url1.replace('../','http://www.n300.me/Mobile/Category/')
-						name = 'I '+name +' I \c00????00('+ desc1+')'
+						name = 'I '+name +' I '+tscolor('\c00????00')+'('+ desc1+')'
 						self.addVideo({'import':cItem['import'],'good_for_fav':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':name, 'desc':desc2, 'icon':image} )	
 		elif gnr2==1:
 			sts, data = self.cm.getPage(url,self.defaultParams)
@@ -85,7 +85,7 @@ class TSIPHost(TSCBaseHostClass):
 					for (url1,image,name,desc1,desc2) in lst_data2:
 						image=image.replace('../../../','http://www.n300.me/')
 						url1=url1.replace('../','http://www.n300.me/Mobile/Category/')
-						name = 'I '+name +' I \c00????00('+ desc2+')'
+						name = 'I '+name +' I '+tscolor('\c00????00')+'('+ desc2+')'
 						self.addDir({'import':cItem['import'],'good_for_fav':True, 'category':'host2', 'url':url1, 'title':name, 'desc':desc1, 'icon':image, 'mode':'30','sub_mode':2} )	
 		elif gnr2==2:	 
 			sts, data = self.cm.getPage(url,self.defaultParams)
@@ -111,19 +111,35 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			Liste_els0 = re.findall('class="ChooseServer">(.*?)</table>', data0, re.S)
 			if Liste_els0:
+				Tab_urls=[]
 				Liste_els1 = re.findall('<input id="(.*?)".*?\(\'(.*?)\'.*?value="(.*?)"', Liste_els0[0], re.S)
 				for (x1,url,titre) in Liste_els1:
-					nr=1 
-					if '.mp4' in url:
-						nr=0
-						url=url.replace('../../../','http://www.n300.me/')
-						if '?videoURL=' in url:
-							sts, data0 = self.cm.getPage(url,self.defaultParams)
-							Liste_els1 = re.findall('file:.*?["\'](.*?)["\']', data0, re.S)
-							if Liste_els1:
-								url=Liste_els1[0]
-					
-					urlTab.append({'name':titre, 'url':url, 'need_resolve':nr})			
+					if url not in Tab_urls:
+						Tab_urls.append(url)
+						nr=1 
+						local=''
+						#if 'سرفر' in titre:
+						titre = titre.replace('سيرفر','Server')
+						titre = titre.replace('الموقع','Local')
+						if '.mp4' in url:
+							printDBG('fffff1')
+							url=url.replace('../../../','http://www.n300.me/')
+							titre = '|'+titre+'| N300'
+							nr=0
+							local='local'
+							
+							if '?videoURL=' in url:
+								printDBG('fffff2')
+								sts, data0 = self.cm.getPage(url,self.defaultParams)
+								if sts:
+									printDBG('fffff3')
+									Liste_els1 = re.findall('file:.*?["\'](.*?)["\']', data0, re.S)
+									if Liste_els1:
+										printDBG('fffff4')
+										url=Liste_els1[0]
+						else:
+							titre = '|'+titre+'| '+gethostname(url)
+						urlTab.append({'name':titre, 'url':url, 'need_resolve':nr,'type':local})			
 		return urlTab
 	
 	def start(self,cItem):      

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Playlist
@@ -73,7 +73,7 @@ class TSIPHost(TSCBaseHostClass):
 			
 		elif gnr==1:
 			Cat_TAB = [
-						{'category':hst,'title': 'Tous',                'mode':'30','url':'https://hdss.to/tv-seriess/'},
+						{'category':hst,'title': 'Tous',                'mode':'30','url':'https://hdss.to/tv-series-a/'},
 						{'category':hst,'title': 'Par Genre',           'mode':'20','sub_mode':4},
 						]			
 			self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})
@@ -156,40 +156,40 @@ class TSIPHost(TSCBaseHostClass):
 						titre=data_list1[0][2]
 						desc=''
 						data_listi = re.findall('class="Year">(.*?)<', data1, re.S)
-						if data_listi: desc='\c00??????Year: \c00????00'+data_listi[0]+' \c00??????| '
+						if data_listi: desc=tscolor('\c00??????')+'Year: '+tscolor('\c00????00')+data_listi[0]+' '+tscolor('\c00??????')+'| '
 						data_listi = re.findall('star">(.*?)<', data1, re.S)
-						if data_listi: desc=desc+'\c00??????Rate: \c00????00'+data_listi[0]+' \c00??????| '				
+						if data_listi: desc=desc+tscolor('\c00??????')+'Rate: '+tscolor('\c00????00')+data_listi[0]+' '+tscolor('\c00??????')+'| '				
 						data_listi = re.findall('Qlty">(.*?)<', data1, re.S)
-						if data_listi: desc=desc+'\c00??????Qualité: \c00????00'+data_listi[0]+' \c00??????| '
+						if data_listi: desc=desc+tscolor('\c00??????')+'Qualité: '+tscolor('\c00????00')+data_listi[0]+' '+tscolor('\c00??????')+'| '
 						data_listi = re.findall('Description">(.*?)</p>', data1, re.S)							
-						if data_listi: desc=desc+'\\n\c00??????Résumé: \c0000????'+ph.clean_html(data_listi[0])							
+						if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Résumé: '+tscolor('\c0000????')+ph.clean_html(data_listi[0])							
 						data_listi = re.findall('Genre:(.*?)</p>', data1, re.S)							
-						if data_listi: desc=desc+'\\n\c00??????Genre: \c00????00'+ph.clean_html(data_listi[0])				
+						if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Genre: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])				
 						data_listi = re.findall('Director:(.*?)</p>', data1, re.S)							
-						if data_listi: desc=desc+'\\n\c00??????Director: \c00????00'+ph.clean_html(data_listi[0])				
+						if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Director: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])				
 						data_listi = re.findall('Cast:(.*?)</p>', data1, re.S)							
-						if data_listi: desc=desc+'\\n\c00??????Cast: \c00????00'+ph.clean_html(data_listi[0])					
+						if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Cast: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])					
 						
 						self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre),'desc':desc,'icon':image,'mode':'31'})	
 				if i>19:
-					self.addDir({'import':cItem['import'],'title':'\c0000????Page Suivante','page':page+1,'category' : 'host2','url':cItem['url'],'icon':cItem['icon'],'mode':'30'} )									
+					self.addDir({'import':cItem['import'],'title':tscolor('\c0000????')+'Page Suivante','page':page+1,'category' : 'host2','url':cItem['url'],'icon':cItem['icon'],'mode':'30'} )									
 			else:
 				data_list = re.findall('class="Num">.*?href="(.*?)".*?src="(.*?)"(.*?)<strong>(.*?)<.*?class="Info">(.*?)</tr>', data, re.S)
 				i=0
 				for (url,image,type_,titre,desc1) in data_list:
 					i=i+1
 					if 'Qlty">TV' in type_:
-						type_='  \c0000????(Serie)'
+						type_='  '+tscolor('\c0000????')+'(Serie)'
 					else: type_=''
 					desc=''
 					data_listi = re.findall('Qlty">(.*?)<', desc1, re.S)							
-					if data_listi: desc=desc+'\c00??????Qualité: \c00????00'+ph.clean_html(data_listi[0])+' \c00??????| '					
+					if data_listi: desc=desc+tscolor('\c00??????')+'Qualité: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])+' '+tscolor('\c00??????')+'| '					
 					data_listi = re.findall('<td>(.*?)</td', desc1, re.S)							
 					if data_listi: 
-						desc=desc+'\c00??????Durée: \c00????00'+ph.clean_html(data_listi[0])+' \c00??????| Genre: \c00????00'+ph.clean_html(data_listi[1])
+						desc=desc+tscolor('\c00??????')+'Durée: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])+' '+tscolor('\c00??????')+'| Genre: '+tscolor('\c00????00')+ph.clean_html(data_listi[1])
 					self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre)+type_,'desc':desc,'icon':image,'mode':'31'})	
 				if i>19:
-					self.addDir({'import':cItem['import'],'title':'\c0000????Page Suivante','page':page+1,'category' : 'host2','url':cItem['url'],'icon':cItem['icon'],'mode':'30'} )									
+					self.addDir({'import':cItem['import'],'title':tscolor('\c0000????')+'Page Suivante','page':page+1,'category' : 'host2','url':cItem['url'],'icon':cItem['icon'],'mode':'30'} )									
 
 	def showelms(self,cItem):
 		urlo=cItem['url']
@@ -201,10 +201,10 @@ class TSIPHost(TSCBaseHostClass):
 			if data_list:
 				for (name,data1) in data_list:
 					data1=data1.replace('&quot;','"')
-					self.addMarker({'title':'\c00????00'+ph.clean_html(name),'icon':cItem['icon']})
+					self.addMarker({'title':tscolor('\c00????00')+ph.clean_html(name),'icon':cItem['icon']})
 					data_list1 = re.findall('class="Num">(.*?)<a.*?href="(.*?)".*?src="(.*?)".*?href="(.*?)">(.*?)</a>(.*?)</td>', data1, re.S)
 					for (num,url,image,x1,titre,date) in data_list1:
-						titre='Episode \c00????00'+ph.clean_html(num)+'\c00??????: '+titre+' \c0000????('+ph.clean_html(date)+')'
+						titre='Episode '+tscolor('\c00????00')+ph.clean_html(num)+tscolor('\c00??????')+':  '+titre+tscolor('\c0000????')+'('+ph.clean_html(date)+')'
 						self.addVideo({'import':cItem['import'],'category' : 'host2','title':titre,'url':url,'desc':desc,'icon':image,'hst':'tshost','good_for_fav':True})	
 			else:
 				self.addVideo({'import':cItem['import'],'category' : 'host2','title':cItem['title'],'url':urlo,'desc':desc,'icon':img_,'hst':'tshost','good_for_fav':True})	
@@ -225,21 +225,21 @@ class TSIPHost(TSCBaseHostClass):
 					titre=data_list1[0][2]
 					desc=''
 					data_listi = re.findall('class="Year">(.*?)<', data1, re.S)
-					if data_listi: desc='\c00??????Year: \c00????00'+data_listi[0]+' \c00??????| '
+					if data_listi: desc=tscolor('\c00??????')+'Year: '+tscolor('\c00????00')+data_listi[0]+' '+tscolor('\c00??????')+'| '
 					data_listi = re.findall('star">(.*?)<', data1, re.S)
-					if data_listi: desc=desc+'\c00??????Rate: \c00????00'+data_listi[0]+' \c00??????| '				
+					if data_listi: desc=desc+tscolor('\c00??????')+'Rate: '+tscolor('\c00????00')+data_listi[0]+' '+tscolor('\c00??????')+'| '				
 					data_listi = re.findall('Qlty">(.*?)<', data1, re.S)
 					if data_listi: 
-						desc=desc+'\c00??????Qualité: \c00????00'+data_listi[0]+' \c00??????| '
-						if data_listi[0]=='TV': titre=titre+' \c0000????(Serie)'
+						desc=desc+tscolor('\c00??????')+'Qualité: '+tscolor('\c00????00')+data_listi[0]+' '+('\c00??????')+'| '
+						if data_listi[0]=='TV': titre=titre+' '+tscolor('\c0000????')+'(Serie)'
 					data_listi = re.findall('Description">(.*?)</p>', data1, re.S)							
-					if data_listi: desc=desc+'\\n\c00??????Résumé: \c0000????'+ph.clean_html(data_listi[0])							
+					if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Résumé: '+tscolor('\c0000????')+ph.clean_html(data_listi[0])							
 					data_listi = re.findall('Genre:(.*?)</p>', data1, re.S)							
-					if data_listi: desc=desc+'\\n\c00??????Genre: \c00????00'+ph.clean_html(data_listi[0])				
+					if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Genre: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])				
 					data_listi = re.findall('Director:(.*?)</p>', data1, re.S)							
-					if data_listi: desc=desc+'\\n\c00??????Director: \c00????00'+ph.clean_html(data_listi[0])				
+					if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Director: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])				
 					data_listi = re.findall('Cast:(.*?)</p>', data1, re.S)							
-					if data_listi: desc=desc+'\\n\c00??????Cast: \c00????00'+ph.clean_html(data_listi[0])					
+					if data_listi: desc=desc+'\\n'+tscolor('\c00??????')+'Cast: '+tscolor('\c00????00')+ph.clean_html(data_listi[0])					
 					
 					self.addDir({'name':'sherch','import':extra,'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre),'desc':desc,'icon':image,'mode':'31'})	
 

@@ -1,22 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.libs import ph
-import re
-
+import re,urllib,base64
 
 def getinfo():
 	info_={}
 	info_['name']='3sk.Co'
-	info_['version']='1.2 30/06/2019'
+	info_['version']='1.3.1 26/10/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات تركية'
 	info_['icon']='https://i.ibb.co/XxF6hB3/culcaqfk.png'
 	info_['recherche_all']='0'
-	info_['update']='Bugs Fix'	
+	info_['update']='Fix Links extractor'	
 
 	return info_
 	
@@ -61,7 +59,7 @@ class TSIPHost(TSCBaseHostClass):
 			if sts:
 				lst_data=re.findall('<div class="col-xs-12 catTitle">(.*?)/h2>(.*?)<div class="row">', data, re.S)
 				for (name_cat,data2) in lst_data:		
-					self.addMarker({'title':'\c00????00'+ph.clean_html(name_cat),'icon':cItem['icon']})
+					self.addMarker({'title':tscolor('\c00????00')+ph.clean_html(name_cat),'icon':cItem['icon']})
 					lst_data2=re.findall('"itemIMG">.*?href="(.*?)".*?src="(.*?)".*?<h3>(.*?)</h3>', data2, re.S)
 					for (url1,image,name_eng) in lst_data2:	
 						if not image.startswith('http'): image='https://3sk.co/'+image	
@@ -109,7 +107,7 @@ class TSIPHost(TSCBaseHostClass):
 				if not ".php" in link:
 					continue
 				if mode_=='91':
-					self.addVideo({'import':extra,'category' : 'host2','title':title,'url':link,'hst':'tshost','good_for_fav':True})		
+					self.addVideo({'import':extra,'category' : 'video','title':title,'url':link,'hst':'tshost','good_for_fav':True})		
 				else:
 					self.addDir({'import':extra,'category' : 'host2','title':title,'url':link,'mode':'20','good_for_fav':True})
 		
@@ -127,6 +125,9 @@ class TSIPHost(TSCBaseHostClass):
 					i=i+1
 					if href.startswith('//'):
 						href='http:'+href
+					if 'post.php?url=' in href:
+						x1,href = href.split('post.php?url=')
+						href = base64.b64decode( urllib.unquote(href) )
 					if self.up.checkHostSupport(href)==1: 
 						urlTab.append({'url':href, 'name':'|'+str(i)+'| '+self.cm.getBaseUrl(href, True).replace('www.',''), 'need_resolve':1})
 					elif '/vid/' in href:

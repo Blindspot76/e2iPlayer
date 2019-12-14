@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import unpackJSPlayerParams, SAWLIVETV_decryptPlayerParams
@@ -39,7 +39,7 @@ class TSIPHost(TSCBaseHostClass):
 	def showmenu0(self,cItem):
 		hst='host2'
 		img_=cItem['icon']
-		self.addMarker({'title':'\c00????00'+'أفلام','category' : 'host2','icon':img_} )									
+		self.addMarker({'title':tscolor('\c00????00')+'أفلام','category' : 'host2','icon':img_} )									
 		Cat_TAB = [
 					{'category':hst,'title': 'الكل', 'mode':'30','url':'https://www.moviflex.net/movies/'},
 					{'category':hst,'title': 'الأكتر مشاهدة هذا الأسبوع', 'mode':'30','url':'https://www.moviflex.net/trending/?get=movies'},
@@ -48,7 +48,7 @@ class TSIPHost(TSCBaseHostClass):
 
 					]
 		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})	
-		self.addMarker({'title':'\c00????00'+'مسلسلات','category' : 'host2','icon':img_} )	
+		self.addMarker({'title':tscolor('\c00????00')+'مسلسلات','category' : 'host2','icon':img_} )	
 		Cat_TAB = [
 					{'category':hst,'title': 'الكل', 'mode':'30','url':'https://www.moviflex.net/tvshows/'},
 					{'category':hst,'title': 'الأكتر مشاهدة هذا الأسبوع',  'mode':'30','url':'https://www.moviflex.net/trending/?get=tv'},
@@ -86,9 +86,9 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			films_list = re.findall('<article id="post.*?href="(.*?)".*?src="(.*?)".*?alt="(.*?)".*?rating">(.*?)</div>.*?data">.*?<span>(.*?)</span>', data, re.S)		
 			for (url,image,titre,rate,desc) in films_list:
-				desc='Rating: \c00????00'+ph.clean_html(rate)+'\c00??????\\nDate: \c00????00'+ph.clean_html(desc)
-				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
-			self.addDir({'import':cItem['import'],'title':'Page '+str(page+1),'page':page+1,'category' : 'host2','url':cItem['url'],'icon':image,'mode':'30'} )									
+				desc='Rating: '+tscolor('\c00????00')+ph.clean_html(rate)+tscolor('\c00??????')+'\\nDate: '+tscolor('\c00????00')+ph.clean_html(desc)
+				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':ph.clean_html(titre),'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
+			self.addDir({'import':cItem['import'],'title':tscolor('\c0000??00')+'Page '+str(page+1),'page':page+1,'category' : 'host2','url':cItem['url'],'icon':image,'mode':'30'} )									
 
 	def showelms(self,cItem):
 		urlo=cItem['url']
@@ -98,7 +98,7 @@ class TSIPHost(TSCBaseHostClass):
 			films_list = re.findall('class="se-q">.*?title">(.*?)<div.*?<ul(.*?)</ul>', data, re.S)
 			if films_list:
 				for elm in films_list:
-					self.addMarker({'title':'\c00????00'+ph.clean_html(elm[0]),'category' : 'host2','icon':img_} )
+					self.addMarker({'title':tscolor('\c00????00')+ph.clean_html(elm[0]),'category' : 'host2','icon':img_} )
 					films_list1 = re.findall('<li>.*?href="(.*?)".*?src="(.*?)".*?numerando">(.*?)<', elm[1], re.S)				
 					for (url,image,titre) in films_list1:
 						self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':ph.clean_html(titre),'desc':cItem['desc'],'icon':image,'hst':'tshost'} )
@@ -130,7 +130,7 @@ class TSIPHost(TSCBaseHostClass):
 						sts, data = self.getPage(url,self.defaultParams)
 						url_els = re.findall('<source src="(.*?)"', data, re.S)
 						if url_els:
-							urlTab.append({'name':'Direct', 'url':url_els[0], 'need_resolve':0})
+							urlTab.append({'name':'Moviflex', 'url':url_els[0], 'need_resolve':0,'type':'local'})
 					elif 'moviflex.ml' in url:
 						post_data = {'r':'','d':'moviflex.ml'}
 						url=url.replace('/v/','/api/source/')
@@ -138,7 +138,7 @@ class TSIPHost(TSCBaseHostClass):
 						data = json_loads(data)
 						elmdata = data['data']
 						for elm0 in elmdata:
-							urlTab.append({'name':'Direct_ ('+elm0['label']+')', 'url':elm0['file'], 'need_resolve':0})				
+							urlTab.append({'name':'|'+elm0['label']+'| Moviflex' , 'url':elm0['file'], 'need_resolve':0,'type':'local'})				
 					elif '.moviflex.pw' in url:
 						paramsUrl = dict(self.defaultParams1)
 						paramsUrl['header']['Referer'] = URL
@@ -151,7 +151,7 @@ class TSIPHost(TSCBaseHostClass):
 							script_ = unpackJSPlayerParams(script_data, SAWLIVETV_decryptPlayerParams, 0)
 							url_els = re.findall('file":"(.*?)".*?label":"(.*?)"', script_, re.S)
 							for (url_,titre_) in url_els:	
-								urlTab.append({'name':'Direct ('+titre_+')', 'url':strwithmeta(url_, {'Referer':url}), 'need_resolve':0})				
+								urlTab.append({'name':'|'+titre_+'| Moviflex' , 'url':strwithmeta(url_, {'Referer':url}), 'need_resolve':0,'type':'local'})				
 					else:	
 						if len(url)>4:
 							url11 = url.split('https://')

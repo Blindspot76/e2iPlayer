@@ -1,7 +1,7 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 
 import re
 
@@ -48,8 +48,8 @@ class TSIPHost(TSCBaseHostClass):
 				img      = elm['Icon']
 				nbSeason = elm['SSeasons']
 				nbEp=elm['Total']
-				Desc='\c00????00Saisons: \c00??????'+nbSeason+'\\n'
-				Desc=Desc+'\c00????00Episodes: \c00??????'+nbEp+'\\n'
+				Desc=tscolor('\c00????00')+'Saisons: '+tscolor('\c00??????')+nbSeason+'\\n'
+				Desc=Desc+tscolor('\c00????00')+'Episodes: '+tscolor('\c00??????')+nbEp+'\\n'
 				if name!='mymoreapps':
 					if 	int(nbSeason)>1:
 						self.addDir({'import':cItem['import'],'category' : 'host2','title':titre,'url':name,'icon':img,'desc':Desc,'mode':'21','nbSeason':nbSeason,'good_for_fav':True})
@@ -82,7 +82,7 @@ class TSIPHost(TSCBaseHostClass):
 				srv5  = elm.get('Server_5','')
 				servers = [srv1,srv2,srv3,srv4,srv5]
 				
-				Desc='\c00????00Views: \c00??????'+Views+'\\n'
+				Desc=tscolor('\c00????00')+'Views: '+tscolor('\c00??????')+Views+'\\n'
 				img='https://wiiudown.com/apps/'+anime+'/Poster/'+img+'.jpg'	
 				url_data = re.findall('url=(.*)', url, re.S)
 				if url_data:

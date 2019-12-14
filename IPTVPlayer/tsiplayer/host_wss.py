@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='WSS V2.3 (Android App)'
 	info_['version']='1.0 24/04/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='100'
+	info_['cat_id']='104'#'100'
 	info_['desc']=' تطبيق اندوريد للبث المباشر للقنوات الرياضية'
 	info_['icon']='https://i.ibb.co/xYDVLNY/cdordh6s.jpg'
 	info_['recherche_all']='0'	

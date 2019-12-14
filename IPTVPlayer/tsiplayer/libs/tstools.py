@@ -1,17 +1,20 @@
 # -*- coding: utf8 -*-
-from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _, GetIPTVNotify
-from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.components.asynccall import MainSessionWrapper
-#from Plugins.Extensions.IPTVPlayer.tsiplayer.pCommon import common, CParsingHelper
-from Plugins.Extensions.IPTVPlayer.libs.pCommon import common, CParsingHelper 
-from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
-from Plugins.Extensions.IPTVPlayer.tools.iptvtools import CSearchHistoryHelper, GetCookieDir, printDBG, printExc
-from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
-from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit    import TranslateTXT as _, GetIPTVNotify
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes              import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.asynccall         import MainSessionWrapper
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon       import common, CParsingHelper
+#from Plugins.Extensions.IPTVPlayer.libs.pCommon                import common, CParsingHelper 
+from Plugins.Extensions.IPTVPlayer.libs.urlparser               import urlparser
+from Plugins.Extensions.IPTVPlayer.tools.iptvtools              import CSearchHistoryHelper, GetCookieDir, printDBG, printExc
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson                 import loads as json_loads, dumps as json_dumps
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc   import AES_CBC
+
 from Components.config import config
 import os
 import re
 import hashlib
+import urllib,cookielib,time
+import threading
 
 black,white,gray='\c00000000','\c00??????','\c00808080'
 blue,green,red,yellow,cyan,magenta='\c000000??','\c0000??00','\c00??0000','\c00????00','\c0000????','\c00??00??'
@@ -21,6 +24,7 @@ tunisia_gouv = [("", "None"),("Tunis","Tunis"),("Ariana","Ariana"),("Béja","Bé
                 ("Kébili","Kébili"),("Kef","Kef"),("Mahdia","Mahdia"),("Manouba","Manouba"),("Médnine","Médnine"),\
                 ("Monastir","Monastir"),("Nabeul","Nabeul"),("Sfax","Sfax"),("Sidi Bouzid","Sidi Bouzid"),("Siliana","Siliana"),\
                 ("Sousse","Sousse"),("Tataouine","Tataouine"),("Tozeur","Tozeur"),("Zaghouane","Zaghouane")]
+
 
 def cryptoJS_AES_decrypt(encrypted, password, salt):
 	def derive_key_and_iv(password, salt, key_length, iv_length):
@@ -33,9 +37,25 @@ def cryptoJS_AES_decrypt(encrypted, password, salt):
 	key, iv = derive_key_and_iv(password, salt, 32, 16)
 	cipher = AES_CBC(key=key, keySize=32)
 	return cipher.decrypt(encrypted, iv)
+
+def tscolor(color):
+	if config.plugins.iptvplayer.use_colors.value=='yes':
+		return color
+	elif config.plugins.iptvplayer.use_colors.value=='no':
+		return ''
+	else:
+		if os.path.isfile('/etc/image-version'):
+			with open('/etc/image-version') as file:  
+				data = file.read() 
+				if 'opendreambox'   in data.lower(): return ''
+				#elif 'openatv'      in data.lower(): return ''
+				else: return color
+		else: return color	
+
 	
 def gethostname(url):
-	url=url.replace('http://','').replace('https://','').replace('www.','').replace('embed.','')
+	url=url.replace('http://','').replace('https://','').replace('www.','')
+	if url.startswith('embed.'): url=url.replace('embed.','')
 	if '/' in url:
 		url=url.split('/',1)[0]
 	return url
@@ -145,6 +165,15 @@ def xtream_get_conf():
 
 
 
+
+class TsThread(threading.Thread):
+    def __init__(self, target, *args):
+        self._target = target
+        self._args = args
+        threading.Thread.__init__(self)
+    def run(self):
+        self._target(*self._args)
+
 class TSCBaseHostClass:
     def __init__(self, params={}):
         self.sessionEx = MainSessionWrapper() 
@@ -161,6 +190,45 @@ class TSCBaseHostClass:
         if '' != params.get('cookie', ''):
             self.COOKIE_FILE = GetCookieDir(params['cookie'])
         self.moreMode = False
+
+
+    def uniform_titre(self,titre,year_op=0):
+		titre=titre.replace('مشاهدة وتحميل مباشر','').replace('مشاهدة','').replace('اون لاين','')
+		
+		tag_type = ['مدبلج للعربية', 'مدبلجة', 'مترجمة', 'فيلم' , 'مترجم' , 'مدبلج', 'مسلسل', 'عرض']
+		tag_qual = ['1080p','720p','WEB-DL','BluRay','DVDRip','HDCAM','HDTC','HDRip', 'HD', '1080P','720P','DVBRip','TVRip','DVD','SD']
+		type_ = tscolor('\c00????00')+ 'Type: '+tscolor('\c00??????')
+		qual = tscolor('\c00????00')+ 'Quality: '+tscolor('\c00??????')
+		desc=''
+		for elm in tag_type:
+			if elm in titre:
+				titre = titre.replace(elm,'')
+				type_ = type_+elm+' | '
+		for elm in tag_qual:
+			if elm in titre:
+				#re_st = re.compile(re.escape(elm.lower()), re.IGNORECASE)
+				#titre=re_st.sub('', titre)
+				titre = titre.replace(elm,'')
+				qual = qual+elm+' | '
+				
+		data = re.findall('((19|20)\d{2})', titre, re.S)
+		if data:
+			year_ = data[0][0]
+			year_out = tscolor('\c0000????')+data[0][0]+tscolor('\c00??????')
+			if year_op==0: titre = year_out+'  '+titre.replace(year_, '')
+			else: titre = titre.replace(year_, '')
+			if year_op<2:
+				desc = 	tscolor('\c00????00')+ 'Year: '+tscolor('\c00??????')+year_+'\n'
+			else:
+				desc = 	year_	
+		if year_op<2:
+			if type_!=tscolor('\c00????00')+ 'Type: '+tscolor('\c00??????'):
+				desc = desc+type_[:-3]+'\n'
+			if qual != tscolor('\c00????00')+ 'Quality: '+tscolor('\c00??????'):
+				desc = desc+qual[:-3]+'\n'
+
+		return desc,self.cleanHtmlStr(titre).replace('()','').strip()
+
         
     def informAboutGeoBlockingIfNeeded(self, country, onlyOnce=True):
         try: 

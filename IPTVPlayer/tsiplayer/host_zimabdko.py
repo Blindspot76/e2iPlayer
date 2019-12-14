@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
 
 import re
 
 def getinfo():
 	info_={}
 	info_['name']='Zimabdko.Com'
-	info_['version']='1.0 19/05/2019'
+	info_['version']='1.1 20/10/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='202'
 	info_['desc']='انمي + دراما اسياوية'
 	info_['icon']='https://www.zimabdko.com/wp-content/themes/zimabdk/images/logo.png'
 	info_['recherche_all']='0'
-	info_['update']='New Host'
+	info_['update']='Bugs Fix'
 	return info_
 	
 	
@@ -48,20 +48,21 @@ class TSIPHost(TSCBaseHostClass):
 			sts, data = self.getPage(url1)
 		if sts:
 			if 'class="movies-servers' not in data:
-				films_list = re.findall('class="one-poster.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)</h2>.*?hover-poster">(.*?)</div>', data, re.S)		
+				films_list = re.findall('class="one-poster.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)</h2>.*?hover-poster.*?>(.*?)</div>', data, re.S)		
 				i=0
 				for (url,image,titre,desc_) in films_list:
 					desc=''
 					i=i+1
 					inf_list = re.findall('<span.*?>(.*?)</span>', desc_, re.S)		
 					for elm in inf_list:
-						if 'fa-star' in elm:
-							desc=desc+'Rating: \c00????00'+ph.clean_html(elm)+'\c00??????\\n'
-						elif 'fa-eye' in elm:
-							desc=desc+'View: \c00????00'+ph.clean_html(elm)+'\c00??????\\n'
-						else:
-							desc=desc+'\c00????00'+ph.clean_html(elm)+'\c00??????\\n'			
-					self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'30','page':-1,'EPG':True})	
+						if ph.clean_html(elm) !='':
+							if 'fa-star' in elm:
+								desc=desc+'Rating: '+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'
+							elif 'fa-eye' in elm:
+								desc=desc+'View: '+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'
+							else:
+								desc=desc+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'			
+					self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':ph.clean_html(titre),'desc':desc,'icon':image,'hst':'tshost','mode':'30','page':-1,'EPG':True})	
 				if (i>17) and (page >0):
 					self.addDir({'import':cItem['import'],'title':'Next Page','page':page+1,'category' : 'host2','url':url1,'icon':cItem['icon'],'mode':'30'} )									
 			else:
@@ -78,11 +79,11 @@ class TSIPHost(TSCBaseHostClass):
 				inf_list = re.findall('<span.*?>(.*?)</span>', desc_, re.S)		
 				for elm in inf_list:
 					if 'fa-star' in elm:
-						desc=desc+'Rating: \c00????00'+ph.clean_html(elm)+'\c00??????\\n'
+						desc=desc+'Rating: '+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'
 					elif 'fa-eye' in elm:
-						desc=desc+'View: \c00????00'+ph.clean_html(elm)+'\c00??????\\n'
+						desc=desc+'View: '+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'
 					else:
-						desc=desc+'\c00????00'+ph.clean_html(elm)+'\c00??????\\n'			
+						desc=desc+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'			
 				self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','EPG':True})	
 
 		
@@ -99,11 +100,7 @@ class TSIPHost(TSCBaseHostClass):
 					sts, data = self.getPage(url)
 					Liste_els = re.findall('src.*?["\'](.*?)["\']', data, re.S)
 					if Liste_els:
-						if self.up.checkHostSupport(Liste_els[0])==1:
-							color='\c0000??00'
-						else:
-							color='\c00??0000'
-						urlTab.append({'name':'Server: '+ph.clean_html(srv)+color+' ('+gethostname(Liste_els[0])+')', 'url':Liste_els[0], 'need_resolve':1})						
+						urlTab.append({'name':'|Server: '+ph.clean_html(srv)+'| '+gethostname(Liste_els[0]), 'url':Liste_els[0], 'need_resolve':1})						
 		return urlTab
 
 		

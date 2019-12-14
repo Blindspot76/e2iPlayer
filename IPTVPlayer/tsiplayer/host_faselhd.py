@@ -2,9 +2,9 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 from Components.config import config
-
+import base64,urllib
 import re
 
 
@@ -12,13 +12,13 @@ import re
 def getinfo():
 	info_={}
 	info_['name']='Faselhd.Co'
-	info_['version']='1.1 06/07/2019'
+	info_['version']='1.3 06/10/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات اسياوية و اجنبية'
-	info_['icon']='https://www.faselhd.co/wp-content/themes/adbreak/images/logo.png'
+	info_['icon']='https://i.ibb.co/jw33PcN/logo.png'
 	info_['recherche_all']='1'
-	info_['update']='Bugs Fix'	
+	info_['update']='Add Local M3u8 and T7meel servers '	
 	return info_
 	
 	
@@ -97,13 +97,14 @@ class TSIPHost(TSCBaseHostClass):
 				desc=''
 				if self.cleanHtmlStr(desc1)!='':
 					desc='Rate:'+self.cleanHtmlStr(desc1)+'\n'
-				desc=desc+self.cleanHtmlStr(desc2)+'\n'	
+				desc=desc+self.cleanHtmlStr(desc2)+'\n'
+				name_eng=self.cleanHtmlStr(name_eng)
 				name_eng=name_eng.replace('فيلم ','')
 				name_eng=name_eng.replace('مسلسل ','')
 				name_eng=name_eng.replace('أنمي ','')	
 				name_eng=name_eng.replace('&#8211;','-')				
 				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':str(name_eng), 'desc':desc, 'icon':image, 'mode':'32'} )	
-			self.addDir({'import':cItem['import'],'category':'host2', 'url':url0, 'title':'Page Suivante', 'page':page+1, 'desc':'Page Suivante', 'icon':img, 'mode':'30'})					
+			self.addDir({'import':cItem['import'],'category':'host2', 'url':url0, 'title':tscolor('\c0000??00')+'Page Suivante', 'page':page+1, 'desc':'Page Suivante', 'icon':img, 'mode':'30'})					
 
 	def showitms2(self,cItem):
 		url0=cItem['url']			 
@@ -120,7 +121,8 @@ class TSIPHost(TSCBaseHostClass):
 			url0='https://www.faselhd.co'+url0
 		if '/anime/' in url0:
 			url0=url0+'?display=normal'
-		titre0=cItem['title']				
+		titre0=cItem['title']
+		titre0=titre0.replace('|'+tscolor('\c0060??60')+'FaselHD'+tscolor('\c00??????')+'| ','')				
 		sts, data = self.cm.getPage(url0)
 		if sts:
 			if 'http-equiv="refresh"' in data:
@@ -160,7 +162,36 @@ class TSIPHost(TSCBaseHostClass):
 				desc=desc+self.cleanHtmlStr(desc2)+'\n'	
 				name_eng=name_eng.replace('&#8211;','-')				
 				self.addDir({'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':str(name_eng), 'desc':desc, 'icon':image, 'mode':'32'} )	
-		
+
+	def MediaBoxResult(self,str_ch,year_,extra):
+		urltab=[]
+		str_ch_o = str_ch
+		str_ch = urllib.quote(str_ch_o+' '+year_)
+		url_='https://www.faselhd.co/page/1/?s='+str_ch
+		sts, data = self.cm.getPage(url_)
+		if sts:
+			lst_data=re.findall('class="movie-wrap">.*?href="(.*?)".*?src="(.*?)".*?alt="(.*?)".*?<span>(.*?)</span>(.*?)<h1>', data, re.S)			
+			for (url1,image,name_eng,desc1,desc2) in lst_data:
+				desc=''
+				if self.cleanHtmlStr(desc1)!='':
+					desc='Rate:'+self.cleanHtmlStr(desc1)+'\n'
+				desc=''
+				
+				name_eng=str(name_eng).replace('&#8211;','-')
+				
+				x1,titre0=self.uniform_titre(name_eng,year_op=1)
+				desc=x1+desc				
+				
+				if str_ch_o.lower().replace(' ','') == titre0.replace('-',' ').replace(':',' ').lower().replace(' ',''):
+					trouver = True
+				else:
+					trouver = False
+				name_eng='|'+tscolor('\c0060??60')+'FaselHD'+tscolor('\c00??????')+'| '+titre0				
+				if trouver:
+					urltab.insert(0,{'titre':titre0,'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':name_eng, 'desc':desc, 'icon':image, 'mode':'32'} )					
+				else:
+					urltab.append({'titre':titre0,'import':extra,'good_for_fav':True,'EPG':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':name_eng, 'desc':desc, 'icon':image, 'mode':'32'} )	
+		return urltab	
 		
 	def get_links(self,cItem): 	
 		urlTab = []	
@@ -172,6 +203,7 @@ class TSIPHost(TSCBaseHostClass):
 				Liste_els1 = re.findall('<a href="(.*?)".*?</i>(.*?)<', Liste_els0[0], re.S)
 				for (url5,titre5) in Liste_els1:
 					if not 'download=true' in url5:
+						if 'إعلان' in titre5: titre5 = '[ Trailer ]'
 						urlTab.append({'name':titre5, 'url':url5, 'need_resolve':1})
 					else:
 						sts, data = self.cm.getPage(url5)
@@ -182,15 +214,24 @@ class TSIPHost(TSCBaseHostClass):
 							if Liste_els_4:
 								Liste_els_5 = re.findall('href="(.*?)".*?">(.*?)<', Liste_els_4[0], re.S)
 								for (url_,titre_)in Liste_els_5 :				
-									urlTab.append({'name':titre_+' - سرفر تحميل', 'url':url_, 'need_resolve':1})			
+									urlTab.append({'name':'|Download Server| '+titre_, 'url':url_, 'need_resolve':1})
+						
+							Liste_els_6 = re.findall('dl-link">.*?href="(.*?)"', data, re.S)
+							if Liste_els_6 :				
+								urlTab.append({'name':'|Download Server| T7meel', 'url':Liste_els_6[0], 'need_resolve':0,'type':'local'})
+							
+										
 			Liste_els = re.findall('onclick="player_iframe.*?\'(.*?)\'">(.*?)</a>', data0, re.S)
 			for(url,name) in Liste_els:	
 				if config.plugins.iptvplayer.ts_dsn.value:
-					sts, data = self.cm.getPage(url)
-					Liste_els_3 = re.findall('<iframe.*?src="(.*?)"', data, re.S)	
-					if Liste_els_3:
-						URL_=Liste_els_3[0]
-						urlTab.append({'name':self.up.getDomain(URL_), 'url':URL_, 'need_resolve':1})
+					sts, data = self.cm.getPage(url) 
+					if '/video_player?' in url:
+						urlTab.append({'name':'|M3u8| Faselhd', 'url':'hst#tshost#'+url, 'need_resolve':1,'type':'local'})					
+					else:
+						Liste_els_3 = re.findall('<iframe.*?src="(.*?)"', data, re.S)	
+						if Liste_els_3:
+							URL_=Liste_els_3[0]
+							urlTab.append({'name':self.up.getDomain(URL_).title(), 'url':URL_, 'need_resolve':1})	
 				else:
 					urlTab.append({'name':self.cleanHtmlStr(name), 'url':'hst#tshost#'+url, 'need_resolve':1})					
 		return urlTab
@@ -198,16 +239,37 @@ class TSIPHost(TSCBaseHostClass):
 	def getVideos(self,videoUrl):
 		urlTab = []	
 		sts, data = self.cm.getPage(videoUrl)
-		if sts:
-			Liste_els_3 = re.findall('<iframe.*?src="(.*?)"', data, re.S)	
-			if Liste_els_3:
-				urlTab.append((Liste_els_3[0],'1'))
+		if sts:			
+			if 'adilbo_HTML_encoder' in data:
+				printDBG('ttttttttttttttttttttttttttt'+data)
+				t_script = re.findall('<script.*?;.*?\'(.*?);', data, re.S)	
+				t_int = re.findall('/g.....(.*?)\)', data, re.S)	
+				if t_script and t_int:
+					script = t_script[0].replace("'",'')
+					script = script.replace("+",'')
+					script = script.replace("\n",'')
+					sc = script.split('.')
+					page = ''
+					for elm in sc:
+						#printDBG('decode'+elm)
+						c_elm = base64.b64decode(elm+'==')
+						t_ch = re.findall('\d+', c_elm, re.S)
+						if t_ch:
+							nb = int(t_ch[0])+int(t_int[0])
+							page = page + chr(nb)
+					t_url = re.findall('file":"(.*?)"', page, re.S)	
+					if t_url:	
+						urlTab.append((t_url[0].replace('\\',''),'3'))
 			else:
-				Liste_els_3 = re.findall('file: "(.*?)"', data, re.S)	
-				if Liste_els_3:			
-					meta = {'iptv_proto':'m3u8','Referer':videoUrl}
-					url_=strwithmeta(Liste_els_3[0], meta)
-					urlTab.append((url_,'3'))
+				Liste_els_3 = re.findall('<iframe.*?src="(.*?)"', data, re.S)	
+				if Liste_els_3:
+					urlTab.append((Liste_els_3[0],'1'))
+				else:
+					Liste_els_3 = re.findall('file: "(.*?)"', data, re.S)	
+					if Liste_els_3:			
+						meta = {'iptv_proto':'m3u8','Referer':videoUrl}
+						url_=strwithmeta(Liste_els_3[0], meta)
+						urlTab.append((url_,'3'))
 		return urlTab
 		
 	def getArticle(self, cItem):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 
 
 import re
@@ -23,7 +23,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'seriestreaminghd.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://www.serie-streaminghd.org'
+		self.MAIN_URL = 'https://fr.serie-streaminghd.org'
 #		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 #		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
@@ -38,9 +38,6 @@ class TSIPHost(TSCBaseHostClass):
 			addParams = dict(self.defaultParams)
 		addParams['cloudflare_params'] = {'cookie_file': self.COOKIE_FILE, 'User-Agent': self.HTTP_HEADER['User-Agent']}
 		return self.cm.getPageCFProtection(url, addParams, post_data)
-
-
-
 
 	 
 	def showmenu0(self,cItem):
@@ -69,7 +66,7 @@ class TSIPHost(TSCBaseHostClass):
 				desc=desc.replace('<b>','\\n')
 				desc=desc.replace('<strong>','\\n')
 				desc=ph.clean_html(desc+'>').strip()		
-				self.addDir({'import':cItem['import'],'category' : 'host2','title':titre+' \c0000??00('+ph.clean_html(qual)+')','url':url,'desc':desc,'icon':image,'good_for_fav':True,'EPG':True,'hst':'tshost','mode':'31'})
+				self.addDir({'import':cItem['import'],'category' : 'host2','title':titre+' '+tscolor('\c0000??00')+'('+ph.clean_html(qual)+')','url':url,'desc':desc,'icon':image,'good_for_fav':True,'EPG':True,'hst':'tshost','mode':'31'})
 			self.addDir({'import':cItem['import'],'category' : 'host2','title':'Page Suivante','url':url0,'page':page+1,'mode':'30'})
 
 	def showepisodes(self,cItem):
@@ -91,7 +88,7 @@ class TSIPHost(TSCBaseHostClass):
 				if eNum not in episodeKeys:
 					episodeKeys.append(eNum)
 					episodeLinks[eNum] = []
-				episodeLinks[eNum].append({'name':'%s \c0000??00(%s)' % (self.up.getHostName(url),langTitle), 'url':url, 'need_resolve':1})
+				episodeLinks[eNum].append({'name':'|%s| %s' % (langTitle.upper(),self.up.getHostName(url)), 'url':url, 'need_resolve':1})
 		
 		for eNum in episodeKeys:
 			title = 'S%sE%s' % (sNum.zfill(2), eNum.zfill(2))

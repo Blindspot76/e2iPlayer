@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 
 import re
 
 def getinfo():
 	info_={}
 	info_['name']='m.Movizland.Online'
-	info_['version']='1.1 06/07/2019'
+	info_['version']='1.2 28/10/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي بالعربية'
 	info_['icon']='https://i.ibb.co/Jz35Xbn/2p12b1o6.png'
 	info_['recherche_all']='1'
-	info_['update']='Bugs Fix'	
+	info_['update']='Change Host'	
 	return info_
 	
 	
@@ -23,7 +23,7 @@ class TSIPHost(TSCBaseHostClass):
 		TSCBaseHostClass.__init__(self,{'cookie':'movizland.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
 		#self.MAIN_URL = 'http://movizland.online'
-		self.MAIN_URL = 'http://m.movizland.online'
+		self.MAIN_URL = 'https://mo.movizland.online'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage
@@ -48,7 +48,7 @@ class TSIPHost(TSCBaseHostClass):
 			Liste_films_data = re.findall('<li class="grid-item.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<', data, re.S)
 			for (url1,image,name_eng) in Liste_films_data:
 				self.addVideo({'import':cItem['import'],'category' : 'host2','title':name_eng.strip(),'url':url1,'icon':image,'desc':'','good_for_fav':True,'hst':'tshost'})					
-			self.addDir({'import':cItem['import'],'category' : 'host2','title':'Page Suivante','url':urlo,'page':page+1,'mode':'30'})
+			self.addDir({'import':cItem['import'],'category' : 'host2','title':tscolor('\c0000??00')+'Page Suivante','url':urlo,'page':page+1,'mode':'30'})
 
 		
 
@@ -58,19 +58,22 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			Liste_films_data = re.findall('<li class="grid-item.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<', data, re.S)
 			for (url1,image,name_eng) in Liste_films_data:
-				self.addVideo({'import':extra,'category' : 'host2','title':name_eng.strip(),'url':url1,'icon':image,'desc':'','good_for_fav':True,'hst':'tshost'})					
+				self.addVideo({'import':extra,'category' : 'video','title':name_eng.strip(),'url':url1,'icon':image,'desc':'','good_for_fav':True,'hst':'tshost'})					
 		
 		
 	def get_links(self,cItem): 	
 		urlTab = []
 		Url=cItem['url']
-		sts, data = self.getPage(Url.replace('//movizland.online/','//m.movizland.online/'))
+		sts, data = self.getPage(Url.replace('//movizland.online/','//mo.movizland.online/'))
 		if sts:
 			Liste_els = re.findall('rgba\(203, 0, 44, 0.36\).*?href="(.*?)".*?ViewMovieNow">(.*?)<', data, re.S)
 			for (url_,titre_) in Liste_els:
+				if 'منخفضة' in titre_: titre_='|Low| Movizland'
+				if 'sd' in titre_.lower(): titre_='|SD| Movizland'
+				if 'hd' in titre_.lower(): titre_='|HD| Movizland'
 				if 'و حمل' not in titre_:
-					if 'تحميل' in titre_: titre_='سرفر التحميل'
-					urlTab.append({'name':titre_, 'url':url_, 'need_resolve':0})							
+					if 'تحميل' in titre_: titre_='|Download Server| Movizland'
+					urlTab.append({'name':titre_, 'url':url_, 'need_resolve':0,'type':'local'})							
 		return urlTab	
 
 			

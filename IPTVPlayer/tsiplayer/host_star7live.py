@@ -13,8 +13,8 @@ def getinfo():
 	info_['name']='Star7 Live (Android App)'
 	info_['version']='1.1 01/08/2019'
 	info_['dev']='TSMedia (yassinov) + RGYSoft (Adaptation)'
-	info_['cat_id']='100'
-	info_['desc']='Star7 Iptv and VOD'
+	info_['cat_id']='104'#'100'
+	info_['desc']='Star7 >>> Only VOD <<<'
 	info_['icon']='https://i.ibb.co/rvVNhFG/icon.png'
 	info_['recherche_all']='0'
 	return info_
@@ -59,7 +59,7 @@ class TSIPHost(TSCBaseHostClass):
 			desc='\c00????00'+'User: '+'\c00??????'+username+'\\n'
 			desc=desc+'\c00????00'+'Pass: '+'\c00??????'+password+'\\n'
 			desc=desc+'\c00????00'+'Invalid Account !!'
-		self.addDir({'import':cItem['import'],'category' : 'host2','title':'LIVE','url':lst_url,'desc':desc,'icon':cItem['icon'],'mode':'20','play_url':play_url})
+		self.addDir({'import':cItem['import'],'category' : 'host2','title':'LIVE (Not Work)','url':lst_url,'desc':desc,'icon':cItem['icon'],'mode':'20','play_url':play_url})
 		self.addDir({'import':cItem['import'],'category' : 'host2','title':'VOD','url':lst_url,'desc':desc,'icon':cItem['icon'],'mode':'30','vod_url':vod_url})			
 		
 	def showmenu0(self,cItem):
@@ -85,9 +85,12 @@ class TSIPHost(TSCBaseHostClass):
 					username,password = conf_file.read().split(':',1)
 					conf_file.close()
 				url='http://t100v.com/apk/api.php'+'?username='+username+'&password='+password
-				sts, data = self.getPage(url,{'header':self.HEADER})	
-			data = json_loads(data)
-			self.showcat(data,username,password,cItem)
+				sts, data = self.getPage(url,{'header':self.HEADER})
+			try:	
+				data = json_loads(data)
+				self.showcat(data,username,password,cItem)
+			except:
+				pass
 		else:
 			self.addMarker({'title':'Problem geting user pass','icon':cItem['icon'],'desc':''})	
 			
@@ -141,7 +144,7 @@ class TSIPHost(TSCBaseHostClass):
 			self.addVideo({'import':cItem['import'],'category' : 'host2','title':titre_,'url':URL,'icon':img,'hst':'direct'})
 		
 	def start(self,cItem):      
-		mode=cItem.get('mode', None)
+		mode=cItem.get('mode', None) 
 		if mode=='00':
 			self.showmenu0(cItem)
 		if mode=='20':
