@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-09-10 by Alec - Web HU Player
+# 2019-12-15 by Blindspot - Web HU Player
 ###################################################
-HOST_VERSION = "2.6"
+HOST_VERSION = "2.7"
 ###################################################
 # LOCAL import
 ###################################################
@@ -69,8 +69,8 @@ class webhuplayer(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'webhuplayer', 'cookie':'webhuplayer.cookie'})
         self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = self.cm.getDefaultHeader()
-        self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8/XyypIBwDbUhM+'))
-        self.ICON_YT = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8+PryzRyypIBwAYgRSK'))
+        self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eNpdikEOgzAMwH7DsWlY6MoktMv+EbE0DDTRVlDE92Ec55NleSwlrw+A3bxT+kqIRtIMu/Zl1AXyJGVbFIjRW9cyMp7a4KCe0VkeLvh2wdaT969z+svsTI6f5yopaIc1VSHNU+jI1VUfhX9K96Y9AGfgK44='))
+        self.ICON_YT = zlib.decompress(base64.b64decode('eNpdikEOgzAMwH7DsWlY6MoktMv+EbE0DDTRVlDE92Ec55NleSwlrw+A3bxT+kqIRtIMu/Zl1AXyJGVbFIjRW9cyMp7a4KCe0VkeLvh2wdaT969z+svsTI6f5yopaIc1VSHNU+jI1VUfhX9K96Y9AGfgK44='))
         self.ICON_INFO = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8+Pz9TLKkgHAANGFAY='))
         self.ICON_FRISSIT = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8+PTyvSyypIBwAYBRR1'))
         self.WHPL = zlib.decompress(base64.b64decode('eJwrT03KKC3ISaxMLdLLySwuAQA4XgaT'))
