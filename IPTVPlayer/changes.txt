@@ -1,4 +1,7 @@
-﻿#2019.12.15.01
+﻿#2019.12.16.01
+-SpankBang hozzáadva (XXX)
+-ProStream és UpStream tárhelyek támogatása hozzáadva (XXX)
+#2019.12.15.01
 -WebHU Player Időjárás megjelenítés hozzáadva (Teszt)
 -USTV Go javítva
 -TVP VOD javítva
