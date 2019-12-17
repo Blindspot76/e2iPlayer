@@ -99,6 +99,7 @@ class IPTVHostsGroups:
         'cartoonhd' : [ 'english', 'moviesandseries'] ,
         'cb01' : [ 'italian', 'moviesandseries'] ,
         'cdapl' : [ 'moviesandseries', 'others', 'polish'] ,
+        'cdafilmy' : ['polish'] ,
         'chomikuj' : [ 'others', 'polish'] ,
         'christusvincit' : [ 'polish'] ,
         'cimaclubcom' : [ 'arabic', 'moviesandseries'] ,
