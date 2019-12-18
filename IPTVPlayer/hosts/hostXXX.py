@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2019.12.16.0"
+    XXXversion = "2019.12.17.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -2188,6 +2188,9 @@ class Host:
            sts, data = self.cm.getPage(url, self.defaultParams)
            if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
+           self.cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+           self.baf = self.cm.getCookieItem(COOKIEFILE,'baf')
+
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class=slm_c>', '</div>')
            for item in data:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
@@ -8071,9 +8074,7 @@ class Host:
            videoUrl = myfreecam_start(url)
            if videoUrl != '':
               printDBG( 'Host videoUrl:  '+videoUrl )
-              #id = self.cm.ph.getSearchGroups(videoUrl, '''ngrp:mfc_([^"^']+?)\.f4v''')[0] 
-              videoUrl = strwithmeta(videoUrl, {'Origin': 'https://www.myfreecams.com', 'Referer': 'https://www.myfreecams.com'})
-              #tmp = getDirectM3U8Playlist(videoUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
+              videoUrl = strwithmeta(videoUrl, {'Origin': 'https://www.myfreecams.com', 'Cookie':self.cookieHeader})
               tmp = getDirectM3U8Playlist(videoUrl, checkExt=False, variantCheck=False, checkContent=False, sortWithMaxBitrate=99999999)
               for item in tmp:
                  printDBG( 'Host listsItems valtab: '  +str(item))
@@ -8836,20 +8837,17 @@ class Host:
                  videoPage = self.cm.ph.getSearchGroups(data, '''hls_source":\s*['"]([^"^']+?)['"]''')[0] 
               try:
                  item = []
-                 videoUrl = urllib2.unquote(videoPage.replace('&amp;','&'))
+                 videoUrl = videoPage.replace('&amp;','&')
                  videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'User-Agent':host}) 
-                 if self.cm.isValidUrl(videoUrl): 
-                    tmp = getDirectM3U8Playlist(videoUrl)
-                    try: tmp = sorted(tmp, key=lambda item: int(item.get('bitrate', '0')))
-                    except Exception: pass
-                    for item in tmp:
-                       printDBG( 'Host listsItems valtab1: '  +str(item))
-                    if self.format4k:
-                       return tmp[-1]['url']
-                    else:
-                       if tmp[-1]['height']<=1080 : return tmp[-1]['url']
-                       if tmp[-2]['height']<=1080 : return tmp[-2]['url']
-                       if tmp[-3]['height']<=1080 : return tmp[-3]['url']
+                 tmp = getDirectM3U8Playlist(videoUrl, checkExt=True, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
+                 for item in tmp:
+                    printDBG( 'Host listsItems valtab1: '  +str(item))
+                 if self.format4k:
+                    return tmp[0]['url']
+                 else:
+                    if tmp[0]['height']<=1080 : return tmp[0]['url']
+                    if tmp[1]['height']<=1080 : return tmp[1]['url']
+                    if tmp[2]['height']<=1080 : return tmp[2]['url']
               except Exception:
                  printExc()
            return ''
@@ -10735,13 +10733,14 @@ def myfreecam_start(url):
 		return ''
 	ws.close()
 	if CAMGIRLSERVER != 0:
-		Url="http://video"+str(CAMGIRLSERVER)+".myfreecams.com:1935/NxServer/ngrp:mfc_"+str(CAMGIRLCHANID)+".f4v_mobile/playlist.m3u8"+'?nc='+str(int(time_time()*1000))  #+str(datetime.now()) #str(time_time()).encode('utf-8')
+		Url="http://video"+str(CAMGIRLSERVER)+".myfreecams.com:1935/NxServer/ngrp:mfc_"+str(CAMGIRLCHANID)+".f4v_mobile/playlist.m3u8" #+'?nc='+str(int(time_time()*1000))  #+str(datetime.now()) #str(time_time()).encode('utf-8')
 		#Url="http://video"+str(CAMGIRLSERVER)+".myfreecams.com:1935/NxServer/mfc_"+str(CAMGIRLCHANID)+".f4v_aac/playlist.m3u8" #320x240
 		printDBG("Camgirl - "+CAMGIRL)
 		printDBG("Url  - "+Url)
 		return Url
 	else:
 		printDBG ("No video server ... _|_ ")
+		return ''
 
 # decrypt function/0/
 def decryptHash(videoUrl, licenseCode, hashRange):

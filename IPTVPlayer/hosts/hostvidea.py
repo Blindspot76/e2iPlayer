@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-06-18 by Alec - Videa
+# 2019-12-18 by Alec - Videa
 ###################################################
-HOST_VERSION = "1.0"
+HOST_VERSION = "1.1"
 ###################################################
 # LOCAL import
 ###################################################
@@ -103,12 +103,7 @@ class videa(CBaseHostClass):
     def listMainMenu(self, cItem):
         try:
             if not self.ebbtit(): return
-            if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()
-            vtb = self.malvadnav(cItem, '1', '12', '0')
-            if len(vtb) > 0:
-                for item in vtb:
-                    item['category'] = 'list_third'
-                    self.addVideo(item)
+            if self.btps != '' and self.brdr != '': self.pbtp = self.btps.strip() + ' - ' + self.brdr.strip()            
             tab_kat = 'videa_kategoriak'
             desc_kat = self.getdvdsz(tab_kat, 'Videa kategóriáinak megjelenítése...')
             tab_csat = 'videa_csatornak'
@@ -129,8 +124,13 @@ class videa(CBaseHostClass):
                             {'category':'search_history', 'title': _('Search history'), 'tab_id':tab_search_hist, 'desc':desc_search_hist} 
                            ]
             self.listsTab(MAIN_CAT_TAB, {'name':'category'})
+            vtb = self.malvadnav(cItem, '7', '12', '0', '14')
+            if len(vtb) > 0:
+                for item in vtb:
+                    item['category'] = 'list_third'
+                    self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def listMainItems(self, cItem):
         try:
@@ -147,7 +147,7 @@ class videa(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def Vdktgrk(self, cItem, tabID):
         mlt = []
@@ -177,7 +177,7 @@ class videa(CBaseHostClass):
                 for ipv in mlt:
                     self.addDir(ipv)
         except Exception:
-            printExc()
+            return
             
     def Vdcstrnk(self, cItem, tabID):
         mlt = []
@@ -207,7 +207,7 @@ class videa(CBaseHostClass):
                 for ipv in mlt:
                     self.addDir(ipv)
         except Exception:
-            printExc()
+            return
             
     def Vdajnzttt(self, cItem, tabID):
         try:
@@ -218,13 +218,13 @@ class videa(CBaseHostClass):
             desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
             tab_anzt = 'videa_ajnlt_nezettseg'
             desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
-            A_CAT_TAB = [{'category':'list_third', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams},
-                         {'category':'list_third', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
+            A_CAT_TAB = [{'category':'list_third', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
+                         {'category':'list_third', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams},
                          {'category':'list_third', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt} 
                         ]
             self.listsTab(A_CAT_TAB, cItem)
         except Exception:
-            printExc()
+            return
             
     def listSecondItems(self, cItem):
         try:
@@ -248,7 +248,7 @@ class videa(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def listThirdItems(self, cItem):
         try:
@@ -262,7 +262,7 @@ class videa(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def Vajnltmsr(self,cItem):
         try:
@@ -272,7 +272,7 @@ class videa(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltdtm(self,cItem):
         vtb = []
@@ -283,7 +283,7 @@ class videa(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltnztsg(self,cItem):
         try:
@@ -293,7 +293,7 @@ class videa(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def listItems(self, cItem):
         try:
@@ -343,7 +343,7 @@ class videa(CBaseHostClass):
                 params.update({'title':_("Next page"), 'page':page+1, 'desc':'Nyugi...\nVan még további tartalom, lapozz tovább!!!'})
                 self.addDir(params)
         except Exception:
-            printExc()
+            return
             
     def getLinksForVideo(self, cItem):
         try:
@@ -387,7 +387,7 @@ class videa(CBaseHostClass):
                     urlTab.extend(tmpTab)
             urlTab.reverse()
             if cItem['category'] != 'list_third':
-                self.susmrgts('2', '12', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'])
+                self.susmrgts('2', '12', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'], 'mnez')
             return urlTab
         except Exception:
             return []
@@ -400,7 +400,7 @@ class videa(CBaseHostClass):
                 if mk != '':
                     vissza = True
         except Exception:
-            printExc()
+            return False
         return vissza
         
     def check_string(self, string, substring_list):
@@ -453,14 +453,15 @@ class videa(CBaseHostClass):
         except Exception:
             return t_s
             
-    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip=''):
+    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip='', i_mpdb=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         t_s = []
         try:
             if i_md != '' and i_hgk != '' and i_mptip != '':
                 if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
                 if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
-                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip}
+                if i_mpdb != '': i_mpdb = base64.b64encode(i_mpdb).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpdb':i_mpdb}
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
                 if not sts: return t_s
                 if len(data) == 0: return t_s
@@ -499,7 +500,7 @@ class videa(CBaseHostClass):
         except Exception:
             return []
         
-    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl=''):
+    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl='', i_mpnzs=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         try:
             if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
@@ -514,7 +515,8 @@ class videa(CBaseHostClass):
                 i_mpdl = base64.b64encode('-')
             else:
                 i_mpdl = base64.b64encode(i_mpdl).replace('\n', '').strip()
-            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl}
+            if i_mpnzs != '': i_mpnzs = base64.b64encode(i_mpnzs).replace('\n', '').strip()
+            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl, 'mpnzs':i_mpnzs}
             if i_md != '' and i_hgk != '' and i_mptip != '' and i_mpu != '':
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
             return
@@ -642,7 +644,8 @@ class videa(CBaseHostClass):
                     self.addDir(params)
                     if ln >= lnp:
                         break
-                except Exception: printExc()
+                except Exception:
+                    return
             
         try:
             list = self.malvadkrttmk('1','12')
@@ -653,7 +656,7 @@ class videa(CBaseHostClass):
                 random.shuffle(list)
                 _vdakstmk(list,48)
         except Exception:
-            printExc()
+            return
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         try:
@@ -682,10 +685,10 @@ class videa(CBaseHostClass):
                     self.susn('2', '12', 'videa_kereses_elozmeny')
                 self.listsHistory({'name':'history', 'category': 'search', 'tab_id':''}, 'desc', _("Type: "))
             else:
-                printExc()
+                return
             CBaseHostClass.endHandleService(self, index, refresh)
         except Exception:
-            printExc()
+            return
 
 class IPTVHost(CHostBase):
 

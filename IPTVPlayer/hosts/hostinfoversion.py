@@ -133,7 +133,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2019.12.08"
+    infoversion = "2019.12.16"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -2026,17 +2026,9 @@ class Host:
                     valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', None))
             return valTab
         if 'darmowa' == name:
-            printDBG( 'Host listsItems begin name='+name )
-            COOKIEFILE = os_path.join(GetCookieDir(), 'echo24.cookie')
-            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
-            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-            sts, data = self.get_Page(url)
-            if not sts: return valTab
-            printDBG( 'Host listsItems data: '+data )
             valTab.insert(0,CDisplayListItem("--- Zobacz.ws ---","Zobacz.ws",     CDisplayListItem.TYPE_CATEGORY,['http://zobacz.ws'],'zobacz_ws',    '',None))
-
-            #valTab.insert(0,CDisplayListItem("--- SwirTeamTk ---","SwirTeamTk",     CDisplayListItem.TYPE_CATEGORY,['http://tv-swirtvteam.tk/'],'SwirTeamTk',    '',None))
-            valTab.insert(0,CDisplayListItem("--- SuperSportowo ---","SuperSportowo",     CDisplayListItem.TYPE_CATEGORY,['http://supersportowo.com'],'SuperSportowo',    '',None))
+            valTab.insert(0,CDisplayListItem("--- SwirTeam ---","SwirTeam",     CDisplayListItem.TYPE_CATEGORY,['http://tv-swirtvteam.info/'],'SwirTeamTk',    '',None))
+            #valTab.insert(0,CDisplayListItem("--- SuperSportowo ---","SuperSportowo",     CDisplayListItem.TYPE_CATEGORY,['http://supersportowo.com'],'SuperSportowo',    '',None))
             valTab.insert(0,CDisplayListItem("--- Ustreamix ---","Ustreamix",     CDisplayListItem.TYPE_CATEGORY,['https://ssl.ustreamix.com/search.php?q=poland'],'Ustreamix',    '',None))
             #valTab.insert(0,CDisplayListItem("--- Darmowa-telewizja.online ---","Darmowa-telewizja.online",     CDisplayListItem.TYPE_CATEGORY,['http://darmowa-telewizja.online/'],'darmowaonline',    '',None))
             return valTab
@@ -2066,9 +2058,9 @@ class Host:
         if 'SwirTeamTk' == name:
             printDBG( 'Host listsItems begin name='+name )
             COOKIEFILE = os_path.join(GetCookieDir(), 'SwirTeamTk.cookie')
-            mainurl = 'http://tv-swirtvteam.tk/'
+            mainurl = 'http://tv-swirtvteam.info/'
             self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-            sts, data = self.getPage(url, 'SwirTeamTk.cookie', 'tv-swirtvteam.tk', self.defaultParams)
+            sts, data = self.getPage(url, 'SwirTeamTk.cookie', 'tv-swirtvteam.info', self.defaultParams)
             if not sts: 
                 SetIPTVPlayerLastHostError(_(' Wystąpił chwilowy problem z naszymi serwerami.'))
                 return []
@@ -2085,6 +2077,11 @@ class Host:
                 if Image.startswith('i'): Image = mainurl + Image
                 if  not 'http' in Url: Url = mainurl + Url
                 Image = strwithmeta(Image, {'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
+                if 'run?' in Url: Title = Title + ' [ swirtvteam ]'
+                if 'planet?' in Url: Title = ''
+                if 'weeb/?' in Url: Title = Title + ' [ weeb ]'
+                if 'gold/?' in Url: Title = ''
+                if 'ipla' in Title: Title = ''
                 if Title:
                     valTab.append(CDisplayListItem(decodeHtml(Title), decodeHtml(Title),  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, Image, None))
             return valTab
@@ -3737,15 +3734,14 @@ class Host:
 
         if 'swirtvteam' in url:
             COOKIEFILE = os_path.join(GetCookieDir(), 'SwirTeamTk.cookie')
-            mainurl = 'http://tv-swirtvteam.tk/'
+            mainurl = 'http://tv-swirtvteam.info/'
             self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-            sts, data = self.getPage(url, 'SwirTeamTk.cookie', 'tv-swirtvteam.tk', self.defaultParams)
+            sts, data = self.getPage(url, 'SwirTeamTk.cookie', 'tv-swirtvteam.info', self.defaultParams)
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
             videoUrl = self.cm.ph.getSearchGroups(data, '''source:\s['"]([^"^']+?)['"]''', 1, True)[0] 
             if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
             #videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, 'Connection':'keep-alive'})  
-
             return videoUrl
 
         if 'ustreamix' in url:
