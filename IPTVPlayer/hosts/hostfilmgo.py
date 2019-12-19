@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-09-10 by Alec - modified Filmgo
+# 2019-12-19 by Alec - modified Filmgo
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -116,14 +116,14 @@ class Filmgo(CBaseHostClass):
                             {'category':'search_history', 'title': _('Search history'), 'tps':'0', 'tab_id':tab_search_hist, 'desc':desc_search_hist } 
                            ]
             self.listsTab(MAIN_CAT_TAB, {'name':'category'})
-            vtb = self.malvadnav(cItem, '6', '13', '0')
+            vtb = self.malvadnav(cItem, '7', '13', '0', '14')
             if len(vtb) > 0:
                 for item in vtb:
                     item['category'] = 'list_third'
                     self.addVideo(item)
             self.ilk = True
         except Exception:
-            printExc()
+            return
             
     def _listCategories(self, cItem, nextCategory, mode):
         try:
@@ -150,7 +150,7 @@ class Filmgo(CBaseHostClass):
                 params.update({'category':nextCategory, 'title':title, 'url':url, 'md':mode})
                 self.addDir(params)
         except Exception:
-            printExc()
+            return
         
     def listMovies(self, cItem, nextCategory):
         tabID = cItem['tab_id']
@@ -231,7 +231,7 @@ class Filmgo(CBaseHostClass):
                             params.update({'title':_("Next page"), 'page':page+1, 'desc':'Nyugi...\nVan még további tartalom, lapozz tovább!!!'})
                             self.addDir(params)
         except Exception:
-            printExc()
+            return
             
     def exploreItem(self, cItem):
         try:
@@ -247,7 +247,7 @@ class Filmgo(CBaseHostClass):
                 params = MergeDicts(cItem, {'good_for_fav': True, 'title':cItem['title'], 'url':cItem['url'], 'desc':leiras, 'icon':cItem['icon']})
                 self.addVideo(params)
         except Exception:
-            printExc()
+            return
             
     def listEvad(self, cItem):
         try:
@@ -272,7 +272,7 @@ class Filmgo(CBaseHostClass):
                         params = MergeDicts(cItem, {'category':'list_evad_item', 'url': cItem['url'] + '/seasons/' + str(evad), 'eretitle': cItem['title'], 'title':str(evad) + '. évad'})
                         self.addDir(params)
         except Exception:
-            printExc()
+            return
             
     def listEvadItem(self, cItem):
         try:
@@ -306,7 +306,7 @@ class Filmgo(CBaseHostClass):
                     params = MergeDicts(cItem, {'good_for_fav': True, 'title':title + epzd + '. epizód', 'url':url, 'desc':desc})
                     self.addVideo(params)
         except Exception:
-            printExc()
+            return
             
     def getLinksForVideo(self, cItem):
         retTab = []
@@ -353,7 +353,7 @@ class Filmgo(CBaseHostClass):
                         retTab.append({'name':name, 'url':item['url'], 'need_resolve':1})
             if len(retTab) > 0:
                 if cItem['category'] != 'list_third':
-                    self.susmrgts('2', '13', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'])
+                    self.susmrgts('2', '13', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'], 'mnez')
                 return retTab
             else:
                 return []
@@ -385,7 +385,7 @@ class Filmgo(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def Fzkttm(self, cItem, tabID):
         try:
@@ -402,7 +402,7 @@ class Filmgo(CBaseHostClass):
                         ]
             self.listsTab(A_CAT_TAB, cItem)
         except Exception:
-            printExc()
+            return
         
     def listThirdItems(self, cItem):
         try:
@@ -416,7 +416,7 @@ class Filmgo(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def Vajnltmsr(self,cItem):
         try:
@@ -426,7 +426,7 @@ class Filmgo(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltdtm(self,cItem):
         vtb = []
@@ -437,7 +437,7 @@ class Filmgo(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltnztsg(self,cItem):
         try:
@@ -447,7 +447,7 @@ class Filmgo(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
 
     def listSearchResult(self, cItem, searchPattern, searchType):
         try:
@@ -500,7 +500,7 @@ class Filmgo(CBaseHostClass):
         except Exception:
             return
             
-    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl=''):
+    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl='', i_mpnzs=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         try:
             if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
@@ -515,7 +515,8 @@ class Filmgo(CBaseHostClass):
                 i_mpdl = base64.b64encode('-')
             else:
                 i_mpdl = base64.b64encode(i_mpdl).replace('\n', '').strip()
-            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl}
+            if i_mpnzs != '': i_mpnzs = base64.b64encode(i_mpnzs).replace('\n', '').strip()
+            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl, 'mpnzs':i_mpnzs}
             if i_md != '' and i_hgk != '' and i_mptip != '' and i_mpu != '':
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
             return
@@ -566,14 +567,15 @@ class Filmgo(CBaseHostClass):
         except Exception:
             return t_s
             
-    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip=''):
+    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip='', i_mpdb=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         t_s = []
         try:
             if i_md != '' and i_hgk != '' and i_mptip != '':
                 if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
                 if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
-                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip}
+                if i_mpdb != '': i_mpdb = base64.b64encode(i_mpdb).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpdb':i_mpdb}
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
                 if not sts: return t_s
                 if len(data) == 0: return t_s
@@ -693,7 +695,7 @@ class Filmgo(CBaseHostClass):
                     self.addDir(params)
                     if ln >= lnp:
                         break
-                except Exception: printExc()
+                except Exception: return
             
         try:
             list = self.malvadkrttmk('1','13')
@@ -704,7 +706,7 @@ class Filmgo(CBaseHostClass):
                 random.shuffle(list)
                 _vdakstmk(list,48)
         except Exception:
-            printExc()
+            return
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
@@ -743,7 +745,7 @@ class Filmgo(CBaseHostClass):
                 self.susn('2', '13', 'filmgo_kereses_elozmeny')
             self.listsHistory({'name':'history', 'category': 'search', 'tab_id':'', 'tps':'0'}, 'desc', _("Type: "))
         else:
-            printExc()
+            return
         CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
@@ -755,5 +757,3 @@ class IPTVHost(CHostBase):
         if (cItem['type'] != 'video' and cItem['category'] != 'explore_item'):
             return False
         return True
-    
-    

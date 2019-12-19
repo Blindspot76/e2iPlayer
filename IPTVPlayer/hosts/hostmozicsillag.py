@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-08-23 by Alec - modified Mozicsillag
+# 2019-12-19 by Alec - modified Mozicsillag
 ###################################################
-HOST_VERSION = "1.5"
+HOST_VERSION = "1.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -136,14 +136,14 @@ class MuziCsillangCC(CBaseHostClass):
                             {'category':'search_history', 'title': _('Search history'), 'tps':'0', 'tab_id':tab_search_hist, 'desc':desc_search_hist }
                            ]
             self.listsTab(MAIN_CAT_TAB, {'name':'category'})
-            vtb = self.malvadnav(cItem, '6', '5', '0')
+            vtb = self.malvadnav(cItem, '7', '5', '0','14')
             if len(vtb) > 0:
                 for item in vtb:
                     item['category'] = 'list_third'
                     self.addVideo(item)
             self.ilk = True
         except Exception:
-            printExc()
+            return
     
     def fillCacheFilters(self, cItem):
         self.cacheFilters = {}
@@ -211,7 +211,7 @@ class MuziCsillangCC(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def Fzkttm(self, cItem, tabID):
         try:
@@ -227,7 +227,7 @@ class MuziCsillangCC(CBaseHostClass):
                         ]
             self.listsTab(A_CAT_TAB, cItem)
         except Exception:
-            printExc()
+            return
         
     def listFilters(self, cItem, nextCategory):
         if self.ilk:
@@ -260,7 +260,7 @@ class MuziCsillangCC(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def Vajnltmsr(self,cItem):
         try:
@@ -270,7 +270,7 @@ class MuziCsillangCC(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltdtm(self,cItem):
         vtb = []
@@ -281,7 +281,7 @@ class MuziCsillangCC(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltnztsg(self,cItem):
         try:
@@ -291,7 +291,7 @@ class MuziCsillangCC(CBaseHostClass):
                 for item in vtb:
                     self.addVideo(item)
         except Exception:
-            printExc()
+            return
         
     def listItems(self, cItem, nextCategory):
         url = cItem['url']
@@ -310,7 +310,7 @@ class MuziCsillangCC(CBaseHostClass):
             if 'f_search_qual_' in cItem: query += 'search_qual_%s=%s&' % (cItem['f_search_qual_'], cItem['f_search_qual_'])
             if 'f_search_share_' in cItem: query += 'search_share_%s=%s&' % (cItem['f_search_share_'], cItem['f_search_share_'])
             if query.endswith('&'): query = query[:-1]
-            printDBG('>>> query[%s]' % query)
+            #printDBG('>>> query[%s]' % query)
         
         if not url.endswith('/'): url += '/'
         if sort != '': url += sort + '/'
@@ -484,7 +484,7 @@ class MuziCsillangCC(CBaseHostClass):
             videoUrl = cItem['url'].replace('youtu.be/', 'youtube.com/watch?v=')
             return self.up.getVideoLinkExt(videoUrl)
         if cItem['category'] != 'list_third':
-            self.susmrgts('2', '5', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'])
+            self.susmrgts('2', '5', cItem['tps'], cItem['url'], cItem['title'], cItem['icon'], cItem['desc'], 'mnez')
             key = cItem.get('links_key', '')
         else:
             key = ''
@@ -586,7 +586,7 @@ class MuziCsillangCC(CBaseHostClass):
         try:
             cItem = byteify(json.loads(fav_data))
             links = self.getLinksForVideo(cItem)
-        except Exception: printExc()
+        except Exception: return
         return links
         
     def setInitListFromFavouriteItem(self, fav_data):
@@ -596,7 +596,7 @@ class MuziCsillangCC(CBaseHostClass):
             params = byteify(json.loads(fav_data))
         except Exception: 
             params = {}
-            printExc()
+            return
         self.addDir(params)
         return True
         
@@ -654,7 +654,7 @@ class MuziCsillangCC(CBaseHostClass):
         except Exception:
             return
             
-    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl=''):
+    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl='', i_mpnzs=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         try:
             if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
@@ -669,7 +669,8 @@ class MuziCsillangCC(CBaseHostClass):
                 i_mpdl = base64.b64encode('-')
             else:
                 i_mpdl = base64.b64encode(i_mpdl).replace('\n', '').strip()
-            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl}
+            if i_mpnzs != '': i_mpnzs = base64.b64encode(i_mpnzs).replace('\n', '').strip()
+            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl, 'mpnzs':i_mpnzs}
             if i_md != '' and i_hgk != '' and i_mptip != '' and i_mpu != '':
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
             return
@@ -720,14 +721,15 @@ class MuziCsillangCC(CBaseHostClass):
         except Exception:
             return t_s
             
-    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip=''):
+    def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip='', i_mpdb=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         t_s = []
         try:
             if i_md != '' and i_hgk != '' and i_mptip != '':
                 if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
                 if i_mptip != '': i_mptip = base64.b64encode(i_mptip).replace('\n', '').strip()
-                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip}
+                if i_mpdb != '': i_mpdb = base64.b64encode(i_mpdb).replace('\n', '').strip()
+                pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpdb':i_mpdb}
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
                 if not sts: return t_s
                 if len(data) == 0: return t_s
@@ -845,7 +847,7 @@ class MuziCsillangCC(CBaseHostClass):
                     self.addDir(params)
                     if ln >= lnp:
                         break
-                except Exception: printExc()
+                except Exception: return
             
         try:
             list = self.malvadkrttmk('1','5')
@@ -856,7 +858,7 @@ class MuziCsillangCC(CBaseHostClass):
                 random.shuffle(list)
                 _vdakstmk(list,48)
         except Exception:
-            printExc()
+            return
     
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):
         CBaseHostClass.handleService(self, index, refresh, searchPattern, searchType)
@@ -893,7 +895,7 @@ class MuziCsillangCC(CBaseHostClass):
                 self.susn('2', '5', 'mozicsillag_search_hist')
             self.listsHistory({'name':'history', 'category': 'search', 'tab_id':'', 'tps':'0'}, 'desc', _("Type: "))
         else:
-            printExc()
+            return
         CBaseHostClass.endHandleService(self, index, refresh)
 
 class IPTVHost(CHostBase):
@@ -905,5 +907,4 @@ class IPTVHost(CHostBase):
         if (cItem['type'] != 'video' and cItem['category'] != 'explore_item'):
             return False
         return True
-    
-    
+        
