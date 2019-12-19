@@ -1,4 +1,6 @@
-﻿#2019.12.19.01
+﻿#2019.12.19.02
+-WebHU Player frissítve
+#2019.12.19.01
 -Filmezz.hu frissítve
 -MoziCsiilag frissítve
 -FilmGo frissítve

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-12-15 by Blindspot - Web HU Player
+# 2019-12-19 by Alec - Web HU Player
 ###################################################
-HOST_VERSION = "2.7"
+HOST_VERSION = "2.8"
 ###################################################
 # LOCAL import
 ###################################################
@@ -69,8 +69,9 @@ class webhuplayer(CBaseHostClass):
         CBaseHostClass.__init__(self, {'history':'webhuplayer', 'cookie':'webhuplayer.cookie'})
         self.USER_AGENT = 'User-Agent=Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
         self.HEADER = self.cm.getDefaultHeader()
-        self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eNpdikEOgzAMwH7DsWlY6MoktMv+EbE0DDTRVlDE92Ec55NleSwlrw+A3bxT+kqIRtIMu/Zl1AXyJGVbFIjRW9cyMp7a4KCe0VkeLvh2wdaT969z+svsTI6f5yopaIc1VSHNU+jI1VUfhX9K96Y9AGfgK44='))
-        self.ICON_YT = zlib.decompress(base64.b64decode('eNpdikEOgzAMwH7DsWlY6MoktMv+EbE0DDTRVlDE92Ec55NleSwlrw+A3bxT+kqIRtIMu/Zl1AXyJGVbFIjRW9cyMp7a4KCe0VkeLvh2wdaT969z+svsTI6f5yopaIc1VSHNU+jI1VUfhX9K96Y9AGfgK44='))
+        self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8/XyypIBwDbUhM+'))
+        self.ICON_YT = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8+PryzRyypIBwAYgRSK'))
+        self.ICON_IDOJARAS = zlib.decompress(base64.b64decode('eNpdikEOgzAMwH7DsWlY6MoktMv+EbE0DDTRVlDE92Ec55NleSwlrw+A3bxT+kqIRtIMu/Zl1AXyJGVbFIjRW9cyMp7a4KCe0VkeLvh2wdaT969z+svsTI6f5yopaIc1VSHNU+jI1VUfhX9K96Y9AGfgK44='))
         self.ICON_INFO = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8+Pz9TLKkgHAANGFAY='))
         self.ICON_FRISSIT = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9PTcooLchJrEwtis/JT8+PTyvSyypIBwAYBRR1'))
         self.WHPL = zlib.decompress(base64.b64decode('eJwrT03KKC3ISaxMLdLLySwuAQA4XgaT'))
@@ -142,8 +143,8 @@ class webhuplayer(CBaseHostClass):
             else:
                 self.aid_ki = ''
             msg_frissites = self.aid_ki + 'A meglévő tartalmak frissítése, újak telepítése...\nOK gomb megnyomása után láthatod, hogy kell-e frissítened, illetve telepítened a média tartalmakat!\nAz ellenőrzés időigényes lehet, akár 1-2 percig is eltarthat...  Légy türelmes!'
-            MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'Webes tartalmak', 'tab_id': 'webes', 'desc': msg_webes_tartalom, 'icon':self.DEFAULT_ICON_URL},
-                            {'category': 'list_main', 'title': 'YouTube tartalmak', 'tab_id': 'youtartalom', 'desc': msg_yt_tartalom, 'icon':self.ICON_YT},
+            MAIN_CAT_TAB = [{'category': 'list_main', 'title': 'Webes tartalmak', 'tab_id': 'webes', 'desc': msg_webes_tartalom, 'icon':self.ICON_IDOJARAS},
+                            {'category': 'list_main', 'title': 'YouTube tartalmak', 'tab_id': 'youtartalom', 'desc': msg_yt_tartalom, 'icon':self.ICON_IDOJARAS},
                             {'category': 'list_main', 'title': 'Utoljára nézett tartalmak', 'tab_id': 'ut_nez_tart', 'desc': msg_utnez_tartalom, 'icon':self.DEFAULT_ICON_URL},
                             {'category': 'list_main', 'title': 'Ajánlott, nézett tartalmak', 'tab_id': 'wh_ajlt_tart', 'desc': msg_wh_ajlt_tart, 'icon':self.DEFAULT_ICON_URL},
                             {'category': 'list_main', 'title': 'Tartalom frissítés, telepítés...', 'tab_id': 'fofrissites', 'desc': msg_frissites, 'icon':self.ICON_FRISSIT}
@@ -153,7 +154,7 @@ class webhuplayer(CBaseHostClass):
             params = {'good_for_fav': False, 'title':'Információ', 'icon':self.ICON_INFO, 'desc':msg_info, 'art_id':'foinformacio', 'type':'article'}
             self.addArticle(params)
         except Exception:
-            printExc()
+            return
             
     def listMainItems(self, cItem):
         try:
@@ -171,7 +172,7 @@ class webhuplayer(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def dtcffn(self):
         encoding = 'utf-8'
@@ -302,7 +303,7 @@ class webhuplayer(CBaseHostClass):
                 msg = 'Hiba: 1\nHiányzó Web média tartalom (Telepítés szükséges)\nvagy Nem megfelelő a beállítás (KÉK gomb, Oldal beállítasai)!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )    
         except Exception:
-            printExc()
+            return
             
     def whajnztrt(self, cItem, tabID):
         try:
@@ -313,13 +314,13 @@ class webhuplayer(CBaseHostClass):
             desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
             tab_anzt = 'whu_ajnlt_nezettseg'
             desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
-            A_CAT_TAB = [{'category':'list_six', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams},
-                         {'category':'list_six', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
-                         {'category':'list_six', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt} 
+            A_CAT_TAB = [{'category':'list_six', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
+                         {'category':'list_six', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt},
+                         {'category':'list_six', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams},
                         ]
             self.listsTab(A_CAT_TAB, cItem)
         except Exception:
-            printExc()
+            return
             
     def yttrtmkk(self, cItem):        
         try:
@@ -352,9 +353,8 @@ class webhuplayer(CBaseHostClass):
                 msg = 'Hiba: 1\nHiányzó YouTube média tartalom (Telepítés szükséges)\nvagy Nem megfelelő a beállítás (KÉK gomb, Oldal beállítasai)!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
         except Exception:
-            printExc()
-        return
-        
+            return
+
     def unttrlmk(self, cItem):
         encoding = 'utf-8'
         ln = 0
@@ -410,8 +410,7 @@ class webhuplayer(CBaseHostClass):
                                 if ln > 50:
                                     break
         except Exception:
-            printExc()
-        return
+            return
         
     def ffts(self, cItem): 
         try:
@@ -441,8 +440,7 @@ class webhuplayer(CBaseHostClass):
             else:
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
         except Exception:
-            printExc()
-        return
+            return        
         
     def listSecondItems(self, cItem):
         try:
@@ -464,14 +462,14 @@ class webhuplayer(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
         
     def wsmvtrmk(self, cItem):
         try:
             self.susn('2', '10', 'hu_aktualis_tartalom')
             self.tfkn('1', self.fwuln, self.path_wh)    
         except Exception:
-            printExc()
+            return
             
     def wsutrtmk(self, cItem):
         encoding = 'utf-8'
@@ -541,8 +539,7 @@ class webhuplayer(CBaseHostClass):
                 msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez...'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
-            printExc()
-        return
+            return
             
     def wsattk(self, cItem):
         try:
@@ -558,14 +555,14 @@ class webhuplayer(CBaseHostClass):
                     msg = 'Hiba: 2 - Nem megfelelő tartalom!'
                     self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )            
         except Exception:
-            printExc()
+            return
             
     def ymltrmk(self, cItem):
         try:
             self.susn('2', '10', 'hu_yt_akt_tartalom')
             self.tfkn('2', self.fwuytln, self.path_yt)    
         except Exception:
-            printExc()
+            return
             
     def yutrmk(self, cItem):
         encoding = 'utf-8'
@@ -635,8 +632,7 @@ class webhuplayer(CBaseHostClass):
                 msg = 'Nincs új tartalom a legutolsó frissítés óta!\nÚjdonságokért menj a Tartalom frissítéshez...'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_INFO, timeout = 15 )
         except Exception:
-            printExc()
-        return
+            return        
             
     def wstmft(self, cItem):
         try:
@@ -653,7 +649,7 @@ class webhuplayer(CBaseHostClass):
                 msg = 'A kék gomb, majd az Oldal beállításai segítségével megadhatod a kért adatokat.\nHa megfelelőek az előre beállított értékek, akkor ZÖLD gomb (Mentés) megnyomása!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
         except Exception:
-            printExc()
+            return
             
     def ytmfs(self, cItem):
         try:            
@@ -670,7 +666,7 @@ class webhuplayer(CBaseHostClass):
                 msg = 'A kék gomb, majd az Oldal beállításai segítségével megadhatod a kért adatokat.\nHa megfelelőek az előre beállított értékek, akkor ZÖLD gomb (Mentés) megnyomása!'
                 self.sessionEx.open(MessageBox, msg, type = MessageBox.TYPE_ERROR, timeout = 20 )
         except Exception:
-            printExc()
+            return
             
     def listThirdItems(self, cItem):
         azn = cItem['azn']
@@ -706,7 +702,7 @@ class webhuplayer(CBaseHostClass):
                             if '.stream' in fn:
                                 self.tkn(fPM + '/' + fn,False)
         except Exception:
-            printExc()
+            return
             
     def listFourthItems(self, cItem):
         azn = cItem['azn']
@@ -742,7 +738,7 @@ class webhuplayer(CBaseHostClass):
                             if '.stream' in fn:
                                 self.tkn(fPM + '/' + fn,False)
         except Exception:
-            printExc()
+            return
             
     def listFifthItems(self, cItem):
         azn = cItem['azn']
@@ -765,7 +761,7 @@ class webhuplayer(CBaseHostClass):
                             if '.stream' in fn:
                                 self.tkn(fPM + '/' + fn,False)
         except Exception:
-            printExc()
+            return
             
     def listSixItems(self, cItem):
         try:
@@ -779,7 +775,7 @@ class webhuplayer(CBaseHostClass):
             else:
                 return
         except Exception:
-            printExc()
+            return
             
     def Vajnltmsr(self,cItem):
         try:
@@ -800,7 +796,7 @@ class webhuplayer(CBaseHostClass):
                     else:
                         self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltdtm(self,cItem):
         vtb = []
@@ -823,7 +819,7 @@ class webhuplayer(CBaseHostClass):
                     else:
                         self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def Vajnltnztsg(self,cItem):
         try:
@@ -844,7 +840,7 @@ class webhuplayer(CBaseHostClass):
                     else:
                         self.addVideo(item)
         except Exception:
-            printExc()
+            return
             
     def wstmts(self, cItem):
         hiba = False
@@ -912,7 +908,6 @@ class webhuplayer(CBaseHostClass):
         except Exception:
             title = 'Webes tartalom frissítése nemsikerült!'
             desc = 'Indítsd újra a programot!\nNyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón'
-            printExc()
         params = dict(cItem)
         params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'web_tr_frissit', 'desc': desc})
         self.addDir(params)            
@@ -988,7 +983,6 @@ class webhuplayer(CBaseHostClass):
         except Exception:
             title = 'YouTube tartalom frissítése nemsikerült!'
             desc = 'Indítsd újra a programot!\nNyomd meg a Kilépés gombot!  -  PIROS gomb a távirányítón'
-            printExc()
         params = dict(cItem)
         params.update({'good_for_fav': False, 'category': 'list_second', 'title': title, 'tab_id': 'yt_tr_frissit', 'desc': desc})
         self.addDir(params)            
@@ -1024,8 +1018,7 @@ class webhuplayer(CBaseHostClass):
                                     params.update({'good_for_fav': False, 'category': 'list_third', 'title': mn, 'f_pn': fpn, 'f_nm': fn, 'desc': desc, 'icon': fin, 'azn': ak})
                                     self.addDir(params)
         except Exception:
-            printExc()
-        return
+            return        
         
     def tkn(self, fan, kkl=False):
         hnn = 'nn'
@@ -1054,8 +1047,7 @@ class webhuplayer(CBaseHostClass):
                 else:
                     self.addVideo(params)
         except Exception:
-            printExc()
-        return
+            return
         
     def tkn_dt(self, fan):
         encoding = 'utf-8'
@@ -1072,7 +1064,6 @@ class webhuplayer(CBaseHostClass):
                         elso = elso.replace('\n','').strip()
                     data = self.cm.ph.getAllItemsBeetwenMarkers(data, '', '---\n', False)
         except Exception:
-            printExc()
             return [], ''
         return data, elso
         
@@ -1127,7 +1118,6 @@ class webhuplayer(CBaseHostClass):
             params = {'title':vn, 'url':vu, 'desc':vl, 'icon':vi, 'azn':va, 'datum':vdvd, 'verzio':vdvv}
             return False, params
         except Exception:
-            printExc()
             return True, params
             
     def wmpfkr(self):
@@ -1141,8 +1131,7 @@ class webhuplayer(CBaseHostClass):
                 finally:
                     self.wupt = []
         except Exception:
-            printExc()
-        return
+            return
         
     def ytmpfkr(self):
         encoding = 'utf-8'
@@ -1155,8 +1144,7 @@ class webhuplayer(CBaseHostClass):
                 finally:
                     self.yupt = []
         except Exception:
-            printExc()
-        return
+            return
     
     def cpve(self, cfpv=''):
         vissza = False
@@ -1166,7 +1154,7 @@ class webhuplayer(CBaseHostClass):
                 if mk != '':
                     vissza = True
         except Exception:
-            printExc()
+            return False
         return vissza
         
     def _usable(self):
@@ -1186,7 +1174,7 @@ class webhuplayer(CBaseHostClass):
             else:
                 valasz = True
         except Exception:
-            printExc()
+            return False, ''
         return valasz, msg
         
     def _mycall(self, cmd):
@@ -1195,7 +1183,7 @@ class webhuplayer(CBaseHostClass):
         try:
             back_state = subprocess.call(command)
         except Exception:
-            printExc()
+            return -1
         return back_state
         
     def _mycopy(self, filename, dest_dir):
@@ -1207,7 +1195,7 @@ class webhuplayer(CBaseHostClass):
                     if self._mycall(copy_command) == 0:
                         sikerult = True
         except Exception:
-            printExc()
+            return False
         return sikerult
         
     def _mycopy_o(self, filename, dest_dir):
@@ -1218,7 +1206,7 @@ class webhuplayer(CBaseHostClass):
                 if subprocess.call(copy_command, shell=True) == 0:
                     sikerult = True
         except Exception:
-            printExc()
+            return False
         return sikerult
         
     def dflt(self, url, fnm, hsz=2, ved=3):
@@ -1234,7 +1222,7 @@ class webhuplayer(CBaseHostClass):
                 else:
                     sleep(ved)
         except Exception:
-            printExc()
+            return False
         return vissza
         
     def malvadst(self, i_md='', i_hgk='', i_mpu=''):
@@ -1301,7 +1289,7 @@ class webhuplayer(CBaseHostClass):
             else:
                 return []
         except Exception:
-            printExc()
+            return
             
     def bladt(self, wtt='', ktt= True):
         szv = ''
@@ -1320,11 +1308,11 @@ class webhuplayer(CBaseHostClass):
             self.susn('2', '10', 'hu_informacio')
             title_citem = cItem['title']
             icon_citem = cItem['icon']
-            desc = 'Észrevételeidet, javaslataidat a következő címre küldheted el:\n' + zlib.decompress(base64.b64decode('eJwrT03KKC3ISaxMLXJIz03MzNFLzs8FAF5sCGA=')) + '\n\nFelhívjuk figyelmedet, hogy egyes csatornák online adásai átmenetileg szünetelhetnek. Mielőtt hibát jelzel, ellenőrizd az adott csatorna internetes oldalán az adás működését.\n\nA rádiócsatornák zökkenőmentes hallgatásához javasoljuk az exteplayer3 használatát pufferelés nélküli módban!\n\nKellemes szórakozást kívánunk!'            
+            desc = 'Észrevételeidet, javaslataidat a következő címre küldheted el:\n' + zlib.decompress(base64.b64decode('eJwrT03KKC3ISaxMLXJIz03MzNFLzs8FAF5sCGA=')) + '\n\nFelhívjuk figyelmedet, hogy egyes csatornák online adásai átmenetileg szünetelhetnek. Mielőtt hibát jelzel, ellenőrizd az adott csatorna internetes oldalán az adás működését.\n\nA rádiócsatornák zökkenőmentes hallgatásához javasoljuk az exteplayer3 használatát pufferelés nélküli módban!\n\nKellemes szórakozást kívánunk!\n(Alec, Blindspot)'            
             retList = {'title':title_citem, 'text': desc, 'images':[{'title':'', 'url':icon_citem}]}
             return [retList]
         except Exception:
-            printExc()
+            return
                 
     def getLinksForVideo(self, cItem):
         try:
@@ -1362,10 +1350,10 @@ class webhuplayer(CBaseHostClass):
                     if -1 < idx1:
                         tid = dsct[0:idx1].strip()
                         tid = re.sub(r'^(.{600}).*$', '\g<1>...', tid)
-                self.susmrgts('2', '10', '0', cItem['url'], cItem['title'], cItem['icon'], tid, cItem['azn'], cItem['mkt'], cItem['md'])
+                self.susmrgts('2', '10', '0', cItem['url'], cItem['title'], cItem['icon'], tid, cItem['azn'], cItem['mkt'], cItem['md'], 'mnez')
             return videoUrls
         except Exception:
-            printExc()
+            return
             
     def getVideoLinks(self, videoUrl):
         urlTab = []
@@ -1462,7 +1450,6 @@ class webhuplayer(CBaseHostClass):
                                                 else:
                                                     dsz = str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
         except Exception:
-            printExc()
             if fileExists(destination):
                 rm(destination) 
                 rmtree(destination_dir, ignore_errors=True)
@@ -1544,7 +1531,6 @@ class webhuplayer(CBaseHostClass):
                                                 else:
                                                     dsz = str(evo) + ' módosult műsor található!  OK gomb megnyomása után a tartalom frissíthető...'
         except Exception:
-            printExc()
             if fileExists(destination):
                 rm(destination) 
                 rmtree(destination_dir, ignore_errors=True)
@@ -1696,7 +1682,7 @@ class webhuplayer(CBaseHostClass):
             return 0, 0
         return ev, uv
         
-    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl='', i_mpaz='', i_mput='', i_mpmd=''):
+    def susmrgts(self, i_md='', i_hgk='', i_mptip='', i_mpu='', i_mpt='', i_mpi='', i_mpdl='', i_mpaz='', i_mput='', i_mpmd='', i_mpnzs=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         try:
             if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
@@ -1723,7 +1709,8 @@ class webhuplayer(CBaseHostClass):
                 i_mpmd = base64.b64encode('-')
             else:
                 i_mpmd = base64.b64encode(i_mpmd).replace('\n', '').strip()
-            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl, 'mpaz':i_mpaz, 'mput':i_mput, 'mpmd':i_mpmd}
+            if i_mpnzs != '': i_mpnzs = base64.b64encode(i_mpnzs).replace('\n', '').strip()
+            pstd = {'md':i_md, 'hgk':i_hgk, 'mptip':i_mptip, 'mpu':i_mpu, 'mpt':i_mpt, 'mpi':i_mpi, 'mpdl':i_mpdl, 'mpaz':i_mpaz, 'mput':i_mput, 'mpmd':i_mpmd, 'mpnzs':i_mpnzs}
             if i_md != '' and i_hgk != '' and i_mptip != '' and i_mpu != '':
                 sts, data = self.cm.getPage(uhe, self.defaultParams, pstd)
             return
@@ -1922,7 +1909,7 @@ class webhuplayer(CBaseHostClass):
                 printExc()
             CBaseHostClass.endHandleService(self, index, refresh)
         except Exception:
-            printExc()
+            return
 
 class IPTVHost(CHostBase):
 
@@ -1951,7 +1938,7 @@ class IPTVHost(CHostBase):
                 retlist.append(CUrlItem(item["name"], item["url"], 0))
             return RetHost(RetHost.OK, value = retlist)
         except Exception:
-            printExc()
+            return
 
     def convertList(self, cList):
         try:
@@ -1999,7 +1986,7 @@ class IPTVHost(CHostBase):
                 hostList.append(hostItem)
             return hostList
         except Exception:
-            printExc()
+            return
             
     def withArticleContent(self, cItem):
         if cItem['type'] != 'article':
