@@ -60,6 +60,7 @@ class IPTVHostsGroups:
         # hosts
         self.PREDEFINED_HOSTS = {}
         HOST_AND_GROUPS = {
+        'technika' : [ 'hungarian', 'documentary'] ,
         'updatehosts' : [ 'hungarian'] ,
         'webhuplayer' : [ 'hungarian'] ,
         'filmgo' : [ 'hungarian', 'moviesandseries'] ,
