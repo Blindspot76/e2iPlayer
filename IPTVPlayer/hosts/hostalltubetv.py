@@ -302,7 +302,7 @@ class AlltubeTV(CBaseHostClass):
         
         printDBG(data)
         
-        data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', 'Kontakt')[1]
+        data = self.cm.ph.rgetDataBeetwenMarkers(data, '<div class="container-fluid">', 'Regulamin')[1]
         data = data.split('<h2 class="headline">')
         if len(data): del data[0]
         
@@ -426,7 +426,10 @@ class AlltubeTV(CBaseHostClass):
             videoUrl = url
             if url.startswith('//'):
                 videoUrl = 'http:' + videoUrl
+            from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser 
+            videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': baseUrl}) 
             urlTab = self.up.getVideoLinkExt(videoUrl)
+
         return urlTab
 
     def handleService(self, index, refresh = 0, searchPattern = '', searchType = ''):

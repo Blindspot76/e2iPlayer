@@ -17,10 +17,10 @@ except Exception: import simplejson as json
 
 
 def gettytul():
-    return 'http://filmativa.ws/'
+    return 'http://filmativa.net/'
 
 class Filmotopia(CBaseHostClass):
-    MAIN_URL    = 'http://filmativa.ws/'
+    MAIN_URL    = 'http://filmativa.net/'
     SRCH_URL    = MAIN_URL + '?s='
     DEFAULT_ICON_URL = 'http://athensmoviepalace.com/wp-content/uploads/2014/07/FilmReel.png'
     
@@ -155,6 +155,9 @@ class Filmotopia(CBaseHostClass):
                 linkUrl = self.cm.ph.getSearchGroups(tmp[-1], 'data-only="([^"]+?)"')[0]
                 if '' != linkUrl: 
                     linkUrl = 'https://onlystream.tv/e/{0}'.format(linkUrl)
+                linkUrl = self.cm.ph.getSearchGroups(tmp[-1], 'data-mix="([^"]+?)"')[0]
+                if '' != linkUrl: 
+                    linkUrl = 'https://mixdrop.co/e/{0}'.format(linkUrl)
             episodeTitle = self.cleanHtmlStr( tmp[0] )
             if 0 == len(self.seriesCache.get(season, [])):
                 self.seriesCache[season] = []
