@@ -1,4 +1,7 @@
-﻿#2020.01.03.02
+﻿#2020.01.04.01
+-Twitch TV javítva
+-OrthoBullets javítva
+#2020.01.03.02
 -3Filmy hozzáadva
 -NHL66.ir hozzáadva
 -MediaSetPlay EPG javítva
