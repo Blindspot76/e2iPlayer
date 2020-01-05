@@ -6545,7 +6545,6 @@ class pageParser(CaptchaHelper):
         printDBG("parserWEBCAMERAPL baseUrl[%s]" % baseUrl)
         
         def _getFullUrl(url):
-            url = url.replace('\\/', '/')
             if url.startswith('//'):
                 url = 'http:' + url
             return url
@@ -6570,7 +6569,6 @@ class pageParser(CaptchaHelper):
             else:
                 for playerUrl in tmp:
                     playerUrl = _getFullUrl(playerUrl)
-                    if 'connlimit' in playerUrl: continue
                     if self.cm.isValidUrl(playerUrl):
                         urlsTab.extend(getDirectM3U8Playlist(playerUrl, checkContent=True))
         
@@ -12411,7 +12409,7 @@ class pageParser(CaptchaHelper):
 
             # found a part similar to this one:
             #MDCore.vsrc="//s-delivery4.mixdrop.co/v/cd5b9db3d4d79b8e27f4b8e9e01b0f89.mp4?s=n4gHzKKmauonkMNudSwDkQ&e=1573868130"
-            link = re.findall("vsr.*?=\"([^\"]+?)\"", decoded)
+            link = re.findall("furl=\"([^\"]+?)\"", decoded)
             if link:
                 if link[0].startswith('//'):
                     video_url = "https:" + link[0]

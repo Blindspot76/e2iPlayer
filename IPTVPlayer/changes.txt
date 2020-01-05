@@ -1,4 +1,7 @@
-﻿#2020.01.04.01
+﻿#2020.01.05.01
+-Kisebb javítások
+-UStreamIx frissítve
+#2020.01.04.01
 -Twitch TV javítva
 -OrthoBullets javítva
 #2020.01.03.02
