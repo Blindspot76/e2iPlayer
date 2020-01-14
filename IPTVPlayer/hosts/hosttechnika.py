@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-12-27 by Alec - modified Technika.HU
+# 2020-01-14 by Alec - modified Technika.HU
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -110,6 +110,28 @@ class Technika(CBaseHostClass):
         self.plurl_nbook = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoemWZWlFJgGOPsYVaakVEUFu5dlZXoEA5dcXIA=='))
         self.DEFAULT_ICON_URL_APIE = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U8syEyNz8lPz9fLKkgHAFqQEDU='))
         self.plurl_apie = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoQG6YZmFQe6JxhW6OdmpJtnx4SUZTo4A4csWyw=='))
+        self.DEFAULT_ICON_URL_SHADOWWARRIOR = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S/OSEzJLy9PLCrKzC+Kz8lPz9fLKkgHAAQ1FCI='))
+        self.plurl_shadowwarrior = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoaW6VeXuiRHeZgVR/rpGwbph5rm6Fo4A4JsWCA=='))
+        self.DEFAULT_ICON_URL_HUNBOXING = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c8ozUvKr8jMS4/PyU/P18sqSAcAtOoSaA=='))
+        self.plurl_hunboxing = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoYFm7lXeieFOUaaOySaBeUmpRZme+Y4A3rIWqg=='))
+        self.DEFAULT_ICON_URL_BYTECH = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U+qLElNzojPyU/P18sqSAcAfWkRFQ=='))
+        self.plurl_bytech = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoSFGWXnF5cHFJsVugV557gWOrmnOIeUA5xkXEQ=='))
+        self.DEFAULT_ICON_URL_TECHKALAUZ = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9JTc7ITsxJLK2Kz8lPz9fLKkgHAManEsI='))
+        self.plurl_techkalauz = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoUFVblVhpa6p6QEZ2R6OSRapZVlZ3oEA6oUXVQ=='))
+        self.DEFAULT_ICON_URL_TECHDOBOZ = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9JTc5IyU/Kr4rPyU/P18sqSAcAs8ISWA=='))
+        self.plurl_techdoboz = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoRWOTiUuHgVFxX4VBp4lYfFmxcUpeYEA6AYXUw=='))
+        self.DEFAULT_ICON_URL_ANONIM = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U/My8/LzI3PyU/P18sqSAcAfV8RGA=='))
+        self.plurl_anonim = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoaEGpeWBhaauiRllniGJlUZlBRWJHoEA50UXSQ=='))
+        self.DEFAULT_ICON_URL_PCX = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9IrojPyU/P18sqSAcASwgP4Q=='))
+        self.plurl_pcx = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoaXFYdkhhc75LlGO5QHhuaZGFQGlEeUA6pcXWQ=='))
+        self.DEFAULT_ICON_URL_BITECH = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1U/KLElNzojPyU/P18sqSAcAfIkRBQ=='))
+        self.plurl_bitech = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoSmpiaWmYRZF+Y55aQbxfv6ZHi6BBekA5jMW/Q=='))
+        self.DEFAULT_ICON_URL_THEHUB = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S/JSM0oTYrPyU/P18sqSAcAfXQRFg=='))
+        self.plurl_thehub = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoT66oc7xERFBAemJQabmmRGBFu6mkekA22oWKg=='))
+        self.DEFAULT_ICON_URL_RPLAIR = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S8qyEnMLIrPyU/P18sqSAcAfekRIA=='))
+        self.plurl_rplair = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoVURJq5uZb4hUZEG5saFhiVuqdlJkekA3zIWnw=='))
+        self.DEFAULT_ICON_URL_TECHFUNDO = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1S9JTc5IK81LyY/PyU/P18sqSAcAs9USVg=='))
+        self.plurl_techfundo = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9erzC8tKU1K1UvOz9UvyEmszMksLrEHEbahoVFZuUk5Yb7OQeEurq5pKTmhwemuiYEA5lgW9A=='))
         self.fnmts = zlib.decompress(base64.b64decode('eJzTTy1J1k/Ny0zPTTTSTzXKLMhJrEwtKklNzsjLzE4EAKcpC0E='))
         self.vivn = GetIPTVPlayerVerstion()
         self.porv = self.gits()
@@ -152,7 +174,7 @@ class Technika(CBaseHostClass):
             url_legfris = 'technika_legfrissebb'
             desc_legfris = self.getdvdsz(url_legfris, 'Legfrissebb technikai adások, műsorok és információk gyűjtőhelye...')
             url_techcsat = 'technika_csatornak'
-            desc_techcsat = self.getdvdsz(url_techcsat, 'Tech műsorcsatornák (TECH2, POWERTECH, MOBEEL, ITFROCCS, TECHVIDEOHU, HASZNÁLT DROID, THEVR TECH, NOTEBOOK.HU, APPLE PIE) műsorai...')
+            desc_techcsat = self.getdvdsz(url_techcsat, 'Tech műsorcsatornák - TECH2, POWERTECH, MOBEEL, ITFROCCS, TECHVIDEOHU, HASZNÁLT DROID, THEVR TECH, NOTEBOOK.HU, APPLE PIE, SHADOWWARRIOR, HUNBOXING, BYTECH, TECHKALAUZ, TECHDOBOZ, ANONIMINC, PCX, BITECH, THE HUB, RPS LAIR, TECHFUNDO - műsorai...')
             tab_ajanlott = 'technika_ajanlott'
             desc_ajanlott = self.getdvdsz(tab_ajanlott, 'Ajánlott, nézett tartalmak megjelenítése...')
             tab_keresett = 'technika_keresett_tartalom'
@@ -199,7 +221,7 @@ class Technika(CBaseHostClass):
     def getLinksForVideo(self, cItem):
         try:
             tabID = cItem.get('tab_id', '')
-            if tabID in ['tech2','powertech','mobeel','itfrocs','techvideo','hdroid','vrtech','nbook','apie']:
+            if tabID in ['tech2','powertech','mobeel','itfrocs','techvideo','hdroid','vrtech','nbook','apie','shadowwarrior','hunboxing','bytech','techkalauz','techdoboz','anonim','pcx','bitech','thehub','rplair','techfundo']:
                 nez = self.Yt_getLinksForVideo(cItem)
                 if len(nez) > 0:
                     self.susn('2', '15', cItem['url'])
@@ -246,6 +268,18 @@ class Technika(CBaseHostClass):
                 if tpe == '36': bv = title.replace('TheVR Tech - ','').strip()
                 if tpe == '37': bv = title.replace('Notebook.hu - ','').strip()
                 if tpe == '38': bv = title.replace('Apple Pie - ','').strip()
+                if tpe == '39': bv = title.replace('ShadowWarrior - ','').strip()
+                if tpe == '40': bv = title.replace('Hunboxing - ','').strip()
+                if tpe == '41': bv = title.replace('ByTech - ','').strip()
+                if tpe == '42': bv = title.replace('TechKalauz - ','').strip()
+                if tpe == '43': bv = title.replace('TechDoboz - ','').strip()
+                if tpe == '44': bv = title.replace('AnonimInc - ','').strip()
+                if tpe == '45': bv = title.replace('PCX - ','').strip()
+                if tpe == '46': bv = title.replace('BiTech - ','').strip()
+                if tpe == '47': bv = title.replace('The HUB - ','').strip()
+                if tpe == '48': bv = title.replace('RPs Lair - ','').strip()
+                if tpe == '49': bv = title.replace('TechFunDo - ','').strip()
+                
             return bv
         except Exception:
             return ''            
@@ -362,6 +396,28 @@ class Technika(CBaseHostClass):
                 self.Ytpl_lista(cItem, tabID, 'nbook')
             elif tabID == 'apie':
                 self.Ytpl_lista(cItem, tabID, 'apie')
+            elif tabID == 'shadowwarrior':
+                self.Ytpl_lista(cItem, tabID, 'shadowwarrior')
+            elif tabID == 'hunboxing':
+                self.Ytpl_lista(cItem, tabID, 'hunboxing')
+            elif tabID == 'bytech':
+                self.Ytpl_lista(cItem, tabID, 'bytech')
+            elif tabID == 'techkalauz':
+                self.Ytpl_lista(cItem, tabID, 'techkalauz')
+            elif tabID == 'techdoboz':
+                self.Ytpl_lista(cItem, tabID, 'techdoboz')
+            elif tabID == 'anonim':
+                self.Ytpl_lista(cItem, tabID, 'anonim')
+            elif tabID == 'pcx':
+                self.Ytpl_lista(cItem, tabID, 'pcx')
+            elif tabID == 'bitech':
+                self.Ytpl_lista(cItem, tabID, 'bitech')
+            elif tabID == 'thehub':
+                self.Ytpl_lista(cItem, tabID, 'thehub')
+            elif tabID == 'rplair':
+                self.Ytpl_lista(cItem, tabID, 'rplair')
+            elif tabID == 'techfundo':
+                self.Ytpl_lista(cItem, tabID, 'techfundo')
             else:
                 return
         except Exception:
@@ -416,12 +472,14 @@ class Technika(CBaseHostClass):
                     data = json_loads(data)['video']
                     for item in data:
                         url = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v16vMLy0pTUrVS87P1S9PLEnOsC+zBQC7bgue')) + item['encrypted_id']
-                        if mk in ['tech2','mobeel','techvideo','hdroid','vrtech','nbook','apie']:
+                        if mk in ['tech2','mobeel','techvideo','hdroid','vrtech','nbook','apie','shadowwarrior','hunboxing','bytech','techkalauz','techdoboz','anonim','pcx','bitech','thehub','techfundo']:
                             title = CParsingHelper.cleanHtmlStr(item['title']).strip()
                         if mk == 'powertech':
                             title = CParsingHelper.cleanHtmlStr(item['title']).replace('| PowerTech.hu','').strip()
                         if mk == 'itfrocs':    
                             title = CParsingHelper.cleanHtmlStr(item['title']).replace('| ITFroccs.hu','').strip()
+                        if mk == 'rplair':
+                            title = CParsingHelper.cleanHtmlStr(item['title']).replace("- RP's Lair",'').strip()
                         #title = re.sub(r'[^\x00-\x7f]',r'', title)
                         title = self.rpttl(title, tpe)    
                         img = item['thumbnail']
@@ -440,6 +498,18 @@ class Technika(CBaseHostClass):
                         if mk == 'vrtech': tempdesc = self.szovegki_vrtech(tempdesc)
                         if mk == 'nbook': tempdesc = self.szovegki_nbook(tempdesc)
                         if mk == 'apie': tempdesc = self.szovegki_apie(tempdesc)
+                        if mk == 'shadowwarrior': tempdesc = self.szovegki_shadowwarrior(tempdesc)
+                        if mk == 'hunboxing': tempdesc = self.szovegki_hunboxing(tempdesc)
+                        if mk == 'bytech': tempdesc = self.szovegki_bytech(tempdesc)
+                        if mk == 'techkalauz': tempdesc = self.szovegki_techkalauz(tempdesc)
+                        if mk == 'techdoboz': tempdesc = self.szovegki_techdoboz(tempdesc)
+                        if mk == 'anonim': tempdesc = self.szovegki_anonim(tempdesc)
+                        if mk == 'pcx': tempdesc = self.szovegki_pcx(tempdesc)
+                        if mk == 'bitech': tempdesc = self.szovegki_bitech(tempdesc)
+                        if mk == 'thehub': tempdesc = self.szovegki_thehub(tempdesc)
+                        if mk == 'rplair': tempdesc = self.szovegki_rplair(tempdesc)
+                        if mk == 'techfundo': tempdesc = self.szovegki_techfundo(tempdesc)
+                        tempdesc = tempdesc.strip()
                         if tempdesc == '': tempdesc = title
                         if elso:
                             desc = added + '  |  Időtartatm:  ' + time + '\n\nTartalom:\n' + tempdesc
@@ -472,6 +542,211 @@ class Technika(CBaseHostClass):
                 return params
             else:
                 return []
+                
+    def szovegki_techfundo(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'Támogass')
+                bv = self.szovegkivetel(bv,'Támogatás')
+                bv = self.szovegkivetel(bv,'Segítesz')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'Csatlakozz')
+                bv = self.szovegkivetel(bv,'Iratkozz')
+                bv = self.szovegkivetel(bv,'Link a')
+                bv = self.szovegkivetel(bv,'Adsz bele')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = self.szovegkivetel(bv,'www.')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_rplair(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'Dobj egy')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'Arukereso')
+                bv = self.szovegkivetel(bv,'Tedd fel')
+                bv = self.szovegkivetel(bv,'Duma link')
+                bv = self.szovegkivetel(bv,'---')
+                bv = self.szovegkivetel(bv,'Csatlakozz')
+                bv = self.szovegkivetel(bv,'Patriot')
+                bv = self.szovegkivetel(bv,'Megéri?')
+                bv = self.szovegkivetel(bv,'Szemelyre szabott')
+                bv = self.szovegkivetel(bv,'Egyedi hosszu')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_thehub(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'Holoszoba')
+                bv = self.szovegkivetel(bv,'Ha tetszett a')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'facebook')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_bitech(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'facebook')
+                bv = self.szovegkivetel(bv,'Instagram')
+                bv = self.szovegkivetel(bv,'Regisztráció')
+                bv = self.szovegkivetel(bv,'Ha tetszett a videó')
+                bv = self.szovegkivetel(bv,'Remélem tetszett')
+                bv = self.szovegkivetel(bv,'Patreon')
+                bv = self.szovegkivetel(bv,'---')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_pcx(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'A videóban látható')
+                bv = self.szovegkivetel(bv,'A videóban szereplő')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_anonim(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'Itt tudod megvenni')
+                bv = self.szovegkivetel(bv,'Vásárlási')
+                bv = self.szovegkivetel(bv,'További információ')
+                bv = self.szovegkivetel(bv,'VEDD MEG')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Hivatalos Weboldal')
+                bv = self.szovegkivetel(bv,'Támogatnál?')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_techdoboz(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'WEB')
+                bv = self.szovegkivetel(bv,'Termékleírást')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_techkalauz(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'Vásárlás')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Weboldal')
+                bv = self.szovegkivetel(bv,'techkalauz.hu')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_bytech(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'Itten lehet')
+                bv = self.szovegkivetel(bv,'A terméket itt')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_hunboxing(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'Részletek')
+                bv = self.szovegkivetel(bv,'Vásárlás')
+                bv = self.szovegkivetel(bv,'Bővebben')
+                bv = self.szovegkivetel(bv,'Bővebb')
+                bv = self.szovegkivetel(bv,'Regisztrálj')
+                bv = self.szovegkivetel(bv,'Több infó')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'Instagram')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
+            
+    def szovegki_shadowwarrior(self, txt=''):
+        bv = ''
+        try:
+            if txt != '':
+                bv = txt
+                bv = self.szovegkivetel(bv,'***')
+                bv = self.szovegkivetel(bv,'weboldal')
+                bv = self.szovegkivetel(bv,'Facebook')
+                bv = self.szovegkivetel(bv,'http')
+                bv = self.szovegkivetel(bv,'https')
+                bv = re.sub(r'^(.{400}).*$', '\g<1>...', bv.strip())
+            return bv
+        except Exception:
+            return ''
             
     def szovegki_tech2(self, txt=''):
         bv = ''
@@ -725,6 +1000,28 @@ class Technika(CBaseHostClass):
         desc_nbook = self.getdvdsz(url_nbook, 'Notebook.hu csatorna videói...\n\nNotebookról, ultrabookról, tabletről és okostelefonról szóló információkat lehet itt megtekinteni.')
         url_apie = 'technika_apie_csatorna'
         desc_apie = self.getdvdsz(url_apie, 'Apple Pie csatorna videói...\n\nEz a csatonra leginkább az Apple-ről szól, azonban néha más menő cuccok is bemutatásra kerülnek.')
+        url_shadowwarrior = 'technika_shadowwarrior_csatorna'
+        desc_shadowwarrior = self.getdvdsz(url_shadowwarrior, 'ShadowWarrior csatorna videói...\n\nA ShadowWarrior csatorna, egy független forrás, amely különféle hardver és gamer témával kapcsolatban jelentkezik újabb és újabb videokkal.')
+        url_hunboxing = 'technika_hunboxing_csatorna'
+        desc_hunboxing = self.getdvdsz(url_hunboxing, 'Hunboxing csatorna videói...\n\nKülönféle eszközök tesztelése, bemutatása. TV, telefon, okos otthon és egyéb kiegészítő tesztek.')
+        url_bytech = 'technika_bytech_csatorna'
+        desc_bytech = self.getdvdsz(url_bytech, 'ByTech csatorna videói...\n\nTechnikai kütyük tesztelése.')
+        url_techkalauz = 'technika_techkalauz_csatorna'
+        desc_techkalauz = self.getdvdsz(url_techkalauz, 'TechKalauz csatorna videói...\n\nKülönféle eszközök tesztelése, bemutatása.')
+        url_techdoboz = 'technika_techdoboz_csatorna'
+        desc_techdoboz = self.getdvdsz(url_techdoboz, 'TechDoboz csatorna videói...\n\nKülönféle eszközök tesztelése, bemutatása.')
+        url_anonim = 'technika_anonim_csatorna'
+        desc_anonim = self.getdvdsz(url_anonim, 'AnonimInc csatorna videói...\n\nA Tech minden oldala: Népszerű, külföldi, limitált, prémium, komplikált, olcsó, hangos, méretes, nálam mindent megtalálsz. Hangszórók, telefonok, laptopok, egerek, tabletek, billentyűzetek, fejhallgatók, drónok, és sok minden más. Éljen a mindenható Tech.')
+        url_pcx = 'technika_pcx_csatorna'
+        desc_pcx = self.getdvdsz(url_pcx, 'PCX csatorna videói...\n\nSzámítógépek minden mennyiségben.')
+        url_bitech = 'technika_bitech_csatorna'
+        desc_bitech = self.getdvdsz(url_bitech, 'BiTech csatorna videói...\n\nKülönféle eszközök tesztelése, bemutatása.')
+        url_thehub = 'technika_thehub_csatorna'
+        desc_thehub = self.getdvdsz(url_thehub, 'The HUB csatorna videói...\n\nKülönféle eszközök tesztelése, bemutatása.')
+        url_rplair = 'technika_rplair_csatorna'
+        desc_rplair = self.getdvdsz(url_rplair, 'RPs Lair csatorna videói...\n\nBonyolult Tech, Egyszerűen! Magyarország legtechnikaibb tech csatornája. Részletek egészen az utolsó legkisebb alkatrészig.')
+        url_techfundo = 'technika_techfundo_csatorna'
+        desc_techfundo = self.getdvdsz(url_techfundo, 'TechFunDo csatorna videói...\n\nNem vagyok egészen normális és bírom a tech kütyüket. Há mondom kotyvasztok ebből egy csatornát, meméne!?')
         MR_CAT_TAB = [
                       {'category':'list_second', 'title': 'Tech2', 'url': url_tech2, 'plurl': self.plurl_tech2, 'tab_id': 'tech2', 'icon': self.DEFAULT_ICON_URL_TECH2, 'desc': desc_tech2, 'tpe':'30'},
                       {'category':'list_second', 'title': 'PowerTech', 'url': url_powertech, 'plurl': self.plurl_powertech, 'tab_id': 'powertech', 'icon': self.DEFAULT_ICON_URL_POWERTECH, 'desc': desc_powertech, 'tpe':'31'},
@@ -734,33 +1031,138 @@ class Technika(CBaseHostClass):
                       {'category':'list_second', 'title': 'Hasznalt Droid', 'url': url_hdroid, 'plurl': self.plurl_hdroid, 'tab_id': 'hdroid', 'icon': self.DEFAULT_ICON_URL_HDROID, 'desc': desc_hdroid, 'tpe':'35'},
                       {'category':'list_second', 'title': 'TheVR Tech', 'url': url_vrtech, 'plurl': self.plurl_vrtech, 'tab_id': 'vrtech', 'icon': self.DEFAULT_ICON_URL_VRTECH, 'desc': desc_vrtech, 'tpe':'36'},
                       {'category':'list_second', 'title': 'Notebook.hu', 'url': url_nbook, 'plurl': self.plurl_nbook, 'tab_id': 'nbook', 'icon': self.DEFAULT_ICON_URL_NBOOK, 'desc': desc_nbook, 'tpe':'37'},
-                      {'category':'list_second', 'title': 'Apple Pie', 'url': url_apie, 'plurl': self.plurl_apie, 'tab_id': 'apie', 'icon': self.DEFAULT_ICON_URL_APIE, 'desc': desc_apie, 'tpe':'38'}
+                      {'category':'list_second', 'title': 'Apple Pie', 'url': url_apie, 'plurl': self.plurl_apie, 'tab_id': 'apie', 'icon': self.DEFAULT_ICON_URL_APIE, 'desc': desc_apie, 'tpe':'38'},
+                      {'category':'list_second', 'title': 'ShadowWarrior', 'url': url_shadowwarrior, 'plurl': self.plurl_shadowwarrior, 'tab_id': 'shadowwarrior', 'icon': self.DEFAULT_ICON_URL_SHADOWWARRIOR, 'desc': desc_shadowwarrior, 'tpe':'39'},
+                      {'category':'list_second', 'title': 'Hunboxing', 'url': url_hunboxing, 'plurl': self.plurl_hunboxing, 'tab_id': 'hunboxing', 'icon': self.DEFAULT_ICON_URL_HUNBOXING, 'desc': desc_hunboxing, 'tpe':'40'},
+                      {'category':'list_second', 'title': 'ByTech', 'url': url_bytech, 'plurl': self.plurl_bytech, 'tab_id': 'bytech', 'icon': self.DEFAULT_ICON_URL_BYTECH, 'desc': desc_bytech, 'tpe':'41'},
+                      {'category':'list_second', 'title': 'TechKalauz', 'url': url_techkalauz, 'plurl': self.plurl_techkalauz, 'tab_id': 'techkalauz', 'icon': self.DEFAULT_ICON_URL_TECHKALAUZ, 'desc': desc_techkalauz, 'tpe':'42'},
+                      {'category':'list_second', 'title': 'TechDoboz', 'url': url_techdoboz, 'plurl': self.plurl_techdoboz, 'tab_id': 'techdoboz', 'icon': self.DEFAULT_ICON_URL_TECHDOBOZ, 'desc': desc_techdoboz, 'tpe':'43'},
+                      {'category':'list_second', 'title': 'AnonimInc', 'url': url_anonim, 'plurl': self.plurl_anonim, 'tab_id': 'anonim', 'icon': self.DEFAULT_ICON_URL_ANONIM, 'desc': desc_anonim, 'tpe':'44'},
+                      {'category':'list_second', 'title': 'PCX', 'url': url_pcx, 'plurl': self.plurl_pcx, 'tab_id': 'pcx', 'icon': self.DEFAULT_ICON_URL_PCX, 'desc': desc_pcx, 'tpe':'45'},
+                      {'category':'list_second', 'title': 'BiTech', 'url': url_bitech, 'plurl': self.plurl_bitech, 'tab_id': 'bitech', 'icon': self.DEFAULT_ICON_URL_BITECH, 'desc': desc_bitech, 'tpe':'46'},
+                      {'category':'list_second', 'title': 'The HUB', 'url': url_thehub, 'plurl': self.plurl_thehub, 'tab_id': 'thehub', 'icon': self.DEFAULT_ICON_URL_THEHUB, 'desc': desc_thehub, 'tpe':'47'},
+                      {'category':'list_second', 'title': 'RPs Lair', 'url': url_rplair, 'plurl': self.plurl_rplair, 'tab_id': 'rplair', 'icon': self.DEFAULT_ICON_URL_RPLAIR, 'desc': desc_rplair, 'tpe':'48'},
+                      {'category':'list_second', 'title': 'TechFunDo', 'url': url_techfundo, 'plurl': self.plurl_techfundo, 'tab_id': 'techfundo', 'icon': self.DEFAULT_ICON_URL_TECHFUNDO, 'desc': desc_techfundo, 'tpe':'49'}
                      ]
+        random.shuffle(MR_CAT_TAB)
         self.listsTab(MR_CAT_TAB, cItem)
             
     def Legfrissebb_MainItems(self, cItem, tabID):
         url = cItem['url']
+        param_lista = [] 
         try:
             self.susn('2', '15', url)
             params = dict()
             params = self.Ytlfl('tech2', self.plurl_tech2, '30', 'tech2', True)
-            if params: self.kiirtt(params,'Tech2 - ','tech2')
+            if params: param_lista.append(params)
             params = self.Ytlfl('powertech', self.plurl_powertech, '31', 'powertech', True)
-            if params: self.kiirtt(params,'PowerTech - ','powertech') 
+            if params: param_lista.append(params)  
             params = self.Ytlfl('mobeel', self.plurl_mobeel, '32', 'mobeel', True)
-            if params: self.kiirtt(params,'Mobeel - ','mobeel')
+            if params: param_lista.append(params)
             params = self.Ytlfl('itfrocs', self.plurl_itfrocs, '33', 'itfrocs', True)
-            if params: self.kiirtt(params,'ITFroccs - ','itfrocs')
+            if params: param_lista.append(params)
             params = self.Ytlfl('techvideo', self.plurl_techvideo, '34', 'techvideo', True)
-            if params: self.kiirtt(params,'TechVideoHU - ','techvideo')
+            if params: param_lista.append(params)
             params = self.Ytlfl('hdroid', self.plurl_hdroid, '35', 'hdroid', True)
-            if params: self.kiirtt(params,'Hasznalt Droid - ','hdroid')
+            if params: param_lista.append(params)
             params = self.Ytlfl('vrtech', self.plurl_vrtech, '36', 'vrtech', True)
-            if params: self.kiirtt(params,'TheVR Tech - ','vrtech')
+            if params: param_lista.append(params)
             params = self.Ytlfl('nbook', self.plurl_nbook, '37', 'nbook', True)
-            if params: self.kiirtt(params,'Notebook.hu - ','nbook')
+            if params: param_lista.append(params)
             params = self.Ytlfl('apie', self.plurl_apie, '38', 'apie', True)
-            if params: self.kiirtt(params,'Apple Pie - ','apie')
+            if params: param_lista.append(params)
+            params = self.Ytlfl('shadowwarrior', self.plurl_shadowwarrior, '39', 'shadowwarrior', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('hunboxing', self.plurl_hunboxing, '40', 'hunboxing', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('bytech', self.plurl_bytech, '41', 'bytech', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('techkalauz', self.plurl_techkalauz, '42', 'techkalauz', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('techdoboz', self.plurl_techdoboz, '43', 'techdoboz', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('anonim', self.plurl_anonim, '44', 'anonim', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('pcx', self.plurl_pcx, '45', 'pcx', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('bitech', self.plurl_bitech, '46', 'bitech', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('thehub', self.plurl_thehub, '47', 'thehub', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('rplair', self.plurl_rplair, '48', 'rplair', True)
+            if params: param_lista.append(params)
+            params = self.Ytlfl('techfundo', self.plurl_techfundo, '49', 'techfundo', True)
+            if params: param_lista.append(params)
+            if len(param_lista) > 0:
+                param_lista = sorted(param_lista, key=lambda i: (i['time']), reverse=True)
+                for item in param_lista:
+                    tsz = '-'
+                    tab_id = '-'
+                    if not self.fnbvn(item['url']):
+                        if item['tpe'] == '30':
+                            tsz = 'Tech2 - '
+                            tab_id = 'tech2'
+                        if item['tpe'] == '31':
+                            tsz = 'PowerTech - '
+                            tab_id = 'powertech'
+                        if item['tpe'] == '32':
+                            tsz = 'Mobeel - '
+                            tab_id = 'mobeel'
+                        if item['tpe'] == '33':
+                            tsz = 'ITFroccs - '
+                            tab_id = 'itfrocs'
+                        if item['tpe'] == '34':
+                            tsz = 'TechVideoHU - '
+                            tab_id = 'techvideo'
+                        if item['tpe'] == '35':
+                            tsz = 'Hasznalt Droid - '
+                            tab_id = 'hdroid'
+                        if item['tpe'] == '36':
+                            tsz = 'TheVR Tech - '
+                            tab_id = 'vrtech'
+                        if item['tpe'] == '37':
+                            tsz = 'Notebook.hu - '
+                            tab_id = 'nbook'
+                        if item['tpe'] == '38':
+                            tsz = 'Apple Pie - '
+                            tab_id = 'apie'
+                        if item['tpe'] == '39':
+                            tsz = 'ShadowWarrior - '
+                            tab_id = 'shadowwarrior'
+                        if item['tpe'] == '40':
+                            tsz = 'Hunboxing - '
+                            tab_id = 'hunboxing'
+                        if item['tpe'] == '41':
+                            tsz = 'ByTech - '
+                            tab_id = 'bytech'
+                        if item['tpe'] == '42':
+                            tsz = 'TechKalauz - '
+                            tab_id = 'techkalauz'
+                        if item['tpe'] == '43':
+                            tsz = 'TechDoboz - '
+                            tab_id = 'techdoboz'
+                        if item['tpe'] == '44':
+                            tsz = 'AnonimInc - '
+                            tab_id = 'anonim'
+                        if item['tpe'] == '45':
+                            tsz = 'PCX - '
+                            tab_id = 'pcx'
+                        if item['tpe'] == '46':
+                            tsz = 'BiTech - '
+                            tab_id = 'bitech'
+                        if item['tpe'] == '47':
+                            tsz = 'The HUB - '
+                            tab_id = 'thehub'
+                        if item['tpe'] == '48':
+                            tsz = 'RPs Lair - '
+                            tab_id = 'rplair'
+                        if item['tpe'] == '49':
+                            tsz = 'TechFunDo - '
+                            tab_id = 'techfundo'   
+                        if tsz != '-' and tab_id != '-':
+                            item['title'] = tsz + item['title']
+                            item = MergeDicts(item, {'good_for_fav': False, 'tab_id':tab_id})
+                            self.addVideo(item)
         except Exception:
             return
             
@@ -801,6 +1203,17 @@ class Technika(CBaseHostClass):
                 if tpse == '36': bv = 'TheVR Tech'
                 if tpse == '37': bv = 'Notebook.hu'
                 if tpse == '38': bv = 'Apple Pie'
+                if tpse == '39': bv = 'ShadowWarrior'
+                if tpse == '40': bv = 'Hunboxing'
+                if tpse == '41': bv = 'ByTech'
+                if tpse == '42': bv = 'TechKalauz'
+                if tpse == '43': bv = 'TechDoboz'
+                if tpse == '44': bv = 'AnonimInc'
+                if tpse == '45': bv = 'PCX'
+                if tpse == '46': bv = 'BiTech'
+                if tpse == '47': bv = 'The HUB'
+                if tpse == '48': bv = 'RPs Lair'
+                if tpse == '49': bv = 'TechFunDo'
             return bv
         except Exception:
             return ''
@@ -818,6 +1231,17 @@ class Technika(CBaseHostClass):
                 if tpse == '36': bv = 'vrtech'
                 if tpse == '37': bv = 'nbook'
                 if tpse == '38': bv = 'apie'
+                if tpse == '39': bv = 'shadowwarrior'
+                if tpse == '40': bv = 'hunboxing'
+                if tpse == '41': bv = 'bytech'
+                if tpse == '42': bv = 'techkalauz'
+                if tpse == '43': bv = 'techdoboz'
+                if tpse == '44': bv = 'anonim'
+                if tpse == '45': bv = 'pcx'
+                if tpse == '46': bv = 'bitech'
+                if tpse == '47': bv = 'thehub'
+                if tpse == '48': bv = 'rplair'
+                if tpse == '49': bv = 'techfundo'
             return bv
         except Exception:
             return ''

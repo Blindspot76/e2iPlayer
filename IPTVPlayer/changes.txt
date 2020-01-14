@@ -1,4 +1,6 @@
-﻿#2020.01.14.01
+﻿#2020.01.14.02
+-Technika.HU frissítve
+#2020.01.14.01
 -InfoVersion frissítve
 #2020.01.13.01
 -Felnőtt kiegészítő javítva
