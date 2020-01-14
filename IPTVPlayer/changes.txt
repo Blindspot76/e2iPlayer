@@ -1,4 +1,6 @@
-﻿#2020.01.12.01
+﻿#2020.01.13.01
+-Felnőtt kiegészítő javítva
+#2020.01.12.01
 -Twitch TV javítva (Keresési eredmények)
 -eKino javítva
 -PornRabbit javítva (XXX)
