@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-01-14 by Alec - modified Technika.HU
+# 2020-01-16 by Alec - modified Technika.HU
 ###################################################
-HOST_VERSION = "1.2"
+HOST_VERSION = "1.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -175,23 +175,23 @@ class Technika(CBaseHostClass):
             desc_legfris = self.getdvdsz(url_legfris, 'Legfrissebb technikai adások, műsorok és információk gyűjtőhelye...')
             url_techcsat = 'technika_csatornak'
             desc_techcsat = self.getdvdsz(url_techcsat, 'Tech műsorcsatornák - TECH2, POWERTECH, MOBEEL, ITFROCCS, TECHVIDEOHU, HASZNÁLT DROID, THEVR TECH, NOTEBOOK.HU, APPLE PIE, SHADOWWARRIOR, HUNBOXING, BYTECH, TECHKALAUZ, TECHDOBOZ, ANONIMINC, PCX, BITECH, THE HUB, RPS LAIR, TECHFUNDO - műsorai...')
+            url_erdekesseg = 'technika_erdekesseg'
+            desc_erdekesseg = self.getdvdsz(url_erdekesseg, 'Tech videó érdekességek megjelenítése...')
             tab_ajanlott = 'technika_ajanlott'
             desc_ajanlott = self.getdvdsz(tab_ajanlott, 'Ajánlott, nézett tartalmak megjelenítése...')
-            tab_keresett = 'technika_keresett_tartalom'
-            desc_keresett = self.getdvdsz(tab_keresett, 'Keresett tartalmak megjelenítése...')
             tab_search = 'technika_kereses'
             desc_search = self.getdvdsz(tab_search, 'Keresés...')
-            tab_search_hist = 'technika_kereses_elozmeny'
-            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
+            tab_kereses_lehetoseg = 'technika_kereses_lehetoseg'
+            desc_kereses_lehetoseg = self.getdvdsz(tab_kereses_lehetoseg, 'Keresett videók megjelenítése, Keresés az előzmények között...')
             url_info = 'technika_informacio'
             desc_info = self.getdvdsz(url_info, 'Információk megjelenítése...')
             MAIN_CAT_TAB = [
-                            {'category':'list_main', 'title': 'Legfrissebb adások', 'url': url_legfris, 'tab_id': 'legfrissebb', 'desc': desc_legfris},
-                            {'category':'list_main', 'title': 'Tech Csatornák', 'url': url_techcsat, 'tab_id': 'techcsat', 'desc': desc_techcsat},                            
-                            {'category':'list_main', 'title': 'Ajánlott, nézett tartalmak', 'tab_id':tab_ajanlott, 'desc':desc_ajanlott },
-                            {'category':'list_main', 'title': 'Keresett tartalmak', 'tab_id':tab_keresett, 'desc':desc_keresett },
-                            {'category':'search', 'title': _('Search'), 'search_item':True, 'tps':'0', 'tab_id':tab_search, 'desc':desc_search },
-                            {'category':'search_history', 'title': _('Search history'), 'tps':'0', 'tab_id':tab_search_hist, 'desc':desc_search_hist } 
+                            {'category':'list_main', 'title': 'Legfrissebb videók', 'url': url_legfris, 'tab_id': 'legfrissebb', 'desc': desc_legfris},
+                            {'category':'list_main', 'title': 'Tech csatornák videói', 'url': url_techcsat, 'tab_id': 'techcsat', 'desc': desc_techcsat},
+                            {'category':'list_main', 'title': 'Tech videó érdekességek', 'url': url_erdekesseg, 'tab_id':'erdekesseg', 'desc':desc_erdekesseg},
+                            {'category':'list_main', 'title': 'Ajánlott, nézett videók', 'tab_id':tab_ajanlott, 'desc':desc_ajanlott},
+                            {'category':'search', 'title': _('Search'), 'search_item': True, 'tps':'0', 'tab_id':tab_search, 'desc':desc_search},
+                            {'category':'list_main', 'title': 'Keresési lehetőségek', 'tab_id':tab_kereses_lehetoseg, 'desc':desc_kereses_lehetoseg}
                            ]
             self.listsTab(MAIN_CAT_TAB, {'name':'category'})
             params = dict(cItem)
@@ -227,7 +227,7 @@ class Technika(CBaseHostClass):
                     self.susn('2', '15', cItem['url'])
                 return nez
             else:
-                return []
+                return []    
         except Exception:
             return []
             
@@ -970,8 +970,12 @@ class Technika(CBaseHostClass):
                 self.Legfrissebb_MainItems(cItem, tabID)
             elif tabID == 'techcsat':
                 self.MusorMainMenu(cItem, tabID)
+            elif tabID == 'erdekesseg':
+                self.ErdekesMainMenu(cItem, tabID)
             elif tabID == 'technika_ajanlott':
                 self.Fzkttm(cItem, tabID)
+            elif tabID == 'technika_kereses_lehetoseg':
+                self.KeresesMainMenu(cItem, tabID)
             elif tabID == 'technika_keresett_tartalom':
                 self.Vdakstmk({'name':'history', 'category': 'search', 'tab_id':''}, 'desc', _("Type: "), tabID)
             else:
@@ -1046,6 +1050,14 @@ class Technika(CBaseHostClass):
                      ]
         random.shuffle(MR_CAT_TAB)
         self.listsTab(MR_CAT_TAB, cItem)
+        
+    def ErdekesMainMenu(self, cItem, tabID):
+        url = cItem['url']
+        try:
+            self.susn('2', '15', url)
+            self.Vajnltmsr(cItem)
+        except Exception:
+            return
             
     def Legfrissebb_MainItems(self, cItem, tabID):
         url = cItem['url']
@@ -1176,17 +1188,30 @@ class Technika(CBaseHostClass):
     def Fzkttm(self, cItem, tabID):
         try:
             self.susn('2', '15', tabID)
-            tab_ams = 'technika_ajnlt_musor'
-            desc_ams = self.getdvdsz(tab_ams, 'Ajánlott, nézett tartalmak megjelenítése műsorok szerint...')
             tab_adt = 'technika_ajnlt_datum'
             desc_adt = self.getdvdsz(tab_adt, 'Ajánlott, nézett tartalmak megjelenítése dátum szerint...')
             tab_anzt = 'technika_ajnlt_nezettseg'
             desc_anzt = self.getdvdsz(tab_anzt, 'Ajánlott, nézett tartalmak megjelenítése nézettség szerint...')
-            A_CAT_TAB = [{'category':'list_third', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
-                         {'category':'list_third', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt},
-                         {'category':'list_third', 'title': 'Műsorok szerint', 'tab_id':tab_ams, 'desc':desc_ams} 
+            A_CAT_TAB = [
+                         {'category':'list_third', 'title': 'Dátum szerint', 'tab_id':tab_adt, 'desc':desc_adt},
+                         {'category':'list_third', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt} 
                         ]
             self.listsTab(A_CAT_TAB, cItem)
+        except Exception:
+            return
+            
+    def KeresesMainMenu(self, cItem, tabID):
+        try:
+            self.susn('2', '15', tabID)
+            tab_keresett = 'technika_keresett_tartalom'
+            desc_keresett = self.getdvdsz(tab_keresett, 'Keresett tartalmak megjelenítése...')
+            tab_search_hist = 'technika_kereses_elozmeny'
+            desc_search_hist = self.getdvdsz(tab_search_hist, 'Keresés az előzmények között...')
+            K_CAT_TAB = [
+                         {'category':'list_main', 'title': 'Keresett videók', 'tab_id':tab_keresett, 'desc':desc_keresett},
+                         {'category':'search_history', 'title': _('Search history'), 'tps':'0', 'tab_id':tab_search_hist, 'desc':desc_search_hist} 
+                        ]
+            self.listsTab(K_CAT_TAB, cItem)
         except Exception:
             return
             
@@ -1249,9 +1274,7 @@ class Technika(CBaseHostClass):
     def listThirdItems(self, cItem):
         try:
             tabID = cItem.get('tab_id', '')
-            if tabID == 'technika_ajnlt_musor':
-                self.Vajnltmsr(cItem)
-            elif tabID == 'technika_ajnlt_datum':
+            if tabID == 'technika_ajnlt_datum':
                 self.Vajnltdtm(cItem)
             elif tabID == 'technika_ajnlt_nezettseg':
                 self.Vajnltnztsg(cItem)
@@ -1262,7 +1285,6 @@ class Technika(CBaseHostClass):
             
     def Vajnltmsr(self,cItem):
         try:
-            self.susn('2', '15', 'technika_ajnlt_musor')
             vtb = self.malvadnav(cItem, '3', '15', '4')
             if len(vtb) > 0:
                 for item in vtb:
@@ -1278,7 +1300,7 @@ class Technika(CBaseHostClass):
                                 tempdesc = 'Csatorna:  ' + self.cslkrs(item['tpe']) + '\n' + ttmb[0]
                                 tempdesc = tempdesc + 'Tartalom:\n' + re.sub(r'^(.{450}).*$', '\g<1>...', ttmb[1].replace('\n','').strip())
                         item['desc'] = tempdesc
-                    item['category'] = 'list_third'
+                    item['category'] = 'list_main'
                     if item['url'] != '' and item['title'] != '':
                         self.addVideo(item)
         except Exception:
@@ -1453,6 +1475,7 @@ class Technika(CBaseHostClass):
     def malvadnav(self, cItem, i_md='', i_hgk='', i_mptip='', i_mpdb=''):
         uhe = zlib.decompress(base64.b64decode('eJzLKCkpsNLXLy8v10vLTK9MzclNrSpJLUkt1sso1c9IzanUzy0tSQQTxYklKUl6BRkFABGoFBk='))
         t_s = []
+        temp_yd = ''
         try:
             if i_md != '' and i_hgk != '' and i_mptip != '':
                 if i_hgk != '': i_hgk = base64.b64encode(i_hgk).replace('\n', '').strip()
@@ -1492,11 +1515,22 @@ class Technika(CBaseHostClass):
                         if t_vp == 'c_sor_tipe':
                             temp_tpe = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_tipe">', '</span>', False)[1]
                             if temp_tpe != '': temp_tpe = base64.b64decode(temp_tpe)
+                        if t_vp == 'c_sor_yd':
+                            temp_yd = self.cm.ph.getDataBeetwenMarkers(item, '<span class="c_sor_yd">', '</span>', False)[1]
+                            if temp_yd != '':
+                                temp_yd = base64.b64decode(temp_yd)
+                                pev = temp_yd[:4]
+                                pho = temp_yd[5:7]
+                                pnap = temp_yd[8:10]
+                                if pev.isdigit() and pho.isdigit() and pnap.isdigit():
+                                    temp_yd = pev + '.' + pho + '.' + pnap + '.'
+                                else:
+                                    temp_yd = ''
                     if temp_u == '' and temp_t =='': continue
                     if temp_n == '': temp_n = '1'
                     if temp_tpe == '': temp_tpe = '0'
                     temp_tabid = self.cslkrstid(temp_tpe)
-                    params = MergeDicts(cItem, {'good_for_fav': True, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp, 'tpe':temp_tpe, 'tab_id':temp_tabid})
+                    params = MergeDicts(cItem, {'good_for_fav': True, 'url':temp_u, 'title':temp_t, 'icon':temp_i, 'desc':temp_l, 'nztsg':temp_n, 'tps':temp_tp, 'tpe':temp_tpe, 'tab_id':temp_tabid, 'time':temp_yd})
                     t_s.append(params)       
             return t_s
         except Exception:
