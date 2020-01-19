@@ -1,4 +1,7 @@
-﻿#2020.01.16.01
+﻿#2020.01.19.01
+-Technika.HU frissítve
+-Kisebb módosítások
+#2020.01.16.01
 -Technika.HU frissítve
 -TSiPlayer frissítve
 #2020.01.14.02

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-01-16 by Alec - modified Technika.HU
+# 2020-01-17 by Alec - modified Technika.HU
 ###################################################
-HOST_VERSION = "1.3"
+HOST_VERSION = "1.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -1197,6 +1197,28 @@ class Technika(CBaseHostClass):
                          {'category':'list_third', 'title': 'Nézettség szerint', 'tab_id':tab_anzt, 'desc':desc_anzt} 
                         ]
             self.listsTab(A_CAT_TAB, cItem)
+            try:
+                vtb = self.malvadnav(cItem, '9', '15', '4')
+                if len(vtb) > 0:
+                    for item in vtb:
+                        if not self.fnbvn(item['url']):
+                            if len(item['desc']) > 0:
+                                tempdesc = item['desc']
+                                if tempdesc.startswith('ID'):
+                                    tlt = tempdesc.find('\n')
+                                    if -1 < tlt:
+                                        tempdesc = tempdesc[tlt+1:].strip()
+                                if not tempdesc.startswith('Csatorna'):
+                                    ttmb = tempdesc.split('Tartalom:')
+                                    if len(ttmb) == 2:
+                                        tempdesc = 'Csatorna:  ' + self.cslkrs(item['tpe']) + '\n' + ttmb[0]
+                                        tempdesc = tempdesc + 'Tartalom:\n' + re.sub(r'^(.{450}).*$', '\g<1>...', ttmb[1].replace('\n','').strip())
+                                item['desc'] = tempdesc
+                            item['category'] = 'list_main'
+                            if item['url'] != '' and item['title'] != '':
+                                self.addVideo(item)
+            except Exception:
+                pass
         except Exception:
             return
             
