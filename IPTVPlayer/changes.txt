@@ -1,4 +1,7 @@
-﻿#2020.01.19.01
+﻿#2020.01.25.01
+-YouTube javítva
+-Felnőtt kiegészítő frissítve
+#2020.01.19.01
 -Technika.HU frissítve
 -Kisebb módosítások
 #2020.01.16.01
