@@ -133,7 +133,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.01.10"
+    infoversion = "2020.01.26"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -345,7 +345,7 @@ class Host:
 
         if 'TV_zagraniczne' == name:
            valTab.append(CDisplayListItem('Glaz', 'http://www.glaz.tv/online-tv/', CDisplayListItem.TYPE_CATEGORY, ['http://www.glaz.tv/online-tv/'], 'glaz', 'http://s.glaz.tv/images/logo.png', None))
-           valTab.append(CDisplayListItem('Rosja - EuropaPlus', 'http://www.europaplus.ru/europaplustv', CDisplayListItem.TYPE_CATEGORY, ['http://www.europaplus.ru/europaplustv'], 'europaplus', 'http://www.europaplus.ru/template/2012/img/logo.png', None))                
+           valTab.append(CDisplayListItem('Rosja - EuropaPlus', 'https://europaplus.ru/live', CDisplayListItem.TYPE_CATEGORY, ['https://europaplus.ru/live'], 'europaplus', 'https://europaplus.ru/media/logotype.e7ee9233.png', None))                
            valTab.append(CDisplayListItem('Rosja - NTV', 'http://www.ntv.ru/#air', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://www.ntv.ru/#air', 1)], '', 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/NTV_logo.svg/480px-NTV_logo.svg.png', None)) 
            valTab.append(CDisplayListItem('Tivix', 'http://tivix.co', CDisplayListItem.TYPE_CATEGORY, ['http://tivix.co'], 'tivix', 'http://tivix.co/templates/Default/dleimages/logo.png', None)) 
            #valTab.append(CDisplayListItem('Czeskie i Rosyjskie', 'Czeskie i Rosyjskie', CDisplayListItem.TYPE_CATEGORY, [''], 'czeskie', 'http://g7.forsal.pl/p/_wspolne/pliki/980000/980201-shutterstock-100853926.jpg', None)) 
@@ -1544,18 +1544,20 @@ class Host:
             self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
             sts, data = self.get_Page(url)
             if not sts: return valTab
-            #printDBG( 'Host listsItems data1: '+data )
+            printDBG( 'Host listsItems data1: '+data )
             Url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
+            if Url.startswith('//'): Url = 'http:' + Url
             sts, data = self.get_Page(Url)
             if not sts: return valTab
-            #printDBG( 'Host listsItems data2: '+data )
+            printDBG( 'Host listsItems data2: '+data )
             Url = self.cm.ph.getSearchGroups(data, '''file\': ['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
             if not Url: Url = self.cm.ph.getSearchGroups(data, '''setStream\(['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
+            if not Url: Url = self.cm.ph.getSearchGroups(data, '''"hls":['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&').replace('\/','/')
             if Url.startswith('//'): Url = 'http:' + Url
             if self.cm.isValidUrl(Url): 
-                tmp = getDirectM3U8Playlist(Url)
+                tmp = getDirectM3U8Playlist(Url, checkContent=True, sortWithMaxBitrate=999999999)
                 for item in tmp:
-                    valTab.append(CDisplayListItem('EuropaPlus   '+str(item['name']), 'EuropaPlus',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', str(item['url']), 0)], 0, 'http://www.europaplus.ru/template/2012/img/logo.png', None))
+                    valTab.append(CDisplayListItem('EuropaPlus   '+str(item['name']), 'EuropaPlus',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', str(item['url']), 0)], 0, 'https://europaplus.ru/media/logotype.e7ee9233.png', None))
             return valTab  
 
         if 'sbl' == name:
@@ -1678,11 +1680,20 @@ class Host:
         if 'MIAMI' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'https://miamitvhd.com' 
+           url = self.MAIN_URL
            COOKIEFILE = os_path.join(GetCookieDir(), 'miami.cookie')
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.getPage(url, 'miami.cookie', 'miamitvhd.com', self.defaultParams)
            if not sts: return valTab
            printDBG( 'Host listsItems data: '+str(data) )
+           link1 = self.cm.ph.getDataBeetwenMarkers(data, '<div id="playerElement"', '</div>', False)[1]
+           if link1:
+              link1 = self.cm.ph.getSearchGroups(link1, '''url=['"]([^"^']+?)['"]''', 1, True)[0] 
+              if link1:
+                 link1 = urlparser.decorateUrl(link1, {'User-Agent': self.USER_AGENT, 'Referer':self.MAIN_URL})
+           link2 = self.cm.ph.getSearchGroups(data, '''<source src=['"]([^"^']+?)['"]''', 1, True)[0]
+           if link2:
+              link2 = urlparser.decorateUrl(link2, {'User-Agent': self.USER_AGENT, 'Referer':self.MAIN_URL})
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li><a class="dropdown-item"', '</li>')
            for item in data:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
@@ -1691,10 +1702,10 @@ class Host:
               if phUrl.startswith('/'): phUrl = 'https://miamitvhd.com' + phUrl 
               if phTitle=='Promos': break
               valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'MIAMI-clips', '', None)) 
-           valTab.insert(0,CDisplayListItem("--- MIAMI TV Espania ---","MIAMI TV Espania",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', self.MAIN_URL+'/?channel=miamitv4', 1)],0,    'https://miamitvhd.com/assets/miamitvespana-eec799e28bb876387f572458461375127e49c28c27e71e7363293db36b803039.png',None))
-           valTab.insert(0,CDisplayListItem("--- MIAMI TV Colombia ---","MIAMI TV Colombia",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', self.MAIN_URL+'/?channel=miamitv3', 1)],0,    'https://miamitvhd.com/assets/miamitvcolombia-16791a2f575f8932b66528b7340353f82d242346d117345eb82a3876612b4789.png',None))
-           valTab.insert(0,CDisplayListItem("--- MIAMI TV Latino ---","MIAMI TV Latino",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', self.MAIN_URL+'/?channel=miamitv2', 1)],0,    'https://miamitvhd.com/assets/miamitvlatino-a0a662e0cef788009ad389105e7263d585707570b055e46e3b9b7eb5329775aa.png',None))
-           valTab.insert(0,CDisplayListItem("--- MIAMI TV ---","MIAMI TV",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', self.MAIN_URL+'/?channel=miamitv', 1)], 0,    'https://miamitvhd.com/assets/miamitv-8fcf2efe186508c88b6ebd5441452254a32c410d1d18ea7f82ffbb0d26b35271.png',None))
+           #valTab.insert(0,CDisplayListItem("--- MIAMI TV Espania ---","MIAMI TV Espania",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', self.MAIN_URL+'/?channel=miamitv4', 1)],0,    'https://miamitvhd.com/assets/miamitvespana-eec799e28bb876387f572458461375127e49c28c27e71e7363293db36b803039.png',None))
+           #valTab.insert(0,CDisplayListItem("--- MIAMI TV Colombia ---","MIAMI TV Colombia",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', self.MAIN_URL+'/?channel=miamitv3', 1)],0,    'https://miamitvhd.com/assets/miamitvcolombia-16791a2f575f8932b66528b7340353f82d242346d117345eb82a3876612b4789.png',None))
+           valTab.insert(0,CDisplayListItem("--- MIAMI TV Latino ---","MIAMI TV Latino",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', link2, 0)],0,    'https://miamitvhd.com/assets/miamitvlatino-a0a662e0cef788009ad389105e7263d585707570b055e46e3b9b7eb5329775aa.png',None))
+           valTab.insert(0,CDisplayListItem("--- MIAMI TV ---","MIAMI TV",     CDisplayListItem.TYPE_VIDEO,[CUrlItem('', link1, 0)], 0,    'https://miamitvhd.com/assets/miamitv-8fcf2efe186508c88b6ebd5441452254a32c410d1d18ea7f82ffbb0d26b35271.png',None))
            return valTab
         if 'MIAMI-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
@@ -2069,12 +2080,55 @@ class Host:
                     valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', None))
             return valTab
         if 'darmowa' == name:
+            valTab.insert(0,CDisplayListItem("--- Pastebin --- Przypadkowe listy m3u, wyszukane w google na stronie pastebin.com","Przypadkowe listy m3u, wyszukane w google na stronie pastebin.com",     CDisplayListItem.TYPE_CATEGORY,['https://pastebin.com'],'pastebin',    '',None))
             valTab.insert(0,CDisplayListItem("--- Zobacz.ws ---","Zobacz.ws",     CDisplayListItem.TYPE_CATEGORY,['http://zobacz.ws'],'zobacz_ws',    '',None))
             valTab.insert(0,CDisplayListItem("--- SwirTeam ---","SwirTeam",     CDisplayListItem.TYPE_CATEGORY,['http://tv-swirtvteam.info/'],'SwirTeamTk',    '',None))
             #valTab.insert(0,CDisplayListItem("--- SuperSportowo ---","SuperSportowo",     CDisplayListItem.TYPE_CATEGORY,['http://supersportowo.com'],'SuperSportowo',    '',None))
             valTab.insert(0,CDisplayListItem("--- Ustreamix ---","Ustreamix",     CDisplayListItem.TYPE_CATEGORY,['https://ssl.ustreamix.com/search.php?q=poland'],'Ustreamix',    '',None))
-            #valTab.insert(0,CDisplayListItem("--- Darmowa-telewizja.online ---","Darmowa-telewizja.online",     CDisplayListItem.TYPE_CATEGORY,['http://darmowa-telewizja.online/'],'darmowaonline',    '',None))
             return valTab
+        if 'pastebin' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'pastebin.cookie')
+            #url = 'https://www.google.pl/search?q=%23extm3u+pastebin+poland&tbs=qdr:m'
+            url = 'https://www.google.pl/search?q=extm3u+poland+site%3Apastebin.com&tbs=qdr:m'
+            #url = 'https://www.google.pl/search?q=extm3u+poland+tvp+site%3Apastebin.com&tbs=qdr:m'
+            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.get_Page(url)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '&')
+            data = data.split('<div class="s">')
+            if len(data): del data[0]
+            for item in data:
+                Url = self.cm.ph.getSearchGroups(item, '''href=['"](https://pastebin.com/[^"^']+?)['"]''', 1, True)[0] 
+                desc = self._cleanHtmlStr(item).split(' - ')[0].strip()
+                if Url:
+                    Url = Url.replace('pastebin.com','pastebin.com/raw')
+                    valTab.append(CDisplayListItem(Url+' ['+desc+']', '['+desc+'] '+Url, CDisplayListItem.TYPE_CATEGORY, [Url], 'pastebin-url', '', None))
+            return valTab
+        if 'pastebin-url' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'pastebin.cookie')
+            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.get_Page(url)
+            if not sts: return valTab
+            printDBG( 'Host listsItems data: '+data )
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'XTINF', '#E')
+            for item in data:
+                try:
+                    item = item.split('\n')
+                    printDBG( 'Host item:%s ' % item )
+                    Image = self.cm.ph.getSearchGroups(item[0], '''tvg-logo=['"]([^"^']+?)['"]''', 1, True)[0] 
+                    Title = self.cm.ph.getSearchGroups(item[0], ''',([^,]+?)[\.\r]''', 1, True)[0].strip()
+                    Url = self.cm.ph.getSearchGroups(item[1], '''([^>]+?)[\r]''', 1, True)[0]
+                    if not Url: Url = item[1]
+                    valTab.append(CDisplayListItem(Title,Url,  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 0)], 0, Image, None))
+                except Exception:
+                    printExc()
+                #valTab.sort(key=lambda poz: poz.name)
+            return valTab 
         if 'darmowaonline' == name:
             printDBG( 'Host listsItems begin name='+name )
             COOKIEFILE = os_path.join(GetCookieDir(), 'darmowaonline.cookie')
@@ -4825,6 +4879,71 @@ class Host:
                     printDBG( 'Host item: '+str(item) )
                 if self.cm.isValidUrl(item['url']): return item['url']
             return ''
+
+        if url.startswith('http://tivix.co'):
+            COOKIEFILE = os_path.join(GetCookieDir(), 'tivix.cookie')
+            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            for x in range(1, 100): 
+                sts, data = self.getPage(url, 'tivix.cookie', 'tivix.co', self.defaultParams)
+                if not sts: return ''
+                #printDBG( 'Host listsItems data1: '+str(data) )
+                firstIpProtect = self.cm.ph.getSearchGroups(data, '''var firstIpProtect = ['"]([^"^']+?)['"]''', 1, True)[0]
+                secondIpProtect = self.cm.ph.getSearchGroups(data, '''var secondIpProtect = ['"]([^"^']+?)['"]''', 1, True)[0]
+                portProtect = self.cm.ph.getSearchGroups(data, '''var portProtect = ['"]([^"^']+?)['"]''', 1, True)[0]
+                m3u8_url = self.cm.ph.getSearchGroups(data, '''file:['"]([^"^']+?)['"]''', 1, True)[0].replace('#2','')
+                if m3u8_url:
+                    printDBG( 'Host m3u8_url:'+m3u8_url )
+                    link = m3u8_url.split('//')
+                    m3u8_url = ''
+                    wynik = ''
+
+                    for part in link:
+                        printDBG( 'Host part:%s %s' % (part, str(len(part))) )
+                        if part.startswith('a'): wynik += part
+                        elif 'MzE0' in part: 
+                            MzE0 = re.sub('.+MzE0', '', part)
+                            wynik += MzE0
+                            printDBG( 'Host MzNm-MzE0:%s %s' % (MzE0, str(len(part))) )
+                        elif '3zE0' in part: 
+                            E03z = re.sub('.+3zE0', '', part)
+                            wynik += E03z
+                            printDBG( 'Host MzNm-3zE0:%s %s' % (E03z, str(len(part))) )
+                        elif 'N2Zh' in part: 
+                            N2Zh = re.sub('.+N2Zh', '', part)
+                            wynik += N2Zh
+                            printDBG( 'Host M2Q-N2Zh:%s ' % N2Zh )
+                        elif 'ZmQ0' in part: 
+                            ZmQ0 = re.sub('.+ZmQ0', '', part)
+                            wynik += ZmQ0
+                            printDBG( 'Host Y2-ZmQ0:%s %s' % (ZmQ0, str(len(part))) )
+                        elif 'OWQ3' in part: 
+                            OWQ3 = re.sub('.+OWQ3', '', part)
+                            wynik += OWQ3
+                            printDBG( 'Host MzNm-OWQ3:%s %s' % (OWQ3, str(len(part))) )
+                    printDBG( 'Host wynik:'+wynik )
+
+                    try:
+                        m3u8_url = urllib.unquote(base64.b64decode(wynik))
+                    except:
+                        printDBG( 'nie ma' )
+                    printDBG( 'Host m3u8_url po:'+m3u8_url )
+                    m3u8_url = m3u8_url.replace(r'{v3}',portProtect).replace(r'{v2}', secondIpProtect)
+                    m3u8_url = urlparser.decorateUrl(m3u8_url, {'Referer': url})
+                    if self.cm.isValidUrl(m3u8_url):
+                        tmp = getDirectM3U8Playlist(m3u8_url, checkContent=True, sortWithMaxBitrate=999999999)
+                        if not tmp:
+                            m3u8_url = m3u8_url.replace(secondIpProtect,firstIpProtect)
+                            m3u8_url = urlparser.decorateUrl(m3u8_url, {'Referer': url})
+                            if self.cm.isValidUrl(m3u8_url):
+                                tmp = getDirectM3U8Playlist(m3u8_url, checkContent=True, sortWithMaxBitrate=999999999)
+                                printDBG( 'Host tmp:%s ' % tmp )
+                                for item in tmp:
+                                    return item['url']
+                        printDBG( 'Host tmp:%s ' % tmp )
+                        for item in tmp:
+                            return item['url']
+            return ''
+
 #######################################################################################################################
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
         try:
@@ -4834,12 +4953,6 @@ class Host:
             printDBG( 'Host listsItems ERROR' )
             return videoUrl
         printDBG( 'Host getResolvedURL data'+data )
-
-        if url.startswith('http://tivix.co'):
-            printDBG( 'Host getResolvedURL mainurl: '+url )
-            m3u8_url = self.cm.ph.getSearchGroups(data, '''style="display:none">([^"^']+?)<''', 1, True)[0]
-            if len(m3u8_url)<11: return ''
-            return urlparser.decorateUrl(m3u8_url, {'Referer': url})
 
         if url.startswith('http://stream360.pl'):
             printDBG( 'Host getResolvedURL mainurl: '+url )

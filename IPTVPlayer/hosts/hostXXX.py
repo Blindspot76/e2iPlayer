@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.01.24.1"
+    XXXversion = "2020.01.25.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -1044,16 +1044,17 @@ class Host:
            if not sts: return valTab
            printDBG( 'Host getResolvedURL data: '+data )
            next = self.cm.ph.getSearchGroups(data, '''rel=['"]next['"]\s*href=['"]([^"^']+?)['"]''', 1, True)[0] 
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'data-video-id', '<i class="icon-thin-x">')
+           #data = self.cm.ph.getAllItemsBeetwenMarkers(data, 'data-video-id', '<i class="icon-thin-x">')
+           data = data.split('data-video-id=')
+           if len(data): del data[0]
            for item in data:
               phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0] 
               phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?jpg)['"]''', 1, True)[0] 
-              if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+              if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?)['"]''', 1, True)[0].replace("&amp;","&")
+              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0].replace("&amp;","&") 
               phRuntime = self.cm.ph.getSearchGroups(item, '''duration">([^>]+?)<''', 1, True)[0] 
-              phUrl = phUrl.replace("&amp;","&")
               if phUrl.startswith('/'): phUrl = 'https://www.youporn.com' + phUrl
-              if len(phUrl)>5:
+              if len(phUrl)>5 and phTitle:
                  valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phRuntime.strip()+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
               next = next.replace("&amp;","&")
@@ -8359,13 +8360,14 @@ class Host:
                  sources = self.cm.ph.getDataBeetwenMarkers(data, 'mediaDefinition = ', '];', False)[1]
                  result = byteify(simplejson.loads(sources+']'))
                  for item in result:
-                    if str(item["quality"])=='720' : return str(item["videoUrl"])
-                    if str(item["quality"])=='480' : return str(item["videoUrl"])
-                    if str(item["quality"])=='360' : return str(item["videoUrl"])
+                    if str(item["quality"])=='720' : return str(item["videoUrl"]).replace('\u0026', '&')
+                    if str(item["quality"])=='480' : return str(item["videoUrl"]).replace('\u0026', '&')
+                    if str(item["quality"])=='360' : return str(item["videoUrl"]).replace('\u0026', '&')
+                    if str(item["quality"])=='240' : return str(item["videoUrl"]).replace('\u0026', '&')
               except Exception as e:
                  printExc()
-           videoUrl = self.cm.ph.getSearchGroups(data, '''"videoUrl":['"]([^'"]+?)['"]''')[0]
-           if videoUrl: return videoUrl.replace('&amp;','&').replace(r"\/",r"/")
+           videoUrl = self.cm.ph.getSearchGroups(data, '''"videoUrl":['"]([^'"]+?)['"]''')[0].replace('&amp;','&').replace(r"\/",r"/")
+           if videoUrl: return videoUrl.replace('\u0026', '&')
            return ''
 
         # make by 12asdfg12
