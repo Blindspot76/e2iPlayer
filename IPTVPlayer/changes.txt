@@ -1,4 +1,7 @@
-﻿#2020.02.02.01
+﻿#2020.02.02.02
+-TVN24 javítva 
+-Kisebb módosítások
+#2020.02.02.01
 -Webstream javítva
 -VideoPenny javítva
 -InfoVersion frissítve

@@ -69,6 +69,8 @@ class Tvn24(CBaseHostClass):
         
         VIDEO_PLAYLIST = Tvn24.MAIN_URL + '/video/playlists/' + Tvn24.API_KEY
         MAIN_CATEGORIES = [
+            {'name': 'category', 'title': '>> Z anteny <<',      'category': 'categories',    'url': 'http://www.tvn24.pl/wideo/z-anteny/', 'page':'1' },
+            {'name': 'category', 'title': '>> Magazyny <<',      'category': 'categories',    'url': 'http://www.tvn24.pl/wideo/magazyny/', 'page':'1' },
             {'name': 'category', 'title': 'Najnowsze',     'category': 'end_cat',      'url': Tvn24.MAIN_URL + '/articles/newest/' + Tvn24.API_KEY + '/20' },
             {'name': 'category', 'title': 'Najważniejsze', 'category': 'end_cat',      'url': Tvn24.MAIN_URL + '/articles/important/' + Tvn24.API_KEY },
             {'name': 'category', 'title': 'Informacje',    'category': 'playlist',     'url': VIDEO_PLAYLIST + '/1'},
@@ -171,7 +173,26 @@ class Tvn24(CBaseHostClass):
                 self.addDir(params)
         except Exception:
             printExc()
-            
+
+        try:
+            sts,data = self.cm.getPage( baseUrl)
+            #printDBG("listCategories data[%s] " % data)
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="nav nav-list">', '</ul>', False)[1]
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+            currCat = 'end_cat'
+            subCategiories = []
+            for item in data:
+                url  = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''')[0]
+                icon   = ''
+                plot = ''
+                title     = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]
+                if url != '':
+                    if url.startswith('/'): url = 'http://www.tvn24.pl' + url
+                    params = {'name': 'category', 'category': currCat, 'parent_cat': category, 'title': title, 'url':url, 'icon':icon, 'plot':plot, 'page':'1', 'sub_categiories':subCategiories}
+                    self.addDir(params)
+        except Exception:
+            printExc()
+
     def listEndItems(self, parent_cat, baseUrl, page):
         printDBG("listEndItems parent_cat[%s] baseUrl[%s], page[%s]" % (parent_cat, baseUrl, page))
         url = baseUrl
@@ -225,6 +246,34 @@ class Tvn24(CBaseHostClass):
         except Exception:
             printExc()
                 
+        try:
+            sts,data = self.cm.getPage( baseUrl)
+            #printDBG("listEndItems data[%s] " % data)
+            data = self.cm.ph.getDataBeetwenMarkers(data, '<ul id="cat'+baseUrl.split('/')[-2], '</ul>', False)[1]
+            #printDBG("listEndItems data[%s] " % data)
+            cat = self.cm.ph.getSearchGroups(data, '''playlisttitle=['"]([^"^']+?)['"]''')[0]
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li', '</li>')
+            currCat = 'end_cat'
+            subCategiories = []
+            for item in data:
+                url  = self.cm.ph.getSearchGroups(item, '''data-quality=['"]([^"^']+?)['"]''')[0].replace('&quot;','').replace('\/','/')
+                url = self.cm.ph.getSearchGroups(url, '''720p:([^"^']+?mp4)\}''')[0]
+                if not url: url = self.cm.ph.getSearchGroups(url, '''480p:([^"^']+?mp4)\}''')[0]
+
+                icon = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
+                plot = self.cm.ph.getSearchGroups(item, '''desc">([^>]+?)<''')[0].replace('&quot;','"')
+                title     = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''')[0]
+                time = self.cm.ph.getSearchGroups(item, '''time" >([^>]+?)<''')[0].strip()
+                if time: plot = '['+time+']  '+plot
+                if url != '':
+                    if url.startswith('//'): url = 'http:' + url
+                    if url.startswith('/'): url = 'http://www.tvn24.pl' + url
+                    params = {'title': title, 'url':url, 'icon':icon, 'plot':plot}
+                    if '' != url:
+                        self.addVideo(params)
+        except Exception:
+            printExc()
+
     def getHostingTable(self, idx):
         url = self.currList[idx].get('url', '')
         printDBG("getHostingTable idx[%d] = url[%s]" % (idx, url))
