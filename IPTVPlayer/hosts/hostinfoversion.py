@@ -133,7 +133,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.01.26"
+    infoversion = "2020.01.28"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -295,8 +295,6 @@ class Host:
            valTab.append(CDisplayListItem('Słowianin TV', 'Słowianin TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UCpUZqLZNnVwlBIeOZYslMDw/live', 1)], 'Słowianin', 'http://www.tvslowianin.pl/images/logo_na_strone.png', None)) 
            #valTab.append(CDisplayListItem('Truso TV', 'Truso TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://95.160.28.218:1935/elblag/myStream_aac/chunklist_w693626581.m3u8', 0)], 'Truso TV', 'https://static.truso.tv/data/wysiwig/images/logo1.png', None)) 
            valTab.append(CDisplayListItem('Olsztyn TV', 'Olsztyn TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UC0vwjMGoZpwG_lLBuF6_ALA/live', 1)], 'olsztyn', 'https://static.telewizjaolsztyn.pl/data/wysiwig/images/tvolsztyn_logo.png', None)) 
-           valTab.append(CDisplayListItem('Kaszuby - Wejherowo', 'Kaszuby - Wejherowo', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UC2fNuW5Sw8HDwpalwxF6Tqw/live', 1)], 'KASZUBY', 'https://static.wejherowo24.info/data/wysiwig/images/logo/wejherowo24_new_1.png', None)) 
-           valTab.append(CDisplayListItem('Kaszuby - Kościerzyna', 'Kaszuby - Kościerzyna', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UCMb2n_jb2cAJ_Wpz5z48Ibg/live', 1)], 'KaszubyKościerzyna', 'https://static.koscierzyna24.info/data/wysiwig/images/nowelogo24_500.png', None)) 
            valTab.append(CDisplayListItem('Świebodzin TV', 'Świebodzin TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UCEQZDk3FFLNM67Hx4jQaXVw/live', 1)], 'Świebodzin TV', 'https://static.swiebodzin.tv/data/wysiwig/images/logo_na_strone.png', None)) 
            valTab.append(CDisplayListItem('Rybnik TVT', 'Rybnik TVT', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://176.107.129.219/media/tvt/index.m3u8', 1)], 'Rybnik TVT', 'https://yt3.ggpht.com/a/AGF-l7_T04dDfM0UTVjsM4OxvsurRbnaRrPVSsk02Q=s288-c-k-c0xffffffff-no-rj-mo', None)) 
            valTab.append(CDisplayListItem('Dla ciebie TV', 'Dla ciebie TV', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://94.246.128.53:1935/tv/_definst_/dlaCiebieTv/playlist.m3u8', 1)], 'Dla ciebie TV', 'http://www.jaw.pl/wp-content/uploads/2014/02/dlaciebie.png', None)) 
@@ -959,7 +957,7 @@ class Host:
                 Image = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
                 if Url: Title = Url.split('/')[-2].upper() 
                 if Url.startswith('/'): Url = 'https://webtv.ert.gr' + Url
-                if Url:
+                if Url and not 'PLAY' in Title:
                     printDBG( 'Host Url: '+Url )
                     valTab.append(CDisplayListItem(Title,Title,CDisplayListItem.TYPE_CATEGORY, [Url],'ert-clips', Image, None)) 
             return valTab  
@@ -977,8 +975,10 @@ class Host:
             sts, data = self.get_Page(Url)
             if not sts: return valTab
             printDBG( 'Host listsItems data2: '+data )
-            data = self.cm.ph.getDataBeetwenMarkers(data, '<iframe', '</iframe>', False)[1]
-            Url = self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
+            Url = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"](https://www.youtube.com[^"^']+?)['"]''', 1, True)[0]
+            if not Url:
+                data = self.cm.ph.getDataBeetwenMarkers(data, '<iframe', '</iframe>', False)[1]
+                Url = self.cm.ph.getSearchGroups(data, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
             videoUrls = self.getLinksForVideo(Url)
             if videoUrls:
                 for item in videoUrls:
@@ -1149,10 +1149,11 @@ class Host:
                 Title = self._cleanHtmlStr(item).strip()+'  na żywo'
                 if Url.startswith('/'): Url = 'http://animallive.tv' + Url
                 valTab.append(CDisplayListItem(Title,Title,CDisplayListItem.TYPE_CATEGORY, [Url],'animallive-clips', '', None)) 
-            valTab.append(CDisplayListItem('Żubry', 'Żubry',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://www.lasy.gov.pl/pl/informacje/kampanie_i_akcje/zubryonline', 1)], 0, 'http://www.lasy.gov.pl/pl/informacje/kampanie_i_akcje/zubryonline/logo_projekt_zubr-200-2.jpg', None))
+            valTab.append(CDisplayListItem('Estonia karmnik', 'Estonia karmnik',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://www.youtube.com/channel/UCa7D-kXKYvG-fOEDn_HVkkA/live', 1)], 0, '', None))
+            valTab.append(CDisplayListItem('Żubry online', 'Żubry online',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://www.lasy.gov.pl/pl/informacje/kampanie_i_akcje/zubryonline', 1)], 0, 'http://www.lasy.gov.pl/pl/informacje/kampanie_i_akcje/zubryonline/logo_projekt_zubr-200-2.jpg', None))
             valTab.insert(0,CDisplayListItem('--- Kamery kukaj.sk ---', 'http://www.kukaj.sk/', CDisplayListItem.TYPE_CATEGORY, ['http://www.kukaj.sk/'], 'kukaj', 'http://www.kukaj.sk/images/design/logo.png', None)) 
             valTab.insert(0,CDisplayListItem("--- Ptaki w gniazdach ---","Ptaki w gniazdach",     CDisplayListItem.TYPE_CATEGORY,[''],'ptaki',    '',None))
-            valTab.insert(0,CDisplayListItem("--- Kamery Estonia ---","Kamery Estonia",     CDisplayListItem.TYPE_CATEGORY,['http://pontu.eenet.ee/'],'animalestonia',    '',None))
+            #valTab.insert(0,CDisplayListItem("--- Kamery Estonia ---","Kamery Estonia",     CDisplayListItem.TYPE_CATEGORY,['http://pontu.eenet.ee/'],'animalestonia',    '',None))
 
             if data != []:
                 valTab.insert(0,CDisplayListItem("--- Atlas zwierząt ---","Atlas zwierząt",     CDisplayListItem.TYPE_CATEGORY,['http://animallive.tv/pl/atlas-zwierzat.html'],'animallive-filmy',    '',None))

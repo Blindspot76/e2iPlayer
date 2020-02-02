@@ -1,4 +1,8 @@
-﻿#2020.01.26.01
+﻿#2020.02.02.01
+-Webstream javítva
+-VideoPenny javítva
+-InfoVersion frissítve
+#2020.01.26.01
 -YouPorn javítva (XXX)
 -RedBull TV javítva
 -Kisebb módosítások
