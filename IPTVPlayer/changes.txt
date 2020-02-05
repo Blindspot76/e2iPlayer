@@ -1,4 +1,6 @@
-﻿#2020.02.02.02
+﻿#2020.02.05.01
+-Felnőtt kiegészítő frissítve
+#2020.02.02.02
 -TVN24 javítva 
 -Kisebb módosítások
 #2020.02.02.01
