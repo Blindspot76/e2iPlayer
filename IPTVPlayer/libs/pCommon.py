@@ -830,21 +830,13 @@ class common:
         return sts, data
 
     def fillHeaderItems(self, metadata, responseHeaders, camelCase=False, collectAllHeaders=False):
-
         returnKeys = ['content-type', 'content-disposition', 'content-length', 'location']
-        
-        if camelCase: 
-            sourceKeys = ['Content-Type', 'Content-Disposition', 'Content-Length', 'Location']
-        else: 
-            sourceKeys = returnKeys
-        
+        if camelCase: sourceKeys = ['Content-Type', 'Content-Disposition', 'Content-Length', 'Location']
+        else: sourceKeys = returnKeys
         for idx in range(len(returnKeys)):
             if sourceKeys[idx] in responseHeaders:
                 metadata[returnKeys[idx]] = responseHeaders[sourceKeys[idx]]
-                #printDBG(sourceKeys[idx] + " ---->  " + responseHeaders[sourceKeys[idx]])
-                
-        #printDBG(str(responseHeaders))
-        
+
         if collectAllHeaders:
             if "Access-Control-Allow-Headers" in responseHeaders:
                 acah = responseHeaders["Access-Control-Allow-Headers"]
@@ -854,11 +846,9 @@ class common:
                     key = key.strip()
                     if key in responseHeaders:
                         metadata[key.lower()]=responseHeaders[key]
-                        #printDBG(key + " ---->  " + responseHeaders[key])
 
             for header, value in responseHeaders.iteritems():
                 metadata[header.lower()] = responseHeaders[header]
-                #printDBG(header + " ---->  " + value)
 
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
@@ -953,9 +943,9 @@ class common:
                 try:
                     domain = self.getBaseUrl(data.meta['url'])
                     verData = data
-                    #printDBG("------------------")
-                    #printDBG(verData)
-                    #printDBG("------------------")
+                    printDBG("------------------")
+                    printDBG(verData)
+                    printDBG("------------------")
                     if 'sitekey' not in verData and 'challenge' not in verData: break
                     
                     printDBG(">>")
@@ -1009,59 +999,44 @@ class common:
                             if 'setTimeout' in item and 'submit()' in item:
                                 dat = item
                                 break
-
                         decoded = ''
-                        
-                        #first part of code
-                        js_params = [{'path' : GetJSScriptFile('cf_max.byte')}]
-                        #particular div element
+                        elemsText = {}
                         tmp = ph.findall(verData, ('<div', '>', 'hidden'), '</div>', flags=ph.START_S)
-                        code2=''
                         for idx in range(1, len(tmp), 2):
-                            name_id = ph.getattr(tmp[(idx - 1)], 'id', flags=ph.I)
-                            if name_id:
-                                value_id = tmp[idx]
-                                code2 = "document.children.push ( new element('', '%s', 'div')); document.children[6].innerHTML ='%s';" % (name_id, value_id)
-                                                                
-                        #printDBG(code2)
-                        #script part in variable called 'dat'
+                            eId = ph.getattr(tmp[(idx - 1)], 'id', flags=ph.I)
+                            if eId:
+                                elemsText[eId] = tmp[idx]
 
-                        dat = dat.replace('(function(){\n    var a = function() {try{return !!window.addEventListener} catch(e) {return !1} },\n    b = function(b, c) {a() ? document.addEventListener("DOMContentLoaded", b, c) : document.attachEvent("onreadystatechange", b)};\n    b(function()','function pippo()')
-                        dat = dat.replace('f.submit()','print(a.value)')
-                        dat = dat.replace('setTimeout(function(){','')
-                        dat = dat.replace(', 4000);\n    }, false);\n  })()','')
-                        dat = dat.replace("t = document.createElement('div');\n        t.innerHTML=\"<a href='/'>x</a>\";\n        t = t.firstChild.href;",'t="%domain%";').replace('%domain%',domain)
-                        printDBG(dat)
-                        
-                        js_params.append({'code': "%s\n%s\n\npippo(); " % (code2, dat)})
+                        js_params = [{'path':GetJSScriptFile('cf.byte')}]
+                        js_params.append({'code': "var ELEMS_TEXT = %s; var location = {hash:''}; var iptv_domain='%s';\n%s\niptv_fun();" % (json_dumps(elemsText), domain, dat)})
                         ret = js_execute_ext( js_params )
-                        printDBG(ret);
-                        get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
-                        get_data['jschl_answer'] = ret['data'].replace('\n','')
+                        decoded = json_loads(ret['data'].strip())
                         
+                        verData = ph.find(verData, ('<form', '>', 'id="challenge-form"'), '</form>')[1]
+                        printDBG(">>")
+                        printDBG(verData)
+                        printDBG("<<")
                         verUrl =  _getFullUrl( ph.getattr(verData, 'action'), domain)
-                        
-                        postDataCF = {}
-                        for key in get_data:
-                            postDataCF[key] = get_data[key]
-                        
-                        
-                        printDBG("CF verification url: %s" % verUrl)
-                        printDBG("CF post data: %s" % str(postDataCF))
-                        
+                        get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
+                        get_data['jschl_answer'] = decoded['answer']
+                        post_data = 'r=%s&jschl_vc=%s&pass=%s&jschl_answer=%s' % (urllib.quote(get_data['r'],safe=''), urllib.quote(get_data['jschl_vc'],safe=''), urllib.quote(get_data['pass'],safe=''), get_data['jschl_answer'])
+                        verUrl = _getFullUrl2( verUrl, domain).replace('&amp;','&')
                         params2 = dict(params)
                         params2['load_cookie'] = True
                         params2['save_cookie'] = True
                         params2['header'] = dict(params.get('header', {}))
                         params2['header'].update({'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'})
+                        params2['raw_post_data'] = True
+                        if 'Accept-Encoding' not in params2:
+                            params2['Accept-Encoding'] = '*'
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
                         if current == 1:
-                            GetIPTVSleep().Sleep(4 -(time.time() - start_time))
+                            GetIPTVSleep().Sleep(0.2 + (decoded['timeout'] / 1000.0)-(time.time() - start_time))
                         else:
-                            GetIPTVSleep().Sleep(4)
+                            GetIPTVSleep().Sleep((decoded['timeout'] / 1000.0))
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
-                        printDBG("Timeout: [%s]" % 4000)
-                        sts, data = self.getPage(verUrl, params2, postDataCF)
+                        printDBG("Timeout: [%s]" % decoded['timeout'])
+                        sts, data = self.getPage(verUrl, params2, post_data)
                 except Exception:
                     printExc()
                     break

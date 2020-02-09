@@ -133,7 +133,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.01.28"
+    infoversion = "2020.02.06"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -2450,7 +2450,7 @@ class Host:
            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.get_Page(url)
            if not sts: return valTab
-           printDBG( 'Host listsItems data: '+data )
+           #printDBG( 'Host listsItems data: '+data )
 
         if 'info' == name:
             x = 0
@@ -3540,16 +3540,17 @@ class Host:
            printDBG( 'Hostinfo listsItems begin name='+name )
            import os
            _url = 'https://gitlab.com/mosz_nowy/infoversion'
-           query_data = { 'url': _url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
+
            try:
-              data = self.cm.getURLRequestData(query_data)
+              sts, data = self.cm.getPage(_url+'/-/commits/master')
+              if not sts: return valTab
               #printDBG( 'Host init data: '+data )
-              r=self.cm.ph.getSearchGroups(data, '''/mosz_nowy/infoversion/commit/([^"^']+?)['"]''', 1, True)[0]
-              if r:
-                 printDBG( 'crc = '+r )
-                 crc=r
+              crc=self.cm.ph.getSearchGroups(data, '''/infoversion/commit/([^"^']+?)['"]''', 1, True)[0]
+              printDBG( 'crc: '+crc )
            except:
               printDBG( 'Host init query error' )
+              valTab.append(CDisplayListItem('ERROR - Blad pobierania: '+_url,   'ERROR', CDisplayListItem.TYPE_CATEGORY, [''], '', '', None)) 
+              return valTab
 
            tmpDir = GetTmpDir() 
            source = os_path.join(tmpDir, 'infoversion-master.tar.gz') 
@@ -3637,15 +3638,16 @@ class Host:
         if 'Download' == name:
            printDBG( 'Hostinfo listsItems begin name='+name +url)
            import os
-           query_data = { 'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True }
            try:
-              data = self.cm.getURLRequestData(query_data)
+              sts, data = self.cm.getPage(url+'/-/commits/master')
+              if not sts: return valTab
               #printDBG( 'Host init data: '+data )
               crc=self.cm.ph.getSearchGroups(data, '''/e2iplayer/commit/([^"^']+?)['"]''', 1, True)[0]
               printDBG( 'crc: '+crc )
            except:
               printDBG( 'Host init query error' )
-
+              valTab.append(CDisplayListItem('ERROR - Blad pobierania: '+url,   'ERROR', CDisplayListItem.TYPE_CATEGORY, [''], '', '', None)) 
+              return valTab
            tmpDir = GetTmpDir() 
            source = os_path.join(tmpDir, 'master.tar.gz') 
            dest = os_path.join(tmpDir , '') 
