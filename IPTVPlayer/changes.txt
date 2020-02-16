@@ -1,4 +1,8 @@
-﻿#2020.02.14.01
+﻿#2020.02.16.01
+-InfoVersion frissítve
+-Felnőtt kiegészítő frissítve
+-Kisebb javítások
+#2020.02.14.01
 -Felnőtt kiegészítő frissítve
 #2020.02.09.01
 -InfoVersion javítva
