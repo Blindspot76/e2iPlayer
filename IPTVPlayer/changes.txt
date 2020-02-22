@@ -1,4 +1,7 @@
-﻿#2020.02.16.01
+﻿#2020.02.22.01
+-HClips javítva (XXX)
+-EPorner javítva (XXX)
+#2020.02.16.01
 -InfoVersion frissítve
 -Felnőtt kiegészítő frissítve
 -Kisebb javítások
