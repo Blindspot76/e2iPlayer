@@ -569,6 +569,7 @@ class urlparser:
                        'youdbox.com':          self.pp.parserONLYSTREAMTV   ,
                        'upstream.to':          self.pp.parserONLYSTREAMTV   ,
                        'supervideo.tv':        self.pp.parserONLYSTREAMTV   ,
+                       'streamwire.net':       self.pp.parserONLYSTREAMTV   ,
                        'mixdrop.co':           self.pp.parserMIXDROP        ,
                     }
         return
@@ -9696,7 +9697,9 @@ class pageParser(CaptchaHelper):
             vidTab = []
             for item in decoded['sources']:
                 if 'mp4' in item['type']:
-                    vidTab.append({'url':item['src'], 'name':item['label']})
+                    url = item['src']
+                    if url.startswith('//'): url = 'http:' + url
+                    vidTab.append({'url':url, 'name':item['label']})
             return vidTab
         return False 
         
