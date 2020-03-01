@@ -1,4 +1,8 @@
-﻿#2020.02.26.02
+﻿#2020.03.01.01
+-EKino javítva
+-123Movies javítva
+-Kisebb módosítások
+#2020.02.26.02
 -USTVGo javítva
 -VidCorn javítva
 -Twitch TV javítva (Lapozás)
