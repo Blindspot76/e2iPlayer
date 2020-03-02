@@ -1,4 +1,6 @@
-﻿#2020.03.01.01
+﻿#2020.03.02.01
+-Kisebb javítások
+#2020.03.01.01
 -EKino javítva
 -123Movies javítva
 -Kisebb módosítások
