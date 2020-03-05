@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.02.26.0"
+    XXXversion = "2020.03.04.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -9250,12 +9250,33 @@ class Host:
            sts, data = self.get_Page(videoUrl)
            if not sts: return ''
            printDBG( 'Host  data2: '+data )
+           p1080 = ''
+           p720 = ''
+           p360 = ''
+           p240 = ''
+           subData = data.split('<source')
+           if len(subData): del subData[0]
+           if subData:
+              for item in subData:
+                 src = self.cm.ph.getSearchGroups(item, '''['"](//[^"^']+?)['"]''')[0].replace('\\','')
+                 if '1080' in item: 
+                    if src.startswith('//'): src = 'https:' + src
+                    p1080 = src
+                 if '720' in item: 
+                    if src.startswith('//'): src = 'https:' + src
+                    p720 = src
+                 if '360' in item: 
+                    if src.startswith('//'): src = 'https:' + src
+                    p360 = src
+                 if '240' in item: 
+                    if src.startswith('//'): src = 'https:' + src
+                    p240 = src
+              if p1080: return p1080
+              if p720: return p720
+              if p360: return p360
+              if p240: return p240
            subData = self.cm.ph.getDataBeetwenMarkers(data, 'var srca', ']', False)[1].split('}')
            if subData:
-              p1080 = ''
-              p720 = ''
-              p360 = ''
-              p240 = ''
               for item in subData:
                  label   = self.cm.ph.getSearchGroups(item, 'label:\s*?"([^"]+?)"')[0]
                  src     = self.cm.ph.getSearchGroups(item, 'file:\s*?"([^"]+?)"')[0]
