@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.03.04.0"
+    XXXversion = "2020.03.05.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -8873,7 +8873,6 @@ class Host:
            if not sts: return ''
            printDBG( 'Host listsItems data1: '+data )
            file = str(self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>'))
-
            tmp = file.split('|')
            post = ''
            for item in tmp:
@@ -8884,14 +8883,16 @@ class Host:
            postdata = {'id' : url.split('/')[4]} 
            self.defaultParams['header']['X-Requested-With'] = 'XMLHttpRequest'
            self.defaultParams['header']['Host'] = 'letmejerk.com'
+           self.cm.clearCookie(COOKIEFILE, ['__cfduid'])
            sts, data = self.getPage(post, 'letmejerk.cookie', 'letmejerk.com', self.defaultParams, postdata)
            if not sts: return ''
            printDBG( 'Host listsItems data2: '+data )
-           videoUrl = self.cm.ph.getSearchGroups(data, '''<source src=['"]([^"^']+?)['"]''', 1, True)[0]
-           poster = self.cm.ph.getSearchGroups(data, '''poster=['"]([^"^']+?)['"]''', 1, True)[0]
-           if '@!' in videoUrl:
-              videoUrl = videoUrl.replace('@!'+poster+'#','')
-           videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, "Origin": "https://letmejerk.com"})
+           __cfduid = '__cfduid='+self.cm.getCookieItem(COOKIEFILE,'__cfduid')
+           ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
+           videoUrl = self.cm.ph.getSearchGroups(data, '''<source\ssrc=['"]([^"^']+?)['"]''', 1, True)[0]
+           poster = self.cm.ph.getSearchGroups(videoUrl, '''(@[^"^']+?#)''', 1, True)[0]
+           videoUrl = videoUrl.replace(poster,'')
+           videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, "Origin": "https://letmejerk.com", 'User-Agent':ua, "Cookie": "__cfduid=1", "Range": "bytes=0-"})
            if 'm3u8' in videoUrl: 
               tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
               for item in tmp:
