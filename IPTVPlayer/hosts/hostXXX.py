@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.03.05.1"
+    XXXversion = "2020.03.08.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -360,7 +360,7 @@ class Host:
            valTab.append(CDisplayListItem('PORNREWIND',     'https://www.pornrewind.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.pornrewind.com/categories/'],'PORNREWIND', 'https://www.pornrewind.com/static/images/logo-light-pink.png', None)) 
            valTab.append(CDisplayListItem('BALKANJIZZ',     'https://www.balkanjizz.com/', CDisplayListItem.TYPE_CATEGORY, ['https://www.balkanjizz.com/kategorije-pornica'],'BALKANJIZZ', 'https://www.balkanjizz.com/images/logo/logo.png', None)) 
            valTab.append(CDisplayListItem('PORNORUSSIA',     'https://pornorussia.tv/', CDisplayListItem.TYPE_CATEGORY, ['https://pornorussia.tv/'],'PORNORUSSIA', 'https://pornorussia.tv/images/logo.png', None)) 
-           valTab.append(CDisplayListItem('LETMEJERK',     'https://www.letmejerk.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.letmejerk.com/categories'],'LETMEJERK', 'https://image.freepik.com/darmowe-ikony/gra%C4%87_318-135191.jpg', None)) 
+           valTab.append(CDisplayListItem('LETMEJERK',     'https://www.letmejerk.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.letmejerk.com/category'],'LETMEJERK', 'https://image.freepik.com/darmowe-ikony/gra%C4%87_318-135191.jpg', None)) 
            valTab.append(CDisplayListItem('GOTPORN',     'https://www.gotporn', CDisplayListItem.TYPE_CATEGORY, ['https://www.gotporn.com/categories?src=hm'],'GOTPORN', 'https://cdn2-static-cf.gotporn.com/desktop/img/gotporn-logo.png', None)) 
            valTab.append(CDisplayListItem('ANALDIN',     'https://www.analdin.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.analdin.com/categories/'],'ANALDIN', 'https://www.analdin.com/images/logo-retina.png', None)) 
            valTab.append(CDisplayListItem('NETFLIXPORNO',     'https://netflixporno.net/', CDisplayListItem.TYPE_CATEGORY, ['https://netflixporno.net/'],'NETFLIXPORNO', 'https://netflixporno.net/wp-content/uploads/2018/04/netflixporno-1.png', None)) 
@@ -3625,7 +3625,7 @@ class Host:
            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li>', '</li>')
            for item in data:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phTitle = phUrl.split('/')[-1].replace('-',' ')
+              phTitle = phUrl.split('/')[-1].replace('-',' ').replace('%20',' ').replace('%26','-')
               phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace(' ','%20') 
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phImage.startswith('/'): phImage = self.MAIN_URL + phImage
@@ -3652,16 +3652,22 @@ class Host:
            if not sts: return ''
            printDBG( 'Host listsItems data: '+str(data) )
            next_page = self.cm.ph.getDataBeetwenMarkers(data, 'class="pagination"', '</ul>', False)[1]
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="card', '<!-- /card -->')
+           catUrl = self.currList[Index].possibleTypesOfSearch
+           if catUrl == 'channels':
+              data = data.split('<div id=')
+           else:
+              data = data.split('<div class="card thumbs_rotate')
+           if len(data): del data[0]
            for item in data:
               phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0].strip() 
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
               phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace(' ','%20') 
               Time = self.cm.ph.getSearchGroups(item, '''duration">([^"^']+?)<''', 1, True)[0] 
+              added = self.cm.ph.getSearchGroups(item, '''addition">([^"^']+?)<''', 1, True)[0] 
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phImage.startswith('//'): phImage = 'http:' + phImage
               if phTitle and Time:
-                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
+                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+']  '+decodeHtml(phTitle)+'\n'+added,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next_page: 
               match = re.compile('href="(.*?)"').findall(next_page)
               if match:
@@ -3678,16 +3684,18 @@ class Host:
            if not sts: return ''
            printDBG( 'Host listsItems data: '+str(data) )
            next_page = self.cm.ph.getDataBeetwenMarkers(data, 'class="pagination"', '</ul>', False)[1]
-           data = self.cm.ph.getDataBeetwenMarkers(data, 'Popular channels', 'pagination', False)[1]
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="card">', '</div>')
+           #data = self.cm.ph.getDataBeetwenMarkers(data, 'Popular channels', 'pagination', False)[1]
+           #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="card">', '</div>')
+           data = data.split('<div class="card">')
+           if len(data): del data[0]
            for item in data:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0].replace('%20',' ').replace('%26','-') 
               phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0].replace(' ','%20') 
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phImage.startswith('/'): phImage = self.MAIN_URL + phImage
               if phTitle:
-                 valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [phUrl],'PLAYVIDS-clips', phImage, None))
+                 valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [phUrl],'PLAYVIDS-clips', phImage, 'channels'))
            if next_page: 
               match = re.compile('href="(.*?)"').findall(next_page)
               if match:
@@ -3704,8 +3712,10 @@ class Host:
            if not sts: return ''
            printDBG( 'Host listsItems data: '+str(data) )
            next_page = self.cm.ph.getDataBeetwenMarkers(data, 'class="pagination"', '</ul>', False)[1]
-           data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="stars_list">', '</ul>', False)[1]
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li>', '</li>')
+           #data = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="stars_list">', '</ul>', False)[1]
+           #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<li>', '</li>')
+           data = data.split('<div class="card">')
+           if len(data): del data[0]
            for item in data:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTitle = phUrl.split('/')[-1].replace('-',' ')
@@ -5921,7 +5931,10 @@ class Host:
            COOKIEFILE = os_path.join(GetCookieDir(), 'letmejerk.cookie')
            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-           sts, data = self.get_Page(url)
+           self.defaultParams['header']['Referer'] = url
+           self.defaultParams['header']['Origin'] = self.MAIN_URL
+           #sts, data = self.get_Page(url)
+           sts, data = self.getPage(url, 'letmejerk.cookie', 'letmejerk.com', self.defaultParams)
            if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
            self.page = 0
@@ -5946,37 +5959,42 @@ class Host:
            return valTab
         if 'LETMEJERK-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
-           catUrl = self.currList[Index].possibleTypesOfSearch
-           COOKIEFILE = os_path.join(GetCookieDir(), 'letmejerk.cookie')
-           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
-           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-           sts, data = self.get_Page(url)
-           if not sts: return valTab
-           printDBG( 'Host listsItems data: '+data )
-           #next = self.cm.ph.getSearchGroups(data, '''class="more" href=['"]([^"^']+?)['"]''', 1, True)[0]
-           next = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="paginator">', '</ul>', False)[1]
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="th-image">', '</div>')
-           for item in data:
-              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phImage = self.cm.ph.getSearchGroups(item, '''img src=['"]([^"^']+?)['"]''', 1, True)[0] 
-              if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''data-src=['"]([^"^']+?)['"]''', 1, True)[0] 
-              if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?)['"]''', 1, True)[0] 
-              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
-              Time = self.cm.ph.getSearchGroups(item, '''clock"></i>([^>]+?)<''', 1, True)[0].strip()
-              if phUrl.startswith('/'): phUrl = 'https://www.letmejerk.com' + phUrl
-              if phImage.startswith('//'): phImage = 'https:' + phImage
-              try:
-                 phImage = urlparser.decorateUrl(phImage, {'Referer': 'https://www.letmejerk.com'})
-              except: pass
-              if phTitle and not phUrl.endswith('/.html'):
-                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
-           if next:
-              match = re.compile('href="(.*?)"').findall(next)
-              if not match: return valTab
-              next = match[-1].replace('&sort=','')
-              url1 = url.replace(url.split('/')[-1],'')
-              next = url1 + next
-              valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', 'next'))
+           for x in range(1, 20): 
+              COOKIEFILE = os_path.join(GetCookieDir(), 'letmejerk.cookie')
+              self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+              self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+              self.defaultParams['header']['Referer'] = url
+              self.defaultParams['header']['Origin'] = self.MAIN_URL
+              self.defaultParams['header']['User-Agent'] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:73.0) Gecko/20100101 Firefox/73.0"
+              self.defaultParams['cookie_items'] = {'visited':'yes'}
+              sts, data = self.getPage(url, 'letmejerk.cookie', 'letmejerk.com', self.defaultParams)
+              if not sts: return valTab
+              #printDBG( 'Host listsItems data: '+data )
+              next = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="paginator">', '</ul>', False)[1]
+              data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="th-image">', '</div>')
+              if not len(data): continue
+              for item in data:
+                 phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0] 
+                 phImage = self.cm.ph.getSearchGroups(item, '''img src=['"]([^"^']+?)['"]''', 1, True)[0] 
+                 if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''data-src=['"]([^"^']+?)['"]''', 1, True)[0] 
+                 if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?)['"]''', 1, True)[0] 
+                 phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                 Time = self.cm.ph.getSearchGroups(item, '''clock"></i>([^>]+?)<''', 1, True)[0].strip()
+                 if phUrl.startswith('/'): phUrl = 'https://www.letmejerk.com' + phUrl
+                 if phImage.startswith('//'): phImage = 'https:' + phImage
+                 try:
+                    phImage = urlparser.decorateUrl(phImage, {'Referer': 'https://www.letmejerk.com'})
+                 except: pass
+                 if phTitle and not phUrl.endswith('/.html'):
+                    valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
+              if len(next)>180:
+                 match = re.compile('href="(.*?)"').findall(next)
+                 if not match: return valTab
+                 next = match[-1].replace('&sort=','')
+                 url1 = url.replace(url.split('/')[-1],'')
+                 next = url1 + next
+                 valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', 'next'))
+              if len(data): break
            return valTab
 
         if 'GOTPORN' == name:
@@ -8745,7 +8763,7 @@ class Host:
            sts, data = self.getPage(url, 'pinflix.cookie', 'pinflix.com', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+str(data) )
-           videoUrl = self.cm.ph.getSearchGroups(data, '''<source src=['"]([^"^']+?)['"]''')[0].replace('\/','/')
+           videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^"^']+?)['"]''')[0].replace('\/','/')
            if not videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''"720p":['"]([^"^']+?)['"]''')[0].replace('\/','/')
            if not videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''"480p":['"]([^"^']+?)['"]''')[0].replace('\/','/')
            if not videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''"360p":['"]([^"^']+?)['"]''')[0].replace('\/','/')
@@ -8761,7 +8779,7 @@ class Host:
            sts, data = self.getPage(url, 'pornhd.cookie', 'pornhd.com', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+str(data) )
-           videoUrl = self.cm.ph.getSearchGroups(data, '''<source src=['"]([^"^']+?)['"]''')[0].replace('\/','/')
+           videoUrl = self.cm.ph.getSearchGroups(data, '''<source[^>]+?src=['"]([^"^']+?)['"]''')[0].replace('\/','/')
            if not videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''"1080p":['"]([^"^']+?)['"]''')[0].replace('\/','/')
            if not videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''"720p":['"]([^"^']+?)['"]''')[0].replace('\/','/')
            if not videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''"480p":['"]([^"^']+?)['"]''')[0].replace('\/','/')
@@ -8865,38 +8883,57 @@ class Host:
            return ''
 
         if parser == 'https://www.letmejerk.com':
-           COOKIEFILE = os_path.join(GetCookieDir(), 'letmejerk.cookie')
-           self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
-           self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-           self.defaultParams['header']['Referer'] = url
-           sts, data = self.getPage(url, 'letmejerk.cookie', 'letmejerk.com', self.defaultParams)
-           if not sts: return ''
-           printDBG( 'Host listsItems data1: '+data )
-           file = str(self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>'))
-           tmp = file.split('|')
-           post = ''
-           for item in tmp:
-              item = item.strip()
-              if item.endswith("="): post = 'https://letmejerk.com/load/video/'+item+'/'
-              if item.startswith("eX"): post = 'https://letmejerk.com/load/video/'+item+'/'
-              if 'IWh0dHB' in item: post = 'https://letmejerk.com/load/video/'+item+'/'
-           postdata = {'id' : url.split('/')[4]} 
-           self.defaultParams['header']['X-Requested-With'] = 'XMLHttpRequest'
-           self.defaultParams['header']['Host'] = 'letmejerk.com'
-           self.cm.clearCookie(COOKIEFILE, ['__cfduid'])
-           sts, data = self.getPage(post, 'letmejerk.cookie', 'letmejerk.com', self.defaultParams, postdata)
-           if not sts: return ''
-           printDBG( 'Host listsItems data2: '+data )
-           __cfduid = '__cfduid='+self.cm.getCookieItem(COOKIEFILE,'__cfduid')
-           ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
-           videoUrl = self.cm.ph.getSearchGroups(data, '''<source\ssrc=['"]([^"^']+?)['"]''', 1, True)[0]
-           poster = self.cm.ph.getSearchGroups(videoUrl, '''(@[^"^']+?#)''', 1, True)[0]
-           videoUrl = videoUrl.replace(poster,'')
-           videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, "Origin": "https://letmejerk.com", 'User-Agent':ua, "Cookie": "__cfduid=1", "Range": "bytes=0-"})
-           if 'm3u8' in videoUrl: 
-              tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
+           for x in range(1, 10): 
+              COOKIEFILE = os_path.join(GetCookieDir(), 'letmejerk.cookie')
+              self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+              self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+              self.defaultParams['header']['Referer'] = url
+              sts, data = self.getPage(url, 'letmejerk.cookie', 'letmejerk.com', self.defaultParams)
+              if not sts: return ''
+              #printDBG( 'Host listsItems data1: '+data )
+              file = str(self.cm.ph.getAllItemsBeetwenMarkers(data, '<script', '</script>'))
+              tmp = file.split('|')
+              post = ''
               for item in tmp:
-                 return item['url']
+                 item = item.strip()
+                 if item.endswith("="): post = item
+                 if item.startswith("eX"): post = item
+                 if 'IWh0dHB' in item: post = item
+              #printDBG( 'Host post:%s' % base64.b64decode(post) )
+              #printDBG( 'Host post:%s' % base64.b64decode(post)[1:] )
+              #printDBG( 'Host post:%s' % base64.b64decode(post)[:len(post)] )
+              postdata = {'id' : url.split('/')[4]} 
+              self.defaultParams['header']['X-Requested-With'] = 'XMLHttpRequest'
+              self.defaultParams['header']['Host'] = 'letmejerk.com'
+              sts, data = self.getPage('https://letmejerk.com/load/video/'+post+'/', 'letmejerk.cookie', 'letmejerk.com', self.defaultParams, postdata)
+              if not sts: return ''
+              printDBG( 'Host listsItems data2: '+data )
+              videoUrl = self.cm.ph.getSearchGroups(data, '''<source\ssrc=['"]([^"^']+?)['"]''', 1, True)[0]
+              poster = self.cm.ph.getSearchGroups(videoUrl, '''(@[^"^']+?#)''', 1, True)[0]
+              videoUrl = videoUrl.replace(poster,'')
+
+              if 'm3u8' in videoUrl: 
+                 videoUrl = urlparser.decorateUrl(videoUrl, {'Referer': url, "Origin": "https://letmejerk.com"})
+                 tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
+                 for item in tmp:
+                    return item['url']
+
+              HTTP_HEADER = {'Accept-Encoding': 'gzip, deflate', 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'} 
+              defaultParams = {'header':HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+              defaultParams['header']['Referer'] = url
+              defaultParams['max_data_size'] = 0
+              defaultParams['header']['Host'] = videoUrl.split('/')[2]
+              #defaultParams['header']['User-Agent'] = ua
+              defaultParams['header']['Accept'] = "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5"
+              defaultParams['header']['Range'] = "bytes=0-" 
+              defaultParams['header']['Referer'] = url
+              defaultParams['ignore_http_code_ranges'] = []
+              sts, data = self.getPage(videoUrl, 'letmejerk.cookie', 'letmejerk.com', defaultParams)
+              #if not sts: return ''
+              try:
+                 if data.meta['location']: return self.FullUrl(data.meta['location'])
+              except Exception: 
+                 printExc() 
            return videoUrl 
 
         if parser == 'https://www.gotporn.com':
@@ -10195,6 +10232,12 @@ def decodeHtml(text):
 	text = text.replace('&#133;','')
 	text = text.replace('&#4','')
 	text = text.replace('&#40;','')
+
+	text = text.replace('&atilde;',"'")
+	text = text.replace('&colon;',':')
+	text = text.replace('&sol;','/')
+	text = text.replace('&percnt;','%')
+	text = text.replace('&commmat;',' ')
 
 	return text	
 
