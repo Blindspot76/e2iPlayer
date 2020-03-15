@@ -1,4 +1,9 @@
-﻿#2020.03.15.01
+﻿#2020.03.15.02
+-NHL66 javítva
+-SWatchSeries javítva
+-CDA.PL javítva
+-USTVGo javítva
+#2020.03.15.01
 -WatchCartoonOnline javítva (Köszönet: Alec és Codermik)
 -AnyPorn hozzáadva (XXX)
 -BongaCams javítva (XXX)

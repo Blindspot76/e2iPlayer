@@ -576,6 +576,7 @@ class urlparser:
                        'vidoo.tv':             self.pp.parserONLYSTREAMTV   ,
                        'mixdrop.co':           self.pp.parserMIXDROP        ,
                        'vidload.net':          self.pp.parserVIDLOADNET     ,
+                       'vidcloud9.com':        self.pp.parserVIDCLOUD9      ,
                     }
         return
     
@@ -11712,17 +11713,25 @@ class pageParser(CaptchaHelper):
     def parserVIDSTODOME(self, baseUrl):
         printDBG("parserVIDSTODOME baseUrl[%r]" % baseUrl)
         # example video: https://vidstodo.me/embed-6g0hf5ne3eb2.html
-        def _findLinks(data):
-            linksTab = []
-            data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
-            data = re.compile('"(http[^"]+?)"').findall(data)
-            for link in data:
-                if link.split('?')[0].endswith('m3u8'):
-                    linksTab.extend(getDirectM3U8Playlist(link, checkContent=True))
-                elif link.split('?')[0].endswith('mp4'):
-                    linksTab.append({'name':'mp4', 'url': link})
-            return linksTab
-        return self._parserUNIVERSAL_A(baseUrl, 'https://vidstodo.me/embed-{0}.html', _findLinks)
+#        def _findLinks(data):
+#            linksTab = []
+#            data = self.cm.ph.getDataBeetwenMarkers(data, 'sources:', ']', False)[1]
+#            data = re.compile('"(http[^"]+?)"').findall(data)
+#            for link in data:
+#                if link.split('?')[0].endswith('m3u8'):
+#                    linksTab.extend(getDirectM3U8Playlist(link, checkContent=True))
+#                elif link.split('?')[0].endswith('mp4'):
+#                    linksTab.append({'name':'mp4', 'url': link})
+#            return linksTab
+#        return self.parserONLYSTREAMTV(baseUrl, 'https://vidtodo.com/embed-{0}.html', _findLinks)
+
+        baseUrl = strwithmeta(baseUrl)
+        if 'embed' not in baseUrl:
+            video_id = self.cm.ph.getSearchGroups(baseUrl+'/', '/([A-Za-z0-9]{12})[/.]')[0]
+            printDBG("parserVIDSTODOME video_id[%s]" % video_id)
+            url = 'https://vidtodo.com/embed-{0}.html'.format(video_id)
+
+        return self.parserONLYSTREAMTV(strwithmeta(url, {'Referer':baseUrl}))
 
     def parserCLOUDVIDEOTV(self, baseUrl):
         printDBG("parserCLOUDVIDEOTV baseUrl[%r]" % baseUrl)
@@ -12522,3 +12531,33 @@ class pageParser(CaptchaHelper):
             hlsUrl = strwithmeta(hlsUrl, {'Origin':"https://" + urlparser.getDomain(baseUrl), 'Referer':baseUrl})
             urlTab.extend(getDirectM3U8Playlist(hlsUrl, checkExt=False, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999))
         return urlTab
+
+    def parserVIDCLOUD9(self, baseUrl):
+        printDBG("parserVIDCLOUD9 baseUrl[%r]" % baseUrl)
+        baseUrl = strwithmeta(baseUrl)
+        HTTP_HEADER = self.cm.getDefaultHeader(browser='firefox')
+        urlParams = {'header': HTTP_HEADER}
+        urlParams['header'].update({'Referer': urlparser.getDomain(baseUrl, False), 'X-Requested-With': 'XMLHttpRequest'})
+        _url = self.cm.ph.getSearchGroups(baseUrl, '''https?://.+?/(.+?)\.php.+?''', ignoreCase=True)[0]
+        sts, data = self.cm.getPage(baseUrl.replace(_url, 'ajax'), urlParams)
+        if not sts: return False
+        data = json_loads(data)
+        urlTab = []
+        for item in data['source']:
+            url = item.get('file', '')
+            url = strwithmeta(url, {'Referer':baseUrl})
+            label = item.get('label', '')
+            if 'm3u8' in url:
+                urlTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+            elif 'mp4' in url:
+                urlTab.append({'name': 'res: ' + label, 'url': url})
+        for item in data['source_bk']:
+            url = item.get('file', '')
+            url = strwithmeta(url, {'Referer':baseUrl})
+            label = item.get('label', '')
+            if 'm3u8' in url:
+                urlTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
+            elif 'mp4' in url:
+                urlTab.append({'name': 'res: ' + label, 'url': url})
+        return urlTab
+
