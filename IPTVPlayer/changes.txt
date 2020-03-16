@@ -1,4 +1,7 @@
-﻿#2020.03.15.02
+﻿#2020.03.16.01
+-USTVGo funkcionális bővítések
+-Anon-V hozzáadva (XXX)
+#2020.03.15.02
 -NHL66 javítva
 -SWatchSeries javítva
 -CDA.PL javítva
