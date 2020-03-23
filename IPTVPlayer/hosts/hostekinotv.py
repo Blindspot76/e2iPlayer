@@ -251,14 +251,14 @@ class EkinoTv(CBaseHostClass, CaptchaHelper):
         printDBG("EkinoTv.listSearchResult cItem[%s], searchPattern[%s] searchType[%s]" % (cItem, searchPattern, searchType))
         searchPattern = searchPattern.replace(' ', '+')
         
-        url = 'https://ekino-tv.pl/s/search?q=' + urllib.quote_plus(searchPattern)
+        url = 'https://ekino-tv.pl/search/q/?q=' + urllib.quote_plus(searchPattern)
         sts, data = self.getPage(url)
         if not sts: return
-        if not 'search' in self.cm.meta['url']:
-            url = 'https://ekino-tv.pl/se/search?q=' + urllib.quote_plus(searchPattern)
-            sts, data = self.getPage(url)
-            if not sts: return
-        
+#        if not 'search' in self.cm.meta['url']:
+#            url = 'https://ekino-tv.pl/se/search?q=' + urllib.quote_plus(searchPattern)
+#            sts, data = self.getPage(url)
+#            if not sts: return
+        printDBG("EkinoTv.listSearchResult data[%s]" % data)
         if 'movies' == searchType:
             sp = '<div class="movies-list-item"'
             data = self.cm.ph.getDataBeetwenMarkers(data, sp, 'Znalezione seriale', False)[1]
@@ -413,7 +413,9 @@ class EkinoTv(CBaseHostClass, CaptchaHelper):
             sts, data = self.getPage(url, urlParams)
             if not sts: return urlTab
 
-            if not meta.get('is_premium', False):
+            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''\shref=['"]([^'^"]+?)['"].+?buttonprch''')[0])
+
+            if not meta.get('is_premium', False) and url == '':
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''\shref=['"]([^'^"]+?)['"]''')[0])
                 if self.cm.isValidUrl(url):
                     urlParams['header']['Referer'] = baseUrl
@@ -425,11 +427,12 @@ class EkinoTv(CBaseHostClass, CaptchaHelper):
                 SetIPTVPlayerLastHostError(_('Link protected with google recaptcha v2.')) 
                 continue
             
-            url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0])
+            if not self.cm.isValidUrl(url):
+                url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '<iframe[^>]+?src="([^"]+?)"')[0])
 
             if not self.cm.isValidUrl(url):
                 url = self.getFullUrl(self.cm.ph.getSearchGroups(data, '''var\s+url\s*=\s*['"]([^'^"]+?)['"]''')[0])
-            
+
             if not self.cm.isValidUrl(url):
                 url = data.meta.get('url', '')
 
