@@ -1,4 +1,6 @@
-﻿#2020.03.23.01
+﻿#2020.03.26.01
+-Anon-V javítva (XXX)
+#2020.03.23.01
 -VUP.to tárhely kezelése hozzáadva
 -EKino javítva (Keresés)
 -ASheMaleTube javítva (XXX)
