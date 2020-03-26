@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.03.22.0"
+    XXXversion = "2020.03.26.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -9995,9 +9995,14 @@ class Host:
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.getPage(url, 'anon-v.cookie', 'anon-v.com', self.defaultParams)
            if not sts: return ''
-           videoUrl = self.cm.ph.getSearchGroups(data, '''video_url:\s*?['"]([^"^']+?)['"]''', 1, True)[0] 
+           license_code = self.cm.ph.getSearchGroups(data, '''license_code\s*?:\s*?['"]([^"^']+?)['"]''')[0]
+           videoUrl = self.cm.ph.getSearchGroups(data, '''video_url\s*?:\s*?['"]([^"^']+?)['"]''')[0]
+           printDBG( 'Host license_code: %s' % license_code )
+           printDBG( 'Host video_url: %s' % videoUrl )
+           if 'function/0/' in videoUrl:
+              videoUrl = decryptHash(videoUrl, license_code, '16')
            if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
-           return videoUrl
+           return urlparser.decorateUrl(videoUrl, {'Referer': url})
 
 ##########################################################################################################################
         query_data = {'url': url, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True}
