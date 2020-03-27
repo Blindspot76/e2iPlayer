@@ -1,0 +1,776 @@
+<<<<<<< HEAD
+﻿#2020.03.27.01
+-MindiGo Frissítve (Köszönet Celeburdinak!)
+#2020.03.26.01
+-Anon-V javítva (XXX)
+#2020.03.23.01
+-VUP.to tárhely kezelése hozzáadva
+-EKino javítva (Keresés)
+-ASheMaleTube javítva (XXX)
+#2020.03.21.01
+-EPorner javítva (XXX)
+-BravoPorn hozzáadva (XXX)
+-BravoTeens hozzáadva (XXX)
+#2020.03.16.01
+-USTVGo funkcionális bővítések
+-Anon-V hozzáadva (XXX)
+#2020.03.15.02
+-NHL66 javítva
+-SWatchSeries javítva
+-CDA.PL javítva
+-USTVGo javítva
+#2020.03.15.01
+-WatchCartoonOnline javítva (Köszönet: Alec és Codermik)
+-AnyPorn hozzáadva (XXX)
+-BongaCams javítva (XXX)
+#2020.03.11.01
+-EKino javítva
+-USTVGo javítva
+#2020.03.09.01
+-Kisebb javítások
+#2020.03.08.01
+-PornHD javítva (XXX)
+-PlayVids javítva (XXX)
+#2020.03.06.01
+LetMeJerk javítva (XXX)
+#2020.03.05.01
+-HQPorner javítva (XXX)
+#2020.03.02.01
+-Kisebb javítások
+#2020.03.01.01
+-EKino javítva
+-123Movies javítva
+-Kisebb módosítások
+#2020.02.26.02
+-USTVGo javítva
+-VidCorn javítva
+-Twitch TV javítva (Lapozás)
+-Xhamster javítva (XXX)
+#2020.02.26.01
+-Twitch TV javítva
+-PornDoe javítva (XXX)
+-RusPorn javítva (XXX)
+-Watch-Movies hozzáadva (PL)
+-EKinoManiak hozzáadva (PL)
+-Kisebb javítvások
+#2020.02.23.01
+-PornoPersik hozzáadva (XXX)
+#2020.02.22.01
+-HClips javítva (XXX)
+-EPorner javítva (XXX)
+#2020.02.16.01
+-InfoVersion frissítve
+-Felnőtt kiegészítő frissítve
+-Kisebb javítások
+#2020.02.14.01
+-Felnőtt kiegészítő frissítve
+#2020.02.09.01
+-InfoVersion javítva
+-Kisebb módosítások
+#2020.02.05.01
+-Felnőtt kiegészítő frissítve
+#2020.02.02.02
+-TVN24 javítva 
+-Kisebb módosítások
+#2020.02.02.01
+-Webstream javítva
+-VideoPenny javítva
+-InfoVersion frissítve
+#2020.01.26.01
+-YouPorn javítva (XXX)
+-RedBull TV javítva
+-Kisebb módosítások
+#2020.01.25.01
+-YouTube javítva
+-Felnőtt kiegészítő frissítve
+#2020.01.19.01
+-Technika.HU frissítve
+-Kisebb módosítások
+#2020.01.16.01
+-Technika.HU frissítve
+-TSiPlayer frissítve
+#2020.01.14.02
+-Technika.HU frissítve
+#2020.01.14.01
+-InfoVersion frissítve
+#2020.01.13.01
+-Felnőtt kiegészítő javítva
+#2020.01.12.01
+-Twitch TV javítva (Keresési eredmények)
+-eKino javítva
+-PornRabbit javítva (XXX)
+#2020.01.08.01
+-PorniCom javítva (XXX)
+-WoxTube hozzáadva (XXX)
+-WatchPornX hozzáadva (XXX)
+#2020.01.06.01
+-CrocoTube javítva (XXX)
+#2020.01.05.01
+-Kisebb javítások
+-UStreamIx frissítve
+#2020.01.04.01
+-Twitch TV javítva
+-OrthoBullets javítva
+#2020.01.03.02
+-3Filmy hozzáadva
+-NHL66.ir hozzáadva
+-MediaSetPlay EPG javítva
+-AllTube javítva
+-Kisebb javítások
+#2020.01.03.01
+-Technika.hu hozzáadva
+-HU telepítő frissítve
+-Felnőtt kiegészítő frissítve
+-Kisebb módosítások
+#2019.12.19.02
+-WebHU Player frissítve
+#2019.12.19.01
+-Filmezz.hu frissítve
+-MoziCsiilag frissítve
+-FilmGo frissítve
+-NonStopMozi frissítve
+#2019.12.18.01
+-Videa.hu frissítve
+-Chaturbate javítva (XXX)
+-InfoVersion frissítve
+#2019.12.17.01
+-CDA Filmy hozzáadva (Lengyel)
+#2019.12.16.01
+-SpankBang hozzáadva (XXX)
+-ProStream és UpStream tárhelyek támogatása hozzáadva (XXX)
+#2019.12.15.01
+-WebHU Player Időjárás megjelenítés hozzáadva (Teszt)
+-USTV Go javítva
+-TVP VOD javítva
+-Kisebb módosítások
+#2019.12.14.01
+-TSiPlayer frissítve
+-PornRewind javítva (XXX)
+#2019.12.13.01
+-InfoVersion frissítve
+#2019.12.08.02
+-Kisebb módosítások
+#2019.12.08.01
+-DatoPorn javítva (XXX)
+-EroProfile javítva (XXX)
+#2019.12.06.01
+-BongaCams javítva (XXX)
+-MyFree MP3 javítva
+#2019.12.05.01
+-Youtube javítva
+#2019.12.02.01
+-USTV Go javítva
+#2019.12.01.01
+-EuroSportPlayer frissítve
+-TVP VOD frissítve
+#2019.11.28.01
+-TXXX javítva
+#2019.11.26.02
+-Camster javítva (XXX)
+-Kisebb javítások
+#2019.11.26.01
+-SolarMovie javítva
+-YMovies.to javítva
+#2019.11.25.01
+-TVP VOD javítva (Belépés)
+#2019.11.24.01
+-HQ Porner hozzáadva (XXX)
+-DatoPorn hozzáadva (XXX)
+#2019.11.23.02
+-FullMatch TV javítva
+-eFilmy javítva
+-FilmAtiva javítva
+-Kisebb módosítások
+#2019.11.23.01
+-123 Movies HD javítva
+-Arte.TV javítva
+#2019.11.18.02
+-WebStream frissítve
+-Kisebb javítások
+#2019.11.18.01
+-Felnőtt kiegészítő frissítve
+#2019.11.17.01
+-Twitch TV javítva
+#2019.11.15.03
+-FullMatchTV hozzáadva
+-Kisebb javítások
+#2019.11.15.02
+-FilmOWood hozzáadva
+-SolarMovie javítva
+#2019.11.15.01
+-AnyBunny, YesPornPlease hozzáadva (XXX)
+-LetMeJerk javítva (XXX)
+#2019.11.10.02
+-123Movies javítva
+-EuroSport Player módosítva
+-RaiPlay, USTVGo, EgyBest frissítve.
+#2019.11.10.01
+-Auto.HU frissítve
+-Felnőtt kiegészítő hibái javítva
+#2019.11.04.03
+-RaiPlay, Clipwatching javítva
+#2019.11.04.02
+-Amateur Cool hozzáadva (XXX)
+#2019.11.04.01
+-Felnőtt kiegészítő frissítve
+#2019.10.29.02
+-LoveHomePorn hozzáadva (XXX)
+#2019.10.29.01
+-Twitch TV javítva
+-HooFoot javítva
+#2019.10.27.01
+-Miami TV javítva
+#2019.10.25.01
+-Felnőtt kiegészítő frissítve
+#2019.10.22.01
+-YouTube javítva
+-DokumentalneNET javítva
+-RaiPlay javítva
+-GoldVOD javítva
+#2019.10.18.02
+-HooFoot javítva
+-OurMatch javítva
+-USTV Go frissítve
+#2019.10.18.01
+-Felnőtt kiegészítő frissítve
+#2019.10.14.02
+-PinFlix javítva (XXX)
+-LetMeJerk javítva (XXX)
+#2019.10.14.01
+-CineBlog javítva
+#2019.10.13.02
+-USTV Go hozzáadva
+#2019.10.13.01
+-NetFlix Horror Series javítva (TSiPlayer)
+-Beeg javítva (XXX)
+#2019.10.12.01
+-FilmeHD.se javítva
+-RaiPlay frissítve
+#2019.10.07.02
+-Cinemay frissítve
+-Kisebb módosítások
+#2019.10.07.01
+-HU Telepítő frissítve
+-Auto.hu frissítve
+#2019.10.03.01
+-HD Filme javítva
+-Rai Play EPG forrás frissítve
+#2019.09.30.01
+-Rai Play javítva
+-SerienStreams javítva
+-Kisebb módosítások (Feliratkeresés)
+#2019.09.26.02
+-CineMay javítva
+-Planet Streaming képmegjelenítés javítva
+-HDFilme javítva
+#2019.09.26.01
+-eKino.tv javítva
+-Auto.HU frissítve
+#2019.09.21.02
+-Kisebb javítások
+#2019.09.21.01
+-AsheMaleTube javítva (XXX)
+#2019.09.17.01
+-Kisebb javítások
+-YouTube frissítve
+-Beeg javítva (XXX)
+#2019.09.15.01
+-Kisebb javítások
+#2019.09.14.01
+-YouTube frissítve
+-Kisebb módosítások
+#2019.09.11.02
+-HU telepítő frissítve
+-NonStop Mozi hozzáadva
+#2019.09.11.01
+-WebHU Player frissítve
+-FilmGo frissítve
+#2019.09.10.01
+-Felnőtt kiegészítő javítva
+#2019.09.08.01
+-DaftSex hozzáadva
+-Kisebb javítások
+#2019.09.07.01
+-Kisebb módosítások
+-Felnőtt kiegészítő frissítve
+#2019.09.06.03
+-CB01 hozzáadva (Olaszország)
+#2019.09.06.02
+-Adult TV, YouPorn Sexy javítva
+#2019.09.06.01
+-Kisebb javítások (Tárhelykezelés)
+#2019.09.05.01
+-Felnőtt kiegészítő frissítve
+#2019.09.04.01
+-HU telepítő frissítve
+-FilmGo hozzáadva
+#2019.09.02.01
+-Kisebb javítások
+-Ikonok frissítve
+#2019.09.01.01
+-Documentari Streaming hozzáadva
+#2019.08.28.01
+-RaiPlay javítva
+-MediaSet Play javítva
+#2019.08.27.01
+-Twitch TV javítva
+#2019.08.26.01
+-MediaSet Play javítva
+#2019.08.24.03
+-Kisebb javítások
+#2019.08.24.02
+-BeinMatch fordítás bővítve
+#2019.08.24.01
+-Filmezz javítva
+#2019.08.23.02
+-HU Telepítő, MoziCsillag frissítve
+#2019.08.23.01
+-TS iPlayer javítva
+#2019.08.21.01
+-Beeg javítva (XXX)
+#2019.08.19.03
+-OK Goals, OurMatch, HooFoot javítva
+-Néhány további szolgáltató hibajavításai
+#2019.08.19.02
+-Kisebb javítások
+-BeinMatch arab feliratok lefordítva
+-LookMovie hozzáadva
+#2019.08.19.01
+-Seriale.co, Extraklasa TV javítva
+#2019.08.16.02
+-Sport 365 javítva
+#2019.08.16.01
+-Filiser.TV javítva
+#2019.08.13.02
+-TSiPlayer frissítve
+#2019.08.14.01
+-Felnőtt kiegészítő frissítve
+#2019.08.13.01
+-HU Telepítő frissítve
+-WebHU Player frissítve
+#2019.08.07.01
+-Openload linkek támogatása javítva
+#2019.08.06.02
+-Kisebb fejlesztések, javítások
+-Új funkció:  Vissza a Kategória lista elejéhez, ha több oldal volt megnézve
+-Új funkció:  Vissza a kiszolgáló kiindulási pontjához (gyors visszalépés az adott hoston belül)
+-Magyaros dátumkijelzés
+#2019.08.06.01
+-HU telepítő frissítve
+#2019.08.03.03
+-HU telepítő frissítve
+-Redbull TV javítva
+#2019.08.03.02
+-VideoPenny host javítva
+#2019.08.03.01
+-XXX kiegészítő frissítve
+#2019.07.26.01
+-Altadefizione host javítva
+-Ikonok frissítve
+#2019.07.23.03
+-Új host: SportItalia hozzáadva
+#2019.07.23.02
+-Filiser.TV javítva
+#2019.07.23.01
+-XXX kiegészítő frissítve
+#2019.07.21.01
+-HU Telepítő frissítve
+#2019.07.20.01
+-Updatehosts frissítve
+-Magyarítás frissítve
+#2019.07.19.02
+-Kisebb javítások
+-iptvplayerwidget.py frissítve
+#2019.07.19.01
+-Kisebb javítások
+#2019.07.18.04
+-Webcamera.pl javítva
+#2019.07.18.03
+=======
+﻿#2020.03.26.01
+-Anon-V javítva (XXX)
+#2020.03.23.01
+-VUP.to tárhely kezelése hozzáadva
+-EKino javítva (Keresés)
+-ASheMaleTube javítva (XXX)
+#2020.03.21.01
+-EPorner javítva (XXX)
+-BravoPorn hozzáadva (XXX)
+-BravoTeens hozzáadva (XXX)
+#2020.03.16.01
+-USTVGo funkcionális bővítések
+-Anon-V hozzáadva (XXX)
+#2020.03.15.02
+-NHL66 javítva
+-SWatchSeries javítva
+-CDA.PL javítva
+-USTVGo javítva
+#2020.03.15.01
+-WatchCartoonOnline javítva (Köszönet: Alec és Codermik)
+-AnyPorn hozzáadva (XXX)
+-BongaCams javítva (XXX)
+#2020.03.11.01
+-EKino javítva
+-USTVGo javítva
+#2020.03.09.01
+-Kisebb javítások
+#2020.03.08.01
+-PornHD javítva (XXX)
+-PlayVids javítva (XXX)
+#2020.03.06.01
+LetMeJerk javítva (XXX)
+#2020.03.05.01
+-HQPorner javítva (XXX)
+#2020.03.02.01
+-Kisebb javítások
+#2020.03.01.01
+-EKino javítva
+-123Movies javítva
+-Kisebb módosítások
+#2020.02.26.02
+-USTVGo javítva
+-VidCorn javítva
+-Twitch TV javítva (Lapozás)
+-Xhamster javítva (XXX)
+#2020.02.26.01
+-Twitch TV javítva
+-PornDoe javítva (XXX)
+-RusPorn javítva (XXX)
+-Watch-Movies hozzáadva (PL)
+-EKinoManiak hozzáadva (PL)
+-Kisebb javítvások
+#2020.02.23.01
+-PornoPersik hozzáadva (XXX)
+#2020.02.22.01
+-HClips javítva (XXX)
+-EPorner javítva (XXX)
+#2020.02.16.01
+-InfoVersion frissítve
+-Felnőtt kiegészítő frissítve
+-Kisebb javítások
+#2020.02.14.01
+-Felnőtt kiegészítő frissítve
+#2020.02.09.01
+-InfoVersion javítva
+-Kisebb módosítások
+#2020.02.05.01
+-Felnőtt kiegészítő frissítve
+#2020.02.02.02
+-TVN24 javítva 
+-Kisebb módosítások
+#2020.02.02.01
+-Webstream javítva
+-VideoPenny javítva
+-InfoVersion frissítve
+#2020.01.26.01
+-YouPorn javítva (XXX)
+-RedBull TV javítva
+-Kisebb módosítások
+#2020.01.25.01
+-YouTube javítva
+-Felnőtt kiegészítő frissítve
+#2020.01.19.01
+-Technika.HU frissítve
+-Kisebb módosítások
+#2020.01.16.01
+-Technika.HU frissítve
+-TSiPlayer frissítve
+#2020.01.14.02
+-Technika.HU frissítve
+#2020.01.14.01
+-InfoVersion frissítve
+#2020.01.13.01
+-Felnőtt kiegészítő javítva
+#2020.01.12.01
+-Twitch TV javítva (Keresési eredmények)
+-eKino javítva
+-PornRabbit javítva (XXX)
+#2020.01.08.01
+-PorniCom javítva (XXX)
+-WoxTube hozzáadva (XXX)
+-WatchPornX hozzáadva (XXX)
+#2020.01.06.01
+-CrocoTube javítva (XXX)
+#2020.01.05.01
+-Kisebb javítások
+-UStreamIx frissítve
+#2020.01.04.01
+-Twitch TV javítva
+-OrthoBullets javítva
+#2020.01.03.02
+-3Filmy hozzáadva
+-NHL66.ir hozzáadva
+-MediaSetPlay EPG javítva
+-AllTube javítva
+-Kisebb javítások
+#2020.01.03.01
+-Technika.hu hozzáadva
+-HU telepítő frissítve
+-Felnőtt kiegészítő frissítve
+-Kisebb módosítások
+#2019.12.19.02
+-WebHU Player frissítve
+#2019.12.19.01
+-Filmezz.hu frissítve
+-MoziCsiilag frissítve
+-FilmGo frissítve
+-NonStopMozi frissítve
+#2019.12.18.01
+-Videa.hu frissítve
+-Chaturbate javítva (XXX)
+-InfoVersion frissítve
+#2019.12.17.01
+-CDA Filmy hozzáadva (Lengyel)
+#2019.12.16.01
+-SpankBang hozzáadva (XXX)
+-ProStream és UpStream tárhelyek támogatása hozzáadva (XXX)
+#2019.12.15.01
+-WebHU Player Időjárás megjelenítés hozzáadva (Teszt)
+-USTV Go javítva
+-TVP VOD javítva
+-Kisebb módosítások
+#2019.12.14.01
+-TSiPlayer frissítve
+-PornRewind javítva (XXX)
+#2019.12.13.01
+-InfoVersion frissítve
+#2019.12.08.02
+-Kisebb módosítások
+#2019.12.08.01
+-DatoPorn javítva (XXX)
+-EroProfile javítva (XXX)
+#2019.12.06.01
+-BongaCams javítva (XXX)
+-MyFree MP3 javítva
+#2019.12.05.01
+-Youtube javítva
+#2019.12.02.01
+-USTV Go javítva
+#2019.12.01.01
+-EuroSportPlayer frissítve
+-TVP VOD frissítve
+#2019.11.28.01
+-TXXX javítva
+#2019.11.26.02
+-Camster javítva (XXX)
+-Kisebb javítások
+#2019.11.26.01
+-SolarMovie javítva
+-YMovies.to javítva
+#2019.11.25.01
+-TVP VOD javítva (Belépés)
+#2019.11.24.01
+-HQ Porner hozzáadva (XXX)
+-DatoPorn hozzáadva (XXX)
+#2019.11.23.02
+-FullMatch TV javítva
+-eFilmy javítva
+-FilmAtiva javítva
+-Kisebb módosítások
+#2019.11.23.01
+-123 Movies HD javítva
+-Arte.TV javítva
+#2019.11.18.02
+-WebStream frissítve
+-Kisebb javítások
+#2019.11.18.01
+-Felnőtt kiegészítő frissítve
+#2019.11.17.01
+-Twitch TV javítva
+#2019.11.15.03
+-FullMatchTV hozzáadva
+-Kisebb javítások
+#2019.11.15.02
+-FilmOWood hozzáadva
+-SolarMovie javítva
+#2019.11.15.01
+-AnyBunny, YesPornPlease hozzáadva (XXX)
+-LetMeJerk javítva (XXX)
+#2019.11.10.02
+-123Movies javítva
+-EuroSport Player módosítva
+-RaiPlay, USTVGo, EgyBest frissítve.
+#2019.11.10.01
+-Auto.HU frissítve
+-Felnőtt kiegészítő hibái javítva
+#2019.11.04.03
+-RaiPlay, Clipwatching javítva
+#2019.11.04.02
+-Amateur Cool hozzáadva (XXX)
+#2019.11.04.01
+-Felnőtt kiegészítő frissítve
+#2019.10.29.02
+-LoveHomePorn hozzáadva (XXX)
+#2019.10.29.01
+-Twitch TV javítva
+-HooFoot javítva
+#2019.10.27.01
+-Miami TV javítva
+#2019.10.25.01
+-Felnőtt kiegészítő frissítve
+#2019.10.22.01
+-YouTube javítva
+-DokumentalneNET javítva
+-RaiPlay javítva
+-GoldVOD javítva
+#2019.10.18.02
+-HooFoot javítva
+-OurMatch javítva
+-USTV Go frissítve
+#2019.10.18.01
+-Felnőtt kiegészítő frissítve
+#2019.10.14.02
+-PinFlix javítva (XXX)
+-LetMeJerk javítva (XXX)
+#2019.10.14.01
+-CineBlog javítva
+#2019.10.13.02
+-USTV Go hozzáadva
+#2019.10.13.01
+-NetFlix Horror Series javítva (TSiPlayer)
+-Beeg javítva (XXX)
+#2019.10.12.01
+-FilmeHD.se javítva
+-RaiPlay frissítve
+#2019.10.07.02
+-Cinemay frissítve
+-Kisebb módosítások
+#2019.10.07.01
+-HU Telepítő frissítve
+-Auto.hu frissítve
+#2019.10.03.01
+-HD Filme javítva
+-Rai Play EPG forrás frissítve
+#2019.09.30.01
+-Rai Play javítva
+-SerienStreams javítva
+-Kisebb módosítások (Feliratkeresés)
+#2019.09.26.02
+-CineMay javítva
+-Planet Streaming képmegjelenítés javítva
+-HDFilme javítva
+#2019.09.26.01
+-eKino.tv javítva
+-Auto.HU frissítve
+#2019.09.21.02
+-Kisebb javítások
+#2019.09.21.01
+-AsheMaleTube javítva (XXX)
+#2019.09.17.01
+-Kisebb javítások
+-YouTube frissítve
+-Beeg javítva (XXX)
+#2019.09.15.01
+-Kisebb javítások
+#2019.09.14.01
+-YouTube frissítve
+-Kisebb módosítások
+#2019.09.11.02
+-HU telepítő frissítve
+-NonStop Mozi hozzáadva
+#2019.09.11.01
+-WebHU Player frissítve
+-FilmGo frissítve
+#2019.09.10.01
+-Felnőtt kiegészítő javítva
+#2019.09.08.01
+-DaftSex hozzáadva
+-Kisebb javítások
+#2019.09.07.01
+-Kisebb módosítások
+-Felnőtt kiegészítő frissítve
+#2019.09.06.03
+-CB01 hozzáadva (Olaszország)
+#2019.09.06.02
+-Adult TV, YouPorn Sexy javítva
+#2019.09.06.01
+-Kisebb javítások (Tárhelykezelés)
+#2019.09.05.01
+-Felnőtt kiegészítő frissítve
+#2019.09.04.01
+-HU telepítő frissítve
+-FilmGo hozzáadva
+#2019.09.02.01
+-Kisebb javítások
+-Ikonok frissítve
+#2019.09.01.01
+-Documentari Streaming hozzáadva
+#2019.08.28.01
+-RaiPlay javítva
+-MediaSet Play javítva
+#2019.08.27.01
+-Twitch TV javítva
+#2019.08.26.01
+-MediaSet Play javítva
+#2019.08.24.03
+-Kisebb javítások
+#2019.08.24.02
+-BeinMatch fordítás bővítve
+#2019.08.24.01
+-Filmezz javítva
+#2019.08.23.02
+-HU Telepítő, MoziCsillag frissítve
+#2019.08.23.01
+-TS iPlayer javítva
+#2019.08.21.01
+-Beeg javítva (XXX)
+#2019.08.19.03
+-OK Goals, OurMatch, HooFoot javítva
+-Néhány további szolgáltató hibajavításai
+#2019.08.19.02
+-Kisebb javítások
+-BeinMatch arab feliratok lefordítva
+-LookMovie hozzáadva
+#2019.08.19.01
+-Seriale.co, Extraklasa TV javítva
+#2019.08.16.02
+-Sport 365 javítva
+#2019.08.16.01
+-Filiser.TV javítva
+#2019.08.13.02
+-TSiPlayer frissítve
+#2019.08.14.01
+-Felnőtt kiegészítő frissítve
+#2019.08.13.01
+-HU Telepítő frissítve
+-WebHU Player frissítve
+#2019.08.07.01
+-Openload linkek támogatása javítva
+#2019.08.06.02
+-Kisebb fejlesztések, javítások
+-Új funkció:  Vissza a Kategória lista elejéhez, ha több oldal volt megnézve
+-Új funkció:  Vissza a kiszolgáló kiindulási pontjához (gyors visszalépés az adott hoston belül)
+-Magyaros dátumkijelzés
+#2019.08.06.01
+-HU telepítő frissítve
+#2019.08.03.03
+-HU telepítő frissítve
+-Redbull TV javítva
+#2019.08.03.02
+-VideoPenny host javítva
+#2019.08.03.01
+-XXX kiegészítő frissítve
+#2019.07.26.01
+-Altadefizione host javítva
+-Ikonok frissítve
+#2019.07.23.03
+-Új host: SportItalia hozzáadva
+#2019.07.23.02
+-Filiser.TV javítva
+#2019.07.23.01
+-XXX kiegészítő frissítve
+#2019.07.21.01
+-HU Telepítő frissítve
+#2019.07.20.01
+-Updatehosts frissítve
+-Magyarítás frissítve
+#2019.07.19.02
+-Kisebb javítások
+-iptvplayerwidget.py frissítve
+#2019.07.19.01
+-Kisebb javítások
+#2019.07.18.04
+-Webcamera.pl javítva
+#2019.07.18.03
+>>>>>>> 118e2cccb360e09e0145881d923120252d7a0f46
+-Mindig Tv ikonok frissítve
