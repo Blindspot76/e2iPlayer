@@ -1,5 +1,7 @@
-<<<<<<< HEAD
-﻿#2020.03.27.01
+#2020.03.29.01
+-MindiGo frissítve (Köszönet Celeburdinak!)
+-Kisebb javítások
+#2020.03.27.01
 -MindiGo Frissítve (Köszönet Celeburdinak!)
 #2020.03.26.01
 -Anon-V javítva (XXX)
@@ -385,8 +387,7 @@ LetMeJerk javítva (XXX)
 -Kisebb javítások
 #2019.07.18.04
 -Webcamera.pl javítva
-#2019.07.18.03
-=======
+
 ﻿#2020.03.26.01
 -Anon-V javítva (XXX)
 #2020.03.23.01
@@ -772,5 +773,4 @@ LetMeJerk javítva (XXX)
 #2019.07.18.04
 -Webcamera.pl javítva
 #2019.07.18.03
->>>>>>> 118e2cccb360e09e0145881d923120252d7a0f46
 -Mindig Tv ikonok frissítve
