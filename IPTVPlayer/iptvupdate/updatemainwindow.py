@@ -370,9 +370,9 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
     
     def getStepsList(self):
         self.list = []
-        if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value >= '1':
+        if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value == '2':
             self.list.append( self.__getStepDesc(title = _("Add repository last version."),   execFunction = self.stepGetGitlab, ignoreError=True ) )
-        self.list.append( self.__getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists, ignoreError=True ) )
+        self.list.append( self.__getStepDesc(title = _("Obtaining server list."),          execFunction = self.stepGetServerLists ) )
         self.list.append( self.__getStepDesc(title = _("Downloading an update packet."),   execFunction = self.stepGetArchive ) )
         self.list.append( self.__getStepDesc(title = _("Extracting an update packet."),    execFunction = self.stepUnpackArchive ) )
         self.list.append( self.__getStepDesc(title = _("Copy post installed binaries."),   execFunction = self.stepCopyPostInatalledBinaries, breakable=True, ignoreError=True ) )
@@ -407,37 +407,28 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
 
     def stepGetGitlab(self):
         printDBG('UpdateMainAppImpl.stepGetGitlab')
-        if config.plugins.iptvplayer.gitlab_repo.value == '1':
-            nick = 'mosz_nowy'
-        else:
-            nick = 'zadmario'
         self.clearTmpData()
         sts, msg = self.createPath(self.tmpDir)
         if not sts:
             self.stepFinished(-1, msg)
             return
-        serverUrl = "https://gitlab.com/{0}/e2iplayer/raw/master/IPTVPlayer/version.py".format(nick)
+        serverUrl = "https://gitlab.com/{0}/e2iplayer/raw/master/IPTVPlayer/version.py".format(config.plugins.iptvplayer.gitlab_repo.value)
         self.downloader = UpdateDownloaderCreator(serverUrl)
         self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__serversListGitlabFinished, None))
         self.downloader.start(serverUrl, os_path.join(self.tmpDir, 'lastversion.py'))
         
     def stepGetArchive(self):
-        try:
-            self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['url'])
-            self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__archiveDownloadFinished, None))
-            self.sourceArchive = os_path.join(self.tmpDir, 'iptvplayer_archive.tar.gz')
-            url = self.serversList[self.currServIdx]['url']
+        self.downloader = UpdateDownloaderCreator(self.serversList[self.currServIdx]['url'])
+        self.downloader.subscribersFor_Finish.append( boundFunction(self.downloadFinished, self.__archiveDownloadFinished, None))
+        self.sourceArchive = os_path.join(self.tmpDir, 'iptvplayer_archive.tar.gz')
+        url = self.serversList[self.currServIdx]['url']
 
-            if self.decKey:
-                from hashlib import sha256
-                url += '&' if '?' in url else '?'
-                url += 'hash=%s' % sha256(self.user).hexdigest()
+        if self.decKey:
+            from hashlib import sha256
+            url += '&' if '?' in url else '?'
+            url += 'hash=%s' % sha256(self.user).hexdigest()
 
-            self.downloader.start(url, self.sourceArchive)
-        except Exception:
-            printExc()
-            self.stepFinished(-1, 'Error. Choose preferred server.')
-            return
+        self.downloader.start(url, self.sourceArchive)
 
     def stepUnpackArchive(self):
         self.destinationArchive  = os_path.join(self.tmpDir , 'iptv_archive')
@@ -709,12 +700,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
         url            = self.downloader.getUrl()
         filePath       = self.downloader.getFullFileName()
         self.downloader = None
-        serversList = []
         printDBG('UpdateMainAppImpl.__serversListGitlabFinished url[%s], filePath[%s] ' % (url, filePath))
-        if config.plugins.iptvplayer.gitlab_repo.value == '1':
-            nick = 'mosz_nowy'
-        else:
-            nick = 'zadmario'
         if DMHelper.STS.DOWNLOADED != status:
             msg = _("Problem with downloading the packet:\n[%s].") % url
             self.stepFinished(-1, msg)
@@ -729,7 +715,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                 except Exception:
                     printExc()
                 if 13 == len(newVerNum):
-                    sourceUrl = "https://gitlab.com/{0}/e2iplayer/-/archive/master/e2iplayer-master.tar.gz".format(nick)
+                    sourceUrl = "https://gitlab.com/{0}/e2iplayer/-/archive/master/e2iplayer-master.tar.gz".format(config.plugins.iptvplayer.gitlab_repo.value)
                     self.gitlabList = {'name':'gitlab.com', 'version':newVerNum, 'url':sourceUrl, 'subdir':'e2iplayer-master/', 'pyver':'X.X', 'packagetype':'sourcecode'}
                     printDBG("__serversListGitlabFinished: [%s]" % str(self.gitlabList))
                 else:
@@ -738,10 +724,7 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             else:
                 msg = _("File not found:\n[%s].") % filePath
                 self.stepFinished(-1, msg)
-            if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value >= '1':
-                serversList.append(self.gitlabList)
-            self.serversList = serversList
-            self.stepFinished(0, _("GitLab version from {0} was downloaded successfully.".format(nick)))
+            self.stepFinished(0, _("GitLab version from {0} was downloaded successfully.".format(config.plugins.iptvplayer.gitlab_repo.value)))
         return
 
     def __serversListDownloadFinished(self, arg, status):
@@ -817,6 +800,9 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
             if config.plugins.iptvplayer.hiddenAllVersionInUpdate.value:
                 self.__addLastVersion(serversList) # get last version from gitlab.com only for developers
 
+            if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value == '2':
+                serversList.append(self.gitlabList)
+
             self.serversList = serversList
             self.serverGraphicsHash = serverGraphicsHash
             self.serverIconsHash = serverIconsHash
@@ -883,7 +869,10 @@ class UpdateMainAppImpl(IUpdateObjectInterface):
                     elif config.plugins.iptvplayer.ListaGraficzna.value:
                         list.append( self.__getStepDesc(title = _("Copy icons."),    execFunction = self.stepCopyOnlyIcons ) )
 
-            self.list[3:3] = list
+            if config.plugins.iptvplayer.gitlab_repo.value and config.plugins.iptvplayer.preferredupdateserver.value == '2':
+                self.list[4:4] = list
+            else:
+                self.list[3:3] = list
             if 'enc' in self.serversList[self.currServIdx]:
                 self.list.insert(1, self.__getStepDesc(title = _("Get decryption key."),    execFunction = self.stepGetEncKey ) )
                 self.list.insert(3, self.__getStepDesc(title = _("Decrypt archive."),       execFunction = self.stepDecryptArchive ) )
