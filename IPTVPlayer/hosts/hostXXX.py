@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.03.26.0"
+    XXXversion = "2020.04.01.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -1341,7 +1341,7 @@ class Host:
               OldImage = self.cm.ph.getSearchGroups(item, '''data-image=['"]([^"^']+?)['"]''', 1, True)[0] 
               phUrl = self.MAIN_URL+phUrl
               if not OldImage:
-                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phRuntime+'] [Added: '+phAdded+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
+                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phRuntime+'] '+decodeHtml(phTitle)+ '\n[Added: '+phAdded+'] ',CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
               valTab.append(CDisplayListItem('Next', 'Next '+re.sub('.+page=', '', next), CDisplayListItem.TYPE_CATEGORY, [self.MAIN_URL+next.replace('&amp;','&')], name, '', None))        
            return valTab
@@ -8882,6 +8882,23 @@ class Host:
            sts, data = self._getPage(url, self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+data )
+           try:
+              match = re.compile(r"""quality_([0-9]{3,4})p\s*=(?:"|')?([^'";]+)(?:"|')?;""", re.DOTALL | re.IGNORECASE).findall(data)
+              match = sorted(match, key=lambda x: int(x[0]), reverse=True)
+              videolink = match[0][1]
+              if "/*" in videolink:
+                 videolink = re.sub(r"/\*[^/]+/", "", videolink).replace("+","")
+                 linkparts = re.compile(r"(\w+)", re.DOTALL | re.IGNORECASE).findall(videolink)
+                 for part in linkparts:
+                    partval = re.compile(part+'="(.*?)";', re.DOTALL | re.IGNORECASE).findall(data)[0]
+                    partval = partval.replace('" + "','')
+                    videolink = videolink.replace(part, partval)
+              videoUrl = videolink.replace(" ","")
+              printDBG( 'Host videoUrl: '+videoUrl )
+              if videoUrl: return strwithmeta(videoUrl, {'Referer':url})
+           except Exception:
+              printExc()  
+
            videoPage = self.cm.ph.getSearchGroups(data, '''"quality":"720","videoUrl":['"]([^"^']+?)['"]''')[0] 
            if videoPage: return videoPage.replace('\/','/')
            videoPage = self.cm.ph.getSearchGroups(data, '''"quality":"480","videoUrl":['"]([^"^']+?)['"]''')[0] 
@@ -8890,9 +8907,9 @@ class Host:
            if videoPage: return videoPage.replace('\/','/')
            try:
               #js = re.findall('(var flashvars_(?:\d+).*?)loadScriptUniqueId', data, re.S)
-              js = re.findall('type="text/javascript">.*?(var\sflashvars.*?)loadScriptUniqueId', data, re.S)
+              js = re.findall('type="text/javascript">.*?(var\sflashvars.*?)</script>', data, re.S)
               #js = self.cm.ph.getDataBeetwenMarkers(data, 'var flashvars_', 'loadScriptUniqueId', False)[1]
-              #printDBG( 'Host data js: '+js[0] )
+              printDBG( 'Host data js: '+js[0] )
               if js:
                  urls = js_execute( js[0]+ '\nfor (n in this){print(n+"="+this[n]+";");}')
                  videoPage = self.cm.ph.getSearchGroups(urls['data'], '''quality_1080p=([^"^']+?);''')[0] 
@@ -8903,7 +8920,8 @@ class Host:
                  if videoPage: return videoPage
                  videoPage = self.cm.ph.getSearchGroups(urls['data'], '''quality_240p=([^"^']+?);''')[0] 
                  if videoPage: return videoPage
-           except:
+           except Exception:
+              printExc()
               embed = re.search('"embedCode":"<iframe src=."(.*?)"', data, re.S)
               if embed:
                  url = embed.group(1).replace('\/','/').replace('\\','')
