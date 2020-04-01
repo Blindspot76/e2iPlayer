@@ -1493,6 +1493,7 @@ class pageParser(CaptchaHelper):
         return url
         
     def parserCDA(self, inUrl):
+        printDBG("parserCDA inUrl[%r]" % inUrl)
         COOKIE_FILE = GetCookieDir('cdapl.cookie')
         self.cm.clearCookie(COOKIE_FILE, removeNames=['vToken'])
 
@@ -1551,6 +1552,16 @@ class pageParser(CaptchaHelper):
                 uniqUrls.append(params['url'])
         
         def __ca(dat):
+            def rot47(s):
+               x = []
+               for i in xrange(len(s)):
+                   j = ord(s[i])
+                   if j >= 33 and j <= 126:
+                       x.append(chr(33 + ((j + 14) % 94)))
+                   else:
+                       x.append(s[i])
+               return ''.join(x)
+
             def __replace(c):
                 code = ord(c.group(1))
                 if code <= ord('Z'):
@@ -1564,7 +1575,11 @@ class pageParser(CaptchaHelper):
             
             if not self.cm.isValidUrl(dat):
                 try:
-                    dat = re.sub('([a-zA-Z])', __replace, dat)
+                    if 'uggcf' in dat:
+                        dat = re.sub('([a-zA-Z])', __replace, dat)
+                    else:
+                        dat = rot47(urllib.unquote(dat))
+                        dat = 'https://' + str(dat) + '.mp4'
                     if not dat.endswith('.mp4'):
                         dat += '.mp4'
                     dat = dat.replace("adc.mp4", ".mp4")
@@ -9845,7 +9860,7 @@ class pageParser(CaptchaHelper):
 #                    jscode.append(item)
 #                    break
 #            jscode.append('var adb = "0/"; ext = "";')
-            jscode = ['var token = ""; var adb = "0/";']
+            jscode = ['var token = ""; var adb = "0/"; var wasmcheck="1";']
             tmp = ph.search(data, '''(['"][^'^"]*?get_md5\.php[^;]+?);''')[0]
             jscode.append('print(%s)' % tmp)
             ret = js_execute( '\n'.join(jscode) )
@@ -11511,28 +11526,30 @@ class pageParser(CaptchaHelper):
         domain = urlparser.getDomain(cUrl)
        
         if 'embed' not in cUrl:
-            url = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0], domain)
-            if 'embed' in url:
-                urlParams['header']['Referer'] = cUrl
-                sts, data = self.cm.getPage(url, urlParams)
-                if not sts: return False
-        
-        jscode = [self.jscode['jwplayer'], "Clappr={Player:jwplayer()['setup']};"]
-        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
-        for item in tmp:
-            if 'eval(' in item and 'sources' in item:
-                jscode.append(item)
-        urlTab = []
-        jscode = '\n'.join(jscode)
-        ret = js_execute( jscode )
-        printDBG(ret['data'])
-        data = json_loads(ret['data'])
-        for item in data['sources']:
-            url = self.cm.getFullUrl(item, domain)
-            url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'Range':'bytes=0-'})
-            urlTab.append({'name':domain, 'url':url})
-            
-        return urlTab
+            baseUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0], domain)
+#            if 'embed' in url:
+#                urlParams['header']['Referer'] = cUrl
+#                sts, data = self.cm.getPage(url, urlParams)
+#                if not sts: return False
+#        
+#        jscode = [self.jscode['jwplayer'], "Clappr={Player:jwplayer()['setup']};"]
+#        tmp = self.cm.ph.getAllItemsBeetwenNodes(data, ('<script', '>'), ('</script', '>'), False)
+#        for item in tmp:
+#            if 'eval(' in item and 'sources' in item:
+#                jscode.append(item)
+#        urlTab = []
+#        jscode = '\n'.join(jscode)
+#        ret = js_execute( jscode )
+#        printDBG(ret['data'])
+#        data = json_loads(ret['data'])
+#        for item in data['sources']:
+#            url = self.cm.getFullUrl(item, domain)
+#            url = strwithmeta(url, {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent'], 'Range':'bytes=0-'})
+#            urlTab.append({'name':domain, 'url':url})
+#            
+#        return urlTab
+
+        return self.parserONLYSTREAMTV(strwithmeta(baseUrl, {'Referer':cUrl}))
 
     def parserKRAKENFILESCOM(self, baseUrl):
         printDBG("parserKRAKENFILESCOM baseUrl[%r]" % baseUrl)
