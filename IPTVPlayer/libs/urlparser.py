@@ -1579,10 +1579,11 @@ class pageParser(CaptchaHelper):
                         dat = re.sub('([a-zA-Z])', __replace, dat)
                     else:
                         dat = rot47(urllib.unquote(dat))
+                        dat = dat.replace(".cda.mp4", "").replace(".2cda.pl", ".cda.pl").replace(".3cda.pl", ".cda.pl");
                         dat = 'https://' + str(dat) + '.mp4'
                     if not dat.endswith('.mp4'):
                         dat += '.mp4'
-                    dat = dat.replace("adc.mp4", ".mp4")
+                    dat = dat.replace("0)sss", "")
                 except Exception:
                     dat = ''
                     printExc()
@@ -9789,13 +9790,17 @@ class pageParser(CaptchaHelper):
         if (subData.endswith('.srt') or subData.endswith('.vtt')):
             sub_tracks.append({'title':'attached', 'url':subData, 'lang':'unk', 'format':'srt'})
 
-        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script>', '</script>')
+        data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script>', '</script>', False)
+        wise = ''
+        tmp  = ''
         for item in data:
             if 'orig_vid = "' in item:
-                data = item
-                break
-        orig_vid = self.cm.ph.getDataBeetwenMarkers(data, 'orig_vid = "', '"', False)[1]
-        jscode = self.cm.ph.getDataBeetwenMarkers(data, 'location.replace(', ');', False)[1]
+                tmp = item
+            if "w,i,s,e" in item:
+                wise = item
+
+        orig_vid = self.cm.ph.getDataBeetwenMarkers(tmp, 'orig_vid = "', '"', False)[1]
+        jscode = self.cm.ph.getDataBeetwenMarkers(tmp, 'location.replace(', ');', False)[1]
         jscode = 'var need_captcha="0"; var server_referer="http://hqq.watch/"; var orig_vid="'+orig_vid+'"; print(' + jscode + ');'
 
         gt = self.cm.getCookieItem(COOKIE_FILE,'gt')
@@ -9860,7 +9865,8 @@ class pageParser(CaptchaHelper):
 #                    jscode.append(item)
 #                    break
 #            jscode.append('var adb = "0/"; ext = "";')
-            jscode = ['var token = ""; var adb = "0/"; var wasmcheck="1";']
+            jscode = ['var token = ""; var adb = "0/"; var wasmcheck="1"; var videokeyorig="%s";' % vid]
+            jscode.append(wise)
             tmp = ph.search(data, '''(['"][^'^"]*?get_md5\.php[^;]+?);''')[0]
             jscode.append('print(%s)' % tmp)
             ret = js_execute( '\n'.join(jscode) )
@@ -11527,6 +11533,7 @@ class pageParser(CaptchaHelper):
        
         if 'embed' not in cUrl:
             baseUrl = self.cm.getFullUrl(self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''', 1, True)[0], domain)
+
 #            if 'embed' in url:
 #                urlParams['header']['Referer'] = cUrl
 #                sts, data = self.cm.getPage(url, urlParams)
@@ -11549,7 +11556,7 @@ class pageParser(CaptchaHelper):
 #            
 #        return urlTab
 
-        return self.parserONLYSTREAMTV(strwithmeta(baseUrl, {'Referer':cUrl}))
+        return self.parserONLYSTREAMTV(strwithmeta(baseUrl, {'Host':domain}))
 
     def parserKRAKENFILESCOM(self, baseUrl):
         printDBG("parserKRAKENFILESCOM baseUrl[%r]" % baseUrl)
