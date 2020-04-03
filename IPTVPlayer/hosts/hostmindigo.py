@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-05-19 Celeburdi
+# 2020-03-27 Celeburdi
 ###################################################
-HOST_VERSION = "2.0"
+HOST_VERSION = "2.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -202,7 +202,7 @@ def _getMTVATVs():
 def _getYTTVs():
     return [
         {"title": "Euronews", "url": "https://www.youtube.com/channel/UC4Ct8gIf9f0n4mdyGsFiZRA/live" },
-#        {"title": "Erdély TV", "url": "https://www.youtube.com/channel/UCS5t4xWMT6lIZ9tcPROUd5A/live" },
+#        {"title": "Erdély TV", "url": "https://www.youtube.com/channel//live" },
         ]
 
 
@@ -343,18 +343,14 @@ class MindiGoHU(CBaseHostClass):
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVzzUGAI6qCes="))
         self.M3_PROGRAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
             "eJzTLyjKTy9KzAUADYgDKA=="))
+        self.M3_DAILYPROGRAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
+            "eJzTT0nMzKnULSjKTy9KzAUAJqwFaA=="))
+        self.M3_OPEN_URL = self.M3_URL+zlib.decompress(base64.b64decode(
+            "eJzTT08t0c0vSM2zT87PyUlNLsnMz7MFAFVWB/c="))
         self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
-        self.M3_LIVE_URL1 = zlib.decompress(base64.b64decode(
-            "eJwVyUEKgCAQAMDfdHRDD4UgPUUUDYVdEXcV+n11HKaIdLYALAOjVi2soMoEjAxkPNaVfRoEPuW7"
-            "NhYPTBXtV4feu/pxydOzIzPPjTNzTe4FEO8eUA=="))
-        self.M3_LIVE_URL2=zlib.decompress(base64.b64decode(
-            "eJwVxTEKwCAMAMDfdDRQlyJInxIULQYSEROF/r70lmtmQwOA2uR8up52cm0BZwXxyLQrlimApT7U"
-            "1RBUiIN493/bO2oUv65DqyqV+AGFrxzo"))
-
-        self.M3_VOD_URL = zlib.decompress(base64.b64decode(
-            "eJwFweEKwBAUBtC32U+35s9S8igiFoVp36WWvPvOScwdigj8Fn+K5qYTaVDxoCrtfALZEO/cwJZc"
-            "LWC1tuGvR13luA5EIAe99g/DNxq4"))
+        self.M3_STREAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
+            "eJzTLy4pSk3MtS9JLEpPLbEFAC3gBb8="))
 
         self.HBBTV_HEADER = dict(self.HEADER)
         self.HBBTV_HEADER.update( {"User-Agent": "Mozilla/5.0 (SMART-TV; Linux; Tizen 2.3) AppleWebkit/538.1 (KHTML, like Gecko) SamsungBrowser/1.0 TV Safari/538.1"} )
@@ -642,7 +638,9 @@ class MindiGoHU(CBaseHostClass):
                         {"category":"list_radioChannels", "title": _("Radio stations") },
                         {"category":"list_brands", "title": "MindiGo "+_("Videos") },
                         {"category":"list_mtvavideos", "title": "MTVA "+ _("Videos") },
-                        {"category":"list_m3videos", "title": "M3 "+ _("Videos") } ]
+                        {"category":"list_m3videos", "title": "M3 "+ _("Videos"), "url": "P" },
+                        {"category":"list_m3videos", "title": "M3+ "+ _("Videos"), "url": "D" },
+                        {"category":"list_mtvaarch", "title": "MTVA Archivum "+ _("Videos") } ]
         self.listsTab(MAIN_CAT_TAB, cItem)
 
     def listTVChannels(self, cItem):
@@ -695,10 +693,20 @@ class MindiGoHU(CBaseHostClass):
     def listM3Videos(self, cItem):
         printDBG("MindiGoHU.listM3Videos")
         # get M3 videos
+        url = cItem["url"] 
+        kind = url[:1] 
+
         try:
-            sts, data = self.getPage(self.M3_PROGRAM_URL)
+            if kind == "P": 
+                url = self.M3_PROGRAM_URL
+            elif kind == "D":
+                url = self.M3_DAILYPROGRAM_URL
+            elif kind == "A":
+                url = self.M3_OPEN_URL + url[1:]
+
+            sts, data = self.getPage(url)
             if not sts: raise Exception("Can't get M3 program page")
-            data = json_loads(data)["program"]
+            data = json_loads(data)["docs" if kind == "A" else "program" ]
             for i in data:
                 url = "v"+i["id"]
 
@@ -714,6 +722,54 @@ class MindiGoHU(CBaseHostClass):
 
         except Exception: printExc()
 
+    def listMTVAArch(self, cItem):
+        printDBG("MindiGoHU.listMTVAArch")
+        try:
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Tévéfilmek és sorozatok"), "url": "A" + "M3-VMOpdsOpZmlsbWVrIMOpcyBzb3JvemF0b2s" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Családi filmek"), "url": "A" + "M3-Q3NhbMOhZGkgZmlsbWVr" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Kabaré, vígjáték"), "url": "A" + "M3-S2FiYXLDqSwgdsOtZ2rDoXTDqWs" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Romantikus"), "url": "A" + "M3-Um9tYW50aWt1cw" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Bűnügyi filmek és sorozatok"), "url": "A" + "M3-QsWxbsO8Z3lpIGZpbG1layDDqXMgc29yb3phdG9r" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Játék és vetélkedő"), "url": "A" + "M3-SsOhdMOpayDDqXMgdmV0w6lsa2VkxZE" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Színház"), "url": "A" + "M3-U3rDrW5ow6F6" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Ismeretterjesztő"), "url": "A" + "M3-SXNtZXJldHRlcmplc3p0xZE" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Zene"), "url": "A" + "M3-WmVuZQ" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Mesék"), "url": "A" + "M3-TWVzw6lr" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Sport"), "url": "A" + "M3-U3BvcnQ" } )
+            self.addDir(params)
+
+        except Exception: printExc()
 
 
 
@@ -805,14 +861,14 @@ class MindiGoHU(CBaseHostClass):
                     if not sts: return []
                     token = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
                 if url == "mm3":
-                    url1 = strwithmeta(self.M3_LIVE_URL1+token,{'User-Agent':self.HEADER ['User-Agent']} )
-                    url2 = strwithmeta(self.M3_LIVE_URL2+token,{'User-Agent':self.HEADER ['User-Agent']} )
-
-                    return [
-                        { "name": "720p", "url": url1},
-                        { "name": "1080p", "url": url2},
-                    ]
-                uri = strwithmeta(self.M3_VOD_URL.format(url[1:],token),{'User-Agent':self.HEADER ['User-Agent']} )
+                    url = self.M3_STREAM_URL + "live" 
+                else:
+                    url = self.M3_STREAM_URL + url[1:] 
+     
+                sts, data = self.getPage(url)
+                if not sts: return []
+                data = json_loads(data)["url"]
+                uri = strwithmeta(data,{'User-Agent':self.HEADER ['User-Agent']} )
                 return getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
                 
             if url[:1] == "D":
@@ -1033,6 +1089,8 @@ class MindiGoHU(CBaseHostClass):
             self.listMtvaVideos(self.currItem)
         elif category == "list_m3videos":
             self.listM3Videos(self.currItem)
+        elif category == "list_mtvaarch":
+            self.listMTVAArch(self.currItem)
         elif category == "list_genres":
             self.listGenres(self.currItem)
         elif category == "list_types":
