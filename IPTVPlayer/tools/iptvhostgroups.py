@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-10-13 by Blindspot - modified iptvhostgroups
+# 2020-04-09 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -271,7 +271,6 @@ class IPTVHostsGroups:
         'ustvgo' : [ 'english', 'live'] ,
         'vevo' : [ 'music'] ,
         'vidcorncom' : [ 'latino', 'moviesandseries'] ,
-        'videopenny' : [ 'moviesandseries', 'polish'] ,
         'vimeo' : [ 'arabic', 'balkans', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'music', 'others', 'polish', 'russian', 'swedish'] ,
         'vodpl' : [ 'polish'] ,
         'vumedicom' : [ 'documentary', 'english', 'science'] ,
@@ -290,6 +289,7 @@ class IPTVHostsGroups:
         'yesmoviesto' : [ 'english', 'moviesandseries'] ,
         'yifytv' : [ 'english', 'moviesandseries'] ,
         'youtube' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'swedish'] ,
+        'zalukajvip' : [ 'moviesandseries', 'polish'] ,
         'zalukajcom' : [ 'moviesandseries', 'polish'] 
         }        
         
