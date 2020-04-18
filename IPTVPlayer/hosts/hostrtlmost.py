@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-04-10 Celeburdi
+# 2020-04-16 Celeburdi
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ######################################################################################################
 # LOCAL import
 ###################################################
@@ -219,16 +219,33 @@ class RtlMostHU(CBaseHostClass):
                 clips = i['clips']
                 if 0 == len(clips): continue
                 otherInfo =dict(cItem['other_info'])
+
+                plus = ''
                 if 1 == len(clips):
                     c = clips[0]
                     isVideo = True
                     url = c['video_id']
+                    a = c.get('assets')
+                    if a:
+                        for ai in a:
+                            at=ai.get('type','')
+                            aq=ai.get('video_quality','')
+                            if at == 'usp_hls_h264':
+                                at=''
+                            elif (at == 'usp_dashcenc_h264'):
+                                at=':d'
+                            elif (at == 'usp_hlsfp_h264'):
+                                at = ':fp'
+                            else: at = ':'+at
+                            plus=plus+aq+at+','
+                        plus=' ('+plus[:len(plus)-1]+')'
+                    else: plus=' (+)'
                 else:
                     c = i
                     isVideo = False
                     url =c['id']
                 _updateOtherInfo(otherInfo,c)
-                title = c['title']
+                title = c['title'] + plus
                 desc = c.get('description')
                 icon = _getImageExtKey(c['images'], 'vignette')
                 params = dict(cItem)
@@ -332,9 +349,32 @@ class RtlMostHU(CBaseHostClass):
         if not sts: return videoUrls
         try:
             data = json_loads(data)
-            assets = data['clips'][0].get('assets')
-            url = assets[0].get('full_physical_path');
+            a = data['clips'][0].get('assets')
+            if not a: return []
         except Exception: printExc()
+
+        hls = None
+        fp = None
+        url = None
+        for ai in a:
+            at=ai.get('type')
+            aq=ai.get('video_quality')
+            if (at == 'usp_hls_h264'):
+                url = ai.get('full_physical_path')
+                if aq == 'hd': break
+                hls = aq
+                continue
+            if hls: continue
+            if (at == 'usp_hlsfp_h264'):
+                if fp != 'hd':
+                    url = ai.get('full_physical_path')
+                    fp = aq
+                continue
+            if fp: continue
+            if not url:
+                url = ai.get('full_physical_path')
+
+        printDBG("RtlMostHU.m3u8 url[%s]" % url)
 
         uri = urlparser.decorateParamsFromUrl(url)
         protocol = uri.meta.get('iptv_proto', '')
@@ -358,6 +398,25 @@ class RtlMostHU(CBaseHostClass):
         if 'subcat' in cItem: params['subcat'] = cItem['subcat']
         if 'other_info' in cItem: params['other_info'] = cItem['other_info']
         return json_dumps(params)
+
+    def getLinksForFavourite(self, fav_data):
+        printDBG('RtlMostHU.getLinksForFavourite')
+        links = []
+        try:
+            cItem = json_loads(fav_data)
+            links = self.getLinksForVideo(cItem)
+        except Exception: printExc()
+        return links
+
+    def setInitListFromFavouriteItem(self, fav_data):
+        printDBG('RtlMostHU.setInitListFromFavouriteItem')
+        try:
+            params = json_loads(fav_data)
+        except Exception:
+            params = {}
+            printExc()
+        self.addDir(params)
+        return True
 
     def getArticleContent(self, cItem):
         printDBG("RtlMostHU.getArticleContent [%s]" % cItem)
