@@ -1,3 +1,5 @@
+#2020.04.18.01
+-RTL Most frissítve (Köszönet Celeburdinak!)
 #2020.04.09.01
 -WatchMovies javítva
 -GuardaSerie javítva
