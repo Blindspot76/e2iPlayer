@@ -80,7 +80,7 @@ config.plugins.iptvplayer.IPTVWebIterface = ConfigYesNo(default = False)
 config.plugins.iptvplayer.plugin_autostart = ConfigYesNo(default = False)
 config.plugins.iptvplayer.plugin_autostart_method = ConfigSelection(default = "wizard", choices = [("wizard", "wizard"),("infobar", "infobar")])
 
-config.plugins.iptvplayer.preferredupdateserver = ConfigSelection(default = "", choices = [("", _("Default")),("1", "http://iptvplayer.vline.pl/"),("2", "http://zadmario.gitlab.io/")])
+config.plugins.iptvplayer.preferredupdateserver = ConfigSelection(default = "", choices = [("", _("Default")),("1", "http://iptvplayer.vline.pl/"), ("2", _("http://zadmario.gitlab.io/")), ("3", _("private"))])
 config.plugins.iptvplayer.osk_type = ConfigSelection(default = "", choices = [("", _("Auto")),("system", _("System")), ("own", _("Own model"))])
 config.plugins.iptvplayer.osk_layout = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.osk_allow_suggestions = ConfigYesNo(default = True)
@@ -145,7 +145,7 @@ config.plugins.iptvplayer.SciezkaCache = ConfigDirectory(default = "/hdd/IPTVCac
 config.plugins.iptvplayer.NaszaTMP = ConfigDirectory(default = "/tmp/") #, fixed_size = False)
 config.plugins.iptvplayer.ZablokujWMV = ConfigYesNo(default = True)
 
-config.plugins.iptvplayer.gitlab_repo = ConfigSelection(default = "mosz_nowy", choices = [("1", "mosz_nowy"),("2", "zadmario")])
+config.plugins.iptvplayer.gitlab_repo = ConfigSelection(default = "zadmario", choices = [("mosz_nowy", "mosz_nowy"),("zadmario", "zadmario"),("maxbambi", "maxbambi")])
 
 config.plugins.iptvplayer.vkcom_login    = ConfigText(default="", fixed_size = False)
 config.plugins.iptvplayer.vkcom_password = ConfigText(default="", fixed_size = False)
@@ -188,6 +188,8 @@ config.plugins.iptvplayer.russian_proxyurl = ConfigText(default = "http://user:p
 config.plugins.iptvplayer.ukrainian_proxyurl = ConfigText(default = "http://user:pass@ip:port", fixed_size = False)
 config.plugins.iptvplayer.alternative_proxy1 = ConfigText(default = "http://user:pass@ip:port", fixed_size = False)
 config.plugins.iptvplayer.alternative_proxy2 = ConfigText(default = "http://user:pass@ip:port", fixed_size = False)
+
+config.plugins.iptvplayer.captcha_bypass = ConfigSelection(default = "", choices = [("", _("Auto")), ("2captcha.com", "2captcha.com"), ("9kw.eu", "9kw.eu")]) 
 
 config.plugins.iptvplayer.api_key_9kweu = ConfigText(default = "", fixed_size = False)
 config.plugins.iptvplayer.api_key_2captcha = ConfigText(default = "", fixed_size = False)
@@ -326,7 +328,7 @@ class ConfigMenu(ConfigBaseWidget):
 
         list.append( getConfigListEntry(_("Auto check for plugin update"), config.plugins.iptvplayer.autoCheckForUpdate) )
         list.append( getConfigListEntry(_("The preferred update server"), config.plugins.iptvplayer.preferredupdateserver) )
-        if config.plugins.iptvplayer.preferredupdateserver.value >= '1':
+        if config.plugins.iptvplayer.preferredupdateserver.value == '2':
             list.append(getConfigListEntry(_("Add update from GitLab repository"), config.plugins.iptvplayer.gitlab_repo))
         if config.plugins.iptvplayer.preferredupdateserver.value == '3':
             list.append(getConfigListEntry(_("%s login") % 'E2iPlayer', config.plugins.iptvplayer.iptvplayer_login))
@@ -393,6 +395,7 @@ class ConfigMenu(ConfigBaseWidget):
         list.append(getConfigListEntry(_("%s password") % ('My JDownloader'), config.plugins.iptvplayer.myjd_password))
         list.append(getConfigListEntry(_("%s device name") % ('My JDownloader'), config.plugins.iptvplayer.myjd_jdname))
         
+        list.append(getConfigListEntry(_("Default captcha bypass"), config.plugins.iptvplayer.captcha_bypass))
         list.append(getConfigListEntry(_("%s API KEY") % 'https://9kw.eu/', config.plugins.iptvplayer.api_key_9kweu))
         list.append(getConfigListEntry(_("%s API KEY") % 'http://2captcha.com/', config.plugins.iptvplayer.api_key_2captcha))
         
