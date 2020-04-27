@@ -1,3 +1,7 @@
+#2020.04.27.01
+-Twitch TV javítva
+-eKino TV javítva
+-Tárhelykezelés javítva ill. bővítve
 #2020.04.18.01
 -RTL Most frissítve (Köszönet Celeburdinak!)
 #2020.04.09.01
