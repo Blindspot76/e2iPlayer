@@ -1,3 +1,5 @@
+#2020.04.28.01
+-Felnőtt kiegészítő frissítve
 #2020.04.27.01
 -Twitch TV javítva
 -eKino TV javítva
