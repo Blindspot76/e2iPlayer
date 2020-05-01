@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.04.27.2"
+    XXXversion = "2020.04.28.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -386,6 +386,7 @@ class Host:
            valTab.append(CDisplayListItem('BRAVOPORN',     'https://www.bravoporn.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.bravoporn.com/c/'],'bravoporn', 'https://www.bravoporn.com/v/images/logo.png', None)) 
            valTab.append(CDisplayListItem('BRAVOTEENS',     'https://www.bravoteens.com/', CDisplayListItem.TYPE_CATEGORY, ['https://www.bravoteens.com//cats/'],'bravoteens', 'https://www.bravoteens.com/tb/images/logo.png', None)) 
            valTab.append(CDisplayListItem('SLEAZYNEASY',     'https://www.sleazyneasy.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.sleazyneasy.com/categories/'],'sleazyneasy', 'https://cdni.sleazyneasy.com/images/favicon-152.png', None)) 
+           valTab.append(CDisplayListItem('VJAV',     'https://vjav.com', CDisplayListItem.TYPE_CATEGORY, ['https://vjav.com/categories/'],'vjav', 'https://vjav.com/images/favicons/apple-touch-icon.png', None)) 
 
 
            if config.plugins.iptvplayer.xxxsortall.value:
@@ -3969,7 +3970,7 @@ class Host:
            next_page = self.cm.ph.getSearchGroups(data, '''<link rel='next' href=['"]([^"^']+?)['"]''', 1, True)[0] 
            data = data.split('data-postid=')
            for item in data:
-              printDBG( 'Host listsItems item: '+str(item) )
+              #printDBG( 'Host listsItems item: '+str(item) )
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"](/post/[^"^']+?)['"]''', 1, True)[0] 
               if not phUrl: phUrl = self.cm.ph.getSearchGroups(item, '''href=['"](http[^"^']+?)['"]''', 1, True)[0] 
               phImage = self.cm.ph.getSearchGroups(item, '''src=['"](//[^"^']+?)['"]''', 1, True)[0] 
@@ -3997,6 +3998,7 @@ class Host:
                  if phUrl.startswith('https://gounlimited.to'):
                     if not 'embed' in phUrl:
                        phUrl = 'https://gounlimited.to' + '/embed-'+ phUrl.split('/')[3] +'.html'
+              if phRuntime=='': continue 
               printDBG( 'Host phTitle6: '+phTitle )
               printDBG( 'Host phUrl: '+phUrl )
               printDBG( 'Host phImage: '+phImage )
@@ -7733,7 +7735,77 @@ class Host:
                  printExc()
            return valTab
 
+        if 'vjav' == name:
+           printDBG( 'Host listsItems begin name='+name )
+           self.MAIN_URL = 'https://vjav.com'
+           COOKIEFILE = os_path.join(GetCookieDir(), 'vjav.cookie')
+           self.defaultParams = {'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.getPage(url, 'vjav.cookie', 'vjav.com', self.defaultParams)
+           if not sts: return ''
+           printDBG( 'Host listsItems data: '+data )
+           data = data.split('<a class="item')
+           if len(data): del data[0]
+           for item in data:
+              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phTitle = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0] 
+              if not phTitle: phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0]
+              phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+              if phUrl.startswith('//'): phUrl = 'https:' + phUrl + '/' 
+              if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl 
+              if phImage.startswith('//'): phImage = 'https:' + phImage
+              if phImage.startswith('/'): phImage = self.MAIN_URL + phImage
+              valTab.append(CDisplayListItem(decodeHtml(phTitle),decodeHtml(phTitle),CDisplayListItem.TYPE_CATEGORY, [phUrl+'?sort_by=post_date'],'vjav-clips', phImage, None)) 
+           valTab.sort(key=lambda poz: poz.name)
+           valTab.insert(0,CDisplayListItem("--- Top Rated ---","Top Rated",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+'/top-rated/'],             'vjav-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- Popular ---","Popular",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+'/most-popular/'],             'vjav-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- New ---","New",     CDisplayListItem.TYPE_CATEGORY,[self.MAIN_URL+'/latest-updates/'],             'vjav-clips',    '',None))
+           self.SEARCH_proc='vjav-search'
+           valTab.insert(0,CDisplayListItem(_('Search history'), _('Search history'), CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
+           valTab.insert(0,CDisplayListItem(_('Search'),  _('Search'),                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
+           return valTab
+        if 'vjav-search' == name:
+           printDBG( 'Host listsItems begin name='+name )
+           valTab = self.listsItems(-1, 'https://www.vjav.com/search/?q=%s' % url.replace(' ','+'), 'vjav-clips')
+           return valTab              
+        if 'vjav-clips' == name:
+           printDBG( 'Host listsItems begin name='+name )
+           COOKIEFILE = os_path.join(GetCookieDir(), 'vjav.cookie')
+           self.defaultParams = {'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+           sts, data = self.getPage(url, 'vjav.cookie', 'vjav.com', self.defaultParams)
+           if not sts: return valTab
+           printDBG( 'Host listsItems data: '+data )
+           catUrl = self.currList[Index].possibleTypesOfSearch
+           next = self.cm.ph.getDataBeetwenMarkers(data, '<li class="next">', '</li>', False)[1]
+           n = 'data-id='
+           s = '<div class="video-rating pull-right'
+           if not n in data and not s in data:  return valTab
+           if n in data: data = data.split(n)
+           if s in data: data = data.split(s)
+           if len(data): del data[0]
+           for item in data:
+              phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&')
+              phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0]
+              if phTitle=='ASACP': continue
+              phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
+              phTime = self.cm.ph.getSearchGroups(item, '''duration">([^>]+?)<''', 1, True)[0].strip()
+              Added = self.cm.ph.getSearchGroups(item, '''truncate">([^>]+?)<''', 1, True)[0].strip()
+              if phImage.startswith('//'): phImage = 'http:' + phImage
+              if phUrl.startswith('//'): phUrl = 'http:' + phUrl
+              if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
+              valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+'] '+decodeHtml(phTitle)+'\n'+Added,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
+           if next:
+              try:
+                 page = self.cm.ph.getSearchGroups(str(next), '''page:([^"^']+?)['"]''')[0]
+                 url = url.replace(url.split('/')[-1],'')
+                 next = url + '?mode=async&function=get_block&block_id=list_videos_common_videos_list&sort_by=post_date&from='+page
+                 valTab.append(CDisplayListItem('Next', 'Page : '+page, CDisplayListItem.TYPE_CATEGORY, [next], name, '', 'Next'))  
+              except Exception:
+                 printExc()
+           return valTab
 
+ 
+   
+   
         return valTab
 
     def getLinksForVideo(self, url):
@@ -8020,7 +8092,8 @@ class Host:
         if self.MAIN_URL == 'https://anon-v.com':            return self.MAIN_URL
         if self.MAIN_URL == 'https://www.bravoporn.com':     return 'https://anyporn.com'
         if self.MAIN_URL == 'https://www.bravoteens.com':    return 'https://anyporn.com'
-        if self.MAIN_URL == 'https://www.sleazyneasy.com':    return 'https://www.sleazyneasy.com'
+        if self.MAIN_URL == 'https://www.sleazyneasy.com':   return 'https://www.sleazyneasy.com'
+        if self.MAIN_URL == 'https://vjav.com':              return 'http://www.hdzog.com'
 
 
         return ''
