@@ -29,6 +29,7 @@ hostcdafilmy
 hostchomikuj
 hostchristusvincit
 hostcimaclubcom
+hostcinemalibero
 hostcinemaxx
 hostcinemay
 hostcineto
@@ -199,7 +200,6 @@ hostustvgo
 hostvevo
 hostvidcorncom
 hostvidea
-hostvideopenny
 hostvimeo
 hostvodpl
 hostvumedicom
@@ -219,6 +219,7 @@ hostyesmoviesto
 hostyifytv
 hostyoutube
 hostzalukajcom
+hostzalukajvip
 hostzdfmediathek
 hostwebhuplayer
 hostupdatehosts
