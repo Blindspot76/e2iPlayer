@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-04-09 by Blindspot - modified iptvhostgroups
+# 2020-05-05 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -106,6 +106,7 @@ class IPTVHostsGroups:
         'christusvincit' : [ 'polish'] ,
         'cimaclubcom' : [ 'arabic', 'moviesandseries'] ,
         'cineblog' : [ 'italian'] ,
+        'cinemalibero' : ['italian', 'moviesandseries'],
         'cinemaxx' : [ 'german', 'moviesandseries'] ,
         'cinemay' : [ 'french', 'moviesandseries'] ,
         'cineto' : [ 'english', 'german', 'moviesandseries'] ,
