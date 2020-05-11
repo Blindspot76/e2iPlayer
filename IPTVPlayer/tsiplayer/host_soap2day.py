@@ -1,30 +1,81 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+try:
+	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
+	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
+except:
+	pass 
 
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit       import GetIPTVSleep
 import re
-import base64
+import base64,cookielib,time,os
 
 def getinfo():
 	info_={}
-	info_['name']='Soap2day.com'
+	info_['name']='Soap2day'
 	info_['version']='1.0 28/07/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='401'
 	info_['desc']='Films & Series'
-	info_['icon']='https://soap2day.com/title.png'
+	info_['icon']='https://i.ibb.co/F56Rvzh/title.png'
 	info_['recherche_all']='1'
 	return info_
 
 
 class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
-		TSCBaseHostClass.__init__(self,{'cookie':'soap2day.cookie'})
-		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://soap2day.com'
+		TSCBaseHostClass.__init__(self,{'cookie':'soap2day00.cookie'})
+		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'
+		self.MAIN_URL = 'https://soap2day.to'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-		self.getPage = self.cm.getPage
+		#self.getPage = self.cm.getPage
+
+	def getPage(self,baseUrl, addParams = {}, post_data = None):
+		if addParams == {}: addParams = dict(self.defaultParams) 
+		sts, data = self.cm.getPage(baseUrl,addParams,post_data)
+		if not data: data=''
+		if '!![]+!![]' in data:
+			try:
+				if os.path.exists(self.COOKIE_FILE):
+					os.remove(self.COOKIE_FILE)
+					printDBG('cookie removed')
+				printDBG('Start CLoudflare  Vstream methode')
+				oRequestHandler = cRequestHandler(baseUrl)
+				if post_data:
+					post_data_vstream = ''
+					for key in post_data:
+						if post_data_vstream=='':
+							post_data_vstream=key+'='+post_data[key]
+						else:
+							post_data_vstream=post_data_vstream+'&'+key+'='+post_data[key]					
+					oRequestHandler.setRequestType(cRequestHandler.REQUEST_TYPE_POST)
+					oRequestHandler.addParametersLine(post_data_vstream)					
+				data = oRequestHandler.request()
+				sts = True
+				printDBG('cook_vstream_file='+self.up.getDomain(baseUrl).replace('.','_'))
+				cook = GestionCookie().Readcookie(self.up.getDomain(baseUrl).replace('.','_'))
+				printDBG('cook_vstream='+cook)
+				if ';' in cook: cook_tab = cook.split(';')
+				else: cook_tab = cook
+				cj = self.cm.getCookie(self.COOKIE_FILE)
+				for item in cook_tab:
+					if '=' in item:	
+						printDBG('item='+item)		
+						cookieKey, cookieValue = item.split('=')
+						cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=cookieValue, port=None, port_specified=False, domain='.'+self.cm.getBaseUrl(baseUrl, True), domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=time.time()+3600*48, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
+						cj.set_cookie(cookieItem)
+				cj.save(self.COOKIE_FILE, ignore_discard = True)
+				GetIPTVSleep().Sleep(2)
+				printDBG('Cookie saved')
+			except Exception, e:
+				printDBG('ERREUR:'+str(e))
+				printDBG('Start CLoudflare  E2iplayer methode')
+				addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+				sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)	
+		return sts, data		
 		
 	def showmenu(self,cItem):
 		self.addDir({'import':cItem['import'],'category' : 'host2','title':'Films','icon':cItem['icon'],'mode':'10','sub_mode':'1'})
@@ -54,7 +105,7 @@ class TSIPHost(TSCBaseHostClass):
 					i=0
 					for (url,titre) in Liste_:
 						titre = titre.strip()
-						url = self.MAIN_URL+url
+						url = self.MAIN_URL+url.replace('\n','').replace('\t','')
 						if not((titre=='Popular')and(i==0)):
 							self.addDir({'import':cItem['import'],'desc':url,'url':url,'category' : 'host2','title':titre,'icon':cItem['icon'],'mode':'11','count':1})
 							i=i+1
@@ -67,12 +118,13 @@ class TSIPHost(TSCBaseHostClass):
 					Liste_ = re.findall('<li>.*?href="(.*?)".*?>(.*?)<', Liste_els[count], re.S)
 					for (url,titre) in Liste_:
 						titre = titre.strip()
-						url = self.MAIN_URL+url
+						url = self.MAIN_URL+url.replace('\n','').replace('\t','')
 						if count==2:mode_='20'
 						else: mode_='11'
 						self.addDir({'import':cItem['import'],'desc':url,'url':url,'category' : 'host2','title':titre,'icon':cItem['icon'],'mode':mode_,'count':count+1})
 											
 	def showitms(self,cItem):
+		
 		page=cItem.get('page',1)
 		url_or=cItem['url']	
 		if '?' in url_or:
@@ -83,10 +135,12 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			Liste_els = re.findall('img-group">.*?href=\'(.*?)\'.*?src="(.*?)".*?>(.*?)<h5>(.*?)</h5>', data, re.S)
 			i=0	
+			cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
 			for (url,image,desc,titre) in Liste_els:
 				Desc = tscolor('\c00????00')+ 'Info: '+tscolor('\c00??????')+self.cleanHtmlStr(desc)
 				url = self.MAIN_URL+url
 				image = self.MAIN_URL+image
+				image = strwithmeta(image,{'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
 				titre = self.cleanHtmlStr(titre)
 				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','title':titre  ,'url':url ,'desc':Desc,'icon':image,'mode':'21','hst':'tshost'})
 				i=i+1

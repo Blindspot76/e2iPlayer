@@ -7,21 +7,21 @@ try:
 	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
 except:
 	pass 
-	
+import urllib
 import re
-import time,urllib,cookielib
+import time,cookielib
 
 
 def getinfo():
 	info_={}
 	info_['name']='Cima4u.Tv'
-	info_['version']='1.5 02/09/2019' 
+	info_['version']='1.6 20/02/2020' 
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='https://apkplz.net/storage/images/aflam/egybest/film/aflam.egybest.film_1.png'
 	info_['recherche_all']='1'
-	info_['update']='change to w.cima4u.tv'
+	#info_['update']='change to w.cima4u.tv'
 	return info_
 	
 	
@@ -35,6 +35,7 @@ class TSIPHost(TSCBaseHostClass):
 		#self.getPage = self.cm.getPage
 
 	def getPage(self,baseUrl, addParams = {}, post_data = None):
+		baseUrl=self.std_url(baseUrl)
 		if addParams == {}: addParams = dict(self.defaultParams) 
 		sts, data = self.cm.getPage(baseUrl,addParams,post_data)
 		if not data: data=''
@@ -152,6 +153,7 @@ class TSIPHost(TSCBaseHostClass):
 
 	def showepisodes(self,cItem):
 		URL=cItem['url']  
+		URL = urllib.quote(URL).replace('%3A//','://')
 		titre=cItem['title'] 	
 		sts, data = self.getPage(URL)
 		if sts:
@@ -177,6 +179,7 @@ class TSIPHost(TSCBaseHostClass):
 	def get_links(self,cItem):
 		urlTab = []	
 		URL=cItem['url']
+		#URL = urllib.quote(URL).replace('%3A//','://')
 		sts, data = self.getPage(URL)
 		if sts:
 			Trailer_els = re.findall('class="modalTrailer".*?<iframe.*?src="(.*?)"', data, re.S)
@@ -190,7 +193,8 @@ class TSIPHost(TSCBaseHostClass):
 				Liste_els_2 =  re.findall('data-link="(.*?)".*?/>(.*?)<', Liste_els[0][0], re.S)
 				for (code,host_) in Liste_els_2:
 					host_ = host_.replace(' ','')
-					if 'thevids' in host_.lower(): host_= 'thevideobee'
+					if 'thevids'   in host_.lower(): host_= 'thevideobee'
+					if 'up-stream' in host_.lower(): host_= 'uptostream'
 					urlTab.append({'name':host_, 'url':'hst#tshost#'+code, 'need_resolve':1})						
 		return urlTab
 		

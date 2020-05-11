@@ -100,14 +100,13 @@ class TSIPHost(TSCBaseHostClass):
 					for entry in a['stream_list']:
 						if '.m3u8' in entry['stream_url'] or '.2ts' in entry['stream_url']:
 							streams.append(entry)
-					if len(streams) == 0:
-						continue
-					name = a.get('channel_title',a.get('video_title',''))
-					icon = a.get('channel_thumbnail',a.get('video_thumbnail_b',''))
-					url = streams[0]['stream_url']
-					token = streams[0]['token']
-					playencode = '%s|%s|%s' % (name, url, token)
-					self.addVideo({'import':cItem['import'],'category':'video', 'url':playencode, 'title':str(name), 'desc':'', 'icon':icon,'hst':'tshost'})	
+							name = a.get('channel_title',a.get('video_title',''))
+							icon = a.get('channel_thumbnail',a.get('video_thumbnail_b',''))
+							url = entry['stream_url']
+							token = entry['token']
+							if name != entry['name']: name = name+' ('+tscolor('\c0000????')+entry['name'].strip().replace(name,'')+tscolor('\c00??????')+')'
+							playencode = '%s|%s|%s' % (name, url, token)
+							self.addVideo({'import':cItem['import'],'category':'video', 'url':playencode, 'title':str(name), 'desc':'', 'icon':icon,'hst':'tshost'})	
 		
  	def get_links(self,cItem): 	
 		urlTab = []	

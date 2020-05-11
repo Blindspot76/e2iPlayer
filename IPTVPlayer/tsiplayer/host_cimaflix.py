@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
+from Components.config import config
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,cryptoJS_AES_decrypt,tscolor
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
@@ -143,7 +144,20 @@ class TSIPHost(TSCBaseHostClass):
 			data_els = re.findall('(class="serverslist active"|class="serverslist").*?data-server="(.*?)">(.*?)<', data, re.S)
 			for (x1,data_,host_) in data_els:
 				host_ = host_.replace(' ','')
-				urlTab.append({'name':host_, 'url':'hst#tshost#'+data_, 'need_resolve':1})		
+				if not config.plugins.iptvplayer.ts_dsn.value:
+					urlTab.append({'name':host_, 'url':'hst#tshost#'+data_, 'need_resolve':1})		
+				else:
+					urlTab0=self.getVideos(data_)
+					for elm in urlTab0:
+						printDBG('elm='+str(elm))
+						url_ = elm[0]
+						type_ = elm[1]
+						if type_ == '0':
+							urlTab.append({'name':self.up.getDomain(url_), 'url':url_, 'need_resolve':0})
+						elif type_ == '4':	
+							urlTab.append({'name':url_.split('|')[0], 'url':url_.split('|')[1], 'need_resolve':0})
+						elif type_ == '1':		
+							urlTab.append({'name':self.up.getDomain(url_), 'url':url_, 'need_resolve':1})
 		return urlTab
 		
 		 

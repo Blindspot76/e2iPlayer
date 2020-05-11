@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='m.Movizland.Online'
 	info_['version']='1.2 28/10/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='104'
 	info_['desc']='أفلام, مسلسلات و انمي بالعربية'
 	info_['icon']='https://i.ibb.co/Jz35Xbn/2p12b1o6.png'
 	info_['recherche_all']='1'
@@ -47,7 +47,8 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			Liste_films_data = re.findall('<li class="grid-item.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<', data, re.S)
 			for (url1,image,name_eng) in Liste_films_data:
-				self.addVideo({'import':cItem['import'],'category' : 'host2','title':name_eng.strip(),'url':url1,'icon':image,'desc':'','good_for_fav':True,'hst':'tshost'})					
+				desc,titre = self.uniform_titre(name_eng.strip(),-1)
+				self.addVideo({'import':cItem['import'],'category' : 'host2','title':titre,'url':url1,'icon':image,'desc':desc,'good_for_fav':True,'hst':'tshost'})					
 			self.addDir({'import':cItem['import'],'category' : 'host2','title':tscolor('\c0000??00')+'Page Suivante','url':urlo,'page':page+1,'mode':'30'})
 
 		
@@ -58,7 +59,8 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			Liste_films_data = re.findall('<li class="grid-item.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<', data, re.S)
 			for (url1,image,name_eng) in Liste_films_data:
-				self.addVideo({'import':extra,'category' : 'video','title':name_eng.strip(),'url':url1,'icon':image,'desc':'','good_for_fav':True,'hst':'tshost'})					
+				desc,titre = self.uniform_titre(name_eng.strip(),-1)
+				self.addVideo({'import':extra,'category' : 'video','title':titre,'url':url1,'icon':image,'desc':desc,'good_for_fav':True,'hst':'tshost'})					
 		
 		
 	def get_links(self,cItem): 	

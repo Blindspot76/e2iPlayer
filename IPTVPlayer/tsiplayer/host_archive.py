@@ -1,11 +1,15 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 import re
 
 def getinfo():
 	info_={}
-	info_['name']='Quran (Archive.Org)'
+	name = 'Quran (Archive.Org)'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://archive.org'
+	info_['host']= hst
+	info_['name']=name
 	info_['version']='1.3 20/05/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='204'
@@ -21,7 +25,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'archive.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://archive.org'
+		self.MAIN_URL = getinfo()['host']
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage

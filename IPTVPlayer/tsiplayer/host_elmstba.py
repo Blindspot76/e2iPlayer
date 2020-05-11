@@ -1,6 +1,8 @@
 # -*- coding: utf8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass
+from tsiplayer.libs.packer import cPacker
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit       import SetIPTVPlayerLastHostError
 
 import re
 import base64
@@ -107,12 +109,22 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			printDBG('data'+data)
 			Liste_els = re.findall('sources.*?"(.*?)"', data, re.S)
+			if not Liste_els:
+				L_els = re.findall('(eval.*?)</script>', data, re.S)
+				if 	L_els:
+					printDBG('p,a,c,k,e,d Trouver')
+					data = cPacker().unpack(L_els[0].strip())
+					printDBG(data)
+					Liste_els = re.findall('sources.*?"(.*?)"', data, re.S)	
 			if 	Liste_els:
-				URL=Liste_els[0]
+				URL=Liste_els[0]				
 				if ('m3u8' in URL):
 					urlTab.append((URL,'3'))
 				else:
-					urlTab.append((URL,'0'))	
+					urlTab.append((URL,'0'))
+			else:
+				if 'File is no longer available' in data:
+					SetIPTVPlayerLastHostError('File is no longer available')
 		return urlTab	
 			
 	def start(self,cItem):

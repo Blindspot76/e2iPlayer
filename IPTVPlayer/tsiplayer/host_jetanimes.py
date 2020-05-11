@@ -22,7 +22,7 @@ def getinfo():
 	info_['name']='Jetanimes.Com'
 	info_['version']='1.0 05/10/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='302'
+	info_['cat_id']='104'
 	info_['desc']='Animes et Mangas'
 	info_['update']='New Host'		
 	info_['icon']='https://i.ibb.co/zJh34S1/web-horizontal.png'

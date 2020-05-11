@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,unifurl,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,unifurl,tscolor,tshost
 import urllib
 import re
 
 def getinfo():
 	info_={}
-	info_['name']='Arabseed.Com'
+	name = 'Arabseed'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://m.arabseed.net'
+	info_['host']= hst
+	info_['name']=name
 	info_['version']='1.5.1 07/11/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'#'201'
@@ -22,17 +26,25 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'arabseed.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://arabseed.net'
+		self.MAIN_URL = getinfo()['host']
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-		self.getPage = self.cm.getPage
+		#self.getPage = self.cm.getPage
+
+
+
+	def getPage(self, baseUrl, addParams = {}, post_data = None):
+		baseUrl=self.std_url(baseUrl)
+		if addParams == {}: addParams = dict(self.defaultParams)
+		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
 		
 	def showmenu0(self,cItem):
 		hst='host2'
 		self.Arablionz_TAB = [
 							{'category':hst, 'sub_mode':0, 'title': 'افلام',       'mode':'20'},
 							{'category':hst, 'sub_mode':1, 'title': 'مسلسلات',     'mode':'20'},
-							#{'category':hst, 'sub_mode':2, 'title':'رمضان 2019',  'mode':'20'},
+							{'category':hst, 'sub_mode':2, 'title':'رمضان 2020',  'mode':'20'},
 							{'category':hst, 'sub_mode':3, 'title': 'اقسام اخري', 'mode':'20'},
 							{'category':hst,               'title': tscolor('\c0000????') + 'حسب التصنيف' , 'mode':'21','count':1,'data':'none','code':self.MAIN_URL+'/getposts?'},	
 							{'category':'search','title':tscolor('\c00????30') + _('Search'), 'search_item':True,'page':1,'hst':'tshost'},
@@ -53,8 +65,8 @@ class TSIPHost(TSCBaseHostClass):
 						self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':titre,'desc':'','icon':cItem['icon'],'mode':'30'})	
 		elif gnr==2:	
 			self.Arablionz_TAB = [
-								{'category':hst,'title': 'مسلسلات رمضان 2019',    'mode':'30', 'url':self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%B1%D9%85%D8%B6%D8%A7%D9%86-2019'},
-								{'category':hst,'title': 'برامج رمضان 2019',     'mode':'30', 'url':self.MAIN_URL+'/category/%D8%A8%D8%B1%D8%A7%D9%85%D8%AC-%D8%B1%D9%85%D8%B6%D8%A7%D9%86-2019'},
+								{'category':hst,'title': 'مسلسلات رمضان 2020',    'mode':'30', 'url':self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%B1%D9%85%D8%B6%D8%A7%D9%86-2020'},
+								#{'category':hst,'title': 'برامج رمضان 2019',     'mode':'30', 'url':self.MAIN_URL+'/category/%D8%A8%D8%B1%D8%A7%D9%85%D8%AC-%D8%B1%D9%85%D8%B6%D8%A7%D9%86-2019'},
 								]		
 			self.listsTab(self.Arablionz_TAB, {'import':cItem['import'],'icon':cItem['icon']})	
 			
@@ -89,6 +101,7 @@ class TSIPHost(TSCBaseHostClass):
 					self.addDir({'import':cItem['import'],'category' :'host2', 'url':code, 'title':ph.clean_html(x3), 'desc':x1, 'icon':cItem['icon'], 'mode':mode_,'count':count+1,'data':data1,'code':code, 'sub_mode':'item_filter','page':-1})					
 		
 	def showitms(self,cItem):
+		printDBG('citem='+str(cItem))
 		page=cItem.get('page',1)
 		urlorg=cItem['url']
 		titre=cItem['title']

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 try:
 	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
@@ -15,8 +15,12 @@ import re,urllib,cookielib,time
 
 def getinfo():
 	info_={}
-	info_['name']='Asia2tv'
-	info_['version']='1.3 07/11/2019'
+	name = 'Asia2tv'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://asiatv.cc'
+	info_['host']= hst
+	info_['name']=name
+	info_['version']='1.4 20/02/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات آسياوية'
@@ -30,7 +34,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'asia2tv.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'
-		self.MAIN_URL = 'https://astv.co'
+		self.MAIN_URL = getinfo()['host']
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		#self.getPage = self.cm.getPage
@@ -176,9 +180,13 @@ class TSIPHost(TSCBaseHostClass):
 				Url = Url.replace('%3F','?')
 				Url = Url.replace('%3D','=')
 
-				if Url.startswith('//'):
-					Url='http:'+Url
-				if ('userpro' not in Url) and('بتغير' not in host_):
+				if Url.startswith('//'): Url='http:'+Url
+				if ('&code=' in Url) and (not Url.startswith('http')):
+					x1,x2 = Url.split('&code=',1)
+					if '&' in x2:
+						id_ = x2.split('&',1)[0]
+						Url = 'https://tune.pk/js/open/load.js?vid='+id_
+				if ('userpro' not in Url) and ('بتغير' not in host_) and ('astv_ads' not in Url):
 					urlTab.append({'name':host_, 'url':Url, 'need_resolve':1})						
 		return urlTab
 		 

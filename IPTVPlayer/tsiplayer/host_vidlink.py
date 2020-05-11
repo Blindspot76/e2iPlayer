@@ -89,6 +89,7 @@ class TSIPHost(TSCBaseHostClass):
 		post_data = {'postID':id_}
 		sts, data = self.getPage(URL,post_data=post_data)
 		if sts:
+			printDBG('data='+data)
 			data = cPacker().unpack(data.strip())
 			printDBG('dataaaaa'+data)
 			ol_data = re.findall('var.*?oploadID="(.*?)"', data, re.S)

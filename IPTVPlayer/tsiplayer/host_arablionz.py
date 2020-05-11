@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 
-import re
+import re,urllib
 
 def getinfo():
 	info_={}
-	info_['name']='Arblionz.Tv'
-	info_['version']='1.4 25/11/2019'
+	name = 'Arblionz'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://m.arblionz.tv'
+	info_['host']= hst
+	info_['name']=name
+	info_['version']='1.5 20/02/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
 	info_['icon']='https://i.ibb.co/16pJgMF/unnamed.jpg'
 	info_['recherche_all']='1'
-	info_['update']='Fix sub category'	
+	#info_['update']='Fix sub category'	
 
 	return info_
 
@@ -23,10 +27,17 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'arblionz.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://eg.arblionz.tv'
-		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
+		self.MAIN_URL = getinfo()['host']
+		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-		self.getPage = self.cm.getPage
+		#self.getPage = self.cm.getPage
+		 
+		 
+	def getPage(self, baseUrl, addParams = {}, post_data = None):
+		baseUrl=self.std_url(baseUrl)
+		if addParams == {}: addParams = dict(self.defaultParams)
+		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)		 
 		 
 	def showmenu0(self,cItem):
 		hst='host2'
@@ -46,7 +57,7 @@ class TSIPHost(TSCBaseHostClass):
 		data1=cItem['data']	
 		codeold=cItem['code']	
 		if count==1:
-			sts, data = self.getPage(self.MAIN_URL)
+			sts, data = self.getPage(self.MAIN_URL+'/%D8%A7%D9%84%D8%B1%D8%A6%D9%8A%D8%B3%D9%8A%D8%A9')
 			if sts:
 				data1=re.findall('dropdown select-menu">.*?<ul(.*?)</ul>', data, re.S)
 			else:
@@ -64,7 +75,7 @@ class TSIPHost(TSCBaseHostClass):
 	def showmenu2(self,cItem):		
 		gnr=cItem['sub_mode']
 		img_=cItem['icon']
-		url=self.MAIN_URL
+		url=self.MAIN_URL+'/%D8%A7%D9%84%D8%B1%D8%A6%D9%8A%D8%B3%D9%8A%D8%A9'
 		sts, data = self.getPage(url)
 		if sts:
 			cat_film_data=re.findall('href="/cat/افلام">(.*?)</ul>', data, re.S) 
@@ -94,10 +105,17 @@ class TSIPHost(TSCBaseHostClass):
 						self.addDir({'import':cItem['import'],'category' : 'host2','url': url,'title':titre,'desc':titre,'page':1,'icon':img_,'sub_mode':gnr,'mode':'30'} )
 		
 	def showitms(self,cItem):
+		printDBG('citem='+str(cItem))
 		gnr=cItem['sub_mode']
 		url=cItem['url']
 		titre=cItem['title']
 		img_=cItem['icon']
+		#printDBG('url='+url)
+		#url=urllib.unquote(url)
+		#printDBG('url='+url)
+		#url=url.replace('://','rgysoft')
+		#url=urllib.quote(url).replace('rgysoft','://')
+		#printDBG('url='+url)
 		if gnr=='items':
 			sts, data = self.getPage(url)
 			desc=''
@@ -163,6 +181,9 @@ class TSIPHost(TSCBaseHostClass):
 		URL=url_origin.replace('/episode/','/watch/')
 		URL=URL.replace('/film/','/watch/')
 		URL=URL.replace('/post/','/watch/')
+		URL=urllib.unquote(URL)
+		URL=URL.replace('://','rgysoft')
+		URL=urllib.quote(URL).replace('rgysoft','://')
 		sts, data = self.getPage(URL)
 		if sts:
 			server_data = re.findall('data-embedd="&lt.*?(SRC|src)=&quot;(.*?)&quot;.*?">(.*?)"', data, re.S)
@@ -190,13 +211,14 @@ class TSIPHost(TSCBaseHostClass):
 				url_=self.MAIN_URL+'/ajaxCenter?_action=getdownloadlinks&postId='+server_data[0]
 				HTTP_HEADER= {'X-Requested-With':'XMLHttpRequest','Referer':url_origin}
 				sts, data_ = self.getPage(url_,{'header':HTTP_HEADER})
-				server_data = re.findall('<a href="(.*?)"', data_, re.S)
-				for (url_1) in server_data:
+				printDBG('data ajax='+data_)
+				server_data = re.findall('class="serversTitle ti-slow.*?">(.*?)</h6>.*?<a href="(.*?)"', data_, re.S)
+				for (label,url_1) in server_data:
 					hostUrl=url_1.replace("www.", "")				
 					raw1 =  re.findall('//(.*?)/', hostUrl, re.S)
 					if raw1: hostUrl=raw1[0]
-					if ('openload' in hostUrl.lower())or('uptobox' in hostUrl.lower()):
-						urlTab.append({'name':'|Download Server| '+hostUrl, 'url':url_1, 'need_resolve':1})
+					if ('uppom' in hostUrl.lower()):
+						urlTab.append({'name':'|Down Serv: '+label+'| '+hostUrl, 'url':url_1, 'need_resolve':1})
 			else:
 				code_data = re.findall('data-embedd="(.*?)".*?alt="(.*?)"', data, re.S)
 				id_data = re.findall("attr\('data-embedd'\).*?url: \"(.*?)\"", data, re.S)
@@ -211,6 +233,7 @@ class TSIPHost(TSCBaseHostClass):
 		HTTP_HEADER= { 'X-Requested-With':'XMLHttpRequest' }
 		sts, data = self.getPage(videoUrl,{'header':HTTP_HEADER})
 		if sts:
+			printDBG('result='+data)
 			_data2 = re.findall('<iframe.*?(src|SRC)=(.*?) ',data, re.S) 
 			if _data2:
 				URL_=_data2[0][1]
@@ -218,11 +241,13 @@ class TSIPHost(TSCBaseHostClass):
 				URL_=URL_.replace("'",'')
 				if URL_.startswith('//'):
 					URL_='http:'+URL_ 
-				urlTab.append((URL_,'1'))
+				urlTab.append((URL_.replace('\r','').replace('\n',''),'1'))
 			else:
 				data=data.strip()
+				printDBG('result1='+data)
 				if data.startswith('http'):
-					urlTab.append((data,'1'))					
+					printDBG('result2='+data)
+					urlTab.append((data.replace('\r','').replace('\n',''),'1'))					
 		return urlTab
 		
 	def getArticle(self, cItem):

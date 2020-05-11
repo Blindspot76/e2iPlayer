@@ -12,7 +12,7 @@ import re
 def getinfo():
 	info_={}
 	info_['name']='N300.Me'
-	info_['version']='1.1 06/07/2019'
+	info_['version']='1.2 16/04/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='افلام و مسلسلات عربية واجنبية'
@@ -44,23 +44,24 @@ class TSIPHost(TSCBaseHostClass):
 		img=cItem['icon']
 		gnr2=cItem['sub_mode']	
 		if gnr2==0:
-			CAT_TAB=[ {'category':hst,'title':'افلام اجنبية','desc': 'افلام اجنبية مدبلجة / مترجمة'      ,'url':'http://www.n300.me/Mobile/Category/CatMovies/OtherMovies' ,'mode':'30' ,'icon':img ,'sub_mode':0},
-					  {'category':hst,'title':'افلام عربية' ,'desc':'افلام عربية سورية , مصرية , خليجية' ,'url':'http://www.n300.me/Mobile/Category/CatMovies/ArabicMovies','mode':'30' ,'icon':img ,'sub_mode':0},
-					  {'category':hst,'title':'افلام تركية' ,'desc':'افلام تركية مترجمة / مدبلجة'        ,'url':'http://www.n300.me/Mobile/Category/CatMovies/TurkeyMovies','mode':'30' ,'icon':img ,'sub_mode':0},
-					  {'category':hst,'title':'افلام هندية' ,'desc':'افلام هندية مترجمة / مدبلجة'        ,'url':'http://www.n300.me/Mobile/Category/CatMovies/IndianMovies','mode':'30' ,'icon':img ,'sub_mode':0},
+			CAT_TAB=[ {'category':hst,'title':'افلام اجنبية','desc': 'افلام اجنبية مدبلجة / مترجمة'      ,'url':self.MAIN_URL+'/Mobile/Category/CatMovies/OtherMovies' ,'mode':'30' ,'icon':img ,'sub_mode':0},
+					  {'category':hst,'title':'افلام عربية' ,'desc':'افلام عربية سورية , مصرية , خليجية' ,'url':self.MAIN_URL+'/Mobile/Category/CatMovies/ArabicMovies','mode':'30' ,'icon':img ,'sub_mode':0},
+					  {'category':hst,'title':'افلام تركية' ,'desc':'افلام تركية مترجمة / مدبلجة'        ,'url':self.MAIN_URL+'/Mobile/Category/CatMovies/TurkeyMovies','mode':'30' ,'icon':img ,'sub_mode':0},
+					  {'category':hst,'title':'افلام هندية' ,'desc':'افلام هندية مترجمة / مدبلجة'        ,'url':self.MAIN_URL+'/Mobile/Category/CatMovies/IndianMovies','mode':'30' ,'icon':img ,'sub_mode':0},
 						]
 			self.listsTab(CAT_TAB, {'import':cItem['import'],'name':hst})			
 		elif gnr2==1:
-			CAT_TAB=[ {'category':hst,'title':'مسلسلات رمضان 2019','desc':'مسلسلات رمضان 2019'                    ,'url':'http://www.n300.me/phone/Category/subCat/Ramadan2018' ,'mode':'30' ,'icon':img ,'sub_mode':1},
-					  {'category':hst,'title':'مسلسلات تركية'     ,'desc':'مسلسلات تركية مدبلجة / مترجمة'         ,'url':'http://www.n300.me/phone/Category/subCat/TurkeySeries','mode':'30' ,'icon':img ,'sub_mode':1},
-					  {'category':hst,'title':'مسلسلات عربية'     ,'desc':'مسلسلات عربية سورية , مصرية , خليجية'  ,'url':'http://www.n300.me/phone/Category/subCat/ArabicSeries','mode':'30' ,'icon':img ,'sub_mode':1},
-					  {'category':hst,'title':'مسلسلات هندية'     ,'desc':'مسلسلات هندية اجنبية'                  ,'url':'http://www.n300.me/phone/Category/subCat/OtherSeries' ,'mode':'30' ,'icon':img ,'sub_mode':1},
-					  {'category':hst,'title':'برامج تلفزيون'    ,'desc':'برامج تلفزيون'                        ,'url':'http://www.n300.me/phone/Category/subCat/TvProgram'   ,'mode':'30' ,'icon':img ,'sub_mode':1},
+			CAT_TAB=[ {'category':hst,'title':'مسلسلات رمضان 2020','desc':'مسلسلات رمضان 2020'                    ,'url':self.MAIN_URL+'/phone/Category/subCat/Ramadan2020' ,'mode':'30' ,'icon':img ,'sub_mode':1},
+					  {'category':hst,'title':'مسلسلات تركية'     ,'desc':'مسلسلات تركية مدبلجة / مترجمة'         ,'url':self.MAIN_URL+'/phone/Category/subCat/TurkeySeries','mode':'30' ,'icon':img ,'sub_mode':1},
+					  {'category':hst,'title':'مسلسلات عربية'     ,'desc':'مسلسلات عربية سورية , مصرية , خليجية'  ,'url':self.MAIN_URL+'/phone/Category/subCat/ArabicSeries','mode':'30' ,'icon':img ,'sub_mode':1},
+					  {'category':hst,'title':'مسلسلات هندية'     ,'desc':'مسلسلات هندية اجنبية'                  ,'url':self.MAIN_URL+'/phone/Category/subCat/OtherSeries' ,'mode':'30' ,'icon':img ,'sub_mode':1},
+					  {'category':hst,'title':'برامج تلفزيون'    ,'desc':'برامج تلفزيون'                        ,'url':self.MAIN_URL+'/phone/Category/subCat/TvProgram'   ,'mode':'30' ,'icon':img ,'sub_mode':1},
 						]
 			self.listsTab(CAT_TAB, {'import':cItem['import'],'name':hst})			
 			
 	
 	def showitms(self,cItem):
+		printDBG('citem='+str(cItem))
 		url=cItem['url']  
 		hst='host2'
 		img=cItem['icon']
@@ -72,9 +73,11 @@ class TSIPHost(TSCBaseHostClass):
 				if 	lst_data:
 					lst_data2=re.findall('<a href="(.*?)".*?src="(.*?)".*?<h1.*?>(.*?)</h1>.*?<h2.*?>(.*?)</h2>.*?<span.*?>(.*?)</span>', lst_data[0], re.S)
 					for (url1,image,name,desc1,desc2) in lst_data2:
-						image=image.replace('../../../','http://www.n300.me/')
-						url1=url1.replace('../','http://www.n300.me/Mobile/Category/')
+						image=image.replace('../../../',self.MAIN_URL+'/')
+						url1=url1.replace('../',self.MAIN_URL+'/Mobile/Category/')
 						name = 'I '+name +' I '+tscolor('\c00????00')+'('+ desc1+')'
+						if not image.startswith('http'): image = self.MAIN_URL + image
+						if not url1.startswith('http'): url1 = self.MAIN_URL + url1
 						self.addVideo({'import':cItem['import'],'good_for_fav':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':name, 'desc':desc2, 'icon':image} )	
 		elif gnr2==1:
 			sts, data = self.cm.getPage(url,self.defaultParams)
@@ -83,24 +86,24 @@ class TSIPHost(TSCBaseHostClass):
 				if 	lst_data:
 					lst_data2=re.findall('<a href=\'(.*?)&.*?src="(.*?)".*?<span.*?>(.*?)</span>.*?<span.*?>(.*?)</span>.*?<span.*?>(.*?)</span>', lst_data[0], re.S)
 					for (url1,image,name,desc1,desc2) in lst_data2:
-						image=image.replace('../../../','http://www.n300.me/')
-						url1=url1.replace('../','http://www.n300.me/Mobile/Category/')
+						image=image.replace('../../../',self.MAIN_URL+'/')
+						url1=url1.replace('../',self.MAIN_URL+'/Mobile/Category/')
 						name = 'I '+name +' I '+tscolor('\c00????00')+'('+ desc2+')'
+						if not image.startswith('http'): image = self.MAIN_URL + image
+						if not url1.startswith('http'): url1 = self.MAIN_URL + url1
 						self.addDir({'import':cItem['import'],'good_for_fav':True, 'category':'host2', 'url':url1, 'title':name, 'desc':desc1, 'icon':image, 'mode':'30','sub_mode':2} )	
 		elif gnr2==2:	 
 			sts, data = self.cm.getPage(url,self.defaultParams)
 			if sts:
 				lst_data=re.findall('<table id="Content(.*?)</form>', data, re.S)
-				printDBG('11111'+data)
 				if 	lst_data:
-					printDBG('1111122222222')
 					lst_data2=re.findall('<a href="(.*?)&.*?src="(.*?)".*?<span.*?>(.*?)</span>', lst_data[0], re.S)
 					for (url1,image,name) in lst_data2:
-						printDBG('11111333333333')
-						image=image.replace('../../../','http://www.n300.me/')
-						url1='http://www.n300.me/phone/Category/moslsl/'+url1
+						image=image.replace('../../../',self.MAIN_URL+'/')
+						url1=self.MAIN_URL+'/phone/Category/moslsl/'+url1
 						if '<br />' in name:
 							x1,name = name.split('<br />',1)
+						if not image.startswith('http'): image = self.MAIN_URL + image
 						self.addVideo({'import':cItem['import'],'good_for_fav':True, 'hst':'tshost', 'category':'host2', 'url':url1, 'title':ph.clean_html(name), 'desc':'', 'icon':image} )	
 
 		
@@ -115,6 +118,7 @@ class TSIPHost(TSCBaseHostClass):
 				Liste_els1 = re.findall('<input id="(.*?)".*?\(\'(.*?)\'.*?value="(.*?)"', Liste_els0[0], re.S)
 				for (x1,url,titre) in Liste_els1:
 					if url not in Tab_urls:
+						videoUrl = url
 						Tab_urls.append(url)
 						nr=1 
 						local=''
@@ -122,20 +126,19 @@ class TSIPHost(TSCBaseHostClass):
 						titre = titre.replace('سيرفر','Server')
 						titre = titre.replace('الموقع','Local')
 						if '.mp4' in url:
-							printDBG('fffff1')
-							url=url.replace('../../../','http://www.n300.me/')
+							url=url.replace('../../../',self.MAIN_URL+'/')
+							url=url.replace('http://www.n300.net:8080/','https://ssl.n300.me:8080/')
+							if 'videoURL=' in url: url = url.split('videoURL=',1)[-1]
 							titre = '|'+titre+'| N300'
 							nr=0
 							local='local'
-							
+							meta = {'Referer':videoUrl}
+							url = strwithmeta(url, meta)
 							if '?videoURL=' in url:
-								printDBG('fffff2')
 								sts, data0 = self.cm.getPage(url,self.defaultParams)
 								if sts:
-									printDBG('fffff3')
 									Liste_els1 = re.findall('file:.*?["\'](.*?)["\']', data0, re.S)
 									if Liste_els1:
-										printDBG('fffff4')
 										url=Liste_els1[0]
 						else:
 							titre = '|'+titre+'| '+gethostname(url)

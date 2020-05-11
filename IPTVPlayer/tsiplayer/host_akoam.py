@@ -4,7 +4,7 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import GetIPTVSleep
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor,tshost
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser    import urlparser as ts_urlparser
 
 try:
@@ -24,14 +24,18 @@ import time
 ###################################################	
 def getinfo():
 	info_={}
-	info_['name']='Akoam'
-	info_['version']='1.7 01/12/2019'
+	name = 'Akoam'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://web.akoam.net'
+	info_['host']= hst
+	info_['name']=name
+	info_['version']='1.8 20/02/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='https://i.ibb.co/pLWdJQn/akoam.png'
 	info_['recherche_all']='1'
-	info_['update']='Fix Links Extract'
+	#info_['update']='Fix Links Extract'
 	return info_
 	
 	
@@ -39,7 +43,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'rmdan.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://w5.akoam.net'
+		self.MAIN_URL = getinfo()['host']
 		#self.COOKIE_FILE1 = '/media/hdd/IPTVCache/cookies/rmdan2.cookie'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.AJAX_HEADER = MergeDicts(self.HEADER, {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'})
@@ -200,15 +204,20 @@ class TSIPHost(TSCBaseHostClass):
 				trailer_data=re.findall('class="sub_trailer">.*?class="youtube-player.*?id="(.*?)"', data, re.S)
 				if trailer_data:
 					self.addVideo({'category' : 'host2','title':'TRAILER','url':'https://www.youtube.com/watch?v='+trailer_data[0],'desc':'','icon':cItem['icon'],'hst':'none'})	
-				if 'sub_episode_links">' in data:
+				if 'الانتقال إلي التصميم الجديد' in data:
+					lst_data=re.findall('class="sub_desc">.*?href="(.*?)"', data, re.S)
+					if lst_data:
+						Url=lst_data[0]
+						import_ = 'from Plugins.Extensions.IPTVPlayer.tsiplayer.host_akwam import '
+						titre = tscolor('\c0000??00')+ '[New Site] '+tscolor('\c00??????')+cItem['title']
+						self.addDir({'import':import_,'category' : 'host2','title': titre ,'url':Url ,'desc':cItem['desc'],'icon':cItem['icon'],'hst':'tshost','mode':'31'})
+							
+				elif 'sub_episode_links">' in data:
 					lst_data=re.findall('_episode_links">(.*?)title">(.*?)<.*?<h5>(.*?)<div class="sub', data, re.S)			
 					for (inf,titre1,data1) in lst_data:
 						img_data=re.findall('src="(.*?)"', inf, re.S)
 						img_ = cItem['icon']
 						if img_data: img_ = img_data[0]
-						
-						
-						
 						
 						self.addMarker({'title':tscolor('\c0000????')+titre1.strip(),'icon':img_})
 						if 'box epsoide_box\'>' in data1:
@@ -301,7 +310,6 @@ class TSIPHost(TSCBaseHostClass):
 		return urlTab
 
 
-
 	def get_links(self,cItem): 	
 		urlTab = []
 		try:
@@ -314,16 +322,19 @@ class TSIPHost(TSCBaseHostClass):
 			self.getPage(URL, paramsUrl)
 			paramsUrl.pop('use_new_session')
 			data = self.cm.getCookieItems(self.COOKIE_FILE)
+			printDBG('1111')
 			if 'golink' in data:
 				data = json_loads(urllib.unquote(data['golink']))
 				paramsUrl = dict(self.defaultParams)
 				paramsUrl['header']['Referer'] = cItem['url']
-				url_=data['route']			
+				url_=data['route']	
+				printDBG('1111000')				
 				sts, data = self.getPage(url_, paramsUrl)
 				if sts:
+					printDBG('111122')
 					cUrl = data.meta['url']
 					url_dat=re.findall('<iframe[^>]+?src=[\'"]([^"^\']+?)[\'"]', data, re.S | re.IGNORECASE)
-					if not url_dat:	
+					if (not url_dat) or ('ads.com' in url_dat[0]):	
 						GetIPTVSleep().Sleep(6)
 						paramsUrl = dict(self.defaultParams) 
 						paramsUrl['header'] = dict(self.AJAX_HEADER)
@@ -342,8 +353,6 @@ class TSIPHost(TSCBaseHostClass):
 		except:
 			printDBG('Erreur')					
 		return urlTab	
-
-
 
 
 

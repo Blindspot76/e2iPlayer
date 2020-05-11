@@ -5,13 +5,13 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 
-try:
-	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
-	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
-except:
-	pass 
+#try:
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
+#except:
+#	pass 
 	
-import re,urllib,cookielib,time
+import re,urllib,cookielib,time,os
 
 def getinfo():
 	info_={}
@@ -27,10 +27,10 @@ def getinfo():
 
 class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
-		TSCBaseHostClass.__init__(self,{'cookie':'dpstream.cookie'})
+		TSCBaseHostClass.__init__(self,{'cookie':'dpstream1.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'
 		self.cookieHeader=''
-		self.MAIN_URL = 'https://www.dpstream.top'
+		self.MAIN_URL = 'https://www.dpstream.one'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		#self.getPage = self.cm.getPage
@@ -39,8 +39,13 @@ class TSIPHost(TSCBaseHostClass):
 		if addParams == {}: addParams = dict(self.defaultParams) 
 		sts, data = self.cm.getPage(baseUrl,addParams,post_data)
 		if not data: data=''
-		if '!![]+!![]' in data:
-			try:
+		printDBG('ddddaaattttaaaa'+str(data.meta))
+		printDBG('ddddaaattttaaaa'+data)
+		if ('!![]+!![]' in data) or (data.meta.get('status_code',0)==503):
+			if True:#try:
+				if os.path.exists(self.COOKIE_FILE):
+					os.remove(self.COOKIE_FILE)
+					printDBG('cookie removed')
 				printDBG('Start CLoudflare  Vstream methode')
 				oRequestHandler = cRequestHandler(baseUrl)
 				if post_data:
@@ -67,7 +72,7 @@ class TSIPHost(TSCBaseHostClass):
 						cookieItem = cookielib.Cookie(version=0, name=cookieKey, value=cookieValue, port=None, port_specified=False, domain='.'+self.cm.getBaseUrl(baseUrl, True), domain_specified=True, domain_initial_dot=True, path='/', path_specified=True, secure=False, expires=time.time()+3600*48, discard=True, comment=None, comment_url=None, rest={'HttpOnly': None}, rfc2109=False)
 						cj.set_cookie(cookieItem)
 				cj.save(self.COOKIE_FILE, ignore_discard = True)
-			except Exception, e:
+			else:#except Exception, e:
 				printDBG('ERREUR:'+str(e))
 				printDBG('Start CLoudflare  E2iplayer methode')
 				addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}

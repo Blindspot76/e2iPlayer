@@ -121,7 +121,7 @@ class TSIPHost(TSCBaseHostClass):
 						desc=desc1+'\\n'+tscolor('\c00??????')+'Synopsis: '+tscolor('\c0000????')+ph.clean_html(desc)			
 						self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':self.cleanHtmlStr(titre.replace(' Streaming HD','')),'desc':desc,'icon':image,'hst':'tshost','mode':'31'})		
 					
-			if i>15:
+			if i>12:
 				self.addDir({'import':cItem['import'],'title':tscolor('\c0000????')+'Page Suivante','page':page+1,'category' : 'host2','url':cItem['url'],'icon':cItem['icon'],'mode':'30'} )									
 
 	def showelms(self,cItem):
@@ -192,10 +192,16 @@ class TSIPHost(TSCBaseHostClass):
 					elm['name']='|film-hd.vip| '+elm['name']
 					elm['type'] = 'local'
 				urlTab.append(elm)
-			elif 'clickopen.win' in elm['url']:
+			elif 'd0stream' in elm['url']:
+				if 'hst#tshost#' not in elm['url']:
+					elm['url']='hst#tshost#'+elm['url'].replace('#','')+'||'+cItem['url']
+					elm['name']='|d0stream| '+elm['name']+' > Marche pas :( <'
+					elm['type'] = 'local'
+				urlTab.append(elm)
+			elif 'clickopen.' in elm['url']:
 				if 'hst#tshost#' not in elm['url']:
 					elm['url']='hst#tshost#'+elm['url']
-					elm['name']='|clickopen.win| '+elm['name']
+					elm['name']='|clickopen| '+elm['name']
 					elm['type'] = 'local'
 				urlTab.append(elm)
 				
@@ -210,20 +216,50 @@ class TSIPHost(TSCBaseHostClass):
 	
 	def getVideos(self,videoUrl):
 		urlTab=[]
-		Url=videoUrl
+		referer=''
+		printDBG('||||||||||||||||||:'+videoUrl)
+		if '||' in videoUrl:
+			Url,referer=videoUrl.split('||')
+		else:
+			Url=videoUrl
 		id_ =''
 		if '/v/' in Url:
 			id_ = Url.split('/v/',1)[1]
 		elif '/x/embed/' in Url:
 			id_ = Url.split('/x/embed/',1)[1]
 			id_ = id_.replace('/','')	
-			
-		if 'film-hd.vip' in Url:
+		
+		if 'd0stream' in Url:
+			url_='https://v.d0stream.com/'
+			printDBG('refererrefererrefererrefererrefererrefererrefererrefererreferer='+referer)
+			Params = dict(self.defaultParams) 
+			Params['header']['Referer']=referer
+			sts, data = self.getPage(url_,Params)
+			if sts:
+				printDBG('data_films='+data)
+				films_list = re.findall('video-pr\'>(.*?)<',data, re.S)		
+				if films_list:
+					id_2 = films_list[0]
+					id_1 = Url.split('/')[-1]
+					URL = 'https://v.d0stream.com/krade.io/we/'+id_1+'/'+id_2+'#/'+id_1
+					Params['header']['Referer']='https://v.d0stream.com/'
+					sts, data = self.getPage(URL,Params)
+					if sts:				
+						printDBG('data_films2='+data)
+						films_list = re.findall('HlsSources.*?url":"(.*?)"',data, re.S)		
+						if films_list:
+							src = films_list[0]
+							printDBG('src='+src)
+							urlTab.append(('https://v.d0stream.com'+src,'3'))
+							return urlTab
+			return []
+					
+		elif 'film-hd.vip' in Url:
 			post_data = {'r':'', 'd':'film-hd.vip'} 
 			url1= 'https://film-hd.vip/api/source/'+id_
 		else:
-			post_data = {'r':'', 'd':'clickopen.win'} 
-			url1= 'https://clickopen.win/api/source/'+id_			
+			post_data = {'r':'', 'd':'clickopen.club'} 
+			url1= 'https://clickopen.club/api/source/'+id_			
 		sts, data = self.getPage(url1, post_data=post_data)
 		if sts:
 			try:

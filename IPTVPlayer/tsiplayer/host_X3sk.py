@@ -8,13 +8,13 @@ import re,urllib,base64
 def getinfo():
 	info_={}
 	info_['name']='3sk.Co'
-	info_['version']='1.3.1 26/10/2019'
+	info_['version']='1.4 20/02/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات تركية'
 	info_['icon']='https://i.ibb.co/XxF6hB3/culcaqfk.png'
 	info_['recherche_all']='0'
-	info_['update']='Fix Links extractor'	
+	#info_['update']='Fix Links extractor'	
 
 	return info_
 	
@@ -96,6 +96,7 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			jdata = json_loads(data)
 			items=jdata['items']
+			icon = 'https://i.ibb.co/XxF6hB3/culcaqfk.png'
 			for item in items:
 				title=item['title'].encode("utf-8")
 				link=item['link']
@@ -109,7 +110,7 @@ class TSIPHost(TSCBaseHostClass):
 				if mode_=='91':
 					self.addVideo({'import':extra,'category' : 'video','title':title,'url':link,'hst':'tshost','good_for_fav':True})		
 				else:
-					self.addDir({'import':extra,'category' : 'host2','title':title,'url':link,'mode':'20','good_for_fav':True})
+					self.addDir({'import':extra,'category' : 'host2','title':title,'url':link,'icon':icon,'mode':'20','good_for_fav':True})
 		
 		
 	def get_links(self,cItem): 	

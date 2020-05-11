@@ -15,13 +15,13 @@ import hashlib
 def getinfo():
 	info_={}
 	info_['name']='Vumoo.To'
-	info_['version']='1.1 11/09/2019'
+	info_['version']='1.2 08/03/2019'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='401'#'401'
 	info_['desc']='Films & Series'
 	info_['icon']='http://vumoo.to/images/logo.png'
 	info_['recherche_all']='1'
-	info_['update']='Fix search'
+	info_['update']='Fix Links'
 	return info_
 	
 	
@@ -83,7 +83,7 @@ class TSIPHost(TSCBaseHostClass):
 				self.addMarker({'title':tscolor('\c00????00')+server,'icon':cItem['icon']} )
 				data_list = re.findall('embedUrl="(.*?)">(.*?)<', data1, re.S)
 				for (Url,titre) in data_list:
-					data_h={'name':titre, 'url':'hst#tshost#'+Url, 'need_resolve':1}
+					data_h={'name':titre, 'url':'hst#tshost#'+Url+'|'+URL, 'need_resolve':1}
 					self.addVideo({'import':cItem['import'],'category' : 'host2','url': Url,'title':titre,'desc':'','icon':cItem['icon'],'hst':'tshost','good_for_fav':True,'data_h':data_h})	
 	
 	def SearchResult(self,str_ch,page,extra):
@@ -111,8 +111,19 @@ class TSIPHost(TSCBaseHostClass):
 
 	def getVideos(self,videoUrl):
 		urlTab = []	
-		sts, data = self.getPage(videoUrl)
-		if sts:
+		videoUrl,referer = videoUrl.split('|')
+		# New methode
+		if 'meomeo' in videoUrl:
+			self.defaultParams['header']['Referer']=referer
+			sts, data = self.getPage(videoUrl)
+			if sts:			
+				printDBG('data='+data)
+				Liste_els_5 = re.findall('"playlist":.*?"file":"(.*?)"', data, re.S)
+				if Liste_els_5:
+					url_1=Liste_els_5[0]
+					if url_1.startswith('//'): url_1 = 'https:'+url_1
+					urlTab.append((url_1,'3'))				
+		# Old methode
 			Liste_els_3 = re.findall('embedVal="(.+?)"', data, re.S)	
 			if Liste_els_3:
 				encrypted = base64.b64decode(Liste_els_3[0])

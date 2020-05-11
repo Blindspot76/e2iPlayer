@@ -14,7 +14,7 @@ def getinfo():
 	info_['name']='Dardarkom.Tv'
 	info_['version']='1.0 01/09/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='201'
+	info_['cat_id']='102'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
 	info_['icon']='https://i.ibb.co/1rp9DNF/logo.png'
 	info_['recherche_all']='1'

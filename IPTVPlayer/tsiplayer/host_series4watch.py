@@ -101,8 +101,10 @@ class TSIPHost(TSCBaseHostClass):
 				url_post = self.MAIN_URL+'/wp-admin/admin-ajax.php'
 				sts, data = self.getPage(url_post,post_data=post_data)
 				if sts:
-					server_data = re.findall('<li.*?src="(.*?)".*?<strong>(.*?)<', data, re.S)
+					server_data = re.findall('<li.*?src="(.*?)".*?<strong>(.*?)<', data,  re.S | re.IGNORECASE)
 					for (url,titre) in server_data:
+						if url.startswith('//'): url = 'http:'+url
+						if 'سيرفر' in titre: titre = self.up.getDomain(url)
 						urlTab.append({'name':titre, 'url':url, 'need_resolve':1})
 		return urlTab
 		

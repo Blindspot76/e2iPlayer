@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 from Components.config import config
 
 
@@ -10,14 +10,18 @@ import re
 
 def getinfo():
 	info_={}
-	info_['name']='Aflam06'
-	info_['version']='1.1 26/10/2019'
+	name = 'Aflam06'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://aflam06.net'
+	info_['host']= hst
+	info_['name']=name	
+	info_['version']='1.2 20/02/2020'
 	info_['dev']='OPESBOY'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='http://aflam06.net/wp-content/uploads/2017/12/1aa8a166848.png'
 	info_['recherche_all']='1'
-	info_['update']='New Host'
+	#info_['update']='New Host'
 	return info_
 	
 	
@@ -25,7 +29,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'aflam06.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://aflam06.net'
+		self.MAIN_URL = getinfo()['host']
 		self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.AJAX_HEADER = dict(self.HTTP_HEADER)
 		self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -147,8 +151,10 @@ class TSIPHost(TSCBaseHostClass):
 			code_data = re.findall("data: 'q=(.*?)&", data, re.S)
 			if code_data:
 				code=code_data[0]
-				server_data = re.findall('data-server="(.*?)">(.*?)<', data, re.S)	
+				server_data = re.findall('data-server="(.*?)">(.*?)</li>', data, re.S)	
 				for (id,name) in server_data:
+					name = self.cleanHtmlStr(name)
+					name = name.replace('سيرفر','Server')
 					if config.plugins.iptvplayer.ts_dsn.value:
 						URL_=self.aflam06_plus_extract(code,id)
 						urlTab.append({'name':self.up.getDomain(URL_), 'url':URL_, 'need_resolve':1})
