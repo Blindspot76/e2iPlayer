@@ -937,13 +937,14 @@ class common:
                 return cfParams['full_url_handle2'](url)
             return url
         
+        r = ""
         url = baseUrl
         header = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
         header.update(params.get('header', {}))
         params.update({'with_metadata':True, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
         sts, data = self.getPage(url, params, post_data)
         
-        printDBG("Cloudflare Url: %s" % data.meta["url"])
+        #printDBG("Cloudflare Url: %s" % data.meta["url"])
         
         current = 0
         while current < 5:
@@ -974,6 +975,7 @@ class common:
                             challenge_form = re.findall("(<form class=\"challenge-form\".*?</form>)",verData, re.S)
                             if not challenge_form:
                                 continue
+                            
                             challenge_form = challenge_form[0]
                             
                             from Plugins.Extensions.IPTVPlayer.libs.hcaptcha import UnCaptchahCaptcha
@@ -990,21 +992,35 @@ class common:
                             scriptUrl = re.findall('<script.*src="([^"]+?)"', challenge_form)[0]
                             
                             post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', challenge_form))
-                            #post_data2['id'] = dataray
+                            post_data2['id'] = dataray
                             post_data2['h-captcha-response'] = token
                             post_data2['g-recaptcha-response'] = token
-
+                            #if post_data2.get("r","") == "":
+                            #    post_data2["r"] = r
+                                
                             printDBG("--------------- post data after captcha ------------")
                             printDBG(json_dumps(post_data2))
                             
                             url = _getFullUrl(action, domain)
                         
-                            params2 = dict(params)
-                            params2['header']= dict(params['header'])
-                            params2['header']['Referer'] = baseUrl
+                            params2 = { 
+                                'use_cookie': True, 
+                                'load_cookie': True,
+                                'save_cookie': True,
+                                #'raw_post_data': True, 
+                                'return_data': True, 
+                                'cookiefile': params['cloudflare_params']['cookie_file']
+                            }
                             
-                            post_data2= json_dumps(post_data2)
+                            params2['header'] = {
+                                'Referer': baseUrl,
+                                'Accept': 'text/html',
+                                'Accept-Encoding': 'gzip',
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.106 Safari/537.36'
+                            }
                             
+                            #post_data2= json_dumps(post_data2)
                             
                         else:
                             printDBG("*************** CloudFlare prompts reCaptcha *************")
@@ -1037,6 +1053,7 @@ class common:
                             params2 = dict(params)
                             params2['header']= dict(params['header'])
                             params2['header']['Referer'] = baseUrl
+                            
                             if actionType == 'get':
                                 if '?' in url:
                                     url += '&'
@@ -1062,6 +1079,7 @@ class common:
                                 dat = item
                                 break
                         if not dat:
+                            GetIPTVNotify().push(_("New javascript not yet supported!"), 'info', 5)
                             break
                         
                         decoded = ''
@@ -1127,11 +1145,16 @@ class common:
                         
                         verUrl =  _getFullUrl( ph.getattr(verData, 'action'), domain)
                         
+                        #unescape html code of & 
+                        verUrl = verUrl.replace("&amp;",'&')
+                        
                         postDataCF = {}
                         for key in get_data:
                             #postDataCF[key] = urllib.quote(get_data[key])
                             postDataCF[key] = get_data[key]
-                        
+                            if key == "r":
+                                r = get_data[key]
+                                
                         printDBG("CF verification url: %s" % verUrl)
                         printDBG("CF post data: %s" % str(postDataCF))
                         
@@ -1140,6 +1163,9 @@ class common:
                         params2['save_cookie'] = True
                         params2['header'] = dict(params.get('header', {}))
                         params2['header'].update({'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept': 'text/html,application/xhtml+xml,application/xml','Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded'})
+                        if params2.get('raw_post_data',False):
+                            params2.pop('raw_post_data')
+                        
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
                         if current == 1:
                             GetIPTVSleep().Sleep(4 -(time.time() - start_time))
@@ -1147,9 +1173,10 @@ class common:
                             GetIPTVSleep().Sleep(4)
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
                         printDBG("Timeout: [%s]" % 4000)
+                        
                         sts, data = self.getPage(verUrl, params2, postDataCF)
   
-                        printDBG("Cloudflare Url: %s" % data.meta["url"])
+                        #printDBG("Cloudflare Url: %s" % data.meta["url"])
 
                         #printDBG("--------- cf verification server answer -------")
                         #printDBG(data)
