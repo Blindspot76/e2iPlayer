@@ -2,7 +2,7 @@
 #
 #  Konfigurator dla iptv 2013
 #  autorzy: j00zek, samsamsam
-#
+#  Modified: Blindspot (2020.05.08.)
 
 ###################################################
 # LOCAL import
@@ -73,7 +73,7 @@ config.plugins.iptvplayer.IPTVDMRunAtStart      = ConfigYesNo(default = False)
 config.plugins.iptvplayer.IPTVDMShowAfterAdd    = ConfigYesNo(default = True)
 config.plugins.iptvplayer.IPTVDMMaxDownloadItem = ConfigSelection(default = "1", choices = [("1", "1"),("2", "2"),("3", "3"),("4", "4")])
 
-config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = True)
+config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = False)
 config.plugins.iptvplayer.sortuj = ConfigYesNo(default = True)
 config.plugins.iptvplayer.remove_diabled_hosts = ConfigYesNo(default = False)
 config.plugins.iptvplayer.IPTVWebIterface = ConfigYesNo(default = False)
@@ -220,7 +220,7 @@ config.plugins.iptvplayer.search_history_size  = ConfigInteger(50, (0, 1000000))
 config.plugins.iptvplayer.autoplay_start_delay  = ConfigInteger(3, (0, 9))
 
 config.plugins.iptvplayer.watched_item_color = ConfigSelection(default = "#808080", choices = COLORS_DEFINITONS)
-config.plugins.iptvplayer.usepycurl = ConfigYesNo(default = False)
+config.plugins.iptvplayer.usepycurl = ConfigYesNo(default = True)
 
 config.plugins.iptvplayer.prefer_hlsdl_for_pls_with_alt_media = ConfigYesNo(default = True)
 
