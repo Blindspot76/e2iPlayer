@@ -1,3 +1,10 @@
+#2020.05.11.01
+-TSiPlayer javítva
+#2020.05.10.01
+-HDFilme javítva
+-TantiFilm javítva
+-CineBlog01 és CB01.Uno javítva (ITA)
+-Kisebb módosítások
 #2020.05.05.01
 -JavHoHo hozzáadva (XXX)
 -CinemaLibero hozzáadva (Italian)
