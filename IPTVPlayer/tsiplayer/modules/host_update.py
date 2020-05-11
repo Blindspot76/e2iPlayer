@@ -105,17 +105,41 @@ class TSIPHost(TSCBaseHostClass):
 	def update_now_tar(self,cItem):
 		restart=cItem.get('retstart',True)
 		printDBG('TSIplayer: Start Update' )
+		
+		
+		
+		
+		#crc=''
+		#_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer'
+		#try:
+		#	crc_data = re.findall('/Rgysoft/iptv-host-e2iplayer/commit/([^"^\']+?)[\'"]',self.cm.getPage(_url)[1], re.S)
+		#	if crc_data:
+		#		crc=crc_data[0]
+		#		printDBG('TSIplayer: crc = '+crc)
+		#	else: printDBG('TSIplayer: crc not found') 
+		#except:
+		#	printDBG('TSIplayer: Get Main URL Error')		
+		#	return ''		
+		
+		
 		crc=''
-		_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer'
+		_url = 'https://gitlab.com/Rgysoft/iptv-host-e2iplayer/-/refs/master/logs_tree/?format=json&o'
 		try:
-			crc_data = re.findall('/Rgysoft/iptv-host-e2iplayer/commit/([^"^\']+?)[\'"]',self.cm.getPage(_url)[1], re.S)
+			crc_data = re.findall('commit.*?id":"(.*?)"',self.cm.getPage(_url)[1], re.S)
 			if crc_data:
 				crc=crc_data[0]
 				printDBG('TSIplayer: crc = '+crc)
-			else: printDBG('TSIplayer: crc not found') 
+			else: printDBG('TSIplayer: crc not found')  
 		except:
 			printDBG('TSIplayer: Get Main URL Error')		
 			return ''		
+		
+		
+		
+		
+		
+		
+		
 		tmpDir = GetTmpDir() 
 		source = os_path.join(tmpDir, 'iptv-host-e2iplayer.tar.gz') 
 		dest = os_path.join(tmpDir , '') 
@@ -146,6 +170,7 @@ class TSIPHost(TSCBaseHostClass):
 			od = '%siptv-host-e2iplayer-master-%s/'% (dest, crc)
 			do = resolveFilename(SCOPE_PLUGINS, 'Extensions/') 
 			cmd = 'cp -rf "%s"/* "%s"/ 2>&1' % (os_path.join(od, 'IPTVPlayer'), os_path.join(do, 'IPTVPlayer'))
+			printDBG('<<<<<<<<<<<<<<<<<<<<<<<<<<cmd='+cmd)
 			os_system (cmd)
 			os_system ('sync')
 			printDBG('TSIplayer: Copy OK')			
