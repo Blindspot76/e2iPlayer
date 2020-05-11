@@ -5,6 +5,7 @@ from Plugins.Extensions.IPTVPlayer.components.asynccall         import MainSessi
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.pCommon       import common, CParsingHelper
 #from Plugins.Extensions.IPTVPlayer.libs.pCommon                import common, CParsingHelper 
 from Plugins.Extensions.IPTVPlayer.libs.urlparser               import urlparser
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.urlparser     import urlparser as ts_urlparser
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools              import CSearchHistoryHelper, GetCookieDir, printDBG, printExc
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson                 import loads as json_loads, dumps as json_dumps
 from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc   import AES_CBC
@@ -52,6 +53,8 @@ def tscolor(color):
 				else: return color
 		else: return color	
 
+def tshost(hst):
+	return ''
 	
 def gethostname(url):
 	url=url.replace('http://','').replace('https://','').replace('www.','')
@@ -59,7 +62,7 @@ def gethostname(url):
 	if '/' in url:
 		url=url.split('/',1)[0]
 	return url
-
+		
 def resolve_liveFlash(link,referer):
 	URL=''
 	cm = common()
@@ -178,7 +181,7 @@ class TSCBaseHostClass:
     def __init__(self, params={}):
         self.sessionEx = MainSessionWrapper() 
         self.up = urlparser()
-        
+        self.ts_urlpars = ts_urlparser()
         proxyURL = params.get('proxyURL', '')
         useProxy = params.get('useProxy', False)
         self.cm = common(proxyURL, useProxy)
@@ -191,15 +194,59 @@ class TSCBaseHostClass:
             self.COOKIE_FILE = GetCookieDir(params['cookie'])
         self.moreMode = False
 
-
+    def std_host_name(self,name_, direct=False):
+        if '|' in name_:
+            n1 = name_.split('|')[-1]
+            n2 = name_.replace(name_.split('|')[-1],'')
+            if direct=='direct': name_=n2+tscolor('\c0090??20')+n1.replace('embed.','').title()
+            elif self.ts_urlpars.checkHostSupportbyname(n1):
+                name_=n2+tscolor('\c0090??20')+n1.replace('embed.','').title()	
+            elif self.ts_urlpars.checkHostNotSupportbyname(n1):
+                name_=n2+tscolor('\c00??1020')+n1.replace('embed.','').title()
+            else:
+                name_=n2+tscolor('\c00999999')+n1.replace('embed.','').title()                	
+        else: 
+            if direct=='direct': name_=tscolor('\c0090??20')+name_.replace('embed.','').title()
+            elif self.ts_urlpars.checkHostSupportbyname(name_):
+                name_=tscolor('\c0090??20')+name_.replace('embed.','').title()
+            elif self.ts_urlpars.checkHostNotSupportbyname(name_):
+                name_=tscolor('\c00??5050')+name_.replace('embed.','').title()	
+              
+                				
+        return name_ 
+		
+    def std_url(self,url):
+		url1=url
+		printDBG('url0='+url1)
+		url1=url1.replace('://','rgy11soft')
+		url1=url1.replace('?','rgy22soft')        
+		url1=url1.replace('&','rgy33soft') 
+		url1=url1.replace('=','rgy44soft') 
+		url1=urllib.unquote(url1)
+		url1=urllib.quote(url1)
+		url1=url1.replace('rgy11soft','://')
+		url1=url1.replace('rgy22soft','?')        
+		url1=url1.replace('rgy33soft','&') 	
+		url1=url1.replace('rgy44soft','=') 		
+		printDBG('url1='+url1)
+		return url1
     def uniform_titre(self,titre,year_op=0):
 		titre=titre.replace('مشاهدة وتحميل مباشر','').replace('مشاهدة','').replace('اون لاين','')
-		
-		tag_type = ['مدبلج للعربية', 'مدبلجة', 'مترجمة', 'فيلم' , 'مترجم' , 'مدبلج', 'مسلسل', 'عرض']
-		tag_qual = ['1080p','720p','WEB-DL','BluRay','DVDRip','HDCAM','HDTC','HDRip', 'HD', '1080P','720P','DVBRip','TVRip','DVD','SD']
+		tag_type   = ['مدبلج للعربية','مترجمة للعربية','مترجم للعربية', 'مدبلجة', 'مترجمة' , 'مترجم' , 'مدبلج', 'مسلسل', 'عرض', 'انمي', 'فيلم']
+		tag_qual   = ['1080p','720p','WEB-DL','BluRay','DVDRip','HDCAM','HDTC','HDRip', 'HD', '1080P','720P','DVBRip','TVRip','DVD','SD']
+		tag_saison = [('الموسم الثاني','02'),('الموسم الاول','01'),('الموسم الثالث','03'),('الموسم الرابع','04'),('الموسم الخامس','05'),('الموسم السادس','06'),('الموسم السابع','07'),('الموسم الثامن','08'),('الموسم التاسع','09'),('الموسم العاشر','10')]
 		type_ = tscolor('\c00????00')+ 'Type: '+tscolor('\c00??????')
 		qual = tscolor('\c00????00')+ 'Quality: '+tscolor('\c00??????')
+		sais = tscolor('\c00????00')+ 'Saison: '+tscolor('\c00??????')
 		desc=''
+		saison=''
+		
+		for elm in tag_saison:
+			if elm[0] in titre:
+				sais=sais+elm[1]
+				titre = titre.replace(elm[0],'')
+				break
+				
 		for elm in tag_type:
 			if elm in titre:
 				titre = titre.replace(elm,'')
@@ -215,18 +262,38 @@ class TSCBaseHostClass:
 		if data:
 			year_ = data[0][0]
 			year_out = tscolor('\c0000????')+data[0][0]+tscolor('\c00??????')
-			if year_op==0: titre = year_out+'  '+titre.replace(year_, '')
-			else: titre = titre.replace(year_, '')
-			if year_op<2:
+			if year_op==0:
+				titre = year_out+'  '+titre.replace(year_, '')
 				desc = 	tscolor('\c00????00')+ 'Year: '+tscolor('\c00??????')+year_+'\n'
-			else:
-				desc = 	year_	
+			elif year_op==-1:
+				titre = year_out+'  '+titre.replace(year_, '')
+				desc = 	''			
+			elif year_op==1:
+				titre = titre.replace(year_, '')
+				desc = 	tscolor('\c00????00')+ 'Year: '+tscolor('\c00??????')+year_+'\n'
+			elif year_op==2:	
+				titre = titre.replace(year_, '')
+				desc = 	year_
+					
 		if year_op<2:
+			if sais != tscolor('\c00????00')+ 'Saison: '+tscolor('\c00??????'):
+				desc = desc+sais+'\n'				
 			if type_!=tscolor('\c00????00')+ 'Type: '+tscolor('\c00??????'):
 				desc = desc+type_[:-3]+'\n'
 			if qual != tscolor('\c00????00')+ 'Quality: '+tscolor('\c00??????'):
 				desc = desc+qual[:-3]+'\n'
 
+		pat = 'موسم.*?([0-9]{1,2}).*?حلقة.*?([0-9]{1,2})'
+		data = re.findall(pat, titre, re.S)
+		if data:
+			sa = data[0][0]
+			ep = data[0][1]
+			if len(sa)==1: sa='0'+sa
+			if len(ep)==1: ep='0'+ep			
+			ep_out = tscolor('\c0000????')+'S'+sa+tscolor('\c0000????')+'E'+ep+tscolor('\c00??????')
+			titre = ep_out+' '+re.sub(pat,'',titre)
+			
+			
 		return desc,self.cleanHtmlStr(titre).replace('()','').strip()
 
         
@@ -453,4 +520,3 @@ class TSCBaseHostClass:
             self.afterMoreItemList  = []
         self.moreMode = False
     
-
