@@ -31,7 +31,7 @@ import os
 
 ###################################################
 #RICH_DESC_PARAMS = ["alternate_title", "original_title", "station", "price", "age_limit", "views", "status", "type", "first_air_date", "last_air_date", "seasons", "episodes", "country", "language", "duration", "quality", "subtitles", "year", "imdb_rating", "tmdb_rating","released", "broadcast", "remaining", "rating", "rated", "genre", "genres", "category", "categories", "production", "director", "directors", "writer", "writers", "creator", "creators", "cast", "actors", "stars", "awards", "budget", "translation",]
-
+#https://api.dailymotion.com/user/MelodyAflam/videos?page=1&limit=100&fields=id,title,duration,thumbnail_240_url
 config.plugins.iptvplayer.ts_dsn           = ConfigYesNo(default = True)
 config.plugins.iptvplayer.vs_meta_view     = ConfigYesNo(default = False)
 config.plugins.iptvplayer.dev_mod          = ConfigYesNo(default = False)
@@ -165,9 +165,9 @@ class TSIPlayer(CBaseHostClass):
 		#self.addDir(params)		
 		#params = {'category' : 'update_now2','title':tscolor('\c0000????')+' +++++++ FORCE UPDATE & RESTART (Zip method) +++++++ ','name':'update_restart'} 
 		#self.addDir(params)			
-		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Hosts en développement |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
+		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Not supported Hosts |★●-----','desc':''})
 		self.tsiplayer_host({'cat_id':'102'})	
-		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Hosts Out |★●-----','desc':'Dessins animés & Animes en VF et VOSTFR'})
+		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Hosts Out |★●-----','desc':''})
 		self.tsiplayer_host({'cat_id':'104'})	
 
 
@@ -235,6 +235,7 @@ class TSIPlayer(CBaseHostClass):
 						info['version']=''
 						info['cat_id']='104'
 						info['dev']=''
+						#info.get('host','')=
 					desc=''
 					icon_ = info['icon']
 					param_ = 'oui'
@@ -254,7 +255,8 @@ class TSIPlayer(CBaseHostClass):
 							desc=desc+tscolor('\c00????00')+' Info: '+tscolor('\c00??????')+info['desc']+'\\n '+tscolor('\c00????00')+'Version: '+tscolor('\c00??????')+info['version']+'\\n '+tscolor('\c00????00')+'Developpeur: '+tscolor('\c00??????')+info['dev']+'\\n'
 							if info.get('update', '')!='':
 								desc=desc+tscolor('\c00????00')+' Last Update: '+tscolor('\c00??????')+info.get('update', '')+'\\n'
-								
+							if info.get('host','')!='':
+								desc=desc+tscolor('\c00????00')+' Host: '+tscolor('\c00??????')+info.get('host', '')+'\\n'
 							show = True	
 							if ordre >-1:
 								show = False
@@ -274,13 +276,48 @@ class TSIPlayer(CBaseHostClass):
 							if show:
 								self.addDir({'category' : 'host2','title':color_+name_,'desc':desc,'icon':icon_,'mode':'00','import':import_str,'gnr':gnr_})
 
+	def tsiplayer_get_addons_host(self,cItem):
+		folder='/usr/lib/enigma2/python/Plugins/Extensions/IPTVPlayer/tsiplayer/addons/'
+		import_ = 'from Plugins.Extensions.IPTVPlayer.tsiplayer.addons.'
+		color_ = tscolor('\c00????99')
+				
+		cat_id=cItem.get('cat_id','')
+
+		lst=[]
+		if os.path.exists(folder):
+			lst=os.listdir(folder)
+			lst.sort()
+			for (file_) in lst:
+				if (file_.endswith('.py'))and((file_.startswith('host_')) or ((file_.startswith('hide_')))):
+					path_=folder+'/'+file_
+					import_str=import_+file_.replace('.py',' import ')
+					try:
+						exec (import_str+'getinfo')
+						info=getinfo()
+					except Exception, e:
+						info={}
+						info['warning']=' >>>>>>> Problem in this host <<<<<<<'
+						info['desc']=str(e)
+						info['name']=file_
+						info['version']=''
+						info['dev']=''
+					try:
+						exec (import_str+'getHosts')
+						hsts=getHosts()
+					except Exception, e:
+						hsts=[]
+					for (cat_id_,elm_) in hsts:
+						if cat_id==cat_id_:
+							elm_['title']=color_+elm_['title']
+							self.addDir(elm_)
+
 		
 	def tsiplayer_host(self,cItem):
 		self.tsiplayer_get_host(cItem,'private')
 		self.tsiplayer_get_host(cItem,'public')
 		self.tsiplayer_get_host(cItem,'addons')
 		self.tsiplayer_get_host(cItem,'system')
-
+		self.tsiplayer_get_addons_host(cItem)
 						
 	def host2_host(self,cItem):
 		mode_=cItem.get('mode','00')
@@ -438,6 +475,7 @@ class TSIPlayer(CBaseHostClass):
 				name_ = elm.get('name','XXXX')
 				type_ = elm.get('type','XXXX')
 				color =''
+				name_ = name_.replace('\c0060??60','').replace('\c0090??20','').replace('\c00??3030','').replace('\C0060??60','').replace('\C0090??20','').replace('\C00??3030','')
 				if type_=='local':
 					color = tscolor('\c0060??60')
 				elif ts_urlparser().checkHostSupportbyname(name_):
