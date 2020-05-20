@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.05.12.0"
+    XXXversion = "2020.05.20.1"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -3994,9 +3994,11 @@ class Host:
               phTitle = phTitle.replace('\n','')
               Title = phTitle[:95].split('#')[0]
               if 'External Link' in item:
-                 phUrl = self.cm.ph.getSearchGroups(item, '''href=['"](https://gounlimited[^"^']+?)['"]''', 1, True)[0]
+                 phUrl = self.cm.ph.getSearchGroups(item, '''href=['"](https?://gounlimited[^"^']+?)['"]''', 1, True)[0]
                  phRuntime = 'External Link'
-                 if phUrl.startswith('https://gounlimited.to'):
+                 Title = re.sub(r'http(.*?)mp4', '', Title)
+                 Title = re.sub(r'http(.*?) ', '', Title)
+                 if 'gounlimited.to' in phUrl:
                     if not 'embed' in phUrl:
                        phUrl = 'https://gounlimited.to' + '/embed-'+ phUrl.split('/')[3] +'.html'
               if phRuntime=='': continue 
@@ -5746,7 +5748,7 @@ class Host:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTitle = self._cleanHtmlStr(item)
               phUrl = urlparser.decorateUrl(phUrl, {'Referer': url})
-              if phUrl.startswith('https://gounlimited.to'):
+              if 'gounlimited.to' in phUrl:
                  if not 'embed' in phUrl:
                     phUrl = 'https://gounlimited.to' + '/embed-'+ phUrl.split('/')[3] +'.html'
               if 'Streaming' in item:
@@ -7975,6 +7977,7 @@ class Host:
 
 # URLPARSER
         if url.startswith('https://gounlimited.to'):                  return 'xxxlist.txt'
+        if url.startswith('http://gounlimited.to'):                  return 'xxxlist.txt'
         if url.startswith('http://openload.co'):                      return 'xxxlist.txt'
         if url.startswith('https://oload.tv'):                        return 'xxxlist.txt'
         if url.startswith('http://www.cda.pl'):                       return 'xxxlist.txt'
