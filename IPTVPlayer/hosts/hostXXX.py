@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.05.20.1"
+    XXXversion = "2020.05.27.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -1203,7 +1203,8 @@ class Host:
         if 'xhamsterlive' == name:
            printDBG( 'Host listsItems begin name='+name )
            self.MAIN_URL = 'http://xhamsterlive.com' 
-           url='http://xhamsterlive.com/api/front/models'
+           #url='http://xhamsterlive.com/api/front/models'
+           url='https://go.hpyrdr.com/api/models?limit=9999'
            COOKIEFILE = os_path.join(GetCookieDir(), 'xhamsterlive.cookie')
            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
@@ -1211,20 +1212,25 @@ class Host:
            if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
            country = ''
+           Url = ''
            result = simplejson.loads(data)
            try:
               for item in result["models"]:
                  ID = str(item["id"]) 
                  Name = str(item["username"])
-                 BroadcastServer = str(item["broadcastServer"])
-                 Image = str(item["previewUrl"].replace('\/','/'))  
+                 try:
+                    Url = str(item["stream"]['url'])
+                    #printDBG( 'Host Url: '+Url )
+                 except Exception:
+                    printExc()
+                 Image = str(item["snapshotUrl"].replace('\/','/'))  
                  status = str(item["status"])
                  try:
-                    country = ' [Country: '+str(item["country"]).upper()+']'
+                    country = ' [Country: '+str(item["modelsCountry"]).upper()+']'
                  except Exception:
                     printExc()
                  if status == "public":
-                    valTab.append(CDisplayListItem(Name,Name+country,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', ID, 1)], 0, Image, None)) 
+                    valTab.append(CDisplayListItem(Name,Name+country,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 0)], 0, Image, None)) 
            except Exception:
               printExc()
            return valTab
@@ -8953,6 +8959,12 @@ class Host:
            sts, data = self.getPage(url, 'playvids.cookie', 'playvids.com', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+str(data) )
+           videoUrl = self.cm.ph.getSearchGroups(data, '''hls-src720=['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
+           if ''==videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''hls-src480=['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
+           if ''==videoUrl: videoUrl = self.cm.ph.getSearchGroups(data, '''hls-src360=['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
+           if videoUrl:
+              return self.FullUrl(videoUrl)
+
            videoUrl = self.cm.ph.getSearchGroups(data, '''src720=['"]([^"^']+?)['"]''')[0].replace('&amp;','&')
            if videoUrl:
               return self.FullUrl(videoUrl)
