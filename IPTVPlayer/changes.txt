@@ -1,3 +1,5 @@
+#2020.05.28.01
+-XHamsterLive javítva (XXX)
 #2020.05.27.01
 -Választható skinek bővítve (13 új skin)
 #2020.05.24.01
