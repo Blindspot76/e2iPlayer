@@ -1,6 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-###################################################
-# 2019-09-17 by Blindspot - modified Youtube
+
 ###################################################
 # LOCAL import
 ###################################################
@@ -33,14 +32,10 @@ def GetConfigList():
     optionList.append(getConfigListEntry(_("Video format:"), config.plugins.iptvplayer.ytformat))
     optionList.append(getConfigListEntry(_("Default video quality:"), config.plugins.iptvplayer.ytDefaultformat))
     optionList.append(getConfigListEntry(_("Use default video quality:"), config.plugins.iptvplayer.ytUseDF))
-    optionList.append(getConfigListEntry(_("Korhatár ellenőrzés kihagyása:"), config.plugins.iptvplayer.ytAgeGate))
-    
     # temporary, the ffmpeg must be in right version to be able to merge file without transcoding
     # checking should be moved to setup
     if IsExecutable('ffmpeg'): 
         optionList.append(getConfigListEntry(_("Allow dash format:"), config.plugins.iptvplayer.ytShowDash))
-        if config.plugins.iptvplayer.ytShowDash.value != 'false':
-            optionList.append(getConfigListEntry(_("VP9 kodec használata:"), config.plugins.iptvplayer.ytVP9))
     return optionList
 ###################################################
 ###################################################
