@@ -1,3 +1,9 @@
+#2020.05.29.01
+-YouTube javítva
+-GuardaSerie javítva
+-MusicBox javítva
+-CB01 javítva
+-MyStream támogatás javítva
 #2020.05.28.01
 -XHamsterLive javítva (XXX)
 #2020.05.27.01
