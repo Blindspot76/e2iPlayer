@@ -232,7 +232,7 @@ class CParsingHelper:
         return ph.clean_html(str)
 
 class common:
-    HOST   = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+    HOST   = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
     HEADER = None
     ph = CParsingHelper
     
@@ -240,7 +240,7 @@ class common:
     def getDefaultHeader(browser='firefox'):
         if browser == 'firefox': ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0'
         elif browser == 'iphone_3_0': ua = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16'
-        else: ua = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+        else: ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
         
         HTTP_HEADER = { 'User-Agent':ua,
                         'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -830,13 +830,21 @@ class common:
         return sts, data
 
     def fillHeaderItems(self, metadata, responseHeaders, camelCase=False, collectAllHeaders=False):
+
         returnKeys = ['content-type', 'content-disposition', 'content-length', 'location']
-        if camelCase: sourceKeys = ['Content-Type', 'Content-Disposition', 'Content-Length', 'Location']
-        else: sourceKeys = returnKeys
+        
+        if camelCase: 
+            sourceKeys = ['Content-Type', 'Content-Disposition', 'Content-Length', 'Location']
+        else: 
+            sourceKeys = returnKeys
+        
         for idx in range(len(returnKeys)):
             if sourceKeys[idx] in responseHeaders:
                 metadata[returnKeys[idx]] = responseHeaders[sourceKeys[idx]]
-
+                #printDBG(sourceKeys[idx] + " ---->  " + responseHeaders[sourceKeys[idx]])
+                
+        #printDBG(str(responseHeaders))
+        
         if collectAllHeaders:
             if "Access-Control-Allow-Headers" in responseHeaders:
                 acah = responseHeaders["Access-Control-Allow-Headers"]
@@ -846,9 +854,11 @@ class common:
                     key = key.strip()
                     if key in responseHeaders:
                         metadata[key.lower()]=responseHeaders[key]
+                        #printDBG(key + " ---->  " + responseHeaders[key])
 
             for header, value in responseHeaders.iteritems():
                 metadata[header.lower()] = responseHeaders[header]
+                #printDBG(header + " ---->  " + value)
 
     def getPage(self, url, addParams = {}, post_data = None):
         ''' wraps getURLRequestData '''
@@ -927,11 +937,14 @@ class common:
                 return cfParams['full_url_handle2'](url)
             return url
         
+        r = ""
         url = baseUrl
         header = {'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'}
         header.update(params.get('header', {}))
         params.update({'with_metadata':True, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': cfParams.get('cookie_file', ''), 'header':header})
         sts, data = self.getPage(url, params, post_data)
+        
+        #printDBG("Cloudflare Url: %s" % data.meta["url"])
         
         current = 0
         while current < 5:
@@ -943,9 +956,9 @@ class common:
                 try:
                     domain = self.getBaseUrl(data.meta['url'])
                     verData = data
-                    printDBG("------------------")
-                    printDBG(verData)
-                    printDBG("------------------")
+                    #printDBG("------------------")
+                    #printDBG(verData)
+                    #printDBG("------------------")
                     if 'sitekey' not in verData and 'challenge' not in verData: break
                     
                     printDBG(">>")
@@ -954,44 +967,100 @@ class common:
                     
                     sitekey = self.ph.getSearchGroups(verData, 'data-sitekey="([^"]+?)"')[0]
                     id = self.ph.getSearchGroups(verData, 'data-ray="([^"]+?)"')[0]
+                    
                     if sitekey != '':
-                        from Plugins.Extensions.IPTVPlayer.libs.hcaptcha_2captcha import UnCaptchahCaptcha
-                        # google captcha
-                        recaptcha = UnCaptchahCaptcha(lang=GetDefaultLang())
-#                        recaptcha.HTTP_HEADER['Referer'] = baseUrl
-#                        if '' != cfParams.get('User-Agent', ''): recaptcha.HTTP_HEADER['User-Agent'] = cfParams['User-Agent']
-                        token = recaptcha.processCaptcha(sitekey, domain)
-                        if token == '': return False, None
-                        
-                        sts, tmp = self.ph.getDataBeetwenMarkers(verData, '<form', '</form>', caseSensitive=False)
-                        if not sts: return False, None
-                        
-                        url = self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0]
-                        if url != '': url = _getFullUrl( url, domain )
-                        else: url = data.meta['url']
-                        actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
-#                        post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
-                        post_data2 = {}
-                        verData = re.findall(r'(<input[^>]*)>', re.sub("<!--.*?-->", "<!-- -->", verData))
-                        for item in verData:
-                            name = self.ph.getSearchGroups(item, '''\sname=['"]([^'^"]+?)['"]''')[0]
-                            value = self.ph.getSearchGroups(item, '''\svalue=['"]([^'^"]+?)['"]''')[0]
-                            post_data2[name] = value
-                        #post_data2['id'] = id
-                        if '' != token:
+                        if self.ph.getSearchGroups(verData, 'data-sitekey="([^"]+?)"')[0]:
+                            printDBG("*************** CloudFlare prompts hCaptcha *************")
+                            
+                            challenge_form = re.findall("(<form class=\"challenge-form\".*?</form>)",verData, re.S)
+                            if not challenge_form:
+                                continue
+                            
+                            challenge_form = challenge_form[0]
+                            
+                            from Plugins.Extensions.IPTVPlayer.libs.hcaptcha import UnCaptchahCaptcha
+                            hcaptcha = UnCaptchahCaptcha(lang=GetDefaultLang(), params = params)
+                            
+                            token = hcaptcha.processCaptcha(challenge_form, domain , GetDefaultLang(), params)
+                            
+                            if token == '': 
+                                return False, None
+                            
+                            action = re.findall('action="([^"]+?)"', challenge_form)[0]
+                            key = re.findall('data-sitekey="([^"]+?)"', challenge_form)[0]
+                            dataray = re.findall('data-ray="([^"]+?)"', challenge_form)[0]
+                            scriptUrl = re.findall('<script.*src="([^"]+?)"', challenge_form)[0]
+                            
+                            post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', challenge_form))
+                            post_data2['id'] = dataray
                             post_data2['h-captcha-response'] = token
+                            post_data2['g-recaptcha-response'] = token
+                            #if post_data2.get("r","") == "":
+                            #    post_data2["r"] = r
+                                
+                            printDBG("--------------- post data after captcha ------------")
+                            printDBG(json_dumps(post_data2))
+                            
+                            url = _getFullUrl(action, domain)
+                        
+                            params2 = { 
+                                'use_cookie': True, 
+                                'load_cookie': True,
+                                'save_cookie': True,
+                                #'raw_post_data': True, 
+                                'return_data': True, 
+                                'cookiefile': params['cloudflare_params']['cookie_file']
+                            }
+                            
+                            params2['header'] = {
+                                'Referer': baseUrl,
+                                'Accept': 'text/html',
+                                'Accept-Encoding': 'gzip',
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.106 Safari/537.36'
+                            }
+                            
+                            #post_data2= json_dumps(post_data2)
+                            
                         else:
-                            continue
-                        params2 = dict(params)
-                        params2['header']= dict(params['header'])
-                        params2['header']['Referer'] = baseUrl
-                        if actionType == 'get':
-                            if '?' in url:
-                                url += '&'
+                            printDBG("*************** CloudFlare prompts reCaptcha *************")
+                                
+                            from Plugins.Extensions.IPTVPlayer.libs.recaptcha_v2 import UnCaptchaReCaptcha
+                        
+                            recaptcha = UnCaptchaReCaptcha(lang=GetDefaultLang())
+                            recaptcha.HTTP_HEADER['Referer'] = baseUrl
+                            if '' != cfParams.get('User-Agent', ''): recaptcha.HTTP_HEADER['User-Agent'] = cfParams['User-Agent']
+                        
+                            token = recaptcha.processCaptcha(sitekey)
+                        
+                            if token == '': 
+                                return False, None
+                        
+                            sts, tmp = self.ph.getDataBeetwenMarkers(verData, '<form', '</form>', caseSensitive=False)
+                            if not sts: return False, None
+
+                            url = self.ph.getSearchGroups(tmp, 'action="([^"]+?)"')[0]
+                            if url != '': url = _getFullUrl( url, domain )
+                            else: url = data.meta['url']
+                            actionType = self.ph.getSearchGroups(tmp, 'method="([^"]+?)"', 1, True)[0].lower()
+                            post_data2 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', tmp))
+                            #post_data2['id'] = id
+                        
+                            if '' != token:
+                                post_data2['g-recaptcha-response'] = token
                             else:
-                                url += '?'
-                            url += urllib.urlencode(post_data2)
-                            post_data2 = None
+                                continue
+                            params2 = dict(params)
+                            params2['header']= dict(params['header'])
+                            params2['header']['Referer'] = baseUrl
+                            
+                            if actionType == 'get':
+                                if '?' in url:
+                                    url += '&'
+                                else:
+                                    url += '?'
+                                url += urllib.urlencode(post_data2)
+                                post_data2 = None
                             
                         sts, data = self.getPage(url, params2, post_data2)
                         printDBG("+++++++++++++")
@@ -999,59 +1068,154 @@ class common:
                         printDBG("-------------")
                         printDBG(data)
                         printDBG("++++++++++++++")
+                    
                     else:
-                        dat = ph.findall(verData, ('<script', '>'), '</script>', flags=0)
-                        for item in dat:
+                        printDBG("*************** CloudFlare: Searching javascript code *************")
+
+                        dat = ""
+                        datas = ph.findall(verData, ('<script', '>'), '</script>', flags=0)
+                        for item in datas:
                             if 'setTimeout' in item and 'submit()' in item:
                                 dat = item
                                 break
-                        decoded = ''
-                        elemsText = {}
-                        tmp = re.findall("<div.*?id=\"([^\"]+)\">(.*?)</div>", verData)
-                        for item in tmp:
-                            if item[0] and re.search(r'\w+\d', item[0]):
-                                elemsText[item[0]] = item[1]
-
-                        js_params = [{'path':GetJSScriptFile('cf.byte')}]
-                        try:
-                            dat = dat.replace(dat[dat.index('var isIE'):dat.index('setTimeout')],'')
-                        except Exception:
-                            printExc()
-                        js_params.append({'code': "var navigator={cookieEnabled:1}; var ELEMS_TEXT = %s; var location = {hash:''}; var iptv_domain='%s';\n%s\niptv_fun();" % (json_dumps(elemsText), domain, dat)})
-                        ret = js_execute_ext( js_params )
-                        decoded = json_loads(ret['data'].strip())
+                        if not dat:
+                            GetIPTVNotify().push(_("New javascript not yet supported!"), 'info', 5)
+                            break
                         
-                        verData = ph.find(verData, ('<form', '>', 'id="challenge-form"'), '</form>')[1]
-                        printDBG(">>")
-                        printDBG(verData)
-                        printDBG("<<")
+                        decoded = ''
+                        
+                        #first part of code
+                        js_params = [{'path' : GetJSScriptFile('cf_max.byte')}]
+                        #particular div element
+                        #tmp = ph.findall(verData, ('<div', '>', 'id'), '</div>', flags=ph.START_S)
+                        
+                        
+                        code2=''
+                        numChildren = 5
+                        #<div style="display:none;visibility:hidden;">
+                        
+                        tmp = divs = re.findall("<div.*?id=\"([^\"]+)\">(.*?)</div>", data)
+                        for t in tmp:
+                            name_id = t[0]
+                            if len(name_id)>=8 and len(name_id)<=12:
+                                numChildren = numChildren + 1
+                                value_id = t[1]
+                                code2 = code2 + "\ndocument.children.push ( new element('', '%s', 'div')); document.children[%d].innerHTML ='%s';" % (name_id, numChildren,value_id)
+                                                                
+                        printDBG("--------------- code 2 ------------------")
+                        printDBG(code2)
+                        printDBG("-----------------------------------------")
+                        #script part in variable called 'dat'
+                        printDBG("-------------- dat prima delle sostituzioni----------------------")
+                        printDBG(dat)
+                        printDBG("-----------------------------------------")
+                        #dat = dat.replace('(function(){\n\n    var a = function() {try{return !!window.addEventListener} catch(e) {return !1} },\n    b = function(b, c) {a() ? document.addEventListener("DOMContentLoaded", b, c) : document.attachEvent("onreadystatechange", b)};\n    b(function()','function pippo()')
+                        pattern = re.compile("\(function\(\)\{.*?b\(function\(\)", re.S)
+                        dat = re.sub(pattern, "function pippo()", dat)
+                        
+                        dat = dat.replace('f.submit()','print(a.value);')
+                        dat = dat.replace('setTimeout(function(){','')
+                        
+                        #var cookiesEnabled=(navigator.cookieEnabled)? true : false;
+                        #var cookieSupportInfix=cookiesEnabled?'/nocookie':'/cookie';
+                        dat = dat.replace("var cookiesEnabled=(navigator.cookieEnabled)? true : false;","")
+                        dat = dat.replace("var cookieSupportInfix=cookiesEnabled?'/nocookie':'/cookie';","")
+                        
+                        pattern2= re.compile("\},4000\);.*?\)\(\)",re .S)
+                        dat = re.sub(pattern2,'}', dat)
+                        
+                        
+                        #new version
+                        #t = document.createElement('div');
+                        #t.innerHTML="<a href='/'>x</a>";
+                        #t = t.firstChild.href;r = (setInterval(function(){}, 100),t.match(/https?:\/\//)[0]);
+                        dat = dat.replace("r = (setInterval(function(){}, 100),t.match(/https?:\/\//)[0]);","r = t.match(/https?:\/\//)[0];")
+                        #old version
+                        dat = dat.replace("t = document.createElement('div');\n        t.innerHTML=\"<a href='/'>x</a>\";\n        t = t.firstChild.href;",'t="%domain%";').replace('%domain%',domain)
+                        
+                        
+                        
+                        pattern3 = re.compile("var a = document.*?appendChild\(.*?\);",re.S)
+                        dat = re.sub(pattern3, "", dat)
+                        
+                        printDBG("-------------- dat dopo le sostituzioni----------------------")
+                        printDBG(dat)
+                        printDBG("-----------------------------------------")
+                        
+                        js_params.append({'code': "%s\n%s\n\npippo(); " % (code2, dat)})
+                        ret = js_execute_ext( js_params )
+                        printDBG(ret)
+                        
+                        formTag = self.ph.getDataBeetwenNodes(verData, ('<form','>', 'challenge'), ('</form','>'))[1]
+                        formTag = re.sub("<!--.*?-->", "<!-- -->", formTag)
+
+                        printDBG("--------challenge form-----------")
+                        printDBG(formTag)
+                        printDBG("--------challenge form-----------")
+                        
+                        get_data_1 = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', formTag))
+                        
+                        get_data_2 = dict(re.findall(r'<input[^>]*value="([^"]*)"[^>]*name="([^"]*)"[^>]*>', formTag))
+
+                        printDBG("get_data_1: %s" % str(get_data_1))
+                        printDBG("get_data_2: %s" % str(get_data_2))
+
+                        get_data={}
+                        
+                        for xx in get_data_1:
+                            if not get_data.get(xx,''):
+                                get_data[xx] = get_data_1[xx]
+                                    
+                        #get_data.update(get_data_1)
+                        
+                        for xx in get_data_2:
+                            if not get_data.get(get_data_2[xx],''):
+                                get_data[get_data_2[xx]] = xx
+                                
+                        #get_data.update(get_data_2_swap)
+                        #get_data['cf_ch_verify']='plat'
+                        
+                        get_data['jschl_answer'] = ret['data'].replace('\n','')
+                        
                         verUrl =  _getFullUrl( ph.getattr(verData, 'action'), domain)
-                        get_data = {}
-                        verData = re.findall(r'(<input[^>]*)>', re.sub("<!--.*?-->", "<!-- -->", verData))
-                        for item in verData:
-                            name = self.ph.getSearchGroups(item, '''\sname=['"]([^'^"]+?)['"]''')[0]
-                            value = self.ph.getSearchGroups(item, '''\svalue=['"]([^'^"]+?)['"]''')[0]
-                            get_data[name] = value
-#                        get_data = dict(re.findall(r'<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"[^>]*>', verData))
-                        get_data['jschl_answer'] = decoded['answer']
-                        post_data = 'r=%s&jschl_vc=%s&pass=%s&jschl_answer=%s' % (urllib.quote(get_data['r'],safe=''), urllib.quote(get_data['jschl_vc'],safe=''), urllib.quote(get_data['pass'],safe=''), get_data['jschl_answer'])
-                        verUrl = _getFullUrl2( verUrl, domain).replace('&amp;','&')
+                        
+                        #unescape html code of & 
+                        verUrl = verUrl.replace("&amp;",'&')
+                        
+                        postDataCF = {}
+                        for key in get_data:
+                            #postDataCF[key] = urllib.quote(get_data[key])
+                            postDataCF[key] = get_data[key]
+                            if key == "r":
+                                r = get_data[key]
+                                
+                        printDBG("CF verification url: %s" % verUrl)
+                        printDBG("CF post data: %s" % str(postDataCF))
+                        
                         params2 = dict(params)
                         params2['load_cookie'] = True
                         params2['save_cookie'] = True
                         params2['header'] = dict(params.get('header', {}))
-                        params2['header'].update({'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept-Encoding':'text'})
-                        params2['raw_post_data'] = True
-                        if 'Accept-Encoding' not in params2:
-                            params2['Accept-Encoding'] = '*'
+                        params2['header'].update({'Referer':url, 'User-Agent':cfParams.get('User-Agent', ''), 'Accept': 'text/html,application/xhtml+xml,application/xml','Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded'})
+                        if params2.get('raw_post_data',False):
+                            params2.pop('raw_post_data')
+                        
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
                         if current == 1:
-                            GetIPTVSleep().Sleep(0.2 + (decoded['timeout'] / 1000.0)-(time.time() - start_time))
+                            GetIPTVSleep().Sleep(4 -(time.time() - start_time))
                         else:
-                            GetIPTVSleep().Sleep((decoded['timeout'] / 1000.0))
+                            GetIPTVSleep().Sleep(4)
                         printDBG("Time spent: [%s]" % (time.time() - start_time))
-                        printDBG("Timeout: [%s]" % decoded['timeout'])
-                        sts, data = self.getPage(verUrl, params2, post_data)
+                        printDBG("Timeout: [%s]" % 4000)
+                        
+                        sts, data = self.getPage(verUrl, params2, postDataCF)
+  
+                        #printDBG("Cloudflare Url: %s" % data.meta["url"])
+
+                        #printDBG("--------- cf verification server answer -------")
+                        #printDBG(data)
+                        #printDBG(" ----------------------------------------------")
+                        
                 except Exception:
                     printExc()
                     break
