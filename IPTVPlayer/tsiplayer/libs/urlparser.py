@@ -236,12 +236,26 @@ class urlparser:
 						'imdb.com'        : self.pp.parserUNI01,
 						'hdup.net'        : self.pp.parserUNI01,
 						'govid.co'        : self.pp.parserUNI01,
-						'easyload.io'     : self.pp.parserEASYLOAD,	
-						'dood.watch'      : self.pp.parserDOOD,	
-						'mystream.to'     : self.pp.parserVSTREAM,
 						'vidbm.com'       : self.pp.parserUNI01,#self.pp.parserVSTREAM,
 						'vidbom.com'      : self.pp.parserUNI01,
-						'uptostream.com'  : self.pp.parserUPTOSTREAMCOM,#self.pp.parserUPTOSTREAMCOM, 
+						'asia2tv.cc'      : self.pp.parserUNI01,
+						'allvid.co'       : self.pp.parserUNI01,
+						'moshahda.online' : self.pp.parserUNI01,
+						'anavids.com'     : self.pp.parserUNI01,
+						'sendvid.com'     : self.pp.parserUNI01,
+						'arabseed.me'     : self.pp.parserUNI01,
+						'abcvideo.cc'     : self.pp.parserABCVIDEO,
+						'fembed.net'	  : self.pp.parserFEURL, 						
+						'feurl.com'	      : self.pp.parserFEURL, 
+						'playvid.pw'	  : self.pp.parserFEURL, 
+						'fsimg.info'	  : self.pp.parserFEURL,
+						'mg-play.info'	  : self.pp.parserFEURL,						
+						'mystream.to'     : self.pp.parserVSTREAM,
+						'uptostream.com'  : self.pp.parserVSTREAM,	
+						'vev.io'          : self.pp.parserVSTREAM,							
+						'easyload.io'     : self.pp.parserEASYLOAD,	
+						'dood.to'         : self.pp.parserDOOD,	
+						'dood.watch'      : self.pp.parserDOOD,	
 						'deepmic.com'     : self.pp.parserDEEPMIC,#self.pp.parserVIDOZANET,							
 						'mixdrop.to'      : self.pp.parserMIXDROP,	
 						'mixdrop.co'      : self.pp.parserMIXDROP,								
@@ -258,10 +272,6 @@ class urlparser:
 						'uptobox.com'     : self.pp.parserUPTOSTREAMCOM,	
 						'google.com'      : self.pp.parserGOOGLE, 
 						'fembed.com'      : self.pp.parserXSTREAMCDNCOM, 
-						'fembed.net'	  : self.pp.parserFEURL, 						
-						'feurl.com'	      : self.pp.parserFEURL, 
-						'playvid.pw'	  : self.pp.parserFEURL, 
-						'fsimg.info'	  : self.pp.parserFEURL,
 						'uppom.live'      :	self.pp.downUPPOM, 					
 						#					
 						#'hqq.tv'          : self.pp.parserHQQ,
@@ -301,7 +311,7 @@ class urlparser:
 	def checkHostNotSupportbyname(self, name):
 		nothostMap_404 = ['upvid','streamango.com','videoz.me','yourupload.com','openload.co','openload.pw','oload.tv','oload.stream','oload.site','oload.download','oload.life','oload.biz']
 		nothostMap_not_found = ['file-up.org',]
-		nothostMap_not_work = ['playhydrax.com','jetload.net','hqq.tv','waaw.tv','videomega.co','vidshare.tv','vev.red','vev.io','hqq.watch','hqq.tv','netu','videoz.me','file-up.org','deepmic.com']
+		nothostMap_not_work = ['playhydrax.com','jetload.net','hqq.tv','waaw.tv','videomega.co','vidshare.tv','vev.red','hqq.watch','hqq.tv','netu','videoz.me','file-up.org','deepmic.com']
 		nothostMap = nothostMap_404 + nothostMap_not_found + nothostMap_not_work
 		if '|' in name: name=name.split('|')[-1].strip() 
 		name=name.lower().replace('embed.','').replace('www.','').replace(' ','')
@@ -472,6 +482,7 @@ class pageParser(CaptchaHelper):
 
 	def parserVSTREAM(self, baseUrl):
 		printDBG("parserVSTREAM baseUrl[%r]" % baseUrl)
+		UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0'
 		videoTab = []
 		hst_name = self.getHostName(baseUrl, True)
 		printDBG("Host Name="+hst_name)
@@ -482,11 +493,16 @@ class pageParser(CaptchaHelper):
 		printDBG('aLink='+str(aLink))
 		if (aLink[0] == True):
 			URL = aLink[1]
-			if '|User-Agent=' in URL:
-				URL,UA=aLink[1].split('|User-Agent=',1)
-			URL = strwithmeta(URL, {'User-Agent':UA})
-			printDBG('URL='+URL)
-			videoTab.append({'url':URL , 'name': hst_name})		
+			if'||'in URL: urls = URL.split('||')
+			else: urls = [URL]
+			for URL in urls:
+				label=''
+				if '|tag:' in URL: URL,label = URL.split('|tag:',1)
+				if '|User-Agent=' in URL:
+					URL,UA=URL.split('|User-Agent=',1)
+				URL = strwithmeta(URL, {'User-Agent':UA})
+				printDBG('URL='+URL)
+				videoTab.append({'url':URL , 'name': hst_name+' '+label})		
 		return videoTab
 
 	def parserXFILESHARE(self, baseUrl):
@@ -2465,7 +2481,7 @@ class pageParser(CaptchaHelper):
 
 	def parserFEURL(self, baseUrl):
 		printDBG("parserFEURL baseUrl[%r]" % baseUrl)
-		url = baseUrl.replace('/v/','/api/source/').replace('playvid.pw','feurl.com').replace('fsimg.info','feurl.com').replace('www.','')
+		url = baseUrl.replace('/v/','/api/source/').replace('playvid.pw','feurl.com').replace('mg-play.info','feurl.com').replace('fsimg.info','feurl.com').replace('www.','')
 		HTTP_HEADER= {'User-Agent':"Mozilla/5.0"}
 		urlParams = {'header': HTTP_HEADER}
 		post_data = {'r':'','d':'feurl.com'}
@@ -2479,6 +2495,21 @@ class pageParser(CaptchaHelper):
 		else:
 			return []
 
+	def parserABCVIDEO(self, baseUrl):
+		printDBG("parserABCVIDEO baseUrl[%r]" % baseUrl)
+		url = baseUrl.replace('embed-','')
+		HTTP_HEADER= {'User-Agent':"Mozilla/5.0"}
+		urlParams = {'header': HTTP_HEADER}
+		sts, data = self.cm.getPage(url, urlParams)
+		printDBG('data='+'#'+str(data)+'#')
+		if not sts: return False
+		lst_data = re.findall('sources:.*?(\[.*?])', data, re.S)
+		if lst_data:
+			videoTab = self.parserUNI01_GET(lst_data,baseUrl,HTTP_HEADER)		
+			return videoTab
+		else:
+			return []
+			
 	def parserDEEPMIC(self, baseUrl):
 		printDBG("parserDEEPMIC baseUrl[%r]" % baseUrl)
 		videoTab = []
@@ -2552,7 +2583,7 @@ class pageParser(CaptchaHelper):
 		if not sts: return False
 		lst_data = re.findall('(/pass_md5.*?)\'.*?(\?token=.*?)"', data, re.S)
 		if lst_data:
-			result = 'https://dood.watch'+lst_data[0][0]
+			result = 'https://dood.to'+lst_data[0][0]
 			token = lst_data[0][1]
 			urlParams['header']['referer'] = baseUrl
 			sts, data = self.cm.getPage(result, urlParams)
