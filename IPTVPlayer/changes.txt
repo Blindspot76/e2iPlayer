@@ -1,3 +1,5 @@
+#2020.06.01.01
+-TSiPlayer frissítve
 #2020.05.29.01
 -YouTube javítva
 -GuardaSerie javítva
