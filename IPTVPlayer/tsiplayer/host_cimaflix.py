@@ -21,7 +21,7 @@ def getinfo():
 	info_['name']='Cimaflix.Tv'
 	info_['version']='1.5 17/08/2019'
 	info_['dev']='RGYSoft (Thx to SAMSAMSAM)'
-	info_['cat_id']='201'#'201'
+	info_['cat_id']='104'#'201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='https://cimaflix.tv/images/logo.png'
 	info_['recherche_all']='0'

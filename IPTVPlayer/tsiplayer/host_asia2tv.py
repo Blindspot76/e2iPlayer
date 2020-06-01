@@ -3,6 +3,7 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
+from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit       import SetIPTVPlayerLastHostError
 try:
 	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.requestHandler import cRequestHandler
 	from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
@@ -173,23 +174,36 @@ class TSIPHost(TSCBaseHostClass):
 		URL=cItem['url']
 		sts, data = self.getPage(URL)
 		if sts:
-			Liste_els = re.findall('getplay.*?titlea="(.*?)".*?hrefa=.*?\?url=(.*?)"', data, re.S)
-			for (host_,Url) in Liste_els:
-				Url = Url.replace('%3A',':')
-				Url = Url.replace('%2F','/')
-				Url = Url.replace('%3F','?')
-				Url = Url.replace('%3D','=')
-
-				if Url.startswith('//'): Url='http:'+Url
-				if ('&code=' in Url) and (not Url.startswith('http')):
-					x1,x2 = Url.split('&code=',1)
-					if '&' in x2:
-						id_ = x2.split('&',1)[0]
-						Url = 'https://tune.pk/js/open/load.js?vid='+id_
-				if ('userpro' not in Url) and ('بتغير' not in host_) and ('astv_ads' not in Url):
-					urlTab.append({'name':host_, 'url':Url, 'need_resolve':1})						
+			Liste_els = re.findall('getplay.*?titlea="(.*?)".*?hrefa="(.*?)"(.*?)</li>', data, re.S)
+			for (host_,Url,vip) in Liste_els:
+				if host_ != '..':
+					type_=''
+					if 'VIP' in vip: host_=host_+' ! VIP :('
+					elif 'golden' in host_.lower(): host_='feurl.com'
+					elif 'okru' in host_.lower(): host_='ok.ru'
+					elif 'upto' in host_.lower(): host_='uptobox'
+					elif 'asia2' in host_.lower():
+						host_='|LOCAL| Asia2Tv'
+						type_='local'
+					urlTab.append({'name':host_, 'url':'hst#tshost#'+Url, 'need_resolve':1,'type':type_})
 		return urlTab
 		 
+	def getVideos(self,videoUrl):
+		urlTab = []	
+		Url = self.MAIN_URL+'/'+videoUrl		
+		sts, data = self.getPage(Url)
+		if sts:
+			printDBG('dddddaaaaattttaaaaa'+data)
+			_data2 = re.findall('<iframe.*?src=["\'](.*?)["\']',data, re.IGNORECASE)
+			if _data2:
+				URL_=_data2[0]
+				if URL_.startswith('//'):
+					URL_='http:'+URL_
+				urlTab.append((URL_,'1'))
+			else:
+				if 'https://asiatv.cc/userpro/' in data:
+					SetIPTVPlayerLastHostError('Only premium users!!')
+		return urlTab
 
 			
 	def start(self,cItem):      

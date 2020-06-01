@@ -3,7 +3,6 @@ from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
 from Components.config import config
-
 import re,urllib
 
 
@@ -24,12 +23,13 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'cimaclub.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://www.cimaclub.tv'
+		self.MAIN_URL = 'https://www.cimaclub.cam'
 		self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.AJAX_HEADER = dict(self.HTTP_HEADER)
 		self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
 		self.defaultParams = {'header':self.HTTP_HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-
+		#self.getPage = self.cm.getPage
+		
 	def getPage(self, baseUrl, addParams = {}, post_data = None):
 		if addParams == {}: addParams = dict(self.defaultParams)
 		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
@@ -218,9 +218,17 @@ class TSIPHost(TSCBaseHostClass):
 				#		params = {'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url,'title':name_eng,'desc':ph.clean_html(desc),'icon':image,'hst':'tshost'} 
 				#		self.addVideo(params)	
 	def SearchResult(self,str_ch,page,extra):
-		url_=self.MAIN_URL+'/?s='+str_ch+'&paged='+str(page)
-		sts, data = self.getPage(url_)
-		if sts:
+		HTTP_HEADER = {'User-Agent': self.USER_AGENT}
+		defaultParams = {'header':HTTP_HEADER}
+		url_=self.MAIN_URL+'/search/'+str_ch+'/page/'+str(page)+'/'
+		try:
+			import requests
+			response = requests.get(url_)
+			data = response.content
+		except:
+			data = ''
+		#sts, data = self.getPage(url_,defaultParams)
+		if data:
 			cat_data=re.findall('MovieBlock">.*?href="(.*?)".*?image:url\((.*?)\).*?Title">(.*?)<(.*?)</a>', data, re.S)
 			for (url1,image,name_eng,desc) in cat_data:
 				params = {'import':extra,'data_post':'','good_for_fav':True,'category' : 'host2','url': url1,'title':ph.clean_html(name_eng),'desc':ph.clean_html(desc),'icon':image,'mode':'31','EPG':True,'hst':'tshost'} 

@@ -177,8 +177,9 @@ class TSIPHost(TSCBaseHostClass):
 					elif '"vostfrL"' in vf: VF='VOSTFR'
 					elif '"voL"' in vf: VF='VO'
 					else: VF=''
-					if 'voirfilms.' in url:
+					if ('voirfilms.' in url) or ('opsktp' in url):
 						titre = ph.clean_html(host)
+						if ('opsktp' in url): titre = 'Fsimg.Info'
 						Name_host='|'+tscolor('\c0000????')+VF+tscolor('\c00??????')+'| '+titre	
 						urlTab.append({'name':Name_host, 'url':'hst#tshost#'+url+'|'+URL, 'need_resolve':1})
 					else:
@@ -192,8 +193,20 @@ class TSIPHost(TSCBaseHostClass):
 		url_,refer=videoUrl.split('|')
 		#printDBG('f111fffffffffff'+url_+'r111rrrrrrrrrrrrrr'+refer)
 		HTTP_HEADER= {'Referer':refer,"User-Agent": "Mozilla/5.0 (Windows NT 6.3; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0","Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3","Connection": "keep-alive","Upgrade-Insecure-Requests": "1"}
-		sts, data = self.getPage(url_,HTTP_HEADER)
+		Params = {'with_metadata':True,'no_redirection':True,'header':HTTP_HEADER}
+		if ('opsktp' in url_):
+			for k in range(0,20):
+				sts, data = self.getPage(url_,Params)
+				if sts:
+					printDBG('data.meta='+str(data.meta))
+					if data.meta.get('location','')!='':
+						urlTab.append((data.meta.get('location',''),'1'))
+						return urlTab
+						break
+		else:
+			sts, data = self.getPage(url_,Params)
 		if sts:
+			printDBG('data.meta='+str(data.meta))
 			printDBG('eeeeeeeee'+data)
 			get_url = re.findall('url=(.*?)"', data, re.S)
 			if get_url: url=get_url[0]

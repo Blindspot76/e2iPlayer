@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
-
+from Components.config import config
 import re
 
 def getinfo():
@@ -26,15 +26,16 @@ class TSIPHost(TSCBaseHostClass):
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage
-		 
+		self.cacheLinks = {}
+		
 	def showmenu0(self,cItem):
 		hst='host2'
 		img_=cItem['icon']
 		cat_TAB = [
-					{'category':hst,'title': 'أفلام الأنيمي'    ,'mode':'30','url':'http://www.zimabdko.com/anime/'},
-					{'category':hst,'title': 'الأنميات'        ,'mode':'30','url':'http://www.zimabdko.com/series/'},
-					{'category':hst,'title': 'آخر الحلقات'    ,'mode':'30','url':'http://www.zimabdko.com/episodes/'},					
-					{'category':hst,'title': 'الدراما الأسيوية','mode':'30','url':'http://www.zimabdko.com/asian-movies/'},					
+					{'category':hst,'title': 'أفلام الأنيمي'    ,'mode':'30','url':self.MAIN_URL+'/anime/'},
+					{'category':hst,'title': 'الأنميات'        ,'mode':'30','url':self.MAIN_URL+'/series/'},
+					{'category':hst,'title': 'آخر الحلقات'    ,'mode':'30','url':self.MAIN_URL+'/episodes/'},					
+					{'category':hst,'title': 'الدراما الأسيوية','mode':'30','url':self.MAIN_URL+'/asian-movies/'},					
 					{'category':'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost'},
 					]
 		self.listsTab(cat_TAB, {'import':cItem['import'],'icon':img_})						
@@ -62,6 +63,7 @@ class TSIPHost(TSCBaseHostClass):
 								desc=desc+'View: '+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'
 							else:
 								desc=desc+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'			
+					#if not url.startswith('http'): url =  self.MAIN_URL+url
 					self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':ph.clean_html(titre),'desc':desc,'icon':image,'hst':'tshost','mode':'30','page':-1,'EPG':True})	
 				if (i>17) and (page >0):
 					self.addDir({'import':cItem['import'],'title':'Next Page','page':page+1,'category' : 'host2','url':url1,'icon':cItem['icon'],'mode':'30'} )									
@@ -70,10 +72,10 @@ class TSIPHost(TSCBaseHostClass):
 					
 	
 	def SearchResult(self,str_ch,page,extra):
-		url_='http://www.zimabdko.com/page/'+str(page)+'/?s='+str_ch
+		url_=self.MAIN_URL+'/page/'+str(page)+'/?s='+str_ch
 		sts, data = self.getPage(url_)
 		if sts:
-			films_list = re.findall('class="one-poster.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)</h2>.*?hover-poster">(.*?)</div>', data, re.S)		
+			films_list = re.findall('class="one-poster.*?href="(.*?)".*?src="(.*?)".*?<h2>(.*?)</h2>.*?hover-poster(.*?)</div>', data, re.S)		
 			for (url,image,titre,desc_) in films_list:
 				desc=''
 				inf_list = re.findall('<span.*?>(.*?)</span>', desc_, re.S)		
@@ -84,26 +86,51 @@ class TSIPHost(TSCBaseHostClass):
 						desc=desc+'View: '+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'
 					else:
 						desc=desc+tscolor('\c00????00')+ph.clean_html(elm)+tscolor('\c00??????')+'\\n'			
-				self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','EPG':True})	
+
+				self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','EPG':True,'mode':'30','page':-1})	
 
 		
 	def get_links(self,cItem):
 		urlTab = []	
 		URL=cItem['url']
-		sts, data = self.getPage(URL)
-		if sts:
-			Liste_els = re.findall('class="movies-servers.*?<ul(.*?)</ul>', data, re.S)
-			if Liste_els:		
-				Liste_els_2 =  re.findall('<li.*?data-serv="(.*?)".*?post="(.*?)">(.*?)</li>', Liste_els[0], re.S)
-				for (code1,code2,srv) in Liste_els_2:
-					url='https://www.zimabdko.com/wp-admin/admin-ajax.php?action=codecanal_ajax_request&post='+code2+'&serv='+code1
-					sts, data = self.getPage(url)
-					Liste_els = re.findall('src.*?["\'](.*?)["\']', data, re.S)
-					if Liste_els:
-						urlTab.append({'name':'|Server: '+ph.clean_html(srv)+'| '+gethostname(Liste_els[0]), 'url':Liste_els[0], 'need_resolve':1})						
+		if config.plugins.iptvplayer.ts_dsn.value:
+			urlTab = self.cacheLinks.get(URL, [])
+		if urlTab == []:
+			sts, data = self.getPage(URL)
+			if sts:
+				Liste_els = re.findall('class="movies-servers.*?<ul(.*?)</ul>', data, re.S)
+				if Liste_els:		
+					Liste_els_2 =  re.findall('data-serv="(.*?)".*?post="(.*?)">(.*?)</li>', Liste_els[0], re.S)
+					for (code1,code2,srv) in Liste_els_2:
+						if not config.plugins.iptvplayer.ts_dsn.value:
+							urlTab.append({'name':'Server: '+ph.clean_html(srv), 'url':'hst#tshost#'+code2+'|'+code1, 'need_resolve':1})		
+						else:
+							urlTab0=self.getVideos(code2+'|'+code1)
+							for elm in urlTab0:
+								printDBG('elm='+str(elm))
+								url_ = elm[0]
+								type_ = elm[1]
+								if type_ == '1':		
+									name_ = gethostname(url_)
+									if 'drive.google' in name_.lower(): name_= 'Google.Com'
+									urlTab.append({'name':'|Server: '+ph.clean_html(srv)+'| '+name_, 'url':url_, 'need_resolve':1})									
+			if config.plugins.iptvplayer.ts_dsn.value:
+				self.cacheLinks[str(cItem['url'])] = urlTab
 		return urlTab
 
-		
+
+	def getVideos(self,videoUrl):
+		urlTab = []	
+		code2,code1=videoUrl.split('|')
+		url=self.MAIN_URL+'/wp-admin/admin-ajax.php?action=codecanal_ajax_request&post='+code2+'&serv='+code1
+		sts, data = self.getPage(url)
+		if sts:
+			Liste_els = re.findall('src.*?["\'](.*?)["\']', data, re.S)
+			if Liste_els:
+				URL_ = Liste_els[0]
+				if URL_.startswith('//'): URL_ = 'http:'+URL_
+				urlTab.append((URL_,'1'))
+		return urlTab		
 	def getArticle(self, cItem):
 		printDBG("cima4u.getVideoLinks [%s]" % cItem) 
 		otherInfo1 = {}

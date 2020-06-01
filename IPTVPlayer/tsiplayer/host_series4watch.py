@@ -10,7 +10,7 @@ def getinfo():
 	info_['name']='Series4watch.Online'
 	info_['version']='1.3 21/10/2019'
 	info_['dev']='Opesboy'
-	info_['cat_id']='201'
+	info_['cat_id']='104'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
 	info_['icon']='https://i.ibb.co/zVsWkt4/serie4w.png'
 	info_['recherche_all']='1'

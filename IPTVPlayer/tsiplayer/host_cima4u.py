@@ -8,9 +8,9 @@ try:
 except:
 	pass 
 import urllib
-import re
+import re,os
 import time,cookielib
-
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 
 def getinfo():
 	info_={}
@@ -27,20 +27,25 @@ def getinfo():
 	
 class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
-		TSCBaseHostClass.__init__(self,{'cookie':'cima4u.cookie'})
-		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'http://w.cima4u.tv'
+		TSCBaseHostClass.__init__(self,{'cookie':'cima4u2.cookie'})
+		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'
+		self.MAIN_URL = 'http://cima4u.io'
+		self.MAIN_URL2 = 'http://live.cima4u.io'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
-		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
+		self.defaultParams = {'header':self.HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		#self.getPage = self.cm.getPage
 
 	def getPage(self,baseUrl, addParams = {}, post_data = None):
-		baseUrl=self.std_url(baseUrl)
 		if addParams == {}: addParams = dict(self.defaultParams) 
 		sts, data = self.cm.getPage(baseUrl,addParams,post_data)
-		if not data: data=''
-		if '!![]+!![]' in data:
+		if not data: data=strwithmeta('',{})
+		printDBG('ddddaaattttaaaa'+str(data.meta))
+		#printDBG('ddddaaattttaaaa'+data)
+		if ('!![]+!![]' in data) or (data.meta.get('status_code',0)==503):
 			try:
+				if os.path.exists(self.COOKIE_FILE):
+					os.remove(self.COOKIE_FILE)
+					printDBG('cookie removed')
 				printDBG('Start CLoudflare  Vstream methode')
 				oRequestHandler = cRequestHandler(baseUrl)
 				if post_data:
@@ -57,6 +62,7 @@ class TSIPHost(TSCBaseHostClass):
 				printDBG('cook_vstream_file='+self.up.getDomain(baseUrl).replace('.','_'))
 				cook = GestionCookie().Readcookie(self.up.getDomain(baseUrl).replace('.','_'))
 				printDBG('cook_vstream='+cook)
+				#printDBG('cook_vstream='+data)
 				if ';' in cook: cook_tab = cook.split(';')
 				else: cook_tab = cook
 				cj = self.cm.getCookie(self.COOKIE_FILE)
@@ -72,10 +78,7 @@ class TSIPHost(TSCBaseHostClass):
 				printDBG('Start CLoudflare  E2iplayer methode')
 				addParams['cloudflare_params'] = {'domain':self.up.getDomain(baseUrl), 'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
 				sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)	
-		return sts, data		
-
-
-
+		return sts, data	
 
 		 
 	def showmenu0(self,cItem):
@@ -85,7 +88,7 @@ class TSIPHost(TSCBaseHostClass):
 					{'category':hst,'title': 'Films', 'mode':'20'},
 					{'category':hst,'title': 'Series','mode':'21'},
 					{'category':hst,'title': 'WWE','link':self.MAIN_URL+'/category/%d9%85%d8%b5%d8%a7%d8%b1%d8%b9%d8%a9-%d8%ad%d8%b1%d8%a9-wwe/','mode':'30','page':1},
-					{'category':hst,'title': 'برامج تلفزيونية','link':'http://live.cima4u.tv/24.%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%AA%D9%84%D9%81%D8%B2%D9%8A%D9%88%D9%86%D9%8A%D8%A9.html','mode':'31','page':1},							
+					{'category':hst,'title': 'برامج تلفزيونية','link':self.MAIN_URL2+'/24.%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%AA%D9%84%D9%81%D8%B2%D9%8A%D9%88%D9%86%D9%8A%D8%A9.html','mode':'31','page':1},							
 					{'category':'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost'},
 					]
 		self.listsTab(Cima4u_TAB, {'import':cItem['import'],'icon':img_})						
@@ -103,51 +106,60 @@ class TSIPHost(TSCBaseHostClass):
 	def showmenu2(self,cItem):
 		hst='host2'
 		img_=cItem['icon']
-		Cima4u_series_Cat = [  #{'title': 'مسلسلات وبرامج رمضان 2019','link':'http://live.cima4u.tv/35.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%88%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2019.html'},
-							   {'title': 'مسلسلات وبرامج رمضان 2018','link':'http://live.cima4u.tv/34.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%88%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2018.html'},
-							   {'title': 'مسلسلات وبرامج رمضان 2017','link':'http://live.cima4u.tv/29.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%88%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2017.html'},
-							   {'title': 'مسلسلات رمضان 2016',       'link':'http://live.cima4u.tv/28.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2016.html'},
-							   {'title': 'مسلسلات اجنبى',            'link':'http://live.cima4u.tv/25.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D8%AC%D9%86%D8%A8%D9%89.html'},
-							   {'title': 'مسلسلات مصريه',            'link':'http://live.cima4u.tv/10.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%85%D8%B5%D8%B1%D9%8A%D9%87.html'},
-							   {'title': 'مسلسلات خليجيه',           'link':'http://live.cima4u.tv/11.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%AE%D9%84%D9%8A%D8%AC%D9%8A%D9%87.html'},
-							   {'title': 'مسلسلات مدبلجة',           'link':'http://live.cima4u.tv/33.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
-							   {'title': 'مسلسلات تركيه مترجمه',     'link':'http://live.cima4u.tv/13.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%AA%D8%B1%D9%83%D9%8A%D9%87+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D9%87.html'},
-							   {'title': 'مسلسلات تركيه مدبلجه',     'link':'http://live.cima4u.tv/14.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%AA%D8%B1%D9%83%D9%8A%D9%87+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D9%87.html'},
-							   {'title': 'مسلسلات اسيوية مترجمة',    'link':'http://live.cima4u.tv/19.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D8%B3%D9%8A%D9%88%D9%8A%D8%A9+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D8%A9.html'},
-							   {'title': 'مسلسلات اسيوية مدبلجة',    'link':'http://live.cima4u.tv/20.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D8%B3%D9%8A%D9%88%D9%8A%D8%A9+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
-							   {'title': 'مسلسلات هندية مترجمة',     'link':'http://live.cima4u.tv/23.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%87%D9%86%D8%AF%D9%8A%D8%A9+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D8%A9.html'},
-							   {'title': 'مسلسلات هندية مدبلجة',     'link':'http://live.cima4u.tv/22.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%87%D9%86%D8%AF%D9%8A%D8%A9+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
-							   {'title': 'مسلسلات انيمي مترجمة',     'link':'http://live.cima4u.tv/17.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D9%86%D9%8A%D9%85%D9%8A+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D8%A9.html'},
-							   {'title': 'مسلسلات انيمي مدبلجة',     'link':'http://live.cima4u.tv/16.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D9%86%D9%8A%D9%85%D9%8A+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
+		Cima4u_series_Cat = [  #{'title': 'مسلسلات وبرامج رمضان 2019','link':self.MAIN_URL2+'/35.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%88%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2019.html'},
+							   {'title': 'مسلسلات وبرامج رمضان 2018','link':self.MAIN_URL2+'/34.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%88%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2018.html'},
+							   {'title': 'مسلسلات وبرامج رمضان 2017','link':self.MAIN_URL2+'/29.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%88%D8%A8%D8%B1%D8%A7%D9%85%D8%AC+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2017.html'},
+							   {'title': 'مسلسلات رمضان 2016',       'link':self.MAIN_URL2+'/28.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%B1%D9%85%D8%B6%D8%A7%D9%86+2016.html'},
+							   {'title': 'مسلسلات اجنبى',            'link':self.MAIN_URL2+'/25.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D8%AC%D9%86%D8%A8%D9%89.html'},
+							   {'title': 'مسلسلات مصريه',            'link':self.MAIN_URL2+'/10.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%85%D8%B5%D8%B1%D9%8A%D9%87.html'},
+							   {'title': 'مسلسلات خليجيه',           'link':self.MAIN_URL2+'/11.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%AE%D9%84%D9%8A%D8%AC%D9%8A%D9%87.html'},
+							   {'title': 'مسلسلات مدبلجة',           'link':self.MAIN_URL2+'/33.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
+							   {'title': 'مسلسلات تركيه مترجمه',     'link':self.MAIN_URL2+'/13.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%AA%D8%B1%D9%83%D9%8A%D9%87+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D9%87.html'},
+							   {'title': 'مسلسلات تركيه مدبلجه',     'link':self.MAIN_URL2+'/14.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%AA%D8%B1%D9%83%D9%8A%D9%87+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D9%87.html'},
+							   {'title': 'مسلسلات اسيوية مترجمة',    'link':self.MAIN_URL2+'/19.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D8%B3%D9%8A%D9%88%D9%8A%D8%A9+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D8%A9.html'},
+							   {'title': 'مسلسلات اسيوية مدبلجة',    'link':self.MAIN_URL2+'/20.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D8%B3%D9%8A%D9%88%D9%8A%D8%A9+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
+							   {'title': 'مسلسلات هندية مترجمة',     'link':self.MAIN_URL2+'/23.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%87%D9%86%D8%AF%D9%8A%D8%A9+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D8%A9.html'},
+							   {'title': 'مسلسلات هندية مدبلجة',     'link':self.MAIN_URL2+'/22.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D9%87%D9%86%D8%AF%D9%8A%D8%A9+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
+							   {'title': 'مسلسلات انيمي مترجمة',     'link':self.MAIN_URL2+'/17.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D9%86%D9%8A%D9%85%D9%8A+%D9%85%D8%AA%D8%B1%D8%AC%D9%85%D8%A9.html'},
+							   {'title': 'مسلسلات انيمي مدبلجة',     'link':self.MAIN_URL2+'/16.%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA+%D8%A7%D9%86%D9%8A%D9%85%D9%8A+%D9%85%D8%AF%D8%A8%D9%84%D8%AC%D8%A9.html'},
 							]	
 		self.listsTab(Cima4u_series_Cat, {'import':cItem['import'],'category':hst,'page':1,'icon':img_,'mode':'31'})
 		
 	def showitms_films(self,cItem):
 		url1=cItem['link']
 		page=cItem['page']
-		sts, data = self.getPage(url1+'page/'+str(page)+'/')
+		if page ==1:
+			sts, data = self.getPage(url1)
+		else:
+			sts, data = self.getPage(url1+'page/'+str(page)+'/')
 		if sts:
 			Liste_els = re.findall('</h2>(.*?)(class="pagination"|<footer>)', data, re.S)
-			
+			cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
 			if Liste_els:
 				films_list = re.findall('class="block">.*?<a href="(.*?)".*?background-image:url\((.*?)\).*?"boxtitle">(.*?)<.*?"boxdetil">(.*?)<\/div>', Liste_els[0][0], re.S)		
 				for (url,image,titre,desc) in films_list:
 					titre=titre.replace('مشاهدة فيلم ','')
+					image=strwithmeta(image,{'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
 					self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'video','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','EPG':True})	
-			self.addDir({'import':cItem['import'],'title':tscolor('\c0000??00')+'Page '+str(page+1),'page':page+1,'category' : 'host2','link':url1,'icon':image,'mode':'30'} )									
+			self.addDir({'import':cItem['import'],'title':tscolor('\c0000??00')+'Page '+str(page+1),'page':page+1,'category' : 'host2','link':url1,'icon':cItem['icon'],'mode':'30'} )									
 
 	def showitms_series(self,cItem):
 		url1=cItem['link']
 		page=cItem['page']
-		sts, data = self.getPage(url1+'?PageID='+str(page))
+		if page ==1:
+			sts, data = self.getPage(url1)
+		else:		
+			sts, data = self.getPage(url1+'?PageID='+str(page))
 		if sts:
 			Liste_els = re.findall('</h2>(.*?)(class="pagination"|<footer>)', data, re.S)
+			cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
 			if Liste_els:
 				films_list = re.findall('class="block">.*?<a href="(.*?)".*?background-image:url\((.*?)\).*?"boxtitle">(.*?)<', Liste_els[0][0], re.S)		
 				for (url,image,titre) in films_list:
 					titre=titre.replace('مشاهدة مسلسل ','')
 					titre=titre.replace('مشاهدة برنامج ','')
 					titre=titre.replace('مشاهدة','')
+					image=strwithmeta(image,{'Cookie':cookieHeader, 'User-Agent':self.USER_AGENT})
 					self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'mode':'32'} )
 				self.addDir({'import':cItem['import'],'title':tscolor('\c0000??00')+'Page '+str(page+1),'page':page+1,'category' : 'host2','link':url1,'icon':cItem['icon'],'mode':'31'})				
 
@@ -201,7 +213,7 @@ class TSIPHost(TSCBaseHostClass):
 		 
 	def getVideos(self,videoUrl):
 		urlTab = []	
-		sUrl = 'http://live.cima4u.tv/structure/server.php?id='+videoUrl
+		sUrl = self.MAIN_URL2+'/structure/server.php?id='+videoUrl
 		post_data = {'id':videoUrl}
 		sts, data = self.getPage(sUrl, post_data=post_data)
 		if sts:

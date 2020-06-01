@@ -18,7 +18,7 @@ def getinfo():
 	info_['name']='Dpstream.Top'
 	info_['version']='1.0 21/09/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='301'
+	info_['cat_id']='104'
 	info_['desc']='Films & Series HD'
 	info_['icon']='https://i.ibb.co/KhMNMTf/v88msij7.png'
 	info_['recherche_all']='1'
