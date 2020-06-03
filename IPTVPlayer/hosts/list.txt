@@ -23,6 +23,7 @@ hostbbciplayer
 hostbbcsport
 hostbsto
 hostcartoonhd
+hostcasacinema
 hostcb01
 hostcdapl
 hostcdafilmy
