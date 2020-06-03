@@ -1,3 +1,9 @@
+#2020.06.03.01
+-FreeOMovie javítva (XXX)
+-OKGoals,OurMatch javítva
+-InfoVersion frissítve
+-CasaCinema hozzáadva (ITA)
+-USTVGo hozzáadva (Webstream)
 #2020.06.01.01
 -TSiPlayer frissítve
 #2020.05.29.01
