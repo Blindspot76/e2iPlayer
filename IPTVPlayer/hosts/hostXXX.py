@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.06.02.0"
+    XXXversion = "2020.06.06.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -9804,13 +9804,32 @@ class Host:
            sts, data = self.getPage(url, 'anybunny.cookie', 'anybunny.com', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+data )
-           videoUrl = self.cm.ph.getSearchGroups(data, '''<iframe[^>]+?src=['"]([^"^']+?)['"]''')[0] 
+           videoPage = self.cm.ph.getAllItemsBeetwenMarkers(data, '<iframe', '</iframe>')
+           for item in videoPage:
+              if 'exoclick' in item: continue
+              printDBG( 'Host  videoPage: '+item )
+              videoUrl = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''')[0] 
+           if ''== videoUrl:
+              videoUrl = self.cm.ph.getSearchGroups(data, '''source src=['"]([^"^']+?)['"]''')[0] 
+              if 'm3u8' in videoUrl:
+                 tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
+                 for item in tmp:
+                    return item['url']
+              else:
+                 return strwithmeta(videoUrl, {'Referer': url, 'User-Agent': self.USER_AGENT})
+
            if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
            sts, data = self.get_Page(videoUrl)
            if not sts: return ''
            printDBG( 'Host  data2: '+data )
            self.domains = ['vartuc.com', "azblowjobtube.com"]
-           js_link = re.compile("src='(/kt_player/.*?)'", re.DOTALL | re.IGNORECASE).search(data).group(1)
+           try:
+              js_link = re.compile("src='(/kt_player/.*?)'", re.DOTALL | re.IGNORECASE).search(data).group(1)
+           except Exception: 
+              printExc()
+              videoUrl = self.cm.ph.getSearchGroups(data, '''source src=['"]([^"^']+?)['"]''')[0] 
+              printDBG( 'Host  videoUrl: '+videoUrl )
+
            js_path = 'https://' + self.domains[0] + js_link + '&ver=x'
            sts, data = self.getPage(js_path, 'anybunny.cookie', 'anybunny.com', self.defaultParams)
            js = data.split(";")
@@ -9821,7 +9840,7 @@ class Host:
            videoUrl = self.cm.ph.getSearchGroups(urls['data'], '''src=['"]([^"^']+?)['"]''')[0] 
            if videoUrl:
               if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
-              return videoUrl
+              return strwithmeta(videoUrl, {'Referer': url, 'User-Agent': self.USER_AGENT})
            return ''
 
         if parser == 'https://hqporner.com':
