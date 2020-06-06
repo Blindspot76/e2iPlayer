@@ -1,3 +1,5 @@
+#2020.06.06.01
+-AnyBunny javítva (XXX)
 #2020.06.03.01
 -FreeOMovie javítva (XXX)
 -OKGoals,OurMatch javítva
