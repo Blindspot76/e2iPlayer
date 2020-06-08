@@ -1,3 +1,6 @@
+#2020.06.08.01
+-LosMovies, TantiFilm, EkstraKlasa javítva
+-Kisebb módosítások
 #2020.06.06.01
 -AnyBunny javítva (XXX)
 #2020.06.03.01
