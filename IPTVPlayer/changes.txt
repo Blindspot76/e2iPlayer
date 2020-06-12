@@ -1,3 +1,5 @@
+#2020.06.13.01
+-WatchCartoonOnline, EKinoManiak, HdFull javítva
 #2020.06.08.01
 -LosMovies, TantiFilm, EkstraKlasa javítva
 -Kisebb módosítások
