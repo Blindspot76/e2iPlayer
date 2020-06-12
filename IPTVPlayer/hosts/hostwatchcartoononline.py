@@ -1,15 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #
-#
-# @Codermik release, based on @Samsamsam's E2iPlayer public.
-# Released with kind permission of Samsamsam.
-# All code developed by Samsamsam is the property of the Samsamsam and the E2iPlayer project,  
-# all other work is ? E2iStream Team, aka Codermik.  TSiPlayer is ? Rgysoft, his group can be
-# found here:  https://www.facebook.com/E2TSIPlayer/
-#
-# https://www.facebook.com/e2iStream/
-#
+# thank you Codermik
 #
 
 from Plugins.Extensions.IPTVPlayer.components.iptvplayerinit import TranslateTXT as _
@@ -38,7 +30,7 @@ class WatchCartoonOnline(CBaseHostClass):
         self.AJAX_HEADER.update({'X-Requested-With': 'XMLHttpRequest',
          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'})
         self.MAIN_URL = 'https://www.thewatchcartoononline.tv/'
-        self.DEFAULT_ICON_URL = 'https://mk0echouaawhk9ls0i7l.kinstacdn.com/wp-content/uploads/websites/website%20to%20watch%20cartoons/www.watchcartoononline.com.1280.jpg'
+        self.DEFAULT_ICON_URL = 'https://www.voddler.com/wp-content/uploads/2020/01/watchcartoononline.png'
         self.defaultParams = {'header': self.HEADER,
          'use_cookie': True,
          'load_cookie': True,
