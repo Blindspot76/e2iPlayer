@@ -1,3 +1,6 @@
+#2020.06.13.02
+-Info version frissítve
+-Kisebb javítások
 #2020.06.13.01
 -WatchCartoonOnline, EKinoManiak, HdFull javítva
 #2020.06.08.01
