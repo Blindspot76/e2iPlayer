@@ -134,7 +134,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.06.02"
+    infoversion = "2020.05.24"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -246,7 +246,7 @@ class Host:
               valTab.insert(0,CDisplayListItem('---UPDATE---','UPDATE MENU',        CDisplayListItem.TYPE_CATEGORY,           [''], 'UPDATE',  '', None)) 
            if config.plugins.iptvplayer.infoupdate.value:
                valTab.append(CDisplayListItem('ZMIANY W WERSJI',                    'ZMIANY W WERSJI',   CDisplayListItem.TYPE_CATEGORY, ['https://gitlab.com/mosz_nowy/infoversion/commits/master.atom'], 'UPDATE-ZMIANY', '', None)) 
-           #valTab.insert(0,CDisplayListItem(_('PROSZĘ PRZEKAŻ 1% PODATKU NA KRS 0000049063'),  _('KRS 0000049063\nSTOWARZYSZENIE "OTWÓRZMY PRZED NIMI ŻYCIE"\nUL. KOŚCIUSZKI 43   32-065 KRZESZOWICE\nPRZEKAŻ 1 % SWOJEGO PODATKU\nPODARUJ NASZYM NIEPEŁNOSPRAWNYM SŁOŃCE'),             CDisplayListItem.TYPE_MORE,             [''], '',        '', None)) 
+           valTab.insert(0,CDisplayListItem(_('PROSZĘ PRZEKAŻ 1% PODATKU NA KRS 0000049063'),  _('KRS 0000049063\nSTOWARZYSZENIE "OTWÓRZMY PRZED NIMI ŻYCIE"\nUL. KOŚCIUSZKI 43   32-065 KRZESZOWICE\nPRZEKAŻ 1 % SWOJEGO PODATKU\nPODARUJ NASZYM NIEPEŁNOSPRAWNYM SŁOŃCE'),             CDisplayListItem.TYPE_MORE,             [''], '',        '', None)) 
            return valTab
 
         if 'HISTORY' == name:
@@ -3493,21 +3493,16 @@ class Host:
             valTab.append(CDisplayListItem('Sokół wędrowny na kominie MPEC we Włocławku gniazdo', 'Sokół wędrowny na kominie Miejskiego Przedsiębiorstwa Energetyki Cieplnej we Włocławku',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://53c7d208964cd.streamlock.net/mpecw/mpecw.stream_aac/playlist.m3u8', 0)], 0, 'http://www.peregrinus.pl/images/comprofiler/4246_5e91d934b04fa.jpg', None))
             valTab.append(CDisplayListItem('Czarny Bocian - Hungary', 'Czarny Bocian - Hungary',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://gemenczrt.hu/media/feketegolya-feszek/', 1)], 0, 'http://gemenczrt.hu/wp-content/uploads/2020/05/3f_1_200501.jpg', None))
 
-            url ='https://www.youtube.com/channel/UCwlJ4WLonGeFWeU2VFLDnig'
+            url ='https://www.sokolka.tv/index.php/kamery-online/gniazdo-bocianie'
             COOKIEFILE = os_path.join(GetCookieDir(), 'info.cookie') 
             self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
             self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': COOKIEFILE}
             sts, data = self.get_Page(url)
             if not sts: return valTab
             printDBG( 'Host listsItems data '+data )
-            data = data.split('"videoId":')
-            if len(data): del data[0]
-            for item in data:
-               if 'Gniazdo Bocianie' in item: break
-            printDBG( 'Host item '+item )
-            Url = self.cm.ph.getSearchGroups(item, '''watch\?v=([^"^']+?)['"]''')[0] 
+            Url = self.cm.ph.getSearchGroups(data, '''(//www.youtube.com[^"^']+?)['"?]''')[0] 
             if Url:
-               Url = 'http://www.youtube.com/watch?v=' + Url 
+               if Url.startswith('//'): Url = 'https:' + Url 
                valTab.append(CDisplayListItem('Kamera na bocianim gnieździe Sokółka', 'Kamera na bocianim gnieździe Sokółka (youtube)',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, 'http://zasoby.ekologia.pl/artykulyNew/19316/xxl/800px-ciconia-ciconia-01-bocian-bialy_800x600.jpg', None))
 
             #valTab.append(CDisplayListItem('Sokół wędrowny Płock ORLEN (rtmp)', 'Sokół wędrowny Płock ORLEN',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'rtmp://stream.orlen.pl:1935/sokol playpath=gniazdo.stream swfUrl=http://webcam.peregrinus.pl/plugins/hwdvs-videoplayer/jwflv/mediaplayer.swf pageUrl=http://webcam.peregrinus.pl/pl/plock-orlen-podglad', 0)], 0, 'http://postis.pl/wp-content/uploads/sok%C3%B3%C5%82-w%C4%99drowny.jpeg', None))
@@ -3747,9 +3742,7 @@ class Host:
             if not sts: return ''
             printDBG( 'Host listsItems data: %s' % data )
             videoUrl = self.cm.ph.getSearchGroups(data, '''"sourceURL":\s*?['"]([^"^']+?)['"]''', 1, True)[0].replace(r'http:',r'https:').replace(r':443','')
-            printDBG( 'Host videoUrl: %s' % videoUrl )
-            cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
-            videoUrl = strwithmeta(videoUrl, {'Referer':url, 'Origin':"https://www.kukaj.sk", 'Cookie':cookieHeader})
+            videoUrl = strwithmeta(videoUrl, {'Referer':url, 'Origin':"https://www.kukaj.sk"})
             tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
             for item in tmp:
                 return item['url']
