@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-05-05 by Blindspot - modified iptvhostgroups
+# 2020-06-15 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -126,6 +126,7 @@ class IPTVHostsGroups:
         'dsda' : [ 'documentary', 'italian', 'science'] ,
         'efilmytv' : [ 'moviesandseries', 'polish'] ,
         'egybest' : [ 'arabic', 'moviesandseries'] ,
+        'ekinomaniac' : ['moviesandseries', 'polish'], 
         'ekinotv' : [ 'moviesandseries', 'polish'] ,
         'ekstraklasatv' : [ 'polish', 'sport'] ,
         'eskago' : [ 'live', 'music', 'polish'] ,
@@ -209,6 +210,7 @@ class IPTVHostsGroups:
         'ngolos' : [ 'sport'] ,
         'ninateka' : [ 'polish'] ,
         'nuteczki' : [ 'music', 'polish'] ,
+        'ogladajto' : [ 'moviesandseries', 'polish'],
         'officialfilmillimite' : [ 'french', 'moviesandseries'] ,
         'oipeirates' : [ 'greek', 'moviesandseries'] ,
         'okgoals' : [ 'sport'] ,
@@ -277,6 +279,7 @@ class IPTVHostsGroups:
         'vumedicom' : [ 'documentary', 'english', 'science'] ,
         'vumooch' : [ 'english', 'moviesandseries'] ,
         'watchcartoononline' : [ 'cartoonsandanime', 'english'] ,
+        'watchmovies' : [ 'moviesandseries', 'polish'], 
         'watchwrestling' : [ 'english', 'sport'] ,
         'watchwrestlinguno' : [ 'english', 'sport'] ,
         'webstream' : [ 'arabic', 'english', 'german', 'live', 'polish', 'sport'] ,
