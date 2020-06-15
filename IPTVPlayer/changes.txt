@@ -1,3 +1,8 @@
+#2020.06.15.01
+-WatchMovies javítva
+-Ogladaj.to hozzáadva (Lengyel)
+-Info version frissítve
+-Kisebb módosítások
 #2020.06.13.02
 -Info version frissítve
 -Kisebb javítások
