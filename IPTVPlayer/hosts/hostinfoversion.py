@@ -134,7 +134,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    infoversion = "2020.05.24"
+    infoversion = "2020.06.08"
     inforemote  = "0.0.0"
     currList = []
     SEARCH_proc = ''
@@ -246,7 +246,7 @@ class Host:
               valTab.insert(0,CDisplayListItem('---UPDATE---','UPDATE MENU',        CDisplayListItem.TYPE_CATEGORY,           [''], 'UPDATE',  '', None)) 
            if config.plugins.iptvplayer.infoupdate.value:
                valTab.append(CDisplayListItem('ZMIANY W WERSJI',                    'ZMIANY W WERSJI',   CDisplayListItem.TYPE_CATEGORY, ['https://gitlab.com/mosz_nowy/infoversion/commits/master.atom'], 'UPDATE-ZMIANY', '', None)) 
-           valTab.insert(0,CDisplayListItem(_('PROSZĘ PRZEKAŻ 1% PODATKU NA KRS 0000049063'),  _('KRS 0000049063\nSTOWARZYSZENIE "OTWÓRZMY PRZED NIMI ŻYCIE"\nUL. KOŚCIUSZKI 43   32-065 KRZESZOWICE\nPRZEKAŻ 1 % SWOJEGO PODATKU\nPODARUJ NASZYM NIEPEŁNOSPRAWNYM SŁOŃCE'),             CDisplayListItem.TYPE_MORE,             [''], '',        '', None)) 
+           #valTab.insert(0,CDisplayListItem(_('PROSZĘ PRZEKAŻ 1% PODATKU NA KRS 0000049063'),  _('KRS 0000049063\nSTOWARZYSZENIE "OTWÓRZMY PRZED NIMI ŻYCIE"\nUL. KOŚCIUSZKI 43   32-065 KRZESZOWICE\nPRZEKAŻ 1 % SWOJEGO PODATKU\nPODARUJ NASZYM NIEPEŁNOSPRAWNYM SŁOŃCE'),             CDisplayListItem.TYPE_MORE,             [''], '',        '', None)) 
            return valTab
 
         if 'HISTORY' == name:
@@ -355,7 +355,7 @@ class Host:
            #valTab.append(CDisplayListItem('BG-Gledai TV', 'http://www.bg-gledai.tv', CDisplayListItem.TYPE_CATEGORY, ['http://www.bg-gledai.tv'], 'gledai', 'http://www.bg-gledai.tv/img/newlogo.png', None)) 
            #valTab.append(CDisplayListItem('Stream - OKLIVETV', 'http://oklivetv.com', CDisplayListItem.TYPE_CATEGORY, ['http://oklivetv.com/genre/?orderby=title'], 'oklivetv', 'http://oklivetv.com/wp-content/uploads/2015/01/logo2.png', None)) 
            valTab.append(CDisplayListItem('Poland In', 'Poland In', CDisplayListItem.TYPE_CATEGORY, ['https://www.youtube.com/channel/UCBjUPsHj7bXt24SUWNoZ0zA/live'], 'polandin', 'https://yt3.ggpht.com/a-/AN66SAyfw6iby9Gj5QKt0mT80p1CL7C5miParL5nSw=s288-mo-c-c0xffffffff-rj-k-no', None)) 
-           valTab.append(CDisplayListItem('MIAMI TV',     'https://miamitvhd.com', CDisplayListItem.TYPE_CATEGORY, ['https://miamitvhd.com/?channel=miamitv'],'MIAMI', 'https://miamitvhd.com/assets/miamitv-8fcf2efe186508c88b6ebd5441452254a32c410d1d18ea7f82ffbb0d26b35271.png', None)) 
+           #valTab.append(CDisplayListItem('MIAMI TV',     'https://miamitvhd.com', CDisplayListItem.TYPE_CATEGORY, ['https://miamitvhd.com/?channel=miamitv'],'MIAMI', 'https://miamitvhd.com/assets/miamitv-8fcf2efe186508c88b6ebd5441452254a32c410d1d18ea7f82ffbb0d26b35271.png', None)) 
            #valTab.append(CDisplayListItem('Filmbit',     'https://filmbit.ws/telewizja-online', CDisplayListItem.TYPE_CATEGORY, ['https://filmbit.ws/telewizja-online'],'filmbit-clips', 'http://filmbit.ws/public/dist/images/logo_new.png', None))
            valTab.sort(key=lambda poz: poz.name)
            return valTab
@@ -366,7 +366,7 @@ class Host:
               valTab.append(CDisplayListItem('Andrychów - Parafia św. Stanisława Biskupa i Męczennika', 'Parafia św. Stanisława Biskupa i Męczennika w Andrychowie', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://stanislaw-andrychow.pl/kamera_online.html', 1)], 'andrychow', 'http://stanislaw-andrychow.pl/public/images/image.jpg', None)) 
               #valTab.append(CDisplayListItem('Andrychów - Parafia św. Stanisława Biskupa i Męczennika 2', 'Parafia św. Stanisława Biskupa i Męczennika w Andrychowie 2', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://stanislaw-andrychow.pl/kamera_online.html?k=2', 1)], 'andrychow', 'http://stanislaw-andrychow.pl/public/images/image.jpg', None)) 
               #valTab.append(CDisplayListItem('Assisi - Basilica of St. Francis', 'Basilica of St. Francis in Assisi', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://www.skylinewebcams.com/en/webcam/italia/umbria/perugia/basilica-san-francesco-assisi.html', 1)], '', 'https://ladybudd.files.wordpress.com/2012/08/basilica-of-st-francis-of-assisi.jpg', None)) 
-              valTab.append(CDisplayListItem('Cieszyn - Parafia Św. Marii Magdaleny', 'http://parafiamagdaleny.pl', CDisplayListItem.TYPE_CATEGORY, ['http://parafiamagdaleny.pl/parafia/transmisja-wideo'], 'magdalena', 'http://www.polskiekrajobrazy.pl/images/stories/big/50261.jpg', None)) 
+              valTab.append(CDisplayListItem('Cieszyn - Parafia Św. Marii Magdaleny', 'http://parafiamagdaleny.pl', CDisplayListItem.TYPE_CATEGORY, ['https://parafiamagdaleny.pl/parafia/transmisja-wideo'], 'magdalena', 'http://www.polskiekrajobrazy.pl/images/stories/big/50261.jpg', None)) 
               #valTab.append(CDisplayListItem('Cieszyn - Parafia Św.Jerzego 1  (exteplayer3)', 'http://www.swjerzycieszyn.ox.pl', CDisplayListItem.TYPE_CATEGORY, ['rtmp://80.51.121.254:5119/live/jerzy1'], 'swjerzy', 'http://www.cieszyn.pl/files/www.cieszyn.pl%20Renata%20Karpinska%2050[1].jpg', None)) 
               #valTab.append(CDisplayListItem('Cieszyn - Parafia Św.Jerzego 2  (exteplayer3)', 'http://www.swjerzycieszyn.ox.pl', CDisplayListItem.TYPE_CATEGORY, ['rtmp://80.51.121.254:5119/live/jerzy2'], 'swjerzy', 'http://www.cieszyn.pl/files/www.cieszyn.pl%20Renata%20Karpinska%2050[1].jpg', None)) 
               valTab.append(CDisplayListItem('Częstochowa - Jasna Góra', 'http://www.jasnagora.pl', CDisplayListItem.TYPE_CATEGORY, ['http://www.jasnagora.pl/612,372,artykul,Kaplica_Matki_Bozej.aspx'], 'jasna', 'https://jasnagora.pl/wp-content/themes/ordipress/assets/img/top-mb.png', None)) 
@@ -379,20 +379,20 @@ class Host:
               valTab.append(CDisplayListItem('Heroldsbach - Marienkirche', 'http://heroldsbach.esgibtmehr.net', CDisplayListItem.TYPE_CATEGORY, ['http://heroldsbach.esgibtmehr.net/doku.php?id=marienkirche#marienkirche_-_24h_livestream'], 'Heroldsbach', 'http://www.heroldsbach-pilgerverein.de/bilder/rundgang_5_g.jpg', None)) 
               valTab.append(CDisplayListItem('Kalwaria Zebrzydowska Sanktuarium ', 'Kalwaria Zebrzydowska Sanktuarium ', CDisplayListItem.TYPE_CATEGORY, ['https://www.youtube.com/channel/UCPaeCakVviK0hmDEl-3yGsg'], 'kalwaria', 'http://www.powiat.wadowice.pl/fotki/g2065d.jpg', None)) 
               #valTab.append(CDisplayListItem('Kluczbork - Parafia Najświętszego Serca Pana Jezusa', 'http://nspjkluczbork.pl/uncategorized/kamera/', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://nspjkluczbork.pl/uncategorized/kamera/', 1)], 'kluczbork', 'http://nspjkluczbork.pl/wp-content/uploads/2016/11/33_-1200x675.jpg', None)) 
-              valTab.append(CDisplayListItem('Kodeń - Sanktuarium Matki Bożej', 'http://www.koden.com.pl/', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://worldcam.live/pl/webcam/koden', 1)], 'koden', 'http://img2.garnek.pl/a.garnek.pl/017/153/17153628_800.0.jpg/koden-sanktuarium-maryjne.jpg', None)) 
+              #valTab.append(CDisplayListItem('Kodeń - Sanktuarium Matki Bożej', 'http://www.koden.com.pl/', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://worldcam.live/pl/webcam/koden', 1)], 'koden', 'http://img2.garnek.pl/a.garnek.pl/017/153/17153628_800.0.jpg/koden-sanktuarium-maryjne.jpg', None)) 
               #valTab.append(CDisplayListItem('Kraków-Łagiewniki Sanktuarium', 'https://www.faustyna.pl', CDisplayListItem.TYPE_CATEGORY, ['https://www.faustyna.pl/zmbm/transmisja-on-line/'], 'faustyna', 'http://milosierdzie.pl/images/menu-obrazki/obraz.png', None)) 
               valTab.append(CDisplayListItem('Kraków-Łagiewniki TV Miłosierdzie', 'http://www.milosierdzie.pl', CDisplayListItem.TYPE_CATEGORY, ['http://www.milosierdzie.pl/index.php/pl/multimedia-foto/tv-milosierdzie-pl.html'], 'milosierdzie', 'http://www.milosierdzie.pl/images/logo-TVMilosierdzie.png', None)) 
               valTab.append(CDisplayListItem('Lourdes TV', 'https://www.lourdes-france.org', CDisplayListItem.TYPE_CATEGORY, ['https://www.lourdes-france.org/en/tv-lourdes'], 'lourdes', 'http://www.fronda.pl/site_media/media/uploads/maryja_lourdes.jpg', None)) 
-              valTab.append(CDisplayListItem('Maków Podhalański - Ołtarz', 'Maków Podhalański Ołtarz', CDisplayListItem.TYPE_CATEGORY, ['http://www.parafiamakowska.pl/kamera-online/kamera-na-oltarz/'], 'makow', 'http://www.parafia.pixpro.pl/img/obraz_top.png', None)) 
-              valTab.append(CDisplayListItem('Maków Podhalański - Kaplica', 'Maków Podhalański Kaplica', CDisplayListItem.TYPE_CATEGORY, ['http://www.parafiamakowska.pl/kamera-online/kamera-w-kaplicy/'], 'makow', 'http://www.parafia.pixpro.pl/img/obraz_top.png', None)) 
-              valTab.append(CDisplayListItem('Medziugorje   17:00 - 22:00', 'http://www.centrummedjugorje.pl', CDisplayListItem.TYPE_CATEGORY, ['http://www.divinemercy.pl/PL-H47/video.html'], 'medju', 'http://www.medjugorje.org.pl/images/medjugorje-2.jpg', None)) 
+              #valTab.append(CDisplayListItem('Maków Podhalański - Ołtarz', 'Maków Podhalański Ołtarz', CDisplayListItem.TYPE_CATEGORY, ['http://www.parafiamakowska.pl/kamera-online/kamera-na-oltarz/'], 'makow', 'http://www.parafia.pixpro.pl/img/obraz_top.png', None)) 
+              #valTab.append(CDisplayListItem('Maków Podhalański - Kaplica', 'Maków Podhalański Kaplica', CDisplayListItem.TYPE_CATEGORY, ['http://www.parafiamakowska.pl/kamera-online/kamera-w-kaplicy/'], 'makow', 'http://www.parafia.pixpro.pl/img/obraz_top.png', None)) 
+              #valTab.append(CDisplayListItem('Medziugorje   17:00 - 22:00', 'http://www.centrummedjugorje.pl', CDisplayListItem.TYPE_CATEGORY, ['http://www.divinemercy.pl/PL-H47/video.html'], 'medju', 'http://www.medjugorje.org.pl/images/medjugorje-2.jpg', None)) 
               valTab.append(CDisplayListItem('Międzyzdroje - Parafia św. Piotra Apostoła', 'Międzyzdroje  Parafia św. Piotra Apostoła', CDisplayListItem.TYPE_CATEGORY, ['https://www.youtube.com/channel/UC5zVBy9-3R_3HwgrxXyxKBg/live'], 'miedzyzdroje', 'http://www.polskaniezwykla.pl/pictures/original/271578.jpg', None)) 
-              valTab.append(CDisplayListItem('Natanek Ogłoszenia bieżące', 'http://www.christusvincit-tv.pl', CDisplayListItem.TYPE_CATEGORY, ['http://christusvincit-tv.pl/articles.php?article_id=236'], 'religia', 'http://img.youtube.com/vi/JRHdinMsXmA/hqdefault.jpg', None)) 
+              #valTab.append(CDisplayListItem('Natanek Ogłoszenia bieżące', 'http://www.christusvincit-tv.pl', CDisplayListItem.TYPE_CATEGORY, ['http://christusvincit-tv.pl/articles.php?article_id=236'], 'religia', 'http://img.youtube.com/vi/JRHdinMsXmA/hqdefault.jpg', None)) 
               valTab.append(CDisplayListItem('Natanek Live', 'http://www.christusvincit-tv.pl', CDisplayListItem.TYPE_CATEGORY, ['http://185.48.128.138/hls/kam5.m3u8'], 'religialive', 'http://img.youtube.com/vi/JRHdinMsXmA/hqdefault.jpg', None)) 
-              valTab.append(CDisplayListItem('Natanek Czołówka / Z ostatniej chwili', 'http://christusvincit-tv.pl', CDisplayListItem.TYPE_CATEGORY, ['http://christusvincit-tv.pl/viewpage.php?page_id=1'], 'religia2', 'http://img.youtube.com/vi/JRHdinMsXmA/hqdefault.jpg', None)) 
-              valTab.append(CDisplayListItem('Natanek Kazania Pasyjne', 'http://www.christusvincit-tv.pl', CDisplayListItem.TYPE_CATEGORY, ['http://christusvincit-tv.pl/articles.php?article_id=147'], 'pasyjne', 'http://img.youtube.com/vi/JRHdinMsXmA/hqdefault.jpg', None)) 
+              #valTab.append(CDisplayListItem('Natanek Czołówka / Z ostatniej chwili', 'http://christusvincit-tv.pl', CDisplayListItem.TYPE_CATEGORY, ['http://christusvincit-tv.pl/viewpage.php?page_id=1'], 'religia2', 'http://img.youtube.com/vi/JRHdinMsXmA/hqdefault.jpg', None)) 
+              #valTab.append(CDisplayListItem('Natanek Kazania Pasyjne', 'http://www.christusvincit-tv.pl', CDisplayListItem.TYPE_CATEGORY, ['http://christusvincit-tv.pl/articles.php?article_id=147'], 'pasyjne', 'http://img.youtube.com/vi/JRHdinMsXmA/hqdefault.jpg', None)) 
               valTab.append(CDisplayListItem('Piwniczna-Zdrój - Parafia pw Narodzenia Najświętszej Maryi Panny', 'http://www.parafia.piwniczna.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.parafia.piwniczna.com/s48-tv---online.html'], 'piwniczna', 'http://www.parafia.piwniczna.com/images/panel_boczny.jpg', None)) 
-              valTab.append(CDisplayListItem('Pogórze - Parafia NMP Królowej Polski', 'http://www.pogorze.katolik.bielsko.pl', CDisplayListItem.TYPE_CATEGORY, ['http://80.51.121.254/pogorze.m3u8'], 'pogorze', 'http://www.pogorze.info.pl/files/kosciol1.jpg', None)) 
+              #valTab.append(CDisplayListItem('Pogórze - Parafia NMP Królowej Polski', 'http://www.pogorze.katolik.bielsko.pl', CDisplayListItem.TYPE_CATEGORY, ['http://80.51.121.254/pogorze.m3u8'], 'pogorze', 'http://www.pogorze.info.pl/files/kosciol1.jpg', None)) 
               valTab.append(CDisplayListItem('Radzionków - Parafis św. Wojciecha', 'Radzionków  Parafis św. Wojciecha', CDisplayListItem.TYPE_CATEGORY, ['https://www.youtube.com/channel/UCsuXsGQzzH-z9vjB1e4DACw/live'], 'radzionkow', 'https://upload.wikimedia.org/wikipedia/commons/c/cc/Parafia_%C5%9Bw._Wojciecha_w_Radzionkowie.JPG', None)) 
               valTab.append(CDisplayListItem('Sanok - Parafia Chrystusa Króla', 'Sanok Parafia Chrystusa Króla', CDisplayListItem.TYPE_CATEGORY, ['https://www.youtube.com/channel/UC-Jehng9zHoWXR9NfNXZkqA/live'], 'sanok', 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Christ_the_King_church_in_Sanok_2012.jpg/240px-Christ_the_King_church_in_Sanok_2012.jpg', None)) 
               valTab.append(CDisplayListItem('Skoczów Kaplicówka - Sanktuarium Św. Jana Sarkandra', 'http://kamera.pompejanska.pl/', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'rtmp://80.51.121.254:5119/live/kaplicowka', 0)], 'kaplicowka', 'http://www.polskaniezwykla.pl/pictures/original/278033.jpg', None))               #valTab.append(CDisplayListItem('Parafia Górny Bor', 'http://parafiagornybor.pl/kamera-online', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://parafiagornybor.pl/kamera-online', 1)], 'gornybor', 'http://www.parafiagornybor.ox.pl/images/slider/slide_02.jpg', None)) 
@@ -400,8 +400,7 @@ class Host:
               valTab.append(CDisplayListItem('Skoczów Parafia pw. Św. Apostołów Piotra i Pawła 2', 'http://www.kamera2.parafiaskoczow.ox.pl/', CDisplayListItem.TYPE_CATEGORY, ['http://www.kamera2.parafiaskoczow.ox.pl/'], 'skoczow', 'http://www.parafiaskoczow.ox.pl/css/frontend/contactphoto.jpg', None)) 
               valTab.append(CDisplayListItem('Skoczów Parafia Matki Bożej Różańcowej', 'Skoczów Parafia Matki Bożej Różańcowej', CDisplayListItem.TYPE_CATEGORY, ['https://www.youtube.com/channel/UCeM7BtSCbkEAkFewPALHRMw/live'], 'skoczow3', 'https://yt3.ggpht.com/-3mqSWrOjsaU/AAAAAAAAAAI/AAAAAAAAAAA/ZRW9L0FHDt4/s288-mo-c-c0xffffffff-rj-k-no/photo.jpg', None)) 
               valTab.append(CDisplayListItem('Tomaszów Lubelski - Kościół pw. Zwiastowania Najświętszej Marii Panny', 'https://tomaszow.lub.pl', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://tomaszow.lub.pl/obraz-na-zywo-z-kamer-miejskich/', 1)], 'tomaszow', 'https://tomaszow.lub.pl/wp-content/uploads/2017/02/tpl_ogo_large.png', None)) 
-              valTab.append(CDisplayListItem('Tomaszów Lubelski - Kościół pw. Najświętszego Serca Jezusa', 'http://www.nsjtomaszowlub.pl', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://www.nsjtomaszowlub.pl/video', 1)], 'nsjtomaszow', 'http://www.nsjtomaszowlub.pl/images/phocagallery/2020/improb/thumbs/phoca_thumb_m_DSC_4612.jpg', None)) 
-
+              #valTab.append(CDisplayListItem('Tomaszów Lubelski - Kościół pw. Najświętszego Serca Jezusa', 'http://www.nsjtomaszowlub.pl', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://www.nsjtomaszowlub.pl/video', 1)], 'nsjtomaszow', 'http://www.nsjtomaszowlub.pl/images/phocagallery/2020/improb/thumbs/phoca_thumb_m_DSC_4612.jpg', None)) 
               valTab.append(CDisplayListItem('Trwam TV', 'http://www.tv-trwam.pl', CDisplayListItem.TYPE_CATEGORY, ['https://trwamtv.live.rd.insyscd.net/cl01/out/u/trwam.m3u8'], 'trwam', 'https://www.redemptor.pl/wp-content/uploads/2015/06/TV-Trwam-logo.jpg', None)) 
               valTab.append(CDisplayListItem('Turza Śląska - Sanktuarium Matki Bożej Fatimskiej', 'Turza Śląska - Sanktuarium Matki Bożej Fatimskiej', CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://www.sanktuarium.turza.pl/kamera.html', 1)], 'turza', 'http://www.sanktuarium.turza.pl/public/szablon/sanktuarium.turza.pl/img/logo.jpg', None)) 
               valTab.append(CDisplayListItem('Watykan CTV', 'http://www.ctv.va', CDisplayListItem.TYPE_CATEGORY, ['https://www.youtube.com/channel/UC7E-LYc1wivk33iyt5bR5zQ/live'], 'ctv', 'http://www.vaticannews.va/etc/designs/vatican-news/release/library/main/images/appletouch.png', None)) 
@@ -2114,32 +2113,34 @@ class Host:
             return valTab
 
         if 'darmowa' == name:
-            valTab.insert(0,CDisplayListItem("--- Pastebin --- Przypadkowe listy m3u, wyszukane w google na stronie pastebin.com","Przypadkowe listy m3u, wyszukane w google na stronie pastebin.com",     CDisplayListItem.TYPE_CATEGORY,['https://pastebin.com'],'pastebin',    '',None))
+            valTab.insert(0,CDisplayListItem("--- Github --- Przypadkowe linki do streamu skopiowane ze strony https://iptv-org.github.io","Przypadkowe linki do streamu skopiowane ze strony https://iptv-org.github.io",     CDisplayListItem.TYPE_CATEGORY,['https://iptv-org.github.io/iptv/index.m3u'],'github',    '',None))
+            valTab.insert(0,CDisplayListItem("--- FreeM3U --- Przypadkowe listy m3u, wyszukane w google na stronie https://www.iptvm3ulist.com","Przypadkowe listy m3u, wyszukane w google na stronie https://www.iptvm3ulist.com",     CDisplayListItem.TYPE_CATEGORY,['https://pastebin.com'],'pastebin',    '',None))
             #valTab.insert(0,CDisplayListItem("--- Zobacz.ws ---","Zobacz.ws",     CDisplayListItem.TYPE_CATEGORY,['http://zobacz.ws'],'zobacz_ws',    '',None))
             valTab.insert(0,CDisplayListItem("--- SwirTeam ---","SwirTeam",     CDisplayListItem.TYPE_CATEGORY,['http://tv-swirtvteam.info/'],'SwirTeamTk',    '',None))
             #valTab.insert(0,CDisplayListItem("--- SuperSportowo ---","SuperSportowo",     CDisplayListItem.TYPE_CATEGORY,['http://supersportowo.com'],'SuperSportowo',    '',None))
-            valTab.insert(0,CDisplayListItem("--- Ustreamix ---","Ustreamix",     CDisplayListItem.TYPE_CATEGORY,['https://ssl.ustreamix.com/search.php?q=poland'],'Ustreamix',    '',None))
+            #valTab.insert(0,CDisplayListItem("--- Ustreamix ---","Ustreamix",     CDisplayListItem.TYPE_CATEGORY,['https://ssl.ustreamix.com/search.php?q=poland'],'Ustreamix',    '',None))
             return valTab
         if 'pastebin' == name:
             printDBG( 'Host listsItems begin name='+name )
             COOKIEFILE = os_path.join(GetCookieDir(), 'pastebin.cookie')
             #url = 'https://www.google.pl/search?q=%23extm3u+pastebin+poland&tbs=qdr:m'
-            url = 'https://www.google.pl/search?q=extm3u+site%3Apastebin.com&tbs=qdr:m'
+            #url = 'https://www.google.pl/search?q=extm3u+site%3Apastebin.com&tbs=qdr:m'
             #url = 'https://www.google.pl/search?q=extm3u+poland+tvp+site%3Apastebin.com&tbs=qdr:m'
+            url = 'https://www.iptvm3ulist.com/iptv-european/poland-iptv-m3u/'
             self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
             self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
             sts, data = self.get_Page(url)
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
             #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<a', '&')
-            data = data.split('<div class="s">')
+            data = data.split('div class="td-module-thumb">')
             if len(data): del data[0]
             for item in data:
-                Url = self.cm.ph.getSearchGroups(item, '''href=['"](https://pastebin.com/[^"^']+?)['"]''', 1, True)[0] 
-                desc = self._cleanHtmlStr(item).split(' - ')[0].strip()
+                Url = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
+                desc = self._cleanHtmlStr(item).split('    ')[0].strip()
                 if Url:
                     Url = Url.replace('pastebin.com','pastebin.com/raw')
-                    valTab.append(CDisplayListItem(Url+' ['+desc+']', '['+desc+'] '+Url, CDisplayListItem.TYPE_CATEGORY, [Url], 'pastebin-url', '', None))
+                    valTab.append(CDisplayListItem(desc, Url, CDisplayListItem.TYPE_CATEGORY, [Url], 'pastebin-url', '', None))
             return valTab
         if 'pastebin-url' == name:
             printDBG( 'Host listsItems begin name='+name )
@@ -2153,6 +2154,19 @@ class Host:
                 valTab.insert(0,CDisplayListItem('Status Code: '+str(self.cm.meta['status_code']),  'Status Code: '+str(self.cm.meta['status_code']),             CDisplayListItem.TYPE_MORE,             [''], '',        '', None)) 
                 return valTab
             printDBG( 'Host listsItems data: '+data )
+            data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<pre>', '</pre>')
+            for item in data:
+                Url = self.cm.ph.getSearchGroups(item, '''<pre>([^"^']+?\.m3u)<''', 1, True)[0] 
+                if Url=='': continue
+                valTab.append(CDisplayListItem(Url, Url, CDisplayListItem.TYPE_CATEGORY, [Url], 'freeiptv-stream', '', None))
+            return valTab
+
+        if 'freeiptv-stream' == name:
+            sts, data = self.get_Page(url)
+            if not sts: return valTab
+			
+			
+			
             data = ParseM3u(data)
             groups = {}
             for item in data:
@@ -2166,6 +2180,30 @@ class Host:
                     valTab.append(CDisplayListItem(item['title'],url,  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', url, 0)], 0, icon, None))
 
             return valTab 
+
+        if 'github' == name:
+            printDBG( 'Host listsItems begin name='+name )
+            COOKIEFILE = os_path.join(GetCookieDir(), 'github.cookie')
+            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
+            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
+            sts, data = self.get_Page(url)
+            if not sts: return valTab
+            if self.cm.meta['status_code']!=200:
+                SetIPTVPlayerLastHostError(_(str(self.cm.meta['status_code'])))
+                valTab.insert(0,CDisplayListItem('Status Code: '+str(self.cm.meta['status_code']),  'Status Code: '+str(self.cm.meta['status_code']),             CDisplayListItem.TYPE_MORE,             [''], '',        '', None)) 
+                return valTab
+            printDBG( 'Host listsItems data: '+data )
+            data = ParseM3u(data)
+            groups = {}
+            for item in data:
+                printDBG( 'Host item:%s ' % item )
+                group = item.get('group-title', '')
+                url = item['uri']
+                icon = item.get('tvg-logo', '') 
+                if item['f_type'] == 'inf':
+                    valTab.append(CDisplayListItem(item['title'],url,  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', url, 0)], 0, icon, None))
+            return valTab 
+
         if 'darmowaonline' == name:
             printDBG( 'Host listsItems begin name='+name )
             COOKIEFILE = os_path.join(GetCookieDir(), 'darmowaonline.cookie')
@@ -2735,7 +2773,20 @@ class Host:
 
         if 'lourdes' == name:
             printDBG( 'Host listsItems begin name='+name )
-            youtube_link = self.cm.ph.getSearchGroups(data, '''href=['"](https://www.youtube.com[^"^']+?)['"]''')[0] 
+            youtube_link = self.cm.ph.getSearchGroups(data, '''['"](https://www.youtube.com/embed/[^"^']+?)['"?]''')[0] 
+            if ''== youtube_link: youtube_link = self.cm.ph.getSearchGroups(data, '''['"](https://www.youtube.com[^"^']+?)['"?]''')[0] 
+            if youtube_link:
+               videoUrls = self.getLinksForVideo(youtube_link)
+               if videoUrls:
+                  for item in videoUrls:
+                     Url = item['url']
+                     Name = item['name']
+                     printDBG( 'Host Url:  '+Url )
+                     printDBG( 'Host name:  '+Name )
+                     valTab.append(CDisplayListItem('TV Lourdes  '+Name, 'TV Lourdes  '+Name,  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 0)], 0, 'http://mozecoswiecej.pl/wp-content/uploads/2017/02/VirgendeLourdes.jpg', None))
+               return valTab 
+
+            if ''== youtube_link: youtube_link = self.cm.ph.getSearchGroups(data, '''href=['"](https://www.youtube.com[^"^']+?)['"]''')[0] 
             try: data = self.cm.getURLRequestData({'url': youtube_link, 'use_host': False, 'use_cookie': False, 'use_post': False, 'return_data': True})
             except:
                 printDBG( 'Host listsItems ERROR' )
@@ -2883,6 +2934,7 @@ class Host:
                 data = data.replace('&quot;','"').replace('\/','/')
                 printDBG( 'Host listsItems data: '+data )
                 videoUrl = self.cm.ph.getSearchGroups(data, '''src['"]:['"]([^"^']+?)['"]''')[0].replace('\/','/')
+                if videoUrl=='': videoUrl = 'https://stream.mentel-it.pl/parafiamariimagdaleny/index.m3u8'
                 if self.cm.isValidUrl(videoUrl): 
                     tmp = getDirectM3U8Playlist(videoUrl)
                     for item in tmp:
@@ -3493,16 +3545,21 @@ class Host:
             valTab.append(CDisplayListItem('Sokół wędrowny na kominie MPEC we Włocławku gniazdo', 'Sokół wędrowny na kominie Miejskiego Przedsiębiorstwa Energetyki Cieplnej we Włocławku',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'https://53c7d208964cd.streamlock.net/mpecw/mpecw.stream_aac/playlist.m3u8', 0)], 0, 'http://www.peregrinus.pl/images/comprofiler/4246_5e91d934b04fa.jpg', None))
             valTab.append(CDisplayListItem('Czarny Bocian - Hungary', 'Czarny Bocian - Hungary',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'http://gemenczrt.hu/media/feketegolya-feszek/', 1)], 0, 'http://gemenczrt.hu/wp-content/uploads/2020/05/3f_1_200501.jpg', None))
 
-            url ='https://www.sokolka.tv/index.php/kamery-online/gniazdo-bocianie'
+            url ='https://www.youtube.com/channel/UCwlJ4WLonGeFWeU2VFLDnig'
             COOKIEFILE = os_path.join(GetCookieDir(), 'info.cookie') 
             self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
             self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': False, 'save_cookie': True, 'cookiefile': COOKIEFILE}
             sts, data = self.get_Page(url)
             if not sts: return valTab
             printDBG( 'Host listsItems data '+data )
-            Url = self.cm.ph.getSearchGroups(data, '''(//www.youtube.com[^"^']+?)['"?]''')[0] 
+            data = data.split('"videoId":')
+            if len(data): del data[0]
+            for item in data:
+               if 'Gniazdo Bocianie' in item: break
+            printDBG( 'Host item '+item )
+            Url = self.cm.ph.getSearchGroups(item, '''watch\?v=([^"^']+?)['"]''')[0] 
             if Url:
-               if Url.startswith('//'): Url = 'https:' + Url 
+               Url = 'http://www.youtube.com/watch?v=' + Url 
                valTab.append(CDisplayListItem('Kamera na bocianim gnieździe Sokółka', 'Kamera na bocianim gnieździe Sokółka (youtube)',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', Url, 1)], 0, 'http://zasoby.ekologia.pl/artykulyNew/19316/xxl/800px-ciconia-ciconia-01-bocian-bialy_800x600.jpg', None))
 
             #valTab.append(CDisplayListItem('Sokół wędrowny Płock ORLEN (rtmp)', 'Sokół wędrowny Płock ORLEN',  CDisplayListItem.TYPE_VIDEO, [CUrlItem('', 'rtmp://stream.orlen.pl:1935/sokol playpath=gniazdo.stream swfUrl=http://webcam.peregrinus.pl/plugins/hwdvs-videoplayer/jwflv/mediaplayer.swf pageUrl=http://webcam.peregrinus.pl/pl/plock-orlen-podglad', 0)], 0, 'http://postis.pl/wp-content/uploads/sok%C3%B3%C5%82-w%C4%99drowny.jpeg', None))
@@ -3742,7 +3799,9 @@ class Host:
             if not sts: return ''
             printDBG( 'Host listsItems data: %s' % data )
             videoUrl = self.cm.ph.getSearchGroups(data, '''"sourceURL":\s*?['"]([^"^']+?)['"]''', 1, True)[0].replace(r'http:',r'https:').replace(r':443','')
-            videoUrl = strwithmeta(videoUrl, {'Referer':url, 'Origin':"https://www.kukaj.sk"})
+            printDBG( 'Host videoUrl: %s' % videoUrl )
+            cookieHeader = self.cm.getCookieHeader(COOKIEFILE)
+            videoUrl = strwithmeta(videoUrl, {'Referer':url, 'Origin':"https://www.kukaj.sk", 'Cookie':cookieHeader})
             tmp = getDirectM3U8Playlist(videoUrl, checkContent=True, sortWithMaxBitrate=999999999)
             for item in tmp:
                 return item['url']
@@ -4068,6 +4127,23 @@ class Host:
             sts, data = self.getPage(url, 'ustreamix.cookie', 'ustreamix.com', self.defaultParams)
             if not sts: return valTab
             printDBG( 'Host listsItems data: '+data )
+            if 'm3u8' in data:
+                data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<script>', '</script>')
+                for item in data:
+                    data2 = item
+                    if 'm3u8' in item: break
+                printDBG( 'Host resolveUrl packed' )
+                packed = re.compile('eval\(function\(p,a,c,k,e,d\)(.+?)</script>', re.DOTALL).findall(data2)
+                if packed:
+                    data2 = packed[-1]
+                else:
+                    return ''
+                try:
+                    unpack = unpackJSPlayerParams(data2, TEAMCASTPL_decryptPlayerParams, 0, True, True) 
+                except Exception: printExc()
+                printDBG( 'Host listsItems unpack: '+unpack )
+
+
             videoUrl = self.cm.ph.getSearchGroups(data, '''window.open\(['"]([^"^']+?)['"]''', 1, True)[0] 
             if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
             if videoUrl.startswith('/'): videoUrl = 'https://ssl.ustreamix.com' + videoUrl
