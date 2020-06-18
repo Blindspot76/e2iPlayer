@@ -1,3 +1,5 @@
+#2020.06.18.01
+-ForcedCelebs hozzáadva (XXX)
 #2020.06.15.01
 -WatchMovies javítva
 -Ogladaj.to hozzáadva (Lengyel)
