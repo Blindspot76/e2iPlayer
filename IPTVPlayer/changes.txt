@@ -1,3 +1,8 @@
+#2020.06.20.01
+-Twitch TV javítva
+-Music Box javítva
+-YouTube javítva
+-TantiFilm javítva
 #2020.06.18.01
 -ForcedCelebs hozzáadva (XXX)
 #2020.06.15.01
