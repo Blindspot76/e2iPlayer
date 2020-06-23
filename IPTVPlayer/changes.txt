@@ -1,3 +1,7 @@
+#2020.06.23.01
+BBCiPlayer, Djing, BS.to javítva
+Fontos frissítések, javítások
+(Mindenképp ajánlott telepíteni!)
 #2020.06.20.01
 -Twitch TV javítva
 -Music Box javítva
