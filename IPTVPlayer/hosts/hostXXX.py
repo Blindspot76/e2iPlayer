@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.06.17.0"
+    XXXversion = "2020.06.20.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -337,7 +337,7 @@ class Host:
            valTab.append(CDisplayListItem('YOURPORN.SEXY',     'https://sxyprn.com', CDisplayListItem.TYPE_CATEGORY, ['https://sxyprn.com'],'yourporn', 'http://cdn.itsyourporn.com/assets/images/logo.jpg', None)) 
            valTab.append(CDisplayListItem('FREEOMOVIE',     'https://www.freeomovie.to', CDisplayListItem.TYPE_CATEGORY, ['https://www.freeomovie.to'],'freeomovie', 'https://www.freeomovie.to/wp-content/uploads/2013/04/logo.png', None)) 
            valTab.append(CDisplayListItem('KATESTUBE',     'http://www.katestube.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.katestube.com/categories/'],'KATESTUBE', 'https://www.katestube.com/images/logo.png', None)) 
-           valTab.append(CDisplayListItem('VPORN',     'https://www.vporn.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.vporn.com/categories/'],'vporn', 'https://image.spreadshirtmedia.com/image-server/v1/mp/compositions/1012679167/views/1,width=300,height=300,backgroundColor=E8E8E8,version=1485256808/vporn-brand-dark.jpg', None)) 
+           valTab.append(CDisplayListItem('PORNONE',     'https://pornone.com', CDisplayListItem.TYPE_CATEGORY, ['https://pornone.com/categories/'],'pornone', 'https://th-eu4.pornone.com/images/logo-light-theme.png', None)) 
            valTab.append(CDisplayListItem('HOTMOVS',     'http://hotmovs.com', CDisplayListItem.TYPE_CATEGORY, ['http://hotmovs.com/categories/'],'hotmovs', 'http://hotmovs.com/images/logo.png', None)) 
            valTab.append(CDisplayListItem('PORNOXO',     'https://www.pornoxo.com', CDisplayListItem.TYPE_CATEGORY, ['https://www.pornoxo.com'],'pornoxo', 'http://www.web-tv-sexe.fr/logo/pornoxo.jpg', None)) 
            valTab.append(CDisplayListItem('PINFLIX',     'http://www.pinflix.com', CDisplayListItem.TYPE_CATEGORY, ['http://www.pinflix.com/category'],'pinflix', 'https://pbs.twimg.com/profile_images/568766044114657280/JYh2ZSF_.png', None)) 
@@ -4277,10 +4277,10 @@ class Host:
            data2 = None
            return valTab
 
-        if 'vporn' == name:
+        if 'pornone' == name:
            printDBG( 'Host listsItems begin name='+name )
-           self.MAIN_URL = 'https://www.vporn.com'
-           COOKIEFILE = os_path.join(GetCookieDir(), 'vporn.cookie')
+           self.MAIN_URL = 'https://pornone.com'
+           COOKIEFILE = os_path.join(GetCookieDir(), 'pornone.cookie')
            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.get_Page(url)
@@ -4296,26 +4296,26 @@ class Host:
               if phUrl.startswith('//'): phUrl = 'http:' + phUrl
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phUrl and phTitle:
-                 valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'vporn-clips', phImage, None)) 
+                 valTab.append(CDisplayListItem(phTitle,phTitle,CDisplayListItem.TYPE_CATEGORY, [phUrl],'pornone-clips', phImage, None)) 
            valTab.sort(key=lambda poz: poz.name)
-           valTab.insert(0,CDisplayListItem("--- Longest ---","Longest",     CDisplayListItem.TYPE_CATEGORY,['http://www.vporn.com/longest/'],             'vporn-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Most Votes ---","Most Votes",     CDisplayListItem.TYPE_CATEGORY,['http://www.vporn.com/votes/'],             'vporn-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Most Comments ---","Most Comments",     CDisplayListItem.TYPE_CATEGORY,['http://www.vporn.com/comments/'],             'vporn-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Most Favorited ---","Most Favorited",     CDisplayListItem.TYPE_CATEGORY,['http://www.vporn.com/favorites/'],             'vporn-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Most Viewed ---","Most Viewed",     CDisplayListItem.TYPE_CATEGORY,['http://www.vporn.com/views/'],             'vporn-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Top Rated ---","Top Rated",     CDisplayListItem.TYPE_CATEGORY,['http://www.vporn.com/rating/'],             'vporn-clips',    '',None))
-           valTab.insert(0,CDisplayListItem("--- Newest ---","Newest",     CDisplayListItem.TYPE_CATEGORY,['http://www.vporn.com/newest/'],             'vporn-clips',    '',None))
-           self.SEARCH_proc='vporn-search'
+           valTab.insert(0,CDisplayListItem("--- Longest ---","Longest",     CDisplayListItem.TYPE_CATEGORY,['http://www.pornone.com/longest/'],             'pornone-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- Most Votes ---","Most Votes",     CDisplayListItem.TYPE_CATEGORY,['http://www.pornone.com/votes/'],             'pornone-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- Most Comments ---","Most Comments",     CDisplayListItem.TYPE_CATEGORY,['http://www.pornone.com/comments/'],             'pornone-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- Most Favorited ---","Most Favorited",     CDisplayListItem.TYPE_CATEGORY,['http://www.pornone.com/favorites/'],             'pornone-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- Most Viewed ---","Most Viewed",     CDisplayListItem.TYPE_CATEGORY,['http://www.pornone.com/views/'],             'pornone-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- Top Rated ---","Top Rated",     CDisplayListItem.TYPE_CATEGORY,['http://www.pornone.com/rating/'],             'pornone-clips',    '',None))
+           valTab.insert(0,CDisplayListItem("--- Newest ---","Newest",     CDisplayListItem.TYPE_CATEGORY,['http://www.pornone.com/newest/'],             'pornone-clips',    '',None))
+           self.SEARCH_proc='pornone-search'
            valTab.insert(0,CDisplayListItem(_('Search history'), _('Search history'), CDisplayListItem.TYPE_CATEGORY, [''], 'HISTORY', '', None)) 
            valTab.insert(0,CDisplayListItem(_('Search'),  _('Search'),                       CDisplayListItem.TYPE_SEARCH,   [''], '',        '', None)) 
            return valTab
-        if 'vporn-search' == name:
+        if 'pornone-search' == name:
            printDBG( 'Host listsItems begin name='+name )
-           valTab = self.listsItems(-1, 'https://www.vporn.com/search?q=%s' % url.replace(' ','+'), 'vporn-clips')
+           valTab = self.listsItems(-1, 'https://pornone.com/search?q=%s' % url.replace(' ','+'), 'pornone-clips')
            return valTab              
-        if 'vporn-clips' == name:
+        if 'pornone-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
-           COOKIEFILE = os_path.join(GetCookieDir(), 'vporn.cookie')
+           COOKIEFILE = os_path.join(GetCookieDir(), 'pornone.cookie')
            self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
            self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
            sts, data = self.get_Page(url)
@@ -4329,12 +4329,12 @@ class Host:
               phImage = self.cm.ph.getSearchGroups(item, '''<img src=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0] 
               phTime = self.cm.ph.getSearchGroups(item, '''"time">([^"^']+?)<''', 1, True)[0].strip()
-              if phUrl.startswith('/'): phUrl = 'https://www.vporn.com' + phUrl
+              if phUrl.startswith('/'): phUrl = 'https://pornone.com' + phUrl
               if phImage.startswith('//'): phImage = 'http:' + phImage
               valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+phTime+']  '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next_page:
               next = self.cm.ph.getSearchGroups(next_page, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
-              if next.startswith('/'): next = 'https://www.vporn.com' + next
+              if next.startswith('/'): next = 'https://pornone.com' + next
               valTab.append(CDisplayListItem('Next', next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', None))                
            return valTab
 
@@ -8041,7 +8041,7 @@ class Host:
         if url.startswith('http://www.tube8.com'):                    return 'http://www.tube8.com'
         if url.startswith('http://m.tube8.com'):                      return 'http://m.tube8.com'
         if url.startswith('https://www.tube8.com'):                   return 'http://www.tube8.com'
-        if url.startswith('https://www.vporn.com'):                   return 'https://www.vporn.com'
+        if url.startswith('https://pornone.com'):                   return 'https://pornone.com'
         if url.startswith('http://xhamster.com'):                     return 'http://xhamster.com'
         if url.startswith('https://xhamster.com'):                    return 'http://xhamster.com'
         if url.startswith('http://www.xnxx.com'):                     return 'http://www.xnxx.com'
@@ -8164,7 +8164,7 @@ class Host:
         if url.endswith('.mjpg'):                            return 'mjpg_stream'
         if url.endswith('.cgi'):                             return 'mjpg_stream'
         if self.MAIN_URL == 'http://hotmovs.com':            return 'http://www.hdzog.com'
-        if self.MAIN_URL == 'https://www.vporn.com':         return self.MAIN_URL
+        if self.MAIN_URL == 'https://pornone.com':         return self.MAIN_URL
         if self.MAIN_URL == 'https://sxyprn.com':            return self.MAIN_URL
         if self.MAIN_URL == 'http://www.moviefap.com':       return self.MAIN_URL
         if self.MAIN_URL == 'http://www.homemoviestube.com': return self.MAIN_URL
@@ -10133,10 +10133,10 @@ class Host:
            if videoUrl.startswith('//'): videoUrl = 'http:' + videoUrl
            return urlparser.decorateUrl(videoUrl, {'Referer': url})
 
-        if parser == 'https://www.vporn.com':
-           COOKIEFILE = os_path.join(GetCookieDir(), 'vporn.cookie')
+        if parser == 'https://pornone.com':
+           COOKIEFILE = os_path.join(GetCookieDir(), 'pornone.cookie')
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
-           sts, data = self.getPage(url, 'vporn.cookie', 'vporn.com', self.defaultParams)
+           sts, data = self.getPage(url, 'pornone.cookie', 'pornone.com', self.defaultParams)
            if not sts: return ''
            printDBG( 'Host listsItems data: '+data )
            if 'This video has been deleted' in data:
