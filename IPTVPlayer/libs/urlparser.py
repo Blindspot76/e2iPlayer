@@ -36,6 +36,7 @@ from Plugins.Extensions.IPTVPlayer.iptvdm.iptvdh import DMHelper
 from Plugins.Extensions.IPTVPlayer.components.asynccall import iptv_execute, MainSessionWrapper
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute, js_execute_ext
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
+from Plugins.Extensions.IPTVPlayer.libs.demjson import decode as demjson_loads
 from Plugins.Extensions.IPTVPlayer.libs.aadecode import decode as aadecode 
 from Plugins.Extensions.IPTVPlayer.libs.powvideo import swapUrl as powvideo_swapUrl
 
@@ -153,6 +154,7 @@ class urlparser:
                        'allocine.fr':           self.pp.parserALLOCINEFR    ,
                        'allvid.ch':             self.pp.parserALLVIDCH      ,
                        'anime-shinden.info':    self.pp.parserANIMESHINDEN  ,
+                       'aparat.cam':            self.pp.parserAPARAT        ,
                        'api.video.mail.ru':     self.pp.parserVIDEOMAIL     ,
                        'archive.org':           self.pp.parserARCHIVEORG    ,
                        'auroravid.to':          self.pp.parserAURORAVIDTO   ,
@@ -5437,16 +5439,47 @@ class pageParser(CaptchaHelper):
     def parserVIVOSX(self, baseUrl):
         printDBG("parserVIVOSX baseUrl[%s]" % baseUrl)
         HTTP_HEADER = {'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate'}
-        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
-        if not sts: return False
-        
-        data = self.cm.ph.getDataBeetwenMarkers(data, 'InitializeStream', ';', False)[1]
-        data = self.cm.ph.getSearchGroups(data, '''['"]([^'^"]+?)['"]''')[0]
-        data = json_loads(base64.b64decode(data))
+
         urlTab = []
-        for idx in range(len(data)):
-            if not self.cm.isValidUrl(data[idx]): continue
-            urlTab.append({'name':_('Source %s') % (idx+1), 'url':strwithmeta(data[idx], {'Referer':baseUrl, 'User-Agent':HTTP_HEADER['User-Agent']})})
+
+        sts, data = self.cm.getPage(baseUrl, {'header':HTTP_HEADER})
+        if not sts: 
+            return urlTab
+        
+        #printDBG("----------------------")
+        #printDBG(data)
+        #printDBG("----------------------")
+        
+        
+        tmp = re.findall("InitializeStream\s?\((.*?)\)", data, re.S)
+        
+        #printDBG("*********")
+        #printDBG(str(tmp))
+        #printDBG("*********")
+        
+        if not tmp:
+            return []
+        
+        j = demjson_loads(tmp[0])
+        
+        src = j.get('source','')
+        if src:
+            jsCode = '''function Normalize(a, b) { return ++b ? String.fromCharCode((a = a.charCodeAt() + 47, a > 126 ? a - 94 : a)) : decodeURIComponent(a).replace(/[^ ]/g, this.Normalize) } ; s = Normalize('%s'); console.log(s);'''
+            jsCode = jsCode % src
+            ret = js_execute(jsCode)
+            
+            if ret['sts'] and 0 == ret['code']:
+                url = ret['data'].replace('\n','')
+                
+                printDBG("Found url %s" % url)
+        
+                if self.cm.isValidUrl(url):
+                    u = urlparser.decorateUrl(url, {'Referer': baseUrl})
+                    label = j.get('quality','link')
+                    params = {'name': label , 'url': u}
+                    printDBG(str(params))
+                    urlTab.append(params)
+        
         return urlTab
         
     def parserZSTREAMTO(self, baseUrl):
@@ -7003,26 +7036,6 @@ class pageParser(CaptchaHelper):
         rm(COOKIE_FILE)
         params = {'header':HTTP_HEADER, 'with_metadata':True, 'cookiefile':COOKIE_FILE, 'use_cookie': True, 'save_cookie':True}
         
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('lang:', '"lang":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"src":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-            if txt.find('idLang:'):
-                txt = txt.replace('idLang:', '"idLang":')
-            
-            return txt
-        
-        
         sts, data = self.cm.getPage(baseUrl, params)
         if not sts: 
             return False
@@ -7083,7 +7096,7 @@ class pageParser(CaptchaHelper):
                     sources = re.findall("src\((\{.*?\})\)", decoded)
 
                     for s in sources:
-                        src = eval(checkTxt(s))
+                        src = demjson_loads(s)
                         url = src.get('src','')
                         if url:
                             if not url.startswith('http'):
@@ -7865,25 +7878,6 @@ class pageParser(CaptchaHelper):
         #        https://uptostream.com/xjo9gegjzf8c
         #        https://uptostream.com/api/streaming/source/get?token=null&file_code=zxfcxyy8in9e
         
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('lang:', '"lang":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"src":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-            if txt.find('idLang:'):
-                txt = txt.replace('idLang:', '"idLang":')
-            
-            return txt
-
         
         urlTab = []
         m = re.search("(iframe/|file_code=)(?P<id>.*)$", baseUrl)
@@ -7911,7 +7905,7 @@ class pageParser(CaptchaHelper):
                     
                     ret = js_execute( code )
                     if ret['sts'] and 0 == ret['code']:
-                        response = eval(checkTxt(ret['data']))
+                        response = demjson_loads(ret['data'])
 
                         #printDBG(str(response))
                         
@@ -11760,24 +11754,6 @@ class pageParser(CaptchaHelper):
         printDBG("parserCLOUDVIDEOTV baseUrl[%r]" % baseUrl)
         # example video: https://cloudvideo.tv/embed-1d3w4w97woun.html
 
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('kind:', '"kind":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"file":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-            
-            return txt
-
-
         baseUrl = strwithmeta(baseUrl)
         HTTP_HEADER= self.cm.getDefaultHeader(browser='chrome')
         HTTP_HEADER['Referer'] = baseUrl.meta.get('Referer', baseUrl)
@@ -11807,7 +11783,6 @@ class pageParser(CaptchaHelper):
                 elif 'x-mpeg' in type:
                     retTab.extend(getDirectM3U8Playlist(url, checkContent=True, sortWithMaxBitrate=999999999))
         
-        
         if retTab: 
             return retTab
         
@@ -11835,10 +11810,10 @@ class pageParser(CaptchaHelper):
                 # stream search
                 s = re.findall("sources\s?:\s?\[(.*?)\]", decoded, re.S)
                 if s:
-                    txt = checkTxt("[" + s[0] + "]")
+                    txt = "[" + s[0] + "]"
                     printDBG(txt)
                     
-                    links = json_loads(txt)
+                    links = demjson_loads(txt)
                     printDBG(str(links))
                     
                     for l in links:
@@ -12104,23 +12079,6 @@ class pageParser(CaptchaHelper):
         printDBG("parserSUPERVIDEO baseUrl[%s]" % baseUrl)
         #example  https://supervideo.tv/embed-k9aicjz32dcj.html
         
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('kind:', '"kind":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"file":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-            
-            return txt
-        
         sts, data = self.cm.getPage(baseUrl)
         if not sts: 
             return False
@@ -12160,7 +12118,7 @@ class pageParser(CaptchaHelper):
             printDBG(urls_text)
 
             if urls_text.startswith("sources:"):
-                urls = eval(checkTxt(urls_text[8:]))
+                urls = demjson_loads(urls_text[8:])
                 for u in urls:
                     printDBG(u)
 
@@ -12484,23 +12442,6 @@ class pageParser(CaptchaHelper):
 
         printDBG("parserONLYSTREAM baseUrl[%s]" % baseUrl)
 
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('kind:', '"kind":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"file":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-            
-            return txt
-                
         sts, data = self.cm.getPage(baseUrl)
         if not sts:
             return []
@@ -12511,9 +12452,9 @@ class pageParser(CaptchaHelper):
         # subtitles search
         t = re.findall("tracks: \[(.*?)\]", data, re.S)
         if t:
-            txt = checkTxt("[" + t[0] + "]")
+            txt = "[" + t[0] + "]"
             printDBG(txt)
-            tracks = json_loads(txt)
+            tracks = demjson_loads(txt)
             printDBG(str(tracks))
             
             for tr in tracks:
@@ -12536,10 +12477,10 @@ class pageParser(CaptchaHelper):
             if not s:
                 return []
 
-        txt = checkTxt("[" + s[0] + "]")
+        txt = "[" + s[0] + "]"
         printDBG(txt)
         
-        links = json_loads(txt)
+        links = demjson_loads(txt)
         #printDBG(str(links))
         for l in links:
             if 'file' in l:
@@ -12648,22 +12589,6 @@ class pageParser(CaptchaHelper):
     def parserWSTREAMVIDEO(self, baseUrl):
         printDBG("parserWSTREAMVIDEO baseUrl[%s]" % baseUrl)
 
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('kind:', '"kind":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"src":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-                return txt
-
         sts, data = self.cm.getPage(baseUrl)
         if not sts:
             return []
@@ -12719,10 +12644,10 @@ class pageParser(CaptchaHelper):
         # stream search
         s = re.findall("sources: ?\[(.*?)\]", data, re.S)
         if s:
-            txt = checkTxt("[" + s[0] + "]")
+            txt = "[" + s[0] + "]"
             printDBG(txt)
 
-            links = json_loads(txt)
+            links = demjson_loads(txt)
             #printDBG(str(links))
             for l in links:
                 if 'src' in l:
@@ -13239,23 +13164,6 @@ class pageParser(CaptchaHelper):
         # "http://backin.net/nplr7n8c1qla"
         # "http://backin.net/s/nplr7n8c1qla"
         # "http://backin.net/s/streams.php?s=nplr7n8c1qla"
-
-        
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('kind:', '"kind":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"src":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-                return txt
 
         
         USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
@@ -13851,25 +13759,6 @@ class pageParser(CaptchaHelper):
             }
         }
 
-        def checkTxt(txt):
-            txt = txt.replace('\n', ' ')
-            if txt.find('file:'):
-                txt = txt.replace('file:', '"file":')
-            if txt.find('label:'):
-                txt = txt.replace('label:', '"label":')
-            if txt.find('kind:'):
-                txt = txt.replace('lang:', '"lang":')
-            if txt.find('src:'):
-                txt = txt.replace('src:', '"src":')
-            if txt.find('res:'):
-                txt = txt.replace('res:', '"res":')
-            if txt.find('type:'):
-                txt = txt.replace('type:', '"type":')
-            if txt.find('idLang:'):
-                txt = txt.replace('idLang:', '"idLang":')
-            
-            return txt
-
         urlsTab = []
         
         sts, data = self.cm.getPage(baseUrl, httpParams)
@@ -13904,7 +13793,7 @@ class pageParser(CaptchaHelper):
                     sources = re.findall("src\((\{.*?\})\)", decoded, re.S)
 
                     for s in sources:
-                        src = eval(checkTxt(s))
+                        src = demjson_loads(s)
                         url = src.get('src','')
                         if url:
                             if not url.startswith('http'):
@@ -14123,3 +14012,48 @@ class pageParser(CaptchaHelper):
 
         return urlsTab
         
+
+    def parserAPARAT(self, baseUrl):
+        printDBG("parserAPARAT baseUrl[%r]" % baseUrl)
+
+        httpParams = {
+            'header' : {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip',
+                'Referer' : baseUrl.meta.get('Referer', baseUrl)
+            } 
+        }
+
+        urlsTab = []
+        
+        sts, data = self.cm.getPage(baseUrl, httpParams)
+        
+        if sts:
+            #printDBG("-----------------------")
+            #printDBG(data)
+            #printDBG("-----------------------")
+        
+            srcJson = re.findall("sources\s?:\s?\[(.*?)\]", data, re.S)
+            
+            if srcJson:
+                srcJson = srcJson[0]
+                sources = demjson_loads("[" + srcJson + "]")
+                printDBG(str(sources))
+                
+                for s in sources:
+                    u = s.get('src','')
+                    if self.cm.isValidUrl(u):
+                        u = urlparser.decorateUrl(u, {'Referer': baseUrl})
+                        label = s.get('label','')
+                        srcType = s.get('type','')
+                    if 'm3u' in u or 'hls' in srcType or 'x-mpeg' in srcType :
+                        params = getDirectM3U8Playlist(u, checkExt=True, variantCheck=True, checkContent=True, sortWithMaxBitrate=99999999)
+                        printDBG(str(params))    
+                        urlsTab.extend(params)
+                    else:
+                        params = {'name': label , 'url': u}
+                        printDBG(str(params))
+                        urlsTab.append(params)
+
+        return urlsTab
