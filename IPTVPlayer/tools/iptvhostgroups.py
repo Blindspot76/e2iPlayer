@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-06-15 by Blindspot - modified iptvhostgroups
+# 2020-06-27 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -126,7 +126,7 @@ class IPTVHostsGroups:
         'dsda' : [ 'documentary', 'italian', 'science'] ,
         'efilmytv' : [ 'moviesandseries', 'polish'] ,
         'egybest' : [ 'arabic', 'moviesandseries'] ,
-        'ekinomaniac' : ['moviesandseries', 'polish'], 
+        'ekinomaniak' : ['moviesandseries', 'polish'], 
         'ekinotv' : [ 'moviesandseries', 'polish'] ,
         'ekstraklasatv' : [ 'polish', 'sport'] ,
         'eskago' : [ 'live', 'music', 'polish'] ,
