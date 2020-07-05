@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.07.03.0"
+    XXXversion = "2020.07.05.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -8322,27 +8322,27 @@ class Host:
               videoPage = self.cm.ph.getSearchGroups(data, '''video_alt_url5: ['"]([^"^']+?)['"]''')[0] 
               if videoPage:
                  printDBG( 'Host videoPage video_alt_url5 4k: '+videoPage )
-                 return videoPage
+                 return strwithmeta(videoPage, {'Referer':url})
               videoPage = self.cm.ph.getSearchGroups(data, '''video_alt_url4: ['"]([^"^']+?)['"]''')[0] 
               if videoPage:
                  printDBG( 'Host videoPage video_alt_url4 High HD: '+videoPage )
-                 return videoPage
+                 return strwithmeta(videoPage, {'Referer':url})
               videoPage = self.cm.ph.getSearchGroups(data, '''video_alt_url3: ['"]([^"^']+?)['"]''')[0] 
               if videoPage:
                  printDBG( 'Host videoPage video_alt_url3 Full High: '+videoPage )
-                 return videoPage
+                 return strwithmeta(videoPage, {'Referer':url})
            videoPage = self.cm.ph.getSearchGroups(data, '''video_alt_url2: ['"]([^"^']+?)['"]''')[0] 
            if videoPage:
               printDBG( 'Host videoPage video_alt_url2 HD: '+videoPage )
-              return videoPage
+              return strwithmeta(videoPage, {'Referer':url})
            videoPage = self.cm.ph.getSearchGroups(data, '''video_alt_url: ['"]([^"^']+?)['"]''')[0] 
            if videoPage:
               printDBG( 'Host videoPage video_alt_url Medium: '+videoPage )
-              return videoPage
+              return strwithmeta(videoPage, {'Referer':url})
            videoPage = self.cm.ph.getSearchGroups(data, '''video_url: ['"]([^"^']+?)['"]''')[0] 
            if videoPage:
               printDBG( 'Host videoPage video_url Low: '+videoPage )
-              return videoPage
+              return strwithmeta(videoPage, {'Referer':url})
            return ''
 
         if parser == 'http://www.hclips.com':
