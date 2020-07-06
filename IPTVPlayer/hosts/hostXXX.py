@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.07.05.0"
+    XXXversion = "2020.07.05.2"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -5994,7 +5994,7 @@ class Host:
            return valTab
         if 'LETMEJERK-clips' == name:
            printDBG( 'Host listsItems begin name='+name )
-           for x in range(1, 20): 
+           for x in range(1, 3): 
               COOKIEFILE = os_path.join(GetCookieDir(), 'letmejerk.cookie')
               self.HTTP_HEADER = self.cm.getDefaultHeader(browser='chrome')
               self.defaultParams = {'header':self.HTTP_HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE}
@@ -6004,9 +6004,10 @@ class Host:
               self.defaultParams['cookie_items'] = {'visited':'yes'}
               sts, data = self.getPage(url, 'letmejerk.cookie', 'letmejerk.com', self.defaultParams)
               if not sts: return valTab
-              #printDBG( 'Host listsItems data: '+data )
-              next = self.cm.ph.getDataBeetwenMarkers(data, '<ul class="paginator">', '</ul>', False)[1]
-              data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<div class="th-image">', '</div>')
+              printDBG( 'Host listsItems data: '+data )
+              next = self.cm.ph.getDataBeetwenMarkers(data, 'class="next"', '</ul>', False)[1]
+              data = data.split('<div class="th">')
+              if len(data): del data[0]
               if not len(data): continue
               for item in data:
                  phTitle = self.cm.ph.getSearchGroups(item, '''alt=['"]([^"^']+?)['"]''', 1, True)[0] 
@@ -6015,6 +6016,7 @@ class Host:
                  if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?)['"]''', 1, True)[0] 
                  phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0] 
                  Time = self.cm.ph.getSearchGroups(item, '''clock"></i>([^>]+?)<''', 1, True)[0].strip()
+                 if ''==Time: Time = self.cm.ph.getSearchGroups(item, '''clock-o"></i>([^>]+?)<''', 1, True)[0].strip()
                  if phUrl.startswith('/'): phUrl = 'https://www.letmejerk.com' + phUrl
                  if phImage.startswith('//'): phImage = 'https:' + phImage
                  try:
@@ -6022,13 +6024,14 @@ class Host:
                  except: pass
                  if phTitle and not phUrl.endswith('/.html'):
                     valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
-              if len(next)>180:
+              if len(next)>18:
                  match = re.compile('href="(.*?)"').findall(next)
                  if not match: return valTab
                  next = match[-1].replace('&sort=','')
-                 url1 = url.replace(url.split('/')[-1],'')
-                 next = url1 + next
-                 valTab.append(CDisplayListItem('Next ', 'Page: '+next, CDisplayListItem.TYPE_CATEGORY, [next], name, '', 'next'))
+                 #url1 = url.replace(url.split('/')[-1],'')
+                 #next = url1 + next
+                 if next.startswith('/'): next = 'https://www.letmejerk.com' + next
+                 valTab.append(CDisplayListItem('Next ', 'Page: '+next.split('=')[-1], CDisplayListItem.TYPE_CATEGORY, [next], name, '', 'next'))
               if len(data): break
            return valTab
 
@@ -6937,9 +6940,7 @@ class Host:
            printDBG( 'Host listsItems data: '+data )
            next = self.cm.ph.getSearchGroups(data, '''<link rel="next" href=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&').replace('..','')
            if next == '': next = self.cm.ph.getSearchGroups(data, '''<li class="next"><a href=['"]([^"^']+?)['"]''', 1, True)[0].replace('&amp;','&').replace('..','')
-           data2 = self.cm.ph.getDataBeetwenMarkers(data, '<a href="/tag/" class="k more">', 'footer', False)[1]
-           if len(data2): data = data2
-           data = data.split('<div class="video-item"')
+           data = data.split('data-id=')
            if len(data): del data[0]
            for item in data:
               Added = ''
@@ -6948,14 +6949,14 @@ class Host:
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0].replace('..','')
               Time = self.cm.ph.getSearchGroups(item, '''clock-o"></i>([^>]+?)<''', 1, True)[0].strip()
               if not Time: Time = self.cm.ph.getSearchGroups(item, '''i-len">([^>]+?)<''', 1, True)[0].strip()
+              if not Time: Time = self.cm.ph.getSearchGroups(item, '''</use></svg>([^>]+?)<''', 1, True)[0].strip()
               Added = self.cm.ph.getSearchGroups(item, '''&nbsp;<span>([^>]+?)<''', 1, True)[0].strip()
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               if phImage.startswith('//'): phImage = 'http:' + phImage
               try:
                  phImage = urlparser.decorateUrl(phImage, {'Referer': self.MAIN_URL})
               except: pass
-              if phTitle and Time:
-                 valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle)+'\n'+Added,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
+              valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Time+'] '+decodeHtml(phTitle)+'\n'+Added,CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)],'', phImage, None)) 
            if next:
               if next.startswith('//'): next = 'http:' + next
               if next.startswith('/'): next = self.MAIN_URL + next
