@@ -1,3 +1,6 @@
+#2020.07.07.01
+-Music Box javítva
+-USTV Go javítva
 #2020.07.06.01 
 -Youtube részben javítva (Kereső, Webp > JPEG konverzió)
 -RaiPlay javítva (ITA)
