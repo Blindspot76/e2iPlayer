@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# Blindspot - 2020-07-06
+# Blindspot - 2020-07-07
 ###################################################
 # LOCAL import
 ###################################################
@@ -54,6 +54,7 @@ class Youtube(CBaseHostClass):
         self.DEFAULT_ICON_URL = zlib.decompress(base64.b64decode('eJzLKCkpKLbS1y8vL9fLzTUystRLzs/Vz8xNTE8t1q/MLy0pTUrVTSotKcnP0y0oTtE1MTUwMjDWK8hLBwBj7xQv'))
         self.MAIN_GROUPED_TAB = [{'category': 'from_file',             'title': _("User links"),     'desc': _("User links stored in the ytlist.txt file.")}, \
                                  {'category': 'search',                'title': _("Search"),         'desc': _("Search youtube materials "), 'search_item':True}, \
+                                 {'category': 'feeds',                 'title': _("Felkapott videók"), 'desc': _("Népszerű videók böngészése")}, \
                                  {'category': 'search_history',        'title': _("Search history"), 'desc': _("History of searched phrases.")}]
         
         self.SEARCH_TYPES = [  (_("Video"),    "video"   ), 
@@ -149,7 +150,34 @@ class Youtube(CBaseHostClass):
         for idx in range(len(self.currList)):
             if self.currList[idx]['category'] in ["channel","playlist","movie","traylist"]:
                 self.currList[idx]['good_for_fav'] = True
+
+    def listFeeds(self, cItem):
+        printDBG('Youtube.listFeeds cItem[%s]' % (cItem))
+
+        category = cItem.get("category","")
         
+        if category == "feeds":
+            url = "https://www.youtube.com/feed/trending"
+            tmpList = self.ytp.getFeedsList(url)
+            for item in tmpList:
+                self.addDir(item) 
+        
+        elif category.startswith("feeds_"):
+            topic = category[6:]
+            url = cItem.get('url','')
+            tmpList = self.ytp.getVideoFromFeed(url) 
+
+            for item in tmpList:
+                item.update({'name':'category'})
+                if 'video' == item['type']:
+                    self.addVideo(item)
+                elif 'more' == item['type']:
+                    self.addMore(item)
+                else:
+                    if item['category'] in ["channel","playlist","movie","traylist"] or item['category'].startswith("feeds"):
+                        item['good_for_fav'] = True
+                    self.addDir(item)
+            
     def getVideos(self, cItem):
         printDBG('Youtube.getVideos cItem[%s]' % (cItem))
         
@@ -240,6 +268,8 @@ class Youtube(CBaseHostClass):
             self.listCategory(self.currItem)
         elif category in ["channel","playlist","movie","traylist"]:
             self.getVideos(self.currItem)
+        elif category.startswith("feeds"):
+            self.listFeeds(self.currItem)
         elif category == 'playlists':
             self.listItems(self.currItem)
         #SEARCH
