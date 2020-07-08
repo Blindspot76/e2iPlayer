@@ -98,7 +98,7 @@ class TSIPlayer(CBaseHostClass):
 			self.tsiplayer_host({'cat_id':'903'})
 		if config.plugins.iptvplayer.dev_mod.value:
 			self.addDir({'name':'cat','category' : 'Devmod','title':'Tools','desc':'','icon':'http://www.mezganisaid.com/z-include/images/code-dev.png'} )
-
+		self.addDir({'name':'cat','category' : 'Trash','title':'Trash','desc':'','icon':'https://i.ibb.co/9424kFw/Cancel-Subscription.png'} )
 		self.tsiplayer_host({'cat_id':'901','ordre':1})
 
 
@@ -134,10 +134,18 @@ class TSIPlayer(CBaseHostClass):
 		self.tsiplayer_host({'cat_id':'101'})	
 		self.tsiplayer_host({'cat_id':'401'})
 		self.tsiplayer_host({'cat_id':'904','gnr':'en'})
-		#self.addDir({'name':'search','category' :'search','title': _('Search'),'search_item':True,'page':1,'hst':'ALLEN','icon':''})
+
+	def TrashCat(self):
+		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Not Supported Hosts |★●-----','desc':'Not supported Hosts'})	
+		self.tsiplayer_host({'cat_id':'102'})	
+		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Deleted Hosts |★●-----','desc':'Not Working Hosts'})
+		self.tsiplayer_host({'cat_id':'104'})			
+		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Not Working Hosts |★●-----','desc':'Not Working Hosts'})
+		self.tsiplayer_host({'cat_id':'105'})	
 
 
-				
+
+		
 	def FilmCatAr(self):
 		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Films & Series |★●-----','desc':'Films, Series & Animes en VF et VOSTFR'})			
 		self.tsiplayer_host({'cat_id':'101'})	
@@ -165,10 +173,6 @@ class TSIPlayer(CBaseHostClass):
 		#self.addDir(params)		
 		#params = {'category' : 'update_now2','title':tscolor('\c0000????')+' +++++++ FORCE UPDATE & RESTART (Zip method) +++++++ ','name':'update_restart'} 
 		#self.addDir(params)			
-		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Not supported Hosts |★●-----','desc':''})
-		self.tsiplayer_host({'cat_id':'102'})	
-		self.addMarker({'category' :'marker','title':tscolor('\c00????00')+' -----●★| Hosts Out |★●-----','desc':''})
-		self.tsiplayer_host({'cat_id':'104'})	
 
 
 	def PrintExTs(self,e):
@@ -233,7 +237,7 @@ class TSIPlayer(CBaseHostClass):
 						info['name']=file_
 						info['icon']=''
 						info['version']=''
-						info['cat_id']='104'
+						info['cat_id']='105'
 						info['dev']=''
 						#info.get('host','')=
 					desc=''
@@ -366,6 +370,8 @@ class TSIPlayer(CBaseHostClass):
 			self.IptvCat()
 		elif category == 'Devmod':
 			self.DevCat()
+		elif category == 'Trash':
+			self.TrashCat()
 		elif category == 'Addons':
 			self.AddonsCat()
 		else:
@@ -502,7 +508,11 @@ class TSIPlayer(CBaseHostClass):
 			if data=='host2':
 				retTab=self.host_.getArticle(cItem)
 		elif hst=='tshost':		
-			retTab=self.host_.getArticle(cItem)			
+			retTab=self.host_.getArticle(cItem)	
+		elif hst=='xtream_vod':			
+			data=cItem.get('category', '')
+			if data=='host2':
+				retTab=self.host_.getArticle(cItem)
 		else:	
 			exec ('retTab=self.'+hst+'_getArticleContent(cItem)')
 		return retTab
