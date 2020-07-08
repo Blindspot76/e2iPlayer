@@ -1,3 +1,6 @@
+#2020.07.08.01
+-TSiPlayer frissítve
+-Kisebb módosítások
 #2020.07.07.02
 -Youtube további javítások
 -Music Box frissítve
