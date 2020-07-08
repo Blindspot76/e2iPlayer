@@ -73,7 +73,7 @@ config.plugins.iptvplayer.IPTVDMRunAtStart      = ConfigYesNo(default = False)
 config.plugins.iptvplayer.IPTVDMShowAfterAdd    = ConfigYesNo(default = True)
 config.plugins.iptvplayer.IPTVDMMaxDownloadItem = ConfigSelection(default = "1", choices = [("1", "1"),("2", "2"),("3", "3"),("4", "4")])
 
-config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = True)
+config.plugins.iptvplayer.AktualizacjaWmenu = ConfigYesNo(default = False)
 config.plugins.iptvplayer.sortuj = ConfigYesNo(default = True)
 config.plugins.iptvplayer.remove_diabled_hosts = ConfigYesNo(default = False)
 config.plugins.iptvplayer.IPTVWebIterface = ConfigYesNo(default = False)
@@ -206,7 +206,7 @@ config.plugins.iptvplayer.myjd_jdname = ConfigText(default = "", fixed_size = Fa
 config.plugins.iptvplayer.api_key_youtube = ConfigText(default = "", fixed_size = False)
 
 # Update
-config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = True)
+config.plugins.iptvplayer.autoCheckForUpdate = ConfigYesNo(default = False)
 config.plugins.iptvplayer.updateLastCheckedVersion = ConfigText(default = "00.00.00.00", fixed_size = False)
 config.plugins.iptvplayer.fakeUpdate               = ConfigSelection(default = "fake", choices = [("fake", "  ")])
 config.plugins.iptvplayer.downgradePossible        = ConfigYesNo(default = False)
