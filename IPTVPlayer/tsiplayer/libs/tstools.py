@@ -27,6 +27,10 @@ tunisia_gouv = [("", "None"),("Tunis","Tunis"),("Ariana","Ariana"),("Béja","Bé
                 ("Sousse","Sousse"),("Tataouine","Tataouine"),("Tozeur","Tozeur"),("Zaghouane","Zaghouane")]
 
 
+def printD(x1,x2=''):
+	printDBG(x1)
+	return ''
+
 def cryptoJS_AES_decrypt(encrypted, password, salt):
 	def derive_key_and_iv(password, salt, key_length, iv_length):
 		d = d_i = ''

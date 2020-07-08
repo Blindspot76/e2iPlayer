@@ -37,6 +37,24 @@ from urlparse import urlparse, parse_qs
 from Components.config import config
 ###################################################
 
+from binascii import unhexlify
+from hashlib import md5
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+
+
+def cryptoJS_AES_decrypt(encrypted, password, salt):
+    def derive_key_and_iv(password, salt, key_length, iv_length):
+        d = d_i = ''
+        while len(d) < key_length + iv_length:
+            d_i = md5(d_i + password + salt).digest()
+            d += d_i
+        return d[:key_length], d[key_length:key_length+iv_length]
+    bs = 16
+    key, iv = derive_key_and_iv(password, salt, 32, 16)
+    cipher = AES_CBC(key=key, keySize=32)
+    return cipher.decrypt(encrypted, iv)
+	
+	
 def DecodeAllThePage(html):
 	Maxloop = 10
 	while (Maxloop > 0):
@@ -239,11 +257,17 @@ class urlparser:
 						'vidbm.com'       : self.pp.parserUNI01,#self.pp.parserVSTREAM,
 						'vidbom.com'      : self.pp.parserUNI01,
 						'asia2tv.cc'      : self.pp.parserUNI01,
+						'asia2tv.com'     : self.pp.parserUNI01,						
 						'allvid.co'       : self.pp.parserUNI01,
 						'moshahda.online' : self.pp.parserUNI01,
 						'anavids.com'     : self.pp.parserUNI01,
 						'sendvid.com'     : self.pp.parserUNI01,
 						'arabseed.me'     : self.pp.parserUNI01,
+						'arabveturk.com'  : self.pp.parserUNI01,
+						'okgaming.org'    : self.pp.parserUNI01,
+						'okanime.com'     : self.pp.parserUNI01, 
+						'saruch.co'       : self.pp.parserSARUCH,
+						'zimabdko.com'    : self.pp.parserZIMABDKO,
 						'abcvideo.cc'     : self.pp.parserABCVIDEO,
 						'fembed.net'	  : self.pp.parserFEURL, 						
 						'feurl.com'	      : self.pp.parserFEURL, 
@@ -272,7 +296,8 @@ class urlparser:
 						'uptobox.com'     : self.pp.parserUPTOSTREAMCOM,	
 						'google.com'      : self.pp.parserGOOGLE, 
 						'fembed.com'      : self.pp.parserXSTREAMCDNCOM, 
-						'uppom.live'      :	self.pp.downUPPOM, 					
+						'uppom.live'      :	self.pp.downUPPOM, 	
+						'sandup.co'       : self.pp.downSANDUP, 							
 						#					
 						#'hqq.tv'          : self.pp.parserHQQ,
 						'verystream.com'  : self.pp.parserVERYSTREAM,
@@ -2372,18 +2397,21 @@ class pageParser(CaptchaHelper):
 						
 	def parserUNI01(self, baseUrl):
 		printDBG("parserUNI01 baseUrl[%r]" % baseUrl)
+		printDBG("parserUNI01"+str(strwithmeta(baseUrl).meta))
 		videoTab = []
 		url = baseUrl
-		HTTP_HEADER= {'User-Agent':"Mozilla/5.0"}
+		HTTP_HEADER= {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'}
 		if 'Referer' in strwithmeta(baseUrl).meta:
 			HTTP_HEADER['Referer'] = strwithmeta(baseUrl).meta['Referer']
+		if 'arabveturk' in baseUrl: HTTP_HEADER['Referer'] = ''
+		#printDBG("parserUNI01"+str(HTTP_HEADER))
 		COOKIE_FILE = GetCookieDir('UNI01.cookie')	
 		self.cm.clearCookie(COOKIE_FILE, ['__cfduid', 'cf_clearance'])
 		urlParams = {'header': HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
 		sts, data = self.getPageCF(url, urlParams)
 		#sts, data = self.cm.getPage(url)
-		#printDBG('data='+'#'+str(data)+'#')
 		if not sts: return False
+		#printDBG('data='+'#'+str(data)+'#')
 		if 'ﾟωﾟ' in data:
 			lst_pk = re.findall("(ﾟωﾟ.*?)<", data, re.S)
 			if lst_pk:
@@ -2532,14 +2560,38 @@ class pageParser(CaptchaHelper):
 				lst_data1 = re.findall('<input.*?name="(.*?)".*?value="(.*?)"', lst_data[0], re.S|re.IGNORECASE)
 				for elm in lst_data1:
 					post_data[elm[0]]=elm[1]
-					urlParams['header']['Referer']=url
-					sts, data = self.getPageCF(url,urlParams,post_data=post_data)	
-					lst_data = re.findall('<form(.*?)</form', data, re.S|re.IGNORECASE)
+				urlParams['header']['Referer']=url
+				sts, data = self.getPageCF(url,urlParams,post_data=post_data)	
+				lst_data = re.findall('<form(.*?)</form', data, re.S|re.IGNORECASE)
 			printDBG('data1='+'#'+str(data)+'#')		
 			lst_data = re.findall('id="direct_link".*?href="(.*?)"', data, re.S|re.IGNORECASE)		
 			if lst_data:
+				videoTab.append({'name':'DirectLink', 'url':lst_data[0]})			
+		return videoTab	
+		
+	def downSANDUP(self, baseUrl):
+		printDBG("downSANDUP baseUrl[%r]" % baseUrl)
+		videoTab = []
+		url = baseUrl
+		HTTP_HEADER= {'User-Agent':"Mozilla/5.0"}
+		COOKIE_FILE = GetCookieDir('sandup.cookie')	
+		self.cm.clearCookie(COOKIE_FILE, ['__cfduid', 'cf_clearance'])
+		urlParams = {'header': HTTP_HEADER, 'use_cookie': True, 'save_cookie': True, 'load_cookie': True, 'cookiefile': COOKIE_FILE}
+		sts, data = self.getPageCF(url, urlParams)
+		if sts:		
+			lst_data = re.findall('<form(.*?)</form', data, re.S|re.IGNORECASE)
+			post_data = {}
+			lst_data1 = re.findall('<input.*?name="(.*?)".*?value="(.*?)"', lst_data[0], re.S|re.IGNORECASE)
+			for elm in lst_data1:
+				post_data[elm[0]]=elm[1]
+			urlParams['header']['Referer']=url
+			sts, data = self.getPageCF(url,urlParams,post_data=post_data)	
+			printDBG('data1='+'#'+str(data)+'#')		
+			lst_data = re.findall('class="done">.*?href="(.*?)"', data, re.S|re.IGNORECASE)		
+			if lst_data:
 				videoTab.append({'name':'DirectLink', 'url':lst_data[0]})	
 		return videoTab	
+		
 	def easyload_decode(self, src, t):
 		url = ''.join([chr(ord(src[i]) ^ ord(t[i % len(t)])) for i in range(len(src))])
 		return url
@@ -2594,3 +2646,51 @@ class pageParser(CaptchaHelper):
 				link = strwithmeta(link, {'User-Agent':UA})
 				videoTab.append({'name':'[MP4]', 'url':link})
 		return videoTab
+		
+	def parserZIMABDKO(self, baseUrl):
+		videoTab = []
+		UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/66.0'
+		printDBG("parserFEURL baseUrl[%r]" % baseUrl)
+		HTTP_HEADER= {'User-Agent':UA}
+		urlParams = {'header': HTTP_HEADER}
+		sts, data = self.cm.getPage(baseUrl,urlParams)
+		if sts:
+			lst_data = re.findall('data-en=.*?[\'"](.*?)[\'"].*?data-p=.*?[\'"](.*?)[\'"]', data, re.S)	
+			if lst_data:
+				code = urllib.unquote(lst_data[0][0])
+				code = json_loads(code.strip())
+				b = lst_data[0][1]
+				printDBG('code= '+str(code)+' | pass= '+b)
+				ciphertext = base64.b64decode(code['ct'])
+				iv = unhexlify(code['iv'])
+				salt = unhexlify(code['s'])
+				decrypted = cryptoJS_AES_decrypt(ciphertext, b, salt)
+				printDBG('decrypted= '+decrypted)
+				URL = decrypted.replace('\/','/').replace('"','')
+				sts, data = self.cm.getPage(URL)
+				if sts:	
+					printDBG('data= '+data)
+					lst_data = re.findall('file":"(.*?)"', data, re.S)	
+					if lst_data:
+						if 'm3u8' in lst_data[0]:
+							videoTab.extend(getDirectM3U8Playlist(lst_data[0], checkExt=False, checkContent=True, sortWithMaxBitrate=999999999))
+						else:
+							videoTab.append({'name':'[MP4]', 'url':lst_data[0]})	
+		return videoTab		
+		
+		
+	def parserSARUCH(self, baseUrl):
+		videoTab = []
+		UA = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:53.0) Gecko/20100101 Firefox/66.0'
+		HTTP_HEADER= {'User-Agent':UA,'referer':baseUrl}
+		urlParams = {'header': HTTP_HEADER}
+		url = baseUrl.replace('/embed/','/videos/').replace('//saruch.co','//api.saruch.co')+'/stream?referrer='+baseUrl
+		url = url.replace('//stream','/stream')
+		sts, data = self.cm.getPage(url,urlParams)
+		if sts:
+			lst_data = re.findall('"sources":(\[.*?])', data, re.S)
+			if lst_data:
+				videoTab = self.parserUNI01_GET(lst_data,baseUrl,HTTP_HEADER)		
+				return videoTab
+			else:
+				return []		

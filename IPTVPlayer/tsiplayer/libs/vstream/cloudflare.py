@@ -1,11 +1,11 @@
-# coding=utf-8
-# https://github.com/Kodi-vStream/venom-xbmc-addons
+# -*- coding: utf-8 -*-
+# vStream https://github.com/Kodi-vStream/venom-xbmc-addons
 #
-#alors la j'ai pas le courage
+# alors la j'ai pas le courage
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.config import GestionCookie
 from requests.adapters import HTTPAdapter
 from collections import OrderedDict
-import re, ssl, requests#, os, time, json, random
+import re, ssl, requests  #, os, time, json, random
 from requests.sessions import Session
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream.jsunfuck import JSUnfuck
 
@@ -14,16 +14,18 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-#old version
+# old version
 from requests.packages.urllib3.util.ssl_ import create_urllib3_context
-
-##########################################################################################################################################################
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream import cloudscraper
+# #####################################################################################################################
 #
 # Ok so a big thx to VeNoMouS for this code
 # From this url https://github.com/VeNoMouS/cloudscraper
 # Franchement si vous etes content de voir revenir vos sites allez mettre une etoile sur son github.
 #
-##########################################################################################################################################################
+# #####################################################################################################################
+
+
 class CipherSuiteAdapter(HTTPAdapter):
 
     def __init__(self, cipherSuite = None, **kwargs):
@@ -47,7 +49,7 @@ class CipherSuiteAdapter(HTTPAdapter):
         kwargs['ssl_context'] = self.ssl_context
         return super(CipherSuiteAdapter, self).proxy_manager_for(*args, **kwargs)
 
-##########################################################################################################################################################
+#######################################################################################################################
 
 Mode_Debug = True
 
@@ -71,18 +73,18 @@ if (False):
     requests_log.setLevel(logging.DEBUG)
     requests_log.propagate = True
 
-#---------------------------------------------------------
-#Gros probleme, mais qui a l'air de passer
-#Le headers 'Cookie' apparait 2 fois, il faudrait lire la precedente valeur
-#la supprimer et remettre la nouvelle avec les 2 cookies
-#Non conforme au protocole, mais ca marche (pour le moment)
-#-----------------------------------------------------------
+# ---------------------------------------------------------
+# Gros probleme, mais qui a l'air de passer
+# Le headers 'Cookie' apparait 2 fois, il faudrait lire la precedente valeur
+# la supprimer et remettre la nouvelle avec les 2 cookies
+# Non conforme au protocole, mais ca marche (pour le moment)
+# -----------------------------------------------------------
 
-#Cookie path
-#C:\Users\BRIX\AppData\Roaming\Kodi\userdata\addon_data\plugin.video.vstream\
+# Cookie path
+# C:\Users\BRIX\AppData\Roaming\Kodi\userdata\addon_data\plugin.video.vstream\
 
-#Light method
-#Ne marche que si meme user-agent
+# Light method
+# Ne marche que si meme user-agent
     # req = urllib.request.Request(sUrl, None, headers)
     # try:
         # response = urllib.request.urlopen(req)
@@ -97,13 +99,14 @@ if (False):
                 # cookies = cookies.split(';')[0]
                 # sHtmlContent = CloudflareBypass().GetHtml(sUrl, e.read(), cookies)
 
-#Heavy method
+# Heavy method
 # sHtmlContent = CloudflareBypass().GetHtml(sUrl)
 
-#For memory
-#http://www.jsfuck.com/
+# For memory
+# http://www.jsfuck.com/
 
 UA = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:63.0) Gecko/20100101 Firefox/63.0'
+
 
 def checklowerkey(key, dict):
     for i in dict:
@@ -111,7 +114,8 @@ def checklowerkey(key, dict):
             return i
     return False
 
-def checkpart(s, end = '+'):
+
+def checkpart(s, end='+'):
     p = 0
     pos = 0
 
@@ -133,27 +137,28 @@ def checkpart(s, end = '+'):
 
     return s[:pos]
 
+
 def parseInt(s):
     v = JSUnfuck(s).decode(False)
     v = re.sub('([^\(\)])\++', '\\1', v)
     v = eval(v)
     return v
 
+
 def CheckIfActive(data):
     if 'Checking your browser before accessing' in str(data):
-    #if ('URL=/cdn-cgi/' in head.get('Refresh', '') and head.get('Server', '') == 'cloudflare-nginx'):
         return True
     return False
+
 
 def showInfo(sTitle, sDescription, iSeconds=0):
     if (iSeconds == 0):
         iSeconds = 1000
     else:
         iSeconds = iSeconds * 1000
-    #xbmc.executebuiltin('Notification(%s, %s, %s)' % (str(sTitle), (str(sDescription)), iSeconds))
+
 
 class CloudflareBypass(object):
-
     def __init__(self):
         self.state = False
         self.HttpReponse = None
@@ -163,11 +168,8 @@ class CloudflareBypass(object):
         self.Header = None
         self.RedirectionUrl = None
 
-        #self.s = requests.Session()
-
-    #Return param for head
+    # Return param for head
     def GetHeadercookie(self,url):
-        #urllib.parse.quote_plus()
         Domain = re.sub(r'https*:\/\/([^/]+)(\/*.*)', '\\1', url)
         cook = GestionCookie().Readcookie(Domain.replace('.', '_'))
         if cook == '':
@@ -175,24 +177,28 @@ class CloudflareBypass(object):
 
         return '|' + urllib.urlencode({'User-Agent': UA, 'Cookie': cook})
 
+
     def ParseCookies(self, data):
         list = {}
 
         sPattern = '(?:^|[,;]) *([^;,]+?)=([^;,\/]+)'
         aResult = re.findall(sPattern, data)
+        # VSlog(str(aResult))
         if (aResult):
             for cook in aResult:
                 if 'deleted' in cook[1]:
                     continue
                 list[cook[0]] = cook[1]
-                #cookies = cookies + cook[0] + '=' + cook[1]+ ';'
+                # cookies = cookies + cook[0] + '=' + cook[1]+ ';'
 
+        # VSlog(str(list))
 
         return list
 
+
     def SetHeader(self):
         head = OrderedDict()
-        #Need to use correct order
+        # Need to use correct order
         h = ['User-Agent', 'Accept', 'Accept-Language', 'Accept-Encoding', 'Connection', 'Upgrade-Insecure-Requests']
         v = [UA, 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'en-US,en;q=0.5', 'gzip, deflate', 'close', '1']
         for i in enumerate(h):
@@ -202,12 +208,12 @@ class CloudflareBypass(object):
             else:
                 head[i[1]] = v[i[0]]
 
-        #optional headers
+        # optional headers
         if 'Referer' in self.Memorised_Headers:
             head['Referer'] = self.Memorised_Headers['Referer']
 
         if (False):
-            #Normalisation because they are not case sensitive:
+            # Normalisation because they are not case sensitive:
             Headers = ['User-Agent', 'Accept', 'Accept-Language', 'Accept-Encoding', 'Cache-Control', 'Dnt', 'Pragma', 'Connexion']
             Headers_l = [x.lower() for x in Headers]
             head2 = dict(head)
@@ -219,23 +225,26 @@ class CloudflareBypass(object):
 
         return head
 
+
     def GetReponseInfo(self):
         return self.RedirectionUrl, self.Header
 
-    def GetHtml(self, url, htmlcontent = '', cookies = '', postdata = None, Gived_headers = ''):
 
-        #Memorise headers
+    def GetHtml(self, url, htmlcontent='', cookies='', postdata=None, Gived_headers=''):
+
+        # Memorise headers
         self.Memorised_Headers = Gived_headers
 
-        #Memorise postdata
+        # Memorise postdata
         self.Memorised_PostData = postdata
 
-        #Memorise cookie
+        # Memorise cookie
         self.Memorised_Cookies = cookies
+        # VSlog(cookies)
 
-        #cookies in headers?
+        # cookies in headers?
         if Gived_headers != '':
-            if Gived_headers.get('Cookie',None):
+            if Gived_headers.get('Cookie', None):
                 if cookies:
                     self.Memorised_Cookies = cookies + '; ' + Gived_headers.get('Cookie')
                 else:
@@ -256,7 +265,7 @@ class CloudflareBypass(object):
         data = {}
         if postdata:
             method = 'POST'
-            #Need to convert data to dictionnary
+            # Need to convert data to dictionnary
             d = postdata.split('&')
             for dd in d:
                 ddd = dd.split('=')
@@ -265,11 +274,10 @@ class CloudflareBypass(object):
             method = 'GET'
 
 
-        from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.vstream import cloudscraper
-        s = cloudscraper.create_scraper(browser={'custom': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'})#'ScraperBot/1.0'})
+        s = cloudscraper.create_scraper(browser={'custom': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:50.0) Gecko/20100101 Firefox/50.0'})
 
-        r = s.request(method,url,headers = self.SetHeader(), cookies = self.ParseCookies(cookies), data = data)
-        #r = s.request(method, url)
+        r = s.request(method,url, headers=self.SetHeader(), cookies=self.ParseCookies(cookies), data=data)
+        # r = s.request(method, url)
         MemCookie = r.cookies.get_dict()
 
         if r:
@@ -278,23 +286,23 @@ class CloudflareBypass(object):
             self.Header = r.headers
         else:
             sContent = ''
-            #self.RedirectionUrl = r.url
-            #self.Header = r.headers
+            # self.RedirectionUrl = r.url
+            # self.Header = r.headers
             MemCookie = {}
-            #r.cookies.clear()
+            # r.cookies.clear()
             GestionCookie().DeleteCookie(self.host.replace('.', '_'))
 
-        #fh = open('c:\\test.txt', 'w')
-        #fh.write(sContent)
-        #fh.close()
+        # fh = open('c:\\test.txt', 'w')
+        # fh.write(sContent)
+        # fh.close()
 
-        #Memorisation des cookies
+        # Memorisation des cookies
         c = ''
         cookie = MemCookie
         if cookie:
             for i in cookie:
                 c = c + i + '=' + cookie[i] + ';'
-            #Write them
+            # Write them
             GestionCookie().SaveCookie(self.host.replace('.', '_'), c)
 
         return sContent
