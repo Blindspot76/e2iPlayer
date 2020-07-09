@@ -1,3 +1,6 @@
+#2020.07.09.01
+-Music Box Frissítve
+-Youtube bélyegkép megjelenítés javítva
 #2020.07.08.01
 -TSiPlayer frissítve
 -Kisebb módosítások
