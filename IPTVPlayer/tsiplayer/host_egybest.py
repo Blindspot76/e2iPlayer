@@ -2,7 +2,7 @@
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG,GetCookieDir
 from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 from Components.config import config
 from Plugins.Extensions.IPTVPlayer.tools.e2ijs import js_execute
 import base64
@@ -14,23 +14,27 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 
 def getinfo():
 	info_={}
-	info_['name']='Egy.Best'
-	info_['version']='1.4 23/02/2020'
+	name = 'Egy.Best'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://open.egybest.asia'
+	info_['host']= hst
+	info_['name']=name
+	info_['version']='1.2.01 05/07/2020'
 	info_['dev']='RGYSoft | Thx to >> @maxbambi & @zadmario <<'
 	info_['cat_id']='201'
 	info_['desc']='أفلام عربية و اجنبية + مسلسلات اجنبية'
 	info_['icon']='https://i.ibb.co/z2SXTd8/souayah-Egy-Best-film.png'
 	info_['recherche_all']='1'
-	info_['update']='Fix Vidstream Server'
+	#info_['update']='Fix Vidstream Server'
 		
 	return info_
 	
 	
 class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
-		TSCBaseHostClass.__init__(self,{'cookie':'egybest00.cookie'})
+		TSCBaseHostClass.__init__(self,{'cookie':'egybest01.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Linux; Android 7.0; PLUS Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.98 Mobile Safari/537.36'
-		self.MAIN_URL = 'https://tool.egybest.ltd'
+		self.MAIN_URL =  getinfo()['host']
 		self.VID_URL  = 'https://vidstream.kim'
 		self.varconst = 'a0'
 		self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
@@ -275,12 +279,12 @@ class TSIPHost(TSCBaseHostClass):
 			if Liste_els0:			
 				urlTab.append({'name':'|HLS| Vidstream', 'url':'hst#tshost#'+Liste_els0[0], 'need_resolve':1,'type':'local'})
 			
-			Liste_els0 = re.findall('<table(.*?)</table>', data, re.S)
-			if Liste_els0:
-				printDBG('data='+Liste_els0[-1])
-				Liste_els1 = re.findall('<tr>.*?<td>(.*?)<td class.*?url="(.*?)"', Liste_els0[-1], re.S)
-				for (titre,url) in Liste_els1:
-					urlTab.append({'name':'|'+ph.clean_html(titre)+'| Vidstream', 'url':'hst#tshost#'+url+'&v=1'+'%%%'+cItem['url'], 'need_resolve':1,'type':'local'})
+			#Liste_els0 = re.findall('<table(.*?)</table>', data, re.S)
+			#if Liste_els0:
+			#	printDBG('data='+Liste_els0[-1])
+			#	Liste_els1 = re.findall('<tr>.*?<td>(.*?)<td class.*?url="(.*?)"', Liste_els0[-1], re.S)
+			#	for (titre,url) in Liste_els1:
+			#		urlTab.append({'name':'|'+ph.clean_html(titre)+'| Vidstream', 'url':'hst#tshost#'+url+'&v=1'+'%%%'+cItem['url'], 'need_resolve':1,'type':'local'})
 				
 		return urlTab
 

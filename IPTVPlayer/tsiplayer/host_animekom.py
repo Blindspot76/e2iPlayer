@@ -31,142 +31,108 @@ class TSIPHost(TSCBaseHostClass):
 		self.MAIN_URL = getinfo()['host']
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-		self.getPage = self.cm.getPage
+		#self.getPage = self.cm.getPage
 
-
+		
+	def getPage(self, baseUrl, addParams = {}, post_data = None):
+		baseUrl=self.std_url(baseUrl)
+		if addParams == {}: addParams = dict(self.defaultParams)
+		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+		
 	def showmenu0(self,cItem):
 		hst='host2'
 		Animekom_TAB = [
-							{'category':hst,      'title':'جميع الأنميات'     , 'mode':'30', 'url':self.MAIN_URL+'/'},
-							{'category':hst,      'title':'جميع الافلام'       , 'mode':'30', 'url':self.MAIN_URL+'/movies/'},
-							{'category':hst,      'title':'جديد الأنمي'       , 'mode':'21', 'sub_mode':2},
-							{'category':hst,      'title':'جديد الأفلام'       , 'mode':'21', 'sub_mode':0},
-							{'category':hst,      'title':'جديد الأوفات'      , 'mode':'21', 'sub_mode':1},	
-							{'category':hst,      'title': tscolor('\c0000??00')+'أنواع الأنمي'      , 'mode':'22'},
-							{'category':hst,      'title':'قريبا'            , 'mode':'23'},										
+							{'category':hst,      'title':'قائمة الأنميات'     , 'mode':'30', 'url':self.MAIN_URL+'/anime-list/'},
+							{'category':hst,      'title':'قائمة الأفلام'      , 'mode':'30', 'url':self.MAIN_URL+'/anime-type/فيلم/'},
+							{'category':hst,      'title':'آخر الحلقات المضافة'  , 'mode':'30', 'url':self.MAIN_URL+'/episode/','sub_mode':1},							
+							#{'category':hst,      'title':'حلقات الأنمي المثبتة'   , 'mode':'21', 'sub_mode':0},
+							#{'category':hst,      'title':'آخر الأنميات المضافة'  , 'mode':'21', 'sub_mode':2},	
+							{'category':hst,      'title': tscolor('\c0000??00')+'تصنيف الأنمي'      , 'mode':'22', 'sub_mode':0},
+							{'category':hst,      'title': tscolor('\c0000??00')+'نوع الأنمي'      , 'mode':'22', 'sub_mode':1},		
 							{'category':'search', 'title':_('Search')  ,'search_item':True,'page':1,'hst':'tshost'},
 							]
 		self.listsTab(Animekom_TAB, {'icon':cItem['icon'],'import':cItem['import']})						
 	
-	def showmenu_21(self,cItem):
-		gnr=cItem['sub_mode']
-		Url=self.MAIN_URL
-		if   gnr==0: pat = '<span>جديد الأفلام</span>(.*?)<div class="title">'
-		elif gnr==1: pat = '<span>جديد الأوفات</span>(.*?)<div class="title">'
-		elif gnr==2: pat = '"title">جديد الأنمي</p>(.*?)<div class="title'
-		sts, data = self.getPage(Url)
-		if sts:
-			_data = re.findall(pat,data, re.S)		
-			if _data:
-				_data = re.findall('class="poster">.*?src="(.*?)".*?>(.*?)href="(.*?)".*?name_film">(.*?)</p>(.*?)</div>',_data[0], re.S)
-				for (image,desc,url,titre,desc1) in _data:
-					desc=self.cleanHtmlStr(desc+'>')
-					if not image.startswith('http'): image = self.MAIN_URL+image
-					if desc.strip()!='':
-						titre = self.cleanHtmlStr(titre)+' ('+tscolor('\c0000????')+desc+tscolor('\c00??????')+')'
-					else: titre = self.cleanHtmlStr(titre)
-					if desc1.strip()!='': desc1= tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+self.cleanHtmlStr(desc1)
-					self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc1,'icon':image,'hst':'tshost','mode':'31'} )	
-		
-	def showmenu_23(self,cItem):
-		Url=self.MAIN_URL
-		sts, data = self.getPage(Url)
-		if sts:
-			_data = re.findall('<h3>قريبا</h3>(.*?)class="menu">',data, re.S)		
-			if _data:
-				_data = re.findall('class="poster">.*?src="(.*?)".*?href="(.*?)".*?name_film">(.*?)</p>(.*?)</div>',_data[0], re.S)
-				for (image,url,titre,desc) in _data:
-					if not image.startswith('http'): image = self.MAIN_URL+image					
-					titre = self.cleanHtmlStr(titre)
-					if desc.strip()!='': desc= tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+self.cleanHtmlStr(desc)
-					self.addMarker({'title':titre,'desc':desc,'icon':image} )	
-		
-
 	def showmenu_22(self,cItem):
 		Url=self.MAIN_URL
+		gnr=cItem.get('sub_mode',0)
+		if gnr == 0: pat = 'genresDropdown">(.*?)</ul'
+		else:
+			pat = 'typeDropdown">(.*?)</ul'
 		sts, data = self.getPage(Url)
 		if sts:
-			Cat_data = re.findall('class="cat-list">(.*?)</ul',data, re.S)
+			Cat_data = re.findall(pat,data, re.S)
 			if Cat_data:
 				list_cat=re.findall('href="(.*?)">(.*?)<', Cat_data[0], re.S)
 				for (url,titre) in list_cat:
 					if '18' not in titre:
-						self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':titre,'icon':cItem['icon'],'mode':'30'})
+						self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':titre,'icon':cItem['icon'],'mode':'30','sub_mode':2})
 
 	def showitms(self,cItem):
 		Url=cItem['url']
 		page=cItem.get('page',1)
+		gnr=cItem.get('sub_mode',0)
 		sUrl=Url+'page/'+str(page)+'/'
 		sts, data = self.getPage(sUrl)
 		if sts: 
-			Liste_films_data = re.findall('</h1>(.*?)class="title">', data, re.S)
-			if Liste_films_data:
-				_data = re.findall('class="poster">.*?src="(.*?)".*?>(.*?)href="(.*?)".*?name_film">(.*?)</p>(.*?)</div>',Liste_films_data[0], re.S)
-				for (image,desc,url,titre,desc1) in _data:
-					#desc= tscolor('\c00????00')+'Type: '+tscolor('\c00??????')+desc
-					desc=self.cleanHtmlStr(desc+'>')
-					if not image.startswith('http'): image = self.MAIN_URL+image
-					if desc.strip()!='':
-						titre = self.cleanHtmlStr(titre)+' ('+tscolor('\c0000????')+desc+tscolor('\c00??????')+')'
-					else: titre = self.cleanHtmlStr(titre)
-					if desc1.strip()!='': desc1= tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+self.cleanHtmlStr(desc1)
-					self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc1,'icon':image,'hst':'tshost','mode':'31'} )	
-			self.addDir({'import':cItem['import'],'category' : 'host2','url': cItem['url'],'title':tscolor('\c0090??20')+_('Next page'),'page':page+1,'icon':cItem['icon'],'mode':'30'} )
+			#_data = re.findall('class="img-responsive.*?src="(.*?)".*?href="(.*?)"(.*?)title="(.*?)"(.*?)</div>',data, re.S)
+			_data = re.findall('anime-card-container">(.*?)class="img-responsive.*?src="(.*?)".*?href="(.*?)"(.*?)title="(.*?)"(.*?)</div>',data, re.S)
+			for (ep,image,url,desc,titre,desc1) in _data:
+				desc=self.cleanHtmlStr('<'+desc+'>')
+				desc= tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+desc
+				ep =self.cleanHtmlStr(ep+'>')
+				if not image.startswith('http'): image = self.MAIN_URL+image
+				if ep.strip()!='':
+					titre = self.cleanHtmlStr(titre)+' ['+tscolor('\c0000????')+ep.strip()+tscolor('\c00??????')+'] '
+				else: titre = self.cleanHtmlStr(titre)
+				_desc = re.findall('data-content="(.*?)"',desc1, re.S)
+				if _desc: desc= desc+'\n'+tscolor('\c00????00')+'Story: '+tscolor('\c00??????')+self.cleanHtmlStr(_desc[0])
+				
+				if gnr==1:
+					self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','title':titre,'desc':desc,'icon':image,'hst':'tshost','url':url} )	
+				else:
+					self.addDir({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'} )	
+			if gnr!=2:
+				self.addDir({'import':cItem['import'],'category' : 'host2','url': cItem['url'],'title':tscolor('\c0090??20')+_('Next page'),'page':page+1,'icon':cItem['icon'],'mode':'30','sub_mode':gnr} )
 
 	def showelems(self,cItem):
-		Url=cItem['url'].replace('://','rgysoft')
-		Url=urllib.quote(Url).replace('rgysoft','://')
-		sts, sHtmlContent = self.getPage(Url)
-		srv=[]
+		sts, sHtmlContent = self.getPage(cItem['url'])
 		if sts:
 			desc = self.get_info(sHtmlContent)
 			Liste_Episodes_data = re.findall('(youtube.com.*?)"', sHtmlContent, re.S)
+			if not Liste_Episodes_data: Liste_Episodes_data = re.findall('(youtu.be.*?)"', sHtmlContent, re.S)
 			if Liste_Episodes_data:			
 				self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','title':'Trailer','desc':desc,'icon':cItem['icon'],'hst':'none','url':'https://www.'+Liste_Episodes_data[0]} )	
-			
-			Liste_Episodes_data = re.findall('<div id="accordian">(.*?)</div>', sHtmlContent, re.S)
-			if Liste_Episodes_data:
-				for (Lst_Episodes_data) in Liste_Episodes_data:	
-					srv=[]
-					Name_Episodes_data = re.findall('data-link="(.*?)".*?">(.*?)</li>', Lst_Episodes_data, re.S)
-					titre='!'
-					for (elm,hst) in Name_Episodes_data:
-						if elm.startswith('*'): titre = 'Episode: '+elm.split('*')[1].replace('الحلقة','')
-						elif elm.strip()!='': srv.append((elm,self.cleanHtmlStr(hst)))				
-					self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','title':titre,'desc':desc,'icon':cItem['icon'],'hst':'tshost','url':srv} )	
-			else:
-				Liste_Episodes_data = re.findall('role="tablist">(.*?)</div>', sHtmlContent, re.S)
-				if Liste_Episodes_data:
-					srv=[]
-					Name_Episodes_data = re.findall('data-link="(.*?)".*?">(.*?)</li>', Liste_Episodes_data[0], re.S)					
-					for (elm,hst) in Name_Episodes_data:
-						if elm.strip()!='': srv.append((elm,self.cleanHtmlStr(hst)))							
-					self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','title':cItem['title'],'desc':desc,'icon':cItem['icon'],'hst':'tshost','url':srv} )	
+			Name_Episodes_data = re.findall('episodes-card-title">.*?href="(.*?)".*?>(.*?)<.*?src="(.*?)"', sHtmlContent, re.S)
+			for (url,titre,image) in Name_Episodes_data:			
+				self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','title':titre,'desc':desc,'icon':image,'hst':'tshost','url':url} )	
 			
 	def SearchResult(self,str_ch,page,extra):
-		url_=self.MAIN_URL+'/index.php?do=search'
-		post_data = {'do':'search','subaction':'search','search_start':page,'full_search':0,'result_from':((page-1)*20)+1,'story':str_ch}
-		sts, data = self.getPage(url_, post_data=post_data)
+		url_=self.MAIN_URL+'/?search_param=animes&s='+str_ch
+		sts, data = self.getPage(url_)
 		if sts:
-			printDBG('data sc='+data)
-			Liste_films_data = re.findall('</h1>(.*?)class="title">', data, re.S)
-			if Liste_films_data:
-				_data = re.findall('class="poster">.*?src="(.*?)".*?>(.*?)href="(.*?)".*?name_film">(.*?)</p>(.*?)</div>',Liste_films_data[0], re.S)
-				for (image,desc,url,titre,desc1) in _data:
-					desc=self.cleanHtmlStr(desc+'>')
-					if not image.startswith('http'): image = self.MAIN_URL+image
-					if desc.strip()!='':
-						titre = self.cleanHtmlStr(titre)+' ('+tscolor('\c0000????')+desc+tscolor('\c00??????')+')'
-					else: titre = self.cleanHtmlStr(titre)
-					if desc1.strip()!='': desc1= tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+self.cleanHtmlStr(desc1)
-					self.addDir({'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc1,'icon':image,'hst':'tshost','mode':'31'})
-			
+			_data = re.findall('anime-card-container">(.*?)class="img-responsive.*?src="(.*?)".*?href="(.*?)"(.*?)title="(.*?)"(.*?)</div>',data, re.S)
+			for (ep,image,url,desc,titre,desc1) in _data:
+				desc=self.cleanHtmlStr('<'+desc+'>')
+				desc= tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+desc
+				ep =self.cleanHtmlStr(ep+'>')
+				if not image.startswith('http'): image = self.MAIN_URL+image
+				if ep.strip()!='':
+					titre = self.cleanHtmlStr(titre)+' ['+tscolor('\c0000????')+ep.strip()+tscolor('\c00??????')+'] '
+				else: titre = self.cleanHtmlStr(titre)
+				_desc = re.findall('data-content="(.*?)"',desc1, re.S)
+				if _desc: desc= desc+'\n'+tscolor('\c00????00')+'Story: '+tscolor('\c00??????')+self.cleanHtmlStr(_desc[0])
+				self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'} )	
+
 	def get_links(self,cItem): 	
 		urlTab = []
-		data=cItem['url']
-		printDBG('srv='+str(data))
-		for (srv,hst) in data:
-			urlTab.append({'name':hst, 'url':srv, 'need_resolve':1})	 
+		Url=cItem['url']
+		sts, data = self.getPage(Url)
+		if sts:
+			iframe = re.findall('data-ep-url="(.*?)".*?>(.*?)<',data,re.S|re.IGNORECASE)				
+			for (url,titre) in iframe:
+				urlTab.append({'name':titre, 'url':url, 'need_resolve':1})	 
 		return urlTab				
 
 	def getArticle(self, cItem):

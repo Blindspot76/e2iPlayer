@@ -9,10 +9,10 @@ def getinfo():
 	info_={}
 	name = 'Arblionz'
 	hst = tshost(name)	
-	if hst=='': hst = 'https://m.arblionz.tv'
+	if hst=='': hst = 'https://w.arblionz.tv'
 	info_['host']= hst
 	info_['name']=name
-	info_['version']='1.5 20/02/2020'
+	info_['version']='1.1.01 05/07/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات عربية و اجنبية'
@@ -116,6 +116,7 @@ class TSIPHost(TSCBaseHostClass):
 		#url=url.replace('://','rgysoft')
 		#url=urllib.quote(url).replace('rgysoft','://')
 		#printDBG('url='+url)
+		url =url.replace('category/افلام-عربية/','category/افلام-عربية-1').replace('category/افلام-اجنبية-افلام-اون-لاين/','category/افلام-اجنبية-افلام-اون-لاين-1')
 		if gnr=='items':
 			sts, data = self.getPage(url)
 			desc=''
@@ -186,20 +187,19 @@ class TSIPHost(TSCBaseHostClass):
 		URL=urllib.quote(URL).replace('rgysoft','://')
 		sts, data = self.getPage(URL)
 		if sts:
-			server_data = re.findall('data-embedd="&lt.*?(SRC|src)=&quot;(.*?)&quot;.*?">(.*?)"', data, re.S)
+			server_data = re.findall('class="ProServer.*?="(.*?)".*?>(.*?)<', data, re.S)
 			if server_data:
-				for (x1,url,titre_) in server_data:
+				for (url,titre_) in server_data:
 					hostUrl=url.replace("www.", "")				
 					raw1 =  re.findall('//(.*?)/', hostUrl, re.S)				
 					hostUrl=raw1[0]
-					urlTab.append({'name':hostUrl, 'url':url, 'need_resolve':1})
-			else:
-				code_data = re.findall('data-embedd="(.*?)".*?alt="(.*?)"', data, re.S)
-				id_data = re.findall("attr\('data-embedd'\).*?url: \"(.*?)\"", data, re.S)
-				if id_data:
-					for (code_,titre_) in code_data:
-						url=id_data[0]+'&serverid='+code_
-						urlTab.append({'name':titre_, 'url':'hst#tshost#'+url, 'need_resolve':1})
+					urlTab.append({'name':'|Pro Server '+titre_+'| '+hostUrl, 'url':url, 'need_resolve':1, 'type':'local' })
+			code_data = re.findall('data-embedd="(.*?)".*?alt="(.*?)"', data, re.S)
+			id_data = re.findall("attr\('data-embedd'\).*?url: \"(.*?)\"", data, re.S)
+			if id_data:
+				for (code_,titre_) in code_data:
+					url=id_data[0]+'&serverid='+code_
+					urlTab.append({'name':'|Watch Server| '+titre_, 'url':'hst#tshost#'+url, 'need_resolve':1})
 
 		URL=url_origin.replace('/episode/','/download/')
 		URL=URL.replace('/film/','/download/')
@@ -217,7 +217,7 @@ class TSIPHost(TSCBaseHostClass):
 					hostUrl=url_1.replace("www.", "")				
 					raw1 =  re.findall('//(.*?)/', hostUrl, re.S)
 					if raw1: hostUrl=raw1[0]
-					if ('uppom' in hostUrl.lower()):
+					if ('uppom' in hostUrl.lower()) or ('filesload' in hostUrl.lower()):
 						urlTab.append({'name':'|Down Serv: '+label+'| '+hostUrl, 'url':url_1, 'need_resolve':1})
 			else:
 				code_data = re.findall('data-embedd="(.*?)".*?alt="(.*?)"', data, re.S)

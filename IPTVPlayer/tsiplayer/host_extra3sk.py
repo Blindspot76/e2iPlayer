@@ -12,7 +12,7 @@ def getinfo():
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات تركية'
-	info_['icon']='https://i.ibb.co/XzFvL81/cropped-13-270x270.png'
+	info_['icon']='https://i.ibb.co/qR294FT/extra.png'
 	info_['recherche_all']='0'
 	#info_['update']='Fix Links extractor'	
 
@@ -34,6 +34,7 @@ class TSIPHost(TSCBaseHostClass):
 			lst_data=re.findall('<li id="menu.*?href="(.*?)".*?>(.*?)<', data, re.S)
 			for (url,titre) in lst_data:
 				if 'الرئيسية' not in titre:
+					if 'ramadan-2020' in url: titre = 'Ramadan 2020 | ' + titre
 					self.addDir({'import':cItem['import'],'category' : 'host2','title': titre,'icon':cItem['icon'],'mode':'30','url':url,'sub_mode':'0'})
 			self.addDir({'import':cItem['import'],'category' :'search','title': _('Search'),'search_item':True,'page':1,'hst':'tshost','icon':cItem['icon']})
 
@@ -71,6 +72,7 @@ class TSIPHost(TSCBaseHostClass):
 					url   = lst_data0[0][0]
 					desc=''
 					desc0,titre = self.uniform_titre(titre)
+					image=self.std_url(image)
 					self.addDir({'import':cItem['import'],'category' : 'host2','title':titre,'url':url,'desc':desc0,'icon':image,'mode':'31','good_for_fav':True,'sub_mode':'1','EPG':True})	
 			if i>95:
 				self.addDir({'import':cItem['import'],'category' : 'host2','title':'Page Suivante','url':cItem['url'],'page':page+1,'mode':'30','sub_mode':sub_mode})
@@ -96,6 +98,7 @@ class TSIPHost(TSCBaseHostClass):
 					if lst_inf0: desc = desc + tscolor('\c00????00')+'Rate: '+tscolor('\c00??????')+self.cleanHtmlStr(lst_inf0[0])				
 					desc0,titre = self.uniform_titre(titre)
 					desc = desc0+desc
+					image=self.std_url(image)
 					self.addVideo({'import':cItem['import'],'category' : 'host2','title':titre,'url':url,'desc':desc,'icon':image,'hst':'tshost','good_for_fav':True,'EPG':True})	
 
 	def SearchResult(self,str_ch,page,extra):
@@ -115,6 +118,7 @@ class TSIPHost(TSCBaseHostClass):
 					image = lst_data0[0][1]
 					url   = lst_data0[0][0]
 					desc=''
+					image=self.std_url(image)
 					if '/selary/' in url:
 						self.addDir({'import':extra,'category' : 'host2','title':titre,'url':url,'desc':desc,'icon':image,'mode':'30','good_for_fav':True,'sub_mode':'0'})	
 					else:

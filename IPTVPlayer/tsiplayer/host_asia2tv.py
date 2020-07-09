@@ -90,9 +90,9 @@ class TSIPHost(TSCBaseHostClass):
 		sts, data = self.getPage(URL)
 		if sts:
 			i=0			
-			Liste_films_data = re.findall('class="postmoveie">.*?post-date">(.*?)<.*?href="(.*?)".*?thumb-bg">(.*?)</div>.*?<h4.*?">(.*?)<', data, re.S)
+			Liste_films_data = re.findall('(class="recentpost-move|class="postmoveie">).*?post-date">(.*?)<.*?href="(.*?)".*?thumb-bg">(.*?)</div>.*?<h4.*?">(.*?)<', data, re.S)
 			cookieHeader = self.cm.getCookieHeader(self.COOKIE_FILE)
-			for (desc,url1,image,name_eng) in Liste_films_data:
+			for (x1,desc,url1,image,name_eng) in Liste_films_data:
 				i=i+1
 				img_data = re.findall('data-lazy-src="(.*?)"', image, re.S)
 				if not img_data: img_data = re.findall('src="(.*?)"', image, re.S)
@@ -182,6 +182,13 @@ class TSIPHost(TSCBaseHostClass):
 					elif 'golden' in host_.lower(): host_='feurl.com'
 					elif 'okru' in host_.lower(): host_='ok.ru'
 					elif 'upto' in host_.lower(): host_='uptobox'
+					elif 'tunepk' in host_.lower(): host_='tunepk'
+					elif 'mega' in host_.lower():
+						host_='|MEGA| Asia2Tv'
+						type_='local'					
+					elif 'dropbox' in host_.lower():
+						host_='|DROPBOX| Asia2Tv'
+						type_='local'	
 					elif 'asia2' in host_.lower():
 						host_='|LOCAL| Asia2Tv'
 						type_='local'
@@ -194,15 +201,27 @@ class TSIPHost(TSCBaseHostClass):
 		sts, data = self.getPage(Url)
 		if sts:
 			printDBG('dddddaaaaattttaaaaa'+data)
-			_data2 = re.findall('<iframe.*?src=["\'](.*?)["\']',data, re.IGNORECASE)
+			_data2 = re.findall('<iframe.*?src=["\'](.*?)["\']',data, re.S|re.IGNORECASE)
 			if _data2:
+				printDBG('01')
 				URL_=_data2[0]
 				if URL_.startswith('//'):
 					URL_='http:'+URL_
 				urlTab.append((URL_,'1'))
 			else:
-				if 'https://asiatv.cc/userpro/' in data:
-					SetIPTVPlayerLastHostError('Only premium users!!')
+				printDBG('02')
+				_data2 = re.findall('<body>.*?src=["\'](.*?)["\']',data, re.S|re.IGNORECASE)
+				if _data2:
+					printDBG('03')
+					URL_=_data2[0]
+					if URL_.startswith('//'):
+						URL_='http:'+URL_
+					urlTab.append((URL_,'1'))
+				else:
+					printDBG('04')
+					if 'https://asiatv.cc/userpro/' in data:
+						SetIPTVPlayerLastHostError('Only premium users!!')
+				
 		return urlTab
 
 			

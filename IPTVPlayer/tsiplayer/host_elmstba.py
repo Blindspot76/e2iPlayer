@@ -108,7 +108,7 @@ class TSIPHost(TSCBaseHostClass):
 		sts, data = self.getPage(videoUrl)
 		if sts:
 			printDBG('data'+data)
-			Liste_els = re.findall('sources.*?"(.*?)"', data, re.S)
+			Liste_els = re.findall('sources.{,9}?"(.*?)"', data, re.S)
 			if not Liste_els:
 				L_els = re.findall('(eval.*?)</script>', data, re.S)
 				if 	L_els:

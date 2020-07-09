@@ -15,7 +15,7 @@ def getinfo():
 	if hst=='': hst = 'https://aflam06.net'
 	info_['host']= hst
 	info_['name']=name	
-	info_['version']='1.2 20/02/2020'
+	info_['version']='1.0.01 05/07/2020'
 	info_['dev']='OPESBOY'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
@@ -36,6 +36,7 @@ class TSIPHost(TSCBaseHostClass):
 		self.defaultParams = {'header':self.HTTP_HEADER, 'with_metadata':True, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
 	def getPage(self, baseUrl, addParams = {}, post_data = None):
+		baseUrl=self.std_url(baseUrl)
 		if addParams == {}: addParams = dict(self.defaultParams)
 		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
 		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
@@ -122,6 +123,7 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:		
 			lst_data=re.findall('class="block">.*?href="(.*?)".*?src="(.*?)".*?<p>(.*?)<.*?class="title">(.*?)<', data, re.S)
 			for (url1,image,desc,titre) in lst_data:
+				image=self.std_url(image)
 				desc0,titre = self.uniform_titre(titre)
 				
 				self.addVideo({'import':cItem['import'],'good_for_fav':True,'category':'host2', 'url':url1, 'desc':desc0,'title':titre, 'icon':image, 'mode':'31','EPG':True,'hst':'tshost'} )							
@@ -134,6 +136,7 @@ class TSIPHost(TSCBaseHostClass):
 		if sts:
 			cat_data=re.findall('class="block">.*?href="(.*?)".*?src="(.*?)".*?<p>(.*?)<.*?class="title">(.*?)<', data, re.S)
 			for (url1,image,desc,name_eng) in cat_data:
+				image=self.std_url(image)
 				desc=ph.clean_html(desc)
 				desc0,name_eng = self.uniform_titre(name_eng)
 				if desc.strip()!='':

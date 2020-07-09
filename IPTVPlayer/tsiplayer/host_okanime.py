@@ -23,9 +23,27 @@ class TSIPHost(TSCBaseHostClass):
 		TSCBaseHostClass.__init__(self,{'cookie':'okanime.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
 		self.MAIN_URL = 'https://www.okanime.com'
-		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive','Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', 'Accept-Encoding':'gzip, deflate, br','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
+		self.HEADER = {'User-Agent': self.USER_AGENT}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-		self.getPage = self.cm.getPage
+		#self.getPage = self.cm.getPage
+
+
+	def getPage(self,baseUrl, addParams = {}, post_data = None):
+		i=0
+		while True:
+			baseUrl=self.std_url(baseUrl)
+			printDBG('counttttt'+str(i))
+			if addParams == {}: addParams = dict(self.defaultParams)
+			sts, data = self.cm.getPage(baseUrl, addParams, post_data)
+			printDBG(str(sts))
+			if sts:
+				#printDBG(data)
+				break
+			else:
+				i=i+1
+				if i>2: break
+		return sts, data
+
 		 
 	def showmenu0(self,cItem):
 		hst='host2'
@@ -33,17 +51,19 @@ class TSIPHost(TSCBaseHostClass):
 		self.addMarker({'title':'أفلام','category' : 'host2','icon':img_} )									
 
 		Cat_TAB = [
-					{'category':hst,'title': 'الترتيب حسب أحدث الافلام', 'mode':'30','url':'https://www.okanime.com/movies?direction=desc&sort=published_at'},		
-					{'category':hst,'title': 'الترتيب حسب الأبجدية', 'mode':'30','url':'https://www.okanime.com/movies?direction=asc&sort=title'},
-					{'category':hst,'title': 'الترتيب حسب تقييم الأعضاء', 'mode':'30','url':'https://www.okanime.com/movies?direction=desc&sort=rating_caches.avg'},
+					{'category':hst,'title': 'الترتيب حسب أحدث الافلام', 'mode':'30','url':'https://www.okanime.com/partials/filter_movies?sort=movies.aired_year&direction=desc'},	
+					{'category':hst,'title': 'الترتيب حسب أحدث الاضافات', 'mode':'30','url':'https://www.okanime.com/partials/filter_movies?sort=movies.published_at&direction=desc'},						
+					{'category':hst,'title': 'الترتيب حسب الأبجدية', 'mode':'30','url':'https://www.okanime.com/partials/filter_movies?sort=title&direction=asc'},
+					{'category':hst,'title': 'الترتيب حسب تقييم الأعضاء', 'mode':'30','url':'https://www.okanime.com/partials/filter_movies?sort=rating_caches.avg&direction=desc'},
 					]
 		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})	
 		self.addMarker({'title':'قائمة الانميات','category' : 'host2','icon':img_} )	
 		Cat_TAB = [
 					{'category':hst,'title':'آخر الحلقات المضافة', 'mode':'30','url':'https://www.okanime.com/dashboard/newest_animes?direction=asc','sub_mode':1},
-					{'category':hst,'title': 'الترتيب حسب أحدث الانميات', 'mode':'30','url':'https://www.okanime.com/animes?direction=desc&sort=published_at'},
-					{'category':hst,'title': 'الترتيب حسب الأبجدية', 'mode':'30','url':'https://www.okanime.com/animes?direction=asc&sort=title'},
-					{'category':hst,'title': 'الترتيب حسب تقييم الأعضاء', 'mode':'30','url':'https://www.okanime.com/animes?direction=desc&sort=rating_caches.avg'},
+					{'category':hst,'title': 'الترتيب حسب أحدث الانميات', 'mode':'30','url':'https://www.okanime.com/partials/filter_animes?sort=animes.aired_year&direction=desc'},
+					{'category':hst,'title': 'الترتيب حسب أحدث الاضافات', 'mode':'30','url':'https://www.okanime.com/partials/filter_animes?sort=animes.published_at&direction=desc'},
+					{'category':hst,'title': 'الترتيب حسب الأبجدية', 'mode':'30','url':'https://www.okanime.com/partials/filter_animes?sort=title&direction=asc'},
+					{'category':hst,'title': 'الترتيب حسب تقييم الأعضاء', 'mode':'30','url':'https://www.okanime.com/partials/filter_animes?sort=rating_caches.avg&direction=desc'},
 					{'category':'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost'},
 					]
 		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})			
@@ -57,54 +77,58 @@ class TSIPHost(TSCBaseHostClass):
 		sts, data = self.getPage(url_)
 		if sts:
 			if gnr==0:
-				films_list = re.findall('class=\'col-md-15.*?title="(.*?)".*?href="(.*?)".*?src="(.*?)".*?class="rating.*?>(.*?)</div>.*?class=\'info-.*?<a(.*?)</div>', data, re.S)		
-				for (titre,url,image,rate,desc) in films_list:
-					if not url.startswith('http'): url=self.MAIN_URL+url
-					if not image.startswith('http'): image=self.MAIN_URL+image
-					desc='Rating: '+tscolor('\c00????00')+ph.clean_html(rate)+tscolor('\c00??????')+'\\nGenre: '+tscolor('\c00????00')+ph.clean_html('<a'+desc)
-					self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
-			else:
-				films_list0 = re.findall('animes-carousel">(.*?)</ul', data, re.S)	
-				if films_list0:
-					films_list = re.findall('<li.*?href="(.*?)".*?src="(.*?)".*?class="title.*?>(.*?)</div>', films_list0[0], re.S)		
-					for (url,image,titre) in films_list:
-						image = self.MAIN_URL+image
-						url=self.MAIN_URL+url
-						titre=ph.clean_html(titre)
-						self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'hst':'tshost','mode':'31'})		
+				pat = 'video-item">.*?data-src="(.*?)".*?href="(.*?)".*?<h6>(.*?)<'
+			else:	
+				pat = 'video-item">.*?data-src="(.*?)".*?href="(.*?)".*?video-title">(.*?)<'	
+			films_list = re.findall(pat, data, re.S)		
+			for (image,url,titre) in films_list:
+				image = image.replace('.jpg.webp','.jpg')
+				if not image.startswith('http'): image = self.MAIN_URL + image
+				url=self.MAIN_URL+url
+				titre=ph.clean_html(titre)
+				if ('/movies/' in url) and ('/watch' not in url) :
+					url = url +'/watch'
+				if ('/animes/' in url) and ('/episodes/' not in url):				
+					self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'hst':'tshost','mode':'31'})		
+				else:
+					self.addVideo({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'hst':'tshost'})		
+
 			self.addDir({'import':cItem['import'],'title':'Page '+str(page+1),'page':page+1,'category' : 'host2','url':url1,'icon':cItem['icon'],'mode':'30','sub_mode':gnr} )									
-				
+			
 	def showelms(self,cItem):
 		urlo=cItem['url']
 		url1=urlo
 		sts, data = self.getPage(urlo)
 		if sts:
-			Liste_els = re.findall('class="btn btn-lg2.*?href="(.*?)"', data, re.S)
+			Liste_els = re.findall('ajax\({.*?url:.*?\'(.*?)\'', data, re.S)
 			if Liste_els:
 				url1=Liste_els[0]
 				if not url1.startswith('http'): url1=self.MAIN_URL+url1
 				sts, data = self.getPage(url1)
-			if sts:
-				films_list = re.findall('<ul class=\'episodes-list(.*?)</ul>', data, re.S)
-				if films_list:
-					films_list1 = re.findall('<a.*?href="(.*?)".*?class=\'episode\'>(.*?)</li>', films_list[0], re.S)				
-					for (url,titre) in films_list1:
+				if sts:
+					films_list1 = re.findall('class="item".*?href="(.*?)".*?src="(.*?)".*?subtitle">(.*?)<', data, re.S)				
+					for (url,image,titre) in films_list1:
 						if not url.startswith('http'): url=self.MAIN_URL+url
-						self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':ph.clean_html(titre),'desc':cItem['desc'],'icon':cItem['icon'],'hst':'tshost'} )
-				else:
-					self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url1,'title':cItem['title'],'desc':cItem['desc'],'icon':cItem['icon'],'hst':'tshost'} )
-		
+						image = image.replace('.jpg.webp','.jpg')
+						if not image.startswith('http'): image = self.MAIN_URL + image
+						self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url': url,'title':ph.clean_html(titre),'desc':cItem['desc'],'icon':image,'hst':'tshost'} )		
 	
 	def SearchResult(self,str_ch,page,extra):
-		url_='https://www.okanime.com/search?utf8=%E2%9C%93&%5Bsearch%5D='+str_ch
+		url_=self.MAIN_URL+'/partials/filter_animes?sort=animes.published_at&direction=desc&search='+str_ch+'&page='+str(page)
 		sts, data = self.getPage(url_)
 		if sts:
-			films_list = re.findall('class=\'col-md-15.*?href="(.*?)".*?src="(.*?)".*?class="rating.*?>(.*?)</div>.*?title\'>(.*?)<', data, re.S)		
-			for (url,image,rate,titre) in films_list:
-				if not url.startswith('http'): url=self.MAIN_URL+url
-				if not image.startswith('http'): image=self.MAIN_URL+image
-				desc='Rating: '+tscolor('\c00????00')+ph.clean_html(rate)
-				self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'hst':'tshost','mode':'31'})	
+			films_list = re.findall('video-item">.*?data-src="(.*?)".*?href="(.*?)".*?<h6>(.*?)<', data, re.S)		
+			for (image,url,titre) in films_list:
+				image = image.replace('.jpg.webp','.jpg')
+				if not image.startswith('http'): image = self.MAIN_URL + image
+				url=self.MAIN_URL+url
+				titre=ph.clean_html(titre)
+				if ('/movies/' in url) and ('/watch' not in url) :
+					url = url +'/watch'
+				if ('/animes/' in url) and ('/episodes/' not in url):				
+					self.addDir({'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'hst':'tshost','mode':'31'})		
+				else:
+					self.addVideo({'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':'','icon':image,'hst':'tshost'})		
 
 
 	def get_links(self,cItem):
@@ -112,60 +136,42 @@ class TSIPHost(TSCBaseHostClass):
 		URL=cItem['url']
 		sts, data = self.getPage(URL)
 		if sts:
-			Tab_els = re.findall('<ul class=\'servers-list(.*?)</ul>', data, re.S)
-			if Tab_els:
-				Liste_els = re.findall('<li>.*?href="(.*?)">(.*?)<', Tab_els[0], re.S)
-				for (code,host_) in Liste_els:
-					local=''
-					if 'google' in host_.lower(): host_= 'google.com'
-					if 'neon' in host_.lower():
-						host_ = '|OKAnime| '+host_
-						local = 'local'
-					urlTab.append({'name':host_, 'url':'hst#tshost#'+code+'|'+URL, 'need_resolve':1,'local':local})						
+			Liste_els = re.findall('class="servers-list.*?data-provider_name="(.*?)".*?data-category="(.*?)".*?href="(.*?)"', data, re.S)
+			for (host_,cat,url) in Liste_els:
+				local=''
+				if 'one plus' in host_.lower(): local='local'
+				if 'server 7' in host_.lower():
+					host_ = '|'+cat.upper()+ ' S7'+'| Mp4upload'
+					local='local'
+				elif 'server 2' in host_.lower():
+					host_ = '|'+cat.upper()+ ' S2'+'| OK.ru'
+					local='local'						
+				else:
+					host_ = '|'+cat.upper()+'| '+host_	
+				urlTab.append({'name':host_, 'url':'hst#tshost#'+url, 'need_resolve':1,'type':local})						
 		return urlTab
 		
 		 
 	def getVideos(self,videoUrl):
 		urlTab = []	
-		try:
-			videoUrl,referer=videoUrl.split('|',1)
-			sUrl = self.MAIN_URL+videoUrl
-			paramsUrl = dict(self.defaultParams)
-			paramsUrl['header']['Referer'] = referer
-			sts, data = self.getPage(sUrl,paramsUrl)
-			if sts:
-				Liste_els_3 = re.findall('url":"(.*?)"', data, re.S)	
-				if Liste_els_3:
-					URL=Liste_els_3[0].replace('\\n','')
-					if URL.startswith('//'): URL='https:'+URL
-					if 'www.okanime.com' in URL:			
-						sts, data = self.getPage(URL,paramsUrl)
-						Liste_els_3 = re.findall('loadVideURL\(.*?src.*?\'(.*?)\'', data, re.S)	
-						if Liste_els_3:
-							URL1=Liste_els_3[0]	
-							if ('vk/index.php?v=' in URL1) or ('vr/index.php?link=' in URL1)or ('yd/index.php?id=' in URL1):
-								sts, data = self.getPage(URL1,paramsUrl)
-								paramsUrl = dict(self.defaultParams)
-								paramsUrl['header']['Referer'] = URL1							
-								sts, data = self.getPage(URL1,paramsUrl)
-								Liste_els_3 = re.findall('sources:.*?(\[.*?])', data, re.S)								
-								if Liste_els_3:
-									srvs = json_loads(Liste_els_3[0])
-									for elm in srvs:
-										urlTab.append((elm['label']+'|'+elm['file'],'4'))
-							if 'okgaming' in URL1 :
-								urlTab.append(('','1'))
-							else:			
-								urlTab.append((URL1,'1'))
-						else:
-							Liste_els_3 = re.findall('sources.*?file":"(.*?)"', data, re.S)	
-							if Liste_els_3:
-								URL1=Liste_els_3[0]				
-								urlTab.append((Liste_els_3[0],'0'))
-					else:
-						urlTab.append((Liste_els_3[0],'1'))
-		except:
-			printDBG('erreur')
+		sUrl = self.MAIN_URL+videoUrl
+		sts, data = self.getPage(sUrl)
+		if sts:
+			srv = json_loads(data)
+			URL = srv.get('data',{}).get('attributes',{}).get('url','')
+			if URL.startswith('//'): URL = 'https:'+URL
+			if '/cdn/' in URL:
+				urlParams = dict(self.defaultParams)
+				urlParams['header']['Referer']=self.MAIN_URL
+				sts, data = self.getPage(URL,urlParams)
+				if sts:
+					printDBG('data='+data)
+					srv_ = re.findall("'frame'..src.*?=.*?'(.*?)'", data, re.S)
+					if srv_:
+						URL_ = srv_[0]
+						urlTab.append((URL_,'1'))
+			else:
+				if URL!='': urlTab.append((URL,'1'))
 		return urlTab
 
 	def getArticle(self, cItem):
@@ -174,7 +180,7 @@ class TSIPHost(TSCBaseHostClass):
 		desc = cItem['desc']
 		sts, data = self.getPage(cItem['url'])
 		if sts:
-			lst_dat=re.findall('row description\'>(.*?)</d', data, re.S)
+			lst_dat=re.findall('review-content">(.*?)</p', data, re.S)
 			if lst_dat:
 				desc=desc+'\\n'+ph.clean_html(lst_dat[0])
 

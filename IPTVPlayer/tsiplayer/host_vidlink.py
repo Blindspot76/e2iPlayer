@@ -17,7 +17,7 @@ def getinfo():
 	info_['name']='Vidlink.Org'
 	info_['version']='1.0 10/09/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='401'
+	info_['cat_id']='104'#'401'
 	info_['desc']='Movies & TV shows'
 	info_['icon']='https://i.ibb.co/bJwn22Q/vidlink.png'
 	info_['recherche_all']='1'

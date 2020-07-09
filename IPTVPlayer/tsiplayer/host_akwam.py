@@ -29,7 +29,7 @@ def getinfo():
 	if hst=='': hst = 'https://akwam.net'
 	info_['host']= hst
 	info_['name']=name
-	info_['version']='1.0 07/03/2020'
+	info_['version']='1.1.01 05/07/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
@@ -145,7 +145,7 @@ class TSIPHost(TSCBaseHostClass):
 		else: Url = cItem['url']+'&page='+str(page)
 		sts, data = self.getPage(Url)
 		if sts:
-			lst_data=re.findall('class="entry-box.*?>(.*?)src="(.*?)".*?href="(.*?)".*?<h3.*?>(.*?)</h3>', data, re.S)
+			lst_data=re.findall('class="entry-box.*?>(.*?)-src="(.*?)".*?href="(.*?)".*?<h3.*?>(.*?)</h3>', data, re.S)
 			count=0			
 			for (desc,image,url,titre) in lst_data:
 				rating = ''

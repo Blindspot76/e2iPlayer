@@ -1,21 +1,25 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 from Components.config import config
 import re,urllib
 
 
 def getinfo():
 	info_={}
-	info_['name']='Cimaclub.Com'
-	info_['version']='1.7 16/01/2020'
+	name = 'Cimaclub.Com'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://www.cimaclub.cam'
+	info_['host']= hst
+	info_['name']=name
+	info_['version']='1.1.01 05/07/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
 	info_['icon']='https://i.pinimg.com/originals/f2/67/05/f267052cb0ba96d70dd21e41a20a522e.jpg'
 	info_['recherche_all']='1'
-	info_['update']='New Template'
+	#info_['update']='New Template'
 	return info_
 	
 	
@@ -23,7 +27,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'cimaclub.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://www.cimaclub.cam'
+		self.MAIN_URL = getinfo()['host']
 		self.HTTP_HEADER = {'User-Agent': self.USER_AGENT, 'DNT':'1', 'Accept': 'text/html', 'Accept-Encoding':'gzip, deflate', 'Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.AJAX_HEADER = dict(self.HTTP_HEADER)
 		self.AJAX_HEADER.update( {'X-Requested-With': 'XMLHttpRequest', 'Accept-Encoding':'gzip, deflate', 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Accept':'application/json, text/javascript, */*; q=0.01'} )
@@ -31,6 +35,7 @@ class TSIPHost(TSCBaseHostClass):
 		#self.getPage = self.cm.getPage
 		
 	def getPage(self, baseUrl, addParams = {}, post_data = None):
+		baseUrl=self.std_url(baseUrl)
 		if addParams == {}: addParams = dict(self.defaultParams)
 		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
 		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)
@@ -48,7 +53,7 @@ class TSIPHost(TSCBaseHostClass):
 
 	def showmenu1(self,cItem):
 		gnr2=cItem['sub_mode']			 
-		url=self.MAIN_URL
+		url=self.MAIN_URL+'/%D8%A7%D9%84%D8%B1%D8%A6%D9%8A%D8%B3%D9%8A%D8%A9/'
 		img=cItem['icon']
 	
 		if gnr2=='filter':
@@ -286,7 +291,7 @@ class TSIPHost(TSCBaseHostClass):
 				params = dict(self.defaultParams)
 				params['header']['Referer'] = referer
 				if 'govid.co' in URL_:
-					sts, data = self.cm.getPage(URL_,params)
+					sts, data = self.getPage(URL_,params)
 					if sts:	
 						lst_data = re.findall('<source.*?src=[\'"](.*?)[\'"]',data, re.S)
 						if lst_data:

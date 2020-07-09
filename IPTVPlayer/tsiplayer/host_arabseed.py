@@ -127,9 +127,9 @@ class TSIPHost(TSCBaseHostClass):
 			urlorg = self.MAIN_URL+'/wp-content/themes/ArbSeed/ajaxCenter/Home/AdvFiltering.php'
 			sts, data = self.getPage(urlorg,post_data=post_data)
 		if sts:
-			data1=re.findall('class="BlockItem.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<(.*?)</div>', data, re.S)		
+			data1=re.findall('class="BlockItem.*?href="(.*?)"(.*?)src="(.*?)".*?Title">(.*?)(<.*?)</div>', data, re.S)		
 			i=0
-			for (url,image,titre,desc) in data1:
+			for (url,x1,image,titre,desc) in data1:
 				desc = desc .replace ('<li>','rgyrgy')
 				desc=ph.clean_html(desc)
 				desc = desc .replace ('rgyrgy','\n')
@@ -137,6 +137,7 @@ class TSIPHost(TSCBaseHostClass):
 				if desc.strip()!='':
 					desc = tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+desc
 				desc=desc0+desc								
+				if 'FULLPACK' in x1.upper(): desc=tscolor('\c00??00??')+'!! FULLPACK !!'+'\n'+desc
 				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'mode':'31','hst':'tshost'})			
 				i=i+1
 			if i>38:
@@ -158,15 +159,16 @@ class TSIPHost(TSCBaseHostClass):
 		url_=self.MAIN_URL+'/?s='+str_ch+'&page='+str(page)
 		sts, data = self.getPage(url_)
 		if sts:		
-			data1=re.findall('class="BlockItem.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<(.*?)</div>', data, re.S)		
+			data1=re.findall('class="BlockItem.*?href="(.*?)"(.*?)src="(.*?)".*?Title">(.*?)(<.*?)</div>', data, re.S)		
 			i=0
-			for (url,image,titre,desc) in data1:
+			for (url,x1,image,titre,desc) in data1:
 				desc=ph.clean_html(desc)
 				titre=ph.clean_html(titre)
 				desc0,titre = self.uniform_titre(titre)
 				if desc.strip()!='':
 					desc = tscolor('\c00????00')+'Desc: '+tscolor('\c00??????')+desc
 				desc=desc0+desc	
+				if 'FULLPACK' in x1.upper(): desc=tscolor('\c00??00??')+'!! FULLPACK !!'+'\n'+desc
 				self.addDir({'import':extra,'good_for_fav':True,'EPG':True,'category' : 'host2','url': url,'title':titre,'desc':desc,'icon':image,'mode':'31','hst':'tshost'})			
 
 

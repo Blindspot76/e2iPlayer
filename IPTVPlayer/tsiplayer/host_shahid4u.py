@@ -22,11 +22,17 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'shahid4u.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://ww.shahid4u.net'
+		self.MAIN_URL = 'https://shahid4u.cam'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-		self.getPage = self.cm.getPage
-		 
+		#self.getPage = self.cm.getPage
+
+	def getPage(self, baseUrl, addParams = {}, post_data = None):
+		baseUrl=self.std_url(baseUrl)
+		if addParams == {}: addParams = dict(self.defaultParams)
+		addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+		return self.cm.getPageCFProtection(baseUrl, addParams, post_data)		
+		
 	def showmenu0(self,cItem):
 		hst='host2'
 		self.Arablionz_TAB = [
@@ -65,14 +71,21 @@ class TSIPHost(TSCBaseHostClass):
 		if gnr=='film': 
 			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/cat/%D8%A7%D9%81%D9%84%D8%A7%D9%85','title':'أفلام','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
 			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A','title':'افلام اجنبي','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
+			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D9%86%D9%85%D9%8A','title':'افلام انمي','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
+
 			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%B9%D8%B1%D8%A8%D9%8A','title':'أفلام عربية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
 			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D9%87%D9%86%D8%AF%D9%8A','title':'افلام هندي','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
 					
 		elif gnr=='serie':
 			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/cat/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA','title':'مسلسلات','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'} )		
-			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%A7%D8%AC%D9%86%D8%A8%D9%8A','title':'مسلسلات اجنبية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
-			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%B9%D8%B1%D8%A8%D9%8A','title':'مسلسلات عربية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
-			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%AA%D8%B1%D9%83%D9%8A%D8%A9','title':'مسلسلات تركية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
+			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%A7%D8%AC%D9%86%D8%A8%D9%89','title':'مسلسلات اجنبية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
+			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%B9%D8%B1%D8%A8%D9%89','title':'مسلسلات عربية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
+
+			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%A7%D9%86%D9%85%D9%8A','title':'مسلسلات انمي','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
+			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/netflix','title':'مسلسلات نتفليكس','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
+
+
+			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D8%AA%D8%B1%D9%83%D9%8A%D9%87','title':'مسلسلات تركية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
 			self.addDir({'import':cItem['import'],'category' : 'host2','url': self.MAIN_URL+'/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D9%87%D9%86%D8%AF%D9%8A%D8%A9','title':'مسلسلات هندية','desc':'','page':1,'icon':img_,'sub_mode':gnr,'mode':'30'})		
 
 

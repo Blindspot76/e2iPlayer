@@ -246,32 +246,33 @@ class TSIPHost(TSCBaseHostClass):
 							paramsUrl = dict(self.defaultParams)
 							paramsUrl['header']['Referer'] = url
 							sts, data3 = self.getPage(url1,paramsUrl)
-							Url=data3.meta['url']
-							printDBG('etap 5='+Url)
-							if ('public/dist' in Url) and ('id=' in Url):
-								URL = 'https://' + Url.split('/')[2] + '/hls/'+Url.split('id=')[1]+'/'+Url.split('id=')[1]+'.playlist.m3u8'
-								printDBG('etap 6='+URL)
-								URL = strwithmeta(URL, {'Referer':Url})	
-								urlTab.extend(getDirectM3U8Playlist(URL, checkExt=True, checkContent=True, sortWithMaxBitrate=999999999))
-							if '/public/dist/index.html?id=' in Url:
-								URL = Url.replace('/public/dist/index.html?id=','/getLinkStreamMd5/')
-								printDBG('etap 7='+URL)						
-								sts, data4 = self.getPage(URL,paramsUrl)
-								if sts:
-									data_lst = re.findall('file":"(.*?)".*?label":"(.*?)"', data4, re.S)
-									if data_lst: 
-										label = data_lst[0][1]
-										if 'googlevideo' in data_lst[0][0]: label = '|'+label + '| Google'
-										urlTab.append({'name':label, 'url':data_lst[0][0], 'need_resolve':0})
-							elif '/embedplay/' in Url:
-								sts, data4 = self.getPage(Url,self.defaultParams)
-								if sts:
-									data_list4 = re.findall('<iframe.*?src=["\'](.*?)["\']', data4, re.S)
-									if data_list4:
-										Url = data_list4[0]
-										urlTab.append({'name':gethostname(Url), 'url':Url, 'need_resolve':1})
-							else:
-								urlTab.append({'name':gethostname(Url), 'url':Url, 'need_resolve':1})
+							if sts:
+								Url=data3.meta['url']
+								printDBG('etap 5='+Url)
+								if ('public/dist' in Url) and ('id=' in Url):
+									URL = 'https://' + Url.split('/')[2] + '/hls/'+Url.split('id=')[1]+'/'+Url.split('id=')[1]+'.playlist.m3u8'
+									printDBG('etap 6='+URL)
+									URL = strwithmeta(URL, {'Referer':Url})	
+									urlTab.extend(getDirectM3U8Playlist(URL, checkExt=True, checkContent=True, sortWithMaxBitrate=999999999))
+								if '/public/dist/index.html?id=' in Url:
+									URL = Url.replace('/public/dist/index.html?id=','/getLinkStreamMd5/')
+									printDBG('etap 7='+URL)						
+									sts, data4 = self.getPage(URL,paramsUrl)
+									if sts:
+										data_lst = re.findall('file":"(.*?)".*?label":"(.*?)"', data4, re.S)
+										if data_lst: 
+											label = data_lst[0][1]
+											if 'googlevideo' in data_lst[0][0]: label = '|'+label + '| Google'
+											urlTab.append({'name':label, 'url':data_lst[0][0], 'need_resolve':0})
+								elif '/embedplay/' in Url:
+									sts, data4 = self.getPage(Url,self.defaultParams)
+									if sts:
+										data_list4 = re.findall('<iframe.*?src=["\'](.*?)["\']', data4, re.S)
+										if data_list4:
+											Url = data_list4[0]
+											urlTab.append({'name':gethostname(Url), 'url':Url, 'need_resolve':1})
+								else:
+									urlTab.append({'name':gethostname(Url), 'url':Url, 'need_resolve':1})
 				self.cacheLinks[str(cItem['url'])] = urlTab	
 		return urlTab	
 

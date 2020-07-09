@@ -27,7 +27,7 @@ def getinfo():
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام و مسلسلات اجنبية'
-	info_['icon']='https://www.mvs4u.to/wp-content/uploads/2020/03/Logo-header.png'
+	info_['icon']='https://www.movs4u.live/wp-content/uploads/2020/03/Logo-header.png'
 	info_['recherche_all']='1'
 	info_['update']='Fixe trailer'	
 	return info_
@@ -49,7 +49,7 @@ class TSIPHost(TSCBaseHostClass):
 		
 		TSCBaseHostClass.__init__(self,{'cookie':'movs4u.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://www.mvs4u.to'
+		self.MAIN_URL = 'https://www.movs4u.live'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'timeout':9,'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		#self.getPage = self.cm.getPage

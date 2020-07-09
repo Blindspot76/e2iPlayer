@@ -72,9 +72,14 @@ class TSIPHost(TSCBaseHostClass):
 			if cItem['xua']!='': Url  = strwithmeta(Url,{'User-Agent' : cItem['xua']})
 			if elm['stream_icon']: stream_icon =elm['stream_icon']
 			else: stream_icon = ''
-			if elm['rating']: rating = str(elm['rating'])
-			else: rating = ''			
-			self.addVideo({'import':cItem['import'],'name':'categories','category' : 'video','url': Url,'title':elm['name'],'icon':stream_icon,'desc':'Rating: '+rating,'hst':'direct'})
+			rating = elm.get('rating','')
+			if rating: desc = tscolor('\c00????00')+'RATING: '+tscolor('\c00??????')+str(rating)+'/10 \n'
+			else:
+				desc = ''
+			titre = elm['name']
+			if '\u' in titre: titre = str(titre.decode('unicode-escape'))
+			url_inf = cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_vod_info&vod_id='+str(elm['stream_id'])
+			self.addVideo({'import':cItem['import'],'name':'categories','category' : 'host2','url': Url,'url_inf':url_inf,'title':titre,'icon':stream_icon,'desc':desc,'hst':'direct','EPG':True})
 		
 		
 	def showmenu_series(self,cItem):		
@@ -82,16 +87,15 @@ class TSIPHost(TSCBaseHostClass):
 		sts, data = self.cm.getPage(Url)
 		data = json_loads(data)
 		for elm in data:
-			if elm['cover']: stream_icon =elm['cover']
-			else: stream_icon = ''
-			if elm['rating']: rating = str(elm['rating'])
-			else: rating = ''
-			if elm['plot']: plot = str(elm['plot'])
-			else: plot = ''
-			if elm['genre']: genre = str(elm['genre'])
-			else: genre = ''
-			desc = 'GENRE:'+genre+' RATING:'+rating+'/10 \nPlot: '+plot
-			self.addDir({'import':cItem['import'],'name':'categories','category' : 'host2','url': str(elm['series_id']),'title':elm['name'],'icon':stream_icon,'desc':desc,'hst':'xtream_vod','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'23'})
+			stream_icon =elm.get('cover','')
+			rating = str(elm.get('rating',''))
+			plot = str(elm.get('plot',''))
+			genre = str(elm.get('genre',''))
+			desc = tscolor('\c00????00')+'GENRE: '+tscolor('\c00??????')+str(genre)+'\n'+tscolor('\c00????00')+' RATING:'+tscolor('\c00??????')+str(rating)+'/10 \n'+tscolor('\c00????00')+'Plot: '+tscolor('\c00??????')+str(plot)
+			titre = elm['name']
+			if '\u' in titre: titre = str(titre.decode('unicode-escape'))
+			url_inf = cItem['xhost']+'/player_api.php?username='+cItem['xuser']+'&password='+cItem['xpass']+'&action=get_series_info&series_id='+str(elm['series_id'])
+			self.addDir({'import':cItem['import'],'name':'categories','category' : 'host2','url_inf':url_inf,'url': str(elm['series_id']),'title':titre,'icon':stream_icon,'desc':desc,'hst':'xtream_vod','xuser':cItem['xuser'],'xpass':cItem['xpass'],'xhost':cItem['xhost'],'xua':cItem['xua'],'mode':'23','EPG':True})
 		
 	def showmenu_saisons(self,cItem):			
 		xuser=cItem['xuser']
@@ -114,7 +118,7 @@ class TSIPHost(TSCBaseHostClass):
 			elm = ('Season '+season,id_+'|'+season)
 			if ( elm not in liste ):
 				liste.append(elm)	 
-				params = {'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'host2','url': season,'title':'Season '+season,'icon':img_,'id_':id_,'xuser':xuser,'xpass':xpass,'xhost':xhost,'xua':xua,'mode':'24'} 
+				params = {'import':cItem['import'],'good_for_fav':True,'name':'categories','category' : 'host2','desc':cItem.get('desc',''),'url': season,'title':'Season '+season,'icon':img_,'id_':id_,'xuser':xuser,'xpass':xpass,'xhost':xhost,'xua':xua,'mode':'24'} 
 				self.addDir(params)	
 		
 	def showmenu_episodes(self,cItem):			
@@ -139,8 +143,33 @@ class TSIPHost(TSCBaseHostClass):
 			if ( season == saison):
 				if xua!='':
 					link  = strwithmeta(link,{'User-Agent' : xua})
-				params = {'import':cItem['import'],'name':'categories','category' : 'video','url': link,'title':titre,'icon':img_,'desc':link,'hst':'direct'} 
+				if '\u' in titre: titre = str(titre.decode('unicode-escape'))
+				params = {'import':cItem['import'],'name':'categories','category' : 'video','url': link,'title':titre,'icon':img_,'desc':cItem.get('desc',''),'hst':'direct'} 
 				self.addVideo(params)	
+
+	def getArticle(self, cItem):
+		printDBG('ssssssssssssssssssssssssssssss')
+		otherInfo1 = {}
+		icon = cItem.get('icon','')
+		desc = cItem.get('desc','')
+		url = cItem.get('url_inf','')		
+		sts, data = self.cm.getPage(url)
+		if sts:
+			data = json_loads(data)
+			inf = data.get('info',[])
+			if inf != []:
+				desc = inf.get('plot','')
+				#icon = inf.get('cover_big',inf.get('cover',icon))
+				if inf.get('age','')         != '': otherInfo1['age_limit']   = inf.get('age','')
+				if inf.get('country','')     != '': otherInfo1['country']     = inf.get('country','')
+				if inf.get('genre','')       != '': otherInfo1['genre']       = inf.get('genre','')	
+				if inf.get('duration','')    != '': otherInfo1['duration']    = inf.get('duration','')				
+				if inf.get('episode_run_time','0')    != '0': otherInfo1['duration']    = inf.get('episode_run_time','')
+				if inf.get('releasedate','') != '': otherInfo1['year'] = inf.get('releasedate','')				
+				if inf.get('releaseDate','') != '': otherInfo1['year'] = inf.get('releasedate','')					
+				
+		title = cItem['title']		
+		return [{'title':title, 'text': desc, 'images':[{'title':'', 'url':icon}], 'other_info':otherInfo1}]
 
 
 	def SearchResult(self,str_ch,page,extra):

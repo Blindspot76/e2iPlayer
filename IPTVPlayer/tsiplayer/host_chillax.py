@@ -15,15 +15,15 @@ import time
 
 def getinfo():
 	info_={}
-	info_['name']='Chillax.To'
-	info_['version']='1.1 23/09/2019'
+	info_['name']='9Movies'
+	info_['version']='1.2 07/07/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='401'
 	info_['desc']='Watch Movies & TV shows'
-	info_['icon']='https://i.ibb.co/r2kKX5s/chillax.png'
+	info_['icon']='https://i.ibb.co/dtmXV8g/9movies.png'
 	info_['recherche_all']='1'
 	info_['update']='Change Host name and fix link extractor'
-	info_['warning']='---->  !! Work only in Eplayer3 WITH BUFFERING  !! <----'
+	#info_['warning']='---->  !! Work only in Eplayer3 WITH BUFFERING  !! <----'
 	return info_
 	
 	
@@ -31,16 +31,16 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'chillax.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0'
-		self.MAIN_URL = 'https://ww1.9movies.yt'
+		self.MAIN_URL = 'https://ww2.9movies.yt'
 		self.HEADER = {'User-Agent': self.USER_AGENT,'Accept':'*/*','X-Requested-With':'XMLHttpRequest', 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Pragma':'no-cache'}
 		self.HEADER1 = {'User-Agent': self.USER_AGENT,'Accept':'*/*', 'Connection': 'keep-alive', 'Accept-Encoding':'gzip'}
 		self.defaultParams = {'timeout':9,'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.defaultParams1 = {'header':self.HEADER1, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 
-		#self.getPage = self.cm.getPage
+		self.getPage = self.cm.getPage
 		 
 
-	def getPage(self,baseUrl, addParams = {}, post_data = None):
+	def getPage1(self,baseUrl, addParams = {}, post_data = None):
 		sts = False
 		try:
 			oRequestHandler = cRequestHandler(baseUrl)
@@ -71,7 +71,7 @@ class TSIPHost(TSCBaseHostClass):
 					{'category':hst,'title': tscolor('\c00????00')+'Filter',           'mode':'21'},													
 					{'category':'search','name':'search','title': _('Search'), 'search_item':True,'hst':'tshost'},
 					]
-		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_,'desc':'---- >  '+tscolor('\c00????00')+'Work only in eplayer3 '+tscolor('\c0000??00')+'WITH BUFFERING '+tscolor('\c00??????')+'<----'})				
+		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_,'desc':''})				
 
 
 	def showmenu1(self,cItem):
@@ -222,8 +222,8 @@ class TSIPHost(TSCBaseHostClass):
 		urlTab = []	
 		videoUrl,referer,x1=videoUrl.split('|')
 		url=self.MAIN_URL+'/ajax/movie_sources/'
-		#post_data = {'eid':videoUrl}
-		post_data = 'eid='+videoUrl
+		post_data = {'eid':videoUrl}
+		#post_data = 'eid='+videoUrl
 		sts, data = self.getPage(url,post_data=post_data)
 		if sts:
 			Tab_els = re.findall('file":"(.*?)".*?label":"(.*?)"', data, re.S)
@@ -252,8 +252,16 @@ class TSIPHost(TSCBaseHostClass):
 						urlTab.append((url,'3'))
 					elif '.vtt' not in url_:
 						urlTab.append((label+'|'+url,'4'))
-					
-						
+			else:
+				Tab_els = re.findall('embed":"(.*?)"', data, re.S)
+				if Tab_els:
+					url = Tab_els[0].replace('\/','/')
+					if '?id=' in url:
+						x1,id = url.split('?id=',1)
+						url = 'https://m4ufree.yt/playlist/'+id+'/1594121280570'
+						urlTab.append((url,'3'))
+					else:
+						urlTab.append((url,'1'))
 
 		return urlTab		
 		

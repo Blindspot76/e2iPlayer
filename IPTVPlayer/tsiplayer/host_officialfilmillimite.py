@@ -37,7 +37,14 @@ class TSIPHost(TSCBaseHostClass):
 		self.cacheLinks = {}
 		self.getPage = self.cm.getPage
 		 
-	def showmenu0(self,cItem):
+	
+	
+	
+	
+	
+	
+	
+	def showmenu00(self,cItem):
 		hst='host2'
 		img_=cItem['icon']								
 		Cat_TAB = [
@@ -47,12 +54,14 @@ class TSIPHost(TSCBaseHostClass):
 					{'category':'search','name':'search','title': _('Search'), 'search_item':True,'hst':'tshost'},
 					]
 		self.listsTab(Cat_TAB, {'import':cItem['import'],'icon':img_})
-	def showmenu1(self,cItem):
+	def showmenu0(self,cItem):
 		hst='host2'
 		img_=cItem['icon']								
 		Cat_TAB = [
 					{'category':hst,'title': 'Tous', 'mode':'30','url':self.MAIN_URL+'/films/'},
-					{'category':hst,'title': 'Saga', 'mode':'30','url':self.MAIN_URL+'/films/sagas/'},					
+					{'category':hst,'title': 'Saga', 'mode':'30','url':self.MAIN_URL+'/films/sagas/'},
+					{'category':hst,'title': 'Netflix', 'mode':'30','url':self.MAIN_URL+'/netflix/'},
+					{'category':hst,'title': 'Films d''Apocalypse', 'mode':'30','url':self.MAIN_URL+'/films/streaming-720p-streaming-1080p/film-dapocalypse/'},									
 					{'category':hst,'title': 'Par Genre', 'mode':'21','sub_mode':0},
 					{'category':hst,'title': 'Par Qualité', 'mode':'21','sub_mode':1},
 					{'category':hst,'title': 'Par Année', 'mode':'21','sub_mode':2},

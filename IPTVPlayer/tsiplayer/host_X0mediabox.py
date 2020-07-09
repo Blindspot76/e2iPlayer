@@ -640,15 +640,17 @@ class TSIPHost(TSCBaseHostClass,CaptchaHelper):
 						'X-Requested-With':'XMLHttpRequest','x-token': _token1,'Referer':Url}
 					
 				post_data = {'tokenCode':tc,'_token':_token}
-				sts, data = self.getPage('https://gomostream.com/decoding_v3.php',{'header':POST_HEADER},post_data)
+				sts, data = self.getPage('https://gomo.to/decoding_v3.php',{'header':POST_HEADER},post_data)
 				if sts:
 					srv_data = re.findall('"(.*?)"', data.replace('\\',''), re.S)
 					for srv in srv_data:
 						if srv!='':
-							if 'gomostream.com' not in srv:
+							if 'gomo.to' not in srv:
 								urlTab.append({'name':gethostname(srv).capitalize(), 'url':srv, 'need_resolve':1})
 							else:
-								urlTab.append({'name':'Viduplayer (Gomostream)', 'url':'hst#tshost#'+srv+'|XXGOM', 'need_resolve':1})
+								titre = 'Gomostream'
+								if '/vid1/' in srv: titre = 'GDrive'
+								urlTab.append({'name':'|Local| '+titre, 'url':'hst#tshost#'+srv+'|XXGOM', 'need_resolve':1,'type':'local'})								
 		return urlTab
 
 

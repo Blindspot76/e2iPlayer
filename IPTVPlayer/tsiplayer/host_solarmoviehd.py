@@ -16,7 +16,7 @@ def getinfo():
 	info_['name']='Solarmoviehd.Ru'
 	info_['version']='1.0 01/09/2019'
 	info_['dev']='RGYSoft'
-	info_['cat_id']='401'
+	info_['cat_id']='102'#'401'
 	info_['desc']='Watch Movies & TV shows'
 	info_['icon']='https://solarmoviehd.ru/assets/images/logo.png'
 	info_['recherche_all']='1'

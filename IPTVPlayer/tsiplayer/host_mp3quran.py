@@ -8,16 +8,15 @@ import re
 import urllib
 import HTMLParser
 
-tunisia_gouv_code = [0,23,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24]
 
 def getinfo():
 	info_={}
 	info_['name']='MP3Quran.Net'
-	info_['version']='1.0 05/05/2019'
+	info_['version']='1.1 07/07/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='204'
 	info_['desc']='Quran Audio Library'
-	info_['icon']='https://www.mp3quran.net/images/quraan-logo.png'
+	info_['icon']='https://i.ibb.co/4M5FBQR/logo2.png'
 	info_['recherche_all']='0'
 	return info_
 	
@@ -29,26 +28,47 @@ class TSIPHost(TSCBaseHostClass):
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		#self.getPage = self.cm.getPage
-		
+
+
+	def getPage(self,baseUrl, addParams = {}, post_data = None):
+		while True:
+			if addParams == {}: addParams = dict(self.defaultParams)
+			origBaseUrl = baseUrl
+			baseUrl = self.cm.iriToUri(baseUrl)
+			sts, data = self.cm.getPage(baseUrl, addParams, post_data)			
+			return sts, data	
+
+			
 	def showmenu(self,cItem):	
-		self.addDir({'import':cItem['import'],'category' :'host2','title':'Videos | '+'المكتبة المرئية','icon':cItem['icon'],'mode': '30','url':'https://videos.mp3quran.net/Site/Gallery/VideosGroup/76'})		
-		self.addDir({'import':cItem['import'],'category' :'host2','title':'Reciters | '+'القرّاء'+' Ar','icon':cItem['icon'],'mode': '20','sub_mode':'1'})			
-		self.addDir({'import':cItem['import'],'category' :'host2','title':'Reciters | '+'القرّاء'+' En','icon':cItem['icon'],'mode': '20','sub_mode':'2'})			
+		#self.addDir({'import':cItem['import'],'category' :'host2','title':'Videos | '+'المكتبة المرئية','icon':cItem['icon'],'mode': '30','url':'https://videos.mp3quran.net/Site/Gallery/VideosGroup/76'})		
+		self.addDir({'import':cItem['import'],'category' :'host2','title':'Reciters | '+'القرّاء'+' Ar','icon':cItem['icon'],'mode': '20','lng':'ar'})			
+		self.addDir({'import':cItem['import'],'category' :'host2','title':'Reciters | '+'القرّاء'+' En','icon':cItem['icon'],'mode': '20','lng':'eng'})			
 		self.addDir({'import':cItem['import'],'category' :'host2','title':'Radios','icon':cItem['icon'],'mode': '21'})			
 		self.addAudio({'import':cItem['import'],'title':'LIVE Radio','url':'http://live.mp3quran.net:8006/;','icon':cItem['icon'],'desc':tscolor('\c00??0000')+'LIVE','hst':'direct'})			
 
+
 	def showmenu1(self,cItem):
-		lng_id=	cItem['sub_mode']
-		Url0='https://www.mp3quran.net/changement-lang.php'
-		post_data0={'langue':lng_id}
-		self.getPage(Url0,post_data=post_data0) 
-		Url='https://www.mp3quran.net/includes/ajax.php'
-		post_data={'lang_id':lng_id,'search':'all','action':'filterByLetter'}
-		sts, data = self.getPage(Url,post_data=post_data) 	
+		lng = cItem['lng']
+		Url=self.MAIN_URL + '/'+lng+'/ajax?r=0&t=all'
+		addParams = dict(self.defaultParams)
+		addParams['header']['X-Requested-With'] = 'XMLHttpRequest'
+		sts, data = self.getPage(Url,addParams) 	
 		if sts:
-			data_ = re.findall('reciter-item.*?id="(.*?)".*?reciter-name.*?>(.*?)<', data, re.S)
-			for (id_,name) in data_:
-				self.addDir({'import':cItem['import'],'category' :'host2','title':name,'icon':cItem['icon'],'rec_id':id_,'mode': '40','sub_mode':lng_id})
+			data = json_loads(data)
+			reads = data.get('reads',{})
+			for key, value in sorted(reads.items(), key=lambda t: t[0]):
+				self.addMarker({'title':key,'icon':cItem['icon']})
+				for elm in value:
+					titre   = elm.get('title','')
+					count   = elm.get('soar_count','')
+					rewaya  = elm.get('rewaya_name','')
+					reciter = elm.get('reciter_name','')
+					id_     = elm.get('id','')
+					slug    = elm.get('slug','')					
+					desc = tscolor('\c00????00')+'Info: '+tscolor('\c00??????')+count+'\n'
+					desc = desc + tscolor('\c00????00')+'Reciter: '+tscolor('\c00??????')+reciter+'\n'
+					desc = desc + tscolor('\c00????00')+'Rewaya: '+tscolor('\c00??????')+rewaya+'\n'
+					self.addDir({'import':cItem['import'],'category' :'host2','title':titre,'desc':desc,'icon':cItem['icon'],'slug':slug,'mode': '40','lng':lng})
 						
 	def showmenu2(self,cItem):
 		url='http://api.mp3quran.net/radios/get_radios.php'
@@ -88,42 +108,30 @@ class TSIPHost(TSCBaseHostClass):
 			self.addDir({'import':cItem['import'],'category' : 'host2','title':'Next','url':Url,'page':page+1,'mode':'30'})
 
 
-			
-	def showitms1(self,cItem):		
-		rec_id=	cItem['rec_id']
-		Url='https://www.mp3quran.net/includes/ajax.php'
-		post_data={'readerID':rec_id,'action':'reader_slider_by_alias'}
-		sts, data = self.getPage(Url,post_data=post_data) 	
+
+
+
+	def showitms1(self,cItem):	
+		lng = cItem['lng']
+		slug = cItem['slug']
+		Url=self.MAIN_URL + '/'+lng+'/ajax/'+slug
+		addParams = dict(self.defaultParams)
+		addParams['header']['X-Requested-With'] = 'XMLHttpRequest'
+		sts, data = self.getPage(Url,addParams) 	
 		if sts:
 			data = json_loads(data)
-			id_=data['id']
-			name_=data['name']
-			
-			
-			Url='https://www.mp3quran.net/includes/reciter_page.php'
-			post_data={'alias':rec_id,'action':'ajaxreader'}
-			sts, data = self.getPage(Url,post_data=post_data) 
-			if sts:	
-				data_ = re.findall('"ms_weekly_box">.*?data-name="(.*?)".*?data-media="(.*?)".*?<h3>(.*?)</h3>.*?<p>(.*?)<', data, re.S)
-				for (desc,url,name,time_) in data_:
-					self.addAudio({'import':cItem['import'],'title':ph.clean_html(name),'url':url,'icon':cItem['icon'],'desc':'duration: '+tscolor('\c00????00')+time_+'\\n '+tscolor('\c00??????')+'Reciters: '+tscolor('\c00????00')+desc,'hst':'direct'})			
-				
-				Url='https://www.mp3quran.net/includes/ajax.php'
-				post_data={'loadReaderId':id_,'page':'NaN','classification_id':'1','action':'loadMoreByReader'}
-				sts, data = self.getPage(Url,post_data=post_data)
-				if sts: 	
-					data_ = re.findall('"ms_weekly_box">.*?data-name="(.*?)".*?data-media="(.*?)".*?<h3>(.*?)</h3>.*?<p>(.*?)<', data, re.S)
-					for (desc,url,name,time_) in data_:
-						self.addAudio({'import':cItem['import'],'title':ph.clean_html(name),'url':url,'icon':cItem['icon'],'desc':'duration: '+tscolor('\c00????00')+time_+'\\n '+tscolor('\c00??????')+'Reciters: '+tscolor('\c00????00')+desc,'hst':'direct'})			
+			reciter = data.get('reciter',{})
+			reads_ = reciter.get('reads',[])
+			for reads in reads_:
+				soar = reads.get('soar',[])
+				for elm in soar:
+					titre = elm.get('sora_name','')
+					url   = elm.get('sora_audio','')
+					time_ = elm.get('sora_duration','')
+					num   = elm.get('sora_num','')	
+					self.addAudio({'import':cItem['import'],'title':titre,'url':url,'icon':cItem['icon'],'desc':'Duration: '+tscolor('\c00????00')+str(time_)+'\\n'+tscolor('\c00??????')+'Num: '+tscolor('\c00????00')+str(num),'hst':'direct'})			
 		
-			
-	def getPage(self,baseUrl, addParams = {}, post_data = None):
-		while True:
-			if addParams == {}: addParams = dict(self.defaultParams)
-			origBaseUrl = baseUrl
-			baseUrl = self.cm.iriToUri(baseUrl)
-			sts, data = self.cm.getPage(baseUrl, addParams, post_data)			
-			return sts, data		 
+				 
 
 	def get_links(self,cItem): 	
 		urlTab = []

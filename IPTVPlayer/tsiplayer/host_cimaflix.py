@@ -23,7 +23,7 @@ def getinfo():
 	info_['dev']='RGYSoft (Thx to SAMSAMSAM)'
 	info_['cat_id']='104'#'201'
 	info_['desc']='أفلام, مسلسلات و انمي عربية و اجنبية'
-	info_['icon']='https://cimaflix.tv/images/logo.png'
+	info_['icon']='https://i.ibb.co/MM3NSMZ/cimaflix.png'
 	info_['recherche_all']='0'
 	info_['update']='bugs fix'
 		
@@ -34,19 +34,23 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'cimaflix.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL = 'https://cimaflix.tv'
+		self.MAIN_URL = 'https://www.cimaflix.tv'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Upgrade-Insecure-Requests':'1','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER,'with_metadata':True,'no_redirection':False, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
 		self.getPage = self.cm.getPage
 		 
 	def showmenu0(self,cItem):
 
-		sts, data = self.getPage(self.MAIN_URL)
-		if sts:
-			Liste_els = re.findall('<a href="#"><i class="fa fa.*?>(.*?)<\/a>(.*?)<\/ul>', data, re.S)
-			for (titre,data_) in Liste_els:
-				self.addDir({'import':cItem['import'],'category' : 'host2','title':ph.clean_html(titre),'icon':cItem['icon'],'mode':'20','data':data_} )
+		#sts, data = self.getPage(self.MAIN_URL)
+		#if sts:
+		#	Liste_els = re.findall('<a href="#"><i class="fa fa.*?>(.*?)<\/a>(.*?)<\/ul>', data, re.S)
+		#	for (titre,data_) in Liste_els:
+		#		self.addDir({'import':cItem['import'],'category' : 'host2','title':ph.clean_html(titre),'icon':cItem['icon'],'mode':'20','data':data_} )
 		#self.addDir({'import':cItem['import'],'category':'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost','icon':cItem['icon']})
+		
+		self.addDir({'import':cItem['import'],'category' : 'host2','title':'الرئيسية','url':self.MAIN_URL,'icon':cItem['icon'],'mode':'30'} )
+		self.addDir({'import':cItem['import'],'category' : 'host2','title':'رمضان 2020','url':self.MAIN_URL+'/categorys/%d8%b1%d9%85%d8%b6%d8%a7%d9%86-2020/','icon':cItem['icon'],'mode':'30'} )
+		#♠self.addDir({'import':cItem['import'],'category':'search','title': _('Search'), 'search_item':True,'page':1,'hst':'tshost','icon':cItem['icon']})
 		
 	def showmenu1(self,cItem):
 		Liste_els = re.findall('<li>.*?href="(.*?)">(.*?)<', cItem['data'], re.S)
@@ -55,85 +59,36 @@ class TSIPHost(TSCBaseHostClass):
 			
 			
 	def showitms(self,cItem):
-		url1=cItem['url']
+		url=cItem['url']
 		page=cItem.get('page',1)
-		index = (page-1)*49
-		sts, data = self.getPage(url1+'page-'+str(index))
-		if sts:
-			Liste_els = re.findall('<div class="list-item">.*?href="(.*?)".*?src="(.*?)".*?title">(.*?)<\/div>', data, re.S)
-			i=0
-			for (url,image,titre) in Liste_els:
-				self.addDir({'import':cItem['import'],'good_for_fav':True,'EPG':True,'category' : 'host2','url':url,'title':ph.clean_html(titre),'icon':image,'mode':'31','hst':'tshost'} )			
-				i=i+1
-			if i>47:
-				self.addDir({'import':cItem['import'],'title':tscolor('\c0000??00')+'Page Suivante','page':page+1,'category' : 'host2','url':url1,'icon':cItem['icon'],'mode':'30'} )									
-		
-
-	def showelms(self,cItem):
-		url1=cItem['url']
-		sts, data = self.getPage(url1)
-		if sts:
-			Liste_els = re.findall('class="post">.*?href="(.*?)".*?title="(.*?)".*?src="(.*?)"', data, re.S)
-			if Liste_els:
-				for (url,titre,image) in Liste_els:
-					self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url':url+'?sv=1','title':titre,'icon':image,'hst':'tshost'} )			
+		if page>1:
+			if url == self.MAIN_URL:
+				url = url + '/?page='+str(page)+'/'
 			else:
-				self.addVideo({'import':cItem['import'],'good_for_fav':True,'category' : 'host2','url':url1+'?sv=1','title':cItem['title'],'icon':cItem['icon'],'hst':'tshost'} )			
-			
-	
-	
-	
-	def SearchResult1(self,str_ch,page,extra):
-		searchPattern=str_ch
-		marker = 'google.search.Search.csqr2538'
-		url = 'https://cse.google.com/cse.js?cx=002905823017627243012:xoba_omzj5w'
-		sts, data = self.getPage(url)
-		if not sts: return
-		data_els = re.findall('\(({.*?})\);', data, re.S)
-		if data_els:
-			tmp = data_els[1]
-			printDBG('ttttttttttttttttt'+tmp)
-			tmp = json_loads(tmp)
-			url = tmp['protocol'] + '://' + tmp['uds'] + '/' +  tmp['loaderPath']
-			url += '?autoload=%7B%22modules%22%3A%5B%7B%22name%22%3A%22search%22%2C%22version%22%3A%221.0%22%2C%22callback%22%3A%22__gcse.scb%22%2C%22style%22%3A%22http%3A%2F%2Fwww.google.com%2Fcse%2Fstatic%2Fstyle%2Flook%2Fv2%2Fdefault.css%22%2C%22language%22%3A%22'
-			url += tmp['language'] + '%22%7D%5D%7D'
-			lang = tmp['language']
-			token = tmp['cse_token']
-			sts, tmp = self.getPage(url)
-			if not sts: return
-			hash = ph.search(tmp, '''google\.search\.JSHash\s*?=\s*?['"]([^'^"]+?)['"]''')[0]
-
-			baseUrl = 'https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl='
-			baseUrl += lang + '&source=gcsc&gss=.tv&sig=' + hash + '&start={0}&cx=' + cx
-			baseUrl += '&q=dead&safe=off&cse_tok=' + token + '&googlehost=www.google.com&callback=' + marker
-
-
-			url = baseUrl.format(str(page*10))
-			sts, data = self.getPage(url)
-			printDBG('ddddddddddddd'+data)
+				url = url + 'page/'+str(page)+'/'
 		
-	def SearchResult(self,str_ch,page,extra):
-		url='https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=ar&source=gcsc&gss=.com&cselibv=5d7bf4891789cfae&cx=002905823017627243012:xoba_omzj5w&q='+str_ch+'&safe=off&cse_tok=AKaTTZgv7DKIyeQSmxrA753KYYq3:1557397954561&sort=&exp=csqr,4229469&oq='+str_ch+'&callback=google.search.cse.api13946'
-
-		url='https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=ar&source=gcsc&gss=.com&cselibv=5d7bf4891789cfae&cx=002905823017627243012:xoba_omzj5w&q='+str_ch+'&safe=off&cse_tok=AKaTTZgv7DKIyeQSmxrA753KYYq3:1557397954561&sort=&exp=csqr,4229469&oq='+str_ch+'&gs_l=partner-generic.12...13879.13879.1.14802.1.1.0.0.0.0.190.190.0j1.1.0.gsnos,n=13...0.0....34.partner-generic..3.0.0.g0m1uVF97m8&callback=google.search.cse.api13946'
-		url='https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=10&hl=ar&source=gcsc&gss=.com&cselibv=5d7bf4891789cfae&cx=002905823017627243012:xoba_omzj5w&q='+urllib.quote(str_ch)+'&safe=off&cse_tok=AKaTTZj3wNKpWeOU1-_LoEOy_2ff:1557398789721&sort=&exp=csqr,4229469&callback=google.search.cse.api4514'
 		sts, data = self.getPage(url)
 		if sts:
-			data_els = re.findall('\(({.*?})\);', data, re.S)
-			if data_els:
-				data = data_els[0]
-				printDBG(data)
-				jdata = json_loads(data)
-				items=jdata['results']
-				for item in items:
-					title=ph.clean_html(item['title'].encode("utf-8").replace(' اون لاين مباشرة على موقع سيما فليكس','').replace('...',''))
-					link=item['url']
-					try:
-						image=item['richSnippet']['cseImage']['src']
-					except:
-						image=''
-					self.addDir({'import':extra,'good_for_fav':True,'category' : 'host2','title':title,'icon':image,'url':link,'mode':'31','good_for_fav':True})
-				
+			if '/?v=watch' in data:
+				self.addVideo({'import':cItem['import'],'good_for_fav':True,'category':'host2', 'url':cItem['url']+'?v=watch','data_post':'', 'title':cItem['title'], 'desc':cItem['desc'], 'icon':cItem['icon'],'hst':'tshost'} )							
+			else:
+				lst_data=re.findall('MovieBlock">.*?href="(.*?)"(.*?)image:url\((.*?)\).*?Title">(.*?)<(.*?)</a>', data, re.S)
+				if lst_data:
+					for (url1,x1,image,name_eng,desc0) in lst_data:
+						desc0 = x1+desc0
+						desc1 =''
+						lst_inf=re.findall('GenresList">(.*?)<div class', desc0, re.S)
+						if lst_inf: desc1 = desc1 + tscolor('\c00????00')+'Genre: '+tscolor('\c00??????')+ph.clean_html(lst_inf[0])+'\n'
+						lst_inf=re.findall('imdbRating">(.*?)</div>', desc0, re.S)
+						if lst_inf: desc1 = desc1 + tscolor('\c00????00')+'Rate: '+tscolor('\c00??????')+ph.clean_html(lst_inf[0])+'\n'				
+						desc00,name_eng = self.uniform_titre(name_eng)
+						#if '://'in image: image = image.split('://')[0]+'://'+urllib.quote(image.split('://')[1])
+						#else: image = cItem['image']
+						desc=desc00+desc1
+						self.addDir({'import':cItem['import'],'good_for_fav':True,'category':'host2', 'url':url1,'data_post':'', 'title':ph.clean_html(name_eng), 'desc':desc, 'icon':image, 'mode':'30','EPG':True,'hst':'tshost'} )							
+					self.addDir({'import':cItem['import'],'category':'host2', 'url':cItem['url'], 'title':tscolor('\c0000??00')+'Next', 'page':page+1, 'desc':'Page Suivante', 'icon':cItem['icon'], 'mode':'30'})	
+	
+	
 				
 	def get_links(self,cItem):
 		urlTab = []	

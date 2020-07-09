@@ -4,6 +4,12 @@ from Plugins.Extensions.IPTVPlayer.libs import ph
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,gethostname,tscolor
 from Components.config import config
 import re
+from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
+import base64
+from binascii import unhexlify
+from hashlib import md5
+from Plugins.Extensions.IPTVPlayer.libs.crypto.cipher.aes_cbc import AES_CBC
+import urllib
 
 def getinfo():
 	info_={}
@@ -16,6 +22,18 @@ def getinfo():
 	info_['recherche_all']='0'
 	info_['update']='Bugs Fix'
 	return info_
+
+def cryptoJS_AES_decrypt(encrypted, password, salt):
+    def derive_key_and_iv(password, salt, key_length, iv_length):
+        d = d_i = ''
+        while len(d) < key_length + iv_length:
+            d_i = md5(d_i + password + salt).digest()
+            d += d_i
+        return d[:key_length], d[key_length:key_length+iv_length]
+    bs = 16
+    key, iv = derive_key_and_iv(password, salt, 32, 16)
+    cipher = AES_CBC(key=key, keySize=32)
+    return cipher.decrypt(encrypted, iv)
 	
 	
 class TSIPHost(TSCBaseHostClass):
@@ -25,8 +43,27 @@ class TSIPHost(TSCBaseHostClass):
 		self.MAIN_URL = 'https://www.zimabdko.com'
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
 		self.defaultParams = {'header':self.HEADER, 'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': self.COOKIE_FILE}
-		self.getPage = self.cm.getPage
+		#self.getPage = self.cm.getPage
 		self.cacheLinks = {}
+
+
+	def getPage(self,baseUrl, addParams = {}, post_data = None):
+		i=0
+		while True:
+			printDBG('counttttt'+str(i))
+			if addParams == {}: addParams = dict(self.defaultParams)
+			origBaseUrl = baseUrl
+			baseUrl = self.cm.iriToUri(baseUrl)
+			addParams['cloudflare_params'] = {'cookie_file':self.COOKIE_FILE, 'User-Agent':self.USER_AGENT}
+			sts, data = self.cm.getPageCFProtection(baseUrl, addParams, post_data)
+			printDBG(str(sts))
+			if sts:
+				break
+			else:
+				i=i+1
+				if i>2: break
+		return sts, data
+
 		
 	def showmenu0(self,cItem):
 		hst='host2'
@@ -107,13 +144,17 @@ class TSIPHost(TSCBaseHostClass):
 						else:
 							urlTab0=self.getVideos(code2+'|'+code1)
 							for elm in urlTab0:
+								local =''
 								printDBG('elm='+str(elm))
 								url_ = elm[0]
 								type_ = elm[1]
+								name_ = gethostname(url_)
+								if 'drive.google' in name_.lower(): name_= 'Google.Com'
+								if 'zimabdko.' in url_:
+									local='local'
+									name_ = 'zimabdko.com'
 								if type_ == '1':		
-									name_ = gethostname(url_)
-									if 'drive.google' in name_.lower(): name_= 'Google.Com'
-									urlTab.append({'name':'|Server: '+ph.clean_html(srv)+'| '+name_, 'url':url_, 'need_resolve':1})									
+									urlTab.append({'name':'|Server: '+ph.clean_html(srv)+'| '+name_, 'url':url_, 'need_resolve':1,'type':local})	
 			if config.plugins.iptvplayer.ts_dsn.value:
 				self.cacheLinks[str(cItem['url'])] = urlTab
 		return urlTab
@@ -129,7 +170,29 @@ class TSIPHost(TSCBaseHostClass):
 			if Liste_els:
 				URL_ = Liste_els[0]
 				if URL_.startswith('//'): URL_ = 'http:'+URL_
-				urlTab.append((URL_,'1'))
+				if False:#'zimabdko.' in URL_:
+					sts, data = self.getPage(URL_)
+					if sts:
+						lst_data = re.findall('data-en=.*?[\'"](.*?)[\'"].*?data-p=.*?[\'"](.*?)[\'"]', data, re.S)	
+						if lst_data:
+							code = urllib.unquote(lst_data[0][0])
+							code = json_loads(code.strip())
+							b = lst_data[0][1]
+							printDBG('code= '+str(code)+' | pass= '+b)
+							ciphertext = base64.b64decode(code['ct'])
+							iv = unhexlify(code['iv'])
+							salt = unhexlify(code['s'])
+							decrypted = cryptoJS_AES_decrypt(ciphertext, b, salt)
+							printDBG('decrypted= '+decrypted)
+							URL = decrypted.replace('\/','/').replace('"','')
+							sts, data = self.getPage(URL)
+							if sts:	
+								printDBG('data= '+data)
+								lst_data = re.findall('file":"(.*?)"', data, re.S)	
+								if lst_data:
+									urlTab.append((lst_data[0],'3')) 
+				else:
+					urlTab.append((URL_,'1'))
 		return urlTab		
 	def getArticle(self, cItem):
 		printDBG("cima4u.getVideoLinks [%s]" % cItem) 

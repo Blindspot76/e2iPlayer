@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from Plugins.Extensions.IPTVPlayer.tools.iptvtools import printDBG
 from Plugins.Extensions.IPTVPlayer.libs import ph
-from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor
+from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.tstools import TSCBaseHostClass,tscolor,tshost
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads
 from Plugins.Extensions.IPTVPlayer.tsiplayer.libs.packer import cPacker
 from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
@@ -9,14 +9,18 @@ import re
 
 def getinfo():
 	info_={}
-	info_['name']='Movizland.Com'
-	info_['version']='1.2 09/09/2019'
+	name = 'Movizland.Com'
+	hst = tshost(name)	
+	if hst=='': hst = 'https://on.movizland.com'
+	info_['host']= hst
+	info_['name']=name
+	info_['version']='1.2.01 05/07/2020'
 	info_['dev']='RGYSoft'
 	info_['cat_id']='201'
 	info_['desc']='أفلام, مسلسلات و انمي بالعربية'
 	info_['icon']='https://i.ibb.co/ZS8tq3z/movizl.png'
 	info_['recherche_all']='1'
-	info_['update']='New Template'	
+	#info_['update']='New Template'	
 	return info_
 	
 	
@@ -24,7 +28,7 @@ class TSIPHost(TSCBaseHostClass):
 	def __init__(self):
 		TSCBaseHostClass.__init__(self,{'cookie':'movizland.cookie'})
 		self.USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0'
-		self.MAIN_URL        = 'https://tv1.movizland.com'
+		self.MAIN_URL        = getinfo()['host']
 		self.MAIN_URL_MOBILE = 'https://app.movizland.online'
 		self.defaut_mobile = False
 		self.HEADER = {'User-Agent': self.USER_AGENT, 'Connection': 'keep-alive', 'Accept-Encoding':'gzip', 'Content-Type':'application/x-www-form-urlencoded','Referer':self.getMainUrl(), 'Origin':self.getMainUrl()}
@@ -133,6 +137,7 @@ class TSIPHost(TSCBaseHostClass):
 				name_eng=self.cleanHtmlStr(name_eng.strip())
 				desc3,titre = self.uniform_titre(name_eng,-1)
 				desc = desc3 + self.get_desc(desc0,desc1,desc2)
+				image=self.std_url(image)
 				self.addDir({'import':cItem['import'],'category' : 'host2','title':titre,'url':url1,'icon':image,'desc':desc,'mode':'31','good_for_fav':True,'EPG':True,'hst':'tshost'})					
 			if (filter_==''):
 				self.addDir({'import':cItem['import'],'category' : 'host2','title':tscolor('\c0000??00')+'Page Suivante','url':urlo,'page':page+1,'mode':'30'})
@@ -150,6 +155,7 @@ class TSIPHost(TSCBaseHostClass):
 				if Liste_url:
 					URL = Liste_url[-1]
 					desc,titre = self.uniform_titre(name_eng.strip(),-1)
+					image=self.std_url(image)
 					self.addVideo({'import':cItem['import'],'category' : 'host2','title':titre,'url':URL,'icon':image,'desc':desc,'good_for_fav':True,'hst':'tshost'})					
 			self.addDir({'import':cItem['import'],'category' : 'host2','title':tscolor('\c0000??00')+'Page Suivante','url':urlo,'page':page+1,'mode':'50'})
 
@@ -170,6 +176,7 @@ class TSIPHost(TSCBaseHostClass):
 					desc = self.get_desc(desc0,desc1,desc2)
 					desc3,titre = self.uniform_titre(name_eng,-1)
 					desc = desc3 + desc
+					image=self.std_url(image)
 					if 'الموسم' in name_eng: 
 						self.addDir({'import':cItem['import'],'category' : 'host2','title':titre,'url':url1,'icon':image,'desc':desc,'mode':'31','good_for_fav':True,'EPG':True,'hst':'tshost'})					
 					else:
@@ -182,6 +189,7 @@ class TSIPHost(TSCBaseHostClass):
 			if sts:
 				Liste_films_data = re.findall('<li class="grid-item.*?href="(.*?)".*?src="(.*?)".*?Title">(.*?)<', data, re.S)
 				for (url1,image,name_eng) in Liste_films_data:
+					image=self.std_url(image)
 					desc,titre = self.uniform_titre(name_eng.strip(),-1)
 					self.addVideo({'import':extra,'category' : 'video','title':titre,'url':url1,'icon':image,'desc':desc,'good_for_fav':True,'hst':'tshost'})					
 		else:
@@ -190,6 +198,7 @@ class TSIPHost(TSCBaseHostClass):
 			if sts:
 				Liste_films_data = re.findall('BlockItem">.*?href="(.*?)".*?<img.*?src="(.*?)"(.*?)RestInformation">(.*?)</ul.*?InfoEndBlock">(.*?)</ul.*?Title">(.*?)<', data, re.S)
 				for (url1,image,desc0,desc1,desc2,name_eng) in Liste_films_data:
+					image=self.std_url(image)
 					name_eng=self.cleanHtmlStr(name_eng.strip())
 					desc3,titre = self.uniform_titre(name_eng,-1)
 					desc = desc3+self.get_desc(desc0,desc1,desc2)
@@ -228,7 +237,7 @@ class TSIPHost(TSCBaseHostClass):
 							else:
 								urlTab.append({'name':label, 'url':url, 'need_resolve':0,'type':'local'})			
 			# other servers		
-			iframe = re.findall('<li data.*?">(.*?)<.*?src="(.*?)"',data,re.S|re.IGNORECASE)			
+			iframe = re.findall('<li data.*?">(.*?)<.*?srcout="(.*?)"',data,re.S|re.IGNORECASE)			
 			for (server,href) in iframe:
 				urlTab.append({'name':server, 'url':href, 'need_resolve':1})
 			# mobile version

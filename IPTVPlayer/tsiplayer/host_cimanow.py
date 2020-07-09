@@ -96,6 +96,7 @@ class TSIPHost(TSCBaseHostClass):
 					elif 'fa-film'     in elm: desc = desc+tscolor('\c00????00')+'Cat: ' +tscolor('\c00??????') + self.cleanHtmlStr(elm)+' | '
 					elif 'fa-eye'      in elm: desc = desc+tscolor('\c00????00')+'View: ' +tscolor('\c00??????') + self.cleanHtmlStr(elm)+' | '	
 				desc = desc+tscolor('\c00????00')+'\nDesc: '+tscolor('\c00??????') + self.cleanHtmlStr(inf2) +'\n'
+				image=self.std_url(image)
 				self.addDir({'import':cItem['import'],'category' : 'host2','title':self.cleanHtmlStr(titre),'url':url ,'desc':desc,'icon':image,'mode':'20','good_for_fav':True,'EPG':True,'hst':'tshost'})
 				i=i+1
 			if (i>13) and (ind<0): self.addDir({'import':cItem['import'],'category' : 'host2','title':'Page Suivante','url':cItem['url'],'page':page+1,'mode':'20'})
@@ -125,6 +126,7 @@ class TSIPHost(TSCBaseHostClass):
 					elif 'fa-film'     in elm: desc = desc+tscolor('\c00????00')+'Cat: ' +tscolor('\c00??????') + self.cleanHtmlStr(elm)+' | '
 					elif 'fa-eye'      in elm: desc = desc+tscolor('\c00????00')+'View: ' +tscolor('\c00??????') + self.cleanHtmlStr(elm)+' | '	
 				desc = desc+tscolor('\c00????00')+'\nDesc: '+tscolor('\c00??????') + self.cleanHtmlStr(inf2) +'\n'
+				image=self.std_url(image)
 				self.addDir({'import':extra,'category' : 'host2','title':self.cleanHtmlStr(titre),'url':url ,'desc':desc,'icon':image,'mode':'20','good_for_fav':True,'EPG':True,'hst':'tshost'})
 
 
