@@ -1,3 +1,5 @@
+#2020.07.12.01
+-Cinemay, DSDA, CB01 javítva
 #2020.07.09.01
 -Music Box Frissítve
 -Youtube bélyegkép megjelenítés javítva
