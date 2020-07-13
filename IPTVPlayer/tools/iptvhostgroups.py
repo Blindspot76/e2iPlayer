@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-06-27 by Blindspot - modified iptvhostgroups
+# 2020-07-13 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -82,7 +82,6 @@ class IPTVHostsGroups:
         '7tvde' : [ 'german'] ,
         '9anime' : [ 'cartoonsandanime', 'english'] ,
         'akoam' : [ 'arabic', 'moviesandseries'] ,
-        'allboxtv' : [ 'moviesandseries', 'polish'] ,
         'alltubetv' : [ 'moviesandseries', 'polish'] ,
         'altadefinizione' : [ 'italian', 'moviesandseries'] ,
         'altadefinizione01' : [ 'italian', 'moviesandseries'] ,
@@ -91,7 +90,6 @@ class IPTVHostsGroups:
         'andrijaiandjelka' : [ 'balkans', 'moviesandseries'] ,
         'animeodcinki' : [ 'cartoonsandanime', 'polish'] ,
         'appletrailers' : [ 'moviesandseries'] ,
-        'arconaitvme' : [ 'german', 'live'] ,
         'ardmediathek' : [ 'german'] ,
         'artetv' : [ 'english', 'french', 'german', 'latino', 'polish'] ,
         'bajeczkiorg' : [ 'cartoonsandanime', 'polish'] ,
@@ -111,11 +109,9 @@ class IPTVHostsGroups:
         'cinemay' : [ 'french', 'moviesandseries'] ,
         'cineto' : [ 'english', 'german', 'moviesandseries'] ,
         'classiccinemaonline' : [ 'english', 'moviesandseries'] ,
-        'crtankocom' : [ 'balkans', 'cartoonsandanime'] ,
         'dailymotion' : [ 'arabic', 'balkans', 'documentary', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'science', 'swedish'] ,
         'dancetrippin' : [ 'english', 'music'] ,
-        'dardarkomcom' : [ 'arabic', 'moviesandseries'] ,
-        'darshowcom' : [ 'arabic', 'moviesandseries'] ,
+        'dardarkomcom' : [ 'arabic', 'moviesandseries'] ,        
         'ddl' : [ 'english', 'german', 'moviesandseries'] ,
         'del' : [ 'german', 'sport'] ,
         'dixmax' : [ 'latino', 'moviesandseries'] ,
@@ -163,7 +159,6 @@ class IPTVHostsGroups:
         'hdfull' : [ 'latino', 'moviesandseries'] ,
         'hdkinomir' : [ 'moviesandseries', 'russian'] ,
         'hdpopcornscom' : [ 'english', 'moviesandseries'] ,
-        'hdsto' : [ 'arabic', 'english', 'french', 'latino', 'moviesandseries'] ,
         'hdstreams' : [ 'german', 'moviesandseries'] ,
         'hitboxtv' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'others', 'polish', 'russian', 'sport', 'swedish'] ,
         'hoofootcom' : [ 'english', 'sport'] ,
@@ -176,7 +171,6 @@ class IPTVHostsGroups:
         'kabarety' : [ 'others', 'polish'] ,
         'kijknl' : [ 'others'] ,
         'kinogo' : [ 'moviesandseries', 'russian'] ,
-        'kinomanco' : [ 'moviesandseries', 'polish'] ,
         'kinopokaz' : [ 'moviesandseries', 'russian'] ,
         'kinotan' : [ 'moviesandseries', 'russian'] ,
         'kinox' : [ 'german', 'moviesandseries'] ,
@@ -206,7 +200,6 @@ class IPTVHostsGroups:
         'musicmp3ru' : [ 'music'] ,
         'myfreemp3' : [ 'music'] ,
         'mythewatchseries' : [ 'english', 'moviesandseries'] ,
-        'naszekinotv' : [ 'moviesandseries', 'polish'] ,
         'ngolos' : [ 'sport'] ,
         'ninateka' : [ 'polish'] ,
         'nuteczki' : [ 'music', 'polish'] ,
@@ -248,15 +241,13 @@ class IPTVHostsGroups:
         'streamcomplet' : [ 'french', 'moviesandseries'] ,
         'streaminghdfun' : [ 'italian', 'moviesandseries'] ,
         'streamliveto' : [ 'live'] ,
-        'svtplayse' : [ 'swedish'] ,
-        'szenestreamz' : [ 'german', 'moviesandseries'] ,
+        'svtplayse' : [ 'swedish'] ,        
         'tainieskaiseirestv' : [ 'greek', 'moviesandseries'] ,
         'tantifilmorg' : [ 'italian', 'moviesandseries'] ,
         'tata' : [ 'german'] ,
         'ted' : [ 'english', 'others'] ,
         'tfarjocom' : [ 'french', 'moviesandseries'] ,
-        'thewatchseriesto' : [ 'english', 'moviesandseries'] ,
-        'treetv' : [ 'moviesandseries', 'russian'] ,
+        'thewatchseriesto' : [ 'english', 'moviesandseries'] , 
         'turcjatv' : [ 'moviesandseries', 'polish'] ,
         'tvgrypl' : [ 'polish'] ,
         'tvjworg' : [ 'others', 'polish'] ,
@@ -279,7 +270,6 @@ class IPTVHostsGroups:
         'vumedicom' : [ 'documentary', 'english', 'science'] ,
         'vumooch' : [ 'english', 'moviesandseries'] ,
         'watchcartoononline' : [ 'cartoonsandanime', 'english'] ,
-        'watchmovies' : [ 'moviesandseries', 'polish'], 
         'watchwrestling' : [ 'english', 'sport'] ,
         'watchwrestlinguno' : [ 'english', 'sport'] ,
         'webstream' : [ 'arabic', 'english', 'german', 'live', 'polish', 'sport'] ,
@@ -294,7 +284,6 @@ class IPTVHostsGroups:
         'yifytv' : [ 'english', 'moviesandseries'] ,
         'youtube' : [ 'arabic', 'balkans', 'english', 'french', 'german', 'greek', 'hungarian', 'italian', 'latino', 'live', 'music', 'others', 'polish', 'russian', 'swedish'] ,
         'zalukajvip' : [ 'moviesandseries', 'polish'] ,
-        'zalukajcom' : [ 'moviesandseries', 'polish'] 
         }        
         
         for h in HOST_AND_GROUPS:
