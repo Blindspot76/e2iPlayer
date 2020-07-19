@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2020-07-13 by Blindspot - modified iptvhostgroups
+# 2020-07-19 by Blindspot - modified iptvhostgroups
 ###################################################
 # LOCAL import
 ###################################################
@@ -144,7 +144,6 @@ class IPTVHostsGroups:
         'filmpertutti' : [ 'italian', 'moviesandseries'] ,
         'filmstreamhdit' : [ 'italian', 'moviesandseries'] ,
         'filmstreamvkcom' : [ 'french', 'moviesandseries'] ,
-        'filmydokumentalneeu' : [ 'documentary', 'polish'] ,
         'fokustv' : [ 'documentary', 'live', 'polish', 'science'] ,
         'forjatn' : [ 'arabic', 'english', 'french', 'moviesandseries'] ,
         'francetv' : [ 'french'] ,
@@ -237,8 +236,7 @@ class IPTVHostsGroups:
         'spiegeltv' : [ 'german'] ,
         'sportdeutschland' : [ 'german', 'sport'] ,
         'sportitalia' : [ 'italian', 'sport'] ,
-        'spryciarze' : [ 'others', 'polish'] ,
-        'streamcomplet' : [ 'french', 'moviesandseries'] ,
+        'spryciarze' : [ 'others', 'polish'] ,       
         'streaminghdfun' : [ 'italian', 'moviesandseries'] ,
         'streamliveto' : [ 'live'] ,
         'svtplayse' : [ 'swedish'] ,        
@@ -249,8 +247,7 @@ class IPTVHostsGroups:
         'tfarjocom' : [ 'french', 'moviesandseries'] ,
         'thewatchseriesto' : [ 'english', 'moviesandseries'] , 
         'turcjatv' : [ 'moviesandseries', 'polish'] ,
-        'tvgrypl' : [ 'polish'] ,
-        'tvjworg' : [ 'others', 'polish'] ,
+        'tvgrypl' : [ 'polish'] ,      
         'tvn24' : [ 'polish'] ,
         'tvnowde' : [ 'german'] ,
         'tvnvod' : [ 'polish'] ,
