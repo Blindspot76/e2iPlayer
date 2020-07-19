@@ -64,7 +64,6 @@ hostfilmezz
 hostfilmgo
 hostfilmixco
 hostfilmovizijastudio
-hostfilmowood
 hostfilmpalast
 hostfilmpertutti
 hostfilmstreamhdit
@@ -167,7 +166,6 @@ hostspiegeltv
 hostsportdeutschland
 hostsportitalia
 hostspryciarze
-hoststreamcomplet
 hoststreaminghdfun
 hoststreamliveto
 hostsvtplayse
@@ -178,7 +176,6 @@ hostted
 hosttfarjocom
 hostthewatchseriesto
 hosttvgrypl
-hosttvjworg
 hosttvn24
 hosttvnowde
 hosttvnvod
