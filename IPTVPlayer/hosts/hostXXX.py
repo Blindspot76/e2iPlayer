@@ -168,7 +168,7 @@ class IPTVHost(IHost):
     ###################################################
 
 class Host:
-    XXXversion = "2020.07.18.0"
+    XXXversion = "2020.07.20.0"
     XXXremote  = "0.0.0.0"
     currList = []
     MAIN_URL = ''
@@ -1531,15 +1531,17 @@ class Host:
            sts, data = self.getPage(url, 'pornrabbit.cookie', 'pornrabbit.com', self.defaultParams)
            if not sts: return valTab
            printDBG( 'Host listsItems data: '+data )
-           next = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', 'NEXT', False)[1]
-           data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<!-- item -->', '<!-- item END -->')
+           next = self.cm.ph.getDataBeetwenMarkers(data, 'pagination', 'Next', False)[1]
+           #data = self.cm.ph.getAllItemsBeetwenMarkers(data, '<!-- item -->', '<!-- item END -->')
+           data = data.split('data-video=')
+           if len(data): del data[0]
            for item in data:
               phTitle = self.cm.ph.getSearchGroups(item, '''title=['"]([^"^']+?)['"]''', 1, True)[0].replace(' Porn Videos','')
               phUrl = self.cm.ph.getSearchGroups(item, '''href=['"]([^"^']+?)['"]''', 1, True)[0]
               if phUrl.startswith('/'): phUrl = self.MAIN_URL + phUrl
               phImage = self.cm.ph.getSearchGroups(item, '''data-original=['"]([^"^']+?)['"]''', 1, True)[0] 
               if not phImage: phImage = self.cm.ph.getSearchGroups(item, '''src=['"]([^"^']+?)['"]''', 1, True)[0] 
-              Runtime = self.cm.ph.getSearchGroups(item, '''desc">([^>]+?)<''', 1, True)[0] 
+              Runtime = self.cm.ph.getSearchGroups(item, '''<span>([^>]+?)<''', 1, True)[0] 
               if Runtime:
                  valTab.append(CDisplayListItem(decodeHtml(phTitle),'['+Runtime+'] '+decodeHtml(phTitle),CDisplayListItem.TYPE_VIDEO, [CUrlItem('', phUrl, 1)], 0, phImage, None)) 
            if next:
@@ -2266,8 +2268,8 @@ class Host:
                  self.h5video_servers = result["h5video_servers"]
                  self.wzobs_servers = result["wzobs_servers"]
                  self.ngvideo_servers = result["ngvideo_servers"]
-                 #self.websocket_servers = result["websocket_servers"]
-                 #self.video_servers = result["video_servers"]
+                 self.websocket_servers = result["websocket_servers"]
+                 self.chat_servers = result["chat_servers"]
            except Exception:
               printExc()
            self.defaultParams = {'use_cookie': True, 'load_cookie': True, 'save_cookie': True, 'cookiefile': COOKIEFILE, 'return_data': True}
@@ -5949,6 +5951,7 @@ class Host:
               Time = self.cm.ph.getSearchGroups(item, '''th-duration">([^>]+?)<''', 1, True)[0].strip()
               if phUrl.startswith('/'): phUrl = 'https://pornorussia.tv' + phUrl
               if phImage.startswith('//'): phImage = 'https:' + phImage
+              if phImage.startswith('/'): phImage = 'https://pornorussia.tv' + phImage
               try:
                  phImage = urlparser.decorateUrl(phImage, {'Referer': 'https://pornorussia.tv'})
               except: pass
@@ -8559,8 +8562,9 @@ class Host:
               return newurl
 
         if parser == 'https://www.myfreecams.com/':
+           printDBG("Connecting to Chat Server:%s" % str(random.choice(self.chat_servers)))
            host = "Mozilla/5.0 (Linux; U; Android 4.1.1; en-us; androVM for VirtualBox ('Tablet' version with phone caps) Build/JRO03S) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Safari/534.30"
-           videoUrl = myfreecam_start(url)
+           videoUrl = myfreecam_start(url, str(random.choice(self.chat_servers)))
            if videoUrl != '':
               key = self.cm.ph.getSearchGroups(videoUrl, '''video([^"^']+?)\.''')[0] 
               id = self.cm.ph.getSearchGroups(videoUrl, '''mfc_([^"^']+?)\.''')[0] 
@@ -11388,7 +11392,7 @@ def read_model_data(m):
 		pass
 	printDBG ("%s  Video Server : %d Channel Id : %d  Model id : %d " %(buf, CAMGIRLSERVER, CAMGIRLCHANID, CAMGIRLUID))
 
-def myfreecam_start(url):
+def myfreecam_start(url, xchat):
 	global CAMGIRL
 	global CAMGIRLSERVER
 	global CAMGIRLUID
@@ -11399,17 +11403,9 @@ def myfreecam_start(url):
 	import sys
 	sys.path.insert(1, libsPath)
 	import websocket
-	printDBG("Connecting to Chat Server...")
+	printDBG("Connecting to Chat Server:")
 	try:
-		xchat = [ 62, 63, 64, 65, 66, 67, 68, 69,
-				70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-				80, 81, 83 ,84, 85, 86, 87, 88, 89,
-				91, 94, 95, 96, 97, 98, 99,
-				100, 101, 102, 103, 104, 105, 106, 108, 109,
-				111, 112, 113, 114, 115, 116, 118, 119,
-				120, 121, 122, 123, 124, 125, 126, 127
-				]
-		host = "ws://xchat"+str(random.choice(xchat))+".myfreecams.com:8080/fcsl"
+		host = "ws://"+xchat+".myfreecams.com:8080/fcsl"
 		printDBG("Chat Server..."+host)
 		ws = websocket.create_connection(host)
 		ws.send("hello fcserver\n\0")
